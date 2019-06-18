@@ -12,6 +12,7 @@
 #include "AreaPattern.h"
 #include <Bentley/BeTimeUtilities.h>
 #include <cmath>
+#include <BRepCore/SolidKernel.h>
 
 BEGIN_BENTLEY_RENDER_NAMESPACE
 
@@ -52,7 +53,7 @@ private:
     uint32_t m_shadows:1;          //!< Shows or hides shadows.
     uint32_t m_noClipVolume:1;     //!< Controls whether the clip volume is applied.
     uint32_t m_constructions:1;    //!< Shows or hides construction class geometry.
-    uint32_t m_monochrome:1;       //!< draw all graphics in a single color 
+    uint32_t m_monochrome:1;       //!< draw all graphics in a single color
     uint32_t m_noGeometryMap:1;    //!< ignore geometry maps
     uint32_t m_hLineMaterialColors:1; //!< use material colors for hidden lines
     uint32_t m_edgeMask:2;         //!< 0=none, 1=generate mask, 2=use mask
@@ -161,8 +162,8 @@ public:
     void SetAnimate(bool val) {m_animate = val;}
     bool ShowBackgroundMap() const { return m_backgroundMap; }
     void SetShowBackgroundMap(bool val) {m_backgroundMap = val;}
-    
-    
+
+
     RenderMode GetRenderMode() const {return m_renderMode; }
     void SetRenderMode(RenderMode value) {m_renderMode = value;}
 
@@ -378,7 +379,7 @@ public:
 };
 
 //=======================================================================================
-//! An uncompressed high definition image in either RGBE or RGBM  
+//! An uncompressed high definition image in either RGBE or RGBM
 // @bsiclass                                                    Ray.Bentley     01/2018
 //=======================================================================================
 struct HDRImage : Image
@@ -395,8 +396,8 @@ public:
     //! @param[in] encoding the encoding (either RGBM or RGBE)
     DGNPLATFORM_EXPORT static HDRImage FromHDR(uint8_t const* srcData, uint32_t srcLen, Encoding encoding = Encoding::RGBM);
     bvector<float> Decode () const;
-    void Encode(Encoding encoding); 
-}; 
+    void Encode(Encoding encoding);
+};
 
 //=======================================================================================
 //! Identifies a texture or material.
@@ -708,7 +709,7 @@ struct Material : RefCounted<NonCopyableClass>
 
         explicit CreateParams(MaterialKeyCR key=MaterialKey()) : m_key(key) { }
         DGNPLATFORM_EXPORT CreateParams(MaterialKeyCR key, RenderingAssetCR, DgnDbR, SystemCR, TextureP texture=nullptr);
-                                           
+
         void SetDiffuseColor(ColorDef val) {m_diffuseColor = val;} //<! Set the surface color for fill or diffuse illumination
         void SetSpecularColor(ColorDef val) {m_specularColor = val;} //<! Set the surface color for specular illumination
         void SetEmissiveColor(ColorDef val) {m_emissiveColor = val;} //<!  Set the surface emissive color
@@ -1057,7 +1058,7 @@ struct GradientSymb : RefCountedBase
         Hemispherical       = 5,
         Thematic            = 6,
     };
-  
+
 
 protected:
     Mode        m_mode = Mode::None;
@@ -1107,7 +1108,7 @@ public:
     DGNPLATFORM_EXPORT BentleyStatus FromJson(Json::Value const& json);
     BentleyStatus GetKey(ColorDef& color, double& value, uint32_t iKey) const;
     // Thematic display.
-    bool IsThematic() const { return m_mode == Mode::Thematic; } 
+    bool IsThematic() const { return m_mode == Mode::Thematic; }
     ThematicGradientSettingsCPtr GetThematicSettings() const { return m_thematicSettings; }
     ThematicGradientSettingsPtr GetThematicSettingsR() { return m_thematicSettings; }
     void SetThematicSettings (ThematicGradientSettingsR settings) { m_thematicSettings = &settings; }
@@ -1277,7 +1278,7 @@ enum class LinePixels : uint32_t
     Code5 = 0xe0e0e0e0, // 5
     Code6 = 0xf888f888, // 6
     Code7 = 0xff18ff18, // 7
-    HiddenLine = 0xcccccccc,  // hidden lines 
+    HiddenLine = 0xcccccccc,  // hidden lines
     Invisible = 0x00000001, // nearly invisible
     Invalid = 0xffffffff,
     };
@@ -2125,7 +2126,7 @@ struct QPoint3d
         z = Quantization::Quantize(pt.z, params.origin.z, params.scale.z);
         }
     QPoint3d(FPoint3dCR pt, DRange3dCR range) : QPoint3d(pt, Params(range)) { }
-    QPoint3d(FPoint3dCR pt, ParamsCR params) : QPoint3d(ToDPoint(pt), params) {} 
+    QPoint3d(FPoint3dCR pt, ParamsCR params) : QPoint3d(ToDPoint(pt), params) {}
 
     //! Decode this QPoint3d into a DPoint3d using the same params from which the QPoint3d was created.
     DPoint3d Unquantize(ParamsCR params) const { return UnquantizeAsVector(params); }
@@ -2358,7 +2359,7 @@ public:
     bvector<uint32_t> const& GetIndices() const { return m_indices; }
     bvector<uint32_t>& GetIndices() { return m_indices; }
     double GetStartDistance() const { return m_startDistance; }
-    
+
     void AddIndex(uint32_t index)  { if (m_indices.empty() || m_indices.back() != index) m_indices.push_back(index); }
     void Clear() { m_indices.clear(); }
  };
@@ -2408,7 +2409,7 @@ struct IndexedPolylineArgs
 
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     05/2017
-//=======================================================================================                                                           
+//=======================================================================================
 struct  MeshEdge
     {
     enum    Flags : uint8_t
@@ -2435,7 +2436,7 @@ struct  MeshEdge
         }
 
     bool operator < (MeshEdge const& rhs) const;
-    };                 
+    };
 
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     05/2017
@@ -2460,7 +2461,7 @@ template <typename T_Data>  struct AuxChannel : RefCountedBase
     DEFINE_REF_COUNTED_PTR(Data);
 
     struct Data : RefCountedBase
-        { 
+        {
         private:
         float               m_input;
         bvector<T_Data>     m_values;
@@ -2474,7 +2475,7 @@ template <typename T_Data>  struct AuxChannel : RefCountedBase
         Data(float input, bvector<T_Data>&& values) : m_input(input), m_values(values) { }
         };
 private:
-    bvector<DataPtr>         m_data;    
+    bvector<DataPtr>         m_data;
 
 public:
         AuxChannel( bvector<DataPtr>&& data) : m_data(std::move(data)) { }
@@ -2504,7 +2505,7 @@ public:
                 bvector<T_Data>     values;
                 dataVector.push_back (new Data(data->GetInput(), std::move(values)));
                 }
-                
+
             return new AuxChannel(std::move(dataVector));
             }
         bvector<DataPtr> const& GetData() const { return m_data; }
@@ -2605,7 +2606,7 @@ struct TriMeshArgs
 
     DGNPLATFORM_EXPORT PolyfaceHeaderPtr ToPolyface() const;
 };
- 
+
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   03/17
 //=======================================================================================
@@ -2753,13 +2754,13 @@ struct ImageLight
     template <typename T_Image> struct T_Map : RefCounted<NonCopyableClass>
         {
         T_Map() { }
-        T_Map(T_Image&& image, Mapping mapping, DPoint2dCR offset = DPoint2d::FromZero(), double gamma = 1.0, bool viewOriented = false) : 
+        T_Map(T_Image&& image, Mapping mapping, DPoint2dCR offset = DPoint2d::FromZero(), double gamma = 1.0, bool viewOriented = false) :
               m_image(std::move(image)), m_mapping(mapping), m_offset(offset), m_gamma(gamma), m_viewOriented(viewOriented) { }
 
         T_Image         m_image;
-        Mapping         m_mapping = Mapping::Invalid; 
+        Mapping         m_mapping = Mapping::Invalid;
         bool            m_viewOriented = false;
-        DPoint2d        m_offset = DPoint2d::FromZero(); 
+        DPoint2d        m_offset = DPoint2d::FromZero();
         double          m_gamma = 0.0;
         bool IsValid() { return m_image.IsValid(); }
         T_Image const&  GetImage() { return m_image; }
@@ -2790,7 +2791,7 @@ struct ImageLight
 
 
 //=======================================================================================
-//! A list of Render::Lights, plus the f-stop setting for the camera 
+//! A list of Render::Lights, plus the f-stop setting for the camera
 // @bsiclass                                                    Keith.Bentley   03/17
 //=======================================================================================
 struct SceneLights : RefCounted<NonCopyableClass>
@@ -2806,7 +2807,7 @@ struct SceneLights : RefCounted<NonCopyableClass>
         Render::TexturePtr          m_diffuseImage;
         ImageLight::Solar           m_solar;
         } m_imageBased;
-    
+
     void AddLight(LightPtr light) {if (light.IsValid()) m_list.push_back(light);}
     bool IsEmpty() const {return m_list.empty();}
 
@@ -2971,7 +2972,7 @@ public:
 
         return found;
         }
-    
+
     bool FindFeature(FeatureR feature, uint32_t index) const
         {
         for (auto kvp : m_map)
@@ -3100,9 +3101,9 @@ struct MeshEdgeCreationOptions
     {
     enum    Options
         {
-        NoEdges                 = 0x0000,          
-        SheetEdges              = 0x0001 << 0, 
-        CreaseEdges             = 0x0001 << 1, 
+        NoEdges                 = 0x0000,
+        SheetEdges              = 0x0001 << 0,
+        CreaseEdges             = 0x0001 << 1,
         SmoothEdges             = 0x0001 << 2,
         CreateChains            = 0x0001 << 3,
         DefaultEdges            = CreaseEdges | SheetEdges,
@@ -3118,7 +3119,7 @@ struct MeshEdgeCreationOptions
     bool GenerateAllEdges() const    { return m_options == AllEdges; }
     bool GenerateNoEdges() const     { return m_options == NoEdges;   }
     bool GenerateSheetEdges() const  { return 0 != (m_options & SheetEdges); }
-    bool GenerateCreaseEdges() const { return 0 != (m_options & CreaseEdges); } 
+    bool GenerateCreaseEdges() const { return 0 != (m_options & CreaseEdges); }
     bool CreateEdgeChains() const    { return 0 != (m_options & CreateChains); }     // Create edge chains for polyfaces that do not already have them.
     };
 
@@ -3130,7 +3131,7 @@ struct MeshEdgeCreationOptions
 struct System
 {
     virtual ~System() { }
-    
+
     //! Initialize the rendering system. Return a non-zero value in case of error. The client thread waits for the result.
     virtual int _Initialize(void* systemWindow, bool swRendering) = 0;
 

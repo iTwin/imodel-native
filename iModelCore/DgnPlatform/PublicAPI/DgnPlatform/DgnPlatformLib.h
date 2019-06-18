@@ -11,9 +11,9 @@
 #include "Render.h"
 #include "ColorUtil.h"
 #include "TxnManager.h"
-#include "SolidKernel.h"
 #include "DgnViewport.h"
 #include <BeSQLite/L10N.h>
+#include <BRepCore/SolidKernel.h>
 #include <Logging/bentleylogging.h>
 
 typedef struct _EXCEPTION_POINTERS*  LPEXCEPTION_POINTERS;
@@ -25,7 +25,7 @@ DGNPLATFORM_TYPEDEFS(DgnHost)
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-typedef struct ::FT_LibraryRec_* FreeType_LibraryP; 
+typedef struct ::FT_LibraryRec_* FreeType_LibraryP;
 
 /*=================================================================================**//**
 @addtogroup DgnPlatformHost
@@ -122,7 +122,7 @@ public:
             DGNPLATFORM_EXPORT BeFileNameCR GetDgnPlatformAssetsDirectory();
 
             //! Return the directory containing the required GeoCoordinateData that must be deployed with any DgnPlatform-based app.
-            //! The only reason to use this method is when a PowerPlatform-based app is also using these libraries but wants to use the 
+            //! The only reason to use this method is when a PowerPlatform-based app is also using these libraries but wants to use the
             //! PowerPlatform based GeoCoordinateData and not the one from DgnClientSdk
             BeFileNameCR GetGeoCoordinateDataDirectory() { return _GetGeoCoordinateDataDirectory(); }
 
@@ -182,11 +182,11 @@ public:
             bool m_triedToLoadFTLibrary;
             bool m_suspended = false;
             FreeType_LibraryP m_ftLibrary;
-        
+
             DGNPLATFORM_EXPORT virtual BeFileName _GetLastResortFontDbPath();
             DGNPLATFORM_EXPORT virtual BentleyStatus _EnsureLastResortFontDb();
             DGNPLATFORM_EXPORT virtual DgnFontPtr _CreateLastResortFont(DgnFontType);
-        
+
             virtual DgnFontCR _GetLastResortTrueTypeFont() {return m_lastResortTTFont.IsValid() ? *m_lastResortTTFont : *(m_lastResortTTFont = _CreateLastResortFont(DgnFontType::TrueType));}
             virtual DgnFontCR _GetLastResortRscFont() {return m_lastResortRscFont.IsValid() ? *m_lastResortRscFont : *(m_lastResortRscFont = _CreateLastResortFont(DgnFontType::Rsc));}
             virtual DgnFontCR _GetLastResortShxFont() {return m_lastResortShxFont.IsValid() ? *m_lastResortShxFont : *(m_lastResortShxFont = _CreateLastResortFont(DgnFontType::Shx));}
@@ -312,18 +312,18 @@ public:
             //! Create a portable file URI, to be used with _ResolveFileUri. The default behavior strips the path from fileName and keeps only the file name.
             //! The host application can override this method to handle particular schemes or create URIs for specific locations.
             //! @param[out]     fileUri         A portable URI. This should be a name relative to the Bim file or a name with a known scheme ("bim://", ...)
-            //! @param[in]      fileName        File name. The host application can override this method to handle names with a specific scheme. 
-            //! @return SUCCESS if the fileUri could be created. ERROR otherwise. 
+            //! @param[in]      fileName        File name. The host application can override this method to handle names with a specific scheme.
+            //! @return SUCCESS if the fileUri could be created. ERROR otherwise.
             DGNPLATFORM_EXPORT virtual BentleyStatus _CreateFileUri(Utf8StringR fileUri, Utf8StringCR fileName) const;
 
             //! Resolve the URI defined by fileUri. The output fileName should define a full path that can be used by RasterFileModelHandler to open the raster file.
             //! The default behavior assumes that fileUri defines a path relative to the Bim file.
             //! The host application can override this method to resolve specific file schemes. The host application should call the default _ResolveFileUri
             //! implementation if its own implementation fails.
-            //! @param[out]     fileName        Resolved file name. 
+            //! @param[out]     fileName        Resolved file name.
             //! @param[in]      fileUri         File URI that needs to be resolved.
             //! @param[in]      db              The current DgnDb file
-            //! @return SUCCESS if the URI was resolved. ERROR otherwise. 
+            //! @return SUCCESS if the URI was resolved. ERROR otherwise.
             DGNPLATFORM_EXPORT virtual BentleyStatus _ResolveFileUri(BeFileNameR fileName, Utf8StringCR fileUri, DgnDbCR db) const;
             };
 
@@ -374,7 +374,7 @@ public:
 
     public:
         T_RegisteredDomains& RegisteredDomains() {return m_registeredDomains;}
-        
+
         DGNPLATFORM_EXPORT virtual void _OnAssert(WCharCP _Message, WCharCP _File, unsigned _Line);
 
         virtual IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() = 0;
@@ -403,7 +403,7 @@ public:
         virtual void _SupplyProductName(Utf8StringR) = 0;
 
         virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() = 0;
-  
+
         virtual void _OnUndisplayedSetChanged(DgnDbR) {}
 
         //! Given the name of a 'gated' feature, return whether or not it is enabled. By default, returns false.
@@ -456,14 +456,14 @@ public:
     //! @return nullptr if not Host is associated with the current process. Otherwise, a pointer to the Host object.
     DGNPLATFORM_EXPORT static Host* QueryHost();
 
-    //! Get the Host 
+    //! Get the Host
     //! @return a reference to the Host object. WARNING: Do not call this function unless you know that there is a Host.
     DGNPLATFORM_EXPORT static Host& GetHost();
 
     //! Used by DgnDbFileIO to initialize logging for Graphite code.
     //! @param configFileName Optional. The name of the logging configuration file to parse. Pass nullptr for logging to the console with default severities.
     //! If configFileName is specified, then the log4cxx provider will be used. Note that this provider comes from log4cxx.dll, and both the Graphite and Vancouver
-    //! code will use the same log4cxx.dll. 
+    //! code will use the same log4cxx.dll.
     //! @private
     DGNPLATFORM_EXPORT static void InitializeBentleyLogging(WCharCP configFileName);
 

@@ -3,13 +3,11 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include <DgnPlatformInternal.h>
-#include <DgnPlatform/DgnBRep/PSolidUtil.h>
+#include <BRepCore/SolidKernel.h>
+#include <BRepCore/PSolidUtil.h>
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_DGN
-
-
 
 //=======================================================================================
 // @bsistruct                                                       Ray.Bentley   09/2017
@@ -30,7 +28,7 @@ PSolidThreadLocalStorage()
         BeAssert(false);
         return;
         }
-        
+
     PK_PARTITION_set_type(m_partition, PK_PARTITION_type_light_c);
     PK_PARTITION_make_pmark(m_partition, &m_mark);
     }
@@ -55,20 +53,17 @@ static void  GoToPMark ();
 static void  Initialize();
 static void  Clear();
 static void  PrepareToWork();
-
-
 };
 
-
-static      BeThreadLocalStorage*       s_threadLocalParasolidHandlerStorage;    
+static BeThreadLocalStorage*    s_threadLocalParasolidHandlerStorage;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PSolidThreadLocalStorage::GoToPMark()
     {
-    PSolidThreadLocalStorage*     storage = reinterpret_cast<PSolidThreadLocalStorage*> (s_threadLocalParasolidHandlerStorage->GetValueAsPointer());
-    
+    PSolidThreadLocalStorage*   storage = reinterpret_cast<PSolidThreadLocalStorage*> (s_threadLocalParasolidHandlerStorage->GetValueAsPointer());
+
     PK_PMARK_goto_o_t   opts;
     int                 numNew, numMod, numDel;
     PK_ENTITY_t*        newEntities = nullptr;
@@ -106,7 +101,7 @@ void PSolidThreadLocalStorage::Initialize()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PSolidThreadLocalStorage::Clear()
     {
-    PSolidThreadLocalStorage*     storage = reinterpret_cast<PSolidThreadLocalStorage*> (s_threadLocalParasolidHandlerStorage->GetValueAsPointer());
+    PSolidThreadLocalStorage*   storage = reinterpret_cast<PSolidThreadLocalStorage*> (s_threadLocalParasolidHandlerStorage->GetValueAsPointer());
 
     if (nullptr == storage)
         {
@@ -147,7 +142,6 @@ static void clearExclusions()
     PK_THREAD_clear_exclusion (PK_THREAD_exclusion_serious_c, &clearedExclusion, &clearedThisThread);
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley      10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -166,20 +160,18 @@ static PK_ERROR_code_t threadedParasolidErrorHandler (PK_ERROR_sf_t* errorSf)
                 //printf ("Error %d caught in parasolid error handler\n", errorSf->code);
                 BeAssert (false && "Severe error during threaded processing");
                 break;
-
-
-            }       
+            }
 
         clearExclusions ();
-        
+
         PK_THREAD_tidy();
 
         PSolidThreadLocalStorage::GoToPMark ();
 
         throw PSolidThreadUtil::ParasolidException();
         }
-    
-    return 0; 
+
+    return 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -195,8 +187,8 @@ PSolidThreadUtil::MainThreadMark::MainThreadMark()
 * @bsimethod                                                    RayBentley      09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 PSolidThreadUtil::MainThreadMark::~MainThreadMark()
-    { 
-    if (nullptr == m_previousLocalStorage) 
+    {
+    if (nullptr == m_previousLocalStorage)
         DELETE_AND_CLEAR (s_threadLocalParasolidHandlerStorage);
     }
 
@@ -212,7 +204,7 @@ PSolidThreadUtil::WorkerThreadOuterMark::WorkerThreadOuterMark()
     errorFrustum.handler_fn = threadedParasolidErrorHandler;
     PK_THREAD_register_error_cbs(errorFrustum);
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -229,8 +221,8 @@ PSolidThreadUtil::WorkerThreadOuterMark::~WorkerThreadOuterMark()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-PK_PARTITION_t  PSolidThreadUtil::GetThreadPartition()  
-    { 
+PK_PARTITION_t  PSolidThreadUtil::GetThreadPartition()
+    {
     PSolidThreadLocalStorage*     storage = reinterpret_cast<PSolidThreadLocalStorage*> (s_threadLocalParasolidHandlerStorage->GetValueAsPointer());
 
     if (nullptr == storage)
@@ -239,7 +231,7 @@ PK_PARTITION_t  PSolidThreadUtil::GetThreadPartition()
         return 0;
         }
 
-    return storage->GetPartition(); 
+    return storage->GetPartition();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -249,8 +241,8 @@ void PSolidThreadUtil::SetThreadPartitionMark()
     {
     PSolidThreadLocalStorage::PrepareToWork();
     }
-    
 
-     
-     
-     
+
+
+
+

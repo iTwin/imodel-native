@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
-  
+
     <Product Name="DwgConverters" PrgOutputDir="DwgConverters" AddIn="true"> <!-- AddIn to ignore product directories -->
         <!-- DWG importer using OpenDwg -->
         <SubProduct ProductName="OpenDwgImporter" />
@@ -84,7 +84,7 @@
         <SubPart PartName="PublicAPI"/>
         <SubPart PartName="BentleyDll"      PartFile="iModelCore/Bentley/Bentley"                   Repository="imodel02"/>
         <SubPart PartName="Teigha"          PartFile="${SrcRoot}bsicommon/CvsPartFiles/teigha"      Repository="bin-teigha"  />
-        <SubPart PartName="PsolidShim_x64"  PartFile="iModelCore/DgnPlatform/DgnPlatform"/> <!-- so we more easily match what DgnPlatform uses -->
+        <SubPart PartName="PsolidShim_x64"  PartFile="iModelCore/BRepCore/BRepCore"/> <!-- so we more easily match what DgnPlatform uses -->
         <SubPart PartName="GeomDlls"        PartFile="iModelCore/GeomLibs/GeomLibs"/>
         <Bindings>
             <Libs ProductDirectoryName="OpenDwgDbLibs" Required="false">Delivery/OpenDwgImporter/$(libprefix)OpenDwgDbExchange$(libext)</Libs>
@@ -154,7 +154,7 @@
         <SubPart PartName="PublicAPI"/>
         <SubPart PartName="BentleyDll"      PartFile="iModelCore/Bentley/Bentley"                   Repository="imodel02"/>
         <SubPart PartName="RealDwg"         PartFile="${SrcRoot}bsicommon/CvsPartFiles/realdwg"     Repository="bin-realdwg" />
-        <SubPart PartName="PsolidShim_x64"  PartFile="iModelCore/DgnPlatform/DgnPlatform"           Repository="imodel02"/> <!-- so we more easily match what DgnPlatform uses -->
+        <SubPart PartName="PsolidShim_x64"  PartFile="iModelCore/BRepCore/BRepCore"                 Repository="imodel02"/> <!-- so we more easily match what DgnPlatform uses -->
         <SubPart PartName="GeomDlls"        PartFile="iModelCore/GeomLibs/Geomlibs"                 Repository="imodel02" />
         <Bindings>
             <!-- Put the .lib file to a versioned sub-folder to avoid name collision -->
@@ -243,7 +243,7 @@
         <SubPart PartName="Gtest-Tools"         PartFile="iModelCore/BeGTest/BeGTest"   Repository="imodel02"/>
         <SubPart PartName="google_gtest_lib"    PartFile="iModelCore/util/gtest/gtest"  Repository="imodel02"/>
     </Part>
-    
+
     <Part Name="DwgImporterTestsExe" BentleyBuildMakeFile="Tests/Tests.mke" BentleyBuildMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2019" OnlyPlatforms="x64">
         <SubPart PartName="GTestDependencies"/>
         <SubPart PartName="RealDwgImportExe"/>
@@ -259,7 +259,7 @@
             <Directory SourceName="Delivery/ImportTestData"  SubPartDirectory="TestData"  ProductDirectoryName="ImportTestData" Required="false"/>
         </Bindings>
     </Part>
-    
+
     <ProductDirectoryList ListName="Tests">
         <ProductDirectory Name="DwgImporterTestsExe"            Path=""/>
         <ProductDirectory Name="IgnoreList"                     Path="Ignore"/>

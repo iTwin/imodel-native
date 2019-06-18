@@ -3,8 +3,11 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include <DgnPlatformInternal.h>
-#include <DgnPlatform/DgnBRep/PSolidUtil.h>
+#include <BRepCore/SolidKernel.h>
+#include <BRepCore/PSolidUtil.h>
+
+USING_NAMESPACE_BENTLEY
+USING_NAMESPACE_BENTLEY_DGN
 
 #define KRN_INVALID_FACE_ID                    -1
 
@@ -199,7 +202,7 @@ BentleyStatus   PSolidTopoId::IdFromEdge (EdgeId& edgeId, PK_EDGE_t edgeTag, boo
 
     if (numFaces >= 2)
         {
-        if (SUCCESS == PSolidTopoId::IdFromFace (edgeId.faces[0], faces[0], useHighestId) && 
+        if (SUCCESS == PSolidTopoId::IdFromFace (edgeId.faces[0], faces[0], useHighestId) &&
             SUCCESS == PSolidTopoId::IdFromFace (edgeId.faces[1], faces[1], useHighestId))
             status = SUCCESS;
         }
@@ -219,7 +222,7 @@ BentleyStatus   PSolidTopoId::IdFromVertex (VertexId& vertexId, PK_VERTEX_t vert
 
     int         numFaces = 0;
     PK_FACE_t*  faces = NULL;
-    
+
     PK_VERTEX_ask_faces (vertexTag, &numFaces, &faces);
 
     BentleyStatus status = ERROR;
@@ -558,7 +561,7 @@ static void assignFaceIds (int numFaces, PK_FACE_t* pFaceTagArray, uint32_t node
         }
 
     int nextEntityId = highestEntityId + 1;
-    
+
     for (PK_FACE_t faceTag : facesToAssign)
         PSolidTopoId::AttachEntityId (faceTag, nodeId, nextEntityId++);
     }
@@ -615,7 +618,7 @@ static void assignEdgeIds (int numEdges, PK_EDGE_t* pEdgeTagArray, uint32_t node
             }
 
         int nextEntityId = highestEntityId + 1;
-    
+
         for (PK_EDGE_t edgeTag : edgesToAssign)
             PSolidTopoId::AttachEntityId (edgeTag, nodeId, nextEntityId++);
         }
@@ -1360,7 +1363,7 @@ BentleyStatus   PSolidTopoId::FaceFromId (PK_FACE_t& faceTag, FaceId const& face
     {
     int         numFaces = 0;
     PK_FACE_t*  faces = NULL;
-    
+
     PK_BODY_ask_faces (bodyTag, &numFaces, &faces);
 
     BentleyStatus   status = ERROR;
@@ -1372,7 +1375,7 @@ BentleyStatus   PSolidTopoId::FaceFromId (PK_FACE_t& faceTag, FaceId const& face
             faceTag = faces[i];
             status  = SUCCESS;
             }
-        
+
         if (SUCCESS == status)
             break;
         }
@@ -1389,7 +1392,7 @@ BentleyStatus PSolidTopoId::FacesFromNodeId (bvector<PK_FACE_t>& faceVector, uin
     {
     int         numFaces = 0;
     PK_FACE_t*  faces = NULL;
-    
+
     PK_BODY_ask_faces (bodyTag, &numFaces, &faces);
 
     BentleyStatus   status = ERROR;
@@ -1406,7 +1409,7 @@ BentleyStatus PSolidTopoId::FacesFromNodeId (bvector<PK_FACE_t>& faceVector, uin
         }
 
     PK_MEMORY_free (faces);
-    
+
     return status;
     }
 
@@ -1417,7 +1420,7 @@ BentleyStatus PSolidTopoId::FacesFromId (bvector<PK_FACE_t>& faceVector, FaceId 
     {
     int         numFaces = 0;
     PK_FACE_t*  faces = NULL;
-    
+
     PK_BODY_ask_faces (bodyTag, &numFaces, &faces);
 
     BentleyStatus   status = ERROR;
@@ -1432,7 +1435,7 @@ BentleyStatus PSolidTopoId::FacesFromId (bvector<PK_FACE_t>& faceVector, FaceId 
         }
 
     PK_MEMORY_free (faces);
-    
+
     return status;
     }
 
@@ -1443,7 +1446,7 @@ BentleyStatus   PSolidTopoId::EdgeFromId (PK_EDGE_t& edgeTag, EdgeId const& edge
     {
     int         numEdges = 0;
     PK_EDGE_t*  edges = NULL;
-    
+
     PK_BODY_ask_edges (bodyTag, &numEdges, &edges);
 
     BentleyStatus   status = ERROR;
@@ -1483,7 +1486,7 @@ BentleyStatus   PSolidTopoId::EdgesFromId (bvector<PK_EDGE_t>& edgeVector, EdgeI
     {
     int         numEdges = 0;
     PK_EDGE_t*  edges = NULL;
-    
+
     PK_BODY_ask_edges (bodyTag, &numEdges, &edges);
 
     BentleyStatus   status = ERROR;
@@ -1520,7 +1523,7 @@ BentleyStatus   PSolidTopoId::VertexFromId (PK_VERTEX_t& vertexTag, VertexId con
     {
     int         numVertices = 0;
     PK_EDGE_t*  vertices = NULL;
-    
+
     PK_BODY_ask_vertices (bodyTag, &numVertices, &vertices);
 
     BentleyStatus   status = ERROR;
@@ -1564,7 +1567,7 @@ BentleyStatus   PSolidTopoId::VerticesFromId (bvector<PK_VERTEX_t>& vertexVector
     {
     int         numVertices = 0;
     PK_EDGE_t*  vertices = NULL;
-    
+
     PK_BODY_ask_vertices (bodyTag, &numVertices, &vertices);
 
     BentleyStatus   status = ERROR;
@@ -1619,7 +1622,7 @@ BentleyStatus PSolidTopoId::CurveTopologyIdFromEdge (CurveTopologyId& id, PK_EDG
         {
         FaceId  faceIds[2];
 
-        if (SUCCESS == PSolidTopoId::IdFromFace (faceIds[0], faces[0], useHighestId) && 
+        if (SUCCESS == PSolidTopoId::IdFromFace (faceIds[0], faces[0], useHighestId) &&
             SUCCESS == PSolidTopoId::IdFromFace (faceIds[1], faces[1], useHighestId))
             {
             id = CurveTopologyId::FromBRepSharedEdge (faceIds[0], faceIds[1]);

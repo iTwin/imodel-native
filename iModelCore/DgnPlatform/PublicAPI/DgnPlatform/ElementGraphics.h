@@ -7,8 +7,8 @@
 /*__BENTLEY_INTERNAL_ONLY__*/
 
 #include "DgnPlatform.h"
-#include "SolidKernel.h"
 #include "ViewContext.h"
+#include <BRepCore/SolidKernel.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 

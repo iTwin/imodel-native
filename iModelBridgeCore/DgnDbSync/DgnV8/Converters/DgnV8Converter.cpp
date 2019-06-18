@@ -4,8 +4,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnDbSync/DgnV8/ConverterApp.h>
-#if defined (BENTLEYCONFIG_PARASOLID) 
-#include <DgnPlatform/DgnBRep/PSolidUtil.h>
+#if defined (BENTLEYCONFIG_PARASOLID)
+#include <BRepCore/PSolidUtil.h>
 #endif
 
 /*---------------------------------------------------------------------------------**//**
@@ -51,7 +51,7 @@ void iModelBridge_getAffinity(WCharP buffer,
                               WCharCP sourceFileNameStr)
     {
     Converter::GetAffinity(buffer, bufferSize, affinityLevel, affinityLibraryPathStr, sourceFileNameStr);
-    
+
 
 #ifdef COMMENT_OUT_EXAMPLE_CODE
     // *** The following is just an example of how iModelBridge_getAffinity could support more than one bridge.

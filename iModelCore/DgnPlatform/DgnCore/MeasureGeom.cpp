@@ -4,8 +4,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#if defined (BENTLEYCONFIG_PARASOLID) 
-#include <DgnPlatform/DgnBRep/PSolidUtil.h>
+#if defined (BENTLEYCONFIG_PARASOLID)
+#include <BRepCore/PSolidUtil.h>
 #endif
 
 /*---------------------------------------------------------------------------------**//**
@@ -28,7 +28,7 @@ bool MeasureGeomCollector::GetPreFlattenTransform (TransformR transform, Simplif
 
     worldToLocal.InverseOf (graphic.GetLocalToWorldTransform()); // Account for current transform...
     transform = Transform::FromProduct (worldToLocal, m_preFlattenTransform, graphic.GetLocalToWorldTransform());
-    
+
     return true;
     }
 
@@ -367,7 +367,7 @@ bool MeasureGeomCollector::DoAccumulateVolumes (ISolidPrimitiveCR primitive, Sim
 
     if (!myStat)
         return false;
-                
+
     double  iXY, iXZ, iYZ;
 
     reorientPrincipalMoments (moments, axes, momentB.x, momentB.y, momentB.z, iXY, iXZ, iYZ);
@@ -434,9 +434,9 @@ bool MeasureGeomCollector::DoAccumulateAreas (MSBsplineSurfaceCR surface, Simpli
                 printf ("Product %g %d %.15lg", tolerances[j], i, products[k].coff[3][3]);
             }
         }
-            
+
     k = 0;
-            
+
     for (int i = 1; i < 6; i++)
         {
         for (int j = 0; j< 3;j++, k++)
@@ -444,7 +444,7 @@ bool MeasureGeomCollector::DoAccumulateAreas (MSBsplineSurfaceCR surface, Simpli
 
         printf ("\n");
         }
-#endif    
+#endif
 
     static int  s_method = 0;
     double      area, scale;
@@ -507,7 +507,7 @@ bool MeasureGeomCollector::DoAccumulateAreas (PolyfaceQueryCR meshQuery, Simplif
         {
         AutoRestore<bool>   saveInFlatten (&m_inFlatten, true);
         PolyfaceHeaderPtr   tmpMeshQuery = PolyfaceHeader::New ();
-    
+
         tmpMeshQuery->CopyFrom (meshQuery);
         tmpMeshQuery->Transform (flattenTransform);
 
@@ -639,7 +639,7 @@ static double getBRepTolerance (IBRepEntityCR entity, IFacetOptionsPtr& facetOpt
 
         if (requestedTolerance > 0.0)
             {
-            Transform   invTrans;        
+            Transform   invTrans;
 
             invTrans.InverseOf(entity.GetEntityTransform());
             invTrans.ScaleDoubleArrayByXColumnMagnitude(&requestedTolerance, 1);
@@ -694,7 +694,7 @@ static void getBRepMoments (DPoint3dR moments, double& iXY, double& iXZ, double&
     moments.z = inertia[2][2];
     }
 #endif
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -717,7 +717,7 @@ bool MeasureGeomCollector::DoAccumulateLengths (IBRepEntityCR entity, SimplifyGr
         return true;
 
     Transform   outputTransform;
-    
+
     GetOutputTransform(outputTransform, graphic);
     entityPtr->PreMultiplyEntityTransformInPlace(outputTransform);
 
@@ -757,7 +757,7 @@ bool MeasureGeomCollector::DoAccumulateAreas (IBRepEntityCR entity, SimplifyGrap
         return true;
 
     Transform   outputTransform;
-    
+
     GetOutputTransform(outputTransform, graphic);
     entityPtr->PreMultiplyEntityTransformInPlace(outputTransform);
 
@@ -792,7 +792,7 @@ bool MeasureGeomCollector::DoAccumulateVolumes (IBRepEntityCR entity, SimplifyGr
         return true;
 
     Transform   outputTransform;
-    
+
     GetOutputTransform(outputTransform, graphic);
     entityPtr->PreMultiplyEntityTransformInPlace(outputTransform);
 
@@ -1033,7 +1033,7 @@ void MeasureGeomCollector::SetResultOptions (IFacetOptionsP facetOptions, Transf
             {
             double      tolerance = m_facetOptions->GetChordTolerance ();
             Transform   fwdCurrTrans;
-    
+
             fwdCurrTrans.InverseOf (m_invCurrTransform);
             fwdCurrTrans.ScaleDoubleArrayByXColumnMagnitude (&tolerance, 1); // mdlCurrTrans_scaleDoubleArray...
 
@@ -1241,7 +1241,7 @@ BentleyStatus MeasureGeomCollector::Process (GeometricPrimitiveCR primitive, Dgn
     m_geomTransform = transform ? *transform : Transform::FromIdentity();
 
     GeometryProcessor::Process (*this, dgnDb); // Calls _OutputGraphics...
-    
+
     return GetOperationStatus ();
     }
 
@@ -1251,7 +1251,7 @@ BentleyStatus MeasureGeomCollector::Process (GeometricPrimitiveCR primitive, Dgn
 BentleyStatus MeasureGeomCollector::Process (GeometrySourceCR source)
     {
     GeometryProcessor::Process (*this, source);
-    
+
     return GetOperationStatus ();
     }
 

@@ -9,11 +9,40 @@
 #include <DgnPlatformInternal/DgnCore/ElementGraphics.fb.h>
 #include <DgnPlatformInternal/DgnCore/TextStringPersistence.h>
 #include "DgnPlatform/Annotations/TextAnnotationDraw.h"
-#if defined (BENTLEYCONFIG_PARASOLID) 
-#include <DgnPlatform/DgnBRep/PSolidUtil.h>
+#if defined (BENTLEYCONFIG_PARASOLID)
+#include <BRepCore/PSolidUtil.h>
 #endif
 
 using namespace flatbuffers;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void FaceAttachmentUtil::FromGeometryParams(FaceAttachment& attachment, Render::GeometryParamsCR sourceParams)
+    {
+    if (!sourceParams.IsLineColorFromSubCategoryAppearance())
+        attachment.SetColor(sourceParams.GetLineColor().GetValue(), sourceParams.GetTransparency());
+
+    if (!sourceParams.IsMaterialFromSubCategoryAppearance())
+        attachment.SetMaterial(sourceParams.GetMaterialId().GetValueUnchecked());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void FaceAttachmentUtil::ToGeometryParams(FaceAttachment const& attachment, Render::GeometryParamsR faceParams, Render::GeometryParamsCR baseParams)
+    {
+    faceParams = baseParams;
+
+    if (attachment.GetUseColor())
+        {
+        faceParams.SetLineColor(ColorDef(attachment.GetColor()));
+        faceParams.SetTransparency(attachment.GetTransparency());
+        }
+
+    if (attachment.GetUseMaterial())
+        faceParams.SetMaterialId(RenderMaterialId(attachment.GetMaterial()));
+    }
 
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  02/15
@@ -512,7 +541,7 @@ bool GeometricPrimitive::IsSameStructureAndGeometry(GeometricPrimitiveCR primiti
             if (0.0 != solidTolerance)
                 {
                 Transform uorToSolid;
- 
+
                 uorToSolid.InverseOf(GetAsIBRepEntity()->GetEntityTransform());
                 uorToSolid.ScaleDoubleArrayByXColumnMagnitude(&solidTolerance, 1);
                 }
@@ -951,7 +980,7 @@ static bool hasDisconnectPoint(DPoint3dCP pts, size_t nPts)
         {
         if (pts[iPt].IsDisconnect())
             {
-            BeAssert(false); // STOP USING THIS ABOMINATION! Create a BOUNDARY_TYPE_None CurveVector with disjoint pieces... 
+            BeAssert(false); // STOP USING THIS ABOMINATION! Create a BOUNDARY_TYPE_None CurveVector with disjoint pieces...
             return true;
             }
         }
@@ -1370,7 +1399,7 @@ void GeometryStreamIO::Writer::Append(IBRepEntityCR entity)
 
                         GeometryParams  faceParams, baseParamsIgnored;
 
-                        params[i].ToGeometryParams(faceParams, baseParamsIgnored);
+                        FaceAttachmentUtil::ToGeometryParams(params[i], faceParams, baseParamsIgnored);
                         Append(faceParams, true, true); // We don't support allowing sub-category to vary by FaceAttachment...and we didn't initialize it...
 
                         polyfaces[i]->NormalizeParameters(); // Normalize uv parameters or materials won't have correct scale...
@@ -1403,18 +1432,14 @@ void GeometryStreamIO::Writer::Append(IBRepEntityCR entity)
 
         for (FaceAttachment attachment : faceAttachmentsVec)
             {
-            FB::DPoint2d    uv(0.0, 0.0); // NEEDSWORK_WIP_MATERIAL - Add geometry specific material mappings to GeometryParams/GraphicParams...
-            GeometryParams  faceParams, baseParamsIgnored;
-
-            attachment.ToGeometryParams(faceParams, baseParamsIgnored);
-
-            bool useColor = !faceParams.IsLineColorFromSubCategoryAppearance();
-            bool useMaterial = !faceParams.IsMaterialFromSubCategoryAppearance();
+            FB::DPoint2d uv(0.0, 0.0);
+            bool useColor = attachment.GetUseColor();
+            bool useMaterial = attachment.GetUseMaterial();
 
             FB::FaceSymbology  fbSymb(useColor, useMaterial,
-                                        useColor ? faceParams.GetLineColor().GetValue() : 0,
-                                        useMaterial ? faceParams.GetMaterialId().GetValueUnchecked() : 0,
-                                        useColor ? faceParams.GetTransparency() : 0, uv);
+                                      useColor ? attachment.GetColor() : 0,
+                                      useMaterial ? attachment.GetMaterial() : 0,
+                                      useColor ? attachment.GetTransparency() : 0, uv);
 
             fbSymbVec.push_back(fbSymb);
             }
@@ -1465,7 +1490,7 @@ void GeometryStreamIO::Writer::Append(DgnGeometryPartId geomPart, TransformCP ge
 
     geomToElem->GetTranslation(origin);
     geomToElem->GetMatrix(rMatrix);
-    
+
     if (!rMatrix.IsRigidSignedScale(deScaledMatrix, scale))
         scale = 1.0;
 
@@ -1553,10 +1578,10 @@ void GeometryStreamIO::Writer::Append(GeometryParamsCR elParams, bool ignoreSubC
             flatbuffers::Offset<FB::ThematicSettings>   thematicSettingsOffset = 0;
             if (gradient.GetMode() == GradientSymb::Mode::Thematic && gradient.GetThematicSettings().IsValid())
                 {
-                auto& thematicSettings = *gradient.GetThematicSettings(); 
+                auto& thematicSettings = *gradient.GetThematicSettings();
 
                 thematicSettingsOffset = FB::CreateThematicSettings(fbb,
-                                                                   thematicSettings.GetStepCount(), 
+                                                                   thematicSettings.GetStepCount(),
                                                                    thematicSettings.GetMargin(),
                                                                    thematicSettings.GetMarginColor().GetValue(),
                                                                    (uint32_t) thematicSettings.GetMode(),
@@ -1612,7 +1637,7 @@ void GeometryStreamIO::Writer::Append(GeometryParamsCR elParams, bool ignoreSubC
             }
 
         flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<FB::DwgHatchDefLine>>> fbDefLines;
-        
+
         if (0 != defLineOffsets.size())
             fbDefLines = fbb.CreateVector(defLineOffsets);
 
@@ -1659,7 +1684,7 @@ void GeometryStreamIO::Writer::Append(GeometryParamsCR elParams, bool ignoreSubC
 
         if (pattern->GetInvisibleBoundary())
             builder.add_invisibleBoundary(true);
-            
+
         if (pattern->GetSnappable())
             builder.add_snappable(true);
 
@@ -1887,23 +1912,17 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, IBRepEntityPtr& entity
     for (size_t iSymb=0; iSymb < ppfb->symbology()->Length(); iSymb++)
         {
         FB::FaceSymbology const* fbSymb = ((FB::FaceSymbology const*) ppfb->symbology()->Data())+iSymb;
-        GeometryParams faceParams;
+        FaceAttachment attachment;
 
         if (fbSymb->useColor())
-            {
-            faceParams.SetLineColor(ColorDef(fbSymb->color()));
-            faceParams.SetTransparency(fbSymb->transparency());
-            }
+            attachment.SetColor(fbSymb->color(), fbSymb->transparency());
 
         if (fbSymb->useMaterial())
-            {
-            faceParams.SetMaterialId(RenderMaterialId((uint64_t)fbSymb->materialId()));
-            // NEEDSWORK_WIP_MATERIAL...uv???
-            }
+            attachment.SetMaterial((uint64_t)fbSymb->materialId());
 
         if (nullptr == entity->GetFaceMaterialAttachments())
             {
-            IFaceMaterialAttachmentsPtr attachments = PSolidUtil::CreateNewFaceAttachments(PSolidUtil::GetEntityTag(*entity), faceParams);
+            IFaceMaterialAttachmentsPtr attachments = PSolidUtil::CreateNewFaceAttachments(PSolidUtil::GetEntityTag(*entity), attachment);
 
             if (!attachments.IsValid())
                 break;
@@ -1912,14 +1931,14 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, IBRepEntityPtr& entity
             }
         else
             {
-            entity->GetFaceMaterialAttachmentsP()->_GetFaceAttachmentsVecR().push_back(faceParams);
+            entity->GetFaceMaterialAttachmentsP()->_GetFaceAttachmentsVecR().push_back(attachment);
             }
         }
 
     // Support for older BRep that didn't have face attachment index attrib and add the attributes now...
     if (!ppfb->has_symbologyIndex())
         return true;
-    
+
     int         nFaces;
     PK_FACE_t*  faces = nullptr;
 
@@ -1930,7 +1949,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, IBRepEntityPtr& entity
 
     for (int iFace = 0; iFace < nFaces; iFace++)
         subElemIdToFaceMap[iFace + 1] = faces[iFace]; // subElemId is 1 based face index...
-    
+
     PK_MEMORY_free(faces);
 
     for (size_t iSymbIndex=0; iSymbIndex < ppfb->symbologyIndex()->Length(); iSymbIndex++)
@@ -2560,9 +2579,9 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
 
                 FlatBufferBuilder remappedfbb;
 
-                auto mloc = FB::CreateAreaPattern(remappedfbb, ppfb->origin(), ppfb->rotation(), ppfb->space1(), ppfb->space2(), ppfb->angle1(), ppfb->angle2(), ppfb->scale(), 
+                auto mloc = FB::CreateAreaPattern(remappedfbb, ppfb->origin(), ppfb->rotation(), ppfb->space1(), ppfb->space2(), ppfb->angle1(), ppfb->angle2(), ppfb->scale(),
                                                   ppfb->color(), ppfb->weight(), ppfb->useColor(), ppfb->useWeight(), ppfb->invisibleBoundary(), ppfb->snappable(),
-                                                  remappedGeometryPartId.GetValueUnchecked()); 
+                                                  remappedGeometryPartId.GetValueUnchecked());
                 remappedfbb.Finish(mloc);
                 writer.Append(Operation(OpCode::Pattern, (uint32_t) remappedfbb.GetSize(), remappedfbb.GetBufferPointer()));
                 break;
@@ -2638,15 +2657,15 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
                 DgnFontId srcFontId = importer.GetSourceDb().Fonts().FindId(text->GetStyle().GetFont());
                 DgnFontId dstFontId = importer.RemapFont(srcFontId);
                 DgnFontCP dstFont = importer.GetDestinationDb().Fonts().FindFontById(dstFontId);
-                
+
                 if (nullptr == dstFont)
                     { BeDataAssert(nullptr != dstFont); }
                 else
                     text->GetStyleR().SetFont(*dstFont);
-                
+
                 writer.Append(*text);
                 }
-            
+
             default:
                 {
                 writer.Append(egOp);
@@ -2797,9 +2816,9 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
                 if (!output._WantVerbose())
                     break;
 
-                if (!(ppfb->has_color() || ppfb->has_useColor() || 
-                      ppfb->has_weight() || ppfb->has_useWeight() || 
-                      ppfb->has_lineStyleId() || ppfb->has_useStyle() || 
+                if (!(ppfb->has_color() || ppfb->has_useColor() ||
+                      ppfb->has_weight() || ppfb->has_useWeight() ||
+                      ppfb->has_lineStyleId() || ppfb->has_useStyle() ||
                       ppfb->has_transparency() || ppfb->has_displayPriority() || ppfb->has_geomClass()))
                     break;
 
@@ -2861,7 +2880,7 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
                 int         nPts;
                 int8_t      boundary;
                 DPoint3dCP  pts;
-            
+
                 if (!reader.Get(egOp, pts, nPts, boundary))
                     break;
 
@@ -2894,7 +2913,7 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
                 int         nPts;
                 int8_t      boundary;
                 DPoint2dCP  pts;
-            
+
                 if (!reader.Get(egOp, pts, nPts, boundary))
                     break;
 
@@ -2926,7 +2945,7 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
 
                 int8_t      boundary;
                 DEllipse3d  arc;
-            
+
                 if (!reader.Get(egOp, arc, boundary))
                     break;
 
@@ -3328,7 +3347,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 
                 if (!reader.Get(egOp, pts, nPts, boundary))
                     break;
-    
+
                 DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
 
                 if (FB::BoundaryType_Closed == boundary)
@@ -3346,7 +3365,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 
                             context.DrawAreaPattern(*currGraphic, *CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateLineString(&localPoints3dBuf[0], nPts)), geomParams, false);
                             }
-                           
+
                         if (pattern->GetInvisibleBoundary() && !DrawHelper::IsFillVisible(context, geomParams))
                             break;
                         }
@@ -3410,7 +3429,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                         {
                         if (context.WantAreaPatterns())
                             context.DrawAreaPattern(*currGraphic, *CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateLineString(pts, nPts)), geomParams, false);
-                           
+
                         if (pattern->GetInvisibleBoundary() && !DrawHelper::IsFillVisible(context, geomParams))
                             break;
                         }
@@ -3468,7 +3487,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                         {
                         if (context.WantAreaPatterns())
                             context.DrawAreaPattern(*currGraphic, *CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateArc(arc)), geomParams, false);
-                           
+
                         if (pattern->GetInvisibleBoundary() && !DrawHelper::IsFillVisible(context, geomParams))
                             break;
                         }
@@ -3579,7 +3598,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                         {
                         if (context.WantAreaPatterns())
                             context.DrawAreaPattern(*currGraphic, *curvePtr, geomParams, false);
-                           
+
                         if (pattern->GetInvisibleBoundary() && !DrawHelper::IsFillVisible(context, geomParams))
                             break;
                         }
@@ -4117,7 +4136,7 @@ Json::Value GeometryCollection::ToJson(JsonValueCR opts) const
     DgnSubCategoryId lastSubCategory = m_state.m_geomParams.GetSubCategoryId();
     bool wantBRepData = opts["wantBRepData"].asBool();
     Json::Value output;
-    
+
     for (auto const& egOp : collection)
         {
         switch (egOp.m_opCode)
@@ -4156,10 +4175,10 @@ Json::Value GeometryCollection::ToJson(JsonValueCR opts) const
 
                 if (0 != ppfb->displayPriority())
                     value["displayPriority"] = ppfb->displayPriority();
-                
+
                 if (FB::GeometryClass_Primary != ppfb->geomClass())
                     value["geometryClass"] = ppfb->geomClass();
-                    
+
                 Json::Value symbValue;
                 symbValue["appearance"] = value; // NOTE: A null "appearance" indicates a reset to default sub-category appearance...
                 output.append(symbValue);
@@ -4330,7 +4349,7 @@ Json::Value GeometryCollection::ToJson(JsonValueCR opts) const
                 Json::Value value;
 
                 value["pattern"] = pattern->ToJson();
-                output.append(value);  
+                output.append(value);
                 break;
                 }
 
@@ -4410,7 +4429,7 @@ Json::Value GeometryCollection::ToJson(JsonValueCR opts) const
                 Json::Value value;
 
                 // we're going to store the fontid as a 32 bit value, even though in memory we have a 64bit value. Make sure the high bits are 0.
-                BeAssert(fontId.GetValue() == (int64_t)((uint32_t)fontId.GetValue())); 
+                BeAssert(fontId.GetValue() == (int64_t)((uint32_t)fontId.GetValue()));
                 value["font"] = (uint32_t)fontId.GetValue();
                 value["text"] = text->GetText().c_str();
                 value["height"] = style.GetHeight();
@@ -4764,7 +4783,7 @@ bool GeometryBuilder::Append(GeometryParamsCR elParams, CoordSystem coord)
             if (m_isPartCreate)
                 {
                 BeAssert(false); // Part GeometryParams must be supplied in local coordinates...
-                return false; 
+                return false;
                 }
 
             // NOTE: Must defer applying transform until placement is computed from first geometric primitive...
@@ -4790,7 +4809,7 @@ bool GeometryBuilder::Append(GeometryParamsCR elParams, CoordSystem coord)
             if (!m_havePlacement)
                 {
                 BeAssert(false); // Caller can't supply local coordinates if we don't know what local is yet...
-                return false; 
+                return false;
                 }
             }
         }
@@ -5014,7 +5033,7 @@ bool GeometryBuilder::ConvertToLocal(GeometricPrimitiveR geom)
     if (m_isPartCreate)
         {
         BeAssert(false); // Part geometry must be supplied in local coordinates...
-        return false; 
+        return false;
         }
 
     Transform   localToWorld;
@@ -5084,7 +5103,7 @@ bool GeometryBuilder::AppendLocal(GeometricPrimitiveCR geom)
     if (!m_havePlacement)
         {
         BeAssert(false); // placement must already be defined...
-        return false; 
+        return false;
         }
 
     DRange3d localRange;
@@ -5092,7 +5111,7 @@ bool GeometryBuilder::AppendLocal(GeometricPrimitiveCR geom)
     if (!geom.GetRange(localRange))
         return false;
 
-    GeometryStreamIO::OpCode opCode; 
+    GeometryStreamIO::OpCode opCode;
 
     switch (geom.GetGeometryType())
         {
@@ -5621,7 +5640,7 @@ GeometryBuilderPtr GeometryBuilder::Create(GeometrySourceCR source, GeometryStre
 
     if (!builder.IsValid())
         return nullptr;
-    
+
     Render::GeometryParams sourceParams(categoryId);
     Transform sourceTransform = source.GetPlacementTransform();
 
@@ -5954,7 +5973,7 @@ bool GeometryBuilder::FromJson(JsonValueCR input, JsonValueCR opts)
                     }
                 else
                     {
-                    params.SetFillColorFromViewBackground(BackgroundFill::Outline == bgFill);                
+                    params.SetFillColorFromViewBackground(BackgroundFill::Outline == bgFill);
                     }
                 }
             else if (!fill["color"].isNull())
@@ -6073,7 +6092,7 @@ bool GeometryBuilder::FromJson(JsonValueCR input, JsonValueCR opts)
             if (!textString["widthFactor"].isNull())
                 {
                 double widthFactor = textString["widthFactor"].asDouble();
-                
+
                 if (0.0 != widthFactor)
                     width = height * widthFactor;
                 }
@@ -6150,24 +6169,25 @@ bool GeometryBuilder::FromJson(JsonValueCR input, JsonValueCR opts)
 
                 for (uint32_t iSymb=0; iSymb < nSymb; iSymb++)
                     {
-                    GeometryParams faceParams;
+                    FaceAttachment attachment;
 
                     if (!brep["faceSymbology"][iSymb]["color"].isNull())
-                        faceParams.SetLineColor(ColorDef(brep["faceSymbology"][iSymb]["color"].asUInt()));
-
-                    if (!brep["faceSymbology"][iSymb]["transparency"].isNull())
-                        faceParams.SetTransparency(brep["faceSymbology"][iSymb]["transparency"].asDouble());
+                        {
+                        uint32_t color = brep["faceSymbology"][iSymb]["color"].asUInt();
+                        double transparency = !brep["faceSymbology"][iSymb]["transparency"].isNull() ? brep["faceSymbology"][iSymb]["transparency"].asDouble() : 0.0;
+                        attachment.SetColor(color, transparency);
+                        }
 
                     if (!brep["faceSymbology"][iSymb]["material"].isNull())
                         {
                         RenderMaterialId materialId;
                         materialId.FromJson(brep["faceSymbology"][iSymb]["material"]);
-                        faceParams.SetMaterialId(materialId);
+                        attachment.SetMaterial(materialId.GetValueUnchecked());
                         }
 
                     if (nullptr == entity->GetFaceMaterialAttachments())
                         {
-                        IFaceMaterialAttachmentsPtr attachments = PSolidUtil::CreateNewFaceAttachments(PSolidUtil::GetEntityTag(*entity), faceParams);
+                        IFaceMaterialAttachmentsPtr attachments = PSolidUtil::CreateNewFaceAttachments(PSolidUtil::GetEntityTag(*entity), attachment);
 
                         if (!attachments.IsValid())
                             break;
@@ -6176,7 +6196,7 @@ bool GeometryBuilder::FromJson(JsonValueCR input, JsonValueCR opts)
                         }
                     else
                         {
-                        entity->GetFaceMaterialAttachmentsP()->_GetFaceAttachmentsVecR().push_back(faceParams);
+                        entity->GetFaceMaterialAttachmentsP()->_GetFaceAttachmentsVecR().push_back(attachment);
                         }
                     }
                 }
@@ -6196,7 +6216,7 @@ bool GeometryBuilder::FromJson(JsonValueCR input, JsonValueCR opts)
 
             if (!IModelJson::TryIModelJsonValueToGeometry(entry, geometry))
                 continue; // Should a tag we don't recognize be considered an error? Should at least log an error...
-            
+
             if (1 != geometry.size())
                 return false; // Should only ever be a single entry...
 

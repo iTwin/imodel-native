@@ -3,8 +3,11 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include <DgnPlatformInternal.h>
-#include <DgnPlatform/DgnBRep/PSolidUtil.h>
+#include <BRepCore/SolidKernel.h>
+#include <BRepCore/PSolidUtil.h>
+
+USING_NAMESPACE_BENTLEY
+USING_NAMESPACE_BENTLEY_DGN
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      03/2012
@@ -304,7 +307,7 @@ BentleyStatus   PSolidTopo::GetTangentBlendEdges(bvector<PK_EDGE_t>& smoothEdges
 static BentleyStatus findEdgeFinForFace(PK_FIN_t& fin, PK_EDGE_t edge, PK_FACE_t face)
     {
     bvector<PK_FIN_t> edgeFins;
-    
+
     PSolidTopo::GetEdgeFins(edgeFins, edge);
 
     for (PK_FIN_t testFin : edgeFins)
@@ -331,7 +334,7 @@ BentleyStatus   PSolidTopo::GetLoopEdgesFromEdge(bvector<PK_EDGE_t>& loopEdges, 
 
     if (SUCCESS != findEdgeFinForFace(finTag, edgeTag, faceTag))
         return ERROR;
-           
+
     PK_LOOP_t   loopTag;
 
     if (SUCCESS != PK_FIN_ask_loop(finTag, &loopTag))
@@ -342,7 +345,7 @@ BentleyStatus   PSolidTopo::GetLoopEdgesFromEdge(bvector<PK_EDGE_t>& loopEdges, 
 
     if (SUCCESS != PK_LOOP_ask_edges(loopTag, &nEdgeTags, &edgeTags) || 0 == nEdgeTags)
         return ERROR;
-    
+
     loopEdges.resize(nEdgeTags);
     for (int i=0; i < nEdgeTags; i++)
         loopEdges[i] = edgeTags[i];

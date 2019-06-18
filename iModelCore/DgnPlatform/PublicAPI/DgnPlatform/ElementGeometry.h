@@ -7,15 +7,15 @@
 //__PUBLISH_SECTION_START__
 
 #include "DgnPlatform.h"
-#include "SolidKernel.h"
 #include "GeomPart.h"
 #include "ViewContext.h"
 #include "Annotations/TextAnnotation.h"
+#include <BRepCore/SolidKernel.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
-//! Class for multiple RefCounted geometry types: ICurvePrimitive, CurveVector, 
+//! Class for multiple RefCounted geometry types: ICurvePrimitive, CurveVector,
 //! ISolidPrimitive, MSBsplineSurface, PolyfaceHeader, IBRepEntity.
 //! @ingroup GROUP_Geometry
 //=======================================================================================
@@ -48,7 +48,7 @@ protected:
 public:
     DGNPLATFORM_EXPORT GeometryType GetGeometryType() const;
 
-    //! Return true if the geometry is or would be represented by a solid body. Accepted geometry includes BRep solids, capped SolidPrimitves, and closed Polyfaces. 
+    //! Return true if the geometry is or would be represented by a solid body. Accepted geometry includes BRep solids, capped SolidPrimitves, and closed Polyfaces.
     DGNPLATFORM_EXPORT bool IsSolid() const;
 
     //! Return true if the geometry is or would be represented by a sheet body. Accepted geometry includes BRep sheets, un-capped SolidPrimitives, region CurveVectors, Bspline Surfaces, and unclosed Polyfaces.
@@ -100,6 +100,15 @@ public:
     DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(TextStringPtr const& source);        //!< Create a GeometricPrimitive using source directly
 
 }; // GeometricPrimitive
+
+//=======================================================================================
+//! @bsiclass                                                   Brien.Bastings  06/19
+//=======================================================================================
+struct FaceAttachmentUtil
+{
+static void FromGeometryParams(FaceAttachment& attachment, Render::GeometryParamsCR sourceParams);
+static void ToGeometryParams(FaceAttachment const& attachment, Render::GeometryParamsR faceParams, Render::GeometryParamsCR baseParams);
+}; // FaceAttachmentUtil
 
 //=======================================================================================
 //! Provides helper methods to approximate the number of facets a geometric primitive
@@ -169,9 +178,9 @@ struct GeometryStreamIO
         TextString              = 22,   //!< TextString (single-line/single-format run of characters)
         LineStyleModifiers      = 23,   //!< Specifies line style overrides to populate a LineStyleParams structure
         ParasolidBRep           = 25,   //!< Parasolid body
-        BRepPolyfaceDeprecated  = 26,   //!< Polyface from Parasolid solid or sheet body (Parasolid now supported on all required platforms) 
-        BRepCurveVecDeprecated  = 27,   //!< CurveVector from Parasolid wire or planar sheet body (Parasolid now supported on all required platforms) 
-        Image                   = 28,   //!< Small single-tile raster image 
+        BRepPolyfaceDeprecated  = 26,   //!< Polyface from Parasolid solid or sheet body (Parasolid now supported on all required platforms)
+        BRepCurveVecDeprecated  = 27,   //!< CurveVector from Parasolid wire or planar sheet body (Parasolid now supported on all required platforms)
+        Image                   = 28,   //!< Small single-tile raster image
     };
 
     //=======================================================================================
@@ -404,10 +413,10 @@ struct GeometryCollection
 
         DgnDbR GetDgnDb() const {return m_state->m_dgnDb;} //!< @private DgnDb used to create collector...
         Render::GeometryParamsCR GetGeometryParams() const {return m_state->m_geomParams;} //!< Returns GeometryParams for current GeometricPrimitive...
-        DgnGeometryPartId GetGeometryPartId() const {return m_state->m_geomStreamEntryId.GetGeometryPartId();} //!< Returns invalid id if not a DgnGeometryPart reference... 
+        DgnGeometryPartId GetGeometryPartId() const {return m_state->m_geomStreamEntryId.GetGeometryPartId();} //!< Returns invalid id if not a DgnGeometryPart reference...
         GeometryStreamEntryId GetGeometryStreamEntryId() const {return m_state->m_geomStreamEntryId;} //!< Returns primitive id for current GeometricPrimitive...
-        DRange3dCR GetSubGraphicLocalRange() const {return m_state->m_localRange;} //!< Returns local range for geometry that was appended with GeometryBuilder::SetAppendAsSubGraphics enabled. 
-        
+        DRange3dCR GetSubGraphicLocalRange() const {return m_state->m_localRange;} //!< Returns local range for geometry that was appended with GeometryBuilder::SetAppendAsSubGraphics enabled.
+
         DGNPLATFORM_EXPORT EntryType GetEntryType() const;  //!< check geometry type to avoid creating GeometricPrimitivePtr for un-desired types.
         DGNPLATFORM_EXPORT bool IsCurve() const;            //!< open and unstructured curves check that avoids creating GeometricPrimitivePtr when possible.
         DGNPLATFORM_EXPORT bool IsSurface() const;          //!< closed curve, planar region, surface, and open mesh check that avoids creating GeometricPrimitivePtr when possible.
@@ -432,7 +441,7 @@ public:
 
     typedef Iterator const_iterator;
     typedef const_iterator iterator; //!< only const iteration is possible
-    
+
     const_iterator begin() const {return const_iterator(m_data, m_dataSize, m_state);}
     const_iterator end() const {return const_iterator();}
 
@@ -441,7 +450,7 @@ public:
     //! allows iteration of the DgnGeometryPart's GeometryStream using the instance specific GeometryParams
     //! and part geometry to world transform as established by the parent GeometrySource.
     DGNPLATFORM_EXPORT void SetNestedIteratorContext(Iterator const& iter);
-    
+
     //! Iterate a GeometryStream.
     //! @note It is up to the caller to keep the GeometryStream in memory by holding onto a DgnGeometryPartPtr, etc. until done iterating.
     DGNPLATFORM_EXPORT GeometryCollection(GeometryStreamCR geom, DgnDbR dgnDb, Render::GeometryParamsCP baseParams = nullptr, TransformCP sourceToWorld = nullptr);
@@ -479,7 +488,7 @@ typedef RefCountedPtr<GeometryBuilder> GeometryBuilderPtr;
 //! GeometryBuilderPtr builder = GeometryBuilder::Create(model, category, DPoint3d::From(5.0, 5.0, 0.0));
 //! builder->Append(*ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::From(5.0, 5.0, 0.0), DPoint3d::From(15.0, 5.0, 0.0))), GeometryBuilder::CoordSystem::World);
 //! builder->Finish(source);
-//! \endcode 
+//! \endcode
 //!
 //! Approach 3: Construct a builder with identity placement, add the geometry in local coordinates, then update the element's placement.
 //! \code
@@ -489,14 +498,14 @@ typedef RefCountedPtr<GeometryBuilder> GeometryBuilderPtr;
 //! Placement3d placement = source.ToGeometrySource3d()->GetPlacement(); // Finish updated placement's ElementAlignedBox3d
 //! placement.GetOriginR() = DPoint3d::From(5.0, 5.0, 0.0);
 //! source.ToGeometrySource3dP()->SetPlacement(placement);
-//! \endcode 
-//! 
+//! \endcode
+//!
 //! Approach 4: Construct a builder without specifying any placement, add the geometry in world coordinates, and let the builder choose a placement.
 //! \code
 //! GeometryBuilderPtr builder = GeometryBuilder::CreateWithAutoPlacement(model, category, DPoint3d::From(5.0, 5.0, 0.0));
 //! builder->Append(*ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::From(5.0, 5.0, 0.0), DPoint3d::From(15.0, 5.0, 0.0))), GeometryBuilder::CoordSystem::World);
 //! builder->Finish(source);
-//! \endcode 
+//! \endcode
 //!
 //! @note It is NEVER correct to construct a builder with an identity placement and then proceed to add geometry in world coordinates.
 //!       The resulting element won't have a meaningful placement.
@@ -511,14 +520,14 @@ typedef RefCountedPtr<GeometryBuilder> GeometryBuilderPtr;
 //! A DgnGeometryPart is always defined in it's un-rotated orientation and positioned relative to 0,0,0. The GeometryStream for a DgnGeometryPart can
 //! not include sub-category changes. A part may include specific symbology, otherwise it inherits the symbology established by the referencing GeometryStream.
 //! As an example, let's instead create our 10m line from above as a DgnGeometryPart. We will then use this part to create a "+" symbol by appending 4 instances.
-//! 
+//!
 //! Construct a builder to create a new DgnGeometryPart having already checked that it doesn't already exist.
 //! \code
 //! GeometryBuilderPtr partBuilder = GeometryBuilder::CreateGeometryPart(dgnDb, is3d);
 //! partBuilder->Append(*ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::FromZero(), DPoint3d::From(10.0, 0.0, 0.0))));
 //! DgnGeometryPartPtr geomPart = DgnGeometryPart::Create(dgnDb, partCode); // The DgnCode for the part is important for finding an existing part
 //! if (SUCCESS == partBuilder->Finish(*geomPart)) dgnDb.Elements().Insert<DgnGeometryPart>(*geomPart); // Finish and Insert part
-//! \endcode 
+//! \endcode
 //!
 //! Construct a builder to create a new GeometricElement using an existing DgnGeometryPart.
 //! \code
@@ -529,7 +538,7 @@ typedef RefCountedPtr<GeometryBuilder> GeometryBuilderPtr;
 //! builder->Append(partId, DPoint3d::FromZero(), YawPitchRollAngles::FromDegrees(180.0, 0.0, 0.0));
 //! builder->Append(partId, DPoint3d::FromZero(), YawPitchRollAngles::FromDegrees(270.0, 0.0, 0.0));
 //! builder->Finish(source);
-//! \endcode 
+//! \endcode
 //!
 //! @note If performance/memory is the only consideration, it's not worth creating a DgnGeometryPart for very simple geometry such as a single line or cone.
 //!
@@ -538,7 +547,7 @@ typedef RefCountedPtr<GeometryBuilder> GeometryBuilderPtr;
 struct GeometryBuilder : RefCountedBase
 {
 public:
-    
+
     enum class CoordSystem
     {
         Local = 0, //!< GeometricPrimitive being supplied in local coordinates. @note Builder must be created with a known placement for local coordinates to be meaningful.
@@ -674,7 +683,7 @@ public:
     DGNPLATFORM_EXPORT static GeometryBuilderPtr Create(DgnModelR model, DgnCategoryId categoryId, DPoint2dCR origin, AngleInDegrees const& angle = AngleInDegrees());
 
     //! Create builder using the DgnModel, DgnCategoryId, and Placement2d or Placement3d of an existing GeometrySource.
-    //! @note It is expected that either the GeometrySource has a valid non-identity placement already set, or that the caller will update the placement after 
+    //! @note It is expected that either the GeometrySource has a valid non-identity placement already set, or that the caller will update the placement after
     //!       adding GeometricPrimitive in local coordinates. World coordinate geometry should never be added to a builder with an identity placement unless
     //!       the element is really located at the origin.
     //!       The supplied GeometrySource is soley used to query information, it does not need to be the same GeometrySource that is modified by Finish.

@@ -27,101 +27,6 @@ namespace ACSElementHandler
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
-#if defined (NOT_NOW)
-/*=================================================================================**//**
-* NOTE: Persistent data structure! See ACSData...
-*
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct ACSGrid
-{
-Point2d         m_repetitions;  // grid size for fixed number of repetitions (0,0 for infinite grid plane)...
-Point2d         m_originOffset; // grid position relative to acs origin (0,0 for lower left)...
-uint32_t        m_gridPerRef;   // grid dot per reference grid line...
-uint32_t        m_unused;       // Unused pad bytes...
-DPoint2d        m_spacing;      // grid x/y spacing in meters...
-
-ACSGrid() {Init();};
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  12/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Init()
-    {
-    m_gridPerRef = 10;
-    m_unused = 0;
-    m_spacing.x = m_spacing.y = 0.0;
-    m_repetitions.x = m_repetitions.y = 0;
-    m_originOffset.x = m_originOffset.y = 0;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  12/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool IsDefaultSettings() const
-    {
-    ACSGrid     defaultGrid;
-
-    return IsEqual(defaultGrid);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  12/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool IsEqual(ACSGrid const& otherData) const
-    {
-    if (m_repetitions.x != otherData.m_repetitions.x || m_repetitions.y != otherData.m_repetitions.y)
-        return false;
-
-    if (m_originOffset.x != otherData.m_originOffset.x || m_originOffset.y != otherData.m_originOffset.y)
-        return false;
-
-    if (m_spacing.x != otherData.m_spacing.x || m_spacing.y != otherData.m_spacing.y)
-        return false;
-
-    if (m_unused != otherData.m_unused)
-        return false;
-
-    if (m_gridPerRef != otherData.m_gridPerRef)
-        return false;
-
-    return true;
-    }
-
-}; // ACSGrid
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  12/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt /*AuxCoordSys::*/_SetStandardGridParams(Point2dCR gridReps, Point2dCR gridOffset, DPoint2dCR spacing, uint32_t gridPerRef) override
-    {
-    m_acsData.m_grid.Init();
-
-    if (0.0 == spacing.x || 0.0 == spacing.y || 0 == gridReps.x || 0 == gridReps.y)
-        return ERROR;
-
-    m_acsData.m_grid.m_repetitions  = gridReps;
-    m_acsData.m_grid.m_originOffset = gridOffset;
-    m_acsData.m_grid.m_spacing      = spacing;
-    m_acsData.m_grid.m_gridPerRef   = gridPerRef;
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  12/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt /*AuxCoordSys::*/_GetStandardGridParams(Point2dR gridReps, Point2dR gridOffset, DPoint2dR spacing, uint32_t& gridPerRef) const override
-    {
-    gridReps   = m_acsData.m_grid.m_repetitions;
-    gridOffset = m_acsData.m_grid.m_originOffset;
-    spacing    = m_acsData.m_grid.m_spacing;
-    gridPerRef = m_acsData.m_grid.m_gridPerRef;
-
-    return (0.0 == spacing.x || 0.0 == spacing.y || 0 == gridReps.x || 0 == gridReps.y) ? ERROR : SUCCESS;
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -197,7 +102,7 @@ bool AuxCoordSystem::_IsValidForView(ViewControllerCR viewController) const
     {
     if (viewController.IsSpatialView())
         return IsAuxCoordSystemSpatial();
-        
+
     return (viewController.Is3d() == IsAuxCoordSystem3d());
     }
 
@@ -405,7 +310,7 @@ bool                delta,
 DPoint3dCP          deltaOrigin,
 DgnModelR           modelRef,
 DistanceFormatterR  distanceFormatter,
-DirectionFormatterR directionFormatter 
+DirectionFormatterR directionFormatter
 ) const
     {
     DPoint3d    origin;

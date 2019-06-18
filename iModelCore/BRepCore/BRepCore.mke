@@ -1,0 +1,120 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+%include mdl.mki
+
+appName         = BRepCore
+baseDir         = $(_MakeFilePath)
+SrcBRepCore     = $(SrcRoot)imodel02/iModelCore/BRepCore/
+publicAPISrc    = $(SrcBRepCore)PublicAPI/BRepCore/
+o               = $(OutBuildDir)$(appname)/
+
+always:
+    !~mkdir $(o)
+
+#----------------------------------------------------------------------
+# Put the BRepCore publicAPI file into the output directory so it
+# is available to other builds.
+#----------------------------------------------------------------------
+always:
+   ~linkdir "$(OutBuildContexts)BRepCore/PublicAPI/BRepCore=$(baseDir)PublicAPI/BRepCore"
+
+#----------------------------------------------------------------------
+#
+#   Define __BREPCORE_BUILD__ symbol, so that class declarations will
+#   know to specify dllexport, rather than dllimport (the default)
+#   !No other makefile should define this symbol!
+#
+#----------------------------------------------------------------------
+nameToDefine=__BREPCORE_BUILD__
+%include cdefapnd.mki
+
+#---------------------------------------------
+#        Compile the source files for the DLM
+#---------------------------------------------
+$(o)SolidKernelUtil$(oext) :                 $(baseDir)SolidKernelUtil.cpp $(PublicAPISrc)SolidKernel.h
+
+$(o)TopologyPrimitive$(oext) :               $(baseDir)TopologyPrimitive.cpp $(PublicAPISrc)SolidKernel.h
+
+%if defined (BENTLEYCONFIG_PARASOLID)
+
+$(o)PSolidKernelManager$(oext) :             $(baseDir)PSolidKernelManager.cpp $(PublicAPISrc)SolidKernel.h
+
+$(o)PSolidKernelEntity$(oext) :              $(baseDir)PSolidKernelEntity.cpp $(PublicAPISrc)SolidKernel.h $(PublicAPISrc)PSolidUtil.h
+
+$(o)PSolidAttrib$(oext) :                    $(baseDir)PSolidAttrib.cpp $(PublicAPISrc)SolidKernel.h $(PublicAPISrc)PSolidUtil.h
+
+$(o)PSolidBSpline$(oext) :                   $(baseDir)PSolidBSpline.cpp $(PublicAPISrc)SolidKernel.h $(PublicAPISrc)PSolidUtil.h
+
+$(o)PSolidCreate$(oext) :                    $(baseDir)PSolidCreate.cpp $(PublicAPISrc)SolidKernel.h $(PublicAPISrc)PSolidUtil.h
+
+$(o)PSolidFacet$(oext) :                     $(baseDir)PSolidFacet.cpp $(PublicAPISrc)SolidKernel.h $(PublicAPISrc)PSolidUtil.h
+
+$(o)PSolidModify$(oext) :                    $(baseDir)PSolidModify.cpp $(PublicAPISrc)SolidKernel.h $(PublicAPISrc)PSolidUtil.h
+
+$(o)PSolidPolyface$(oext) :                  $(baseDir)PSolidPolyface.cpp $(PublicAPISrc)SolidKernel.h $(PublicAPISrc)PSolidUtil.h
+
+$(o)PSolidThreadUtil$(oext) :                $(baseDir)PSolidThreadUtil.cpp $(PublicAPISrc)SolidKernel.h $(PublicAPISrc)PSolidUtil.h
+
+$(o)PSolidTopo$(oext) :                      $(baseDir)PSolidTopo.cpp $(PublicAPISrc)SolidKernel.h $(PublicAPISrc)PSolidUtil.h
+
+$(o)PSolidTopoId$(oext) :                    $(baseDir)PSolidTopoId.cpp $(PublicAPISrc)SolidKernel.h $(PublicAPISrc)PSolidUtil.h
+
+$(o)PSolidUtil$(oext) :                      $(baseDir)PSolidUtil.cpp $(PublicAPISrc)SolidKernel.h $(PublicAPISrc)PSolidUtil.h
+
+%endif
+
+#---------------------------------------------
+#        Define the object file list
+#---------------------------------------------
+dlmObjs = $(o)SolidKernelUtil$(oext)
+
+dlmObjs + $(o)TopologyPrimitive$(oext)
+
+%if defined (BENTLEYCONFIG_PARASOLID)
+
+dlmObjs + $(o)PSolidKernelManager$(oext) \
+          $(o)PSolidKernelEntity$(oext) \
+          $(o)PSolidAttrib$(oext) \
+          $(o)PSolidBSpline$(oext) \
+          $(o)PSolidCreate$(oext) \
+          $(o)PSolidFacet$(oext) \
+          $(o)PSolidModify$(oext) \
+          $(o)PSolidPolyface$(oext) \
+          $(o)PSolidThreadUtil$(oext) \
+          $(o)PSolidTopo$(oext) \
+          $(o)PSolidTopoId$(oext) \
+          $(o)PSolidUtil$(oext)
+
+%endif
+
+#--------------------------------------------------------------
+#        Make the DLL
+#--------------------------------------------------------------
+#----------------------------------------------------------------------------------------
+# Use dlmlink.mki to link the DLM.
+#----------------------------------------------------------------------------------------
+DLM_OBJECT_DEST             = $(o)
+DLM_LIBDEF_SRC              = $(baseDir)
+DLM_NAME                    = $(appName)
+RIGHTSCOMPLIANT             = true
+DLM_OBJECT_FILES            = $(dlmObjs)
+DLM_NOENTRY                 = 1
+DLM_NO_INITIALIZE_FUNCTION  = 1
+DLM_SPECIAL_LINKOPT         = -Fixed:no
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
+DLM_DEST                    = $(o)
+DLM_EXPORT_DEST             = $(o)
+
+%if defined (BENTLEYCONFIG_PARASOLID)
+LINKER_LIBRARIES_DELAYLOADED = \
+    $(ContextSubPartsLibs)pskernel.lib \
+%endif
+
+%include $(sharedMki)linkLibrary.mki
+
+
+
+

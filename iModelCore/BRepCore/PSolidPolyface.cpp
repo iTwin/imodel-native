@@ -3,9 +3,12 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include <DgnPlatformInternal.h>
-#include <DgnPlatform/DgnBRep/PSolidUtil.h>
+#include <BRepCore/SolidKernel.h>
+#include <BRepCore/PSolidUtil.h>
 #include <Mtg/MtgApi.h>
+
+USING_NAMESPACE_BENTLEY
+USING_NAMESPACE_BENTLEY_DGN
 
 static int s_debug = 0;
 
@@ -657,7 +660,7 @@ BentleyStatus PSolidGeom::BodyFromPolyface(PK_BODY_t& bodyTag, PolyfaceQueryCR p
 
         jmdlMTGFacets_free (facets);
         }
-    
+
     return status;
     }
 

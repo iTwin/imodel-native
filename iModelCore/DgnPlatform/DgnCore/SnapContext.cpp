@@ -7,10 +7,83 @@
 #include <GeomSerialization/GeomLibsSerialization.h>
 #include <GeomSerialization/GeomLibsJsonSerialization.h>
 #if defined (BENTLEYCONFIG_PARASOLID)
-#include <DgnPlatform/DgnBRep/PSolidUtil.h>
+#include <BRepCore/PSolidUtil.h>
 #endif
 
 BEGIN_BENTLEY_DGN_NAMESPACE
+/*=================================================================================**//**
+* @bsiclass                                                     Brien.Bastings  04/2016
++===============+===============+===============+===============+===============+======*/
+struct BRepCache : DgnElement::AppData
+{
+static DgnElement::AppData::Key const& GetKey() {static DgnElement::AppData::Key s_key; return s_key;}
+typedef bmap<uint16_t, IBRepEntityPtr> IndexedGeomMap;
+IndexedGeomMap m_map;
+
+virtual DropMe _OnInserted(DgnElementCR el){return DropMe::Yes;}
+virtual DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original, bool isOriginal) {return DropMe::Yes;}
+virtual DropMe _OnAppliedUpdate(DgnElementCR original, DgnElementCR modified) {return DropMe::Yes;}
+virtual DropMe _OnDeleted(DgnElementCR el) {return DropMe::Yes;}
+
+static BRepCache* Get(DgnElementCR elem, bool addIfNotFound)
+    {
+    if (addIfNotFound)
+        return static_cast<BRepCache*>(elem.FindOrAddAppData(GetKey(), []() { return new BRepCache(); }).get());
+    else
+        return static_cast<BRepCache*>(elem.FindAppData(GetKey()).get());
+    }
+};
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct BRepDataCache
+{
+static IBRepEntityPtr FindCachedBRepEntity(DgnElementCR element, GeometryStreamEntryIdCR entryId);
+static void AddCachedBRepEntity(DgnElementCR element, GeometryStreamEntryIdCR entryId, IBRepEntityR entity);
+
+}; // BRepDataCache
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+IBRepEntityPtr BRepDataCache::FindCachedBRepEntity(DgnElementCR element, GeometryStreamEntryIdCR entryId)
+    {
+    BRepCache* cache = BRepCache::Get(element, false);
+
+    if (nullptr == cache)
+        return nullptr;
+
+    BRepCache::IndexedGeomMap::const_iterator found = cache->m_map.find(entryId.GetGeometryPartId().IsValid() ? entryId.GetPartIndex() : entryId.GetIndex());
+
+    if (found == cache->m_map.end())
+        return nullptr;
+
+    IBRepEntityPtr entity = found->second;
+
+#if defined (BENTLEYCONFIG_PARASOLID)
+    // Make sure entity tag is still valid...
+    PK_LOGICAL_t isEntity = PK_LOGICAL_false;
+    if (PK_ERROR_no_errors != PK_ENTITY_is(PSolidUtil::GetEntityTag(*entity), &isEntity) || !isEntity)
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+#endif
+
+    return entity;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void BRepDataCache::AddCachedBRepEntity(DgnElementCR element, GeometryStreamEntryIdCR entryId, IBRepEntityR entity)
+    {
+    BRepCache* cache = BRepCache::Get(element, true);
+
+    cache->m_map[entryId.GetGeometryPartId().IsValid() ? entryId.GetPartIndex() : entryId.GetIndex()] = &entity;
+    }
+
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
@@ -1642,9 +1715,9 @@ bool ProcessBody(IBRepEntityCR entity, DPoint3dCR localPoint)
         case ISubEntity::SubEntityType::Edge:
         case ISubEntity::SubEntityType::Vertex:
             {
-            GeometricPrimitiveCPtr geom = closeEntity->GetGeometry();
+            TopologyPrimitiveCPtr geom = closeEntity->GetGeometry();
 
-            if (geom.IsValid() && GeometricPrimitive::GeometryType::CurvePrimitive == geom->GetGeometryType())
+            if (geom.IsValid() && TopologyPrimitive::GeometryType::CurvePrimitive == geom->GetGeometryType())
                 {
                 ICurvePrimitivePtr curve = geom->GetAsICurvePrimitive();
 
@@ -1684,9 +1757,9 @@ bool ProcessBody(IBRepEntityCR entity, DPoint3dCR localPoint)
         if (nullptr != m_stopTester && m_stopTester->_CheckStop())
             return false;
 
-        GeometricPrimitiveCPtr geom = edge->GetGeometry();
+        TopologyPrimitiveCPtr geom = edge->GetGeometry();
 
-        if (!geom.IsValid() || GeometricPrimitive::GeometryType::CurvePrimitive != geom->GetGeometryType())
+        if (!geom.IsValid() || TopologyPrimitive::GeometryType::CurvePrimitive != geom->GetGeometryType())
             continue;
 
         ICurvePrimitivePtr curve = geom->GetAsICurvePrimitive();
@@ -2357,7 +2430,7 @@ SnapContext::Response SnapContext::DoSnap(SnapContext::Request const& input, Dgn
             CurveVectorPtr intersectionsB = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
 
             CurveCurve::IntersectionsXY(*intersectionsA, *intersectionsB, curveA.get(), curveB.get(), &worldToViewMap.M0);
-            
+
             CurveLocationDetail intersectDetail;
             if (!intersectionsA->ClosestPointBoundedXY(closePoint, &worldToViewMap.M0, intersectDetail))
                 continue;

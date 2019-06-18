@@ -3,73 +3,13 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include <DgnPlatformInternal.h>
-#if defined (BENTLEYCONFIG_PARASOLID) 
-#include <DgnPlatform/DgnBRep/PSolidUtil.h>
-#endif
-
-/*=================================================================================**//**
-* @bsiclass                                                     Brien.Bastings  04/2016
-+===============+===============+===============+===============+===============+======*/
-struct BRepCache : DgnElement::AppData
-{
-static DgnElement::AppData::Key const& GetKey() {static DgnElement::AppData::Key s_key; return s_key;}
-typedef bmap<uint16_t, IBRepEntityPtr> IndexedGeomMap;
-IndexedGeomMap m_map;
-
-virtual DropMe _OnInserted(DgnElementCR el){return DropMe::Yes;}
-virtual DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original, bool isOriginal) {return DropMe::Yes;}
-virtual DropMe _OnAppliedUpdate(DgnElementCR original, DgnElementCR modified) {return DropMe::Yes;}
-virtual DropMe _OnDeleted(DgnElementCR el) {return DropMe::Yes;}
-
-static BRepCache* Get(DgnElementCR elem, bool addIfNotFound)
-    {
-    if (addIfNotFound)
-        return static_cast<BRepCache*>(elem.FindOrAddAppData(GetKey(), []() { return new BRepCache(); }).get());
-    else
-        return static_cast<BRepCache*>(elem.FindAppData(GetKey()).get());
-    }
-};
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-IBRepEntityPtr BRepDataCache::FindCachedBRepEntity(DgnElementCR element, GeometryStreamEntryIdCR entryId)
-    {
-    BRepCache* cache = BRepCache::Get(element, false);
-
-    if (nullptr == cache)
-        return nullptr;
-
-    BRepCache::IndexedGeomMap::const_iterator found = cache->m_map.find(entryId.GetGeometryPartId().IsValid() ? entryId.GetPartIndex() : entryId.GetIndex());
-
-    if (found == cache->m_map.end())
-        return nullptr;
-
-    IBRepEntityPtr entity = found->second;
-
+#include <BRepCore/SolidKernel.h>
 #if defined (BENTLEYCONFIG_PARASOLID)
-    // Make sure entity tag is still valid...
-    PK_LOGICAL_t isEntity = PK_LOGICAL_false;
-    if (PK_ERROR_no_errors != PK_ENTITY_is(PSolidUtil::GetEntityTag(*entity), &isEntity) || !isEntity)
-        {
-        BeAssert(false);
-        return nullptr;
-        }
+#include <BRepCore/PSolidUtil.h>
 #endif
 
-    return entity;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void BRepDataCache::AddCachedBRepEntity(DgnElementCR element, GeometryStreamEntryIdCR entryId, IBRepEntityR entity)
-    {
-    BRepCache* cache = BRepCache::Get(element, true);
-
-    cache->m_map[entryId.GetGeometryPartId().IsValid() ? entryId.GetPartIndex() : entryId.GetIndex()] = &entity;
-    }
+USING_NAMESPACE_BENTLEY
+USING_NAMESPACE_BENTLEY_DGN
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/12
@@ -77,9 +17,9 @@ void BRepDataCache::AddCachedBRepEntity(DgnElementCR element, GeometryStreamEntr
 FaceAttachment::FaceAttachment()
     {
     m_useColor = m_useMaterial = false;
-    m_color = ColorDef::Black();
+    m_color = 0;
     m_transparency = 0.0;
-    m_uv.Init(0.0, 0.0);
+    m_material = 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -91,9 +31,7 @@ bool FaceAttachment::operator == (struct FaceAttachment const& rhs) const
         m_useMaterial   != rhs.m_useMaterial ||
         m_color         != rhs.m_color ||
         m_transparency  != rhs.m_transparency ||
-        m_material      != rhs.m_material ||
-        m_uv.x          != rhs.m_uv.x || 
-        m_uv.y          != rhs.m_uv.y)
+        m_material      != rhs.m_material)
         return false;
 
     return true;
@@ -106,64 +44,9 @@ bool FaceAttachment::operator < (struct FaceAttachment const& rhs) const
     {
     return (m_useColor         < rhs.m_useColor ||
             m_useMaterial      < rhs.m_useMaterial ||
-            m_color.GetValue() < rhs.m_color.GetValue() ||
+            m_color            < rhs.m_color ||
             m_transparency     < rhs.m_transparency ||
-            m_material         < rhs.m_material ||
-            m_uv.x             < rhs.m_uv.x || 
-            m_uv.y             < rhs.m_uv.y);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  12/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-FaceAttachment::FaceAttachment(GeometryParamsCR sourceParams)
-    {
-    if (m_useColor = !sourceParams.IsLineColorFromSubCategoryAppearance())
-        {
-        m_color = sourceParams.GetLineColor();
-        m_transparency = sourceParams.GetTransparency();
-        }
-
-    if (m_useMaterial = !sourceParams.IsMaterialFromSubCategoryAppearance())
-        {
-        m_material = sourceParams.GetMaterialId();
-        // NEEDSWORK_WIP_MATERIAL...m_uv???
-        }
-
-    m_uv.Init(0.0, 0.0);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  12/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void FaceAttachment::ToGeometryParams(GeometryParamsR faceParams, GeometryParamsCR baseParams) const
-    {
-    faceParams = baseParams;
-
-    if (m_useColor)
-        {
-        faceParams.SetLineColor(m_color);
-        faceParams.SetTransparency(m_transparency);
-        }
-
-    if (m_useMaterial)
-        {
-        faceParams.SetMaterialId(m_material);
-        // NEEDSWORK_WIP_MATERIAL...m_uv???
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void FaceAttachment::CookFaceAttachment(ViewContextR context, GeometryParamsCR baseParams) const
-    {
-    GeometryParams faceParams;
-
-    ToGeometryParams(faceParams, baseParams);
-    context.CookGeometryParams(faceParams, m_graphicParams);
-
-    m_haveGraphicParams = true;
+            m_material         < rhs.m_material);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -171,7 +54,7 @@ void FaceAttachment::CookFaceAttachment(ViewContextR context, GeometryParamsCR b
 +---------------+---------------+---------------+---------------+---------------+------*/
 PolyfaceHeaderPtr BRepUtil::FacetEntity(IBRepEntityCR entity, IFacetOptionsR facetOptions)
     {
-#if defined (BENTLEYCONFIG_PARASOLID) 
+#if defined (BENTLEYCONFIG_PARASOLID)
     return PSolidUtil::FacetEntity(entity, facetOptions);
 #else
     return nullptr;
@@ -183,34 +66,10 @@ PolyfaceHeaderPtr BRepUtil::FacetEntity(IBRepEntityCR entity, IFacetOptionsR fac
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool BRepUtil::FacetEntity(IBRepEntityCR entity, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<FaceAttachment>& params, IFacetOptionsR facetOptions)
     {
-#if defined (BENTLEYCONFIG_PARASOLID) 
+#if defined (BENTLEYCONFIG_PARASOLID)
     return PSolidUtil::FacetEntity(entity, polyfaces, params, facetOptions);
 #else
     return false;
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  07/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BRepUtil::ClipCurveVector(bvector<CurveVectorPtr>& output, CurveVectorCR input, ClipVectorCR clipVector, TransformCP transform)
-    {
-#if defined (BENTLEYCONFIG_PARASOLID) 
-    return PSolidUtil::ClipCurveVector(output, input, clipVector, transform);
-#else
-    return ERROR;
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  07/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BRepUtil::ClipBody(bvector<IBRepEntityPtr>& output, bool& clipped, IBRepEntityCR input, ClipVectorCR clipVector)
-    {
-#if defined (BENTLEYCONFIG_PARASOLID)
-    return PSolidUtil::ClipBody(output, clipped, input, clipVector);
-#else
-    return ERROR;
 #endif
     }
 
@@ -436,7 +295,7 @@ BentleyStatus BRepUtil::GetTangentBlendEdges(bvector <ISubEntityPtr>& smoothEdge
 
     if (SUCCESS != PSolidTopo::GetTangentBlendEdges(edges, edgeTag))
         return ERROR;
-    
+
     Transform   entityTransform = PSolidSubEntity::GetSubEntityTransform(edge);
 
     for (PK_EDGE_t smoothEdge : edges)
@@ -464,7 +323,7 @@ BentleyStatus BRepUtil::GetLoopEdgesFromEdge(bvector<ISubEntityPtr>& loopEdges, 
 
     if (SUCCESS != PSolidTopo::GetLoopEdgesFromEdge(edges, edgeTag, faceTag))
         return ERROR;
-    
+
     Transform   entityTransform = PSolidSubEntity::GetSubEntityTransform(face);
 
     for (PK_EDGE_t loopEdge : edges)
@@ -669,7 +528,7 @@ void BRepUtil::GetSubEntityVertices(bvector<ISubEntityPtr>& vertices, bvector<IS
                     vertexTags.insert(entities[1]);
                 break;
                 }
-            
+
             case ISubEntity::SubEntityType::Face:
                 {
                 int           nEntity = 0;
@@ -719,7 +578,7 @@ void BRepUtil::GetSubEntityEdges(bvector<ISubEntityPtr>& edges, bvector<ISubEnti
                 edgeTags.insert(entityTag);
                 break;
                 }
-            
+
             case ISubEntity::SubEntityType::Face:
                 {
                 int           nEntity = 0;
@@ -868,7 +727,7 @@ BentleyStatus BRepUtil::EvaluateVertex(ISubEntityCR subEntity, DPoint3dR point)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool BRepUtil::IsDisjointBody(IBRepEntityCR entity)
     {
-#if defined (BENTLEYCONFIG_PARASOLID) 
+#if defined (BENTLEYCONFIG_PARASOLID)
     int          nRegions = 0;
     PK_REGION_t* regions = nullptr;
 
@@ -893,7 +752,7 @@ bool BRepUtil::IsDisjointBody(IBRepEntityCR entity)
 #endif
     }
 
-#if defined (BENTLEYCONFIG_PARASOLID) 
+#if defined (BENTLEYCONFIG_PARASOLID)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -911,13 +770,13 @@ static bool isPlanarSurfaceClass(PK_CLASS_t surfaceClass)
         }
     }
 #endif
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool BRepUtil::IsSingleFacePlanarSheetBody(IBRepEntityCR entity, bool& hasHoles)
     {
-#if defined (BENTLEYCONFIG_PARASOLID) 
+#if defined (BENTLEYCONFIG_PARASOLID)
     PK_ENTITY_t     entityTag = PSolidUtil::GetEntityTag(entity);
     PK_BODY_type_t  bodyType;
 
@@ -925,7 +784,7 @@ bool BRepUtil::IsSingleFacePlanarSheetBody(IBRepEntityCR entity, bool& hasHoles)
 
     if (PK_BODY_type_sheet_c != bodyType)
         return false;
-    
+
     int nFaces = 0;
 
     if (SUCCESS != PK_BODY_ask_faces(entityTag, &nFaces, nullptr) || 1 != nFaces)
@@ -961,7 +820,7 @@ bool BRepUtil::IsSingleFacePlanarSheetBody(IBRepEntityCR entity, bool& hasHoles)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool BRepUtil::HasOnlyPlanarFaces(IBRepEntityCR entity)
     {
-#if defined (BENTLEYCONFIG_PARASOLID) 
+#if defined (BENTLEYCONFIG_PARASOLID)
     return PSolidUtil::HasOnlyPlanarFaces(PSolidUtil::GetEntityTag(entity));
 #else
     return false;
@@ -973,7 +832,7 @@ bool BRepUtil::HasOnlyPlanarFaces(IBRepEntityCR entity)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool BRepUtil::HasCurvedFaceOrEdge(IBRepEntityCR entity)
     {
-#if defined (BENTLEYCONFIG_PARASOLID) 
+#if defined (BENTLEYCONFIG_PARASOLID)
     return PSolidUtil::HasCurvedFaceOrEdge(PSolidUtil::GetEntityTag(entity));
 #else
     return false;
@@ -985,7 +844,7 @@ bool BRepUtil::HasCurvedFaceOrEdge(IBRepEntityCR entity)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool BRepUtil::IsPlanarFace(ISubEntityCR subEntity)
     {
-#if defined (BENTLEYCONFIG_PARASOLID) 
+#if defined (BENTLEYCONFIG_PARASOLID)
     return PSolidUtil::IsPlanarFace(PSolidSubEntity::GetSubEntityTag(subEntity));
 #else
     return false;
@@ -997,7 +856,7 @@ bool BRepUtil::IsPlanarFace(ISubEntityCR subEntity)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool BRepUtil::IsSmoothEdge(ISubEntityCR subEntity)
     {
-#if defined (BENTLEYCONFIG_PARASOLID) 
+#if defined (BENTLEYCONFIG_PARASOLID)
     return PSolidUtil::IsSmoothEdge(PSolidSubEntity::GetSubEntityTag(subEntity));
 #else
     return false;
@@ -1205,7 +1064,7 @@ bool BRepUtil::IsPointInsideBody(IBRepEntityCR entity, DPoint3dCR testPoint)
 #if defined (BENTLEYCONFIG_PARASOLID)
     DPoint3d    solidPoint = testPoint;
     Transform   dgnToSolid;
-    
+
     dgnToSolid.InverseOf(entity.GetEntityTransform());
     dgnToSolid.Multiply(solidPoint);
 
@@ -1296,7 +1155,7 @@ static void transformInertiaTensor(double inertia[3][3], RotMatrixCR rMatrix, do
     inertia[1][2] *= pow(scale, power);
     }
 #endif
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1387,7 +1246,7 @@ BentleyStatus BRepUtil::MassProperties(IBRepEntityCR entity, double* amount, dou
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Brien.Bastings  01/2018
 //---------------------------------------------------------------------------------------
-BentleyStatus BRepUtil::UpdateFaceMaterialAttachments(IBRepEntityR target, bvector<ISubEntityPtr>& faces, Render::GeometryParamsCP baseParams, Render::GeometryParamsCP faceParams)
+BentleyStatus BRepUtil::UpdateFaceMaterialAttachments(IBRepEntityR target, bvector<ISubEntityPtr>& faces, FaceAttachment const* baseParams, FaceAttachment const* faceParams)
     {
 #if defined (BENTLEYCONFIG_PARASOLID)
     IFaceMaterialAttachmentsP attachments = target.GetFaceMaterialAttachmentsP();
@@ -1449,7 +1308,7 @@ BentleyStatus BRepUtil::UpdateFaceMaterialAttachments(IBRepEntityR target, bvect
 
     for (ISubEntityPtr subEntity : faces)
         PSolidAttrib::SetFaceMaterialIndexAttribute(PSolidSubEntity::GetSubEntityTag(*subEntity), (int32_t) attachmentIndex);
-    
+
     T_FaceToAttachmentIndexMap faceToIndexMap;
     bool haveInvalidAttachment = !PSolidAttrib::PopulateFaceMaterialIndexMap(faceToIndexMap, PSolidUtil::GetEntityTag(target), faceAttachmentsVec.size());
     bool haveNonBaseAttachment = false; // See if all face assignments have been removed...
@@ -1808,7 +1667,7 @@ BentleyStatus BRepUtil::TopologyID::VerticesFromId(bvector<ISubEntityPtr>& subEn
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus BRepUtil::Create::BodyFromCurveVector(IBRepEntityPtr& entityOut, CurveVectorCR curveVector, uint32_t nodeId)
     {
-#if defined (BENTLEYCONFIG_PARASOLID) 
+#if defined (BENTLEYCONFIG_PARASOLID)
     return PSolidGeom::BodyFromCurveVector(entityOut, curveVector, nullptr, nodeId);
 #else
     return ERROR;
@@ -1869,7 +1728,7 @@ CurveVectorPtr BRepUtil::Create::PlanarFaceToCurveVector(ISubEntityCR face)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus BRepUtil::Create::CutProfileBodyFromOpenCurveVector(IBRepEntityPtr& entityOut, CurveVectorCR curves, DRange3dCR targetRange, DVec3dCP defaultNormal, bool reverseClosure, uint32_t nodeId)
     {
-#if defined (BENTLEYCONFIG_PARASOLID) 
+#if defined (BENTLEYCONFIG_PARASOLID)
     if (curves.IsAnyRegionType())
         return PSolidGeom::BodyFromCurveVector(entityOut, curves, nullptr, nodeId);
 
@@ -1917,7 +1776,7 @@ BentleyStatus BRepUtil::Create::CutProfileBodyFromOpenCurveVector(IBRepEntityPtr
         DRay3d      testRay = DRay3d::FromOriginAndVector(intercept, planeDir);
         DPoint3d    corners[8];
         double      clearDist = 0.0;
-    
+
         targetRange.Get8Corners(corners);
 
         for (int i=0; i<8; i++)
@@ -1938,7 +1797,7 @@ BentleyStatus BRepUtil::Create::CutProfileBodyFromOpenCurveVector(IBRepEntityPtr
 
         DPoint3d    extE = DPoint3d::FromSumOf(rayE.origin, rayE.direction, clearDist);
         DPoint3d    extS = DPoint3d::FromSumOf(rayS.origin, rayS.direction, clearDist);
-        
+
         closurePts.push_back(rayE.origin);
 
         if (rayE.origin.Distance(extE) > 1.0e-5)
@@ -2014,7 +1873,7 @@ BentleyStatus BRepUtil::Create::CutProfileBodyFromOpenCurveVector(IBRepEntityPtr
                 default:
                     break;
                 }
-                
+
             if (0 != linearPts.size())
                 {
                 if (0 == iCurve && !closurePts.empty())
@@ -2097,7 +1956,7 @@ BentleyStatus BRepUtil::Create::SweptBodyFromOpenCurveVector(IBRepEntityPtr& ent
     localToWorld.MultiplyMatrixOnly(planeDir);
     planeDir.Normalize();
     localToWorld.Multiply(planePt);
-    
+
     DRay3d      sweepVector = DRay3d::FromOriginAndVector(planePt, planeDir);
     DRange1d    depthRange = targetRange.GetCornerRange(sweepVector);
 
@@ -2169,7 +2028,7 @@ BentleyStatus BRepUtil::Create::SweptBodyFromOpenCurveVector(IBRepEntityPtr& ent
                 default:
                     break;
                 }
-                
+
             if (0 != linearPts.size())
                 {
                 if (0 == iCurve && !extendPtsS.empty())
@@ -2217,7 +2076,7 @@ BentleyStatus BRepUtil::Create::SweptBodyFromOpenCurveVector(IBRepEntityPtr& ent
         PK_BODY_t   bodyTag = PSolidUtil::GetEntityTag(*entityOut);
         PK_EDGE_t   edgeTag = PK_ENTITY_null;
         Transform   worldToSolid;
-    
+
         worldToSolid.InverseOf(entityOut->GetEntityTransform());
         worldToSolid.Multiply (&extendPtsS.front(), (int) extendPtsS.size());
 
@@ -2255,7 +2114,7 @@ BentleyStatus BRepUtil::Create::SweptBodyFromOpenCurveVector(IBRepEntityPtr& ent
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus BRepUtil::Create::BodyFromSolidPrimitive(IBRepEntityPtr& entityOut, ISolidPrimitiveCR primitive, uint32_t nodeId)
     {
-#if defined (BENTLEYCONFIG_PARASOLID) 
+#if defined (BENTLEYCONFIG_PARASOLID)
     return PSolidGeom::BodyFromSolidPrimitive(entityOut, primitive, nodeId);
 #else
     return ERROR;
@@ -2267,7 +2126,7 @@ BentleyStatus BRepUtil::Create::BodyFromSolidPrimitive(IBRepEntityPtr& entityOut
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus BRepUtil::Create::BodyFromBSurface(IBRepEntityPtr& entityOut, MSBsplineSurfaceCR surface, uint32_t nodeId)
     {
-#if defined (BENTLEYCONFIG_PARASOLID) 
+#if defined (BENTLEYCONFIG_PARASOLID)
     return PSolidGeom::BodyFromBSurface(entityOut, surface, nodeId);
 #else
     return ERROR;
@@ -2279,7 +2138,7 @@ BentleyStatus BRepUtil::Create::BodyFromBSurface(IBRepEntityPtr& entityOut, MSBs
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus BRepUtil::Create::BodyFromPolyface(IBRepEntityPtr& entityOut, PolyfaceQueryCR meshData, uint32_t nodeId)
     {
-#if defined (BENTLEYCONFIG_PARASOLID) 
+#if defined (BENTLEYCONFIG_PARASOLID)
     return PSolidGeom::BodyFromPolyface(entityOut, meshData, nodeId);
 #else
     return ERROR;
@@ -2291,7 +2150,7 @@ BentleyStatus BRepUtil::Create::BodyFromPolyface(IBRepEntityPtr& entityOut, Poly
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus BRepUtil::Create::BodyFromLoft(IBRepEntityPtr& entityOut, bvector<CurveVectorPtr>& profiles, bvector<CurveVectorPtr>* guides, bool periodic, uint32_t nodeId)
     {
-#if defined (BENTLEYCONFIG_PARASOLID) 
+#if defined (BENTLEYCONFIG_PARASOLID)
     return PSolidGeom::BodyFromLoft(entityOut, &profiles.front(), profiles.size(), guides ? &guides->front() : nullptr, guides ? guides->size() : 0, periodic, nodeId);
 #else
     return ERROR;
@@ -2303,7 +2162,7 @@ BentleyStatus BRepUtil::Create::BodyFromLoft(IBRepEntityPtr& entityOut, bvector<
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus BRepUtil::Create::BodyFromSweep(IBRepEntityPtr& entityOut, CurveVectorCR profile, CurveVectorCR path, bool alignParallel, bool selfRepair, bool createSheet, DVec3dCP lockDirection, double const* twistAngle, double const* scale, DPoint3dCP scalePoint, uint32_t nodeId)
     {
-#if defined (BENTLEYCONFIG_PARASOLID) 
+#if defined (BENTLEYCONFIG_PARASOLID)
     return PSolidGeom::BodyFromSweep(entityOut, profile, path, alignParallel, selfRepair, createSheet, lockDirection, twistAngle, scale, scalePoint, nodeId);
 #else
     return ERROR;
@@ -2315,14 +2174,14 @@ BentleyStatus BRepUtil::Create::BodyFromSweep(IBRepEntityPtr& entityOut, CurveVe
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus BRepUtil::Create::BodyFromExtrusionToBody(IBRepEntityPtr& entityOut, IBRepEntityCR extrudeTo, IBRepEntityCR profile, bool reverseDirection, uint32_t nodeId)
     {
-#if defined (BENTLEYCONFIG_PARASOLID) 
+#if defined (BENTLEYCONFIG_PARASOLID)
     return PSolidGeom::BodyFromExtrusionToBody(entityOut, extrudeTo, profile, reverseDirection, nodeId);
 #else
     return ERROR;
 #endif
     }
 
-#if defined (BENTLEYCONFIG_PARASOLID) 
+#if defined (BENTLEYCONFIG_PARASOLID)
 /*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  12/2016
 +===============+===============+===============+===============+===============+======*/
@@ -2368,7 +2227,7 @@ BentleyStatus BRepUtil::Modify::IntersectSheetFaces(CurveVectorPtr& vectorOut, I
     PK_ENTITY_t sheet2Tag = PSolidUtil::GetEntityTag(*sheet2Clone);
     PK_ENTITY_t sheet1Tag = PSolidUtil::GetEntityTag(sheet1);
     PSolidUtil::TransformBody(sheet2Tag, toolTransform);
-    
+
     if (PK_ENTITY_null == sheet1Tag || PK_ENTITY_null == sheet2Tag)
         return ERROR;
 
@@ -2392,7 +2251,7 @@ BentleyStatus BRepUtil::Modify::IntersectSheetFaces(CurveVectorPtr& vectorOut, I
     PK_intersect_curve_t* curvesTypes = nullptr;
 
     BentleyStatus   status = (SUCCESS == PK_FACE_intersect_face(sheet1FaceTag, sheet2FaceTag, &options, &numVectors, &vectors, &numCurves, &curves, &bounds, &curvesTypes) ? SUCCESS : ERROR);
-    
+
     if (SUCCESS == status)
         {
         vectorOut = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
@@ -2419,7 +2278,7 @@ BentleyStatus BRepUtil::Modify::IntersectSheetFaces(CurveVectorPtr& vectorOut, I
 #endif
     }
 
-#if defined (BENTLEYCONFIG_PARASOLID) 
+#if defined (BENTLEYCONFIG_PARASOLID)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2447,7 +2306,7 @@ static PK_boolean_function_t getBooleanFunction(BRepUtil::Modify::BooleanMode op
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus BRepUtil::Modify::BooleanOperation(IBRepEntityPtr& targetEntity, IBRepEntityPtr& toolEntity, BooleanMode op)
     {
-#if defined (BENTLEYCONFIG_PARASOLID) 
+#if defined (BENTLEYCONFIG_PARASOLID)
     return PSolidUtil::DoBoolean(targetEntity, &toolEntity, 1, getBooleanFunction(op), PKI_BOOLEAN_OPTION_AllowDisjoint);
 #else
     return ERROR;
@@ -2459,7 +2318,7 @@ BentleyStatus BRepUtil::Modify::BooleanOperation(IBRepEntityPtr& targetEntity, I
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus BRepUtil::Modify::BooleanOperation(IBRepEntityPtr& targetEntity, bvector<IBRepEntityPtr>& toolEntities, BooleanMode op)
     {
-#if defined (BENTLEYCONFIG_PARASOLID) 
+#if defined (BENTLEYCONFIG_PARASOLID)
     return PSolidUtil::DoBoolean(targetEntity, &toolEntities.front(), toolEntities.size(), getBooleanFunction(op), PKI_BOOLEAN_OPTION_AllowDisjoint);
 #else
     return ERROR;
@@ -2498,7 +2357,7 @@ BentleyStatus BRepUtil::Modify::BooleanCut(IBRepEntityPtr& target, IBRepEntityCR
 
     planarTool.GetEntityTransform().Multiply(faceRay.origin);
     planarTool.GetEntityTransform().MultiplyMatrixOnly(faceRay.direction); // This is probably not necessary.
-    faceRay.direction.Normalize(); 
+    faceRay.direction.Normalize();
 
     DRange1d depthRange;
 
@@ -2533,13 +2392,13 @@ BentleyStatus BRepUtil::Modify::BooleanCut(IBRepEntityPtr& target, IBRepEntityCR
                 depthRange.ExtendBySignedShift(margin);
                 break;
             }
-        }                                                                                                                                                             
+        }
 
      if (!depthRange.IsPositiveLength())
-        return ERROR;                                             
+        return ERROR;
 
     IBRepEntityPtr toolCopy = planarTool.Clone();
-    
+
     if (!toolCopy.IsValid())
         return ERROR;
 
@@ -2548,7 +2407,7 @@ BentleyStatus BRepUtil::Modify::BooleanCut(IBRepEntityPtr& target, IBRepEntityCR
         DPoint3d translation;
 
         translation.Scale(faceRay.direction, depthRange.low);
-        
+
         if (!toolCopy->ApplyTransform(Transform::From(translation)))
             return ERROR;
         }
@@ -2572,7 +2431,7 @@ BentleyStatus BRepUtil::Modify::BooleanCut(IBRepEntityPtr& target, IBRepEntityCR
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus BRepUtil::Modify::SewBodies(bvector<IBRepEntityPtr>& sewnEntities, bvector<IBRepEntityPtr>& unsewnEntities, bvector<IBRepEntityPtr>& toolEntities, double gapWidthBound, size_t nIterations)
     {
-#if defined (BENTLEYCONFIG_PARASOLID) 
+#if defined (BENTLEYCONFIG_PARASOLID)
     if (toolEntities.size() < 2)
         return ERROR;
 
@@ -2740,7 +2599,7 @@ BentleyStatus BRepUtil::Modify::DeleteRedundantTopology(IBRepEntityR targetEntit
 BentleyStatus BRepUtil::Modify::ReverseOrientation(IBRepEntityR targetEntity)
     {
 #if defined (BENTLEYCONFIG_PARASOLID)
-    if (IBRepEntity::EntityType::Sheet != targetEntity.GetEntityType()) 
+    if (IBRepEntity::EntityType::Sheet != targetEntity.GetEntityType())
         return ERROR;
 
     PK_ENTITY_t targetEntityTag = PSolidUtil::GetEntityTagForModify(targetEntity);
@@ -2783,7 +2642,7 @@ BentleyStatus BRepUtil::Modify::SweepBody(IBRepEntityR targetEntity, DVec3dCR pa
     double      distance;
     DVec3d      pathVec;
     Transform   invTargetTransform;
- 
+
     invTargetTransform.InverseOf(targetEntity.GetEntityTransform());
     invTargetTransform.MultiplyMatrixOnly(pathVec, path);
     distance = pathVec.Normalize();
@@ -2818,7 +2677,7 @@ BentleyStatus BRepUtil::Modify::SpinBody(IBRepEntityR targetEntity, DRay3dCR axi
 
     DRay3d      revolveAxis;
     Transform   invTargetTransform;
- 
+
     invTargetTransform.InverseOf(targetEntity.GetEntityTransform());
 
     invTargetTransform.Multiply(&revolveAxis.origin, &axis.origin, 1);
@@ -2842,9 +2701,9 @@ BentleyStatus BRepUtil::Modify::SpinBody(IBRepEntityR targetEntity, DRay3dCR axi
 * @bsimethod                                                    Ray.Bentley     03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus BRepUtil::Modify::Emboss(IBRepEntityR targetEntity, IBRepEntityCR toolEntity, bool reverseDirection, DVec3dCP direction)
-    {                           
+    {
 #if defined (BENTLEYCONFIG_PARASOLID)
-    if (IBRepEntity::EntityType::Sheet != toolEntity.GetEntityType()) 
+    if (IBRepEntity::EntityType::Sheet != toolEntity.GetEntityType())
         return ERROR;
 
     PK_ENTITY_t targetTag = PSolidUtil::GetEntityTagForModify(targetEntity);
@@ -2883,7 +2742,7 @@ BentleyStatus BRepUtil::Modify::Emboss(IBRepEntityR targetEntity, IBRepEntityCR 
 
     if (reverseDirection)
         drawDir.Negate();
-            
+
     PK_BODY_emboss_o_t  options;
     PK_TOPOL_track_r_t  tracking;
     PK_TOPOL_local_r_t  results;
@@ -2931,7 +2790,7 @@ BentleyStatus BRepUtil::Modify::Emboss(IBRepEntityR targetEntity, IBRepEntityCR 
 BentleyStatus BRepUtil::Modify::ThickenSheet(IBRepEntityR targetEntity, double frontDistance, double backDistance)
     {
 #if defined (BENTLEYCONFIG_PARASOLID)
-    if (IBRepEntity::EntityType::Sheet != targetEntity.GetEntityType()) 
+    if (IBRepEntity::EntityType::Sheet != targetEntity.GetEntityType())
         return ERROR;
 
     PK_ENTITY_t targetEntityTag = PSolidUtil::GetEntityTagForModify(targetEntity);
@@ -2952,7 +2811,7 @@ BentleyStatus BRepUtil::Modify::ThickenSheet(IBRepEntityR targetEntity, double f
     memset(&results, 0, sizeof(results));
 
     Transform   invTargetTransform;
- 
+
     invTargetTransform.InverseOf(targetEntity.GetEntityTransform());
     invTargetTransform.ScaleDoubleArrayByXColumnMagnitude(&frontDistance, 1);
     invTargetTransform.ScaleDoubleArrayByXColumnMagnitude(&backDistance, 1);
@@ -2992,7 +2851,7 @@ BentleyStatus BRepUtil::Modify::BlendEdges(IBRepEntityR targetEntity, bvector<IS
     PK_MARK_create(&markTag);
 
     Transform   invTargetTransform;
- 
+
     invTargetTransform.InverseOf(targetEntity.GetEntityTransform());
 
     for (size_t iEdge = 0; iEdge < edges.size(); ++iEdge)
@@ -3064,13 +2923,13 @@ static BentleyStatus computeChamferFaceData(DPoint3dR edgePoint, DVec3dR edgeTan
     DPoint2d faceParam1, faceParam2;
     DPoint3d facePoint1, facePoint2;
 
-    if (!PSolidUtil::ClosestPointToFace(faces.at(0), Transform::FromIdentity(), facePoint1, faceParam1, faceDist1, edgePoint) || 
+    if (!PSolidUtil::ClosestPointToFace(faces.at(0), Transform::FromIdentity(), facePoint1, faceParam1, faceDist1, edgePoint) ||
         !PSolidUtil::ClosestPointToFace(faces.at(1), Transform::FromIdentity(), facePoint2, faceParam2, faceDist2, edgePoint))
         return ERROR;
 
     DVec3d uDir1, uDir2, vDir1, vDir2;
 
-    if (SUCCESS != PSolidUtil::EvaluateFace(facePoint1, faceNormal1, uDir1, vDir1, faceParam1, faces.at(0)) || 
+    if (SUCCESS != PSolidUtil::EvaluateFace(facePoint1, faceNormal1, uDir1, vDir1, faceParam1, faces.at(0)) ||
         SUCCESS != PSolidUtil::EvaluateFace(facePoint2, faceNormal2, uDir2, vDir2, faceParam2, faces.at(1)))
         return ERROR;
 
@@ -3137,7 +2996,7 @@ static bool computeChamferReversed(bvector<PK_EDGE_t>& edgeTags, bvector<bool>& 
 
         if (faces.at(0) == testFaces.at(0))
             return reversed.at(iEdge);
-        
+
         if (faces.at(1) == testFaces.at(1))
             return reversed.at(iEdge);
 
@@ -3171,7 +3030,7 @@ BentleyStatus BRepUtil::Modify::ChamferEdges (IBRepEntityR targetEntity, bvector
     PK_MARK_create(&markTag);
 
     Transform   invTargetTransform;
- 
+
     invTargetTransform.InverseOf(targetEntity.GetEntityTransform());
 
     bvector<bool>       reversed;
@@ -3310,7 +3169,7 @@ static void coverRubberFaces(PK_BODY_t bodyTag)
 
         if (SUCCESS != PK_FACE_ask_surf(faceTags[iFace], &surfTag) || PK_ENTITY_null != surfTag)
             continue;
-        
+
         PK_local_check_t localCheck;
 
         PK_FACE_attach_surf_fitting(faceTags[iFace], PK_LOGICAL_true, &localCheck);
@@ -3337,7 +3196,7 @@ BentleyStatus BRepUtil::Modify::HollowFaces(IBRepEntityR targetEntity, bvector<I
 
     double      shellOffset = defaultDistance;
     Transform   invTargetTransform;
- 
+
     invTargetTransform.InverseOf(targetEntity.GetEntityTransform());
     invTargetTransform.ScaleDoubleArrayByXColumnMagnitude(&shellOffset, 1);
 
@@ -3348,8 +3207,8 @@ BentleyStatus BRepUtil::Modify::HollowFaces(IBRepEntityR targetEntity, bvector<I
 
     // NOTE: Wanted to try not having the shell feature add it's node id to the product faces. Regardless of whether shelling
     //       inwards or outwards, the original faces are always the outer faces, so you won't be able to identity the shell by face
-    //       reliably anyway. I'm currently incrementing the offset faces using the highest entity id for a given face's node id. 
-    //       The offset faces are then unique, but still identify the original feature(s). These ids will be more stable than just 
+    //       reliably anyway. I'm currently incrementing the offset faces using the highest entity id for a given face's node id.
+    //       The offset faces are then unique, but still identify the original feature(s). These ids will be more stable than just
     //       assigning the faces sequentially...and the user can still easily modify the shell thickness through handles or properties.
     //       A shell is something that is typically done once per solid anyway...
     bmap<uint32_t, uint32_t> nodeIdToHighestEntityIdMap;
@@ -3493,7 +3352,7 @@ BentleyStatus BRepUtil::Modify::OffsetFaces(IBRepEntityR targetEntity, bvector<I
     PK_MARK_create(&markTag);
 
     Transform   invTargetTransform;
- 
+
     invTargetTransform.InverseOf(targetEntity.GetEntityTransform());
 
     bvector<double>    offsets;
@@ -3667,7 +3526,7 @@ BentleyStatus BRepUtil::Modify::OffsetEdges(IBRepEntityR targetEntity, bvector<I
         return ERROR;
 
     Transform   fwdTargetTransform, invTargetTransform;
- 
+
     fwdTargetTransform = targetEntity.GetEntityTransform();
     invTargetTransform.InverseOf(fwdTargetTransform);
 
@@ -3822,7 +3681,7 @@ BentleyStatus BRepUtil::Modify::OffsetEdges(IBRepEntityR targetEntity, bvector<I
     if (!commonFacePtr.IsValid())
         {
         taperFaces.push_back(refFacePtr);
-        refEntities.push_back(extremePtr);        
+        refEntities.push_back(extremePtr);
         }
     else
         {
@@ -3920,7 +3779,7 @@ BentleyStatus BRepUtil::Modify::TransformFaces(IBRepEntityR targetEntity, bvecto
     PK_MARK_create(&markTag);
 
     Transform   invTargetTransform;
- 
+
     invTargetTransform.InverseOf(targetEntity.GetEntityTransform());
 
     bvector<PK_TRANSF_t> transfs;
@@ -3962,7 +3821,7 @@ BentleyStatus BRepUtil::Modify::TransformFaces(IBRepEntityR targetEntity, bvecto
             options.transform_step = PK_transform_step_all_c;
             break;
         }
-    
+
     PK_TOPOL_track_r_t tracking;
     PK_TOPOL_local_r_t results;
 
@@ -4045,7 +3904,7 @@ BentleyStatus BRepUtil::Modify::TransformEdges(IBRepEntityR targetEntity, bvecto
         return ERROR;
 
     Transform   fwdTargetTransform, invTargetTransform;
- 
+
     fwdTargetTransform = targetEntity.GetEntityTransform();
     invTargetTransform.InverseOf(fwdTargetTransform);
 
@@ -4069,7 +3928,7 @@ BentleyStatus BRepUtil::Modify::TransformEdges(IBRepEntityR targetEntity, bvecto
         bvector<PK_CURVE_t>::iterator it = std::find(curves.begin(), curves.end(), curveTag);
         bool isSameCurve = (it != curves.end());
         curves.push_back(curveTag);
-        
+
         double      uParam;
         DPoint3d    edgePoint;
 
@@ -4135,7 +3994,7 @@ BentleyStatus BRepUtil::Modify::TransformEdges(IBRepEntityR targetEntity, bvecto
             DVec3d      testDir = DVec3d::FromNormalizedCrossProduct(edgeTangent, faceNormal);
 
             if (testDir.DotProduct(pickDir) < 0.0)
-                testDir.Negate();            
+                testDir.Negate();
 
             PK_VECTOR_t dir1, dir2, dir3;
 
@@ -4185,7 +4044,7 @@ BentleyStatus BRepUtil::Modify::TransformEdges(IBRepEntityR targetEntity, bvecto
 
 #if defined (BENTLEYCONFIG_PARASOLID)
 //=======================================================================================
-// @bsiclass 
+// @bsiclass
 //=======================================================================================
 struct ImprintIndices {size_t m_indices[2];};
 struct SurfaceIndices {size_t m_indices[3];};
@@ -4201,7 +4060,7 @@ struct IsImprintReversed : std::binary_function <ImprintIndices, ImprintIndices 
     };
 
 //=======================================================================================
-// @bsiclass 
+// @bsiclass
 //=======================================================================================
 struct FaceVertexData
 {
@@ -4451,7 +4310,7 @@ BentleyStatus transformVertices(IBRepEntityR targetEntity, bvector<ISubEntityPtr
             for (ISubEntityPtr vertexPtr : loopVertices)
                 {
                 DPoint3d    vertexPoint;
-        
+
                 if (SUCCESS != BRepUtil::EvaluateVertex(*vertexPtr, vertexPoint))
                     continue;
 
@@ -4673,7 +4532,7 @@ BentleyStatus transformVertices(IBRepEntityR targetEntity, bvector<ISubEntityPtr
 
         PK_ENTITY_track_r_f(&tracking);
         PK_CURVE_project_r_f(&results);
-    
+
         PK_ENTITY_delete((int) toolBodies.size(), &toolBodies.front());
 
         if (SUCCESS != status)
@@ -4719,7 +4578,7 @@ BentleyStatus transformVertices(IBRepEntityR targetEntity, bvector<ISubEntityPtr
 
     PK_TOPOL_local_r_f(&results);
     PK_TOPOL_track_r_f(&tracking);
-    
+
     if (SUCCESS != status)
         PK_ENTITY_delete((int) replaceSurfs.size(), &replaceSurfs.front());
 
@@ -4734,7 +4593,7 @@ BentleyStatus BRepUtil::Modify::TransformVertices(IBRepEntityR targetEntity, bve
     {
 #if defined (BENTLEYCONFIG_PARASOLID)
     PK_MARK_t   markTag = PK_ENTITY_null;
-    
+
     PK_MARK_create(&markTag);
 
     BentleyStatus status = transformVertices(targetEntity, vertices, transforms);
@@ -4782,7 +4641,7 @@ BentleyStatus BRepUtil::Modify::SweepFaces(IBRepEntityR targetEntity, bvector<IS
     PK_local_check_t checkResult;
     PK_VECTOR_t      pathVec;
     Transform        invTargetTransform;
- 
+
     invTargetTransform.InverseOf(targetEntity.GetEntityTransform());
     invTargetTransform.MultiplyMatrixOnly((DVec3dR) pathVec, path);
 
@@ -4831,7 +4690,7 @@ BentleyStatus BRepUtil::Modify::SpinFaces(IBRepEntityR targetEntity, bvector<ISu
     PK_local_check_t checkResult;
     PK_AXIS1_sf_t    axisSf;
     Transform        invTargetTransform;
- 
+
     invTargetTransform.InverseOf(targetEntity.GetEntityTransform());
     invTargetTransform.Multiply((DPoint3dP) &axisSf.location.coord[0], &axis.origin, 1);
     invTargetTransform.MultiplyMatrixOnly(*((DVec3dP) &axisSf.axis.coord[0]), axis.direction);
@@ -4909,7 +4768,7 @@ BentleyStatus BRepUtil::Modify::TaperFaces(IBRepEntityR targetEntity, bvector<IS
 
     PK_VECTOR1_t taperVec;
     Transform    invTargetTransform;
- 
+
     invTargetTransform.InverseOf(targetEntity.GetEntityTransform());
     invTargetTransform.MultiplyMatrixOnly((DVec3dR) taperVec, direction);
     ((DVec3dR) (taperVec)).Normalize();
@@ -4982,7 +4841,7 @@ BentleyStatus BRepUtil::Modify::TaperFaces(IBRepEntityR targetEntity, bvector<IS
     return ERROR;
 #endif
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -5110,7 +4969,7 @@ BentleyStatus BRepUtil::Modify::ImprintCurveVectorOnFace(ISubEntityPtr& face, Cu
         return ERROR;
 
     DVec3d  projVec = DVec3d::From(0.0, 0.0, 1.0);
- 
+
     if (direction)
         {
         curveToBodyTrans.MultiplyMatrixOnly(projVec, *direction);
@@ -5150,7 +5009,7 @@ BentleyStatus BRepUtil::Modify::ImprintCurveVectorOnBody(IBRepEntityR target, Cu
         return ERROR;
 
     DVec3d  projVec = DVec3d::From(0.0, 0.0, 1.0);
- 
+
     if (direction)
         {
         curveToBodyTrans.MultiplyMatrixOnly(projVec, *direction);
@@ -5188,7 +5047,7 @@ BentleyStatus BRepUtil::Modify::ImprintBodyOnBody(IBRepEntityR targetEntity, IBR
         return ERROR;
 
     Transform   invTargetTransform, toolTransform;
- 
+
     invTargetTransform.InverseOf(targetEntity.GetEntityTransform());
     toolTransform.InitProduct(invTargetTransform, toolEntity.GetEntityTransform());
 
@@ -5321,7 +5180,7 @@ BentleyStatus wireBodyFromOffsetEdgesOnPlanarFace(bvector<PK_BODY_t>& wireBodies
     PK_EDGE_t* newEdges = nullptr;
     PK_CURVE_make_wire_body_o_t wireOptions;
 
-    PK_CURVE_make_wire_body_o_m(wireOptions); 
+    PK_CURVE_make_wire_body_o_m(wireOptions);
     wireOptions.want_indices = PK_LOGICAL_true;
     wireOptions.want_edges = PK_LOGICAL_true;
 
@@ -5373,7 +5232,7 @@ BentleyStatus BRepUtil::Modify::ImprintOffsetEdgesOnPlanarFace(ISubEntityPtr& fa
     {
 #if defined (BENTLEYCONFIG_PARASOLID)
     bvector<PK_BODY_t> wireBodies;
-    
+
     if (SUCCESS != wireBodyFromOffsetEdgesOnPlanarFace(wireBodies, *face, edges, distance))
         return ERROR;
 
@@ -5409,7 +5268,7 @@ CurveVectorPtr BRepUtil::Create::OffsetEdgesOnPlanarFaceToCurveVector(ISubEntity
     {
 #if defined (BENTLEYCONFIG_PARASOLID)
     bvector<PK_BODY_t> wireBodies;
-    
+
     if (SUCCESS != wireBodyFromOffsetEdgesOnPlanarFace(wireBodies, face, edges, distance))
         return nullptr;
 
@@ -5422,7 +5281,7 @@ CurveVectorPtr BRepUtil::Create::OffsetEdgesOnPlanarFaceToCurveVector(ISubEntity
 
         if (!wireEntity.IsValid())
             continue;
-         
+
         CurveVectorPtr wireCurve = BRepUtil::Create::BodyToCurveVector(*wireEntity);
 
         if (!offsetCurves.IsValid())
@@ -5448,9 +5307,4 @@ CurveVectorPtr BRepUtil::Create::OffsetEdgesOnPlanarFaceToCurveVector(ISubEntity
 #endif
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-GeometricPrimitiveCPtr ISubEntity::GetGeometry() const { return _GetGeometry(); }
-GeometricPrimitiveCPtr ISubEntity::GetParentGeometry() const { return _GetParentGeometry(); }
 

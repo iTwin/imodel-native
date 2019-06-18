@@ -13,7 +13,7 @@
 
 #include <VersionedDgnV8Api/PSolid/PSolidCore.h>
 #if defined (BENTLEYCONFIG_PARASOLID)
-#include <DgnPlatform/DgnBRep/PSolidUtil.h>
+#include <BRepCore/PSolidUtil.h>
 #endif
 
 #undef min
@@ -118,7 +118,7 @@ struct V8FileSyncInfoIdAppData : DgnV8Api::DgnFileAppData
     StableIdPolicy m_idPolicy;
     RepositoryLinkId m_repositoryLinkId;
 
-    V8FileSyncInfoIdAppData(RepositoryLinkId id, StableIdPolicy policy) 
+    V8FileSyncInfoIdAppData(RepositoryLinkId id, StableIdPolicy policy)
         : m_repositoryLinkId(id), m_idPolicy(policy)
         {}
 
@@ -1525,7 +1525,7 @@ static void dumpParentAndChildren(DgnElementCR el, int indent)
     printf("%s", in.c_str());
 
     dumpElement(el);
-    
+
     auto subj = dynamic_cast<Subject const*>(&el);
     if (nullptr != subj)
         printf(" %s", Json::FastWriter::ToString(subj->GetSubjectJsonProperties()).c_str());
@@ -1680,7 +1680,7 @@ void getOutlierElementInfo (const bvector<BeInt64Id>& elementOutliers, DgnDbCP d
 
             estmt.BindInt64 (1, eid.GetValue ());
             int64_t v8ElementId = 0;
-            
+
             if (BentleyApi::BeSQLite::BE_SQLITE_ROW == estmt.Step ())
                 v8ElementId = estmt.GetValueInt64 (0);
 
@@ -2591,7 +2591,7 @@ DgnV8Api::FindInstancesScopePtr Converter::CreateFindInstancesScope(DgnV8EhCR v8
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Converter::AnnounceConversionResults(ElementConversionResults& results, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, 
+void Converter::AnnounceConversionResults(ElementConversionResults& results, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm,
                                                   IChangeDetector::SearchResults const& updatePlan, bool isParentElement)
     {
     if (!results.m_element.IsValid() || !results.m_element->GetElementId().IsValid())
@@ -2670,16 +2670,16 @@ DgnDbStatus Converter::InsertResults(ElementConversionResults& results, SyncInfo
     auto result = m_dgndb->Elements().Insert(*results.m_element, &stat);
 
     if (DgnDbStatus::DuplicateCode == stat)
-        {                                                                                                                
-        Utf8String duplicateMessage;                                                                                     
-        duplicateMessage.Sprintf("Duplicate element code '%s' ignored", code.GetValueUtf8().c_str());                    
-        ReportIssue(IssueSeverity::Info, IssueCategory::InconsistentData(), Issue::Message(), duplicateMessage.c_str()); 
-                                                                                                                         
-        DgnDbStatus stat2 = results.m_element->SetCode(DgnCode::CreateEmpty()); // just leave the code null              
-        BeAssert(DgnDbStatus::Success == stat2);                                                                         
-        result = m_dgndb->Elements().Insert(*results.m_element, &stat);                                                  
-        }                                                                                                                
-                                                                                                                         
+        {
+        Utf8String duplicateMessage;
+        duplicateMessage.Sprintf("Duplicate element code '%s' ignored", code.GetValueUtf8().c_str());
+        ReportIssue(IssueSeverity::Info, IssueCategory::InconsistentData(), Issue::Message(), duplicateMessage.c_str());
+
+        DgnDbStatus stat2 = results.m_element->SetCode(DgnCode::CreateEmpty()); // just leave the code null
+        BeAssert(DgnDbStatus::Success == stat2);
+        result = m_dgndb->Elements().Insert(*results.m_element, &stat);
+        }
+
     if (DgnDbStatus::Success != stat)
         {
         BeAssert((DgnDbStatus::LockNotHeld != stat) && "Failed to get or retain necessary locks");
@@ -2769,9 +2769,9 @@ DgnDbStatus Converter::UpdateResultsForOneElement(ElementConversionResults& conv
     conversionResults.m_element = result->CopyForEdit();// Note that we don't plan to modify the result after this. We just
                                                         // want the output to reflect the outcome. Since, we have a non-const
                                                         // pointer, we have to make a copy.
-    
+
     _GetChangeDetector().OnElementSeen(*this, conversionResults.m_element.get());
-    
+
     return DgnDbStatus::Success;
     }
 
@@ -3202,7 +3202,7 @@ bool Converter::TryFindElement(DgnElementId& elementId, DgnV8EhCR eh)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::V8ElementExternalSourceAspect Converter::FindFirstElementMappedTo(DgnModelId modelId, DgnV8Api::ElementId v8ElementId, 
+SyncInfo::V8ElementExternalSourceAspect Converter::FindFirstElementMappedTo(DgnModelId modelId, DgnV8Api::ElementId v8ElementId,
                                                                   IChangeDetector::T_SyncInfoElementFilter* filter)
     {
     SyncInfo::V8ElementExternalSourceAspectIteratorByV8Id elements(*GetDgnDb().Models().GetModel(modelId), v8ElementId);
@@ -3214,14 +3214,14 @@ SyncInfo::V8ElementExternalSourceAspect Converter::FindFirstElementMappedTo(DgnM
         }
     if (elements.end() != entry)
         return *entry;
-    
+
     return SyncInfo::V8ElementExternalSourceAspect();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::V8ElementExternalSourceAspect Converter::FindFirstElementMappedTo(DgnV8ModelCR v8Model, DgnV8Api::ElementId v8ElementId, 
+SyncInfo::V8ElementExternalSourceAspect Converter::FindFirstElementMappedTo(DgnV8ModelCR v8Model, DgnV8Api::ElementId v8ElementId,
                                                                IChangeDetector::T_SyncInfoElementFilter* filter)
     {
     auto repositoryLinkEl = GetRepositoryLinkElement(*v8Model.GetDgnFileP());
@@ -3229,14 +3229,14 @@ SyncInfo::V8ElementExternalSourceAspect Converter::FindFirstElementMappedTo(DgnV
     auto modelAspectEntry = modelIter.begin();
     if (modelAspectEntry == modelIter.end())
         return SyncInfo::V8ElementExternalSourceAspect();
-     
+
     return FindFirstElementMappedTo(modelAspectEntry->GetModelId(), v8ElementId, filter);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::V8ElementExternalSourceAspect Converter::_FindFirstElementMappedTo(DgnV8Api::DisplayPath const& proxyPath, bool tail, 
+SyncInfo::V8ElementExternalSourceAspect Converter::_FindFirstElementMappedTo(DgnV8Api::DisplayPath const& proxyPath, bool tail,
                                                                IChangeDetector::T_SyncInfoElementFilter* filter)
     {
     ElementRefP targetEl;
@@ -3722,7 +3722,7 @@ ConverterLibrary::ConverterLibrary(DgnDbR bim, RootModelSpatialParams& params) :
     m_dgndb = &bim;
 
     m_changeDetector.reset(new ChangeDetector);
-    
+
     AttachSyncInfo();
 
     m_dgndb->AddIssueListener(m_issueReporter.GetECDbIssueListener());

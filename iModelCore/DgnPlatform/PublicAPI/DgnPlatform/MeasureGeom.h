@@ -10,6 +10,7 @@
 
 #include <DgnPlatform/DgnPlatform.h>
 #include <DgnPlatform/SimplifyGraphic.h>
+#include <BRepCore/SolidKernel.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -103,37 +104,37 @@ MeasureGeomCollector (OperationType);
 //__PUBLISH_SECTION_START__
 public:
 
-//! 
+//!
 DGNPLATFORM_EXPORT double GetVolume () const;
 
-//! 
+//!
 DGNPLATFORM_EXPORT double GetArea () const;
 
-//! 
+//!
 DGNPLATFORM_EXPORT double GetPerimeter () const;
 
-//! 
+//!
 DGNPLATFORM_EXPORT double GetLength () const;
 
-//! 
+//!
 DGNPLATFORM_EXPORT double GetClosureError () const;
 
-//! 
+//!
 DGNPLATFORM_EXPORT DPoint3dCR GetCentroid () const;
 
-//! 
+//!
 DGNPLATFORM_EXPORT double GetIXY () const;
 
-//! 
+//!
 DGNPLATFORM_EXPORT double GetIXZ () const;
 
-//! 
+//!
 DGNPLATFORM_EXPORT double GetIYZ () const;
 
-//! 
+//!
 DGNPLATFORM_EXPORT DPoint3dCR GetMoments () const;
 
-//! 
+//!
 DGNPLATFORM_EXPORT static BentleyStatus CalculatePrincipalAxes
 (
 DPoint3dP   principalMomentsP,      // <=  opt: {Ixx, Iyy, Izz} about principal axes

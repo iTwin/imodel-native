@@ -13,8 +13,8 @@
 #include <DgnPlatform/FunctionalDomain.h>
 #include <chrono>
 
-#if defined (BENTLEYCONFIG_PARASOLID) 
-#include <DgnPlatform/DgnBRep/PSolidUtil.h>
+#if defined (BENTLEYCONFIG_PARASOLID)
+#include <BRepCore/PSolidUtil.h>
 #endif
 
 static Utf8String s_lastECDbIssue;
@@ -158,7 +158,7 @@ void JsInterop::Initialize(BeFileNameCR addonDllDir, Napi::Env env, BeFileNameCR
 #endif
 
     static std::once_flag s_initFlag;
-    std::call_once(s_initFlag, []() 
+    std::call_once(s_initFlag, []()
         {
         auto jsHost = new JsDgnHost();
         DgnPlatformLib::Initialize(*jsHost);
@@ -184,7 +184,7 @@ void JsInterop::InitLogging()
     NativeLogging::LoggingConfig::ActivateProvider(new NativeLoggingShim());
     }
 
-#if defined (BENTLEYCONFIG_PARASOLID) 
+#if defined (BENTLEYCONFIG_PARASOLID)
 static RefCountedPtr<PSolidThreadUtil::MainThreadMark> s_psolidMainThreadMark;
 #endif
 
@@ -193,7 +193,7 @@ static RefCountedPtr<PSolidThreadUtil::MainThreadMark> s_psolidMainThreadMark;
 +---------------+---------------+---------------+---------------+---------------+------*/
 void JsInterop::InitializeParasolid()
     {
-#if defined (BENTLEYCONFIG_PARASOLID) 
+#if defined (BENTLEYCONFIG_PARASOLID)
     PSolidKernelManager::StartSession();
 
     if (s_psolidMainThreadMark.IsNull())
@@ -306,7 +306,7 @@ Napi::Value JsInterop::PostConcurrentQuery(ECDbCR ecdb, Napi::Env env, Utf8Strin
         }
 
     const auto rc = ecdb.GetConcurrentQueryManager().PostQuery(taskId, ecsql.c_str(), bindings.c_str(),
-                                                       ConcurrentQueryManager::Limit(maxRowAllowed, startRowOffset), 
+                                                       ConcurrentQueryManager::Limit(maxRowAllowed, startRowOffset),
                                                        ConcurrentQueryManager::Quota(maxTimeAllowed, maxMemoryAllowed), priority);
     auto result = Napi::Object::New(env);
     result.Set("status", (int) rc);
@@ -343,7 +343,7 @@ DgnDbPtr JsInterop::CreateIModel(DbResult& result, Utf8StringCR name, JsonValueC
     BeFileName fileName(name);
     BeFileName path =fileName.GetDirectoryName();
     if (!path.DoesPathExist()) {
-        Utf8String err = Utf8String("Path [") + path.GetNameUtf8() + "] does not exist"; 
+        Utf8String err = Utf8String("Path [") + path.GetNameUtf8() + "] does not exist";
         Napi::TypeError::New(env, err.c_str()).ThrowAsJavaScriptException();
         return nullptr;
     }
@@ -361,7 +361,7 @@ DgnDbPtr JsInterop::CreateIModel(DbResult& result, Utf8StringCR name, JsonValueC
         params.m_client = in[json_client()].asCString();
 
     DgnDbPtr db = DgnDb::CreateDgnDb(&result, fileName, params);
-    if (!db.IsValid()) 
+    if (!db.IsValid())
         return nullptr;
 
     // NEEDS_WORK - create GCS from ecef location
@@ -401,7 +401,7 @@ DbResult JsInterop::OpenDgnDb(DgnDbPtr& db, BeFileNameCR fileOrPathname, DgnDb::
             if (!dbDir.DoesPathExist())
                 return DbResult::BE_SQLITE_NOTFOUND;
             }
-            
+
         pathname = dbDir;
         pathname.AppendToPath(L"../Documents/");
         pathname.AppendToPath(fileOrPathname.c_str());
@@ -619,7 +619,7 @@ DbResult JsInterop::ExtractCodesFromFile(JsonValueR codes, DgnDbR dgndb, JsonVal
 
     if (revisionPtrs.empty())
         return BE_SQLITE_ERROR;
-    
+
     return ExtractCodesFromChangeSet(codes, revisionPtrs[0], dgndb);
     }
 
@@ -631,7 +631,7 @@ DbResult JsInterop::ExtractCodesFromFile(JsonValueR codes, DgnDbR dgndb, JsonVal
 DbResult SavePendingChangeSets(DgnDbR dgndb, JsonValueCR changeSets)
     {
     DbResult result = dgndb.SaveBriefcaseLocalValue(PENDING_CHANGESET_PROPERTY_NAME, changeSets.ToString());
-    
+
     if (BE_SQLITE_DONE != result)
         return result;
 
@@ -679,7 +679,7 @@ DbResult JsInterop::AddPendingChangeSet(DgnDbR dgndb, Utf8StringCR changeSetId)
 
     if (-1 != FindChangeSet(changeSets, changeSetId))
         return BE_SQLITE_OK;
-    
+
     changeSets.append(changeSetId);
 
     return SavePendingChangeSets(dgndb, changeSets);
@@ -699,7 +699,7 @@ DbResult JsInterop::RemovePendingChangeSet(DgnDbR dgndb, Utf8StringCR changeSetI
 
     if (-1 == foundIndex)
         return BE_SQLITE_OK;
-    
+
     changeSets.removeIndex(foundIndex);
 
     return SavePendingChangeSets(dgndb, changeSets);
@@ -708,7 +708,7 @@ DbResult JsInterop::RemovePendingChangeSet(DgnDbR dgndb, Utf8StringCR changeSetI
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  06/17
 //---------------------------------------------------------------------------------------
-void JsInterop::GetRowAsJson(Json::Value& rowJson, ECSqlStatement& stmt) 
+void JsInterop::GetRowAsJson(Json::Value& rowJson, ECSqlStatement& stmt)
     {
     JsonECSqlSelectAdapter adapter(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsHexadecimalString));
     adapter.GetRow(rowJson, true);
@@ -717,7 +717,7 @@ void JsInterop::GetRowAsJson(Json::Value& rowJson, ECSqlStatement& stmt)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  06/17
 //---------------------------------------------------------------------------------------
-void JsInterop::GetECValuesCollectionAsJson(Json::Value& json, ECN::ECValuesCollectionCR props) 
+void JsInterop::GetECValuesCollectionAsJson(Json::Value& json, ECN::ECValuesCollectionCR props)
     {
     for (ECN::ECPropertyValue const& prop : props)
         {
@@ -725,7 +725,7 @@ void JsInterop::GetECValuesCollectionAsJson(Json::Value& json, ECN::ECValuesColl
 
         if (prop.HasChildValues())
             GetECValuesCollectionAsJson(pvalue, *prop.GetChildValues());
-        else 
+        else
             ECUtils::ConvertECValueToJson(pvalue, prop.GetValue());
         }
     }

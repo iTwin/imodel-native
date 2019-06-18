@@ -4,8 +4,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
-#if defined (BENTLEYCONFIG_PARASOLID) 
-#include <DgnPlatform/DgnBRep/PSolidUtil.h>
+#if defined (BENTLEYCONFIG_PARASOLID)
+#include <BRepCore/PSolidUtil.h>
 #endif
 
 #define TRIANGLE_MULTIPLIER 2
@@ -300,7 +300,7 @@ size_t FacetCounter::GetFacetCount (IGeometryCR geometry) const
     MSBsplineSurfacePtr     bsplineSurface;
     PolyfaceHeaderPtr       polyface;
     ICurvePrimitivePtr      curvePrimitive;
-    
+
     if ((curveVector = geometry.GetAsCurveVector()).IsValid())
         return GetFacetCount (*curveVector);
 
@@ -368,7 +368,7 @@ IFacetOptionsPtr FacetCounter::CreateDefaultFacetOptions()
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t FacetCounter::GetFacetCount(IBRepEntityCR entity) const
     {
-#if defined (BENTLEYCONFIG_PARASOLID) 
+#if defined (BENTLEYCONFIG_PARASOLID)
     PK_ENTITY_t entityTag = PSolidUtil::GetEntityTag(entity);
 
     if (0 == entityTag)
@@ -392,7 +392,7 @@ size_t FacetCounter::GetFacetCount(IBRepEntityCR entity) const
 
         PK_FACE_ask_oriented_surf (faceTag, &surface, &orientation);
         PK_ENTITY_ask_class (surface, &surfaceClass);
-        
+
         switch (surfaceClass)
             {
             case PK_CLASS_plane:

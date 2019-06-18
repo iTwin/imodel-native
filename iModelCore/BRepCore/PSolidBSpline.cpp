@@ -3,8 +3,8 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include <DgnPlatformInternal.h>
-#include <DgnPlatform/DgnBRep/PSolidUtil.h>
+#include <BRepCore/SolidKernel.h>
+#include <BRepCore/PSolidUtil.h>
 #include <Vu/VuApi.h>
 
 USING_NAMESPACE_BENTLEY
@@ -203,7 +203,7 @@ void            PSolidUtil::NormalizeBsplineCurve (MSBsplineCurveR curve)
             beziers[i]->MakeRational ();
         }
 
-    bool    closed = TO_BOOL (curve.params.closed);
+    bool    closed = 0 != curve.params.closed;
 
     curve.ReleaseMem ();
     auto newCurve = MSBsplineCurve::CreateFromBeziers (beziers);
@@ -393,7 +393,7 @@ BentleyStatus   PSolidGeom::CreateMSBsplineCurveFromSPCurve (MSBsplineCurveR cur
     PK_ENTITY_delete (1, &bCurveTag);
 
     if (isExactP)
-        *isExactP = TO_BOOL (isExact);
+        *isExactP = 0 != isExact;
 
     return status;
     }
@@ -532,7 +532,7 @@ BentleyStatus   PSolidGeom::CreateMSBsplineCurveFromCurve (MSBsplineCurveR curve
         }
 
     if (isExactP)
-        *isExactP = TO_BOOL (isExact);
+        *isExactP = 0 != isExact;
 
     return SUCCESS;
     }
@@ -559,7 +559,7 @@ BentleyStatus   PSolidGeom::CreateCurveFromMSBsplineCurve (PK_CURVE_t* curveP, M
         return ERROR;
         }
 
-    // compute spline size parameters 
+    // compute spline size parameters
     numKnots = bspknot_numberKnots (curve.params.numPoles, curve.params.order, curve.params.closed);
 
     numPoles = numKnots - curve.params.order;
@@ -1475,9 +1475,9 @@ static void     defaultTrimDataRange (PK_SURF_trim_data_t* pTrimData)
 static int      testTrimData (PK_SURF_trim_data_t* pTrimData)
     {
     // trim data is a collection of sp_curves
-    if (NULL != pTrimData && 
-        NULL != pTrimData->spcurves && 
-        NULL != pTrimData->intervals && 
+    if (NULL != pTrimData &&
+        NULL != pTrimData->spcurves &&
+        NULL != pTrimData->intervals &&
         NULL != pTrimData->trim_loop &&
         NULL != pTrimData->trim_set)
         return PK_ERROR_no_errors;
@@ -1987,7 +1987,7 @@ double          angle
 static int      createFittingCurve
 (
 MSBsplineCurveP pCurve,     // <=
-DPoint3dP       pPts,       // => 
+DPoint3dP       pPts,       // =>
 int             num,        // =>
 double          tolerance,  // => least square tolerance
 bool            smoothEnd   // => periodic ends

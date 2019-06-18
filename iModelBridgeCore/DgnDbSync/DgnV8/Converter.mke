@@ -182,7 +182,7 @@ cppObjects + $(nonPortableObjects)
 DLM_NAME                = $(appName)
 DLM_DEST                = $(o)
 DLM_OBJECT_DEST         = $(o)
-DLM_OBJECT_PCH          = $(o)ConverterInternal$(oext) 
+DLM_OBJECT_PCH          = $(o)ConverterInternal$(oext)
 DLM_EXPORT_DEST         = $(o)
 DLM_OBJECT_FILES        = $(cppObjects)
 DLM_NOINITFUNC          = 1
@@ -201,20 +201,20 @@ LINKER_LIBRARIES        + $(ContextSubpartsLibs)BaseGeoCoord.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)DgnPlatform.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)BeJsonCpp.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)ImagePP.lib
-LINKER_LIBRARIES        + $(ContextSubPartsStaticLibs)$(libprefix)BeLibJpegTurbo$(stlibext) 
-LINKER_LIBRARIES        + $(ContextSubpartsLibs)$(libprefix)BeJpeg$(stlibext) 
-LINKER_LIBRARIES        + $(ContextSubpartsLibs)Raster.lib 
-LINKER_LIBRARIES        + $(ContextSubpartsLibs)PointCloud.lib 
-LINKER_LIBRARIES        + $(ContextSubpartsLibs)ThreeMx.lib 
-LINKER_LIBRARIES        + $(ContextSubpartsLibs)iModelBridge.lib 
-LINKER_LIBRARIES        + $(ContextSubpartsLibs)ScalableMeshSchema.lib 
+LINKER_LIBRARIES        + $(ContextSubPartsStaticLibs)$(libprefix)BeLibJpegTurbo$(stlibext)
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)$(libprefix)BeJpeg$(stlibext)
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)Raster.lib
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)PointCloud.lib
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)ThreeMx.lib
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)iModelBridge.lib
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)ScalableMeshSchema.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)ScalableMesh.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)RealityPlatform.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)RealityPlatformTools.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)ECPresentation.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext)
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)$(libprefix)BeHttp$(libext)
-
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)$(libprefix)BRepCore$(libext)
 
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)Bentley.lib
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)BentleyAllocator.lib
@@ -246,7 +246,7 @@ $(ContextDeliveryDir)ImportConfig.xsd : $(baseDir)ImportConfig/ImportConfig.xsd
 $(ContextDeliveryDir)ImportConfig.xml : $(baseDir)ImportConfig/ImportConfig.xml
     $(LinkFirstDepToFirstTarget)
 
-    
+
 SQLANG_CHeader      = $(DgnV8APISrc)Converter.h
 SQLANG_Xliff        = $(o)DgnV8Converter_en.xliff
 

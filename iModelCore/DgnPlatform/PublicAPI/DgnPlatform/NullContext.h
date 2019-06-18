@@ -7,10 +7,11 @@
 //__PUBLISH_SECTION_START__
 
 #include "ViewContext.h"
+#include <BRepCore/SolidKernel.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 /*=================================================================================**//**
-* Context that doesn't draw anything. 
+* Context that doesn't draw anything.
 * @bsiclass                                                     KeithBentley    01/02
 +===============+===============+===============+===============+===============+======*/
 struct NullContext : ViewContext

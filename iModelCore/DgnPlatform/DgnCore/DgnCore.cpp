@@ -8,6 +8,7 @@
 #include <ECDb/ECDb.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <DgnPlatform/DgnECSymbolProvider.h>
+#include <BRepCore/PSolidUtil.h>
 
 BeThreadLocalStorage g_threadId;
 
@@ -57,7 +58,7 @@ DgnPlatformLib::Host::ExceptionHandler& DgnPlatformLib::Host::_SupplyExceptionHa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileNameCR DgnPlatformLib::Host::IKnownLocationsAdmin::GetLocalTempDirectoryBaseName() 
+BeFileNameCR DgnPlatformLib::Host::IKnownLocationsAdmin::GetLocalTempDirectoryBaseName()
     {
     return _GetLocalTempDirectoryBaseName();
     }
@@ -68,7 +69,7 @@ BeFileNameCR DgnPlatformLib::Host::IKnownLocationsAdmin::GetLocalTempDirectoryBa
 BentleyStatus DgnPlatformLib::Host::IKnownLocationsAdmin::GetLocalTempDirectory(BeFileNameR tempDir, WCharCP subDir)
     {
     tempDir = GetLocalTempDirectoryBaseName();
-    
+
     if (NULL != subDir)
         {
         tempDir.AppendToPath(subDir);
@@ -78,7 +79,7 @@ BentleyStatus DgnPlatformLib::Host::IKnownLocationsAdmin::GetLocalTempDirectory(
     BeFileNameStatus status = BeFileName::CreateNewDirectory(tempDir);
     if (status != BeFileNameStatus::Success && status != BeFileNameStatus::AlreadyExists)
         return ERROR;
-    
+
     return SUCCESS;
     }
 
@@ -223,7 +224,7 @@ void DgnPlatformLib::Initialize(Host& host)
 
     DgnDb::SetThreadId(DgnDb::ThreadId::Client);
 
-    host.Initialize(); 
+    host.Initialize();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -250,7 +251,7 @@ void DgnPlatformLib::Host::Initialize()
     DgnDomains::RegisterDomain(GenericDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
 
     _SupplyProductName(m_productName);
-    
+
     BeAssert(NULL == m_txnAdmin); m_txnAdmin = &_SupplyTxnAdmin();
 
     // ECSchemaReadContext::GetStandardPaths will append ECSchemas/ for us.
@@ -265,6 +266,9 @@ void DgnPlatformLib::Host::Initialize()
     BeAssert(NULL == m_repositoryAdmin);       m_repositoryAdmin       = &_SupplyRepositoryAdmin();
 
     m_fontAdmin->Initialize();
+
+    auto tempDirBase = m_knownLocationsAdmin->GetLocalTempDirectoryBaseName();
+    PSolidKernelManager::Initialize(assetDir, tempDirBase);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -418,7 +422,7 @@ DgnProgressMeter::Abort PrintfProgressMeter::_ShowProgress()
         printf("[%c]\r", s_spinner[m_spinCount%s_spinnerSize]);
         return ABORT_No;
         }
-    
+
     ForceNextUpdateToDisplay();
     UpdateDisplay();
     return ABORT_No;
@@ -432,7 +436,7 @@ void PrintfProgressMeter::_Hide()
     Utf8PrintfString msg("    %-123.123s %-16.16s", "", "");
     printf("%s\r", msg.c_str());
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/

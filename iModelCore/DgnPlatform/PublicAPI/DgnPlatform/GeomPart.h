@@ -7,8 +7,8 @@
 
 //__PUBLISH_SECTION_START__
 #include <DgnPlatform/DgnPlatform.h>
-#include <DgnPlatform/ElementGeometry.h>
 #include <DgnPlatform/CodeSpec.h>
+#include <DgnPlatform/DgnModel.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 

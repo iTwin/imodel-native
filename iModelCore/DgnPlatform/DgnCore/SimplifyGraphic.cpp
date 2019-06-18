@@ -5,6 +5,510 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnRscFontStructures.h>
+#if defined (BENTLEYCONFIG_PARASOLID)
+#include <BRepCore/PSolidUtil.h>
+#endif
+
+//=======================================================================================
+//! I don't believe clipping of output is ever used now.
+//! Could move BRepClipUtil into BRepCore if ClipVector/ClipPrimitive can be moved
+//! into GeomLibs and these methods would be generally useful to someone...
+//! @bsiclass                                                   Brien.Bastings  07/12
+//=======================================================================================
+struct BRepClipUtil
+{
+//! Perform 3d clip of the supplied curve vector.
+static BentleyStatus ClipCurveVector(bvector<CurveVectorPtr>& output, CurveVectorCR input, ClipVectorCR clipVector, TransformCP transform);
+
+//! Perform 3d clip of the supplied sheet or solid entity.
+static BentleyStatus ClipBody(bvector<IBRepEntityPtr>& output, bool& clipped, IBRepEntityCR input, ClipVectorCR clipVector);
+
+}; // BRepClipUtil
+
+#if defined (BENTLEYCONFIG_PARASOLID)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      11/07
++---------------+---------------+---------------+---------------+---------------+------*/
+static void setHiddenEdgeAttributes (PK_BODY_t body)
+    {
+    int         nEdges;
+    PK_EDGE_t*  edges;
+    bool        isHidden;
+
+    PK_BODY_ask_edges (body, &nEdges, &edges);
+
+    for (int i=0; i<nEdges; i++)
+        {
+        if (SUCCESS == PSolidAttrib::GetHiddenAttribute (isHidden, edges[i]))
+            {
+            if (!isHidden)
+                PSolidAttrib::DeleteHiddenAttribute (edges[i]);
+            }
+        else
+            {
+            PSolidAttrib::SetHiddenAttribute (edges[i], TRUE);
+            }
+        }
+
+    PK_MEMORY_free (edges);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      11/07
++---------------+---------------+---------------+---------------+---------------+------*/
+static void copyToSheet (PK_BODY_t* outBody, PK_BODY_t inBody, bool setHiddenEdges)
+    {
+    PK_ENTITY_copy (inBody, outBody);
+    PSolidUtil::ConvertSolidBodyToSheet (*outBody);
+
+    if (setHiddenEdges)
+        {
+        int                     nEdges;
+        PK_EDGE_t*              edges;
+        bool                    hidden;
+
+        PK_BODY_ask_edges (*outBody, &nEdges, &edges);
+
+        for (int i=0; i<nEdges; i++)
+            if (SUCCESS != PSolidAttrib::GetHiddenAttribute (hidden, edges[i]))
+                PSolidAttrib::SetHiddenAttribute (edges[i], false);
+
+        PK_MEMORY_free (edges);
+        }
+    }
+
+static void clipBodyByClipVector (bvector<PK_BODY_t>& output, bool& clipped, size_t& errorCount, PK_BODY_t body,  TransformCR clipToBody, ClipVectorCR clip, size_t nextPrimitiveIndex);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      11/07
++---------------+---------------+---------------+---------------+---------------+------*/
+static void clipBodyByPlanes
+(
+bvector<PK_BODY_t>&         output,
+bool&                       clipped,
+size_t&                     errorCount,
+PK_BODY_t                   body,
+ClipPlaneCP                 clipPlane,
+ClipPlaneCP                 endPlane,
+TransformCR                 clipToBody,
+ClipVectorCR                clipVector,
+size_t                      nextPrimitiveIndex
+)
+    {
+    if (clipPlane >= endPlane)
+        {
+        clipBodyByClipVector (output, clipped, errorCount, body, clipToBody, clipVector, nextPrimitiveIndex);
+        return;
+        }
+    DPlane3d            bodyPlane;
+    DPoint3d            bodyCorners[8];
+    DRange3d            range;
+
+    bodyPlane.normal = clipPlane->GetNormal();
+    bodyPlane.origin.Scale (*(&clipPlane->GetNormal()), clipPlane->GetDistance());
+
+    clipToBody.Multiply (bodyPlane, bodyPlane);
+    bodyPlane.Normalize ();
+
+    double          planeDistance = bodyPlane.normal.DotProduct (bodyPlane.origin), minDistance=0.0, maxDistance=0.0;
+
+    PSolidUtil::GetEntityRange (range, body);
+    range.Get8Corners (bodyCorners);
+
+    for (size_t i=0; i<8; i++)
+        {
+        double          cornerDistance = bodyPlane.normal.DotProduct (bodyCorners[i]) - planeDistance;
+
+        if (0 == i)
+            {
+            minDistance = maxDistance = cornerDistance;
+            }
+        else
+            {
+            if (cornerDistance < minDistance)
+                minDistance = cornerDistance;
+            else if (cornerDistance > maxDistance)
+                maxDistance = cornerDistance;
+            }
+        }
+
+    if (minDistance  > -1.0E-8)     // Entire body in front.
+        {
+        clipBodyByPlanes (output, clipped, errorCount, body, clipPlane+1, endPlane, clipToBody, clipVector, nextPrimitiveIndex);
+        return;
+        }
+
+    if (maxDistance < 0.0)      // Entire body behind plane (we're done).
+        {
+        clipped = true;
+        return;
+        }
+
+    PK_PLANE_sf_t       planeSurfaceSF;
+    PK_PLANE_t          planeSurface;
+    RotMatrix           planeMatrix;
+
+    planeMatrix.InitFrom1Vector (bodyPlane.normal, 2, false);
+
+    planeSurfaceSF.basis_set.location.coord[0] = bodyPlane.origin.x;
+    planeSurfaceSF.basis_set.location.coord[1] = bodyPlane.origin.y;
+    planeSurfaceSF.basis_set.location.coord[2] = bodyPlane.origin.z;
+
+    planeSurfaceSF.basis_set.axis.coord[0] = bodyPlane.normal.x;
+    planeSurfaceSF.basis_set.axis.coord[1] = bodyPlane.normal.y;
+    planeSurfaceSF.basis_set.axis.coord[2] = bodyPlane.normal.z;
+    // copy column 0 (x vector)
+    planeSurfaceSF.basis_set.ref_direction.coord[0] = planeMatrix.form3d[0][0];
+    planeSurfaceSF.basis_set.ref_direction.coord[1] = planeMatrix.form3d[1][0];
+    planeSurfaceSF.basis_set.ref_direction.coord[2] = planeMatrix.form3d[2][0];
+
+    PK_BODY_section_o_t     options;
+    PK_section_r_t          results;
+
+    PK_BODY_section_o_m (options);
+    memset (&results, 0, sizeof (results));
+
+   if (SUCCESS != PK_PLANE_create (&planeSurfaceSF, &planeSurface))
+        {
+        clipBodyByPlanes (output, clipped, ++errorCount, body, clipPlane+1, endPlane, clipToBody, clipVector, nextPrimitiveIndex);
+        return;
+        }
+
+    PK_BODY_t   sheetBody;
+
+    copyToSheet (&sheetBody, body, !clipPlane->IsVisible());
+
+    if (SUCCESS == PK_BODY_section_with_surf (sheetBody, planeSurface, &options, &results))
+        {
+        if (0 != results.back_bodies.length)
+            clipped = true;
+
+        for (int i=0; i<results.front_bodies.length; i++)
+            {
+            if (!clipPlane->IsVisible())
+                setHiddenEdgeAttributes (results.front_bodies.array[i]);
+
+            clipBodyByPlanes (output, clipped, errorCount, results.front_bodies.array[i], clipPlane+1, endPlane, clipToBody, clipVector, nextPrimitiveIndex);
+            }
+
+        PK_ENTITY_delete (results.front_bodies.length, results.front_bodies.array);
+        PK_ENTITY_delete (results.back_bodies.length, results.back_bodies.array);
+        PK_section_r_f (&results);
+        }
+    else
+        {
+        clipBodyByPlanes (output, clipped, ++errorCount, body, clipPlane+1, endPlane, clipToBody, clipVector, nextPrimitiveIndex);
+        PK_ENTITY_delete (1, &sheetBody);
+        }
+
+    PK_ENTITY_delete (1, &planeSurface);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/10
++---------------+---------------+---------------+---------------+---------------+------*/
+static void computeZRangeFromBody (double& zMin, double& zMax, PK_BODY_t entityTag, TransformCR solidToClip)
+    {
+    zMin = -1.0e20;
+    zMax = 1.0e20;
+
+    PK_BOX_t    box;
+
+    if (PK_ERROR_no_errors != PK_TOPOL_find_box (entityTag, &box))
+        return;
+
+    DRange3d    range;
+
+    range.InitFrom (box.coord[0], box.coord[1], box.coord[2], box.coord[3], box.coord[4], box.coord[5]);
+    solidToClip.Multiply (range, range);
+
+    // Avoid coincident geometry and ensure a minimum path length for sweep...
+    double      s_uorClearFactor = .5;
+
+    zMin = range.low.z  - s_uorClearFactor;
+    zMax = range.high.z + s_uorClearFactor;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/10
++---------------+---------------+---------------+---------------+---------------+------*/
+static BentleyStatus bodyFromSingleParallelClip (PK_BODY_t& clipBody, ClipPrimitiveCR clip, PK_BODY_t entityToClip, TransformCR clipToSolid, TransformCR solidToClip)
+    {
+    auto curves = clip.GetCurvesCP ();
+    if (nullptr == curves)
+        return ERROR;
+
+    double      zMin, zMax;
+
+    computeZRangeFromBody (zMin, zMax, entityToClip, solidToClip);
+
+    if (clip.ClipZLow() || clip.ClipZHigh() && (zMin < clip.GetZLow() || zMax > clip.GetZHigh()))
+        {
+        if (clip.ClipZLow ())
+            zMin = clip.GetZLow ();
+
+        if (clip.ClipZHigh())
+            zMax = clip.GetZHigh();
+        }
+
+    Transform   clipZTranslation = Transform::From (0.0, 0.0, zMin), compound;
+    DPoint3d    clipSweep = DPoint3d::From (0.0, 0.0, zMax - zMin), solidSweep;
+
+    compound.InitProduct (clipToSolid, clipZTranslation);
+    EdgeToCurveIdMap    idMap;
+
+    if (SUCCESS != PSolidGeom::BodyFromCurveVector (clipBody, nullptr, *curves, compound, 0L, &idMap))
+        return ERROR;
+
+    clipToSolid.MultiplyMatrixOnly (solidSweep, clipSweep);
+
+    // Need a minimum path length for sweep
+    if (solidSweep.Magnitude () < mgds_fc_epsilon)
+        solidSweep.ScaleToLength (mgds_fc_epsilon);
+
+    PK_VECTOR_t path;
+
+    path.coord[0] = solidSweep.x;
+    path.coord[1] = solidSweep.y;
+    path.coord[2] = solidSweep.z;
+
+    int               nLaterals;
+    PK_local_check_t  localCheck;
+
+    if (SUCCESS != PK_BODY_sweep (clipBody, path, false, &nLaterals, NULL, NULL, &localCheck))
+        {
+        PK_ENTITY_delete (1, &clipBody);
+
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      11/07
++---------------+---------------+---------------+---------------+---------------+------*/
+static void clipBodyByShape (bvector<PK_BODY_t>& output, bool& clipped, size_t& errorCount, PK_BODY_t body, ClipPrimitiveCR clipPrimitive, TransformCR clipToBody, ClipVectorCR clipVector, size_t nextPrimitiveIndex)
+    {
+    Transform           bodyToShape, shapeToBody = (NULL != clipPrimitive.GetTransformFromClip()) ? Transform::FromProduct (clipToBody, *clipPrimitive.GetTransformFromClip()) : clipToBody;
+    PK_BODY_t           clipBody;
+
+    bodyToShape.InverseOf (shapeToBody);
+    if (SUCCESS != bodyFromSingleParallelClip (clipBody, clipPrimitive, body, shapeToBody, bodyToShape))
+        {
+        clipBodyByClipVector (output, clipped, ++errorCount, body, clipToBody, clipVector, nextPrimitiveIndex);
+        return;
+        }
+
+#ifdef NOTYET
+    if (mdlSolid_hasHiddenFace ((BODY*) body))          // Changed to only do the (unreliable) clipBodyWithHiddenEntities if faces (unification) are present.
+        {                                               // If only hidden entities are present (as arises from previous clipping, these will be handled by propagating hidden edge attribute below.
+        PK_BODY_t   clipBodyCopy, *clippedBodies = 0;
+        StatusInt   status;
+        int         numClippedBodies = 0;
+
+        PK_ENTITY_copy (clipBody, &clipBodyCopy);
+
+        if (SUCCESS == (status = clipBodyWithHiddenEntities (&clippedBodies, &numClippedBodies, clipped, body, clipBodyCopy, clip->hdr.flags.outside != 0, clip->hdr.flags.dontDisplayCut)))
+            {
+            for (int i = 0; i < numClippedBodies; i++)
+                clipBodyByClipDescr (clippedBodies[i], clip->hdr.next, clipToBody, outputFunction, userArg, clipped);
+
+            PK_ENTITY_delete (1, &clipBody);
+            PK_ENTITY_delete (numClippedBodies, clippedBodies);
+            PK_MEMORY_free (clippedBodies);
+            return;
+            }
+
+        PK_ENTITY_delete (1, &clipBodyCopy);
+        }
+#endif
+
+    PK_BODY_t               sheetBody;
+    PK_BODY_boolean_o_t     options;
+    PK_boolean_r_t          results;
+    PK_TOPOL_track_r_t      tracking;
+
+    PK_BODY_boolean_o_m (options);
+    options.function        = clipPrimitive.IsMask() ? PK_boolean_subtract_c : PK_boolean_intersect_c;
+    options.merge_imprinted = PK_LOGICAL_true;
+
+    memset (&results, 0, sizeof (results));
+    memset (&tracking, 0, sizeof (tracking));
+
+    bool        dontDisplayCut = clipPrimitive.GetInvisible();
+
+    copyToSheet (&sheetBody, body, dontDisplayCut);
+    if (dontDisplayCut)
+        {
+        int                     nEdges;
+        PK_EDGE_t*              edges;
+        bool                    hidden;
+
+        PK_BODY_ask_edges (sheetBody, &nEdges, &edges);
+
+        for (int i=0; i<nEdges; i++)
+            if (SUCCESS != PSolidAttrib::GetHiddenAttribute (hidden, edges[i]))
+                PSolidAttrib::SetHiddenAttribute (edges[i], false);
+
+        PK_MEMORY_free (edges);
+        }
+
+#ifdef DEBUG_CLIP
+    PK_PART_transmit_o_t transmitOptions;
+
+    PK_PART_transmit_o_m (transmitOptions);
+    PK_PART_transmit_u (1, &sheetBody, (PK_UCHAR_t const*) L"d:\\tmp\\SheetBody.xmt", &transmitOptions);
+    PK_PART_transmit_u (1, &clipBody, (PK_UCHAR_t const*) L"d:\\tmp\\ClipBody.xmt", &transmitOptions);
+#endif
+
+    if (SUCCESS == PK_BODY_boolean_2 (sheetBody, 1, &clipBody, &options, &tracking, &results) && PK_boolean_result_failed_c != results.result)
+        {
+        if (0 == results.n_bodies ||  results.result != PK_boolean_result_no_clash_c)
+            clipped = true;
+
+#ifdef DEBUG_CLIP
+        PK_PART_transmit_u (results.n_bodies, &results.bodies[0], (PK_UCHAR_t const*) L"d:\\tmp\\Result.xmt", &transmitOptions);
+#endif
+        for (int i=0; i<results.n_bodies; i++)
+            {
+            if (dontDisplayCut)
+                setHiddenEdgeAttributes (results.bodies[i]);
+
+            clipBodyByClipVector (output, clipped, errorCount, results.bodies[i], clipToBody, clipVector, nextPrimitiveIndex);
+            }
+
+        PK_ENTITY_delete (results.n_bodies, results.bodies);
+        }
+    else
+        {
+        PK_ENTITY_delete (1, &sheetBody);
+        PK_ENTITY_delete (1, &clipBody);
+
+        clipBodyByClipVector (output, clipped, ++errorCount, body, clipToBody, clipVector, nextPrimitiveIndex);
+        }
+
+    PK_boolean_r_f (&results);
+    PK_TOPOL_track_r_f (&tracking);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   RayBentley      11/07
++---------------+---------------+---------------+---------------+---------------+------*/
+static void clipBodyByClipVector (bvector<PK_BODY_t>& output, bool& clipped, size_t& errorCount, PK_BODY_t body, TransformCR clipToBody, ClipVectorCR clipVector, size_t primitiveIndex)
+    {
+    if (primitiveIndex >= clipVector.size())
+        {
+        PK_BODY_t outputBody;
+
+        PK_ENTITY_copy (body, &outputBody);
+        output.push_back (outputBody);
+        return;
+        }
+
+    ClipPrimitiveCP primitive = clipVector.at(primitiveIndex++).get();
+
+    if (NULL == primitive)
+        {
+        BeAssert (false);       // Should never happen.
+        return;
+        }
+
+    if (NULL != primitive->GetPolygon())
+        return clipBodyByShape (output, clipped, errorCount, body, *primitive, clipToBody, clipVector, primitiveIndex);
+
+    if (NULL == primitive->GetClipPlanes())
+        {
+        BeAssert (false); // Should never happen.
+        return;
+        }
+
+    for (ConvexClipPlaneSetCR convexSet: *primitive->GetClipPlanes())
+        clipBodyByPlanes (output, clipped, errorCount, body, &convexSet.front(), &convexSet.front() + convexSet.size(), clipToBody, clipVector, primitiveIndex);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      01/07
++---------------+---------------+---------------+---------------+---------------+------*/
+static BentleyStatus PSolidUtil_ClipCurveVector(bvector<CurveVectorPtr>& output, CurveVectorCR input, ClipVectorCR clipVector, TransformCP transformToDgn)
+    {
+    BentleyStatus       status;
+    IBRepEntityPtr      entity;
+    EdgeToCurveIdMap    idMap;
+
+    if (SUCCESS != (status = PSolidGeom::BodyFromCurveVector (entity, input, transformToDgn, 0L, &idMap)))
+        return status;
+
+    bool                clipped = false;
+    bvector <PK_BODY_t> outBodies;
+    size_t              errorCount = 0;
+    Transform           clipToBody;
+
+    clipToBody.InverseOf (entity->GetEntityTransform());
+    clipBodyByClipVector (outBodies, clipped, errorCount, PSolidUtil::GetEntityTag (*entity), clipToBody, clipVector, 0);
+
+    if (!clipped)
+        {
+        output.push_back (input.Clone());
+        }
+    else
+        {
+        for (PK_BODY_t body: outBodies)
+            {
+            IBRepEntityPtr clippedEntity = PSolidUtil::CreateNewEntity(body, entity->GetEntityTransform(), false);
+
+            PSolidGeom::BodyToCurveVectors (output, *clippedEntity, &idMap);
+            }
+        }
+
+    if (!outBodies.empty())
+        PK_ENTITY_delete ((int) outBodies.size(), &outBodies[0]);
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      07/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+static BentleyStatus PSolidUtil_ClipBody(bvector<IBRepEntityPtr>& output, bool& clipped, IBRepEntityCR input, ClipVectorCR clipVector)
+    {
+    size_t              errorCount = 0;
+    Transform           clipToBody;
+    bvector <PK_BODY_t> outBodies;
+
+    clipToBody.InverseOf(input.GetEntityTransform());
+    clipBodyByClipVector(outBodies, clipped, errorCount, PSolidUtil::GetEntityTag(input), clipToBody, clipVector, 0);
+
+    for (PK_BODY_t body : outBodies)
+        output.push_back(PSolidUtil::CreateNewEntity(body, input.GetEntityTransform()));
+
+    return SUCCESS;
+    }
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepClipUtil::ClipCurveVector(bvector<CurveVectorPtr>& output, CurveVectorCR input, ClipVectorCR clipVector, TransformCP transform)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    return PSolidUtil_ClipCurveVector(output, input, clipVector, transform);
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepClipUtil::ClipBody(bvector<IBRepEntityPtr>& output, bool& clipped, IBRepEntityCR input, ClipVectorCR clipVector)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    return PSolidUtil_ClipBody(output, clipped, input, clipVector);
+#else
+    return ERROR;
+#endif
+    }
 
 /*=================================================================================**//**
 * @bsiclass
@@ -40,7 +544,7 @@ CurveVectorPtr GetCurveVector() {return m_curves;}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static CurveVectorPtr Process(SimplifyGraphic const& graphic, ISolidPrimitiveCR geom, ViewContextR context)                                                                             
+static CurveVectorPtr Process(SimplifyGraphic const& graphic, ISolidPrimitiveCR geom, ViewContextR context)
     {
     SimplifyCurveCollector    processor;
     Render::GraphicBuilderPtr builder = new SimplifyGraphic(graphic.GetCreateParams(), processor, context);
@@ -92,7 +596,7 @@ struct IntersectLocationDetail
     };
 
 bvector<CurveVectorPtr> m_output;
-        
+
 SimplifyCurveClipper() {}
 
 /*---------------------------------------------------------------------------------**//**
@@ -168,7 +672,7 @@ bool ClipAsOpenCurveVector(CurveVectorCR curves, ClipVectorCR clip)
         }
 
     DRange3d  curveRange;
-                             
+
     if (!curves.GetRange(curveRange))
         return false;
 
@@ -178,7 +682,7 @@ bool ClipAsOpenCurveVector(CurveVectorCR curves, ClipVectorCR clip)
 
     for (ClipPrimitivePtr const& thisClip: clip)
         {
-        DRange3d  clipRange;                                                                                             
+        DRange3d  clipRange;
 
         // Optimization for TR#300934. Don't intersect with planes from clips that are disjoint from the current GPA.
         if (thisClip->GetRange(clipRange, NULL, true) && !curveRange.IntersectsWith(clipRange))
@@ -192,12 +696,12 @@ bool ClipAsOpenCurveVector(CurveVectorCR curves, ClipVectorCR clip)
                 {
                 for (ClipPlaneCR plane: convexPlaneSet)
                     {
-                    // NOTE: It would seem that it would not be necessary to calculate intersections with "interior" planes. However, we use 
+                    // NOTE: It would seem that it would not be necessary to calculate intersections with "interior" planes. However, we use
                     //       that designation to mean any plane that should not generate cut geometry so "interior" is not really correct
-                    //       and we need to intersect with these planes as well. Interior intersections do not really cause a problem as we 
+                    //       and we need to intersect with these planes as well. Interior intersections do not really cause a problem as we
                     //       discard them below if insidedness does not change. (RayB TR#244943)
                     bvector<CurveLocationDetailPair> intersections;
-                
+
                     curves.AppendCurvePlaneIntersections(plane.GetDPlane3d(), intersections); // NOTE: Method calls clear in output vector!!!
 
                     // Get curve index for sorting, can disregard 2nd detail in pair as both should be identical...
@@ -287,7 +791,7 @@ bool ClipPointStringCurvePrimitive(ICurvePrimitiveCR primtive, ClipVectorCR clip
         return false;
 
     CurveVectorPtr  tmpCurve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
-    
+
     tmpCurve->push_back(ICurvePrimitive::CreatePointString(&insidePts.front(), insidePts.size()));
     m_output.push_back(tmpCurve);
 
@@ -387,7 +891,7 @@ SimplifyGraphic::SimplifyGraphic(Render::GraphicBuilder::CreateParams const& par
     if (!m_facetOptions.IsValid())
         {
         m_facetOptions = IFacetOptions::Create();
-    
+
         m_facetOptions->SetMaxPerFace(5000/*MAX_VERTICES*/);
         m_facetOptions->SetAngleTolerance(0.25 * Angle::Pi());
         }
@@ -485,7 +989,7 @@ void SimplifyGraphic::ViewToLocal(DPoint3dP localPts, DPoint3dCP viewPts, int nP
     worldToLocal.Multiply(localPts, localPts, nPts);
     }
 
-/*---------------------------------------------------------------------------------**//**  
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      12/08
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SimplifyGraphic::IsRangeTotallyInside(DRange3dCR range) const
@@ -494,21 +998,21 @@ bool SimplifyGraphic::IsRangeTotallyInside(DRange3dCR range) const
     return m_context.GetFrustumPlanes().Contains(box.m_pts, 8) == FrustumPlanes::Contained::Inside;
     }
 
-/*---------------------------------------------------------------------------------**//**  
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      12/08
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SimplifyGraphic::IsRangeTotallyInsideClip(DRange3dCR range) const
-    { 
+    {
     DPoint3d    corners[8];
     range.Get8Corners(corners);
     return ArePointsTotallyInsideClip(corners, 8);
     }
 
-/*---------------------------------------------------------------------------------**//**  
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      12/08
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SimplifyGraphic::ArePointsTotallyInsideClip(DPoint3dCP points, int nPoints) const
-    { 
+    {
     if (nullptr == GetCurrentClip())
         return true;
 
@@ -519,11 +1023,11 @@ bool SimplifyGraphic::ArePointsTotallyInsideClip(DPoint3dCP points, int nPoints)
     return true;
     }
 
-/*---------------------------------------------------------------------------------**//**  
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      12/08
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SimplifyGraphic::ArePointsTotallyOutsideClip(DPoint3dCP points, int nPoints) const
-    { 
+    {
     if (nullptr == GetCurrentClip())
         return false;
 
@@ -603,14 +1107,6 @@ void SimplifyGraphic::ClipAndProcessCurveVector(CurveVectorCR geom, bool filled)
     {
     bool doClipping = (nullptr != GetCurrentClip() && m_processor._DoClipping());
 
-#if defined (NOT_NOW_TOPOLOGYID)
-// No point doing this now as it's not being used...
-//   Also, when we switch to doing locate from depth buffer, PickContext and this code won't be involved so
-//   we'll need to provide another method for getting the CurveTopologyId from an edge (ex. SnapGeometryHelper)...
-    if (m_currGeomEntryId.IsValid())
-        CurveTopologyId::AddCurveVectorIds(geom, CurvePrimitiveId::Type::CurveVector, CurveTopologyId::FromCurveVector(), m_currGeomEntryId.GetIndex(), m_currGeomEntryId.GetPartIndex());
-#endif
-
     // Give output a chance to handle geometry directly...
     if (doClipping)
         {
@@ -649,7 +1145,7 @@ void SimplifyGraphic::ClipAndProcessCurveVector(CurveVectorCR geom, bool filled)
             {
             bvector<CurveVectorPtr> insideCurves;
 
-            if (SUCCESS == BRepUtil::ClipCurveVector(insideCurves, geom, *GetCurrentClip(), &GetLocalToWorldTransform()))
+            if (SUCCESS == BRepClipUtil::ClipCurveVector(insideCurves, geom, *GetCurrentClip(), &GetLocalToWorldTransform()))
                 {
                 for (CurveVectorPtr tmpCurves : insideCurves)
                     m_processor._ProcessCurveVector(*tmpCurves, filled, *this);
@@ -672,7 +1168,7 @@ void SimplifyGraphic::ClipAndProcessCurveVector(CurveVectorCR geom, bool filled)
                 bool clipped;
                 bvector<IBRepEntityPtr> clippedBodies;
 
-                if (SUCCESS == BRepUtil::ClipBody(clippedBodies, clipped, *entityPtr, *GetCurrentClip()) && clipped)
+                if (SUCCESS == BRepClipUtil::ClipBody(clippedBodies, clipped, *entityPtr, *GetCurrentClip()) && clipped)
                     {
                     for (IBRepEntityPtr entityOut : clippedBodies)
                         m_processor._ProcessBody(*entityOut, *this);
@@ -700,11 +1196,11 @@ void SimplifyGraphic::ClipAndProcessCurveVector(CurveVectorCR geom, bool filled)
             return;
             }
 
-        SimplifyPolyfaceClipper     polyfaceClipper(*GetCurrentClip(), GetLocalToWorldTransform(), builder->GetClientMeshR(), m_facetOptions->GetMaxPerFace() <= 3); 
+        SimplifyPolyfaceClipper     polyfaceClipper(*GetCurrentClip(), GetLocalToWorldTransform(), builder->GetClientMeshR(), m_facetOptions->GetMaxPerFace() <= 3);
 
         for (auto& meshOut : polyfaceClipper.GetOutput())
             m_processor._ProcessPolyface(*meshOut, filled, *this);
-           
+
         return;
         }
 
@@ -770,7 +1266,7 @@ void SimplifyGraphic::ClipAndProcessSolidPrimitive(ISolidPrimitiveCR geom)
             bool clipped;
             bvector<IBRepEntityPtr> clippedBodies;
 
-            if (SUCCESS == BRepUtil::ClipBody(clippedBodies, clipped, *entityPtr, *GetCurrentClip()) && clipped)
+            if (SUCCESS == BRepClipUtil::ClipBody(clippedBodies, clipped, *entityPtr, *GetCurrentClip()) && clipped)
                 {
                 for (IBRepEntityPtr entityOut : clippedBodies)
                     m_processor._ProcessBody(*entityOut, *this);
@@ -797,7 +1293,7 @@ void SimplifyGraphic::ClipAndProcessSolidPrimitive(ISolidPrimitiveCR geom)
             return;
             }
 
-        SimplifyPolyfaceClipper     polyfaceClipper(*GetCurrentClip(), GetLocalToWorldTransform(), builder->GetClientMeshR(), m_facetOptions->GetMaxPerFace() <= 3); 
+        SimplifyPolyfaceClipper     polyfaceClipper(*GetCurrentClip(), GetLocalToWorldTransform(), builder->GetClientMeshR(), m_facetOptions->GetMaxPerFace() <= 3);
 
         for (auto& meshOut : polyfaceClipper.GetOutput())
             m_processor._ProcessPolyface(*meshOut, false, *this);
@@ -879,7 +1375,7 @@ void SimplifyGraphic::ClipAndProcessSurface(MSBsplineSurfaceCR geom)
             bool clipped;
             bvector<IBRepEntityPtr> clippedBodies;
 
-            if (SUCCESS == BRepUtil::ClipBody(clippedBodies, clipped, *entityPtr, *GetCurrentClip()) && clipped)
+            if (SUCCESS == BRepClipUtil::ClipBody(clippedBodies, clipped, *entityPtr, *GetCurrentClip()) && clipped)
                 {
                 for (IBRepEntityPtr entityOut : clippedBodies)
                     m_processor._ProcessBody(*entityOut, *this);
@@ -906,7 +1402,7 @@ void SimplifyGraphic::ClipAndProcessSurface(MSBsplineSurfaceCR geom)
             return;
             }
 
-        SimplifyPolyfaceClipper     polyfaceClipper(*GetCurrentClip(), GetLocalToWorldTransform(), builder->GetClientMeshR(), m_facetOptions->GetMaxPerFace() <= 3); 
+        SimplifyPolyfaceClipper     polyfaceClipper(*GetCurrentClip(), GetLocalToWorldTransform(), builder->GetClientMeshR(), m_facetOptions->GetMaxPerFace() <= 3);
 
         for (auto& meshOut : polyfaceClipper.GetOutput())
             m_processor._ProcessPolyface(*meshOut, false, *this);
@@ -983,7 +1479,7 @@ void SimplifyGraphic::ClipAndProcessPolyface(PolyfaceQueryCR geom, bool filled)
             bool clipped;
             bvector<IBRepEntityPtr> clippedBodies;
 
-            if (SUCCESS == BRepUtil::ClipBody(clippedBodies, clipped, *entityPtr, *GetCurrentClip()) && clipped)
+            if (SUCCESS == BRepClipUtil::ClipBody(clippedBodies, clipped, *entityPtr, *GetCurrentClip()) && clipped)
                 {
                 for (IBRepEntityPtr entityOut : clippedBodies)
                     m_processor._ProcessBody(*entityOut, *this);
@@ -1000,7 +1496,7 @@ void SimplifyGraphic::ClipAndProcessPolyface(PolyfaceQueryCR geom, bool filled)
 
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Facet & unhandled) && doClipping) // Already had a chance at un-clipped Polyface...
         {
-        SimplifyPolyfaceClipper     polyfaceClipper(*GetCurrentClip(), GetLocalToWorldTransform(), geom, m_facetOptions->GetMaxPerFace() <= 3); 
+        SimplifyPolyfaceClipper     polyfaceClipper(*GetCurrentClip(), GetLocalToWorldTransform(), geom, m_facetOptions->GetMaxPerFace() <= 3);
 
         for (auto& meshOut : polyfaceClipper.GetOutput())
             m_processor._ProcessPolyface(*meshOut, false, *this);
@@ -1033,7 +1529,7 @@ void SimplifyGraphic::ClipAndProcessPolyfaceAsCurves(PolyfaceQueryCR geom)
     bool doClipping = (nullptr != GetCurrentClip() && m_processor._DoClipping());
 
     for (size_t readIndex = 0; readIndex < numIndices; readIndex++)
-        {    
+        {
         // found face loop entry
         if (thisIndex = vertIndex[readIndex])
             {
@@ -1048,18 +1544,6 @@ void SimplifyGraphic::ClipAndProcessPolyfaceAsCurves(PolyfaceQueryCR geom)
                 int closeVertexId = (abs(prevIndex) - 1);
                 int segmentVertexId = (abs(thisIndex) - 1);
                 ICurvePrimitivePtr curve = ICurvePrimitive::CreateLine(DSegment3d::From(verts[closeVertexId], verts[segmentVertexId]));
-
-#if defined (NOT_NOW_TOPOLOGYID)
-// No point doing this now as it's not being used...
-//   Also, when we switch to doing locate from depth buffer, PickContext and this code won't be involved so
-//   we'll need to provide another method for getting the CurveTopologyId from an edge (ex. SnapGeometryHelper)...
-                if (m_currGeomEntryId.IsValid())
-                    {
-                    CurvePrimitiveIdPtr newId = CurvePrimitiveId::Create(CurvePrimitiveId::Type::PolyfaceEdge, CurveTopologyId(CurveTopologyId::Type::PolyfaceEdge, closeVertexId, segmentVertexId), m_currGeomEntryId.GetIndex(), m_currGeomEntryId.GetPartIndex());
-                    curve->SetId(newId.get());
-                    }
-#endif
-
                 CurveVectorPtr curvePtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curve);
 
                 if (!doClipping)
@@ -1096,18 +1580,6 @@ void SimplifyGraphic::ClipAndProcessPolyfaceAsCurves(PolyfaceQueryCR geom)
                 int closeVertexId = (abs(prevIndex) - 1);
                 int segmentVertexId = (abs(firstIndex) - 1);
                 ICurvePrimitivePtr curve = ICurvePrimitive::CreateLine(DSegment3d::From(verts[closeVertexId], verts[segmentVertexId]));
-
-#if defined (NOT_NOW_TOPOLOGYID)
-// No point doing this now as it's not being used...
-//   Also, when we switch to doing locate from depth buffer, PickContext and this code won't be involved so
-//   we'll need to provide another method for getting the CurveTopologyId from an edge (ex. SnapGeometryHelper)...
-                if (m_currGeomEntryId.IsValid())
-                    {
-                    CurvePrimitiveIdPtr newId = CurvePrimitiveId::Create(CurvePrimitiveId::Type::PolyfaceEdge, CurveTopologyId(CurveTopologyId::Type::PolyfaceEdge, closeVertexId, segmentVertexId), m_currGeomEntryId.GetIndex(), m_currGeomEntryId.GetPartIndex());
-                    curve->SetId(newId.get());
-                    }
-#endif
-
                 CurveVectorPtr curvePtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curve);
 
                 if (!doClipping)
@@ -1171,7 +1643,7 @@ void SimplifyGraphic::ClipAndProcessBody(IBRepEntityCR geom)
         bool clipped;
         bvector<IBRepEntityPtr> clippedBodies;
 
-        if (SUCCESS == BRepUtil::ClipBody(clippedBodies, clipped, geom, *GetCurrentClip()) && clipped)
+        if (SUCCESS == BRepClipUtil::ClipBody(clippedBodies, clipped, geom, *GetCurrentClip()) && clipped)
             {
             for (IBRepEntityPtr entityOut : clippedBodies)
                 m_processor._ProcessBody(*entityOut, *this);
@@ -1241,7 +1713,7 @@ void SimplifyGraphic::ClipAndProcessBodyAsPolyface(IBRepEntityCR entity)
 
                 GeometryParams faceParams;
 
-                params[i].ToGeometryParams(faceParams, m_currGeometryParams);
+                FaceAttachmentUtil::ToGeometryParams(params[i], faceParams, m_currGeometryParams);
                 m_context.CookGeometryParams(faceParams, *this);
 
                 if (!doClipping)
@@ -1250,7 +1722,7 @@ void SimplifyGraphic::ClipAndProcessBodyAsPolyface(IBRepEntityCR entity)
                     continue;
                     }
 
-                SimplifyPolyfaceClipper     polyfaceClipper(*GetCurrentClip(), GetLocalToWorldTransform(), *polyfaces[i], m_facetOptions->GetMaxPerFace() <= 3); 
+                SimplifyPolyfaceClipper     polyfaceClipper(*GetCurrentClip(), GetLocalToWorldTransform(), *polyfaces[i], m_facetOptions->GetMaxPerFace() <= 3);
 
                 for (auto& meshOut : polyfaceClipper.GetOutput())
                     m_processor._ProcessPolyface(*meshOut, false, *this);
@@ -1272,7 +1744,7 @@ void SimplifyGraphic::ClipAndProcessBodyAsPolyface(IBRepEntityCR entity)
         }
 
 
-    SimplifyPolyfaceClipper     polyfaceClipper(*GetCurrentClip(), GetLocalToWorldTransform(), *meshPtr, m_facetOptions->GetMaxPerFace() <= 3); 
+    SimplifyPolyfaceClipper     polyfaceClipper(*GetCurrentClip(), GetLocalToWorldTransform(), *meshPtr, m_facetOptions->GetMaxPerFace() <= 3);
 
     for (auto& meshOut : polyfaceClipper.GetOutput())
         m_processor._ProcessPolyface(*meshOut, false, *this);
@@ -1303,7 +1775,7 @@ void SimplifyGraphic::ClipAndProcessText(TextStringCR text)
         {
         if (text.GetText().empty())
             return;
-        
+
         DPoint3d points[5];
 
         text.ComputeBoundingShape(points);
@@ -1374,7 +1846,7 @@ void SimplifyGraphic::_AddLineString(int numPoints, DPoint3dCP points)
     m_processor._OnNewGeometry();
 
     CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateLineString(points, numPoints));
-    
+
     ClipAndProcessCurveVector(*curve, false);
     }
 
@@ -1486,7 +1958,7 @@ void SimplifyGraphic::_AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled)
 
     // NOTE: QVis closes arc ends and displays them filled (see outputCapArc for linestyle strokes)...
     CurveVectorPtr curve = CurveVector::Create((isEllipse || filled) ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateArc(ellipse));
-    
+
     if (filled && !isEllipse && !ellipse.IsFullEllipse())
         {
         DSegment3d         segment;
@@ -1687,7 +2159,7 @@ void SimplifyGraphic::_AddDgnOle(DgnOleDraw* ole)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ray.Bentley                     05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::ClipAndProcessTriMesh(TriMeshArgs const& args) 
+void SimplifyGraphic::ClipAndProcessTriMesh(TriMeshArgs const& args)
     {
 #ifdef NOTNOW_MAY_NOT_BE_NEEDED
     bool doClipping = (nullptr != GetCurrentClip() && m_processor._DoClipping());
@@ -1707,7 +2179,7 @@ void SimplifyGraphic::ClipAndProcessTriMesh(TriMeshArgs const& args)
     PolyfaceHeaderPtr           polyface = args.ToPolyface();
 
     if (m_processor._GetUnhandledPreference(args, *this) == IGeometryProcessor::UnhandledPreference::Ignore)
-        return;     
+        return;
 
     if (m_processor._GetUnhandledPreference(args, *this) == IGeometryProcessor::UnhandledPreference::Facet)
         {
@@ -1722,14 +2194,14 @@ void SimplifyGraphic::ClipAndProcessTriMesh(TriMeshArgs const& args)
         {
         m_processor._ProcessTriMesh(args, *this);
         }
-    else 
+    else
         {
         for (PolyfaceHeaderPtr clippedPolyface : clippedPolyfaces)
             {
             if (!clippedPolyface->IsTriangulated())
                 clippedPolyface->Triangulate();
 
-            if ((0 != clippedPolyface->GetParamCount() && clippedPolyface->GetParamCount() != clippedPolyface->GetPointCount()) || 
+            if ((0 != clippedPolyface->GetParamCount() && clippedPolyface->GetParamCount() != clippedPolyface->GetPointCount()) ||
                 (0 != clippedPolyface->GetNormalCount() && clippedPolyface->GetNormalCount() != clippedPolyface->GetPointCount()))
                 clippedPolyface = PolyfaceHeader::CreateUnifiedIndexMesh(*clippedPolyface);
 
@@ -1751,7 +2223,7 @@ void SimplifyGraphic::ClipAndProcessTriMesh(TriMeshArgs const& args)
             // unused - size_t  j = 0;
             PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (*clippedPolyface, true);
             for (visitor->Reset(); visitor->AdvanceToNextFace();)
-                {   
+                {
                 indices.push_back(visitor->GetClientPointIndexCP()[0]);
                 indices.push_back(visitor->GetClientPointIndexCP()[1]);
                 indices.push_back(visitor->GetClientPointIndexCP()[2]);
@@ -1831,7 +2303,7 @@ struct      GeometryMapFacetOptionsMark
 * @bsimethod                                                    Ray.Bentley     03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeometryMapFacetOptionsMark(SimplifyGraphic& drawGeom) : m_drawGeom(drawGeom)
-    { 
+    {
     m_saveParamsRequired = drawGeom.GetFacetOptions()->GetParamsRequired();
     drawGeom.GetFacetOptions()->SetParamsRequired(true);
     }
@@ -1891,7 +2363,7 @@ StatusInt SimplifyGraphic::ProcessGeometryMap(PolyfaceQueryCR facets)
 
     if (useCellColors && colorFromMaterial)
          displayStyle->m_flags.m_hLineMaterialColors = false;         // Else an assigned material may cause material from color to be assigned to geometry map.
-        
+
     AutoRestore <ViewContext::T_DrawMethod>     saveDrawMethod(&m_context->m_callDrawMethod, &ViewContext::DrawElementNormal);
     AutoRestore <bool>                          saveNoRangeTestOnComponents(&m_context->m_noRangeTestOnComponents, true);
     AutoRestore <bool>                          saveProcessingGeometryMap(&m_processingMaterialGeometryMap, true);
@@ -1907,10 +2379,10 @@ StatusInt SimplifyGraphic::ProcessGeometryMap(PolyfaceQueryCR facets)
 
     projectionInfo.CalculateForElement(GetCurrentElement(), SUCCESS == GetElementToRootTransform(elementToRoot) ? &elementToRoot : NULL, *material, geometryMap);
 
-    // The parameter area is equivalent to the tile count.... 
+    // The parameter area is equivalent to the tile count....
     double          paramArea = calculateFacetParamArea(projectionInfo, SUCCESS == GetLocalToElementTransform(localToElement) ? &localToElement : NULL, facets, *material, layer);
     static double   s_minTileCount = (.01 * .01), s_maxTileCount = (1000.0 * 1000.0);
-    
+
     if (paramArea < s_minTileCount || paramArea > s_maxTileCount)
         {
         //BeAssert (false);
@@ -2050,7 +2522,7 @@ static StatusInt calculateParamToWorld(TransformR transform, DPoint2dCP params, 
     DRange3d        pointRange;
 
     pointRange.InitFrom(points, (int) nPoints);
-    
+
     for (size_t i=0; i<nPoints; i++)
         {
         DPoint3d            point;
@@ -2073,7 +2545,7 @@ static StatusInt calculateParamToWorld(TransformR transform, DPoint2dCP params, 
         rhSides[2][1] += point.z * params[i].y;
         rhSides[2][2] += point.z;
 
-        }                                                                                                                                                                   
+        }
     aMatrix[1][0] = aMatrix[0][1];
     aMatrix[2][0] = aMatrix[0][2];
     aMatrix[2][1] = aMatrix[1][2];
@@ -2129,7 +2601,7 @@ struct FacetOutlineMeshGatherer : PolyfaceQuery::IClipToPlaneSetOutput
 {
     IPolyfaceConstructionR  m_builder;
     TransformCR             m_transform;
-        
+
     FacetOutlineMeshGatherer(IPolyfaceConstructionR builder, TransformCR transform) : m_builder(builder), m_transform(transform) { }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2159,7 +2631,7 @@ StatusInt _ProcessClippedPolyface(PolyfaceHeaderR polyfaceHeader) override
 
 }; // FacetOutlineMeshGatherer
 
-static double   s_facetTileAreaMinimum   = (.01 * .01);      // Minimum portion of tile within a single 
+static double   s_facetTileAreaMinimum   = (.01 * .01);      // Minimum portion of tile within a single
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2010
@@ -2214,7 +2686,7 @@ StatusInt SimplifyGraphic::ProcessFacetTextureOutlines(IPolyfaceConstructionR bu
     planeSets.push_back(clipPlaneSet);
     for (int i = (int) tileRange.low.x; i < (int) tileRange.high.x; i++)
         {
-        for (int j = (int) tileRange.low.y; j < (int) tileRange.high.y; j++)  
+        for (int j = (int) tileRange.low.y; j < (int) tileRange.high.y; j++)
             {
             for (size_t iPoint = 0; iPoint < outlinePoints.size(); iPoint++)
                 tileOutline[iPoint].Init((double) i + outlinePoints[iPoint].x, (double) j + outlinePoints[iPoint].y, 0.0);
@@ -2255,7 +2727,7 @@ StatusInt SimplifyGraphic::ProcessTextureOutlines(PolyfaceQueryCR facets)
 
     if (pointMagnitude > s_maxPointMagnitude)
         return ERROR;
-    
+
     PolyfaceHeaderPtr   triangulatedFacets = PolyfaceHeader::New();
     bvector<int32_t>    triangulatedOutlineIndices;
     StatusInt           status;
@@ -2279,7 +2751,7 @@ StatusInt SimplifyGraphic::ProcessTextureOutlines(PolyfaceQueryCR facets)
 
     if (builder->GetClientMeshR().HasFacets())
         _ProcessFacetSet(builder->GetClientMeshR(), false);
-        
+
     return SUCCESS;
     }
 
@@ -2351,7 +2823,7 @@ void GeometryProcessor::Process(IGeometryProcessorR processor, GeometrySourceCR 
 
     context.SetDgnDb(source.GetSourceDgnDb());
     context.VisitGeometry(source);
-    }    
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17

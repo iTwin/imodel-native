@@ -44,9 +44,6 @@ AnnotationsApi                  = $(DgnPlatformAPISrc)Annotations/
 
 BaseGeoCoordAPISrc              = $(BuildContext)PublicAPI/GeoCoord/
 
-DgnBRepSrc                      = $(SrcDgnPlatform)DgnBRep/
-DgnBRepApi                      = $(DgnPlatformAPISrc)DgnBRep/
-
 #-----------------------------------------------------------
 # BuildContext
 #-----------------------------------------------------------
@@ -359,41 +356,6 @@ $(o)RenderMaterial$(oext) :                         $(DgnCoreDir)RenderMaterial.
 
 $(o)SmartIBL$(oext) :                               $(DgnCoreDir)SmartIBL.cpp ${MultiCompileDepends}
 
-
-#----------------------------------------------------------------------
-#   DgnBRep
-#----------------------------------------------------------------------
-
-$(CoreObjs)SolidKernelUtil$(oext) :                 $(DgnBRepSrc)SolidKernelUtil.cpp $(DgnPlatformAPISrc)SolidKernel.h ${MultiCompileDepends}
-
-%if defined (BENTLEYCONFIG_PARASOLID)
-
-$(CoreObjs)PSolidKernelManager$(oext) :             $(DgnBRepSrc)PSolidKernelManager.cpp $(DgnPlatformAPISrc)SolidKernel.h ${MultiCompileDepends}
-
-$(CoreObjs)PSolidKernelEntity$(oext) :              $(DgnBRepSrc)PSolidKernelEntity.cpp $(DgnPlatformAPISrc)SolidKernel.h $(DgnBRepApi)PSolidUtil.h ${MultiCompileDepends}
-
-$(CoreObjs)PSolidAttrib$(oext) :                    $(DgnBRepSrc)PSolidAttrib.cpp $(DgnPlatformAPISrc)SolidKernel.h $(DgnBRepApi)PSolidUtil.h ${MultiCompileDepends}
-
-$(CoreObjs)PSolidBSpline$(oext) :                   $(DgnBRepSrc)PSolidBSpline.cpp $(DgnPlatformAPISrc)SolidKernel.h $(DgnBRepApi)PSolidUtil.h ${MultiCompileDepends}
-
-$(CoreObjs)PSolidCreate$(oext) :                    $(DgnBRepSrc)PSolidCreate.cpp $(DgnPlatformAPISrc)SolidKernel.h $(DgnBRepApi)PSolidUtil.h ${MultiCompileDepends}
-
-$(CoreObjs)PSolidFacet$(oext) :                     $(DgnBRepSrc)PSolidFacet.cpp $(DgnPlatformAPISrc)SolidKernel.h $(DgnBRepApi)PSolidUtil.h ${MultiCompileDepends}
-
-$(CoreObjs)PSolidModify$(oext) :                    $(DgnBRepSrc)PSolidModify.cpp $(DgnPlatformAPISrc)SolidKernel.h $(DgnBRepApi)PSolidUtil.h ${MultiCompileDepends}
-
-$(CoreObjs)PSolidPolyface$(oext) :                  $(DgnBRepSrc)PSolidPolyface.cpp $(DgnPlatformAPISrc)SolidKernel.h $(DgnBRepApi)PSolidUtil.h ${MultiCompileDepends}
-
-$(CoreObjs)PSolidThreadUtil$(oext) :                $(DgnBRepSrc)PSolidThreadUtil.cpp $(DgnPlatformAPISrc)SolidKernel.h $(DgnBRepApi)PSolidUtil.h ${MultiCompileDepends}
-
-$(CoreObjs)PSolidTopo$(oext) :                      $(DgnBRepSrc)PSolidTopo.cpp $(DgnPlatformAPISrc)SolidKernel.h $(DgnBRepApi)PSolidUtil.h ${MultiCompileDepends}
-
-$(CoreObjs)PSolidTopoId$(oext) :                    $(DgnBRepSrc)PSolidTopoId.cpp $(DgnPlatformAPISrc)SolidKernel.h $(DgnBRepApi)PSolidUtil.h ${MultiCompileDepends}
-
-$(CoreObjs)PSolidUtil$(oext) :                      $(DgnBRepSrc)PSolidUtil.cpp $(DgnPlatformAPISrc)SolidKernel.h $(DgnBRepApi)PSolidUtil.h ${MultiCompileDepends}
-
-%endif
-
 #----------------------------------------------------------------------
 #   DgnGeoCoord
 #----------------------------------------------------------------------
@@ -584,6 +546,7 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext
                             $(ContextSubpartsLibs)$(BentleyGeomLib) \
                             $(ContextSubpartsLibs)$(libprefix)BentleyGeomSerialization$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)BaseGeoCoord$(libext)\
+                            $(ContextSubpartsLibs)$(libprefix)BRepCore$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)BeXml$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)freetype2$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)BeIcu4c$(libext) \

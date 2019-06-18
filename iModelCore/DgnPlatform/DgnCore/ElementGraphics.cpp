@@ -5,8 +5,8 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/VecMath.h>
-#if defined (BENTLEYCONFIG_PARASOLID) 
-#include <DgnPlatform/DgnBRep/PSolidUtil.h>
+#if defined (BENTLEYCONFIG_PARASOLID)
+#include <BRepCore/PSolidUtil.h>
 #endif
 
 /*---------------------------------------------------------------------------------**//**
@@ -338,58 +338,6 @@ bool WireframeGeomUtil::CollectLateralEdges(DgnRuledSweepDetailCR detail, bvecto
     return false;
     }
 
-#if defined (NOT_NOW_TOPOLOGYID)
-// No point doing this now as it's not being used...
-//   Also, when we switch to doing locate from depth buffer, PickContext and this code won't be involved so
-//   we'll need to provide another method for getting the CurveTopologyId from an edge (ex. SnapGeometryHelper)...
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  03/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void clearCurveVectorIds(CurveVectorCR curveVector)
-    {
-    for (ICurvePrimitivePtr curve: curveVector)
-        {
-        curve->SetId(NULL);
-
-        if (curve->GetChildCurveVectorP ().IsValid())
-            clearCurveVectorIds(*curve->GetChildCurveVectorP ());
-        }
-    }
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Ray.Bentley     10/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void drawSolidPrimitiveCurveVector(Render::GraphicBuilderR graphic, CurveVectorCR curveVector, CurveTopologyIdCR topologyId, GeometryStreamEntryIdCP entryId)
-    {
-    if (nullptr == entryId || !entryId->IsValid())
-        {
-        WireframeGeomUtil::DrawOutline(curveVector, graphic); // Always output as open profile...
-        return;
-        }
-
-    clearCurveVectorIds(curveVector);
-    CurveTopologyId::AddCurveVectorIds(curveVector, CurvePrimitiveId::Type::SolidPrimitive, topologyId, entryId->GetIndex(), entryId->GetPartIndex());
-    WireframeGeomUtil::DrawOutline(curveVector, graphic); // Always output as open profile...
-    clearCurveVectorIds(curveVector); // Best not to leave our curve ids on the curve primitives...
-    }
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Ray.Bentley     10/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void drawSolidPrimitiveCurve(Render::GraphicBuilderR graphic, ICurvePrimitivePtr primitive, CurveTopologyIdCR topologyId, GeometryStreamEntryIdCP entryId)
-    {
-    if (nullptr == entryId || !entryId->IsValid())
-        {
-        graphic.AddCurveVectorR(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, primitive), false);
-        return;
-        }
-
-    CurvePrimitiveIdPtr newId = CurvePrimitiveId::Create(CurvePrimitiveId::Type::SolidPrimitive, topologyId, entryId->GetIndex(), entryId->GetPartIndex());
-    primitive->SetId(newId.get());
-
-    graphic.AddCurveVectorR(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, primitive), false);
-    }
-#else
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Ray.Bentley     10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -405,17 +353,12 @@ static void drawSolidPrimitiveCurve(Render::GraphicBuilderR graphic, ICurvePrimi
     {
     graphic.AddCurveVectorR(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, primitive), false);
     }
-#endif
 
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WireframeGeomUtil::Draw(ISolidPrimitiveCR primitive, Render::GraphicBuilderR graphic, CheckStop* stopTester)
     {
-#if defined (NOT_NOW_TOPOLOGYID)
-    GeometryStreamEntryIdCP entryId = graphic.GetGeometryStreamEntryId();
-#endif
-
     switch (primitive.GetSolidPrimitiveType())
         {
         case SolidPrimitiveType_DgnTorusPipe:
@@ -451,7 +394,7 @@ void WireframeGeomUtil::Draw(ISolidPrimitiveCR primitive, Render::GraphicBuilder
             if (detail.m_radiusB > 0.0)
                 {
                 DEllipse3d ellipse;
-    
+
                 ellipse.InitFromDGNFields3d(detail.m_centerB, detail.m_vector0, detail.m_vector90, detail.m_radiusB, detail.m_radiusB, 0.0, msGeomConst_2pi);
                 drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateArc(ellipse));//, CurveTopologyId::FromSweepProfile(1), entryId);
                 }
@@ -595,7 +538,7 @@ void WireframeGeomUtil::Draw(ISolidPrimitiveCR primitive, Render::GraphicBuilder
         case SolidPrimitiveType_DgnRuledSweep:
             {
             DgnRuledSweepDetail detail;
-    
+
             if (!primitive.TryGetDgnRuledSweepDetail(detail))
                 return;
 
@@ -668,9 +611,6 @@ void WireframeGeomUtil::Draw(IBRepEntityCR entity, Render::GraphicBuilderR graph
     if (SUCCESS != PSolidTopo::GetBodyEdges(edgeTags, entityTag))
         return;
 
-#if defined (NOT_NOW_TOPOLOGYID)
-    GeometryStreamEntryIdCP entryId = graphic.GetGeometryStreamEntryId();
-#endif
     IFaceMaterialAttachmentsCP attachments = entity.GetFaceMaterialAttachments();
 
     for (PK_EDGE_t edgeTag : edgeTags)
@@ -698,28 +638,25 @@ void WireframeGeomUtil::Draw(IBRepEntityCR entity, Render::GraphicBuilderR graph
             if (SUCCESS != PSolidAttrib::GetFaceMaterialIndexAttribute(attachmentIndex, faceTag) || attachmentIndex < 0 || attachmentIndex >= faceAttachmentsVec.size())
                 attachmentIndex = 0; // If face attrib not present, use base symbology...
 
-            FaceAttachment faceAttachment = faceAttachmentsVec.at((size_t) attachmentIndex); 
-            Render::GraphicParamsCP graphicParams = faceAttachment.GetGraphicParams();
+            FaceAttachment faceAttachment = faceAttachmentsVec.at((size_t) attachmentIndex);
 
-            if (nullptr != graphicParams)
-                graphic.ActivateGraphicParams(*graphicParams, nullptr); // Activate the pre-resolved face symbology...
-            }
-
-#if defined (NOT_NOW_TOPOLOGYID)
-// No point doing this now as it's not being used...
-//   Also, when we switch to doing locate from depth buffer, PickContext and this code won't be involved so
-//   we'll need to provide another method for getting the CurveTopologyId from an edge (ex. SnapGeometryHelper)...
-        if (nullptr != entryId && entryId->IsValid())
-            {
-            CurveTopologyId curveTopologyId;
-
-            if (SUCCESS == PSolidTopoId::CurveTopologyIdFromEdge(curveTopologyId, edgeTag, true))
+            if (faceAttachment.GetUseColor())
                 {
-                CurvePrimitiveIdPtr newId = CurvePrimitiveId::Create(CurvePrimitiveId::Type::ParasolidBody, curveTopologyId);
-                curve->SetId(newId.get());
+                ColorDef color(faceAttachment.GetColor());
+
+                if (0.0 != faceAttachment.GetTransparency())
+                    {
+                    Byte transparency = (Byte) (faceAttachment.GetTransparency() * 255.0);
+
+                    if (transparency > 250)
+                        transparency = 250; // Don't allow complete transparency.
+
+                    color.SetAlpha(transparency);
+                    }
+
+                graphic.ActivateGraphicParams(GraphicParams::FromSymbology(color, color, 1), nullptr); // Current weight?
                 }
             }
-#endif
 
         curve->TransformInPlace(entity.GetEntityTransform());
         graphic.AddCurveVectorR(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curve), false);
@@ -1031,7 +968,7 @@ static void computeInterpolationCurveTangentPoints(DPoint3dR startTangentPt, DPo
     startTangentPt.SumOf(curve.fitPoints[0], curve.startTangent, curve.fitPoints[0].Distance(curve.fitPoints[1]) * 0.5);
     endTangentPt.SumOf(curve.fitPoints[curve.params.numPoints-1], curve.endTangent, curve.fitPoints[curve.params.numPoints-1].Distance(curve.fitPoints[curve.params.numPoints-2]) * 0.5);
     }
-    
+
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1128,7 +1065,7 @@ void WireframeGeomUtil::DrawControlPolygon(ICurvePrimitiveCR curve, Render::Grap
     graphic.ActivateGraphicParams(poleParams, nullptr);
 
     graphic.AddPointString((int) poles.size(), &poles.front());
-    
+
     poleParams.SetWidth(1);
     poleParams.SetLinePixels(LinePixels::Code2);
     graphic.ActivateGraphicParams(poleParams, nullptr);
@@ -1175,7 +1112,7 @@ struct ChainTangentInfo
 static void GetChainTangents(ChainTangentInfo* startInfo, ChainTangentInfo* endInfo, ICurvePrimitiveCR curvePrimitive)
     {
     bool        isPoint = (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line == curvePrimitive.GetCurvePrimitiveType() && 0.0 == curvePrimitive.GetLineCP()->Length());
-    DVec3d      tangents[2]; 
+    DVec3d      tangents[2];
     DPoint3d    points[2];
 
     if (isPoint || !curvePrimitive.GetStartEnd(points[0], points[1], tangents[0], tangents[1]))
@@ -1414,7 +1351,7 @@ void ViewContext::_DrawStyledCurveVector(Render::GraphicBuilderR graphic, CurveV
             else if (0 != (fillParams.GetGradient()->GetFlags() & GradientSymb::Flags::Outline))
                 {
                 GradientSymbPtr gradient = GradientSymb::Create();
-                
+
                 gradient->CopyFrom(*fillParams.GetGradient());
                 gradient->SetFlags((GradientSymb::Flags) (((Byte) gradient->GetFlags()) & ~GradientSymb::Flags::Outline));
 

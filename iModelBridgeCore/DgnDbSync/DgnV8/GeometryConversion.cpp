@@ -15,7 +15,7 @@ DGNV8_BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 struct SolidUtil
-{                                                      
+{
 static BentleyStatus DisjoinBody (bvector<ISolidKernelEntityPtr>& out, ISolidKernelEntityCR in);
 };
 
@@ -33,8 +33,8 @@ static size_t DebugMemoryUsage(ISolidKernelEntityCR in);
 }; // PSolidUtil
 DGNV8_END_BENTLEY_DGNPLATFORM_NAMESPACE
 
-#if defined (BENTLEYCONFIG_PARASOLID) 
-#include <DgnPlatform/DgnBRep/PSolidUtil.h>
+#if defined (BENTLEYCONFIG_PARASOLID)
+#include <BRepCore/PSolidUtil.h>
 #endif
 
 BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
@@ -446,7 +446,7 @@ void Converter::ConvertTextString(TextStringPtr& clone, Bentley::TextStringCR v8
         scaledSize.Scale(0.3);
         dbText.GetStyleR().SetSize(scaledSize);
         }
-    
+
     // Because DgnV8 has unsupported underline (and overline) styles, never tell this hacked DB
     // TextString to draw an underline even if it's present, and draw it manually ourselves.
 
@@ -498,7 +498,7 @@ void Converter::ConvertTextString(TextStringPtr& clone, Bentley::TextStringCR v8
             {
             useDerivedGlyphIndices = true;
             derivedGlyphIndices = ((DgnTrueTypeFontCR)resolvedDbFont).ComputeGlyphIndices(dbText.GetText().c_str(), dbText.GetStyle().IsBold(), dbText.GetStyle().IsItalic());
-            
+
             // I can't image how this would differ, but I'd rather be defensive since we'll use
             // v8Text.GetNumGlyphs as loop control below.
             BeAssert(derivedGlyphIndices.size() == v8Text.GetNumGlyphs());
@@ -547,7 +547,7 @@ void Converter::InitLineStyle(Render::GeometryParams& params, DgnModelRefR style
     DgnFileP styleFile = styleModelRef.GetDgnFileP();
     if (nullptr == styleFile)
         {
-        ReportIssueV(Converter::IssueSeverity::Warning, Converter::IssueCategory::MissingData(), Converter::Issue::MissingLsDefinitionFile(), NULL, 
+        ReportIssueV(Converter::IssueSeverity::Warning, Converter::IssueCategory::MissingData(), Converter::Issue::MissingLsDefinitionFile(), NULL,
                      IssueReporter::FmtModelRef(styleModelRef).c_str());
         return;
         }
@@ -667,7 +667,7 @@ void Converter::InitGeometryParams(Render::GeometryParams& params, DgnV8Api::Ele
             InitLineStyle(params, *styleModelRef, ovr->GetLineStyle(), ovr->GetLineStyleParams());
             }
         }
-    else if (paramsV8.GetLineStyle() != 0 && nullptr != (styleModelRef = (nullptr == paramsV8.GetLineStyleModelRef()) ? context.GetCurrentModel() : paramsV8.GetLineStyleModelRef())) 
+    else if (paramsV8.GetLineStyle() != 0 && nullptr != (styleModelRef = (nullptr == paramsV8.GetLineStyleModelRef()) ? context.GetCurrentModel() : paramsV8.GetLineStyleModelRef()))
         {
         DgnV8Api::LineStyleParams const* lsParamsV8 = paramsV8.GetLineStyleParams();
 
@@ -1218,7 +1218,7 @@ DgnV8PathEntry(TransformCR currentTransform, TransformCR conversionScale, bool i
             {
             double    goopScale;
             RotMatrix deScaledMatrix;
-                    
+
             m_goopTrans = Transform::From(skewFactor);
             m_partScale = 0.0;
 
@@ -1838,7 +1838,7 @@ static GeometricPrimitivePtr GetPart(DgnGeometryPartId partId, DgnDbR db)
 
     return found->second;
     }
-                                                
+
 }; // PostInstancePartCacheAppData
 
 /*=================================================================================**//**
@@ -1904,7 +1904,7 @@ virtual Bentley::BentleyStatus _ProcessCurveVector(Bentley::CurveVectorCR curves
     m_converter.InitGeometryParams(pathEntry.m_geomParams, m_currentDisplayParams, *m_context, m_model.Is3d(), m_v8mt.GetV8Model());
 
     // NOTE: Need to apply pushed transforms (ex. shared cell scale) to linestyle params...
-    //       GeometryBuilder will ignore the linestyle for other types of GeometricPrimitive so it's ok 
+    //       GeometryBuilder will ignore the linestyle for other types of GeometricPrimitive so it's ok
     //       that we only account for scale here in _ProcessCurveVector.
     if (pathEntry.m_geomParams.IsTransformable())
         {
@@ -1918,7 +1918,7 @@ virtual Bentley::BentleyStatus _ProcessCurveVector(Bentley::CurveVectorCR curves
 
     // NOTE: Unfortunately PatternParams isn't part of ElemDisplayParams in V8, so we can only check any
     //       element that output a region curve vector to see if it supports IAreaFillPropertiesQuery.
-    //       There's no way to get at a PatternParams buried in an XGraphicsContainer either...but then 
+    //       There's no way to get at a PatternParams buried in an XGraphicsContainer either...but then
     //       MicroStation's pattern tools (ex. show pattern) don't work with these either...
     if (curves.IsAnyRegionType())
         {
@@ -2012,7 +2012,7 @@ virtual Bentley::BentleyStatus _ProcessFacets(Bentley::PolyfaceQueryCR meshData,
 
 #ifdef TEST_AUXDATA
     getTestAuxData(meshData);
-#endif   
+#endif
 
     m_converter.InitGeometryParams(pathEntry.m_geomParams, m_currentDisplayParams, *m_context, m_model.Is3d(), m_v8mt.GetV8Model());
 
@@ -2046,9 +2046,9 @@ virtual Bentley::BentleyStatus _ProcessFacets(Bentley::PolyfaceQueryCR meshData,
 
                     if (ovr)
                         DgnV8Api::DgnColorMap::ExtractElementColorInfo(&mappedColor, nullptr, nullptr, nullptr, nullptr, ovr->GetColor(), dgnFile);
-                    }                                                                                    
+                    }
                 else if (DgnV8Api::COLOR_BYLEVEL == tableColors[iColor])
-                    {                                                                                      
+                    {
                     DgnV8Api::LevelHandle level = m_context->GetCurrentModel()->GetLevelCacheR().GetLevel(m_context->GetCurrentDisplayParams()->GetLevel());
 
                     if (level.IsValid())
@@ -2121,7 +2121,15 @@ void ProcessSingleBody(Bentley::ISolidKernelEntityCR entity, Bentley::IFaceMater
 
     if (nullptr != attachments && !attachments->_GetFaceToSubElemIdMap().empty() && !attachments->_GetFaceAttachmentsMap().empty())
         {
-        pathEntry.m_attachments = DgnDbApi::PSolidUtil::CreateNewFaceAttachments(DgnV8Api::PSolidUtil::GetEntityTag(*pathEntry.m_brep), pathEntry.m_geomParams);
+        FaceAttachment attachment;
+
+        if (!pathEntry.m_geomParams.IsLineColorFromSubCategoryAppearance())
+            attachment.SetColor(pathEntry.m_geomParams.GetLineColor().GetValue(), pathEntry.m_geomParams.GetTransparency());
+
+        if (!pathEntry.m_geomParams.IsMaterialFromSubCategoryAppearance())
+            attachment.SetMaterial(pathEntry.m_geomParams.GetMaterialId().GetValueUnchecked());
+
+        pathEntry.m_attachments = DgnDbApi::PSolidUtil::CreateNewFaceAttachments(DgnV8Api::PSolidUtil::GetEntityTag(*pathEntry.m_brep), attachment);
 
         if (!pathEntry.m_attachments.IsValid())
             {
@@ -2169,12 +2177,18 @@ void ProcessSingleBody(Bentley::ISolidKernelEntityCR entity, Bentley::IFaceMater
             foundFaceV8->second.ToElemDisplayParams(faceParamsV8);
             m_converter.InitGeometryParams(faceParamsDb, faceParamsV8, *m_context, m_model.Is3d(), m_v8mt.GetV8Model());
 
+            if (!faceParamsDb.IsLineColorFromSubCategoryAppearance())
+                attachment.SetColor(faceParamsDb.GetLineColor().GetValue(), faceParamsDb.GetTransparency());
+
+            if (!faceParamsDb.IsMaterialFromSubCategoryAppearance())
+                attachment.SetMaterial(faceParamsDb.GetMaterialId().GetValueUnchecked());
+
             size_t attachmentIndex = 0;
-            DgnDbApi::T_FaceAttachmentsVec::const_iterator foundAttachmentDb = std::find(faceAttachmentsVecDb.begin(), faceAttachmentsVecDb.end(), faceParamsDb);
+            DgnDbApi::T_FaceAttachmentsVec::const_iterator foundAttachmentDb = std::find(faceAttachmentsVecDb.begin(), faceAttachmentsVecDb.end(), attachment);
 
             if (foundAttachmentDb == faceAttachmentsVecDb.end())
                 {
-                const_cast<DgnDbApi::T_FaceAttachmentsVec&>(faceAttachmentsVecDb).push_back(faceParamsDb);
+                const_cast<DgnDbApi::T_FaceAttachmentsVec&>(faceAttachmentsVecDb).push_back(attachment);
                 attachmentIndex = faceAttachmentsVecDb.size()-1;
                 }
             else
@@ -2328,7 +2342,7 @@ bool GetBasisTransform(TransformR basisTransform, double& v8SymbolScale, Bentley
         if (DgnV8Api::EXTENDED_ELM == v8eh.GetElementType() && DgnV8Api::XGraphicsContainer::IsPresent(v8eh))
             {
             // Using the XGraphics symbol transform will handle both XGraphic symbols and SmartFeatures.
-            if (SUCCESS != DgnV8Api::XGraphicsContainer::ExtractTransform(localToGeom, v8eh)) 
+            if (SUCCESS != DgnV8Api::XGraphicsContainer::ExtractTransform(localToGeom, v8eh))
                 return false;
 
             Bentley::DVec3d      scaleVec;
@@ -2369,7 +2383,7 @@ bool GetBasisTransform(TransformR basisTransform, double& v8SymbolScale, Bentley
                 {
                 double minScale = DoubleOps::Min(cellScale.x, cellScale.y, cellScale.z);
                 double maxScale = DoubleOps::Max(cellScale.x, cellScale.y, cellScale.z);
-                
+
                 if (DoubleOps::AlmostEqual(minScale, maxScale, 1.0e-5))
                     v8SymbolScale = minScale;
                 }
@@ -2611,7 +2625,7 @@ void CreatePartReferences(bvector<DgnV8PartReference>& geomParts, TransformCR ba
 
         if (nullptr == instanceElRef)
             {
-            BeAssert(geomParts.empty()); // If one entry is from a V8 instance, then all entries should be... 
+            BeAssert(geomParts.empty()); // If one entry is from a V8 instance, then all entries should be...
             geomParts.clear();
             return;
             }
@@ -2625,7 +2639,7 @@ void CreatePartReferences(bvector<DgnV8PartReference>& geomParts, TransformCR ba
         DgnFileP dgnFile = pathGeom.m_path->GetRoot()->GetDgnFileP();
 
         for (DgnV8PathEntry& pathEntry : pathGeom.m_entries)
-            {            
+            {
             sequenceNo++; // Always increment, even if geometry conversion fails...
 
             if (0 == (++iEntry % 10))
@@ -2664,7 +2678,7 @@ void CreatePartReferences(bvector<DgnV8PartReference>& geomParts, TransformCR ba
 
             if (!partId.IsValid())
                 {
-                BeAssert(false); // Why couldn't part be created??? 
+                BeAssert(false); // Why couldn't part be created???
                 continue;
                 }
 
@@ -2816,7 +2830,7 @@ void ApplySharedCellInstanceOverrides(DgnV8EhCR v8eh, Render::GeometryParamsR ge
     {
     if (DgnV8Api::SHARED_CELL_ELM != v8eh.GetElementType())
         return;
-    
+
     DgnV8Api::SCOverride scOvr = v8eh.GetElementCP()->sharedCell.m_override;
 
     if (0 == *((UInt16*) (&scOvr)))
@@ -3035,7 +3049,7 @@ bool AppendAsSubGraphics(DgnV8PathGeom& currPathGeom, DgnV8PathEntry& currPathEn
 
             if (++entryCount < 25)
                 continue;
-                
+
             return true;
             }
 
@@ -3150,10 +3164,10 @@ void ProcessElement(DgnClassId elementClassId, bool hasV8PrimaryECInstance, DgnC
 
     if (!geomParts.empty())
         {
-        // NOTE: Level from shared cell instance that does not have a level override is 
-        //       meaningless except for components that use DgnV8Api::LEVEL_BYCELL. 
+        // NOTE: Level from shared cell instance that does not have a level override is
+        //       meaningless except for components that use DgnV8Api::LEVEL_BYCELL.
         //       Getting a valid level to pass to ProcessElement would be expensive, so detect
-        //       this situation and choose the category from the first part as necessary. 
+        //       this situation and choose the category from the first part as necessary.
         //       This avoids creating un-necessary assemblies/parent element w/o Geometry...
         //       Purposely doesn't check if target is "GetUncategorizedCategory" as instance level
         //       doesn't have to be 0 (ex. relative level nonsense, etc.)
@@ -3195,7 +3209,7 @@ void ProcessElement(DgnClassId elementClassId, bool hasV8PrimaryECInstance, DgnC
             builder->Append(geomParams);
             builder->Append(partRef.m_partId, geomToLocal, partRef.m_localRange);
             }
-            
+
         // NOTE: Don't need an extra call to BuildNewElement with invalid builder to ensure we have a parent because of targetCategoryValid check...
         BuildNewElement(builder, elementClassId, targetCategoryValid ? targetCategoryId : lastCategoryId, elementCode, v8eh);
         return;
@@ -3258,7 +3272,7 @@ void ProcessElement(DgnClassId elementClassId, bool hasV8PrimaryECInstance, DgnC
 
                     localToWorld = Transform::FromProduct(pathEntry.m_geomToWorld, localToGeom);
                     }
-            
+
                 firstGeomToWorld = pathEntry.m_geomToWorld;
                 firstLocalToGeom = localToGeom;
 
@@ -3326,7 +3340,7 @@ void ProcessElement(DgnClassId elementClassId, bool hasV8PrimaryECInstance, DgnC
 * @bsimethod                                                    BrienBastings   12/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 V8GraphicsCollector(ElementConversionResults& results, Converter& converter, ResolvedModelMapping const& v8mm) :
-                    m_results(results), m_converter(converter), m_model(v8mm.GetDgnModel()), m_v8mt(v8mm), 
+                    m_results(results), m_converter(converter), m_model(v8mm.GetDgnModel()), m_v8mt(v8mm),
                     m_context(nullptr), m_conversionScale(DoInterop(v8mm.GetTransform())), m_inBRepConvertFaces(false) {}
 
 }; // V8GraphicsCollector
@@ -3334,7 +3348,7 @@ V8GraphicsCollector(ElementConversionResults& results, Converter& converter, Res
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   12/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Converter::_CreateElementAndGeom(ElementConversionResults& results, ResolvedModelMapping const& v8mm, DgnClassId elementClassId, 
+BentleyStatus Converter::_CreateElementAndGeom(ElementConversionResults& results, ResolvedModelMapping const& v8mm, DgnClassId elementClassId,
                                                bool hasV8PrimaryECInstance, DgnCategoryId targetCategoryId, DgnCode elementCode, DgnV8EhCR v8eh)
     {
     V8GraphicsCollector collector(results, *this, v8mm);
@@ -3357,7 +3371,7 @@ BentleyApi::CurveVectorPtr Converter::ConvertV8Curve(Bentley::CurveVectorCR v8Cu
 
 //--------------------------------------------------------------------------------------
 //! The following code is a clone of the method used in the Converter class. These
-//! were cloned to support the LightWeightConverter which deals only with graphics 
+//! were cloned to support the LightWeightConverter which deals only with graphics
 //! convertion. The EC and SyncInfo is handled at the application level.
 //!
 // @bsimethod                                                    Vern.Francisco   12/17
@@ -3826,7 +3840,7 @@ struct V8GraphicsLightWeightCollector : DgnV8Api::IElementGraphicsProcessor
             m_converter.InitGeometryParams(pathEntry.m_geomParams, m_currentDisplayParams, *m_context, m_model.Is3d());
 
             // NOTE: Need to apply pushed transforms (ex. shared cell scale) to linestyle params...
-            //       GeometryBuilder will ignore the linestyle for other types of GeometricPrimitive so it's ok 
+            //       GeometryBuilder will ignore the linestyle for other types of GeometricPrimitive so it's ok
             //       that we only account for scale here in _ProcessCurveVector.
             if (pathEntry.m_geomParams.IsTransformable())
                 {
@@ -3840,7 +3854,7 @@ struct V8GraphicsLightWeightCollector : DgnV8Api::IElementGraphicsProcessor
 
             // NOTE: Unfortunately PatternParams isn't part of ElemDisplayParams in V8, so we can only check any
             //       element that output a region curve vector to see if it supports IAreaFillPropertiesQuery.
-            //       There's no way to get at a PatternParams buried in an XGraphicsContainer either...but then 
+            //       There's no way to get at a PatternParams buried in an XGraphicsContainer either...but then
             //       MicroStation's pattern tools (ex. show pattern) don't work with these either...
             if (curves.IsAnyRegionType())
                 {
@@ -4043,7 +4057,15 @@ struct V8GraphicsLightWeightCollector : DgnV8Api::IElementGraphicsProcessor
 
             if (nullptr != attachments && !attachments->_GetFaceToSubElemIdMap().empty() && !attachments->_GetFaceAttachmentsMap().empty())
                 {
-                pathEntry.m_attachments = DgnDbApi::PSolidUtil::CreateNewFaceAttachments(DgnV8Api::PSolidUtil::GetEntityTag(*pathEntry.m_brep), pathEntry.m_geomParams);
+                FaceAttachment attachment;
+
+                if (!pathEntry.m_geomParams.IsLineColorFromSubCategoryAppearance())
+                    attachment.SetColor(pathEntry.m_geomParams.GetLineColor().GetValue(), pathEntry.m_geomParams.GetTransparency());
+
+                if (!pathEntry.m_geomParams.IsMaterialFromSubCategoryAppearance())
+                    attachment.SetMaterial(pathEntry.m_geomParams.GetMaterialId().GetValueUnchecked());
+
+                pathEntry.m_attachments = DgnDbApi::PSolidUtil::CreateNewFaceAttachments(DgnV8Api::PSolidUtil::GetEntityTag(*pathEntry.m_brep), attachment);
 
                 if (!pathEntry.m_attachments.IsValid())
                     {
@@ -4091,12 +4113,18 @@ struct V8GraphicsLightWeightCollector : DgnV8Api::IElementGraphicsProcessor
                     foundFaceV8->second.ToElemDisplayParams(faceParamsV8);
                     m_converter.InitGeometryParams(faceParamsDb, faceParamsV8, *m_context, m_model.Is3d());
 
+                    if (!faceParamsDb.IsLineColorFromSubCategoryAppearance())
+                        attachment.SetColor(faceParamsDb.GetLineColor().GetValue(), faceParamsDb.GetTransparency());
+
+                    if (!faceParamsDb.IsMaterialFromSubCategoryAppearance())
+                        attachment.SetMaterial(faceParamsDb.GetMaterialId().GetValueUnchecked());
+
                     size_t attachmentIndex = 0;
-                    DgnDbApi::T_FaceAttachmentsVec::const_iterator foundAttachmentDb = std::find(faceAttachmentsVecDb.begin(), faceAttachmentsVecDb.end(), faceParamsDb);
+                    DgnDbApi::T_FaceAttachmentsVec::const_iterator foundAttachmentDb = std::find(faceAttachmentsVecDb.begin(), faceAttachmentsVecDb.end(), attachment);
 
                     if (foundAttachmentDb == faceAttachmentsVecDb.end())
                         {
-                        const_cast<DgnDbApi::T_FaceAttachmentsVec&>(faceAttachmentsVecDb).push_back(faceParamsDb);
+                        const_cast<DgnDbApi::T_FaceAttachmentsVec&>(faceAttachmentsVecDb).push_back(attachment);
                         attachmentIndex = faceAttachmentsVecDb.size() - 1;
                         }
                     else
@@ -4205,7 +4233,7 @@ struct V8GraphicsLightWeightCollector : DgnV8Api::IElementGraphicsProcessor
 
             // And then let DgnV8 emit its styled adornments directly as geometry since a DB TextString won't know how to draw them.
             // NEEDSWORK. It appears the drawing of Adornments is not working. At least the underline is always drawn at 0,0. for now
-            // just ignoring them. The backgroug is working but is causing display issues in Gist. 
+            // just ignoring them. The backgroug is working but is causing display issues in Gist.
             v8Text.DrawTextAdornments(*m_context);
             v8Text.DrawTextBackground(*m_context);
 
@@ -4499,7 +4527,7 @@ struct V8GraphicsLightWeightCollector : DgnV8Api::IElementGraphicsProcessor
 
                 if (nullptr == instanceElRef)
                     {
-                    BeAssert(geomParts.empty()); // If one entry is from a V8 instance, then all entries should be... 
+                    BeAssert(geomParts.empty()); // If one entry is from a V8 instance, then all entries should be...
                     geomParts.clear();
                     return;
                     }
@@ -4551,7 +4579,7 @@ struct V8GraphicsLightWeightCollector : DgnV8Api::IElementGraphicsProcessor
 
                     if (!partId.IsValid())
                         {
-                        BeAssert(false); // Why couldn't part be created??? 
+                        BeAssert(false); // Why couldn't part be created???
                         continue;
                         }
 
@@ -4927,10 +4955,10 @@ struct V8GraphicsLightWeightCollector : DgnV8Api::IElementGraphicsProcessor
 
             if (!geomParts.empty())
                 {
-                // NOTE: Level from shared cell instance that does not have a level override is 
-                //       meaningless except for components that use DgnV8Api::LEVEL_BYCELL. 
+                // NOTE: Level from shared cell instance that does not have a level override is
+                //       meaningless except for components that use DgnV8Api::LEVEL_BYCELL.
                 //       Getting a valid level to pass to ProcessElement would be expensive, so detect
-                //       this situation and choose the category from the first part as necessary. 
+                //       this situation and choose the category from the first part as necessary.
                 //       This avoids creating un-necessary assemblies/parent element w/o Geometry...
                 //       Purposely doesn't check if target is "GetUncategorizedCategory" as instance level
                 //       doesn't have to be 0 (ex. relative level nonsense, etc.)
@@ -5634,11 +5662,11 @@ static void addRadialWaveChannels(PolyfaceAuxData::ChannelsR channels, Bentley::
     double              radius = range.DiagonalDistance() / 2.0;
     double              maxHeight = radius/10.0;
 
-        
+
     for(size_t i=0; i<polyface.GetPointCount(); i++)
         {
         DPoint3dCR  point = points[i];
-        double      angle = point.Distance(center) / radius * msGeomConst_2pi; 
+        double      angle = point.Distance(center) / radius * msGeomConst_2pi;
         double      height = maxHeight * sin(angle);
         double      slope = fabs(cos(angle));
 
@@ -5705,7 +5733,7 @@ static void addLinearWaveChannels(PolyfaceAuxData::ChannelsR channels, Bentley::
         displacementDataVector.push_back(new PolyfaceAuxChannel::Data(i, std::move(displacementData)));
         heightDataVector.push_back(new PolyfaceAuxChannel::Data(i, std::move(heightData)));
         slopeDataVector.push_back(new PolyfaceAuxChannel::Data(i, std::move(slopeData)));
-        }                                                                             
+        }
 
     PolyfaceAuxChannelPtr       displacementChannel = new PolyfaceAuxChannel(PolyfaceAuxChannel::DataType::Vector, "Linear: Displacement", "Linear: Time", std::move(displacementDataVector));
     PolyfaceAuxChannelPtr       heightChannel = new PolyfaceAuxChannel(PolyfaceAuxChannel::DataType::Scalar, "Linear: Height", "Linear: Time", std::move(heightDataVector));
@@ -5725,7 +5753,7 @@ static void getTestAuxData(Bentley::PolyfaceQueryCR polyface)
     PolyfaceAuxData::Channels   channels;
 
     memcpy (indices.data(), polyface.GetPointIndexCP(), indices.size() * sizeof(int32_t));
-                                                     
+
     addLinearWaveChannels(channels, polyface);
     addRadialWaveChannels(channels, polyface);
     s_testAuxData = new PolyfaceAuxData(std::move(indices), std::move(channels));
@@ -5751,13 +5779,13 @@ static void getTestAuxData(Bentley::PolyfaceQueryCR polyface, DRange1dR scalarRa
     double              maxHeight = radius/10.0;
 
     memcpy (indices.data(), polyface.GetPointIndexCP(), indices.size() * sizeof(int32_t));
-        
+
     for(size_t i=0; i<polyface.GetPointCount(); i++)
         {
         DPoint3dCR  point = points[i];
         DVec3d      delta = DVec3d::FromStartEnd(point, center);
         double      x = point.Distance(center);
-        double      height = sqrt(radius * radius - x * x); 
+        double      height = sqrt(radius * radius - x * x);
         DVec3d      normal;                                                               dg
 
         scalarData.push_back(height);
@@ -5833,7 +5861,7 @@ static void getTestAuxData(Bentley::PolyfaceQueryCR polyface, DRange1dR scalarRa
     PolyfaceAuxData::Channels           channels;
     channels.push_back (heightChannel);
     PolyfaceAuxDataPtr              auxData = new PolyfaceAuxData(std::move(indices), std::move(channels));
-    
+
     s_testAuxData = new PolyfaceAuxData(std::move(indices), std::move(channels));
     }
 #endif
@@ -5859,8 +5887,8 @@ static void getTestAuxData(Bentley::PolyfaceQueryCR polyface)
 
     memcpy (indices.data(), polyface.GetPointIndexCP(), indices.size() * sizeof(int32_t));
     for(uint32_t i=0; i<nPoints; i++)
-        {                            
-        Bentley::DPoint3dCR point = polyface.GetPointCP()[i];             
+        {
+        Bentley::DPoint3dCR point = polyface.GetPointCP()[i];
 
         double      x = (point.x - range.low.x) / s_inchesPerMeter;
         double      z = (point.z - zOrigin) / s_inchesPerMeter;

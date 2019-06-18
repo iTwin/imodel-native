@@ -3,8 +3,11 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include <DgnPlatformInternal.h>
-#include <DgnPlatform/DgnBRep/PSolidUtil.h>
+#include <BRepCore/SolidKernel.h>
+#include <BRepCore/PSolidUtil.h>
+
+USING_NAMESPACE_BENTLEY
+USING_NAMESPACE_BENTLEY_DGN
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Deepak.Malkan   04/96
@@ -25,8 +28,8 @@ PKIBooleanOptionEnum    booleanOptions      // => options for boolean
     PK_BODY_boolean_o_t options;
     PK_TOPOL_track_r_t  tracking;
     PK_boolean_r_t      results;
-    bool                allowDisjoint = TO_BOOL (booleanOptions & PKI_BOOLEAN_OPTION_AllowDisjoint);
-    bool                sheetSolidFenceNone = TO_BOOL (booleanOptions & PKI_BOOLEAN_OPTION_SheetSolidFenceNone);
+    bool                allowDisjoint = 0 != (booleanOptions & PKI_BOOLEAN_OPTION_AllowDisjoint);
+    bool                sheetSolidFenceNone = 0 != (booleanOptions & PKI_BOOLEAN_OPTION_SheetSolidFenceNone);
 
     memset (&tracking, 0, sizeof (tracking));
     memset (&results, 0, sizeof (results));
@@ -86,7 +89,7 @@ PKIBooleanOptionEnum    booleanOptions      // => options for boolean
                 PK_BODY_type_t body_type;
 
                 PK_BODY_ask_type(results.bodies[0], &body_type);
-            
+
                 if (PK_BODY_type_empty_c == body_type) // TR349612
                     failureCode = PK_boolean_result_failed_c;
                 }
@@ -144,7 +147,7 @@ BentleyStatus PSolidUtil::DoBoolean(IBRepEntityPtr& targetEntity, IBRepEntityPtr
     PK_MARK_create(&markTag);
 
     Transform   invTargetTransform;
- 
+
     invTargetTransform.InverseOf(targetEntity->GetEntityTransform());
 
     IFaceMaterialAttachmentsP targetAttachments = targetEntity->GetFaceMaterialAttachmentsP();
@@ -165,8 +168,8 @@ BentleyStatus PSolidUtil::DoBoolean(IBRepEntityPtr& targetEntity, IBRepEntityPtr
 
             if (nullptr == targetAttachments)
                 {
-                Render::GeometryParams baseParams; // Don't care, replaced with tool attachments...
-                IFaceMaterialAttachmentsPtr newAttachments = PSolidUtil::CreateNewFaceAttachments(targetEntityTag, baseParams);
+                FaceAttachment baseAttachment; // Don't care, replaced with tool attachments...
+                IFaceMaterialAttachmentsPtr newAttachments = PSolidUtil::CreateNewFaceAttachments(targetEntityTag, baseAttachment);
 
                 if (newAttachments.IsValid())
                     {
@@ -213,7 +216,7 @@ BentleyStatus PSolidUtil::DoBoolean(IBRepEntityPtr& targetEntity, IBRepEntityPtr
                 if (indexRemapRequired)
                     {
                     T_FaceToAttachmentIndexMap toolFaceToIndexMap;
-                
+
                     PSolidAttrib::PopulateFaceMaterialIndexMap(toolFaceToIndexMap, toolEntityTag, targetFaceAttachmentsVec.size());
 
                     for (T_FaceToAttachmentIndexMap::const_iterator curr = toolFaceToIndexMap.begin(); curr != toolFaceToIndexMap.end(); ++curr)
@@ -232,7 +235,7 @@ BentleyStatus PSolidUtil::DoBoolean(IBRepEntityPtr& targetEntity, IBRepEntityPtr
         Transform   toolTransform;
 
         toolTransform.InitProduct(invTargetTransform, toolEntities[iTool]->GetEntityTransform());
-        PSolidUtil::TransformBody(toolEntityTag, toolTransform);                                                                                                                                                
+        PSolidUtil::TransformBody(toolEntityTag, toolTransform);
 
         toolEntityTags.push_back(toolEntityTag);
         }
@@ -392,13 +395,13 @@ BentleyStatus PSolidUtil::ImprintCurves(PK_ENTITY_t targetTag, bvector<PK_CURVE_
         }
 
     // NOTE: I don't think a "feature" should add it's node id to anything but the new edges. PSolidTopoId::AddNodeIdAttributes will resolve the
-    //       duplicate face ids after a split and id the new edges. Trying to have the feature "own" a face as per SmartFeatures is problematic 
+    //       duplicate face ids after a split and id the new edges. Trying to have the feature "own" a face as per SmartFeatures is problematic
     //       when an open element is used to split a face. Another option might be to add the new node id (don't overwrite) to all the modified
     //       faces...but that's problematic for assigning robust node ids when the target is a body and the faces split come from multiple features.
 
     PK_ENTITY_track_r_f(&tracking);
     PK_CURVE_project_r_f(&results);
-    
+
     if (SUCCESS != status)
         PK_MARK_goto(markTag);
 
@@ -546,7 +549,7 @@ BentleyStatus   PSolidUtil::FixBlends(PK_BODY_t bodyTag)
         PK_MEMORY_free(faces[i].array);
 
     PK_MEMORY_free(faces);
-        
+
     if (SUCCESS != status)
         PK_MARK_goto(markTag);
 

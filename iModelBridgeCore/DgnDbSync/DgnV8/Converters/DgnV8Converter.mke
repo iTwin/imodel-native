@@ -91,11 +91,12 @@ LINKER_LIBRARIES  + $(ContextSubpartsLibs)BentleyGeom.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnPlatform.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BaseGeoCoord.lib
 LINKER_LIBRARIES  + $(BuildContext)Delivery/DgnV8Converter.lib
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)Raster.lib 
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)Raster.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeJsonCpp.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)ThreeMx.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)iModelBridge.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)WebServicesClient.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)BRepCore.lib
 LINKER_LIBRARIES  + user32.lib
 
 LINKER_LIBRARIES_DELAYLOADED  + $(BuildContext)SubParts/VersionedDgnV8Libs/DgnPlatform.lib

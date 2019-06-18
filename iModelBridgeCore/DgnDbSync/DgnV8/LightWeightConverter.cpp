@@ -10,8 +10,8 @@
 #include "../../../../V8IModelExtraFiles/V8IModelExtraFiles.h"
 
 #include <VersionedDgnV8Api/PSolid/PSolidCore.h>
-#if defined (BENTLEYCONFIG_PARASOLID) 
-#include <DgnPlatform/DgnBRep/PSolidUtil.h>
+#if defined (BENTLEYCONFIG_PARASOLID)
+#include <BRepCore/PSolidUtil.h>
 #endif
 
 #undef min
@@ -144,7 +144,7 @@ LightWeightLineStyleConverter::V8Location::V8Location(DgnV8Api::LsCacheComponent
     m_isElement = lsLoc->IsElement();
     m_v8componentKey = lsLoc->GetIdentKey();
 
-    //  We don't bother recording RscFileHandle because we assume that during a session the 
+    //  We don't bother recording RscFileHandle because we assume that during a session the
     //  search paths through resource files will be the same every time
     //  and that a search for the same ID and type will yield the same resource. Therefore,
     //  we don't try to check location based on RscFileHandle.  We only do a file test
@@ -253,7 +253,7 @@ LineStyleStatus LightWeightLineStyleConverter::ConvertLsComponent(LsComponentId&
 // Turn a DGN line code (1 through 7) into a line style referring to a component defined as
 // { LsComponentType::Internal, line-code-value }.
 //
-//  This is only called by GetOrConvertElementLineCode.  GetOrConvertElementLineCode first 
+//  This is only called by GetOrConvertElementLineCode.  GetOrConvertElementLineCode first
 //  looks for an existing definition and only calls this if the existing definition is not found.
 //
 //  *******[Vern] This method was just copied from the normal LineStyleConverter *******
@@ -285,8 +285,8 @@ LineStyleStatus LightWeightLineStyleConverter::ConvertElementLineCode(DgnStyleId
 
 //---------------------------------------------------------------------------------------
 //  The BIM file format does not support hardcoded line codes in geometry so we replaced
-//  the hardcoded 1 through 7 with line styles that use the line codes.  The name of the 
-//  line style is generated as lc# where # is the DGN line code.  
+//  the hardcoded 1 through 7 with line styles that use the line codes.  The name of the
+//  line style is generated as lc# where # is the DGN line code.
 //
 //  GetSyncInfo().FindLineStyle finds the line code to line style mapping if this is not the
 //  first element using the line code.  If it is the first element using the line code
@@ -345,9 +345,9 @@ LineStyleStatus LightWeightLineStyleConverter::ConvertLineStyle(DgnStyleId& newI
     {
     Utf8String  lineStyleName(v8ls->GetStyleName().c_str());
 
-    //  First check to see if it is already mapped.  There are some files with line style names that 
+    //  First check to see if it is already mapped.  There are some files with line style names that
     //  differ only in case.  When MicroStation encounters them, it only loads the first one.  It
-    //  will not load multiple line styles that differ only by case.  To mimic that behavior, this code 
+    //  will not load multiple line styles that differ only by case.  To mimic that behavior, this code
     //  creates the m_lsDefNameToIdMap using lower case names.
     Utf8String  nameLC(lineStyleName.c_str());
     nameLC.ToLower();
@@ -377,7 +377,7 @@ LineStyleStatus LightWeightLineStyleConverter::ConvertLineStyle(DgnStyleId& newI
     //
     //  Suport for line styles with device units has been dropped. We don't have a suitable replacement.
     //
-    //  We are turning "Master units line styles" into "Meters line styles".  When converting to meters we have a choice of converting all components or just changing the 
+    //  We are turning "Master units line styles" into "Meters line styles".  When converting to meters we have a choice of converting all components or just changing the
     //  line style's scale factor.  I've elected to make the change in the line style scale, leaving the component values unchanged.
     BeAssert(v8ls->IsUnitsMaster() || v8ls->IsUnitsUOR());
 
@@ -386,7 +386,7 @@ LineStyleStatus LightWeightLineStyleConverter::ConvertLineStyle(DgnStyleId& newI
     //  m_storedScale or m_muDef of LsSymbolComponent, m_offset of LsSymbolReference, m_offset for compound component offset, m_length, m_orgWidth, and m_endWidth of LsStroke,
     componentScale = v8ls->GetUnitsDefinition();
 
-    //  Judging from the code in LsSymbology.cpp we want to leave unitsDefinition as zero if IsUnitsDevice is true.  It looks like GetUnitsDefinition is simply a flag indicating 
+    //  Judging from the code in LsSymbology.cpp we want to leave unitsDefinition as zero if IsUnitsDevice is true.  It looks like GetUnitsDefinition is simply a flag indicating
     //  whether to adjust for GetPixelSizeAtPoint.
     if (!v8ls->IsUnitsDevice() && componentScale < mgds_fc_epsilon)
         componentScale = 1.0;
@@ -507,7 +507,7 @@ DgnStyleId LightWeightConverter::_RemapLineStyle(double&unitsScale, DgnV8Api::Dg
         {
         if (!required)
             //  The missing line style is the source file's list of mapped line styles but we don't know whether it is used so we do not want to complain about it
-            //  and we do not want too map it to the default.  We will do that if we find an actual use of it. 
+            //  and we do not want too map it to the default.  We will do that if we find an actual use of it.
             return DgnStyleId();
 
         //  It is needed by an element so we need to warn that it has not been found.
@@ -888,7 +888,7 @@ DbResult LightWeightConverter::InsertLineStyle(DgnStyleId newId, double componen
     MappedLineStyle mapEntry(newId, componentScale);
     m_lineStyle[oldId] = mapEntry;
 
-    // WIP_CONVERTER -- write syncinfo 
+    // WIP_CONVERTER -- write syncinfo
     return BE_SQLITE_DONE;
     }
 
@@ -962,7 +962,7 @@ DgnSubCategoryId LightWeightConverter::ConvertLevelToSubCategory(DgnV8Api::Level
             LOG_LEVEL.tracev("inserted level [%s] (%d) -> [%s] (%d)", Utf8String(level.GetName()).c_str(), level.GetLevelId(), newSubCategory->GetSubCategoryName().c_str(), dbSubCategoryId.GetValue());
         }
 
-    // NEEDSWORK LevelMap cache is needed. 
+    // NEEDSWORK LevelMap cache is needed.
 
     //m_syncInfo.InsertLevel(dbSubCategoryId, v8Model, level);
     return dbSubCategoryId;

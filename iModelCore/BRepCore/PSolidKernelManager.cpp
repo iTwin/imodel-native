@@ -3,10 +3,10 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include <DgnPlatformInternal.h>
 #include <Bentley/GlobalHandleContainer.h>
-#include <DgnPlatform/DgnBRep/PSolidUtil.h>
 #include <Bentley/Desktop/FileSystem.h> // *** NEEDS WORK: Why are we using desktop-only functions?
+#include <BRepCore/SolidKernel.h>
+#include <BRepCore/PSolidUtil.h>
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_DGN
@@ -78,6 +78,17 @@ static int              s_deltaSystemActiveFlag = 0;    // Is the mark system ac
 static PpiDelta         *s_pDeltaList = 0;              // list of deltas
 static PpiDataBuffer    *s_pDataBufferList = 0;         // list of data buffers
 
+static BeFileNameCP     s_assetDir = nullptr;
+static BeFileNameCP     s_tempDirBaseName = nullptr;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  08/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+void PSolidKernelManager::Initialize(BeFileNameCR assetDirW, BeFileNameCR tempDirBaseNameW) {
+    s_assetDir = new BeFileName(assetDirW.c_str());
+    s_tempDirBaseName = new BeFileName(tempDirBaseNameW.c_str());
+}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  08/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -121,7 +132,7 @@ WCharCP         fileNameInP    // => path/prefix to use or NULL
     {
     WString     prefix;
     BeFileName  path;
-    
+
     if (!WString::IsNullOrEmpty(fileNameInP))
         {
         WString dev, dir;
@@ -131,13 +142,16 @@ WCharCP         fileNameInP    // => path/prefix to use or NULL
         }
     else
         {
-        path = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
+//        path = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
+        BeAssert (nullptr != s_tempDirBaseName && "PSolidKernelManager::Initialize wasn't called with GetLocalTempDirectoryBaseName.");
+        if (nullptr != s_tempDirBaseName)
+            path = *s_tempDirBaseName;
         prefix = L"fmp";
         }
 
     BeFileName tempFileName;
 
-    if (BeFileNameStatus::Success != Desktop::FileSystem::BeGetTempFileName(tempFileName, path,prefix.c_str())) // <- NEEDSWORK: This method is currently only implemented for desktop systems...
+    if (BeFileNameStatus::Success != Desktop::FileSystem::BeGetTempFileName(tempFileName, path, prefix.c_str())) // <- NEEDSWORK: This method is currently only implemented for desktop systems...
         return nullptr;
 
 #if defined(BENTLEYCONFIG_OS_WINDOWS)
@@ -777,7 +791,7 @@ static int      pki_partitionRollbackStop ()
     return errorCode;
     }
 #endif
-    
+
 #define PKI_MARK_DATA_BLOCK_SIZE 1024
 
 struct pkiMarkDataStruct
@@ -1126,7 +1140,7 @@ void
 #define FR_WRITE_ACCESS         2
 #define FR_READ_WRITE_ACCESS    3
 
-#define FR_MAX_NAMELEN          DGNPLATFORM_RESOURCE_MAXFILELENGTH
+#define FR_MAX_NAMELEN          256 // DGNPLATFORM_RESOURCE_MAXFILELENGTH
 #define FR_MAX_HEADER_LINE      (FR_MAX_NAMELEN + 32)
 
 #define END_OF_STRING_C         '\0'
@@ -1284,7 +1298,11 @@ static wchar_t const* getFileExtension (int guise, int format)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static BeFileName getPSolidSchemasDir()
     {
-    BeFileName fullName = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+//    BeFileName fullName = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+    BeAssert (nullptr != s_assetDir && "PSolidKernelManager::Initialize wasn't called with GetDgnPlatformAssetsDirectory.");
+    BeFileName fullName;
+    if (nullptr != s_assetDir)
+        fullName = *s_assetDir;
     fullName.AppendToPath (L"ParasolidSchema");
     return fullName;
     }
@@ -1380,7 +1398,7 @@ PFrustrumFile*  pFileOut        // <= output fr file structure
     s_frFileCount++;
 
     *pFileOut = pCurrFile;
-    
+
     return FR_no_errors;
     }
 
@@ -1977,19 +1995,19 @@ int*                strid       // <= output stream-id on which file is opened
     if (FFCDBG == guise)
         {
         if (FR_no_errors != writeXMLFileHeader (pFr, pr2hdr))
-            return FR_bad_header; 
+            return FR_bad_header;
         }
     else
         {
         if (FR_no_errors != writeFileHeader (pFr, pr2hdr))
-            return FR_bad_header; 
+            return FR_bad_header;
         }
 
     *strid = pFr->strid;
 
     return FR_no_errors;
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * author DeepakMalkan
 * purpose Open temporary rollback file for read/write
@@ -2458,7 +2476,7 @@ int             order
         }
 
     MSBsplineCurve  bcurve;
-    
+
     bcurve.Zero();
     bcurve.rational = rational;
     bcurve.params.order = order;
@@ -2527,6 +2545,29 @@ DPoint3dCP      pointP
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  09/00
++---------------+---------------+---------------+---------------+---------------+------*/
+static void legacyMath_RMatrix_FromNormalVector (RotMatrixP rotMatrixP, DPoint3dCP normalP)
+    {
+    DVec3d    world, xNormal, yNormal, zNormal;
+
+    world.x = world.y = world.z = 0.0;
+    zNormal = *(DVec3dCP)normalP;
+    zNormal.Normalize ();
+
+    if ((fabs (zNormal.x) < 0.01) && (fabs (zNormal.y) < 0.01))
+        world.y = 1.0;
+    else
+        world.z = 1.0;
+
+    xNormal.CrossProduct (world, zNormal);
+    xNormal.Normalize ();
+    yNormal.CrossProduct (zNormal, xNormal);
+    yNormal.Normalize ();
+    rotMatrixP->InitFromRowVectors (xNormal, yNormal, zNormal);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/98
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DEllipse3d ellipseFromParams
@@ -2548,7 +2589,7 @@ DPoint3dCP      endP
 
     if (NULL != normalP && NULL == majorDirectionP)
         {
-        LegacyMath::RMatrix::FromNormalVector(&rMatrix, normalP);
+        legacyMath_RMatrix_FromNormalVector(&rMatrix, normalP);
         rMatrix.InverseOf(rMatrix);
         }
     else if (NULL != normalP && NULL != majorDirectionP)
@@ -2801,7 +2842,7 @@ DVec3dCR        direction           // => toward the view (positive Z)
     vector.coord[0] = -tmpDir.x;
     vector.coord[1] = -tmpDir.y;
     vector.coord[2] = -tmpDir.z;
-        
+
     PK_TRANSF_create_view(vector, &options, &viewTransformTag);
     }
 
@@ -2826,7 +2867,7 @@ void PSolidGoOutput::ProcessSilhouettes(IParasolidWireOutput& output, DPoint3dCP
         options.is_curve_chord_tol = true;
         options.curve_chord_tol = tolerance;
         }
- 
+
     s_frustrumOutput.m_wireOutput = &output; // Setup static global callback function...
     /* unused - PK_ERROR_code_t failureCode = */
     PK_TOPOL_render_line(1, &entityTag, nullptr, viewTransformTag, &options);
@@ -3094,7 +3135,7 @@ void PSolidKernelManager::StopSession()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PSolidKernelManager::IsSessionStarted()
     {
-    return TO_BOOL(s_parasolidInitialized);
+    return 0 != s_parasolidInitialized;
     }
 
 /*---------------------------------------------------------------------------------**//**

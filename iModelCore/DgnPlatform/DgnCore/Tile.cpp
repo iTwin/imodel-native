@@ -15,7 +15,7 @@
 #include <map>
 #include <inttypes.h>
 #if defined (BENTLEYCONFIG_PARASOLID)
-#include <DgnPlatform/DgnBRep/PSolidUtil.h>
+#include <BRepCore/PSolidUtil.h>
 #endif
 
 USING_NAMESPACE_TILE

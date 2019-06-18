@@ -16,40 +16,11 @@
         </Bindings>
     </Part>
 
-    <!-- We need this shim part to avoid pulling all psolid repos just to see their platform dependency. -->
-    <Part Name="PsolidShim">
-        <SubPart PartName="PsolidShim_AndroidARM64"/>
-        <SubPart PartName="PsolidShim_iOSArm64"/>
-        <SubPart PartName="PsolidShim_iOSx64"/>
-        <SubPart PartName="PsolidShim_LinuxX64"/>
-        <SubPart PartName="PsolidShim_MacOSx64"/>
-        <SubPart PartName="PsolidShim_x64"/>
-    </Part>
-    <Part Name="PsolidShim_AndroidARM64" OnlyPlatforms="AndroidARM64" WipPartEnable="ParasolidAndroid">
-        <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_311_pre2_AndroidARM64"/>
-    </Part>
-    <Part Name="PsolidShim_iOSArm64" OnlyPlatforms="iOSARM64">
-        <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_30_1_168_iOSArm64"/>
-    </Part>
-    <Part Name="PsolidShim_iOSx64" OnlyPlatforms="iOSx64">
-        <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_30_1_168_iOSx64"/>
-    </Part>
-    <Part Name="PsolidShim_LinuxX64" OnlyPlatforms="LinuxX64">
-        <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_30_1_168_LinuxX64"/>
-    </Part>
-    <Part Name="PsolidShim_MacOSx64" OnlyPlatforms="MacOSx64">
-        <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_30_1_168_MacOSx64"/>
-    </Part>
-    <Part Name="PsolidShim_x64" OnlyPlatforms="x64">
-        <!-- Yes, we are choosing to use a different version on x64. This is for PP compatibility. This version is not available on other platforms. -->
-        <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_31_0_249_x64"/>
-    </Part>
-
     <!-- NOTE: IModel02 uses "M02" as a library suffix to differentiate from DgnV8, Graphite, and Bim02 libraries -->
     <Part Name="DgnPlatformDLL" BentleyBuildMakeFile="DgnPlatform.mke" ApiNumber="M02">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BeHttp"              PartFile="iModelCore/BeHttp/BeHttp"       Repository="imodel02" /><!-- For CesiumTileWriter... -->
-        <SubPart PartName="folly" PartFile="iModelCore/libsrc/facebook/facebook" Repository="imodel02"/> 
+        <SubPart PartName="folly" PartFile="iModelCore/libsrc/facebook/facebook" Repository="imodel02"/>
         <SubPart PartName="BentleyDll"          PartFile="iModelCore/Bentley/Bentley"      Repository="imodel02" />
         <SubPart PartName="ECDbLibrary"         PartFile="iModelCore/ECDb/ECDb"         Repository="imodel02" />
         <SubPart PartName="GeomDlls"            PartFile="iModelCore/GeomLibs/geomlibs"     Repository="imodel02" />
@@ -61,7 +32,7 @@
         <SubPart PartName="BeJpeg" PartFile="iModelCore/Bentley/Bentley" Repository="imodel02"/>
         <SubPart PartName="FlatBuffers" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="GeoCoord"            PartFile="iModelCore/GeoCoord/GeoCoord"     Repository="imodel02"/>
-        <SubPart PartName="PsolidShim"/>
+        <SubPart PartName="BRepCore"            PartFile="iModelCore/BRepCore/BRepCore"     Repository="imodel02"/>
         <SubPart PartName="PublicApi"           PartFile="iModelCore/libsrc/csmap/csmap"        Repository="imodel02"/>
         <SubPart LibType="Static" PartName="Compress" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="ECPresentation" PartFile="iModelCore/ECPresentation/ECPresentation" Repository="imodel02"/>
@@ -177,7 +148,7 @@
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="TestFixtureForUnitTests" />
         <SubPart PartName="BackdoorForUnitTests"/> <!-- BuildTests.mke cannot be called in parallel because it always makes a static symlink; ensure it was run once in isolation -->
-        
+
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="DgnPlatform/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
         </Bindings>
@@ -207,12 +178,12 @@
     <!-- Runs all compatibility tests:
          Preparation:
          * Downloads all existing test runners and test files
-         
+
          Run:
          1) Runs current test runner (from current software) against
             * files it creates itself (-> get saved as nuget afterwards)
             * all downloaded test files.
-         2) Runs all downloaded test runners against 
+         2) Runs all downloaded test runners against
             * all downloaded test files
             * files created by the current test runner
     -->
@@ -223,7 +194,7 @@
     <!-- Runs the current compatibility test runner (from current software):
          Preparation:
          * Downloads all existing test files
-         
+
          Run:
          1) Runs current test runner (from current software) against
             * files it creates itself (-> get saved as nuget afterwards)
@@ -249,7 +220,7 @@
         <Directories DirectoryListName="GtestProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
         <SubPart PartName="BuildIModelEvolutionGTest"/>
     </Product>
-   
+
     <Part Name="BuildIModelEvolutionGTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=IModelEvolutionTests -dTEST_COLLECTION_PRODUCT=IModelEvolutionTests -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
         <RequiredRepository>Bsitools-NuGet</RequiredRepository>
         <SubProduct ProductName="IModelEvolutionTests"/>
@@ -320,7 +291,7 @@
     <ProductDirectoryList ListName="IModelEvolutionTestFilesForNugetPackage" >
         <ProductDirectory Name="TestFiles" Path="TestFiles"/>
     </ProductDirectoryList>
-    
+
 
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // L10N                                                                   // -->
@@ -492,7 +463,7 @@
             <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="zh-tw" SubPartDirectory="l10n/zh-tw">Delivery/l10n/zh-tw/ForeignFormat_zh-tw.xliff</Files>
         </Bindings>
     </Part>
- 
+
     <Product Name="CompatibilityTestFiles" SaveProduct="true">
         <SubPart PartName="SaveCompatibilityTestFiles"/>
         <Directories DirectoryListName="CompatibilityTestFiles"/>
@@ -517,7 +488,7 @@
             </Files>
         </Bindings>
     </Part>
-  
+
     <!-- Define a test collection part-->
     <Part Name="Tests">
         <SubPart PartName="UnitTests-NonPublished"/>
@@ -563,7 +534,7 @@
         <SubPart PartFile="DgnDbTestingScripts" Repository="DgnDbTestingScripts" PartName="MemLeakTests" />
         <SubProduct ProductName="DgnPlatform-Gtest" />
     </Part>
- -->    
+ -->
     <!-- ********************** -->
     <!-- **** AndroidJUnit **** -->
     <!-- ********************** -->
@@ -653,20 +624,20 @@
 
     <Part Name="DgnPlatformNoViewTested" PrgOutputDir="DgnClientSdk">
        <!-- <RequiredRepository>DgnDbTestingScripts</RequiredRepository> --><!--To Automate Unit Testing on Linux -->
-                
+
       <!-- Cannot include because they depend on DgnView
       <SubProduct ProductName="iModelBridgeFwk" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
       <SubProduct ProductName="ToyTileBridge" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" />
       <SubProduct ProductName="ToyTileCreator" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" />
       -->
-      
+
       <SubProduct ProductName="iModelBridgeAssign" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
       <SubProduct ProductName="Briefcase" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" />
       <SubProduct ProductName="iModelConsole" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02" />
-      
+
       <!-- This can't be active because Sam doesn't want iModelJsNodeAddon merged between bim0200 and bim0200dev. -->
       <!-- <SubProduct ProductName="iModelJsNodeAddon" PartFile="iModelJsNodeAddon/iModelJsNodeAddon" Repository="imodel02" /> -->
-      
+
       <!-- Won't build on Linux because of capitalization problems in ImagePP.PartFile.xml:
       <SubProduct ProductName="TilePublisher" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
       -->
@@ -687,15 +658,15 @@
     <Part Name="NoView-Gtest-RunAggregator-Linux" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic" >
       <SubPart PartName="NoView-Gtest-RunAggregator"/>
     </Part>
-  
+
     <Part Name="NoView-Gtest-RunAggregator-MacOS" OnlyPlatforms="MacOS*" ExcludeLibType="Dynamic" >
       <SubPart PartName="NoView-Gtest-RunAggregator"/>
     </Part>
-  
+
     <Part Name="NoView-Gtest-RunAggregator-Windows" OnlyPlatforms="x64" ExcludeLibType="Static" >
       <SubPart PartName="NoView-Gtest-RunAggregator"/>
     </Part>
-  
+
     <Part Name="NoView-Gtest-RunAggregator" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/CheckLogfilesForFailures.mke" BentleyBuildMakeOptions="-dLogFilesDir=$(BuildContext)SubParts/Gtest/Logs">
         <SubPart Repository="imodel02"              PartFile="iModelCore/GeomLibs/geomlibs"         PartName="RunGtest" />
         <SubPart Repository="imodel02"                  PartFile="iModelCore/ECDb/ECDb"             PartName="RunGtest" />
@@ -734,7 +705,7 @@
     <Part Name="iModelConsoleExe-Windows" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SubPart PartName="iModelConsoleExe" LibType="Dynamic"/>
     </Part>
-    
+
     <Part Name="iModelConsoleExe-Linux" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic" >
         <SubPart PartName="iModelConsoleExe" LibType="Static"/>
     </Part>

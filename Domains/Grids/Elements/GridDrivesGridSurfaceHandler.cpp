@@ -12,7 +12,7 @@
 #include <DgnPlatform/ClipVector.h>
 #include <DgnPlatform/ClipPrimitive.h>
 #include <DgnPlatform/RangeIndex.h>
-#include <DgnPlatform/DgnBRep/PSolidUtil.h>
+#include <BRepCore/PSolidUtil.h>
 #include <BuildingShared/DgnUtils/BuildingDgnUtilsApi.h>
 #include <Grids/Elements/GridElementsAPI.h>
 

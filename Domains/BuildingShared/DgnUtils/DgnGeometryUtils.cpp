@@ -268,7 +268,7 @@ CurveVectorPtr DgnGeometryUtils::ExtractXYProfileFromSolid(Dgn::IBRepEntityCR so
 
     return profilePtr;
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Haroldas.Vitunskas             03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -366,9 +366,9 @@ void DgnGeometryUtils::RotatePlacementXY(Placement3dR placement, double theta)
 void DgnGeometryUtils::RotatePlacementAroundPointXY(Placement3dR placement, DPoint3d origin, double theta)
     {
     DVec3d translation = DVec3d::FromStartEnd(placement.GetOrigin(), origin);
-    
+
     TranslatePlacementXY(placement, translation); // Move to new origin
-    
+
     RotatePlacementXY(placement, theta); // Rotate
     translation.RotateXY(theta);
 
@@ -409,7 +409,7 @@ double DgnGeometryUtils::PlacementToAngleXY(Placement3d placement)
 //---------------+---------------+---------------+---------------+---------------+------
 Dgn::IBRepEntityPtr DgnGeometryUtils::GetXYCrossSectionSheetBody
 (
-    Dgn::IBRepEntityCR solid, 
+    Dgn::IBRepEntityCR solid,
     double z
 )
     {
@@ -496,7 +496,7 @@ CurveVectorPtr DgnGeometryUtils::GetXYCrossSection(Dgn::IBRepEntityCR solid, dou
     for (Dgn::ISubEntityPtr subEntity : edgesAndVertices)
         {
         Dgn::ISubEntity::SubEntityType subEntityType = subEntity->GetSubEntityType();
-        Dgn::GeometricPrimitiveCPtr geom = subEntity->GetGeometry();
+        Dgn::TopologyPrimitiveCPtr geom = subEntity->GetGeometry();
 
         if (Dgn::ISubEntity::SubEntityType::Vertex == subEntityType)
             {
@@ -578,8 +578,8 @@ bvector<double>& zElevationVector
 //---------------+---------------+---------------+---------------+---------------+------
 Dgn::IBRepEntityPtr DgnGeometryUtils::GetBodySlice
 (
-    Dgn::IBRepEntityCR geometryToSlice, 
-    double bottomElevation, 
+    Dgn::IBRepEntityCR geometryToSlice,
+    double bottomElevation,
     double topElevation
 )
     {
@@ -602,7 +602,7 @@ Dgn::IBRepEntityPtr DgnGeometryUtils::GetBodySlice
 //---------------+---------------+---------------+---------------+---------------+------
 Dgn::IBRepEntityPtr DgnGeometryUtils::GetCutSheetBody
 (
-    Dgn::IBRepEntityCR geometryToSlice, 
+    Dgn::IBRepEntityCR geometryToSlice,
     double elevation
 )
     {
@@ -635,7 +635,7 @@ Dgn::IBRepEntityPtr DgnGeometryUtils::GetCutSheetBody
 //---------------+---------------+---------------+---------------+---------------+------
 Dgn::IBRepEntityPtr DgnGeometryUtils::GetUpwardSlice
 (
-    Dgn::IBRepEntityCR geometryToSlice, 
+    Dgn::IBRepEntityCR geometryToSlice,
     double elevation
 )
     {
@@ -669,7 +669,7 @@ Dgn::IBRepEntityPtr DgnGeometryUtils::GetUpwardSlice
 //---------------+---------------+---------------+---------------+---------------+------
 Dgn::IBRepEntityPtr DgnGeometryUtils::GetDownwardSlice
 (
-    Dgn::IBRepEntityCR geometryToSlice, 
+    Dgn::IBRepEntityCR geometryToSlice,
     double elevation
 )
     {
@@ -718,7 +718,7 @@ CurveVectorPtr DgnGeometryUtils::ExtractBottomFaceShape(Dgn::GeometricElement3dC
                 Dgn::IBRepEntityPtr solidPtr = (*geomData).GetGeometryPtr()->GetAsIBRepEntity();
                 if (solidPtr.IsValid() && (solidPtr->GetEntityType() == Dgn::IBRepEntity::EntityType::Solid))
                     curves->Add(DgnGeometryUtils::ExtractXYProfileFromSolid(*solidPtr));
-                    
+
                 break;
                 }
             case (Dgn::GeometryCollection::Iterator::EntryType::CurveVector):
@@ -726,7 +726,7 @@ CurveVectorPtr DgnGeometryUtils::ExtractBottomFaceShape(Dgn::GeometricElement3dC
                 CurveVectorPtr curve = (*geomData).GetGeometryPtr()->GetAsCurveVector();
                 if (curve.IsValid() && (curve->IsClosedPath() || GeometryUtils::GetCurveArea(*curve) > 0.0))
                     curves->Add(curve); //data from ABD bridge has text artifacts and geometry.
-                    
+
                 break;
                 }
             }
@@ -736,7 +736,7 @@ CurveVectorPtr DgnGeometryUtils::ExtractBottomFaceShape(Dgn::GeometricElement3dC
         return nullptr;
 
     if (curves->HasSingleCurvePrimitive())
-        return curves->front()->GetChildCurveVectorP();    
+        return curves->front()->GetChildCurveVectorP();
 
     return curves;
     }
@@ -803,13 +803,13 @@ CurveVectorPtr DgnGeometryUtils::GetBaseShape(Dgn::GeometricElement3dCR extrusio
         {
         return nullptr;
         }
-        
+
     Dgn::GeometryStreamCR geomStream = extrusionThatIsSolid.ToGeometrySource3d()->GetGeometryStream();
     if (geomStream.empty())
         {
         return nullptr;
         }
-        
+
     BeAssert(false && "Failed to extract base shape");
     BentleyApi::NativeLogging::LoggingManager::GetLogger(L"BuildingSpacePlanning")->error("DgnGeometryUtils::Failed to extract base shape.\n");
 
@@ -838,7 +838,7 @@ bool isCurveParallelToLocal(CurveVectorCR curve)
 #define PARASOLID_BUG_NOT_FIXED
 /*
     Running BuildingPlacementStrategyTestFixture.ViewOverlay* test before StoryTestFixture.* hangs Story tests.
-    Specifically: 
+    Specifically:
         DgnGeometryUtils::GetSliceAtZero
             ...
             Dgn::BRepUtil::Create::BodyFromSolidPrimitive
@@ -986,7 +986,7 @@ CurveVectorPtr tryGetCurveFromFlatExtrusion(Dgn::GeometricPrimitiveCR primitive)
 
     if (!solid->TryGetDgnExtrusionDetail(extrusionDetail))
         return nullptr;
-    
+
     return extrusionDetail.FractionToProfile(0.0f);
     }
 
@@ -1131,7 +1131,7 @@ bool DgnGeometryUtils::InitiateExtrusionGeometry
     DVec3d zvector;
     zvector.Zero();
     zvector.z = 1.0;
-    zvector.Scale(height); //we build an upwards looking sweep direction 
+    zvector.Scale(height); //we build an upwards looking sweep direction
     DgnExtrusionDetail extrusionDetail(selectedShape, zvector, true);
 
     return InitiateExtrusionGeometry(extrusion, pGeometryParameters, subCategoryId, extrusionDetail, otherGeometry, updatePlacementOrigin);
@@ -1282,8 +1282,8 @@ Dgn::TextStringPtr createElementText
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnGeometryUtils::AppendExtrusionLabel
 (
-    Dgn::GeometryBuilderPtr& builder, 
-    CurveVectorCR profile, Utf8CP name, 
+    Dgn::GeometryBuilderPtr& builder,
+    CurveVectorCR profile, Utf8CP name,
     Dgn::DgnSubCategoryId subCategoryId /*= DgnSubCategoryId ()*/
 )
     {
@@ -1493,7 +1493,7 @@ void DgnGeometryUtils::SetExtrusionName
     Dgn::Render::GeometryParamsCP pGeometryParameters,
     Dgn::DgnSubCategoryId subCategoryId,
     Utf8CP name
-) 
+)
     {
     element.SetUserLabel(name);
 

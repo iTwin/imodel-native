@@ -9,6 +9,7 @@
 #include <DgnPlatform/Render.h>
 #include <DgnPlatform/DgnTexture.h>
 #include <DgnPlatform/DgnMaterial.h>
+#include <BRepCore/SolidKernel.h>
 
 #define BEGIN_BENTLEY_RENDER_PRIMITIVES_NAMESPACE BEGIN_BENTLEY_RENDER_NAMESPACE namespace Primitives {
 #define END_BENTLEY_RENDER_PRIMITIVES_NAMESPACE } END_BENTLEY_RENDER_NAMESPACE
@@ -746,7 +747,7 @@ struct Strokes
         PointList() : m_startDistance(0.0) { }
         PointList(double startDistance, bool canDecimate) : m_startDistance(startDistance), m_canDecimate(canDecimate) { }
         PointList(bvector<DPoint3d>&& points, bool canDecimate) : m_startDistance(0.0), m_points(std::move(points)), m_canDecimate(canDecimate) { }
-        PointList(PointList&& src) : m_startDistance(src.m_startDistance), m_points(std::move(src.m_points)), m_canDecimate(src.m_canDecimate) {} 
+        PointList(PointList&& src) : m_startDistance(src.m_startDistance), m_points(std::move(src.m_points)), m_canDecimate(src.m_canDecimate) {}
 
         PointList& operator=(PointList&& src)
             {

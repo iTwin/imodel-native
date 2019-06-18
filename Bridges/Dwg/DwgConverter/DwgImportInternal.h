@@ -28,7 +28,7 @@
 #include <DgnPlatform/LineStyle.h>
 #include <DgnPlatform/DgnMaterial.h>
 #include <DgnPlatform/DesktopTools/ConfigurationManager.h>
-#include <DgnPlatform/DgnBrep/PSolidUtil.h>
+#include <BRepCore/PSolidUtil.h>
 
 #include <Raster/RasterApi.h>
 #include <ECPresentation/RulesDriven/RuleSetEmbedder.h>
@@ -237,7 +237,7 @@ private:
     size_t          GetPropertyCount () { return m_propertyCount; }
     size_t          GetAdhocCount () { return m_adhocCount; }
     size_t          GetTotalCount () { return m_propertyCount + m_adhocCount; }
-    
+
 public:
     explicit AttributeFactory (DwgImporter& importer, DgnElementR hostElement, DwgImporter::ElementImportResults& reults, DwgImporter::ElementImportInputs& inputs);
 

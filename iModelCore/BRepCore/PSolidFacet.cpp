@@ -3,8 +3,11 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include <DgnPlatformInternal.h>
-#include <DgnPlatform/DgnBRep/PSolidUtil.h>
+#include <BRepCore/SolidKernel.h>
+#include <BRepCore/PSolidUtil.h>
+
+USING_NAMESPACE_BENTLEY
+USING_NAMESPACE_BENTLEY_DGN
 
 //=======================================================================================
 //! Wrapper class around facets that at least act like Parasolid fin tables.
@@ -56,7 +59,7 @@ virtual int         _GetFinEdgeCount () = 0;
 virtual int const*  _GetFacetFace () = 0;           // NOTE: Parasolid only hidden face support (array of face tags)
 virtual int         _GetFacetFaceCount () = 0;
 
-virtual bool        _GetEdgeCurveId (CurveTopologyId& edgeId, int32_t edge, bool useHighestId) = 0; 
+virtual bool        _GetEdgeCurveId (CurveTopologyId& edgeId, int32_t edge, bool useHighestId) = 0;
 
 virtual bool        _IsHiddenFace (int32_t entityTag) = 0;
 virtual bool        _IsHiddenEdge (int32_t entityTag) = 0;
@@ -191,7 +194,7 @@ StatusInt IFacetTopologyTable::ConvertToPolyface (PolyfaceHeaderR polyface, IFac
     T_FinToEdgeMap              finToEdgeMap;
     T_EdgeIdToPolyfaceEdgeMap   edgeIdToPolyfaceEdgeMap;
     bmap<PK_EDGE_t, uint32_t>   edgeToIdMap;
-        
+
     initPolyface (polyface, ftt);
     initFinToEdgeMap (finToEdgeMap, ftt, facetOptions.GetEdgeHiding());
 
@@ -218,7 +221,7 @@ StatusInt IFacetTopologyTable::ConvertToPolyface (PolyfaceHeaderR polyface, IFac
     int const*  ftt_vertexToPoint    = ftt._GetPointIndex ();
     int const*  ftt_vertexToNormal   = ftt._GetNormalIndex ();
     int const*  ftt_vertexToParam    = ftt._GetParamUVIndex ();
-    int const*  ftt_facetToFace      = ftt._GetFacetFace ();                                                                                                                                    
+    int const*  ftt_facetToFace      = ftt._GetFacetFace ();
     Point2dCP   ftt_facetFin         = ftt._GetFacetFin ();
 
     int     thisFace, currentFace  = -1;
@@ -232,7 +235,7 @@ StatusInt IFacetTopologyTable::ConvertToPolyface (PolyfaceHeaderR polyface, IFac
         if (0 == (thisFace = ftt_facetToFace[facetIndex]) ||
             (facetOptions.GetEdgeHiding() && ftt._IsHiddenFace (thisFace)))
             continue;
-        
+
         if (thisFace != currentFace)
             {
             polyface.SetNewFaceData (NULL);
@@ -263,7 +266,7 @@ StatusInt IFacetTopologyTable::ConvertToPolyface (PolyfaceHeaderR polyface, IFac
 
                      if (facetOptions.GetOmitBRepEdgeChainIds() || !ftt._GetEdgeCurveId (curveTopologyId, found->second, true))
                         curveTopologyId = getUnidentifiedEdgeId(found->second, edgeToIdMap);
-                
+
                     PolyfaceEdge             polyfaceEdge(1 + xyzIndex, 1 + ftt_vertexToPoint[ftt_finToVertex[nextFinIndex]]);
                     bvector<PolyfaceEdge>    indices(1, polyfaceEdge);
 
@@ -286,7 +289,7 @@ StatusInt IFacetTopologyTable::ConvertToPolyface (PolyfaceHeaderR polyface, IFac
     polyface.SetNewFaceData (NULL);
     if (edgeChainsRequired) // Edge chains requested...
         addEdgeChains (polyface.EdgeChain(), edgeIdToPolyfaceEdgeMap);
-        
+
     return SUCCESS;
     }
 
@@ -296,7 +299,7 @@ StatusInt IFacetTopologyTable::ConvertToPolyface (PolyfaceHeaderR polyface, IFac
 int32_t remapPointIndex (int32_t pointIndex, T_IndexRemap& pointIndexMap, BlockedVectorDPoint3dR polyfacePoints, DPoint3dCP fttPoints)
     {
     T_IndexRemap::iterator  found = pointIndexMap.find (pointIndex);
-                
+
     if (found == pointIndexMap.end())
         {
         int32_t pointIndexRemapped = (int32_t) polyfacePoints.size();
@@ -325,7 +328,7 @@ static StatusInt convertFaceFacetsToPolyface (PolyfaceHeaderR polyface, bmap<int
     int const*  ftt_facetToFace      = ftt._GetFacetFace ();
     DPoint2dCP  ftt_paramUV          = ftt._GetParamUV ();
     DPoint3dCP  ftt_points           = ftt._GetPoint ();
-    DVec3dCP    ftt_normals          = ftt._GetNormal(); 
+    DVec3dCP    ftt_normals          = ftt._GetNormal();
     Point2dCP   ftt_facetFin         = ftt._GetFacetFin ();
 
     T_IndexRemap                pointIndexMap, normalIndexMap, paramIndexMap;
@@ -567,7 +570,7 @@ int             FindTableIndex (PK_TOPOL_fctab_t tableId)
 DPoint3dCP  _GetPoint () override
     {
     int         iTable;
-    
+
     if (-1 == (iTable = FindTableIndex (PK_TOPOL_fctab_point_vec_c)))
         return NULL;
 
@@ -580,7 +583,7 @@ DPoint3dCP  _GetPoint () override
 int     _GetPointCount () override
     {
     int         iTable;
-    
+
     if (-1 == (iTable = FindTableIndex (PK_TOPOL_fctab_point_vec_c)))
         return 0;
 
@@ -593,7 +596,7 @@ int     _GetPointCount () override
 int const*  _GetPointIndex () override
     {
     int         iTable;
-    
+
     if (-1 == (iTable = FindTableIndex (PK_TOPOL_fctab_data_point_c)))
         return NULL;
 
@@ -606,7 +609,7 @@ int const*  _GetPointIndex () override
 int     _GetPointIndexCount () override
     {
     int         iTable;
-    
+
     if (-1 == (iTable = FindTableIndex (PK_TOPOL_fctab_data_point_c)))
         return 0;
 
@@ -619,7 +622,7 @@ int     _GetPointIndexCount () override
 DVec3dCP    _GetNormal () override
     {
     int         iTable;
-    
+
     if (-1 == (iTable = FindTableIndex (PK_TOPOL_fctab_normal_vec_c)))
         return NULL;
 
@@ -632,7 +635,7 @@ DVec3dCP    _GetNormal () override
 int     _GetNormalCount () override
     {
     int         iTable;
-    
+
     if (-1 == (iTable = FindTableIndex (PK_TOPOL_fctab_normal_vec_c)))
         return 0;
 
@@ -645,7 +648,7 @@ int     _GetNormalCount () override
 int const*  _GetNormalIndex () override
     {
     int         iTable;
-    
+
     if (-1 == (iTable = FindTableIndex (PK_TOPOL_fctab_data_normal_c)))
         return NULL;
 
@@ -658,7 +661,7 @@ int const*  _GetNormalIndex () override
 int     _GetNormalIndexCount () override
     {
     int         iTable;
-    
+
     if (-1 == (iTable = FindTableIndex (PK_TOPOL_fctab_data_normal_c)))
         return 0;
 
@@ -671,7 +674,7 @@ int     _GetNormalIndexCount () override
 DPoint2dCP  _GetParamUV () override
     {
     int         iTable;
-    
+
     if (-1 == (iTable = FindTableIndex (PK_TOPOL_fctab_param_uv_c)))
         return NULL;
 
@@ -684,7 +687,7 @@ DPoint2dCP  _GetParamUV () override
 int     _GetParamUVCount () override
     {
     int         iTable;
-    
+
     if (-1 == (iTable = FindTableIndex (PK_TOPOL_fctab_param_uv_c)))
         return 0;
 
@@ -697,7 +700,7 @@ int     _GetParamUVCount () override
 int const*  _GetParamUVIndex () override
     {
     int         iTable;
-    
+
     if (-1 == (iTable = FindTableIndex (PK_TOPOL_fctab_data_param_c)))
         return NULL;
 
@@ -710,7 +713,7 @@ int const*  _GetParamUVIndex () override
 int     _GetParamUVIndexCount () override
     {
     int         iTable;
-    
+
     if (-1 == (iTable = FindTableIndex (PK_TOPOL_fctab_data_param_c)))
         return 0;
 
@@ -723,7 +726,7 @@ int     _GetParamUVIndexCount () override
 int const*  _GetFinData () override // fin vertex...
     {
     int         iTable;
-    
+
     if (-1 == (iTable = FindTableIndex (PK_TOPOL_fctab_fin_data_c)))
         return NULL;
 
@@ -736,7 +739,7 @@ int const*  _GetFinData () override // fin vertex...
 int     _GetFinDataCount () override
     {
     int         iTable;
-    
+
     if (-1 == (iTable = FindTableIndex (PK_TOPOL_fctab_fin_data_c)))
         return 0;
 
@@ -749,7 +752,7 @@ int     _GetFinDataCount () override
 int const*  _GetFinFin () override
     {
     int         iTable;
-    
+
     if (-1 == (iTable = FindTableIndex (PK_TOPOL_fctab_fin_fin_c)))
         return NULL;
 
@@ -762,7 +765,7 @@ int const*  _GetFinFin () override
 int     _GetFinFinCount () override
     {
     int         iTable;
-    
+
     if (-1 == (iTable = FindTableIndex (PK_TOPOL_fctab_fin_fin_c)))
         return 0;
 
@@ -775,7 +778,7 @@ int     _GetFinFinCount () override
 Point2dCP   _GetFacetFin () override
     {
     int         iTable;
-    
+
     if (-1 == (iTable = FindTableIndex (PK_TOPOL_fctab_facet_fin_c)))
         return NULL;
 
@@ -788,7 +791,7 @@ Point2dCP   _GetFacetFin () override
 int     _GetFacetFinCount () override
     {
     int         iTable;
-    
+
     if (-1 == (iTable = FindTableIndex (PK_TOPOL_fctab_facet_fin_c)))
         return 0;
 
@@ -801,7 +804,7 @@ int     _GetFacetFinCount () override
 Point2dCP   _GetStripFin () override
     {
     int         iTable;
-    
+
     if (-1 == (iTable = FindTableIndex (PK_TOPOL_fctab_strip_boundary_c)))
         return NULL;
 
@@ -814,7 +817,7 @@ Point2dCP   _GetStripFin () override
 int     _GetStripFinCount () override
     {
     int         iTable;
-    
+
     if (-1 == (iTable = FindTableIndex (PK_TOPOL_fctab_strip_boundary_c)))
         return 0;
 
@@ -827,7 +830,7 @@ int     _GetStripFinCount () override
 int const*  _GetStripFaceId () override
     {
     int         iTable;
-    
+
     if (-1 == (iTable = FindTableIndex (PK_TOPOL_fctab_strip_face_c)))
         return NULL;
 
@@ -840,7 +843,7 @@ int const*  _GetStripFaceId () override
 int     _GetStripFaceIdCount () override
     {
     int         iTable;
-    
+
     if (-1 == (iTable = FindTableIndex (PK_TOPOL_fctab_strip_face_c)))
         return 0 ;
 
@@ -853,7 +856,7 @@ int     _GetStripFaceIdCount () override
 Point2dCP   _GetFinEdge () override
     {
     int         iTable;
-    
+
     if (-1 == (iTable = FindTableIndex (PK_TOPOL_fctab_fin_edge_c)))
         return NULL;
 
@@ -866,7 +869,7 @@ Point2dCP   _GetFinEdge () override
 int     _GetFinEdgeCount () override
     {
     int         iTable;
-    
+
     if (-1 == (iTable = FindTableIndex (PK_TOPOL_fctab_fin_edge_c)))
         return 0;
 
@@ -879,7 +882,7 @@ int     _GetFinEdgeCount () override
 int const*  _GetFacetFace () override
     {
     int         iTable;
-    
+
     if (-1 == (iTable = FindTableIndex (PK_TOPOL_fctab_facet_face_c)))
         return NULL;
 
@@ -892,7 +895,7 @@ int const*  _GetFacetFace () override
 int     _GetFacetFaceCount () override
     {
     int         iTable;
-    
+
     if (-1 == (iTable = FindTableIndex (PK_TOPOL_fctab_facet_face_c)))
         return 0;
 
@@ -901,7 +904,7 @@ int     _GetFacetFaceCount () override
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      10/2012
-* 
+*
 *     Note:  This method  assumes that the body still exists.   This is true
 *            for the instances where they are currently used, but if that changes
 *            the curve Ids and hidden states will have to actually be stored in the
@@ -983,7 +986,7 @@ double          RestrictAngleTol (double radians, double defaultRadians, double 
 void            RemoveHiddenEdges (PK_ENTITY_t entityTag)
     {
     int         iTable;
-    
+
     if (-1 == (iTable = FindTableIndex (PK_TOPOL_fctab_fin_edge_c)))
         return;
 
@@ -1018,7 +1021,7 @@ void            RemoveHiddenEdges (PK_ENTITY_t entityTag)
 void            RemoveHiddenFaces (PK_ENTITY_t entityTag)
     {
     int         iTable;
-    
+
     if (-1 == (iTable = FindTableIndex (PK_TOPOL_fctab_strip_boundary_c)))
         return;
 
@@ -1091,7 +1094,7 @@ void            RemoveHiddenFaces (PK_ENTITY_t entityTag)
     *numStripFinP  = numStripFinNew;
     *numStripFaceP = numStripFaceNew;
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   08/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1145,7 +1148,7 @@ void            FacetEntity (IBRepEntityCR in, double pixelSize, DRange1dP pixel
     if (0.0 != pixelSize)
         {
         DVec3d  xColumn;
-    
+
         entityTransform.GetMatrixColumn (xColumn, 0);
 
         if (rangeIsValid && nullptr != pixelSizeRange)
@@ -1283,7 +1286,7 @@ void            FacetEntity (IBRepEntityCR in, IFacetOptionsR facetOptions)
     if (PK_ERROR_no_errors == PK_TOPOL_find_box (entityTag, &box))
         {
         range.InitFrom (box.coord[0], box.coord[1], box.coord[2], box.coord[3], box.coord[4], box.coord[5]);
-    
+
         double  rangeSize = range.low.Distance (range.high);
 
         if (0.0 != solidTolerance && rangeSize / solidTolerance > s_maxToleranceRatio)
@@ -1436,7 +1439,7 @@ static bool facetTableToPolyfaces(IBRepEntityCR entity, bvector<PolyfaceHeaderPt
     T_FaceAttachmentsVec const& faceAttachmentsVec = *facetTopo._GetFaceAttachmentsVec();
     bmap<int, PolyfaceHeaderCP> faceToPolyfaces;
     bmap<FaceAttachment, PolyfaceHeaderCP> uniqueFaceAttachments;
-    
+
     for (T_FaceToAttachmentIndexMap::const_iterator curr = faceToAttachmentIndexMap.begin(); curr != faceToAttachmentIndexMap.end(); ++curr)
         {
         BeAssert(curr->second < faceAttachmentsVec.size());

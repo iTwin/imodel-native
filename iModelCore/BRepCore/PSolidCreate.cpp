@@ -3,8 +3,11 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include <DgnPlatformInternal.h>
-#include <DgnPlatform/DgnBRep/PSolidUtil.h>
+#include <BRepCore/SolidKernel.h>
+#include <BRepCore/PSolidUtil.h>
+
+USING_NAMESPACE_BENTLEY
+USING_NAMESPACE_BENTLEY_DGN
 
 static const double TOLERANCE_CircleAxisRatio = 1.0E-8;
 
@@ -122,7 +125,7 @@ BentleyStatus   PSolidGeom::EdgeToCurvePrimitive (ICurvePrimitivePtr& curvePrimi
         }
 
     curvePrimitive = PSolidGeom::GetAsCurvePrimitive (curveTag, interval, !orientation);
-    
+
     return curvePrimitive.IsValid() ? SUCCESS : ERROR;
     }
 
@@ -273,7 +276,7 @@ CurveVectorPtr  PSolidGeom::PlanarSheetBodyToCurveVector (IBRepEntityCR entity)
 
     if (PK_BODY_type_sheet_c != bodyType)
         return NULL;
-    
+
     int         nFaces = 0;
 
     if (SUCCESS != PK_BODY_ask_faces (entityTag, &nFaces, NULL) || 1 != nFaces)
@@ -315,8 +318,8 @@ static void flipBoundaries (CurveVectorPtr* uvBoundaries, bool flipU, bool flipV
         transform.ScaleMatrixColumns (transform, 1.0, -1.0, 1.0);
         transform.TranslateInLocalCoordinates (transform, 0.0, -1.0, 0.0);
         }
-    
-    (*uvBoundaries)->TransformInPlace (transform);    
+
+    (*uvBoundaries)->TransformInPlace (transform);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -328,8 +331,8 @@ static void swapBoundariesXY (CurveVectorPtr* uvBoundaries)
         return;
 
     Transform swapXY = Transform::From (RotMatrix::From2Vectors (DVec3d::From (0.0, 1.0, 0.0), DVec3d::From (1.0, 0.0, 0.0)));
-    
-    (*uvBoundaries)->TransformInPlace (swapXY);    
+
+    (*uvBoundaries)->TransformInPlace (swapXY);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -367,7 +370,7 @@ CurveVectorPtr* uvBoundaries
     if (fabs (sweepAngle) >= msGeomConst_2pi)
         {
         if (reversed)
-            {                                                                                                                                                                              
+            {
             double      tmpRadius = topRadius;
             DPoint3d    tmpPoint = topPoint;
 
@@ -382,7 +385,7 @@ CurveVectorPtr* uvBoundaries
             // The top and base are reversed above - so need to flip V parameters (unless reverse already flipped).
             flipBoundaries (uvBoundaries, false, true);
             }
-     
+
 
         DgnConeDetail detail (basePoint, topPoint, rMatrix, baseRadius, topRadius, false);
 
@@ -773,7 +776,7 @@ static void getOrderedEdges (PK_EDGE_t* edges, int nEdges)
             BeAssert (false); // Disjoint wire bodies aren't supported...
             return;
             }
-            
+
         } while ((int)connectedEdges.size () < nEdges);
 
     memcpy (edges, &connectedEdges.front (), nEdges * sizeof (*edges));
@@ -909,7 +912,7 @@ static BentleyStatus triangulatedBodyFromNonPlanarPolygon (PK_BODY_t& bodyTag, C
 
 // Default values for gap closure options ...
 static double s_defaultEqualPointTolerance = 1.0e-10;   // should be "like" PSD resabs
-                                                        // BUT ... it seems to be good to make this SMALLER so that 
+                                                        // BUT ... it seems to be good to make this SMALLER so that
                                                         //     we call in "move the endpoints" machinery to REALLY close the gaps instead of
                                                         //     just hoping we "really" understand what PSD will close up.
 static double s_defaultMaxDirectAdjust     = 1.0e-4;    // gaps this large can be closed by just moving endpoints (i.e. without gap segment).
@@ -1294,7 +1297,7 @@ static BentleyStatus bodyFromCurveVector (PK_BODY_t& bodyTag, PK_VERTEX_t* start
         PK_EDGE_t   edgeTag = PK_ENTITY_null;
 
         unsigned long   id = 1;
-        
+
         if (NULL != idMap)
             {
             for (EdgeToCurveIdMap::iterator curr = idMap->begin(); curr != idMap->end(); curr++)
@@ -1302,7 +1305,7 @@ static BentleyStatus bodyFromCurveVector (PK_BODY_t& bodyTag, PK_VERTEX_t* start
                     id = curr->first;
             }
 
-        // NOTE: Scribe curves in reverse order to match SS3 behavior (required for entity id assignment)...        
+        // NOTE: Scribe curves in reverse order to match SS3 behavior (required for entity id assignment)...
         for (size_t iCurve = curves.size (); iCurve > 0; --iCurve)
             {
             ICurvePrimitivePtr  curve = curves.at (iCurve-1);
@@ -1368,7 +1371,7 @@ static BentleyStatus bodyFromCurveVector (PK_BODY_t& bodyTag, PK_VERTEX_t* start
 
                         PK_EDGE_split_at_param (edgeTag, 0.0, &newVertex, &newEdge);
                         }
-                        
+
                     break;
                     }
 
@@ -1556,7 +1559,7 @@ BentleyStatus PSolidGeom::BodyFromCurveVector (IBRepEntityPtr& entityOut, CurveV
 
     if (SUCCESS != PSolidGeom::BodyFromCurveVector (bodyTag, NULL, curveVector, curveToBody, true, idMap))
         return ERROR;
-    
+
     if (nodeId)
         PSolidTopoId::AssignProfileBodyIds (bodyTag, nodeId);
 
@@ -1794,7 +1797,7 @@ BentleyStatus   PSolidGeom::BodyFromLoft (PK_BODY_t& bodyTag, PK_BODY_t* profile
         else
             {
             bodyTag = result.body;
-            }                                          
+            }
         }
 
     PK_BODY_tracked_loft_r_f (&result);
@@ -1823,10 +1826,10 @@ static BentleyStatus getPathVertices (PK_VERTEX_t* vertices, PK_BODY_t pathTag)
         PK_ENTITY_null == startVertices[0] ||
         PK_ENTITY_null == endVertices[1])
         return ERROR;
-    
+
     vertices[0] = startVertices[0];
     vertices[1] = endVertices[1];
-    
+
     return SUCCESS;
     }
 
@@ -1847,7 +1850,7 @@ BentleyStatus   PSolidGeom::BodyFromSweep (PK_BODY_t& bodyTag, PK_BODY_t profile
 
     if (lockDirection)
         {
-        options.have_lock_direction = true; 
+        options.have_lock_direction = true;
         options.lock_type = PK_sweep_lock_path_and_dir_c;
 
         options.lock_direction.coord[0] = lockDirection->x;
@@ -1857,7 +1860,7 @@ BentleyStatus   PSolidGeom::BodyFromSweep (PK_BODY_t& bodyTag, PK_BODY_t profile
 
     if (NULL != twistAngle)
         {
-        options.twist.law_set.vertices = new PK_VERTEX_t[2];                
+        options.twist.law_set.vertices = new PK_VERTEX_t[2];
         options.twist.law_set.values = new double[2];   // From 3dtube.c.... Is this leaked?
 
         if (SUCCESS != getPathVertices (options.twist.law_set.vertices, pathTag))
@@ -1891,7 +1894,7 @@ BentleyStatus   PSolidGeom::BodyFromSweep (PK_BODY_t& bodyTag, PK_BODY_t profile
         options.scale.law_set.values [0] = 1;
         options.scale.law_set.values [1] = *scale;
         }
-    
+
     // unused - static bool     s_doRepair;
 
     if (selfRepair)
@@ -1968,7 +1971,7 @@ BentleyStatus PSolidGeom::BodyFromSolidPrimitive (IBRepEntityPtr& entityOut, ISo
 
             DEllipse3d      minorHoop = detail.VFractionToUSectionDEllipse3d (0.0);
             CurveVectorPtr  curve = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
-    
+
             curve->push_back (ICurvePrimitive::CreateArc (minorHoop));
 
             PK_BODY_t   bodyTag;
@@ -2086,14 +2089,14 @@ BentleyStatus PSolidGeom::BodyFromSolidPrimitive (IBRepEntityPtr& entityOut, ISo
             PSolidUtil::GetTransforms (solidToDgn, dgnToSolid, &origin);
 
             DEllipse3d  ellipse = detail.UFractionToVSectionDEllipse3d (0.0);
-            
+
             if (ellipse.IsCircular ()) // Special case for Sphere...
                 {
                 double      r0, r1, theta0, sweep;
                 DPoint3d    center;
                 RotMatrix   rMatrix;
                 DEllipse3d  tmpEllipse;
-                
+
 
                 dgnToSolid.Multiply (tmpEllipse, ellipse);
                 tmpEllipse.GetScaledRotMatrix (center, rMatrix, r0, r1, theta0, sweep);
@@ -2117,7 +2120,7 @@ BentleyStatus PSolidGeom::BodyFromSolidPrimitive (IBRepEntityPtr& entityOut, ISo
                 }
 
             CurveVectorPtr  curve = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open); // Only true sphere should be a solid...
-    
+
             curve->push_back (ICurvePrimitive::CreateArc (ellipse));
 
             PK_BODY_t   bodyTag;
@@ -2221,7 +2224,7 @@ BentleyStatus PSolidGeom::BodyFromSolidPrimitive (IBRepEntityPtr& entityOut, ISo
                 sweepRadians = msGeomConst_2pi;
             else if (sweepRadians < -msGeomConst_2pi)
                 sweepRadians = -msGeomConst_2pi;
-            
+
             if (SUCCESS != PSolidUtil::SweepBodyAxis (bodyTag, axis, zeroPoint, sweepRadians))
                 {
                 PK_ENTITY_delete (1, &bodyTag);
@@ -2240,7 +2243,7 @@ BentleyStatus PSolidGeom::BodyFromSolidPrimitive (IBRepEntityPtr& entityOut, ISo
         case SolidPrimitiveType_DgnRuledSweep:
             {
             DgnRuledSweepDetail  detail;
-    
+
             if (!primitive.TryGetDgnRuledSweepDetail (detail))
                 return ERROR;
 
@@ -2416,7 +2419,7 @@ BentleyStatus PSolidGeom::BodyFromSolidPrimitive (IBRepEntityPtr& entityOut, ISo
                             if (nodeId)
                                 PSolidTopoId::AddNodeIdAttributes (PSolidUtil::GetEntityTag (*entityOut), nodeId, true);
 
-                            if ((primitive.GetCapped() && IBRepEntity::EntityType::Solid == entityOut->GetEntityType()) || 
+                            if ((primitive.GetCapped() && IBRepEntity::EntityType::Solid == entityOut->GetEntityType()) ||
                                 (!primitive.GetCapped() && IBRepEntity::EntityType::Sheet == entityOut->GetEntityType()))
                                 status = SUCCESS;
                             }
@@ -2433,7 +2436,7 @@ BentleyStatus PSolidGeom::BodyFromSolidPrimitive (IBRepEntityPtr& entityOut, ISo
             memset (profileBodies, 0, nProfiles * sizeof (PK_BODY_t));
 
             StatusInt       status = ERROR;
-        
+
             for (size_t iProfile = 0; iProfile < nProfiles; iProfile++)
                 {
                 // NOTE: Need all open profiles for multi-stage linear transition even though each loft is done 2 profiles at a time.
@@ -2681,7 +2684,7 @@ BentleyStatus PSolidGeom::BodyFromLoft(IBRepEntityPtr& out, CurveVectorPtr* prof
     memset (profileBodies, 0, nProfiles * sizeof (PK_BODY_t));
 
     BentleyStatus   status = ERROR;
-        
+
     for (size_t iProfile = 0; iProfile < nProfiles; iProfile++)
         {
         bool coverClosed = (0 == iProfile || (!periodic && iProfile+1 == nProfiles)); // NOTE: Only end caps may be sheet bodies...
@@ -2734,7 +2737,7 @@ POP_MSVC_IGNORE
 * @bsimethod                                                    Brien.Bastings  07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus PSolidGeom::BodyFromSweep(IBRepEntityPtr& out, CurveVectorCR profile, CurveVectorCR path, bool alignParallel, bool selfRepair, bool createSheet, DVec3dCP lockDirection, double const* twistAngle, double const* scale, DPoint3dCP scalePoint, uint32_t nodeId)
-    {                                                                                                                                                       
+    {
     DPoint3d    origin;
 
     if (!path.GetStartPoint (origin))
@@ -2795,7 +2798,7 @@ BentleyStatus PSolidGeom::BodyFromSweep(IBRepEntityPtr& out, CurveVectorCR profi
 * @bsimethod                                                    Ray.Bentley     03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus PSolidGeom::BodyFromExtrusionToBody(IBRepEntityPtr& target, IBRepEntityCR extrudeTo, IBRepEntityCR profile, bool reverseDirection, uint32_t nodeId)
-    {                           
+    {
     PK_ENTITY_t extrudeToTag = 0, profileTag = 0, extrusionTag = 0;
     Transform   invTargetTransform, profileTransform;
     DVec3d      direction;
@@ -2803,9 +2806,9 @@ BentleyStatus PSolidGeom::BodyFromExtrusionToBody(IBRepEntityPtr& target, IBRepE
     if (0 == (extrudeToTag = PSolidUtil::GetEntityTag (extrudeTo)) ||
         0 == (profileTag = PSolidUtil::GetEntityTag (profile)))
         return ERROR;
- 
+
     PK_ENTITY_copy (profileTag, &profileTag);
-            
+
     invTargetTransform.InverseOf (extrudeTo.GetEntityTransform ());
     profileTransform.InitProduct (invTargetTransform, profile.GetEntityTransform ());
     PSolidUtil::TransformBody (profileTag, profileTransform);

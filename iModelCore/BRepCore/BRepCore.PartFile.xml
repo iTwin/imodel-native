@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="..\bsicommon\build\PartFile.xsd">
+
+    <!-- We need this shim part to avoid pulling all psolid repos just to see their platform dependency. -->
+    <Part Name="PsolidShim">
+        <SubPart PartName="PsolidShim_AndroidARM64"/>
+        <SubPart PartName="PsolidShim_iOSArm64"/>
+        <SubPart PartName="PsolidShim_LinuxX64"/>
+        <SubPart PartName="PsolidShim_MacOSx64"/>
+        <SubPart PartName="PsolidShim_x64"/>
+    </Part>
+    <Part Name="PsolidShim_AndroidARM64" OnlyPlatforms="AndroidARM64" WipPartEnable="ParasolidAndroid">
+        <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_311_pre2_AndroidARM64"/>
+    </Part>
+    <Part Name="PsolidShim_iOSArm64" OnlyPlatforms="iOSARM64">
+        <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_30_1_168_iOSArm64"/>
+    </Part>
+    <Part Name="PsolidShim_LinuxX64" OnlyPlatforms="LinuxX64">
+        <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_30_1_168_LinuxX64"/>
+    </Part>
+    <Part Name="PsolidShim_MacOSx64" OnlyPlatforms="MacOSx64">
+        <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_30_1_168_MacOSx64"/>
+    </Part>
+    <Part Name="PsolidShim_x64" OnlyPlatforms="x64">
+        <!-- Yes, we are choosing to use a different version on x64. This is for PP compatibility. This version is not available on other platforms. -->
+        <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_31_0_249_x64"/>
+    </Part>
+
+    <!-- NOTE: IModel02 uses "M02" as a library suffix to differentiate from DgnV8, Graphite, and Bim02 libraries -->
+    <Part Name="BRepCore" BentleyBuildMakeFile="BRepCore.mke" ApiNumber="M02">
+        <SubPart PartName="GeomDlls"            PartFile="iModelCore/GeomLibs/geomlibs"     Repository="imodel02" />
+        <SubPart PartName="PsolidShim"/>
+        <Bindings>
+            <PublicAPI Domain="BRepCore" />
+            <Libs>Delivery/$(libprefix)BRepCore$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)BRepCore$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+</BuildContext>

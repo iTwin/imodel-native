@@ -85,6 +85,7 @@ DLM_NOENTRY = 1
 DLM_OBJECT_DEST = $(o)
 DLM_OBJECT_FILES = $(objs)
 
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BRepCore$(libext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext)

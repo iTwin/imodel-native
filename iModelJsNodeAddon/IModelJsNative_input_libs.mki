@@ -53,6 +53,7 @@ THIN_ARCHIVE_INPUTS  + $(ContextSubpartsLibs)libBeOpenSSL.a
 DLM_OBJECT_FILES + $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(stlibext)
 
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BRepCore$(libext)
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)ECPresentation$(libext)
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext)
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)Units$(libext)

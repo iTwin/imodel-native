@@ -7,6 +7,7 @@
 //__PUBLISH_SECTION_START__
 
 #include <DgnPlatform/DgnPlatform.h>
+#include <BRepCore/SolidKernel.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -140,7 +141,7 @@ struct IGeometryProcessor
 public:
     //! Specify how to process a geometric primitive that is not handled by it's specific _Process/_ProcessClipped call.
     //! When returning multiple values, priority is given to the lowest value. For example, if IBRepEntity is the
-    //! preferred geometry, but a Polyface is acceptable when conversion to IBRepEntity isn't possible or available, 
+    //! preferred geometry, but a Polyface is acceptable when conversion to IBRepEntity isn't possible or available,
     //! the IGeometryProcessor can return UnhandledPreference::BRep | UnhandledPreference::Facets.
     enum class UnhandledPreference
     {
@@ -231,8 +232,8 @@ virtual void _OutputGraphics(ViewContextR context) {}
 ENUM_IS_FLAGS(IGeometryProcessor::UnhandledPreference)
 
 //=======================================================================================
-//! Provides an implementation of a ViewContext and Render::Graphic suitable for 
-//! collecting a "picture" of an element's graphics. The element handler's Draw method is 
+//! Provides an implementation of a ViewContext and Render::Graphic suitable for
+//! collecting a "picture" of an element's graphics. The element handler's Draw method is
 //! called and the output is sent to the supplied IGeometryProcessor.
 //! @ingroup GROUP_Geometry
 // @bsiclass                                                    Brien.Bastings  06/2009

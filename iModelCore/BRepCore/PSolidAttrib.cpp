@@ -3,8 +3,11 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include <DgnPlatformInternal.h>
-#include <DgnPlatform/DgnBRep/PSolidUtil.h>
+#include <BRepCore/SolidKernel.h>
+#include <BRepCore/PSolidUtil.h>
+
+USING_NAMESPACE_BENTLEY
+USING_NAMESPACE_BENTLEY_DGN
 
 static const int HIDDEN_ATTRIBUTE_Visible = 0;
 static const int HIDDEN_ATTRIBUTE_Hidden  = 1;
@@ -225,7 +228,7 @@ BentleyStatus   PSolidAttrib::SetFaceMaterialIndexAttribute(PK_FACE_t entity, in
         }
     else if (0 == index)
         {
-        PK_ENTITY_delete(numAttributes, attributes); // Remove attribute for "base" attachment info... 
+        PK_ENTITY_delete(numAttributes, attributes); // Remove attribute for "base" attachment info...
         }
     else
         {

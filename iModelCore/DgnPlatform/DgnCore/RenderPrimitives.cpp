@@ -6,7 +6,7 @@
 #include "DgnPlatformInternal.h"
 #include <DgnPlatform/RenderPrimitives.h>
 #if defined(BENTLEYCONFIG_PARASOLID)
-#include <DgnPlatform/DgnBRep/PSolidUtil.h>
+#include <BRepCore/PSolidUtil.h>
 #endif
 
 USING_NAMESPACE_BENTLEY_RENDER
@@ -107,7 +107,7 @@ bvector<bool> &canDecimateFlags
 )
     {
     paths.push_back(bvector<DPoint3d>());
-    canDecimateFlags.push_back(prim.GetCurvePrimitiveType() == ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_LineString); 
+    canDecimateFlags.push_back(prim.GetCurvePrimitiveType() == ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_LineString);
     return CollectPointsFromSinglePrimitive(prim, paths.back());
     }
 
@@ -2263,7 +2263,7 @@ PolyfaceList SolidKernelGeometry::_GetPolyfaces(IFacetOptionsR facetOptions, Vie
             if (polyface->HasFacets())
                 {
                 GeometryParams faceParams;
-                params[i].ToGeometryParams(faceParams, baseParams);
+                FaceAttachmentUtil::ToGeometryParams(params[i], faceParams, baseParams);
 
                 GraphicParams gfParams;
                 context.CookGeometryParams(faceParams, gfParams);
