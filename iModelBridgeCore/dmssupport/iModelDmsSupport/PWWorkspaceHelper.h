@@ -18,6 +18,7 @@ struct PWWorkspaceHelper : public IDmsSupport
         DmsSession  m_session;
         BeFileName  m_inputFile;
         BeFileName  m_activeWorkspaceDir;
+        WString     m_inputFileMoniker;
         bool        InitPwApi();
         virtual bool _Initialize() override;
         virtual bool _UnInitialize() override;

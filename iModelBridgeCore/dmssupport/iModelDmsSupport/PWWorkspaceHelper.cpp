@@ -198,6 +198,8 @@ bool            PWWorkspaceHelper::InitPwApi()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            PWWorkspaceHelper::_InitializeSession(WStringCR pwMoniker)
     {
+    m_inputFileMoniker = pwMoniker;
+
     if (!InitPwApi())
         return false;
     
@@ -263,5 +265,16 @@ bool            PWWorkspaceHelper::_InitializeSessionFromDataSource(WStringCR da
 bool            PWWorkspaceHelper::_StageInputFile(BeFileNameCR fileLocation)
     {
     m_inputFile = fileLocation;
-    return true;
+    if (fileLocation.DoesPathExist())
+        return true;
+
+    int folderId, documentId;
+    if (SUCCESS != GetFolderIdFromMoniker(folderId, documentId, m_inputFileMoniker))
+        return false;
+
+    BeFileName dirLocation = fileLocation.GetDirectoryName();
+    if (SUCCESS == StageDocument(folderId, documentId, dirLocation))
+        return true;
+
+    return false;
     }

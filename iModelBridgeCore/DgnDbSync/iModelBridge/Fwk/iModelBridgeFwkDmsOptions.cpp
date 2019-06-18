@@ -99,9 +99,14 @@ BentleyStatus   iModelBridgeFwk::SetupDmsFiles()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   iModelBridgeFwk::StageInputFile()
     {
+    m_dmsSupport->_Initialize();
+    m_dmsSupport->SetApplicationResourcePath(m_dmsServerArgs.m_applicationWorkspace);
+
     BentleyStatus status = BentleyStatus::SUCCESS;
     if (!m_dmsSupport->_StageInputFile(m_jobEnvArgs.m_inputFileName))
         return ERROR;
+
+    m_dmsSupport->_UnInitialize();
     return status;
     }
 
