@@ -677,8 +677,9 @@ BentleyStatus AdapterHelper::PrimitiveToJson(JsonRef& jsonValue, IECSqlValue con
                         jsonValue.RapidJson().SetString(guid.ToString().c_str(), jsonValue.Allocator()); // copy the string into the json as the original string gets released after the next Step().
                     else
                         jsonValue.JsonCpp() = guid.ToString().c_str();
+                    
+                    return BentleyStatus::SUCCESS;
                     }
-                return BentleyStatus::SUCCESS;
                 }
 
             // not a guid
