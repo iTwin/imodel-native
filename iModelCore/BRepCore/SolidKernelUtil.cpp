@@ -7,6 +7,8 @@
 #if defined (BENTLEYCONFIG_PARASOLID)
 #include <BRepCore/PSolidUtil.h>
 #endif
+#include <Bentley/ByteStream.h>
+#include <GeomJsonWireFormat/JsonUtils.h>
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_DGN
@@ -19,7 +21,6 @@ FaceAttachment::FaceAttachment()
     m_useColor = m_useMaterial = false;
     m_color = 0;
     m_transparency = 0.0;
-    m_material = 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5307,4 +5308,141 @@ CurveVectorPtr BRepUtil::Create::OffsetEdgesOnPlanarFaceToCurveVector(ISubEntity
 #endif
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static void FaceAttachmentFromJson(FaceAttachment& attachment, JsonValueCR brep, uint32_t iSymb)
+    {
+    if (!brep["faceSymbology"][iSymb]["color"].isNull())
+        {
+        uint32_t color = brep["faceSymbology"][iSymb]["color"].asUInt();
+        double transparency = !brep["faceSymbology"][iSymb]["transparency"].isNull() ? brep["faceSymbology"][iSymb]["transparency"].asDouble() : 0.0;
+        attachment.SetColor(color, transparency);
+        }
 
+    if (!brep["faceSymbology"][iSymb]["material"].isNull())
+        {
+        BeInt64Id materialId(brep["faceSymbology"][iSymb]["material"].asUInt64());
+        attachment.SetMaterial(materialId);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static Json::Value FaceAttachmentToJson(FaceAttachment const& attachment)
+    {
+    Json::Value faceValue; // Shouldn't need to worry about null...either useColor or useMaterial must be set...
+    bool useColor = attachment.GetUseColor();
+    bool useMaterial = attachment.GetUseMaterial();
+
+    if (useColor)
+        {
+        faceValue["color"] = attachment.GetColor();
+        if (0.0 != attachment.GetTransparency())
+            faceValue["transparency"] = attachment.GetTransparency();
+        }
+
+    if (useMaterial)
+        {
+        faceValue["materialId"] = attachment.GetMaterial().ToHexStr();
+        }
+
+    return faceValue;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+IBRepEntityPtr BRepUtil::Create::BodyFromJson(JsonValueCR brep)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    if (brep["data"].isNull())
+        return nullptr;
+
+    ByteStream byteStream;
+
+    Base64Utilities::Decode(byteStream, brep["data"].asString());
+
+    if (!byteStream.HasData())
+        return nullptr;
+
+    Transform entityTransform = Transform::FromIdentity();
+
+    if (!brep["transform"].isNull())
+        JsonUtils::TransformFromJson(entityTransform, brep["transform"]);
+
+    IBRepEntityPtr entity;
+
+    if (SUCCESS != PSolidUtil::RestoreEntityFromMemory(entity, byteStream.GetData(), byteStream.GetSize(), entityTransform))
+        return nullptr;
+
+    if (!brep["faceSymbology"].isNull() && brep["faceSymbology"].isArray())
+        {
+        uint32_t nSymb = (uint32_t) brep["faceSymbology"].size();
+
+        for (uint32_t iSymb=0; iSymb < nSymb; iSymb++)
+            {
+            FaceAttachment attachment;
+
+            FaceAttachmentFromJson(attachment, brep, iSymb);
+
+            if (nullptr == entity->GetFaceMaterialAttachments())
+                {
+                IFaceMaterialAttachmentsPtr attachments = PSolidUtil::CreateNewFaceAttachments(PSolidUtil::GetEntityTag(*entity), attachment);
+
+                if (!attachments.IsValid())
+                    break;
+
+                PSolidUtil::SetFaceAttachments(*entity, attachments.get());
+                }
+            else
+                {
+                entity->GetFaceMaterialAttachmentsP()->_GetFaceAttachmentsVecR().push_back(attachment);
+                }
+            }
+        }
+
+    return entity;
+#else
+    return nullptr;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value BRepUtil::Create::BodyToJson(IBRepEntityCR entity)
+    {
+    Json::Value value(Json::objectValue);
+
+#if defined (BENTLEYCONFIG_PARASOLID)
+    size_t      bufferSize = 0;
+    uint8_t*    buffer = nullptr;
+
+    if (SUCCESS != PSolidUtil::SaveEntityToMemory(&buffer, bufferSize, entity))
+        return value;
+
+    Utf8String dataStr = Base64Utilities::Encode((Utf8CP) buffer, bufferSize);
+    value["data"] = dataStr;
+    value["type"] = (uint32_t) entity.GetEntityType(); // Can't be IBRepEntity::EntityType::Invalid if SaveEntityToMemory returned SUCCESS...
+
+    Transform entityTransform = entity.GetEntityTransform();
+    if (!entityTransform.IsIdentity())
+        JsonUtils::TransformToJson(value["transform"], entityTransform);
+
+    IFaceMaterialAttachmentsCP attachments = entity.GetFaceMaterialAttachments();
+    if (nullptr != attachments)
+        {
+        T_FaceAttachmentsVec const& faceAttachmentsVec = attachments->_GetFaceAttachmentsVec();
+
+        for (FaceAttachment attachment : faceAttachmentsVec)
+            {
+            Json::Value faceValue = FaceAttachmentToJson(attachment);
+            value["faceSymbology"].append(faceValue);
+            }
+        }
+#endif
+
+    return value;
+    }

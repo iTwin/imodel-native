@@ -34,6 +34,8 @@ nameToDefine=__BREPCORE_BUILD__
 #---------------------------------------------
 #        Compile the source files for the DLM
 #---------------------------------------------
+%include MultiCppCompileRule.mki
+
 $(o)SolidKernelUtil$(oext) :                 $(baseDir)SolidKernelUtil.cpp $(PublicAPISrc)SolidKernel.h
 
 $(o)TopologyPrimitive$(oext) :               $(baseDir)TopologyPrimitive.cpp $(PublicAPISrc)SolidKernel.h
@@ -66,47 +68,23 @@ $(o)PSolidUtil$(oext) :                      $(baseDir)PSolidUtil.cpp $(PublicAP
 
 %endif
 
-#---------------------------------------------
-#        Define the object file list
-#---------------------------------------------
-dlmObjs = $(o)SolidKernelUtil$(oext)
-
-dlmObjs + $(o)TopologyPrimitive$(oext)
-
-%if defined (BENTLEYCONFIG_PARASOLID)
-
-dlmObjs + $(o)PSolidKernelManager$(oext) \
-          $(o)PSolidKernelEntity$(oext) \
-          $(o)PSolidAttrib$(oext) \
-          $(o)PSolidBSpline$(oext) \
-          $(o)PSolidCreate$(oext) \
-          $(o)PSolidFacet$(oext) \
-          $(o)PSolidModify$(oext) \
-          $(o)PSolidPolyface$(oext) \
-          $(o)PSolidThreadUtil$(oext) \
-          $(o)PSolidTopo$(oext) \
-          $(o)PSolidTopoId$(oext) \
-          $(o)PSolidUtil$(oext)
-
-%endif
+%include MultiCppCompileGo.mki
 
 #--------------------------------------------------------------
 #        Make the DLL
 #--------------------------------------------------------------
-#----------------------------------------------------------------------------------------
-# Use dlmlink.mki to link the DLM.
-#----------------------------------------------------------------------------------------
 DLM_OBJECT_DEST             = $(o)
+DLM_DEST                    = $(o)
+DLM_EXPORT_DEST             = $(o)
 DLM_LIBDEF_SRC              = $(baseDir)
 DLM_NAME                    = $(appName)
 RIGHTSCOMPLIANT             = true
-DLM_OBJECT_FILES            = $(dlmObjs)
+DLM_OBJECT_FILES            = $(MultiCompileObjectList)
 DLM_NOENTRY                 = 1
 DLM_NO_INITIALIZE_FUNCTION  = 1
 DLM_SPECIAL_LINKOPT         = -Fixed:no
-LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
-DLM_DEST                    = $(o)
-DLM_EXPORT_DEST             = $(o)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext) \
+                              $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(stlibext)
 
 %if defined (BENTLEYCONFIG_PARASOLID)
 LINKER_LIBRARIES_DELAYLOADED = \

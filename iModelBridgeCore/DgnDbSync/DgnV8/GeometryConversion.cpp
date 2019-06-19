@@ -2127,7 +2127,7 @@ void ProcessSingleBody(Bentley::ISolidKernelEntityCR entity, Bentley::IFaceMater
             attachment.SetColor(pathEntry.m_geomParams.GetLineColor().GetValue(), pathEntry.m_geomParams.GetTransparency());
 
         if (!pathEntry.m_geomParams.IsMaterialFromSubCategoryAppearance())
-            attachment.SetMaterial(pathEntry.m_geomParams.GetMaterialId().GetValueUnchecked());
+            attachment.SetMaterial(pathEntry.m_geomParams.GetMaterialId());
 
         pathEntry.m_attachments = DgnDbApi::PSolidUtil::CreateNewFaceAttachments(DgnV8Api::PSolidUtil::GetEntityTag(*pathEntry.m_brep), attachment);
 
@@ -2181,7 +2181,7 @@ void ProcessSingleBody(Bentley::ISolidKernelEntityCR entity, Bentley::IFaceMater
                 attachment.SetColor(faceParamsDb.GetLineColor().GetValue(), faceParamsDb.GetTransparency());
 
             if (!faceParamsDb.IsMaterialFromSubCategoryAppearance())
-                attachment.SetMaterial(faceParamsDb.GetMaterialId().GetValueUnchecked());
+                attachment.SetMaterial(faceParamsDb.GetMaterialId());
 
             size_t attachmentIndex = 0;
             DgnDbApi::T_FaceAttachmentsVec::const_iterator foundAttachmentDb = std::find(faceAttachmentsVecDb.begin(), faceAttachmentsVecDb.end(), attachment);
@@ -4063,7 +4063,7 @@ struct V8GraphicsLightWeightCollector : DgnV8Api::IElementGraphicsProcessor
                     attachment.SetColor(pathEntry.m_geomParams.GetLineColor().GetValue(), pathEntry.m_geomParams.GetTransparency());
 
                 if (!pathEntry.m_geomParams.IsMaterialFromSubCategoryAppearance())
-                    attachment.SetMaterial(pathEntry.m_geomParams.GetMaterialId().GetValueUnchecked());
+                    attachment.SetMaterial(pathEntry.m_geomParams.GetMaterialId());
 
                 pathEntry.m_attachments = DgnDbApi::PSolidUtil::CreateNewFaceAttachments(DgnV8Api::PSolidUtil::GetEntityTag(*pathEntry.m_brep), attachment);
 
@@ -4117,7 +4117,7 @@ struct V8GraphicsLightWeightCollector : DgnV8Api::IElementGraphicsProcessor
                         attachment.SetColor(faceParamsDb.GetLineColor().GetValue(), faceParamsDb.GetTransparency());
 
                     if (!faceParamsDb.IsMaterialFromSubCategoryAppearance())
-                        attachment.SetMaterial(faceParamsDb.GetMaterialId().GetValueUnchecked());
+                        attachment.SetMaterial(faceParamsDb.GetMaterialId());
 
                     size_t attachmentIndex = 0;
                     DgnDbApi::T_FaceAttachmentsVec::const_iterator foundAttachmentDb = std::find(faceAttachmentsVecDb.begin(), faceAttachmentsVecDb.end(), attachment);

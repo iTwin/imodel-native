@@ -24,7 +24,7 @@ void FaceAttachmentUtil::FromGeometryParams(FaceAttachment& attachment, Render::
         attachment.SetColor(sourceParams.GetLineColor().GetValue(), sourceParams.GetTransparency());
 
     if (!sourceParams.IsMaterialFromSubCategoryAppearance())
-        attachment.SetMaterial(sourceParams.GetMaterialId().GetValueUnchecked());
+        attachment.SetMaterial(sourceParams.GetMaterialId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -41,7 +41,7 @@ void FaceAttachmentUtil::ToGeometryParams(FaceAttachment const& attachment, Rend
         }
 
     if (attachment.GetUseMaterial())
-        faceParams.SetMaterialId(RenderMaterialId(attachment.GetMaterial()));
+        faceParams.SetMaterialId(RenderMaterialId(attachment.GetMaterial().GetValueUnchecked()));
     }
 
 /*----------------------------------------------------------------------------------*//**
@@ -1438,7 +1438,7 @@ void GeometryStreamIO::Writer::Append(IBRepEntityCR entity)
 
             FB::FaceSymbology  fbSymb(useColor, useMaterial,
                                       useColor ? attachment.GetColor() : 0,
-                                      useMaterial ? attachment.GetMaterial() : 0,
+                                      useMaterial ? attachment.GetMaterial().GetValueUnchecked() : 0,
                                       useColor ? attachment.GetTransparency() : 0, uv);
 
             fbSymbVec.push_back(fbSymb);
@@ -1918,7 +1918,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, IBRepEntityPtr& entity
             attachment.SetColor(fbSymb->color(), fbSymb->transparency());
 
         if (fbSymb->useMaterial())
-            attachment.SetMaterial((uint64_t)fbSymb->materialId());
+            attachment.SetMaterial(BeInt64Id((uint64_t)fbSymb->materialId()));
 
         if (nullptr == entity->GetFaceMaterialAttachments())
             {
@@ -6140,75 +6140,17 @@ bool GeometryBuilder::FromJson(JsonValueCR input, JsonValueCR opts)
             }
         else if (entry.isMember("brep"))
             {
-#if defined (BENTLEYCONFIG_PARASOLID)
             Json::Value brep = entry["brep"];
+            IBRepEntityPtr entity = BRepUtil::Create::BodyFromJson(brep);
 
-            if (brep["data"].isNull())
-                continue;
-
-            ByteStream byteStream;
-
-            Base64Utilities::Decode(byteStream, brep["data"].asString());
-
-            if (!byteStream.HasData())
-                continue;
-
-            Transform entityTransform = Transform::FromIdentity();
-
-            if (!brep["transform"].isNull())
-                JsonUtils::TransformFromJson(entityTransform, brep["transform"]);
-
-            IBRepEntityPtr entity;
-
-            if (SUCCESS != PSolidUtil::RestoreEntityFromMemory(entity, byteStream.GetData(), byteStream.GetSize(), entityTransform))
+            if (!entity.IsValid())
                 return false;
-
-            if (!brep["faceSymbology"].isNull() && brep["faceSymbology"].isArray())
-                {
-                uint32_t nSymb = (uint32_t) brep["faceSymbology"].size();
-
-                for (uint32_t iSymb=0; iSymb < nSymb; iSymb++)
-                    {
-                    FaceAttachment attachment;
-
-                    if (!brep["faceSymbology"][iSymb]["color"].isNull())
-                        {
-                        uint32_t color = brep["faceSymbology"][iSymb]["color"].asUInt();
-                        double transparency = !brep["faceSymbology"][iSymb]["transparency"].isNull() ? brep["faceSymbology"][iSymb]["transparency"].asDouble() : 0.0;
-                        attachment.SetColor(color, transparency);
-                        }
-
-                    if (!brep["faceSymbology"][iSymb]["material"].isNull())
-                        {
-                        RenderMaterialId materialId;
-                        materialId.FromJson(brep["faceSymbology"][iSymb]["material"]);
-                        attachment.SetMaterial(materialId.GetValueUnchecked());
-                        }
-
-                    if (nullptr == entity->GetFaceMaterialAttachments())
-                        {
-                        IFaceMaterialAttachmentsPtr attachments = PSolidUtil::CreateNewFaceAttachments(PSolidUtil::GetEntityTag(*entity), attachment);
-
-                        if (!attachments.IsValid())
-                            break;
-
-                        PSolidUtil::SetFaceAttachments(*entity, attachments.get());
-                        }
-                    else
-                        {
-                        entity->GetFaceMaterialAttachmentsP()->_GetFaceAttachmentsVecR().push_back(attachment);
-                        }
-                    }
-                }
 
             if (!Append(params))
                 return false;
 
             if (!Append(*entity))
                 return false;
-#else
-            return false;
-#endif
             }
         else
             {

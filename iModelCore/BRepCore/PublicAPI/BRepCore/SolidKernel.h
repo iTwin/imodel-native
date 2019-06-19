@@ -10,6 +10,8 @@
 #include <Bentley/bvector.h>
 #include <Bentley/bmap.h>
 #include <Bentley/bset.h>
+#include <Bentley/BeId.h>
+#include <BeJsonCpp/BeJsonUtilities.h>
 #include <Geom/GeomApi.h>
 
 #ifndef BREPCORE_EXPORT
@@ -52,9 +54,9 @@ private:
 
     bool                m_useColor:1;       //!< true - color/transparency does not follow sub-category appearance.
     bool                m_useMaterial:1;    //!< true - material does not follow sub-category appearance.
-    uint32_t            m_color;
-    double              m_transparency;
-    uint64_t            m_material;
+    uint32_t            m_color;            //!< TBGR - T ignored, set from m_transparency
+    double              m_transparency;     //!< 0.0 (fully opaque) <-> 1.0 (fully transparent)
+    BeInt64Id           m_material;         //!< RenderMaterialId
 
 public:
 
@@ -63,15 +65,15 @@ BREPCORE_EXPORT FaceAttachment();
 BREPCORE_EXPORT bool operator == (struct FaceAttachment const&) const;
 BREPCORE_EXPORT bool operator < (struct FaceAttachment const&) const;
 
-bool GetUseColor() const {return m_useColor;} // GetColor/GetTransparency are valid...
-bool GetUseMaterial() const {return m_useMaterial;}
+bool GetUseColor() const {return m_useColor;} //!< GetColor/GetTransparency are valid...
+bool GetUseMaterial() const {return m_useMaterial;} //!< GetMaterial is valid...
 
-uint32_t GetColor() const {return m_color;} // TBGR
-double GetTransparency() const {return m_transparency;} // 0.0 (fully opaque) <-> 1.0 (fully transparent)
-uint64_t GetMaterial() const {return m_material;} // RenderMaterialId
+uint32_t GetColor() const {return m_color;}
+double GetTransparency() const {return m_transparency;}
+BeInt64Id GetMaterial() const {return m_material;}
 
 void SetColor(uint32_t color, double transparency) { m_color = color; m_transparency = transparency; m_useColor = true; }
-void SetMaterial(uint64_t material) { m_material = material; m_useMaterial = true; }
+void SetMaterial(BeInt64Id material) { m_material = material; m_useMaterial = true; }
 
 }; // FaceAttachment
 
@@ -607,6 +609,12 @@ BREPCORE_EXPORT static BentleyStatus UpdateFaceMaterialAttachments(IBRepEntityR 
 //! Support for the creation of new bodies from other types of geometry.
 struct Create
     {
+    //! Create a new IBRepEntity from a json value.
+    BREPCORE_EXPORT static IBRepEntityPtr BodyFromJson(JsonValueCR value);
+
+    //! Represent the supplied IBRepEntity as a json value.
+    BREPCORE_EXPORT static Json::Value BodyToJson(IBRepEntityCR entity);
+
     //! Create a new wire or planar sheet body from a CurveVector that represents an open path, closed path, region with holes, or union region.
     //! @param[out] out The new body.
     //! @param[in] curve The curve vector to create a body from.
