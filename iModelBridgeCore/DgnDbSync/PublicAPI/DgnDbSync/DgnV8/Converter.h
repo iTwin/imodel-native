@@ -2970,9 +2970,20 @@ struct RealityMeshAttachmentConversion
                          
 };
 
+//=======================================================================================
+// @bsiclass                                                    Daryl Holmwood 06/19
+//=======================================================================================
+struct CifTerrainElementHandler : DgnV8Api::ExtendedElementHandler
+    {    
+    enum { ELEMENTHANDLER_SUBTYPE_DTMELEMENT = 11,
+        ELEMENTHANDLER_SUBTYPE_DTMENTITY = 12,
+        XATTRIBUTEID_CifTerrainModel = 22739};
+    DEFINE_T_SUPER(DgnV8Api::ExtendedElementHandler)
+        DGNV8_ELEMENTHANDLER_DECLARE_MEMBERS(CifTerrainElementHandler, );
+    };
 
 //=======================================================================================
-// @bsiclass                                                    Mathieu.St-Pierre 07/17
+// @bsiclass                                                    Daryl Holmwood 07/17
 //=======================================================================================
 struct ConvertScalableMeshAttachment : ConvertToDgnDbElementExtension
 {
@@ -2980,6 +2991,16 @@ struct ConvertScalableMeshAttachment : ConvertToDgnDbElementExtension
     Result _PreConvertElement(DgnV8EhCR, Converter&, ResolvedModelMapping const&) override;
 };
 
+//=======================================================================================
+// @bsiclass                                                    Daryl Holmwood 07/17
+//=======================================================================================
+struct ConvertDTMElement : ConvertScalableMeshAttachment
+    {
+    static void Register();
+    Result DoConvert(DgnV8EhCR v8el, WCharCP url, Converter& converter, ResolvedModelMapping const& v8mm);
+
+    Result _PreConvertElement(DgnV8EhCR, Converter&, ResolvedModelMapping const&) override;
+    };
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      09/2016
 //=======================================================================================
