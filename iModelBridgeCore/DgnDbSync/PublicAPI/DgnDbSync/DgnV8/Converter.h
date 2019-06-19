@@ -833,6 +833,7 @@ struct Converter
         L10N_STRING(FailedToConvertThumbnails)  // =="Failed to convert thumbnails"==
         L10N_STRING(ProjectExtentsAdjusted)      // =="Project Extents have been adjusted to exclude outlying elements"==
         L10N_STRING(FailedToCreatePresentationRules)    // =="Failed to create presentation rules"==
+        L10N_STRING(InconsistentTransformsForEmbeddedReference)    // =="Inconsistent transform used for embedded reference %s. It was first seen with a different transform in %s"==
             
         IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
@@ -2574,6 +2575,7 @@ protected:
     DGNDBSYNC_EXPORT void _AddResolvedModelMapping(ResolvedModelMapping const&) override;
     DGNDBSYNC_EXPORT ResolvedModelMapping _GetResolvedModelMapping(DgnV8ModelRefCR, TransformCR) override;
     DGNDBSYNC_EXPORT ResolvedModelMapping _FindResolvedModelMapping(DgnV8ModelR v8Model, TransformCR) override;
+    void DetectInconsistentEmbeddedReference(DgnV8ModelR v8Model, TransformCR trans);
     DGNDBSYNC_EXPORT ResolvedModelMapping _FindFirstResolvedModelMapping(DgnV8ModelR v8Model) override;
     DGNDBSYNC_EXPORT ResolvedModelMapping _FindResolvedModelMappingByModelId(DgnModelId) override;
     DGNDBSYNC_EXPORT bvector<ResolvedModelMapping> FindResolvedModelMappings(DgnV8ModelR v8Model);

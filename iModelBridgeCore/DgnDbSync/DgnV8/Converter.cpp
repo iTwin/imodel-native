@@ -227,7 +227,7 @@ RepositoryLinkId Converter::WriteRepositoryLink(DgnV8FileR file)
             }
         }
 
-    auto rlink = iModelBridge::MakeRepositoryLink(GetDgnDb(), _GetParams(), localFileName, code.c_str(), uri.c_str());
+    auto rlink = iModelBridge::MakeRepositoryLink(GetDgnDb(), _GetParams(), localFileName, code.c_str(), uri.c_str(), /*preferDefaultCode*/true);
 
     auto rlinkPersist = GetDgnDb().Elements().Get<RepositoryLink>(rlink->GetElementId());
     if (rlinkPersist.IsValid())
@@ -3299,6 +3299,51 @@ void RootModelConverter::_AddResolvedModelMapping(ResolvedModelMapping const& v8
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void RootModelConverter::DetectInconsistentEmbeddedReference(DgnV8ModelR v8Model, TransformCR trans)
+    {
+    if (!v8Model.GetDgnFileP()->IsEmbeddedFile() || _GetParams().GetEmbeddedFileIdRecipe() == nullptr)
+        return;
+
+    // The bridge's policy is to identify embedded files by name. Double-check if this
+    // file was already seen as an embedded reference of some other package.
+
+    auto rlink = GetRepositoryLinkElement(*v8Model.GetDgnFileP());  // This RepositoryLink identifies ALL copies of this embedded file, according to the recipe.
+    if (!rlink.IsValid())
+        return; // ??
+
+    SyncInfo::V8ModelExternalSourceAspectIteratorByV8Id it(*rlink, v8Model);
+    auto alreadyMappedTo = it.begin(); 
+    if (alreadyMappedTo == it.end())
+        return;
+
+    // We have seen this model as a reference before. It must have been using a different transform.
+    BeAssert(alreadyMappedTo->GetScope() == rlink->GetElementId());
+    BeAssert((alreadyMappedTo->GetV8ModelId() == v8Model.GetModelId()) && "The XSA Identifer is the V8 ModelId. The iterator should return only XSA with the same Identifier.");
+    BeAssert(!Converter::IsTransformEqualWithTolerance(alreadyMappedTo->GetTransform(),trans) && "FindModelByExternalAspect should have found this model if the transforms match");
+
+    // Report an issue.
+    Utf8String originalPackageFileName("?");
+    auto originalRefXsa = SyncInfo::RepositoryLinkExternalSourceAspect::GetAspect(*rlink);
+    if (originalRefXsa.IsValid())
+        {
+        auto orginalEfileName = originalRefXsa.GetFileName();
+        auto endPackageName = orginalEfileName.find("<");
+        if (endPackageName != Utf8String::npos)
+            originalPackageFileName = orginalEfileName.substr(0, endPackageName);
+        }
+
+    Bentley::WString thisV8PackageName, v8RefName;
+    DgnV8Api::DgnFile::ParsePackagedName(&thisV8PackageName, nullptr, &v8RefName, v8Model.GetDgnFileP()->GetFileName().c_str());
+
+    ReportIssueV(IssueSeverity::Error, IssueCategory::InconsistentData(), Issue::InconsistentTransformsForEmbeddedReference(), 
+        Utf8String(thisV8PackageName.c_str()).c_str(),      // the current conversion "context"
+        Utf8String(v8RefName.c_str()).c_str(),              // the embedded reference file's name
+        originalPackageFileName.c_str());                   // the package where we first saw with this reference,
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 ResolvedModelMapping RootModelConverter::_GetResolvedModelMapping(DgnV8ModelRefCR v8ModelRef, TransformCR trans)
@@ -3322,6 +3367,11 @@ ResolvedModelMapping RootModelConverter::_GetResolvedModelMapping(DgnV8ModelRefC
         _AddResolvedModelMapping(alreadyConverted);
         GetChangeDetector()._OnModelSeen(*this, alreadyConverted);
         return alreadyConverted;
+        }
+    else
+        {
+        if (!foundOne && v8Model.GetDgnFileP()->IsEmbeddedFile())
+            DetectInconsistentEmbeddedReference(v8Model, trans);
         }
 
     // Didn't find a record of converting this model with this transform => Convert it now.
