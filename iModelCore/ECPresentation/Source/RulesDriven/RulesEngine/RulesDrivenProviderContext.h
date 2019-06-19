@@ -69,7 +69,7 @@ public:
     JsonNavNodesFactory const& GetNodesFactory() const {return m_nodesFactory;}
     IUserSettings const& GetUserSettings() const {return m_userSettings;}
     ECPRESENTATION_EXPORT IUsedUserSettingsListener& GetUsedSettingsListener() const;
-    bvector<Utf8String> GetRelatedSettingIds() const;
+    bset<Utf8String> GetRelatedSettingIds() const;
     ECExpressionsCache& GetECExpressionsCache() const {return m_ecexpressionsCache;}
     IJsonLocalState const* GetLocalState() const {return m_localState;}
     ECPRESENTATION_EXPORT ICancelationTokenCR GetCancelationToken() const;

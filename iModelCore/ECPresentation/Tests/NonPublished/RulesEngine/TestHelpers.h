@@ -242,6 +242,7 @@ private:
     bmap<HierarchyLevelInfo, bvector<DataSourceInfo>> m_virtualHierarchy;
     bmap<DataSourceInfo, bvector<JsonNavNode*>> m_partialHierarchies;
     bset<uint64_t> m_finalizedDataSources;
+    bset<uint64_t> m_physicalNodeIds;
 
     INodesProviderContextFactory* m_nodesProviderContextFactory;
     IConnectionCacheCR m_connections;
@@ -299,7 +300,7 @@ protected:
         }
     NodeVisibility _GetNodeVisibility(uint64_t nodeId) const override
         {
-        return NodeVisibility::Physical;
+        return (m_physicalNodeIds.end() != m_physicalNodeIds.find(nodeId)) ? NodeVisibility::Physical : NodeVisibility::Virtual;
         }
     
     HierarchyLevelInfo _FindHierarchyLevel(Utf8CP connectionId, Utf8CP rulesetId, Utf8CP locale, uint64_t const* virtualParentNodeId) const override
@@ -454,17 +455,22 @@ protected:
         m_nodes[nodeId] = &node;
         m_partialHierarchies[dsInfo].push_back(&node);
 
+        if (!isVirtual)
+            m_physicalNodeIds.insert(node.GetNodeId());
+
         if (m_cacheNodeHandler)
             m_cacheNodeHandler(node, isVirtual);
         }
 
     void _MakePhysical(JsonNavNodeCR node) override
         {
+        m_physicalNodeIds.insert(node.GetNodeId());
         if (m_makePhysicalHandler)
             m_makePhysicalHandler(node);
         }
     void _MakeVirtual(JsonNavNodeCR node) override
         {
+        m_physicalNodeIds.erase(node.GetNodeId());
         if (m_makeVirtualHandler)
             return m_makeVirtualHandler(node);
         }
@@ -734,6 +740,7 @@ public:
     void SetNodesCache(IHierarchyCacheP cache) {m_nodesCache = cache;}
     void SetRuleset(PresentationRuleSetCP ruleset) {m_ruleset = ruleset;}
     void SetUsedClassesListener(IECDbUsedClassesListener* listener) {m_usedClassesListener = listener;}
+    ECSqlStatementCache const& GetStatementsCache() const {return m_statementsCache;}
 };
 
 /*=================================================================================**//**

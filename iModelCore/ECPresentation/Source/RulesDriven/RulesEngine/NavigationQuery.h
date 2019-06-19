@@ -259,12 +259,23 @@ protected:
 public:
     RefCountedPtr<TBase> Clone() const
         {
-        if (nullptr != AsComplexQuery()) return new ComplexPresentationQuery<TBase>(*AsComplexQuery());
-        if (nullptr != AsUnionQuery()) return new UnionPresentationQuery<TBase>(*AsUnionQuery());
-        if (nullptr != AsExceptQuery()) return new ExceptPresentationQuery<TBase>(*AsExceptQuery());
-        if (nullptr != AsStringQuery()) return new StringPresentationQuery<TBase>(*AsStringQuery());
-        BeAssert(false);
-        return nullptr;
+        RefCountedPtr<TBase> clone;
+        if (nullptr != AsComplexQuery()) 
+            clone = new ComplexPresentationQuery<TBase>(*AsComplexQuery());
+        else if (nullptr != AsUnionQuery()) 
+            clone = new UnionPresentationQuery<TBase>(*AsUnionQuery());
+        else if (nullptr != AsExceptQuery()) 
+            clone = new ExceptPresentationQuery<TBase>(*AsExceptQuery());
+        else if (nullptr != AsStringQuery())
+            clone = new StringPresentationQuery<TBase>(*AsStringQuery());
+        else
+            {
+            BeAssert(false);
+            return nullptr;
+            }
+        clone->GetResultParametersR().MergeWith(GetResultParameters());
+        clone->GetExtendedDataR().CopyFrom(GetExtendedData(), clone->GetExtendedDataAllocator());
+        return clone;
         }
 
     ComplexQuery const* AsComplexQuery() const {return const_cast<PresentationQuery<TBase, TContract, TResultParameters>*>(this)->AsComplexQuery();}
@@ -605,7 +616,7 @@ public:
     void SetSpecification(ChildNodeSpecificationCP spec) {m_specification = spec;}
     bset<ECClassId>& GetMatchingRelationshipIds() {return m_matchingRelationshipIds;}
     void OnContractSelected(NavigationQueryContractCR contract) {m_resultType = contract.GetResultType();}
-    void MergeWith(NavigationQueryResultParameters const&);    
+    ECPRESENTATION_EXPORT void MergeWith(NavigationQueryResultParameters const&);
 
 public:
     NavigationQueryResultParameters() 

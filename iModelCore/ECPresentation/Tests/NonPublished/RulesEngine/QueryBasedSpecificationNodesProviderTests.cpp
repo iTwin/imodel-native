@@ -675,7 +675,11 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, NotifiesAboutUsedRelatedClass
     m_ruleset->AddPresentationRule(*new LabelOverride("", 1, "this.GetRelatedValue(\"RulesEngineTest:WidgetHasGadgets\", \"Forward\", \"RulesEngineTest:Gadget\", \"MyID\")", ""));
 
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
-    ASSERT_NE(0, provider->GetNodesCount());
+    JsonNavNodePtr node;
+    size_t index = 0;
+    while (provider->GetNode(node, index++))
+        ;
+    EXPECT_EQ(4, index);
     ASSERT_EQ(3, m_usedClassesListener.GetUsedClasses().size());
 
     auto iter = m_usedClassesListener.GetUsedClasses().find(m_widgetClass);
@@ -690,6 +694,8 @@ TEST_F (QueryBasedSpecificationNodesProviderTests, NotifiesAboutUsedRelatedClass
     ASSERT_TRUE(m_usedClassesListener.GetUsedClasses().end() != iter);
     EXPECT_TRUE(iter->second); // polymorphic
     }
+
+#define NUM_CACHED_QUERIES_WHEN_CHILDREN_DETERMINED_WITHOUT_RUNNING_QUERY   (uint32_t)3
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Haroldas.Vitunskas              01/2019
@@ -720,7 +726,7 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByR
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *rule->GetSpecifications().front());
     ASSERT_TRUE(provider->GetNode(root, 0));
     EXPECT_TRUE(root->HasChildren());
-    EXPECT_EQ(0, m_nodesCache.GetCachedChildrenCount(root->GetNodeId()));
+    EXPECT_EQ(NUM_CACHED_QUERIES_WHEN_CHILDREN_DETERMINED_WITHOUT_RUNNING_QUERY, m_providerContextFactory.GetStatementsCache().Size());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -752,7 +758,7 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByR
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *rule->GetSpecifications().front());
     ASSERT_TRUE(provider->GetNode(root, 0));
     EXPECT_TRUE(root->HasChildren());
-    EXPECT_EQ(1, m_nodesCache.GetCachedChildrenCount(root->GetNodeId()));
+    EXPECT_LT(NUM_CACHED_QUERIES_WHEN_CHILDREN_DETERMINED_WITHOUT_RUNNING_QUERY, m_providerContextFactory.GetStatementsCache().Size());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -784,7 +790,7 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByR
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *rule->GetSpecifications().front());
     ASSERT_TRUE(provider->GetNode(root, 0));
     EXPECT_TRUE(root->HasChildren());
-    EXPECT_EQ(0, m_nodesCache.GetCachedChildrenCount(root->GetNodeId()));
+    EXPECT_EQ(NUM_CACHED_QUERIES_WHEN_CHILDREN_DETERMINED_WITHOUT_RUNNING_QUERY, m_providerContextFactory.GetStatementsCache().Size());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -816,7 +822,7 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByR
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *rule->GetSpecifications().front());
     ASSERT_TRUE(provider->GetNode(root, 0));
     EXPECT_TRUE(root->HasChildren());
-    EXPECT_EQ(1, m_nodesCache.GetCachedChildrenCount(root->GetNodeId()));
+    EXPECT_LT(NUM_CACHED_QUERIES_WHEN_CHILDREN_DETERMINED_WITHOUT_RUNNING_QUERY, m_providerContextFactory.GetStatementsCache().Size());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -848,7 +854,7 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByR
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *rule->GetSpecifications().front());
     ASSERT_TRUE(provider->GetNode(root, 0));
     EXPECT_TRUE(root->HasChildren());
-    EXPECT_EQ(0, m_nodesCache.GetCachedChildrenCount(root->GetNodeId()));
+    EXPECT_EQ(NUM_CACHED_QUERIES_WHEN_CHILDREN_DETERMINED_WITHOUT_RUNNING_QUERY, m_providerContextFactory.GetStatementsCache().Size());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -881,7 +887,7 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByR
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *rule->GetSpecifications().front());
     ASSERT_TRUE(provider->GetNode(root, 0));
     EXPECT_TRUE(root->HasChildren());
-    EXPECT_EQ(0, m_nodesCache.GetCachedChildrenCount(root->GetNodeId()));
+    EXPECT_EQ(NUM_CACHED_QUERIES_WHEN_CHILDREN_DETERMINED_WITHOUT_RUNNING_QUERY, m_providerContextFactory.GetStatementsCache().Size());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -913,7 +919,7 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByR
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *rule->GetSpecifications().front());
     ASSERT_TRUE(provider->GetNode(root, 0));
     EXPECT_TRUE(root->HasChildren());
-    EXPECT_EQ(0, m_nodesCache.GetCachedChildrenCount(root->GetNodeId()));
+    EXPECT_EQ(NUM_CACHED_QUERIES_WHEN_CHILDREN_DETERMINED_WITHOUT_RUNNING_QUERY, m_providerContextFactory.GetStatementsCache().Size());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -945,7 +951,7 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByR
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *rule->GetSpecifications().front());
     ASSERT_TRUE(provider->GetNode(root, 0));
     EXPECT_TRUE(root->HasChildren());
-    EXPECT_EQ(1, m_nodesCache.GetCachedChildrenCount(root->GetNodeId()));
+    EXPECT_LT(NUM_CACHED_QUERIES_WHEN_CHILDREN_DETERMINED_WITHOUT_RUNNING_QUERY, m_providerContextFactory.GetStatementsCache().Size());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -977,7 +983,7 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByR
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *rule->GetSpecifications().front());
     ASSERT_TRUE(provider->GetNode(root, 0));
     EXPECT_TRUE(root->HasChildren());
-    EXPECT_EQ(1, m_nodesCache.GetCachedChildrenCount(root->GetNodeId()));
+    EXPECT_LT(NUM_CACHED_QUERIES_WHEN_CHILDREN_DETERMINED_WITHOUT_RUNNING_QUERY, m_providerContextFactory.GetStatementsCache().Size());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1009,7 +1015,7 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByR
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *rule->GetSpecifications().front());
     ASSERT_TRUE(provider->GetNode(root, 0));
     EXPECT_TRUE(root->HasChildren());
-    EXPECT_EQ(1, m_nodesCache.GetCachedChildrenCount(root->GetNodeId()));
+    EXPECT_LT(NUM_CACHED_QUERIES_WHEN_CHILDREN_DETERMINED_WITHOUT_RUNNING_QUERY, m_providerContextFactory.GetStatementsCache().Size());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1041,5 +1047,5 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByR
     NavNodesProviderPtr provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *rule->GetSpecifications().front());
     ASSERT_TRUE(provider->GetNode(root, 0));
     EXPECT_TRUE(root->HasChildren());
-    EXPECT_EQ(1, m_nodesCache.GetCachedChildrenCount(root->GetNodeId()));
+    EXPECT_LT(NUM_CACHED_QUERIES_WHEN_CHILDREN_DETERMINED_WITHOUT_RUNNING_QUERY, m_providerContextFactory.GetStatementsCache().Size());
     }

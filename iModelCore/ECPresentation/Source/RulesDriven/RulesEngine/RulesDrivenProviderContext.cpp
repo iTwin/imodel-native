@@ -12,9 +12,9 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 +===============+===============+===============+===============+===============+======*/
 struct UsedUserSettingsListener : IUsedUserSettingsListener
     {
-    bvector<Utf8String> m_settingIds;
-    void _OnUserSettingUsed(Utf8CP settingId) override {m_settingIds.push_back(settingId);}
-    bvector<Utf8String> const& GetSettingIds() const {return m_settingIds;}
+    bset<Utf8String> m_settingIds;
+    void _OnUserSettingUsed(Utf8CP settingId) override {m_settingIds.insert(settingId);}
+    bset<Utf8String> const& GetSettingIds() const {return m_settingIds;}
     };
 END_BENTLEY_ECPRESENTATION_NAMESPACE
 
@@ -135,10 +135,10 @@ IUsedUserSettingsListener& RulesDrivenProviderContext::GetUsedSettingsListener()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<Utf8String> RulesDrivenProviderContext::GetRelatedSettingIds() const
+bset<Utf8String> RulesDrivenProviderContext::GetRelatedSettingIds() const
     {
     if (nullptr == m_usedSettingsListener)
-        return bvector<Utf8String>();
+        return bset<Utf8String>();
     return m_usedSettingsListener->GetSettingIds();
     }
 

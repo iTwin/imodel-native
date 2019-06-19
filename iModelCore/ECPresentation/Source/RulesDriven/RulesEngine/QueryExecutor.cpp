@@ -37,7 +37,7 @@ void QueryExecutor::SetQuery(PresentationQueryBase const& query)
     {
     if (m_query == &query)
         return;
-    
+
     m_query = &query;
     m_queryString.clear();
     }
@@ -82,6 +82,7 @@ void QueryExecutor::_Reset()
     m_readFinished = false;
     }
 
+//#define RULES_ENGINE_MEASURE_QUERY_PERFORMANCE 1
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -89,7 +90,7 @@ void QueryExecutor::ReadRecords(ICancelationTokenCP cancelationToken)
     {
     if (nullptr == m_query)
         return;
-    
+
     if (m_readFinished)
         return;
 
@@ -112,17 +113,11 @@ void QueryExecutor::ReadRecords(ICancelationTokenCP cancelationToken)
         }
     _l = nullptr;
 
-    /*if (true) // wip: check severity
-        {
-        Utf8String plan = GetConnection().GetECDb().ExplainQuery(statement->GetNativeSql());
-        LoggingHelper::LogMessage(Log::Default, plan.c_str(), LOG_INFO);
-        }*/
-    
     // bind query variables
     _l = LoggingHelper::CreatePerformanceLogger(Log::Default, "[QueryExecutor] Binding query variable values", NativeLogging::LOG_TRACE);
     m_query->BindValues(*statement);
     _l = nullptr;
-            
+
     if (nullptr != cancelationToken && cancelationToken->IsCanceled())
         {
         LoggingHelper::LogMessage(Log::Default, "[QueryExecutor] Records read canceled before started reading", NativeLogging::LOG_TRACE);
@@ -135,12 +130,20 @@ void QueryExecutor::ReadRecords(ICancelationTokenCP cancelationToken)
     ECDbExpressionSymbolContext ecdbExpressionContext(m_connection.GetECDb(), &m_statementCache);
     DbResult result = DbResult::BE_SQLITE_ERROR;
     uint32_t recordsRead = 0;
+#ifdef RULES_ENGINE_MEASURE_QUERY_PERFORMANCE
+    uint64_t startTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
+#endif
     while (DbResult::BE_SQLITE_ROW == (result = statement->Step()))
         {
-        /*if (0 == recordsRead)
+#ifdef RULES_ENGINE_MEASURE_QUERY_PERFORMANCE
+        if (0 == recordsRead)
             {
-            }*/
-
+            uint64_t elapsedTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis() - startTime;
+            LoggingHelper::LogMessage(Log::Default, Utf8PrintfString("[QueryExecutor] First step took %" PRIu64 " ms", elapsedTime).c_str(), NativeLogging::LOG_ERROR);
+            Utf8String plan = m_connection.GetDb().ExplainQuery(statement->GetNativeSql());
+            LoggingHelper::LogMessage(Log::Default, Utf8PrintfString("[QueryExecutor] Query plan: %s", plan.c_str()).c_str(), NativeLogging::LOG_ERROR);
+            }
+#endif
         _ReadRecord(*statement);
         recordsRead++;
 
@@ -384,7 +387,7 @@ private:
         Utf8String formattedValue;
         if (SUCCESS != formatter.GetFormattedPropertyValue(formattedValue, prop, ValueHelpers::GetECValueFromSqlValue(type, value)))
             return GetFallbackPrimitiveValue(prop, type, value, allocator);
-        
+
         json.SetString(formattedValue.c_str(), json.GetAllocator());
         return json;
         }
@@ -399,7 +402,7 @@ private:
         for (IECSqlValue const& value : structValue.GetStructIterable())
             {
             ECPropertyCP memberProperty = value.GetColumnInfo().GetProperty();
-            json.AddMember(rapidjson::Value(memberProperty->GetName().c_str(), json.GetAllocator()), 
+            json.AddMember(rapidjson::Value(memberProperty->GetName().c_str(), json.GetAllocator()),
                 GetFallbackValue(*memberProperty, value, &json.GetAllocator()), json.GetAllocator());
             }
         return json;
@@ -407,7 +410,7 @@ private:
     /*---------------------------------------------------------------------------------**//**
     // @bsimethod                                    Grigas.Petraitis                09/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    static rapidjson::Document GetFormattedStructValue(IECPropertyFormatter const& formatter, 
+    static rapidjson::Document GetFormattedStructValue(IECPropertyFormatter const& formatter,
         IECSqlValue const& structValue, rapidjson::MemoryPoolAllocator<>* allocator)
         {
         NULL_FORMATTED_VALUE_PRECONDITION(structValue);
@@ -416,7 +419,7 @@ private:
         for (IECSqlValue const& value : structValue.GetStructIterable())
             {
             ECPropertyCP memberProperty = value.GetColumnInfo().GetProperty();
-            json.AddMember(rapidjson::Value(memberProperty->GetName().c_str(), json.GetAllocator()), 
+            json.AddMember(rapidjson::Value(memberProperty->GetName().c_str(), json.GetAllocator()),
                 GetFormattedValue(formatter, *memberProperty, value, &json.GetAllocator()), json.GetAllocator());
             }
         return json;
@@ -451,7 +454,7 @@ private:
     /*---------------------------------------------------------------------------------**//**
     // @bsimethod                                    Grigas.Petraitis                09/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    static rapidjson::Document GetFormattedArrayValue(IECPropertyFormatter const& formatter, ArrayECPropertyCR prop, 
+    static rapidjson::Document GetFormattedArrayValue(IECPropertyFormatter const& formatter, ArrayECPropertyCR prop,
         IECSqlValue const& arrayValue, rapidjson::MemoryPoolAllocator<>* allocator)
         {
         NULL_FORMATTED_VALUE_PRECONDITION(arrayValue);
@@ -649,7 +652,7 @@ private:
             m_relatedFieldKeys[field].push_back(key);
         }
 
-public:    
+public:
     /*---------------------------------------------------------------------------------**//**
     // @bsimethod                                    Grigas.Petraitis               06/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
@@ -661,7 +664,7 @@ public:
     // @bsimethod                                    Grigas.Petraitis               06/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
     void ReadFieldKeys(ContentDescriptor::ECInstanceKeyField const& field, ECSqlStatement& statement, int columnIndex)
-        {    
+        {
         if (!m_trackKeys)
             return;
 
@@ -691,7 +694,7 @@ public:
             BeAssert(false);
             }
         }
-    
+
     /*---------------------------------------------------------------------------------**//**
     // @bsimethod                                    Grigas.Petraitis               06/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
@@ -715,7 +718,7 @@ public:
         BeAssert(propertyIndex < field.GetProperties().size());
         m_fieldProperties[&field] = (int)propertyIndex;
         }
-    
+
     /*---------------------------------------------------------------------------------**//**
     // @bsimethod                                    Grigas.Petraitis               06/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
@@ -726,7 +729,7 @@ public:
             {
             if (-1 == pair.second)
                 {
-                // note: -1 means any property - in this case we iterate through all field properties and 
+                // note: -1 means any property - in this case we iterate through all field properties and
                 // see whether any ECInstaceKey matches that property
                 bvector<ECClassInstanceKey> const* sourceVector = &m_primaryKeys;
                 auto relatedFieldKeyIter = m_relatedFieldKeys.find(pair.first);
@@ -791,7 +794,7 @@ void ContentQueryExecutor::_ReadRecord(ECSqlStatement& statement)
             primaryRecordKeys.push_back(ECClassInstanceKey(keyClass, key.GetInstanceId()));
             }
         }
-    
+
     bool needFieldValueKeys = (0 == (descriptor.GetContentFlags() & (int)ContentFlags::ExcludeEditingData));
     FieldValueInstanceKeyReader fieldValueInstanceKeyReader(GetConnection().GetECDb(), primaryRecordKeys, needFieldValueKeys);
 
@@ -896,7 +899,7 @@ void ContentQueryExecutor::_ReadRecord(ECSqlStatement& statement)
             }
         }
 
-    ContentSetItemPtr record = ContentSetItem::Create(primaryRecordKeys, displayLabel, imageId, 
+    ContentSetItemPtr record = ContentSetItem::Create(primaryRecordKeys, displayLabel, imageId,
         values.GetValues(), values.GetDisplayValues(), values.GetMergedFieldNames(), fieldValueInstanceKeyReader.GetKeys());
     record->SetClass(recordClass);
     ContentSetItemExtendedData(*record).SetContractId(contractId);

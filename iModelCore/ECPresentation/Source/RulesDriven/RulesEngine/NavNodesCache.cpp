@@ -1069,23 +1069,31 @@ void NodesCache::CacheEmptyDataSource(DataSourceInfo& info, DataSourceFilter con
 +---------------+---------------+---------------+---------------+---------------+------*/
 void NodesCache::CacheRelatedClassIds(uint64_t datasourceId, bmap<ECClassId, bool> const& classIds)
     {
-    Utf8String query = "INSERT INTO [" NODESCACHE_TABLENAME_DataSourceClasses "] ([DataSourceId], [ECClassId], [Polymorphic]) VALUES (?, ?, ?)";
-
+    Utf8CP deleteQuery = "DELETE FROM [" NODESCACHE_TABLENAME_DataSourceClasses "] WHERE [DataSourceId] = ?";
     CachedStatementPtr stmt;
-    if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), query.c_str()))
+    if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), deleteQuery))
         {
         BeAssert(false);
         return;
         }
+    stmt->BindUInt64(1, datasourceId);
+    DbResult deleteResult = stmt->Step();
+    BeAssert(BE_SQLITE_DONE == deleteResult);
 
+    Utf8CP insertQuery = "INSERT INTO [" NODESCACHE_TABLENAME_DataSourceClasses "] ([DataSourceId], [ECClassId], [Polymorphic]) VALUES (?, ?, ?)";
+    if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), insertQuery))
+        {
+        BeAssert(false);
+        return;
+        }
     for (auto const& pair : classIds)
         {
         stmt->Reset();
         stmt->BindUInt64(1, datasourceId);
         stmt->BindUInt64(2, pair.first.GetValue());
         stmt->BindBoolean(3, pair.second);
-        DbResult result = stmt->Step();
-        BeAssert(BE_SQLITE_DONE == result);
+        DbResult insertResult = stmt->Step();
+        BeAssert(BE_SQLITE_DONE == insertResult);
         }
     }
 
@@ -1094,15 +1102,23 @@ void NodesCache::CacheRelatedClassIds(uint64_t datasourceId, bmap<ECClassId, boo
 +---------------+---------------+---------------+---------------+---------------+------*/
 void NodesCache::CacheRelatedSettings(uint64_t datasourceId, bvector<UserSettingEntry> const& settings)
     {
-    Utf8String query = "INSERT INTO [" NODESCACHE_TABLENAME_DataSourceSettings "] ([DataSourceId], [SettingId], [SettingValue]) VALUES (?, ?, ?)";
-
+    Utf8CP deleteQuery = "DELETE FROM [" NODESCACHE_TABLENAME_DataSourceSettings "] WHERE [DataSourceId] = ?";
     CachedStatementPtr stmt;
-    if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), query.c_str()))
+    if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), deleteQuery))
         {
         BeAssert(false);
         return;
         }
+    stmt->BindUInt64(1, datasourceId);
+    DbResult deleteResult = stmt->Step();
+    BeAssert(BE_SQLITE_DONE == deleteResult);
 
+    Utf8CP insertQuery = "INSERT INTO [" NODESCACHE_TABLENAME_DataSourceSettings "] ([DataSourceId], [SettingId], [SettingValue]) VALUES (?, ?, ?)";
+    if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), insertQuery))
+        {
+        BeAssert(false);
+        return;
+        }
     for (UserSettingEntry const& setting : settings)
         {
         stmt->Reset();
@@ -1110,7 +1126,8 @@ void NodesCache::CacheRelatedSettings(uint64_t datasourceId, bvector<UserSetting
         stmt->BindText(2, setting.GetId().c_str(), Statement::MakeCopy::No);
         Utf8String valueAsString = setting.GetValue().ToString();
         stmt->BindText(3, valueAsString, Statement::MakeCopy::No);
-        stmt->Step();
+        DbResult insertResult = stmt->Step();
+        BeAssert(BE_SQLITE_DONE == insertResult);
         }
     }
 

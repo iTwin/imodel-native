@@ -51,6 +51,7 @@ TEST_F(CheckboxRuleTests, SetsPropertyBoundCheckboxProperties)
     NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(m_widgetClass);
     ComplexNavigationQueryPtr query = &ComplexNavigationQuery::Create()->SelectContract(*contract).From(*m_widgetClass, false);
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::ECInstanceNodes);
+    query->GetResultParametersR().GetNavNodeExtendedDataR().SetSpecificationHash("");
     
     RefCountedPtr<QueryBasedNodesProvider> provider = QueryBasedNodesProvider::Create(*m_context, *query);
     ASSERT_EQ(2, provider->GetNodesCount());
@@ -97,6 +98,7 @@ TEST_F(CheckboxRuleTests, SetsInversedPropertyBoundCheckboxProperties)
     NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(m_widgetClass);
     ComplexNavigationQueryPtr query = &ComplexNavigationQuery::Create()->SelectContract(*contract).From(*m_widgetClass, false);
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::ECInstanceNodes);
+    query->GetResultParametersR().GetNavNodeExtendedDataR().SetSpecificationHash("");
     
     RefCountedPtr<QueryBasedNodesProvider> provider = QueryBasedNodesProvider::Create(*m_context, *query);
     ASSERT_EQ(2, provider->GetNodesCount());
@@ -132,6 +134,7 @@ TEST_F(CheckboxRuleTests, AppliesDefaultValueIfPropertyIsNull)
     NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(m_widgetClass);
     ComplexNavigationQueryPtr query = &ComplexNavigationQuery::Create()->SelectContract(*contract).From(*m_widgetClass, false);
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::ECInstanceNodes);
+    query->GetResultParametersR().GetNavNodeExtendedDataR().SetSpecificationHash("");
     
     RefCountedPtr<QueryBasedNodesProvider> provider = QueryBasedNodesProvider::Create(*m_context, *query);
     ASSERT_EQ(1, provider->GetNodesCount());
@@ -157,6 +160,7 @@ TEST_F(CheckboxRuleTests, AppliesDefaultValueIfNotPropertyBound)
     NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(m_widgetClass);
     ComplexNavigationQueryPtr query = &ComplexNavigationQuery::Create()->SelectContract(*contract).From(*m_widgetClass, false);
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::ECInstanceNodes);
+    query->GetResultParametersR().GetNavNodeExtendedDataR().SetSpecificationHash("");
     
     RefCountedPtr<QueryBasedNodesProvider> provider = QueryBasedNodesProvider::Create(*m_context, *query);
     ASSERT_EQ(1, provider->GetNodesCount());
@@ -182,6 +186,7 @@ TEST_F(CheckboxRuleTests, CustomizationHelper_NotifyCheckedStateChanged)
     NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(m_widgetClass);
     ComplexNavigationQueryPtr query = &ComplexNavigationQuery::Create()->SelectContract(*contract).From(*m_widgetClass, false);
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::ECInstanceNodes);
+    query->GetResultParametersR().GetNavNodeExtendedDataR().SetSpecificationHash("");
     
     RefCountedPtr<QueryBasedNodesProvider> provider = QueryBasedNodesProvider::Create(*m_context, *query);
     ASSERT_EQ(1, provider->GetNodesCount());
@@ -223,6 +228,7 @@ TEST_F(CheckboxRuleTests, SetCheckBoxEnabled)
     NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(m_widgetClass);
     ComplexNavigationQueryPtr query = &ComplexNavigationQuery::Create()->SelectContract(*contract).From(*m_widgetClass, false);
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::ECInstanceNodes);
+    query->GetResultParametersR().GetNavNodeExtendedDataR().SetSpecificationHash("");
     
     RefCountedPtr<QueryBasedNodesProvider> provider = QueryBasedNodesProvider::Create(*m_context, *query);
     ASSERT_EQ(1, provider->GetNodesCount());
@@ -246,6 +252,7 @@ TEST_F(CheckboxRuleTests, SetCheckBoxDisabled)
     NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(m_widgetClass);
     ComplexNavigationQueryPtr query = &ComplexNavigationQuery::Create()->SelectContract(*contract).From(*m_widgetClass, false);
     query->GetResultParametersR().SetResultType(NavigationQueryResultType::ECInstanceNodes);
+    query->GetResultParametersR().GetNavNodeExtendedDataR().SetSpecificationHash("");
     
     RefCountedPtr<QueryBasedNodesProvider> provider = QueryBasedNodesProvider::Create(*m_context, *query);
     ASSERT_EQ(1, provider->GetNodesCount());

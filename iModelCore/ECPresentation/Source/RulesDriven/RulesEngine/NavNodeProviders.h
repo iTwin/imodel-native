@@ -252,6 +252,7 @@ public:
     ECPRESENTATION_EXPORT bool HasNodes() const;
     void DetermineChildren(JsonNavNodeR) const;
     void NotifyNodeChanged(JsonNavNodeCR node) const;
+    void SetNodesCount(size_t count) {m_cachedNodesCount = count; m_hasCachedNodesCount = true;}
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -443,11 +444,6 @@ public:
 +===============+===============+===============+===============+===============+======*/
 struct QueryBasedNodesProvider : MultiNavNodesProvider
 {
-    struct PostProcessTask;
-    struct CleanupNullProvidersTask;
-    struct DeletedExecutorNodeDiffTask;
-    struct InsertedExecutorNodeDiffTask;
-    struct UpdatedExecutorNodeDiffTask;
     struct Savepoint;
 
     using NavNodesProvider::GetNode;
@@ -457,12 +453,17 @@ private:
     bmap<ECClassId, bool> m_usedClassIds;
     NavigationQueryExecutor m_executor;
     size_t m_executorIndex;
+    size_t m_offset;
 
 private:
     ECPRESENTATION_EXPORT QueryBasedNodesProvider(NavNodesProviderContextCR context, NavigationQuery const& query, bmap<ECClassId, bool> const&);
     bool ShouldReturnChildNodes(JsonNavNode const& node, HasChildrenFlag& hasChildren) const;
     NavNodesProviderPtr CreateProvider(JsonNavNodeR node) const;
     bool HasSimilarNodeInHierarchy(JsonNavNodeCR node, uint64_t parentNodeId) const;
+    void InitializeDataSource();
+    bool InitializeProvidersFromCache();
+    bool InitializeProvidersForAllNodes();
+    bool InitializeProvidersForPagedQueries(size_t nodesCount, size_t pageSize);
     
 protected:
     bool _IsCacheable() const override {return true;}
@@ -480,7 +481,9 @@ public:
         }
     NavigationQueryExecutor const& GetExecutor() const {return m_executor;}
     NavigationQueryExecutor& GetExecutorR() {return m_executor;}
+    bmap<ECClassId, bool> const& GetUsedClassIds() const {return m_usedClassIds;}
     void SetQuery(NavigationQuery const& query, bmap<ECClassId, bool> const&);
+    void SetOffset(size_t value) {m_offset = value;}
 };
 
 /*=================================================================================**//**
