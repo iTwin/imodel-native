@@ -2575,7 +2575,7 @@ protected:
     DGNDBSYNC_EXPORT void _AddResolvedModelMapping(ResolvedModelMapping const&) override;
     DGNDBSYNC_EXPORT ResolvedModelMapping _GetResolvedModelMapping(DgnV8ModelRefCR, TransformCR) override;
     DGNDBSYNC_EXPORT ResolvedModelMapping _FindResolvedModelMapping(DgnV8ModelR v8Model, TransformCR) override;
-    void DetectInconsistentEmbeddedReference(DgnV8ModelR v8Model, TransformCR trans);
+    bool DetectInconsistentEmbeddedReference(DgnV8ModelR v8Model, TransformCR trans);
     DGNDBSYNC_EXPORT ResolvedModelMapping _FindFirstResolvedModelMapping(DgnV8ModelR v8Model) override;
     DGNDBSYNC_EXPORT ResolvedModelMapping _FindResolvedModelMappingByModelId(DgnModelId) override;
     DGNDBSYNC_EXPORT bvector<ResolvedModelMapping> FindResolvedModelMappings(DgnV8ModelR v8Model);

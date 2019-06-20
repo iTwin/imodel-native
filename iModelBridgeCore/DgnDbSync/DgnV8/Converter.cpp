@@ -3301,22 +3301,43 @@ void RootModelConverter::_AddResolvedModelMapping(ResolvedModelMapping const& v8
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RootModelConverter::DetectInconsistentEmbeddedReference(DgnV8ModelR v8Model, TransformCR trans)
+static BentleyApi::Utf8String parsePackageName(BentleyApi::Utf8StringCR embeddedFileName, bool basenameOnly = true)
+    {
+    auto endPackageName = embeddedFileName.find("<");
+    if (endPackageName == Utf8String::npos)
+        return embeddedFileName;
+
+    auto package = embeddedFileName.substr(0, endPackageName);
+    if (!basenameOnly)
+        return package;
+
+    return Utf8String(BentleyApi::BeFileName(package.c_str(), true).GetBaseName());
+    }
+
+static BentleyApi::Utf8String parsePackageName(Bentley::WStringCR embeddedFileName)
+    {
+    return parsePackageName(BentleyApi::Utf8String(embeddedFileName.c_str()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RootModelConverter::DetectInconsistentEmbeddedReference(DgnV8ModelR v8Model, TransformCR trans)
     {
     if (!v8Model.GetDgnFileP()->IsEmbeddedFile() || _GetParams().GetEmbeddedFileIdRecipe() == nullptr)
-        return;
+        return false;
 
     // The bridge's policy is to identify embedded files by name. Double-check if this
     // file was already seen as an embedded reference of some other package.
 
     auto rlink = GetRepositoryLinkElement(*v8Model.GetDgnFileP());  // This RepositoryLink identifies ALL copies of this embedded file, according to the recipe.
     if (!rlink.IsValid())
-        return; // ??
+        return false; // ??
 
     SyncInfo::V8ModelExternalSourceAspectIteratorByV8Id it(*rlink, v8Model);
     auto alreadyMappedTo = it.begin(); 
     if (alreadyMappedTo == it.end())
-        return;
+        return false;
 
     // We have seen this model as a reference before. It must have been using a different transform.
     BeAssert(alreadyMappedTo->GetScope() == rlink->GetElementId());
@@ -3327,20 +3348,17 @@ void RootModelConverter::DetectInconsistentEmbeddedReference(DgnV8ModelR v8Model
     Utf8String originalPackageFileName("?");
     auto originalRefXsa = SyncInfo::RepositoryLinkExternalSourceAspect::GetAspect(*rlink);
     if (originalRefXsa.IsValid())
-        {
-        auto orginalEfileName = originalRefXsa.GetFileName();
-        auto endPackageName = orginalEfileName.find("<");
-        if (endPackageName != Utf8String::npos)
-            originalPackageFileName = orginalEfileName.substr(0, endPackageName);
-        }
+        originalPackageFileName = parsePackageName(originalRefXsa.GetFileName());
 
     Bentley::WString thisV8PackageName, v8RefName;
     DgnV8Api::DgnFile::ParsePackagedName(&thisV8PackageName, nullptr, &v8RefName, v8Model.GetDgnFileP()->GetFileName().c_str());
 
-    ReportIssueV(IssueSeverity::Error, IssueCategory::InconsistentData(), Issue::InconsistentTransformsForEmbeddedReference(), 
+    ReportIssueV(IssueSeverity::Warning, IssueCategory::InconsistentData(), Issue::InconsistentTransformsForEmbeddedReference(), 
         Utf8String(thisV8PackageName.c_str()).c_str(),      // the current conversion "context"
         Utf8String(v8RefName.c_str()).c_str(),              // the embedded reference file's name
-        originalPackageFileName.c_str());                   // the package where we first saw with this reference,
+        originalPackageFileName.c_str());                   // the package where we first saw this reference,
+
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3351,6 +3369,7 @@ ResolvedModelMapping RootModelConverter::_GetResolvedModelMapping(DgnV8ModelRefC
     DgnV8ModelR v8Model = *v8ModelRef.GetDgnModelP();
 
     bool foundOne = false;
+    bool inconsistentEmbeddedReference = false;
     for (auto thisModel : FindResolvedModelMappings(v8Model)) // all unique transforms of attachments of this model
         {
         foundOne = true; // We have mapped this DgnV8 model to a DgnDb model.
@@ -3371,7 +3390,10 @@ ResolvedModelMapping RootModelConverter::_GetResolvedModelMapping(DgnV8ModelRefC
     else
         {
         if (!foundOne && v8Model.GetDgnFileP()->IsEmbeddedFile())
-            DetectInconsistentEmbeddedReference(v8Model, trans);
+            {
+            // See if another bridge mapped this DgnV8 model to a DgnDb model using a different transform.
+            inconsistentEmbeddedReference = DetectInconsistentEmbeddedReference(v8Model, trans);
+            }
         }
 
     // Didn't find a record of converting this model with this transform => Convert it now.
@@ -3411,6 +3433,11 @@ ResolvedModelMapping RootModelConverter::_GetResolvedModelMapping(DgnV8ModelRefC
     else
         {
         newModelName = _ComputeModelName(v8Model).c_str();
+
+        if (inconsistentEmbeddedReference)
+            {
+            newModelName.append(" (").append(parsePackageName(v8Model.GetDgnFileP()->GetFileName())).append(")");
+            }
         }
 
     // Map in the DgnV8 model.
