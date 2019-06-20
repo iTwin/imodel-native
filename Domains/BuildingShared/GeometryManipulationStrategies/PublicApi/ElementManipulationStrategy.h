@@ -56,6 +56,7 @@ struct ElementManipulationStrategy : public GeometryManipulationStrategy
         ELEM_PROPERTY_OVERRIDE(bool)
         ELEM_PROPERTY_OVERRIDE(int)
         ELEM_PROPERTY_OVERRIDE(double)
+        ELEM_PROPERTY_OVERRIDE(DPoint2d)
         ELEM_PROPERTY_OVERRIDE(DVec3d)
         ELEM_PROPERTY_OVERRIDE(DPlane3d)
         ELEM_PROPERTY_OVERRIDE(RotMatrix)

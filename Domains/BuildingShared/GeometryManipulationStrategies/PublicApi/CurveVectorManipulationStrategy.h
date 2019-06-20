@@ -131,6 +131,7 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
         CV_PROPERTY_OVERRIDE(bool)
         CV_PROPERTY_OVERRIDE(int)
         CV_PROPERTY_OVERRIDE(double)
+        CV_PROPERTY_OVERRIDE(DPoint2d)
         CV_PROPERTY_OVERRIDE(DVec3d)
         CV_PROPERTY_OVERRIDE(DPlane3d)
         CV_PROPERTY_OVERRIDE(RotMatrix)
