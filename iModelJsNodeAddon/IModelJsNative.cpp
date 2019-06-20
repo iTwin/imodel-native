@@ -1238,6 +1238,8 @@ public:
 
     Napi::Value IsDgnDbOpen(Napi::CallbackInfo const &info) { return Napi::Boolean::New(Env(), IsOpen()); }
 
+    Napi::Value IsReadonly(Napi::CallbackInfo const &info) { return Napi::Boolean::New(Env(), m_dgndb->IsReadonly()); }
+
     void SetIModelDb(Napi::CallbackInfo const& info) {
         Napi::Value obj = info[0];
         if (m_dgndb.IsValid()) {
@@ -1460,6 +1462,7 @@ public:
     Napi::Value GetUndoString(Napi::CallbackInfo const& info) {return toJsString(Env(), m_dgndb->Txns().GetUndoString());}
     Napi::Value GetRedoString(Napi::CallbackInfo const& info) {return toJsString(Env(), m_dgndb->Txns().GetRedoString());}
     Napi::Value HasUnsavedChanges(Napi::CallbackInfo const& info) {return Napi::Boolean::New(Env(), m_dgndb->Txns().HasChanges());}
+    Napi::Value HasSavedChanges(Napi::CallbackInfo const& info) {return Napi::Boolean::New(Env(), m_dgndb->Txns().QueryNextTxnId(TxnManager::TxnId(0)).IsValid());}
     Napi::Value IsRedoPossible(Napi::CallbackInfo const& info) {return Napi::Boolean::New(Env(), m_dgndb->Txns().IsRedoPossible());}
     Napi::Value IsUndoPossible(Napi::CallbackInfo const& info) {return Napi::Boolean::New(Env(), m_dgndb->Txns().IsUndoPossible());}
     Napi::Value ReinstateTxn(Napi::CallbackInfo const& info) {return Napi::Number::New(Env(), (int) m_dgndb->Txns().ReinstateTxn());}
@@ -2361,6 +2364,7 @@ public:
             InstanceMethod("getUndoString", &NativeDgnDb::GetUndoString),
             InstanceMethod("hasFatalTxnError", &NativeDgnDb::HasFatalTxnError),
             InstanceMethod("hasUnsavedChanges", &NativeDgnDb::HasUnsavedChanges),
+            InstanceMethod("hasSavedChanges", &NativeDgnDb::HasSavedChanges),
             InstanceMethod("importFunctionalSchema", &NativeDgnDb::ImportFunctionalSchema),
             InstanceMethod("importSchema", &NativeDgnDb::ImportSchema),
             InstanceMethod("inBulkOperation", &NativeDgnDb::InBulkOperation),
@@ -2371,6 +2375,7 @@ public:
             InstanceMethod("insertModel", &NativeDgnDb::InsertModel),
             InstanceMethod("isChangeCacheAttached", &NativeDgnDb::IsChangeCacheAttached),
             InstanceMethod("isOpen", &NativeDgnDb::IsDgnDbOpen),
+            InstanceMethod("isReadonly", &NativeDgnDb::IsReadonly),
             InstanceMethod("isRedoPossible", &NativeDgnDb::IsRedoPossible),
             InstanceMethod("isTxnIdValid", &NativeDgnDb::IsTxnIdValid),
             InstanceMethod("isUndoPossible", &NativeDgnDb::IsUndoPossible),

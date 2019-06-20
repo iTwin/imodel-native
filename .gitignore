@@ -12,3 +12,4 @@ gradle.properties
 local.properties
 *.vcxproj
 *.sln
+.vs
