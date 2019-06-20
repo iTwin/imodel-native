@@ -1,0 +1,278 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "LNX Native BeHttpTest",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}LinuxX64/static/ProductCopy/BeHttp-Gtest/BeHttpTest",
+            "cwd": "${workspaceFolder}",
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "LNX Native BentleyTest",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}LinuxX64/static/ProductCopy/Bentley-Gtest/BentleyTest",
+            "cwd": "${workspaceFolder}",
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "LNX Native BeSecurityTest",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}LinuxX64/static/ProductCopy/BeSecurity-Gtest/BeSecurityTest",
+            "cwd": "${workspaceFolder}",
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "LNX Native BeSQLiteTest",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}LinuxX64/static/ProductCopy/BeSQLite-Gtest/BeSQLiteTest",
+            "cwd": "${workspaceFolder}",
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "LNX Native DgnPlatformTest",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}LinuxX64/static/ProductCopy/DgnPlatform-Gtest/DgnPlatformTest",
+            "cwd": "${workspaceFolder}",
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "LNX Native ECDbTest",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}LinuxX64/static/ProductCopy/ECDb-Gtest/ECDbTest",
+            "cwd": "${workspaceFolder}",
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "LNX Native ECObjectsTest",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}LinuxX64/static/ProductCopy/ECObjects-Gtest/ECObjectsTest",
+            "cwd": "${workspaceFolder}",
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "LNX Native ECPresentationTest",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}LinuxX64/static/ProductCopy/ECPresentation-Gtest/ECPresentationTest",
+            "cwd": "${workspaceFolder}",
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "LNX Native GeomLibsTest",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}LinuxX64/static/ProductCopy/GeomLibs-Gtest/GeomLibsTest",
+            "cwd": "${workspaceFolder}",
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "LNX Native UnitsTest",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}LinuxX64/static/ProductCopy/Units-Gtest/UnitsTest",
+            "cwd": "${workspaceFolder}",
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "LNX Native WSClientTest",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}LinuxX64/static/ProductCopy/WSClient-Gtest/WSClientTest",
+            "cwd": "${workspaceFolder}",
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "LNX Native JS-Backend Tests",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/usr/bin/node",
+            // You cannot directly use the test.js wrapper because it spawns a second node process, which is very difficult for VS Code to debug.
+            //  If you want different args, then you can modify test.js to `console.log(args);` right before the spawn call towards the bottom,
+            //  run the wrapper, and copy/paste the resolved args here to run directly.
+            //
+            // To run the test.js wrapper:
+            // "args": [
+            //     "/workspace/imodeljs/core/backend/node_modules/@bentley/build-tools/scripts/test",
+            //     "--testDir=/workspace/imodeljs/core/backend/lib/test/",
+            //     "--recursive",
+            //     "--offline=mock",
+            //     "--grep", "\\#integration",
+            //     "--invert"
+            // ],
+            //
+            // To run the tests directly:
+            "args": [
+                "/workspace/imodeljs/core/backend/node_modules/mocha/bin/_mocha",
+                "--check-leaks",
+                "--require", "source-map-support/register",
+                "--watch-extensions", "ts",
+                "-u", "tdd",
+                "--timeout", "999999",
+                "--colors",
+                "--reporter", "/workspace/imodeljs/tools/build/mocha-reporter/index.js",
+                "--reporter-options", "mochaFile=/workspace/imodeljs/core/backend/lib/test/junit_results.xml",
+                "--grep", "\\#integration",
+                "--invert",
+                "--offline",
+                "mock",
+                "/workspace/imodeljs/core/backend/lib/test/**/*.test.js"
+            ],
+            "stopAtEntry": false,
+            "cwd": "/workspace/imodeljs/core/backend",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+                // Running the test.js wrapper and using these options technically works to debug the child node process,
+                // but the VS Code GUI does not work with the child process.
+                // You could use the DEBUG CONSOLE to use GDB directly, but that's painful.
+                //
+                // ,{
+                //     "description": "Allow GDB to also attach to any spawned child processes.",
+                //     "text": "set follow-fork-mode child"
+                // }
+                // ,{
+                //     "description": "If following child processes, allow GDB to remain attached to both.",
+                //     "text": "set detach-on-fork off"
+                // }
+            ]
+        },
+        {
+            "name": "LNX Script JS-Backend Tests",
+            "type": "node",
+            "request": "launch",
+            "program": "/workspace/imodeljs/core/backend/node_modules/@bentley/build-tools/scripts/test",
+            "cwd": "/workspace/imodeljs/core/backend",
+            "args": [
+                "--testDir=/workspace/imodeljs/core/backend/lib/test/",
+                "--debug",
+                "--recursive",
+                "--offline=mock",
+                "--grep", "\\#integration",
+                "--invert"
+            ],
+            "port": 9229,
+            "protocol": "inspector",
+            "outputCapture": "std"
+        },
+        {
+            "name": "LNX Native Node Attach",
+            "type": "cppdbg",
+            "request": "attach",
+            "program": "/usr/bin/node",
+            "processId": "${command:pickProcess}",
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        }
+    ]
+}

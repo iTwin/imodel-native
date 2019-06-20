@@ -5,6 +5,7 @@
 #----------------------------------------------------------------------
 %ifdef __unix
 
+THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBRepCore.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBaseGeoCoord.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeCsmapStatic.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeCurl.a
