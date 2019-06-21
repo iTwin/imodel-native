@@ -358,6 +358,7 @@ TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithDev_DoesNotSetVa
         });
 
     Http::Request request("https://test/foo", "GET", configurator);
+    request.SetValidateCertificate(false);
     request.Perform().wait();
     }
 
@@ -378,6 +379,7 @@ TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithQa_DoesNotSetVal
         });
 
     Http::Request request("https://test/foo", "GET", configurator);
+    request.SetValidateCertificate(false);
     request.Perform().wait();
     }
 
@@ -398,6 +400,7 @@ TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithRelease_SetsVali
         });
 
     Http::Request request("https://test/foo", "GET", configurator);
+    request.SetValidateCertificate(false);
     request.Perform().wait();
     }
 
@@ -420,6 +423,7 @@ TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithReleaseAndSetToQ
         });
 
     Http::Request request("https://test/foo", "GET", configurator);
+    request.SetValidateCertificate(false);
     request.Perform().wait();
     }
 
@@ -442,6 +446,7 @@ TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithQaAndSetToReleas
         });
 
     Http::Request request("https://test/foo", "GET", configurator);
+    request.SetValidateCertificate(false);
     request.Perform().wait();
     }
 
