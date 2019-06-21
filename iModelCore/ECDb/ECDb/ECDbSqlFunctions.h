@@ -11,6 +11,70 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 #define ECSQLFUNC_Changes "Changes"
 #define SQLFUNC_ChangedValue "ChangedValue"
 #define SQLFUNC_ChangedValueStateToOpCode "ChangedValueStateToOpCode"
+#define SQLFUNC_StrToGuid "StrToGuid"
+#define SQLFUNC_GuidToStr "GuidToStr"
+#define SQLFUNC_IdToHex "IdToHex"
+#define SQLFUNC_HexToId "HexToId"
+//=======================================================================================
+//! B StrToGuid(S)
+// @bsiclass                                                   Affan.Khan        11/17
+//=======================================================================================
+struct StrToGuid final : ScalarFunction
+    {
+    private:
+        StrToGuid() : ScalarFunction(SQLFUNC_StrToGuid, 1, DbValueType::BlobVal) {}
+        void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
+
+    public:
+        ~StrToGuid() {}
+        static StrToGuid& GetSingleton();
+    };
+//=======================================================================================
+//! S GuidToStr(B)
+// @bsiclass                                                   Affan.Khan        11/17
+//=======================================================================================
+struct GuidToStr final : ScalarFunction
+    {
+    private:
+        GuidToStr() : ScalarFunction(SQLFUNC_GuidToStr, 1, DbValueType::TextVal) {}
+        void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
+
+    public:
+        ~GuidToStr() {}
+
+        static GuidToStr& GetSingleton();
+    };
+//=======================================================================================
+//! S IdToHex(I)
+// @bsiclass                                                   Affan.Khan        11/17
+//=======================================================================================
+struct IdToHex final : ScalarFunction
+    {
+    private:
+        IdToHex() : ScalarFunction(SQLFUNC_IdToHex, 1, DbValueType::TextVal) {}
+        void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
+
+    public:
+        ~IdToHex() {}
+
+        static IdToHex& GetSingleton();
+    };
+//=======================================================================================
+//! I HexToId(S)
+// @bsiclass                                                   Affan.Khan        11/17
+//=======================================================================================
+struct HexToId final : ScalarFunction
+    {
+    private:
+        HexToId() : ScalarFunction(SQLFUNC_HexToId, 1, DbValueType::IntegerVal) {}
+        void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
+
+    public:
+        ~HexToId() {}
+
+        static HexToId& GetSingleton();
+    };
+
 
 //=======================================================================================
 //! INT ChangedValueStateToOpCode(ChangedValueState TEXT|INT)
@@ -21,8 +85,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct ChangedValueStateToOpCodeSqlFunction final : ScalarFunction
     {
     private:
-        static ChangedValueStateToOpCodeSqlFunction* s_singleton;  //no need to release a static non-POD variable (Bentley C++ coding standards)
-
         ChangedValueStateToOpCodeSqlFunction() : ScalarFunction(SQLFUNC_ChangedValueStateToOpCode, 1, DbValueType::IntegerVal) {}
         void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
 

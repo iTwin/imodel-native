@@ -7,27 +7,137 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+//************************************************************************************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                       06/19
+//+---------------+---------------+---------------+---------------+---------------+------
+StrToGuid& StrToGuid::GetSingleton()
+    {
+    static StrToGuid s_singleton;
+    return s_singleton;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                       06/19
+//+---------------+---------------+---------------+---------------+---------------+------
+void StrToGuid::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
+    {
+    DbValue const& v = args[0];
+    if (v.IsNull() || v.GetValueType() != DbValueType::TextVal) 
+        {
+        ctx.SetResultNull();
+        return;
+        }
 
+    BeGuid guid;
+    if (guid.FromString(v.GetValueText()) != BentleyStatus::SUCCESS)
+        {
+        ctx.SetResultNull();
+        return;
+        }
+
+    ctx.SetResultBlob(&guid, sizeof(BeGuid), DbFunction::Context::CopyData::Yes);
+    }
+
+
+//************************************************************************************
+// GuidToStr
+//************************************************************************************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                       06/19
+//+---------------+---------------+---------------+---------------+---------------+------
+
+GuidToStr& GuidToStr::GetSingleton()
+    {
+    static GuidToStr s_singleton;
+    return s_singleton;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                       06/19
+//+---------------+---------------+---------------+---------------+---------------+------
+void GuidToStr::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
+    {
+    DbValue const& v = args[0];
+    if (v.IsNull() || v.GetValueType() != DbValueType::BlobVal || v.GetValueBytes() != sizeof(BeGuid)) 
+        {
+        ctx.SetResultNull();
+        return;
+        }
+
+    BeGuid guid;
+    memcpy(&guid, v.GetValueBlob(), sizeof(BeGuid));
+    Utf8String str = guid.ToString();
+    ctx.SetResultText(str.c_str(), static_cast<int>(str.size()), DbFunction::Context::CopyData::Yes);
+    }
+
+//************************************************************************************
+// IdToHex
+//************************************************************************************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                       06/19
+//+---------------+---------------+---------------+---------------+---------------+------
+
+IdToHex& IdToHex::GetSingleton()
+    {
+    static IdToHex s_singleton;
+    return s_singleton;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                       06/19
+//+---------------+---------------+---------------+---------------+---------------+------
+void IdToHex::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
+    {
+    DbValue const& v = args[0];
+    if (v.IsNull() || v.GetValueType() != DbValueType::IntegerVal) 
+        {
+        ctx.SetResultNull();
+        return;
+        }
+
+    static const size_t stringBufferLength = 19;
+    Utf8Char stringBuffer[stringBufferLength];
+    BeStringUtilities::FormatUInt64(stringBuffer, stringBufferLength, v.GetValueUInt64(), HexFormatOptions::IncludePrefix);
+    ctx.SetResultText(stringBuffer, (int) strlen(stringBuffer), Context::CopyData::Yes);
+    }
+
+//************************************************************************************
+// HexToId
+//************************************************************************************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                       06/19
+//+---------------+---------------+---------------+---------------+---------------+------
+
+HexToId& HexToId::GetSingleton()
+    {
+    static HexToId s_singleton;
+    return s_singleton;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                       06/19
+//+---------------+---------------+---------------+---------------+---------------+------
+void HexToId::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
+    {
+    DbValue const& v = args[0];
+    if (v.IsNull() || v.GetValueType() != DbValueType::TextVal) 
+        {
+        ctx.SetResultNull();
+        return;
+        }
+    ctx.SetResultInt64(BeStringUtilities::ParseHex(v.GetValueText(), nullptr));
+    }
 //************************************************************************************
 // ChangedValueStateToOpCodeSqlFunction
 //************************************************************************************
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Affan.Khan                       11/17
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-ChangedValueStateToOpCodeSqlFunction* ChangedValueStateToOpCodeSqlFunction::s_singleton = nullptr;
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                       11/17
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
 ChangedValueStateToOpCodeSqlFunction& ChangedValueStateToOpCodeSqlFunction::GetSingleton()
     {
-    if (s_singleton == nullptr)
-        s_singleton = new ChangedValueStateToOpCodeSqlFunction();
-
-    return *s_singleton;
+    static ChangedValueStateToOpCodeSqlFunction s_singleton;
+    return s_singleton;
     }
 
 //---------------------------------------------------------------------------------------

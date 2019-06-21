@@ -205,7 +205,7 @@ struct QueryWorker final
         std::thread m_thread;
         std::promise<void> m_started;
         RefCountedPtr<RetryHandler> m_retryHandler;
-        Db m_db;
+        ECDb m_db;
         void Init();
         static void Run(QueryWorker* worker);
     public:

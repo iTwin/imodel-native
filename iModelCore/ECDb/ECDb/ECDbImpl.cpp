@@ -309,6 +309,10 @@ bool ECDb::Impl::TryGetSqlFunction(DbFunction*& function, Utf8CP name, int argCo
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECDb::Impl::RegisterBuiltinFunctions() const
     {
+    m_ecdb.AddFunction(GuidToStr::GetSingleton());
+    m_ecdb.AddFunction(StrToGuid::GetSingleton());
+    m_ecdb.AddFunction(IdToHex::GetSingleton());
+    m_ecdb.AddFunction(HexToId::GetSingleton());
     m_changeManager.RegisterSqlFunctions();
     }
 
@@ -320,6 +324,10 @@ void ECDb::Impl::UnregisterBuiltinFunctions() const
     if (!m_ecdb.IsDbOpen())
         return;
 
+    m_ecdb.RemoveFunction(GuidToStr::GetSingleton());
+    m_ecdb.RemoveFunction(StrToGuid::GetSingleton());
+    m_ecdb.RemoveFunction(IdToHex::GetSingleton());
+    m_ecdb.RemoveFunction(HexToId::GetSingleton());
     m_changeManager.UnregisterSqlFunction();
     }
 

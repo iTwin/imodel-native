@@ -1246,6 +1246,10 @@ void FunctionSignatureSet::LoadDefinitions()
     //scoped funtion
     Declare("::" ECSQLFUNC_Changes "(changesetId:integer, operation:any):resultset");
     ////global funtion
+    Declare("guidtostr(value:blob):string");
+    Declare("strtoguid(value:string):string");
+    Declare("hextoid(value:string):integer");
+    Declare("idtohex(value:integer):string");
     Declare("abs(value:numeric):numeric");
     Declare("hex(value:blob):string");
     Declare("ifnull(x:any,y:any):any");
