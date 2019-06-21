@@ -3443,10 +3443,11 @@ BentleyStatus   DwgImporter::_ImportEntitySection ()
         return  BSIERROR;
         }
 
-    if (this->_GetChangeDetector()._ShouldSkipModel(*this, modelMap))
+    // first, detect changes in xRef's attached to the modelspace:
+    if (this->ShouldSkipAllXrefsInModel(m_modelspaceId))
         {
-        // no entity change is detected in modelspace - check all xRef files attached to it:
-        if (this->ShouldSkipAllXrefs(modelMap, m_modelspaceId))
+        // no xRef change is detected - now detect modelspace changes, which may put the model in the skip list:
+        if (this->_GetChangeDetector()._ShouldSkipModel(*this, modelMap))
             return  BSISUCCESS;
         }
 

@@ -1192,18 +1192,21 @@ BentleyStatus   DwgImporter::ImportXrefModelsFrom (DwgXRefHolder& xref, SubjectC
         }
 
     DwgDbObjectIdArray  ids;
-    if (DwgDbStatus::Success != block->GetBlockReferenceIds(ids))
+    if (DwgDbStatus::Success != block->GetBlockReferenceIds(ids) || ids.empty())
         {
         /*------------------------------------------------------------------------------------------------
         There could be legitimate reasons as well as file errors that no instances found for an xref block.
         A nested xref would not have instances in the outermost master file for example.  Whatever has led
         us here is not important - we will not add a model for an xref block that has no instances.  We will
         create a model when we see an xref attachment while importing entities.
+        Give the updater a chance to cache skipped models linked to this file.
         ------------------------------------------------------------------------------------------------*/
+        this->_GetChangeDetector()._ShouldSkipFileAndModels (*this, xref.GetDatabase());
         return  BSISUCCESS;
         }
 
-    LOG_MODEL.tracev("Creating DgnModel(s) from DWG xRef block %ls with %d instances", name.c_str(), ids.size());
+    if (!ids.empty())
+        LOG_MODEL.tracev("Creating DgnModel(s) from DWG xRef block %ls with %d instances", name.c_str(), ids.size());
 
     // the xref block has instances - create models for each of them:
     for (auto const& id : ids)
@@ -1231,7 +1234,7 @@ BentleyStatus   DwgImporter::ImportXrefModelsFrom (DwgXRefHolder& xref, SubjectC
             continue;
 
         // cache the mapped model in the xref holder:
-        m_loadedXrefFiles.back().AddDgnModel (model->GetModelId());
+        xref.AddDgnModel (model->GetModelId());
 
         // give the updater a chance to cache skipped models as we may not see xref inserts during importing phase:
         this->_GetChangeDetector()._ShouldSkipModel (*this, modelMap, xref.GetDatabaseP());
@@ -1257,7 +1260,7 @@ BentleyStatus   DwgImporter::_ImportDwgModels ()
 
     // create models for xRef block references:
     bool    hasPushedReferencesSubject = false;
-    for (auto xref : m_loadedXrefFiles)
+    for (auto& xref : m_loadedXrefFiles)
         this->ImportXrefModelsFrom (xref, *parentSubject, hasPushedReferencesSubject);
 
     if (hasPushedReferencesSubject)
@@ -1472,11 +1475,14 @@ void            DwgImporter::_FinishImport ()
             if (nullptr != (dwg = xref.GetDatabaseP()))
                 {
                 auto repLink = GetDgnDb().Elements().GetForEdit<RepositoryLink>(GetRepositoryLink(dwg));
-                auto aspect = DwgSourceAspects::RepositoryLinkAspect::GetForEdit(*repLink);
-                if (aspect.IsValid())
+                if (repLink.IsValid())
                     {
-                    aspect.Update(DwgSourceAspects::DwgFileInfo(*dwg, *this));
-                    repLink->Update();
+                    auto aspect = DwgSourceAspects::RepositoryLinkAspect::GetForEdit(*repLink);
+                    if (aspect.IsValid())
+                        {
+                        aspect.Update(DwgSourceAspects::DwgFileInfo(*dwg, *this));
+                        repLink->Update();
+                        }
                     }
                 }
             }

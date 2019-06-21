@@ -999,6 +999,17 @@ DwgSourceAspects::ModelAspect   DwgSourceAspects::ModelAspect::GetByAspectId (Dg
     return  nullptr;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t DwgSourceAspects::ModelAspectIterator::Count () const
+    {
+    size_t  count = 0;
+    for (auto iter = this->begin(); iter != this->end(); ++iter)
+        count++;
+    return  count;
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          04/19

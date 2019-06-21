@@ -8,6 +8,7 @@
 BEGIN_DWG_NAMESPACE
 
 static bset<Utf8String> s_loggedFileNames;
+static bset<Utf8String> s_loggedModelNames;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          03/16
@@ -436,6 +437,17 @@ DgnDbStatus DwgImporter::UpdateResults (ElementImportResults& results, DgnElemen
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          02/18
 +---------------+---------------+---------------+---------------+---------------+------*/
+static bool HasModelNameBeenLogged (Utf8StringCR modelname)
+    {
+    if (s_loggedModelNames.find(modelname) != s_loggedModelNames.end())
+        return  true;
+    s_loggedModelNames.insert (modelname);
+    return  false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/18
++---------------+---------------+---------------+---------------+---------------+------*/
 static bool HasFileNameBeenLogged (Utf8StringCR filename)
     {
     if (s_loggedFileNames.find(filename) != s_loggedFileNames.end())
@@ -461,7 +473,7 @@ bool UpdaterChangeDetector::_ShouldSkipFile (DwgImporter& importer, DwgDbDatabas
         {
         Utf8String  fn(dwg.GetFileName().c_str());
         if (!HasFileNameBeenLogged(fn))
-            LOG.tracev("skip %s (dgnfile lastmod time unchanged)", fn.c_str());
+            LOG.tracev("skip file %s (last saved time unchanged)", fn.c_str());
         }
 
     return true;
@@ -470,18 +482,13 @@ bool UpdaterChangeDetector::_ShouldSkipFile (DwgImporter& importer, DwgDbDatabas
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool UpdaterChangeDetector::_ShouldSkipModel (DwgImporter& importer, ResolvedModelMapping const& modelMap, DwgDbDatabaseCP xrefDwg)
+bool UpdaterChangeDetector::_ShouldSkipModel (DwgImporter& importer, ResolvedModelMapping const& modelMap, DwgDbDatabaseCP xref)
     {
     if (!modelMap.IsValid())
         {
         BeAssert (false && "attempt to update a null DWG model!");
         return  false;
         }
-
-#ifdef DEBUG_SKIP_MODELS
-    uint64_t    dwgId = modelMap.GetDwgModelHandle().AsUInt64 ();
-    LOG_MODEL.debugv ("Testing model from syncInfo %lld, InstanceId=%lld[%llx], %s", modelMap.GetModelSyncInfoId().GetValue(), dwgId, dwgId, modelMap.GetMapping().GetDwgName().c_str());
-#endif
 
     // update all models if the root transformation has been changed - even in paperspaces, to prevent models to be deleted:
     if (importer.HasRootTransformChanged())
@@ -492,9 +499,9 @@ bool UpdaterChangeDetector::_ShouldSkipModel (DwgImporter& importer, ResolvedMod
     if (m_newlyDiscoveredModels.find(modelId) != m_newlyDiscoveredModels.end())
         return  false;
 
-    // model is not new, check the file of the object((for an xref it's the insert entity):
-    DwgDbDatabasePtr    dwg = modelMap.GetModelInstanceId().GetDatabase ();
-    if (dwg.IsNull())
+    // model is not new, check the file of the object(for an xref attachment, it's the input xref DWG):
+    DwgDbDatabaseCP dwg = xref == nullptr ? modelMap.GetModelInstanceId().GetDatabase() : xref;
+    if (dwg == nullptr)
         {
         BeAssert (false && L"model object is not a database resident!");
         return  false;
@@ -503,13 +510,42 @@ bool UpdaterChangeDetector::_ShouldSkipModel (DwgImporter& importer, ResolvedMod
     if (!this->_ShouldSkipFile(importer, *dwg))
         return false;
 
-    // for an xRef, also check the xRef DWG file, in addition to the above DWG that owns the insert entity:
-    if (nullptr != xrefDwg && !this->_ShouldSkipFile(importer, *xrefDwg))
-        return  false;
+    if (LOG_IS_SEVERITY_ENABLED(LOG_DEBUG))
+        {
+        uint64_t    dwgId = modelMap.GetModelInstanceId().ToUInt64 ();
+        Utf8String  name = modelMap.GetModel()->GetName();
+        if (!HasModelNameBeenLogged(name))
+            LOG_MODEL.debugv("Skip model %lld (name=%s, handle=%llx)", modelMap.GetModelId().GetValue(), name.c_str(), dwgId);
+        }
 
     // skip this model
     m_dwgModelsSkipped.insert (modelId);
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool UpdaterChangeDetector::_ShouldSkipFileAndModels (DwgImporterR importer, DwgDbDatabaseCR dwg)
+    {
+    // detect file
+    if (!this->_ShouldSkipFile(importer, dwg))
+        return  false;
+
+    // find and skip models linked by the file
+    BeFileName  filename(dwg.GetFileName().c_str());
+    auto rlinkAspect = importer.GetSourceAspects().FindFileByFileName (filename);
+    if (rlinkAspect.IsValid())
+        {
+        DwgSourceAspects::ModelAspectIterator modelAspects(importer.GetDgnDb(), rlinkAspect.GetRepositoryLinkId());
+        for (auto modelAspect : modelAspects)
+            {
+            if (LOG_IS_SEVERITY_ENABLED(LOG_DEBUG))
+                LOG_MODEL.debugv("Skip model %lld (name=%s, handle=%llx)", modelAspect.GetModelId().GetValue(), modelAspect.GetDwgModelName().c_str(), modelAspect.GetDwgModelHandle().AsUInt64());
+            m_dwgModelsSkipped.insert (modelAspect.GetModelId());
+            }
+        }
+    return  true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -531,14 +567,42 @@ void UpdaterChangeDetector::_OnModelSeen (DwgImporter& importer, ResolvedModelMa
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void UpdaterChangeDetector::_DeleteModel(DgnModelR model)
+    {
+    auto modelElementId = model.GetModeledElementId();
+    auto name = model.GetName ();
+    auto& db = model.GetDgnDb ();
+
+    LOG.tracev("Delete model %lld [%s]", model.GetModelId().GetValue(), name.empty() ? "no name" : name.c_str());
+
+    model.Delete();
+    db.Elements().Delete (modelElementId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void UpdaterChangeDetector::_DeleteElement (DgnDbR db, DwgSourceAspects::ObjectAspectCR aspect)
+    {
+    auto elementId = aspect.GetElementId ();
+    auto modelId = aspect.GetModelId ();
+    auto handle = aspect.GetObjectHandle().AsAscii ();
+
+    LOG.tracev ("Delete element %lld [entity %ls] in model %lld", elementId.GetValue(), handle.c_str(), modelId.GetValue());
+
+    db.Elements().Delete (elementId);
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UpdaterChangeDetector::_DetectDeletedModels(DwgImporterR importer, DwgSourceAspects::ModelAspectIteratorR iter)
     {
     // *** NB: This alogorithm *infers* that a model was deleted in DWG if we did not see it or its file during processing.
     //          This inference is valid only if we know that a) we saw all models and/or files, and b) they were all registered in Files/ModelsSkipped or m_dwgModelsSeen.
-
-    auto rootSubject = importer.GetSpatialParentSubject ();
 
     // iterate over all of the previously found models to determine if any of 
     // them were missing this time around. Those models and their constituent Models must to be deleted.
@@ -560,20 +624,7 @@ void UpdaterChangeDetector::_DetectDeletedModels(DwgImporterR importer, DwgSourc
                 continue;
 
             // not found, delete this model
-            auto name = model->GetName ();
-            LOG.tracev("Delete model %lld [%s]", modelId.GetValue(), name.empty() ? "no name" : name.c_str());
-            model->Delete();
-            importer.GetDgnDb().Elements().Delete(modelElementId);
-
-            // if this is an xRef model, find & save the references subject referring to the model for future deletion
-            if (wasModel->GetSourceType() == DwgSourceAspects::ModelAspect::SourceType::XRefAttachment)
-                {
-                Json::Value modelProps(Json::nullValue);
-                modelProps["Type"] = "References";
-                auto subject = DwgHelper::FindModelSubject (*rootSubject, name, modelProps, importer.GetDgnDb());
-                if (subject.IsValid())
-                    m_subjectsToRemove.insert (subject->GetElementId());
-                }
+            this->_DeleteModel (*model);
             }
         }
     }
@@ -600,6 +651,8 @@ void UpdaterChangeDetector::_DetectDeletedElements (DwgImporterR importer, DwgSo
     // *** NB: This alogorithm *infers* that an element was deleted in DWG if we did not see it, its model, or its file during processing.
     //          This inference is valid only if we know that a) we saw all models and/or files, and b) they were all registered in Files/ModelsSkipped or m_elementsSeen.
 
+    auto& db = importer.GetDgnDb ();
+
     // iterate over all of the previously converted elements from the syncinfo.
     for (auto elementInSyncInfo=iter.begin(); elementInSyncInfo!=iter.end(); ++elementInSyncInfo)
         {
@@ -612,9 +665,7 @@ void UpdaterChangeDetector::_DetectDeletedElements (DwgImporterR importer, DwgSo
 
         // We did not encounter the DWG entity that was mapped to this BIM element. We infer that the DWG entity 
         // was deleted. Therefore, the update to the BIM is to delete the corresponding BIM element.
-        LOG.tracev ("Delete element %lld [entity %ls]", previouslyConvertedElementId.GetValue(), elementInSyncInfo->GetObjectHandle().AsAscii().c_str());
-
-        importer.GetDgnDb().Elements().Delete (previouslyConvertedElementId);
+        this->_DeleteElement (db, *elementInSyncInfo);
         }
     }
 
@@ -771,15 +822,425 @@ void UpdaterChangeDetector::_DetectDeletedViews (DwgImporter& importer)
     m_viewsSeen.clear ();
     }
 
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          06/19
++===============+===============+===============+===============+===============+======*/
+struct XRefNode : public RefCountedBase
+{
+private:
+    DwgDbDatabaseP  m_xref;
+    DwgDbObjectIdArray  m_insertIds;
+    bvector<RefCountedPtr<XRefNode>>    m_children;
+    XRefNode*   m_parent;
+    size_t  m_nestingDepth;
+
+public:
+    explicit XRefNode(DwgDbDatabaseP dwg) : m_xref(dwg), m_parent(nullptr), m_nestingDepth(0) { m_insertIds.clear(); }
+
+#define DEBUG_XREF_TREE
+#ifdef DEBUG_XREF_TREE
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String GetDebuggingTabs () const
+    {
+    Utf8String  tabs;
+    for (size_t i = 0; i < m_nestingDepth; ++i)
+        tabs += "\t";
+    return  tabs;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void DebugAddedChild () const
+    {
+    auto tabs = this->GetDebuggingTabs();
+    LOG.debugv ("%sAdded Xref node %ls", tabs.c_str(), m_xref->GetFileName().c_str());
+    for (auto id : m_insertIds)
+        LOG.debugv ("%sXref insert Id = %llx", tabs.c_str(), id.ToUInt64());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void DebugFoundChild (DwgDbDatabaseP xref) const
+    {
+    Utf8String  ids;
+    for (auto id : m_insertIds)
+        ids += Utf8PrintfString(" %llx", id.ToUInt64());
+    auto tabs = this->GetDebuggingTabs ();
+    LOG.debugv ("%sFound inserts[%s]!", tabs.c_str(), ids.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void DebugFindChild (DwgDbDatabaseP xref) const
+    {
+    auto tabs = this->GetDebuggingTabs();
+    LOG.debugv ("%sChecking Xref %ls attached in file %ls", tabs.c_str(), xref->GetFileName().c_str(), m_xref->GetFileName().c_str());
+    }
+#endif  // DEBUG_XREF_TREE
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static RefCountedPtr<XRefNode> Create(DwgDbDatabaseP xref)
+    {
+    return new XRefNode(xref);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void SetParent (XRefNode* parent)
+    {
+    m_parent = parent;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void AddChild (DwgDbDatabaseP xref, DwgDbObjectIdArrayCR insertIds, DwgImporterR importer)
+    {
+    if (xref != nullptr && !insertIds.empty())
+        {
+        m_children.push_back (XRefNode::Create(xref));
+        auto child = m_children.back ();
+        if (child.IsValid())
+            {
+            child->SetParent (this);
+            child->AddBlockInserts (insertIds);
+#ifdef DEBUG_XREF_TREE
+            child->SetNestingDepth (m_nestingDepth + 1);
+            child->DebugAddedChild ();
+#endif
+            child->AddNestedChildren (importer, m_nestingDepth + 1);
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t AddBlockInserts (DwgDbObjectIdArrayCR insertIds)
+    {
+    m_insertIds.assign (insertIds.begin(), insertIds.end());
+    return  m_insertIds.size();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbObjectIdArrayCR GetBlockInserts () const
+    {
+    return  m_insertIds;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void SetNestingDepth (size_t depth)
+    {
+    m_nestingDepth = depth;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t AddNestedChildren (DwgImporterR importer, size_t nestingDepth)
+    {
+    this->SetNestingDepth (nestingDepth);
+
+    // drill into the block table and add xRef nodes it contains as nested children
+    auto thisSavedPath = m_xref->GetFileName ();
+    DwgDbBlockTablePtr  blockTable(m_xref->GetBlockTableId(), DwgDbOpenMode::ForRead);
+    if (blockTable.OpenStatus() != DwgDbStatus::Success)
+        {
+        BeAssert (false && "Unable to open Xref's block table for read!");
+        return 0;
+        }
+
+    auto iter = blockTable->NewIterator ();
+    if (!iter.IsValid() || !iter->IsValid())
+        {
+        BeAssert (false && "Unable to create a block iterator!");
+        return 0;
+        }
+
+    for (iter->Start(); !iter->Done(); iter->Step())
+        {
+        DwgDbBlockTableRecordPtr block(iter->GetRecordId(), DwgDbOpenMode::ForRead);
+        if (block.OpenStatus() != DwgDbStatus::Success || !block->IsExternalReference())
+            continue;
+
+        auto xref = importer.FindXRefHolder (*block, false);
+        if (xref != nullptr)
+            {
+            DwgDbObjectIdArray  insertIds;
+            if (block->GetBlockReferenceIds(insertIds) == DwgDbStatus::Success)
+                this->AddChild (xref->GetDatabaseP(), insertIds, importer);
+            }
+        }
+    return  m_children.size();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IsSameNode (DwgDbDatabaseP xref) const
+    {
+    return  xref == m_xref;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool FindChild (DwgDbDatabaseP xref, DwgDbHandleArrayR outHandles) const
+    {
+    if (xref == m_xref)
+        {
+#ifdef DEBUG_XREF_TREE
+        this->DebugFoundChild (xref);
+#endif
+        for (auto id : m_insertIds)
+            outHandles.push_back (id.GetHandle());
+        return  true;
+        }
+
+#ifdef DEBUG_XREF_TREE
+    this->DebugFindChild (xref);
+#endif
+
+    for (auto node : m_children)
+        {
+        node->FindChild(xref, outHandles);
+        }
+    return  !outHandles.empty();
+    }
+}; // XRefNode
+DEFINE_REF_COUNTED_PTR(XRefNode)
+typedef bvector<XRefNodePtr>    T_XRefNodes;
+
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          06/19
++===============+===============+===============+===============+===============+======*/
+struct XRefTree
+{
+private:
+    DwgImporterR m_importer;
+    T_XRefNodes m_nodes;
+    bool    m_isValid;
+
+public:
+    explicit XRefTree(DwgImporterR importer) : m_importer(importer), m_isValid(false) { m_nodes.clear(); }
+    bool IsValid () const { return m_isValid; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SearchXrefAttachments (DwgDbDatabaseP xref, DwgDbHandleArrayR outHandles)
+    {
+    // demand build the tree
+    if (!this->IsValid())
+        this->Build ();
+    
+    // drill into children and search for matching xRef nodes, collecting all xRef insert handles
+    for (auto node : m_nodes)
+        {
+        if (node->IsSameNode(xref))
+            {
+            // found a node - append attachments to output
+            auto inserts = node->GetBlockInserts ();
+            for (auto id : inserts)
+                outHandles.push_back (id.GetHandle());
+            continue;
+            }
+
+        node->FindChild (xref, outHandles);
+        }
+    return  !outHandles.empty();
+    }
+
+private:
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   AddRootChild (DwgImporter::DwgXRefHolder& xref)
+    {
+    if (!xref.IsValid())
+        return  BSIERROR;
+
+    // add a root child only if it has instances
+    DwgDbObjectIdArray  inserts;
+    DwgDbBlockTableRecordPtr block(xref.GetBlockIdInRootFile(), DwgDbOpenMode::ForRead);
+    if (block.OpenStatus() != DwgDbStatus::Success || block->GetBlockReferenceIds(inserts) != DwgDbStatus::Success || inserts.empty())
+        return  BSIERROR;
+
+    m_nodes.push_back (XRefNode::Create(xref.GetDatabaseP()));
+    auto node = m_nodes.back ();
+    if (node.IsValid())
+        {
+        node->AddBlockInserts (inserts);
+#ifdef DEBUG_XREF_TREE
+        LOG.debugv ("Added root child Xref node %ls", xref.GetSavedPath().c_str());
+        inserts = node->GetBlockInserts ();
+        for (auto id : inserts)
+            LOG.debugv ("Xref insert Id = %llx", id.ToUInt64());
+#endif
+        node->AddNestedChildren (m_importer, 0);
+        return  BSISUCCESS;
+        }
+    return  BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void Build ()
+    {
+    auto loadedXrefs = m_importer.GetLoadedXrefs ();
+    for (auto xref : loadedXrefs)
+        this->AddRootChild(xref);
+    m_isValid = true;
+    }
+};  // XRefTree
+
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          06/19
++===============+===============+===============+===============+===============+======*/
+struct XRefDetector
+{
+private:
+    DwgImporterR    m_importer;
+    XRefTree    m_loadedXrefTree;
+
+public:
+    explicit XRefDetector(DwgImporterR importer) : m_importer(importer), m_loadedXrefTree(importer) {}
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbDatabaseP FindXrefByRepositoryLink (DgnElementId repLinkId)
+    {
+    auto&   loadedXrefs = m_importer.GetLoadedXrefs ();
+    for (auto& xref : loadedXrefs)
+        {
+        auto dwg = xref.GetDatabaseP ();
+        if (nullptr != dwg && m_importer.GetRepositoryLink(dwg) == repLinkId)
+            return  dwg;
+        }
+    return  nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DetectDetachedXrefsForFile(DgnElementId repLinkId, DwgDbHandleArrayCR newXrefInserts, DgnModelIdSet& detachedModels)
+    {
+    // compare old xRef models against current xRef inserts - old models not seen in current xRef list are detached
+    bool hasNoAttachments = newXrefInserts.empty();
+    DwgSourceAspects::ModelAspectIterator oldModels(m_importer.GetDgnDb(), repLinkId);
+    for (auto oldModel : oldModels)
+        {
+        auto oldXrefHandle = oldModel.GetDwgModelHandle ();
+        if (hasNoAttachments)
+            {
+            // all old xRef models are detached
+            detachedModels.insert (oldModel.GetModelId());
+            }
+        else
+            {
+            // one or more old xRef models not seen in current xRef list is/are detached
+            auto found = std::find_if (newXrefInserts.begin(), newXrefInserts.end(), [&](DwgDbHandleCR h){ return oldXrefHandle == h; });
+            if (found == newXrefInserts.end())
+                detachedModels.insert (oldModel.GetModelId());
+            }
+        }
+    return  !detachedModels.empty();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DetectDetachedXrefsForFile (DgnElementId replinkId, BeFileNameCR filename, DgnModelIdSet& deletedModels)
+    {
+    deletedModels.clear ();
+
+    // find the source xRef from which the input repository link was originally created
+    auto xrefDwg = this->FindXrefByRepositoryLink (replinkId);
+    if (xrefDwg == nullptr)
+        return  false;
+
+    // search the tree for all attached instances of the source xRef
+    DwgDbHandleArray xrefInserts;
+    m_loadedXrefTree.SearchXrefAttachments (xrefDwg, xrefInserts);
+    this->DetectDetachedXrefsForFile (replinkId, xrefInserts, deletedModels);
+
+    return !deletedModels.empty();
+    }
+};  // XRefDetector
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void UpdaterChangeDetector::_DeleteXrefModels (DwgImporterR importer, DwgSourceAspects::RepositoryLinkAspectCR file, DgnModelIdSet const& detachedModels)
+    {
+    auto&   db = importer.GetDgnDb ();
+    auto    rootSubject = importer.GetSpatialParentSubject ();
+    auto    rlinkId = file.GetRepositoryLinkId ();
+    size_t  numModels = DwgSourceAspects::ModelAspectIterator(db, rlinkId).Count ();
+
+    // first delete elements in the model in the scope of this file
+    for (auto modelId : detachedModels)
+        {
+        auto model = db.Models().GetModel(modelId);
+        if (model.IsValid())
+            {
+            // the xRef has been detected as detached - if it was previously recorded as skipped model, remove it from the list:
+            m_dwgModelsSkipped.erase (model->GetModelId());
+
+            DwgSourceAspects::ObjectAspectIterator elementsInModel(*model);
+            _DetectDeletedElements (importer, elementsInModel);
+
+            // mark the references subject of this xRef for later deletection
+            if (rootSubject.IsValid())
+                {
+                Json::Value modelProps(Json::nullValue);
+                modelProps["Type"] = "References";
+                auto subject = DwgHelper::FindModelSubject (*rootSubject, model->GetName(), modelProps, db);
+                if (subject.IsValid())
+                    m_subjectsToRemove.insert (subject->GetElementId());
+                }
+
+            _DeleteModel (*model);
+            }
+        }
+
+    // delete the repository link of the xRef file only if all models linked to this file are deleted
+    if (detachedModels.size() == numModels)
+        {
+        BeFileName  filename(file.GetDwgName().c_str());
+        LOG.tracev ("Delete repository link %lld of xRef %ls", rlinkId.GetValue(), filename.c_str());
+        db.Elements().Delete (rlinkId);
+        }
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UpdaterChangeDetector::_DetectDetachedXrefs (DwgImporter& importer)
     {
     auto&   db = importer.GetDgnDb ();
-    auto&   loadedXrefs = importer.GetLoadedXrefs ();
-    auto&   unresolvedXrefs = importer.GetUnresolvedXrefs ();
     auto    rootfileId = importer.GetRepositoryLink(&importer.GetDwgDb());
+
+    DgnElementIdSet subjectsToRemove;
+    XRefDetector detector(importer);
 
     DwgSourceAspects::RepositoryLinkAspectIterator files(db, nullptr);
     for (auto file : files)
@@ -789,37 +1250,12 @@ void UpdaterChangeDetector::_DetectDetachedXrefs (DwgImporter& importer)
         if (rlinkId == rootfileId)
             continue;
         
-        // check if this file is in our loaded xRef list
-        bool    detached = true;
-        for (auto& xref : loadedXrefs)
-            {
-            auto dwg = xref.GetDatabaseP ();
-            if (nullptr != dwg && importer.GetRepositoryLink(dwg) == rlinkId)
-                {
-                detached = false;
-                break;
-                }
-            }
+        BeFileName  filename(file.GetFileName());
+        DgnModelIdSet   detachedModels;
 
-        // also check the unresolved xRef list (nested xRef's out of sync with the master file)
-        if (detached)
-            {
-            BeFileName existingFilename(file.GetFileName());
-            if (unresolvedXrefs.find(existingFilename) != unresolvedXrefs.end())
-                detached = false;
-            }
-
-        if (detached)
-            {
-            // first delete models in the scope of this file
-            DwgSourceAspects::ModelAspectIterator iter(db, rlinkId);
-            _DetectDeletedModels(importer, iter);
-
-            BeFileName  filename(file.GetDwgName().c_str());
-
-            LOG.tracev ("Delete repository link %lld of xRef %ls", rlinkId.GetValue(), filename.c_str());
-            db.Elements().Delete (rlinkId);
-            }
+        detector.DetectDetachedXrefsForFile(rlinkId, filename, detachedModels);
+        if (!detachedModels.empty())
+            _DeleteXrefModels (importer, file, detachedModels);
         }
 
     // now delete references subjects whose xRef models have been deleted

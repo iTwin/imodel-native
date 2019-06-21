@@ -256,7 +256,7 @@ SubjectCPtr DwgImporter::GetOrCreateModelSubject (SubjectCR parent, Utf8StringCR
     ed->SetSubjectJsonProperties(Subject::json_Model(), modelProps);
 
     // set user label to help the element name display in Navigator's version comparison - TFS 915733:
-    Utf8PrintfString    userLabel("%s %s", modelProps["Type"].asCString(), DataStrings::GetString(DataStrings::Subject()).c_str());
+    Utf8PrintfString    userLabel("%s %s %s", modelProps["Type"].asCString(), ModelSubjectType::Hierarchy==stype ? "of" : "in", modelName.c_str());
     ed->SetUserLabel (userLabel.c_str());
 
     return ed->InsertT<Subject>();

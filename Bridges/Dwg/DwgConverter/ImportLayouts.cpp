@@ -262,7 +262,7 @@ BentleyStatus   DwgImporter::_ImportLayout (ResolvedModelMapping& modelMap, DwgD
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          06/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool    DwgImporter::ShouldSkipAllXrefs (ResolvedModelMapping const& ownerModel, DwgDbObjectIdCR ownerSpaceId)
+bool    DwgImporter::ShouldSkipAllXrefsInModel (DwgDbObjectIdCR ownerSpaceId)
     {
     // check all xRef's attached to the modelspace or a paperspace and return true if none is changed.
     if (!this->IsUpdating())
@@ -301,8 +301,8 @@ bool    DwgImporter::ShouldSkipAllXrefs (ResolvedModelMapping const& ownerModel,
         if (nullptr == xrefDwg)
             continue;
 
-        // if an xref is detected to have been changed, do NOT skip the owner model:
-        if (!this->_GetChangeDetector()._ShouldSkipModel(*this, ownerModel, xrefDwg))
+        // if an xref is detected to have been changed, do NOT skip the owner model, which shall be checked separately by the caller:
+        if (!this->_GetChangeDetector()._ShouldSkipFile(*this, *xrefDwg))
             return  false;
         }
 
@@ -372,10 +372,11 @@ BentleyStatus   DwgImporter::_ImportLayouts ()
                 BeAssert (block.OpenStatus() == DwgDbStatus::Success);
                 }
 
-            if (changeDetector._ShouldSkipModel(*this, entry))
+            // detect changes in xRef's attached to this layout
+            if (this->ShouldSkipAllXrefsInModel(modelId))
                 {
-                // no entity change is detected in this layout - check all xRef files attached to it:
-                if (this->ShouldSkipAllXrefs(entry, modelId))
+                // no xRef change is detected in this layout - detect paperspace changes:
+                if (changeDetector._ShouldSkipModel(*this, entry))
                     {
                     // before we skip this layout, record its viewport as seen:
                     DwgDbObjectIdArray  ids;

@@ -193,8 +193,9 @@ struct IDwgChangeDetector
     //! Called to check if the specified file could be skipped (i.e., because it has not changed) by checking timestamps that may be stored in the file.
     virtual bool _ShouldSkipFile (DwgImporter&, DwgDbDatabaseCR) = 0;
     //! Called to check if an entire model could be skipped (i.e., because no element in the model is changed).
-    //! @note DwgImporter must not call this during the model-discovery step but only skip it during the element-conversion step.
-    virtual bool _ShouldSkipModel (DwgImporter&, ResolvedModelMappingCR,  DwgDbDatabaseCP xref = nullptr) = 0;
+    virtual bool _ShouldSkipModel (DwgImporter&, ResolvedModelMappingCR, DwgDbDatabaseCP xref = nullptr) = 0;
+    //! Called for a loaded xRef DWG which is not imported into db during model-discovery (i.e. nested xRef files, etc).  Should the file be skipped, so its models are.
+    virtual bool _ShouldSkipFileAndModels (DwgImporter&, DwgDbDatabaseCR xref) = 0;
 
     //! Called by a DwgImporter to detect if a DWG object is changed or new.
     //! @param[out] results The information about what the change detector has found
@@ -221,8 +222,7 @@ struct IDwgChangeDetector
 
     void OnElementSeen (DwgImporter& importer, DgnElementP el) { if (el != nullptr) _OnElementSeen(importer, el->GetElementId()); }
 
-    //! Called when a DWG model is discovered. This callback should be invoked during the model-discovery phase,
-    //! before the elements in the specified model are converted.
+    //! Called when a DWG model is discovered. This callback should be invoked during the model-discovery phase, but could also be called during entity importing(i.e. nexted xRef attachments).
     //! @param[in] importer An instance of the DwgImporter
     //! @param[in] map      Mapping info for the DWG model
     virtual void _OnModelSeen (DwgImporter& importer, ResolvedModelMappingCR map) = 0;
@@ -596,12 +596,14 @@ public:
         BeFileNameCR    GetResolvedPath () const { return m_resolvedPath; }
         BeFileNameCR    GetSavedPath () const { return m_savedPath; }
         bool            HasDgnModel (DgnModelId id) const { return m_dgnModels.Contains(id); }
+        bool            HasDgnModels () const { return !m_dgnModels.empty(); }
         void            AddDgnModel (DgnModelId id) { m_dgnModels.insert(id); }
         DgnModelIdSet&  GetDgnModelsR () { return m_dgnModels; }
         //! Set a computed range for xRef's modelspace
         void            SetComputedRange (DRange3dCR range) { m_computedRange = range; }
         //! Get the computed range for xRef's modelspace
         DRange3dCR      GetComputedRange () const { return m_computedRange; }
+        bool IsSameXref (DwgXRefHolder const& other) const { return m_xrefDatabase == other.m_xrefDatabase; }
         };  // DwgXRefHolder
     typedef bvector<DwgXRefHolder>    T_LoadedXRefFiles;
 
@@ -1032,7 +1034,7 @@ private:
     void                    CheckSameRootModelAndUnits ();
     void                    ComputeDefaultImportJobName (Utf8StringCR rootModelName) const;
     bool                    IsXrefInsertedInPaperspace (DwgDbObjectIdCR xrefInsertId) const;
-    bool                    ShouldSkipAllXrefs (ResolvedModelMappingCR ownerModel, DwgDbObjectIdCR ownerSpaceId);
+    bool                    ShouldSkipAllXrefsInModel (DwgDbObjectIdCR ownerSpaceId);
     DgnDbStatus             UpdateElementName (DgnElementR editElement, Utf8StringCR newValue, Utf8CP label = nullptr, bool save = true);
     bool                    UpdateModelspaceView (ViewControllerP view);
     bool                    UpdatePaperspaceView (ViewControllerP view, DwgDbObjectIdCR viewportId);
@@ -1419,7 +1421,8 @@ public:
     void    _Prepare (DwgImporter&) override {}
     void    _Cleanup (DwgImporter&) override {}
     bool    _ShouldSkipFile (DwgImporter&, DwgDbDatabaseCR) override { return false; }
-    bool    _ShouldSkipModel (DwgImporter&, ResolvedModelMappingCR m,  DwgDbDatabaseCP xref = nullptr) override { return false; }
+    bool    _ShouldSkipModel (DwgImporter&, ResolvedModelMappingCR m, DwgDbDatabaseCP xref = nullptr) override { return false; }
+    bool    _ShouldSkipFileAndModels (DwgImporter&, DwgDbDatabaseCR xref) override { return false; }
     void    _OnModelSeen (DwgImporter&, ResolvedModelMappingCR m) override {}
     void    _OnViewSeen (DwgImporter&, DgnViewId) override {}
     void    _OnGroupSeen (DwgImporter&, DgnElementId) override {}
@@ -1458,7 +1461,11 @@ private:
     DgnElementIdSet     m_subjectsToRemove;
     uint32_t            m_elementsDiscarded;
 
+protected:
     bool    IsUpdateRequired (DetectionResults& results, DwgImporter& importer, DwgDbObjectCR obj) const;
+    DWG_EXPORT virtual void _DeleteElement (DgnDbR db, DwgSourceAspects::ObjectAspectCR elementAspect);
+    DWG_EXPORT virtual void _DeleteModel (DgnModelR model);
+    DWG_EXPORT virtual void _DeleteXrefModels (DwgImporterR importer, DwgSourceAspects::RepositoryLinkAspectCR file, DgnModelIdSet const& models);
 
 public:
     UpdaterChangeDetector () : m_elementsDiscarded(0) {}
@@ -1470,6 +1477,7 @@ public:
     //! @{
     DWG_EXPORT bool   _ShouldSkipFile (DwgImporter&, DwgDbDatabaseCR) override;
     DWG_EXPORT bool   _ShouldSkipModel (DwgImporter&, ResolvedModelMappingCR, DwgDbDatabaseCP xref = nullptr) override;
+    DWG_EXPORT bool   _ShouldSkipFileAndModels (DwgImporter&, DwgDbDatabaseCR dwg) override;
     DWG_EXPORT void   _OnModelSeen (DwgImporter&, ResolvedModelMappingCR) override;
     DWG_EXPORT void   _OnModelInserted (DwgImporter&, ResolvedModelMappingCR, DwgDbDatabaseCP xRef) override;
     DWG_EXPORT void   _OnViewSeen (DwgImporter&, DgnViewId) override;

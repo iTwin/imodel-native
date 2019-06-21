@@ -227,6 +227,7 @@ public:
             {
             GetStatement()->BindText(GetParameterIndex("identifier"), BaseAspect::FormatDbHandle(sourceId).c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
             }
+        DWG_EXPORT size_t Count() const;
         };  // ModelAspectIterator
     DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(ModelAspectIterator)
 
