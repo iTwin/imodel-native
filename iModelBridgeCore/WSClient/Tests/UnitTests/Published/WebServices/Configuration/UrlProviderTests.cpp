@@ -548,4 +548,60 @@ TEST_F(UrlProviderTests, GetStoredEnvironment_InitializedLocalState_ReturnsTrueA
     EXPECT_EQ(UrlProvider::Environment::Qa, env);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                                      Vincas.Razma    06/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(UrlProviderTests, ToEnvironmentString_ValidValues_ReturnsStringRepresentations)
+    {
+    EXPECT_EQ(UrlProvider::ToEnvironmentString(UrlProvider::Environment::Dev), "DEV");
+    EXPECT_EQ(UrlProvider::ToEnvironmentString(UrlProvider::Environment::Qa), "QA");
+    EXPECT_EQ(UrlProvider::ToEnvironmentString(UrlProvider::Environment::Release), "PROD");
+    EXPECT_EQ(UrlProvider::ToEnvironmentString(UrlProvider::Environment::Perf), "PERF");
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                                      Vincas.Razma    06/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(UrlProviderTests, ToEnvironmentString_InvalidValue_ReturnsEmpty)
+    {
+    EXPECT_EQ(UrlProvider::ToEnvironmentString((UrlProvider::Environment) 42), "");
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                                      Vincas.Razma    06/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(UrlProviderTests, FromEnvironmentString_ValidValues_ReturnsEnumRepresentations)
+    {
+    auto env = UrlProvider::Environment::Qa;
+    EXPECT_EQ(UrlProvider::FromEnvironmentString("DEV", env), SUCCESS);
+    EXPECT_EQ(env, UrlProvider::Environment::Dev);
+    EXPECT_EQ(UrlProvider::FromEnvironmentString("QA", env), SUCCESS);
+    EXPECT_EQ(env, UrlProvider::Environment::Qa);
+    EXPECT_EQ(UrlProvider::FromEnvironmentString("PROD", env), SUCCESS);
+    EXPECT_EQ(env, UrlProvider::Environment::Release);
+    EXPECT_EQ(UrlProvider::FromEnvironmentString("PERF", env), SUCCESS);
+    EXPECT_EQ(env, UrlProvider::Environment::Perf);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                                      Vincas.Razma    06/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(UrlProviderTests, FromEnvironmentString_InvalidValue_ReturnsError)
+    {
+    auto env = UrlProvider::Environment::Qa;
+    EXPECT_EQ(UrlProvider::FromEnvironmentString("FOO", env), ERROR);
+    EXPECT_EQ(env, UrlProvider::Environment::Qa);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                                      Vincas.Razma    06/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(UrlProviderTests, FromEnvironmentString_NullValue_ReturnsError)
+    {
+    auto env = UrlProvider::Environment::Qa;
+    EXPECT_EQ(UrlProvider::FromEnvironmentString(nullptr, env), ERROR);
+    EXPECT_EQ(env, UrlProvider::Environment::Qa);
+    }
+
+
 #endif
