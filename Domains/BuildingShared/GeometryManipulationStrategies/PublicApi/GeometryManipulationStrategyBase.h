@@ -103,6 +103,7 @@ struct GeometryManipulationStrategyBase : RefCountedBase, IResettableDynamic
         bvector<Utf8String> m_registeredBoolProperties;
         bvector<Utf8String> m_registeredIntProperties;
         bvector<Utf8String> m_registeredDoubleProperties;
+        bvector<Utf8String> m_registeredDPoint2dProperties;
         bvector<Utf8String> m_registeredDVec3dProperties;
         bvector<Utf8String> m_registeredDPlane3dProperties;
         bvector<Utf8String> m_registeredRotMatrixProperties;
@@ -127,6 +128,7 @@ struct GeometryManipulationStrategyBase : RefCountedBase, IResettableDynamic
         GMS_V_SET_TRYGET_PROPERTY_TYPE(bool)
         GMS_V_SET_TRYGET_PROPERTY_TYPE(int)
         GMS_V_SET_TRYGET_PROPERTY_TYPE(double)
+        GMS_V_SET_TRYGET_PROPERTY_TYPE(DPoint2d)
         GMS_V_SET_TRYGET_PROPERTY_TYPE(DVec3d)
         GMS_V_SET_TRYGET_PROPERTY_TYPE(DPlane3d)
         GMS_V_SET_TRYGET_PROPERTY_TYPE(RotMatrix)
@@ -150,6 +152,7 @@ struct GeometryManipulationStrategyBase : RefCountedBase, IResettableDynamic
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void RegisterBoolProperty(Utf8StringCR propertyName);
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void RegisterIntProperty(Utf8StringCR propertyName);
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void RegisterDoubleProperty(Utf8StringCR propertyName);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void RegisterDPoint2dProperty(Utf8StringCR propertyName);
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void RegisterDVec3dProperty(Utf8StringCR propertyName);
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void RegisterDPlane3dProperty(Utf8StringCR propertyName);
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void RegisterRotMatrixProperty(Utf8StringCR propertyName);
@@ -165,6 +168,8 @@ struct GeometryManipulationStrategyBase : RefCountedBase, IResettableDynamic
         GMS_SET_TRYGET_PROPERTY_TYPE(int)
         //! Set/TryGet a double property.
         GMS_SET_TRYGET_PROPERTY_TYPE(double)
+        //! Set/TryGet a DPoint2d property.
+        GMS_SET_TRYGET_PROPERTY_TYPE(DPoint2d)
         //! Set/TryGet a DVec3d property.
         GMS_SET_TRYGET_PROPERTY_TYPE(DVec3d)
         //! Set/TryGet a DPlane3d property.

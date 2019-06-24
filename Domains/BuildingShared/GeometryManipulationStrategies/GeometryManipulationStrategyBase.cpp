@@ -54,6 +54,7 @@ void IResettableDynamic::SetDynamicState
 SET_TRYGET_PROPERTY_IMPL(bool)
 SET_TRYGET_PROPERTY_IMPL(int)
 SET_TRYGET_PROPERTY_IMPL(double)
+SET_TRYGET_PROPERTY_IMPL(DPoint2d)
 SET_TRYGET_PROPERTY_IMPL(DVec3d)
 SET_TRYGET_PROPERTY_IMPL(DPlane3d)
 SET_TRYGET_PROPERTY_IMPL(RotMatrix)
@@ -179,6 +180,17 @@ void GeometryManipulationStrategyBase::RegisterDoubleProperty
     RegisterProperty(propertyName, m_registeredDoubleProperties);
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Mindaugas.Butkus                06/2019
+//--------------+---------------+---------------+---------------+---------------+------
+void GeometryManipulationStrategyBase::RegisterDPoint2dProperty
+(
+    Utf8StringCR propertyName
+)
+    {
+    RegisterProperty(propertyName, m_registeredDPoint2dProperties);
+    }
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                02/2019
 //---------------+---------------+---------------+---------------+---------------+------
@@ -267,6 +279,7 @@ void GeometryManipulationStrategyBase::UnregisterProperty
     UnregisterProperty(propertyName, m_registeredBoolProperties);
     UnregisterProperty(propertyName, m_registeredIntProperties);
     UnregisterProperty(propertyName, m_registeredDoubleProperties);
+    UnregisterProperty(propertyName, m_registeredDPoint2dProperties);
     UnregisterProperty(propertyName, m_registeredDVec3dProperties);
     UnregisterProperty(propertyName, m_registeredDPlane3dProperties);
     UnregisterProperty(propertyName, m_registeredRotMatrixProperties);
@@ -306,6 +319,7 @@ void GeometryManipulationStrategyBase::_CopyPropertiesTo
     CopyPropertiesTo<bool>(*this, other, m_registeredBoolProperties);
     CopyPropertiesTo<int>(*this, other, m_registeredIntProperties);
     CopyPropertiesTo<double>(*this, other, m_registeredDoubleProperties);
+    CopyPropertiesTo<DPoint2d>(*this, other, m_registeredDPoint2dProperties);
     CopyPropertiesTo<DVec3d>(*this, other, m_registeredDVec3dProperties);
     CopyPropertiesTo<DPlane3d>(*this, other, m_registeredDPlane3dProperties);
     CopyPropertiesTo<RotMatrix>(*this, other, m_registeredRotMatrixProperties);

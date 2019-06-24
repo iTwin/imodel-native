@@ -406,3 +406,33 @@ TEST_F(GeometryUtilsTests, ProjectCurveOntoZeroPlane)
     ASSERT_EQ(100, area2);
     ASSERT_NE(area1, area2);
     }
+
+//-------------------------------------------------------------------------------------
+// @betest                                      Mindaugas.Butkus                06/2019
+//--------------+---------------+---------------+---------------+---------------+------
+TEST_F(GeometryUtilsTests, ProjectCurveOntoPlane)
+    {
+    bvector<DPoint3d> initCurvePoints{{0, 0, 0}, {10, 0, 10}, {10, 10, 10}, {0, 10, 0}};
+    CurveVectorPtr initCurve = CurveVector::CreateLinear(initCurvePoints, CurveVector::BOUNDARY_TYPE_Outer);
+
+    bvector<DPoint3d> expectedCurvePoints{{5, 0, 0}, {5, 0, 10}, {5, 10, 10}, {5, 10, 0}};
+    CurveVectorPtr expectedCurve = CurveVector::CreateLinear(expectedCurvePoints, CurveVector::BOUNDARY_TYPE_Outer);
+
+    DPlane3d plane = DPlane3d::FromOriginAndNormal(DPoint3d::From(5, 0, 0), DVec3d::From(1, 0, 0));
+    CurveVectorPtr actualCurve = GeometryUtils::ProjectCurveOntoPlane(*initCurve, plane);
+
+    ASSERT_TRUE(GeometryUtils::IsSameSingleLoopGeometry(*actualCurve, *expectedCurve));
+    }
+
+//-------------------------------------------------------------------------------------
+// @betest                                      Mindaugas.Butkus                06/2019
+//--------------+---------------+---------------+---------------+---------------+------
+TEST_F(GeometryUtilsTests, ProjectPointsOntoPlane)
+    {
+    bvector<DPoint3d> initPoints{{0, 0, 0}, {10, 0, 10}, {10, 10, 10}, {0, 10, 0}};
+    bvector<DPoint3d> expectedPoints{{4, 0, 0}, {4, 0, 10}, {4, 10, 10}, {4, 10, 0}};
+    DPlane3d plane = DPlane3d::FromOriginAndNormal(DPoint3d::From(4, 0, 0), DVec3d::From(1, 0, 0));
+    bvector<DPoint3d> actualPoints = GeometryUtils::ProjectPointsOntoPlane(initPoints, plane);
+
+    ASSERT_TRUE(DPoint3d::AlmostEqual(actualPoints, expectedPoints, DoubleOps::SmallCoordinateRelTol()));
+    }
