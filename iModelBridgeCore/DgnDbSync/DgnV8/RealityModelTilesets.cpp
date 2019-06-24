@@ -288,7 +288,7 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
         auto smModel = dynamic_cast<ScalableMeshModelCP>(geometricModel);
         if (smModel != nullptr)
             {
-            doUpload = smModel->_AllowPublishing();
+            doUpload = smModel->AllowPublishing();
             if(doUpload) smModel->WriteCesiumTileset(rootJsonFile, modelDir, dbToEcefTransform);
             }
         else

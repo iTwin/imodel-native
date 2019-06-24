@@ -170,7 +170,7 @@ ConvertToDgnDbElementExtension::Result ConvertDTMElement::_PreConvertElement(Dgn
     smFile.AppendExtension(L"3sm");
 
     StatusInt status;
-    auto scalableMeshCreatorPtr = BentleyB0200::ScalableMesh::IScalableMeshSourceCreator::GetFor(smFile.c_str(), status);
+    auto scalableMeshCreatorPtr = BentleyM0200::ScalableMesh::IScalableMeshSourceCreator::GetFor(smFile.c_str(), status);
 
 #ifdef USEDTMELEMENT
     ScalableMesh::IDTMDgnTerrainModelSourcePtr sourceP = ScalableMesh::IDTMDgnTerrainModelSource::Create(ScalableMesh::DTMSourceDataType::DTM_SOURCE_DATA_DTM,
@@ -181,7 +181,7 @@ ConvertToDgnDbElementExtension::Result ConvertDTMElement::_PreConvertElement(Dgn
     BeFileName dtmFile= tempPath;
     dtmFile.AppendExtension(L"bcdtm");
     bcDTM->Save(dtmFile.c_str());
-    BentleyB0200::ScalableMesh::IDTMSourcePtr sourceP = ScalableMesh::IDTMLocalFileSource::Create(ScalableMesh::DTMSourceDataType::DTM_SOURCE_DATA_DTM, dtmFile.c_str());
+    BentleyM0200::ScalableMesh::IDTMSourcePtr sourceP = ScalableMesh::IDTMLocalFileSource::Create(ScalableMesh::DTMSourceDataType::DTM_SOURCE_DATA_DTM, dtmFile.c_str());
 #endif
     scalableMeshCreatorPtr->EditSources().Add(sourceP);
     scalableMeshCreatorPtr->Create();
