@@ -119,7 +119,9 @@ TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_UrlProviderProduction
         return StubHttpResponse();
         });
 
-    Http::Request("https://foo.com", "GET", authHandler).Perform().get();
+    Http::Request request("https://foo.com", "GET", authHandler);
+    request.SetValidateCertificate(false);
+    request.Perform().get();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -137,7 +139,9 @@ TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_UrlProviderQa_DoesNot
         return StubHttpResponse();
         });
 
-    Http::Request("https://foo.com", "GET", authHandler).Perform().get();
+    Http::Request request("https://foo.com", "GET", authHandler);
+    request.SetValidateCertificate(false);
+    request.Perform().get();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -155,7 +159,9 @@ TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_UrlProviderDev_DoesNo
         return StubHttpResponse();
         });
 
-    Http::Request("https://foo.com", "GET", authHandler).Perform().get();
+    Http::Request request("https://foo.com", "GET", authHandler);
+    request.SetValidateCertificate(false);
+    request.Perform().get();
     }
 
 /*--------------------------------------------------------------------------------------+

@@ -571,6 +571,28 @@ Utf8String UrlProvider::ToEnvironmentString(UrlProvider::Environment env)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus UrlProvider::FromEnvironmentString(Utf8CP envStr, Environment& env)
+    {
+    if (nullptr == envStr)
+        return ERROR;
+
+    if (0 == strcmp(Environment_Release, envStr))
+        env = UrlProvider::Environment::Release;
+    else if (0 == strcmp(Environment_Qa, envStr))
+        env = UrlProvider::Environment::Qa;
+    else if (0 == strcmp(Environment_Dev, envStr))
+        env = UrlProvider::Environment::Dev;
+    else if (0 == strcmp(Environment_Perf, envStr))
+        env = UrlProvider::Environment::Perf;
+    else 
+        return ERROR;
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 UrlProvider::UrlDescriptor::UrlDescriptor(Utf8CP name, Utf8CP devUrl, Utf8CP qaUrl, Utf8CP prodUrl, Utf8CP perfUrl, Registry* registry) :
 m_name(name),
 m_registry(registry)
