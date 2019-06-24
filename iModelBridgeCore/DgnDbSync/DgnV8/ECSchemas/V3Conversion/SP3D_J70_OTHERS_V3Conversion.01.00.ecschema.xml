@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="SP3D_J70_OTHERS_V3Conversion" nameSpacePrefix="sp3dj70v3" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="ECv3ConversionAttributes" version="01.00" prefix="V2ToV3" />
+    <ECCustomAttributes>
+        <ResolvePropertyNameConflicts xmlns="ECv3ConversionAttributes.01.00" />
+        <ResolveClassNameConflicts xmlns="ECv3ConversionAttributes.01.00" />
+    </ECCustomAttributes>
+</ECSchema>
