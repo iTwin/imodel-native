@@ -1,0 +1,443 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------------
+#   Usage guide: Entries to fill:
+#
+#   doxygenOutDir           = Root of documentation output directory.
+#   doxygenFiles            = directories (and/or files) that make up the source code.
+#   doxygenProject          = the name of the module with out spaces. (required)
+#
+#   doxygenLongName         = Long name of module, can contain spaces. defaults to doxygenProject
+#   doxygenInputFilter      = Filter to apply to input files
+#   doxygenProjectDir       = Project output directory.
+#   doxygenRecurseDirs      = Will search sub directories if doxygenFiles is directory
+#   doxygenHtmlDir          = Project html output directory.
+#   doxygenXmlDir           = Project xml output directory.
+#   doxygenChmDir           = Project chm output directory.
+#   doxygenrtfDir           = Project rtf output directory.
+#   doxygenLatexDir         = Project latex output directory.
+#   doxygenHtmlOuput        = Output is html file. Default is YES
+#   doxygenXmlOuput         = Output is xml file. Default is YES
+#   doxygenChmOuput         = Output is chm file. Default is NO
+#   doxygenRtfOuput         = Output is rtf file. Default is NO
+#   doxygenLatexOuput       = Output is latex file. Default is NO
+#   doxygenDependencies     = to decide if we should rebuild the documentation.
+#                             usually the compiled module, DLM_OUT_NAME.
+#                             If no dependecies are specified, the doc will be rebuilt.
+#   doxygenDocAll           = document all functions. YES by default.
+#   doxygenDocPrivate       = document static functions and private members. YES by default.
+#   doxygenDocInternal      = include documentation marked with internal. YES by default.
+#   doxygenCallgraph        = generate call graphs (time-consuming). NO by default.
+#   doxygenLinkage          = Link documentation using tags. Default is YES. Note that
+#                             while HTML output is always produced, CHM output is not
+#                             produced when linkage is on. YES by default.
+#   doxygenTagFiles         = tag files of external documentation to link. Format is:
+#                             tagfile=html folder (or hmtl file name) tagfile2=... ...
+#                             Entry is ignored when linkage is NO.
+#   doxygenInheritedMemb    = Show inherited members as part of the class. Default is No.
+#   doxygenIgnoreKeywords   = macro defs to be ignored in the documentation.
+#   doxygenShowWarnings     = show all warnings. NO by default.
+#   doxygenQuiet            = turn off messages. YES by default.
+#
+#   doxygenStyleSheet       = CSS file to use
+#   doxygenCssHeader        = CSS header file
+#   doxygenCssFooter        = CSS footer
+#
+#   doxygenLogFile          = Logfile to write warnings to
+#
+#   Notes:
+#   A tag file is generated for each module; other modules refer to that file to link
+#   the documentation. If the tag file is not created yet, or if it has changed,
+#   a module will not be able to refer correctly to another one. A second pass,
+#   however, will fix this problem.
+#                                                                   JHB 3/05
+#--------------------------------------------------------------------------------------
+
+%if !defined (ENABLE_DOXYGEN)
+%return
+%endif
+
+#-----------------------------------------------------------------------
+# Check for required values
+#-----------------------------------------------------------------------
+%ifndef doxygenOutDir
+%error doxygenOutDir is undefined!
+%endif
+
+%ifndef doxygenFiles
+%error doxygenFiles is undefined!
+%endif
+
+%ifndef doxygenProject
+%error doxygenProject is undefined!
+%endif
+
+#-----------------------------------------------------------------------
+# Set the default options
+#-----------------------------------------------------------------------
+%ifndef doxygenLongName
+doxygenLongName       =   $(doxygenProject)
+%endif
+
+%ifndef doxygenInputFilter
+doxygenInputFilter    =   *.fdf *.c *.cc *.cxx *.cpp *.c++ *.java *.ii *.ixx *.ipp *.i++ *.inl *.h *.hh *.hxx *.hpp .h++ *.idl *.odl *.cs *.php *.php3 *.inc *.m *.mm
+%endif
+
+%ifndef doxygenDocAll
+doxygenDocAll       =   YES
+%endif
+
+%ifndef doxygenRecurseDirs
+doxygenRecurseDirs   =   YES
+%endif
+
+%ifndef doxygenDocPrivate
+doxygenDocPrivate   =   YES
+%endif
+
+%ifndef doxygenDocInternal
+doxygenDocInternal   =   YES
+%endif
+
+%ifndef doxygenCallgraph
+doxygenCallgraph    =   NO
+%endif
+
+%ifndef doxygenShowWarnings
+doxygenShowWarnings =   NO
+%endif
+
+%ifndef doxygenQuiet
+doxygenQuiet = YES
+%endif
+
+%ifndef doxygenInheritedMemb
+doxygenInheritedMemb = NO
+%endif
+
+
+%ifndef doxygenHtmlOuput
+doxygenHtmlOuput = YES
+%endif
+
+%ifndef doxygenXmlOuput
+doxygenXmlOuput = YES
+%endif
+
+%ifndef doxygenRtfOuput
+doxygenRtfOuput = NO
+%endif
+
+%ifndef doxygenChmOuput
+doxygenChmOuput = NO
+%endif
+
+%ifndef doxygenLatexOuput
+doxygenLatexOuput = NO
+%endif
+
+%ifndef doxygenStyleSheet
+doxygenStyleSheet = ${bsitoolsWinnt}/doxygen.css
+%endif
+
+%ifndef doxygenCssHeader
+doxygenCssHeader = ${bsitoolsWinnt}/doxygen.header
+%endif
+
+%ifndef doxygenCssFooter
+doxygenCssFooter = ${bsitoolsWinnt}/doxygen.footer
+%endif
+
+#-----------------------------------------------------------------------
+# Set and create the output directories
+#-----------------------------------------------------------------------
+%ifnofile $(doxygenOutDir)
+always:
+    ~mkdir $(doxygenOutDir)
+%endif
+
+%ifndef doxygenProjectDir
+doxygenProjectDir = ${doxygenOutDir}/$(doxygenProject)
+%endif
+
+%ifnofile $(doxygenProjectDir)
+always:
+    ~mkdir $(doxygenProjectDir)
+%endif
+
+%ifndef doxygenHtmlDir
+doxygenHtmlDir = ${doxygenProjectDir}/html/
+%endif
+
+%ifnofile $(doxygenHtmlDir)
+always:
+    ~mkdir $(doxygenHtmlDir)
+%endif
+
+%ifndef doxygenXmlDir
+doxygenXmlDir = ${doxygenProjectDir}/xml/
+%endif
+
+%ifnofile $(doxygenXmlDir)
+always:
+    ~mkdir $(doxygenXmlDir)
+%endif
+
+%ifndef doxygenRtfDir
+doxygenRtfDir = ${doxygenProjectDir}/rtf/
+%endif
+
+%ifnofile $(doxygenRtfDir)
+always:
+    ~mkdir $(doxygenRtfDir)
+%endif
+
+%ifndef doxygenChmDir
+doxygenChmDir = ${doxygenProjectDir}/chm/
+%endif
+
+%ifnofile $(doxygenChmDir)
+always:
+    ~mkdir $(doxygenChmDir)
+%endif
+
+%ifndef doxygenLatexDir
+doxygenLatexDir = ${doxygenProjectDir}/latex/
+%endif
+
+%ifnofile $(doxygenLatexDir)
+always:
+    ~mkdir $(doxygenLatexDir)
+%endif
+
+%ifndef doxygenTagDir
+doxygenTagDir    =   ${doxygenOutDir}/tag
+%endif
+
+%ifnofile $(doxygenTagDir)
+always:
+    ~mkdir $(doxygenTagDir)
+%endif
+
+%ifndef doxygenImageDir
+doxygenImageDir    =   ${doxygenOutDir}/image
+%endif
+
+%ifnofile $(doxygenImageDir)
+always:
+    ~mkdir $(doxygenImageDir)
+%endif
+
+%ifndef doxygenIncludeDir
+doxygenIncludeDir    =   ${doxygenOutDir}/include
+%endif
+
+%ifnofile $(doxygenIncludeDir)
+always:
+    ~mkdir $(doxygenIncludeDir)
+%endif
+
+
+#-----------------------------------------------------------------------
+# Generate the output
+#-----------------------------------------------------------------------
+${doxygenProjectDir}/html/index.html : $(doxygenDependencies)
+    $(msg)
+    > ${doxygenProjectDir}/doxyfile
+    PROJECT_NAME           = $(doxygenLongName)
+    PROJECT_NUMBER         =
+    OUTPUT_DIRECTORY       = $(doxygenOutDir)
+    CREATE_SUBDIRS         = NO
+    OUTPUT_LANGUAGE        = English
+    BRIEF_MEMBER_DESC      = YES
+    REPEAT_BRIEF           = YES
+    ABBREVIATE_BRIEF       =
+    ALWAYS_DETAILED_SEC    = NO
+    INLINE_INHERITED_MEMB  = NO
+    FULL_PATH_NAMES        = NO
+    STRIP_FROM_PATH        = $(SrcDms)
+    STRIP_FROM_INC_PATH    =
+    SHORT_NAMES            = NO
+    JAVADOC_AUTOBRIEF      = YES
+    MULTILINE_CPP_IS_BRIEF = NO
+    INHERIT_DOCS           = YES
+    SEPARATE_MEMBER_PAGES  = NO
+    TAB_SIZE               = 4
+    ALIASES                = bsimethod=\author  "hooks=\par Hooks:\n"
+    OPTIMIZE_OUTPUT_FOR_C  = NO
+    OPTIMIZE_OUTPUT_JAVA   = NO
+    BUILTIN_STL_SUPPORT    = YES
+    DISTRIBUTE_GROUP_DOC   = NO
+    SUBGROUPING            = YES
+    EXTRACT_ALL            = $(doxygenDocAll)
+    EXTRACT_PRIVATE        = $(doxygenDocPrivate)
+    EXTRACT_STATIC         = $(doxygenDocPrivate)
+    EXTRACT_LOCAL_CLASSES  = $(doxygenDocPrivate)
+    EXTRACT_LOCAL_METHODS  = $(doxygenDocPrivate)
+    HIDE_UNDOC_MEMBERS     = NO
+    HIDE_UNDOC_CLASSES     = NO
+    HIDE_FRIEND_COMPOUNDS  = NO
+    HIDE_IN_BODY_DOCS      = NO
+    INTERNAL_DOCS          = $(doxygenDocInternal)
+    CASE_SENSE_NAMES       = NO
+    HIDE_SCOPE_NAMES       = YES
+    SHOW_INCLUDE_FILES     = YES
+    INLINE_INFO            = YES
+    SORT_MEMBER_DOCS       = YES
+    SORT_BRIEF_DOCS        = NO
+    SORT_BY_SCOPE_NAME     = YES
+    GENERATE_TODOLIST      = YES
+    GENERATE_TESTLIST      = YES
+    GENERATE_BUGLIST       = YES
+    GENERATE_DEPRECATEDLIST= YES
+    ENABLED_SECTIONS       =
+    MAX_INITIALIZER_LINES  = 30
+    SHOW_USED_FILES        = YES
+    FILE_VERSION_FILTER    =
+    QUIET                  = $(doxygenQuiet)
+    WARNINGS               = $(doxygenShowWarnings)
+    WARN_IF_UNDOCUMENTED   = $(doxygenShowWarnings)
+    WARN_IF_DOC_ERROR      = $(doxygenShowWarnings)
+    WARN_NO_PARAMDOC       = $(doxygenShowWarnings)
+    WARN_FORMAT            = "$$file:$$line: $$text"
+    WARN_LOGFILE           = $(doxygenLogFile)
+    INPUT                  = $(doxygenFiles)
+    FILE_PATTERNS          = $(doxygenInputFilter)
+    RECURSIVE              = $(doxygenRecurseDirs)
+    EXCLUDE                =
+    EXCLUDE_SYMLINKS       = NO
+    EXCLUDE_PATTERNS       =
+    EXAMPLE_PATH           = $(doxygenIncludeDir)
+    EXAMPLE_PATTERNS       =
+    EXAMPLE_RECURSIVE      = NO
+    IMAGE_PATH             = $(doxygenImageDir)
+    INPUT_FILTER           =
+    FILTER_PATTERNS        =
+    FILTER_SOURCE_FILES    = NO
+    SOURCE_BROWSER         = NO
+    INLINE_SOURCES         = NO
+    STRIP_CODE_COMMENTS    = YES
+    REFERENCED_BY_RELATION = YES
+    REFERENCES_RELATION    = YES
+    REFERENCES_LINK_SOURCE = YES
+    USE_HTAGS              = NO
+    VERBATIM_HEADERS       = NO
+    ALPHABETICAL_INDEX     = YES
+    COLS_IN_ALPHA_INDEX    = 5
+    IGNORE_PREFIX          = _ __
+    GENERATE_HTML          = $(doxygenHtmlOuput)
+    HTML_OUTPUT            = $(doxygenHtmlDir)
+    HTML_FILE_EXTENSION    = .html
+    HTML_HEADER            = $(doxygenCssHeader)
+    HTML_FOOTER            = $(doxygenCssFooter)
+    HTML_STYLESHEET        = $(doxygenStyleSheet)
+    GENERATE_HTMLHELP      = $(doxygenChmOuput)
+    CHM_FILE               = $(doxygenChmDir)$(doxygenProject).chm
+    HHC_LOCATION           = $(hhcCmd)
+    GENERATE_CHI           = NO
+    BINARY_TOC             = YES
+    TOC_EXPAND             = YES
+    DISABLE_INDEX          = NO
+    ENUM_VALUES_PER_LINE   = 4
+    GENERATE_TREEVIEW      = NO
+    TREEVIEW_WIDTH         = 250
+    GENERATE_LATEX         = $(doxygenLatexOuput)
+    LATEX_OUTPUT           = $(doxygenLatexDir)
+    LATEX_CMD_NAME         = latex
+    MAKEINDEX_CMD_NAME     = makeindex
+    COMPACT_LATEX          = NO
+    PAPER_TYPE             = letter
+    EXTRA_PACKAGES         =
+    LATEX_HEADER           =
+    PDF_HYPERLINKS         = NO
+    USE_PDFLATEX           = NO
+    LATEX_BATCHMODE        = NO
+    LATEX_HIDE_INDICES     = NO
+    GENERATE_RTF           = $(doxygenRtfOuput)
+    RTF_OUTPUT             = $(doxygenRtfDir)
+    COMPACT_RTF            = NO
+    RTF_HYPERLINKS         = NO
+    RTF_STYLESHEET_FILE    =
+    RTF_EXTENSIONS_FILE    =
+    GENERATE_MAN           = NO
+    MAN_OUTPUT             = man
+    MAN_EXTENSION          = .3
+    MAN_LINKS              = NO
+    GENERATE_XML           = $(doxygenXmlOuput)
+    XML_OUTPUT             = $(doxygenXmlDir)
+    XML_PROGRAMLISTING     = YES
+    GENERATE_AUTOGEN_DEF   = NO
+    GENERATE_PERLMOD       = NO
+    PERLMOD_LATEX          = NO
+    PERLMOD_PRETTY         = YES
+    PERLMOD_MAKEVAR_PREFIX =
+    ENABLE_PREPROCESSING   = YES
+    MACRO_EXPANSION        = YES
+    EXPAND_ONLY_PREDEF     = YES
+    SEARCH_INCLUDES        = YES
+    INCLUDE_PATH           =
+    INCLUDE_FILE_PATTERNS  =
+    PREDEFINED             = __declspec(X)= \
+                                DOXYGEN_COMPILE= \
+                                EXTERN_C= \
+                                WINCALL= \
+                                CRTCALL= \
+                                BEGIN_EXTERN_C= \
+                                END_EXTERN_C= \
+                                __cplusplus \
+                                $(doxygenIgnoredKeywords) \
+                                "BEGIN_ENUM_DEFINITION(X)=enum X {" \
+                                "END_ENUM_DEFINITION(X)=};" \
+                                "BEGIN_BENTLEY_NAMESPACE=namespace Bentley {" \
+                                "END_BENTLEY_NAMESPACE=}" \
+                                "USING_NAMESPACE_BENTLEY=using namespace Bentley;" \
+                                "BEGIN_BENTLEY_SYSTEM_NAMESPACE=namespace Bentley { namespace System {" \
+                                "END_BENTLEY_SYSTEM_NAMESPACE=} }" \
+
+    EXPAND_AS_DEFINED      =
+    SKIP_FUNCTION_MACROS   = NO
+    TAGFILES               = $(doxygenTagFiles)
+    GENERATE_TAGFILE       = $(doxygenTagDir)/$(doxygenProject).tag
+    ALLEXTERNALS           = YES
+    EXTERNAL_GROUPS        = YES
+    PERL_PATH              = /usr/bin/perl
+    CLASS_DIAGRAMS         = YES
+    HIDE_UNDOC_RELATIONS   = YES
+    HAVE_DOT               = NO
+    CLASS_GRAPH            = NO
+    COLLABORATION_GRAPH    = NO
+    GROUP_GRAPHS           = NO
+    UML_LOOK               = NO
+    TEMPLATE_RELATIONS     = YES
+    INCLUDE_GRAPH          = YES
+    INCLUDED_BY_GRAPH      = YES
+    CALL_GRAPH             = NO
+    CALLER_GRAPH           = NO
+    GRAPHICAL_HIERARCHY    = YES
+    DIRECTORY_GRAPH        = YES
+    DOT_IMAGE_FORMAT       = png
+    DOT_PATH               = $(bsitoolsWinnt)
+    DOTFILE_DIRS           =
+    DOT_TRANSPARENT        = NO
+    DOT_MULTI_TARGETS      = NO
+    GENERATE_LEGEND        = YES
+    DOT_CLEANUP            = YES
+    SEARCHENGINE           = NO
+    <
+    $(doxygenCmd) "${doxygenProjectDir}/doxyfile"
+
+#Build CHM file
+%undef hhc
+%include $(SrcRoot)bsicommon/sharedmki/HtmlHelp.mki
+    
+%if !defined (NO_CHM)
+    $(doxygenChmDir)$(doxygenProject).chm : ${doxygenHtmlDir}/index.html
+        -$(hhc) $(doxygenHtmlDir)index.hhp
+        | _____CHM: $(doxygenChmDir)$(doxygenProject).chm
+        |
+        ~time
+%endif
+    
