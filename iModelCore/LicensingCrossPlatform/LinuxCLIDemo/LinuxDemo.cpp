@@ -1,5 +1,5 @@
 
-#include "demo.h"
+#include "LinuxDemo.h"
 
 #include <iostream>
 #include <sstream>

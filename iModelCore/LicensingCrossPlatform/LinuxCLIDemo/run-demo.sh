@@ -67,7 +67,7 @@ PullLinuxCLISource() {
 	read x
 
 	echo "Cloning Licensing repo."
-	hg clone http://bim0200.hgbranches.bentley.com/selserver/LicensingCrossPlatform ${srcroot}
+	hg clone http://bim0200.hgbranches.bentley.com/selserver/LicensingCrossPlatform ./${srcdir}/LicensingCrossPlatform
 
 	if [ ! -d "${srcdir}/LinuxDemo.h" ]; then
 		cp ./${srcdir}/LicensingCrossPlatform/LinuxCLIDemo/LinuxDemo.h ./${srcdir}/LinuxDemo.h
@@ -76,68 +76,52 @@ PullLinuxCLISource() {
 		cp ./${srcdir}/LicensingCrossPlatform/LinuxCLIDemo/LinuxDemo.cpp ./${srcdir}/LinuxDemo.cpp
 	fi
 	echo "Copied the demo files from the licensing code"
+	
+	echo "Deleting cloned source"
+	rm -rf ./${srcdir}/LicensingCrossPlatform
 
 }
 
-#TODO: check if nuget package is installed
 # look in srcdir and if the imodelcore folder is not there, install the package
-
 if [ -d "$srcdir" ]; then
 	echo "directory found"
-	if [ ! -d "${srcdir}/iModelCoreNuget_LinuxX64.2.1.0.192" ]; then
+	if [ ! -d "${srcdir}/iModelCoreNuget_LinuxX64.${nugetVersion}" ]; then
 		if ! type "nuget" > /dev/null; then
-			#TODO: prompt for install
-			echo "nuget not installed, installing nuget now"
-			sudo apt install nuget
+			echo "nuget is not installed, please install nuget. Recommended command: 'sudo apt install nuget'"
 		fi
 		nuget install iModelCoreNuget_LinuxX64 -Version ${nugetVersion} -Source http://nuget.bentley.com/nuget/Default -OutputDirectory ./${srcdir}
 	fi
 	if [ ! -d "${srcdir}/LinuxDemo.h" ] || [ ! -d "${srcdir}/LinuxDemo.cpp" ]; then
-		#TODO replace this with pulling source
-
 		PullLinuxCLISource
-
-		# cp ./LicensingDemo/src/LinuxDemo.h ./${srcdir}/LinuxDemo.h
-		# cp ./LicensingDemo/src/LinuxDemo.cpp ./${srcdir}/LinuxDemo.cpp
 	fi
-	# if [ ! -d "${srcdir}/LinuxDemo.cpp" ]; then
-	# 	#TODO replace this with pulling source
-	# 	cp ./LicensingDemo/src/LinuxDemo.cpp ./${srcdir}/LinuxDemo.cpp
-	# fi
+
 else
 	echo "Demo directory not found, need to create directory and install everything"
 
 	mkdir -p ${srcdir}
 	mkdir -p ${outdir}
 
-	#temporary to provide the .h and .cpp files
-	#TODO replace this with pulling source
 	PullLinuxCLISource
 
 	if ! type "nuget" > /dev/null; then
-		#TODO: prompt for install
-		echo "nuget not installed, installing nuget now"
-		sudo apt install nuget
+		echo "nuget is not installed, please install nuget. Recommended command: 'sudo apt install nuget'"
 	fi
-	nuget install iModelCoreNuget_LinuxX64 -Version 2.1.0.192 -Source http://nuget.bentley.com/nuget/Default -OutputDirectory ./${srcdir}
+	nuget install iModelCoreNuget_LinuxX64 -Version ${nugetVersion} -Source http://nuget.bentley.com/nuget/Default -OutputDirectory ./${srcdir}
 fi
 
 if [ ! -d "$outdir" ]; then
 	mkdir -p ${outdir}
 fi
 
-#TODO: check if installed
-
 if ! type "clang" > /dev/null; then
-	#TODO: prompt for install
-	echo "clang not installed, installing clang now"
+	echo "clang is not installed, please install clang. Recommended command: 'sudo apt install clang'"
 	sudo apt install clang
 elif type "clang" > /dev/null; then
-	echo "clang installed!"
+	echo "clang is installed!"
 fi
 
 #TODO: check for other requirements
 
-clang++ -std=c++14 -stdlib=libstdc++ --include-directory=./${srcdir}/iModelCoreNuget_LinuxX64.2.1.0.192/native/include --library-directory=${srcdir}/iModelCoreNuget_LinuxX64.2.1.0.192/native/lib -o ${outdir}/LinuxDemo ${srcdir}/LinuxDemo.cpp -Wl,--start-group -lBaseGeoCoord -lBeCsmapStatic -lBeCurl -lBeFolly -lBeHttp -lBeIcu4c -lBeJpeg -lBeJsonCpp -lBeLibJpegTurbo -lBeLibxml2 -lBentley -lBentleyGeom -lBentleyGeomSerialization -lBeOpenSSL -lBePng -lBeSecurity -lBeSQLite -lBeSQLiteEC -lBeXml -lBeZlib -lDgnPlatform -lECObjects -lECPresentation -lfreetype2 -lLicensing -llzma -lnapi -lpskernel -lsnappy -lUnits -lWebServicesClient -lpthread -ldl -Wl,--end-group
+clang++ -std=c++14 -stdlib=libstdc++ --include-directory=./${srcdir}/iModelCoreNuget_LinuxX64.${nugetVersion}/native/include --library-directory=${srcdir}/iModelCoreNuget_LinuxX64.${nugetVersion}/native/lib -o ./${outdir}/LinuxDemo ./${srcdir}/LinuxDemo.cpp -Wl,--start-group -lBaseGeoCoord -lBeCsmapStatic -lBeCurl -lBeFolly -lBeHttp -lBeIcu4c -lBeJpeg -lBeJsonCpp -lBeLibJpegTurbo -lBeLibxml2 -lBentley -lBentleyGeom -lBentleyGeomSerialization -lBeOpenSSL -lBePng -lBeSecurity -lBeSQLite -lBeSQLiteEC -lBeXml -lBeZlib -lDgnPlatform -lECObjects -lECPresentation -lfreetype2 -lLicensing -llzma -lnapi -lpskernel -lsnappy -lUnits -lWebServicesClient -lpthread -ldl -Wl,--end-group
 
-${outdir}demo
+./${outdir}demo
