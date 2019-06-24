@@ -244,7 +244,7 @@ TEST_F(SchemaValidatorTests, TestSchemaStandardReferences)
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='01.00.00' alias='bis'/>"
-        "    <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ref'/>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ts'/>"
         "    <ECEntityClass typeName='TestClass'>"
         "        <BaseClass>bis:Element</BaseClass>"
         "    </ECEntityClass>"
@@ -257,7 +257,7 @@ TEST_F(SchemaValidatorTests, TestSchemaStandardReferences)
     }
     {
     Utf8String refXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='ECv3ConversionAttributes' namespacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "<ECSchema schemaName='ECv3ConversionAttributes' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "   <ECClass typeName='TestClass'/>"
         "</ECSchema>";
     
@@ -266,7 +266,7 @@ TEST_F(SchemaValidatorTests, TestSchemaStandardReferences)
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='01.00.00' alias='bis'/>"
-        "    <ECSchemaReference name='ECv3ConversionAttributes' version='01.00.00' alias='ref'/>"
+        "    <ECSchemaReference name='ECv3ConversionAttributes' version='01.00.00' alias='ts'/>"
         "    <ECEntityClass typeName='TestClass'>"
         "        <BaseClass>bis:Element</BaseClass>"
         "    </ECEntityClass>"
@@ -281,7 +281,7 @@ TEST_F(SchemaValidatorTests, TestSchemaStandardReferences)
     // Test ECv3ConversionAttributes exception to EC2 schema rule.
     {
     Utf8String refXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='ECv3ConversionAttributes' namespacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "<ECSchema schemaName='ECv3ConversionAttributes' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "   <ECClass typeName='TestClass'/>"
         "</ECSchema>";
     
@@ -290,7 +290,7 @@ TEST_F(SchemaValidatorTests, TestSchemaStandardReferences)
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='01.00.00' alias='bis'/>"
-        "    <ECSchemaReference name='ECv3ConversionAttributes' version='01.00.00' alias='ref'/>"
+        "    <ECSchemaReference name='ECv3ConversionAttributes' version='01.00.00' alias='ts'/>"
         "    <ECCustomAttributes>"
         "        <DynamicSchema xmlns='CoreCustomAttributes.01.00.00'/>"
         "    </ECCustomAttributes>"
@@ -938,7 +938,7 @@ TEST_F(SchemaValidatorTests, EntityClassMayNotInheritFromCertainBisClasses)
     {
     // Class may not implement both bis:IParentElement and bis:ISubModeledElement
     Utf8String bisSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='BisCore' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>" +
+        "<ECSchema schemaName='BisCore' alias='bis' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>" +
             R"xml(<ECSchemaReference name="CoreCustomAttributes" version="1.0.0" alias="CoreCA"/>
 
             <ECEntityClass typeName="IParentElement" modifier="Abstract" description="IParentElement Description">
@@ -1920,7 +1920,7 @@ TEST_F(SchemaValidatorTests, TestSchemaReferenceVersion)
 
     // Use an EC 3.0 schema as a reference
     Utf8CP refXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="RefSchema" alias="ref" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+        <ECSchema schemaName="RefSchema" nameSpacePrefix="ref" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
             <ECEntityClass typeName="TestClass"/>
         </ECSchema>)xml";
     ECSchemaPtr refSchema;
@@ -1941,7 +1941,7 @@ TEST_F(SchemaValidatorTests, TestSchemaReferenceVersion)
 
     // Use an EC 2.0 schema as a reference
     Utf8CP refXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="RefSchema" alias="ref" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+        <ECSchema schemaName="RefSchema" nameSpacePrefix="ref" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
             <ECEntityClass typeName="TestClass"/>
         </ECSchema>)xml";
     ECSchemaPtr refSchema;
@@ -2433,7 +2433,7 @@ TEST_F(SchemaValidatorTests, EntityClassMayNotSubclassPhysicalModel)
     {
     // Class may not subclass bis:PhysicalModel
     Utf8String bisSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='BisCore' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>" +
+        "<ECSchema schemaName='BisCore' alias='bis' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>" +
         R"xml(<ECEntityClass typeName="Element" modifier="Abstract" description="Element description"/>
             <ECEntityClass typeName="PhysicalModel" displayLabel="Physical Model" description="PhysicalModel Description" />
          </ECSchema>)xml";
@@ -2853,6 +2853,136 @@ TEST_F(SchemaValidatorTests, DuplicatePresentationFormatsKoQ)
     InitContextWithSchemaXml(schemaXml);
     ASSERT_TRUE(schema.IsValid());
     EXPECT_FALSE(validator.Validate(*schema)) << "The AecUnits, 1.0.0 and 1.0.1, were both released prior to the rule being implemented and should pass validation but a newer version should fail.";
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bao.Tran                         06/2019
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaValidatorTests, OriginalSchemaReferenceAliasTest)
+    {
+    {
+    Utf8CP refSchemaXml = R"xml(
+        <ECSchema schemaName="RefSchema" alias="ref" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="1.0.0" alias="bis"/>
+            <ECEntityClass typeName="RefEntityClass">
+                <BaseClass>bis:Element</BaseClass>
+                <ECProperty propertyName="intProps" typeName="int"/>
+            </ECEntityClass>
+        </ECSchema>)xml";
+    InitBisContextWithSchemaXml(refSchemaXml);
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_TRUE(validator.Validate(*schema));
+
+    Utf8CP goodSchemaXml = R"xml(
+        <ECSchema schemaName="goodSchema" alias="good" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="RefSchema" version="01.00.00" alias="ref"/>
+            <ECEntityClass typeName="EntityClass">
+                <BaseClass>ref:RefEntityClass</BaseClass>
+                <ECProperty propertyName="strProps" typeName="string"/>
+            </ECEntityClass>
+        </ECSchema>)xml";
+    ECSchemaPtr goodSchema;
+    EXPECT_EQ(ECSchema::ReadFromXmlString(goodSchema, goodSchemaXml, *context), SchemaReadStatus::Success);
+    EXPECT_TRUE(goodSchema.IsValid());
+    EXPECT_TRUE(validator.Validate(*goodSchema));
+
+    Utf8CP badSchemaXml = R"xml(
+        <ECSchema schemaName="badSchema" alias="bad" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="RefSchema" version="01.00.00" alias="ref"/>
+            <ECSchemaReference name="BisCore" version="01.00.00" alias="badbis"/>
+            <ECEntityClass typeName="EntityClass">
+                <BaseClass>ref:RefEntityClass</BaseClass>
+                <ECProperty propertyName="entityProps" typeName="int"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="BisEntityClass">
+                <BaseClass>badbis:Element</BaseClass>
+                <ECProperty propertyName="bisEntityProps" typeName="int"/>
+            </ECEntityClass>
+        </ECSchema>)xml";
+    ECSchemaPtr badSchema;
+    EXPECT_EQ(ECSchema::ReadFromXmlString(badSchema, badSchemaXml, *context), SchemaReadStatus::Success);
+    EXPECT_TRUE(badSchema.IsValid());
+    EXPECT_FALSE(validator.Validate(*badSchema)) << "validator should fail 'badSchema'. the schema declared alias 'badbis' for reference schema 'BisCore', but the original alias is 'bis'";
+
+    Utf8CP badSchemaXmlII = R"xml(
+        <ECSchema schemaName="badSchemaII" alias="badII" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="goodSchema" version="01.00.00" alias="ref"/>
+            <ECSchemaReference name="RefSchema" version="01.00.00" alias="good"/>
+            <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+            <ECEntityClass typeName="EntityClass">
+                <BaseClass>good:RefEntityClass</BaseClass>
+                <ECProperty propertyName="entityProps" typeName="int"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="BisEntityClass">
+                <BaseClass>bis:Element</BaseClass>
+                <ECProperty propertyName="bisEntityProps" typeName="int"/>
+            </ECEntityClass>
+        </ECSchema>)xml";
+    ECSchemaPtr badSchemaII;
+    EXPECT_EQ(ECSchema::ReadFromXmlString(badSchemaII, badSchemaXmlII, *context), SchemaReadStatus::Success);
+    EXPECT_TRUE(badSchemaII.IsValid());
+    EXPECT_FALSE(validator.Validate(*badSchemaII)) << "validator should fail 'badSchemaII'. " << 
+                                                      "The schema declared alias 'ref' for reference schema 'goodSchema', but the original alias is 'good'. " <<
+                                                      "The schema declared alias 'good' for reference schema 'RefSchema', but the original alias is 'ref'.";
+    }
+    {
+    Utf8CP oldRefSchemaXml = R"xml(
+        <ECSchema schemaName="ECv3ConversionAttributes" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECSchemaReference name="BisCore" version="1.0" prefix="bis"/>
+            <ECClass typeName="RefEntityClass">
+                <BaseClass>bis:Element</BaseClass>
+                <ECProperty propertyName="intProps" typeName="int"/>
+            </ECClass>
+        </ECSchema>)xml";
+    InitBisContextWithSchemaXml(oldRefSchemaXml);
+    EXPECT_TRUE(schema.IsValid());
+
+    Utf8CP goodSchemaXml = R"xml(
+        <ECSchema schemaName="dynamicGoodSchema" alias="bad" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECv3ConversionAttributes" version="01.00.00" alias="ECv3ConversionAttributes"/>
+            <ECSchemaReference name="CoreCustomAttributes" version="01.00.02" alias="CoreCA"/>
+            <ECCustomAttributes>
+                <DynamicSchema xmlns="CoreCustomAttributes.01.00.02"/>
+            </ECCustomAttributes>
+            <ECEntityClass typeName="EntityClass">
+                <BaseClass>ECv3ConversionAttributes:RefEntityClass</BaseClass>
+                <ECProperty propertyName="strProps" typeName="string"/>
+            </ECEntityClass>
+        </ECSchema>)xml";
+    ECSchemaPtr goodSchema;
+    EXPECT_EQ(ECSchema::ReadFromXmlString(goodSchema, goodSchemaXml, *context), SchemaReadStatus::Success);
+    EXPECT_TRUE(goodSchema.IsValid());
+    EXPECT_TRUE(validator.Validate(*goodSchema)) << "The dynamic schema should pass validator. ECv3ConversionAttributes reference schema doesn't have original alias, so the reference alias must be the same as the name of the reference schema";
+    }
+    {
+    Utf8CP oldRefSchemaXml = R"xml(
+        <ECSchema schemaName="ECv3ConversionAttributes" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECSchemaReference name="BisCore" version="1.0" prefix="bis"/>
+            <ECClass typeName="RefEntityClass">
+                <BaseClass>bis:Element</BaseClass>
+                <ECProperty propertyName="intProps" typeName="int"/>
+            </ECClass>
+        </ECSchema>)xml";
+    InitBisContextWithSchemaXml(oldRefSchemaXml);
+    EXPECT_TRUE(schema.IsValid());
+
+    Utf8CP badSchemaXml = R"xml(
+        <ECSchema schemaName="dynamicBadSchema" alias="bad" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECv3ConversionAttributes" version="01.00.00" alias="ref"/>
+            <ECSchemaReference name="CoreCustomAttributes" version="01.00.02" alias="CoreCA"/>
+            <ECCustomAttributes>
+                <DynamicSchema xmlns="CoreCustomAttributes.01.00.02"/>
+            </ECCustomAttributes>
+            <ECEntityClass typeName="EntityClass">
+                <BaseClass>ref:RefEntityClass</BaseClass>
+                <ECProperty propertyName="strProps" typeName="string"/>
+            </ECEntityClass>
+        </ECSchema>)xml";
+    ECSchemaPtr badSchema;
+    EXPECT_EQ(ECSchema::ReadFromXmlString(badSchema, badSchemaXml, *context), SchemaReadStatus::Success);
+    EXPECT_TRUE(badSchema.IsValid());
+    EXPECT_FALSE(validator.Validate(*badSchema)) << "The dynamic schema should fail validator. ECv3ConversionAttributes reference schema doesn't have original alias, so the reference alias must be the same as the name of the reference schema";
     }
     }
 

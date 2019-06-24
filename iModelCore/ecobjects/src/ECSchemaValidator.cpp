@@ -223,11 +223,22 @@ ECObjectsStatus ECSchemaValidator::BaseECValidator(ECSchemaCR schema)
         // RULE: A schema may not reference any ECXml less than EC3.1.
         if (refSchema->OriginalECXmlVersionLessThan(ECVersion::V3_1))
             {
-            if (schema.IsDynamicSchema() && refName.EqualsIAscii("ECv3ConversionAttributes"))
-                continue;
-            LOG.errorv("Failed to validate '%s' since it references '%s' using EC%" PRIu32 ".%" PRIu32 ". A schema may not reference any EC2 or EC3.0 schemas.",
-                       schema.GetFullSchemaName().c_str(), refSchema->GetFullSchemaName().c_str(), refSchema->GetOriginalECXmlVersionMajor(), refSchema->GetOriginalECXmlVersionMinor());
-             status = ECObjectsStatus::Error;
+            if (!schema.IsDynamicSchema() || !refName.EqualsIAscii("ECv3ConversionAttributes"))
+                {
+                LOG.errorv("Failed to validate '%s' since it references '%s' using EC%" PRIu32 ".%" PRIu32 ". A schema may not reference any EC2 or EC3.0 schemas.",
+                           schema.GetFullSchemaName().c_str(), refSchema->GetFullSchemaName().c_str(), refSchema->GetOriginalECXmlVersionMajor(), refSchema->GetOriginalECXmlVersionMinor());
+                 status = ECObjectsStatus::Error;
+                }
+            }
+
+        // RULE: Schema Reference's alias must be the same as the schema alias
+        auto refOriginalAlias = refSchema->GetAlias();
+        Utf8String refCurrentAlias;
+        if (schema.ResolveAlias(*refSchema, refCurrentAlias) == ECObjectsStatus::Success && !refCurrentAlias.Equals(refOriginalAlias))
+            {
+            LOG.errorv("Failed to validate '%s' since the alias '%s' defined for reference schema '%s' is different than the alias defined by the schema, '%s'.",
+                        schema.GetFullSchemaName().c_str(), refCurrentAlias.c_str(), refSchema->GetFullSchemaName().c_str(), refOriginalAlias.c_str());
+            status = ECObjectsStatus::Error;
             }
         }
 

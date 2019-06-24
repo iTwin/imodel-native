@@ -64,7 +64,7 @@ struct ConversionOptions
     uint32_t            WriteVersion = 0;
     uint32_t            MinorVersion = 0;
     };
-/*
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                              Prasanna.Prakash                       01/2016
 //---------------------------------------------------------------------------------------
@@ -152,7 +152,7 @@ static int ConvertLoadedSchema(ECSchemaReadContextR context, ECSchemaR schema, C
 
     return 0;
     }
-*/
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            02/2016
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -172,16 +172,7 @@ static int ConvertSchema(ConversionOptions& options, BeFileName& inputFile, ECSc
         return -1;
         }
 
-    for (ECClassCP c : schema->GetClasses())
-        {
-        for (ECPropertyCP p : c->GetProperties(false))
-            {
-            if (p->GetName().Equals("UAID") || p->GetName().Equals("CBS_Code") || p->GetName().Equals("WBS_Code") || p->GetDisplayLabel().Contains("Part Definition") || p->GetDisplayLabel().Contains("Catalog Type") || p->GetName().Equals("URC"))
-                s_logger->errorv("%s.%s,%s", schema->GetName().c_str(), c->GetName().c_str(), p->GetName().c_str());
-            }
-        }
-    return 0;
-    //return ConvertLoadedSchema(context, *schema, options);
+    return ConvertLoadedSchema(context, *schema, options);
     }
 
 //---------------------------------------------------------------------------------------
