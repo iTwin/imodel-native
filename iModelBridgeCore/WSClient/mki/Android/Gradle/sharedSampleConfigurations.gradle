@@ -1,0 +1,62 @@
+apply plugin: 'com.android.application'
+apply from: "$DGNCLIENTSDK_DIR_BuildPlatform/Gradle/defaultToolVersions.gradle"
+
+android {
+   compileSdkVersion project.ext.compileSdkVersion
+   buildToolsVersion project.ext.buildToolsVersion
+   defaultConfig {
+       minSdkVersion project.ext.minSdkVersion
+       targetSdkVersion project.ext.targetSdkVersion
+       versionCode 1
+       versionName "1.0"
+   }
+
+
+    // if (project.hasProperty('ANDROID_SIGNING_KEYSTORE'))
+    signingConfigs {
+    if ((project.hasProperty('signedBuild')) && (signedBuild =="true"))
+        {
+            release {
+                storeFile file (ANDROID_SIGNING_KEYSTORE)
+                storePassword  ANDROID_SIGNING_STORE_PASSWORD
+                keyAlias       ANDROID_SIGNING_ALIAS
+                keyPassword    ANDROID_SIGNING_KEY_PASSWORD
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            //if (project.hasProperty('ANDROID_SIGNING_KEYSTORE'))
+            if ((project.hasProperty('signedBuild')) && (signedBuild == "true")) {
+                signingConfig signingConfigs.release
+            }
+        }
+
+        debug {
+            debuggable true
+            jniDebuggable true
+        }
+    }
+
+    lintOptions {
+        // Disable error for hardcoded debug mode in AndroidManifest
+        disable 'HardcodedDebugMode'
+    }
+}
+
+dependencies {
+    // compile 'com.bentley.android:DgnClientFx:+'
+}
+
+import org.apache.tools.ant.taskdefs.condition.Os
+ext.getBMakePath = {
+    assert(file(DGNCLIENTSDK_ROOT).exists() && file(DGNCLIENTSDK_ROOT).isDirectory())
+
+    if (Os.isFamily(Os.FAMILY_MAC))
+        return "$DGNCLIENTSDK_ROOT/build/Tools/Macx64/BentleyBuildMake"
+
+    return "$DGNCLIENTSDK_ROOT/build/Tools/Winx86/BentleyBuildMake.exe"
+}
+
+
