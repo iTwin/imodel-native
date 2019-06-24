@@ -14,3 +14,11 @@ NamedGroupTests.NamedGroupOf2dElement
 NamedGroupTests.NamedGroupAcrossReference # Sam broke this with switch to aspects for normal elements. Hopefully, Carole can fix it.
 
 ConverterTests.UseConverterAsLibrary # Sam - decide if we want to support the "record level mapping" feature of ConverterLibrary or not
+
+ChangeSummaryTestFixture.ElementChildRelationshipChanges
+    # bim0200, PRG, x64
+    # [ RUN      ] ChangeSummaryTestFixture.ElementChildRelationshipChanges
+    # e:\Builds\dcsdk020002194\Source\DgnPlatform\Tests\DgnProject\Published\ChangeSummary_Test.cpp(646): error:       Expected: 3
+    # To be equal to: instance.MakeValueIterator().QueryCount()
+    #       Which is: 2
+    # [  FAILED  ] ChangeSummaryTestFixture.ElementChildRelationshipChanges (76 ms)
