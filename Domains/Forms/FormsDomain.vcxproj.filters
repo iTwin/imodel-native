@@ -1,0 +1,89 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Mke">
+      <UniqueIdentifier>{644abad8-7059-4f06-a0ce-abd1312a4d92}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Bentley Build Files">
+      <UniqueIdentifier>{46bed993-31a6-48cd-b0da-427ca211be80}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="PublicApi">
+      <UniqueIdentifier>{d108a29b-069a-45fd-8dbc-d69546c8e40b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utils">
+      <UniqueIdentifier>{14195d61-59a9-45c7-b8e1-820c11362d4a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Schema">
+      <UniqueIdentifier>{1775bf30-d593-43ec-93db-18951c8df725}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Forms.mke">
+      <Filter>Mke</Filter>
+    </None>
+    <None Include="Forms.prewire.mke">
+      <Filter>Mke</Filter>
+    </None>
+    <None Include="FormsCompileOptions.mki">
+      <Filter>Mke</Filter>
+    </None>
+    <None Include="ClassDiagram.cd" />
+    <None Include="ClassDiagram1.cd" />
+    <None Include="ClassDiagram2.cd" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="FormsDomain.Partfile.xml">
+      <Filter>Bentley Build Files</Filter>
+    </Xml>
+    <Xml Include="Forms.ecschema.xml">
+      <Filter>Schema</Filter>
+    </Xml>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="FormsDomainUtilities.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="FormsDomain.cpp" />
+    <ClCompile Include="Form.cpp" />
+    <ClCompile Include="CurvedExtrusion.cpp" />
+    <ClCompile Include="StraightExtrusion.cpp" />
+    <ClCompile Include="CurvedProfiledExtrusion.cpp" />
+    <ClCompile Include="StraightProfiledExtrusion.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="PublicAPI\FormsDomain\FormsDomainUtilities.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\CurvedExtrusion.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\CurvedProfiledExtrusion.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\Form.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\FormsDomain.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\FormsDomainApi.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\FormsDomainDefinitions.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\FormsDomainUtilities.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\StraightExtrusion.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\StraightProfiledExtrusion.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
