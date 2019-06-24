@@ -1,0 +1,9 @@
+message EllipticArc
+{
+required IPlacement placement = 1;
+required double radiusA = 2;
+required double radiusB = 3;
+required Angle startAngle = 4;
+required Angle sweepAngle = 5;
+}
+

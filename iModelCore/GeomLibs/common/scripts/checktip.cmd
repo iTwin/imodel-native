@@ -1,0 +1,1 @@
+cvs log -rDEV_wip: %1 %2 %3 %4 | gema -f %GEMADIR%\g\checktip.g

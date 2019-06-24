@@ -1,0 +1,13 @@
+#*--------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------*/
+%include mdl.mki
+
+# Wire in seed data
+always:
+    @CreateSymLinks.py -m"$(BuildContext)Delivery\TestData=$(SrcRoot)GeomLibsTestData/xmlSamples/*.xml"
+
+   
+

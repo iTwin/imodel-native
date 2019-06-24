@@ -1,0 +1,79 @@
+PRIMITIVE Spiral
+<def name=SUMMARY>Spiral curve described by coordinates, bearing, and curvature at start and end.
+(This data is redundant -- only one of the start and end points is really needed to place the curve.)
+Curvature is one over the local turning radius (radius of curvature).
+(The units of the curvature value are inverse length.)
+The SpiralType is indicated by a string. Interpretation of various types -- Clothoid, Bloth, BiQuadratic -- requires appropriate code
+in the application.   Specialized (e.g. Viennese) types may require furter parameters in auxiliary geometry.
+</def>
+<def name=Interface_BaseList>IGeometry, IPrimitiveCurve</def>
+
+<def name=MEMBERS>
+<value ItemType=String
+        ItemSemanticName=SpiralType
+        ItemParamName=spiralType
+        ItemMemberName=mSpiralType
+        ItemDescription="Spiral type."
+        ScaleMode=None
+ />
+
+<value  ItemType=DPoint3d
+        ItemSemanticName=StartPoint
+        ItemParamName=startPoint
+        ItemMemberName=mStartPoint
+        ItemDescription="Start coordinates"
+        ScaleMode=Length
+ />
+
+<value  ItemType=Angle
+        ItemSemanticName=StartBearing
+        ItemParamName=startBearing
+        ItemMemberName=mStartBearing
+        ItemDescription="bearing angle at start point"
+        ScaleMode=None
+ />
+
+<value  ItemType=double
+        ItemSemanticName=StartCurvature
+        ItemParamName=startCurvature
+        ItemMemberName=mStartCurvature
+        ItemDescription="Curvature at start.  0 for straight line"
+        ScaleMode=InverseLength
+ />
+
+<value  ItemType=DPoint3d
+        ItemSemanticName=EndPoint
+        ItemParamName=endPoint
+        ItemMemberName=mEndPoint
+        ItemDescription="End coordinates"
+        ScaleMode=Length
+ />
+
+<value  ItemType=Angle
+        ItemSemanticName=EndBearing
+        ItemParamName=endBearing
+        ItemMemberName=mEndBearing
+        ItemDescription="bearing angle at end point"
+        ScaleMode=None
+ />
+
+<value  ItemType=double
+        ItemSemanticName=EndCurvature
+        ItemParamName=endCurvature
+        ItemMemberName=mEndCurvature
+        ItemDescription="Curvature at end.  0 for straight line"
+        ScaleMode=InverseLength
+ />
+
+<child  ItemType=IGeometry
+        ItemTagName=Geometry
+        ItemSemanticName=Geometry
+        ItemParamName=geometry
+        ItemMemberName=mGeom
+        ItemDescription="Auxiliry geometry.  Required contents depends on the Spiral type"
+        ScaleMode=Container
+/>
+
+</def>
+
+END_PRIMITIVE
