@@ -1,0 +1,57 @@
+#----------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#----------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------
+#   Configuration files for Doxygen
+#----------------------------------------------------------------------------------------
+BENTLEY_DOXYGEN_CONFIG      = $(BuildContext)SubParts/BentleyDocConfig/bentley-doxygen.cfg
+BENTLEY_DOXYGEN_ALIASES     = $(BuildContext)SubParts/BentleyDocConfig/bentley-doxygen-html-aliases.cfg
+
+DOXYGEN_CONFIG_FILES        = $(BENTLEY_DOXYGEN_CONFIG)
+DOXYGEN_CONFIG_FILES        + $(BENTLEY_DOXYGEN_ALIASES)
+DOXYGEN_CONFIG_FILES        + $(BuildContext)SubParts/BentleyDocConfig/bentley-doxygen.css
+
+#----------------------------------------------------------------------------------------
+#   Configure platform-specific macros for Doxygen @cond statements
+#----------------------------------------------------------------------------------------
+%if $(TARGET_PLATFORM)=="Android"
+    DOXYGEN_TARGET_PLATFORM = BENTLEY_SDK_Android
+%elif $(TARGET_PLATFORM)=="iOS"
+    DOXYGEN_TARGET_PLATFORM = BENTLEY_SDK_iOS
+%elif $(TARGET_PLATFORM)=="Windows"
+    DOXYGEN_TARGET_PLATFORM = BENTLEY_SDK_Windows
+%elif $(TARGET_PLATFORM)=="WinRT"
+    DOXYGEN_TARGET_PLATFORM = BENTLEY_SDK_WinRT
+%endif
+
+#----------------------------------------------------------------------------------------
+#   Configure verbose setting for PublishAPI.py
+#----------------------------------------------------------------------------------------
+%if defined (VERBOSE)
+    PUBLISH_VERBOSE = -v6
+%else
+    PUBLISH_VERBOSE = -v3       # INFO_LEVEL_VeryInteresting
+%endif
+
+#----------------------------------------------------------------------------------------
+#   Configure verbose setting for Doxygen
+#----------------------------------------------------------------------------------------
+%if defined (VERBOSE)
+    DOXYGEN_QUIET = NO
+%else
+    DOXYGEN_QUIET = YES
+%endif
+
+#----------------------------------------------------------------------------------------
+#   Subdirectory macros
+#----------------------------------------------------------------------------------------
+DocsSubDirECObjects        		= docs
+
+#----------------------------------------------------------------------------------------
+#   Output directory macros
+#----------------------------------------------------------------------------------------
+OutBuildECObjects            	= $(OutputRootDir)build/ECObjects/
+
+OutBuildDoxygenArtifacts        = $(OutputRootDir)build/DoxygenArtifacts/
