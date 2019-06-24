@@ -51,13 +51,13 @@ public:
     //! @param[in] accessToken OIDC or SAML token of user to track usage against. OIDC is preferred
     //! @param[in] version version for this usage
     //! @param[in] projectId projectId of this usage
+    //! @param[in] authType optional - specify whether the accessToken is OIDC or SAML. Defaults to OIDC which is preferred
     //! @param[in] productId optional - specify the productId for this usage
     //! @param[in] deviceId optional - specify the deviceId for this usage
     //! @param[in] usageType optional - specify the usage type for this usage
     //! @param[in] correlationId optional - specify the correlationId for this usage, must be a GUID
-    //! @param[in] authType optional - specify whether the accessToken is OIDC or SAML. Defaults to OIDC which is preferred
     LICENSING_EXPORT folly::Future<BentleyStatus> TrackUsage
-    (
+        (
         Utf8StringCR accessToken,
         BeVersionCR version,
         Utf8StringCR projectId,
@@ -71,11 +71,11 @@ public:
     //! Mark realtime feature
     //! @param[in] accessToken OIDC or SAML token of user to mark feature against. OIDC is preferred
     //! @param[in] featureEvent The feature event to mark
+    //! @param[in] authType optional - specify whether the accessToken is OIDC or SAML. Defaults to OIDC which is preferred
     //! @param[in] productId optional - specify the productId for this usage
     //! @param[in] deviceId optional - specify the deviceId for this usage
     //! @param[in] usageType optional - specify the usage type for this usage
     //! @param[in] correlationId optional - specify the correlationId for this usage, must be a GUID
-    //! @param[in] authType optional - specify whether the accessToken is OIDC or SAML. Defaults to OIDC which is preferred
     LICENSING_EXPORT folly::Future<BentleyStatus> MarkFeature
         (
         Utf8StringCR accessToken,
