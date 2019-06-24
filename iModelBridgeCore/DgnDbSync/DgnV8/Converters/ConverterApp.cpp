@@ -213,8 +213,18 @@ void ConverterApp::GetImportConfiguration(BeFileNameR instanceFilePath, BeFileNa
         instanceFilePath.SetName(programDir.c_str());
         instanceFilePath.AppendToPath(L"assets");
         instanceFilePath.AppendToPath(L"ImportConfig.xml");
+
+        if (!instanceFilePath.DoesPathExist())
+            {
+            instanceFilePath.SetName(_GetParams().GetAssetsDir());
+            instanceFilePath.AppendToPath(L"ImportConfig.xml");
+            }
         }
 
+    if (!instanceFilePath.DoesPathExist())
+        {
+        LOG.warningv(L"%ls - MstnBridge configuration file not found", instanceFilePath.c_str());
+        }
     // fwprintf(stdout, L"Configuration file <%ls>\n", instanceFilePath.GetName());
     }
 

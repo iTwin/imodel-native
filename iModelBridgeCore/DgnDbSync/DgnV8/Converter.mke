@@ -116,6 +116,8 @@ $(o)ThreeMxConversion$(oext):  $(baseDir)ThreeMxConversion.cpp $(DgnV8Depends) $
 
 $(o)ScalableMeshConversion$(oext):  $(baseDir)ScalableMeshConversion.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 
+$(o)DTMConversion$(oext):  $(baseDir)DTMConversion.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
 $(o)Initialize$(oext):  $(baseDir)Initialize.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 
 $(o)SheetAttachmentViewHelper$(oext):  $(baseDir)SheetAttachmentViewHelper.cpp $(baseDir)SheetAttachmentViewHelper.h $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
@@ -232,6 +234,7 @@ LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)VisEdgesLib.lib
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)DwgDgnIO.lib
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)acpal.lib
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)acdb$(RDVSuffix).lib
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)TerrainModelCore.lib
 
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)TerrainModelElementHandler.lib
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)TerrainModelCore.lib

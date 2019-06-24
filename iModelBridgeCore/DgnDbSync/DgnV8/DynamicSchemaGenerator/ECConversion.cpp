@@ -1028,19 +1028,24 @@ BentleyStatus ECSchemaXmlDeserializer::DeserializeSchemas(BECN::ECSchemaReadCont
             return BSIERROR;
             }
 
-        if (std::find(usedAliases.begin(), usedAliases.end(), schema->GetAlias()) != usedAliases.end())
+        bool aliasAlreadyInUse = false;
+        ECN::ECSchemaCP existing = m_converter.GetDgnDb().Schemas().GetSchema(schema->GetAlias(), false, BeSQLite::EC::SchemaLookupMode::ByAlias);
+        if (nullptr != existing && schema->GetSchemaKey().CompareByName(existing->GetName()))
+            aliasAlreadyInUse = true;
+        if (aliasAlreadyInUse == true || std::find(usedAliases.begin(), usedAliases.end(), schema->GetAlias()) != usedAliases.end())
             {
             bool conflict = true;
             int32_t counter = 1;
             while (conflict)
                 {
-                Utf8PrintfString testNS("%s_%" PRId32 "", schema->GetAlias().c_str(), counter);
-                if (std::find(usedAliases.begin(), usedAliases.end(), testNS) != usedAliases.end())
+                Utf8PrintfString testAlias("%s_%" PRId32 "", schema->GetAlias().c_str(), counter);
+                ECN::ECSchemaCP lookup = m_converter.GetDgnDb().Schemas().GetSchema(testAlias, false, BeSQLite::EC::SchemaLookupMode::ByAlias);
+                if ((lookup != nullptr && lookup->GetSchemaKey().CompareByName(schema->GetName())) || std::find(usedAliases.begin(), usedAliases.end(), testAlias) != usedAliases.end())
                     counter++;
                 else
                     {
-                    usedAliases.push_back(testNS.c_str());
-                    schema->SetAlias(testNS.c_str());
+                    usedAliases.push_back(testAlias.c_str());
+                    schema->SetAlias(testAlias.c_str());
                     conflict = false;
                     }
                 }
