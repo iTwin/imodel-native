@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<Transkit>
+
+    <SatelliteAssembly DllName="Bentley.TerrainModel.ElementTemplate" DeliverEnglish="False" RightsCompliant="True">
+        <ResxFile ResourceName="Bentley.TerrainModel.ElementTemplate.LocalizableStrings" FileName="LocalizableStrings.resx" />
+    </SatelliteAssembly>
+
+</Transkit>
