@@ -1,0 +1,115 @@
+#---------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#---------------------------------------------------------------------------------------+
+
+%include MultiCppCompileRule.mki
+
+HttpHeaders =
+HttpHeaders + $(BeHttpPublicApiDir)AuthenticationHandler.h
+HttpHeaders + $(BeHttpPublicApiDir)Credentials.h
+HttpHeaders + $(BeHttpPublicApiDir)DefaultHttpHandler.h
+HttpHeaders + $(BeHttpPublicApiDir)HttpBody.h
+HttpHeaders + $(BeHttpPublicApiDir)CompressionOptions.h
+HttpHeaders + $(BeHttpPublicApiDir)HttpClient.h
+HttpHeaders + $(BeHttpPublicApiDir)HttpConfigurationHandler.h
+HttpHeaders + $(BeHttpPublicApiDir)HttpError.h
+HttpHeaders + $(BeHttpPublicApiDir)HttpHeaders.h
+HttpHeaders + $(BeHttpPublicApiDir)HttpRequest.h
+HttpHeaders + $(BeHttpPublicApiDir)HttpResponse.h
+HttpHeaders + $(BeHttpPublicApiDir)HttpStatus.h
+HttpHeaders + $(BeHttpPublicApiDir)Http.h
+HttpHeaders + $(BeHttpPublicApiDir)HttpStatusHelper.h
+HttpHeaders + $(BeHttpPublicApiDir)IHttpHandler.h
+HttpHeaders + $(BeHttpPublicApiDir)ProxyHttpHandler.h
+
+#---------------------------------------------------------------------------------------+
+#   Setup variables
+#---------------------------------------------------------------------------------------+
+%if defined (DEBUG)
+    nameToDefine=DEBUG
+    %include cdefapnd.mki
+%endif
+
+#---------------------------------------------------------------------------------------+
+#   Files to compile
+#---------------------------------------------------------------------------------------+
+$(o)ApplicationEvents$(oext)        : $(BeHttpSourceDir)ApplicationEvents.cpp $(HttpHeaders) ${MultiCompileDepends}
+
+$(o)AuthenticationHandler$(oext)    : $(BeHttpSourceDir)AuthenticationHandler.cpp $(HttpHeaders) ${MultiCompileDepends}
+
+$(o)Backdoor$(oext)                 : $(BeHttpSourceDir)Backdoor.cpp $(HttpHeaders) ${MultiCompileDepends}
+
+$(o)BeUri$(oext)                    : $(BeHttpSourceDir)BeUri.cpp $(HttpHeaders) ${MultiCompileDepends}
+
+$(o)Credentials$(oext)              : $(BeHttpSourceDir)Credentials.cpp $(HttpHeaders) ${MultiCompileDepends}
+
+$(o)DefaultHttpHandler$(oext)       : $(BeHttpSourceDir)DefaultHttpHandler.cpp $(HttpHeaders) ${MultiCompileDepends}
+
+$(o)HttpClient$(oext)               : $(BeHttpSourceDir)HttpClient.cpp $(HttpHeaders) ${MultiCompileDepends}
+
+$(o)HttpHeaders$(oext)              : $(BeHttpSourceDir)HttpHeaders.cpp $(HttpHeaders) ${MultiCompileDepends}
+
+$(o)HttpBody$(oext)                 : $(BeHttpSourceDir)HttpBody.cpp $(HttpHeaders) ${MultiCompileDepends}
+
+$(o)HttpResponse$(oext)             : $(BeHttpSourceDir)HttpResponse.cpp $(HttpHeaders) ${MultiCompileDepends}
+
+$(o)HttpError$(oext)                : $(BeHttpSourceDir)HttpError.cpp $(HttpHeaders) ${MultiCompileDepends}
+
+$(o)HttpStatusHelper$(oext)         : $(BeHttpSourceDir)HttpStatusHelper.cpp $(HttpHeaders) ${MultiCompileDepends}
+
+$(o)HttpProxy$(oext)                : $(BeHttpSourceDir)HttpProxy.cpp $(HttpHeaders) ${MultiCompileDepends}
+
+$(o)HttpRequest$(oext)              : $(BeHttpSourceDir)HttpRequest.cpp $(HttpHeaders) ${MultiCompileDepends}
+
+$(o)ProxyHttpHandler$(oext)         : $(BeHttpSourceDir)ProxyHttpHandler.cpp $(HttpHeaders) ${MultiCompileDepends}
+
+$(o)TrustManager$(oext)             : $(BeHttpSourceDir)TrustManager.cpp $(HttpHeaders) ${MultiCompileDepends}
+
+
+$(o)CurlPool$(oext)                 : $(BeHttpSourceDir)Curl/CurlPool.cpp $(HttpHeaders) ${MultiCompileDepends}
+
+$(o)CurlHttpRequest$(oext)          : $(BeHttpSourceDir)Curl/CurlHttpRequest.cpp $(HttpHeaders) ${MultiCompileDepends}
+
+$(o)CurlHttpHandler$(oext)          : $(BeHttpSourceDir)Curl/CurlHttpHandler.cpp $(HttpHeaders) ${MultiCompileDepends}
+
+$(o)NotificationPipe$(oext)         : $(BeHttpSourceDir)Curl/NotificationPipe.cpp $(HttpHeaders) ${MultiCompileDepends}
+
+$(o)CurlTaskRunner$(oext)           : $(BeHttpSourceDir)Curl/CurlTaskRunner.cpp $(HttpHeaders) ${MultiCompileDepends}
+
+$(o)ThreadCurlHttpHandler$(oext)    : $(BeHttpSourceDir)Curl/ThreadCurlHttpHandler.cpp $(HttpHeaders) ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+%if "iOS" == $(TARGET_PLATFORM)
+
+    CCPchOpts =
+    CPchOpts =
+
+    $(o)ApplicationEventsIos$(oext) : $(BeHttpSourceDir)ApplicationEventsIos.mm $(HttpHeaders) ${MultiCompileDepends}
+
+    # Recipes for .m and .mm don't put the objs to MultiCompileObjectList so do that manually
+    MultiCompileObjectList + $(o)ApplicationEventsIos$(oext)
+
+%endif
+
+#---------------------------------------------------------------------------------------+
+#   Set up linker libraries
+#---------------------------------------------------------------------------------------+
+%if $(TARGET_PROCESSOR_ARCHITECTURE) == "x86" || $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
+    # Win32 sockets for Web
+    LINKER_LIBRARIES            + "WS2_32.Lib"
+
+    # HTTP client configuration
+    LINKER_LIBRARIES            + "Winhttp.Lib"
+%endif
+
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeCurl$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeOpenSSL$(libext)
+
+#---------------------------------------------------------------------------------------+
+#   Deliver assets
+#---------------------------------------------------------------------------------------+
+$(BuildContext)Delivery/http/cabundle.pem : $(BeHttpSourceDir)Curl/cabundle.pem
+    $(LinkFirstDepToFirstTarget)
