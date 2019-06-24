@@ -46,13 +46,14 @@ folly::Future<BentleyStatus> SaasClient::TrackUsage
     Utf8StringCR accessToken,
     BeVersionCR version,
     Utf8StringCR projectId,
+    AuthType authType,
     int productId,
     Utf8StringCR deviceId,
     UsageType usageType,
     Utf8StringCR correlationId
     )
     {
-    return m_impl->TrackUsage(accessToken, version, projectId, productId, deviceId, usageType, correlationId);
+    return m_impl->TrackUsage(accessToken, version, projectId, authType, productId, deviceId, usageType, correlationId);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -62,11 +63,12 @@ folly::Future<BentleyStatus> SaasClient::MarkFeature
     (
     Utf8StringCR accessToken,
     FeatureEvent featureEvent,
+    AuthType authType,
     int productId,
     Utf8StringCR deviceId,
     UsageType usageType,
     Utf8StringCR correlationId
     )
     {
-    return m_impl->MarkFeature(accessToken, featureEvent, productId, deviceId, usageType, correlationId);
+    return m_impl->MarkFeature(accessToken, featureEvent, authType, productId, deviceId, usageType, correlationId);
     }

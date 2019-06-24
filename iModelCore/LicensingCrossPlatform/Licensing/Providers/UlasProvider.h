@@ -62,7 +62,8 @@ public:
         BeVersionCR version,
         Utf8StringCR projectId,
         UsageType usageType,
-        Utf8StringCR correlationId
+        Utf8StringCR correlationId,
+        AuthType authType
         );
     LICENSING_EXPORT folly::Future<BentleyStatus> RealtimeMarkFeature
         (
@@ -72,7 +73,8 @@ public:
         Utf8StringCR featureString,
         Utf8StringCR deviceId,
         UsageType usageType,
-        Utf8StringCR correlationId
+        Utf8StringCR correlationId,
+        AuthType authType
         );
 
     LICENSING_EXPORT folly::Future<Json::Value> GetAccessKeyInfo

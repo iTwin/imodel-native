@@ -232,7 +232,7 @@ folly::Future<folly::Unit> UlasProvider::SendFeatureLogs(ApplicationInfoPtr appl
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<BentleyStatus> UlasProvider::RealtimeTrackUsage(Utf8StringCR accessToken, int productId, Utf8StringCR featureString, Utf8StringCR deviceId, BeVersionCR version, Utf8StringCR projectId, UsageType usageType, Utf8StringCR correlationId)
+folly::Future<BentleyStatus> UlasProvider::RealtimeTrackUsage(Utf8StringCR accessToken, int productId, Utf8StringCR featureString, Utf8StringCR deviceId, BeVersionCR version, Utf8StringCR projectId, UsageType usageType, Utf8StringCR correlationId, AuthType authType)
     {
     LOG.debug("UlasProvider::RealtimeTrackUsage");
     // Send real time usage
@@ -242,7 +242,15 @@ folly::Future<BentleyStatus> UlasProvider::RealtimeTrackUsage(Utf8StringCR acces
 
     HttpClient client(nullptr, m_httpHandler);
     auto uploadRequest = client.CreateRequest(url, "POST");
-    uploadRequest.GetHeaders().SetValue("authorization", "Bearer " + accessToken);
+    switch (authType)
+        {
+        case AuthType::SAML:
+            uploadRequest.GetHeaders().SetValue("authorization", "SAML " + accessToken);
+            break;
+        case AuthType::OIDC:
+        default:
+            uploadRequest.GetHeaders().SetValue("authorization", "Bearer " + accessToken);
+        }
     uploadRequest.GetHeaders().SetValue("content-type", "application/json; charset=utf-8");
 
     // create Json body
@@ -274,7 +282,7 @@ folly::Future<BentleyStatus> UlasProvider::RealtimeTrackUsage(Utf8StringCR acces
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<BentleyStatus> UlasProvider::RealtimeMarkFeature(Utf8StringCR accessToken, FeatureEvent featureEvent, int productId, Utf8StringCR featureString, Utf8StringCR deviceId, UsageType usageType, Utf8StringCR correlationId)
+folly::Future<BentleyStatus> UlasProvider::RealtimeMarkFeature(Utf8StringCR accessToken, FeatureEvent featureEvent, int productId, Utf8StringCR featureString, Utf8StringCR deviceId, UsageType usageType, Utf8StringCR correlationId, AuthType authType)
     {
     LOG.debug("UlasProvider::RealtimeMarkFeature");
     //LOG.tracev("MarkFeature - Called with featureId: %s, version: %s, projectId: %s", featureEvent.m_featureId.c_str(), featureEvent.m_version.ToString().c_str(), featureEvent.m_projectId.c_str());
@@ -283,7 +291,16 @@ folly::Future<BentleyStatus> UlasProvider::RealtimeMarkFeature(Utf8StringCR acce
 
     HttpClient client(nullptr, m_httpHandler);
     auto uploadRequest = client.CreateRequest(url, "POST");
-    uploadRequest.GetHeaders().SetValue("authorization", "Bearer " + accessToken);
+    switch (authType)
+        {
+        case AuthType::SAML:
+            uploadRequest.GetHeaders().SetValue("authorization", "SAML " + accessToken);
+            break;
+        case AuthType::OIDC:
+        default:
+            uploadRequest.GetHeaders().SetValue("authorization", "Bearer " + accessToken);
+        }
+    
     uploadRequest.GetHeaders().SetValue("content-type", "application/json; charset=utf-8");
 
     auto jsonBody = featureEvent.ToJson
