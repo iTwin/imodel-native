@@ -492,6 +492,7 @@ void Converter::SetDllSearchPath(BentleyApi::BeFileNameCR v8Path, BentleyApi::Be
 
 DGNV8_ELEMENTHANDLER_DEFINE_MEMBERS(ThreeMxElementHandler)
 DGNV8_ELEMENTHANDLER_DEFINE_MEMBERS(ScalableMeshElementHandler)
+DGNV8_ELEMENTHANDLER_DEFINE_MEMBERS(CifTerrainElementHandler)
 
 //=======================================================================================
 // @bsiclass
@@ -635,6 +636,8 @@ void Converter::Initialize(BentleyApi::BeFileNameCR bridgeLibraryDir, BentleyApi
         // we need it to exist so we can put the "ToDgnDbExtension" on it.
         DgnV8Api::ElementHandlerManager::RegisterHandler(DgnV8Api::ElementHandlerId(ThreeMxElementHandler::XATTRIBUTEID_ThreeMxAttachment, 0), ThreeMxElementHandler::GetInstance());
         DgnV8Api::ElementHandlerManager::RegisterHandler(DgnV8Api::ElementHandlerId(ScalableMeshElementHandler::XATTRIBUTEID_ScalableMeshAttachment, 0), ScalableMeshElementHandler::GetInstance());
+        DgnV8Api::ElementHandlerManager::RegisterHandler(DgnV8Api::ElementHandlerId(CifTerrainElementHandler::XATTRIBUTEID_CifTerrainModel, CifTerrainElementHandler::ELEMENTHANDLER_SUBTYPE_DTMELEMENT), CifTerrainElementHandler::GetInstance());
+        DgnV8Api::ElementHandlerManager::RegisterHandler(DgnV8Api::ElementHandlerId(CifTerrainElementHandler::XATTRIBUTEID_CifTerrainModel, CifTerrainElementHandler::ELEMENTHANDLER_SUBTYPE_DTMENTITY), CifTerrainElementHandler::GetInstance());
 
         Converter::RegisterForeignFileTypes (dllDirectory, realdwgDirectory);
         Bentley::TerrainModel::Element::DTMElementHandlerManager::InitializeDgnPlatform();
@@ -646,6 +649,7 @@ void Converter::Initialize(BentleyApi::BeFileNameCR bridgeLibraryDir, BentleyApi
     ConvertV8Lights::Register();
     ConvertThreeMxAttachment::Register();
     ConvertScalableMeshAttachment::Register();
+    ConvertDTMElement::Register();
     ConvertDetailingSymbolExtension::Register();
     CifSheetExaggeratedViewHandlerStandin::Register();
 

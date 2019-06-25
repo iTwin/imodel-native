@@ -126,6 +126,12 @@ struct UrlProvider
         //! @param env environment
         WSCLIENT_EXPORT static Utf8String ToEnvironmentString(Environment env);
 
+        //! Parse connect environment and return enum
+        //! @param envStr environment string
+        //! @param env parsed environment
+        //! @return ERROR if invalid string
+        WSCLIENT_EXPORT static BentleyStatus FromEnvironmentString(Utf8CP envStr, Environment& env);
+
         //! Resolve UrlDescriptor by its BUDDI URI.
         //! @param uri - BUDDI URI retrieved from UrlDescriptor::GetBuddiUri call
         //! @return If succeeds, returns a pointer to UrlDescriptor. Otherwise, nullptr.

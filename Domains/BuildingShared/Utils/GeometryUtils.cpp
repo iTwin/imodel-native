@@ -56,30 +56,65 @@ CurveVectorPtr GeometryUtils::CloneTransformed
     return transformed;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Elonas.Seviakovas               04/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Mindaugas.Butkus                06/2019
+//--------------+---------------+---------------+---------------+---------------+------
+bvector<DPoint3d> GeometryUtils::ProjectPointsOntoPlane
+(
+    bvector<DPoint3d> const& points, 
+    DPlane3d const& plane
+)
+    {
+    bvector<DPoint3d> projectedPoints;
+    for (DPoint3dCR point : points)
+        {
+        DPoint3d projectedPoint;
+        plane.ProjectPoint(projectedPoint, point);
+        projectedPoints.push_back(projectedPoint);
+        }
+    return projectedPoints;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Mindaugas.Butkus                06/2019
+//--------------+---------------+---------------+---------------+---------------+------
 CurveVectorPtr GeometryUtils::ProjectCurveOntoPlane(CurveVectorCR curve, DPlane3d const& plane)
     {
-    bvector<STDVectorDPoint3d> pointVectors;
-    curve.CollectLinearGeometry(pointVectors);
-
     CurveVectorPtr projectedCurves = CurveVector::Create(curve.GetBoundaryType());
 
-    for (STDVectorDPoint3dR points : pointVectors)
+    for (ICurvePrimitivePtr const& primitive : curve)
         {
-        STDVectorDPoint3d projectedPoints;
-        for (DPoint3dR point : points)
+        switch (primitive->GetCurvePrimitiveType())
             {
-            DPoint3d projectedPoint;
-            plane.ProjectPoint(projectedPoint, point);
-            projectedPoints.push_back(projectedPoint);
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector: 
+                {
+                projectedCurves->Add(ProjectCurveOntoPlane(*primitive->GetChildCurveVectorCP(), plane));
+                break;
+                }
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
+                {
+                DSegment3d line = *primitive->GetLineCP();
+                DSegment3d newLine = DSegment3d::FromZero();
+                plane.ProjectPoint(newLine.point[0], line.point[0]);
+                plane.ProjectPoint(newLine.point[1], line.point[1]);
+                projectedCurves->Add(ICurvePrimitive::CreateLine(newLine));
+                break;
+                }
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
+                {
+                bvector<DPoint3d> projectedPoints = ProjectPointsOntoPlane(*primitive->GetLineStringCP(), plane);
+                projectedCurves->Add(ICurvePrimitive::CreateLineString(projectedPoints));
+                break;
+                }
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PointString:
+                {
+                bvector<DPoint3d> projectedPoints = ProjectPointsOntoPlane(*primitive->GetPointStringCP(), plane);
+                projectedCurves->Add(ICurvePrimitive::CreatePointString(projectedPoints));
+                break;
+                }
             }
-
-        CurveVectorPtr newCurve = CurveVector::CreateLinear(projectedPoints, curve.GetBoundaryType());
-
-        projectedCurves->Add(newCurve);
         }
+
     return projectedCurves;
     }
 

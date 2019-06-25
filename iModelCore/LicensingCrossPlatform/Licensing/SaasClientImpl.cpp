@@ -36,7 +36,7 @@ SaasClientImpl::SaasClientImpl
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Jason.Wichert           3/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<BentleyStatus> SaasClientImpl::TrackUsage(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId, int productId, Utf8StringCR deviceId, UsageType usageType, Utf8StringCR correlationId)
+folly::Future<BentleyStatus> SaasClientImpl::TrackUsage(Utf8StringCR accessToken, BeVersionCR version, Utf8StringCR projectId, AuthType authType, int productId, Utf8StringCR deviceId, UsageType usageType, Utf8StringCR correlationId)
     {
     LOG.debug("UlasProvider::RealtimeTrackUsage");
 
@@ -52,13 +52,13 @@ folly::Future<BentleyStatus> SaasClientImpl::TrackUsage(Utf8StringCR accessToken
         m_deviceId = deviceId;
         }
 
-    return m_ulasProvider->RealtimeTrackUsage(accessToken, m_productId, m_featureString, m_deviceId, version, projectId, usageType, correlationId);
+    return m_ulasProvider->RealtimeTrackUsage(accessToken, m_productId, m_featureString, m_deviceId, version, projectId, usageType, correlationId, authType);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                            Jason.Wichert            3/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<BentleyStatus> SaasClientImpl::MarkFeature(Utf8StringCR accessToken, FeatureEvent featureEvent, int productId, Utf8StringCR deviceId, UsageType usageType, Utf8StringCR correlationId)
+folly::Future<BentleyStatus> SaasClientImpl::MarkFeature(Utf8StringCR accessToken, FeatureEvent featureEvent, AuthType authType, int productId, Utf8StringCR deviceId, UsageType usageType, Utf8StringCR correlationId)
     {
     LOG.debug("SaasClientImpl::MarkFeature");
 
@@ -74,5 +74,5 @@ folly::Future<BentleyStatus> SaasClientImpl::MarkFeature(Utf8StringCR accessToke
         m_deviceId = deviceId;
         }
 
-    return m_ulasProvider->RealtimeMarkFeature(accessToken, featureEvent, m_productId, m_featureString, m_deviceId, usageType, correlationId);
+    return m_ulasProvider->RealtimeMarkFeature(accessToken, featureEvent, m_productId, m_featureString, m_deviceId, usageType, correlationId, authType);
     }

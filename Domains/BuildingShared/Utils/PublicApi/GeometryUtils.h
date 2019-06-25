@@ -30,13 +30,19 @@ public:
 
     BUILDINGSHAREDUTILS_EXPORT static bvector<DPoint3d> ExtractSingleCurvePoints (CurveVectorCR curve);
 
-    //! Project curve onto specified plane
+    //! Project points onto specified plane.
+    //! @param[in] points   Points that will be projected.
+    //! @param[in] plane    Plane that the points will be projected onto.
+    //! @return points that are projected onto the specified plane.
+    BUILDINGSHAREDUTILS_EXPORT static bvector<DPoint3d> ProjectPointsOntoPlane(bvector<DPoint3d> const& points, DPlane3d const& plane);
+
+    //! Project curve onto specified plane. Works only with linear curves.
     //! @param[in] curve    Curve that will be projected
     //! @param[in] plane    Plane that the curve will be projecte onto
     //! @return a curve that is projected onto specified plane
     BUILDINGSHAREDUTILS_EXPORT static CurveVectorPtr ProjectCurveOntoPlane(CurveVectorCR curve, DPlane3d const& plane);
 
-    //! Project curve onto horizontal plane
+    //! Project curve onto horizontal plane. Works only with linear curves.
     //! @param[in] curve    Curve that will be projected
     //! @return a curve that is projected onto horizontal plane
     BUILDINGSHAREDUTILS_EXPORT static CurveVectorPtr ProjectCurveOntoZeroPlane(CurveVectorCR curve);

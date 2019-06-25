@@ -1002,13 +1002,20 @@ static void setEmbeddedFileIdRecipe(iModelBridge::Params& params)
     if ((nullptr == tempVarCheck) || (*tempVarCheck == '0'))
         return;
 
+    Utf8String regexStr(tempVarCheck);
+
+    if (regexStr.StartsWith("\"") && regexStr.EndsWith("\""))
+        {
+        regexStr.DropQuotes();
+        }
+
     bool isRegex = false;
-    if (*tempVarCheck != '1')
+    if (!regexStr.Equals("1"))
         {
         // assume user has supplied a suffix regex to be used in a recipe.
         try {
             // but first make sure it's valid.
-            std::regex rgx(tempVarCheck);
+            std::regex rgx(regexStr.c_str());
             // If no exception, then go ahead with it.
             isRegex = true;
             }
@@ -1038,7 +1045,7 @@ static void setEmbeddedFileIdRecipe(iModelBridge::Params& params)
     recipe.m_ignoreCase = true;
     recipe.m_ignoreExtension = true;
     recipe.m_ignorePwDocId = true;
-    recipe.m_suffixRegex = tempVarCheck;
+    recipe.m_suffixRegex = regexStr.c_str();
     params.SetEmbeddedFileIdRecipe(recipe);
     }
 
@@ -1076,6 +1083,14 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params, FwkRepoAdmin
     params.SetMergeDefinitions(m_jobEnvArgs.m_mergeDefinitions);
 
     setEmbeddedFileIdRecipe(params);
+
+    if (params.GetEmbeddedFileIdRecipe() != nullptr)
+        {
+        auto recipe = params.GetEmbeddedFileIdRecipe();
+        GetLogger().infov("bridge:%s iModel:%s - EmbeddedFileIdRecipe=C:%d X:%d P:%d I:%d R:%s", 
+            Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str(),
+            recipe->m_ignoreCase, recipe->m_ignoreExtension, recipe->m_ignorePackage, recipe->m_ignorePwDocId, recipe->m_suffixRegex.c_str());
+        }
 
     if (m_useIModelHub)
         {

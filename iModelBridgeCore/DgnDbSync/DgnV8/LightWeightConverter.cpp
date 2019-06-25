@@ -33,6 +33,7 @@ void LightWeightConverter::Initialize()
     ConvertV8Lights::Register();
     ConvertThreeMxAttachment::Register();
     ConvertScalableMeshAttachment::Register();
+    ConvertDTMElement::Register();
     ConvertDetailingSymbolExtension::Register();
    // CifSheetExaggeratedViewHandlerStandin::Register();
 

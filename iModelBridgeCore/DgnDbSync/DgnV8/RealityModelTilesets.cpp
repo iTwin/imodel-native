@@ -240,23 +240,6 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
             return ERROR;
             }
 
-        auto spatialModel = model->ToSpatialModel();
-
-        if(spatialModel != nullptr && !((ScalableMeshModel*)spatialModel)->AllowPublishing())
-            {
-            if(!ecefLocation.m_isValid || !((ScalableMeshModel*)spatialModel)->IsGeoReferenced())
-                {
-                // For scalable meshes with in projects with no ECEF (or that are not georeferenced we need to record the transform or we have no way to get from tileset (ECEF) to DB.
-                Transform   tilesetToDb, dbToTileset = ((ScalableMeshModel*)spatialModel)->GetUorsToStorage();
-
-                tilesetToDb.InverseOf(dbToTileset);
-                tilesetToDb = Transform::FromProduct(tilesetToDb, dbToEcefTransform);
-
-                StoreRealityTilesetTransform(*model, tilesetToDb);
-                model->Update();
-                }
-            }
-
         SyncInfo::UriContentInfo currentInfo;
         currentInfo.GetInfo(fileName);
 
@@ -305,7 +288,8 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
         auto smModel = dynamic_cast<ScalableMeshModelCP>(geometricModel);
         if (smModel != nullptr)
             {
-            smModel->WriteCesiumTileset(rootJsonFile, modelDir, dbToEcefTransform);
+            doUpload = smModel->AllowPublishing();
+            if(doUpload) smModel->WriteCesiumTileset(rootJsonFile, modelDir, dbToEcefTransform);
             }
         else
             {
@@ -366,41 +350,41 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
             url = BeStringUtilities::UriDecode(rd.GetHttpRequestString().c_str());
             BeFileName::EmptyAndRemoveDirectory(modelDir);
             }
+        else if(smModel != nullptr)
+            {
+            url = fileName;
+            }
         else
             {
             url =  localUrlPrefix + Utf8String(dbFileName).c_str() + "/" + model->GetModelId().ToString() + Utf8String("/TileRoot.json");
             }
     
-        if (smModel != nullptr )
+        if(smModel != nullptr && (!ecefLocation.m_isValid || !smModel->IsGeoReferenced()))
             {
-            if(!ecefLocation.m_isValid)
+            // For scalable meshes with in projects with no ECEF we need to record the transform or we have no way to get from tileset (ECEF) to DB.
+
+            // First reload 3sm using new url then get its location
+            auto unConstSMModel = const_cast<ScalableMeshModelP>(smModel);
+            if(doUpload)
                 {
-                // For scalable meshes with in projects with no ECEF we need to record the transform or we have no way to get from tileset (ECEF) to DB.
-                
-                // First reload 3sm using new url then get its location
-                auto unConstSMModel = const_cast<ScalableMeshModelP>(smModel);
                 unConstSMModel->CloseFile();
                 unConstSMModel->UpdateFilename(BeFileName(WString(url.c_str(), true)));
-                Transform   tilesetToDb, dbToTileset = unConstSMModel->GetUorsToStorage();
+                }
+            Transform   tilesetToDb, dbToTileset = unConstSMModel->GetUorsToStorage();
 
-                tilesetToDb.InverseOf(dbToTileset);
-                StoreRealityTilesetTransform(*model, tilesetToDb);
+            tilesetToDb.InverseOf(dbToTileset);
+            tilesetToDb = Transform::FromProduct(tilesetToDb, dbToEcefTransform);
 
+            StoreRealityTilesetTransform(*model, tilesetToDb);
+
+            if(doUpload)
+                {
                 // Put everything back as it was
                 unConstSMModel->CloseFile();
                 unConstSMModel->UpdateFilename(BeFileName(fileName.c_str(), true));
                 }
-            else if(!smModel->IsGeoReferenced())
-                {
-                auto unConstSMModel = const_cast<ScalableMeshModelP>(smModel);
-
-                Transform   tilesetToDb, dbToTileset = unConstSMModel->GetUorsToStorage();
-                tilesetToDb.InverseOf(dbToTileset);
-                tilesetToDb = Transform::FromProduct(tilesetToDb, dbToEcefTransform);
-
-                StoreRealityTilesetTransform(*model, tilesetToDb);
-                }
             }
+
         model->SetJsonProperties(json_tilesetUrl(), url);
         model->Update();
 
