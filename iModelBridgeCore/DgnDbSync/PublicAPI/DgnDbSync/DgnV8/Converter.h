@@ -833,6 +833,7 @@ struct Converter
         L10N_STRING(FailedToConvertThumbnails)  // =="Failed to convert thumbnails"==
         L10N_STRING(ProjectExtentsAdjusted)      // =="Project Extents have been adjusted to exclude outlying elements"==
         L10N_STRING(FailedToCreatePresentationRules)    // =="Failed to create presentation rules"==
+        L10N_STRING(InconsistentTransformsForEmbeddedReference)    // =="Inconsistent transform used for embedded reference %s. It was first seen with a different transform in %s"==
             
         IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
@@ -2574,6 +2575,7 @@ protected:
     DGNDBSYNC_EXPORT void _AddResolvedModelMapping(ResolvedModelMapping const&) override;
     DGNDBSYNC_EXPORT ResolvedModelMapping _GetResolvedModelMapping(DgnV8ModelRefCR, TransformCR) override;
     DGNDBSYNC_EXPORT ResolvedModelMapping _FindResolvedModelMapping(DgnV8ModelR v8Model, TransformCR) override;
+    bool DetectInconsistentEmbeddedReference(DgnV8ModelR v8Model, TransformCR trans);
     DGNDBSYNC_EXPORT ResolvedModelMapping _FindFirstResolvedModelMapping(DgnV8ModelR v8Model) override;
     DGNDBSYNC_EXPORT ResolvedModelMapping _FindResolvedModelMappingByModelId(DgnModelId) override;
     DGNDBSYNC_EXPORT bvector<ResolvedModelMapping> FindResolvedModelMappings(DgnV8ModelR v8Model);
@@ -2970,9 +2972,20 @@ struct RealityMeshAttachmentConversion
                          
 };
 
+//=======================================================================================
+// @bsiclass                                                    Daryl Holmwood 06/19
+//=======================================================================================
+struct CifTerrainElementHandler : DgnV8Api::ExtendedElementHandler
+    {    
+    enum { ELEMENTHANDLER_SUBTYPE_DTMELEMENT = 11,
+        ELEMENTHANDLER_SUBTYPE_DTMENTITY = 12,
+        XATTRIBUTEID_CifTerrainModel = 22739};
+    DEFINE_T_SUPER(DgnV8Api::ExtendedElementHandler)
+        DGNV8_ELEMENTHANDLER_DECLARE_MEMBERS(CifTerrainElementHandler, );
+    };
 
 //=======================================================================================
-// @bsiclass                                                    Mathieu.St-Pierre 07/17
+// @bsiclass                                                    Daryl Holmwood 07/17
 //=======================================================================================
 struct ConvertScalableMeshAttachment : ConvertToDgnDbElementExtension
 {
@@ -2980,6 +2993,16 @@ struct ConvertScalableMeshAttachment : ConvertToDgnDbElementExtension
     Result _PreConvertElement(DgnV8EhCR, Converter&, ResolvedModelMapping const&) override;
 };
 
+//=======================================================================================
+// @bsiclass                                                    Daryl Holmwood 07/17
+//=======================================================================================
+struct ConvertDTMElement : ConvertScalableMeshAttachment
+    {
+    static void Register();
+    Result DoConvert(DgnV8EhCR v8el, WCharCP url, Converter& converter, ResolvedModelMapping const& v8mm);
+
+    Result _PreConvertElement(DgnV8EhCR, Converter&, ResolvedModelMapping const&) override;
+    };
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      09/2016
 //=======================================================================================

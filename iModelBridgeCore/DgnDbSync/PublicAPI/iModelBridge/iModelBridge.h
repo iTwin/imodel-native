@@ -1013,12 +1013,13 @@ public:
     //! @param localFileName    The filename of the source file.
     //! @param defaultCode      The CodeValue to use if a document GUID cannot be found
     //! @param defaultURN       The URN to use if no URN can be found
+    //! @param preferDefaultCode    If true, prefer the value of defaultCode that is passed in. If false, prefer to use the document GUID for the code.
     //! @return An editable RepositoryLink element. It will have a valid DgnElementId if a RepositoryLink Element with the same code already exists in db.
-    IMODEL_BRIDGE_EXPORT static RepositoryLinkPtr MakeRepositoryLink(DgnDbR db, Params const& params, BeFileNameCR localFileName, Utf8StringCR defaultCode, Utf8StringCR defaultURN);
+    IMODEL_BRIDGE_EXPORT static RepositoryLinkPtr MakeRepositoryLink(DgnDbR db, Params const& params, BeFileNameCR localFileName, Utf8StringCR defaultCode, Utf8StringCR defaultURN, bool preferDefaultCode = false);
 
     // @private
     IMODEL_BRIDGE_EXPORT static void GetRepositoryLinkInfo(DgnCode& code, iModelBridgeDocumentProperties& docProps, DgnDbR db, Params const& params, 
-                                                BeFileNameCR localFileName, Utf8StringCR defaultCode, Utf8StringCR defaultURN, InformationModelR lmodel);
+                                                BeFileNameCR localFileName, Utf8StringCR defaultCode, Utf8StringCR defaultURN, InformationModelR lmodel, bool preferDefaultCode = false);
     // @private
     IMODEL_BRIDGE_EXPORT static BeSQLite::BeGuid ParseDocGuidFromPwUri(Utf8StringCR pwUrl);
 

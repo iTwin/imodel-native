@@ -1756,3 +1756,162 @@ TEST_F(ECSchemaTests, SkipSchemaUsingVerifier)
     delete m_verifier;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            06/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ECSchemaTests, AliasAlreadyInUse)
+    {
+    LineUpFiles(L"AliasAlreadyInUse.bim", L"Test3d.dgn", false);
+
+    if (true)
+        {
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestA" nameSpacePrefix="ts" version="01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="Foo" isDomainClass="True">
+                <ECProperty propertyName="Bar" typeName="string" />
+            </ECClass>
+        </ECSchema>)xml";
+
+        ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
+        ECObjectsV8::ECSchemaPtr schema;
+        EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext));
+
+        V8FileEditor v8editor;
+        v8editor.Open(m_v8FileName);
+        EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema, *(v8editor.m_file)));
+
+        DgnV8Api::ElementId eid;
+        v8editor.AddLine(&eid);
+        DgnV8Api::ElementHandle eh(eid, v8editor.m_defaultModel);
+        DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
+        EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, v8editor.CreateInstanceOnElement(createdDgnECInstance, *((DgnV8Api::ElementHandle*)&eh), v8editor.m_defaultModel, L"TestA", L"Foo"));
+        v8editor.Save();
+        }
+
+    DoConvert(m_dgnDbFileName, m_v8FileName);
+
+    BentleyApi::BeFileName secondFile;
+    MakeWritableCopyOf(secondFile, L"Test3d.dgn");
+    if (true)
+        {
+        V8FileEditor v8editor;
+        v8editor.Open(secondFile);
+            {
+            Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="TestB" nameSpacePrefix="ts" version="01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                <ECClass typeName="Goo" isDomainClass="True">
+                    <ECProperty propertyName="Bar" typeName="string" />
+                </ECClass>
+            </ECSchema>)xml";
+
+            ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
+            ECObjectsV8::ECSchemaPtr schema;
+            EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext));
+            EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema, *(v8editor.m_file)));
+            }
+
+            {
+            Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="TestA" nameSpacePrefix="ts" version="01.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                <ECClass typeName="Foo" isDomainClass="True">
+                    <ECProperty propertyName="Bar" typeName="string" />
+                    <ECProperty propertyName="New" typeName="string" />
+                </ECClass>
+            </ECSchema>)xml";
+
+            ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
+            ECObjectsV8::ECSchemaPtr schema;
+            EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext));
+            EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema, *(v8editor.m_file)));
+            v8editor.Save();
+            }
+
+            {
+            DgnV8Api::ElementId eid;
+            v8editor.AddLine(&eid);
+            DgnV8Api::ElementHandle eh(eid, v8editor.m_defaultModel);
+            DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
+            EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, v8editor.CreateInstanceOnElement(createdDgnECInstance, *((DgnV8Api::ElementHandle*)&eh), v8editor.m_defaultModel, L"TestA", L"Foo"));
+            v8editor.Save();
+            }
+            {
+            DgnV8Api::ElementId eid;
+            v8editor.AddLine(&eid);
+            DgnV8Api::ElementHandle eh(eid, v8editor.m_defaultModel);
+            DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
+            EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, v8editor.CreateInstanceOnElement(createdDgnECInstance, *((DgnV8Api::ElementHandle*)&eh), v8editor.m_defaultModel, L"TestB", L"Goo"));
+            v8editor.Save();
+            }
+        }
+    DoUpdate(m_dgnDbFileName, secondFile);
+
+    BentleyApi::BeFileName thirdFile;
+    MakeWritableCopyOf(thirdFile, L"Test3d.dgn");
+    if (true)
+        {
+        V8FileEditor v8editor;
+        v8editor.Open(thirdFile);
+        {
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="TestC" nameSpacePrefix="ts" version="01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                <ECClass typeName="Zoo" isDomainClass="True">
+                    <ECProperty propertyName="None" typeName="string" />
+                </ECClass>
+            </ECSchema>)xml";
+
+        ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
+        ECObjectsV8::ECSchemaPtr schema;
+        EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext));
+        EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema, *(v8editor.m_file)));
+        }
+
+        {
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="TestB" nameSpacePrefix="ts" version="01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                <ECClass typeName="Goo" isDomainClass="True">
+                    <ECProperty propertyName="Bar" typeName="string" />
+                </ECClass>
+            </ECSchema>)xml";
+
+        ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
+        ECObjectsV8::ECSchemaPtr schema;
+        EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext));
+        EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema, *(v8editor.m_file)));
+        }
+
+        {
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="TestA" nameSpacePrefix="ts" version="01.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                <ECClass typeName="Foo" isDomainClass="True">
+                    <ECProperty propertyName="Bar" typeName="string" />
+                    <ECProperty propertyName="New" typeName="string" />
+                </ECClass>
+            </ECSchema>)xml";
+
+        ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
+        ECObjectsV8::ECSchemaPtr schema;
+        EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext));
+        EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema, *(v8editor.m_file)));
+        v8editor.Save();
+        }
+
+        {
+        DgnV8Api::ElementId eid;
+        v8editor.AddLine(&eid);
+        DgnV8Api::ElementHandle eh(eid, v8editor.m_defaultModel);
+        DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
+        EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, v8editor.CreateInstanceOnElement(createdDgnECInstance, *((DgnV8Api::ElementHandle*)&eh), v8editor.m_defaultModel, L"TestA", L"Foo"));
+        v8editor.Save();
+        }
+        {
+        DgnV8Api::ElementId eid;
+        v8editor.AddLine(&eid);
+        DgnV8Api::ElementHandle eh(eid, v8editor.m_defaultModel);
+        DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
+        EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, v8editor.CreateInstanceOnElement(createdDgnECInstance, *((DgnV8Api::ElementHandle*)&eh), v8editor.m_defaultModel, L"TestB", L"Goo"));
+        v8editor.Save();
+        }
+        }
+    DoUpdate(m_dgnDbFileName, thirdFile);
+
+    }
