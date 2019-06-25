@@ -505,6 +505,41 @@
     </Product>
 
   <!-- ********************** -->
+  <!-- **** Performance **** -->
+  <!-- ********************** -->
+  <Product Name="DgnPlatform-Performance-Tests">
+        <SubPart Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" PartName="Base" />
+        <SubPart PartName="UnitTests-Performance"/>
+        <SubPart PartName="DgnPlatformSqlang" />
+        <SubPart PartName="napi-stub"  Repository="imodel02" PartFile="node-addon-api/node-addon-api"/>
+        <!-- DgnPlatform unit tests use some files that are stored in DgnClientSdkUnitTestData. They do NOT use bims that are published from those files. -->
+        <SubPart PartName="RawDgnClientSdkUnitTestData"/>
+      <Directories DirectoryListName="CollectionProduct" Repository="imodel02"  PartFile="iModelCore/BeGTest/BeGTest"/>
+    </Product>
+
+    <Part Name="Gtest-Performance" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=DgnPlatformPerformanceTests -dTEST_COLLECTION_PRODUCT=DgnPlatform-Performance-Tests -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+        <SubProduct ProductName="DgnPlatform-Performance-Tests"/>
+        <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/DgnPlatformPerformanceTests/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/DgnPlatformPerformanceTests/Assets" />
+        </Bindings>
+    </Part>
+
+    <Product Name="DgnPlatform-Gtest-Performance" SaveProduct="true">
+        <SubPart PartName="Gtest-Performance"/>
+        <Directories DirectoryListName="GtestProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
+    </Product>
+
+    <Part Name="RunGtest-Performance" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=DgnPlatform-Gtest-Performance -dGTEST_NAME=DgnPlatformPerformanceTests" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="DgnPlatform-Gtest-Performance" />
+        <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/DgnPlatformPerformanceTest.log</Files>
+        </Bindings>
+    </Part>
+
+  <!-- ********************** -->
   <!-- **** Gtest **** -->
   <!-- ********************** -->
   <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=DgnPlatformTest -dTEST_COLLECTION_PRODUCT=DgnPlatform-Tests -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
