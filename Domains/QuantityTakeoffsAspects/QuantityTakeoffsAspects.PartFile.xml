@@ -13,7 +13,7 @@
     </Part>
 
     <Part Name="QuantityTakeoffsAspectsSchema">
-        <SubPart PartName="QuantityTakeoffsAspects" Repository="BisSchemas" PartFile="BisSchemas" />
+        <SubPart PartName="QuantityTakeoffsAspects" Repository="BisSchemas" PartFile="BisSchemasIModelCore" />
         <SubPart PartName="AecUnitsPublicAPI" Repository="imodel02" PartFile="Domains/AecUnits/AecUnits" />
     </Part>
 
