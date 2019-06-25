@@ -312,7 +312,7 @@ TEST_F(DgnDbTest, SetUntrackedDbAsMaster)
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod                                  Ramanujam.Raman                 06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-#if !defined(BENTLEYCONFIG_OS_LINUX)
+#if !defined(BENTLEYCONFIG_OS_LINUX) && !defined(BENTLEYCONFIG_OS_APPLE_MACOS)
 TEST_F(DgnDbTest, ImportSchemaWithLocalChanges)
 {
     // TFS#906843 was resolved as WAD. This ensures that that's really WAD - i.e.,
