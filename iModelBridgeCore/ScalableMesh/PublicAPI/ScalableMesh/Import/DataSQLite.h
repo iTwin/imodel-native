@@ -79,6 +79,8 @@ public:
     void SetModelName(WString modelName);
     void SetLevelID(uint32_t levelID);
     void SetLevelName(WString levelName);
+    void SetTerrainModelID(uint32_t terrainModelID);
+    void SetTerrainModelName(WString terrainModelName);
     void SetRootToRefPersistentPath(WString rootToRefPersistentPath);
     void SetReferenceName(WString referenceName);
     void SetReferenceModelName(WString referenceModelName);
@@ -90,6 +92,8 @@ public:
     WString GetModelName();
     uint32_t GetLevelID();
     WString GetLevelName();
+    uint32_t GetTerrainModelID();
+    WString GetTerrainModelName();
     WString GetRootToRefPersistentPath();
     WString GetReferenceName();
     WString GetReferenceModelName();

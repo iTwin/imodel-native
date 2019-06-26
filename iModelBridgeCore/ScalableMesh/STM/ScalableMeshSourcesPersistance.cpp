@@ -190,6 +190,13 @@ template <> void SaveSourceMetadata<IDTMDgnReferenceLevelSource>(const IDTMDgnRe
     sourceData.SetLevelName(source.GetLevelName());
     }
 
+template <> void SaveSourceMetadata<IDTMDgnTerrainModelSource>(const IDTMDgnTerrainModelSource& source, SourceDataSQLite& sourceData)
+    {
+    sourceData.SetDTMSourceID(DTMSourceId::DTM_SOURCE_ID_DGN_TERRAIN_MODEL_V0);
+    sourceData.SetTerrainModelID(source.GetTerrainModelID());
+    sourceData.SetTerrainModelName(source.GetTerrainModelName());
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @description 
 * @bsimethod                                                  Raymond.Gauthier   03/2011
@@ -238,6 +245,10 @@ bool SourcesSaver::Save(const IDTMSource& source,
     const IDTMDgnReferenceLevelSource* dgnRefLSource = dynamic_cast<const IDTMDgnReferenceLevelSource*>(&source);
     if (nullptr != dgnRefLSource)
         SaveSourceMetadata(*dgnRefLSource, m_sourceData);
+
+    const IDTMDgnTerrainModelSource* dgnTerrainModelSource = dynamic_cast<const IDTMDgnTerrainModelSource*>(&source);
+    if (nullptr != dgnTerrainModelSource)
+        SaveSourceMetadata(*dgnTerrainModelSource, m_sourceData);
 
 
     // Serializing content config
@@ -672,7 +683,7 @@ IDTMSourcePtr SourcesLoader::CreateSource(SourceDataSQLite& sourceData)
 }
 
 
-IDTMSourcePtr SourcesLoader::CreateSource (IScalableMeshSourceImporterStoragePtr&       sourceImporterStoragePtr, 
+IDTMSourcePtr SourcesLoader::CreateSource (IScalableMeshSourceImporterStoragePtr&       sourceImporterStoragePtr,
                                            IScalableMeshSourceImporterStorage::GroupId& groupId)
     {
 

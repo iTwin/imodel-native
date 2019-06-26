@@ -66,6 +66,8 @@ struct SourceDataSQLite::Impl : public ShareableObjectTypeTrait<Impl>::type
         WString m_modelName;
         uint32_t m_levelID;
         WString m_levelName;
+        uint32_t m_terrainModelID;
+        WString m_terrainModelName;
         WString m_rootToRefPersistentPath;
         WString m_referenceName;
         WString m_referenceModelName;
@@ -99,6 +101,8 @@ struct SourceDataSQLite::Impl : public ShareableObjectTypeTrait<Impl>::type
             m_modelID = 0;
             m_modelName = WSTRING_FROM_CSTR("");
             m_levelID = 0;
+            m_terrainModelID = 0;
+            m_terrainModelName = WSTRING_FROM_CSTR("");
             m_rootToRefPersistentPath = WSTRING_FROM_CSTR("");
             m_referenceName = WSTRING_FROM_CSTR("");
             m_referenceModelName = WSTRING_FROM_CSTR("");
@@ -153,6 +157,8 @@ SourceDataSQLite::SourceDataSQLite(const SourceDataSQLite& rhs)
     m_implP->m_modelName = rhs.m_implP->m_modelName;
     m_implP->m_levelID = rhs.m_implP->m_levelID;
     m_implP->m_levelName = rhs.m_implP->m_levelName;
+    m_implP->m_terrainModelID = rhs.m_implP->m_terrainModelID;
+    m_implP->m_terrainModelName = rhs.m_implP->m_terrainModelName;
     m_implP->m_rootToRefPersistentPath = rhs.m_implP->m_rootToRefPersistentPath;
     m_implP->m_referenceName = rhs.m_implP->m_referenceName;
     m_implP->m_referenceModelName = rhs.m_implP->m_referenceModelName;
@@ -273,6 +279,16 @@ void SourceDataSQLite::SetLevelName(WString levelName)
     m_implP->m_levelName = levelName;
 }
 
+void SourceDataSQLite::SetTerrainModelID(uint32_t terrainModelID)
+    {
+    m_implP->m_terrainModelID = terrainModelID;
+    }
+
+void SourceDataSQLite::SetTerrainModelName(WString terrainModelName)
+    {
+    m_implP->m_terrainModelName = terrainModelName;
+    }
+
 void SourceDataSQLite::SetRootToRefPersistentPath(WString rootToRefPersistentPath)
 {
     m_implP->m_rootToRefPersistentPath = rootToRefPersistentPath;
@@ -322,6 +338,16 @@ WString SourceDataSQLite::GetLevelName()
 {
     return m_implP->m_levelName;
 }
+
+uint32_t SourceDataSQLite::GetTerrainModelID()
+    {
+    return m_implP->m_terrainModelID;
+    }
+
+WString SourceDataSQLite::GetTerrainModelName()
+    {
+    return m_implP->m_terrainModelName;
+    }
 
 WString SourceDataSQLite::GetRootToRefPersistentPath()
 {

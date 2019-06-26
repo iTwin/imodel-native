@@ -166,8 +166,6 @@ bool                            OutputDGNFileLevel(SourceDataSQLite&            
     return OutputDGNFileModel(sourceData, source, env);
 }
 
-
-
 bool                            OutputDGNFileReference(SourceDataSQLite&                          sourceData,
     const IDTMDgnReferenceSource&           source,
     const DocumentEnv&                      env)
@@ -191,6 +189,15 @@ bool                            OutputDGNFileReferenceLevel(SourceDataSQLite&   
 
     return OutputDGNFileReference(sourceData, source, env);
 }
+
+bool                            OutputDGNFileTerrainModel(SourceDataSQLite&                          sourceData,
+    const IDTMDgnTerrainModelSource&               source,
+    const DocumentEnv&                      env)
+    {
+    sourceData.SetTerrainModelID(source.GetTerrainModelID());
+    sourceData.SetTerrainModelName(source.GetTerrainModelName());
+    return OutputDGNFileModel(sourceData, source, env);
+    }
 } // END unnamed namespace
 
 
@@ -240,7 +247,19 @@ private:
 
     } s_dgnReferenceLevelSourceSerializer;
 
+struct IDTMDgnTerrainModelSourceSerializer : public IDTMSourceSerializerBase<IDTMDgnTerrainModelSource>
+    {
+    private:
 
+        virtual bool                _Serialize(const IDTMDgnTerrainModelSource&               source,
+            const DocumentEnv&                      env,
+            SourceDataSQLite&                          sourceData) const
+            {
+            return OutputID(sourceData, DTM_SOURCE_ID_DGN_TERRAIN_MODEL_V0) &&
+                OutputDGNFileTerrainModel(sourceData, source, env);
+            }
+
+    } s_dgnTerrainModelSourceSerializer;
 
 
 namespace { // BEGIN unnamed namespace
@@ -281,6 +300,10 @@ private:
         m_serializerP = &s_dgnReferenceLevelSourceSerializer;
         }
 
+    virtual void                    _Visit                         (const IDTMDgnTerrainModelSource&        source)
+        {
+        m_serializerP = &s_dgnTerrainModelSourceSerializer;
+        }
 
     virtual void                    _Visit                         (const IDTMSourceGroup&              source)
         {
@@ -400,6 +423,19 @@ bool                            LoadDGNV1LevelPart(SourceDataSQLite&      source
     levelName = levelNameField;
     return true;
 }
+
+bool                            LoadDGNTerrainModelPart(SourceDataSQLite&      sourceData,
+    uint32_t&             terrainModelID,
+    WString&            terrainModelName)
+    {
+    uint32_t terrainModelIDField = sourceData.GetTerrainModelID();
+
+    WString terrainModelNameField = sourceData.GetTerrainModelName();
+
+    terrainModelID = terrainModelIDField;
+    terrainModelName = terrainModelNameField;
+    return true;
+    }
 
 
 } // END unnamed namespace
@@ -536,6 +572,36 @@ struct IDTMDgnReferenceLevelSourceCreator : public IDTMSourceCreator
 
     } s_dgnReferenceLevelSourceCreator;
 
+struct IDTMDgnTerrainModelSourceCreator : public IDTMSourceCreator
+    {
+    virtual IDTMSource*     _Create(SourceDataSQLite&      sourceData,
+        const DocumentEnv&    env) const
+        {
+        DTMSourceDataType   sourceType;
+        IMonikerPtr         monikerPtr;
+        uint32_t            modelID;
+        WString             modelName;
+        uint32_t            terrainModelID;
+        WString             terrainModelName;
+
+        uint32_t sourceTypeField = sourceData.GetSourceType();
+        sourceType = static_cast<DTMSourceDataType>(sourceTypeField);
+        WString fullPath = sourceData.GetMonikerString();
+
+        if (LoadDGNTerrainModelPart(sourceData, terrainModelID, terrainModelName) &&
+            LoadDGNV1ModelPart(sourceData, modelID, modelName) &&
+            !fullPath.empty())
+            return new IDTMDgnTerrainModelSource(new IDTMDgnTerrainModelSource::Impl(sourceType,
+                fullPath.c_str(),
+                modelID,
+                modelName.c_str(),
+                terrainModelID,
+                terrainModelName.c_str()));
+
+        return 0;
+        }
+    } s_dgnTerrainModelSourceCreator;
+
 
 /*---------------------------------------------------------------------------------**//**
 * @description  
@@ -557,6 +623,7 @@ const IDTMSourceFactory::CreatorItem* IDTMSourceFactory::GetCreatorIndex ()
         &s_dgnReferenceLevelSourceCreatorV0,
         &s_dgnLevelSourceCreator,
         &s_dgnReferenceLevelSourceCreator,
+        &s_dgnTerrainModelSourceCreator,
         };
 
     static_assert(DTM_SOURCE_ID_QTY == sizeof(CREATORS_INDEX)/sizeof(CREATORS_INDEX[0]), "");
