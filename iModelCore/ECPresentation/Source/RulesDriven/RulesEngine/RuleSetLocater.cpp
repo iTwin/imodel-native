@@ -30,7 +30,10 @@ RuleSetLocaterManager::~RuleSetLocaterManager()
 
     BeMutexHolder lock(m_mutex);
     for (RuleSetLocaterPtr const& locater : m_locaters)
+        {
+        locater->SetMutex(nullptr);
         locater->RemoveRulesetCallbacksHandler(*this);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -38,8 +41,10 @@ RuleSetLocaterManager::~RuleSetLocaterManager()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RuleSetLocaterManager::_RegisterLocater(RuleSetLocater& locater)
     {
-    BeMutexHolder lock(m_mutex);
+    locater.SetMutex(&m_mutex);
     locater.AddRulesetCallbacksHandler(*this);
+
+    BeMutexHolder lock(m_mutex);
     m_locaters.push_back(&locater);
     m_rulesetsCache.clear();
     }
@@ -47,8 +52,11 @@ void RuleSetLocaterManager::_RegisterLocater(RuleSetLocater& locater)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RuleSetLocaterManager::_UnregisterLocater(RuleSetLocater const& locater)
+void RuleSetLocaterManager::_UnregisterLocater(RuleSetLocater& locater)
     {
+    locater.SetMutex(nullptr);
+    locater.RemoveRulesetCallbacksHandler(*this);
+
     BeMutexHolder lock(m_mutex);
     auto iter = std::find(m_locaters.begin(), m_locaters.end(), RuleSetLocaterCPtr(&locater));
     if (iter == m_locaters.end())
@@ -56,7 +64,6 @@ void RuleSetLocaterManager::_UnregisterLocater(RuleSetLocater const& locater)
         BeAssert(false);
         return;
         }
-    (*iter)->RemoveRulesetCallbacksHandler(*this);
     m_locaters.erase(iter);
     m_rulesetsCache.clear();
     }
@@ -85,11 +92,16 @@ void RuleSetLocaterManager::_OnRulesetDispose(RuleSetLocaterCR locater, Presenta
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RuleSetLocaterManager::_OnRulesetCreated(RuleSetLocaterCR locater, PresentationRuleSetR ruleset)
     {
-    if (nullptr != GetRulesetCallbacksHandler())
-        GetRulesetCallbacksHandler()->_OnRulesetCreated(locater, ruleset);
+    BeMutexHolder lock(m_mutex);
 
     if (!m_isLocating)
         RemoveCachedRulesets(ruleset.GetRuleSetId().c_str());
+
+    IRulesetCallbacksHandler* handler = GetRulesetCallbacksHandler();
+    lock.unlock();
+
+    if (nullptr != handler)
+        handler->_OnRulesetCreated(locater, ruleset);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -227,6 +239,16 @@ bvector<Utf8String> RuleSetLocaterManager::_GetRuleSetIds() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                06/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BeMutex& RuleSetLocater::GetMutex() const
+    {
+    if (nullptr != m_mutex)
+        return *m_mutex;
+    return m_defaultMutex;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<PresentationRuleSetPtr> RuleSetLocater::LocateRuleSets(Utf8CP rulesetId) const
@@ -269,7 +291,10 @@ void RuleSetLocater::OnRulesetDisposed(PresentationRuleSetR ruleset) const
     if (m_createdRulesets.end() != iter)
         m_createdRulesets.erase(iter);
 
-    for (IRulesetCallbacksHandler* handler : m_rulesetCallbacksHandlers)
+    bset<IRulesetCallbacksHandler*> handlers = m_rulesetCallbacksHandlers;
+    lock.unlock();
+
+    for (IRulesetCallbacksHandler* handler : handlers)
         handler->_OnRulesetDispose(*this, ruleset);
     }
 
@@ -279,10 +304,12 @@ void RuleSetLocater::OnRulesetDisposed(PresentationRuleSetR ruleset) const
 void RuleSetLocater::OnRulesetCreated(PresentationRuleSetR ruleset) const
     {
     BeMutexHolder lock(GetMutex());
-
     m_createdRulesets.push_back(&ruleset);
 
-    for (IRulesetCallbacksHandler* handler : m_rulesetCallbacksHandlers)
+    bset<IRulesetCallbacksHandler*> handlers = m_rulesetCallbacksHandlers;
+    lock.unlock();
+
+    for (IRulesetCallbacksHandler* handler : handlers)
         handler->_OnRulesetCreated(*this, ruleset);
     }
 
@@ -293,7 +320,11 @@ void RuleSetLocater::AddRulesetCallbacksHandler(IRulesetCallbacksHandler& handle
     {
     BeMutexHolder lock(GetMutex());
     m_rulesetCallbacksHandlers.insert(&handler);
-    for (RefCountedPtr<PresentationRuleSet> const& ruleset : m_createdRulesets)
+
+    bvector<PresentationRuleSetPtr> createdRulesets = m_createdRulesets;
+    lock.unlock();
+
+    for (RefCountedPtr<PresentationRuleSet> const& ruleset : createdRulesets)
         handler._OnRulesetCreated(*this, *ruleset);
     }
 
@@ -525,7 +556,7 @@ bvector<PresentationRuleSetPtr> SupplementalRuleSetLocater::_LocateRuleSets(Utf8
     bvector<PresentationRuleSetPtr> rulesets = m_locater->LocateRuleSets(nullptr);
     auto iter = std::remove_if(rulesets.begin(), rulesets.end(), [](PresentationRuleSetPtr r){return !r->GetIsSupplemental();});
     if (rulesets.end() != iter)
-        rulesets.erase(iter);
+        rulesets.erase(iter, rulesets.end());
     for (PresentationRuleSetPtr ruleset : rulesets)
         ruleset->SetRuleSetId(rulesetId);
     return rulesets;
@@ -556,7 +587,7 @@ bvector<PresentationRuleSetPtr> NonSupplementalRuleSetLocater::_LocateRuleSets(U
     bvector<PresentationRuleSetPtr> rulesets = m_locater->LocateRuleSets(nullptr);
     auto iter = std::remove_if(rulesets.begin(), rulesets.end(), [](PresentationRuleSetPtr r){return r->GetIsSupplemental();});
     if (rulesets.end() != iter)
-        rulesets.erase(iter);
+        rulesets.erase(iter, rulesets.end());
     return rulesets;
     }
 
@@ -605,15 +636,21 @@ bvector<Utf8String> SimpleRuleSetLocater::_GetRuleSetIds() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimpleRuleSetLocater::AddRuleSet(PresentationRuleSetR ruleSet)
     {
+    BeMutexHolder lock(GetMutex());
+    PresentationRuleSetPtr disposedRuleset;
     auto iter = m_cached.find(ruleSet.GetRuleSetId());
     if (iter != m_cached.end())
         {
         BeAssert(iter->second->GetRuleSetId().Equals(iter->first));
-        OnRulesetDisposed(*iter->second);
+        disposedRuleset = iter->second;
         m_cached.erase(iter);
         }
 
     m_cached.Insert(ruleSet.GetRuleSetId(), &ruleSet);
+    lock.unlock();
+
+    if (disposedRuleset.IsValid())
+        OnRulesetDisposed(*disposedRuleset);
     OnRulesetCreated(ruleSet);
     }
 
@@ -622,12 +659,15 @@ void SimpleRuleSetLocater::AddRuleSet(PresentationRuleSetR ruleSet)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimpleRuleSetLocater::RemoveRuleSet(Utf8StringCR ruleSetId)
     {
+    BeMutexHolder lock(GetMutex());
     auto iter = m_cached.find(ruleSetId);
     if (iter != m_cached.end())
         {
         BeAssert(iter->second->GetRuleSetId().Equals(iter->first));
-        OnRulesetDisposed(*iter->second);
+        PresentationRuleSetPtr ruleset = iter->second;
         m_cached.erase(iter);
+        lock.unlock();
+        OnRulesetDisposed(*ruleset);
         }
     }
 
@@ -636,11 +676,13 @@ void SimpleRuleSetLocater::RemoveRuleSet(Utf8StringCR ruleSetId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimpleRuleSetLocater::Clear()
     {
-    for (auto entry : m_cached)
-        {
-        OnRulesetDisposed(*entry.second);
-        }
+    BeMutexHolder lock(GetMutex());
+    bmap<Utf8String, PresentationRuleSetPtr> rulesets = m_cached;
     m_cached.clear();
+    lock.unlock();
+
+    for (auto entry : rulesets)
+        OnRulesetDisposed(*entry.second);
     }
 
 /*---------------------------------------------------------------------------------**//**

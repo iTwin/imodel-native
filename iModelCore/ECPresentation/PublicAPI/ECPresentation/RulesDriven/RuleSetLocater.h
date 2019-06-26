@@ -50,7 +50,8 @@ struct RuleSetLocater : IRefCounted
 private:
     mutable bset<IRulesetCallbacksHandler*> m_rulesetCallbacksHandlers;
     mutable bvector<PresentationRuleSetPtr> m_createdRulesets;
-    mutable BeMutex m_mutex;
+    mutable BeMutex m_defaultMutex;
+    BeMutex* m_mutex;
 
 protected:
     //! Called to find matching rulesets.
@@ -82,15 +83,19 @@ protected:
     ECPRESENTATION_EXPORT void OnRulesetCreated(PresentationRuleSetR ruleset) const;
 
     //! A mutex that can be used to implement thread safety.
-    BeMutex& GetMutex() const {return m_mutex;}
+    BeMutex& GetMutex() const;
 
 //__PUBLISH_SECTION_END__
 public:
     ECPRESENTATION_EXPORT void AddRulesetCallbacksHandler(IRulesetCallbacksHandler& handler) const;
     ECPRESENTATION_EXPORT void RemoveRulesetCallbacksHandler(IRulesetCallbacksHandler& handler) const;
+    void SetMutex(BeMutex* mutex) {m_mutex = mutex;}
 
 //__PUBLISH_SECTION_START__
 public:
+    //! Constructor
+    RuleSetLocater(): m_mutex(nullptr) {}
+
     //! Destructor.
     virtual ~RuleSetLocater() {}
 
@@ -306,16 +311,20 @@ private:
 
 protected:
     IRulesetLocaterManager() : m_rulesetCallbacksHandler(nullptr) {}
+    virtual BeMutex& _GetMutex() const = 0;
     virtual void _InvalidateCache(Utf8CP rulesetId) {}
     virtual void _RegisterLocater(RuleSetLocater& locater) = 0;
-    virtual void _UnregisterLocater(RuleSetLocater const& locater) = 0;
+    virtual void _UnregisterLocater(RuleSetLocater& locater) = 0;
     virtual bvector<PresentationRuleSetPtr> _LocateRuleSets(IConnectionCR, Utf8CP rulesetId) const = 0;
     virtual bvector<Utf8String> _GetRuleSetIds() const = 0;
 
 public:
     virtual ~IRulesetLocaterManager() {}
-    IRulesetCallbacksHandler* GetRulesetCallbacksHandler() const {return m_rulesetCallbacksHandler;}
-    void SetRulesetCallbacksHandler(IRulesetCallbacksHandler* handler) {m_rulesetCallbacksHandler = handler;}
+
+    BeMutex& GetMutex() const {return _GetMutex();}
+
+    IRulesetCallbacksHandler* GetRulesetCallbacksHandler() const {BeMutexHolder lock(_GetMutex()); return m_rulesetCallbacksHandler;}
+    void SetRulesetCallbacksHandler(IRulesetCallbacksHandler* handler) {BeMutexHolder lock(_GetMutex()); m_rulesetCallbacksHandler = handler;}
 
     //! Tells each managed ruleset locater to dispose its cached rulesets.
     //! @param[in] rulesetId ID of the ruleset which should be disposed from cache. NULL means all rulesets.
@@ -325,7 +334,7 @@ public:
     void RegisterLocater(RuleSetLocater& locater) {_RegisterLocater(locater);}
 
     //! Unregister a locater.
-    void UnregisterLocater(RuleSetLocater const& locater) {_UnregisterLocater(locater);}
+    void UnregisterLocater(RuleSetLocater& locater) {_UnregisterLocater(locater);}
 
     //! Find all rulesets that are supported by the specified connection.
     //! @param[in] connection The connection to check whether the ruleset is supported.
@@ -379,9 +388,10 @@ private:
 
 protected:
     // IRulesetLocaterManager
+    BeMutex& _GetMutex() const override {return m_mutex;}
     ECPRESENTATION_EXPORT void _InvalidateCache(Utf8CP rulesetId) override;
     ECPRESENTATION_EXPORT void _RegisterLocater(RuleSetLocater&) override;
-    ECPRESENTATION_EXPORT void _UnregisterLocater(RuleSetLocater const&) override;
+    ECPRESENTATION_EXPORT void _UnregisterLocater(RuleSetLocater&) override;
     ECPRESENTATION_EXPORT bvector<PresentationRuleSetPtr> _LocateRuleSets(IConnectionCR, Utf8CP rulesetId) const override;
     ECPRESENTATION_EXPORT bvector<Utf8String> _GetRuleSetIds() const override;
 

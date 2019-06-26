@@ -322,9 +322,10 @@ private:
 
 protected:
     // IRulesetLocaterManager
+    BeMutex& _GetMutex() const override {return m_wrapped.GetMutex();}
     void _InvalidateCache(Utf8CP rulesetId) override {m_wrapped.InvalidateCache(rulesetId);}
     void _RegisterLocater(RuleSetLocater& locater) override {m_wrapped.RegisterLocater(locater);}
-    void _UnregisterLocater(RuleSetLocater const& locater) override {m_wrapped.UnregisterLocater(locater);}
+    void _UnregisterLocater(RuleSetLocater& locater) override {m_wrapped.UnregisterLocater(locater);}
     bvector<PresentationRuleSetPtr> _LocateRuleSets(IConnectionCR connection, Utf8CP rulesetId) const override {return m_wrapped.LocateRuleSets(connection, rulesetId);}
     bvector<Utf8String> _GetRuleSetIds() const override {return m_wrapped.GetRuleSetIds();}
 
@@ -335,6 +336,7 @@ protected:
         folly::via(&m_manager.GetExecutor(), [&, ruleset = PresentationRuleSetPtr(&ruleset)]()
             {
             // WIP: need to bring task notifications context here
+            BeMutexHolder lock(GetMutex());
             if (nullptr != GetRulesetCallbacksHandler())
                 GetRulesetCallbacksHandler()->_OnRulesetDispose(locater, *ruleset);
             });
@@ -347,6 +349,7 @@ protected:
         folly::via(&m_manager.GetExecutor(), [&, ruleset = PresentationRuleSetPtr(&ruleset)]()
             {
             // WIP: need to bring task notifications context here
+            BeMutexHolder lock(GetMutex());
             if (nullptr != GetRulesetCallbacksHandler())
                 GetRulesetCallbacksHandler()->_OnRulesetCreated(locater, *ruleset);
             }).wait();
@@ -680,7 +683,7 @@ folly::Future<bvector<SelectClassInfo>> RulesDrivenECPresentationManager::_GetCo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<ContentDescriptorCPtr> RulesDrivenECPresentationManager::_GetContentDescriptor(IConnectionCR primaryConnection, Utf8CP preferredDisplayType, int contentFlags, 
+folly::Future<ContentDescriptorCPtr> RulesDrivenECPresentationManager::_GetContentDescriptor(IConnectionCR primaryConnection, Utf8CP preferredDisplayType, int contentFlags,
     KeySetCR inputKeys, SelectionInfo const* selectionInfo, JsonValueCR jsonOptions, PresentationTaskNotificationsContextCR notificationsContext)
     {
     if (selectionInfo)
