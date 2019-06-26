@@ -8,7 +8,9 @@
 #include <ECDb/ECDb.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <DgnPlatform/DgnECSymbolProvider.h>
+#if defined (BENTLEYCONFIG_PARASOLID)
 #include <BRepCore/PSolidUtil.h>
+#endif
 
 BeThreadLocalStorage g_threadId;
 
@@ -268,7 +270,9 @@ void DgnPlatformLib::Host::Initialize()
     m_fontAdmin->Initialize();
 
     auto tempDirBase = m_knownLocationsAdmin->GetLocalTempDirectoryBaseName();
+#if defined (BENTLEYCONFIG_PARASOLID)
     PSolidKernelManager::Initialize(assetDir, tempDirBase);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

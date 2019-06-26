@@ -5311,6 +5311,7 @@ CurveVectorPtr BRepUtil::Create::OffsetEdgesOnPlanarFaceToCurveVector(ISubEntity
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
+#if defined (BENTLEYCONFIG_PARASOLID)
 static void FaceAttachmentFromJson(FaceAttachment& attachment, JsonValueCR brep, uint32_t iSymb)
     {
     if (!brep["faceSymbology"][iSymb]["color"].isNull())
@@ -5350,6 +5351,7 @@ static Json::Value FaceAttachmentToJson(FaceAttachment const& attachment)
 
     return faceValue;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/2019
