@@ -221,7 +221,6 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
 
                     if (allPtsInHull)
                     {
-                        defs[i].resize(1);
                         skipHull = true;
                         continue;
                     }
@@ -403,7 +402,6 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
             if (meshP != 0)
                 {
                 pointsPtr->clear();
-                linearFeaturesPtr = node->GetLinearFeaturesPtr();
                 vector<POINT> nodePts(meshP->GetNbPoints());
                 bvector<DPoint3d> pts(meshP->GetNbPoints());
                 map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> pointsMap(DPoint3dZYXTolerancedSortComparison(1e-5, 0));
@@ -420,10 +418,9 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
                 std::string s;
                 s += "NPOINTS " + std::to_string(meshP->GetNbPoints())+"\n";
 #endif
-                defs.clear();
-                if (linearFeaturesPtr->size() > 0)node->GetFeatureDefinitions(defs, &*linearFeaturesPtr->begin(), linearFeaturesPtr->size());
                 if (linearFeaturesPtr->size() > 0)
                     {
+                    linearFeaturesPtr->clear();
                     size_t count = 0;
                     for (size_t i = 0; i < defs.size(); ++i)
                         {
@@ -481,13 +478,18 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
                         fclose(polyCliPFile);
                         }*/
                         }
-                        linearFeaturesPtr->reserve(count);
-                        for (size_t j = linearFeaturesPtr->size(); j < count; ++j) linearFeaturesPtr->push_back(INT_MAX);
-                        if (linearFeaturesPtr->size() > 0)node->SaveFeatureDefinitions(const_cast<int32_t*>(&*linearFeaturesPtr->begin()), count, defs);
 #if SM_TRACE_FEATURE_DEFS
                         s += "\n\n----\n\n";
 #endif
                         }
+                    if (count > 0) 
+                        {
+                        linearFeaturesPtr->reserve(count);
+                        for (size_t j = linearFeaturesPtr->size(); j < count; ++j) linearFeaturesPtr->push_back(INT_MAX);
+                        if (linearFeaturesPtr->size() > 0)node->SaveFeatureDefinitions(const_cast<int32_t*>(&*linearFeaturesPtr->begin()), count, defs);
+
+                        }
+
                     }
 #if SM_TRACE_FEATURE_DEFS
                 if (node->m_featureDefinitions.size() > 0)
