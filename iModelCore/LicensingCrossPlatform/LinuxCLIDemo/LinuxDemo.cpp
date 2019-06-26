@@ -203,7 +203,7 @@ void Initialize()
     NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::CONSOLE_LOGGING_PROVIDER);
     NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_LICENSING, BentleyApi::NativeLogging::LOG_ERROR);
 
-    BeFileName assetsDir(BeFileName::FileNameParts::Directory, L"/home/jason/Desktop/LicensingDemo/src/assets/");
+    BeFileName assetsDir(BeFileName::FileNameParts::Directory, L"./assets/");
     Http::HttpClient::Initialize(assetsDir);
 
     BeFileName tempDir;
@@ -615,6 +615,7 @@ void CreateClient()
             offlineMode = false;
             break;
             }
+        // TODO: allow "help" as input to get a description of offline mode
 
         cout << "Invalid input, please enter \"true\" or \"false\"\n";
         }
