@@ -3232,6 +3232,11 @@ BentleyStatus   DwgImporter::ImportOrUpdateEntity (ElementImportInputs& inputs)
             // no change - just update input entity for output results
             elementResults.SetExistingElement (detectionResults.GetObjectMapping());
             changeDetector._OnElementSeen (*this, detectionResults.GetExistingElementId());
+            // add children into the element seen list
+            DgnElementIdSet allFromSameSource;
+            if (m_syncInfo.FindElements(allFromSameSource, object->GetObjectId()))
+            for (auto elementId : allFromSameSource)
+                changeDetector._OnElementSeen (*this, elementId);
             break;
             }
 
