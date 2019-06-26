@@ -119,6 +119,7 @@ LicenseStatus ClientImpl::StartApplication()
         (LicenseStatus::Offline == licStatus) ||
         (LicenseStatus::Trial == licStatus))
         {
+        // spawn one new thread for each heartbeat
         // TODO: try function pointers as there is less overhead than std::function
         CallOnInterval(m_stopUsageHeartbeatThread, m_usageHeartbeatThreadStopped, m_lastRunningUsageHeartbeatStartTime, HEARTBEAT_THREAD_DELAY_MS, [this]() { return UsageHeartbeat(); });
         CallOnInterval(m_stopLogPostingHeartbeatThread, m_logPostingHeartbeatThreadStopped, m_lastRunningLogPostingHeartbeatStartTime, HEARTBEAT_THREAD_DELAY_MS, [this]() { return LogPostingHeartbeat(); });
@@ -145,8 +146,6 @@ BentleyStatus ClientImpl::StopApplication()
 
     m_licensingDb->Close();
 
-    LOG.debug("Application stopped");
-
     return SUCCESS;
     }
 
@@ -162,9 +161,7 @@ void ClientImpl::CallOnInterval(std::atomic_bool& stopThread, std::atomic_bool& 
         {
         if (lastRunStartTime.load() == 0)
             {
-            // to get rid of "not used" errors on Android. lastRunStartTime is the reference to each heartbeat's respective lastRun variable
-            // TODO: Refactor this to not need this hack. Perhaps have each heartbeat create a thread rather than a generic function
-            //       creating the heartbeat threads.
+            lastRunStartTime.store(1); // to signal that the thread has started immediately, in case StopApplication is called immediately after start application
             }
 
         // first heartbeat without waiting
