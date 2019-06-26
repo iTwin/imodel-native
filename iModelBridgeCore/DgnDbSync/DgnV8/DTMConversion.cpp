@@ -140,7 +140,17 @@ ConvertToDgnDbElementExtension::Result ConvertDTMElement::_PreConvertElement(Dgn
         return Result::SkipElement;
 
     Bentley::TerrainModel::DTMPtr dtm;
-    dataRef->GetDTMReferenceDirect(dtm);
+    Bentley::DPoint3d ptGO;
+    double uorPerMeter = 1/ Bentley::DgnPlatform::ModelInfo::GetUorPerMeter(&v8el.GetModelRef()->GetDgnModelP()->GetModelInfo());
+    Bentley::DgnPlatform::ModelInfo::GetGlobalOrigin(&v8el.GetModelRef()->GetDgnModelP()->GetModelInfo(), &ptGO);
+    Bentley::Transform trsf;
+    trsf.InitIdentity();
+    trsf.ScaleCompleteRows(trsf, uorPerMeter, uorPerMeter, uorPerMeter);
+    trsf.TranslateInLocalCoordinates (trsf, -ptGO.x, -ptGO.y, -ptGO.z);
+
+    
+    
+    dataRef->GetDTMReference(dtm, trsf);
 
     if (dtm.IsNull())
         return Result::SkipElement;
@@ -169,31 +179,34 @@ ConvertToDgnDbElementExtension::Result ConvertDTMElement::_PreConvertElement(Dgn
     BeFileName smFile = tempPath;
     smFile.AppendExtension(L"3sm");
 
-    StatusInt status;
-    auto scalableMeshCreatorPtr = BentleyB0200::ScalableMesh::IScalableMeshSourceCreator::GetFor(smFile.c_str(), status);
+    bool fileExists = smFile.DoesPathExist();
+    if (!fileExists)
+        {
+        StatusInt status;
+        auto scalableMeshCreatorPtr = BentleyB0200::ScalableMesh::IScalableMeshSourceCreator::GetFor(smFile.c_str(), status);
 
 #ifdef USEDTMELEMENT
-    ScalableMesh::IDTMDgnTerrainModelSourcePtr sourceP = ScalableMesh::IDTMDgnTerrainModelSource::Create(ScalableMesh::DTMSourceDataType::DTM_SOURCE_DATA_DTM,
-        dgnFileMonikerPtr,
-        v8el.GetElementId(),
-        L"kkk").get();
+        ScalableMesh::IDTMDgnTerrainModelSourcePtr sourceP = ScalableMesh::IDTMDgnTerrainModelSource::Create(ScalableMesh::DTMSourceDataType::DTM_SOURCE_DATA_DTM,
+            dgnFileMonikerPtr,
+            v8el.GetElementId(),
+            L"kkk").get();
 #else
-    BeFileName dtmFile= tempPath;
-    dtmFile.AppendExtension(L"bcdtm");
-    bcDTM->Save(dtmFile.c_str());
-    BentleyB0200::ScalableMesh::IDTMSourcePtr sourceP = ScalableMesh::IDTMLocalFileSource::Create(ScalableMesh::DTMSourceDataType::DTM_SOURCE_DATA_DTM, dtmFile.c_str());
+        BeFileName dtmFile = tempPath;
+        dtmFile.AppendExtension(L"bcdtm");
+        bcDTM->Save(dtmFile.c_str());
+        BentleyB0200::ScalableMesh::IDTMSourcePtr sourceP = ScalableMesh::IDTMLocalFileSource::Create(ScalableMesh::DTMSourceDataType::DTM_SOURCE_DATA_DTM, dtmFile.c_str());
 #endif
-    scalableMeshCreatorPtr->EditSources().Add(sourceP);
-    scalableMeshCreatorPtr->Create();
-    scalableMeshCreatorPtr->SaveToFile();
-    scalableMeshCreatorPtr = nullptr;
-
+        scalableMeshCreatorPtr->EditSources().Add(sourceP);
+        scalableMeshCreatorPtr->Create();
+        scalableMeshCreatorPtr->SaveToFile();
+        scalableMeshCreatorPtr = nullptr;
 #ifndef USEDTMELEMENT
     BeFileName::BeDeleteFile(dtmFile.c_str());
 #endif
+        }
     auto ret = DoConvert(v8el, smFile.c_str(), converter, v8mm);
 
-    BeFileName::BeDeleteFile(smFile.c_str());
+    //BeFileName::BeDeleteFile(smFile.c_str());
     return ret;
     }
 
@@ -208,16 +221,6 @@ void ConvertDTMElement::Register()
 
     DgnV8Api::ElementHandlerId handlerId(TMElementMajorId, ELEMENTHANDLER_DTMELEMENT);
     DgnV8Api::Handler* elHandler = DgnV8Api::ElementHandlerManager::FindHandler(handlerId);
-
-    assert(elHandler != nullptr);
-
-    if (elHandler != nullptr)
-        {
-        RegisterExtension(*elHandler, *instance);
-        }
-
-    DgnV8Api::ElementHandlerId handlerId2(CifTerrainElementHandler::XATTRIBUTEID_CifTerrainModel, CifTerrainElementHandler::ELEMENTHANDLER_SUBTYPE_DTMELEMENT);
-    elHandler = DgnV8Api::ElementHandlerManager::FindHandler(handlerId2);
 
     assert(elHandler != nullptr);
 

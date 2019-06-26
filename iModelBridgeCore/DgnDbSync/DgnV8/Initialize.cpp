@@ -642,7 +642,6 @@ void Converter::Initialize(BentleyApi::BeFileNameCR bridgeLibraryDir, BentleyApi
         // we need it to exist so we can put the "ToDgnDbExtension" on it.
         DgnV8Api::ElementHandlerManager::RegisterHandler(DgnV8Api::ElementHandlerId(ThreeMxElementHandler::XATTRIBUTEID_ThreeMxAttachment, 0), ThreeMxElementHandler::GetInstance());
         DgnV8Api::ElementHandlerManager::RegisterHandler(DgnV8Api::ElementHandlerId(ScalableMeshElementHandler::XATTRIBUTEID_ScalableMeshAttachment, 0), ScalableMeshElementHandler::GetInstance());
-        DgnV8Api::ElementHandlerManager::RegisterHandler(DgnV8Api::ElementHandlerId(CifTerrainElementHandler::XATTRIBUTEID_CifTerrainModel, CifTerrainElementHandler::ELEMENTHANDLER_SUBTYPE_DTMELEMENT), CifTerrainElementHandler::GetInstance());
         DgnV8Api::ElementHandlerManager::RegisterHandler(DgnV8Api::ElementHandlerId(CifTerrainElementHandler::XATTRIBUTEID_CifTerrainModel, CifTerrainElementHandler::ELEMENTHANDLER_SUBTYPE_DTMENTITY), CifTerrainElementHandler::GetInstance());
 
         Converter::RegisterForeignFileTypes (dllDirectory, realdwgDirectory);
