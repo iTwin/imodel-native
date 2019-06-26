@@ -211,12 +211,18 @@ void ConvertDTMElement::Register()
 
     assert(elHandler != nullptr);
 
-    RegisterExtension(*elHandler, *instance);
+    if (elHandler != nullptr)
+        {
+        RegisterExtension(*elHandler, *instance);
+        }
 
     DgnV8Api::ElementHandlerId handlerId2(CifTerrainElementHandler::XATTRIBUTEID_CifTerrainModel, CifTerrainElementHandler::ELEMENTHANDLER_SUBTYPE_DTMELEMENT);
     elHandler = DgnV8Api::ElementHandlerManager::FindHandler(handlerId2);
 
     assert(elHandler != nullptr);
 
-    RegisterExtension(*elHandler, *instance);
+    if (elHandler != nullptr)
+        {
+        RegisterExtension(*elHandler, *instance);
+        }
     }
