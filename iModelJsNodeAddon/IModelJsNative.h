@@ -174,11 +174,12 @@ public:
     static void UpdateProjectExtents(DgnDbR dgndb, JsonValueCR newExtents);
     static void UpdateIModelProps(DgnDbR dgndb, JsonValueCR);
 
-    static BeSQLite::DbResult CreateECDb(ECDbR, BeFileNameCR pathname);
-    static BeSQLite::DbResult OpenECDb(ECDbR, BeFileNameCR pathname, BeSQLite::Db::OpenParams const&);
-    static BeSQLite::DbResult ImportSchema(BeSQLite::EC::ECDbR ecdb, BeFileNameCR pathname);
-    static BeSQLite::DbResult ImportSchemaDgnDb(DgnDbR dgndb, BeFileNameCR pathname);
-    static BeSQLite::DbResult ImportFunctionalSchema(DgnDbR);
+    static DbResult CreateECDb(ECDbR, BeFileNameCR pathname);
+    static DbResult OpenECDb(ECDbR, BeFileNameCR pathname, BeSQLite::Db::OpenParams const&);
+    static DbResult ImportSchema(ECDbR ecdb, BeFileNameCR pathname);
+    static DbResult ImportSchemaDgnDb(DgnDbR dgndb, BeFileNameCR pathname);
+    static DbResult ImportSchemasDgnDb(DgnDbR dgndb, bvector<Utf8String> const &schemaFileNames);
+    static DbResult ImportFunctionalSchema(DgnDbR);
 
     static RevisionStatus ReadChangeSets(bvector<DgnRevisionPtr>& revisionPtrs, bool& containsSchemaChanges, Utf8StringCR dbGuid, JsonValueCR changeSetTokens);
     static RevisionStatus ApplySchemaChangeSets(BeFileNameCR dbFileName, bvector<DgnRevisionCP> const& revisions, RevisionProcessOption applyOption);

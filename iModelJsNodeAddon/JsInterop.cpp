@@ -787,6 +787,8 @@ DbResult JsInterop::ImportSchema(ECDbR ecdb, BeFileNameCR pathname)
     }
 
 //---------------------------------------------------------------------------------------
+// @deprecated It is better to import a collection of schemas together rather than individually.
+// @see ImportSchemasDgnDb
 // @bsimethod                               Ramanujam.Raman                 07/17
 //---------------------------------------------------------------------------------------
 DbResult JsInterop::ImportSchemaDgnDb(DgnDbR dgndb, BeFileNameCR pathname)
@@ -804,7 +806,46 @@ DbResult JsInterop::ImportSchemaDgnDb(DgnDbR dgndb, BeFileNameCR pathname)
 
     bvector<ECSchemaCP> schemas;
     schemas.push_back(schema.get());
-    SchemaStatus status = dgndb.ImportSchemas(schemas);
+    SchemaStatus status = dgndb.ImportSchemas(schemas); // NOTE: this calls DgnDb::ImportSchemas which has additional processing over SchemaManager::ImportSchemas
+    if (status != SchemaStatus::Success)
+        return DgnDb::SchemaStatusToDbResult(status, true);
+
+    return dgndb.SaveChanges();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                06/19
+//---------------------------------------------------------------------------------------
+DbResult JsInterop::ImportSchemasDgnDb(DgnDbR dgndb, bvector<Utf8String> const& schemaFileNames)
+    {
+    if (0 == schemaFileNames.size())
+        return BE_SQLITE_NOTFOUND;
+
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
+    schemaContext->SetFinalSchemaLocater(dgndb.GetSchemaLocater());
+    bvector<ECSchemaCP> schemas;
+
+    for (Utf8String schemaFileName : schemaFileNames)
+        {
+        BeFileName schemaFile(schemaFileName.c_str(), BentleyCharEncoding::Utf8);
+        if (!schemaFile.DoesPathExist())
+            return BE_SQLITE_NOTFOUND;
+
+        ECSchemaPtr schema;
+        SchemaReadStatus schemaStatus = ECSchema::ReadFromXmlFile(schema, schemaFile.GetName(), *schemaContext);
+        if (SchemaReadStatus::DuplicateSchema == schemaStatus)
+            continue;
+
+        if (SchemaReadStatus::Success != schemaStatus)
+            return BE_SQLITE_ERROR;
+
+        schemas.push_back(schema.get());
+        }
+
+    if (0 == schemas.size())
+        return BE_SQLITE_NOTFOUND;
+
+    SchemaStatus status = dgndb.ImportSchemas(schemas); // NOTE: this calls DgnDb::ImportSchemas which has additional processing over SchemaManager::ImportSchemas
     if (status != SchemaStatus::Success)
         return DgnDb::SchemaStatusToDbResult(status, true);
 

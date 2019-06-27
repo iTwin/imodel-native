@@ -1791,7 +1791,7 @@ public:
         {
         REQUIRE_DB_TO_BE_OPEN
         REQUIRE_ARGUMENT_STRING(0, schemaPathnameStrObj, Env().Undefined());
-        BeFileName schemaPathname(schemaPathnameStrObj.c_str(), true);
+        BeFileName schemaPathname(schemaPathnameStrObj.c_str(), BentleyCharEncoding::Utf8);
         auto stat = JsInterop::ImportSchemaDgnDb(GetDgnDb(), schemaPathname);
         return Napi::Number::New(Env(), (int)stat);
         }
@@ -1801,6 +1801,31 @@ public:
         REQUIRE_DB_TO_BE_OPEN
         DbResult result = JsInterop::ImportFunctionalSchema(GetDgnDb());
         return Napi::Number::New(Env(), (int)result);
+        }
+
+    Napi::Value ImportSchemas(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN
+        REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaFileNames, Env().Undefined());
+        DbResult result = JsInterop::ImportSchemasDgnDb(GetDgnDb(), schemaFileNames);
+        return Napi::Number::New(Env(), (int)result);
+        }
+
+    Napi::Value ExportSchemas(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, exportDirectory, Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+        bvector<ECN::ECSchemaCP> schemas = GetDgnDb().Schemas().GetSchemas();
+        for (ECSchemaCP schema : schemas)
+            {
+            BeFileName schemaFileName(exportDirectory);
+            schemaFileName.AppendSeparator();
+            schemaFileName.AppendUtf8(schema->GetFullSchemaName().c_str());
+            schemaFileName.AppendExtension(L"ecschema.xml");
+            SchemaWriteStatus status = schema->WriteToXmlFile(schemaFileName.GetName());
+            if (SchemaWriteStatus::Success != status)
+                return Napi::Number::New(Env(), (int) status);
+            }
+        return Napi::Number::New(Env(), (int) SchemaWriteStatus::Success);
         }
 
     void CloseDgnDb(Napi::CallbackInfo const& info) {  CloseDgnDb(); }
@@ -2335,6 +2360,7 @@ public:
             InstanceMethod("endMultiTxnOperation", &NativeDgnDb::EndMultiTxnOperation),
             InstanceMethod("executeTest", &NativeDgnDb::ExecuteTest),
             InstanceMethod("exportGraphics", &NativeDgnDb::ExportGraphics),
+            InstanceMethod("exportSchemas", &NativeDgnDb::ExportSchemas),
             InstanceMethod("extractBriefcaseManagerResourcesRequest", &NativeDgnDb::ExtractBriefcaseManagerResourcesRequest),
             InstanceMethod("extractBulkResourcesRequest", &NativeDgnDb::ExtractBulkResourcesRequest),
             InstanceMethod("extractChangeSummary", &NativeDgnDb::ExtractChangeSummary),
@@ -2367,6 +2393,7 @@ public:
             InstanceMethod("hasSavedChanges", &NativeDgnDb::HasSavedChanges),
             InstanceMethod("importFunctionalSchema", &NativeDgnDb::ImportFunctionalSchema),
             InstanceMethod("importSchema", &NativeDgnDb::ImportSchema),
+            InstanceMethod("importSchemas", &NativeDgnDb::ImportSchemas),
             InstanceMethod("inBulkOperation", &NativeDgnDb::InBulkOperation),
             InstanceMethod("insertCodeSpec", &NativeDgnDb::InsertCodeSpec),
             InstanceMethod("insertElement", &NativeDgnDb::InsertElement),

@@ -630,7 +630,11 @@ void CategorySelector::_RemapIds(DgnImportContext& importContext)
         {
         DgnCategoryIdSet remappedCategories;
         for (auto const& category: m_categories)
-            remappedCategories.insert(importContext.FindCategory(category));
+            {
+            DgnCategoryId categoryId = importContext.FindCategory(category);
+            if (categoryId.IsValid())
+                remappedCategories.insert(categoryId);
+            }
 
         m_categories = remappedCategories;
         }
@@ -658,7 +662,10 @@ void CategorySelector::_ToJson(JsonValueR out, JsonValueCR opts) const
     T_Super::_ToJson(out, opts);
     Json::Value categories(Json::arrayValue);
     for (auto const& category: m_categories)
-        categories.append(category.ToHexStr());
+        {
+        if (category.IsValid())
+            categories.append(category.ToHexStr());
+        }
 
     out[json_categories()] = categories;
     }
