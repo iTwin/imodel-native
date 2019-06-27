@@ -3122,7 +3122,7 @@ void DynamicSchemaGenerator::InitializeECSchemaConversion()
 
         BeFileName v3ConversionECSchemasDir(ecschemasDir);
         v3ConversionECSchemasDir.AppendToPath(L"V3Conversion");
-        m_schemaReadContext->AddConversionSchemaPath(v3ConversionECSchemasDir.c_str());
+        m_syncReadContext->AddConversionSchemaPath(v3ConversionECSchemasDir.c_str());
 
         BeFileName dgndbECSchemasDir(ecschemasDir);
         dgndbECSchemasDir.AppendToPath(L"Standard");

@@ -7,4 +7,7 @@
         <ECProperty propertyName="BaseInterfaceClassName" typeName="string" description="The base class for all ECClasses that should be considered for mixin conversion"/>
         <ECProperty propertyName="BaseObjectClassName" typeName="string" description="The base class for all ECClasses that should not be considered for mixin conversion"/>
     </ECCustomAttributeClass>
+    <ECCustomAttributeClass typeName="RelationshipBaseClass" isDomainClass="false" isCustomAttributeClass="True" description="Used to specify what relationship baseclass should be used instead of the default ElementRefersToElements or ElementOwnsMultiAspects">
+        <ECProperty propertyName="Name" typeName="string" description="Fullname (Schema:Class) of the relationship class.  Needs to come from either BisCore, Generic, or Functional schemas"/>
+    </ECCustomAttributeClass>
 </ECSchema>
