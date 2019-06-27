@@ -140,16 +140,12 @@ ConvertToDgnDbElementExtension::Result ConvertDTMElement::_PreConvertElement(Dgn
         return Result::SkipElement;
 
     Bentley::TerrainModel::DTMPtr dtm;
-    Bentley::DPoint3d ptGO;
-    double uorPerMeter = 1/ Bentley::DgnPlatform::ModelInfo::GetUorPerMeter(&v8el.GetModelRef()->GetDgnModelP()->GetModelInfo());
-    Bentley::DgnPlatform::ModelInfo::GetGlobalOrigin(&v8el.GetModelRef()->GetDgnModelP()->GetModelInfo(), &ptGO);
+    auto rootTransform = converter.GetRootTrans();
     Bentley::Transform trsf;
-    trsf.InitIdentity();
-    trsf.ScaleCompleteRows(trsf, uorPerMeter, uorPerMeter, uorPerMeter);
-    trsf.TranslateInLocalCoordinates (trsf, -ptGO.x, -ptGO.y, -ptGO.z);
+    for(int i = 0; i < 4; i++)
+        for (int j = 0; j < 4; j++)
+            trsf.form3d[i][j] = rootTransform.form3d[i][j];
 
-    
-    
     dataRef->GetDTMReference(dtm, trsf);
 
     if (dtm.IsNull())
@@ -227,5 +223,15 @@ void ConvertDTMElement::Register()
     if (elHandler != nullptr)
         {
         RegisterExtension(*elHandler, *instance);
+        }
+
+    DgnV8Api::ElementHandlerId cifHandlerId(CifTerrainElementHandler::XATTRIBUTEID_CifTerrainModel, CifTerrainElementHandler::ELEMENTHANDLER_SUBTYPE_DTMENTITY );
+    DgnV8Api::Handler* cifElHandler = DgnV8Api::ElementHandlerManager::FindHandler(handlerId);
+
+    assert(cifElHandler != nullptr);
+
+    if (cifElHandler != nullptr)
+        {
+        RegisterExtension(*cifElHandler, *instance);
         }
     }
