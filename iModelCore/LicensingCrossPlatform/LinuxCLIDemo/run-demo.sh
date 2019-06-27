@@ -1,10 +1,8 @@
 #!/bin/bash
 
+# In case we want to check the clang version
 # clangVersionGrep=$(clang++ --version | head -n 1 | grep -o -E "[[:digit:]].[[:digit:]].[[:digit:]]" | uniq | sort)
 # echo $clangVersionGrep
-
-# clangVersion=$(clang++ -dumpversion)
-# echo $clangVersion
 
 demodir="LicensingDemoTemp"
 
@@ -45,22 +43,24 @@ PullLinuxCLISource() {
 		else
 			echo "Please merge the ~/GetAndBuildBim2DcsOnLinux/hgrc file into the ~/.hgrc file. Press enter in this shell when you are done."
 			read x
-			# TODO: do this for them
 		fi
 
 		echo "In the ~/.hgrc file, please replace ui.username your real Bentley login name. Press enter in this shell when you are done."
-		gnome-terminal -- vim ~/GetAndBuildBim2DcsOnLinux/hgrc
+		if type "vim" > /dev/null; then
+			gnome-terminal -- vim ~/.hgrc
+		fi
 		read x
-		# TODO: do this for them, prompt for username
 
 		echo "In the ~/scripts/ntlmaps.cfg file, please replace USER with your real Bentley login name. Press enter in this shell when you are done."
-		gnome-terminal -- vim ~/scripts/ntlmaps.cfg
+		if type "vim" > /dev/null; then
+			gnome-terminal -- vim ~/scripts/ntlmaps.cfg
+		fi
 		read x
-		# TODO: do this for them, prompt for username
 
 		rm -rf ~/GetAndBuildBim2DcsOnLinux
 	fi
 
+	#TODO: check if Ubuntu/Linux etc for the correct terminal to open
 	gnome-terminal -- ~/scripts/hgproxy.sh
 
 	echo "Type in your Bentley password in the new shell that opened. Press enter in this shell when you are done."
@@ -69,11 +69,14 @@ PullLinuxCLISource() {
 	echo "Cloning Licensing repo."
 	hg clone http://bim0200.hgbranches.bentley.com/selserver/LicensingCrossPlatform ./${srcdir}/LicensingCrossPlatform
 
-	if [ ! -d "${srcdir}/LinuxDemo.h" ]; then
+	if [ ! -f "${srcdir}/LinuxDemo.h" ]; then
 		cp ./${srcdir}/LicensingCrossPlatform/LinuxCLIDemo/LinuxDemo.h ./${srcdir}/LinuxDemo.h
 	fi
-	if [ ! -d "${srcdir}/LinuxDemo.cpp" ]; then
+	if [ ! -f "${srcdir}/LinuxDemo.cpp" ]; then
 		cp ./${srcdir}/LicensingCrossPlatform/LinuxCLIDemo/LinuxDemo.cpp ./${srcdir}/LinuxDemo.cpp
+	fi
+	if [ ! -d "${srcdir}/assets" ]; then
+		cp -R ./${srcdir}/LicensingCrossPlatform/LinuxCLIDemo/assets ./${srcdir}/assets
 	fi
 	echo "Copied the demo files from the licensing code"
 	
@@ -88,7 +91,9 @@ if [ -d "$srcdir" ]; then
 	if [ ! -d "${srcdir}/iModelCoreNuget_LinuxX64.${nugetVersion}" ]; then
 		if ! type "nuget" > /dev/null; then
 			echo "nuget is not installed, please install nuget. Recommended command: 'sudo apt install nuget'"
+			exit 1
 		fi
+		echo "Installing iModelCore nuget package"
 		nuget install iModelCoreNuget_LinuxX64 -Version ${nugetVersion} -Source http://nuget.bentley.com/nuget/Default -OutputDirectory ./${srcdir}
 	fi
 	if [ ! -d "${srcdir}/LinuxDemo.h" ] || [ ! -d "${srcdir}/LinuxDemo.cpp" ]; then
@@ -106,6 +111,8 @@ else
 	if ! type "nuget" > /dev/null; then
 		echo "nuget is not installed, please install nuget. Recommended command: 'sudo apt install nuget'"
 	fi
+	
+	echo "Installing iModelCore nuget package"
 	nuget install iModelCoreNuget_LinuxX64 -Version ${nugetVersion} -Source http://nuget.bentley.com/nuget/Default -OutputDirectory ./${srcdir}
 fi
 
@@ -115,13 +122,13 @@ fi
 
 if ! type "clang" > /dev/null; then
 	echo "clang is not installed, please install clang. Recommended command: 'sudo apt install clang'"
-	sudo apt install clang
+	exit 1
 elif type "clang" > /dev/null; then
 	echo "clang is installed!"
 fi
 
 #TODO: check for other requirements
 
-clang++ -std=c++14 -stdlib=libstdc++ --include-directory=./${srcdir}/iModelCoreNuget_LinuxX64.${nugetVersion}/native/include --library-directory=${srcdir}/iModelCoreNuget_LinuxX64.${nugetVersion}/native/lib -o ./${outdir}/LinuxDemo ./${srcdir}/LinuxDemo.cpp -Wl,--start-group -lBaseGeoCoord -lBeCsmapStatic -lBeCurl -lBeFolly -lBeHttp -lBeIcu4c -lBeJpeg -lBeJsonCpp -lBeLibJpegTurbo -lBeLibxml2 -lBentley -lBentleyGeom -lBentleyGeomSerialization -lBeOpenSSL -lBePng -lBeSecurity -lBeSQLite -lBeSQLiteEC -lBeXml -lBeZlib -lDgnPlatform -lECObjects -lECPresentation -lfreetype2 -lLicensing -llzma -lnapi -lpskernel -lsnappy -lUnits -lWebServicesClient -lpthread -ldl -Wl,--end-group
+clang++ -std=c++14 -stdlib=libstdc++ --include-directory=${srcdir}/iModelCoreNuget_LinuxX64.${nugetVersion}/native/include --library-directory=${srcdir}/iModelCoreNuget_LinuxX64.${nugetVersion}/native/lib -o ./${outdir}/LinuxDemo ./${srcdir}/LinuxDemo.cpp -Wl,--start-group -lBaseGeoCoord -lBeCsmapStatic -lBeCurl -lBeFolly -lBeHttp -lBeIcu4c -lBeJpeg -lBeJsonCpp -lBeLibJpegTurbo -lBeLibxml2 -lBentley -lBentleyGeom -lBentleyGeomSerialization -lBeOpenSSL -lBePng -lBeSecurity -lBeSQLite -lBeSQLiteEC -lBeXml -lBeZlib -lDgnPlatform -lECObjects -lECPresentation -lfreetype2 -lLicensing -llzma -lnapi -lpskernel -lsnappy -lUnits -lWebServicesClient -lpthread -ldl -Wl,--end-group
 
-./${outdir}demo
+./${outdir}/LinuxDemo
