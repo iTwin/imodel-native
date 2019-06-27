@@ -348,9 +348,13 @@ void UserSettings::_InitFrom(UserSettingsGroupList const& rules)
         return;
         }
 
+    if (m_initializedFrom == &rules)
+        return;
+
     m_isInitializing = true;
     m_presentationInfo.clear();
     InitFromJson(rules, m_presentationInfo);
+    m_initializedFrom = &rules;
     m_isInitializing = false;
     }
 

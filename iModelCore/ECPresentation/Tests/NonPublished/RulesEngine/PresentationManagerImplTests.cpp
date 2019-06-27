@@ -72,6 +72,7 @@ void RulesDrivenECPresentationManagerImplTests::SetUp()
     //m_impl->SetLocalizationProvider(m_localizationProvider);
     m_connections.NotifyConnectionOpened(s_project->GetECDb());
     m_connection = m_connections.GetConnection(s_project->GetECDb());
+    m_impl->Initialize();
     }
 
 /*---------------------------------------------------------------------------------**//**

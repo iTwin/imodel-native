@@ -571,7 +571,13 @@ RulesDrivenECPresentationManagerImpl::RulesDrivenECPresentationManagerImpl(IRule
     GetLocaters().SetRulesetCallbacksHandler(this);
     GetUserSettingsManager().SetChangesListener(this);
     m_connections.AddListener(*this);
+    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                06/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void RulesDrivenECPresentationManagerImpl::Initialize()
+    {
     RegisterDisplayLabelRuleset(GetLocaters());
     }
 

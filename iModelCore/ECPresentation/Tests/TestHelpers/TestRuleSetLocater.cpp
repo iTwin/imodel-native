@@ -32,7 +32,7 @@ bvector<Utf8String> TestRuleSetLocater::_GetRuleSetIds() const
     {
     bvector<Utf8String> ids;
     for (PresentationRuleSetPtr ruleset : m_rulesets)
-        ids.push_back(Utf8String(ruleset->GetRuleSetId().c_str()).c_str());
+        ids.push_back(ruleset->GetRuleSetId());
     return ids;
     }
 
@@ -83,4 +83,42 @@ void TestRuleSetLocater::Clear()
 TestRuleSetLocater::~TestRuleSetLocater()
     {
     Clear();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<PresentationRuleSetPtr> DelayLoadingRuleSetLocater::_LocateRuleSets(Utf8CP rulesetId) const
+    {
+    if (!m_notified)
+        {
+        OnRulesetCreated(*m_ruleset);
+        m_notified = true;
+        }
+    return { m_ruleset };
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<Utf8String> DelayLoadingRuleSetLocater::_GetRuleSetIds() const
+    {
+    if (!m_notified)
+        {
+        OnRulesetCreated(*m_ruleset);
+        m_notified = true;
+        }
+    return { m_ruleset->GetRuleSetId() };
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                06/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void DelayLoadingRuleSetLocater::Reset()
+    {
+    if (!m_notified)
+        return;
+
+    OnRulesetDisposed(*m_ruleset);
+    m_notified = false;
     }

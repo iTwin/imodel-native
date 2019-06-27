@@ -343,16 +343,16 @@ protected:
         }
     void _OnRulesetCreated(RuleSetLocaterCR locater, PresentationRuleSetR ruleset) override
         {
-        // note this callback is blocking because we need to initialize some stuff
-        // like user settings and expect it to be accessible immediately after
-        // ruleset is created
+        IUserSettings& settings = m_manager.GetUserSettings(ruleset.GetRuleSetId().c_str());
+        settings.InitFrom(ruleset.GetUserSettings());
+
         folly::via(&m_manager.GetExecutor(), [&, ruleset = PresentationRuleSetPtr(&ruleset)]()
             {
             // WIP: need to bring task notifications context here
             BeMutexHolder lock(GetMutex());
             if (nullptr != GetRulesetCallbacksHandler())
                 GetRulesetCallbacksHandler()->_OnRulesetCreated(locater, *ruleset);
-            }).wait();
+            });
         }
 
 public:
@@ -444,7 +444,9 @@ RulesDrivenECPresentationManager::RulesDrivenECPresentationManager(Params const&
     Params implParams(*m_connectionsWrapper, params.GetPaths());
     implParams.SetDisableDiskCache(params.ShouldDisableDiskCache());
     implParams.SetDiskCacheFileSizeLimit(params.GetDiskCacheFileSizeLimit());
-    m_impl = new RulesDrivenECPresentationManagerImpl(*CreateDependenciesFactory(), implParams);
+    RulesDrivenECPresentationManagerImpl* impl = new RulesDrivenECPresentationManagerImpl(*CreateDependenciesFactory(), implParams);
+    m_impl = impl;
+    impl->Initialize();
     }
 
 /*---------------------------------------------------------------------------------**//**

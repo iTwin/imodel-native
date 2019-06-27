@@ -106,6 +106,7 @@ private:
     Json::Value m_presentationInfo;
     IUserSettingsChangeListener const* m_changeListener;
     bool m_isInitializing;
+    UserSettingsGroupList const* m_initializedFrom;
     mutable BeMutex m_mutex;
 
 private:
@@ -133,7 +134,7 @@ public:
     //! @param[in] rulesetId The ID of the ruleset whose settings are stored in this instance.
     //! @param[in] changeListener Listener that's notified when a setting in this instance changes.
     UserSettings(Utf8CP rulesetId, IUserSettingsChangeListener const* changeListener = nullptr)
-        : m_changeListener(changeListener), m_rulesetId(rulesetId), m_localState(nullptr), m_localizationProvider(nullptr), m_logger(nullptr), m_isInitializing(false)
+        : m_changeListener(changeListener), m_rulesetId(rulesetId), m_localState(nullptr), m_localizationProvider(nullptr), m_logger(nullptr), m_isInitializing(false), m_initializedFrom(nullptr)
         {}
     void SetLocalState(IJsonLocalState* localState) {m_localState = localState;}
     void SetLocalizationProvider(ILocalizationProvider const* provider) {m_localizationProvider = provider;}

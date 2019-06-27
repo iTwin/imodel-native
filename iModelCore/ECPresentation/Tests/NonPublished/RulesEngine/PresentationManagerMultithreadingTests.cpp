@@ -130,6 +130,27 @@ TEST_F(RulesDrivenECPresentationManagerMultithreadingTests, RulesetLocaterCallsI
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                06/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerMultithreadingTests, AllowsLocatingRulesetsFromAnyThread)
+    {
+    DelayLoadingRuleSetLocaterPtr locater = DelayLoadingRuleSetLocater::Create(*PresentationRuleSet::CreateInstance("test", 1, 0, false, "", "", "", false));
+    m_manager->GetLocaters().RegisterLocater(*locater);
+
+    // verify we can locate rulesets on the ECPresentation worker thread
+    folly::via(&m_manager->GetExecutor(), [&]() 
+        {
+        EXPECT_EQ(1, m_manager->GetLocaters().LocateRuleSets(*m_connection, "test").size());
+        }).wait();
+
+    locater->Reset();
+    Sync();
+
+    // verify we can locate rulesets on the main thread
+    EXPECT_EQ(1, m_manager->GetLocaters().LocateRuleSets(*m_connection, "test").size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerMultithreadingTests, UserSettingsManagerCallsItsCallbacksOnECPresentationThread)

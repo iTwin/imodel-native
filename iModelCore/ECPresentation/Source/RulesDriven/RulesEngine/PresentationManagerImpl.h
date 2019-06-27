@@ -267,6 +267,7 @@ protected:
 public:
     ECPRESENTATION_EXPORT RulesDrivenECPresentationManagerImpl(IRulesDrivenECPresentationManagerDependenciesFactory const&, Params const&);
     ECPRESENTATION_EXPORT ~RulesDrivenECPresentationManagerImpl();
+    ECPRESENTATION_EXPORT void Initialize();
     NodesCache& GetNodesCache() {return *m_nodesCache;}
     UpdateHandler& GetUpdateHandler() const {return *m_updateHandler;}
 };
