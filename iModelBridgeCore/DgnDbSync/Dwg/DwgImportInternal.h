@@ -437,14 +437,14 @@ private:
     DwgImporter&        m_importer;
 
     void            SetDefaultCreation ();
-    Utf8String      BuildPartCodeValue (DwgImporter::GeometryEntry const& geomEntry, size_t partNo);
+    Utf8String      BuildPartCodeValue (DwgImporter::GeometryEntry const& geomEntry);
     void            TransformGeometry (GeometricPrimitiveR geometry, TransformR geomTrans, double* partScale = nullptr) const;
     bool            Validate2dTransform (TransformR transform) const;
     void            ApplyPartScale (TransformR transform, double scale, bool invert) const;
     bool            NeedsSeparateElement (DgnCategoryId id) const;
     DgnGeometryPartId CreateGeometryPart (DRange3dR range, double& partScale, TransformR geomToLocal, Utf8StringCR partTag, DwgImporter::GeometryEntry const& geomEntry);
     BentleyStatus   GetGeometryPart (DRange3dR range, double& partScale, TransformR geomToLocal, DgnGeometryPartId partId, DwgImporter::GeometryEntry const& geomEntry);
-    BentleyStatus   GetOrCreateGeometryPart (DwgImporter::SharedPartEntry& part, DwgImporter::GeometryEntry const& geomEntry, size_t partNo);
+    BentleyStatus   GetOrCreateGeometryPart (DwgImporter::SharedPartEntry& part, DwgImporter::GeometryEntry const& geomEntry);
     BentleyStatus   CreateEmptyElement ();
     BentleyStatus   CreateIndividualElements ();
     BentleyStatus   CreateSharedParts ();
