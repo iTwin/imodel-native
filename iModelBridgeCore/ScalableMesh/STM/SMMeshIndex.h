@@ -436,11 +436,11 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         size_t i = 0;
         for (auto& vec : featureDefs)
             {
-            if (i > size) return false;
+            if (i >= size) return false;
             serializedFeatureDefs[i++] = (int32_t)vec.size();
             for (auto& pt : vec)
                 {
-                if (i > size) return false;
+                if (i >= size) return false;
                 serializedFeatureDefs[i++] = pt;
                 }
             }
