@@ -1402,7 +1402,13 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::RemoveN
     GetMemoryPool()->RemoveItem(m_graphPoolItemId, this->GetBlockID().m_integerID, SMStoreDataType::Graph, (uint64_t)this->m_SMIndex);
     GetMemoryPool()->RemoveItem(m_graphPoolItemId, this->GetBlockID().m_integerID, SMStoreDataType::Cesium3DTiles, (uint64_t)this->m_SMIndex);
     m_graphPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
-}
+
+    GetMemoryPool()->RemoveItem(m_featurePoolItemId, this->GetBlockID().m_integerID, SMStoreDataType::LinearFeature, (uint64_t)this->m_SMIndex);
+    m_featurePoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+    
+    GetMemoryPool()->RemoveItem(m_dtmPoolItemId, this->GetBlockID().m_integerID, SMStoreDataType::BcDTM, (uint64_t)this->m_SMIndex);
+    m_dtmPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+    }
 
 template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::RemoveMultiTextureData() 
     {
@@ -1751,7 +1757,7 @@ template<class EXTENT> void ClipFeatureDefinition(ISMStore::FeatureType type, EX
                 points2.resize(nPlaneClipSize);
                 for (auto& pt : points2)
                     {
-                    if (pt.x < DBL_MAX)
+                    //if (pt.x < DBL_MAX)
                         points.push_back(pt);
                     //else break;
                     }
@@ -2362,43 +2368,64 @@ bool SMMeshIndexNode<POINT, EXTENT>::InvalidateFilteringMeshing(bool becauseData
             this->m_nodeHeader.m_contentExtent = ExtentOp<EXTENT>::MergeExtents(this->m_nodeHeader.m_contentExtent, featureExtent);
             }
 
+        size_t currentClippedPointIndex = 0;
+        bvector<bvector<DPoint3d>> newFeaturesClipped;
+        bool processNewFeaturesDone = false;
+        while(!processNewFeaturesDone)
+            {
+            processNewFeaturesDone = true;
+            newFeaturesClipped.push_back(bvector<DPoint3d>());
+            auto& newFeature = newFeaturesClipped.back();
+            for(size_t i = currentClippedPointIndex; i < pointsClipped.size(); ++i)
+                {
+                if(pointsClipped[i].x == DBL_MAX)
+                    {
+                    currentClippedPointIndex = i + 1;
+                    processNewFeaturesDone = currentClippedPointIndex >= pointsClipped.size();
+                    break;
+                    }
+                newFeature.push_back(pointsClipped[i]);
+                }
+            }
         size_t added = 0;
         
         if (!this->HasRealChildren() || (this->m_delayedDataPropagation && (pointsPtr->size() + pointsClipped.size() < this->m_nodeHeader.m_SplitTreshold)))
             {
             ++s_featuresAddedToTree;
-            vector<int32_t> indexes;
             DRange3d nodeRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(this->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(this->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMin(this->m_nodeHeader.m_nodeExtent),
                                                 ExtentOp<EXTENT>::GetXMax(this->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMax(this->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMax(this->m_nodeHeader.m_nodeExtent));
             
-            for (auto pt : pointsClipped)
+            for (auto& feature : newFeaturesClipped)
                 {
-                if (pt.x == DBL_MAX)
+                vector<int32_t> indexes;
+                for(auto pt : feature)
                     {
-                    indexes.push_back(INT_MAX);
-                    continue;
+                    if(nodeRange.IsContained(pt)) ++added;
+                    POINT pointToInsert = PointOp<POINT>::Create(pt.x, pt.y, pt.z);
+                    pointsPtr->push_back(pointToInsert);
+                    indexes.push_back((int32_t)pointsPtr->size() - 1);
                     }
-                if (nodeRange.IsContained(pt)) ++added;
-                POINT pointToInsert = PointOp<POINT>::Create(pt.x, pt.y, pt.z);
-                pointsPtr->push_back(pointToInsert);
-                indexes.push_back((int32_t)pointsPtr->size()-1);
+                /* if (m_featureDefinitions.capacity() < m_featureDefinitions.size() +1) for(auto& def : m_featureDefinitions) if(!def.Discarded()) def.Discard();
+                */ RefCountedPtr<SMMemoryPoolVectorItem<int32_t>>  linearFeaturesPtr = GetLinearFeaturesPtr();
+                    linearFeaturesPtr->push_back((int)indexes.size() + 1);
+                    linearFeaturesPtr->push_back((int32_t)type);
+                    linearFeaturesPtr->push_back(&indexes[0], indexes.size());
                 }
-           /* if (m_featureDefinitions.capacity() < m_featureDefinitions.size() +1) for(auto& def : m_featureDefinitions) if(!def.Discarded()) def.Discard();
-           */ RefCountedPtr<SMMemoryPoolVectorItem<int32_t>>  linearFeaturesPtr = GetLinearFeaturesPtr();
-            linearFeaturesPtr->push_back((int)indexes.size()+1);
-            linearFeaturesPtr->push_back((int32_t)type);
-            linearFeaturesPtr->push_back(&indexes[0], indexes.size());
             }
         else
             {
-            if (this->IsParentOfARealUnsplitNode())
-                added = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_pSubNodeNoSplit)->AddFeatureDefinitionUnconditional(type, pointsClipped, extentClipped);
-            else
+            for(auto& feature : newFeaturesClipped)
                 {
-                    for (size_t indexNode = 0; indexNode < this->m_nodeHeader.m_numberOfSubNodesOnSplit; indexNode++)
+                DRange3d newFeatureExtent = DRange3d::From(&feature[0], (int)feature.size());
+                if(this->IsParentOfARealUnsplitNode())
+                    added = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_pSubNodeNoSplit)->AddFeatureDefinitionUnconditional(type, feature, newFeatureExtent);
+                else
+                    {
+                    for(size_t indexNode = 0; indexNode < this->m_nodeHeader.m_numberOfSubNodesOnSplit; indexNode++)
                         {
-                        added += dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_apSubNodes[indexNode])->AddFeatureDefinition(type, pointsClipped, extentClipped, true);
+                        added += dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_apSubNodes[indexNode])->AddFeatureDefinition(type, feature, newFeatureExtent, true);
                         }
+                    }
                 }
             }
      

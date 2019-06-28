@@ -30,6 +30,7 @@ template<class POINT, class EXTENT> void ClipMeshToNodeRange(vector<int>& faceIn
     nodeRange.Get6Planes(origins, normals);   
     DPlane3d planes[6];
     ClipPlane clipPlanes[6];
+    std::map<DPoint3d, int32_t, DPoint3dYXTolerancedSortComparison> mapOfNewPts(DPoint3dYXTolerancedSortComparison(1e-4));
 
     for (size_t i = 0; i < 6; ++i)
         {
@@ -147,12 +148,15 @@ template<class POINT, class EXTENT> void ClipMeshToNodeRange(vector<int>& faceIn
             for (size_t k = 0; k < 3 && idx == -1; ++k)
                 if (polygonArray[j].IsEqual (triangle[k], 1.0e-8))
                     idx = meshP->GetFaceIndexes()[i + k];
+            if(mapOfNewPts.count(polygonArray[j]) > 0)
+                idx = mapOfNewPts[polygonArray[j]];
             if (idx == -1 && polygonArray[j].x < DBL_MAX)
                 {
                 nodePts.push_back(PointOp<POINT>::Create(polygonArray[j].x, polygonArray[j].y, polygonArray[j].z));
                 pts.push_back(polygonArray[j]);
                 if (uvs.size() > 0) uvs.push_back(polygonUvs[j]);
                 idx = (int)nodePts.size();
+                mapOfNewPts[polygonArray[j]] = idx;
                 contentExtent = ExtentOp<EXTENT>::MergeExtents(contentExtent, SpatialOp<POINT, POINT, EXTENT>::GetExtent(nodePts[idx - 1]));
                 }
             if (idx != -1 && std::find(polyIndexes.begin(), polyIndexes.end(), idx) == polyIndexes.end())

@@ -20,7 +20,11 @@
 #include <boost/geometry/geometries/linestring.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
 
+#include <queue>
+
 #include "../mki/StaticAnalysisWarningsPop.h"
+
+#include "Edits/DifferenceSet.h"
 
 namespace SMS = CGAL::Surface_mesh_simplification;
 
@@ -177,23 +181,131 @@ bool CGALEdgeCollapse(MTGGraph* inoutMesh, std::vector<DPoint3d>& pts, uint64_t 
     return ret;
     }
 
+struct PointWithId
+    {
+    DPoint3d m_point;
+    size_t m_id;
+    };
+
+struct PolylineArea
+    {
+    std::list<PointWithId>::iterator m_listItr;
+    mutable double m_area;
+    PolylineArea(std::list<PointWithId>::iterator ptPtr) : m_listItr(ptPtr)
+        {
+        m_area = ComputeArea();
+        }
+    PolylineArea(const PolylineArea& other) : m_listItr(other.m_listItr), m_area(other.m_area) {}
+
+    double ComputeArea() const
+        {
+        auto left = m_listItr; --left;
+        auto right = m_listItr; ++right;
+        double dX0 = left->m_point.x, dY0 = left->m_point.y;
+        double dX1 = m_listItr->m_point.x, dY1 = m_listItr->m_point.y;
+        double dX2 = right->m_point.x, dY2 = right->m_point.y;
+        double dArea = ((dX1 - dX0)*(dY2 - dY0) - (dX2 - dX0)*(dY1 - dY0)) / 2.0;
+        return (dArea > 0.0) ? dArea : -dArea;
+        }
+    bool operator <(PolylineArea const& other) const
+        {
+        return m_listItr->m_id != other.m_listItr->m_id && m_area < other.m_area;
+        }
+    };
+
+struct priority_queue_unique : public std::set<PolylineArea>
+    {
+    void push(const PolylineArea& item)
+        {
+        std::pair<std::set<PolylineArea>::iterator, bool> ret = insert(item);
+        if(!ret.second)
+            {
+            // update area
+            PolylineArea newItem(ret.first->m_listItr);
+            erase(ret.first);
+            insert(newItem);
+            }
+        }
+
+    PolylineArea top()
+        {
+        return *begin();
+        }
+
+    void pop()
+        {
+        erase(begin());
+        }
+    };
+
 void SimplifyPolylines(bvector<bvector<DPoint3d>>& polylines)
     {
-    typedef boost::geometry::model::d2::point_xy<double> xy;
-    for (auto& polyline : polylines)
+    for(auto& polyline : polylines)
         {
-        DRange3d ext = DRange3d::From(polyline);
-        boost::geometry::model::linestring<xy> line;
-        for (auto&pt : polyline)
-            line.push_back(xy(pt.x, pt.y));
+        bool isLoop = polyline.front().IsEqual(polyline.back(), 1.e-5);
+        if(isLoop && polyline.size() < 5) continue;
+        else if(polyline.size() < 3) continue;
 
-            boost::geometry::model::linestring<xy> simplified;
-        boost::geometry::simplify(line, simplified, 0.5);
+        std::list<PointWithId> polyline2;
+        for(size_t i = 0; i < polyline.size(); ++i)
+            polyline2.push_back({ polyline[i], i });
+
+        priority_queue_unique pointQueue;
+
+        for(auto it = ++polyline2.begin(); it != --polyline2.end(); ++it)
+            {
+            pointQueue.push(PolylineArea(it));
+            }
+
+        size_t targetNumPointsToKeep = std::max((size_t)(polyline.size() * 0.75), (size_t)(isLoop ? 4 : 2)) - 2; // Must keep at least first and last points
+        while(pointQueue.size() > targetNumPointsToKeep)
+            {
+            auto topItem = pointQueue.top();
+
+            // remove point from polyline and update areas of adjacent points
+            auto current = topItem.m_listItr;
+            auto previous = current; --previous;
+            PolylineArea previousPolylineArea(previous);
+            auto next = current; ++next;
+            PolylineArea nextPolylineArea(next);
+            polyline2.erase(current);
+
+            pointQueue.pop();
+
+            if (previous->m_id > 0) pointQueue.push(previousPolylineArea);
+            if (next->m_id < polyline.size() - 1) pointQueue.push(nextPolylineArea);
+            }
 
         polyline.clear();
-        for (auto& pt : simplified)
-            polyline.push_back(DPoint3d::From(pt.x(), pt.y(), (ext.high.z - ext.low.z) / 2));
+        for(auto const& pt: polyline2)
+            polyline.push_back(pt.m_point);
         }
+    // // boost uses Douglas-Peucker algorithm to simplify a polyline. This algorithm requires a tolerance
+	// // parameter which is not well suited for our need to target a specified number of points.
+    //typedef boost::geometry::model::d2::point_xy<double> xy;
+    //for (auto& polyline : polylines)
+    //    {
+    //    typedef std::map<DPoint3d, double, DPoint3dYXTolerancedSortComparison> MapOfPoints;
+    //    MapOfPoints pointElevationMap(DPoint3dYXTolerancedSortComparison(1e-5));
+    //    DRange3d ext = DRange3d::From(polyline);
+    //    boost::geometry::model::linestring<xy> line;
+    //    for(auto&pt : polyline)
+    //        {
+    //        if(pointElevationMap.count(pt) == 0) pointElevationMap.insert(std::make_pair(pt, pt.z));
+    //        line.push_back(xy(pt.x, pt.y));
+    //        }
+    //
+    //        boost::geometry::model::linestring<xy> simplified;
+    //    boost::geometry::simplify(line, simplified, 0.5);
+    //
+    //    polyline.clear();
+    //    for(auto& pt : simplified)
+    //        {
+    //        DPoint3d newPoint = DPoint3d::From(pt.x(), pt.y(), 0);
+    //        newPoint = DPoint3d::From(newPoint.x, newPoint.y, pointElevationMap[newPoint]);
+    //        polyline.push_back(newPoint);
+    //        }
+    //    }
 
     }
 END_BENTLEY_SCALABLEMESH_NAMESPACE
