@@ -35,6 +35,7 @@ namespace SMS = CGAL::Surface_mesh_simplification;
 bool boost::graph_traits<GraphWithGeometryInfo>::log = false;
 
 
+BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 
 template<class ECM_>
