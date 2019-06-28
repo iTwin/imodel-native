@@ -190,6 +190,7 @@ bool                            OutputDGNFileReferenceLevel(SourceDataSQLite&   
     return OutputDGNFileReference(sourceData, source, env);
 }
 
+#ifdef VANCOUVER_API
 bool                            OutputDGNFileTerrainModel(SourceDataSQLite&                          sourceData,
     const IDTMDgnTerrainModelSource&               source,
     const DocumentEnv&                      env)
@@ -198,6 +199,7 @@ bool                            OutputDGNFileTerrainModel(SourceDataSQLite&     
     sourceData.SetTerrainModelName(source.GetTerrainModelName());
     return OutputDGNFileModel(sourceData, source, env);
     }
+#endif
 } // END unnamed namespace
 
 
@@ -247,6 +249,7 @@ private:
 
     } s_dgnReferenceLevelSourceSerializer;
 
+#ifdef VANCOUVER_API
 struct IDTMDgnTerrainModelSourceSerializer : public IDTMSourceSerializerBase<IDTMDgnTerrainModelSource>
     {
     private:
@@ -260,7 +263,7 @@ struct IDTMDgnTerrainModelSourceSerializer : public IDTMSourceSerializerBase<IDT
             }
 
     } s_dgnTerrainModelSourceSerializer;
-
+#endif
 
 namespace { // BEGIN unnamed namespace
 
@@ -300,11 +303,12 @@ private:
         m_serializerP = &s_dgnReferenceLevelSourceSerializer;
         }
 
+#ifdef VANCOUVER_API
     virtual void                    _Visit                         (const IDTMDgnTerrainModelSource&        source)
         {
         m_serializerP = &s_dgnTerrainModelSourceSerializer;
         }
-
+#endif
     virtual void                    _Visit                         (const IDTMSourceGroup&              source)
         {
         assert(!"Unsupported yet!");
@@ -572,6 +576,7 @@ struct IDTMDgnReferenceLevelSourceCreator : public IDTMSourceCreator
 
     } s_dgnReferenceLevelSourceCreator;
 
+#ifdef VANCOUVER_API
 struct IDTMDgnTerrainModelSourceCreator : public IDTMSourceCreator
     {
     virtual IDTMSource*     _Create(SourceDataSQLite&      sourceData,
@@ -601,7 +606,7 @@ struct IDTMDgnTerrainModelSourceCreator : public IDTMSourceCreator
         return 0;
         }
     } s_dgnTerrainModelSourceCreator;
-
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @description  
@@ -622,8 +627,11 @@ const IDTMSourceFactory::CreatorItem* IDTMSourceFactory::GetCreatorIndex ()
         0,
         &s_dgnReferenceLevelSourceCreatorV0,
         &s_dgnLevelSourceCreator,
-        &s_dgnReferenceLevelSourceCreator,
+        &s_dgnReferenceLevelSourceCreator
+#ifdef VANCOUVER_API
+        ,
         &s_dgnTerrainModelSourceCreator,
+#endif
         };
 
     static_assert(DTM_SOURCE_ID_QTY == sizeof(CREATORS_INDEX)/sizeof(CREATORS_INDEX[0]), "");

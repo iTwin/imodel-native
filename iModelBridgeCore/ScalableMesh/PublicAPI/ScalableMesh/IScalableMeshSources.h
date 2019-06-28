@@ -30,8 +30,9 @@ struct IDTMSourceGroup;
 struct IDTMLocalFileSource;
 struct IDTMDgnLevelSource;
 struct IDTMDgnReferenceLevelSource;
+#ifdef VANCOUVER_API
 struct IDTMDgnTerrainModelSource;
-
+#endif
 //struct BinaryIStream;
 //struct BinaryOStream;
 
@@ -43,8 +44,9 @@ typedef RefCountedPtr<IDTMSourceGroup>      IDTMSourceGroupPtr;
 typedef RefCountedPtr<IDTMLocalFileSource>  IDTMLocalFileSourcePtr;                                         
 typedef RefCountedPtr<IDTMDgnLevelSource>   IDTMDgnLevelSourcePtr;
 typedef RefCountedPtr<IDTMDgnReferenceLevelSource> IDTMDgnReferenceLevelSourcePtr;
+#ifdef VANCOUVER_API
 typedef RefCountedPtr<IDTMDgnTerrainModelSource> IDTMDgnTerrainModelSourcePtr;
-
+#endif
 
 /*__PUBLISH_SECTION_END__*/
 struct                                      IDTMSourceVisitor;
@@ -384,6 +386,7 @@ struct IDTMDgnReferenceLevelSource : public IDTMDgnReferenceSource
     };
 
 
+#ifdef VANCOUVER_API
 /*---------------------------------------------------------------------------------**//**
 * @description
 * @bsiclass                                                  Kim.Piche   06/2019
@@ -414,7 +417,7 @@ struct IDTMDgnTerrainModelSource : public IDTMDgnModelSource
 
         BENTLEY_SM_EXPORT static IDTMDgnTerrainModelSourcePtr Create(ElementRefP elementRefP);
     };
-
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @description  

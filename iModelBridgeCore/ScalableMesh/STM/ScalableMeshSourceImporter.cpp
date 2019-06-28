@@ -63,10 +63,11 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 #include "ScalableMeshSourceImporter.h"
 
+#ifdef VANCOUVER_API
 #include <ScalableMesh\Import\Plugin\SourceReferenceV0.h>
 #include "ImportPlugins/DGNModelUtilities.h"
 #include "ImportPlugins/ElemSourceRef.h"
-
+#endif
 //#include <DgnPlatform\Tools\ConfigurationManager.h>
 
 
@@ -849,6 +850,7 @@ SourceRef CreateSourceRefFromIDTMSource (const IDTMSource& source)
             {
             /* Do nothing */
             }
+#ifdef VANCOUVER_API
         virtual void                _Visit(const IDTMDgnTerrainModelSource& source) override
             {
             StatusInt status = BSISUCCESS;
@@ -869,6 +871,7 @@ SourceRef CreateSourceRefFromIDTMSource (const IDTMSource& source)
                     break;
                     }
             }
+#endif
         };
 
     Visitor visitor;

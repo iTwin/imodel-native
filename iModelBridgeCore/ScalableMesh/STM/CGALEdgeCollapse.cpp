@@ -1,4 +1,7 @@
 #include "ScalableMeshPCH.h"
+
+#ifdef VANCOUVER_API
+
 #undef static_assert //needed because boost uses static_assert and apparently one of the headers we include redefines it
 #include "../mki/StaticAnalysisWarningsPush.h"
 #pragma warning(disable:4180) //using function for stop predicate
@@ -32,7 +35,7 @@ namespace SMS = CGAL::Surface_mesh_simplification;
 bool boost::graph_traits<GraphWithGeometryInfo>::log = false;
 
 
-BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
+
 
 template<class ECM_>
 class Vertex_placement
@@ -180,6 +183,13 @@ bool CGALEdgeCollapse(MTGGraph* inoutMesh, std::vector<DPoint3d>& pts, uint64_t 
 
     return ret;
     }
+
+#else
+BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
+
+#endif
+
+
 
 struct PointWithId
     {

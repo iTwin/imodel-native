@@ -286,6 +286,7 @@ public:
 
     };
 
+#ifdef VANCOUVER_API
 /*---------------------------------------------------------------------------------**//**
 * @description
 * @bsiclass                                                  Kim.Piche   06/2019
@@ -317,6 +318,7 @@ struct IDTMDgnTerrainModelSource::Impl : public IDTMDgnModelSource::Impl
         // Uses default copy behavior
 
     };
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @description  

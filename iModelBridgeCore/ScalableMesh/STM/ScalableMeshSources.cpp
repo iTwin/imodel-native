@@ -29,8 +29,10 @@
 #include <ScalableMesh/Type/IScalableMeshTIN.h>
 #include <ScalableMesh/Type/IScalableMeshMesh.h>
 
+#ifdef VANCOUVER_API
 #include <DgnPlatform/TerrainModel/TMElementSubHandler.h>
 #include <DgnPlatform/TerrainModel/TMReferenceXAttributeHandler.h>
+#endif
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_GEOCOORDINATES
@@ -1073,6 +1075,7 @@ IDTMDgnReferenceLevelSource::Impl::~Impl()
     {
     }
 
+#ifdef VANCOUVER_API
 IDTMDgnTerrainModelSourcePtr IDTMDgnTerrainModelSource::Create(ElementRefP elementRefP)
     {
     ElementHandle element(elementRefP);
@@ -1162,6 +1165,7 @@ IDTMDgnTerrainModelSource::Impl::Impl(DTMSourceDataType               sourceData
 IDTMDgnTerrainModelSource::Impl::~Impl()
     {
     }
+#endif
 
 
 

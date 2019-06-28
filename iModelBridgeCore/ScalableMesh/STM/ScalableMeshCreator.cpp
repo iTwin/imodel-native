@@ -73,9 +73,12 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 #include "MosaicTextureProvider.h"
 #include "StreamTextureProvider.h"
+
+#ifdef VANCOUVER_API
 #include <ScalableMesh\Import\Plugin\SourceReferenceV0.h>
 #include "ImportPlugins/DGNModelUtilities.h"
 #include "ImportPlugins/ElemSourceRef.h"
+#endif
 
 #define SCALABLE_MESH_TIMINGS
 
@@ -679,6 +682,7 @@ SourceRef CreateSourceRefFromIDTMSource(const IDTMSource& source, const WString&
       
         }
 
+#ifdef VANCOUVER_API
         virtual void                _Visit(const IDTMDgnTerrainModelSource& source) override
             {
             StatusInt status = BSISUCCESS;
@@ -699,6 +703,7 @@ SourceRef CreateSourceRefFromIDTMSource(const IDTMSource& source, const WString&
                     break;
                     }
             }
+#endif
     };
 
     Visitor visitor(stmPath);
