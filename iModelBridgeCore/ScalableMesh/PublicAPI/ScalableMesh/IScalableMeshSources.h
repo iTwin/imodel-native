@@ -30,6 +30,7 @@ struct IDTMSourceGroup;
 struct IDTMLocalFileSource;
 struct IDTMDgnLevelSource;
 struct IDTMDgnReferenceLevelSource;
+struct IDTMDgnTerrainModelSource;
 
 //struct BinaryIStream;
 //struct BinaryOStream;
@@ -41,8 +42,8 @@ typedef RefCountedPtr<IDTMSourceGroup>      IDTMSourceGroupPtr;
 //Different type of data source.
 typedef RefCountedPtr<IDTMLocalFileSource>  IDTMLocalFileSourcePtr;                                         
 typedef RefCountedPtr<IDTMDgnLevelSource>   IDTMDgnLevelSourcePtr;
-typedef RefCountedPtr<IDTMDgnReferenceLevelSource>   
-                                            IDTMDgnReferenceLevelSourcePtr;
+typedef RefCountedPtr<IDTMDgnReferenceLevelSource> IDTMDgnReferenceLevelSourcePtr;
+typedef RefCountedPtr<IDTMDgnTerrainModelSource> IDTMDgnTerrainModelSourcePtr;
 
 
 /*__PUBLISH_SECTION_END__*/
@@ -383,6 +384,36 @@ struct IDTMDgnReferenceLevelSource : public IDTMDgnReferenceSource
     };
 
 
+/*---------------------------------------------------------------------------------**//**
+* @description
+* @bsiclass                                                  Kim.Piche   06/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+struct IDTMDgnTerrainModelSource : public IDTMDgnModelSource
+    {
+    /*__PUBLISH_SECTION_END__*/
+    friend struct                           IDTMDgnTerrainModelSourceCreator;
+
+
+    public:
+        struct                              Impl;
+    private:
+        Impl&                               m_impl;
+
+        virtual void                        _Accept(IDTMSourceVisitor&          visitor) const override;
+        virtual IDTMSource*                 _Clone() const override;
+    protected:
+        explicit                            IDTMDgnTerrainModelSource(Impl*                       implP);
+        /*__PUBLISH_SECTION_START__*/
+
+    public:
+        BENTLEY_SM_EXPORT virtual                 ~IDTMDgnTerrainModelSource();
+
+        BENTLEY_SM_EXPORT uint32_t              GetTerrainModelID() const;
+        BENTLEY_SM_EXPORT const WChar*          GetTerrainModelName() const;
+        BENTLEY_SM_EXPORT ElementRefP           GetElementRefP() const;
+
+        BENTLEY_SM_EXPORT static IDTMDgnTerrainModelSourcePtr Create(ElementRefP elementRefP);
+    };
 
 
 /*---------------------------------------------------------------------------------**//**

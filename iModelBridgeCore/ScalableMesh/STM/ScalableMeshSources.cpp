@@ -29,6 +29,9 @@
 #include <ScalableMesh/Type/IScalableMeshTIN.h>
 #include <ScalableMesh/Type/IScalableMeshMesh.h>
 
+#include <DgnPlatform/TerrainModel/TMElementSubHandler.h>
+#include <DgnPlatform/TerrainModel/TMReferenceXAttributeHandler.h>
+
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_GEOCOORDINATES
 USING_NAMESPACE_IMAGEPP
@@ -1070,6 +1073,95 @@ IDTMDgnReferenceLevelSource::Impl::~Impl()
     {
     }
 
+IDTMDgnTerrainModelSourcePtr IDTMDgnTerrainModelSource::Create(ElementRefP elementRefP)
+    {
+    ElementHandle element(elementRefP);
+    ElementHandle refEl(element);
+
+    if (TMReferenceXAttributeHandler::GetDTMDataReference(element, refEl))
+        {
+        if (refEl.GetElementRef() != element.GetElementRef())
+            {
+            while (TMReferenceXAttributeHandler::GetDTMDataReference(refEl, refEl))
+                {
+                }
+            }
+        }
+    else
+        refEl = element;
+
+    ElementHandle::XAttributeIter iterator(refEl, XAttributeHandlerId(XATTRIBUTEID_XGraphicsName, 0), 0);
+    WString name(L"");
+    if (iterator.IsValid())
+        {
+        UInt32   length = iterator.GetSize() / sizeof(wchar_t);
+        WCharCP  data = (WCharCP)iterator.PeekData();
+        name.assign(data, length);
+        }
+
+    DgnModelRefP modelRefP = element.GetDgnModelP();
+
+    return new IDTMDgnTerrainModelSource(new Impl(ScalableMesh::DTMSourceDataType::DTM_SOURCE_DATA_DTM,
+                                                  modelRefP->GetDgnFileP()->GetFileName().c_str(),
+                                                  modelRefP->GetModelId(),
+                                                  modelRefP->GetModelNameCP(),
+                                                  elementRefP->GetElementId(),
+                                                  name.c_str()));
+    }
+
+
+IDTMDgnTerrainModelSource::IDTMDgnTerrainModelSource(Impl* implP)
+    : IDTMDgnModelSource(implP),
+    m_impl(*implP)
+    {
+
+    }
+
+
+IDTMDgnTerrainModelSource::~IDTMDgnTerrainModelSource()
+    {
+
+    }
+
+
+uint32_t IDTMDgnTerrainModelSource::GetTerrainModelID() const
+    {
+    return m_impl.GetTerrainModelID();
+    }
+
+const WChar* IDTMDgnTerrainModelSource::GetTerrainModelName() const
+    {
+    return m_impl.GetTerrainModelName().c_str();
+    }
+
+void IDTMDgnTerrainModelSource::_Accept(IDTMSourceVisitor& visitor) const
+    {
+    visitor._Visit(*this);
+    }
+
+IDTMSource* IDTMDgnTerrainModelSource::_Clone() const
+    {
+    return new IDTMDgnTerrainModelSource(new Impl(m_impl));
+    }
+
+/*----------------------------------------------------------------------------+
+|DTMDgnLevelSource class
++----------------------------------------------------------------------------*/
+IDTMDgnTerrainModelSource::Impl::Impl(DTMSourceDataType               sourceDataType,
+    const wchar_t*                 filePath,
+    uint32_t                          modelID,
+    const WChar*                  modelName,
+    uint32_t                        terrainModelID,
+    const WChar*                    terrainModelName)
+    : IDTMDgnModelSource::Impl(sourceDataType, filePath, modelID, modelName),
+    m_terrainModelID(terrainModelID),
+    m_terrainModelName(terrainModelName)
+    {
+    }
+
+IDTMDgnTerrainModelSource::Impl::~Impl()
+    {
+    }
 
 
 
