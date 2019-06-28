@@ -493,9 +493,7 @@ DbResult SMSQLiteFile::CreateTables()
                                      "ElevationProperty TEXT,"
                                      "LinearFeatureType INTEGER,"
                                      "PolygonFeatureType INTEGER,"
-                                     "IsGridData INTEGER,"
-                                     "TerrainModelID INTEGER,"
-                                     "TerrainModelName TEXT");
+                                     "IsGridData INTEGER");
     assert(result == BE_SQLITE_OK);
 
 
@@ -1549,7 +1547,7 @@ bool SMSQLiteFile::SaveSource(SourcesDataSQLite& sourcesData)
         //Savepoint insertTransaction(*m_database, "replace");
         m_database->GetCachedStatement(stmt, "REPLACE INTO SMSources (SourceId, SourceType, DTMSourceID, GroupID, ModelId, ModelName, LevelId, LevelName, RootToRefPersistentPath, "
             "ReferenceName, ReferenceModelName, GCS, Flags, TypeFamilyID, TypeID, MonikerType, MonikerString, TimeLastModified, "
-            "SizeExtent, Extent, UpToDateState, Time, IsRepresenting3dData, IsGroundDetection, IsGISData, ElevationProperty, LinearFeatureType, PolygonFeatureType, IsGridData, TerrainModelID, TerrainModelName)"
+            "SizeExtent, Extent, UpToDateState, Time, IsRepresenting3dData, IsGroundDetection, IsGISData, ElevationProperty, LinearFeatureType, PolygonFeatureType, IsGridData)"
             "VALUES(?,?,?,?,?,"
             "?,?,?,?,?,"
             "?,?,?,?,?,"
@@ -1686,7 +1684,7 @@ bool SMSQLiteFile::LoadSources(SourcesDataSQLite& sourcesData)
     CachedStatementPtr stmt;
     m_database->GetCachedStatement(stmt, "SELECT SourceId, SourceType, DTMSourceID, GroupID, ModelId, ModelName, LevelId, LevelName, RootToRefPersistentPath, "
         "ReferenceName, ReferenceModelName, GCS, Flags, TypeFamilyID, TypeID, MonikerType, MonikerString, TimeLastModified, "
-        "SizeExtent, Extent, UpToDateState, Time, IsRepresenting3dData, IsGroundDetection, IsGISData, ElevationProperty, LinearFeatureType, PolygonFeatureType, IsGridData, TerrainModelID, TerrainModelName "
+        "SizeExtent, Extent, UpToDateState, Time, IsRepresenting3dData, IsGroundDetection, IsGISData, ElevationProperty, LinearFeatureType, PolygonFeatureType, IsGridData "
         "FROM SMSources");
     while (stmt->Step() == BE_SQLITE_ROW)
     {
