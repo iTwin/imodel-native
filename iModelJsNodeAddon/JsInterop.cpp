@@ -331,17 +331,16 @@ Napi::Value JsInterop::PollConcurrentQuery(ECDbCR ecdb, Napi::Env env, uint32_t 
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 02/18
 //---------------------------------------------------------------------------------------
-DgnDbPtr JsInterop::CreateIModel(DbResult& result, Utf8StringCR name, JsonValueCR in, Napi::Env env)
+DgnDbPtr JsInterop::CreateDgnDb(DbResult& result, BeFileNameCR filename, JsonValueCR props, Napi::Env env)
     {
     result = BE_SQLITE_NOTFOUND;
-    JsonValueCR rootSubject = in[json_rootSubject()];
+    JsonValueCR rootSubject = props[json_rootSubject()];
     if (rootSubject.isNull() || !rootSubject.isMember(json_name())) {
         Napi::TypeError::New(env, "Root subject name is missing").ThrowAsJavaScriptException();
         return nullptr;
     }
 
-    BeFileName fileName(name);
-    BeFileName path =fileName.GetDirectoryName();
+    BeFileName path = filename.GetDirectoryName();
     if (!path.DoesPathExist()) {
         Utf8String err = Utf8String("Path [") + path.GetNameUtf8() + "] does not exist";
         Napi::TypeError::New(env, err.c_str()).ThrowAsJavaScriptException();
@@ -351,21 +350,20 @@ DgnDbPtr JsInterop::CreateIModel(DbResult& result, Utf8StringCR name, JsonValueC
     CreateDgnDbParams params(rootSubject[json_name()].asCString());
     if (rootSubject.isMember(json_description()))
         params.SetRootSubjectDescription(rootSubject[json_description()].asCString());
-    if (in.isMember(json_globalOrigin()))
-        params.m_globalOrigin = JsonUtils::ToDPoint3d(in[json_globalOrigin()]);
-    if (in.isMember(json_guid()))
-        params.m_guid.FromString(in[json_guid()].asCString());
-    if (in.isMember(json_projectExtents()))
-        params.m_projectExtents.FromJson(in[json_projectExtents()]);
-    if (in.isMember(json_client()))
-        params.m_client = in[json_client()].asCString();
+    if (props.isMember(json_globalOrigin()))
+        params.m_globalOrigin = JsonUtils::ToDPoint3d(props[json_globalOrigin()]);
+    if (props.isMember(json_guid()))
+        params.m_guid.FromString(props[json_guid()].asCString());
+    if (props.isMember(json_projectExtents()))
+        params.m_projectExtents.FromJson(props[json_projectExtents()]);
+    if (props.isMember(json_client()))
+        params.m_client = props[json_client()].asCString();
 
-    DgnDbPtr db = DgnDb::CreateDgnDb(&result, fileName, params);
+    DgnDbPtr db = DgnDb::CreateDgnDb(&result, filename, params);
     if (!db.IsValid())
         return nullptr;
 
     // NEEDS_WORK - create GCS from ecef location
-    // NEEDS_WORK - save thumbnail.
 
     return db;
     }
@@ -373,7 +371,7 @@ DgnDbPtr JsInterop::CreateIModel(DbResult& result, Utf8StringCR name, JsonValueC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  06/17
 //---------------------------------------------------------------------------------------
-DbResult JsInterop::OpenDgnDb(DgnDbPtr& db, BeFileNameCR fileOrPathname, DgnDb::OpenMode mode)
+DbResult JsInterop::OpenDgnDb(DgnDbPtr& db, BeFileNameCR fileOrPathname, DgnDb::OpenParams const& openParams)
     {
     BeFileName pathname;
     if (fileOrPathname.DoesPathExist())
@@ -408,12 +406,7 @@ DbResult JsInterop::OpenDgnDb(DgnDbPtr& db, BeFileNameCR fileOrPathname, DgnDb::
         }
 
     DbResult result;
-
-    SchemaUpgradeOptions schemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::CheckRequiredUpgrades);
-    DgnDb::OpenParams openParams(mode, BeSQLite::DefaultTxn::Yes, schemaUpgradeOptions);
-
     db = DgnDb::OpenDgnDb(&result, pathname, openParams);
-
     return result;
     }
 
@@ -490,9 +483,9 @@ RevisionStatus JsInterop::ReadChangeSets(bvector<DgnRevisionPtr>& revisionPtrs, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 01/18
 //---------------------------------------------------------------------------------------
-RevisionStatus JsInterop::ApplySchemaChangeSets(BeFileNameCR dbFileName, bvector<DgnRevisionCP> const& revisions, RevisionProcessOption applyOption)
+RevisionStatus JsInterop::ApplySchemaChangeSets(BeFileNameCR dbFileName, bvector<DgnRevisionCP> const& revisions, RevisionProcessOption applyOption, IConcurrencyControl* concurrencyControl)
     {
-    SchemaUpgradeOptions schemaUpgradeOptions(revisions, applyOption);
+    SchemaUpgradeOptions schemaUpgradeOptions(revisions, applyOption, concurrencyControl);
     schemaUpgradeOptions.SetUpgradeFromDomains(SchemaUpgradeOptions::DomainUpgradeOptions::SkipCheck);
 
     DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, schemaUpgradeOptions);

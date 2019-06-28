@@ -1149,49 +1149,9 @@ public:
 
     Dgn::DgnDbPtr m_dgndb;
     ConnectionManager m_connections;
-    //std::unique_ptr<RulesDrivenECPresentationManager> m_presentationManager;
     std::shared_ptr<CancellationToken> m_cancellationToken;
     NativeDgnDb(Napi::CallbackInfo const& info) : BeObjectWrap<NativeDgnDb>(info) {}
     ~NativeDgnDb() {SetInDestructor(); CloseDgnDb();}
-
-    void CloseDgnDb()
-        {
-        if (!m_dgndb.IsValid())
-            return;
-
-        BeAssert(nullptr != m_cancellationToken);
-        m_cancellationToken->Cancel();
-        m_cancellationToken = nullptr;
-
-        //TearDownPresentationManager();
-        m_dgndb->RemoveFunction(HexStrSqlFunction::GetSingleton());
-        m_dgndb->RemoveFunction(StrSqlFunction::GetSingleton());
-        m_dgndb->m_jsIModelDb.Reset(); // disconnect the iModelDb object
-        JsInterop::CloseDgnDb(*m_dgndb);
-
-        JsInterop::RemoveCrashReportDgnDb(*m_dgndb);
-
-        m_dgndb = nullptr;
-
-        doDeferredLogging();
-        s_objRefVault.ReleaseUnreferencedObjects();
-        }
-
-    void OnDgnDbOpened(DgnDbR dgndb)
-        {
-        BeAssert(m_dgndb.IsNull());
-
-        m_dgndb = &dgndb;
-
-        JsInterop::AddCrashReportDgnDb(*m_dgndb);
-
-        //SetupPresentationManager();
-        // NativeAppData::Add(*this);
-        m_dgndb->AddFunction(HexStrSqlFunction::GetSingleton());
-        m_dgndb->AddFunction(StrSqlFunction::GetSingleton());
-
-        m_cancellationToken = std::make_shared<CancellationToken>();
-        }
 
     //  Check if val is really a NativeDgnDb peer object
     static bool InstanceOf(Napi::Value val)
@@ -1204,24 +1164,6 @@ public:
         }
 
     DgnDbR GetDgnDb() {return *m_dgndb;}
-
-    /*void SetupPresentationManager()
-        {
-        BeFileName assetsDir = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
-        BeFileName tempDir = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
-        RulesDrivenECPresentationManager::Paths paths(assetsDir, tempDir);
-        m_presentationManager = std::unique_ptr<RulesDrivenECPresentationManager>(new RulesDrivenECPresentationManager(m_connections, paths));
-        IECPresentationManager::RegisterImplementation(m_presentationManager.get());
-        m_presentationManager->GetLocaters().RegisterLocater(*SimpleRulesetLocater::Create("Ruleset_Id"));
-        }
-
-    void TearDownPresentationManager()
-        {
-        if (m_presentationManager == nullptr)
-            return;
-        IECPresentationManager::RegisterImplementation(nullptr);
-        m_presentationManager.reset();
-        }*/
 
     Napi::Object CreateBentleyReturnSuccessObject(Napi::Value goodVal) {return NapiUtils::CreateBentleyReturnSuccessObject(goodVal, Env());}
 
@@ -1240,56 +1182,94 @@ public:
 
     Napi::Value IsReadonly(Napi::CallbackInfo const &info) { return Napi::Boolean::New(Env(), m_dgndb->IsReadonly()); }
 
-    void SetIModelDb(Napi::CallbackInfo const& info) {
+    void SetIModelDb(Napi::CallbackInfo const &info)
+        {
         Napi::Value obj = info[0];
-        if (m_dgndb.IsValid()) {
+        if (m_dgndb.IsValid())
+            {
             if (obj.IsObject())
                 m_dgndb->m_jsIModelDb.Reset(obj.As<Napi::Object>(), 1);
             else
                 m_dgndb->m_jsIModelDb.Reset();
+            }
         }
-    }
 
-    Napi::Value OpenDgnDb(Napi::CallbackInfo const& info)
+    void SetDgnDb(DgnDbR dgndb) 
+        {
+        JsInterop::AddCrashReportDgnDb(dgndb);
+        dgndb.AddFunction(HexStrSqlFunction::GetSingleton());
+        dgndb.AddFunction(StrSqlFunction::GetSingleton());
+
+        m_dgndb = &dgndb;
+        m_cancellationToken = std::make_shared<CancellationToken>();
+        }
+
+    void ClearDgnDb()
+        {
+        BeAssert(nullptr != m_cancellationToken);
+        m_cancellationToken->Cancel();
+        m_cancellationToken = nullptr;
+
+        m_dgndb->RemoveFunction(HexStrSqlFunction::GetSingleton());
+        m_dgndb->RemoveFunction(StrSqlFunction::GetSingleton());
+        m_dgndb->m_jsIModelDb.Reset(); // disconnect the iModelDb object
+        JsInterop::RemoveCrashReportDgnDb(*m_dgndb);
+
+        m_dgndb = nullptr;
+        }
+
+    DbResult OpenDgnDb(BeFileNameCR dbname, DgnDb::OpenParams const& openParams)
+        {
+        DgnDbPtr dgndb;
+        DbResult result = JsInterop::OpenDgnDb(dgndb, dbname, openParams);
+        if (BE_SQLITE_OK == result)
+            SetDgnDb(*dgndb);
+        return result;
+        }
+
+    void CloseDgnDb()
+        {
+        if (!m_dgndb.IsValid())
+            return;
+
+        if (m_dgndb->Txns().HasChanges())
+            m_dgndb->SaveChanges();
+
+        DgnDbPtr dgndb = m_dgndb;
+        ClearDgnDb();
+        dgndb->CloseDb();
+
+        doDeferredLogging();
+        }
+
+    DbResult CreateDgnDb(BeFileNameCR filename, JsonValueCR props, Napi::Env env) 
+        {
+        DbResult result;
+        DgnDbPtr dgndb = JsInterop::CreateDgnDb(result, filename, props, env);
+        if (dgndb.IsValid())
+            SetDgnDb(*dgndb);
+        return result;
+        }
+
+    Napi::Value OpenIModel(Napi::CallbackInfo const& info)
         {
         REQUIRE_ARGUMENT_STRING(0, dbname, Env().Undefined());
         REQUIRE_ARGUMENT_INTEGER(1, mode, Env().Undefined());
 
-        DgnDbPtr db;
-        DbResult status = JsInterop::OpenDgnDb(db, BeFileName(dbname.c_str(), true), (Db::OpenMode)mode);
-        if (BE_SQLITE_OK == status)
-            OnDgnDbOpened(*db);
+        SchemaUpgradeOptions schemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::CheckRequiredUpgrades);
+        DgnDb::OpenParams openParams((Db::OpenMode)mode, BeSQLite::DefaultTxn::Yes, schemaUpgradeOptions);
 
-        return Napi::Number::New(Env(), (int) status);
+        DbResult result = OpenDgnDb(BeFileName(dbname.c_str(), true), openParams);
+        return Napi::Number::New(Env(), (int) result);
         }
 
     Napi::Value CreateIModel(Napi::CallbackInfo const& info)
         {
-        REQUIRE_ARGUMENT_STRING(0, accessToken, Env().Undefined());
-        REQUIRE_ARGUMENT_STRING(1, appVersion, Env().Undefined());
-        REQUIRE_ARGUMENT_STRING(2, projectId, Env().Undefined());
-        REQUIRE_ARGUMENT_STRING(3, fileName, Env().Undefined());
-        REQUIRE_ARGUMENT_STRING(4, args, Env().Undefined());
+        REQUIRE_ARGUMENT_STRING(0, filename, Env().Undefined());
+        REQUIRE_ARGUMENT_STRING(1, props, Env().Undefined());
 
-        DbResult status;
-        DgnDbPtr db = JsInterop::CreateIModel(status, fileName, Json::Value::From(args), Env());
-        if (db.IsValid())
-            OnDgnDbOpened(*db);
-
-        return Napi::Number::New(Env(), (int)status);
-        }
-
-    Napi::Value CreateStandaloneIModel(Napi::CallbackInfo const& info)
-        {
-        REQUIRE_ARGUMENT_STRING(0, fileName, Env().Undefined());
-        REQUIRE_ARGUMENT_STRING(1, args, Env().Undefined());
-
-        DbResult status;
-        DgnDbPtr db = JsInterop::CreateIModel(status, fileName, Json::Value::From(args), Env());
-        if (db.IsValid())
-            OnDgnDbOpened(*db);
-
-        return Napi::Number::New(Env(), (int) status);
+        DbResult result = CreateDgnDb(BeFileName(filename.c_str(), true), Json::Value::From(props), Env());
+        return Napi::Number::New(Env(), (int)result);
         }
 
     Napi::Value GetECClassMetaData(Napi::CallbackInfo const& info)
@@ -1358,61 +1338,6 @@ public:
 
         RevisionStatus status = JsInterop::DumpChangeSet(*m_dgndb, jsonChangeSetToken);
         return Napi::Number::New(Env(), (int)status);
-        }
-
-    Napi::Value ApplyChangeSets(Napi::CallbackInfo const& info)
-        {
-        REQUIRE_ARGUMENT_STRING(0, changeSetTokens, Env().Undefined());
-        REQUIRE_ARGUMENT_INTEGER(1, applyOption, Env().Undefined());
-
-        bvector<DgnRevisionPtr> revisionPtrs;
-        bool containsSchemaChanges;
-        Utf8String dbGuid = m_dgndb->GetDbGuid().ToString();
-        Json::Value jsonChangeSetTokens = Json::Value::From(changeSetTokens);
-        RevisionStatus status = JsInterop::ReadChangeSets(revisionPtrs, containsSchemaChanges, dbGuid, jsonChangeSetTokens);
-        if (RevisionStatus::Success != status)
-            return Napi::Number::New(Env(), (int)status);
-
-        bvector<DgnRevisionCP> revisions;
-        for (uint32_t ii = 0; ii < revisionPtrs.size(); ii++)
-            revisions.push_back(revisionPtrs[ii].get());
-
-        /* Process change sets containing only data changes */
-        if (!containsSchemaChanges)
-            {
-            status = JsInterop::ApplyDataChangeSets(*m_dgndb, revisions, (RevisionProcessOption) applyOption);
-            return Napi::Number::New(Env(), (int)status);
-            }
-
-        /* Process change sets containing schema changes */
-        BeFileName dbFileName(m_dgndb->GetDbFileName(), true);
-        bool isReadonly = m_dgndb->IsReadonly();
-
-        CloseDgnDb();
-
-        status = JsInterop::ApplySchemaChangeSets(dbFileName, revisions, (RevisionProcessOption)applyOption);
-        if (RevisionStatus::Success != status)
-            return Napi::Number::New(Env(), (int)status);
-
-        DgnDbPtr db;
-        DbResult result = JsInterop::OpenDgnDb(db, dbFileName, isReadonly ? Db::OpenMode::Readonly : Db::OpenMode::ReadWrite);
-        if (BE_SQLITE_OK == result)
-            OnDgnDbOpened(*db);
-        else
-            status = RevisionStatus::ApplyError;
-
-        return Napi::Number::New(Env(), (int)status);
-        }
-
-    void ApplyChangeSetsAsync(Napi::CallbackInfo const& info)
-        {
-        REQUIRE_ARGUMENT_FUNCTION(0, responseCallback, );
-        REQUIRE_ARGUMENT_STRING(1, dbname, );
-        REQUIRE_ARGUMENT_STRING(2, dbGuid, );
-        REQUIRE_ARGUMENT_STRING(3, changeSetTokens, );
-        REQUIRE_ARGUMENT_INTEGER(4, applyOption, );
-
-        JsInterop::ApplyChangeSetsAsync(responseCallback, dbname, dbGuid, changeSetTokens, (RevisionProcessOption) applyOption);
         }
 
     static TxnManager::TxnId TxnIdFromString(Utf8StringCR str) {return TxnManager::TxnId(BeInt64Id::FromString(str.c_str()).GetValue());}
@@ -1828,8 +1753,8 @@ public:
         return Napi::Number::New(Env(), (int) SchemaWriteStatus::Success);
         }
 
-    void CloseDgnDb(Napi::CallbackInfo const& info) {  CloseDgnDb(); }
-
+    void CloseIModel(Napi::CallbackInfo const& info) {  CloseDgnDb(); }
+    
     Napi::Value CreateChangeCache(Napi::CallbackInfo const& info)
         {
         REQUIRE_DB_TO_BE_OPEN
@@ -1900,14 +1825,13 @@ public:
 
          // Note: We need to close and reopen the Db to enable change tracking
         if (BE_SQLITE_OK == result)
-            m_dgndb->CloseDb();
-        if (BE_SQLITE_OK == result)
             {
-            SchemaUpgradeOptions schemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::SkipCheck);
-            DgnDb::OpenParams openParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, schemaUpgradeOptions);
+            CloseDgnDb();
 
             PERFLOG_START("iModelJsNative", "OpenDgnDb");
-            m_dgndb = DgnDb::OpenDgnDb(&result, name, openParams);
+            SchemaUpgradeOptions schemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::SkipCheck);
+            DgnDb::OpenParams openParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, schemaUpgradeOptions);
+            OpenDgnDb(name, openParams);
             PERFLOG_FINISH("iModelJsNative", "OpenDgnDb");
             }
 
@@ -2336,8 +2260,6 @@ public:
             InstanceMethod("abandonCreateChangeSet", &NativeDgnDb::AbandonCreateChangeSet),
             InstanceMethod("addPendingChangeSet", &NativeDgnDb::AddPendingChangeSet),
             InstanceMethod("appendBriefcaseManagerResourcesRequest", &NativeDgnDb::AppendBriefcaseManagerResourcesRequest),
-            InstanceMethod("applyChangeSets", &NativeDgnDb::ApplyChangeSets),
-            InstanceMethod("applyChangeSetsAsync", &NativeDgnDb::ApplyChangeSetsAsync),
             InstanceMethod("attachChangeCache", &NativeDgnDb::AttachChangeCache),
             InstanceMethod("beginMultiTxnOperation", &NativeDgnDb::BeginMultiTxnOperation),
             InstanceMethod("briefcaseManagerEndBulkOperation", &NativeDgnDb::BriefcaseManagerEndBulkOperation),
@@ -2345,10 +2267,9 @@ public:
             InstanceMethod("buildBriefcaseManagerResourcesRequestForElement", &NativeDgnDb::BuildBriefcaseManagerResourcesRequestForElement),
             InstanceMethod("buildBriefcaseManagerResourcesRequestForModel", &NativeDgnDb::BuildBriefcaseManagerResourcesRequestForModel),
             InstanceMethod("cancelTo", &NativeDgnDb::CancelTo),
-            InstanceMethod("closeIModel", &NativeDgnDb::CloseDgnDb),
+            InstanceMethod("closeIModel", &NativeDgnDb::CloseIModel),
             InstanceMethod("createChangeCache", &NativeDgnDb::CreateChangeCache),
             InstanceMethod("createIModel", &NativeDgnDb::CreateIModel),
-            InstanceMethod("createStandaloneIModel", &NativeDgnDb::CreateStandaloneIModel),
             InstanceMethod("deleteElement", &NativeDgnDb::DeleteElement),
             InstanceMethod("deleteElementAspect", &NativeDgnDb::DeleteElementAspect),
             InstanceMethod("deleteLinkTableRelationship", &NativeDgnDb::DeleteLinkTableRelationship),
@@ -2407,7 +2328,7 @@ public:
             InstanceMethod("isTxnIdValid", &NativeDgnDb::IsTxnIdValid),
             InstanceMethod("isUndoPossible", &NativeDgnDb::IsUndoPossible),
             InstanceMethod("logTxnError", &NativeDgnDb::LogTxnError),
-            InstanceMethod("openIModel", &NativeDgnDb::OpenDgnDb),
+            InstanceMethod("openIModel", &NativeDgnDb::OpenIModel),
             InstanceMethod("queryFileProperty", &NativeDgnDb::QueryFileProperty),
             InstanceMethod("queryFirstTxnId", &NativeDgnDb::QueryFirstTxnId),
             InstanceMethod("queryModelExtents", &NativeDgnDb::QueryModelExtents),
@@ -4197,67 +4118,261 @@ struct NativeSqliteStatement : BeObjectWrap<NativeSqliteStatement>
             }
     };
 
+//=======================================================================================
+//  Utility to apply change sets (synchronously or asynchronously)
+//! @bsiclass
+//=======================================================================================
+struct ApplyChangeSetsRequest : BeObjectWrap<ApplyChangeSetsRequest>
+    {
+    struct ApplyChangeSetsAsyncWorker : Napi::AsyncWorker
+    {
+    private:
+        NativeDgnDb& m_nativeDgnDb;
+        BeFileNameCR m_dbname;
+        bvector<DgnRevisionCP>& m_revisions;
+        RevisionProcessOption m_applyOption;
+        IConcurrencyControl* m_concurrencyControl;
+        RevisionStatus m_status;
+        JsInterop::ObjectReferenceClaimCheck m_requestContext;
+        Napi::ObjectReference m_applyChangeSetsRequest; // Note: This holds a reference to ApplyChangeSetsRequest instance!
 
-//=======================================================================================
-// @bsistruct                                            Ramanujam.Raman   06/19
-//=======================================================================================
-struct ApplyChangeSetsAsyncWorker : Napi::AsyncWorker
-{
+        void OnComplete()
+            {
+            ApplyChangeSetsRequest* request = ApplyChangeSetsRequest::Unwrap(m_applyChangeSetsRequest.Value());
+            request->m_pending = nullptr;
+            }
+
+        void Execute() override
+            {
+            JsInterop::SetCurrentClientRequestContextForWorkerThread(m_requestContext);
+            NativeLogging::LoggingManager::GetLogger("DgnCore")->info("ApplyChangeSetsAsyncWorker: In worker thread");
+
+            // Apply change sets
+            if (m_nativeDgnDb.IsOpen())
+                m_status = JsInterop::ApplyDataChangeSets(m_nativeDgnDb.GetDgnDb(), m_revisions, m_applyOption);
+            else
+                m_status = JsInterop::ApplySchemaChangeSets(m_dbname, m_revisions, m_applyOption, m_concurrencyControl);
+            }
+
+        void OnOK() override
+            {
+            OnComplete();
+
+            // Warning! If you want to log in a specific ClientRequestContext, then you can't use NativeLogging directly. You must call this helper function:
+            JsInterop::LogMessageInContext("DgnCore", NativeLogging::LOG_INFO, "ApplyChangeSetsAsyncWorker: Back on main thread", m_requestContext);
+            m_requestContext.Dispose();
+
+            auto retval = Napi::Number::New(Env(), (int)m_status);
+            Callback().MakeCallback(Receiver().Value(), {retval});
+            }
+
+    public:
+        ApplyChangeSetsAsyncWorker(Napi::Function &callback, ApplyChangeSetsRequest const& request, NativeDgnDb& nativeDgnDb, BeFileNameCR dbname, bvector<DgnRevisionCP>& revisions, RevisionProcessOption applyOption, IConcurrencyControl* concurrencyControl)
+            : Napi::AsyncWorker(callback), m_nativeDgnDb(nativeDgnDb), m_dbname(dbname), m_revisions(revisions), m_applyOption(applyOption), m_concurrencyControl(concurrencyControl)
+            {
+            m_applyChangeSetsRequest.Reset(request.Value(), 1);
+
+            m_requestContext = JsInterop::GetCurrentClientRequestContextForMainThread();
+            NativeLogging::LoggingManager::GetLogger("DgnCore")->info("ApplyChangeSetsAsyncWorker: Start on main thread");
+            }
+        
+        ~ApplyChangeSetsAsyncWorker() {m_applyChangeSetsRequest.Reset();}
+    };
+
 private:
-    BeFileName m_dbname;
-    Json::Value m_changeSetTokens;
-    Utf8String m_dbGuid;
-    RevisionStatus m_status;
-    RevisionProcessOption m_applyOption;
-    JsInterop::ObjectReferenceClaimCheck m_requestContext;
+    DEFINE_CONSTRUCTOR;
 
-    void Execute() override
+    NativeDgnDb* m_nativeDgnDb;
+    ApplyChangeSetsAsyncWorker *m_pending = nullptr;
+    bvector<DgnRevisionPtr> m_revisionPtrs;
+    bvector<DgnRevisionCP> m_revisions;
+    bool m_containsSchemaChanges;
+    BeFileName m_dbname;
+    Napi::ObjectReference m_jsIModelDb;
+    RefCountedPtr<IConcurrencyControl> m_concurrencyControl;
+
+    /** Reads the change sets to be applied asynchronously */
+    Napi::Value ReadChangeSets(Napi::CallbackInfo const &info)
         {
-        JsInterop::SetCurrentClientRequestContextForWorkerThread(m_requestContext);
-        NativeLogging::LoggingManager::GetLogger("DgnCore")->info("ApplyChangeSetsAsyncWorker: In worker thread");
-               
+        REQUIRE_ARGUMENT_STRING(0, changeSetTokensStr, Napi::Number::New(Env(), (int) RevisionStatus::ApplyError));
+        Json::Value changeSetTokens = Json::Value::From(changeSetTokensStr);
+        if (!m_nativeDgnDb || !m_nativeDgnDb->IsOpen())
+            THROW_JS_TYPE_ERROR("Briefcase must be open to ReadChangeSets");
+
+        Utf8String dbGuid = m_nativeDgnDb->GetDgnDb().GetDbGuid().ToString();
+        RevisionStatus status = JsInterop::ReadChangeSets(m_revisionPtrs, m_containsSchemaChanges, dbGuid, changeSetTokens);
+        if (RevisionStatus::Success == status)
+            {
+            m_revisions.clear();
+            for (uint32_t ii = 0; ii < m_revisionPtrs.size(); ii++)
+                m_revisions.push_back(m_revisionPtrs[ii].get());
+            }
+
+        return Napi::Number::New(Env(), (int) status);
+        }
+
+    /** Returns true if any of the change sets that were read contain schema changes */
+    Napi::Value ContainsSchemaChanges(Napi::CallbackInfo const &info)
+        {
+        if (!m_nativeDgnDb)
+            THROW_JS_TYPE_ERROR("Briefcase must be setup when applying change sets");
+        return Napi::Number::New(Env(), m_containsSchemaChanges);
+        }
+
+    static void CloseBriefcaseLow(BeFileNameR dbname,  Napi::ObjectReference& jsIModelDb, RefCountedPtr<IConcurrencyControl> &concurrencyControl, NativeDgnDb& nativeDgnDb)
+        {
+        DgnDbR dgndb = nativeDgnDb.GetDgnDb();
+        dbname = BeFileName(dgndb.GetDbFileName(), true);
+        jsIModelDb = std::move(dgndb.m_jsIModelDb); // Moves the reference
+        concurrencyControl = dgndb.GetConcurrencyControl();
+        nativeDgnDb.CloseDgnDb();
+        }
+
+    /** 
+     * Close the briefcase, backing up any state that are required at/after open
+     * - needs to be done before applying change sets asynchronously
+     */
+    void CloseBriefcase(Napi::CallbackInfo const &info) 
+        {
+        if (!m_nativeDgnDb || !m_nativeDgnDb->IsOpen())
+            THROW_JS_TYPE_ERROR("Briefcase not open");
+        CloseBriefcaseLow(m_dbname, m_jsIModelDb, m_concurrencyControl, *m_nativeDgnDb);
+        }
+
+    /** 
+     * Apply change sets asynchronously 
+     * Notes:
+     * - the Db must be closed prior to this call (using the CloseBriefcase call in this utility)
+     * - ReadChangeSets must have been called prior to this call
+     * - the Db must be reopened after this call (using the OpenBriefcase call in this utility)
+     */
+    void DoApplyAsync(Napi::CallbackInfo const &info)
+        {
+        REQUIRE_ARGUMENT_FUNCTION(0, responseCallback, );
+        REQUIRE_ARGUMENT_INTEGER(1, applyOption, );
+
+        if (!m_nativeDgnDb)
+            THROW_JS_TYPE_ERROR("Briefcase must be setup when applying change sets");
+        if (m_nativeDgnDb->IsOpen())
+            THROW_JS_TYPE_ERROR("Briefcase must be closed when applying change sets asynchrnously");
+
+        m_pending = new ApplyChangeSetsAsyncWorker(responseCallback, *this, *m_nativeDgnDb, m_dbname, m_revisions, (RevisionProcessOption) applyOption, m_concurrencyControl.get()); // freed in caller of OnOK and OnError see AsyncWorker::OnWorkComplete
+        m_pending->Queue();  // ApplyChanges happens in another thread
+        }
+
+    static DbResult ReopenBriefcaseLow(NativeDgnDb& nativeDgnDb, Db::OpenMode openMode, BeFileNameCR dbname, Napi::ObjectReference& jsIModelDb, IConcurrencyControl* concurrencyControl)
+        {
+        SchemaUpgradeOptions schemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::CheckRequiredUpgrades);
+        DgnDb::OpenParams openParams(openMode, BeSQLite::DefaultTxn::Yes, schemaUpgradeOptions);
+        DbResult result = nativeDgnDb.OpenDgnDb(dbname, openParams);
+        if (BE_SQLITE_OK == result) 
+            {
+            DgnDbR dgndb = nativeDgnDb.GetDgnDb();
+            dgndb.m_jsIModelDb = std::move(jsIModelDb); // Moves the references
+            dgndb.SetConcurrencyControl(concurrencyControl);
+            }
+        return result;
+        }
+
+    /** 
+     * Reopen the briefcase, restoring any backed up state
+     * - needs to be done after applying change sets asynchronously. 
+     */
+    Napi::Value ReopenBriefcase(Napi::CallbackInfo const &info)
+        {
+        if (!m_nativeDgnDb)
+            THROW_JS_TYPE_ERROR("Briefcase must be setup when applying change sets");
+        if (m_nativeDgnDb->IsOpen())
+            THROW_JS_TYPE_ERROR("Briefcase is already open when ReopenBriefcase is called");
+
+        REQUIRE_ARGUMENT_INTEGER(0, openMode, Env().Undefined());
+
+        DbResult result = ReopenBriefcaseLow(*m_nativeDgnDb, (Db::OpenMode) openMode, m_dbname, m_jsIModelDb, m_concurrencyControl.get());
+        return Napi::Number::New(Env(), (int) result);
+        }
+
+    /** 
+     * Apply change sets synchronously
+     *  Notes: 
+     *  - the briefcase must be open
+     *  - causes the briefcase to be closed and reopened *if* the change set contains schema changes
+     *  - the change sets should not be to large to cause a potential timeout since the operation blocks the main thread
+     */
+    static Napi::Value DoApplySync(Napi::CallbackInfo const &info)
+        {
+        REQUIRE_ARGUMENT_OBJ(0, NativeDgnDb, nativeDgnDb, Napi::Number::New(info.Env(), (int) RevisionStatus::ApplyError));
+        REQUIRE_ARGUMENT_STRING(1, changeSetTokensStr, Napi::Number::New(info.Env(), (int) RevisionStatus::ApplyError));
+        REQUIRE_ARGUMENT_INTEGER(2, applyOption, Napi::Number::New(info.Env(), (int) RevisionStatus::ApplyError));
+
+        if (!nativeDgnDb)
+            THROW_JS_TYPE_ERROR("A valid briefcase must be passed in when applying change sets");
+        if (!nativeDgnDb->IsOpen())
+            THROW_JS_TYPE_ERROR("Briefcase must be open when applying a change set synchronously");
+        DgnDbR dgndb = nativeDgnDb->GetDgnDb();
+
         bvector<DgnRevisionPtr> revisionPtrs;
         bool containsSchemaChanges;
-        m_status = JsInterop::ReadChangeSets(revisionPtrs, containsSchemaChanges, m_dbGuid, m_changeSetTokens);
-        if (RevisionStatus::Success != m_status)
-            return;
+        Utf8String dbGuid = dgndb.GetDbGuid().ToString();
+        Json::Value changeSetTokens = Json::Value::From(changeSetTokensStr);
+        RevisionStatus status = JsInterop::ReadChangeSets(revisionPtrs, containsSchemaChanges, dbGuid, changeSetTokens);
+        if (RevisionStatus::Success != status)
+            return Napi::Number::New(info.Env(), (int)status);
 
         bvector<DgnRevisionCP> revisions;
         for (uint32_t ii = 0; ii < revisionPtrs.size(); ii++)
             revisions.push_back(revisionPtrs[ii].get());
 
-        m_status = JsInterop::ApplySchemaChangeSets(m_dbname, revisions, m_applyOption);
-        }
+        /* Process change sets containing only data changes */
+        if (!containsSchemaChanges)
+            {
+            status = JsInterop::ApplyDataChangeSets(dgndb, revisions, (RevisionProcessOption) applyOption);
+            return Napi::Number::New(info.Env(), (int)status);
+            }
 
-    void OnOK() override
-        {
-        // Warning! If you want to log in a specific ClientRequestContext, then you can't use NativeLogging directly. You must call this helper function:
-        JsInterop::LogMessageInContext("DgnCore", NativeLogging::LOG_INFO, "ApplyChangeSetsAsyncWorker: Back on main thread", m_requestContext);
-        m_requestContext.Dispose();
+        /* Process change sets containing schema changes */
+        BeFileName dbname;
+        Napi::ObjectReference jsIModelDb;
+        RefCountedPtr<IConcurrencyControl> concurrencyControl;
+        bool isReadonly = nativeDgnDb->GetDgnDb().IsReadonly();
 
-        auto retval = Napi::Number::New(Env(), (int)m_status);
-        Callback().MakeCallback(Receiver().Value(), {retval});
+        CloseBriefcaseLow(dbname, jsIModelDb, concurrencyControl, *nativeDgnDb);
+
+        status = JsInterop::ApplySchemaChangeSets(dbname, revisions, (RevisionProcessOption)applyOption, concurrencyControl.get());
+        if (RevisionStatus::Success != status)
+            return Napi::Number::New(info.Env(), (int)status);
+
+        Db::OpenMode openMode = isReadonly ? Db::OpenMode::Readonly : Db::OpenMode::ReadWrite;
+        DbResult result = ReopenBriefcaseLow(*nativeDgnDb, openMode, dbname, jsIModelDb, concurrencyControl.get());
+        if (BE_SQLITE_OK != result)
+            status = RevisionStatus::ApplyError;
+
+        return Napi::Number::New(info.Env(), (int)status);
         }
 
 public:
-    ApplyChangeSetsAsyncWorker (Napi::Function& callback, Utf8StringCR dbname, Utf8StringCR dbGuid, Utf8StringCR changeSetTokens, RevisionProcessOption applyOption)
-        : Napi::AsyncWorker(callback), m_dbGuid(dbGuid), m_changeSetTokens(changeSetTokens), m_applyOption(applyOption)
+    ApplyChangeSetsRequest(Napi::CallbackInfo const& info) : BeObjectWrap<ApplyChangeSetsRequest>(info)
         {
-        m_dbname = BeFileName(dbname.c_str(), true);
-        m_changeSetTokens = Json::Value::From(changeSetTokens);
-        m_requestContext = JsInterop::GetCurrentClientRequestContextForMainThread();
-        NativeLogging::LoggingManager::GetLogger("DgnCore")->info("ApplyChangeSetsAsyncWorker: Start on main thread");
+        REQUIRE_ARGUMENT_OBJ(0, NativeDgnDb, nativeDgnDb, );
+        m_nativeDgnDb = nativeDgnDb;
         }
-};
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                Ramanujam.Raman   06/19
-+---------------+---------------+---------------+---------------+---------------+------*/
-void JsInterop::ApplyChangeSetsAsync(Napi::Function& callback, Utf8StringCR dbname, Utf8StringCR dbGuid, Utf8StringCR changeSetTokens, RevisionProcessOption applyOption)
-    {
-    ApplyChangeSetsAsyncWorker *worker = new ApplyChangeSetsAsyncWorker(callback, dbname, dbGuid, changeSetTokens, applyOption);
-    worker->Queue();
-    }
+    ~ApplyChangeSetsRequest() { SetInDestructor(); }
+
+    static void Init(Napi::Env env, Napi::Object exports)
+        {
+        Napi::HandleScope scope(env);
+        Napi::Function t = DefineClass(env, "ApplyChangeSetsRequest", {
+            InstanceMethod("readChangeSets", &ApplyChangeSetsRequest::ReadChangeSets),
+            InstanceMethod("containsSchemaChanges", &ApplyChangeSetsRequest::ContainsSchemaChanges),
+            InstanceMethod("closeBriefcase", &ApplyChangeSetsRequest::CloseBriefcase),
+            InstanceMethod("reopenBriefcase", &ApplyChangeSetsRequest::ReopenBriefcase),
+            InstanceMethod("doApplyAsync", &ApplyChangeSetsRequest::DoApplyAsync),
+            StaticMethod("doApplySync", &ApplyChangeSetsRequest::DoApplySync),
+        });
+        exports.Set("ApplyChangeSetsRequest", t);
+        SET_CONSTRUCTOR(t)
+        }
+    };
 
 //=======================================================================================
 // @bsistruct                                                   Affan.Khan   01/19
@@ -5961,6 +6076,7 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports)
     DisableNativeAssertions::Init(env, exports);
     NativeImportContext::Init(env, exports);
     NativeDevTools::Init(env, exports);
+    ApplyChangeSetsRequest::Init(env, exports);
 
 #ifdef NOT_UNTIL_ALL_BOXES_RUN_NODE_10_2
     napi_add_env_cleanup_hook(env, onNodeExiting, nullptr);

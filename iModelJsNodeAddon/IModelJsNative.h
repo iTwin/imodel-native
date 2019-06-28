@@ -148,9 +148,8 @@ public:
     static BeSQLite::EC::ECInstanceId GetInstanceIdFromInstance(BeSQLite::EC::ECDbCR ecdb, JsonValueCR jsonInstance);
     static void InitLogging();
     static void Initialize(BeFileNameCR, Napi::Env, BeFileNameCR);
-    static DgnDbPtr CreateIModel(DbResult& db, Utf8StringCR name, JsonValueCR, Napi::Env);
-    static BeSQLite::DbResult OpenDgnDb(DgnDbPtr &, BeFileNameCR dbname, DgnDb::OpenMode mode);
-    static void CloseDgnDb(DgnDbR dgndb);
+    static DgnDbPtr CreateDgnDb(DbResult& db, BeFileNameCR filename, JsonValueCR props, Napi::Env);
+    static BeSQLite::DbResult OpenDgnDb(DgnDbPtr &, BeFileNameCR dbname, DgnDb::OpenParams const& openParams);
     static DgnDbStatus GetECClassMetaData(JsonValueR results, DgnDbR db, Utf8CP schema, Utf8CP ecclass);
     static DgnDbStatus GetSchemaItem(JsonValueR results, DgnDbR db, Utf8CP schemaName, Utf8CP itemName);
     static DgnDbStatus GetSchema(JsonValueR results, DgnDbR db, Utf8CP name);
@@ -182,9 +181,8 @@ public:
     static DbResult ImportFunctionalSchema(DgnDbR);
 
     static RevisionStatus ReadChangeSets(bvector<DgnRevisionPtr>& revisionPtrs, bool& containsSchemaChanges, Utf8StringCR dbGuid, JsonValueCR changeSetTokens);
-    static RevisionStatus ApplySchemaChangeSets(BeFileNameCR dbFileName, bvector<DgnRevisionCP> const& revisions, RevisionProcessOption applyOption);
+    static RevisionStatus ApplySchemaChangeSets(BeFileNameCR dbFileName, bvector<DgnRevisionCP> const& revisions, RevisionProcessOption applyOption, IConcurrencyControl* concurrencyControl);
     static RevisionStatus ApplyDataChangeSets(DgnDbR dgndb, bvector<DgnRevisionCP> const& revisions, RevisionProcessOption applyOption);
-    static void ApplyChangeSetsAsync(Napi::Function& callback, Utf8StringCR dbname, Utf8StringCR dbGuid, Utf8StringCR changeSetTokens, RevisionProcessOption applyOption);
     static RevisionStatus StartCreateChangeSet(JsonValueR changeSetInfo, DgnDbR dgndb);
     static RevisionStatus FinishCreateChangeSet(DgnDbR dgndb);
     static void AbandonCreateChangeSet(DgnDbR dgndb);

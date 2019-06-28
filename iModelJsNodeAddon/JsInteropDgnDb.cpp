@@ -833,16 +833,6 @@ DgnDbStatus JsInterop::QueryModelExtents(JsonValueR extentsJson, DgnDbR db, Json
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                               Ramanujam.Raman                 09/17
-//---------------------------------------------------------------------------------------
-void JsInterop::CloseDgnDb(DgnDbR dgndb)
-    {
-    if (dgndb.Txns().HasChanges())
-        dgndb.SaveChanges();
-    dgndb.CloseDb();
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                               Keith.Bentley                 12/17
 //---------------------------------------------------------------------------------------
 void JsInterop::GetIModelProps(JsonValueR val, DgnDbCR dgndb)

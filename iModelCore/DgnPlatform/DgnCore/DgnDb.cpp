@@ -232,6 +232,10 @@ DbResult DgnDb::ProcessRevisions(Db::OpenParams const& params)
     if (revisions.empty())
         return BE_SQLITE_OK;
 
+    IConcurrencyControl* concurrencyControl = schemaUpgradeOptions.GetConcurrencyControl();
+    if (concurrencyControl)
+        SetConcurrencyControl(concurrencyControl);
+        
     RevisionStatus status = Revisions().DoProcessRevisions(revisions, schemaUpgradeOptions.GetRevisionProcessOption());
     return status == RevisionStatus::Success ? BE_SQLITE_OK : BE_SQLITE_ERROR_SchemaUpgradeFailed;
     }

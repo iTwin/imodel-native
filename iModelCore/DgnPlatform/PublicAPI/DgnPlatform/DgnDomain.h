@@ -73,6 +73,8 @@ enum class RevisionProcessOption : int
     Reinstate //!< Revisions will be reinstated
 };
 
+struct IConcurrencyControl;
+
 //=======================================================================================
 //! Options to upgrade schemas when the DgnDb is opened
 //! @note We upgrade the schemas only when the DgnDb is opened to eliminate the impact 
@@ -93,6 +95,7 @@ private:
     DomainUpgradeOptions m_domainUpgradeOptions = DomainUpgradeOptions::CheckRequiredUpgrades;
     bvector<DgnRevisionCP> m_revisions;
     RevisionProcessOption m_revisionProcessOption = RevisionProcessOption::None;
+    RefCountedPtr<IConcurrencyControl> m_concurrencyControl;
 
 public:
     //! Default constructor
@@ -105,7 +108,7 @@ public:
     SchemaUpgradeOptions(DgnRevisionCR revision, RevisionProcessOption revisionOptions = RevisionProcessOption::Merge) { SetUpgradeFromRevision(revision, revisionOptions); }
 
     //! Constructor to setup schema upgrades by merging revisions (that may contain schema changes).
-    SchemaUpgradeOptions(bvector<DgnRevisionCP> const& revisions, RevisionProcessOption revisionOptions = RevisionProcessOption::Merge) { SetUpgradeFromRevisions(revisions, revisionOptions); }
+    SchemaUpgradeOptions(bvector<DgnRevisionCP> const& revisions, RevisionProcessOption revisionOptions = RevisionProcessOption::Merge, IConcurrencyControl* concurrencyControl = nullptr) { SetUpgradeFromRevisions(revisions, revisionOptions, concurrencyControl); }
 
     //! Setup to upgrade schemas from the registered domains
     void SetUpgradeFromDomains(DomainUpgradeOptions domainOptions = DomainUpgradeOptions::CheckRequiredUpgrades)
@@ -114,18 +117,20 @@ public:
         }
 
     //! Setup Schema upgrades by merging a revision (that may contain schema changes)
-    void SetUpgradeFromRevision(DgnRevisionCR upgradeRevision, RevisionProcessOption revisionOptions = RevisionProcessOption::Merge)
+    void SetUpgradeFromRevision(DgnRevisionCR upgradeRevision, RevisionProcessOption revisionOptions = RevisionProcessOption::Merge, IConcurrencyControl* concurrencyControl = nullptr)
         {
         m_revisions.clear();
         m_revisions.push_back(&upgradeRevision);
         m_revisionProcessOption = revisionOptions;
+        m_concurrencyControl = concurrencyControl;
         }
 
     //! Setup Schema upgrades by merging a revision (that contains schema changes)
-    void SetUpgradeFromRevisions(bvector<DgnRevisionCP> const& upgradeRevisions, RevisionProcessOption revisionOptions = RevisionProcessOption::Merge)
+    void SetUpgradeFromRevisions(bvector<DgnRevisionCP> const& upgradeRevisions, RevisionProcessOption revisionOptions = RevisionProcessOption::Merge, IConcurrencyControl* concurrencyControl = nullptr)
         {
         m_revisions = upgradeRevisions;
         m_revisionProcessOption = revisionOptions;
+        m_concurrencyControl = concurrencyControl;
         }
 
     //! Get the option that controls upgrade of schemas in the DgnDb from the domains.
@@ -136,6 +141,9 @@ public:
 
     //! Get the option that controls the processing of revisions 
     RevisionProcessOption GetRevisionProcessOption() const { return m_revisionProcessOption;  }
+
+    //! Get the concurrency control used to handle conflicts
+    IConcurrencyControl* GetConcurrencyControl() const {return m_concurrencyControl.get();}
 
     //! Returns true if schemas are to be upgraded from the domains.
     bool AreDomainUpgradesAllowed() const { return m_domainUpgradeOptions == DomainUpgradeOptions::Upgrade; }
