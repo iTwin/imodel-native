@@ -206,10 +206,6 @@ TEST_F(AccessKeyClientIntegrationTests, AccessKeyClientTestPolicyHeartbeat_Test)
     std::this_thread::sleep_for(std::chrono::seconds(10));
 
     EXPECT_SUCCESS(client->StopApplication());
-
-    std::this_thread::sleep_for(std::chrono::seconds(10));
-
-    EXPECT_EQ(1, 0);
     }
 
 //TEST_F(AccessKeyClientIntegrationTests, OfflinePolicyHeartbeat_Test)
