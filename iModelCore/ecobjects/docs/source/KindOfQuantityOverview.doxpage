@@ -1,0 +1,49 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+//__PUBLISH_SECTION_START__
+    //****** WorkingWithECObjects *******
+
+    /**
+    @page WorkingWithECObjects Working with ECObjects
+
+    This page provides various details and hints about the %ECObjects API and how to work with it.
+
+    @li @subpage KindOfQuantityOverview
+    @li @subpage UnitsOverview
+    @li @subpage FormatsOverview
+    */
+    /**
+    @page KindOfQuantityOverview Kind Of Quantity Overview
+    This document shows examples of how to work with the KindOfQuantity API within ECObjects. KindOfQuantities
+    use both @ref UnitsOverview "Units" and @ref FormatsOverview "Formats" for which there are examples here and here
+
+    KindOfQuantities are created from a schema like so:
+    __PUBLISH_INSERT_FILE__ Overview_KindOfQuantity_CreateKindOfQuantity.sampleCode
+
+    This KoQ is not valid as it does not have a Persistence unit yet and so can not be used. Persistence units
+    can be any valid ECUnit including custom ones like the one we have here or units from the Standard Units
+    Schema
+    __PUBLISH_INSERT_FILE__ Overview_KindOfQuantity_AddPersistenceUnit.sampleCode
+
+    Now that we have a persistence unit, this KoQ is valid and can be added to a property
+    __PUBLISH_INSERT_FILE__ Overview_KindOfQuantity_AddToProperty.sampleCode
+
+    Optionally presentation formats can be added to the KoQ, (See FormatExamples). These control the display of values described
+    by this KoQ and is used in UI. There is no limit to how many presentation formats a KoQ can have. 
+
+    One thing to note is that these formats are instances of the NamedFormat class and are NOT ECFormats. ECFormats are owned by a schema 
+    while these named formats are owned by the KindOfQuantity. NamedFormats are based off an ECFormat but may contain one of several overrides.
+
+    The precision of the format, the units in the composite and the labels of those units can all be overriden by a NamedFormat. In XML this is
+    controlled by format strings, but in code overriding is accomplished by passing certain optional parameters to methods of KindOfQuantity. NamedFormats
+    are not created directly through a constructor, they are created through several factory methods on KindOfQuantity.
+
+    __PUBLISH_INSERT_FILE__ Overview_KindOfQuantity_AddPresentationUnits.sampleCode
+    */
+
+
+

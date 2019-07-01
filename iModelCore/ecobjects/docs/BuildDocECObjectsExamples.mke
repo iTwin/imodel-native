@@ -1,0 +1,93 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+%include mdl.mki
+%include ECObjectsDocs.mki
+
+DOXYGEN_ARTIFACTS       = $(OutBuildDoxygenArtifacts)ECObjectsExamples/
+PublishApiInput         = $(DOXYGEN_ARTIFACTS)PublishApiInput/
+PublishApiOutput        = $(DOXYGEN_ARTIFACTS)PublishApiOutput/
+PublishApiStamp         = $(PublishApiOutput)PublishApi.stamp
+DOXYGEN_INPUT           = $(DOXYGEN_ARTIFACTS)DoxygenInput/
+DOXYGEN_OUTPUT          = $(OutBuildECObjects)
+DOXYGEN_WARN_LOGFILE    = $(DOXYGEN_ARTIFACTS)doxygen-warnings.txt
+
+#----------------------------------------------------------------------------------------
+#   Handle "clean" of all output files
+#----------------------------------------------------------------------------------------
+%if defined (BMAKE_DELETE_ALL_TARGETS)
+    always:
+        -$(rmdirRecursiveCmd) ${DOXYGEN_ARTIFACTS}
+
+    %return
+%endif
+
+#----------------------------------------------------------------------------------------
+#   Run PublishApi to get sample code inserted and macros expanded
+#----------------------------------------------------------------------------------------
+always:
+    !~@mkdir ${PublishApiInput}
+    !~@mkdir ${PublishApiOutput}
+
+always:
+    ~linkfile "$(PublishApiInput)KindOfQuantityExamples.doxpage             = $(_MakeFilePath)source/KindOfQuantityExamples.doxpage
+    ~linkfile "$(PublishApiInput)FormatsExamples.doxpage                    = $(_MakeFilePath)source/FormatsExamples.doxpage   
+    ~linkfile "$(PublishApiInput)UnitsExamples.doxpage                      = $(_MakeFilePath)source/UnitsExamples.doxpage   
+
+
+$(PublishApiStamp) : $[@wildcard $(PublishApiInput)*]
+    $(msg)
+    PublishAPI.py $(PUBLISH_VERBOSE) -o${PublishApiOutput} -d${PublishApiInput} -s$(PublishApiStamp) -x$(TARGET_PLATFORM) --insertFileDir=$(BuildContext)SubParts/Dox/Extractions --insertFileMacros=@$(DOXYGEN_ARTIFACTS)macros.txt
+
+#----------------------------------------------------------------------------------------
+#   Gather Doxygen inputs
+#----------------------------------------------------------------------------------------
+always:
+    !~@mkdir ${DOXYGEN_INPUT}
+    ~linkdir "$(DOXYGEN_INPUT)source = ${PublishApiOutput}"
+
+#----------------------------------------------------------------------------------------
+#   Run Doxygen
+#----------------------------------------------------------------------------------------
+$(DOXYGEN_ARTIFACTS)doxygen.cfg : $(PublishApiStamp) $(DOXYGEN_CONFIG_FILES) $(_MakeFileSpec)
+    $(msg)
+    > $(DOXYGEN_ARTIFACTS)doxygen.cfg
+    @INCLUDE = $(BENTLEY_DOXYGEN_CONFIG)
+    @INCLUDE = $(BENTLEY_DOXYGEN_ALIASES)
+    PROJECT_NAME        = "ECObjects Examples Documentation"
+    WARN_LOGFILE        = $(DOXYGEN_WARN_LOGFILE)
+    QUIET               = $(DOXYGEN_QUIET)
+    INPUT               = $(DOXYGEN_INPUT)
+    OUTPUT_DIRECTORY    = $(DOXYGEN_OUTPUT)
+    HTML_OUTPUT         = $(DocsSubDirECObjects)
+    INCLUDE_PATH        = $(includeDir)
+    DOT_PATH            = $(DOXYGEN_DOT_PATH)
+    SEARCHENGINE        = NO
+    GENERATE_HTML       = YES
+    GENERATE_XML        = NO
+    GENERATE_HTMLHELP   = NO
+    HHC_LOCATION        =
+    ENABLED_SECTIONS    = *
+    FILE_PATTERNS       = *.doxpage
+    <
+%if defined (__apple)
+    ~@putenv GVBINDIR=${DOXYGEN_DOT_PATH}
+%endif
+    !$(doxygenCmd) $(DOXYGEN_ARTIFACTS)doxygen.cfg
+    ~time
+
+always:
+    @$(_MakeFilePath)PreprocessDoxygenWarnings.py "$(DOXYGEN_WARN_LOGFILE)" > "$(DOXYGEN_WARN_LOGFILE)"
+
+%if $[@readfile $(DOXYGEN_WARN_LOGFILE)] != " "
+    %warn ********************
+    %warn * DOXYGEN Warnings *
+    %warn ********************
+    always:
+        @$(_MakeFilePath)DisplayDoxygenWarnings.py "$(DOXYGEN_WARN_LOGFILE)"
+
+    %warn ********************
+    %error DOXYGEN warnings treated as build error
+%endif
