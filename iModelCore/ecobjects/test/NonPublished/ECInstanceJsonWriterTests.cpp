@@ -25,7 +25,6 @@ BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 USING_NAMESPACE_BENTLEY_EC
 
-
 struct ECInstanceBuilder;
 
 //=======================================================================================
@@ -53,7 +52,6 @@ public:
         m_ecValue(value), m_isArrayMember(true), m_arrayCount(count), m_arrayIndex(index), m_instanceProperties(nullptr) {}
     template <typename T, typename = std::enable_if_t<std::is_base_of<T, ECInstanceBuilder>::value>> Value(T& value, int count, int index) :
         m_isArrayMember(true), m_arrayCount(count), m_arrayIndex(index), m_instanceProperties(nullptr) { m_ecValue.SetStruct(value.BuildInstance().get()); }
-
     };
 
 //=======================================================================================

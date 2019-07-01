@@ -336,6 +336,15 @@ BentleyStatus ECJsonUtilities::IGeometryToJson(Json::Value& json, IGeometryCR ge
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                Caleb.Shafer         06/2019
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus ECJsonUtilities::IGeometryToIModelJson(Json::Value& json, IGeometryCR geom)
+    {
+    return IModelJson::TryGeometryToIModelJsonValue(json, geom) ? SUCCESS : ERROR;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      09/2017
 //---------------------------------------------------------------------------------------
 //static
@@ -693,6 +702,24 @@ BentleyStatus ECJsonUtilities::IGeometryToJson(RapidJsonValueR json, IGeometryCR
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                Caleb.Shafer         06/2019
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus ECJsonUtilities::IGeometryToIModelJson(RapidJsonValueR json, IGeometryCR geom, rapidjson::MemoryPoolAllocator<>& allocator)
+    {
+    Utf8String jsonStr;
+    if (!IModelJson::TryGeometryToIModelJsonString(jsonStr, geom) || jsonStr.empty())
+        return ERROR;
+
+    rapidjson::Document jsonDoc;
+    if (jsonDoc.Parse<0>(jsonStr.c_str()).HasParseError())
+        return ERROR;
+
+    json.CopyFrom(jsonDoc, allocator);
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      09/2017
 //---------------------------------------------------------------------------------------
 //static
@@ -711,7 +738,6 @@ IGeometryPtr ECJsonUtilities::JsonToIGeometry(RapidJsonValueCR json)
 
     return geometry[0];
     }
-
 
 //*************************************************************************************
 // JsonECInstanceConverter

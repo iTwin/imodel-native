@@ -136,7 +136,6 @@ TEST_F(ECJsonUtilitiesTestFixture, IdToJson)
     ASSERT_STRCASEEQ("0xffffffffff", rapidJson.GetString()) << id.ToString();
     }
 
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                       Krischan.Eberle             11/2017
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -277,7 +276,6 @@ TEST_F(ECJsonUtilitiesTestFixture, Int64ToJson)
     ASSERT_TRUE(rapidJson.IsString()) << val;
     ASSERT_STRCASEEQ("0x4d2", rapidJson.GetString()) << val;
 
-
     val = INT64_C(0xffffffffff);
 
     ECJsonUtilities::Int64ToJson(jsonCpp, val, ECJsonInt64Format::AsNumber);
@@ -324,7 +322,6 @@ TEST_F(ECJsonUtilitiesTestFixture, Int64ToJson)
     ASSERT_TRUE(rapidJson.IsString()) << val;
     ASSERT_STRCASEEQ("-10", rapidJson.GetString()) << val;
     }
-
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                       Krischan.Eberle             11/2017
@@ -422,7 +419,6 @@ TEST_F(ECJsonUtilitiesTestFixture, DateTimeToJson)
     ASSERT_STRCASEEQ("2017-11-20", rapidJson.GetString()) << dt.ToString();
     }
 
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                       Krischan.Eberle             11/2017
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -465,7 +461,6 @@ TEST_F(ECJsonUtilitiesTestFixture, JsonToBinary)
     EXPECT_EQ(SUCCESS, ECJsonUtilities::JsonToBinary(actualByteStream, rapidJson)) << jsonStr;
     EXPECT_EQ(0, memcmp(expectedByteStream.GetData(), actualByteStream.GetData(), expectedByteStream.GetSize())) << jsonStr;
     }
-
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                       Krischan.Eberle             11/2017
@@ -654,6 +649,96 @@ TEST_F(ECJsonUtilitiesTestFixture, JsonToPoint3d)
     Json::Value nullJsonCpp(Json::nullValue);
     DPoint3d convertedNullJsonCpp;
     EXPECT_NE(SUCCESS, ECJsonUtilities::JsonToPoint3d(convertedNullJsonCpp, nullJsonCpp));
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Caleb.Shafer                     06/2019
+//---------------------------------------------------------------------------------------
+TEST_F(ECJsonUtilitiesTestFixture, IGeometryIModelJsonRoundTrip)
+    {
+    {
+    Json::Value lineSegmentObj(Json::ValueType::objectValue);
+    Json::Value lineSegments(Json::ValueType::arrayValue);
+    Json::Value lineSegment(Json::ValueType::arrayValue);
+    lineSegment[0u] = -21908.999;
+    lineSegment[1u] = 4111.625;
+    lineSegment[2u] = 0.0;
+
+    lineSegments[0u] = lineSegment;
+
+    Json::Value lineSegment2(Json::ValueType::arrayValue);
+    lineSegment2[0u] = -22956.749;
+    lineSegment2[1u] = 4111.625;
+    lineSegment2[2u] = 0.0;
+
+    lineSegments[1u] = lineSegment2;
+
+    lineSegmentObj["lineSegment"] = lineSegments;
+
+    IGeometryPtr geom = ECJsonUtilities::JsonToIGeometry(lineSegmentObj);
+    ASSERT_TRUE(geom.IsValid()) << "The iModelJson IGeometry format should be properly read by ECJsonUtilities::JsonToIGeometry";
+    ICurvePrimitivePtr geomCur = geom->GetAsICurvePrimitive();
+    ASSERT_TRUE(geomCur.IsValid());
+    ASSERT_EQ(ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_Line, geomCur->GetCurvePrimitiveType());
+
+    Json::Value retJson;
+    ECJsonUtilities::IGeometryToIModelJson(retJson, *geom);
+    ASSERT_TRUE(ECTestUtility::JsonDeepEqual(retJson, lineSegmentObj)) << "Expected:\n" + lineSegmentObj.ToString() + "\nBut was:\n" + retJson.ToString();;
+
+    // DgnJs
+    Json::Value dgnJs;
+    ECJsonUtilities::IGeometryToJson(dgnJs, *geom);
+
+    IGeometryPtr geom2 = ECJsonUtilities::JsonToIGeometry(dgnJs);
+    ASSERT_TRUE(geom2.IsValid()) << "The DgnJson format of IGeometry should be able to be read by ECJsonUtilities::JsonToIGeometry";
+    ICurvePrimitivePtr geomCur2 = geom2->GetAsICurvePrimitive();
+    ASSERT_TRUE(geomCur2.IsValid());
+    ASSERT_EQ(ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_Line, geomCur2->GetCurvePrimitiveType());
+
+    EXPECT_TRUE(geom2->IsSameStructureAndGeometry(*geom)) << "The roundtripped geometry should be the same as the original";
+    }
+
+    {// rapid json
+    rapidjson::Document lineSegmentObj(rapidjson::Type::kObjectType);
+    rapidjson::Document lineSegments(rapidjson::Type::kArrayType);
+
+    rapidjson::Document lineSegment(rapidjson::Type::kArrayType);
+    lineSegment.PushBack(-21908.999, lineSegment.GetAllocator());
+    lineSegment.PushBack(4111.625, lineSegment.GetAllocator());
+    lineSegment.PushBack(0.0, lineSegment.GetAllocator());
+
+    lineSegments.PushBack(lineSegment, lineSegments.GetAllocator());
+
+    rapidjson::Document lineSegment2(rapidjson::Type::kArrayType);
+    lineSegment2.PushBack(-22956.749, lineSegment.GetAllocator());
+    lineSegment2.PushBack(4111.625, lineSegment.GetAllocator());
+    lineSegment2.PushBack(0.0, lineSegment.GetAllocator());
+
+    lineSegments.PushBack(lineSegment2, lineSegments.GetAllocator());
+
+    lineSegmentObj.AddMember(rapidjson::StringRef("lineSegment"), lineSegments, lineSegmentObj.GetAllocator());
+
+    IGeometryPtr geom = ECJsonUtilities::JsonToIGeometry(lineSegmentObj);
+    ASSERT_TRUE(geom.IsValid()) << "The iModelJson IGeometry format should be properly read by ECJsonUtilities::JsonToIGeometry";
+    ICurvePrimitivePtr geomCur = geom->GetAsICurvePrimitive();
+    ASSERT_TRUE(geomCur.IsValid());
+    ASSERT_EQ(ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_Line, geomCur->GetCurvePrimitiveType());
+
+    rapidjson::Document retJson;
+    ECJsonUtilities::IGeometryToIModelJson(retJson, *geom.get(), retJson.GetAllocator());
+
+    // DgnJs
+    rapidjson::Document dgnJs;
+    ECJsonUtilities::IGeometryToJson(dgnJs, *geom.get(), dgnJs.GetAllocator());
+
+    IGeometryPtr geom2 = ECJsonUtilities::JsonToIGeometry(dgnJs);
+    ASSERT_TRUE(geom2.IsValid()) << "The DgnJson format of IGeometry should be able to be read by ECJsonUtilities::JsonToIGeometry";
+    ICurvePrimitivePtr geomCur2 = geom2->GetAsICurvePrimitive();
+    ASSERT_TRUE(geomCur2.IsValid());
+    ASSERT_EQ(ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_Line, geomCur2->GetCurvePrimitiveType());
+
+    EXPECT_TRUE(geom2->IsSameStructureAndGeometry(*geom)) << "The roundtripped geometry should be the same as the original";
     }
     }
 

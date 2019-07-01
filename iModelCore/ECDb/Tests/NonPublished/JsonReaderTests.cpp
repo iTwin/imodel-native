@@ -1270,6 +1270,25 @@ TEST_F(JsonECSqlSelectAdapterTests, DataTypes)
     EXPECT_STREQ("TestSchema.ParentHasFoo", actualJson["Parent"][ECJsonSystemNames::Navigation::RelClassName()].GetString()) << actualJson.ToString();
     }
 
+    // Use IModelJs adapter
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT G FROM ts.Foo WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    JsonECSqlSelectAdapter::FormatOptions options(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsHexadecimalString);
+    options.SetRowFormat(JsonECSqlSelectAdapter::RowFormat::IModelJs);
+    JsonECSqlSelectAdapter adapter(stmt, options);
+    JsonDoc actualJson;
+    ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.RapidJson(), actualJson.Allocator()));
+    ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.JsonCpp()));
+
+    ASSERT_TRUE_NULLABLE(actualJson.HasMember("g")) << actualJson.ToString();
+    ASSERT_TRUE_NULLABLE(actualJson["g"].IsObject()) << actualJson.ToString();
+    EXPECT_EQ(JsonValue("{\"lineSegment\":[[0.0,0.0,0.0],[1.0,1.0,1.0]]}"), JsonValue(actualJson["g"].JsonCpp())) << actualJson.ToString();
+    EXPECT_EQ(JsonValue("{\"lineSegment\":[[0.0,0.0,0.0],[1.0,1.0,1.0]]}"), JsonValue(TestUtilities::ToString(actualJson["g"].RapidJson()))) << actualJson.ToString();
+    }
+
     //SELECT FROM relationship
     {
     ECSqlStatement stmt;

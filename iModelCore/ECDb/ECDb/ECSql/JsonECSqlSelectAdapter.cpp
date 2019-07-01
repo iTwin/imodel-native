@@ -813,10 +813,20 @@ BentleyStatus AdapterHelper::PrimitiveToJson(JsonRef& jsonValue, IECSqlValue con
             if (geom == nullptr)
                 return ERROR;
 
-            if (jsonValue.IsRapidJson())
-                return ECJsonUtilities::IGeometryToJson(jsonValue.RapidJson(), *geom, jsonValue.Allocator());
+            if (formatOptions.GetRowFormat() == JsonECSqlSelectAdapter::RowFormat::IModelJs)
+                {
+                if (jsonValue.IsRapidJson())
+                    return ECJsonUtilities::IGeometryToIModelJson(jsonValue.RapidJson(), *geom, jsonValue.Allocator());
 
-            return ECJsonUtilities::IGeometryToJson(jsonValue.JsonCpp(), *geom);
+                return ECJsonUtilities::IGeometryToIModelJson(jsonValue.JsonCpp(), *geom);
+                }
+            else
+                {
+                if (jsonValue.IsRapidJson())
+                    return ECJsonUtilities::IGeometryToJson(jsonValue.RapidJson(), *geom, jsonValue.Allocator());
+
+                return ECJsonUtilities::IGeometryToJson(jsonValue.JsonCpp(), *geom);
+                }
             }
             default:
                 BeAssert(false && "Unknown type");

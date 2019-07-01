@@ -334,7 +334,14 @@ public:
     //! @see BentleyApi::BentleyGeometryJson::TryGeometryToJsonValue
     ECOBJECTS_EXPORT static BentleyStatus IGeometryToJson(Json::Value& json, IGeometryCR geom);
 
-    //! Converts the IGeometry JSON to an IGeometry object
+    //! Converts the specified IGeometry to an iModel JSON value
+    //! @param[out] json the resulting IGeometry IModel JSON value
+    //! @param[in] geom IGeometry to convert
+    //! @return SUCCESS or ERROR
+    //! @see BentleyApi::BentleyGeometryJson::TryGeometryToIModelJsonValue
+    ECOBJECTS_EXPORT static BentleyStatus IGeometryToIModelJson(Json::Value& json, IGeometryCR geom);
+
+    //! Converts the IGeometry JSON or IModel Json to an IGeometry object
     //! @param[in] json the JSON value
     //! @return The IGeometry object or nullptr in case of errors
     //! @see BentleyApi::BentleyGeometryJson::TryJsonValueToGeometry
@@ -475,7 +482,15 @@ public:
     //! @see BentleyApi::BentleyGeometryJson::TryGeometryToJsonValue
     ECOBJECTS_EXPORT static BentleyStatus IGeometryToJson(RapidJsonValueR json, IGeometryCR geom, rapidjson::MemoryPoolAllocator<>& allocator);
 
-    //! Converts the IGeometry JSON to an IGeometry object
+    //! Converts the specified IGeometry to a IModel JSON value
+    //! @param[out] json the resulting IGeometry IModel JSON value
+    //! @param[in] geom IGeometry to convert
+    //! @param[in] allocator Allocator to use to populate the RapidJson value.
+    //! @return SUCCESS or ERROR
+    //! @see BentleyApi::BentleyGeometryJson::TryGeometryToJsonValue
+    ECOBJECTS_EXPORT static BentleyStatus IGeometryToIModelJson(RapidJsonValueR json, IGeometryCR geom, rapidjson::MemoryPoolAllocator<>& allocator);
+
+    //! Converts the IGeometry JSON or IModel Json to an IGeometry object
     //! @param[in] json the JSON value
     //! @return The resulting IGeometry object or nullptr in case of errors
     //! @see BentleyApi::BentleyGeometryJson::TryJsonValueToGeometry
@@ -483,7 +498,6 @@ public:
     //! @}
     };
 
-    
 //=================================================================================
 //! Populates an ECInstance from a JSON in the @ref ECN::ECJsonSystemNames "ECJSON Format".
 // @bsiclass                                                 Ramanujam.Raman      01/2014
