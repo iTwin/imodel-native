@@ -149,7 +149,7 @@ void CurlTaskRunner::_RunAsyncTasksLoop()
     m_curlRunning.store(true);
     m_multi = curl_multi_init();
 
-    if(0 != HttpClient::GetOptions().GetMaxConnectionsPerHost())
+    if (0 != HttpClient::GetOptions().GetMaxConnectionsPerHost())
         curl_multi_setopt(m_multi, CURLMOPT_MAX_HOST_CONNECTIONS, HttpClient::GetOptions().GetMaxConnectionsPerHost());
 
     if (0 != HttpClient::GetOptions().GetMaxTotalConnections())
@@ -202,9 +202,8 @@ void CurlTaskRunner::_RunAsyncTasksLoop()
             CURLMsg* curlMsg = curl_multi_info_read(m_multi, &messageCount);
 
             if (nullptr == curlMsg)
-                {
                 continue;
-                }
+
             if (curlMsg->msg != CURLMSG_DONE) // TODO: is CURLMSG_DONE check needed?
                 {
                 LOG.errorv("Unexpected CURLMsg message: %d", curlMsg->msg);
@@ -309,18 +308,18 @@ void CurlTaskRunner::AddTaskToCurlMultiMap(std::shared_ptr<AsyncTask> task)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    04/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CurlTaskRunner::ResolveFinishedCurl (CURLMsg* curlMsg)
+void CurlTaskRunner::ResolveFinishedCurl(CURLMsg* curlMsg)
     {
     CURL* finishedCurl = curlMsg->easy_handle;
     CURLcode code = curlMsg->data.result;
 
-    auto status = curl_multi_remove_handle (m_multi, finishedCurl);
-    BeAssert (CURLM_OK == status);
+    auto status = curl_multi_remove_handle(m_multi, finishedCurl);
+    BeAssert(CURLM_OK == status);
 
     auto requestTask = m_curlToRequestMap[finishedCurl];
     requestTask->GetData()->FinalizeRequest(code);
 
-    m_curlToRequestMap.erase (finishedCurl);
+    m_curlToRequestMap.erase(finishedCurl);
 
     ResolveRequestTask(requestTask);
     }
@@ -388,9 +387,8 @@ void CurlTaskRunner::WaitForData(long topTimeoutMs)
     // no timeout available (-1) - no requests running, set top value
     // timeout from requests - limit to top value
     if (curl_timeo < 0 || curl_timeo > topTimeoutMs)
-        {
         curl_timeo = topTimeoutMs;
-        }
+
     curl_timeo = topTimeoutMs;
 
     ::timeval timeout = MsToTimeval(curl_timeo);
@@ -417,10 +415,7 @@ void CurlTaskRunner::WaitUntilStopped()
     struct Predicate : IConditionVariablePredicate
         {
         BeAtomic<bool>* curlRunning = nullptr;
-        virtual bool _TestCondition(BeConditionVariable &cv) override
-            {
-            return !curlRunning->load();
-            }
+        virtual bool _TestCondition(BeConditionVariable &cv) override { return !curlRunning->load(); }
         };
 
     Predicate predicate;
