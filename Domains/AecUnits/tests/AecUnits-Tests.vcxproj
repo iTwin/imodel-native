@@ -1,0 +1,113 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="AecUnitsBaseFixture.cpp" />
+    <ClCompile Include="AecUnitsTests.cpp" />
+    <ClCompile Include="AecUnitsTestsMain.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="AecUnitsTests.h" />
+    <ClInclude Include="AecUnitsBaseFixture.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Tests.mke" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{AB43B9A3-5D59-4296-A934-C367BCF7B0B7}</ProjectGuid>
+    <Keyword>MakeFileProj</Keyword>
+    <ProjectName>AecUnitsTests</ProjectName>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <ConfigurationType>Makefile</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions);;__EXCEPTIONS;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;BENTLEY_WIN32;BENTLEY_WARNINGS_HIGHEST_LEVEL;_ALLOW_RTCc_IN_STL;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;WIN32_LEAN_AND_MEAN;_WIN32_WINNT=0x0601;_WIN32_IE=0x0600;NTDDI_WIN7SP1=0x06010100;_VARIADIC_MAX=10</NMakePreprocessorDefinitions>
+    <NMakeIncludeSearchPath>$(OutRoot)Winx64\BuildContexts\AecUnits\PublicAPI\;$(OutRoot)Winx64\BuildContexts\AecUnits\VendorAPI\</NMakeIncludeSearchPath>
+    <NMakeBuildCommandLine>bb re AecUnitsTestsExe</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb re AecUnitsTestsExe</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb re AecUnitsTestsExe -c</NMakeCleanCommandLine>
+    <NMakeOutput>$(OutRoot)Winx64\Product\AecUnitsTests\AecUnitsTests.exe</NMakeOutput>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <NMakeOutput>AecUnitsTests.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <IncludePath>$(OUTROOT)Winx64\BuildContexts\AecUnits\PublicAPI;$(OUTROOT)Winx64\BuildContexts\AecUnits\VendorAPI;$(IncludePath)</IncludePath>
+    <NMakeIncludeSearchPath>$(OUTROOT)Winx64\BuildContexts\AecUnits\PublicAPI;$(OUTROOT)Winx64\BuildContexts\AecUnits\VendorAPI;$(IncludePath)</NMakeIncludeSearchPath>
+    <NMakeBuildCommandLine>bb re AecUnitsTestsExe</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb re AecUnitsTestsExe</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb re AecUnitsTestsExe -c</NMakeCleanCommandLine>
+    <NMakeOutput>$(OutRoot)Winx64\Product\AecUnitsTests\Assemblies\AecUnitsTests.exe</NMakeOutput>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <NMakeOutput>AecUnits-Tests.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <NMakeOutput>AecUnits-Tests.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <BuildLog>
+      <Path>$(OutRoot)Winx64\build\AecUnits\$(MSBuildProjectName).log</Path>
+    </BuildLog>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
