@@ -1,0 +1,15 @@
+{
+    "instances": [
+        {
+            "instanceId": "14812",
+            "schemaName": "RealityModeling",
+            "className": "RealityDataRelationship",
+            "properties": {
+                "RealityDataId": "f4425509-55c4-4e03-932a-d67b87ace30f",
+                "RelatedId": "504fc784-2b2d-465f-b1d9-de58bf6cf0f2",
+                "RelationType": "CONNECT-Project"
+            },
+            "eTag": "gZIS2SFbXqohdwLlTRXkJOTCHz0="
+        }
+    ]
+}

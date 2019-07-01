@@ -1,0 +1,30 @@
+{
+    "instances": [
+        {
+            "instanceId": "",
+            "schemaName": "S3MX",
+            "className": "EnterpriseStat",
+            "properties": {
+                "TotalSize": 235892929,
+                "NumberOfRealityData": 1425,
+                "OrganizationId": "e82a584b-9fae-409f-9581-fd154f7b9ef9",
+                "UltimateId": "e82a584b-9fae-409f-9581-fd154f7b9ef9",
+                "UltimateSite": "e82a584b-9fae-409f-9581-fd154f7b9ef9"
+            },
+            "eTag": "ifZwDzBbgEqb8b0Z62MNmrQTysQ="
+        },
+        {
+            "instanceId": "",
+            "schemaName": "S3MX",
+            "className": "EnterpriseStat",
+            "properties": {
+                "TotalSize": 12,
+                "NumberOfRealityData": 1,
+                "OrganizationId": "af3c43a9-1797-4765-a7c3-fd154f7b9ef9",
+                "UltimateId": "af3c43a9-1797-4765-a7c3-fd154f7b9ef9",
+                "UltimateSite": "af3c43a9-1797-4765-a7c3-fd154f7b9ef9"
+            },
+            "eTag": "bVDdVT+8j6HTmIo7PNaqVcyYyLw="
+        }
+    ]
+}
