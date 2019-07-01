@@ -93,7 +93,7 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
         return repoPath;
         }
 
-    iModel::Hub::iModelInfoPtr GetIModelInfo() override {BeAssert(false && "not implemented"); return nullptr;}
+    iModel::Hub::iModelInfoPtr GetIModelInfo() override {return nullptr;}
     
     bvector<DgnRevisionPtr> GetDgnRevisions(size_t start = 0, size_t end = -1)
         {

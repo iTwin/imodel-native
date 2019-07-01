@@ -10,6 +10,8 @@
 #endif
 #include <iModelBridge/iModelBridgeFwk.h>
 #include <iModelDmsSupport/DmsSession.h>
+#include <regex>
+
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_LOGGING
 
@@ -104,7 +106,7 @@ BentleyStatus   iModelBridgeFwk::StageInputFile()
 
     BentleyStatus status = BentleyStatus::SUCCESS;
     if (!m_dmsSupport->_StageInputFile(m_jobEnvArgs.m_inputFileName))
-        return ERROR;
+        status = ERROR;
 
     m_dmsSupport->_UnInitialize();
     return status;
@@ -356,4 +358,20 @@ BentleyStatus iModelBridgeFwk::DmsServerArgs::Validate(int argc, WCharCP argv[])
 iModelBridgeFwk::DmsServerArgs::DmsServerArgs()
     :m_folderId(0), m_documentId(0), m_isv8i(false), m_dmsType(iModelDmsSupport::SessionType::PWDI)
     {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String iModelBridgeFwk::DmsServerArgs::GetDocumentGuid()
+    {
+    if (m_inputFileUrn.empty())
+        return Utf8String();
+    std::string fileStr(Utf8String(m_inputFileUrn.c_str()).c_str());
+    std::regex guidStr("([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})", std::regex::ECMAScript | std::regex::icase);
+    std::smatch match;
+    if (!std::regex_search(fileStr,match, guidStr))
+        return Utf8String();
+
+    return match[1].str().c_str();
     }

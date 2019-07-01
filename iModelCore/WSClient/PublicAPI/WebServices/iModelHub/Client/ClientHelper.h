@@ -90,6 +90,9 @@ public:
     //! Create a client that always uses the same authorizationHeader
     IMODELHUBCLIENT_EXPORT iModel::Hub::ClientPtr SignInWithStaticHeader(Utf8StringCR authorizationHeader);
 
+    //! Get Connect sign in manager for iModelBridge use case.
+    IMODELHUBCLIENT_EXPORT IConnectSignInManagerPtr GetConnectSignInManager() const;
+    
     //! Set a custom iModelHub Url
     void SetUrl(Utf8StringCR url) { m_url = url; }
 

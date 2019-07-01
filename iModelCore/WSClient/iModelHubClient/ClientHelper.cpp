@@ -222,3 +222,11 @@ Utf8String ClientHelper::QueryProjectId(WSError* errorOut, Utf8StringCR bcsProje
 
     return projectId;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+IConnectSignInManagerPtr   ClientHelper::GetConnectSignInManager() const
+    {
+    return m_signinMgr;
+    }

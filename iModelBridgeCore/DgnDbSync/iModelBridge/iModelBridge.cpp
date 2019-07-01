@@ -12,6 +12,7 @@
 #include "iModelBridgeHelpers.h"
 #include "iModelBridgeLdClient.h"
 #include <Licensing/SaasClient.h>
+#include <WebServices/Configuration/UrlProvider.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_LOGGING
@@ -1199,18 +1200,61 @@ BentleyStatus iModelBridge::_ParseCommandLine(int argc, WCharCP argv[])
 * @bsimethod                                    Abeesh.Basheer                  05/19
 +---------------+---------------+---------------+---------------+---------------+------*/
 static Licensing::SaasClientPtr GetUlasClientInstance(WebServices::ClientInfoPtr clientInfo)
-	{
-	static Licensing::SaasClientPtr s_instance;
-	if (nullptr != s_instance)
-		return s_instance;
+    {
+    static Licensing::SaasClientPtr s_instance;
+    if (nullptr != s_instance)
+        return s_instance;
 
-	if (nullptr == clientInfo)
-		return nullptr;
-	
+    if (nullptr == clientInfo)
+        return nullptr;
+
     int productId = atoi(clientInfo->GetApplicationProductId().c_str());
     s_instance = Licensing::SaasClient::Create(productId, clientInfo->GetApplicationGUID().c_str());
     return s_instance;
 	}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+//static Utf8String GetUsageUrl (int env)
+//    {
+//    switch (env)
+//        {
+//        case WebServices::UrlProvider::Environment::Dev: return "https://dev-connect-ulastm.bentley.com/Bentley.Entitlement.PolicyService/PolicySvcWebApi/api";
+//        case WebServices::UrlProvider::Environment::Perf:
+//        case WebServices::UrlProvider::Environment::Qa: return "https://qa-connect-ulastm.bentley.com/Bentley.Entitlement.PolicyService/PolicySvcWebApi/api";
+//        case WebServices::UrlProvider::Environment::Release: 
+//        default:
+//            return "https://connect-ulastm.bentley.com/Bentley.Entitlement.PolicyService/PolicySvcWebApi/api";
+//        }
+
+// Feature tracking url https://qa-connect-ulastm.bentley.com/Bentley.ULAS.PostingService/PostingSvcWebApi
+//    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+WebServices::ISecurityTokenPtr iModelBridge::GetSecurityToken()
+    {
+    WebServices::IConnectSignInManagerPtr  mgr = _GetParams().GetConnectSigninManager();
+    if (nullptr == mgr)
+        return nullptr;
+
+    auto tokenProvider = mgr->GetTokenProvider("https://connect-wsg20.bentley.com");
+    //auto tokenProvider = mgr->GetTokenProvider(GetUsageUrl(_GetParams().m_environment));
+    if (nullptr == tokenProvider)
+        return nullptr;
+
+    auto tokenPtr = tokenProvider->GetToken();
+    if (nullptr == tokenPtr)
+        {
+        //Token was not generated yet. Try updating it.
+        return tokenProvider->UpdateToken()->GetResult();
+        }
+
+    return tokenPtr;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/19
@@ -1221,15 +1265,12 @@ BentleyStatus	iModelBridge::TrackUsage()
     if (nullptr == clientInfo)
         return ERROR;
 
-    WebServices::IConnectTokenProviderPtr  tokenProvider = _GetParams().GetConnectTokenProvider();
-    if (nullptr == tokenProvider)
+    auto token = GetSecurityToken();
+    if (nullptr == token)
         return ERROR;
-
-    auto tokenPtr = tokenProvider->GetToken();
-    if (nullptr == tokenPtr)
-        return ERROR;
+    //TODO: IF it is a saml token get a an OIDC token.
 
     Licensing::SaasClientPtr client = GetUlasClientInstance(clientInfo);
-    client->TrackUsage(tokenPtr->ToAuthorizationString(),clientInfo->GetApplicationVersion(),_GetParams().GetProjectGuid());
+    client->TrackUsage(token->ToAuthorizationString(),clientInfo->GetApplicationVersion(),_GetParams().GetProjectGuid());
     return SUCCESS;
 	}

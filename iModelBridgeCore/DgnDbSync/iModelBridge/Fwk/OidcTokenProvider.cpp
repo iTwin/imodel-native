@@ -45,7 +45,7 @@ Tasks::AsyncTaskPtr<WebServices::ISecurityTokenPtr> OidcTokenProvider::UpdateTok
         Utf8String bearerString("Bearer ");
         bearerString.append(tokenJson.GetString());
 
-        NativeLogging::LoggingManager::GetLogger("iModelBridge")->infov("OidcTokenProvider::UpdateToken(2) bearerString = %s", bearerString.c_str());
+        //NativeLogging::LoggingManager::GetLogger("iModelBridge")->infov("OidcTokenProvider::UpdateToken(2) bearerString = %s", bearerString.c_str());
 
         m_token = std::make_shared<OidcToken>(tokenJson.GetString());
         

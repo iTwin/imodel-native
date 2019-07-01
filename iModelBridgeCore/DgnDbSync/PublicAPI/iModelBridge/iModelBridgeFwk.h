@@ -28,7 +28,7 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct IModelClientForBridges;
 struct iModelBridgeCallOpenCloseFunctions;
-
+struct iModelBridgeSettings;
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
@@ -52,6 +52,12 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         iModelDoesNotExist = 2
         };
 
+    struct FwkContext
+        {
+        iModelBridgeSettings& m_settings;
+        FwkContext (iModelBridgeSettings& settings): m_settings(settings)
+        {}
+        };
     // BootstrappingState tells us where we are in the bootstrapping process.
     //
     //                                          have BootstrappingState file?
@@ -94,11 +100,11 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
     void SetState(BootstrappingState);
     BootstrappingState GetState();
     BentleyStatus AssertPreConditions();
-    BentleyStatus DoInitial();
-    BentleyStatus IModelHub_DoCreatedLocalDb();
-    BentleyStatus IModelHub_DoCreatedRepository();
+    BentleyStatus DoInitial(FwkContext& context);
+    BentleyStatus IModelHub_DoCreatedLocalDb(FwkContext& context);
+    BentleyStatus IModelHub_DoCreatedRepository(FwkContext& context);
     
-    BentleyStatus BootstrapBriefcase(bool& createdNewRepo);
+    BentleyStatus BootstrapBriefcase(bool& createdNewRepo, FwkContext& context);
     BentleyStatus GetSchemaLock();
     
     enum class SyncState
@@ -111,7 +117,7 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
     void SetSyncState(SyncState);
     SyncState GetSyncState();
 
-    BeSQLite::DbResult SaveBriefcaseId();
+    BeSQLite::DbResult SaveBriefcaseId(BeSQLite::BeBriefcaseId& briefcaseId);
     //void SaveParentRevisionId();
 
     static void DecryptCredentials(Http::Credentials& credentials);
@@ -222,7 +228,7 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         bvector<WString>    m_additionalFilePatterns;
         iModelDmsSupport::SessionType  m_dmsType;
         static void PrintUsage();
-
+        Utf8String          GetDocumentGuid();
         DmsServerArgs();
 
         T_iModelDmsSupport_getInstance*   LoadDmsLibrary();
@@ -284,7 +290,6 @@ protected:
     void LogStderr();
     void CleanJobWorkdir();
     void InitLogging();
-
     bool _IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) override;
     void _QueryAllFilesAssignedToBridge(bvector<BeFileName>& fns, wchar_t const* bridgeRegSubKey) override;
     BentleyStatus _GetDocumentProperties(iModelBridgeDocumentProperties&, BeFileNameCR fn) override;
@@ -304,7 +309,7 @@ protected:
     BentleyStatus Briefcase_CreateRepository0(BeFileNameCR localDb);
     BentleyStatus Briefcase_IModelHub_CreateRepository();
     void Briefcase_MakeBriefcaseName(); // Sets m_briefcaseName
-    BentleyStatus Briefcase_AcquireBriefcase();
+    BentleyStatus Briefcase_AcquireBriefcase(FwkContext& context);
     BentleyStatus Briefcase_Push(Utf8CP);
     BentleyStatus Briefcase_PullMergePush(Utf8CP, bool doPullAndMerge = true, bool doPush = true);
     BentleyStatus Briefcase_ReleaseAllPublicLocks();
@@ -376,7 +381,7 @@ public:
     //! @private
     IMODEL_BRIDGE_FWK_EXPORT static void SetRegistryForTesting(IModelBridgeRegistry&);
 
-    IMODEL_BRIDGE_FWK_EXPORT void SetTokenProvider(WebServices::IConnectTokenProviderPtr provider);
+    IMODEL_BRIDGE_FWK_EXPORT void SetConnectSignInManager(WebServices::ConnectSignInManagerPtr mgr);
 
     IMODEL_BRIDGE_FWK_EXPORT BentleyStatus TestFeatureFlag (CharCP ff, bool& flag) const;
 

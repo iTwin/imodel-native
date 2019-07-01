@@ -24,6 +24,7 @@
 #include "iModelCrashProcessor.h"
 #include "iModelBridgeErrorHandling.h"
 #include <regex>
+#include "../iModelBridgeSettings.h"
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -783,7 +784,7 @@ BentleyStatus iModelBridgeFwk::AssertPreConditions()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridgeFwk::DoInitial()
+BentleyStatus iModelBridgeFwk::DoInitial(iModelBridgeFwk::FwkContext& context)
     {
     // ***
 	// ***
@@ -821,7 +822,7 @@ BentleyStatus iModelBridgeFwk::DoInitial()
 
     // Maybe we just need to acquire a briefcase for an existing repository.
     GetLogger().infov("bridge:%s iModel:%s - acquiring briefcase.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
-    if (BSISUCCESS == Briefcase_AcquireBriefcase())
+    if (BSISUCCESS == Briefcase_AcquireBriefcase(context))
         {
         SetState(BootstrappingState::HaveBriefcase);
         return BSISUCCESS;
@@ -868,7 +869,7 @@ BentleyStatus iModelBridgeFwk::DoInitial()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridgeFwk::IModelHub_DoCreatedLocalDb()
+BentleyStatus iModelBridgeFwk::IModelHub_DoCreatedLocalDb(iModelBridgeFwk::FwkContext& context)
     {
     bool fileExists = m_briefcaseName.DoesPathExist();
     if (!fileExists)
@@ -888,6 +889,9 @@ BentleyStatus iModelBridgeFwk::IModelHub_DoCreatedLocalDb()
     if (BSISUCCESS != Briefcase_IModelHub_CreateRepository())
         return BSIERROR;
 
+    auto iModelInfo = m_client->GetIModelInfo();
+    if (iModelInfo.IsValid())
+        context.m_settings.SetiModelId(iModelInfo->GetId());
     SetState(BootstrappingState::CreatedRepository);
     return BSISUCCESS;
     }
@@ -895,7 +899,7 @@ BentleyStatus iModelBridgeFwk::IModelHub_DoCreatedLocalDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridgeFwk::IModelHub_DoCreatedRepository()
+BentleyStatus iModelBridgeFwk::IModelHub_DoCreatedRepository(iModelBridgeFwk::FwkContext& context)
     {
     bool fileExists = m_briefcaseName.DoesPathExist();
     if (fileExists)
@@ -909,7 +913,7 @@ BentleyStatus iModelBridgeFwk::IModelHub_DoCreatedRepository()
             }
         }
 
-    if (BSISUCCESS != Briefcase_AcquireBriefcase())
+    if (BSISUCCESS != Briefcase_AcquireBriefcase(context))
         {
         BeAssert(false && "we think we have created a repository, but it must have failed");
         if (EffectiveServerError::iModelDoesNotExist == m_lastServerError)
@@ -930,7 +934,7 @@ BentleyStatus iModelBridgeFwk::IModelHub_DoCreatedRepository()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridgeFwk::BootstrapBriefcase(bool& createdNewRepo)
+BentleyStatus iModelBridgeFwk::BootstrapBriefcase(bool& createdNewRepo, iModelBridgeFwk::FwkContext& context)
     {
     BootstrappingState state;
     int count = 0;
@@ -945,9 +949,9 @@ BentleyStatus iModelBridgeFwk::BootstrapBriefcase(bool& createdNewRepo)
         BentleyStatus status = BSISUCCESS;
         switch (state)
             {
-            case BootstrappingState::Initial:                   status = DoInitial(); break;
-            case BootstrappingState::CreatedLocalDb:            status = IModelHub_DoCreatedLocalDb(); createdNewRepo = true; break;
-            case BootstrappingState::CreatedRepository:         status = IModelHub_DoCreatedRepository(); break;
+            case BootstrappingState::Initial:                   status = DoInitial(context); break;
+            case BootstrappingState::CreatedLocalDb:            status = IModelHub_DoCreatedLocalDb(context); createdNewRepo = true; break;
+            case BootstrappingState::CreatedRepository:         status = IModelHub_DoCreatedRepository(context); break;
             }
 
         if (BSISUCCESS != status)
@@ -964,7 +968,11 @@ BentleyStatus iModelBridgeFwk::BootstrapBriefcase(bool& createdNewRepo)
     if (!m_briefcaseName.DoesPathExist())
         {
         BeSQLite::BeBriefcaseId briefcaseId = GetBriefcaseId();
-        if (GetBriefcaseId().IsValid())
+        if (!briefcaseId.IsValid())//We were not able to find a passed or cached briefcaseId. Let's check the settings service.
+            {
+            context.m_settings.GetBriefCaseId(m_dmsServerArgs.GetDocumentGuid(), briefcaseId);
+            }
+        if (briefcaseId.IsValid())
             {
             if (BSISUCCESS != m_client->RestoreBriefcase(m_briefcaseName, m_briefcaseBasename.c_str(), briefcaseId))
                 return BSIERROR;
@@ -1219,7 +1227,7 @@ static RepositoryStatus acquireSharedLocks(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult iModelBridgeFwk::SaveBriefcaseId()
+DbResult iModelBridgeFwk::SaveBriefcaseId(BeSQLite::BeBriefcaseId& briefcaseId)
     {
     DbResult rc;
     auto db = DgnDb::OpenDgnDb(&rc, m_briefcaseName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly));
@@ -1227,7 +1235,8 @@ DbResult iModelBridgeFwk::SaveBriefcaseId()
         {
         return rc;
         }
-    uint32_t bcid = db->GetBriefcaseId().GetValue();
+    briefcaseId = db->GetBriefcaseId();
+    uint32_t bcid = briefcaseId.GetValue();
     m_stateDb.SaveProperty(s_briefcaseIdPropSpec, &bcid, sizeof(bcid));
     m_stateDb.SaveChanges();
     return BE_SQLITE_OK;
@@ -1399,6 +1408,8 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
 
     LogPerformance(setUpTimer, "Initialized iModelBridge Fwk");
 
+    iModelCrashProcessor::GetInstance().SetRunInfo(m_jobEnvArgs.m_jobRequestId, m_jobEnvArgs.m_jobRunCorrelationId);
+
     LOG.tracev(L"Logging into iModel Hub");
     {
     StopWatch iModelHubSignIn(true);
@@ -1408,9 +1419,19 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
 
     LogPerformance(iModelHubSignIn, "Logging into iModelHub");
     }
-    iModelCrashProcessor::GetInstance().SetRunInfo(m_jobEnvArgs.m_jobRequestId, m_jobEnvArgs.m_jobRunCorrelationId);
+    
     LOG.tracev(L"Logging into iModel Hub : Done");
+    //Initialize the settings.
+    Utf8String projectGuid, iModelGuid;
+    if (m_iModelHubArgs)
+        projectGuid = m_client->GetProjectId();
 
+    auto iModelInfo = m_client->GetIModelInfo();
+    if (iModelInfo.IsValid())
+        iModelGuid = iModelInfo->GetId();
+
+    iModelBridgeSettings settings(m_client->GetConnectSignInManager(), m_jobEnvArgs.m_jobRunCorrelationId, iModelGuid.c_str(), projectGuid.c_str());
+    FwkContext context(settings);
     // Stage the workspace and input file if  necessary.
     LOG.tracev(L"Setting up workspace for standalone bridges");
     if (BSISUCCESS != SetupDmsFiles())
@@ -1425,7 +1446,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     StopWatch briefcaseTime(true);
 
     bool createdNewRepo = false;
-    if (BSISUCCESS != BootstrapBriefcase(createdNewRepo))
+    if (BSISUCCESS != BootstrapBriefcase(createdNewRepo, context))
         {
         m_briefcaseDgnDb = nullptr;
         return RETURN_STATUS_SERVER_ERROR;

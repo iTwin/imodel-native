@@ -461,10 +461,10 @@ StatusInt       IModelClientBase::RestoreBriefcase(BeFileNameCR bcFileName, Utf8
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  06/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-WebServices::IConnectTokenProviderPtr IModelClientBase::GetTokenProvider()
+WebServices::IConnectSignInManagerPtr IModelClientBase::GetConnectSignInManager()
     {
-    if (nullptr == m_oidcMgr)
+    if (m_client.IsNull())
         return nullptr;
 
-    return m_oidcMgr->GetTokenProvider("");
+    return ClientHelper::GetInstance()->GetConnectSignInManager();
     }

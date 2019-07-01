@@ -31,6 +31,8 @@ $(o)iModelBridgeBimHost$(oext) : $(_MakeFilePath)iModelBridgeBimHost.cpp $(iMode
 
 $(o)iModelBridgeSyncInfoFile$(oext) : $(_MakeFilePath)iModelBridgeSyncInfoFile.cpp $(iModelBridgeAPISrc)iModelBridge.h $(iModelBridgeAPISrc)iModelBridgeSyncInfoFile.h ${MultiCompileDepends}
 
+$(o)iModelBridgeSettings$(oext) : $(_MakeFilePath)iModelBridgeSettings.cpp $(iModelBridgeAPISrc)iModelBridge.h $(_MakeFilePath)iModelBridgeSettings.h ${MultiCompileDepends}
+
 $(o)iModelBridgeSyncInfoFileChangeDetector$(oext) : $(_MakeFilePath)iModelBridgeSyncInfoFileChangeDetector.cpp $(iModelBridgeAPISrc)iModelBridge.h $(iModelBridgeAPISrc)iModelBridgeSyncInfoFile.h ${MultiCompileDepends}
 
 %if $(TARGET_PLATFORM)=="Windows"

@@ -89,11 +89,17 @@ bool ConnectAuthenticationHandler::_ShouldRetryAuthentication(Http::ResponseCR r
         {
         return true;
         }
-    if (response.GetHttpStatus() == HttpStatus::NotFound &&
-        Json::Reader::DoParse(response.GetBody().AsString())["errorId"].asString().Equals("DatasourceNotFound"))
+    if (response.GetHttpStatus() == HttpStatus::NotFound)
         {
-        // Token MAY be expired, retry. Workaround for TFS#7930
-        return true;
+        auto responseJson = Json::Reader::DoParse(response.GetBody().AsString());
+        if (responseJson.isNull()|| !responseJson.isObject())
+            return false;
+
+        if (!responseJson.isMember("errorId"))
+            return false;
+
+        if (responseJson["errorId"].asString().Equals("DatasourceNotFound"))
+            return true;// Token MAY be expired, retry. Workaround for TFS#7930
         }
     return false;
     }

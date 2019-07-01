@@ -46,6 +46,8 @@ struct IMODEL_BRIDGE_FWK_EXPORT IModelClientForBridges
     virtual iModel::Hub::iModelInfoPtr GetIModelInfo() = 0;
 
     virtual bool IsConnected() const = 0;
+    virtual WebServices::IConnectSignInManagerPtr GetConnectSignInManager() { return nullptr; }
+    virtual Utf8String GetProjectId() const { return Utf8String(); }
 
 };
 
@@ -97,7 +99,7 @@ public:
 
     static NativeLogging::ILogger& GetLogger() { return *NativeLogging::LoggingManager::GetLogger("iModelBridge"); }
 
-    WebServices::IConnectTokenProviderPtr GetTokenProvider();
+    WebServices::IConnectSignInManagerPtr GetConnectSignInManager() override;
 };
 
 // ========================================================================================================
@@ -136,7 +138,7 @@ struct IMODEL_BRIDGE_FWK_EXPORT IModelHubClient : IModelClientBase, IModelHubCli
     ~IModelHubClient() {}
 
     iModel::Hub::iModelInfoPtr GetIModelInfo() override;
-    
+    virtual Utf8String GetProjectId() const override { return m_projectId; }
     /*
     StatusInt AcquireBriefcase(BeFileNameCR bcFileName, Utf8CP repoId) override {return m_impl.AcquireBriefcase(bcFileName, repoId);}
     StatusInt OpenBriefcase(Dgn::DgnDbR db) override {return m_impl.OpenBriefcase(db);}

@@ -10,6 +10,7 @@
 #include <DgnPlatform/DgnProgressMeter.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 #include "Decrypt.h"
+#include "../iModelBridgeSettings.h"
 
 USING_NAMESPACE_BENTLEY_IMODELHUB
 USING_NAMESPACE_BENTLEY_TASKS
@@ -336,7 +337,7 @@ void iModelBridgeFwk::Briefcase_MakeBriefcaseName()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridgeFwk::Briefcase_AcquireBriefcase()
+BentleyStatus iModelBridgeFwk::Briefcase_AcquireBriefcase(iModelBridgeFwk::FwkContext& context)
     {
     m_lastServerError = EffectiveServerError::Unknown;
 
@@ -357,7 +358,12 @@ BentleyStatus iModelBridgeFwk::Briefcase_AcquireBriefcase()
         return BSIERROR;
         }
     BeSQLite::BeBriefcaseId briefcaseId = GetBriefcaseId();
-    if (GetBriefcaseId().IsValid())
+    if (!briefcaseId.IsValid())//We were not able to find a passed or cached briefcaseId. Let's check the settings service.
+        {
+        context.m_settings.GetBriefCaseId(m_dmsServerArgs.GetDocumentGuid(), briefcaseId);
+        }
+    
+    if (briefcaseId.IsValid())
         {
         if (BSISUCCESS != m_client->RestoreBriefcase(m_briefcaseName, m_briefcaseBasename.c_str(), briefcaseId))
             return BSIERROR;
@@ -376,7 +382,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_AcquireBriefcase()
         return BSIERROR;
         }
 
-    auto rc = SaveBriefcaseId();
+    auto rc = SaveBriefcaseId(briefcaseId);
 
     if (BE_SQLITE_OK != rc)
         {
@@ -384,14 +390,17 @@ BentleyStatus iModelBridgeFwk::Briefcase_AcquireBriefcase()
             {
             bool madeSchemaChanges = false;
             iModelBridge::OpenBimAndMergeSchemaChanges(rc, madeSchemaChanges, m_briefcaseName);
-            rc = SaveBriefcaseId();
+            rc = SaveBriefcaseId(briefcaseId);
             }
         else
             {
             GetLogger().infov("Cannot open briefcase (error %x)\n", rc);
             }
         }
-        
+    
+    if (BE_SQLITE_OK == rc)
+        context.m_settings.SetBriefCaseId(m_dmsServerArgs.GetDocumentGuid(), briefcaseId);
+
     return (BE_SQLITE_OK==rc)? BSISUCCESS: BSIERROR;
     }
 
@@ -723,8 +732,6 @@ BentleyStatus iModelBridgeFwk::Briefcase_Initialize(int argc, WCharCP argv[])
         if (m_useIModelHub)
             {
             IModelHubClient* client = new IModelHubClient(*m_iModelHubArgs, clientInfo);
-            if (nullptr != m_bridge)
-                m_bridge->_GetParams().SetConnectTokenProvider(client->GetTokenProvider());
             m_client = client;
             }
         else
@@ -736,6 +743,9 @@ BentleyStatus iModelBridgeFwk::Briefcase_Initialize(int argc, WCharCP argv[])
         GetLogger().error("iModelBridgeFwk client is not connected.");
         return BSIERROR;
         }
+
+    if (nullptr != m_bridge)
+        m_bridge->_GetParams().SetConnectSigninManager(m_client->GetConnectSignInManager());
 
     return BSISUCCESS;
     }
