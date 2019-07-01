@@ -1,0 +1,14 @@
+#---------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#---------------------------------------------------------------------------------------+
+
+$(targetAPIDir)ElectricalPhysical : $(_MakeFilePath)ElectricalPhysicalschema/PublicAPI/ElectricalPhysical
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(targetSchemasDir)ElectricalPhysical.ecschema.xml : $(_MakeFilePath)ElectricalPhysicalschema\EC3_Schemas\ElectricalPhysical.ecschema.xml
+    $(LinkFirstDepToFirstTarget)
+
+    
+    
