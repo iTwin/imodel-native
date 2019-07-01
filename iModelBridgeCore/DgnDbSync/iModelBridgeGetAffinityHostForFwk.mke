@@ -1,0 +1,11 @@
+#----------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#----------------------------------------------------------------------
+
+%include mdl.mki
+
+exeFromSubProduct = $(OutputRootDir)Product/__iModelBridgeGetAffinityHostWrapper/iModelBridgeGetAffinityHost/iModelBridgeGetAffinityHost$(exeext)
+deliveryExe = $(BuildContext)Delivery/__iModelBridgeGetAffinityHostWrapper/iModelBridgeGetAffinityHost$(exeext)
+
+always:
+    ~linkfile "$(deliveryExe)=$(exeFromSubProduct)"
