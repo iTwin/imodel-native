@@ -1,0 +1,12 @@
+#*--------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------*/
+%include mdl.mki
+
+$(BuildContext)PublicAPI/BeSQLite : $(_MakeFilePath)PublicAPI/BeSQLite
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)Delivery/sqlite-license.txt : $(_MakeFilePath)SQLite/sqlite-notice.txt
+    $(LinkFirstDepToFirstTarget)
