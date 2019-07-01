@@ -1,0 +1,85 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+
+BUILD_NO_STACK_CHECK=1
+#HAVE_OPENGL= 1
+#IS_THIRD_PARTY_LIBRARY              = 1
+
+%include $(SrcRoot)/Pointools/PointoolsCommon/mki/PolicyCommon.mki
+%include $(SrcRoot)/Pointools/PointoolsVortexAPI/mki/PointoolsVortexAPI_Version.mki
+
+appName                         = PointoolsVortexAPI
+o                               = $(OutputRootDir)build/Pointools/$(appName)$(VSOutputSubfolder)/
+CCompPDBName                    = $(appName)
+MultiCompileIntermediatePdbFile = $(o)$(CCompPDBName).pdb
+IntermediatePdbFile             = $(MultiCompileIntermediatePdbFile)
+
+PointoolsVortexAPISrcDir=$(SrcRoot)Pointools/PointoolsVortexAPI/
+PointoolsVortexAPI=$(SrcRoot)Pointools/PointoolsVortexAPI/
+PointoolsVortexAPIInclude = $(PointoolsVortexAPI)include/
+PointoolsVortexAPISrc = $(PointoolsVortexAPI)src/
+PointoolsVortexAPIShaderSrc=$(SrcRoot)Pointools/PointoolsVortexAPI/shaders/
+PointoolsVortexAPIShaderSrcEnc=$(o)shaders/
+pointoolsVortexAPIVendorAPI     = $(OutBuildContexts)PointoolsVortexAPI/VendorAPI/
+
+nameToDefine = __PointoolsVortexAPI_BUILD__
+%include cdefapnd.mki
+
+nameToDefine = DATATREE_NO_PARAMMAP
+%include cdefapnd.mki
+
+#nameToDefine = PTRMI_LOGGING
+#%include cdefapnd.mki
+
+#nameToDefine = _TEST
+#%include cdefapnd.mki
+
+nameToDefine = POINTOOLS_API
+%include cdefapnd.mki
+
+nameToDefine = POINTOOLS_API_INCLUDE
+%include cdefapnd.mki
+
+nameToDefine = PTENG_DELAY_LOAD
+%include cdefapnd.mki
+
+nameToDefine = PTLANG_ENGLISH
+%include cdefapnd.mki
+
+nameToDefine = POINTOOLS_PTRMI_PIPE_MANAGER_EXT
+%include cdefapnd.mki
+
+nameToDefine = VORTEX_OBJECTS_API
+%include cdefapnd.mki
+
+#NEEDS_WORK_VORTEX_DGNDB
+#nameToDefine = NO_DATA_SOURCE_SERVER
+#%include cdefapnd.mki
+
+dirToSearch=$(PointoolsVortexAPIInclude)
+%include cincapnd.mki
+
+%if defined(HAVE_OPENGL)
+    nameToDefine = GLEW_STATIC
+    %include cdefapnd.mki
+
+    dirToSearch=$(pointoolsVortexAPIVendorAPI)glew
+
+    %include cincapnd.mki
+
+    dirToSearch=$(pointoolsVortexAPIVendorAPI)OpenGLExt
+    %include cincapnd.mki
+%endif
+
+%if defined(HAVE_WILDMAGIC)
+    nameToDefine = HAVE_WILDMAGIC
+    %include cdefapnd.mki
+
+    dirToSearch=$(pointoolsVortexAPIVendorAPI)wildmagic/core
+    %include cincapnd.mki
+%endif
+
+
