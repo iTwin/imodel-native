@@ -35,7 +35,11 @@ BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 struct RealityDataFileTransfer : public RealityDataUrl
     {
     public:
-        virtual ~RealityDataFileTransfer(){}
+        virtual ~RealityDataFileTransfer()
+            {
+            if (m_fileStream.IsOpen())
+                m_fileStream.Close();
+            }
 
         REALITYDATAPLATFORM_EXPORT virtual void ReadyFile() { m_transferProgress = 0; }
 
@@ -161,6 +165,12 @@ struct RealityDataUploadFileManager
         m_chunkNumber = 0;
         }
 
+    REALITYDATAPLATFORM_EXPORT ~RealityDataUploadFileManager()
+    {
+        if (m_fileStream.IsOpen())
+            m_fileStream.Close();
+    }
+
     REALITYDATAPLATFORM_EXPORT void ReadyFile()
         {
         BeFileStatus status = m_fileStream.Open(m_fileName, BeFileAccess::Read);
@@ -188,7 +198,11 @@ struct RealityDataUploadFileManager
         { 
         m_completedUploads++;
         if(m_uploadCount == m_completedUploads)
+            {
+            if (m_fileStream.IsOpen())
+                m_fileStream.Close();
             return m_blockList;
+            }
         
         return "";
         }
