@@ -1,0 +1,101 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{2340EA9E-30B1-4C48-8124-E6D0C0F3B9F0}</ProjectGuid>
+    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+    <ProjectName>Tests</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Label="Generic Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Debug Configuration">
+    <UseDebugLibraries>true</UseDebugLibraries>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'" Label="Release Configuration">
+    <UseDebugLibraries>false</UseDebugLibraries>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup>
+    <NMakeBuildCommandLine>bb re ProfilesTests -b</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb re ProfilesDomainDLL -b -c &amp;&amp; bb re ProfilesDomainDLL -b &amp;&amp; bb re ProfilesTests -b -c &amp;&amp; bb re ProfilesTests -b</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb re ProfilesTests -b -c</NMakeCleanCommandLine>
+    <IncludePath>$(SRCROOT)DgnDomains\Profiles;$(OUTROOT)Winx64\BuildContexts\ProfilesDomain\PublicAPI;$(OUTROOT)Winx64\BuildContexts\ProfilesDomain\VendorAPI;$(IncludePath)</IncludePath>
+    <LocalDebuggerCommand>$(OUTROOT)Winx64\Product\ProfilesDomainTested\ProfilesTests.exe</LocalDebuggerCommand>
+    <LocalDebuggerCommandArguments>--gtest_break_on_failure</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="CodeCoverage.mke" />
+    <None Include="Tests.mke" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\ArbitraryCenterLineProfileGeometryTests.cpp" />
+    <ClCompile Include="src\ArbitraryCenterLineProfileTests.cpp" />
+    <ClCompile Include="src\ArbitraryCompositeProfileTests.cpp" />
+    <ClCompile Include="src\ArbitraryGeometryProfileTestCase.cpp" />
+    <ClCompile Include="src\ArbitraryShapeProfileGeometryTests.cpp" />
+    <ClCompile Include="src\AsymmetricIShapeProfileTests.cpp" />
+    <ClCompile Include="src\BentPlateProfileTests.cpp" />
+    <ClCompile Include="src\CapsuleProfileTests.cpp" />
+    <ClCompile Include="src\CenterLineCShapeProfileTests.cpp" />
+    <ClCompile Include="src\CenterLineLShapeProfileTests.cpp" />
+    <ClCompile Include="src\CenterLineZShapeProfileTests.cpp" />
+    <ClCompile Include="src\CircleProfileTests.cpp" />
+    <ClCompile Include="src\CShapeProfileTests.cpp" />
+    <ClCompile Include="src\DerivedProfileTests.cpp" />
+    <ClCompile Include="src\DoubleCShapeProfileTests.cpp" />
+    <ClCompile Include="src\DoubleLShapeProfileTests.cpp" />
+    <ClCompile Include="src\EllipseProfileTests.cpp" />
+    <ClCompile Include="src\GeometryTests.cpp" />
+    <ClCompile Include="src\HollowCircleProfileTests.cpp" />
+    <ClCompile Include="src\HollowRectangleProfileTests.cpp" />
+    <ClCompile Include="src\IShapeProfileTests.cpp" />
+    <ClCompile Include="src\LShapeProfileTests.cpp" />
+    <ClCompile Include="src\MaterialProfileTests.cpp" />
+    <ClCompile Include="src\ProfilesTestCase.cpp" />
+    <ClCompile Include="src\DomainTests.cpp" />
+    <ClCompile Include="src\Main.cpp" />
+    <ClCompile Include="src\ProfileTests.cpp" />
+    <ClCompile Include="src\RectangleProfileTests.cpp" />
+    <ClCompile Include="src\RegularPolygonProfileTests.cpp" />
+    <ClCompile Include="src\RoundedRectangleProfileTests.cpp" />
+    <ClCompile Include="src\SchifflerizedLShapeProfileTests.cpp" />
+    <ClCompile Include="src\TestHost.cpp" />
+    <ClCompile Include="src\TrapeziumProfileTests.cpp" />
+    <ClCompile Include="src\TShapeProfileTests.cpp" />
+    <ClCompile Include="src\TTShapeProfileTests.cpp" />
+    <ClCompile Include="src\ZShapeProfileTests.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\ArbitraryGeometryProfileTestCase.h" />
+    <ClInclude Include="src\ProfilesTestCase.h" />
+    <ClInclude Include="src\ProfileValidationTestCase.h" />
+    <ClInclude Include="src\TestHost.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>
