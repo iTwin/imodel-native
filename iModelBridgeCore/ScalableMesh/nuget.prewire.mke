@@ -1,0 +1,7 @@
+#----------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#----------------------------------------------------------------------
+
+always:
+    ~linkdir "$(BuildContext)VendorAPI/wastorage=$(BuildContext)nuget/native/WAStorage.v140/build/native/include"
+    ~linkdir "$(BuildContext)VendorAPI/cpprestsdk=$(BuildContext)nuget/native/cpprestsdk.v140.windesktop.msvcstl.dyn.rt-dyn/build/native/include"
