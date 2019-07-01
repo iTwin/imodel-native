@@ -302,6 +302,8 @@ TEST_F(AccessKeyClientTests, WithKeyStartApplication_StopApplication_Success)
     EXPECT_LE(1, GetPolicyProviderMock().GetPolicyWithKeyCalls());
     EXPECT_LE(1, GetUlasProviderMock().GetAccessKeyInfoCalls());
 
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
     EXPECT_SUCCESS(client->StopApplication());
     EXPECT_EQ(1, GetLicensingDbMock().CloseCount());
     }

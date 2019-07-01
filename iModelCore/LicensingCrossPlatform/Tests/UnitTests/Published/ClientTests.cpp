@@ -265,6 +265,8 @@ TEST_F(ClientTests, StartApplicationStopApplication_Success)
     EXPECT_LE(1, GetLicensingDbMock().DeleteAllOtherPolicyFilesByUserCount());
     EXPECT_EQ(1, GetLicensingDbMock().GetPolicyFilesByUserCount(userId));
 
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
     EXPECT_SUCCESS(client->StopApplication());
     EXPECT_LE(1, GetUlasProviderMock().PostUsageLogsCalls());
     EXPECT_LE(1, GetUlasProviderMock().PostFeatureLogsCalls());
@@ -746,6 +748,8 @@ TEST_F(ClientTests, MarkFeature_Success)
     EXPECT_EQ(2, GetLicensingDbMock().GetPolicyFilesByUserCount(userId));
     EXPECT_EQ(1, GetLicensingDbMock().OpenOrCreateCount());
     EXPECT_EQ(1, GetLicensingDbMock().RecordFeatureCount());
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     EXPECT_SUCCESS(client->StopApplication());
     EXPECT_LE(1, GetUlasProviderMock().PostUsageLogsCalls());
