@@ -861,6 +861,7 @@ void BisClassConverter::ConvertECRelationshipConstraint(BECN::ECRelationshipCons
     // inserting relationships that were created under the proper constraints and are not creating new ones.
 
     constraint.RemoveConstraintClasses();
+    constraint.RemoveAbstractConstraint();
     if (ECObjectsStatus::SchemaNotFound == constraint.AddClass(*defaultConstraintClass))
         {
         relClass.GetSchemaR().AddReferencedSchema(const_cast<ECSchemaR>(defaultConstraintClass->GetSchema()));

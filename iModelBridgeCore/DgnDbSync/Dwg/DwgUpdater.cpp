@@ -362,6 +362,10 @@ DgnDbStatus DwgImporter::UpdateResults (ElementImportResults& results, DgnElemen
     // pointer, we have to make a copy.
     results.m_importedElement = ret->CopyForEdit ();
 
+    // tell the change detector that we have seen this element
+    auto& changeDetector = this->_GetChangeDetector ();
+    changeDetector._OnElementSeen (*this, results.m_importedElement->GetElementId());
+
     if (results.m_childElements.empty())
         return  status;
 
