@@ -1,0 +1,51 @@
+#----------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#----------------------------------------------------------------------
+AppName = DgnElementManipulationStrategies
+CCompPDBName = $(AppName)
+
+%include mdl.mki
+
+o = $(OutputRootDir)build/BuildingShared/DgnElementManipulationStrategies/
+
+nameToDefine = __DGNELEMENTMANIPULATIONSTRATEGIES_BUILD__
+%include cdefapnd.mki
+
+%if !defined (BMAKE_DELETE_ALL_TARGETS)
+    $(o):
+        ~@mkdir $@
+%else
+    always:
+        -$(rmdirRecursiveCmd) $(o)
+%endif
+
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)DgnElementManipulationStrategy$(oext) : $(_MakeFilePath)DgnElementManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/DgnElementManipulationStrategy.h
+
+$(o)DgnElementPlacementStrategy$(oext) : $(_MakeFilePath)DgnElementPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/DgnElementPlacementStrategy.h
+
+
+%include MultiCppCompileGo.mki
+objs +% $(MultiCompileObjectList)
+
+DLM_CONTEXT_LOCATION = $(ContextDeliveryDir)
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+DLM_DEST = $(o)
+DLM_EXPORT_DEST = $(o)
+DLM_EXPORT_OBJS = $(objs)
+DLM_LIB_CONTEXT_LOCATION = $(ContextDeliveryDir)
+DLM_NAME = $(AppName)
+DLM_NOENTRY = 1
+DLM_OBJECT_DEST = $(o)
+DLM_OBJECT_FILES = $(objs)
+
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)Units$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)GeometryManipulationStrategies$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
+
+%include $(sharedMki)linkLibrary.mki
