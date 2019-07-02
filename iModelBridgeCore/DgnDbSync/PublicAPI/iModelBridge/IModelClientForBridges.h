@@ -58,7 +58,7 @@ struct IModelHubClientForBridges : virtual IModelClientForBridges
 {
     virtual ~IModelHubClientForBridges() {}
 
-    virtual StatusInt CreateRepository(Utf8CP repoName, BeFileNameCR localDgnDb) = 0;
+    virtual StatusInt CreateRepository(Utf8CP repoName) = 0;
     virtual BentleyStatus DeleteRepository() = 0;
 };
 
@@ -149,7 +149,7 @@ struct IMODEL_BRIDGE_FWK_EXPORT IModelHubClient : IModelClientBase, IModelHubCli
     IRepositoryManagerP GetRepositoryManager(DgnDbR db) override {return m_impl.GetRepositoryManager(db);}
     void CloseBriefcase() override {m_impl.CloseBriefcase();}
     */
-    StatusInt CreateRepository(Utf8CP repoName, BeFileNameCR localDgnDb) override;
+    StatusInt CreateRepository(Utf8CP repoName) override;
     BentleyStatus DeleteRepository() override;
     };
 

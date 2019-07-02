@@ -242,26 +242,10 @@ StatusInt IModelClientBase::OpenBriefcase(Dgn::DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt IModelHubClient::CreateRepository(Utf8CP repoName, BeFileNameCR localDgnDb)
+StatusInt IModelHubClient::CreateRepository(Utf8CP repoName)
     {
-    DgnDbPtr db = DgnDb::OpenDgnDb(nullptr, localDgnDb, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
-    if (!db.IsValid())
-        {
-        BeAssert(false);
-        m_lastServerError = Error(Error::Id::InvalidBriefcase);
-        return ERROR;
-        }
-    if (db->IsBriefcase())
-        {
-        BeAssert(false && "You say you need to create a repository, and yet you have a briefcase. You might be confused.");
-        m_lastServerError = Error(Error::Id::InvalidBriefcase);
-        return ERROR;
-        }
-
-    auto progress = getHttpProgressMeter();
     Utf8String description;
-    db->QueryProperty(description, PropertySpec("dgn_proj", "description"));
-    auto result = m_client->CreateNewiModel(m_projectId, *db, repoName, description, true, progress)->GetResult();
+    auto result = m_client->CreateEmptyiModel(m_projectId, repoName, description)->GetResult();
 
     if (result.IsSuccess())
         {

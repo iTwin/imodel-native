@@ -123,7 +123,7 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
         return BSISUCCESS;
         }
 
-    StatusInt CreateRepository(Utf8CP repoName, BeFileNameCR localDgnDb) override
+    StatusInt CreateRepository(Utf8CP repoName) override
         {
         BeAssert(nullptr == m_briefcase);
         if (!m_serverRepo.empty() && m_serverRepo.DoesPathExist())
@@ -136,7 +136,21 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
         if (!m_serverRepo.EndsWith(L".bim"))
             m_serverRepo.append(L".bim");
         EXPECT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(m_serverRepo.GetDirectoryName()));
-        EXPECT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(localDgnDb, m_serverRepo, false));
+        //
+    //  We need to create a new repository.
+    //
+        CreateDgnDbParams createProjectParams;
+
+        Utf8String rootSubjName(m_serverRepo);
+        createProjectParams.SetRootSubjectName(rootSubjName.c_str());
+
+        // Create the DgnDb file. All currently registered domain schemas are imported.
+        BeSQLite::DbResult createStatus;
+        auto db = DgnDb::CreateDgnDb(&createStatus, m_serverRepo, createProjectParams);
+        if (!db.IsValid())
+            return BSIERROR;
+
+        db->SaveChanges();
         return BSISUCCESS;
         }
 

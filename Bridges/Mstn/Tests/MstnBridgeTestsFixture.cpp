@@ -995,7 +995,7 @@ void MstnBridgeTestsFixture::CreateRepository(Utf8CP repoName)
         {
         ScopedDgnHost host;
         hubClient->DeleteRepository();
-        ASSERT_EQ(BSISUCCESS, hubClient->CreateRepository(repoName, seedFile));
+        ASSERT_EQ(BSISUCCESS, hubClient->CreateRepository(repoName));
         return;
         }
 

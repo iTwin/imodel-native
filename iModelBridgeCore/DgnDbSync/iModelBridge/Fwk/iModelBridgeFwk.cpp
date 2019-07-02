@@ -844,23 +844,7 @@ BentleyStatus iModelBridgeFwk::DoInitial(iModelBridgeFwk::FwkContext& context)
         return BSIERROR;
         }
 
-    //
-    //  We need to create a new repository.
-    //
-    CreateDgnDbParams createProjectParams;
     
-    Utf8String rootSubjName(m_briefcaseName.GetBaseName());
-    createProjectParams.SetRootSubjectName(rootSubjName.c_str());
-
-    // Create the DgnDb file. All currently registered domain schemas are imported.
-    BeSQLite::DbResult createStatus;
-    auto db = DgnDb::CreateDgnDb(&createStatus, m_briefcaseName, createProjectParams);
-    if (!db.IsValid())
-        {
-        LOG.fatalv(L"Failed to create repository [%s] with error %x", m_briefcaseName.c_str(), createStatus);
-        return BSIERROR;
-        }
-    db->SaveChanges();
     SetState(BootstrappingState::CreatedLocalDb);
 
     return BSISUCCESS;
@@ -871,14 +855,6 @@ BentleyStatus iModelBridgeFwk::DoInitial(iModelBridgeFwk::FwkContext& context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridgeFwk::IModelHub_DoCreatedLocalDb(iModelBridgeFwk::FwkContext& context)
     {
-    bool fileExists = m_briefcaseName.DoesPathExist();
-    if (!fileExists)
-        {
-        BeDataAssert(false && "CreatedLocalDb state assumes localDb was created");
-        SetState(BootstrappingState::Initial); // start over
-        return BSIERROR;
-        }
-
     if (Briefcase_IsBriefcase())
         {
         BeAssert(false && "Invalid state. If we have a briefcase, we should not be in CreatedLocalDb");

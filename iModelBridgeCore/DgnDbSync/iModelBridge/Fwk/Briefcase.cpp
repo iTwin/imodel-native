@@ -445,7 +445,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_IModelHub_CreateRepository()
     GetProgressMeter().SetCurrentStepName("CreateRepository");
     GetLogger().infov("CreateRepository %s", m_briefcaseBasename.c_str());
 
-    if (BSISUCCESS == hubClient->CreateRepository(m_briefcaseBasename.c_str(), m_briefcaseName))
+    if (BSISUCCESS == hubClient->CreateRepository(m_briefcaseBasename.c_str()))
         return BSISUCCESS;
 
     if (Error::Id::iModelAlreadyExists == hubClient->GetLastError().GetId())
