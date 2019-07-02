@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include <json/json.h>
+
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 struct ScalableMeshModuleInfo

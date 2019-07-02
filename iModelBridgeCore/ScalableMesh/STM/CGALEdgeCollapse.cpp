@@ -220,7 +220,7 @@ struct PolylineArea
         }
     bool operator <(PolylineArea const& other) const
         {
-        return m_listItr->m_id != other.m_listItr->m_id && m_area < other.m_area;
+        return (m_listItr->m_id != other.m_listItr->m_id && m_area < other.m_area) || (m_area == other.m_area && m_listItr->m_id < other.m_listItr->m_id);
         }
     };
 
