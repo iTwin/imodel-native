@@ -179,7 +179,8 @@ public:
     static DbResult ImportSchemaDgnDb(DgnDbR dgndb, BeFileNameCR pathname);
     static DbResult ImportSchemasDgnDb(DgnDbR dgndb, bvector<Utf8String> const &schemaFileNames);
     static DbResult ImportFunctionalSchema(DgnDbR);
-
+    static DbResult UnsafeSetBriefcaseId(BeFileNameCR fileOrPathname, BeBriefcaseId briefcaseId, Utf8StringCR dbGuid, Utf8StringCR projectGuid);
+    static BeFileName ResolveFileName(BeFileNameCR fileOrPathname);
     static RevisionStatus ReadChangeSets(bvector<DgnRevisionPtr>& revisionPtrs, bool& containsSchemaChanges, Utf8StringCR dbGuid, JsonValueCR changeSetTokens);
     static RevisionStatus ApplySchemaChangeSets(BeFileNameCR dbFileName, bvector<DgnRevisionCP> const& revisions, RevisionProcessOption applyOption, IConcurrencyControl* concurrencyControl);
     static RevisionStatus ApplyDataChangeSets(DgnDbR dgndb, bvector<DgnRevisionCP> const& revisions, RevisionProcessOption applyOption);

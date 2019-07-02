@@ -373,6 +373,17 @@ DgnDbPtr JsInterop::CreateDgnDb(DbResult& result, BeFileNameCR filename, JsonVal
 //---------------------------------------------------------------------------------------
 DbResult JsInterop::OpenDgnDb(DgnDbPtr& db, BeFileNameCR fileOrPathname, DgnDb::OpenParams const& openParams)
     {
+    BeFileName pathname = ResolveFileName(fileOrPathname);
+    DbResult result;
+    db = DgnDb::OpenDgnDb(&result, pathname, openParams);
+    return result;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                  06/17
+//---------------------------------------------------------------------------------------
+BeFileName JsInterop::ResolveFileName(BeFileNameCR fileOrPathname) 
+    {
     BeFileName pathname;
     if (fileOrPathname.DoesPathExist())
         {
@@ -395,18 +406,56 @@ DbResult JsInterop::OpenDgnDb(DgnDbPtr& db, BeFileNameCR fileOrPathname, DgnDb::
             {
             Desktop::FileSystem::GetCwd(dbDir);
             dbDir.AppendToPath(L"briefcases");
-
-            if (!dbDir.DoesPathExist())
-                return DbResult::BE_SQLITE_NOTFOUND;
             }
 
         pathname = dbDir;
         pathname.AppendToPath(L"../Documents/");
         pathname.AppendToPath(fileOrPathname.c_str());
         }
+    return pathname;
+    }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                      06/19
+//---------------------------------------------------------------------------------------
+DbResult JsInterop::UnsafeSetBriefcaseId(BeFileNameCR fileOrPathname, BeBriefcaseId briefcaseId, Utf8StringCR dbGuid, Utf8StringCR projectGuid)
+    {
     DbResult result;
-    db = DgnDb::OpenDgnDb(&result, pathname, openParams);
+    BeFileName pathname = ResolveFileName(fileOrPathname);
+    SchemaUpgradeOptions schemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::CheckRequiredUpgrades);
+    DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::No, schemaUpgradeOptions);
+    auto db = DgnDb::OpenDgnDb(&result, pathname, openParams);
+    if (result != BE_SQLITE_OK)
+        return result;
+
+    result = db->TryExecuteSql("PRAGMA synchronous=off");
+    if (result != BE_SQLITE_OK)
+        return result;
+
+    Savepoint savePoint(*db, "Set BriefcaseId");
+    if (!projectGuid.empty())
+        {
+        BeGuid id;
+        if (id.FromString(projectGuid.c_str()) != SUCCESS)
+            return BE_SQLITE_ERROR;
+        db->SaveProjectGuid(id);
+        }
+
+    if (!dbGuid.empty()) 
+        {
+        BeGuid id;
+        if (id.FromString(dbGuid.c_str()) != SUCCESS)
+            return BE_SQLITE_ERROR;
+        db->ChangeDbGuid(id);
+        }
+
+    result = db->SetAsBriefcase(briefcaseId);
+    if (result != BE_SQLITE_OK)
+        {
+        savePoint.Cancel();
+        return result;
+        }
+
     return result;
     }
 

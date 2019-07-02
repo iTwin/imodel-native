@@ -2239,7 +2239,18 @@ public:
         OPTIONAL_ARGUMENT_INTEGER(1, pageSize, 0, Napi::Number::New(info.Env(), (int) BE_SQLITE_ERROR));
         DbResult status = Db::Vacuum(dbName.c_str(), pageSize);
         return Napi::Number::New(info.Env(), (int)status);
-        }        
+        }
+
+    static Napi::Value UnsafeSetBriefcaseId(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, dbName, Napi::Number::New(info.Env(), (int) BE_SQLITE_ERROR));
+        REQUIRE_ARGUMENT_INTEGER(1, briefcaseId, Napi::Number::New(info.Env(), (int) BE_SQLITE_ERROR));
+        OPTIONAL_ARGUMENT_STRING(2, dbGuid, Napi::Number::New(info.Env(), (int) BE_SQLITE_ERROR));
+        OPTIONAL_ARGUMENT_STRING(3, projectGuid, Napi::Number::New(info.Env(), (int) BE_SQLITE_ERROR));
+
+        DbResult status = JsInterop::UnsafeSetBriefcaseId(BeFileName(dbName), BeBriefcaseId(briefcaseId), dbGuid, projectGuid);
+        return Napi::Number::New(info.Env(), (int)status);
+        }   
     // ========================================================================================
     // Test method handler
     // ========================================================================================
@@ -2363,6 +2374,7 @@ public:
             InstanceMethod("pollConcurrentQuery", &NativeDgnDb::PollConcurrentQuery),
             StaticMethod("getAssetsDir", &NativeDgnDb::GetAssetDir),
             StaticMethod("vacuum", &NativeDgnDb::Vacuum),
+            StaticMethod("unsafeSetBriefcaseId", &NativeDgnDb::UnsafeSetBriefcaseId),
         });
 
         exports.Set("DgnDb", t);
