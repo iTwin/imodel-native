@@ -30,7 +30,7 @@ void RulesDrivenECPresentationManagerTests::SetUpTestCase()
     {
     s_project = new ECDbTestProject();
     s_project->Create("RulesDrivenECPresentationManagerTests", "RulesEngineTest.01.00.ecschema.xml");
-    
+
     bvector<ECSchemaPtr> schemas;
     ECSchemaReadContextPtr schemaReadContext = ECSchemaReadContext::CreateContext();
     schemaReadContext->AddSchemaLocater(s_project->GetECDb().GetSchemaLocater());
@@ -82,9 +82,9 @@ void RulesDrivenECPresentationManagerTests::SetUp()
     IECPresentationManager::RegisterImplementation(m_manager);
     m_manager->SetLocalizationProvider(new SQLangLocalizationProvider());
 
-    m_locater = TestRuleSetLocater::Create();
+    m_locater = DelayLoadingRuleSetLocater::Create();
     m_manager->GetLocaters().RegisterLocater(*m_locater);
-    
+
     m_connections.NotifyConnectionOpened(s_project->GetECDb());
     }
 
@@ -319,7 +319,7 @@ TEST_F(RulesDrivenECPresentationManagerTests, SaveValueChange_CallsHandlerWithVa
         });
 
     bvector<ChangedECInstanceInfo> instanceInfos = {
-        ChangedECInstanceInfo(*widgetClass, widgetKey.GetInstanceId()), 
+        ChangedECInstanceInfo(*widgetClass, widgetKey.GetInstanceId()),
         ChangedECInstanceInfo(*gadgetClass, gadgetKey.GetInstanceId())
         };
     bvector<ECInstanceChangeResult> result = m_manager->SaveValueChange(s_project->GetECDb(), instanceInfos, "test.property.accessor", ECValue(123)).get();
@@ -331,7 +331,7 @@ TEST_F(RulesDrivenECPresentationManagerTests, SaveValueChange_CallsHandlerWithVa
 
     EXPECT_EQ(SUCCESS, result[0].GetStatus());
     EXPECT_EQ(ECValue(1), result[0].GetChangedValue());
-    
+
     EXPECT_EQ(SUCCESS, result[1].GetStatus());
     EXPECT_EQ(ECValue(2), result[1].GetChangedValue());
     }
@@ -363,7 +363,7 @@ TEST_F(RulesDrivenECPresentationManagerTests, SaveValueChange_CallsHandlerOnlyWi
         });
 
     bvector<ChangedECInstanceInfo> instanceInfos = {
-        ChangedECInstanceInfo(*widgetClass, widgetKey.GetInstanceId()), 
+        ChangedECInstanceInfo(*widgetClass, widgetKey.GetInstanceId()),
         ChangedECInstanceInfo(*gadgetClass, gadgetKey.GetInstanceId())
         };
     bvector<ECInstanceChangeResult> result = m_manager->SaveValueChange(s_project->GetECDb(), instanceInfos, "test", ECValue()).get();
@@ -372,7 +372,7 @@ TEST_F(RulesDrivenECPresentationManagerTests, SaveValueChange_CallsHandlerOnlyWi
 
     EXPECT_EQ(SUCCESS, result[0].GetStatus());
     EXPECT_EQ(ECValue(1), result[0].GetChangedValue());
-    
+
     EXPECT_EQ(ERROR, result[1].GetStatus());
     }
 
@@ -446,7 +446,7 @@ TEST_F(RulesDrivenECPresentationManagerTests, SaveValueChange_PutsResultsInCorre
     ECInstanceKey widgetKey1(widgetClass->GetId(), ECInstanceId((uint64_t)111));
     ECInstanceKey widgetKey2(widgetClass->GetId(), ECInstanceId((uint64_t)222));
     ECInstanceKey gadgetKey(gadgetClass->GetId(), ECInstanceId((uint64_t)333));
-    
+
     int canHandleHandler_callCount = 0;
     int widgetChanges = 0;
     TestECInstanceChangeHandlerPtr widgetsHandler = TestECInstanceChangeHandler::Create();
@@ -465,7 +465,7 @@ TEST_F(RulesDrivenECPresentationManagerTests, SaveValueChange_PutsResultsInCorre
         return ECInstanceChangeResult::Success(ECValue(Utf8PrintfString("widget %d", ++widgetChanges).c_str()));
         });
     m_manager->RegisterECInstanceChangeHandler(*widgetsHandler);
-    
+
     TestECInstanceChangeHandlerPtr gadgetsHandler = TestECInstanceChangeHandler::Create();
     gadgetsHandler->SetCanHandleHandler([&](ECDbCR, ECClassCR ecClass) -> bool
         {
@@ -477,25 +477,25 @@ TEST_F(RulesDrivenECPresentationManagerTests, SaveValueChange_PutsResultsInCorre
         return ECInstanceChangeResult::Success(ECValue("gadget"));
         });
     m_manager->RegisterECInstanceChangeHandler(*gadgetsHandler);
-    
+
     bvector<ChangedECInstanceInfo> instanceInfos = {
-        ChangedECInstanceInfo(*widgetClass, widgetKey1.GetInstanceId()), 
+        ChangedECInstanceInfo(*widgetClass, widgetKey1.GetInstanceId()),
         ChangedECInstanceInfo(*gadgetClass, gadgetKey.GetInstanceId()),
         ChangedECInstanceInfo(*widgetClass, widgetKey2.GetInstanceId())
         };
     bvector<ECInstanceChangeResult> result = m_manager->SaveValueChange(s_project->GetECDb(), instanceInfos, "test", ECValue()).get();
-    
+
     // note - _CanHandle callback should be called only once because the class is the same for both changes
     EXPECT_EQ(1, canHandleHandler_callCount);
 
     ASSERT_EQ(3, result.size());
-    
+
     EXPECT_EQ(SUCCESS, result[0].GetStatus());
     EXPECT_EQ(ECValue("widget 1"), result[0].GetChangedValue());
-    
+
     EXPECT_EQ(SUCCESS, result[1].GetStatus());
     EXPECT_EQ(ECValue("gadget"), result[1].GetChangedValue());
-    
+
     EXPECT_EQ(SUCCESS, result[2].GetStatus());
     EXPECT_EQ(ECValue("widget 2"), result[2].GetChangedValue());
     }
@@ -527,7 +527,7 @@ TEST_F(RulesDrivenECPresentationManagerTests, NotifyNodeExpanded_NotifyNodeColla
 
     // tell the node was collapsed
     m_manager->NotifyNodeCollapsed(s_project->GetECDb(), *node->GetKey(), options.GetJson()).wait();
-    
+
     // verify
     node = m_manager->GetNode(s_project->GetECDb(), *node->GetKey(), options.GetJson()).get();
     EXPECT_FALSE(node->IsExpanded());

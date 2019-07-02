@@ -224,6 +224,7 @@ protected:
     NavNodesProviderPtr GetCachedProvider() const;
     void FinalizeNode(JsonNavNodeR, bool customizeLabel) const;
     ECPRESENTATION_EXPORT void InitializeNodes() const;
+    bool HasSimilarNodeInHierarchy(JsonNavNodeCR node, uint64_t parentNodeId) const;
     
     virtual bool _IsCacheable() const = 0;
     virtual uint64_t _AllocateIndex() override {return m_subProviderIndex++;}
@@ -459,7 +460,6 @@ private:
     ECPRESENTATION_EXPORT QueryBasedNodesProvider(NavNodesProviderContextCR context, NavigationQuery const& query, bmap<ECClassId, bool> const&);
     bool ShouldReturnChildNodes(JsonNavNode const& node, HasChildrenFlag& hasChildren) const;
     NavNodesProviderPtr CreateProvider(JsonNavNodeR node) const;
-    bool HasSimilarNodeInHierarchy(JsonNavNodeCR node, uint64_t parentNodeId) const;
     void InitializeDataSource();
     bool InitializeProvidersFromCache();
     bool InitializeProvidersForAllNodes();

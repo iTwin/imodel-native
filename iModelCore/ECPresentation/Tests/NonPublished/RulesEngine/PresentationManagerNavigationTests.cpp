@@ -1062,6 +1062,38 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_ReturnsCorre
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Recursion prevention (VSTS#102711)
+* @betest                                       Grigas.Petraitis                07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_DoesNotReturnNodesOfTheSameSpecificationAlreadyExistingInHierarchy)
+    {
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+    SetUpDefaultLabelRule(*rules);
+
+    RootNodeRule* rootRule = new RootNodeRule();
+    rootRule->AddSpecification(*CreateCustomNodeSpecification("T_ROOT"));
+    rules->AddPresentationRule(*rootRule);
+
+    ChildNodeRule* childRule = new ChildNodeRule();
+    childRule->AddSpecification(*CreateCustomNodeSpecification("T_CHILD"));
+    rules->AddPresentationRule(*childRule);
+
+    // make sure we have 1 T_ROOT node
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(BeTest::GetNameOfCurrentTest(), TargetTree_MainTree).GetJson();
+    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    ASSERT_EQ(1, rootNodes.GetSize());
+    EXPECT_STREQ("T_ROOT", rootNodes[0]->GetType().c_str());
+
+    // T_ROOT node should have 1 T_CHILD node and it should have no children
+    DataContainer<NavNodeCPtr> childNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get();
+    ASSERT_EQ(1, childNodes.GetSize());
+    EXPECT_STREQ("T_CHILD", childNodes[0]->GetType().c_str());
+    EXPECT_FALSE(childNodes[0]->HasChildren());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @betest                                       Pranciskus.Ambrazas                02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificClasses_AlwaysReturnsChildren)

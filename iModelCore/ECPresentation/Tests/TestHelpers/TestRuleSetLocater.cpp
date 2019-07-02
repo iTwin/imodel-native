@@ -86,16 +86,33 @@ TestRuleSetLocater::~TestRuleSetLocater()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DelayLoadingRuleSetLocater::DelayLoadingRuleSetLocater(PresentationRuleSetP ruleset)
+    {
+    if (nullptr != ruleset)
+        m_rulesets.Insert(ruleset, false);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<PresentationRuleSetPtr> DelayLoadingRuleSetLocater::_LocateRuleSets(Utf8CP rulesetId) const
     {
-    if (!m_notified)
+    bvector<PresentationRuleSetPtr> rulesets;
+    for (auto& entry : m_rulesets)
         {
-        OnRulesetCreated(*m_ruleset);
-        m_notified = true;
+        if (!rulesetId || entry.first->GetRuleSetId().Equals(rulesetId))
+            {
+            if (!entry.second)
+                {
+                OnRulesetCreated(*entry.first);
+                entry.second = true;
+                }
+            rulesets.push_back(entry.first);
+            }
         }
-    return { m_ruleset };
+    return rulesets;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -103,12 +120,19 @@ bvector<PresentationRuleSetPtr> DelayLoadingRuleSetLocater::_LocateRuleSets(Utf8
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<Utf8String> DelayLoadingRuleSetLocater::_GetRuleSetIds() const
     {
-    if (!m_notified)
-        {
-        OnRulesetCreated(*m_ruleset);
-        m_notified = true;
-        }
-    return { m_ruleset->GetRuleSetId() };
+    bvector<Utf8String> ids;
+    bvector<PresentationRuleSetPtr> rulesets = LocateRuleSets();
+    for (PresentationRuleSetPtr ruleset : rulesets)
+        ids.push_back(ruleset->GetRuleSetId());
+    return ids;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void DelayLoadingRuleSetLocater::AddRuleSet(PresentationRuleSetR ruleset)
+    {
+    m_rulesets.Insert(&ruleset, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -116,9 +140,21 @@ bvector<Utf8String> DelayLoadingRuleSetLocater::_GetRuleSetIds() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DelayLoadingRuleSetLocater::Reset()
     {
-    if (!m_notified)
-        return;
+    for (auto& entry : m_rulesets)
+        {
+        if (entry.second)
+            {
+            OnRulesetDisposed(*entry.first);
+            entry.second = false;
+            }
+        }
+    }
 
-    OnRulesetDisposed(*m_ruleset);
-    m_notified = false;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void DelayLoadingRuleSetLocater::Clear()
+    {
+    Reset();
+    m_rulesets.clear();
     }

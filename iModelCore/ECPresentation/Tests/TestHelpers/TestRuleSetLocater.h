@@ -11,7 +11,9 @@ BEGIN_ECPRESENTATIONTESTS_NAMESPACE
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
 
-/*=================================================================================**//**
+/*=================================================================================**/ /**
+* Note: ruleset must not be changed after adding it to the locater! Use DelayLoadingRuleSetLocater
+* if that's necessary.
 * @bsiclass                                     Grigas.Petraitis                03/2015
 +===============+===============+===============+===============+===============+======*/
 struct TestRuleSetLocater : RefCounted<RuleSetLocater>
@@ -44,25 +46,27 @@ typedef RefCountedPtr<TestRuleSetLocater> TestRuleSetLocaterPtr;
 * @bsiclass                                     Grigas.Petraitis                06/2019
 +===============+===============+===============+===============+===============+======*/
 struct DelayLoadingRuleSetLocater : RefCounted<RuleSetLocater>
-    {
-    private:
-        PresentationRuleSetPtr m_ruleset;
-        mutable bool m_notified;
+{
+private:
+    mutable bmap<PresentationRuleSetPtr, bool> m_rulesets;
 
-    private:
-        DelayLoadingRuleSetLocater(PresentationRuleSetR ruleset) : m_ruleset(&ruleset), m_notified(false) {}
+private:
+    DelayLoadingRuleSetLocater(PresentationRuleSetP ruleset);
 
-    protected:
-        bvector<PresentationRuleSetPtr> _LocateRuleSets(Utf8CP rulesetId) const override;
-        bvector<Utf8String> _GetRuleSetIds() const override;
-        void _InvalidateCache(Utf8CP rulesetId) override { Reset(); }
-        int _GetPriority() const override { return 0; }
+protected:
+    bvector<PresentationRuleSetPtr> _LocateRuleSets(Utf8CP rulesetId) const override;
+    bvector<Utf8String> _GetRuleSetIds() const override;
+    void _InvalidateCache(Utf8CP rulesetId) override { Reset(); }
+    int _GetPriority() const override { return 0; }
 
-    public:
-        ~DelayLoadingRuleSetLocater() { Reset(); }
-        static RefCountedPtr<DelayLoadingRuleSetLocater> Create(PresentationRuleSetR ruleset) { return new DelayLoadingRuleSetLocater(ruleset); }
-        void Reset();
-    };
+public:
+    ~DelayLoadingRuleSetLocater() { Reset(); }
+    static RefCountedPtr<DelayLoadingRuleSetLocater> Create() { return new DelayLoadingRuleSetLocater(nullptr); }
+    static RefCountedPtr<DelayLoadingRuleSetLocater> Create(PresentationRuleSetR ruleset) { return new DelayLoadingRuleSetLocater(&ruleset); }
+    void AddRuleSet(PresentationRuleSetR ruleset);
+    void Reset();
+    void Clear();
+};
 typedef RefCountedPtr<DelayLoadingRuleSetLocater> DelayLoadingRuleSetLocaterPtr;
 
 

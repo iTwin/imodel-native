@@ -19,7 +19,7 @@ struct RulesDrivenECPresentationManagerTests : ECPresentationTest
 
     TestConnectionManager m_connections;
     RulesDrivenECPresentationManager* m_manager;
-    TestRuleSetLocaterPtr m_locater;
+    DelayLoadingRuleSetLocaterPtr m_locater;
     
     static void SetUpTestCase();
     static void TearDownTestCase();

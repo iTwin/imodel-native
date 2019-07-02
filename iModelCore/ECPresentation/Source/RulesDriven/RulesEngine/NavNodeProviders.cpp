@@ -653,6 +653,28 @@ NavNodesProviderPtr NavNodesProvider::GetCachedProvider() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Pranciskus.Ambrazas             07/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool NavNodesProvider::HasSimilarNodeInHierarchy(JsonNavNodeCR node, uint64_t parentNodeId) const
+    {
+    NavNodeCPtr parentNavNode = GetContext().GetNodesCache().GetNode(parentNodeId);
+    if (parentNavNode == nullptr)
+        return false;
+
+    BeAssert(dynamic_cast<JsonNavNodeCP>(parentNavNode.get()) != nullptr);
+    JsonNavNodeCP parentNode = static_cast<JsonNavNodeCP>(parentNavNode.get());
+
+    NavNodeExtendedData thisNodeExtendedData(node);
+    NavNodeExtendedData parentNodeExtendedData(*parentNode);
+
+    Utf8String nodeHash = node.GetKey()->GetPathFromRoot().back();
+    Utf8String parentHash = parentNode->GetKey()->GetPathFromRoot().back();
+
+    return nodeHash.Equals(parentHash) && 0 == strcmp(thisNodeExtendedData.GetSpecificationHash(), parentNodeExtendedData.GetSpecificationHash())
+        || HasSimilarNodeInHierarchy(node, parentNode->GetParentNodeId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaik�snoras                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 EmptyNavNodesProvider::EmptyNavNodesProvider(NavNodesProviderContextR context)
@@ -729,6 +751,13 @@ bool CustomNodesProvider::_InitializeNodes()
         m_node->SetIsExpanded(true);
 
     GetContext().GetNodesCache().Cache(*m_node, GetContext().GetDataSourceInfo(), 0, true);
+
+    if (GetContext().IsChildNodeContext() && HasSimilarNodeInHierarchy(*m_node, m_node->GetParentNodeId()))
+        {
+        m_node = nullptr;
+        GetContext().GetNodesCache().FinalizeInitialization(GetContext().GetDataSourceInfo());
+        return true;
+        }
 
     if (m_specification.GetHideNodesInHierarchy())
         {
@@ -853,28 +882,6 @@ bool QueryBasedNodesProvider::ShouldReturnChildNodes(JsonNavNode const& node, Ha
         }
 
     return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Pranciskus.Ambrazas             07/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool QueryBasedNodesProvider::HasSimilarNodeInHierarchy(JsonNavNodeCR node, uint64_t parentNodeId) const
-    {
-    NavNodeCPtr parentNavNode = GetContext().GetNodesCache().GetNode(parentNodeId);
-    if (parentNavNode == nullptr)
-        return false;
-
-    BeAssert(dynamic_cast<JsonNavNodeCP>(parentNavNode.get()) != nullptr);
-    JsonNavNodeCP parentNode = static_cast<JsonNavNodeCP>(parentNavNode.get());
-
-    NavNodeExtendedData thisNodeExtendedData(node);
-    NavNodeExtendedData parentNodeExtendedData(*parentNode);
-
-    Utf8String nodeHash = node.GetKey()->GetPathFromRoot().back();
-    Utf8String parentHash = parentNode->GetKey()->GetPathFromRoot().back();
-
-    return nodeHash.Equals(parentHash) && 0 == strcmp(thisNodeExtendedData.GetSpecificationHash(), parentNodeExtendedData.GetSpecificationHash())
-        || HasSimilarNodeInHierarchy(node, parentNode->GetParentNodeId());
     }
 
 /*---------------------------------------------------------------------------------**//**
