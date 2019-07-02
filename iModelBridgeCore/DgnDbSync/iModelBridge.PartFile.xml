@@ -67,23 +67,37 @@
         <SubPart PartName="__iModelBridgeGetAffinityHostForFwk" />
 
         <Directories DirectoryListName="iModelBridgeAppCommonDirList"/>
-        <Directories DirectoryListName="iModelBridgeFwkDirList" />
+        <Directories DirectoryListName="iModelBridgeFwkDirList"/>
     </Product>
 
     <ProductDirectoryList ListName="iModelBridgeFwkDirList">
-        <ProductDirectory Name="applicationroot" Path=""/>
-        <ProductDirectory Name="Assemblies"                Path="bin"       RelativeTo="applicationroot"/>
-        <ProductDirectory Name="Assemblies" Deliver="false" LibType="Static"/>
-        <ProductDirectory Name="iModelBridgeDoc"           Path="docs"      RelativeTo="applicationroot"/>
-        <ProductDirectory Name="iModelBridgeDoc"           Path="docs"      RelativeTo="applicationroot" LibType="Static"/>
-        <ProductDirectory Name="Libs"                      Path="lib"       RelativeTo="applicationroot"/>
-        <ProductDirectory Name="Libs"                      Path="lib"       RelativeTo="applicationroot" LibType="Static"/>
-        <ProductDirectory Name="PublicApi"                 Path="include"   RelativeTo="applicationroot"/>
-        <ProductDirectory Name="PublisherLoggingConfigXml" Path=""          RelativeTo="Assemblies"/>
-        <ProductDirectory Name="PublisherLoggingConfigXml" Path=""          RelativeTo="Assemblies" LibType="Static"/>
-        <ProductDirectory Name="VendorApi"                 Path="include"   RelativeTo="applicationroot"/>
-        <ProductDirectory Name="VendorApi"                 Path="include"   RelativeTo="applicationroot" LibType="Static"/>
-        <ProductDirectory Name="DgnV8Dlls" Deliver="false"/>
+        <ProductDirectory Name="Assemblies"                                     Path="bin"      RelativeTo="Root"/>
+        <ProductDirectory Name="Assemblies"                 LibType="Static"    Deliver="false"/>
+        <ProductDirectory Name="iModelBridgeDoc"                                Path="docs"     RelativeTo="Root"/>
+        <ProductDirectory Name="iModelBridgeDoc"            LibType="Static"    Path="docs"     RelativeTo="Root"/>
+        <ProductDirectory Name="Libs"                                           Path="lib"      RelativeTo="Root"/>
+        <ProductDirectory Name="Libs"                       LibType="Static"    Path="lib"      RelativeTo="Root"/>
+        <ProductDirectory Name="PublicApi"                                      Path="include"  RelativeTo="Root"/>
+        <ProductDirectory Name="PublicApi"                  LibType="Static"    Path="include"  RelativeTo="Root"/>
+        <ProductDirectory Name="PublisherLoggingConfigXml"                      Path="bin"      RelativeTo="Root"/>
+        <ProductDirectory Name="PublisherLoggingConfigXml"  LibType="Static"    Path="bin"      RelativeTo="Root"/>
+        <ProductDirectory Name="VendorApi"                                      Path="include"  RelativeTo="Root"/>
+        <ProductDirectory Name="VendorApi"                  LibType="Static"    Path="include"  RelativeTo="Root"/>
+        <ProductDirectory Name="DgnV8Dlls"                                      Deliver="false"/>
+        <ProductDirectory Name="DgnV8Dlls"                  LibType="Static"    Deliver="false"/>
+
+        <ProductDirectory Name="BeHttpXliffs"                                   Path="xliffs"   RelativeTo="Root"/>
+        <ProductDirectory Name="BeHttpXliffs"               LibType="Static"    Path="xliffs"   RelativeTo="Root"/>
+        <ProductDirectory Name="DgnPlatformXliffs"                              Path="xliffs"   RelativeTo="Root"/>
+        <ProductDirectory Name="DgnPlatformXliffs"          LibType="Static"    Path="xliffs"   RelativeTo="Root"/>
+        <ProductDirectory Name="ECPresentationXliffs"                           Path="xliffs"   RelativeTo="Root"/>
+        <ProductDirectory Name="ECPresentationXliffs"       LibType="Static"    Path="xliffs"   RelativeTo="Root"/>
+        <ProductDirectory Name="WSClientXliffs"                                 Path="xliffs"   RelativeTo="Root"/>
+        <ProductDirectory Name="WSClientXliffs"             LibType="Static"    Path="xliffs"   RelativeTo="Root"/>
+        <ProductDirectory Name="xliffs"                                         Path="xliffs"   RelativeTo="Root"/>
+        <ProductDirectory Name="xliffs"                     LibType="Static"    Path="xliffs"   RelativeTo="Root"/>
+        <ProductDirectory Name="iModelBridgeFwkXliffs"                          Path="xliffs"   RelativeTo="Root"/>
+        <ProductDirectory Name="iModelBridgeFwkXliffs"      LibType="Static"    Path="xliffs"   RelativeTo="Root"/>
     </ProductDirectoryList>
 
     <NuGetProduct Name="iModelBridgeFwkNuget" Description="iModel Bridge Framework">
@@ -101,7 +115,8 @@
     </NuGetProduct>
 
     <ProductDirectoryList ListName="iModelBridgeFwkNugetDirList">
-        <ProductDirectory Name="applicationroot" Path="native"/>
+        <ProductDirectory Name="Root"                       Path="native"/>
+        <ProductDirectory Name="Root"   LibType="Static"    Path="native"/>
     </ProductDirectoryList>
 
     <!--
@@ -152,7 +167,7 @@
 
     <Part Name="iModelBridgeFwk-Xliffs" BentleyBuildMakeFile="iModelBridge/Fwk/xliffs.mke">
       <Bindings>
-        <Files Required="false" SubPartDirectory="xliffs">
+        <Files Required="false" ProductDirectoryName="iModelBridgeFwkXliffs" SubPartDirectory="xliffs">
           Delivery/xliffs/iModelBridgeFwk_en.xliff
         </Files>
       </Bindings>
@@ -468,25 +483,24 @@
         </Bindings>
     </Part>
 
-  <ProductDirectoryList ListName="iModelBridgeAppCommonDirList">
-    <ProductDirectory Name="applicationroot"            Path=""/>
-    <ProductDirectory Name="ApplicationRoot"            Path="" LibType="Static"/>
-    <ProductDirectory Name="Assets"                     Path="assets" RelativeTo="applicationroot"/>
-    <ProductDirectory Name="Assets"                     Path="assets" RelativeTo="applicationroot" LibType="static"/>
-    <ProductDirectory Name="VendorNotices"              Path="notices" RelativeTo="applicationroot" />
-    <ProductDirectory Name="VendorNotices"              Path="notices" RelativeTo="applicationroot" LibType="Static" />
-    <ProductDirectory Name="BentleyEulaDelivery"        Path="notices" RelativeTo="applicationroot"/>
-    <ProductDirectory Name="Assemblies"                 RelativeTo="applicationroot"/>
-    <ProductDirectory Name="BentleyClientSharedAssemblies" RelativeTo="applicationroot"/>
-    <ProductDirectory Name="BentleyDesktopClientApi" RelativeTo="applicationroot"/>
-    <ProductDirectory Name="BentleyDesktopClientApi_Native" RelativeTo="applicationroot"/>
-    <ProductDirectory Name="Assemblies"                 RelativeTo="applicationroot"/>
-    <ProductDirectory Name="dgnplatformlinestylersc"    Path="LineStyles"            RelativeTo="applicationroot"/>
-    <ProductDirectory Name="PublisherLoggingConfigXml"  RelativeTo="applicationroot"/>
-    <ProductDirectory Name="PdfLibInitNativeAssemblies" Deliver="false"/>
-    <ProductDirectory Name="DgnV8Dlls"                  Path="DgnV8" RelativeTo="applicationroot"/>
-    <ProductDirectory Name="DgnV8DummyUstation"         Path="DgnV8" RelativeTo="applicationroot"/>
-
-  </ProductDirectoryList>
+    <ProductDirectoryList ListName="iModelBridgeAppCommonDirList">
+        <ProductDirectory Name="Root"                                               Path=""/>
+        <ProductDirectory Name="Root"                           LibType="Static"    Path=""/>
+        <ProductDirectory Name="Assets"                                             Path="assets"       RelativeTo="Root"/>
+        <ProductDirectory Name="Assets"                         LibType="static"    Path="assets"       RelativeTo="Root"/>
+        <ProductDirectory Name="VendorNotices"                                      Path="notices"      RelativeTo="Root"/>
+        <ProductDirectory Name="VendorNotices"                  LibType="Static"    Path="notices"      RelativeTo="Root"/>
+        <ProductDirectory Name="BentleyEulaDelivery"                                Path="notices"      RelativeTo="Root"/>
+        <ProductDirectory Name="Assemblies"                                         Path=""             RelativeTo="Root"/>
+        <ProductDirectory Name="BentleyClientSharedAssemblies"                      Path=""             RelativeTo="Root"/>
+        <ProductDirectory Name="BentleyDesktopClientApi"                            Path=""             RelativeTo="Root"/>
+        <ProductDirectory Name="BentleyDesktopClientApi_Native"                     Path=""             RelativeTo="Root"/>
+        <ProductDirectory Name="Assemblies"                                         Path=""             RelativeTo="Root"/>
+        <ProductDirectory Name="dgnplatformlinestylersc"                            Path="LineStyles"   RelativeTo="Root"/>
+        <ProductDirectory Name="PublisherLoggingConfigXml"                          Path=""             RelativeTo="Root"/>
+        <ProductDirectory Name="PdfLibInitNativeAssemblies"                         Deliver="false"/>
+        <ProductDirectory Name="DgnV8Dlls"                                          Path="DgnV8"        RelativeTo="Root"/>
+        <ProductDirectory Name="DgnV8DummyUstation"                                 Path="DgnV8"        RelativeTo="Root"/>
+    </ProductDirectoryList>
 
 </BuildContext>
