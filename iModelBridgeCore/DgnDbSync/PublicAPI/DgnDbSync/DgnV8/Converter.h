@@ -2977,8 +2977,7 @@ struct RealityMeshAttachmentConversion
 //=======================================================================================
 struct CifTerrainElementHandler : DgnV8Api::ExtendedElementHandler
     {    
-    enum { ELEMENTHANDLER_SUBTYPE_DTMELEMENT = 11,
-        ELEMENTHANDLER_SUBTYPE_DTMENTITY = 12,
+    enum { ELEMENTHANDLER_SUBTYPE_DTMENTITY = 12,
         XATTRIBUTEID_CifTerrainModel = 22739};
     DEFINE_T_SUPER(DgnV8Api::ExtendedElementHandler)
         DGNV8_ELEMENTHANDLER_DECLARE_MEMBERS(CifTerrainElementHandler, );

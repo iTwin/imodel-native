@@ -42,6 +42,8 @@
     </Part>
 
     <Product Name="Licensing-UnitTests">
+        <!-- just to ensure that integration tests build, can run manually as desired -->
+        <SubProduct ProductName="Licensing-GtestIntegration"/>
         <SubPart Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" PartName="Base" />
         <SubPart PartName="UnitTests"/>
         <Directories DirectoryListName="CollectionProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>

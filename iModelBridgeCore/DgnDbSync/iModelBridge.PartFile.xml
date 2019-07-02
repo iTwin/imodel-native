@@ -64,7 +64,7 @@
         <SubPart PartName="Docs-Unix-Shim"/>
         <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
         <SubPart PartName="iModelBridgeAssignExeShim" />
-        <SubPart PartName="iModelBridgeGetAffinityHostForFwk" />
+        <SubPart PartName="__iModelBridgeGetAffinityHostForFwk" />
 
         <Directories DirectoryListName="iModelBridgeAppCommonDirList"/>
         <Directories DirectoryListName="iModelBridgeFwkDirList" />
@@ -72,12 +72,12 @@
 
     <ProductDirectoryList ListName="iModelBridgeFwkDirList">
         <ProductDirectory Name="applicationroot" Path=""/>
-        <ProductDirectory Name="Assemblies"                Path="lib/x64"   RelativeTo="applicationroot"/>
-        <ProductDirectory Name="Assemblies"                Path="lib/x64"   RelativeTo="applicationroot" LibType="Static"/>
+        <ProductDirectory Name="Assemblies"                Path="bin"       RelativeTo="applicationroot"/>
+        <ProductDirectory Name="Assemblies" Deliver="false" LibType="Static"/>
         <ProductDirectory Name="iModelBridgeDoc"           Path="docs"      RelativeTo="applicationroot"/>
         <ProductDirectory Name="iModelBridgeDoc"           Path="docs"      RelativeTo="applicationroot" LibType="Static"/>
-        <ProductDirectory Name="Libs"                      Path=""          RelativeTo="Assemblies"/>
-        <ProductDirectory Name="Libs"                      Path=""          RelativeTo="Assemblies" LibType="Static"/>
+        <ProductDirectory Name="Libs"                      Path="lib"       RelativeTo="applicationroot"/>
+        <ProductDirectory Name="Libs"                      Path="lib"       RelativeTo="applicationroot" LibType="Static"/>
         <ProductDirectory Name="PublicApi"                 Path="include"   RelativeTo="applicationroot"/>
         <ProductDirectory Name="PublisherLoggingConfigXml" Path=""          RelativeTo="Assemblies"/>
         <ProductDirectory Name="PublisherLoggingConfigXml" Path=""          RelativeTo="Assemblies" LibType="Static"/>
@@ -92,8 +92,8 @@
         <SubPart PartName="Docs-Windows" LibType="Dynamic"/>
         <SubPart PartName="Docs-Unix-Shim"/>
         <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
-        <SubPart PartName="iModelBridgeAssignExeShim" />
-        <SubPart PartName="iModelBridgeGetAffinityHostForFwk" />
+        <SubPart PartName="iModelBridgeAssignExeShim"/>
+        <SubPart PartName="__iModelBridgeGetAffinityHostForFwk"/>
 
         <Directories DirectoryListName="iModelBridgeAppCommonDirList"/>
         <Directories DirectoryListName="iModelBridgeFwkDirList"/>
@@ -111,26 +111,23 @@
         So we create this Product middle-man to isolate the static EXE for iModelBridgeFwk.
         Further, we know that iModelBridgeGetAffinityHostExe has produced an EXE in our Delivery/ directory, so we can use it directly from there.
     -->
-    <Product Name="iModelBridgeGetAffinityHostWrapper">
+    <Product Name="__iModelBridgeGetAffinityHostWrapper">
         <SubPart PartName="iModelBridgeGetAffinityHostExe" LibType="Static"/>
-        <Directories DirectoryListName="iModelBridgeGetAffinityHostWrapperDirs"/>
+        <Directories DirectoryListName="__iModelBridgeGetAffinityHostWrapperDirs"/>
     </Product>
-    <ProductDirectoryList ListName="iModelBridgeGetAffinityHostWrapperDirs">
+    <ProductDirectoryList ListName="__iModelBridgeGetAffinityHostWrapperDirs">
         <ProductDirectory Name="Assemblies" Deliver="false"/>
-        <ProductDirectory Name="Assemblies" LibType="Static" Deliver="false"/>
+        <ProductDirectory Name="Assemblies" LibType="Static" Path=""/>
         <ProductDirectory Name="Assets" Deliver="false"/>
         <ProductDirectory Name="Assets" LibType="Static" Deliver="false"/>
         <ProductDirectory Name="VendorNotices" Deliver="false"/>
         <ProductDirectory Name="VendorNotices" LibType="Static" Deliver="false"/>
     </ProductDirectoryList>
-    <Part Name="_iModelBridgeGetAffinityHostForFwk">
-        <SubProduct ProductName="iModelBridgeGetAffinityHostWrapper"/>
+    <Part Name="__iModelBridgeGetAffinityHostForFwk" BentleyBuildMakeFile="iModelBridgeGetAffinityHostForFwk.mke">
+        <SubProduct ProductName="__iModelBridgeGetAffinityHostWrapper"/>
         <Bindings>
-            <Files ProductDirectoryName="Assemblies" ProductSubDirectory="iModelBridgeGetAffinityHost">Delivery/exe/iModelBridgeGetAffinityHost$(exeext)</Files>
+            <Files ProductDirectoryName="Assemblies" ProductSubDirectory="iModelBridgeGetAffinityHost">Delivery/__iModelBridgeGetAffinityHostWrapper/iModelBridgeGetAffinityHost$(exeext)</Files>
         </Bindings>
-    </Part>
-    <Part Name="iModelBridgeGetAffinityHostForFwk">
-        <SubPart PartName="_iModelBridgeGetAffinityHostForFwk" LibType="Static"/>
     </Part>
 
     <Part Name="iModelBridgeFwkExe-Windows" OnlyPlatforms="x64" ExcludeLibType="Static">

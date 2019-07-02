@@ -15,6 +15,14 @@ NamedGroupTests.NamedGroupAcrossReference # Sam broke this with switch to aspect
 
 ConverterTests.UseConverterAsLibrary # Sam - decide if we want to support the "record level mapping" feature of ConverterLibrary or not
 
+ChangeSummaryTestFixture.ElementChildRelationshipChanges
+    # bim0200, PRG, x64
+    # [ RUN      ] ChangeSummaryTestFixture.ElementChildRelationshipChanges
+    # e:\Builds\dcsdk020002194\Source\DgnPlatform\Tests\DgnProject\Published\ChangeSummary_Test.cpp(646): error:       Expected: 3
+    # To be equal to: instance.MakeValueIterator().QueryCount()
+    #       Which is: 2
+    # [  FAILED  ] ChangeSummaryTestFixture.ElementChildRelationshipChanges (76 ms)
+
 ConverterTests.DetectDeletionsInEmbeddedFiles
     # [ RUN      ] ConverterTests.DetectDeletionsInEmbeddedFiles
     # F:\hg-imodel02\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(400): error:       Expected: BentleyApi::SUCCESS

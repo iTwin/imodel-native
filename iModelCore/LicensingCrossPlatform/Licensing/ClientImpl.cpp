@@ -119,9 +119,18 @@ LicenseStatus ClientImpl::StartApplication()
         (LicenseStatus::Offline == licStatus) ||
         (LicenseStatus::Trial == licStatus))
         {
+        // spawn one new thread for each heartbeat
         // TODO: try function pointers as there is less overhead than std::function
+
+        int64_t currentTime = m_timeRetriever->GetCurrentTimeAsUnixMillis();
+
+        m_lastRunningUsageHeartbeatStartTime = currentTime; // ensure that StopApplication knows that this heartbeat is started
         CallOnInterval(m_stopUsageHeartbeatThread, m_usageHeartbeatThreadStopped, m_lastRunningUsageHeartbeatStartTime, HEARTBEAT_THREAD_DELAY_MS, [this]() { return UsageHeartbeat(); });
+
+        m_lastRunningLogPostingHeartbeatStartTime = currentTime; // ensure that StopApplication knows that this heartbeat is started
         CallOnInterval(m_stopLogPostingHeartbeatThread, m_logPostingHeartbeatThreadStopped, m_lastRunningLogPostingHeartbeatStartTime, HEARTBEAT_THREAD_DELAY_MS, [this]() { return LogPostingHeartbeat(); });
+
+        m_lastRunningPolicyHeartbeatStartTime = currentTime; // ensure that StopApplication knows that this heartbeat is started
         CallOnInterval(m_stopPolicyHeartbeatThread, m_policyHeartbeatThreadStopped, m_lastRunningPolicyHeartbeatStartTime, HEARTBEAT_THREAD_DELAY_MS, [this](){ return PolicyHeartbeat(); });
         }
     else
@@ -145,8 +154,6 @@ BentleyStatus ClientImpl::StopApplication()
 
     m_licensingDb->Close();
 
-    LOG.debug("Application stopped");
-
     return SUCCESS;
     }
 
@@ -162,9 +169,8 @@ void ClientImpl::CallOnInterval(std::atomic_bool& stopThread, std::atomic_bool& 
         {
         if (lastRunStartTime.load() == 0)
             {
-            // to get rid of "not used" errors on Android. lastRunStartTime is the reference to each heartbeat's respective lastRun variable
-            // TODO: Refactor this to not need this hack. Perhaps have each heartbeat create a thread rather than a generic function
-            //       creating the heartbeat threads.
+            int64_t currentTime = m_timeRetriever->GetCurrentTimeAsUnixMillis();
+            lastRunStartTime.store(currentTime); // to signal that the thread has started immediately, in case StopApplication is called immediately after start application
             }
 
         // first heartbeat without waiting

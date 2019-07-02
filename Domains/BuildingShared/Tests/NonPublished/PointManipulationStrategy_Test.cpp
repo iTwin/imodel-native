@@ -99,3 +99,41 @@ TEST_F(PointManipulationStrategyTestFixture, Clear_RemovesAllKeyPoints)
     sut->Clear();
     ASSERT_EQ(sut->GetKeyPoints().size(), 0);
     }
+
+//-------------------------------------------------------------------------------------
+// @betest                                      Mindaugas.Butkus                06/2019
+//--------------+---------------+---------------+---------------+---------------+------   
+TEST_F(PointManipulationStrategyTestFixture, ResetDynamicState)
+    {
+    PointManipulationStrategyPtr sut = PointManipulationStrategy::Create();
+    ASSERT_TRUE(sut.IsValid());
+
+    ASSERT_EQ(sut->GetKeyPoints().size(), 0);
+    sut->AppendDynamicKeyPoint({0,0,0});
+    ASSERT_EQ(sut->GetKeyPoints().size(), 1);
+    ASSERT_TRUE(sut->GetKeyPoints().front().AlmostEqual(DPoint3d::From(0, 0, 0)));
+
+    if (true)
+        {
+        ScopedDynamicKeyPointResetter resetter(*sut);
+        ASSERT_EQ(sut->GetKeyPoints().size(), 0);
+        }
+
+    ASSERT_EQ(sut->GetKeyPoints().size(), 1);
+    ASSERT_TRUE(sut->GetKeyPoints().front().AlmostEqual(DPoint3d::From(0, 0, 0)));
+
+    sut->AppendKeyPoint({1,1,1});
+    ASSERT_EQ(sut->GetKeyPoints().size(), 1);
+    ASSERT_TRUE(sut->GetKeyPoints().front().AlmostEqual(DPoint3d::From(1, 1, 1)));
+
+    if (true)
+        {
+        ScopedDynamicKeyPointResetter resetter(*sut);
+        ASSERT_EQ(sut->GetKeyPoints().size(), 1);
+        ASSERT_TRUE(sut->GetKeyPoints().front().AlmostEqual(DPoint3d::From(1, 1, 1)));
+        }
+
+    // Check again if nothing changed in the resetter's destructor.
+    ASSERT_EQ(sut->GetKeyPoints().size(), 1);
+    ASSERT_TRUE(sut->GetKeyPoints().front().AlmostEqual(DPoint3d::From(1, 1, 1)));
+    }
