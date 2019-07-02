@@ -336,6 +336,8 @@ $(o)ScalableMeshGroup$(oext) : $(stmDir)ScalableMeshGroup.cpp $(stmDir)ScalableM
 
 $(o)ScalableMeshClippingOptions$(oext) : $(stmDir)ScalableMeshClippingOptions.cpp $(stmDir)ScalableMeshClippingOptions.h ${MultiCompileDepends}
 
+$(o)ScalableMeshModuleInfo$(oext) : $(stmDir)ScalableMeshModuleInfo.cpp $(stmDir)ScalableMeshModuleInfo.h ${MultiCompileDepends}
+
 #-----------------------------------------------------------------------
 #   Build Tile Publisher
 #-----------------------------------------------------------------------
@@ -398,11 +400,11 @@ $(o)SMStoreUtils$(oext) : $(stmDir)Stores/SMStoreUtils.cpp $(stmDir)Stores/SMSto
 
 #$(o)DGNLevelImporter$(oext) : $(importerPluginsDir)DGNLevelImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-#$(o)DGNModelUtilities$(oext) : $(importerPluginsDir)DGNModelUtilities.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+$(o)DGNModelUtilities$(oext) : $(importerPluginsDir)DGNModelUtilities.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 #$(o)ElementType$(oext) : $(importerPluginsDir)ElementType.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-#$(o)ElemSourceRef$(oext) : $(importerPluginsDir)ElemSourceRef.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+$(o)ElemSourceRef$(oext) : $(importerPluginsDir)ElemSourceRef.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 #$(o)DGNModelGeoRef$(oext) : $(geocoordsDir)DGNModelGeoRef.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
@@ -456,11 +458,13 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)$(BaseGeocoordLib) \
     ws2_32.lib \
     Urlmon.lib \
+    Version.lib \
     $(ContextSubpartsLibs)$(TerrainModelCoreLib) \
     $(ContextSubpartsLibs)$(TerrainModelFormatsLib) \
     $(ContextSubpartsLibs)BeCurl.lib \
 	$(ContextSubpartsLibs)acute3dio.lib \
 	$(ContextSubpartsLibs)freeimage.lib \
+    $(ContextSubpartsLibs)PointCloud.lib \
     $(ContextSubpartsLibs)RealityPlatform.lib \
 	$(ContextSubpartsLibs)RealityPlatformTools.lib \
     $(ContextSubpartsLibs)CCApi.lib\
