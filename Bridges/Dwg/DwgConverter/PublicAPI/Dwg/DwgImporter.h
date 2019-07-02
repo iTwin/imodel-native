@@ -705,7 +705,9 @@ public:
         Utf8String                  m_blockName;
         DwgDbObjectId               m_blockId;
         DgnElementId                m_fileId;
+        size_t                      m_partIndex;
     public:
+        GeometryEntry () : m_partIndex(0) { m_transform.InitIdentity(); }
         bool    IsValid () const { return m_geometry.IsValid(); }
         GeometricPrimitiveCR GetGeometry () const { BeAssert(IsValid()); return *m_geometry; }
         GeometricPrimitiveP GetGeometryP () { BeAssert(IsValid()); return m_geometry.get(); }
@@ -721,6 +723,8 @@ public:
         void    SetBlockId (DwgDbObjectIdCR id) { m_blockId = id; }
         DgnElementId GetDwgFileId () const { return m_fileId; }
         void    SetDwgFileId (DgnElementId id) { m_fileId = id; }
+        size_t  GetPartIndex () const { return m_partIndex; }
+        void    SetPartIndex (size_t index) { m_partIndex = index; }
         };  // GeometryEntry
     typedef bvector<GeometryEntry>                      T_GeometryList;
     typedef bpair<DwgDbObjectId, T_GeometryList>        T_BlockGeometryEntry;
