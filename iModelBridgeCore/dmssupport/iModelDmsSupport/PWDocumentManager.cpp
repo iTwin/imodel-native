@@ -4,6 +4,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnDbSync/DgnV8/DgnV8.h> // NB: Must include this first!
+#include <functional>
 #include "PWWorkspaceHelper.h"
 #include <iModelDmsSupport/DmsSession.h>
 #include <ProjectWise_InternalSDK/Include/aaatypes.h>
@@ -22,7 +23,10 @@ struct PWMoniker :  public Bentley::DgnPlatform::DgnDocumentMoniker
 struct PWDocumentManager : public Bentley::DgnPlatform::DgnDocumentManager
     {
     private:
-        bool            FileNameIsDmsFormat(WCharCP fileName);
+        typedef std::function<DgnDocumentMonikerPtr(WCharCP portableName, WCharCP fullPath, WCharCP providerId, WCharCP searchPath, bool findFullPathFirst, WCharCP customXMLString)> CREATEMONIKERIMPLFUNC;
+
+        bool                    FileNameIsDmsFormat(WCharCP fileName);
+        DgnDocumentMonikerPtr   _CreateMonikerImpl(WCharCP portableName, WCharCP fullPath, WCharCP providerId, WCharCP searchPath, bool findFullPathFirst, WCharCP customXMLString, CREATEMONIKERIMPLFUNC parentFunction);
         BentleyApi::Dgn::PWWorkspaceHelper&   m_helper;
     protected:
     /*virtual DgnDocumentPtr                  _CreateDocument0(DgnDocumentMonikerR moniker) override ;
@@ -38,6 +42,7 @@ struct PWDocumentManager : public Bentley::DgnPlatform::DgnDocumentManager
         
     virtual DgnDocumentMonikerPtr           _CreateMoniker(WCharCP portableName, WCharCP fullPath, WCharCP providerId, bool isRelative, WCharCP searchPath, bool findFullPathFirst, WCharCP customXMLString, WCharCP displayName = NULL) override;
     virtual DgnDocumentMonikerPtr           _CreateMonikerFromURI(WCharCP uri, WCharCP basePath) override;
+    virtual DgnDocumentMonikerPtr           _CreateMonikerFromRawData(WCharCP savedName, WCharCP fullPath, WCharCP providerId, WCharCP basePath, bool fullPathFirst, WCharCP customString) override;
     
     public:
         PWDocumentManager (BentleyApi::Dgn::PWWorkspaceHelper& helper)
@@ -61,12 +66,48 @@ DgnDocumentMonikerPtr PWDocumentManager::_CreateMonikerFromFileName(WCharCP file
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDocumentMonikerPtr   PWDocumentManager::_CreateMoniker(WCharCP portableName, WCharCP fullPathIn, WCharCP providerId, bool isRelative, WCharCP searchPathIn, bool findFullPathFirst, WCharCP customXMLString, WCharCP displayName)
     {
+    CREATEMONIKERIMPLFUNC parentFunction =
+        [this, isRelative, displayName](WCharCP portableName, WCharCP fullPath, WCharCP providerId, WCharCP searchPath, bool findFullPathFirst, WCharCP customXMLString)
+        {
+        return DgnDocumentManager::_CreateMoniker(portableName, fullPath, providerId, isRelative, searchPath, findFullPathFirst, customXMLString, displayName);
+        };
+
+    return _CreateMonikerImpl(portableName, fullPathIn, providerId, searchPathIn, findFullPathFirst, customXMLString, parentFunction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDocumentMonikerPtr           PWDocumentManager::_CreateMonikerFromURI(WCharCP uri, WCharCP basePath)
+    {
+    return DgnDocumentManager::_CreateMonikerFromURI(uri, basePath);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Jonathan.DeCarlo                  07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDocumentMonikerPtr PWDocumentManager::_CreateMonikerFromRawData(WCharCP portableName, WCharCP fullPathIn, WCharCP providerId, WCharCP searchPathIn, bool findFullPathFirst, WCharCP customXMLString)
+    {
+    CREATEMONIKERIMPLFUNC parentFunction = 
+        [this](WCharCP portableName, WCharCP fullPath, WCharCP providerId, WCharCP searchPath, bool findFullPathFirst, WCharCP customXMLString)
+        {
+        return DgnDocumentManager::_CreateMonikerFromRawData(portableName, fullPath, providerId, searchPath, findFullPathFirst, customXMLString);
+        };
+
+    return _CreateMonikerImpl(portableName, fullPathIn, providerId, searchPathIn, findFullPathFirst, customXMLString, parentFunction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Jonathan.DeCarlo                  07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDocumentMonikerPtr PWDocumentManager::_CreateMonikerImpl(WCharCP portableName, WCharCP fullPathIn, WCharCP providerId, WCharCP searchPathIn, bool findFullPathFirst, WCharCP customXMLString, CREATEMONIKERIMPLFUNC parentFunction)
+    {
     if (NULL == providerId)
-        return DgnDocumentManager::_CreateMoniker(portableName, fullPathIn, providerId, isRelative, searchPathIn, findFullPathFirst, customXMLString, displayName);
+        return parentFunction(portableName, fullPathIn, providerId, searchPathIn, findFullPathFirst, customXMLString);
 
     int folderId, documentId;
     if (SUCCESS != m_helper.GetFolderIdFromMoniker(folderId, documentId, providerId))
-        return DgnDocumentManager::_CreateMoniker(portableName, fullPathIn, providerId, isRelative, searchPathIn, findFullPathFirst, customXMLString, displayName);
+        return parentFunction(portableName, fullPathIn, providerId, searchPathIn, findFullPathFirst, customXMLString);
 
     WString refFolderName;
     refFolderName.Sprintf(L"%d_%d", folderId, documentId);
@@ -79,7 +120,7 @@ DgnDocumentMonikerPtr   PWDocumentManager::_CreateMoniker(WCharCP portableName, 
     if (NULL != searchPathIn)
         {
         searchPath = searchPathIn;
-        
+
         BentleyApi::BeFileName fullRefFileName;
         BeStringUtilities::Split(searchPathIn, L";", paths);
         for (WStringCR path : paths)
@@ -93,8 +134,8 @@ DgnDocumentMonikerPtr   PWDocumentManager::_CreateMoniker(WCharCP portableName, 
                 {
                 BentleyApi::WString dirName = parentDir.GetFileNameWithoutExtension();
                 int cfolderId, cdocId;
-                if (2== swscanf(dirName.c_str(), L"%d_%d", &cfolderId, &cdocId))
-                    { 
+                if (2 == swscanf(dirName.c_str(), L"%d_%d", &cfolderId, &cdocId))
+                    {
                     parentDir.PopDir();
                     parentDir.AppendToPath(refFolderName.c_str());
                     fullRefFileName = parentDir;
@@ -112,33 +153,25 @@ DgnDocumentMonikerPtr   PWDocumentManager::_CreateMoniker(WCharCP portableName, 
 
         fullRefFileName.AppendToPath(refFileName.c_str());
         if (fullRefFileName.DoesPathExist())
-            return DgnDocumentManager::_CreateMoniker(portableName, fullRefFileName.c_str(), providerId, isRelative, searchPath.c_str(), findFullPathFirst, customXMLString, displayName);
+            return parentFunction(portableName, fullRefFileName.c_str(), providerId, searchPath.c_str(), findFullPathFirst, customXMLString);
         }
     //else search for this in the PW workspace folder with folder_id pattern
     BentleyApi::WPrintfString dmsWorkspaceDirFilePath(L"%s\\dms%05d\\%s", m_helper.GetActiveWorkspaceDir().c_str(), folderId, refFileName.c_str());
     BentleyApi::BeFileName dmsworkspaceDirFile(dmsWorkspaceDirFilePath);
     if (dmsworkspaceDirFile.DoesPathExist())
-        return DgnDocumentManager::_CreateMoniker(portableName, dmsworkspaceDirFile.c_str(), providerId, isRelative, searchPath.c_str(), findFullPathFirst, customXMLString, displayName);
+        return parentFunction(portableName, dmsworkspaceDirFile.c_str(), providerId, searchPath.c_str(), findFullPathFirst, customXMLString);
 
     BentleyApi::WPrintfString workspaceDirFilePath(L"%s\\%s\\%s", m_helper.GetActiveWorkspaceDir().c_str(), refFolderName.c_str(), refFileName.c_str());
     BentleyApi::BeFileName workspaceDirFile(workspaceDirFilePath);
     if (workspaceDirFile.DoesPathExist())
-        return DgnDocumentManager::_CreateMoniker(portableName, workspaceDirFile.c_str(), providerId, isRelative, searchPath.c_str(), findFullPathFirst, customXMLString, displayName);
+        return parentFunction(portableName, workspaceDirFile.c_str(), providerId, searchPath.c_str(), findFullPathFirst, customXMLString);
 
-    
+
     searchPath.append(L";");
     searchPath.append(m_helper.GetActiveWorkspaceDir().c_str());
     searchPath.append(L"\\*");
 
-    return DgnDocumentManager::_CreateMoniker(portableName, fullPathIn, providerId, isRelative, searchPath.c_str(), findFullPathFirst, customXMLString, displayName);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  09/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDocumentMonikerPtr           PWDocumentManager::_CreateMonikerFromURI(WCharCP uri, WCharCP basePath)
-    {
-    return DgnDocumentManager::_CreateMonikerFromURI(uri, basePath);
+    return parentFunction(portableName, fullPathIn, providerId, searchPath.c_str(), findFullPathFirst, customXMLString);
     }
 
 /*---------------------------------------------------------------------------------**//**
