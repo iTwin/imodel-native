@@ -387,8 +387,11 @@ TEST_F(PolicyProviderTests, GetPolicyWithKey_Success)
         });
 
     // assert that we return a well formed policy
-    const auto result = GetPolicyProvider().GetPolicyWithKey(accessKey).get();
+    const auto result = GetPolicyProvider().GetPolicyWithKey(accessKey, "").get();
     auto resultJson = result->GetJson();
     auto expectedJson = expectedPolicy->GetJson();
     EXPECT_EQ(expectedJson, resultJson);
     }
+
+// TODO: add a GetPolicyWithKey test with ultimate ID
+

@@ -80,7 +80,8 @@ public:
     LICENSING_EXPORT folly::Future<Json::Value> GetAccessKeyInfo
         (
         ApplicationInfoPtr applicationInfo,
-        Utf8StringCR accessKey
+        Utf8StringCR accessKey,
+        Utf8StringCR ultimateId
         );
     };
 

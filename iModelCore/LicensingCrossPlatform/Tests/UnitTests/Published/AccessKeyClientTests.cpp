@@ -63,9 +63,12 @@ AccessKeyClientImplPtr CreateWithKeyTestClient(IPolicyProviderPtr policyProvider
         ulasProvider,
         "",
         "",
-        licensingDb
+        licensingDb,
+        ""
         );
     }
+
+// TODO: add a client create function with ultimate ID for unit test with machine agnostic key?
 
 // TODO: move to Integration tests
 //ClientPtr CreateWithKeyTestClientFromFactory(Utf8StringCR productId = TEST_PRODUCT_ID)
