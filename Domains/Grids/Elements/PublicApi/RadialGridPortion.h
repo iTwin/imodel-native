@@ -42,7 +42,7 @@ public:
         //! @param[in] defaultEndRadius         Default end radius
         //! @param[in] defaultStartElevation    Default start elevation
         //! @param[in] defaultEndElevation      Default end elevation
-        CreateParams(Dgn::SpatialLocationModelCR model, Dgn::DgnElementId scopeElementId, Utf8CP name, double defaultAngleIncrement,
+        CreateParams(Dgn::SpatialModelCR model, Dgn::DgnElementId scopeElementId, Utf8CP name, double defaultAngleIncrement,
                      double defaultRadiusIncrement, double defaultStartAngle, double defaultEndAngle, double defaultStartRadius, 
                      double defaultEndRadius, double defaultStartElevation, double defaultEndElevation) :
             T_Super (model, scopeElementId, name, QueryClassId (model.GetDgnDb ()), defaultStartElevation, defaultEndElevation)

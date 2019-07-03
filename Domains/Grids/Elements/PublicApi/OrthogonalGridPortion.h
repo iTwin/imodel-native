@@ -42,7 +42,7 @@ public:     //public - non-exported
         //! @param[in] defaultEndExtY           Default end extent (length from the coordinate on the perpendicular axis) in Y axis for surfaces
         //! @param[in] defaultStartElevation    Default start (bottom) elevation for surfaces
         //! @param[in] defaultEndElevation      Default end (top) elevation for surfaces
-        CreateParams (Dgn::SpatialLocationModelCR model, Dgn::DgnElementId modeledElementId, Utf8CP name, double defaultCoordIncX, double defaultCoordIncY, double defaultStartExtX, double defaultEndExtX, double defaultStartExtY, double defaultEndExtY, double defaultStartElevation, double defaultEndElevation) :
+        CreateParams (Dgn::SpatialModelCR model, Dgn::DgnElementId modeledElementId, Utf8CP name, double defaultCoordIncX, double defaultCoordIncY, double defaultStartExtX, double defaultEndExtX, double defaultStartExtY, double defaultEndExtY, double defaultStartElevation, double defaultEndElevation) :
             T_Super (model, modeledElementId, name, QueryClassId (model.GetDgnDb ()), defaultStartElevation, defaultEndElevation)
             {
             m_defaultCoordinateIncrementX = defaultCoordIncX;
