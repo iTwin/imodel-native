@@ -1488,90 +1488,89 @@ StatusInt GetHorizontalDatumToCoordSys (WStringR wkt, BaseGCSR coordinateSystem)
                 }
             }
     #endif
-        }
 
-    if (finalDatumName.length() != 0)
-        {
-        // We have a datum name ... we simply need to set it now ... in order to do this we need the code
-        int foundIndex = FindDatumIndex (finalDatumName.c_str());
-    
-        if (foundIndex >= 0)
-            coordinateSystem.SetDatumCode (foundIndex);
-        else if (!transfoParamPresent)
-            return ERROR;
-        
-        if (transfoParamPresent)
+        if (finalDatumName.length() != 0)
             {
-            WString paramDatum;
-            if (FindDatumFromTransformationParams(paramDatum, coordinateSystem.GetEllipsoidName(), deltaX, deltaY, deltaZ, rotX, rotY, rotZ, scalePPM))
+            // We have a datum name ... we simply need to set it now ... in order to do this we need the code
+            int foundIndex = FindDatumIndex (finalDatumName.c_str());
+        
+            if (foundIndex >= 0)
+                coordinateSystem.SetDatumCode (foundIndex);
+            else if (!transfoParamPresent)
+                return ERROR;
+            
+            if (transfoParamPresent)
                 {
-                // We found a datum ... check if same or same definition
-                if (paramDatum != finalDatumName)
+                WString paramDatum;
+                if (FindDatumFromTransformationParams(paramDatum, coordinateSystem.GetEllipsoidName(), deltaX, deltaY, deltaZ, rotX, rotY, rotZ, scalePPM))
                     {
-                    // Create both datums and compare 
-                    DatumCP namedDatum1 = Datum::CreateDatum(finalDatumName.c_str());
-                    DatumCP namedDatum2 = Datum::CreateDatum(paramDatum.c_str());
-
-                    if (!DatumEquivalent(*(namedDatum1->GetCSDatum()), *(namedDatum2->GetCSDatum()), false, true))
+                    // We found a datum ... check if same or same definition
+                    if (paramDatum != finalDatumName)
                         {
-                        // This case can occur when a datum has a null transformation to WGS84 but has not the same shape for the ellipsoid (example: SphereWGS84)
-                        // In this case we simply check and go on
-                        if (!(distanceSame(deltaX, 0.0) && distanceSame(deltaY, 0.0) && distanceSame(deltaZ, 0.0) &&
-                            doubleSame(rotX, 0.0) && doubleSame(rotY, 0.0) && doubleSame(rotZ, 0.0) && doubleSame(scalePPM, 0.0)))
+                        // Create both datums and compare 
+                        DatumCP namedDatum1 = Datum::CreateDatum(finalDatumName.c_str());
+                        DatumCP namedDatum2 = Datum::CreateDatum(paramDatum.c_str());
+    
+                        if (!DatumEquivalent(*(namedDatum1->GetCSDatum()), *(namedDatum2->GetCSDatum()), false, true))
                             {
-                            // If they are still different then it may be because the found datum is based on an eveloved method
-                            // such as grid shift files or multiple regression. In this case we consider the transformation parameters provided as fallback
-                            // solution.
-                            WGS84ConvertCode datumConvert = namedDatum1->GetConvertToWGS84MethodCode();
-
-                            if ((ConvertType_MREG != datumConvert) &&
-                                (ConvertType_NAD27 != datumConvert) &&
-                                (ConvertType_HPGN != datumConvert) &&
-                                (ConvertType_AGD66 != datumConvert) &&
-                                (ConvertType_AGD84 != datumConvert) &&
-                                (ConvertType_NZGD4 != datumConvert) &&
-                                (ConvertType_ATS77 != datumConvert) &&
-                                (ConvertType_CSRS != datumConvert) &&
-                                (ConvertType_TOKYO != datumConvert) &&
-                                (ConvertType_RGF93 != datumConvert) &&
-                                (ConvertType_ED50 != datumConvert) &&
-                                (ConvertType_DHDN != datumConvert) &&
-                                (ConvertType_GENGRID != datumConvert) &&
-                                (ConvertType_CHENYX != datumConvert))
-                                {                               
-                                namedDatum1->Destroy();
-                                namedDatum2->Destroy();
-                                return ERROR;
+                            // This case can occur when a datum has a null transformation to WGS84 but has not the same shape for the ellipsoid (example: SphereWGS84)
+                            // In this case we simply check and go on
+                            if (!(distanceSame(deltaX, 0.0) && distanceSame(deltaY, 0.0) && distanceSame(deltaZ, 0.0) &&
+                                doubleSame(rotX, 0.0) && doubleSame(rotY, 0.0) && doubleSame(rotZ, 0.0) && doubleSame(scalePPM, 0.0)))
+                                {
+                                // If they are still different then it may be because the found datum is based on an eveloved method
+                                // such as grid shift files or multiple regression. In this case we consider the transformation parameters provided as fallback
+                                // solution.
+                                WGS84ConvertCode datumConvert = namedDatum1->GetConvertToWGS84MethodCode();
+    
+                                if ((ConvertType_MREG != datumConvert) &&
+                                    (ConvertType_NAD27 != datumConvert) &&
+                                    (ConvertType_HPGN != datumConvert) &&
+                                    (ConvertType_AGD66 != datumConvert) &&
+                                    (ConvertType_AGD84 != datumConvert) &&
+                                    (ConvertType_NZGD4 != datumConvert) &&
+                                    (ConvertType_ATS77 != datumConvert) &&
+                                    (ConvertType_CSRS != datumConvert) &&
+                                    (ConvertType_TOKYO != datumConvert) &&
+                                    (ConvertType_RGF93 != datumConvert) &&
+                                    (ConvertType_ED50 != datumConvert) &&
+                                    (ConvertType_DHDN != datumConvert) &&
+                                    (ConvertType_GENGRID != datumConvert) &&
+                                    (ConvertType_CHENYX != datumConvert))
+                                    {                               
+                                    namedDatum1->Destroy();
+                                    namedDatum2->Destroy();
+                                    return ERROR;
+                                    }
                                 }
                             }
+    
+                        namedDatum1->Destroy();
+                        namedDatum2->Destroy();
                         }
-
-                    namedDatum1->Destroy();
-                    namedDatum2->Destroy();
                     }
-                }
-            
-
-            }   
-        }
-    else if (transfoParamPresent)
-        {
-        // No datum match yet transformation parameters were located
-        WString paramDatum;
-        if (!FindDatumFromTransformationParams(paramDatum, coordinateSystem.GetEllipsoidName(), deltaX, deltaY, deltaZ, rotX, rotY, rotZ, scalePPM))
-            return ERROR;
-
-        int foundIndex = FindDatumIndex(paramDatum.c_str());
-
-        if (foundIndex >= 0)
-            coordinateSystem.SetDatumCode(foundIndex);
+                
+    
+                }   
+            }
+        else if (transfoParamPresent)
+            {
+            // No datum match yet transformation parameters were located
+            WString paramDatum;
+            if (!FindDatumFromTransformationParams(paramDatum, coordinateSystem.GetEllipsoidName(), deltaX, deltaY, deltaZ, rotX, rotY, rotZ, scalePPM))
+                return ERROR;
+    
+            int foundIndex = FindDatumIndex(paramDatum.c_str());
+    
+            if (foundIndex >= 0)
+                coordinateSystem.SetDatumCode(foundIndex);
+            else
+                return ERROR;
+    
+            }
         else
             return ERROR;
-
         }
-    else
-        return ERROR;
-
 
     return status;
     }
