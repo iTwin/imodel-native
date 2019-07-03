@@ -665,7 +665,7 @@ BeFileNameR BeFileName::PopDir ()
     WString::iterator lastChar = this->end()-1;
         
     // A trailing separator doesn't count.
-    if (*lastChar == WCSDIR_SEPARATOR_CHAR)
+    if (lastChar > this->begin() && *lastChar == WCSDIR_SEPARATOR_CHAR)
         --lastChar;
         
     while (lastChar > this->begin() && *lastChar != WCSDIR_SEPARATOR_CHAR)
