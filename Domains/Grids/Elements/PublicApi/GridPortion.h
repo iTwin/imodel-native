@@ -35,7 +35,7 @@ public:
         //! @param[in] modeledElementId     Element id of an element that will contain this grid
         //! @param[in] name                 Name of the grid
         //! @param[in] classId              Class id of the element that will contain this grid
-        CreateParams (Dgn::SpatialLocationModelCR model, Dgn::DgnElementId modeledElementId, Utf8CP name, Dgn::DgnClassId classId) :
+        CreateParams (Dgn::SpatialModelCR model, Dgn::DgnElementId modeledElementId, Utf8CP name, Dgn::DgnClassId classId) :
             T_Super (DgnElement::CreateParams (model.GetDgnDb (), model.GetModelId (), classId, Dgn::DgnCode (model.GetDgnDb ().CodeSpecs ().QueryCodeSpecId (GRIDS_AUTHORITY_Grid), modeledElementId, name)))
             {}
 
@@ -127,7 +127,7 @@ struct EXPORT_VTABLE_ATTRIBUTE PlanGrid : Grid
         //! @param[in] classId                  Class id of the element that will contain this grid
         //! @param[in] defaultStartElevation    Default start elevation for surfaces that will be created for this grid
         //! @param[in] defaultEndElevation      Default end elevation for surfaces that will be created for this grid
-        CreateParams(Dgn::SpatialLocationModelCR model, Dgn::DgnElementId modeledElementId, Utf8CP name, Dgn::DgnClassId classId, double defaultStaElevation, double defaultEndElevation) :
+        CreateParams(Dgn::SpatialModelCR model, Dgn::DgnElementId modeledElementId, Utf8CP name, Dgn::DgnClassId classId, double defaultStaElevation, double defaultEndElevation) :
             T_Super(model, modeledElementId, name, classId)
             {
             m_defaultStartElevation = defaultStaElevation;
