@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Grids/Elements/PublicApi/ForwardDeclarations.h $
-|
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -48,3 +46,4 @@ GRIDS_REFCOUNTED_PTR_AND_TYPEDEFS(RadialGrid)
 GRIDS_REFCOUNTED_PTR_AND_TYPEDEFS(SketchGrid)
 
 GRIDS_REFCOUNTED_PTR_AND_TYPEDEFS(GridCurveBundle)
+GRIDS_REFCOUNTED_PTR_AND_TYPEDEFS(GridLabel)

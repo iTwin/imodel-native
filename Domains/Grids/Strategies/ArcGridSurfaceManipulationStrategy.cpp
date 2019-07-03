@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Grids/Strategies/ArcGridSurfaceManipulationStrategy.cpp $
-|
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include <Grids/Strategies/GridStrategies.h>
