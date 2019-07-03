@@ -33,10 +33,7 @@ CreateParams const& params
     if(params.m_isLoadingElement)
         return;
 
-    if (params.m_classId.IsValid())
-        {
-        SetAxisId(params.m_gridAxisId);
-        }
+    SetAxisId(params.m_gridAxisId);
     }
 
 /*---------------------------------------------------------------------------------**//**
