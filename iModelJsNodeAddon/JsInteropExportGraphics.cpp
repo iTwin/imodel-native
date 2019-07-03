@@ -121,7 +121,7 @@ static void unifyIndices(IntermediateMesh const& inMesh, ExportGraphicsMesh& out
     uint32_t indexCount = inMesh.m_indexCount;
     outMesh.indices.reserve(outMesh.indices.size() + indexCount);
 
-    constexpr static float UV_TOLERANCE = 0.01f;
+    constexpr static float UV_TOLERANCE = 0.00025; // ~1 pixel at 4K
 
     for (uint32_t i = 0; i < indexCount; ++i)
         {
@@ -187,6 +187,7 @@ void _AddBSplineCurve(MSBsplineCurveCR curve, bool filled) override
 void _AddBSplineCurve2d(MSBsplineCurveCR curve, bool filled, double zDepth) override
     { if (curve.params.closed) return T_Super::_AddBSplineCurve2d(curve, filled, zDepth); }
 
+// Copy of SimplifyGraphic::_CreateSubGraphic to generate derived class
 Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR subToGraphic, ClipVectorCP clip) const override
     {
     auto result = new ExportGraphicsBuilder(Render::GraphicBuilder::CreateParams::Scene(GetDgnDb(),
@@ -201,17 +202,51 @@ Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR subToGraphic, ClipVector
 }; // ExportGraphicsBuilder
 
 //=======================================================================================
+// @bsistruct                                                   Matt.Gooding    06/19
+//=======================================================================================
+struct PartInstanceRecord
+{
+    DgnGeometryPartId       partId;
+    Transform               transform;
+    DgnCategoryId           categoryId;
+    DgnSubCategoryId        subCategoryId;
+    RenderMaterialId        materialId;
+    double                  elmTransparency;
+    ColorDef                lineColor;
+};
+
+//=======================================================================================
 // @bsistruct                                                   Matt.Gooding    02/19
 //=======================================================================================
 struct ExportGraphicsContext : NullContext
 {
-DEFINE_T_SUPER(NullContext);
-IGeometryProcessorR m_processor;
+    DEFINE_T_SUPER(NullContext);
+    IGeometryProcessorR             m_processor;
+    bvector<PartInstanceRecord>*    m_instances;
+
+ExportGraphicsContext(IGeometryProcessorR processor, bvector<PartInstanceRecord>* instances)
+    : m_processor(processor), m_instances(instances) {m_purpose = processor._GetProcessPurpose();}
 
 Render::GraphicBuilderPtr _CreateGraphic(Render::GraphicBuilder::CreateParams const& params) override
     { return new ExportGraphicsBuilder(params, m_processor, *this); }
 
-ExportGraphicsContext(IGeometryProcessorR processor) : m_processor(processor) {m_purpose = processor._GetProcessPurpose();}
+void _AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR transform, Render::GeometryParamsR geomParams) override
+    {
+    if (!m_instances) return T_Super::_AddSubGraphic(graphic, partId, transform, geomParams);
+
+    PartInstanceRecord rec;
+    rec.partId = partId;
+    rec.transform = graphic.GetLocalToWorldTransform() * transform;
+
+    geomParams.Resolve(GetDgnDb());
+    rec.categoryId = geomParams.GetCategoryId();
+    rec.subCategoryId = geomParams.GetSubCategoryId();
+    rec.materialId = geomParams.GetMaterialId();
+    rec.elmTransparency = geomParams.GetTransparency();
+    rec.lineColor = geomParams.GetLineColor();
+
+    m_instances->emplace_back(rec);
+    }
 };
 
 //=======================================================================================
@@ -431,18 +466,21 @@ struct ExportGraphicsJob
     DgnDbR                          m_db;
     ExportGraphicsProcessor         m_processor;
     ExportGraphicsContext           m_context;
-    Napi::String                    m_elementId;
-    DgnElementId                    m_debugElementId;
+    Napi::String                    m_elementIdString;
+    DgnElementId                    m_elementId;
+    bvector<PartInstanceRecord>     m_instances;
 
-    ExportGraphicsJob(DgnDbR db, IFacetOptionsR fo, Napi::String elId, DgnElementId debugElId) :
-        m_geom(db), m_db(db), m_processor(db, fo), m_context(m_processor), m_elementId(elId),
-        m_debugElementId(debugElId) { }
+ExportGraphicsJob(DgnDbR db, IFacetOptionsR fo, Napi::String elIdStr, DgnElementId elId, bool saveInstances)
+    : m_geom(db), m_db(db), m_processor(db, fo), m_elementIdString(elIdStr), m_elementId(elId),
+    m_context(m_processor, saveInstances ? &m_instances : nullptr)
+    {
+    }
 
-    void Execute()
-        {
-        m_context.SetDgnDb(m_db);
-        m_geom.Draw(m_context, 0);
-        }
+void Execute()
+    {
+    m_context.SetDgnDb(m_db);
+    m_geom.Draw(m_context, 0);
+    }
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -476,7 +514,7 @@ static IFacetOptionsPtr createFacetOptions(Napi::Object const& exportProps)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Matt.Gooding    02/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Napi::Value convertMesh(Napi::Env env, ExportGraphicsMesh& mesh)
+static Napi::Value convertMesh(Napi::Env& env, ExportGraphicsMesh& mesh)
     {
     Napi::Object convertedMesh = Napi::Object::New(env);
 
@@ -497,6 +535,48 @@ static Napi::Value convertMesh(Napi::Env env, ExportGraphicsMesh& mesh)
     convertedMesh.Set("params", paramArray);
 
     return convertedMesh;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Matt.Gooding    06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static Napi::String createIdString(Napi::Env& env, BeInt64Id const& id)
+    {
+    static Utf8Char idStrBuffer[BeInt64Id::ID_STRINGBUFFER_LENGTH];
+    id.ToString(idStrBuffer, BeInt64Id::UseHex::Yes);
+    return Napi::String::New(env, idStrBuffer);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Matt.Gooding    06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static void convertPartInstances(Napi::Env& env, Napi::Array& napiArray, DgnElementId partInstanceId,
+    bvector<PartInstanceRecord> const& instances)
+    {
+    uint32_t napiArrayIndex = napiArray.Length();
+    Napi::String partInstanceIdString = createIdString(env, partInstanceId);
+    for (auto& rec : instances)
+        {
+        Napi::Object napiInstance = Napi::Object::New(env);
+        napiArray.Set(napiArrayIndex, napiInstance);
+        ++napiArrayIndex;
+
+        napiInstance.Set("partId", createIdString(env, rec.partId));
+        napiInstance.Set("partInstanceId", partInstanceIdString);
+        if (!rec.transform.IsIdentity())
+            {
+            Napi::Float64Array transformArray = Napi::Float64Array::New(env, 12);
+            memcpy (transformArray.Data(), rec.transform.form3d, 12 * sizeof(double));
+            napiInstance.Set("transform", transformArray);
+            }
+        Napi::Object napiDisplayProps = Napi::Object::New(env);
+        napiDisplayProps.Set("categoryId", createIdString(env, rec.categoryId));
+        napiDisplayProps.Set("subCategoryId", createIdString(env, rec.subCategoryId));
+        napiDisplayProps.Set("materialId", createIdString(env, rec.materialId));
+        napiDisplayProps.Set("elmTransparency", Napi::Number::New(env, rec.elmTransparency));
+        napiDisplayProps.Set("lineColor", Napi::Number::New(env, rec.lineColor.GetValue()));
+        napiInstance.Set("displayProps", napiDisplayProps);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -537,6 +617,9 @@ DgnDbStatus JsInterop::ExportGraphics(DgnDbR db, Napi::Object const& exportProps
     bvector<std::unique_ptr<ExportGraphicsJob>> jobs; jobs.reserve(elementIdArray.Length());
     bvector<folly::Future<folly::Unit>> jobHandles; jobHandles.reserve(elementIdArray.Length());
 
+    Napi::Array napiPartArray = exportProps.Get("partInstanceArray").As<Napi::Array>();
+    bool saveInstances = napiPartArray.IsArray();
+
     for (uint32_t i = 0; i < elementIdArray.Length(); ++i)
         {
         Napi::String napiElementId = elementIdArray.Get(i).As<Napi::String>();
@@ -553,7 +636,7 @@ DgnDbStatus JsInterop::ExportGraphics(DgnDbR db, Napi::Object const& exportProps
         auto status = db.Elements().LoadGeometryStream(geomStream, stmt->GetValueBlob(1), stmt->GetColumnBytes(1));
         if (status != DgnDbStatus::Success) continue;
 
-        ExportGraphicsJob* job = new ExportGraphicsJob(db, *facetOptions.get(), napiElementId, elementId);
+        auto job = new ExportGraphicsJob(db, *facetOptions.get(), napiElementId, elementId, saveInstances);
         job->m_geom.m_categoryId = stmt->GetValueId<DgnCategoryId>(0);
         job->m_geom.m_placement = getPlacement(*stmt);
         job->m_geom.m_geomStream = std::move(geomStream);
@@ -564,7 +647,6 @@ DgnDbStatus JsInterop::ExportGraphics(DgnDbR db, Napi::Object const& exportProps
 
     // TS API specifies that modifying the binding of this function in the callback will be ignored
     Napi::Function onGraphicsCb = exportProps.Get("onGraphics").As<Napi::Function>();
-    Utf8Char idStrBuffer[BeInt64Id::ID_STRINGBUFFER_LENGTH];
 
     for (uint32_t i = 0; i < (uint32_t)jobHandles.size(); ++i)
         {
@@ -574,33 +656,88 @@ DgnDbStatus JsInterop::ExportGraphics(DgnDbR db, Napi::Object const& exportProps
         if (job->m_processor.m_gotBadPolyface)
             {
             Utf8CP errorMsg = "Element 0x%llx generated invalid geometry, this may indicate problems with the source data.";
-            JsInterop::GetLogger().errorv(errorMsg, job->m_debugElementId.GetValueUnchecked());
+            JsInterop::GetLogger().errorv(errorMsg, job->m_elementId.GetValueUnchecked());
             }
 
         for (auto& entry : job->m_processor.m_cachedEntries)
             {
             Napi::Object cbArgument = Napi::Object::New(Env());
-            cbArgument.Set("elementId", job->m_elementId);
+            cbArgument.Set("elementId", job->m_elementIdString);
             cbArgument.Set("mesh", convertMesh(Env(), entry.mesh));
             cbArgument.Set("color", Napi::Number::New(Env(), entry.color.GetValue()));
-
-            entry.subCategoryId.ToString(idStrBuffer, BeInt64Id::UseHex::Yes);
-            cbArgument.Set("subCategory", Napi::String::New(Env(), idStrBuffer));
-
+            cbArgument.Set("subCategory", createIdString(Env(), entry.subCategoryId));
             if (entry.materialId.IsValid())
-                {
-                entry.materialId.ToString(idStrBuffer, BeInt64Id::UseHex::Yes);
-                cbArgument.Set("materialId", Napi::String::New(Env(), idStrBuffer));
-                }
+                cbArgument.Set("materialId", createIdString(Env(), entry.materialId));
             if (entry.textureId.IsValid())
-                {
-                entry.textureId.ToString(idStrBuffer, BeInt64Id::UseHex::Yes);
-                cbArgument.Set("textureId", Napi::String::New(Env(), idStrBuffer));
-                }
+                cbArgument.Set("textureId", createIdString(Env(), entry.textureId));
             onGraphicsCb.Call({ cbArgument });
             }
 
+        if (saveInstances && !job->m_instances.empty())
+            convertPartInstances(Env(), napiPartArray, job->m_elementId, job->m_instances);
+
         jobs[i].reset(); // Cleaning these up now while they're still in cache is much faster
+        }
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Matt.Gooding    06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static uint64_t getIdFromNapiValue(Napi::Value const& napiVal)
+    {
+    auto napiString = napiVal.As<Napi::String>();
+    std::string utf8String = napiString.Utf8Value();
+    return BeInt64Id::FromString(utf8String.c_str()).GetValueUnchecked();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Matt.Gooding    06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus JsInterop::ExportPartGraphics(DgnDbR db, Napi::Object const& exportProps)
+    {
+    DgnElementId elementId(getIdFromNapiValue(exportProps.Get("elementId")));
+    if (!elementId.IsValid()) return DgnDbStatus::InvalidId;
+
+    DgnGeometryPartCPtr partElement = db.Elements().Get<DgnGeometryPart>(elementId);
+    if (!partElement.IsValid()) return DgnDbStatus::InvalidId;
+
+    auto displayProps = exportProps.Get("displayProps").As<Napi::Object>();
+    DgnCategoryId categoryId(getIdFromNapiValue(displayProps.Get("categoryId")));
+    DgnSubCategoryId subCategoryId(getIdFromNapiValue(displayProps.Get("subCategoryId")));
+    RenderMaterialId materialId(getIdFromNapiValue(displayProps.Get("materialId")));
+    Render::GeometryParams geomParams(categoryId, subCategoryId);
+    geomParams.SetMaterialId(materialId);
+    geomParams.SetTransparency(displayProps.Get("elmTransparency").As<Napi::Number>());
+    geomParams.SetLineColor(ColorDef(displayProps.Get("lineColor").As<Napi::Number>()));
+
+    IFacetOptionsPtr facetOptions = createFacetOptions(exportProps);
+    ExportGraphicsProcessor processor(db, *facetOptions.get());
+    ExportGraphicsContext context(processor, nullptr);
+    context.SetDgnDb(db);
+
+    auto graphic = context.CreateSceneGraphic(Transform::FromIdentity());
+    GeometryStreamCR geomStream = partElement->GetGeometryStream();
+    GeometryStreamIO::Collection geomCollection(geomStream.GetData(), geomStream.GetSize());
+    geomCollection.Draw(*graphic, context, geomParams, true, partElement.get());
+
+    Utf8CP errorMsg = "Element 0x%llx generated invalid geometry, this may indicate problems with the source data.";
+    if (processor.m_gotBadPolyface)
+        JsInterop::GetLogger().errorv(errorMsg, elementId.GetValueUnchecked());
+
+    // TS API specifies that modifying the binding of this function in the callback will be ignored
+    Napi::Function onGraphicsCb = exportProps.Get("onPartGraphics").As<Napi::Function>();
+    for (auto& entry : processor.m_cachedEntries)
+        {
+        Napi::Object cbArgument = Napi::Object::New(Env());
+        cbArgument.Set("color", Napi::Number::New(Env(), entry.color.GetValue()));
+        cbArgument.Set("mesh", convertMesh(Env(), entry.mesh));
+        if (entry.materialId.IsValid())
+            cbArgument.Set("materialId", createIdString(Env(), entry.materialId));
+        if (entry.textureId.IsValid())
+            cbArgument.Set("textureId", createIdString(Env(), entry.textureId));
+        onGraphicsCb.Call({ cbArgument });
         }
 
     return DgnDbStatus::Success;

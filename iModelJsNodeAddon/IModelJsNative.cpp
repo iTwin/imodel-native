@@ -1575,6 +1575,27 @@ public:
         return Napi::Number::New(Env(), (int)status);
         }
 
+    Napi::Value ExportPartGraphics(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN
+        REQUIRE_ARGUMENT_ANY_OBJ(0, exportProps, Env().Undefined());
+
+        Napi::Value onPartGraphicsVal = exportProps.Get("onPartGraphics");
+        if (!onPartGraphicsVal.IsFunction())
+            THROW_TYPE_EXCEPTION_AND_RETURN("onPartsGraphics must be a function", Env().Undefined());
+
+        Napi::Value displayPropsVal = exportProps.Get("displayProps");
+        if (!displayPropsVal.IsObject())
+            THROW_TYPE_EXCEPTION_AND_RETURN("displayProps must be an object", Env().Undefined());
+
+        Napi::Value elementIdVal = exportProps.Get("elementId");
+        if (!elementIdVal.IsString())
+            THROW_TYPE_EXCEPTION_AND_RETURN("elementId must be a string", Env().Undefined());
+
+        DgnDbStatus status = JsInterop::ExportPartGraphics(GetDgnDb(), exportProps);
+        return Napi::Number::New(Env(), (int)status);
+        }
+
     void GetTileTree(Napi::CallbackInfo const& info)
         {
         REQUIRE_ARGUMENT_STRING(0, idStr, );
@@ -2292,6 +2313,7 @@ public:
             InstanceMethod("endMultiTxnOperation", &NativeDgnDb::EndMultiTxnOperation),
             InstanceMethod("executeTest", &NativeDgnDb::ExecuteTest),
             InstanceMethod("exportGraphics", &NativeDgnDb::ExportGraphics),
+            InstanceMethod("exportPartGraphics", &NativeDgnDb::ExportPartGraphics),
             InstanceMethod("exportSchemas", &NativeDgnDb::ExportSchemas),
             InstanceMethod("extractBriefcaseManagerResourcesRequest", &NativeDgnDb::ExtractBriefcaseManagerResourcesRequest),
             InstanceMethod("extractBulkResourcesRequest", &NativeDgnDb::ExtractBulkResourcesRequest),
