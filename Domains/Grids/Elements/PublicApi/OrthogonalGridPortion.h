@@ -2,7 +2,7 @@
 |
 |     $Source: Grids/Elements/PublicApi/OrthogonalGridPortion.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -31,31 +31,30 @@ public:     //public - non-exported
         double      m_defaultEndExtentY;
 
         //! Creates create parameters for orthogonal grid
-        //! @param[in] model                        model to create the grid in
-        //! @param[in] modeledElementId             element id of the modeled element
-        //! @param[in] name                         name for this grid
-        //! @param[in] defaultCoordIncX             default coordinate increment in X axis
-        //! @param[in] defaultCoordIncY             default coordinate increment in Y axis
-        //! @param[in] defaultStaExtX               default start extent in X axis
-        //! @param[in] defaultEndExtX               default end extent in X axis
-        //! @param[in] defaultStaExtY               default start extent in Y axis
-        //! @param[in] defaultEndExtY               default end extent in Y axis
-        //! @param[in] defaultStaElevation          default start(bottom) elevation for the surfaces
-        //! @param[in] defaultEndElevation          default end(top) elevation for the surfaces
-        CreateParams (Dgn::SpatialLocationModelCR model, Dgn::DgnElementId modeledElementId, Utf8CP name, double defaultCoordIncX, double defaultCoordIncY, double defaultStaExtX, double defaultEndExtX, double defaultStaExtY, double defaultEndExtY, double defaultStaElevation, double defaultEndElevation) :
-            T_Super (model, modeledElementId, name, QueryClassId (model.GetDgnDb ()), defaultStaElevation, defaultEndElevation)
+        //! @param[in] model                    Model that will contain this grid
+        //! @param[in] modeledElementId         Element id of an element that will contain this grid
+        //! @param[in] name                     Name for this grid
+        //! @param[in] defaultCoordIncX         Default coordinate (starting point on the axis) in X axis for surfaces
+        //! @param[in] defaultCoordIncY         Default coordinate (starting point on the axis) in y axis for surfaces
+        //! @param[in] defaultStartExtX         Default start extent (length from the coordinate on the perpendicular axis) in X axis for surfaces
+        //! @param[in] defaultEndExtX           Default end extent (length from the coordinate on the perpendicular axis) in X axis for surfaces
+        //! @param[in] defaultStartExtY         Default start extent (length from the coordinate on the perpendicular axis)  in Y axis for surfaces
+        //! @param[in] defaultEndExtY           Default end extent (length from the coordinate on the perpendicular axis) in Y axis for surfaces
+        //! @param[in] defaultStartElevation    Default start (bottom) elevation for surfaces
+        //! @param[in] defaultEndElevation      Default end (top) elevation for surfaces
+        CreateParams (Dgn::SpatialLocationModelCR model, Dgn::DgnElementId modeledElementId, Utf8CP name, double defaultCoordIncX, double defaultCoordIncY, double defaultStartExtX, double defaultEndExtX, double defaultStartExtY, double defaultEndExtY, double defaultStartElevation, double defaultEndElevation) :
+            T_Super (model, modeledElementId, name, QueryClassId (model.GetDgnDb ()), defaultStartElevation, defaultEndElevation)
             {
             m_defaultCoordinateIncrementX = defaultCoordIncX;
             m_defaultCoordinateIncrementY = defaultCoordIncY;
-            m_defaultStartExtentX = defaultStaExtX;
+            m_defaultStartExtentX = defaultStartExtX;
             m_defaultEndExtentX = defaultEndExtX;
-            m_defaultStartExtentY = defaultStaExtY;
+            m_defaultStartExtentY = defaultStartExtY;
             m_defaultEndExtentY = defaultEndExtY;
             }
 
         //! Constructor from base params. Chiefly for internal use.
-        //! @param[in]      params   The base element parameters
-        //! @return 
+        //! @param[in] params                   The base element parameters
         explicit GRIDELEMENTS_EXPORT CreateParams (Dgn::DgnElement::CreateParams const& params)
             : T_Super (params)
             {

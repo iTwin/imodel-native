@@ -2,7 +2,7 @@
 |
 |     $Source: Grids/Elements/PublicApi/GridSurface.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,7 +10,7 @@
 BEGIN_GRIDS_NAMESPACE
 
 //=======================================================================================
-//! Physical building element
+//! An abstract grid surface element
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GridSurface : Dgn::SpatialLocationElement
 {
@@ -158,7 +158,7 @@ public:
 };
 
 //=======================================================================================
-//! an IPlanGridSurface mixin - this is limited to GridSurface subclasses
+//! An IPlanGridSurface mixin - this is limited to GridSurface subclasses
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE IPlanGridSurface //inherit nothing here (multi-inheritance, base class handled by actual class)
     {
@@ -170,9 +170,10 @@ public:
         double m_endElevation;
 
         //! Creates create parameters for orthogonal grid
-        //! @param[in] model              model for the PlanCartesianGridSurface
-        CreateParams (double staElevation, double endElevation) :
-            m_startElevation(staElevation), m_endElevation(endElevation)
+        //! @param[in] startElevation       Start elevation of the surface
+        //! @param[in] endElevation         End elevation of the surface
+        CreateParams (double startElevation, double endElevation) :
+            m_startElevation(startElevation), m_endElevation(endElevation)
             {}
         };
 private:

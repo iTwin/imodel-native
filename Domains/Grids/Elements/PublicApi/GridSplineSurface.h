@@ -2,7 +2,7 @@
 |
 |     $Source: Grids/Elements/PublicApi/GridSplineSurface.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,7 +10,7 @@
 BEGIN_GRIDS_NAMESPACE
 
 //=======================================================================================
-//! Physical building element
+//! An abstract curved grid-surface element that is created from a spline.
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GridSplineSurface : GridSurface
 {
@@ -26,13 +26,10 @@ protected:
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (GridSplineSurface, GRIDELEMENTS_EXPORT)
 
-    //---------------------------------------------------------------------------------------
-    // Creation
-    //---------------------------------------------------------------------------------------
 };
 
 //=======================================================================================
-//! plan grid spline surface element
+//! An abstract curved and upwards facing grid surface element that is created from a spline.
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE PlanGridSplineSurface : GridSplineSurface, IPlanGridSurface
     {
@@ -43,15 +40,18 @@ struct EXPORT_VTABLE_ATTRIBUTE PlanGridSplineSurface : GridSplineSurface, IPlanG
             {
             DEFINE_T_SUPER (GridSplineSurface::CreateParams);
 
-            //! Creates create parameters for orthogonal grid
-            //! @param[in] model              model for the PlanCartesianGridSurface
-            CreateParams (Dgn::SpatialLocationModelCR model, Dgn::DgnClassId classId, Dgn::DgnElementId gridAxisId, double staElevation, double endElevation) :
-                T_Super (model, classId, gridAxisId), IPlanGridSurface::CreateParams (staElevation, endElevation)
+            //! Creates create parameters for a plan grid spline surface
+            //! @param[in] model            Model of the grid that will contain this surface
+            //! @param[in] classId          ClassId of the grid that will contain this surface
+            //! @param[in] gridAxisId       Element id of the axis that this surface is being created from
+            //! @param[in] startElevation   Starting elevation for the surface
+            //! @param[in] endElevation     End elevation for the surface
+            CreateParams (Dgn::SpatialLocationModelCR model, Dgn::DgnClassId classId, Dgn::DgnElementId gridAxisId, double startElevation, double endElevation) :
+                T_Super (model, classId, gridAxisId), IPlanGridSurface::CreateParams (startElevation, endElevation)
                 {}
 
             //! Constructor from base params. Chiefly for internal use.
-            //! @param[in]      params   The base element parameters
-            //! @return 
+            //! @param[in] params           The base element parameters
             explicit GRIDELEMENTS_EXPORT CreateParams (Dgn::DgnElement::CreateParams const& params)
                 : T_Super (params), IPlanGridSurface::CreateParams (0.0, 0.0)
                 {}
@@ -69,7 +69,7 @@ struct EXPORT_VTABLE_ATTRIBUTE PlanGridSplineSurface : GridSplineSurface, IPlanG
     };
 
 //=======================================================================================
-//! plan grid planar surface element
+//! A curved and upwards facing grid surface element that is created from a spline.
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE SketchSplineGridSurface : PlanGridSplineSurface
     {
@@ -81,16 +81,20 @@ struct EXPORT_VTABLE_ATTRIBUTE SketchSplineGridSurface : PlanGridSplineSurface
             DEFINE_T_SUPER (SketchSplineGridSurface::T_Super::CreateParams);
             ICurvePrimitivePtr m_splinePrimitive;
 
-            //! Creates create parameters for orthogonal grid
-            //! @param[in] model              model for the PlanCartesianGridSurface
-            CreateParams (Dgn::SpatialLocationModelCR model, GridAxisCR gridAxis, double staElevation, double endElevation, ICurvePrimitiveCR splinePrimitive) :
-                T_Super::CreateParams (model, QueryClassId (model.GetDgnDb ()), gridAxis.GetElementId (), staElevation, endElevation)
+            //! Creates create parameters for a sketch spline grid surface
+            //! @param[in] model            Model of the grid that will contain this surface
+            //! @param[in] gridAxis         Axis that this surface is being created from
+            //! @param[in] startElevation   Starting elevation for the surface
+            //! @param[in] endElevation     End elevation for the surface
+            //! @param[in] splinePrimitive  Spline curve that defined the shape of a surface
+            CreateParams (Dgn::SpatialLocationModelCR model, GridAxisCR gridAxis, double startElevation, double endElevation, ICurvePrimitiveCR splinePrimitive) :
+                T_Super::CreateParams (model, QueryClassId (model.GetDgnDb ()), gridAxis.GetElementId (), startElevation, endElevation)
                 {
                 m_splinePrimitive = splinePrimitive.Clone();
                 }
 
             //! Constructor from base params. Chiefly for internal use.
-            //! @param[in]      params   The base element parameters
+            //! @param[in] params           The base element parameters
             //! @return 
             explicit GRIDELEMENTS_EXPORT CreateParams (Dgn::DgnElement::CreateParams const& params)
                 : T_Super (params)

@@ -2,7 +2,7 @@
 |
 |     $Source: Grids/Elements/PublicApi/GridCurve.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -88,10 +88,10 @@ struct EXPORT_VTABLE_ATTRIBUTE GeneralGridCurve : GridCurve
         //---------------------------------------------------------------------------------------
         // Creation
         //---------------------------------------------------------------------------------------
-        //! Creates a grid line
+        //! Creates a grid curve
         //! @param[in]  model   model for the GeneralGridCurve
         //! @param[in]  curve   curve geometry
-        //! @return             Grid line
+        //! @return             Grid curve
         GRIDELEMENTS_EXPORT static GeneralGridCurvePtr Create(Dgn::DgnModelCR model, ICurvePrimitivePtr curve);
     };
 

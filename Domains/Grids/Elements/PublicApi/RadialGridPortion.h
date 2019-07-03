@@ -2,7 +2,7 @@
 |
 |     $Source: Grids/Elements/PublicApi/RadialGridPortion.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -31,21 +31,21 @@ public:
         double m_defaultEndRadius;
 
         //! Creates create parameters for radial grid
-        //! @param[in] model                    model to create the grid in
-        //! @param[in] scopeElementId           scope element id
-        //! @param[in] name                     grid name, must be unique
-        //! @param[in] defaultAngleIncrement    default angle increment
-        //! @param[in] defaultRadiusIncrement   default radius increment
-        //! @param[in] defaultStartAngle        default start angle
-        //! @param[in] defaultEndAngle          default end angle
-        //! @param[in] defaultStartRadius       default start radius
-        //! @param[in] defaultEndRadius         default end radius
-        //! @param[in] defaultstaElevation      default start elevation
-        //! @param[in] defaultendElevation      default end elevation
+        //! @param[in] model                    Model to create the grid in
+        //! @param[in] scopeElementId           Scope element id
+        //! @param[in] name                     Grid name, must be unique
+        //! @param[in] defaultAngleIncrement    Default angle increment
+        //! @param[in] defaultRadiusIncrement   Default radius increment
+        //! @param[in] defaultStartAngle        Default start angle
+        //! @param[in] defaultEndAngle          Default end angle
+        //! @param[in] defaultStartRadius       Default start radius
+        //! @param[in] defaultEndRadius         Default end radius
+        //! @param[in] defaultStartElevation    Default start elevation
+        //! @param[in] defaultEndElevation      Default end elevation
         CreateParams(Dgn::SpatialLocationModelCR model, Dgn::DgnElementId scopeElementId, Utf8CP name, double defaultAngleIncrement,
                      double defaultRadiusIncrement, double defaultStartAngle, double defaultEndAngle, double defaultStartRadius, 
-                     double defaultEndRadius, double defaultstaElevation, double defaultendElevation) :
-            T_Super (model, scopeElementId, name, QueryClassId (model.GetDgnDb ()), defaultstaElevation, defaultendElevation)
+                     double defaultEndRadius, double defaultStartElevation, double defaultEndElevation) :
+            T_Super (model, scopeElementId, name, QueryClassId (model.GetDgnDb ()), defaultStartElevation, defaultEndElevation)
             {
             m_defaultAngleIncrement = defaultAngleIncrement;
             m_defaultRadiusIncrement = defaultRadiusIncrement;
@@ -56,8 +56,7 @@ public:
             }
 
         //! Constructor from base params. Chiefly for internal use.
-        //! @param[in]      params   The base element parameters
-        //! @return 
+        //! @param[in] params                   The base element parameters
         explicit GRIDELEMENTS_EXPORT CreateParams(Dgn::DgnElement::CreateParams const& params)
             : T_Super(params) 
                 {
