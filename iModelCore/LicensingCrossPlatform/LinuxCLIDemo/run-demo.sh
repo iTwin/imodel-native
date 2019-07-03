@@ -82,7 +82,6 @@ PullLinuxCLISource() {
 	
 	echo "Deleting cloned source"
 	rm -rf ./${srcdir}/LicensingCrossPlatform
-
 }
 
 # look in srcdir and if the imodelcore folder is not there, install the package
@@ -96,7 +95,7 @@ if [ -d "$srcdir" ]; then
 		echo "Installing iModelCore nuget package"
 		nuget install iModelCoreNuget_LinuxX64 -Version ${nugetVersion} -Source http://nuget.bentley.com/nuget/Default -OutputDirectory ./${srcdir}
 	fi
-	if [ ! -d "${srcdir}/LinuxDemo.h" ] || [ ! -d "${srcdir}/LinuxDemo.cpp" ]; then
+	if [ ! -f "${srcdir}/LinuxDemo.h" ] || [ ! -f "${srcdir}/LinuxDemo.cpp" ] || [ ! -d "${srcdir}/assets" ]; then
 		PullLinuxCLISource
 	fi
 
@@ -131,4 +130,7 @@ fi
 
 clang++ -std=c++14 -stdlib=libstdc++ --include-directory=${srcdir}/iModelCoreNuget_LinuxX64.${nugetVersion}/native/include --library-directory=${srcdir}/iModelCoreNuget_LinuxX64.${nugetVersion}/native/lib -o ./${outdir}/LinuxDemo ./${srcdir}/LinuxDemo.cpp -Wl,--start-group -lBaseGeoCoord -lBeCsmapStatic -lBeCurl -lBeFolly -lBeHttp -lBeIcu4c -lBeJpeg -lBeJsonCpp -lBeLibJpegTurbo -lBeLibxml2 -lBentley -lBentleyGeom -lBentleyGeomSerialization -lBeOpenSSL -lBePng -lBeSecurity -lBeSQLite -lBeSQLiteEC -lBeXml -lBeZlib -lDgnPlatform -lECObjects -lECPresentation -lfreetype2 -lLicensing -llzma -lnapi -lpskernel -lsnappy -lUnits -lWebServicesClient -lpthread -ldl -Wl,--end-group
 
-./${outdir}/LinuxDemo
+# pass source dir into the program to determine assets directory
+fullSourcePath=$(pwd)
+
+./${outdir}/LinuxDemo "${fullSourcePath}/${srcdir}"
