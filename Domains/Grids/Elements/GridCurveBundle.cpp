@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "PublicApi/GridElementsAPI.h"
 #include <BuildingShared/DgnUtils/BuildingDgnUtilsApi.h>
+#include <limits>
 
 USING_NAMESPACE_GRIDS
 USING_NAMESPACE_BENTLEY_DGN
@@ -134,27 +135,71 @@ Dgn::DgnDbStatus GridCurveBundle::_OnDelete() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Jonas.Valiunas                  05/17
+* @bsimethod                                    Elonas.Seviakovas               07/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-ICurvePrimitivePtr              GridCurveBundle::ComputeIntersection
+Dgn::IBRepEntityPtr getBRepFromElevationSurface(ElevationGridSurfaceCR surface)
+    {
+    Dgn::IBRepEntityPtr bRep;
+    
+    constexpr double minValue = std::numeric_limits<float>::lowest();
+    constexpr double maxValue = std::numeric_limits<float>::max();
+
+    CurveVectorCPtr curve = CurveVector::CreateRectangle(minValue, minValue, maxValue, maxValue, surface.GetElevation());
+    BRepUtil::Create::BodyFromCurveVector(bRep, *curve);
+
+    return bRep;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas               07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::IBRepEntityPtr getBRepFromSurface(GridSurfaceCR surface)
+    {
+    if (!surface.HasGeometry())
+        {
+        // Elevation surface might have no curve specified, but still have an elevation,
+        // so we try to create an infinite plane if that's the case
+        ElevationGridSurfaceCP elevationSurface = dynamic_cast<ElevationGridSurfaceCP>(&surface);
+        if(!elevationSurface)
+            return nullptr;
+
+        return getBRepFromElevationSurface(*elevationSurface);
+        }
+
+    bvector<Dgn::IBRepEntityPtr> bReps;
+    if (SUCCESS != DgnGeometryUtils::GetIBRepEntitiesFromGeometricElement(bReps, &surface))
+        return nullptr;
+
+    if (bReps.size() == 0)
+        return nullptr;
+
+    return *bReps.begin();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas               07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+ICurvePrimitivePtr GridCurveBundle::ComputeIntersection
 (
-GridSurfaceCR thisSurface,
-GridSurfaceCR otherSurface
+GridSurfaceCR firstSurface,
+GridSurfaceCR secondSurface
 )
     {
-    bvector<Dgn::IBRepEntityPtr> brepsThis, brepsThat;
-    if (SUCCESS == DgnGeometryUtils::GetIBRepEntitiesFromGeometricElement (brepsThis, &thisSurface) &&
-        SUCCESS == DgnGeometryUtils::GetIBRepEntitiesFromGeometricElement (brepsThat, &otherSurface))
-        {
-        Dgn::IBRepEntity::EntityType type1 = brepsThis[0]->GetEntityType();
-        Dgn::IBRepEntity::EntityType type2 = brepsThat[0]->GetEntityType();
-        CurveVectorPtr result;
-        BRepUtil::Modify::IntersectSheetFaces(result, *brepsThis[0], *brepsThat[0]);
-        if (result->size() > 0)
-            return *result->begin();
-        return nullptr; // TODO get the curvePrimitive
-        }
-    return nullptr;
+    Dgn::IBRepEntityPtr firstSurfaceBRep = getBRepFromSurface(firstSurface);
+    if(firstSurfaceBRep.IsNull())
+        return nullptr;
+
+    Dgn::IBRepEntityPtr secondSurfaceBRep = getBRepFromSurface(secondSurface);
+    if (secondSurfaceBRep.IsNull())
+        return nullptr;
+
+    CurveVectorPtr intersectionCurve;
+    BRepUtil::Modify::IntersectSheetFaces(intersectionCurve, *firstSurfaceBRep, *secondSurfaceBRep);
+
+    if (intersectionCurve.IsNull() || intersectionCurve->size() == 0)
+        return nullptr;
+
+    return *intersectionCurve->begin();
     }
 
 //--------------------------------------------------------------------------------------
