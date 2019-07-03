@@ -28,7 +28,7 @@ folly::Future<BentleyStatus> UlasProviderMock::RealtimeMarkFeature(Utf8StringCR 
     return folly::makeFuture(m_mockedRealtimeMarkFeature);
     }
 
-folly::Future<Json::Value> UlasProviderMock::GetAccessKeyInfo(ApplicationInfoPtr applicationInfo, Utf8StringCR accessKey)
+folly::Future<Json::Value> UlasProviderMock::GetAccessKeyInfo(ApplicationInfoPtr applicationInfo, Utf8StringCR accessKey, Utf8StringCR ultimateId)
     {
     m_getAccessKeyInfoCalls++;
     return folly::makeFuture(m_mockedGetAccessKeyInfo);

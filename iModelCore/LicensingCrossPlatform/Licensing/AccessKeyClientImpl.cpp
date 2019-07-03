@@ -28,7 +28,8 @@ AccessKeyClientImpl::AccessKeyClientImpl
     IUlasProviderPtr ulasProvider,
     Utf8StringCR projectId,
     Utf8StringCR featureString,
-    ILicensingDbPtr licensingDb
+    ILicensingDbPtr licensingDb,
+    Utf8StringCR ultimateId
     )
     {
     m_userInfo = ConnectSignInManager::UserInfo();
@@ -42,6 +43,7 @@ AccessKeyClientImpl::AccessKeyClientImpl
     m_projectId = projectId;
     m_featureString = featureString;
     m_licensingDb = licensingDb;
+    m_ultimateId = ultimateId;
 
     if(m_licensingDb == nullptr) // either pass in a mock, or initialize here
         m_licensingDb = std::make_unique<LicensingDb>(); // should this be make shared?
@@ -104,6 +106,7 @@ BentleyStatus AccessKeyClientImpl::StopApplication()
 
     m_licensingDb->Close();
 
+    LOG.debug("Stopped AccessKey heartbeat");
     return SUCCESS;
     }
 
@@ -124,7 +127,7 @@ bool AccessKeyClientImpl::ValidateAccessKey()
             }
         }
 
-    auto responseJson = m_ulasProvider->GetAccessKeyInfo(m_applicationInfo, m_accessKey).get();
+    auto responseJson = m_ulasProvider->GetAccessKeyInfo(m_applicationInfo, m_accessKey, m_ultimateId).get();
 
     if (Json::Value::GetNull() == responseJson)
         {
@@ -159,7 +162,7 @@ std::shared_ptr<Policy> AccessKeyClientImpl::GetPolicyToken()
     try
         {
         // call to entitlements will fail if accesskey is inactive or expired
-        auto policy = m_policyProvider->GetPolicyWithKey(m_accessKey).get();
+        auto policy = m_policyProvider->GetPolicyWithKey(m_accessKey, m_ultimateId).get();
 
         if (policy != nullptr)
             {

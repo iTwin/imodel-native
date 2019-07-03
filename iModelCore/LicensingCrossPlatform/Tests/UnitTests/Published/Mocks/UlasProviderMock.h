@@ -34,7 +34,7 @@ public:
     BentleyStatus PostFeatureLogs(ApplicationInfoPtr applicationInfo, BeFileNameCR dbPath, ILicensingDb& licensingDb, std::shared_ptr<Policy> policy) override;
     folly::Future<BentleyStatus> RealtimeTrackUsage(Utf8StringCR accessToken, int productId, Utf8StringCR featureString, Utf8StringCR deviceId, BeVersionCR version, Utf8StringCR projectId, UsageType usageType, Utf8StringCR correlationId, AuthType authType) override;
     folly::Future<BentleyStatus> RealtimeMarkFeature(Utf8StringCR accessToken, FeatureEvent featureEvent, int productId, Utf8StringCR featureString, Utf8StringCR deviceId, UsageType usageType, Utf8StringCR correlationId, AuthType authType) override;
-    folly::Future<Json::Value> GetAccessKeyInfo(ApplicationInfoPtr applicationInfo, Utf8StringCR accessKey) override;
+    folly::Future<Json::Value> GetAccessKeyInfo(ApplicationInfoPtr applicationInfo, Utf8StringCR accessKey, Utf8StringCR ultimateId) override;
 
     void MockPostUsageLogs(BentleyStatus mocked) { m_mockedPostUsageLogs = mocked; }
     void MockPostFeatureLogs(BentleyStatus mocked) { m_mockedPostFeatureLogs = mocked; }

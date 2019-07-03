@@ -42,7 +42,7 @@ AccessKeyClientPtr AccessKeyClient::Create
     IBuddiProviderPtr buddiProvider = std::make_shared<BuddiProvider>();
     IPolicyProviderPtr policyProvider = std::make_shared<PolicyProvider>(buddiProvider, applicationInfo, httpHandler, AuthType::None);
     IUlasProviderPtr ulasProvider = std::make_shared<UlasProvider>(buddiProvider, httpHandler);
-    return std::shared_ptr<AccessKeyClient>(new AccessKeyClient(std::make_shared<AccessKeyClientImpl>(accessKey, applicationInfo, dbPath, offlineMode, policyProvider, ulasProvider, projectId, featureString, nullptr)));
+    return std::shared_ptr<AccessKeyClient>(new AccessKeyClient(std::make_shared<AccessKeyClientImpl>(accessKey, applicationInfo, dbPath, offlineMode, policyProvider, ulasProvider, projectId, featureString, nullptr, "")));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -62,7 +62,28 @@ AccessKeyClientPtr AccessKeyClient::Create
     IBuddiProviderPtr buddiProvider = std::make_shared<BuddiProvider>();
     IPolicyProviderPtr policyProvider = std::make_shared<PolicyProvider>(buddiProvider, applicationInfo, httpHandler, AuthType::None);
     IUlasProviderPtr ulasProvider = std::make_shared<UlasProvider>(buddiProvider, httpHandler);
-    return std::shared_ptr<AccessKeyClient>(new AccessKeyClient(std::make_shared<AccessKeyClientImpl>(accessKey, applicationInfo, dbPath, offlineMode, policyProvider, ulasProvider, projectId, featureString, nullptr)));
+    return std::shared_ptr<AccessKeyClient>(new AccessKeyClient(std::make_shared<AccessKeyClientImpl>(accessKey, applicationInfo, dbPath, offlineMode, policyProvider, ulasProvider, projectId, featureString, nullptr, "")));
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Jason.Wichert    7/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+AccessKeyClientPtr AccessKeyClient::AgnosticCreateWithUltimate
+    (
+    Utf8StringCR accessKey,
+    ApplicationInfoPtr applicationInfo,
+    BeFileNameCR dbPath,
+    bool offlineMode,
+    Utf8StringCR ultimateId,
+    Utf8StringCR projectId,
+    Utf8StringCR featureString,
+    Http::IHttpHandlerPtr httpHandler
+    )
+    {
+    IBuddiProviderPtr buddiProvider = std::make_shared<BuddiProvider>();
+    IPolicyProviderPtr policyProvider = std::make_shared<PolicyProvider>(buddiProvider, applicationInfo, httpHandler, AuthType::None);
+    IUlasProviderPtr ulasProvider = std::make_shared<UlasProvider>(buddiProvider, httpHandler);
+    return std::shared_ptr<AccessKeyClient>(new AccessKeyClient(std::make_shared<AccessKeyClientImpl>(accessKey, applicationInfo, dbPath, offlineMode, policyProvider, ulasProvider, projectId, featureString, nullptr, ultimateId)));
     }
 
 /*--------------------------------------------------------------------------------------+

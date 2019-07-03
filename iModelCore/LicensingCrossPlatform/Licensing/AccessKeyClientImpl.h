@@ -19,6 +19,7 @@ struct AccessKeyClientImpl : ClientImpl
     {
 protected:
     Utf8String m_accessKey;
+    Utf8String m_ultimateId;
     bool m_isAccessKeyValid;
     bool ValidateAccessKey();
     std::shared_ptr<Policy> GetPolicyToken();
@@ -35,7 +36,8 @@ public:
         IUlasProviderPtr ulasProvider,
         Utf8StringCR projectId,
         Utf8StringCR featureString,
-        ILicensingDbPtr licensingDb
+        ILicensingDbPtr licensingDb,
+        Utf8StringCR ultimateId
         );
     LICENSING_EXPORT LicenseStatus StartApplication();
     LICENSING_EXPORT BentleyStatus StopApplication();

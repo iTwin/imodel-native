@@ -66,9 +66,9 @@ void AccessKeyClientIntegrationTests::TearDown() {}
 void AccessKeyClientIntegrationTests::SetUpTestCase()
     {
     // This is only an example of how to set logging severity and see info logs. Usually should be set more globally than in TestCase SetUp
-    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_LICENSING, BentleyApi::NativeLogging::LOG_INFO);
-    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_LICENSING, BentleyApi::NativeLogging::LOG_DEBUG);
-    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_LICENSING, BentleyApi::NativeLogging::LOG_TRACE);
+    //NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_LICENSING, BentleyApi::NativeLogging::LOG_INFO);
+    //NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_LICENSING, BentleyApi::NativeLogging::LOG_DEBUG);
+    //NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_LICENSING, BentleyApi::NativeLogging::LOG_TRACE);
 
     BeFileName asssetsDir;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(asssetsDir);
@@ -109,6 +109,31 @@ AccessKeyClientPtr AccessKeyClientIntegrationTests::CreateTestClient(Utf8StringC
         );
     }
 
+AccessKeyClientPtr AccessKeyClientIntegrationTests::CreateTestClientWithUltimate(Utf8StringCR ultimateId, Utf8StringCR productId, Utf8StringCR accessKey) const
+    {
+    //InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
+    RuntimeJsonLocalState* localState = new RuntimeJsonLocalState();
+    UrlProvider::Initialize(UrlProvider::Environment::Qa, UrlProvider::DefaultTimeout, localState);
+
+    auto appInfo = ApplicationInfo::Create(BeVersion(1, 0), productId);
+
+    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+
+    BeFileName dbPath = GetLicensingDbPathIntegration();
+
+    return AccessKeyClient::AgnosticCreateWithUltimate
+        (
+        accessKey,
+        appInfo,
+        dbPath,
+        true,
+        ultimateId,
+        "",
+        "",
+        proxy
+        );
+    }
+
 AccessKeyClientImplPtr AccessKeyClientIntegrationTests::CreateTestClientImpl(Utf8StringCR productId, Utf8StringCR accessKey) const
     {
     InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
@@ -135,7 +160,8 @@ AccessKeyClientImplPtr AccessKeyClientIntegrationTests::CreateTestClientImpl(Utf
         ulasProvider,
         "",
         "",
-        nullptr
+        nullptr,
+        ""
         );
     }
 
@@ -206,10 +232,19 @@ TEST_F(AccessKeyClientIntegrationTests, AccessKeyClientTestPolicyHeartbeat_Test)
     std::this_thread::sleep_for(std::chrono::seconds(10));
 
     EXPECT_SUCCESS(client->StopApplication());
+    }
 
-    std::this_thread::sleep_for(std::chrono::seconds(10));
+TEST_F(AccessKeyClientIntegrationTests, HeartbeatWithUltimateId_Test)
+    {
+    // I am using this test to manually debug/test the heartbeat when using ultimate ID vs device ID
+    auto client = CreateTestClientWithUltimate("12345678"); // check for this ultimate in the network call to fiddler
+    ASSERT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
 
-    EXPECT_EQ(1, 0);
+    // use std::chrono::seconds(2); to wait in tests
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    EXPECT_SUCCESS(client->StopApplication());
     }
 
 //TEST_F(AccessKeyClientIntegrationTests, OfflinePolicyHeartbeat_Test)
