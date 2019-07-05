@@ -346,8 +346,9 @@ ECObjectsStatus DwgImporter::AddAttrdefECClassFromBlock (ECSchemaPtr& attrdefSch
     if (attrdefSchema.IsNull())
         {
         Utf8String  schemaName = DwgHelper::GetAttrdefECSchemaName (block.GetDatabase().get());
+        Utf8String  schemaAlias = DwgHelper::GetAttrdefECSchemaAlias (block.GetDatabase().get());
 
-        status = ECSchema::CreateSchema (attrdefSchema, schemaName, SCHEMAAlias_AttributeDefinitions, 1, 0, 0);
+        status = ECSchema::CreateSchema (attrdefSchema, schemaName, schemaAlias, 1, 0, 0);
         if (ECObjectsStatus::Success == status)
             {
             // set label

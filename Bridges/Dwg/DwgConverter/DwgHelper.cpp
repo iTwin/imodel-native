@@ -1121,18 +1121,37 @@ void            DwgHelper::SetGradientFrom (DwgGiGradientFillR gradientOut, DwgD
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+void    DwgHelper::AppendToSchemaName (Utf8StringR schemaName, DwgStringCR dwgName)
+    {
+    Utf8String  filename(BeFileName::GetFileNameWithoutExtension(dwgName.c_str()).c_str());
+
+    schemaName += "_" + filename;
+    if (!ECNameValidation::IsValidName(schemaName.c_str()))
+        ECNameValidation::EncodeToValidName (schemaName, schemaName.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/16
++---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String      DwgHelper::GetAttrdefECSchemaName (DwgDbDatabaseCP dwg)
     {
     // build a per-file attrdef schema name
     Utf8String  schemaName = SCHEMAName_AttributeDefinitions;
     if (dwg != nullptr)
-        {
-        Utf8String  filename(BeFileName::GetFileNameWithoutExtension(dwg->GetFileName().c_str()).c_str());
-        schemaName += "_" + filename;
-        if (!ECNameValidation::IsValidName(schemaName.c_str()))
-            ECNameValidation::EncodeToValidName (schemaName, schemaName.c_str());
-        }
+        DwgHelper::AppendToSchemaName (schemaName, dwg->GetFileName());
     return  schemaName;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String      DwgHelper::GetAttrdefECSchemaAlias (DwgDbDatabaseCP dwg)
+    {
+    // build a per-file attrdef schema alias
+    Utf8String  schemaAlias = SCHEMAAlias_AttributeDefinitions;
+    if (dwg != nullptr)
+        DwgHelper::AppendToSchemaName (schemaAlias, dwg->GetFileName());
+    return  schemaAlias;
     }
 
 /*---------------------------------------------------------------------------------**//**

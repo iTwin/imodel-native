@@ -60,7 +60,9 @@ public:
     DWG_EXPORT static ColorDef         GetColorDefFromTrueColor (DwgCmColorCR acColor);
     DWG_EXPORT static void             GetDgnGradientColor (GradientSymbR gradientOut, DwgGiGradientFillCR gradientIn);
     DWG_EXPORT static void             SetGradientFrom (DwgGiGradientFillR gradientOut, DwgDbHatchCR hatchIn);
+    DWG_EXPORT static void             AppendToSchemaName (Utf8StringR schemaName, DwgStringCR dwgName);
     DWG_EXPORT static Utf8String       GetAttrdefECSchemaName (DwgDbDatabaseCP dwg);
+    DWG_EXPORT static Utf8String       GetAttrdefECSchemaAlias (DwgDbDatabaseCP dwg);
     DWG_EXPORT static Utf8String       GetAttrdefECClassNameFromBlockName (WCharCP blockName);
     DWG_EXPORT static DRange2d         GetRangeFrom (DPoint2dCR center, double width, double height);
     DWG_EXPORT static double           GetAbsolutePDSIZE (double pdsize, double vportHeight);

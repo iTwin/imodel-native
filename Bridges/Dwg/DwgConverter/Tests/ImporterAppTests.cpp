@@ -278,8 +278,10 @@ TEST_F(ImporterAppTests, BudweiserBenchmarks)
     EXPECT_EQ(2, count) << "Should have 2 ExternalSourceAspects of Material kind!";
 
     // Check benchmark #14: 2 ElementAspects for 2 attributes:
-    Utf8String  bud  = SCHEMAAlias_AttributeDefinitions + Utf8String(".") + Utf8String("BUDElementAspect");
-    Utf8String  bud1 = SCHEMAAlias_AttributeDefinitions + Utf8String(".") + Utf8String("BUD1ElementAspect");
+    Utf8String schemaAlias = SCHEMAAlias_AttributeDefinitions;
+    DwgHelper::AppendToSchemaName (schemaAlias, Utf8String(fileName));
+    Utf8String  bud  = schemaAlias + Utf8String(".") + Utf8String("BUDElementAspect");
+    Utf8String  bud1 = schemaAlias + Utf8String(".") + Utf8String("BUD1ElementAspect");
     count = 0;
     for (auto entry : db->Elements().MakeAspectIterator(bud.c_str()))
         count++;
