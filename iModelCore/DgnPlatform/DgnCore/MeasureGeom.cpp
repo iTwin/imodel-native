@@ -1263,3 +1263,59 @@ MeasureGeomCollectorPtr MeasureGeomCollector::Create (OperationType opType)
     return new MeasureGeomCollector (opType);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/18
++---------------+---------------+---------------+---------------+---------------+------*/
+MeasureGeomCollector::Response MeasureGeomCollector::DoMeasure(MeasureGeomCollector::Request const& input, DgnDbR db)
+    {
+    MeasureGeomCollector::Response output;
+    output.SetStatus(ERROR);
+
+    if (!input.IsValid())
+        return output;
+
+    DgnElementIdSet candidates = input.GetCandidates();
+    if (0 == candidates.size())
+        return output;
+
+    OperationType opType = input.GetOperation();
+    MeasureGeomCollectorPtr collector = MeasureGeomCollector::Create(opType);
+
+    for (DgnElementId candidateId : candidates)
+        {
+        DgnElementCPtr candidateElement = db.Elements().GetElement(candidateId);
+        GeometrySourceCP candidateSource = candidateElement.IsValid() ? candidateElement->ToGeometrySource() : nullptr;
+
+        if (nullptr == candidateSource)
+            continue;
+
+        if (SUCCESS == collector->Process(*candidateSource))
+            output.SetStatus(SUCCESS);
+        }
+
+    switch (opType)
+        {
+        case AccumulateVolumes:
+            output.SetVolume(collector->GetVolume());
+            output.SetArea(collector->GetArea());
+            break;
+
+        case AccumulateAreas:
+            output.SetArea(collector->GetArea());
+            output.SetPerimeter(collector->GetPerimeter());
+            break;
+
+        default:
+            output.SetLength(collector->GetLength());
+            break;
+        }
+
+    output.SetCentroid(collector->GetCentroid());
+    output.SetIXY(collector->GetIXY());
+    output.SetIXZ(collector->GetIXZ());
+    output.SetIYZ(collector->GetIYZ());
+    output.SetMoments(collector->GetMoments());
+
+    return output;
+    }
+

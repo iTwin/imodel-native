@@ -31,6 +31,50 @@ enum OperationType
     AccumulateVolumes = 2,
     };
 
+struct Request : Json::Value {
+    BE_JSON_NAME(operation)
+    BE_JSON_NAME(candidates)
+    bool IsValid() const {return isMember(json_operation()) && isMember(json_candidates());}
+    OperationType GetOperation() const {auto& value = (*this)[json_operation()]; return (OperationType) value.asUInt();}
+
+    DgnElementIdSet GetCandidates() const {
+        DgnElementIdSet elements;
+        auto& candidates = (*this)[json_candidates()];
+        if (candidates.isNull() || !candidates.isArray())
+            return elements;
+        uint32_t nEntries = (uint32_t) candidates.size();
+        for (uint32_t i=0; i < nEntries; i++) {
+            DgnElementId elemId;
+            elemId.FromJson(candidates[i]);
+            elements.insert(elemId);
+        }
+    return elements;
+    }
+};
+
+struct Response : Json::Value {
+    BE_JSON_NAME(status)
+    BE_JSON_NAME(volume)
+    BE_JSON_NAME(area)
+    BE_JSON_NAME(perimeter)
+    BE_JSON_NAME(length)
+    BE_JSON_NAME(centroid)
+    BE_JSON_NAME(ixy)
+    BE_JSON_NAME(ixz)
+    BE_JSON_NAME(iyz)
+    BE_JSON_NAME(moments)
+    void SetStatus(BentleyStatus val) {(*this)[json_status()] = (uint32_t) val;}
+    void SetVolume(double val) {(*this)[json_volume()] = val;}
+    void SetArea(double val) {(*this)[json_area()] = val;}
+    void SetPerimeter(double val) {(*this)[json_perimeter()] = val;}
+    void SetLength(double val) {(*this)[json_length()] = val;}
+    void SetCentroid(DPoint3dCR pt) {(*this)[json_centroid()] = JsonUtils::DPoint3dToJson(pt);}
+    void SetIXY(double val) {(*this)[json_ixy()] = val;}
+    void SetIXZ(double val) {(*this)[json_ixz()] = val;}
+    void SetIYZ(double val) {(*this)[json_iyz()] = val;}
+    void SetMoments(DPoint3dCR pt) {(*this)[json_moments()] = JsonUtils::DPoint3dToJson(pt);}
+};
+
 //__PUBLISH_SECTION_END__
 protected:
 
@@ -171,6 +215,9 @@ DGNPLATFORM_EXPORT BentleyStatus Process (GeometrySourceCR);
 
 //! Create new instance of a measure geometry collector.
 DGNPLATFORM_EXPORT static MeasureGeomCollectorPtr Create (OperationType opType);
+
+//! Query the mass properties as a json value.
+DGNPLATFORM_EXPORT static Response DoMeasure(Request const& input, DgnDbR db);
 
 }; // MeasureGeomCollector
 

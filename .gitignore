@@ -6,7 +6,7 @@
 *.xcuserstate
 xcuserdata
 iModelJsApp.xcconfig
-.vscode/ipch
+ipch
 .gradle/
 gradle.properties
 local.properties

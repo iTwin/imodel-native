@@ -23,6 +23,7 @@
 #include <Bentley/CancellationToken.h>
 #include <Bentley/BeAtomic.h>
 #include <Bentley/PerformanceLogger.h>
+#include <DgnPlatform/MeasureGeom.h>
 #include <DgnPlatform/Tile.h>
 #include <DgnPlatform/ChangedElementsManager.h>
 #include "UlasClient.h"
@@ -35,7 +36,7 @@ USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
 USING_NAMESPACE_BENTLEY_EC
 
-/* 
+/*
  *  See README-Private.md for Rules to Check in Code Reviews
  */
 
@@ -290,7 +291,7 @@ ObjRefVault::Slot& ObjRefVault::Slot::operator=(Slot&& r)
     {
     m_refCount = std::move(r.m_refCount);
     m_objRef = std::move(r.m_objRef);
-    return *this;            
+    return *this;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -390,7 +391,7 @@ uint32_t ObjRefVault::GetObjectRefCountById(Utf8StringCR id)
     auto slotIt = m_slotMap.find(id);
     return (slotIt == m_slotMap.end())? 0: slotIt->second.m_refCount;
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/19
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1194,7 +1195,7 @@ public:
             }
         }
 
-    void SetDgnDb(DgnDbR dgndb) 
+    void SetDgnDb(DgnDbR dgndb)
         {
         JsInterop::AddCrashReportDgnDb(dgndb);
         dgndb.AddFunction(HexStrSqlFunction::GetSingleton());
@@ -1244,7 +1245,7 @@ public:
             doDeferredLogging();
         }
 
-    DbResult CreateDgnDb(BeFileNameCR filename, JsonValueCR props, Napi::Env env) 
+    DbResult CreateDgnDb(BeFileNameCR filename, JsonValueCR props, Napi::Env env)
         {
         DbResult result;
         DgnDbPtr dgndb = JsInterop::CreateDgnDb(result, filename, props, env);
@@ -1468,6 +1469,16 @@ public:
         REQUIRE_ARGUMENT_STRING(0, changeSetId, Env().Undefined());
         DbResult result = JsInterop::RemovePendingChangeSet(*m_dgndb, changeSetId);
         return Napi::Number::New(Env(), (int) result);
+        }
+
+    Napi::Value GetMassProperties(Napi::CallbackInfo const& info)
+        {
+        // Use the macro to get the argument (which is JSON string containing the operation and candidate elements) from the info argument.
+        REQUIRE_ARGUMENT_STRING(0, measureStr, Env().Undefined());
+        // get a Json::Value from the string.
+        Json::Value request = Json::Value::From(measureStr);
+        MeasureGeomCollector::Response response = MeasureGeomCollector::DoMeasure((MeasureGeomCollector::Request const&) request, *m_dgndb);
+        return toJsString(Env(), response.ToString());
         }
 
     Napi::Value GetIModelCoordsFromGeoCoords(Napi::CallbackInfo const& info)
@@ -1777,7 +1788,7 @@ public:
         }
 
     void CloseIModel(Napi::CallbackInfo const& info) {  CloseDgnDb(); }
-    
+
     Napi::Value CreateChangeCache(Napi::CallbackInfo const& info)
         {
         REQUIRE_DB_TO_BE_OPEN
@@ -1833,13 +1844,13 @@ public:
         REQUIRE_ARGUMENT_INTEGER(0, idValue, Env().Undefined());
         BeFileName name(m_dgndb->GetFileName());
 
-        // TODO: This routine has excessive logging to diagnose performance issues with this 
-        // simple operation. The logs must be removed after the issue is addressed. 
+        // TODO: This routine has excessive logging to diagnose performance issues with this
+        // simple operation. The logs must be removed after the issue is addressed.
         PERFLOG_START("iModelJsNative", "SetAsBriefcase");
         DbResult result = m_dgndb->SetAsBriefcase(BeBriefcaseId(idValue));
         PERFLOG_FINISH("iModelJsNative", "SetAsBriefcase");
 
-        if (BE_SQLITE_OK == result) 
+        if (BE_SQLITE_OK == result)
             {
             PERFLOG_START("iModelJsNative", "SaveChanges");
             result = m_dgndb->SaveChanges();
@@ -2273,7 +2284,7 @@ public:
 
         DbResult status = JsInterop::UnsafeSetBriefcaseId(BeFileName(dbName), BeBriefcaseId(briefcaseId), dbGuid, projectGuid);
         return Napi::Number::New(info.Env(), (int)status);
-        }   
+        }
     // ========================================================================================
     // Test method handler
     // ========================================================================================
@@ -2328,6 +2339,7 @@ public:
             InstanceMethod("getDbGuid", &NativeDgnDb::GetDbGuid),
             InstanceMethod("getECClassMetaData", &NativeDgnDb::GetECClassMetaData),
             InstanceMethod("getElement", &NativeDgnDb::GetElement),
+            InstanceMethod("getMassProperties", &NativeDgnDb::GetMassProperties),
             InstanceMethod("getGeoCoordinatesFromIModelCoordinates", &NativeDgnDb::GetGeoCoordsFromIModelCoords),
             InstanceMethod("getIModelCoordinatesFromGeoCoordinates", &NativeDgnDb::GetIModelCoordsFromGeoCoords),
             InstanceMethod("getIModelProps", &NativeDgnDb::GetIModelProps),
@@ -4211,7 +4223,7 @@ struct ApplyChangeSetsRequest : BeObjectWrap<ApplyChangeSetsRequest>
             m_requestContext = JsInterop::GetCurrentClientRequestContextForMainThread();
             NativeLogging::LoggingManager::GetLogger("DgnCore")->info("ApplyChangeSetsAsyncWorker: Start on main thread");
             }
-        
+
         ~ApplyChangeSetsAsyncWorker() {m_applyChangeSetsRequest.Reset();}
     };
 
@@ -4264,19 +4276,19 @@ private:
         nativeDgnDb.CloseDgnDb();
         }
 
-    /** 
+    /**
      * Close the briefcase, backing up any state that are required at/after open
      * - needs to be done before applying change sets asynchronously
      */
-    void CloseBriefcase(Napi::CallbackInfo const &info) 
+    void CloseBriefcase(Napi::CallbackInfo const &info)
         {
         if (!m_nativeDgnDb || !m_nativeDgnDb->IsOpen())
             THROW_JS_TYPE_ERROR("Briefcase not open");
         CloseBriefcaseLow(m_dbname, m_jsIModelDb, m_concurrencyControl, *m_nativeDgnDb);
         }
 
-    /** 
-     * Apply change sets asynchronously 
+    /**
+     * Apply change sets asynchronously
      * Notes:
      * - the Db must be closed prior to this call (using the CloseBriefcase call in this utility)
      * - ReadChangeSets must have been called prior to this call
@@ -4301,7 +4313,7 @@ private:
         SchemaUpgradeOptions schemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::CheckRequiredUpgrades);
         DgnDb::OpenParams openParams(openMode, BeSQLite::DefaultTxn::Yes, schemaUpgradeOptions);
         DbResult result = nativeDgnDb.OpenDgnDb(dbname, openParams);
-        if (BE_SQLITE_OK == result) 
+        if (BE_SQLITE_OK == result)
             {
             DgnDbR dgndb = nativeDgnDb.GetDgnDb();
             dgndb.m_jsIModelDb = std::move(jsIModelDb); // Moves the references
@@ -4310,9 +4322,9 @@ private:
         return result;
         }
 
-    /** 
+    /**
      * Reopen the briefcase, restoring any backed up state
-     * - needs to be done after applying change sets asynchronously. 
+     * - needs to be done after applying change sets asynchronously.
      */
     Napi::Value ReopenBriefcase(Napi::CallbackInfo const &info)
         {
@@ -4327,9 +4339,9 @@ private:
         return Napi::Number::New(Env(), (int) result);
         }
 
-    /** 
+    /**
      * Apply change sets synchronously
-     *  Notes: 
+     *  Notes:
      *  - the briefcase must be open
      *  - causes the briefcase to be closed and reopened *if* the change set contains schema changes
      *  - the change sets should not be to large to cause a potential timeout since the operation blocks the main thread
@@ -4869,7 +4881,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
             }
         void OnOK() override
             {
-            JsInterop::LogMessageInContext("ECPresentation.Node", NativeLogging::LOG_DEBUG, Utf8PrintfString("Sending success response (took %" PRIu64 " ms)", 
+            JsInterop::LogMessageInContext("ECPresentation.Node", NativeLogging::LOG_DEBUG, Utf8PrintfString("Sending success response (took %" PRIu64 " ms)",
                 (BeTimeUtilities::GetCurrentTimeAsUnixMillis() - m_startTime)), m_requestContext);
             Callback().MakeCallback(Receiver().Value(), {CreateReturnValue(Env(), m_result, true)});
             }
@@ -4879,7 +4891,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
             Callback().MakeCallback(Receiver().Value(), {CreateReturnValue(Env(), ECPresentationResult(ECPresentationStatus::Error, "callback error"))});
             }
     public:
-        ResponseSender(Napi::Function& callback) 
+        ResponseSender(Napi::Function& callback)
             : Napi::AsyncWorker(callback), m_requestContext(JsInterop::GetCurrentClientRequestContextForMainThread()), m_hasResult(false), m_startTime(BeTimeUtilities::GetCurrentTimeAsUnixMillis())
             {}
         void SetResult(ECPresentationResult&& result) {m_result = std::move(result); m_hasResult.store(true); m_waiter.notify_all();}
@@ -4909,7 +4921,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
                 }
             void OnOK() override
                 {
-                JsInterop::LogMessageInContext("ECPresentation.Node", NativeLogging::LOG_DEBUG, Utf8PrintfString("Preloading ECSchemas took %" PRIu64 " ms", 
+                JsInterop::LogMessageInContext("ECPresentation.Node", NativeLogging::LOG_DEBUG, Utf8PrintfString("Preloading ECSchemas took %" PRIu64 " ms",
                     (BeTimeUtilities::GetCurrentTimeAsUnixMillis() - m_startTime)), m_requestContext);
                 Callback().MakeCallback(Receiver().Value(), { Napi::Number::New(Env(), (int)ECPresentationStatus::Success) });
                 }
@@ -4963,7 +4975,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         : BeObjectWrap<NativeECPresentationManager>(info)
         {
         OPTIONAL_ARGUMENT_STRING(0, id, );
-        m_presentationManager = std::unique_ptr<RulesDrivenECPresentationManager>(ECPresentationUtils::CreatePresentationManager(m_connections, 
+        m_presentationManager = std::unique_ptr<RulesDrivenECPresentationManager>(ECPresentationUtils::CreatePresentationManager(m_connections,
             T_HOST.GetIKnownLocationsAdmin(), id));
         m_ruleSetLocater = SimpleRuleSetLocater::Create();
         m_presentationManager->GetLocaters().RegisterLocater(*m_ruleSetLocater);
@@ -5871,7 +5883,7 @@ NativeLogging::SEVERITY callGetLogLevelJs(Utf8StringCR category)
     auto catJS = toJsString(env, category);
 
     auto jsLevelValue = method({catJS});
-    
+
     int logLevel = (jsLevelValue == env.Undefined())? 4: jsLevelValue.ToNumber().Int32Value();
 
     switch (logLevel)
@@ -5897,7 +5909,7 @@ static void pushDeferredLoggingMessage(Utf8CP category, NativeLogging::SEVERITY 
         s_deferredLogging = new bmap<Utf8String, bmap<Utf8String, bvector<LogMessage>>>();
 
     if (nullptr != s_categorySeverityFilter)
-        {                                                                   
+        {
         auto i = s_categorySeverityFilter->find(category);                  // if we know the level set for the category
         if ((i != s_categorySeverityFilter->end()) && (sev < i->second))    // and we know that the current message is of lower severity than that
             return;                                                         // then don't both to save the message, since we know that Logger will just filter it out.
