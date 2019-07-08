@@ -90,6 +90,8 @@ LicenseStatus AccessKeyClientImpl::StartApplication()
         {
         // Begin heartbeat
         CallOnInterval(m_stopPolicyHeartbeatThread, m_policyHeartbeatThreadStopped, m_lastRunningPolicyHeartbeatStartTime, HEARTBEAT_THREAD_DELAY_MS, [this]() { return PolicyHeartbeat(); });
+        CallOnInterval(m_stopUsageHeartbeatThread, m_usageHeartbeatThreadStopped, m_lastRunningUsageHeartbeatStartTime, HEARTBEAT_THREAD_DELAY_MS, [this]() { return UsageHeartbeat(); });
+        CallOnInterval(m_stopLogPostingHeartbeatThread, m_logPostingHeartbeatThreadStopped, m_lastRunningLogPostingHeartbeatStartTime, HEARTBEAT_THREAD_DELAY_MS, [this]() { return LogPostingHeartbeat(); });
         }
     else
         {
@@ -97,17 +99,6 @@ LicenseStatus AccessKeyClientImpl::StartApplication()
         }
 
     return licStatus;
-    }
-
-BentleyStatus AccessKeyClientImpl::StopApplication()
-    {
-    LOG.trace("AccessKeyClientImpl::StopApplication");
-    StopPolicyHeartbeat(); // This will stop Policy heartbeat
-
-    m_licensingDb->Close();
-
-    LOG.debug("Stopped AccessKey heartbeat");
-    return SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------------+
