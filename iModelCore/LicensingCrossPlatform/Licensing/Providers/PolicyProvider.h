@@ -36,10 +36,10 @@ public:
         std::shared_ptr<IAuthHandlerProvider> authHandlerProvider = nullptr // allow creation of non-authorized PolicyProvider
         );
     LICENSING_EXPORT folly::Future<std::shared_ptr<Policy>> GetPolicy();
-    LICENSING_EXPORT folly::Future<std::shared_ptr<Policy>> GetPolicyWithKey(Utf8StringCR accessKey);
+    LICENSING_EXPORT folly::Future<std::shared_ptr<Policy>> GetPolicyWithKey(Utf8StringCR accessKey, Utf8StringCR ultimateId);
     LICENSING_EXPORT folly::Future<Utf8String> GetCertificate();
     LICENSING_EXPORT folly::Future<Utf8String> PerformGetPolicyRequest();
-    LICENSING_EXPORT folly::Future<Utf8String> PerformGetPolicyWithKeyRequest(Utf8StringCR accessKey);
+    LICENSING_EXPORT folly::Future<Utf8String> PerformGetPolicyWithKeyRequest(Utf8StringCR accessKey, Utf8StringCR ultimateId);
 
 private:
     WebServices::IConnectAuthenticationProvider::HeaderPrefix GetHeaderPrefix(AuthType authType);

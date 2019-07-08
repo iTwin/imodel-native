@@ -434,8 +434,10 @@ TEST_F(UlasProviderTests, GetAccessKeyInfo_Success)
         return MockHttpHandler::StubHttpResponse(testJsonString);
         });
 
-    EXPECT_NE(Json::Value::GetNull(), GetUlasProvider().GetAccessKeyInfo(appInfo, accessKey).get());
+    EXPECT_NE(Json::Value::GetNull(), GetUlasProvider().GetAccessKeyInfo(appInfo, accessKey, "").get());
     }
+
+// TODO: add a GetAccessKeyInfo success test with ultimate ID
 
 TEST_F(UlasProviderTests, GetAccessKeyInfo_Failure)
     {
@@ -462,5 +464,8 @@ TEST_F(UlasProviderTests, GetAccessKeyInfo_Failure)
         return MockHttpHandler::StubHttpFailureResponse();
         });
 
-    EXPECT_EQ(Json::Value::GetNull(), GetUlasProvider().GetAccessKeyInfo(appInfo, accessKey).get());
+    EXPECT_EQ(Json::Value::GetNull(), GetUlasProvider().GetAccessKeyInfo(appInfo, accessKey, "").get());
     }
+
+// TODO: add a GetAccessKeyInfo failure test with invalid ultimate ID?
+

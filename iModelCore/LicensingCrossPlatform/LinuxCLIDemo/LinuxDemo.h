@@ -10,6 +10,8 @@
 bool m_isClientCreated;
 bool m_heartbeatRunning;
 
+std::string m_fullPath;
+
 Licensing::ClientPtr m_client;
 Licensing::AccessKeyClientPtr m_accessKeyClient;
 Licensing::SaasClientPtr m_saasClient;
