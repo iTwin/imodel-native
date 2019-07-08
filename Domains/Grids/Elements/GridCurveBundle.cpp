@@ -139,13 +139,24 @@ Dgn::DgnDbStatus GridCurveBundle::_OnDelete() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Dgn::IBRepEntityPtr getBRepFromElevationSurface(ElevationGridSurfaceCR surface)
     {
-    Dgn::IBRepEntityPtr bRep;
-    
-    constexpr double minValue = std::numeric_limits<float>::lowest();
-    constexpr double maxValue = std::numeric_limits<float>::max();
+    CurveVectorPtr curve = surface.GetSurface2d();
 
-    CurveVectorCPtr curve = CurveVector::CreateRectangle(minValue, minValue, maxValue, maxValue, surface.GetElevation());
+    if (curve.IsNull())
+        {
+        constexpr double minValue = std::numeric_limits<float>::lowest();
+        constexpr double maxValue = std::numeric_limits<float>::max();
+
+        curve = CurveVector::CreateRectangle(minValue, minValue, maxValue, maxValue, 0);
+        }
+
+    Dgn::IBRepEntityPtr bRep;
     BRepUtil::Create::BodyFromCurveVector(bRep, *curve);
+
+    if(bRep.IsNull())
+        return nullptr;
+
+    Transform transform = surface.GetPlacementTransform(); // Composed of grid position + elevation height 
+    bRep->ApplyTransform(Transform::From(DPoint3d::From(0.0, 0.0, transform.Translation().z)));
 
     return bRep;
     }
