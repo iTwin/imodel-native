@@ -1,6 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|     $Source: formats/TriangulationPreserver.cpp $
+|
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <TerrainModel/Formats/Formats.h>
@@ -131,7 +133,6 @@ void TriangulationPreserver::AddTriangle (int* ptNums, int numPoints)
         m_pointIndex.push_back(localPtNum);
         }
     }
-
 
 //=======================================================================================
 // @bsistruct                                            Daryl.Holmwood      10/2017
@@ -620,3 +621,58 @@ void TriangulationPreserver::CheckTriangle (long* ptNums, int numPts)
             }
         }
     }
+
+//=======================================================================================
+// @bsimethod                                            Cecilio.Shirakawa   02/2019
+//=======================================================================================
+DPoint3d* TriangulationPreserver::GetPointsFromTriangleIndex(int triangleIndex)
+    {
+    int index3 = (triangleIndex) * 3;
+    BeAssert (index3+2 < (int)m_pointIndex.size());
+    DPoint3d* points = new DPoint3d[3];
+    points[0] = m_pts[m_pointIndex[index3]];
+    points[1] = m_pts[m_pointIndex[index3+1]];
+    points[2] = m_pts[m_pointIndex[index3+2]];
+    return points;
+    }
+
+//=======================================================================================
+// @bsimethod                                            Cecilio.Shirakawa   02/2019
+//=======================================================================================
+DPoint3d* TriangulationPreserver::GetTrianglePoints (int* ptNums, int numPoints)
+    {
+    Initialize ();
+
+    if (numPoints != 3)
+        return NULL;
+
+    DPoint3d* pts = new DPoint3d[4];
+    int num = GetLocalId(ptNums[0]);
+    BeAssert(-1 != num);
+    if (-1 == num)
+        return NULL;
+
+    pts[0] = m_pts[num];
+    num = GetLocalId(ptNums[1]);
+    BeAssert(-1 != num);
+    if (-1 == num)
+        return NULL;
+    pts[1] = m_pts[GetLocalId (ptNums[1])];
+
+    num = GetLocalId(ptNums[2]);
+    BeAssert(-1 != num);
+    if (-1 == num)
+        return NULL;
+    pts[2] = m_pts[GetLocalId (ptNums[2])];
+
+    int side = bcdtmMath_sideOf(pts[0].x, pts[0].y, pts[1].x, pts[1].y, pts[2].x, pts[2].y);
+
+    // Make sure it is the right orientation.
+    if (side > 0)
+        std::swap(ptNums[2], ptNums[1]);
+
+    pts[3] = m_pts[GetLocalId (ptNums[0])];
+
+    return pts;
+    }
+
