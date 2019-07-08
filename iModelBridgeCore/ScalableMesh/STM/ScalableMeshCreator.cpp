@@ -74,6 +74,12 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include "MosaicTextureProvider.h"
 #include "StreamTextureProvider.h"
 
+#ifdef VANCOUVER_API
+#include <ScalableMesh\Import\Plugin\SourceReferenceV0.h>
+#include "ImportPlugins/DGNModelUtilities.h"
+#include "ImportPlugins/ElemSourceRef.h"
+#endif
+
 #define SCALABLE_MESH_TIMINGS
 
 //NEEDS_WORK_SM : Temp global variable probably only for debug purpose, not sure we want to know if we are in editing.
@@ -675,6 +681,29 @@ SourceRef CreateSourceRefFromIDTMSource(const IDTMSource& source, const WString&
         {
       
         }
+
+#ifdef VANCOUVER_API
+        virtual void                _Visit(const IDTMDgnTerrainModelSource& source) override
+            {
+            StatusInt status = BSISUCCESS;
+            DGNFileHolder fileHolder = OpenDGNFile(source.GetPath(), status);
+
+            if (BSISUCCESS != status)
+                throw SourceNotFoundException();
+
+            DGNModelRefHolder modelRefHolder = FindDGNModel(fileHolder, source.GetModelID(), status);
+
+            if (BSISUCCESS != status)
+                throw SourceNotFoundException();
+            
+            for (PersistentElementRefP const& elemRef : fileHolder.GetP()->GetAllElementsCollection())
+                if (elemRef->GetElementId() == source.GetTerrainModelID())
+                    {
+                    m_sourceRefP.reset(new SourceRef(CivilElemSourceRef::CreateFrom(elemRef, modelRefHolder)));
+                    break;
+                    }
+            }
+#endif
     };
 
     Visitor visitor(stmPath);
@@ -687,7 +716,6 @@ SourceRef CreateSourceRefFromIDTMSource(const IDTMSource& source, const WString&
 
     return *visitor.m_sourceRefP;
 }
-
 
 int IScalableMeshCreator::Impl::CreateScalableMesh(bool isSingleFile, bool restrictLevelForPropagation, bool doPartialUpdate)
     {    

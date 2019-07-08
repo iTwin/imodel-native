@@ -98,7 +98,7 @@ int AddPolygonsToDTMObject(bvector<bvector<DPoint3d>>& polygons, DTMFeatureType 
     }
 
 //Limited case. If a void and an island exactly overlap, remove them both.
-void PruneFeatures(bvector<bvector<int>>& idsOfPrunedVoidIslandFeatures, bvector<bvector<DPoint3d>>& islandFeatures, bvector<bvector<DPoint3d>>& voidFeatures, bvector<DTMFeatureType> types, bvector<bvector<int>>& idsOfVoidIslandFeatures)
+void PruneFeatures(bvector<bvector<int>>& idsOfPrunedVoidIslandFeatures, bvector<bvector<DPoint3d>>& islandFeatures, bvector<bvector<DPoint3d>>& voidFeatures, bvector<DTMFeatureType>& types, bvector<bvector<int>>& idsOfVoidIslandFeatures)
     {
     idsOfPrunedVoidIslandFeatures.resize(2);
     bvector<bool> deleteIslands(islandFeatures.size());

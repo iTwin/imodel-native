@@ -63,6 +63,11 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 #include "ScalableMeshSourceImporter.h"
 
+#ifdef VANCOUVER_API
+#include <ScalableMesh\Import\Plugin\SourceReferenceV0.h>
+#include "ImportPlugins/DGNModelUtilities.h"
+#include "ImportPlugins/ElemSourceRef.h"
+#endif
 //#include <DgnPlatform\Tools\ConfigurationManager.h>
 
 
@@ -845,6 +850,28 @@ SourceRef CreateSourceRefFromIDTMSource (const IDTMSource& source)
             {
             /* Do nothing */
             }
+#ifdef VANCOUVER_API
+        virtual void                _Visit(const IDTMDgnTerrainModelSource& source) override
+            {
+            StatusInt status = BSISUCCESS;
+            DGNFileHolder fileHolder = OpenDGNFile(source.GetPath(), status);
+
+            if (BSISUCCESS != status)
+                throw SourceNotFoundException();
+
+            DGNModelRefHolder modelRefHolder = FindDGNModel(fileHolder, source.GetModelID(), status);
+
+            if (BSISUCCESS != status)
+                throw SourceNotFoundException();
+
+            for (PersistentElementRefP const& elemRef : fileHolder.GetP()->GetAllElementsCollection())
+                if (elemRef->GetElementId() == source.GetTerrainModelID())
+                    {
+                    m_sourceRefP.reset(new SourceRef(CivilElemSourceRef::CreateFrom(elemRef, modelRefHolder)));
+                    break;
+                    }
+            }
+#endif
         };
 
     Visitor visitor;

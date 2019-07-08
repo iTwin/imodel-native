@@ -19,7 +19,7 @@
 #include <condition_variable>
 #include <json/json.h>
 #include <CloudDataSource/DataSourceManager.h>
-#include "InternalUtilityFunctions.h"
+#include "ScalableMeshModuleInfo.h"
 
 #define SESSION_NAME DataSource::SessionName
 

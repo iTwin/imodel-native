@@ -360,6 +360,8 @@ $(o)ScalableMeshGroup$(oext) : $(stmDir)ScalableMeshGroup.cpp $(stmDir)ScalableM
 
 $(o)ScalableMeshClippingOptions$(oext) : $(stmDir)ScalableMeshClippingOptions.cpp $(stmDir)ScalableMeshClippingOptions.h ${MultiCompileDepends}
 
+$(o)ScalableMeshModuleInfo$(oext) : $(stmDir)ScalableMeshModuleInfo.cpp $(stmDir)ScalableMeshModuleInfo.h ${MultiCompileDepends}
+
 #-----------------------------------------------------------------------
 #   Build Tile Publisher
 #-----------------------------------------------------------------------

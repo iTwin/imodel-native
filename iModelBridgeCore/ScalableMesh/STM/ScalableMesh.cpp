@@ -3331,7 +3331,7 @@ template <class POINT> bool ScalableMesh<POINT>::_InSynchWithSources() const
     SourcesDataSQLite sourcesData;
     m_smSQLitePtr->LoadSources(sourcesData);
 
-    const bool InSync = sourcesData.GetLastModifiedTime() < sourcesData.GetLastSyncTime();
+    const bool InSync = sourcesData.GetLastModifiedTime() <= sourcesData.GetLastSyncTime();
     return InSync;
     }
 
@@ -4547,6 +4547,10 @@ void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons)
 
 void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons, std::function<bool(const size_t i, const bvector<DPoint3d>& element)> choosePolygonInSet, std::function<void(const bvector<DPoint3d>& element)> afterPolygonAdded)
 {
+    typedef std::map<DPoint3d, double, DPoint3dYXTolerancedSortComparison> MapOfPoints;
+    bvector<MapOfPoints> vectorMapOfHeights(polygons.size(), MapOfPoints(DPoint3dYXTolerancedSortComparison(1e-5)));
+    MapOfPoints pointElevationMap(DPoint3dYXTolerancedSortComparison(1e-5));
+
     bvector<bvector<DPoint3d>> newUnifiedPoly;
     HFCPtr<HGF2DCoordSys>   coordSysPtr(new HGF2DCoordSys());
     HFCPtr<HVEShape> allPolyShape = new HVEShape(coordSysPtr);
@@ -4566,7 +4570,7 @@ void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons, std::function<bool(c
         DRange3d range = DRange3d::From(poly);
         if (poly.empty()) continue;
         bvector<DPoint3d> poly_2d = poly;
-        for (auto&pt : poly_2d) pt.z = 0;
+        for(auto&pt : poly_2d) pt.z = 0;
         for (auto& poly2 : polygons)
         {
             if (!available[&poly2 - &polygons.front()]) continue;
@@ -4854,6 +4858,8 @@ void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons, std::function<bool(c
 
         for (size_t pointInd = 0; pointInd < poly.size(); pointInd++)
         {
+            if(pointElevationMap.count(poly[pointInd]) == 0) pointElevationMap.insert(std::make_pair(poly[pointInd], poly[pointInd].z));
+            //else BeAssert(pointElevationMap[poly[pointInd]] == poly[pointInd].z);
             tempBuffer[bufferInd * 2] = poly[pointInd].x;
             tempBuffer[bufferInd * 2 + 1] = poly[pointInd].y;
             bufferInd++;
@@ -4866,6 +4872,13 @@ void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons, std::function<bool(c
 
     AddLoopsFromShape(newUnifiedPoly, allPolyShape->GetLightShape(), afterPolygonAdded);
     polygons = newUnifiedPoly;
+
+    for(auto& poly : polygons)
+        for(auto& pt : poly)
+            {
+            BeAssert(pointElevationMap.count(pt) > 0);
+            pt.z = pointElevationMap[pt];
+            }
 }
 
 void IScalableMeshMemoryCounts::SetMaximumMemoryUsage(size_t maxNumberOfBytes)

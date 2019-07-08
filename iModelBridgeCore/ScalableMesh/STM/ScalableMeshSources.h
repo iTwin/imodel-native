@@ -286,6 +286,40 @@ public:
 
     };
 
+#ifdef VANCOUVER_API
+/*---------------------------------------------------------------------------------**//**
+* @description
+* @bsiclass                                                  Kim.Piche   06/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+struct IDTMDgnTerrainModelSource::Impl : public IDTMDgnModelSource::Impl
+
+    {
+    private:
+        friend struct                       IDTMDgnTerrainModelSource;
+        friend struct                       IDTMDgnTerrainModelSourceCreator;
+
+        uint32_t                              m_terrainModelID;
+        WString                               m_terrainModelName;
+
+    protected:
+        explicit                            Impl(DTMSourceDataType sourceDataType,
+            const wchar_t*                  filePath,
+            uint32_t                        modelID,
+            const WChar*                    modelName,
+            uint32_t                        terrainModelID,
+            const WChar*                    terrainModelName);
+
+        uint32_t                              GetTerrainModelID() const { return m_terrainModelID; }
+        const WString&                 GetTerrainModelName() const { return m_terrainModelName; }
+
+    public:
+        virtual                             ~Impl();
+
+        // Uses default copy behavior
+
+    };
+#endif
+
 /*---------------------------------------------------------------------------------**//**
 * @description  
 * @bsiclass                                                  Raymond.Gauthier   06/2011

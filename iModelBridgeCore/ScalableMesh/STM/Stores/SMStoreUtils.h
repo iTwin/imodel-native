@@ -228,7 +228,7 @@ template <class EXTENT> class SMIndexMasterHeader
         EXTENT                  m_MaxExtent;                    // Indicates the maximum extent if the spatial index is extent limited
         bool                    m_HasMaxExtent;                 // indicated if the index is extent limited.
         bool                    m_balanced;                     // Control variable that indicates if the tree must be balanced
-        SMTextureType           m_textured;
+        SMTextureType           m_textured = SMTextureType::None;
         bool                    m_singleFile;
         size_t                  m_numberOfSubNodesOnSplit;      // Control value that hold either 4 or 8 to indicate if a quadtree or octtree is used.
         size_t                  m_depth;                        // Cached (maximum) number of levels in the tree.

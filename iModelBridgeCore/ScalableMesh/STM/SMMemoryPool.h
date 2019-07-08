@@ -809,14 +809,14 @@ typedef RandomAccessIteratorWithAutoReverseConst<iteratorBase<T>, iteratorBase<t
 
         NotifySizeChangePoolItem(sizeof(DataType), 1);
 
-        assert(this->m_size <= m_allocatedSize);
+        BeAssert(this->m_size <= m_allocatedSize);
 
         return true;
         }
     
     virtual bool push_back(const DataType* newObjects, size_t count)
         {        
-        assert(count != 0);      
+        BeAssert(count != 0);      
 
         if ((this->m_nbItems + count) * sizeof(DataType) > m_allocatedSize)
             {
