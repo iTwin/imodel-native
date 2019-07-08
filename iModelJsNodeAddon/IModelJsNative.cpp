@@ -1239,7 +1239,9 @@ public:
         ClearDgnDb();
         dgndb->CloseDb();
 
-        doDeferredLogging();
+        // Some code opens, merges changesets, and closes a dgndb in a background thread, so need to guard this call.
+        if (!JsInterop::IsJsExecutionDisabled())
+            doDeferredLogging();
         }
 
     DbResult CreateDgnDb(BeFileNameCR filename, JsonValueCR props, Napi::Env env) 
