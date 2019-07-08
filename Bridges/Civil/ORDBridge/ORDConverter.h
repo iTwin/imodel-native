@@ -107,6 +107,7 @@ private:
     bool AssignSuperelevationAspect(Dgn::DgnElementR element, DgnV8EhCR v8el) const;
     bool AssignCorridorAspect(Dgn::DgnElementR element, DgnV8EhCR v8el) const;
     bool AssignCorridorSurfaceAspect(Dgn::DgnElementR element, DgnV8EhCR v8el) const;
+    bool AssignFeatureAspect(Dgn::DgnElementR element, DgnV8EhCR v8el) const;
 
 protected:
     virtual void _DetermineElementParams(Dgn::DgnClassId&, Dgn::DgnCode&, Dgn::DgnCategoryId&, DgnV8EhCR, Dgn::DgnDbSync::DgnV8::Converter&, ECObjectsV8::IECInstance const* primaryV8Instance, Dgn::DgnDbSync::DgnV8::ResolvedModelMapping const&) override;

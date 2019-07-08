@@ -1119,6 +1119,7 @@ ConvertORDElementXDomain::ConvertORDElementXDomain(ORDConverter& converter): m_c
     m_cifConsensusConnection = ConsensusConnection::Create(*m_converter.GetRootModelRefP());
     m_graphic3dClassId = converter.GetDgnDb().Schemas().GetClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_Graphic3d);    
 
+    m_aspectAssignFuncs.push_back(&ConvertORDElementXDomain::AssignFeatureAspect);
     m_aspectAssignFuncs.push_back(&ConvertORDElementXDomain::AssignCorridorSurfaceAspect);
     m_aspectAssignFuncs.push_back(&ConvertORDElementXDomain::AssignLinearQuantityAspect);
     m_aspectAssignFuncs.push_back(&ConvertORDElementXDomain::AssignCorridorAspect);
@@ -1504,18 +1505,32 @@ bool ConvertORDElementXDomain::AssignCorridorAspect(Dgn::DgnElementR element, Dg
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      03/2019
+* @bsimethod                                    Diego.Diaz                      07/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ConvertORDElementXDomain::AssignCorridorSurfaceAspect(Dgn::DgnElementR element, DgnV8EhCR v8el) const
+bool ConvertORDElementXDomain::AssignFeatureAspect(Dgn::DgnElementR element, DgnV8EhCR v8el) const
     {
     auto featurizedPtr = FeaturizedConsensusItem::CreateFromElementHandle(*m_cifConsensusConnection, v8el);
     if (featurizedPtr.IsValid())
         {
-        if (element.GetModel()->Is3d())
+        assignORDFeatureAspect(element, *featurizedPtr);
+        return true;
+        }
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ConvertORDElementXDomain::AssignCorridorSurfaceAspect(Dgn::DgnElementR element, DgnV8EhCR v8el) const
+    {
+    if (element.GetModel()->Is3d())
+        {
+        auto featurizedPtr = FeaturizedConsensusItem::CreateFromElementHandle(*m_cifConsensusConnection, v8el);
+        if (featurizedPtr.IsValid())
             {
             if (auto cifCorridorSurfaceCP = dynamic_cast<CorridorSurfaceCP>(featurizedPtr.get()))
                 {
-                assignORDFeatureAspect(element, *featurizedPtr);
                 assignCorridorSurfaceAspect(element, *cifCorridorSurfaceCP);
                 assignStationRangeAspect(element, *cifCorridorSurfaceCP);
                 assignQuantityAspect(element, *cifCorridorSurfaceCP);
