@@ -152,11 +152,12 @@
     <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/prewire.mke">
         <RequiredRepository>CompatibilityTestFiles-2-0-1-60</RequiredRepository>
         <SubPart PartName="DgnPlatformDLL"/>
+        <SubPart PartName="DgnPlatformSqlang" />
         <SubPart PartName="DgnPlatformUnitTestHelpers"/>
         <Bindings>
             <Files     ProductDirectoryName="UnitTests-IgnoreList"   ProductSubDirectory="DgnPlatform" SubPartDirectory="UnitTests/DgnPlatform">Delivery/UnitTests/ignore_list.txt</Files>
             <Files     ProductDirectoryName="UnitTests-Assets"       ProductSubDirectory="ECSchemas"> Delivery/UnitTests/ECSchemas/*.xml</Files>
-			<Files     ProductDirectoryName="UnitTests-Assets"       ProductSubDirectory="PerformanceTestData"> Delivery/UnitTests/PerformanceTestData/*.json</Files>
+            <Files     ProductDirectoryName="UnitTests-Assets"       ProductSubDirectory="PerformanceTestData"> Delivery/UnitTests/PerformanceTestData/*.json</Files>
             <Directory ProductDirectoryName="UnitTests-Assets"       ProductSubDirectory="CompatibilityTestFiles" SourceName="Delivery/UnitTests/CompatibilityTestFiles" />
         </Bindings>
     </Part>

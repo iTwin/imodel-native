@@ -2360,15 +2360,19 @@ BentleyStatus BRepUtil::Modify::IntersectSheetFaces(CurveVectorPtr& vectorOut, I
     if (IBRepEntity::EntityType::Sheet != sheet2.GetEntityType())
         return ERROR;
 
-    Transform   invTargetTransform;
-    invTargetTransform.InverseOf(sheet1.GetEntityTransform());
-    Transform   toolTransform;
-    toolTransform.InitProduct(invTargetTransform, sheet2.GetEntityTransform());
+    IBRepEntityPtr sheet1Clone = sheet1.Clone();
     IBRepEntityPtr sheet2Clone = sheet2.Clone();
+
+    PK_ENTITY_t sheet1Tag = PSolidUtil::GetEntityTag(*sheet1Clone);
     PK_ENTITY_t sheet2Tag = PSolidUtil::GetEntityTag(*sheet2Clone);
-    PK_ENTITY_t sheet1Tag = PSolidUtil::GetEntityTag(sheet1);
-    PSolidUtil::TransformBody(sheet2Tag, toolTransform);
-    
+
+    Transform sheet1Transform = sheet1.GetEntityTransform();
+    Transform sheet2Transform = sheet2.GetEntityTransform();
+
+    // Apply bRep's tranforms to sheet geometry
+    PSolidUtil::TransformBody(sheet1Tag, sheet1Transform);
+    PSolidUtil::TransformBody(sheet2Tag, sheet2Transform);
+
     if (PK_ENTITY_null == sheet1Tag || PK_ENTITY_null == sheet2Tag)
         return ERROR;
 
@@ -2391,8 +2395,11 @@ BentleyStatus BRepUtil::Modify::IntersectSheetFaces(CurveVectorPtr& vectorOut, I
     PK_INTERVAL_t* bounds = nullptr;
     PK_intersect_curve_t* curvesTypes = nullptr;
 
-    BentleyStatus   status = (SUCCESS == PK_FACE_intersect_face(sheet1FaceTag, sheet2FaceTag, &options, &numVectors, &vectors, &numCurves, &curves, &bounds, &curvesTypes) ? SUCCESS : ERROR);
+    BentleyStatus status = (SUCCESS == PK_FACE_intersect_face(sheet1FaceTag, sheet2FaceTag, &options, &numVectors, &vectors, &numCurves, &curves, &bounds, &curvesTypes) ? SUCCESS : ERROR);
     
+    if (numCurves == 0)
+        status = ERROR;
+
     if (SUCCESS == status)
         {
         vectorOut = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
@@ -2402,9 +2409,6 @@ BentleyStatus BRepUtil::Modify::IntersectSheetFaces(CurveVectorPtr& vectorOut, I
             ICurvePrimitivePtr curvePrimitive = PSolidGeom::GetAsCurvePrimitive(curves[i], bounds[i], false);
             vectorOut->push_back(curvePrimitive);
             }
-
-        // apply sheet1 trans to curvevec here
-        vectorOut->TransformInPlace(sheet1.GetEntityTransform());
         }
 
     PK_ENTITY_delete(numCurves, curves);
