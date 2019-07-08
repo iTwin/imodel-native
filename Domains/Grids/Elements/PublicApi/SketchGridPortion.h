@@ -2,7 +2,7 @@
 |
 |     $Source: Grids/Elements/PublicApi/SketchGridPortion.h $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -29,7 +29,7 @@ public:
     //! Creates an empty sketch grid
     //! @param[in]  model   model for the radialgridportion
     //! @return             sketch grid
-    GRIDELEMENTS_EXPORT static SketchGridPtr Create (Dgn::SpatialLocationModelCR model, Dgn::DgnElementId scopeElementId, Utf8CP name, double defaultStartElevation, double defaultEndElevation);
+    GRIDELEMENTS_EXPORT static SketchGridPtr Create (Dgn::SpatialModelCR model, Dgn::DgnElementId scopeElementId, Utf8CP name, double defaultStartElevation, double defaultEndElevation);
     };
 
 END_GRIDS_NAMESPACE

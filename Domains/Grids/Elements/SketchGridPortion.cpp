@@ -31,7 +31,7 @@ T_Super::CreateParams const& params
 +---------------+---------------+---------------+---------------+---------------+------*/
 SketchGridPtr        SketchGrid::Create
 (
-Dgn::SpatialLocationModelCR model,
+Dgn::SpatialModelCR model,
 Dgn::DgnElementId scopeElementId,
 Utf8CP          name,
 double defaultStartElevation,

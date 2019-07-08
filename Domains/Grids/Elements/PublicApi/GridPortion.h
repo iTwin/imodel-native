@@ -193,7 +193,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ElevationGrid : Grid
             //! @param[in] model                Model that will contain this grid
             //! @param[in] modeledElementId     Element id of an element that will contain this grid
             //! @param[in] name                 Name of the grid
-            CreateParams (Dgn::SpatialLocationModelCR model, Dgn::DgnElementId modeledElementId, Utf8CP name) :
+            CreateParams (Dgn::SpatialModelCR model, Dgn::DgnElementId modeledElementId, Utf8CP name) :
                 T_Super (model, modeledElementId, name, QueryClassId (model.GetDgnDb ()))
                 {}
 
