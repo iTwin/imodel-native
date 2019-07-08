@@ -2180,7 +2180,6 @@ TEST_F(SchemaChecksumTest, ComputeCheckSumSameAsSerializedXmlStringCheckSum)
     {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-            <ECSchemaReference name="CoreCustomAttributes" version="1.00.00" alias="CoreCA"/>
             <ECEntityClass typeName="TestClass">
             </ECEntityClass>
         </ECSchema>)xml";
@@ -2197,7 +2196,7 @@ TEST_F(SchemaChecksumTest, ComputeCheckSumSameAsSerializedXmlStringCheckSum)
     Utf8String serializedXml;
     ASSERT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(serializedXml, ecXmlVersion));
     Utf8String serializedXmlChecksum = ECSchema::ComputeSchemaXmlStringCheckSum(serializedXml.c_str(), sizeof(Utf8Char) * serializedXml.length());
-    EXPECT_STREQ("85436c33a75b65ca8f4a5acee30ec7b73f525aa3", serializedXmlChecksum.ToLower().c_str());
+    EXPECT_STREQ("f873d1d8223498533a2567a9badaf4bcd641350c", serializedXmlChecksum.ToLower().c_str());
 
     Utf8String checksum = schema->ComputeCheckSum();
     EXPECT_STREQ(serializedXmlChecksum.ToLower().c_str(), checksum.ToLower().c_str());
