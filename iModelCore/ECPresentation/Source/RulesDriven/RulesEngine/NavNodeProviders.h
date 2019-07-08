@@ -29,14 +29,22 @@ public:
 };
 
 /*=================================================================================**//**
-* An interface for provider index allocator
-* @bsiclass                                     Grigas.Petraitis                10/2018
+* @bsiclass                                     Grigas.Petraitis                07/2019
 +===============+===============+===============+===============+===============+======*/
-struct IProviderIndexAllocator
-    {
-    virtual uint64_t _AllocateIndex() = 0;
-    virtual ~IProviderIndexAllocator() {}
-    };
+struct ProvidersIndexAllocator : RefCountedBase
+{
+private:
+    bvector<uint64_t> m_parentIndex;
+    uint64_t m_currIndex;
+private:
+    bvector<uint64_t> CreateIndex(bool createNew);
+public:
+    ProvidersIndexAllocator() : m_currIndex(0) {}
+    ProvidersIndexAllocator(bvector<uint64_t> parentIndex) : m_parentIndex(parentIndex), m_currIndex(0) {}
+    bvector<uint64_t> GetCurrentIndex() { return CreateIndex(false); }
+    bvector<uint64_t> AllocateIndex() { return CreateIndex(true); }
+};
+typedef RefCountedPtr<ProvidersIndexAllocator> ProvidersIndexAllocatorPtr;
 
 /*=================================================================================**//**
 * Context for NavNodesProvider implementations.
@@ -51,7 +59,7 @@ private:
     INodesProviderFactoryCR m_providerFactory;
     uint64_t const* m_physicalParentNodeId;
     uint64_t const* m_virtualParentNodeId;
-    IProviderIndexAllocator* m_providerIndexAllocator;
+    ProvidersIndexAllocatorPtr m_providersIndexAllocator;
     mutable HierarchyLevelInfo m_hierarchyLevelInfo;
     mutable DataSourceInfo m_dataSourceInfo;
 
@@ -77,6 +85,7 @@ private:
 
 private:
     void Init();
+    void InitProvidersIndexAllocator(uint64_t const* physicalParentNodeId);
     ECPRESENTATION_EXPORT NavNodesProviderContext(PresentationRuleSetCR, bool, RuleTargetTree, Utf8String, uint64_t const*, IUserSettings const&, ECExpressionsCache&, 
         RelatedPathsCache&, PolymorphicallyRelatedClassesCache&, JsonNavNodesFactory const&, IHierarchyCache&, INodesProviderFactoryCR, IJsonLocalState const*);
     ECPRESENTATION_EXPORT NavNodesProviderContext(NavNodesProviderContextCR other);
@@ -108,8 +117,8 @@ public:
     HierarchyLevelInfo const& GetHierarchyLevelInfo() const;
     DataSourceInfo const& GetDataSourceInfo() const;
     bvector<UserSettingEntry> GetRelatedSettings() const;
-    IProviderIndexAllocator* GetProviderIndexAllocator() const {return m_providerIndexAllocator;}
-    void SetProviderIndexAllocator(IProviderIndexAllocator* allocator) {m_providerIndexAllocator = allocator;}
+    ProvidersIndexAllocator& GetProvidersIndexAllocator() const {return *m_providersIndexAllocator;}
+    void SetProvidersIndexAllocator(ProvidersIndexAllocator& allocator) {m_providersIndexAllocator = &allocator;}
 
     // optimization flags
     bool IsFullNodesLoadDisabled() const {return m_isFullLoadDisabled;}
@@ -201,7 +210,7 @@ struct DataSourceRelatedSettingsUpdater
 * Abstract class for navigation node providers.
 * @bsiclass                                     Grigas.Petraitis                07/2015
 +===============+===============+===============+===============+===============+======*/
-struct NavNodesProvider : RefCountedBase, IProviderIndexAllocator
+struct NavNodesProvider : RefCountedBase
 {
     struct SpecificationsVisitor;
     friend struct NavNodesProviderContext;
@@ -211,7 +220,6 @@ struct NavNodesProvider : RefCountedBase, IProviderIndexAllocator
 
 private:
     NavNodesProviderContextPtr m_context;
-    uint64_t m_subProviderIndex;
     mutable bool m_nodesInitialized;
     mutable bool m_cachedHasNodesFlag;
     mutable bool m_hasCachedHasNodesFlag;
@@ -227,7 +235,6 @@ protected:
     bool HasSimilarNodeInHierarchy(JsonNavNodeCR node, uint64_t parentNodeId) const;
     
     virtual bool _IsCacheable() const = 0;
-    virtual uint64_t _AllocateIndex() override {return m_subProviderIndex++;}
     virtual ProviderNodesInitializationStrategy _GetInitializationStrategy() const {return ProviderNodesInitializationStrategy::Automatic;}
     virtual bool _InitializeNodes() {return true;}
 
@@ -313,7 +320,6 @@ struct EmptyNavNodesProvider : NavNodesProvider
 private:
     EmptyNavNodesProvider(NavNodesProviderContextR context);
 protected:
-    uint64_t _AllocateIndex() override {return 0;}
     bool _IsCacheable() const override {return true;}
     ECPRESENTATION_EXPORT bool _InitializeNodes() override;
     bool _GetNode(JsonNavNodePtr& node, size_t index) const override {return false;}

@@ -76,8 +76,13 @@ struct RulesEngineTestHelpers
     
     static void ValidateContentSetItem(ECN::IECInstanceCR instance, ContentSetItemCR item, ContentDescriptorCR descriptor, Utf8CP expectedLabel = nullptr, Utf8CP expectedImageId = nullptr);
     static void ValidateContentSet(bvector<ECN::IECInstanceCP> instances, Content const& content, bool validateOrder = false);
+    static DataContainer<NavNodeCPtr> GetValidatedNodes(std::function<DataContainer<NavNodeCPtr>()> getter);
 
     static ContentDescriptor::Field& AddField(ContentDescriptorR, ECN::ECClassCR, ContentDescriptor::Property, IPropertyCategorySupplierR);
+
+    static void CacheNode(IHierarchyCacheR cache, JsonNavNodeR node);
+
+
     };
 
 /*=================================================================================**//**
@@ -316,7 +321,7 @@ protected:
             }
         return HierarchyLevelInfo();
         }
-    DataSourceInfo _FindDataSource(uint64_t hierarchyLevelId, uint64_t index) const override
+    DataSourceInfo _FindDataSource(uint64_t hierarchyLevelId, bvector<uint64_t> const& index) const override
         {
         for (auto entry : m_partialHierarchies)
             {
@@ -433,9 +438,9 @@ protected:
         info.SetId(++m_datasourceIds);
         m_partialHierarchies[info] = bvector<JsonNavNode*>();
         bvector<DataSourceInfo>& physicalHierarchy = m_physicalHierarchy[GetHierarchyLevelInfo(info)];
-        physicalHierarchy.insert(physicalHierarchy.begin() + info.GetIndex(), info);
+        physicalHierarchy.insert(physicalHierarchy.begin() + info.GetIndex().back(), info);
         bvector<DataSourceInfo>& virtualHierarchy = m_virtualHierarchy[GetHierarchyLevelInfo(info)];
-        virtualHierarchy.insert(virtualHierarchy.begin() + info.GetIndex(), info);
+        virtualHierarchy.insert(virtualHierarchy.begin() + info.GetIndex().back(), info);
 
         if (m_cacheDataSourceHandler)
             m_cacheDataSourceHandler(info, filter, relatedClassIds, relatedSettings, updatesDisabled);

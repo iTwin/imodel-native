@@ -19,7 +19,7 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                04/2015
 +===============+===============+===============+===============+===============+======*/
-struct NodesProviderTests : ECPresentationTest, IProviderIndexAllocator
+struct NodesProviderTests : ECPresentationTest
     {
     static ECDbTestProject* s_project;
     IConnectionPtr m_connection;
@@ -47,8 +47,6 @@ struct NodesProviderTests : ECPresentationTest, IProviderIndexAllocator
     
     virtual void SetUp() override;
     virtual void TearDown() override;
-    
-    virtual uint64_t _AllocateIndex() override {return m_providerIndex++;}
     
     void Cache(JsonNavNodeR node);
     };

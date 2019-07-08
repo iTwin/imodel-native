@@ -76,7 +76,7 @@ protected:
     virtual NodeVisibility _GetNodeVisibility(uint64_t nodeId) const = 0;
 
     virtual HierarchyLevelInfo _FindHierarchyLevel(Utf8CP connectionId, Utf8CP rulesetId, Utf8CP locale, uint64_t const* virtualParentNodeId) const = 0;
-    virtual DataSourceInfo _FindDataSource(uint64_t hierarchyLevelId, uint64_t index) const = 0;
+    virtual DataSourceInfo _FindDataSource(uint64_t hierarchyLevelId, bvector<uint64_t> const& index) const = 0;
     virtual DataSourceInfo _FindDataSource(uint64_t nodeId) const = 0;
 
     virtual NavNodesProviderPtr _GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo const&, bool, bool) const = 0;
@@ -108,7 +108,7 @@ public:
     NodeVisibility GetNodeVisibility(uint64_t nodeId) const {return _GetNodeVisibility(nodeId);}
 
     HierarchyLevelInfo FindHierarchyLevel(Utf8CP connectionId, Utf8CP rulesetId, Utf8CP locale, uint64_t const* virtualParentNodeId) const {return _FindHierarchyLevel(connectionId, rulesetId, locale, virtualParentNodeId);}
-    DataSourceInfo FindDataSource(uint64_t hierarchyLevelId, uint64_t index) const {return _FindDataSource(hierarchyLevelId, index);}
+    DataSourceInfo FindDataSource(uint64_t hierarchyLevelId, bvector<uint64_t> const& index) const {return _FindDataSource(hierarchyLevelId, index);}
     DataSourceInfo FindDataSource(uint64_t nodeId) const {return _FindDataSource(nodeId);}
 
     //! Get data source for the combined hierarchy level for specified physical parent node
@@ -156,9 +156,12 @@ public:
 #define NODESCACHE_TABLENAME_Nodes              "Nodes"
 #define NODESCACHE_TABLENAME_ExpandedNodes      "ExpandedNodes"
 #define NODESCACHE_TABLENAME_NodeKeys           "NodeKeys"
+#define NODESCACHE_TABLENAME_NodesOrder         "NodesOrder"
 #define NODESCACHE_TABLENAME_AffectingInstances "AffectingECInstances"
 #define NODESCACHE_TABLENAME_Connections        "Connections"
 #define NODESCACHE_TABLENAME_Rulesets           "Rulesets"
+
+#define NODESCACHE_FUNCNAME_ConcatBinaryIndex   "ConcatBinaryIndex"
 
 // Note: nodes cache uses a small in-memory structure of size NODESCACHE_QUICK_Size to store
 // the most recently used data sources whose size is at least NODESCACHE_QUICK_Boundary nodes.
@@ -189,6 +192,7 @@ private:
     mutable bvector<bpair<CombinedHierarchyLevelInfo, NavNodesProviderPtr>> m_quickDataSourceCache;
     mutable bvector<bpair<uint64_t, JsonNavNodePtr>> m_quickNodesCache;
     uint64_t m_sizeLimit;
+    bvector<BeSQLite::ScalarFunction*> m_customFunctions;
     
 private:
     void Initialize(BeFileNameCR tempDirectory);
@@ -225,7 +229,7 @@ protected:
     ECPRESENTATION_EXPORT JsonNavNodePtr _GetNode(uint64_t) const override;
     ECPRESENTATION_EXPORT NodeVisibility _GetNodeVisibility(uint64_t nodeId) const override;
     ECPRESENTATION_EXPORT HierarchyLevelInfo _FindHierarchyLevel(Utf8CP connectionId, Utf8CP rulesetId, Utf8CP locale, uint64_t const* virtualParentNodeId) const override;
-    ECPRESENTATION_EXPORT DataSourceInfo _FindDataSource(uint64_t hierarchyLevelId, uint64_t index) const override;
+    ECPRESENTATION_EXPORT DataSourceInfo _FindDataSource(uint64_t hierarchyLevelId, bvector<uint64_t> const&) const override;
     ECPRESENTATION_EXPORT DataSourceInfo _FindDataSource(uint64_t nodeId) const override;
     ECPRESENTATION_EXPORT NavNodesProviderPtr _GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo const&, bool, bool) const override;
     ECPRESENTATION_EXPORT NavNodesProviderPtr _GetHierarchyLevel(HierarchyLevelInfo const&, bool, bool) const override;

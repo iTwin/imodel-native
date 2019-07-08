@@ -35,14 +35,10 @@ void NodesProviderTests::SetUp()
     ECPresentationTest::SetUp();
     m_providerContextFactory.SetNodesCache(&m_nodesCache);
     m_providerContextFactory.SetUsedClassesListener(&m_usedClassesListener);
-
     m_ruleset = PresentationRuleSet::CreateInstance("QueryBasedSpecificationNodesProviderTests", 1, 0, false, "", "", "", false);
     m_providerContextFactory.SetRuleset(m_ruleset.get());
-
     m_connection = m_connections.NotifyConnectionOpened(s_project->GetECDb());
-
     m_context = m_providerContextFactory.Create(*m_connection, m_ruleset->GetRuleSetId().c_str(), "", nullptr);
-    m_context->SetProviderIndexAllocator(this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -68,10 +64,10 @@ void NodesProviderTests::Cache(JsonNavNodeR node)
             extendedData.GetLocale(), node.GetParentNodeId(), virtualParentId);
         m_nodesCache.Cache(hlInfo);
         }
-    DataSourceInfo dsInfo = m_nodesCache.FindDataSource(hlInfo.GetId(), 0);
+    DataSourceInfo dsInfo = m_nodesCache.FindDataSource(hlInfo.GetId(), { 0 });
     if (!dsInfo.IsValid())
         {
-        dsInfo = DataSourceInfo(hlInfo.GetId(), 0);
+        dsInfo = DataSourceInfo(hlInfo.GetId(), { 0 });
         m_nodesCache.Cache(dsInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
         }
     m_nodesCache.Cache(node, dsInfo, 0, false);
@@ -99,6 +95,7 @@ TEST_F(NodesProviderTests, AbortsFinalizingNodesWhenCanceled)
             isCanceled = true;
 
         node = TestNodesHelper::CreateCustomNode(*m_connection, "T", "L", "D");
+        RulesEngineTestHelpers::CacheNode(m_nodesCache, *node);
         return true;
         });
     provider->FinalizeNodes();

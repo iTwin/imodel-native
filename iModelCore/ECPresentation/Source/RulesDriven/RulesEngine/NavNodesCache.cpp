@@ -15,10 +15,14 @@
 
 USING_NAMESPACE_BENTLEY_LOGGING
 
-#define NAVNODES_CACHE_DB_NAME          L"HierarchyCache.db"
-#define NAVNODES_CACHE_DB_VERSION_MAJOR 11
-#define NAVNODES_CACHE_DB_VERSION_MINOR 0
+#define NAVNODES_CACHE_DB_NAME              L"HierarchyCache.db"
+#define NAVNODES_CACHE_DB_VERSION_MAJOR     12
+#define NAVNODES_CACHE_DB_VERSION_MINOR     0
+#define NAVNODES_CACHE_BINARY_INDEX
 //#define NAVNODES_CACHE_DEBUG
+#ifdef NAVNODES_CACHE_DEBUG
+    #undef NAVNODES_CACHE_BINARY_INDEX
+#endif
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                02/2017
@@ -136,6 +140,94 @@ rapidjson::Document DataSourceFilter::AsJson() const
         }
     return json;
     }
+
+static const unsigned DS_INDEX_PADDING = 20;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static Utf8String GetPaddedNumber(uint64_t number)
+    {
+    Utf8String padded;
+    padded.reserve(DS_INDEX_PADDING);
+    auto numberStr = std::to_string(number);
+    for (int i = numberStr.length(); i < DS_INDEX_PADDING; i++)
+        padded.append("0");
+    padded.append(numberStr.c_str());
+    return padded;
+    }
+
+static const Utf8String DS_INDEX_SEPARATOR = "-";
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static Utf8String IndexToString(bvector<uint64_t> const& index, bool pad)
+    {
+    Utf8String str;
+    if (pad)
+        str.reserve(index.size() * (DS_INDEX_PADDING + 1));
+    for (uint64_t i : index)
+        {
+        if (!str.empty())
+            str.append(DS_INDEX_SEPARATOR);
+        if (pad)
+            str.append(GetPaddedNumber(i).c_str());
+        else
+            str.append(std::to_string(i).c_str());
+        }
+    return str;
+    }
+
+#ifdef NAVNODES_CACHE_BINARY_INDEX
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static bvector<uint64_t> IndexFromBlob(void const* blob, int size)
+    {
+    uint64_t const* arr = static_cast<uint64_t const*>(blob);
+    int count = size / sizeof(uint64_t);
+    bvector<uint64_t> index;
+    index.reserve(count);
+    for (int i = 0; i < count; ++i)
+        index.push_back(arr[i]);
+    return index;
+    }
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                07/2019
++===============+===============+===============+===============+===============+======*/
+struct ConcatBinaryIndexScalar : BeSQLite::ScalarFunction
+    {
+    void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
+        {
+        uint64_t const* lhsArr = static_cast<uint64_t const*>(args[0].GetValueBlob());
+        int lhsCount = args[0].GetValueBytes() / sizeof(uint64_t);
+        uint64_t const* rhsArr = static_cast<uint64_t const*>(args[1].GetValueBlob());
+        int rhsCount = args[1].GetValueBytes() / sizeof(uint64_t);
+        bvector<uint64_t> result;
+        result.reserve(lhsCount + rhsCount);
+        for (int i = 0; i < lhsCount; ++i)
+            result.push_back(lhsArr[i]);
+        for (int i = 0; i < rhsCount; ++i)
+            result.push_back(rhsArr[i]);
+        ctx.SetResultBlob(reinterpret_cast<void const*>(&result.front()), result.size() * sizeof(uint64_t), DbFunction::Context::CopyData::Yes);
+        }
+    ConcatBinaryIndexScalar()
+        : ScalarFunction(NODESCACHE_FUNCNAME_ConcatBinaryIndex, 2, DbValueType::BlobVal)
+        {}
+    };
+#else
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static bvector<uint64_t> IndexFromString(Utf8StringCR str)
+    {
+    bvector<uint64_t> index;
+    size_t offset = 0;
+    Utf8String token;
+    while (Utf8String::npos != (offset = str.GetNextToken(token, DS_INDEX_SEPARATOR.c_str(), offset)))
+        index.push_back(BeStringUtilities::ParseUInt64(token.c_str()));
+    return index;
+    }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2017
@@ -310,12 +402,15 @@ void NodesCache::Initialize(BeFileNameCR tempDirectory)
         {
         Utf8CP ddl = "[Id] INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE, "
                      "[HierarchyLevelId] INTEGER REFERENCES " NODESCACHE_TABLENAME_HierarchyLevels "([Id]) ON DELETE CASCADE ON UPDATE CASCADE, "
-                     "[Index] INTEGER NOT NULL, "
+#ifdef NAVNODES_CACHE_BINARY_INDEX
+                     "[FullIndex] BINARY, "
+#else
+                     "[FullIndex] TEXT NOT NULL, "
+#endif
                      "[IsInitialized] BOOLEAN NOT NULL DEFAULT FALSE, "
                      "[Filter] TEXT, "
                      "[IsUpdatesDisabled] BOOLEAN NOT NULL DEFAULT FALSE ";
         m_db.CreateTable(NODESCACHE_TABLENAME_DataSources, ddl);
-        m_db.ExecuteSql("CREATE UNIQUE INDEX [UX_DataSources_HierarchyLevelIndex] ON [" NODESCACHE_TABLENAME_DataSources "]([HierarchyLevelId],[Index])");
         }
     if (!m_db.TableExists(NODESCACHE_TABLENAME_DataSourceClasses))
         {
@@ -338,13 +433,16 @@ void NodesCache::Initialize(BeFileNameCR tempDirectory)
         {
         Utf8CP ddl = "[DataSourceId] INTEGER NOT NULL REFERENCES " NODESCACHE_TABLENAME_DataSources "([Id]) ON DELETE CASCADE ON UPDATE CASCADE, "
                      "[Id] INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE, "
-                     "[Index] INTEGER NOT NULL, "
+#ifdef NAVNODES_CACHE_BINARY_INDEX
+                     "[Index] BINARY, "
+#else
+                     "[Index] TEXT NOT NULL, "
+#endif
                      "[IsVirtual] BOOLEAN NOT NULL DEFAULT FALSE, "
                      "[Data] TEXT NOT NULL, "
                      "[Label] TEXT, "
                      "[UniqueHash] TEXT NOT NULL";
         m_db.CreateTable(NODESCACHE_TABLENAME_Nodes, ddl);
-        m_db.ExecuteSql("CREATE UNIQUE INDEX [IX_Nodes_DataSourceIndex] ON [" NODESCACHE_TABLENAME_Nodes "]([DataSourceId],[Index])");
         m_db.ExecuteSql("CREATE INDEX [IX_Nodes_Hash] ON [" NODESCACHE_TABLENAME_Nodes "]([UniqueHash])");
         }
     if (!m_db.TableExists(NODESCACHE_TABLENAME_NodeKeys))
@@ -391,7 +489,37 @@ void NodesCache::Initialize(BeFileNameCR tempDirectory)
         result = m_db.ExecuteSql(createUniqueIndex);
         BeAssert(result == BE_SQLITE_OK);
         }
+    if (!m_db.TableExists(NODESCACHE_TABLENAME_NodesOrder))
+        {
+        Utf8CP ddl = "[HierarchyLevelId] INTEGER NOT NULL REFERENCES " NODESCACHE_TABLENAME_HierarchyLevels "([Id]) ON DELETE CASCADE, "
+                     "[DataSourceId] INTEGER NOT NULL REFERENCES " NODESCACHE_TABLENAME_DataSources "([Id]) ON DELETE CASCADE, "
+                     "[NodeId] INTEGER PRIMARY KEY NOT NULL UNIQUE REFERENCES " NODESCACHE_TABLENAME_Nodes "([Id]) ON DELETE CASCADE, "
+#ifdef NAVNODES_CACHE_BINARY_INDEX
+                     "[OrderValue] BINARY";
+#else
+                     "[OrderValue] TEXT NOT NULL";
+#endif
+        m_db.CreateTable(NODESCACHE_TABLENAME_NodesOrder, ddl);
+        m_db.ExecuteSql("CREATE UNIQUE INDEX [UX_Order] ON [" NODESCACHE_TABLENAME_NodesOrder "]([HierarchyLevelId],[OrderValue])");
+        m_db.ExecuteSql("CREATE TRIGGER IF NOT EXISTS [TRIGG_" NODESCACHE_TABLENAME_NodesOrder "] AFTER INSERT ON [" NODESCACHE_TABLENAME_Nodes "] "
+                        "BEGIN"
+                        "    INSERT INTO [" NODESCACHE_TABLENAME_NodesOrder "] "
+                        "    SELECT [d].[HierarchyLevelId], [d].[Id], NEW.[Id], "
+#ifdef NAVNODES_CACHE_BINARY_INDEX
+                        "    " NODESCACHE_FUNCNAME_ConcatBinaryIndex "([d].[FullIndex], NEW.[Index]) "
+#else
+                        "    [d].[FullIndex] || '-' || NEW.[Index] "
+#endif
+                        "    FROM [" NODESCACHE_TABLENAME_DataSources "] d "
+                        "    WHERE [d].[Id] = NEW.[DataSourceId]; "
+                        "END");
+        }
     m_db.SaveChanges();
+
+#ifdef NAVNODES_CACHE_BINARY_INDEX
+    m_customFunctions.push_back(new ConcatBinaryIndexScalar());
+    m_db.AddFunction(*m_customFunctions.back());
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -425,6 +553,9 @@ NodesCache::~NodesCache()
     m_statements.Empty();
     m_db.CloseDb();
     dbFile.BeDeleteFile();
+
+    for (BeSQLite::ScalarFunction* func : m_customFunctions)
+        delete func;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -844,7 +975,7 @@ static Utf8String GetDataSourceDebugString(Utf8CP action, DataSourceInfo const& 
     str.append(" data source {");
     str.append("Id: ").append(std::to_string(info.GetId()).c_str()).append(", ");
     str.append("HierarchyLevelId: ").append(std::to_string(info.GetHierarchyLevelId()).c_str()).append(", ");
-    str.append("Index: ").append(std::to_string(info.GetIndex()).c_str());
+    str.append("Index: ").append(IndexToString(info.GetIndex(), false).c_str());
     str.append("}");
     return str;
     }
@@ -950,9 +1081,16 @@ void NodesCache::CacheNode(DataSourceInfo const& datasourceInfo, NavNodeR node, 
         return;
         }
 
-    stmt->BindUInt64(1, datasourceInfo.GetId());
-    stmt->BindUInt64(2, index);
-    stmt->BindBoolean(3, isVirtual);
+    int bindingIndex = 1;
+
+    stmt->BindUInt64(bindingIndex++, datasourceInfo.GetId());
+#ifdef NAVNODES_CACHE_BINARY_INDEX
+    stmt->BindBlob(bindingIndex++, reinterpret_cast<void*>(&index), sizeof(uint64_t), Statement::MakeCopy::No);
+#else
+    Utf8String indexStr = GetPaddedNumber(index);
+    stmt->BindText(bindingIndex++, indexStr.c_str(), Statement::MakeCopy::No);
+#endif
+    stmt->BindBoolean(bindingIndex++, isVirtual);
 
     BeAssert(nullptr != dynamic_cast<JsonNavNodeP>(&node));
     JsonNavNodeR jsonNode = static_cast<JsonNavNodeR>(node);
@@ -962,9 +1100,9 @@ void NodesCache::CacheNode(DataSourceInfo const& datasourceInfo, NavNodeR node, 
     Utf8String hash = ComputeNodeHash(jsonNode, *this, *nodeConnection);
 
     Utf8String nodeStr = GetSerializedJson(jsonNode.GetJson());
-    stmt->BindText(4, nodeStr.c_str(), Statement::MakeCopy::No);
-    stmt->BindText(5, hash.c_str(), Statement::MakeCopy::No);
-    stmt->BindText(6, node.GetLabel(), Statement::MakeCopy::Yes);
+    stmt->BindText(bindingIndex++, nodeStr.c_str(), Statement::MakeCopy::No);
+    stmt->BindText(bindingIndex++, hash.c_str(), Statement::MakeCopy::No);
+    stmt->BindText(bindingIndex++, node.GetLabel(), Statement::MakeCopy::Yes);
 
     DbResult result = stmt->Step();
     BeAssert(BE_SQLITE_DONE == result);
@@ -1036,7 +1174,7 @@ void NodesCache::CacheEmptyHierarchyLevel(HierarchyLevelInfo& info)
 void NodesCache::CacheEmptyDataSource(DataSourceInfo& info, DataSourceFilter const& filter, bool disableUpdates)
     {
     Utf8String query = "INSERT INTO [" NODESCACHE_TABLENAME_DataSources "] ("
-                       "[HierarchyLevelId], [Index], [Filter], [IsUpdatesDisabled]"
+                       "[HierarchyLevelId], [FullIndex], [Filter], [IsUpdatesDisabled]"
                        ") VALUES (?, ?, ?, ?)";
 
     CachedStatementPtr stmt;
@@ -1046,12 +1184,18 @@ void NodesCache::CacheEmptyDataSource(DataSourceInfo& info, DataSourceFilter con
         return;
         }
 
+    int bindingIndex = 1;
     Utf8String filterStr = GetSerializedJson(filter.AsJson());
 
-    stmt->BindUInt64(1, info.GetHierarchyLevelId());
-    stmt->BindUInt64(2, info.GetIndex());
-    stmt->BindText(3, filterStr.c_str(), Statement::MakeCopy::No);
-    stmt->BindBoolean(4, disableUpdates);
+    stmt->BindUInt64(bindingIndex++, info.GetHierarchyLevelId());
+#ifdef NAVNODES_CACHE_BINARY_INDEX
+    stmt->BindBlob(bindingIndex++, reinterpret_cast<void const*>(&info.GetIndex().front()), info.GetIndex().size() * sizeof(uint64_t), Statement::MakeCopy::No);
+#else
+    Utf8String dsIndex = IndexToString(info.GetIndex(), true);
+    stmt->BindText(bindingIndex++, dsIndex.c_str(), Statement::MakeCopy::No);
+#endif
+    stmt->BindText(bindingIndex++, filterStr.c_str(), Statement::MakeCopy::No);
+    stmt->BindBoolean(bindingIndex++, disableUpdates);
 
     DbResult result = stmt->Step();
     if (BE_SQLITE_DONE != result)
@@ -1208,12 +1352,12 @@ HierarchyLevelInfo NodesCache::FindHierarchyLevel(uint64_t id) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DataSourceInfo NodesCache::_FindDataSource(uint64_t hierarchyLevelId, uint64_t index) const
+DataSourceInfo NodesCache::_FindDataSource(uint64_t hierarchyLevelId, bvector<uint64_t> const& index) const
     {
     Utf8CP query = "SELECT [ds].[Id] "
                    "  FROM [" NODESCACHE_TABLENAME_DataSources "] ds "
                    "  JOIN [" NODESCACHE_TABLENAME_HierarchyLevels "] hl ON [hl].[Id] = [ds].[HierarchyLevelId] "
-                   " WHERE [hl].[RemovalId] IS NULL AND [hl].[Id] = ? AND [ds].[Index] = ?";
+                   " WHERE [hl].[RemovalId] IS NULL AND [hl].[Id] = ? AND [ds].[FullIndex] = ?";
 
     CachedStatementPtr stmt;
     if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), query))
@@ -1223,7 +1367,12 @@ DataSourceInfo NodesCache::_FindDataSource(uint64_t hierarchyLevelId, uint64_t i
         }
 
     stmt->BindUInt64(1, hierarchyLevelId);
-    stmt->BindUInt64(2, index);
+#ifdef NAVNODES_CACHE_BINARY_INDEX
+    stmt->BindBlob(2, reinterpret_cast<void const*>(&index.front()), index.size() * sizeof(uint64_t), Statement::MakeCopy::No);
+#else
+    Utf8String dsIndex = IndexToString(index, true);
+    stmt->BindText(2, dsIndex.c_str(), Statement::MakeCopy::No);
+#endif
 
     if (BE_SQLITE_ROW != stmt->Step())
         return DataSourceInfo();
@@ -1236,7 +1385,7 @@ DataSourceInfo NodesCache::_FindDataSource(uint64_t hierarchyLevelId, uint64_t i
 +---------------+---------------+---------------+---------------+---------------+------*/
 DataSourceInfo NodesCache::_FindDataSource(uint64_t nodeId) const
     {
-    Utf8CP query = "SELECT [ds].[Id], [ds].[HierarchyLevelId], [ds].[Index] "
+    Utf8CP query = "SELECT [ds].[Id], [ds].[HierarchyLevelId], [ds].[FullIndex] "
                    "  FROM [" NODESCACHE_TABLENAME_DataSources "] ds "
                    "  JOIN [" NODESCACHE_TABLENAME_HierarchyLevels "] hl ON [hl].[Id] = [ds].[HierarchyLevelId] "
                    "  JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[DataSourceId] = [ds].[Id] "
@@ -1254,7 +1403,12 @@ DataSourceInfo NodesCache::_FindDataSource(uint64_t nodeId) const
     if (BE_SQLITE_ROW != stmt->Step())
         return DataSourceInfo();
 
-    return DataSourceInfo(stmt->GetValueUInt64(0), stmt->GetValueUInt64(1), stmt->GetValueUInt64(2));
+    return DataSourceInfo(stmt->GetValueUInt64(0), stmt->GetValueUInt64(1),
+#ifdef NAVNODES_CACHE_BINARY_INDEX
+        IndexFromBlob(stmt->GetValueBlob(2), stmt->GetColumnBytes(2)));
+#else
+        IndexFromString(stmt->GetValueText(2)));
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1384,7 +1538,7 @@ bool NodesCache::HasRelatedSettingsChanged(uint64_t datasourceId, Utf8StringCR r
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<DataSourceInfo> NodesCache::GetDataSourcesWithChangedUserSettings(CombinedHierarchyLevelInfo const& info) const
     {
-    Utf8String query = "SELECT [ds].[Id], [ds].[HierarchyLevelId], [ds].[Index], [dss].[SettingId], [dss].[SettingValue] "
+    Utf8String query = "SELECT [ds].[Id], [ds].[HierarchyLevelId], [ds].[FullIndex], [dss].[SettingId], [dss].[SettingValue] "
                        "  FROM [" NODESCACHE_TABLENAME_HierarchyLevels "] hl "
                        "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[HierarchyLevelId] = [hl].[Id] "
                        "  JOIN [" NODESCACHE_TABLENAME_DataSourceSettings "] dss ON [dss].[DataSourceId] = [ds].[Id] "
@@ -1411,7 +1565,14 @@ bvector<DataSourceInfo> NodesCache::GetDataSourcesWithChangedUserSettings(Combin
         Utf8CP settingId = stmt->GetValueText(3);
         Utf8String cachedValue = stmt->GetValueText(4);
         if (cachedValue != m_userSettings.GetSettings(info.GetRulesetId()).GetSettingValueAsJson(settingId).ToString())
-            infos.push_back(DataSourceInfo(stmt->GetValueUInt64(0), stmt->GetValueUInt64(1), stmt->GetValueUInt64(2)));
+            {
+            infos.push_back(DataSourceInfo(stmt->GetValueUInt64(0), stmt->GetValueUInt64(1),
+#ifdef NAVNODES_CACHE_BINARY_INDEX
+                IndexFromBlob(stmt->GetValueBlob(2), stmt->GetColumnBytes(2))));
+#else
+                IndexFromString(stmt->GetValueText(2))));
+#endif
+            }
         }
 
     return infos;
@@ -1422,7 +1583,7 @@ bvector<DataSourceInfo> NodesCache::GetDataSourcesWithChangedUserSettings(Combin
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<DataSourceInfo> NodesCache::GetDataSourcesWithChangedUserSettings(HierarchyLevelInfo const& info) const
     {
-    Utf8CP query = "SELECT [ds].[Id], [ds].[HierarchyLevelId], [ds].[Index], [dss].[SettingId], [dss].[SettingValue] "
+    Utf8CP query = "SELECT [ds].[Id], [ds].[HierarchyLevelId], [ds].[FullIndex], [dss].[SettingId], [dss].[SettingValue] "
                    "  FROM [" NODESCACHE_TABLENAME_DataSources "] ds "
                    "  JOIN [" NODESCACHE_TABLENAME_DataSourceSettings "] dss ON [dss].[DataSourceId] = [ds].[Id] "
                    " WHERE [ds].[HierarchyLevelId] = ? ";
@@ -1442,7 +1603,14 @@ bvector<DataSourceInfo> NodesCache::GetDataSourcesWithChangedUserSettings(Hierar
         Utf8CP settingId = stmt->GetValueText(3);
         Utf8String cachedValue = stmt->GetValueText(4);
         if (cachedValue != m_userSettings.GetSettings(info.GetRulesetId()).GetSettingValueAsJson(settingId).ToString())
-            infos.push_back(DataSourceInfo(stmt->GetValueUInt64(0), stmt->GetValueUInt64(1), stmt->GetValueUInt64(2)));
+            {
+            infos.push_back(DataSourceInfo(stmt->GetValueUInt64(0), stmt->GetValueUInt64(1),
+#ifdef NAVNODES_CACHE_BINARY_INDEX
+                IndexFromBlob(stmt->GetValueBlob(2), stmt->GetColumnBytes(2))));
+#else
+                IndexFromString(stmt->GetValueText(2))));
+#endif
+            }
         }
 
     return infos;
@@ -1505,6 +1673,8 @@ NavNodesProviderPtr NodesCache::_GetHierarchyLevel(HierarchyLevelInfo const& inf
 
     NavNodesProviderContextPtr context = m_contextFactory.Create(*connection, info.GetRulesetId().c_str(), info.GetLocale().c_str(),
         info.GetPhysicalParentNodeId(), nullptr, IsUpdatesDisabled(info));
+    if (info.GetVirtualParentNodeId())
+        context->SetVirtualParentNodeId(*info.GetVirtualParentNodeId());
     return context.IsValid() ? CachedHierarchyLevelProvider::Create(*context, m_db, m_statements, info.GetId()) : nullptr;
     }
 
@@ -1536,6 +1706,8 @@ NavNodesProviderPtr NodesCache::_GetDataSource(DataSourceInfo const& dsInfo, boo
 
     NavNodesProviderContextPtr context = m_contextFactory.Create(*connection, hlInfo.GetRulesetId().c_str(), hlInfo.GetLocale().c_str(),
         hlInfo.GetVirtualParentNodeId(), nullptr, IsUpdatesDisabled(hlInfo));
+    if (hlInfo.GetVirtualParentNodeId())
+        context->SetVirtualParentNodeId(*hlInfo.GetVirtualParentNodeId());
     return context.IsValid() ? CachedPartialDataSourceProvider::Create(*context, m_db, m_statements, dsInfo.GetId()) : nullptr;
     }
 
@@ -1548,7 +1720,7 @@ NavNodesProviderPtr NodesCache::_GetDataSource(uint64_t nodeId, bool removeIfInv
     if (!dsInfo.IsValid() || onlyInitialized && !IsInitialized(dsInfo))
         return nullptr;
 
-    return GetDataSource(dsInfo, removeIfInvalid);
+    return GetDataSource(dsInfo, removeIfInvalid, onlyInitialized);
     }
 
 /*---------------------------------------------------------------------------------**//**

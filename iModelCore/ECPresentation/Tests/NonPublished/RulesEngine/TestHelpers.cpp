@@ -494,6 +494,35 @@ void RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP> instances
     }
 
 /*---------------------------------------------------------------------------------**//**
+* The first time we request nodes, we get them straight from the creator data providers.
+* The second time - we get them from cache providers. To make sure both types of providers
+* return the same result, nodes should be requested through this helper function.
+* @betest                                       Grigas.Petraitis                10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DataContainer<NavNodeCPtr> RulesEngineTestHelpers::GetValidatedNodes(std::function<DataContainer<NavNodeCPtr>()> getter)
+    {
+    // allow the test to verify the nodes
+    DataContainer<NavNodeCPtr> initialNodes = getter();
+
+    // additionally, make sure another get, which returns nodes from cache,
+    // returns the same result
+    DataContainer<NavNodeCPtr> cachedNodes = getter();
+
+    EXPECT_EQ(initialNodes.GetSize(), cachedNodes.GetSize())
+        << "Results of initial request (generator) should match results of second request (cached)";
+    if (initialNodes.GetSize() != cachedNodes.GetSize())
+        return initialNodes;
+
+    for (size_t i = 0; i < initialNodes.GetSize(); ++i)
+        {
+        EXPECT_TRUE(cachedNodes[i]->Equals(*initialNodes[i]))
+            << "Nodes from initial request should match nodes from cached request";
+        }
+
+    return initialNodes;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentDescriptor::Field& RulesEngineTestHelpers::AddField(ContentDescriptorR descriptor, ECClassCR primaryClass, 
@@ -502,6 +531,30 @@ ContentDescriptor::Field& RulesEngineTestHelpers::AddField(ContentDescriptorR de
     ContentDescriptor::Field* field = new ContentDescriptor::ECPropertiesField(primaryClass, prop, categorySupplier);
     descriptor.AddField(field);
     return *descriptor.GetAllFields().back();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void RulesEngineTestHelpers::CacheNode(IHierarchyCacheR cache, JsonNavNodeR node)
+    {
+    NavNodeExtendedData extendedData(node);
+    uint64_t virtualParentId = extendedData.HasVirtualParentId() ? extendedData.GetVirtualParentId() : 0;
+    HierarchyLevelInfo hlInfo = cache.FindHierarchyLevel(extendedData.GetConnectionId(),
+        extendedData.GetRulesetId(), extendedData.GetLocale(), extendedData.HasVirtualParentId() ? &virtualParentId : nullptr);
+    if (!hlInfo.IsValid())
+        {
+        hlInfo = HierarchyLevelInfo(extendedData.GetConnectionId(), extendedData.GetRulesetId(),
+            extendedData.GetLocale(), node.GetParentNodeId(), virtualParentId);
+        cache.Cache(hlInfo);
+        }
+    DataSourceInfo dsInfo = cache.FindDataSource(hlInfo.GetId(), { 0 });
+    if (!dsInfo.IsValid())
+        {
+        dsInfo = DataSourceInfo(hlInfo.GetId(), { 0 });
+        cache.Cache(dsInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
+        }
+    cache.Cache(node, dsInfo, 0, false);
     }
 
 /*---------------------------------------------------------------------------------**//**

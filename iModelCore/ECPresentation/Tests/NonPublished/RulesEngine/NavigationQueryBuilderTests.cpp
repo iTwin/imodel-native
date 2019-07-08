@@ -98,7 +98,7 @@ TEST_F (NavigationQueryBuilderTests, NotifiesAboutUsedClassesInJoins)
     GetBuilder().GetParameters().SetUsedClassesListener(&listener);
     
     TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*m_connection, *GetECClass("RulesEngineTest", "Gadget"));
-    Cache(*parentNode);
+    RulesEngineTestHelpers::CacheNode(m_nodesCache, *parentNode);
 
     ChildNodeRule rule("", 1000, false, TargetTree_MainTree);
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, false,

@@ -36,34 +36,6 @@ struct RulesDrivenECPresentationManagerNavigationTests : RulesDrivenECPresentati
         }
 };
 
-#ifdef WIP_DETERMINE_IF_USEFUL
-/*---------------------------------------------------------------------------------**//**
-* @betest                                       Grigas.Petraitis                10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-static DataContainer<NavNodeCPtr> GetVerifiedNodes(std::function<DataContainer<NavNodeCPtr>()> getter)
-    {
-    // allow the test to verify the nodes
-    DataContainer<NavNodeCPtr> initialNodes = getter();
-
-    // additionally, make sure another get, which returns nodes from cache,
-    // returns the same result
-    DataContainer<NavNodeCPtr> cachedNodes = getter();
-
-    EXPECT_EQ(initialNodes.GetSize(), cachedNodes.GetSize())
-        << "Results of initial request (generator) should match results of second request (cached)";
-    if (!initialNodes.GetSize(), cachedNodes.GetSize())
-        return initialNodes;
-
-    for (size_t i = 0; i < initialNodes.GetSize(); ++i)
-        {
-        EXPECT_TRUE(cachedNodes[i]->Equals(*initialNodes[i]))
-            << "Nodes from initial request should match nodes from cached request";
-        }
-
-    return initialNodes;
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -113,7 +85,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_NotGro
 
     // request for nodes
     RulesDrivenECPresentationManager::NavigationOptions options("AllInstanceNodes_NotGrouped", TargetTree_MainTree);
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get(); });
 
     // expect two nodes
     ASSERT_EQ(2, nodes.GetSize());
@@ -144,14 +116,14 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_Groupe
 
     // request for nodes
     RulesDrivenECPresentationManager::NavigationOptions options("AllInstanceNodes_GroupedByClass", TargetTree_MainTree);
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get(); });
 
     // make sure we have 2 class grouping nodes
     ASSERT_EQ(2, nodes.GetSize());
 
     EXPECT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, nodes[0]->GetType().c_str());
     EXPECT_EQ(m_gadgetClass->GetId(), nodes[0]->GetKey()->AsECClassGroupingNodeKey()->GetECClassId());
-    DataContainer<NavNodeCPtr> gadgetNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *nodes[0], PageOptions(), options.GetJson()).get();
+    DataContainer<NavNodeCPtr> gadgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *nodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, gadgetNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, gadgetNodes[0]->GetType().c_str());
     ASSERT_EQ(nodes[0]->GetNodeId(), gadgetNodes[0]->GetParentNodeId());
@@ -159,7 +131,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_Groupe
 
     EXPECT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, nodes[1]->GetType().c_str());
     EXPECT_EQ(m_widgetClass->GetId(), nodes[1]->GetKey()->AsECClassGroupingNodeKey()->GetECClassId());
-    DataContainer<NavNodeCPtr> widgetNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *nodes[1], PageOptions(), options.GetJson()).get();
+    DataContainer<NavNodeCPtr> widgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *nodes[1], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, widgetNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, widgetNodes[0]->GetType().c_str());
     ASSERT_EQ(nodes[1]->GetNodeId(), widgetNodes[0]->GetParentNodeId());
@@ -184,7 +156,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_AlwaysR
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("AllInstanceNodes_AlwaysReturnsChildren", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 node
     ASSERT_EQ(1, nodes.GetSize());
@@ -214,7 +186,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_DoNotSo
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("AllInstanceNodes_DoNotSort_ReturnsUnsortedNodes", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 2 nodes
     ASSERT_EQ(2, nodes.GetSize());
@@ -246,7 +218,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_HideIfN
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("AllInstanceNodes_HideIfNoChildren_ReturnsEmptyListIfNoChildren", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 0 nodes
     ASSERT_EQ(0, nodes.GetSize());
@@ -276,7 +248,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_HideIfN
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("AllInstanceNodes_HideIfNoChildren_ReturnsNodesIfHasChildren", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 node
     ASSERT_EQ(1, nodes.GetSize());
@@ -307,7 +279,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_HideNod
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 node
     ASSERT_EQ(1, nodes.GetSize());
@@ -335,7 +307,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_Grouped
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("AllInstanceNodes_GroupedByLabel_DoesntGroup1Instance", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 node
     ASSERT_EQ(1, nodes.GetSize());
@@ -366,7 +338,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_Grouped
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("AllInstanceNodes_GroupedByLabelGroups3InstancesWith1GroupingNode", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 2 nodes
     ASSERT_EQ(2, nodes.GetSize());
@@ -380,7 +352,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_Grouped
     ASSERT_STREQ("WidgetID", labelGroupingNode->GetLabel().c_str());
 
     //make sure we have 2 widget instances
-    DataContainer<NavNodeCPtr> instanceNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *labelGroupingNode, PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> instanceNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *labelGroupingNode, PageOptions(), options).get(); });
     ASSERT_EQ(2, instanceNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, instanceNodes[0]->GetType().c_str());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, instanceNodes[1]->GetType().c_str());
@@ -409,7 +381,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_Grouped
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("AllInstanceNodes_GroupedByLabelGroups4InstancesWith2GroupingNodes", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> labelGroupingNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> labelGroupingNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 2 label grouping nodes
     ASSERT_EQ(2, labelGroupingNodes.GetSize());
@@ -419,7 +391,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_Grouped
     ASSERT_STREQ("GadgetID", labelGroupingNode->GetLabel().c_str());
 
     // make sure we have 2 gadget instances
-    DataContainer<NavNodeCPtr> instanceNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *labelGroupingNode, PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> instanceNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *labelGroupingNode, PageOptions(), options).get(); });
     ASSERT_EQ(2, instanceNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, instanceNodes[0]->GetType().c_str());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, instanceNodes[1]->GetType().c_str());
@@ -429,7 +401,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_Grouped
     ASSERT_STREQ("WidgetID", labelGroupingNode->GetLabel().c_str());
 
     // make sure we have 2 widget instances
-    instanceNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *labelGroupingNode, PageOptions(), options).get();
+    instanceNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *labelGroupingNode, PageOptions(), options).get(); });
     ASSERT_EQ(2, instanceNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, instanceNodes[0]->GetType().c_str());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, instanceNodes[1]->GetType().c_str());
@@ -442,13 +414,13 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, RemovesLabelGroupingNod
     {
     // make sure there are instances with unique labels and instances with same labels
     IECInstancePtr instanceWithUniqueLabel = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass,
-        [](IECInstanceR instance) { instance.SetValue("MyID", ECValue("GetRootNodes_RemovesLabelGroupingNodeIfOnlyOneChild: Unique Label")); });
-    IECInstancePtr instanceWithSameLabel = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass,
-        [](IECInstanceR instance) { instance.SetValue("MyID", ECValue("GetRootNodes_RemovesLabelGroupingNodeIfOnlyOneChild: Same Label")); });
-    instanceWithSameLabel = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass,
-        [](IECInstanceR instance) { instance.SetValue("MyID", ECValue("GetRootNodes_RemovesLabelGroupingNodeIfOnlyOneChild: Same Label")); });
-    instanceWithSameLabel = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass,
-        [](IECInstanceR instance) { instance.SetValue("MyID", ECValue("GetRootNodes_RemovesLabelGroupingNodeIfOnlyOneChild: Same Label")); });
+        [](IECInstanceR instance) { instance.SetValue("MyID", ECValue("Unique Label")); });
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass,
+        [](IECInstanceR instance) { instance.SetValue("MyID", ECValue("Same Label")); });
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass,
+        [](IECInstanceR instance) { instance.SetValue("MyID", ECValue("Same Label")); });
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass,
+        [](IECInstanceR instance) { instance.SetValue("MyID", ECValue("Same Label")); });
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
@@ -459,8 +431,8 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, RemovesLabelGroupingNod
     rules->AddPresentationRule(*rule);
 
     // request for nodes
-    RulesDrivenECPresentationManager::NavigationOptions options("RemovesLabelGroupingNodeIfOnlyOneChild", TargetTree_MainTree);
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get();
+    RulesDrivenECPresentationManager::NavigationOptions options(BeTest::GetNameOfCurrentTest(), TargetTree_MainTree);
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get(); });
 
     // make sure we have one instance node and one display label grouping node
     ASSERT_EQ(2, nodes.GetSize());
@@ -494,7 +466,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, AlwaysReturnsResultsFla
 
     // request for nodes
     RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_MainTree);
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get(); });
 
     // make sure the parent node has the "always returns results" flag
     ASSERT_EQ(2, nodes.GetSize());
@@ -525,7 +497,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, HideIfNoChildren_Return
 
     // request for nodes
     RulesDrivenECPresentationManager::NavigationOptions options("HideIfNoChildren_ReturnsEmptyListIfNoChildren", TargetTree_MainTree);
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get(); });
 
     // make sure the node was hidden
     ASSERT_TRUE(0 == nodes.GetSize());
@@ -558,7 +530,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, HideIfNoChildren_Return
 
     // request for nodes
     RulesDrivenECPresentationManager::NavigationOptions options("HideIfNoChildren_ReturnsNodesIfHasChildren", TargetTree_MainTree);
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get(); });
 
     // make sure the node was not hidden
     ASSERT_EQ(1, nodes.GetSize());
@@ -582,7 +554,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, HideIfNoChildren_Ignore
 
     // request for nodes
     RulesDrivenECPresentationManager::NavigationOptions options("HideIfNoChildren_IgnoredIfHasAlwaysReturnsNodesFlag", TargetTree_MainTree);
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get(); });
 
     // make sure the node was not hidden
     ASSERT_EQ(1, nodes.GetSize());
@@ -614,7 +586,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, HideNodesInHierarchy_Re
 
     // request for nodes
     RulesDrivenECPresentationManager::NavigationOptions options("HideNodesInHierarchy_ReturnsChildNodes", TargetTree_MainTree);
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get(); });
 
     // make sure we get gadget, not widget
     ASSERT_EQ(1, nodes.GetSize());
@@ -648,13 +620,13 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, HideNodesInHierarchy_Re
 
     // request for root nodes
     RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_MainTree);
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get(); });
 
     // expect 1 widget node
     ASSERT_EQ(1, rootNodes.GetSize());
 
     // request for child nodes
-    DataContainer<NavNodeCPtr> childNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options.GetJson()).get();
+    DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options.GetJson()).get(); });
 
     // expect empty container
     ASSERT_EQ(0, childNodes.GetSize());
@@ -684,7 +656,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_SkipsSpecifiedNu
 
     // request for nodes
     RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_MainTree);
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(2), options.GetJson()).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(2), options.GetJson()).get(); });
 
     // expect 3 nodes: C, D, E
     ASSERT_EQ(3, nodes.GetSize());
@@ -716,7 +688,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_SkipsSpecifiedNu
 
     // request for nodes
     RulesDrivenECPresentationManager::NavigationOptions options("Paging_SkipsSpecifiedNumberOfNodes", TargetTree_MainTree);
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(2), options.GetJson()).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(2), options.GetJson()).get(); });
 
     // expect 3 nodes: C, D, E
     ASSERT_EQ(3, nodes.GetSize());
@@ -748,7 +720,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_SkippingMoreThan
 
     // request for nodes
     RulesDrivenECPresentationManager::NavigationOptions options("Paging_SkippingMoreThanExists", TargetTree_MainTree);
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(5), options.GetJson()).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(5), options.GetJson()).get(); });
 
     // expect 0 nodes
     ASSERT_EQ(0, nodes.GetSize());
@@ -778,7 +750,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_ReturnsSpecified
 
     // request for nodes
     RulesDrivenECPresentationManager::NavigationOptions options("Paging_ReturnsSpecifiedNumberOfNodes", TargetTree_MainTree);
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(0, 2), options.GetJson()).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(0, 2), options.GetJson()).get(); });
 
     // expect 2 nodes: A, B
     ASSERT_EQ(2, nodes.GetSize());
@@ -806,7 +778,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_PageSizeHigherTh
 
     // request for nodes
     RulesDrivenECPresentationManager::NavigationOptions options("Paging_PageSizeHigherThanTheNumberOfNodes", TargetTree_MainTree);
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(0, 5), options.GetJson()).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(0, 5), options.GetJson()).get(); });
 
     // expect 2 nodes: A, B
     ASSERT_EQ(2, nodes.GetSize());
@@ -834,7 +806,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_IndexHigherThanP
 
     // request for nodes
     RulesDrivenECPresentationManager::NavigationOptions options("Paging_PageSizeHigherThanTheNumberOfNodes", TargetTree_MainTree);
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(0, 2), options.GetJson()).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(0, 2), options.GetJson()).get(); });
 
     // expect nullptr
     EXPECT_TRUE(nodes[2].IsNull());
@@ -863,7 +835,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, Paging_SkipsAndReturnsS
 
     // request for nodes
     RulesDrivenECPresentationManager::NavigationOptions options("Paging_SkipsAndReturnsSpecifiedNumberOfNodes", TargetTree_MainTree);
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(1, 3), options.GetJson()).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(1, 3), options.GetJson()).get(); });
 
     // expect 3 nodes: B, C, D
     ASSERT_EQ(3, nodes.GetSize());
@@ -888,7 +860,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_Type_Label_D
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("CustomNodes_Type_Label_Description_ImageId", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 node
     ASSERT_EQ(1, nodes.GetSize());
@@ -918,7 +890,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_HideIfNoChil
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("CustomNodes_HideIfNoChildren_ReturnsNodesIfHasChildren", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 0 nodes
     ASSERT_EQ(1, nodes.GetSize());
@@ -939,7 +911,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_HideIfNoChil
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("CustomNodes_HideIfNoChildren_ReturnsEmptyListIfNoChildren", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 0 nodes
     ASSERT_EQ(0, nodes.GetSize());
@@ -960,7 +932,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_HideNodesInH
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 0 nodes
     ASSERT_EQ(0, nodes.GetSize());
@@ -984,7 +956,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_HideNodesInH
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 0 nodes
     ASSERT_EQ(0, nodes.GetSize());
@@ -1010,7 +982,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_AlwaysReturn
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
     ASSERT_EQ(1, IECPresentationManager::GetManager().GetRootNodesCount(s_project->GetECDb(), options).get());
 
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(1, nodes.GetSize());
 
     NavNodeCPtr node = nodes[0];
@@ -1048,12 +1020,12 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_ReturnsCorre
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 node
     ASSERT_EQ(1, rootNodes.GetSize());
 
-    DataContainer<NavNodeCPtr> childNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
 
     // make sure we have 2 nodes
     ASSERT_EQ(2, childNodes.GetSize());
@@ -1082,12 +1054,12 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_DoesNotRetur
 
     // make sure we have 1 T_ROOT node
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(BeTest::GetNameOfCurrentTest(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("T_ROOT", rootNodes[0]->GetType().c_str());
 
     // T_ROOT node should have 1 T_CHILD node and it should have no children
-    DataContainer<NavNodeCPtr> childNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, childNodes.GetSize());
     EXPECT_STREQ("T_CHILD", childNodes[0]->GetType().c_str());
     EXPECT_FALSE(childNodes[0]->HasChildren());
@@ -1111,7 +1083,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("InstanceNodesOfSpecificClasses_AlwaysReturnsChildren", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 node
     ASSERT_EQ(1, nodes.GetSize());
@@ -1144,7 +1116,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("InstanceNodesOfSpecificClasses_HideNodesInHierarchy", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 node
     ASSERT_EQ(1, nodes.GetSize());
@@ -1171,7 +1143,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("InstanceNodesOfSpecificClasses_HideIfNoChildren_ReturnsEmptyListIfNoChildren", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 0 nodes
     ASSERT_EQ(0, nodes.GetSize());
@@ -1201,7 +1173,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("InstanceNodesOfSpecificClasses_HideIfNoChildren_ReturnsNodesIfHasChildren", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 node
     ASSERT_EQ(1, nodes.GetSize());
@@ -1226,7 +1198,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecific
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("InstanceNodesOfSpecificClasses_GroupedByClass", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> classGroupingNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> classGroupingNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 2 class grouping nodes
     ASSERT_EQ(2, classGroupingNodes.GetSize());
@@ -1253,7 +1225,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("InstanceNodesOfSpecificClasses_GroupedByLabel_DoesntGroup1Instance", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 node
     ASSERT_EQ(1, nodes.GetSize());
@@ -1283,7 +1255,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("InstanceNodesOfSpecificClasses_GroupedByLabel_Groups3InstancesWith1GroupingNode", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 2 nodes
     ASSERT_EQ(2, nodes.GetSize());
@@ -1299,7 +1271,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
     ASSERT_STREQ("WidgetID", labelGroupingNode->GetLabel().c_str());
 
     //make sure we have 2 widget instances
-    DataContainer<NavNodeCPtr> instanceNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *labelGroupingNode, PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> instanceNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *labelGroupingNode, PageOptions(), options).get(); });
     ASSERT_EQ(2, instanceNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, instanceNodes[0]->GetType().c_str());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, instanceNodes[1]->GetType().c_str());
@@ -1328,7 +1300,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("InstanceNodesOfSpecificClasses_GroupedByLabel_Groups4InstancesWith2GroupingNodes", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> labelGroupingNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> labelGroupingNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 2 label grouping nodes
     ASSERT_EQ(2, labelGroupingNodes.GetSize());
@@ -1337,7 +1309,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
     NavNodeCPtr labelGroupingNode = labelGroupingNodes[0];
     EXPECT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, labelGroupingNode->GetType().c_str());
     ASSERT_STREQ("GadgetID", labelGroupingNode->GetLabel().c_str());
-    DataContainer<NavNodeCPtr> instanceNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *labelGroupingNode, PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> instanceNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *labelGroupingNode, PageOptions(), options).get(); });
     ASSERT_EQ(2, instanceNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, instanceNodes[0]->GetType().c_str());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, instanceNodes[1]->GetType().c_str());
@@ -1346,7 +1318,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
     labelGroupingNode = labelGroupingNodes[1];
     EXPECT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, labelGroupingNode->GetType().c_str());
     ASSERT_STREQ("WidgetID", labelGroupingNode->GetLabel().c_str());
-    instanceNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *labelGroupingNode, PageOptions(), options).get();
+    instanceNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *labelGroupingNode, PageOptions(), options).get(); });
     ASSERT_EQ(2, instanceNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, instanceNodes[0]->GetType().c_str());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, instanceNodes[1]->GetType().c_str());
@@ -1377,25 +1349,25 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("InstanceNodesOfSpecificClasses_GroupedByClassAndByLabel", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> classGroupingNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> classGroupingNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 2 class grouping nodes
     ASSERT_EQ(2, classGroupingNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, classGroupingNodes[0]->GetType().c_str());
 
     // make sure we have 1 gadget instance node
-    DataContainer<NavNodeCPtr> gadgetInstanceNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *classGroupingNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> gadgetInstanceNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *classGroupingNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, gadgetInstanceNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, gadgetInstanceNodes[0]->GetType().c_str());
     EXPECT_STREQ(GetDefaultDisplayLabel(*gadget).c_str(), gadgetInstanceNodes[0]->GetLabel().c_str());
 
     // make sure we have 2 widget nodes (one grouping node and one instance node)
-    DataContainer<NavNodeCPtr> widgetNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *classGroupingNodes[1], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> widgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *classGroupingNodes[1], PageOptions(), options).get(); });
     ASSERT_EQ(2, widgetNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, widgetNodes[0]->GetType().c_str());
 
     // make sure we have 2 Widget1 instance nodes
-    DataContainer<NavNodeCPtr> widget1Nodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *widgetNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> widget1Nodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *widgetNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(2, widget1Nodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, widget1Nodes[0]->GetType().c_str());
     EXPECT_STREQ("Widget1", widget1Nodes[0]->GetLabel().c_str());
@@ -1429,25 +1401,25 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("InstanceNodesOfSpecificClasses_GroupedByClassAndByLabel", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> classGroupingNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> classGroupingNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 2 class grouping nodes
     ASSERT_EQ(2, classGroupingNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, classGroupingNodes[0]->GetType().c_str());
 
     // make sure we have 1 gadget instance node
-    DataContainer<NavNodeCPtr> gadgetInstanceNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *classGroupingNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> gadgetInstanceNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *classGroupingNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, gadgetInstanceNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, gadgetInstanceNodes[0]->GetType().c_str());
     EXPECT_STREQ(RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_NotSpecified()).c_str(), gadgetInstanceNodes[0]->GetLabel().c_str());
 
     // make sure we have 2 widget nodes (one grouping node and one instance node)
-    DataContainer<NavNodeCPtr> widgetNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *classGroupingNodes[1], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> widgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *classGroupingNodes[1], PageOptions(), options).get(); });
     ASSERT_EQ(2, widgetNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, widgetNodes[0]->GetType().c_str());
 
     // make sure we have 2 Widget1 instance nodes
-    DataContainer<NavNodeCPtr> widget1Nodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *widgetNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> widget1Nodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *widgetNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(2, widget1Nodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, widget1Nodes[0]->GetType().c_str());
     EXPECT_STREQ("Widget1", widget1Nodes[0]->GetLabel().c_str());
@@ -1479,7 +1451,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("InstanceNodesOfSpecificClasses_DoNotSort_ReturnsUnsortedNodes", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 2 nodes
     ASSERT_EQ(2, nodes.GetSize());
@@ -1515,7 +1487,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("InstanceNodesOfSpecificClasses_ArePolymorphic", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 2 nodes
     ASSERT_EQ(2, nodes.GetSize());
@@ -1543,7 +1515,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("InstanceNodesOfSpecificClasses_AreNotPolymorphic", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 node
     ASSERT_EQ(1, nodes.GetSize());
@@ -1568,7 +1540,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("InstanceNodesOfSpecificClasses_InstanceFilter", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 node
     ASSERT_EQ(1, nodes.GetSize());
@@ -1602,12 +1574,12 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 node
     ASSERT_EQ(1, rootNodes.GetSize());
 
-    DataContainer<NavNodeCPtr> childNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
 
     // make sure we have 2 nodes
     ASSERT_EQ(2, childNodes.GetSize());
@@ -1646,12 +1618,12 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 node
     ASSERT_EQ(1, rootNodes.GetSize());
 
-    DataContainer<NavNodeCPtr> childNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
 
     // make sure we have 2 nodes
     ASSERT_EQ(2, childNodes.GetSize());
@@ -1686,13 +1658,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Al
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("RelatedInstancesNodes_AlwaysReturnsChildren", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> widgetNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> widgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 widget node
     ASSERT_EQ(1, widgetNodes.GetSize());
 
     NavNodeCPtr widgetNode = widgetNodes[0];
-    DataContainer<NavNodeCPtr> gadgetNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *widgetNode, PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> gadgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *widgetNode, PageOptions(), options).get(); });
 
     // make sure we have 1 gadget node
     ASSERT_EQ(1, gadgetNodes.GetSize());
@@ -1733,13 +1705,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Hi
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("RelatedInstancesNodes_HideNodesInHierarchy", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> widgetNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> widgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
      // make sure we have 1 widget node
     ASSERT_EQ(1, widgetNodes.GetSize());
 
     NavNodeCPtr widgetNode = widgetNodes[0];
-    DataContainer<NavNodeCPtr> customNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *widgetNode, PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> customNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *widgetNode, PageOptions(), options).get(); });
 
     // make sure we have 1 custom node
     ASSERT_EQ(1, customNodes.GetSize());
@@ -1775,13 +1747,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Hi
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("RelatedInstancesNodes_HideIfNoChildren_ReturnsEmptyListIfNoChildren", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> widgetNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> widgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 widget node
     ASSERT_EQ(1, widgetNodes.GetSize());
 
     NavNodeCPtr widgetNode = widgetNodes[0];
-    DataContainer<NavNodeCPtr> gadgetNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *widgetNode, PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> gadgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *widgetNode, PageOptions(), options).get(); });
 
     // make sure we have 0 gadget nodes
     ASSERT_EQ(0, gadgetNodes.GetSize());
@@ -1819,12 +1791,12 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Hi
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("RelatedInstancesNodes_HideIfNoChildren_ReturnsNodesIfHasChildren", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> widgetNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> widgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 widget node
     ASSERT_EQ(1, widgetNodes.GetSize());
     NavNodeCPtr widgetNode = widgetNodes[0];
-    DataContainer<NavNodeCPtr> gadgetNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *widgetNode, PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> gadgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *widgetNode, PageOptions(), options).get(); });
 
     // make sure we have 1 gadget node
     ASSERT_EQ(1, gadgetNodes.GetSize());
@@ -1857,12 +1829,12 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_G
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("RelatedInstancesNodes_GroupedByClass", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> widgetNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> widgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 widget node
     ASSERT_EQ(1, widgetNodes.GetSize());
     NavNodeCPtr widgetNode = widgetNodes[0];
-    DataContainer<NavNodeCPtr> classGroupingNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *widgetNode, PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> classGroupingNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *widgetNode, PageOptions(), options).get(); });
 
     // make sure we have 1 class grouping node
     ASSERT_EQ(1, classGroupingNodes.GetSize());
@@ -1898,13 +1870,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Gr
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("RelatedInstancesNodes_GroupedByLabel_DoesntGroup1Instance", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> gadgetNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> gadgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 gadget node
     ASSERT_EQ(1, gadgetNodes.GetSize());
     ASSERT_STREQ("GadgetID", gadgetNodes[0]->GetLabel().c_str());
     NavNodeCPtr gadgetNode = gadgetNodes[0];
-    DataContainer<NavNodeCPtr> widgetNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *gadgetNode, PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> widgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *gadgetNode, PageOptions(), options).get(); });
 
     // make sure we have 1 widget node
     ASSERT_EQ(1, widgetNodes.GetSize());
@@ -1947,20 +1919,20 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Gr
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("RelatedInstancesNodes_GroupedByLabel_Groups3InstancesWith1GroupingNode", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> gadgetNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> gadgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 gadget node
     ASSERT_EQ(1, gadgetNodes.GetSize());
     ASSERT_STREQ(GetDefaultDisplayLabel(*gadgetInstance).c_str(), gadgetNodes[0]->GetLabel().c_str());
     NavNodeCPtr gadgetNode = gadgetNodes[0];
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *gadgetNode, PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *gadgetNode, PageOptions(), options).get(); });
 
     // make sure we have 2 nodes
     ASSERT_EQ(2, nodes.GetSize());
 
     // make sure we have 2 sprocket nodes
     EXPECT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, nodes[0]->GetType().c_str());
-    DataContainer<NavNodeCPtr> sprocketNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *nodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> sprocketNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *nodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(2, sprocketNodes.GetSize());
 
     // make sure we have 1 widget node
@@ -1999,13 +1971,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Do
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("RelatedInstancesNodes_DoNotSort_ReturnsUnsortedNodes", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> gadgetNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> gadgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 gadget node
     ASSERT_EQ(1, gadgetNodes.GetSize());
     ASSERT_STREQ(GetDefaultDisplayLabel(*gadgetInstance).c_str(), gadgetNodes[0]->GetLabel().c_str());
     NavNodeCPtr gadgetNode = gadgetNodes[0];
-    DataContainer<NavNodeCPtr> sprocketNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *gadgetNode, PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> sprocketNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *gadgetNode, PageOptions(), options).get(); });
 
     // make sure we have 2 sprocket nodes
     ASSERT_EQ(2, sprocketNodes.GetSize());
@@ -2046,12 +2018,12 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Sk
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("RelatedInstancesNodes_SkipRelatedLevel", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> widgetNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> widgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
      // make sure we have 1 widget node
     ASSERT_EQ(1, widgetNodes.GetSize());
     NavNodeCPtr widgetNode = widgetNodes[0];
-    DataContainer<NavNodeCPtr> sprocketNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *widgetNode, PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> sprocketNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *widgetNode, PageOptions(), options).get(); });
 
     // make sure we have 1 sprocket node
     ASSERT_EQ(1, sprocketNodes.GetSize());
@@ -2093,7 +2065,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Sk
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
      // make sure we have 1 widget root node
     ASSERT_EQ(1, rootNodes.GetSize());
@@ -2103,7 +2075,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Sk
     ASSERT_EQ(ECInstanceKey(widget1->GetClass().GetId(), widgetId), widget1Node->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
 
     // make sure we have 1 widget child node
-    DataContainer<NavNodeCPtr> childNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *widget1Node, PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *widget1Node, PageOptions(), options).get(); });
     ASSERT_EQ(1, childNodes.GetSize());
     NavNodeCPtr widget2Node = childNodes[0];
     ECInstanceId widget2Id;
@@ -2143,13 +2115,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_In
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("RelatedInstancesNodes_InstanceFilter", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> gadgetNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> gadgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 gadget node
     ASSERT_EQ(1, gadgetNodes.GetSize());
     ASSERT_STREQ(GetDefaultDisplayLabel(*gadgetInstance).c_str(), gadgetNodes[0]->GetLabel().c_str());
     NavNodeCPtr gadgetNode = gadgetNodes[0];
-    DataContainer<NavNodeCPtr> sprocketNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *gadgetNode, PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> sprocketNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *gadgetNode, PageOptions(), options).get(); });
 
     // make sure we have 1 sprocket node
     ASSERT_EQ(1, sprocketNodes.GetSize());
@@ -2202,10 +2174,10 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_In
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(2, rootNodes.GetSize());
 
-    DataContainer<NavNodeCPtr> childNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, childNodes.GetSize());
     }
 
@@ -2246,24 +2218,24 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Gr
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("RelatedInstancesNodes_GroupedByLabel_GroupsByClassAndByLabel", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> gadgetNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> gadgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 gadget node
     ASSERT_EQ(1, gadgetNodes.GetSize());
     NavNodeCPtr gadgetNode = gadgetNodes[0];
-    DataContainer<NavNodeCPtr> classGroupingNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *gadgetNode, PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> classGroupingNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *gadgetNode, PageOptions(), options).get(); });
 
     // make sure we have 2 class grouping nodes
     ASSERT_EQ(2, classGroupingNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, classGroupingNodes[0]->GetType().c_str());
 
     // make sure we have 2 sprocket nodes (one grouping node and one instance node)
-    DataContainer<NavNodeCPtr> sprocketNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *classGroupingNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> sprocketNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *classGroupingNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(2, sprocketNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, sprocketNodes[0]->GetType().c_str());
 
     // make sure we have 2 Sprocket1 instance nodes
-    DataContainer<NavNodeCPtr> sprocket1Nodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *sprocketNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> sprocket1Nodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *sprocketNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(2, sprocket1Nodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, sprocket1Nodes[0]->GetType().c_str());
     EXPECT_STREQ("Sprocket1", sprocket1Nodes[0]->GetLabel().c_str());
@@ -2273,7 +2245,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Gr
     EXPECT_STREQ("Sprocket2", sprocketNodes[1]->GetLabel().c_str());
 
     // make sure we have 1 widget instance node
-    DataContainer<NavNodeCPtr> widgetInstanceNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *classGroupingNodes[1], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> widgetInstanceNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *classGroupingNodes[1], PageOptions(), options).get(); });
     ASSERT_EQ(1, widgetInstanceNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, widgetInstanceNodes[0]->GetType().c_str());
     EXPECT_STREQ(GetDefaultDisplayLabel(*widgetInstance).c_str(), widgetInstanceNodes[0]->GetLabel().c_str());
@@ -2315,24 +2287,24 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Gr
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("RelatedInstancesNodes_GroupedByLabel_GroupsByClassAndByLabel", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> gadgetNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> gadgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 gadget node
     ASSERT_EQ(1, gadgetNodes.GetSize());
     NavNodeCPtr gadgetNode = gadgetNodes[0];
-    DataContainer<NavNodeCPtr> classGroupingNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *gadgetNode, PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> classGroupingNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *gadgetNode, PageOptions(), options).get(); });
 
     // make sure we have 2 class grouping nodes
     ASSERT_EQ(2, classGroupingNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, classGroupingNodes[0]->GetType().c_str());
 
     // make sure we have 2 sprocket nodes (one grouping node and one instance node)
-    DataContainer<NavNodeCPtr> sprocketNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *classGroupingNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> sprocketNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *classGroupingNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(2, sprocketNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, sprocketNodes[0]->GetType().c_str());
 
     // make sure we have 2 Sprocket1 instance nodes
-    DataContainer<NavNodeCPtr> sprocket1Nodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *sprocketNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> sprocket1Nodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *sprocketNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(2, sprocket1Nodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, sprocket1Nodes[0]->GetType().c_str());
     EXPECT_STREQ("Sprocket1", sprocket1Nodes[0]->GetLabel().c_str());
@@ -2342,7 +2314,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Gr
     EXPECT_STREQ("Sprocket2", sprocketNodes[1]->GetLabel().c_str());
 
     // make sure we have 1 widget instance node
-    DataContainer<NavNodeCPtr> widgetInstanceNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *classGroupingNodes[1], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> widgetInstanceNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *classGroupingNodes[1], PageOptions(), options).get(); });
     ASSERT_EQ(1, widgetInstanceNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, widgetInstanceNodes[0]->GetType().c_str());
     EXPECT_STREQ(GetDefaultDisplayLabel(*widgetInstance).c_str(), widgetInstanceNodes[0]->GetLabel().c_str());
@@ -2428,10 +2400,10 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Fi
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(BeTest::GetNameOfCurrentTest(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
 
-    DataContainer<NavNodeCPtr> childNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, childNodes.GetSize());
     ASSERT_STREQ("test label", childNodes[0]->GetLabel().c_str());
     }
@@ -2462,14 +2434,14 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SearchResultInstances_Hi
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("SearchResultInstances_HideIfNoChildren_ReturnsNodesIfHasChildren", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> widgetNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> widgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 widget node
     ASSERT_EQ(1, widgetNodes.GetSize());
     EXPECT_STREQ(GetDefaultDisplayLabel(*widget).c_str(), widgetNodes[0]->GetLabel().c_str());
 
     // make sure we have 1 custom node
-    DataContainer<NavNodeCPtr> customNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *widgetNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> customNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *widgetNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, customNodes.GetSize());
     EXPECT_STREQ("test", customNodes[0]->GetLabel().c_str());
     }
@@ -2494,7 +2466,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SearchResultInstances_Hi
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("SearchResultInstances_HideIfNoChildren_ReturnsEmptyListIfNoChildren", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 0 nodes
     ASSERT_EQ(0, nodes.GetSize());
@@ -2520,7 +2492,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, SearchResultInstances_G
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("SearchResultInstances_GroupedByClass", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> classGroupingNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> classGroupingNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 class grouping node
     ASSERT_EQ(1, classGroupingNodes.GetSize());
@@ -2547,7 +2519,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, SearchResultInstances_G
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 instance node
     ASSERT_EQ(1, nodes.GetSize());
@@ -2579,7 +2551,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, SearchResultInstances_G
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("SearchResultInstances_GroupedByLabel_Groups3InstancesWith1GroupingNode", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 2 nodes
     ASSERT_EQ(2, nodes.GetSize());
@@ -2590,7 +2562,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, SearchResultInstances_G
 
     // make sure we have 2 widget instance nodes with label grouping node
     EXPECT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, nodes[1]->GetType().c_str());
-    DataContainer<NavNodeCPtr> widgetNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *nodes[1], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> widgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *nodes[1], PageOptions(), options).get(); });
     ASSERT_EQ(2, widgetNodes.GetSize());
     ASSERT_STREQ("WidgetID", widgetNodes[0]->GetLabel().c_str());
     ASSERT_STREQ("WidgetID", widgetNodes[1]->GetLabel().c_str());
@@ -2622,20 +2594,20 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, SearchResultInstances_G
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("SearchResultInstances_GroupedByLabel_Groups4InstancesWith2GroupingNodes", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 2 label grouping nodes
     ASSERT_EQ(2, nodes.GetSize());
 
     // make sure we have 2 gadget instance nodes
     EXPECT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, nodes[0]->GetType().c_str());
-    DataContainer<NavNodeCPtr> gadgetNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *nodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> gadgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *nodes[0], PageOptions(), options).get(); });
     ASSERT_STREQ("GadgetID", gadgetNodes[0]->GetLabel().c_str());
     ASSERT_STREQ("GadgetID", gadgetNodes[1]->GetLabel().c_str());
 
     // make sure we have 2 widget instance nodes
     EXPECT_STREQ(NAVNODE_TYPE_DisplayLabelGroupingNode, nodes[1]->GetType().c_str());
-    DataContainer<NavNodeCPtr> widgetNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *nodes[1], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> widgetNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *nodes[1], PageOptions(), options).get(); });
     ASSERT_EQ(2, widgetNodes.GetSize());
     ASSERT_STREQ("WidgetID", widgetNodes[0]->GetLabel().c_str());
     ASSERT_STREQ("WidgetID", widgetNodes[1]->GetLabel().c_str());
@@ -2663,7 +2635,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SearchResultInstances_Do
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("SearchResultInstances_DoNotSort_ReturnsUnsortedNodes", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 2 nodes
     ASSERT_EQ(2, nodes.GetSize());
@@ -2697,7 +2669,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, ImageIdOverride)
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("ImageIdOverride", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 node with overrided ImageId
     ASSERT_EQ(1, nodes.GetSize());
@@ -2730,7 +2702,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, UsesRelatedInstanceInIma
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 node with overrided ImageId
     ASSERT_EQ(1, nodes.GetSize());
@@ -2757,7 +2729,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, LabelOverride)
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("LabelOverride", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 node with overrided Label & Description
     ASSERT_EQ(1, nodes.GetSize());
@@ -2791,7 +2763,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, LabelOverrideWithGrouped
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("LabelOverrideWithGroupedInstancesCountOnClassGroupingNode", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // verify there're two grouping nodes with correct labels
     ASSERT_EQ(2, nodes.GetSize());
@@ -2833,7 +2805,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, LabelOverrideWithGrouped
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("LabelOverrideWithGroupedInstancesCountOnPropertyGroupingNode", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // verify there're three grouping nodes with correct labels
     ASSERT_EQ(3, nodes.GetSize());
@@ -2877,7 +2849,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, LabelOverrideWithGrouped
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("LabelOverrideWithGroupedInstancesCountOnPropertyGroupingNodeSortedByPropertyValue", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // verify there're three grouping nodes with correct labels
     ASSERT_EQ(3, nodes.GetSize());
@@ -2907,7 +2879,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, StyleOverride)
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("StyleOverride", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 node with overrided BackColor, ForeColor & FontStyle
     ASSERT_EQ(1, nodes.GetSize());
@@ -2938,7 +2910,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, LocalizationResourceKeyD
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("LocalizationResourceKeyDefinition_WithExistingKey", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 node
     ASSERT_EQ(1, nodes.GetSize());
@@ -2967,7 +2939,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, LocalizationResourceKeyD
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("LocalizationResourceKeyDefinition_KeyNotFound", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 node
     ASSERT_EQ(1, nodes.GetSize());
@@ -2999,7 +2971,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CheckBoxRule_UsesDefault
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("CheckBoxRule_UsesDefaultValueIfPropertyIsNull", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 2 nodes
     ASSERT_EQ(2, nodes.GetSize());
@@ -3035,7 +3007,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CheckBoxRule_WithoutProp
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("CheckBoxRule_WithoutProperty", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 node
     ASSERT_EQ(1, nodes.GetSize());
@@ -3076,7 +3048,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CheckBoxRule_UsesInverse
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("CheckBoxRule_UsesInversedPropertyName", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 2 nodes
     ASSERT_EQ(2, nodes.GetSize());
@@ -3124,7 +3096,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CheckBoxRule_DoesNotUseI
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("CheckBoxRule_DoesNotUseInversedPropertyName", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 2 nodes
     ASSERT_EQ(2, nodes.GetSize());
@@ -3165,7 +3137,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingAscen
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("SortingRule_SortingAscending", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 3 nodes sorted ascending
     ASSERT_EQ(3, nodes.GetSize());
@@ -3199,7 +3171,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingAscen
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("SortingRule_SortingAscending", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 3 nodes sorted ascending
     ASSERT_EQ(3, nodes.GetSize());
@@ -3233,7 +3205,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingDesce
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("SortingRule_SortingDescending", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 node sorted descending
     ASSERT_EQ(3, nodes.GetSize());
@@ -3267,7 +3239,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_DoNotSort)
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("SortingRule_DoNotSort", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 3 unsorted nodes
     ASSERT_EQ(3, nodes.GetSize());
@@ -3305,7 +3277,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingAscen
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("SortingRule_SortingAscendingPolymorphically", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 4 sorted ascending ClassE & ClassF nodes
     ASSERT_EQ(4, nodes.GetSize());
@@ -3362,7 +3334,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingByTwo
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("SortingRule_SortingByTwoProperties", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 3 nodes sorted ascending by IntProperty & descending by DoubleProperty
     ASSERT_EQ(3, nodes.GetSize());
@@ -3402,7 +3374,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingByEnu
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 2 nodes sorted correctly by enum display value
     ASSERT_EQ(2, nodes.GetSize());
@@ -3439,7 +3411,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Grou
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Grouping_ClassGroup_GroupsByBaseClass", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 class grouping node
     ASSERT_EQ(1, nodes.GetSize());
@@ -3447,7 +3419,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Grou
     ASSERT_STREQ("ClassE", nodes[0]->GetLabel().c_str());
 
     // make sure we have 2 classE child nodes
-    DataContainer<NavNodeCPtr> classEChildNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *nodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> classEChildNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *nodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(2, classEChildNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, classEChildNodes[0]->GetType().c_str());
     ASSERT_STREQ(GetDefaultDisplayLabel(*instanceF).c_str(), classEChildNodes[0]->GetLabel().c_str());
@@ -3482,7 +3454,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Does
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Grouping_ClassGroup_DoesNotCreateGroupForSingleItem", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 ClassF node
     ASSERT_EQ(1, nodes.GetSize());
@@ -3517,7 +3489,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Crea
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Grouping_ClassGroup_CreatesGroupForSingleItem", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 class grouping node
     ASSERT_EQ(1, nodes.GetSize());
@@ -3525,7 +3497,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Crea
     ASSERT_STREQ("ClassE", nodes[0]->GetLabel().c_str());
 
     // make sure we have 1 ClassF node
-    DataContainer<NavNodeCPtr> classFNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *nodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> classFNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *nodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, classFNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, classFNodes[0]->GetType().c_str());
     ASSERT_STREQ(GetDefaultDisplayLabel(*instanceF).c_str(), classFNodes[0]->GetLabel().c_str());
@@ -3557,7 +3529,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_D
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Grouping_PropertyGroup_DoesNotCreateGroupForSingleItem", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 Widget node
     ASSERT_EQ(1, nodes.GetSize());
@@ -3590,7 +3562,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_D
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Grouping_PropertyGroup_DoesNotCreateGroupForSingleItem", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 Widget node
     ASSERT_EQ(1, nodes.GetSize());
@@ -3623,7 +3595,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_C
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 widget property grouping node
     ASSERT_EQ(1, nodes.GetSize());
@@ -3656,7 +3628,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_S
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Grouping_PropertyGroup_SetImageIdForGroupingNode", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 widget property grouping node with changed ImageId
     ASSERT_EQ(1, nodes.GetSize());
@@ -3690,7 +3662,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Grouping_PropertyGroup_GroupsByNullProperty", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 property grouping node
     ASSERT_EQ(1, nodes.GetSize());
@@ -3699,7 +3671,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     EXPECT_STREQ(RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_NotSpecified()).c_str(), node->GetLabel().c_str());
 
     // make sure the node has 2 children
-    DataContainer<NavNodeCPtr> children = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *nodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> children = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *nodes[0], PageOptions(), options).get(); });
     EXPECT_EQ(2, children.GetSize());
     }
 
@@ -3739,7 +3711,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Grouping_PropertyGroup_GroupsPolymorphically", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 property grouping node
     ASSERT_EQ(1, nodes.GetSize());
@@ -3747,7 +3719,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     ASSERT_STREQ("ClassD_Label", nodes[0]->GetLabel().c_str());
 
     // make sure the node has 2 children
-    DataContainer<NavNodeCPtr> children = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *nodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> children = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *nodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(2, children.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, children[0]->GetType().c_str());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, children[1]->GetType().c_str());
@@ -3783,7 +3755,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 property grouping node
     ASSERT_EQ(1, nodes.GetSize());
@@ -3791,7 +3763,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     ASSERT_STREQ("My Value", nodes[0]->GetLabel().c_str());
 
     // make sure the node has 2 children
-    DataContainer<NavNodeCPtr> children = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *nodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> children = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *nodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(2, children.GetSize());
     for (size_t i = 0; i < 2; ++i)
         EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, children[i]->GetType().c_str());
@@ -3824,7 +3796,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 2 property grouping nodes
     ASSERT_EQ(2, nodes.GetSize());
@@ -3860,7 +3832,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 2 property grouping nodes
     ASSERT_EQ(2, nodes.GetSize());
@@ -3896,7 +3868,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Grouping_PropertyGroup_GroupsByNullForeignKey", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 property grouping node
     ASSERT_EQ(1, nodes.GetSize());
@@ -3935,7 +3907,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
 
     // request for root nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Grouping_PropertyGroup_GroupsByRelationshipProperty", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // expect 1 widget node
     ASSERT_EQ(1, rootNodes.GetSize());
@@ -3943,7 +3915,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     ASSERT_STREQ(widget->GetInstanceId().c_str(), rootNodes[0]->GetKey()->AsECInstanceNodeKey()->GetInstanceId().ToString().c_str());
 
     // request for children
-    DataContainer<NavNodeCPtr> childNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
 
     // expect 1 child property grouping node
     ASSERT_EQ(1, childNodes.GetSize());
@@ -3993,7 +3965,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
 
     // request for root nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // expect 1 ClassS node
     ASSERT_EQ(1, rootNodes.GetSize());
@@ -4002,7 +3974,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     EXPECT_EQ(ECInstanceKey(instanceS->GetClass().GetId(), sId), rootNodes[0]->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
 
     // request for children
-    DataContainer<NavNodeCPtr> childNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
 
     // expect 1 child property grouping node with label of instanceU
     ASSERT_EQ(1, childNodes.GetSize());
@@ -4010,7 +3982,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     EXPECT_STREQ("Label 3", childNodes[0]->GetLabel().c_str());
 
     // request for grandchildren
-    DataContainer<NavNodeCPtr> grandchildNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *childNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> grandchildNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *childNodes[0], PageOptions(), options).get(); });
 
     // expect 1 grandchild instance node
     ASSERT_EQ(1, grandchildNodes.GetSize());
@@ -4061,14 +4033,14 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
 
     // request for root nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // expect 1 ClassS node
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*instanceS), rootNodes[0]->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
 
     // request for children
-    DataContainer<NavNodeCPtr> childNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
 
     // expect 1 child property grouping node with label of instanceU
     ASSERT_EQ(1, childNodes.GetSize());
@@ -4076,7 +4048,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     EXPECT_STREQ("3", childNodes[0]->GetLabel().c_str());
 
     // request for grandchildren
-    DataContainer<NavNodeCPtr> grandchildNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *childNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> grandchildNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *childNodes[0], PageOptions(), options).get(); });
 
     // expect 1 grandchild instance node
     ASSERT_EQ(1, grandchildNodes.GetSize());
@@ -4117,7 +4089,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
 
     // request for root nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Grouping_PropertyGroup_GroupsBySkippedRelationshipProperty", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // expect 1 widget node
     ASSERT_EQ(1, rootNodes.GetSize());
@@ -4125,7 +4097,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     ASSERT_STREQ(widget->GetInstanceId().c_str(), rootNodes[0]->GetKey()->AsECInstanceNodeKey()->GetInstanceId().ToString().c_str());
 
     // request for children
-    DataContainer<NavNodeCPtr> childNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
 
     // expect 1 child property grouping node
     ASSERT_EQ(1, childNodes.GetSize());
@@ -4171,7 +4143,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
 
     // request for root nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // expect 1 ClassD node
     ASSERT_EQ(1, rootNodes.GetSize());
@@ -4179,13 +4151,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_PropertyGroup_G
     ASSERT_STREQ(instanceD->GetInstanceId().c_str(), rootNodes[0]->GetKey()->AsECInstanceNodeKey()->GetInstanceId().ToString().c_str());
 
     // expect 1 child property grouping node
-    DataContainer<NavNodeCPtr> childNodes1 = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> childNodes1 = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, childNodes1.GetSize());
     ASSERT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, childNodes1[0]->GetType().c_str());
     ASSERT_STREQ("5", childNodes1[0]->GetLabel().c_str());
 
     // expect 2 child instance nodes under the grouping node
-    DataContainer<NavNodeCPtr> childNodes2 = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *childNodes1[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> childNodes2 = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *childNodes1[0], PageOptions(), options).get(); });
     ASSERT_EQ(2, childNodes2.GetSize());
     ASSERT_STREQ(NAVNODE_TYPE_ECInstanceNode, childNodes2[0]->GetType().c_str());
     ASSERT_STREQ(GetDefaultDisplayLabel(*instanceF).c_str(), childNodes2[0]->GetLabel().c_str());
@@ -4220,7 +4192,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_SameLabelInstan
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Grouping_SameLabelInstanceGroup", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 widget instance node
     ASSERT_EQ(1, nodes.GetSize());
@@ -4254,7 +4226,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_InstanceLabelOv
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Grouping_SameLabelInstanceGroup", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 widget instance node
     ASSERT_EQ(1, nodes.GetSize());
@@ -4290,7 +4262,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Grouping_GroupsByProperty_WithRanges", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 property grouping node
     ASSERT_EQ(1, nodes.GetSize());
@@ -4298,7 +4270,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
     EXPECT_STREQ(RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_Other()).c_str(), nodes[0]->GetLabel().c_str());
 
     // make sure it has 1 ECInstance child node
-    DataContainer<NavNodeCPtr> children = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *nodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> children = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *nodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, children.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, children[0]->GetType().c_str());
     EXPECT_STREQ(GetDefaultDisplayLabel(*widget).c_str(), children[0]->GetLabel().c_str());
@@ -4331,7 +4303,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 property grouping node
     ASSERT_EQ(1, nodes.GetSize());
@@ -4339,7 +4311,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
     EXPECT_STREQ("Range", nodes[0]->GetLabel().c_str());
 
     // make sure it has 1 ECInstance child node
-    DataContainer<NavNodeCPtr> children = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *nodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> children = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *nodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, children.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, children[0]->GetType().c_str());
     EXPECT_STREQ(GetDefaultDisplayLabel(*widget).c_str(), children[0]->GetLabel().c_str());
@@ -4372,7 +4344,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 property grouping node
     ASSERT_EQ(1, nodes.GetSize());
@@ -4380,7 +4352,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
     EXPECT_STREQ("Range", nodes[0]->GetLabel().c_str());
 
     // make sure it has 1 ECInstance child node
-    DataContainer<NavNodeCPtr> children = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *nodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> children = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *nodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, children.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, children[0]->GetType().c_str());
     EXPECT_STREQ(GetDefaultDisplayLabel(*widget).c_str(), children[0]->GetLabel().c_str());
@@ -4413,7 +4385,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 property grouping node
     ASSERT_EQ(1, nodes.GetSize());
@@ -4421,7 +4393,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
     EXPECT_STREQ("Range", nodes[0]->GetLabel().c_str());
 
     // make sure it has 1 ECInstance child node
-    DataContainer<NavNodeCPtr> children = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *nodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> children = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *nodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, children.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, children[0]->GetType().c_str());
     EXPECT_STREQ(GetDefaultDisplayLabel(*widget).c_str(), children[0]->GetLabel().c_str());
@@ -4454,7 +4426,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 property grouping node
     ASSERT_EQ(1, nodes.GetSize());
@@ -4462,7 +4434,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
     EXPECT_STREQ("Range", nodes[0]->GetLabel().c_str());
 
     // make sure it has 1 ECInstance child node
-    DataContainer<NavNodeCPtr> children = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *nodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> children = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *nodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, children.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, children[0]->GetType().c_str());
     EXPECT_STREQ(GetDefaultDisplayLabel(*widget).c_str(), children[0]->GetLabel().c_str());
@@ -4503,14 +4475,14 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_GroupsByPropert
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // expect 1 gadget node
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(GetDefaultDisplayLabel(*gadget).c_str(), rootNodes[0]->GetLabel().c_str());
 
     // request children
-    DataContainer<NavNodeCPtr> childNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
 
     // make sure we have 1 property grouping node
     ASSERT_EQ(1, childNodes.GetSize());
@@ -4544,7 +4516,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Grou
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Grouping_ClassGroup_GroupsByBaseClassAndByInstancesClasses", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 class grouping node
     ASSERT_EQ(1, nodes.GetSize());
@@ -4552,7 +4524,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Grou
     ASSERT_STREQ("ClassE", nodes[0]->GetLabel().c_str());
 
     // make sure we have 1 classE child nodes
-    DataContainer<NavNodeCPtr> classEChildNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *nodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> classEChildNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *nodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, classEChildNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, classEChildNodes[0]->GetType().c_str());
     ASSERT_STREQ("ClassF", classEChildNodes[0]->GetLabel().c_str());
@@ -4589,27 +4561,27 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, DoesNotReturnECInstanceN
 
     // make sure we have 1 ClassD root node
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("DoesNotReturnECInstanceNodesOfTheSameSpecificationAlreadyExistingInHierarchy", TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, rootNodes[0]->GetType().c_str());
     EXPECT_STREQ(GetDefaultDisplayLabel(*classDInstance).c_str(), rootNodes[0]->GetLabel().c_str());
 
     // ClassD instance node should have 1 ClassE instance child node
-    DataContainer<NavNodeCPtr> classDChildNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> classDChildNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, classDChildNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, classDChildNodes[0]->GetType().c_str());
     EXPECT_STREQ(GetDefaultDisplayLabel(*classEInstance).c_str(), classDChildNodes[0]->GetLabel().c_str());
 
     // ClassE instance node has 1 ClassD instance node. There's such a node already in the hierarchy, but it's based on
     // different (root node rule) specification, so we allow it
-    DataContainer<NavNodeCPtr> classEChildNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *classDChildNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> classEChildNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *classDChildNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, classEChildNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, classEChildNodes[0]->GetType().c_str());
     EXPECT_STREQ(GetDefaultDisplayLabel(*classDInstance).c_str(), rootNodes[0]->GetLabel().c_str());
 
     // This time ClassD instance node has no children because there's such a node up in the
     // hierarchy and it's also based on the same specification.
-    DataContainer<NavNodeCPtr> classDChildNodes2 = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *classEChildNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> classDChildNodes2 = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *classEChildNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(0, classDChildNodes2.GetSize());
     }
 
@@ -4653,12 +4625,12 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupingWorksCorrectlyWi
 
     // make sure we have 1 property grouping node
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
 
     // the node should have 1 Gadget child node
-    DataContainer<NavNodeCPtr> childNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, childNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, childNodes[0]->GetType().c_str());
     EXPECT_STREQ(gadget->GetInstanceId().c_str(), childNodes[0]->GetKey()->AsECInstanceNodeKey()->GetInstanceId().ToString().c_str());
@@ -4688,7 +4660,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomizesNodesWhenCusto
 
     // make sure we have 1 node
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(primaryRules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, rootNodes[0]->GetType().c_str());
     EXPECT_STREQ(widget->GetInstanceId().c_str(), rootNodes[0]->GetKey()->AsECInstanceNodeKey()->GetInstanceId().ToString().c_str());
@@ -4739,17 +4711,17 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupingChildrenByRelate
 
     // make sure we have 1 widget
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
 
     // the node should have 1 property grouping node
-    DataContainer<NavNodeCPtr> childNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, childNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, childNodes[0]->GetType().c_str());
 
     // the child node should have 1 Gadget child node
-    DataContainer<NavNodeCPtr> grandChildNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *childNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> grandChildNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *childNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, grandChildNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, grandChildNodes[0]->GetType().c_str());
     EXPECT_STREQ(gadget->GetInstanceId().c_str(), grandChildNodes[0]->GetKey()->AsECInstanceNodeKey()->GetInstanceId().ToString().c_str());
@@ -4798,17 +4770,17 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupingChildrenByRelate
 
     // make sure we have 1 widget
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
 
     // the node should have 1 property grouping node
-    DataContainer<NavNodeCPtr> childNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, childNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, childNodes[0]->GetType().c_str());
 
     // the child node should have 1 Gadget child node
-    DataContainer<NavNodeCPtr> grandChildNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *childNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> grandChildNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *childNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, grandChildNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, grandChildNodes[0]->GetType().c_str());
     EXPECT_STREQ(gadget->GetInstanceId().c_str(), grandChildNodes[0]->GetKey()->AsECInstanceNodeKey()->GetInstanceId().ToString().c_str());
@@ -4834,7 +4806,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, ReturnsChildNodesWhenTh
 
     // make sure we have 2 widget nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(2, rootNodes.GetSize());
     EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, rootNodes[0]->GetType().c_str());
@@ -4864,12 +4836,12 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, ReturnsChildrenUsingAll
 
     // make sure we have 1 root node
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("a", rootNodes[0]->GetLabel().c_str());
 
     // make sure it has 2 child nodes
-    DataContainer<NavNodeCPtr> childNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(2, childNodes.GetSize());
     EXPECT_STREQ("b", childNodes[0]->GetLabel().c_str());
     EXPECT_STREQ("c", childNodes[1]->GetLabel().c_str());
@@ -4892,7 +4864,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AutoExpandSetsIsExpanded
 
     // make sure we have 1 root node
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_TRUE(rootNodes[0]->IsExpanded());
     }
@@ -4928,17 +4900,17 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, FiltersNodesByParentNod
 
     // make sure we have 1 root node
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(GetDefaultDisplayLabel(*widget).c_str(), rootNodes[0]->GetLabel().c_str());
 
     // make sure it has 1 child node
-    DataContainer<NavNodeCPtr> childNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, childNodes.GetSize());
     EXPECT_STREQ(GetDefaultDisplayLabel(*gadget).c_str(), childNodes[0]->GetLabel().c_str());
 
     // make sure it has 1 child node as well
-    DataContainer<NavNodeCPtr> childNodes2 = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *childNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> childNodes2 = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *childNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, childNodes2.GetSize());
     EXPECT_STREQ(GetDefaultDisplayLabel(*sprocket).c_str(), childNodes2[0]->GetLabel().c_str());
     }
@@ -4968,12 +4940,12 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, FiltersNodesByParentNod
 
     // make sure we have 1 root node
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(GetDefaultDisplayLabel(*widget).c_str(), rootNodes[0]->GetLabel().c_str());
 
     // make sure it has 0 children
-    DataContainer<NavNodeCPtr> childNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(0, childNodes.GetSize());
     }
 
@@ -5008,17 +4980,17 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, FiltersNodesByParentNod
 
     // make sure we have 1 root node
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(GetDefaultDisplayLabel(*widget).c_str(), rootNodes[0]->GetLabel().c_str());
 
     // make sure it has 1 child node
-    DataContainer<NavNodeCPtr> childNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, childNodes.GetSize());
     EXPECT_STREQ(GetDefaultDisplayLabel(*gadget).c_str(), childNodes[0]->GetLabel().c_str());
 
     // make sure it has 0 children
-    DataContainer<NavNodeCPtr> childNodes2 = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *childNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> childNodes2 = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *childNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(0, childNodes2.GetSize());
     }
 
@@ -5055,13 +5027,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDoublePrope
 
     //make sure we have 1 grouping node
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
     EXPECT_STREQ("2.00", rootNodes[0]->GetLabel().c_str());
 
     //make sure it has 2 children nodes
-    DataContainer<NavNodeCPtr> childrenNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> childrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(2, childrenNodes.GetSize());
     EXPECT_STREQ("WidgetID", childrenNodes[0]->GetLabel().c_str());
     EXPECT_STREQ("WidgetID", childrenNodes[1]->GetLabel().c_str());
@@ -5100,13 +5072,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDoublePrope
 
     //make sure we have 1 grouping node
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
     EXPECT_STREQ("2.50", rootNodes[0]->GetLabel().c_str());
 
     //make sure it has 2 children nodes
-    DataContainer<NavNodeCPtr> childrenNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> childrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(2, childrenNodes.GetSize());
     EXPECT_STREQ("WidgetID", childrenNodes[0]->GetLabel().c_str());
     EXPECT_STREQ("WidgetID", childrenNodes[1]->GetLabel().c_str());
@@ -5150,13 +5122,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDoublePrope
 
     //make sure we have 1 grouping node
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
     EXPECT_STREQ("0.01", rootNodes[0]->GetLabel().c_str());
 
     //make sure it has 3 children nodes
-    DataContainer<NavNodeCPtr> childrenNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> childrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(3, childrenNodes.GetSize());
     EXPECT_STREQ("WidgetID", childrenNodes[0]->GetLabel().c_str());
     EXPECT_STREQ("WidgetID", childrenNodes[1]->GetLabel().c_str());
@@ -5196,7 +5168,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDoublePrope
 
     //make sure we have 2 grouping nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(2, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[1]->GetType().c_str());
@@ -5204,12 +5176,12 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDoublePrope
     EXPECT_STREQ("2.51", rootNodes[1]->GetLabel().c_str());
 
     //make sure first grouping node has 1 child node
-    DataContainer<NavNodeCPtr> firstNodeChildrenNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> firstNodeChildrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, firstNodeChildrenNodes.GetSize());
     EXPECT_STREQ("WidgetID", firstNodeChildrenNodes[0]->GetLabel().c_str());
 
     //make sure second grouping node has 1 child node
-    DataContainer<NavNodeCPtr> secondNodeChildrenNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[1], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> secondNodeChildrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[1], PageOptions(), options).get(); });
     ASSERT_EQ(1, secondNodeChildrenNodes.GetSize());
     EXPECT_STREQ("WidgetID", secondNodeChildrenNodes[0]->GetLabel().c_str());
     }
@@ -5247,13 +5219,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDoublePrope
 
     //make sure we have 1 grouping node
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
     EXPECT_STREQ("2.60", rootNodes[0]->GetLabel().c_str());
 
     //make sure it has 2 children nodes
-    DataContainer<NavNodeCPtr> childrenNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> childrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(2, childrenNodes.GetSize());
     EXPECT_STREQ("WidgetID", childrenNodes[0]->GetLabel().c_str());
     EXPECT_STREQ("WidgetID", childrenNodes[1]->GetLabel().c_str());
@@ -5292,7 +5264,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDoublePrope
 
     //make sure we have 2 grouping nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(2, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[1]->GetType().c_str());
@@ -5300,12 +5272,12 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDoublePrope
     EXPECT_STREQ("2.60", rootNodes[1]->GetLabel().c_str());
 
     //make sure first grouping node has 1 child node
-    DataContainer<NavNodeCPtr> firstNodeChildrenNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> firstNodeChildrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, firstNodeChildrenNodes.GetSize());
     EXPECT_STREQ("WidgetID", firstNodeChildrenNodes[0]->GetLabel().c_str());
 
     //make sure second grouping node has 1 child node
-    DataContainer<NavNodeCPtr> secondNodeChildrenNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[1], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> secondNodeChildrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[1], PageOptions(), options).get(); });
     ASSERT_EQ(1, secondNodeChildrenNodes.GetSize());
     EXPECT_STREQ("WidgetID", secondNodeChildrenNodes[0]->GetLabel().c_str());
     }
@@ -5335,13 +5307,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
 
     //make sure we have 1 grouping node
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
     EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[0]->GetLabel().c_str());
 
     //make sure it has 2 children nodes
-    DataContainer<NavNodeCPtr> childrenNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> childrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(2, childrenNodes.GetSize());
     EXPECT_STREQ(GetDefaultDisplayLabel(*instance1).c_str(), childrenNodes[0]->GetLabel().c_str());
     EXPECT_STREQ(GetDefaultDisplayLabel(*instance2).c_str(), childrenNodes[1]->GetLabel().c_str());
@@ -5372,13 +5344,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
 
     //make sure we have 1 grouping node
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
     EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[0]->GetLabel().c_str());
 
     //make sure it has 2 children nodes
-    DataContainer<NavNodeCPtr> childrenNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> childrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(2, childrenNodes.GetSize());
     EXPECT_STREQ(GetDefaultDisplayLabel(*instance1).c_str(), childrenNodes[0]->GetLabel().c_str());
     EXPECT_STREQ(GetDefaultDisplayLabel(*instance2).c_str(), childrenNodes[1]->GetLabel().c_str());
@@ -5409,7 +5381,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
 
     //make sure we have 2 grouping nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(2, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[1]->GetType().c_str());
@@ -5417,12 +5389,12 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
     EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[1]->GetLabel().c_str());
 
     //make sure first grouping node has 1 child node
-    DataContainer<NavNodeCPtr> firstNodeChildrenNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> firstNodeChildrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, firstNodeChildrenNodes.GetSize());
     EXPECT_STREQ(GetDefaultDisplayLabel(*instance1).c_str(), firstNodeChildrenNodes[0]->GetLabel().c_str());
 
     //make sure second grouping node has 1 child node
-    DataContainer<NavNodeCPtr> secondNodeChildrenNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[1], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> secondNodeChildrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[1], PageOptions(), options).get(); });
     ASSERT_EQ(1, secondNodeChildrenNodes.GetSize());
     EXPECT_STREQ(GetDefaultDisplayLabel(*instance2).c_str(), secondNodeChildrenNodes[0]->GetLabel().c_str());;
     }
@@ -5452,7 +5424,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
 
     //make sure we have 2 grouping nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(2, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[1]->GetType().c_str());
@@ -5460,12 +5432,12 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
     EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[1]->GetLabel().c_str());
 
     //make sure first grouping node has 1 child node
-    DataContainer<NavNodeCPtr> firstNodeChildrenNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> firstNodeChildrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, firstNodeChildrenNodes.GetSize());
     EXPECT_STREQ(GetDefaultDisplayLabel(*instance1).c_str(), firstNodeChildrenNodes[0]->GetLabel().c_str());
 
     //make sure second grouping node has 1 child node
-    DataContainer<NavNodeCPtr> secondNodeChildrenNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[1], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> secondNodeChildrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[1], PageOptions(), options).get(); });
     ASSERT_EQ(1, secondNodeChildrenNodes.GetSize());
     EXPECT_STREQ(GetDefaultDisplayLabel(*instance2).c_str(), secondNodeChildrenNodes[0]->GetLabel().c_str());;
     }
@@ -5495,7 +5467,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
 
     //make sure we have 2 grouping nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(2, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[1]->GetType().c_str());
@@ -5503,12 +5475,12 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
     EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[1]->GetLabel().c_str());
 
     //make sure first grouping node has 1 child node
-    DataContainer<NavNodeCPtr> firstNodeChildrenNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> firstNodeChildrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, firstNodeChildrenNodes.GetSize());
     EXPECT_STREQ(GetDefaultDisplayLabel(*instance1).c_str(), firstNodeChildrenNodes[0]->GetLabel().c_str());
 
     //make sure second grouping node has 1 child node
-    DataContainer<NavNodeCPtr> secondNodeChildrenNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[1], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> secondNodeChildrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[1], PageOptions(), options).get(); });
     ASSERT_EQ(1, secondNodeChildrenNodes.GetSize());
     EXPECT_STREQ(GetDefaultDisplayLabel(*instance2).c_str(), secondNodeChildrenNodes[0]->GetLabel().c_str());;
     }
@@ -5538,7 +5510,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
 
     //make sure we have 2 grouping nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(2, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[1]->GetType().c_str());
@@ -5546,12 +5518,12 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
     EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[1]->GetLabel().c_str());
 
     //make sure first grouping node has 1 child node
-    DataContainer<NavNodeCPtr> firstNodeChildrenNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> firstNodeChildrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(1, firstNodeChildrenNodes.GetSize());
     EXPECT_STREQ(GetDefaultDisplayLabel(*instance1).c_str(), firstNodeChildrenNodes[0]->GetLabel().c_str());
 
     //make sure second grouping node has 1 child node
-    DataContainer<NavNodeCPtr> secondNodeChildrenNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[1], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> secondNodeChildrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[1], PageOptions(), options).get(); });
     ASSERT_EQ(1, secondNodeChildrenNodes.GetSize());
     EXPECT_STREQ(GetDefaultDisplayLabel(*instance2).c_str(), secondNodeChildrenNodes[0]->GetLabel().c_str());;
     }
@@ -5581,13 +5553,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
 
     //make sure we have 1 grouping node
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
     EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[0]->GetLabel().c_str());
 
     //make sure it has 2 children nodes
-    DataContainer<NavNodeCPtr> childrenNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> childrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(2, childrenNodes.GetSize());
     EXPECT_STREQ(GetDefaultDisplayLabel(*instance1).c_str(), childrenNodes[0]->GetLabel().c_str());
     EXPECT_STREQ(GetDefaultDisplayLabel(*instance2).c_str(), childrenNodes[1]->GetLabel().c_str());
@@ -5618,13 +5590,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
 
     //make sure we have 1 grouping node
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
     EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[0]->GetLabel().c_str());
 
     //make sure it has 2 children nodes
-    DataContainer<NavNodeCPtr> childrenNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> childrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(2, childrenNodes.GetSize());
     EXPECT_STREQ(GetDefaultDisplayLabel(*instance1).c_str(), childrenNodes[0]->GetLabel().c_str());
     EXPECT_STREQ(GetDefaultDisplayLabel(*instance2).c_str(), childrenNodes[1]->GetLabel().c_str());
@@ -5655,13 +5627,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
 
     //make sure we have 1 grouping node
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
     EXPECT_STREQ("X: 1.12 Y: 1.12 Z: 1.12", rootNodes[0]->GetLabel().c_str());
 
     //make sure it has 2 children nodes
-    DataContainer<NavNodeCPtr> childrenNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> childrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
     ASSERT_EQ(2, childrenNodes.GetSize());
     EXPECT_STREQ(GetDefaultDisplayLabel(*instance1).c_str(), childrenNodes[0]->GetLabel().c_str());
     EXPECT_STREQ(GetDefaultDisplayLabel(*instance2).c_str(), childrenNodes[1]->GetLabel().c_str());
@@ -5811,7 +5783,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceLabelOverride_Ov
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 2 nodes
     ASSERT_EQ(2, nodes.GetSize());
@@ -5845,7 +5817,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceLabelOverride_Fi
 
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
 
     // make sure we have 1 nodes
     ASSERT_EQ(1, nodes.GetSize());
@@ -5876,7 +5848,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceLabelOverride_As
     // request for nodes
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
     IGNORE_BE_ASSERT();
-    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5985,7 +5957,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceLabelOverride_Ha
 
     // request for nodes
     RulesDrivenECPresentationManager::NavigationOptions options(BeTest::GetNameOfCurrentTest(), TargetTree_MainTree);
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(6, rootNodes.GetSize());
 
     EXPECT_STREQ("Custom Element 1 UserLabel", rootNodes[0]->GetLabel().c_str());
@@ -6077,16 +6049,16 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceLabelOverride_Ha
     rules->AddPresentationRule(*modelsRule);
 
     ChildNodeRule* elementsRule = new ChildNodeRule();
-    elementsRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0, 
+    elementsRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0,
         "", RequiredRelationDirection_Forward, "", rel->GetFullName(), elementClass->GetFullName()));
     rules->AddPresentationRule(*elementsRule);
 
     // request for nodes
     RulesDrivenECPresentationManager::NavigationOptions options(BeTest::GetNameOfCurrentTest(), TargetTree_MainTree);
-    DataContainer<NavNodeCPtr> modelNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get();
+    DataContainer<NavNodeCPtr> modelNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, modelNodes.GetSize());
 
-    DataContainer<NavNodeCPtr> elementNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *modelNodes[0], PageOptions(), options.GetJson()).get();
+    DataContainer<NavNodeCPtr> elementNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *modelNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(3, elementNodes.GetSize());
     EXPECT_STREQ("CodeValue", elementNodes[0]->GetLabel().c_str());
     EXPECT_STREQ("Custom Element-0-4", elementNodes[1]->GetLabel().c_str());
@@ -6142,11 +6114,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 
     // request for nodes
     RulesDrivenECPresentationManager::NavigationOptions options(BeTest::GetNameOfCurrentTest(), TargetTree_MainTree);
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("ClassA1_CodeValue", rootNodes[0]->GetLabel().c_str());
 
-    DataContainer<NavNodeCPtr> childNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options.GetJson()).get();
+    DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, childNodes.GetSize());
     EXPECT_STREQ("ClassC_CodeValue", childNodes[0]->GetLabel().c_str());
     }
@@ -6202,11 +6174,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 
     // request for nodes
     RulesDrivenECPresentationManager::NavigationOptions options(BeTest::GetNameOfCurrentTest(), TargetTree_MainTree);
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("ClassA1_CodeValue", rootNodes[0]->GetLabel().c_str());
 
-    DataContainer<NavNodeCPtr> childNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options.GetJson()).get();
+    DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, childNodes.GetSize());
     EXPECT_STREQ("ClassC_UserLabel", childNodes[0]->GetLabel().c_str());
     }
@@ -6251,7 +6223,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodesSpecific
 
     // request for nodes
     RulesDrivenECPresentationManager::NavigationOptions options(BeTest::GetNameOfCurrentTest(), TargetTree_MainTree);
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(2, rootNodes.GetSize());
     EXPECT_STREQ("ClassC_CodeValue", rootNodes[0]->GetLabel().c_str());
     EXPECT_STREQ("ClassA1_CodeValue", rootNodes[1]->GetLabel().c_str());
@@ -6298,7 +6270,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodesSpecific
 
     // request for nodes
     RulesDrivenECPresentationManager::NavigationOptions options(BeTest::GetNameOfCurrentTest(), TargetTree_MainTree);
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(2, rootNodes.GetSize());
     EXPECT_STREQ("1_Instance_C", rootNodes[0]->GetLabel().c_str());
     EXPECT_STREQ("2_Instance_A", rootNodes[1]->GetLabel().c_str());
@@ -6314,31 +6286,64 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CreatesValidHierarchyWhe
     m_locater->AddRuleSet(*rules);
 
     RootNodeRule* rule1 = new RootNodeRule();
-    rule1->AddSpecification(*CreateCustomNodeSpecification("first"));
+    rule1->AddSpecification(*CreateCustomNodeSpecification("1"));
     rules->AddPresentationRule(*rule1);
 
-    ChildNodeRule* rule2 = new ChildNodeRule("ParentNode.Type = \"first\"", 1, false, TargetTree_Both);
-    rule2->AddSpecification(*CreateCustomNodeSpecification("second1", [](CustomNodeSpecificationR spec) { spec.SetHideNodesInHierarchy(true); }));
-    rule2->AddSpecification(*CreateCustomNodeSpecification("second2", [](CustomNodeSpecificationR spec) { spec.SetHideNodesInHierarchy(true); }));
+    ChildNodeRule* rule2 = new ChildNodeRule("ParentNode.Type = \"1\"", 1, false, TargetTree_Both);
+    rule2->AddSpecification(*CreateCustomNodeSpecification("1.1", [](CustomNodeSpecificationR spec) { spec.SetHideNodesInHierarchy(true); }));
+    rule2->AddSpecification(*CreateCustomNodeSpecification("1.2", [](CustomNodeSpecificationR spec) {  }));
     rules->AddPresentationRule(*rule2);
 
-    ChildNodeRule* rule3 = new ChildNodeRule("ParentNode.Type = \"second1\"", 1, false, TargetTree_Both);
-    rule3->AddSpecification(*CreateCustomNodeSpecification("third", [](CustomNodeSpecificationR spec) { spec.SetHideNodesInHierarchy(true); }));
+    ChildNodeRule* rule3 = new ChildNodeRule("ParentNode.Type = \"1.1\"", 1, false, TargetTree_Both);
+    rule3->AddSpecification(*CreateCustomNodeSpecification("1.1.1", [](CustomNodeSpecificationR spec) { spec.SetHideNodesInHierarchy(true); }));
+    rule3->AddSpecification(*CreateCustomNodeSpecification("1.1.2", [](CustomNodeSpecificationR spec) {}));
     rules->AddPresentationRule(*rule3);
 
-    ChildNodeRule* rule4 = new ChildNodeRule("ParentNode.Type = \"third\"", 1, false, TargetTree_Both);
-    rule4->AddSpecification(*CreateCustomNodeSpecification("fourth"));
+    ChildNodeRule* rule4 = new ChildNodeRule("ParentNode.Type = \"1.1.1\"", 1, false, TargetTree_Both);
+    rule4->AddSpecification(*CreateCustomNodeSpecification("1.1.1.1"));
+    rule4->AddSpecification(*CreateCustomNodeSpecification("1.1.1.2"));
     rules->AddPresentationRule(*rule4);
+
+    ChildNodeRule* rule5 = new ChildNodeRule("ParentNode.Type = \"1.1.1.1\"", 1, false, TargetTree_Both);
+    rule5->AddSpecification(*CreateCustomNodeSpecification("1.1.1.1.1"));
+    rules->AddPresentationRule(*rule5);
+
+    ChildNodeRule* rule6 = new ChildNodeRule("ParentNode.Type = \"1.1.2\"", 1, false, TargetTree_Both);
+    rule6->AddSpecification(*CreateCustomNodeSpecification("1.1.2.1", [](CustomNodeSpecificationR spec) { spec.SetHideNodesInHierarchy(true); }));
+    rule6->AddSpecification(*CreateCustomNodeSpecification("1.1.2.2", [](CustomNodeSpecificationR spec) { }));
+    rules->AddPresentationRule(*rule6);
+
+    ChildNodeRule* rule7 = new ChildNodeRule("ParentNode.Type = \"1.1.2.1\"", 1, false, TargetTree_Both);
+    rule7->AddSpecification(*CreateCustomNodeSpecification("1.1.2.1.1", [](CustomNodeSpecificationR spec) {}));
+    rules->AddPresentationRule(*rule7);
+
+    /*
+    1
+        [1.1]
+            [1.1.1]
+                1.1.1.1
+                    1.1.1.1.1
+                1.1.1.2
+            1.1.2
+                [1.1.2.1]
+                    1.1.2.1.1
+                1.1.2.2
+        1.2
+    */
 
     // request for nodes
     RulesDrivenECPresentationManager::NavigationOptions options(BeTest::GetNameOfCurrentTest(), TargetTree_MainTree);
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ("first", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("1", rootNodes[0]->GetLabel().c_str());
 
-    DataContainer<NavNodeCPtr> childNodes = IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options.GetJson()).get();
-    ASSERT_EQ(1, childNodes.GetSize());
-    EXPECT_STREQ("fourth", childNodes[0]->GetLabel().c_str());
+    // get child nodes
+    DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options.GetJson()).get(); });
+    ASSERT_EQ(4, childNodes.GetSize());
+    EXPECT_STREQ("1.1.1.1", childNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("1.1.1.2", childNodes[1]->GetLabel().c_str());
+    EXPECT_STREQ("1.1.2", childNodes[2]->GetLabel().c_str());
+    EXPECT_STREQ("1.2", childNodes[3]->GetLabel().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -6362,7 +6367,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AppliesNodeExtendedDataF
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
 
-    RootNodeRule* rule1 = new RootNodeRule();    
+    RootNodeRule* rule1 = new RootNodeRule();
     rules->AddPresentationRule(*rule1);
     rule1->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "", ecClass1->GetFullName(), true));
 
@@ -6386,13 +6391,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AppliesNodeExtendedDataF
 
     // request for nodes
     RulesDrivenECPresentationManager::NavigationOptions options(BeTest::GetNameOfCurrentTest(), TargetTree_MainTree);
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(2, rootNodes.GetSize());
 
     RapidJsonAccessor extendedData = rootNodes[0]->GetUsersExtendedData();
     ASSERT_TRUE(extendedData.GetJson().IsObject());
     ASSERT_EQ(8, extendedData.GetJson().MemberCount());
-    
+
     ASSERT_TRUE(extendedData.GetJson().HasMember("class_name"));
     EXPECT_STREQ(ecClass1->GetName().c_str(), extendedData.GetJson()["class_name"].GetString());
 

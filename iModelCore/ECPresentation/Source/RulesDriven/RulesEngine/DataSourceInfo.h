@@ -204,19 +204,19 @@ struct DataSourceInfo
 private:
     uint64_t m_id;
     uint64_t m_hierarchyLevelId;
-    uint64_t m_index;
+    bvector<uint64_t> m_index;
 public:
-    DataSourceInfo() : m_id(0), m_hierarchyLevelId(0), m_index(0) {}
+    DataSourceInfo() : m_id(0), m_hierarchyLevelId(0) {}
     DataSourceInfo(DataSourceInfo const& other)
         : m_id(other.m_id), m_hierarchyLevelId(other.m_hierarchyLevelId), m_index(other.m_index)
         {}
     DataSourceInfo(DataSourceInfo&& other)
-        : m_id(other.m_id), m_hierarchyLevelId(other.m_hierarchyLevelId), m_index(other.m_index)
+        : m_id(other.m_id), m_hierarchyLevelId(other.m_hierarchyLevelId), m_index(std::move(other.m_index))
         {}
-    DataSourceInfo(uint64_t hierarchyLevelId, uint64_t index)
+    DataSourceInfo(uint64_t hierarchyLevelId, bvector<uint64_t> index)
         : m_id(0), m_hierarchyLevelId(hierarchyLevelId), m_index(index)
         {}
-    DataSourceInfo(uint64_t id, uint64_t hierarchyLevelId, uint64_t index)
+    DataSourceInfo(uint64_t id, uint64_t hierarchyLevelId, bvector<uint64_t> index)
         : m_id(id), m_hierarchyLevelId(hierarchyLevelId), m_index(index)
         {}
     bool IsValid() const {return 0 != m_id;}
@@ -230,7 +230,18 @@ public:
             return true;
         if (m_hierarchyLevelId > other.m_hierarchyLevelId)
             return false;
-        return (m_index < other.m_index);        
+        if (m_index.size() < other.m_index.size())
+            return true;
+        if (m_index.size() > other.m_index.size())
+            return false;
+        for (size_t i = 0; i < m_index.size(); ++i)
+            {
+            if (m_index[i] < other.m_index[i])
+                return true;
+            if (m_index[i] > other.m_index[i])
+                return false;
+            }
+        return false;
         }
     DataSourceInfo& operator=(DataSourceInfo const& other)
         {
@@ -243,7 +254,7 @@ public:
         {
         m_id = other.m_id;
         m_hierarchyLevelId = other.m_hierarchyLevelId;
-        m_index = other.m_index;
+        m_index = std::move(other.m_index);
         return *this;
         }
     bool operator==(DataSourceInfo const& other) const
@@ -256,7 +267,7 @@ public:
     uint64_t GetId() const {return m_id;}
     void SetId(uint64_t id) {m_id = id;}
     uint64_t GetHierarchyLevelId() const {return m_hierarchyLevelId;}
-    uint64_t GetIndex() const {return m_index;}
+    bvector<uint64_t> const& GetIndex() const {return m_index;}
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

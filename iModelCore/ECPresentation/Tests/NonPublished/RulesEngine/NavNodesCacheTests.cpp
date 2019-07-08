@@ -171,7 +171,7 @@ bpair<HierarchyLevelInfo, DataSourceInfo> NodesCacheTests::CacheDataSource(Utf8S
     m_cache->Cache(hlInfo);
     EXPECT_TRUE(hlInfo.IsValid());
 
-    DataSourceInfo dsInfo(hlInfo.GetId(), 0);
+    DataSourceInfo dsInfo(hlInfo.GetId(), { 0 });
     m_cache->Cache(dsInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
     EXPECT_TRUE(dsInfo.IsValid());
 
@@ -505,7 +505,7 @@ TEST_F(NodesCacheTests, UpdateDataSource_UpdatesFilter)
     m_cache->Cache(hlInfo);
     EXPECT_TRUE(hlInfo.IsValid());
 
-    DataSourceInfo dsInfo(hlInfo.GetId(), 0);
+    DataSourceInfo dsInfo(hlInfo.GetId(), { 0 });
     bmap<ECClassId, bool> usedClassIds;
     usedClassIds[ECClassId((uint64_t)1)] = false;
     m_cache->Cache(dsInfo, DataSourceFilter(), usedClassIds, bvector<UserSettingEntry>());
@@ -539,7 +539,7 @@ TEST_F(NodesCacheTests, UpdateDataSource_UpdatesRelatedClassIds)
     m_cache->Cache(hlInfo);
     EXPECT_TRUE(hlInfo.IsValid());
 
-    DataSourceInfo dsInfo(hlInfo.GetId(), 0);
+    DataSourceInfo dsInfo(hlInfo.GetId(), { 0 });
     m_cache->Cache(dsInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
     EXPECT_TRUE(dsInfo.IsValid());
     
@@ -570,7 +570,7 @@ TEST_F(NodesCacheTests, UpdateDataSource_UpdatesRelatedSettings)
     m_cache->Cache(hlInfo);
     EXPECT_TRUE(hlInfo.IsValid());
 
-    DataSourceInfo dsInfo(hlInfo.GetId(), 0);
+    DataSourceInfo dsInfo(hlInfo.GetId(), { 0 });
     m_cache->Cache(dsInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
     EXPECT_TRUE(dsInfo.IsValid());
         
@@ -757,14 +757,14 @@ TEST_F(NodesCacheTests, ReturnsNullsWhenEmpty)
     
     EXPECT_FALSE(m_cache->FindHierarchyLevel(m_connection->GetId().c_str(), "test ruleset id", "test locale", nullptr).IsValid());
     EXPECT_FALSE(m_cache->FindHierarchyLevel(1).IsValid());
-    EXPECT_FALSE(m_cache->FindDataSource(1, 0).IsValid());
+    EXPECT_FALSE(m_cache->FindDataSource(1, { 0 }).IsValid());
     EXPECT_FALSE(m_cache->FindDataSource(999).IsValid());
 
     IGNORE_BE_ASSERT();
 
     EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo(m_connection->GetId(), "test ruleset id", "test locale", 999)).IsNull());
     EXPECT_TRUE(m_cache->GetHierarchyLevel(HierarchyLevelInfo(1, m_connection->GetId(), "test ruleset id", "test locale", 0, 0)).IsNull());
-    EXPECT_TRUE(m_cache->GetDataSource(DataSourceInfo(1, 0)).IsNull());
+    EXPECT_TRUE(m_cache->GetDataSource(DataSourceInfo(1, { 0 })).IsNull());
     EXPECT_TRUE(m_cache->GetDataSource(999).IsNull());
     EXPECT_TRUE(m_cache->GetNode(999).IsNull());
     }
@@ -782,7 +782,7 @@ TEST_F(NodesCacheTests, ReturnsCachedRootDataSource)
     
     EXPECT_TRUE(m_cache->FindHierarchyLevel(m_connection->GetId().c_str(), info.first.GetRulesetId().c_str(), info.first.GetLocale().c_str(), nullptr).IsValid());
     EXPECT_TRUE(m_cache->FindHierarchyLevel(info.first.GetId()).IsValid());
-    EXPECT_TRUE(m_cache->FindDataSource(info.first.GetId(), 0).IsValid());
+    EXPECT_TRUE(m_cache->FindDataSource(info.first.GetId(), { 0 }).IsValid());
 
     EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo(m_connection->GetId(), info.first.GetRulesetId(), info.first.GetLocale(), 0)).IsValid());
     EXPECT_TRUE(m_cache->GetHierarchyLevel(info.first).IsValid());
