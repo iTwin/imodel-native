@@ -86,6 +86,7 @@ struct DwgSyncInfo
         BentleyApi::Utf8String  m_versionGuid;
         StableIdPolicy          m_idPolicy;
         double                  m_lastSaveTime;
+        BentleyApi::Utf8String  m_rootName;
         FileInfo() {m_lastSaveTime = 0.0; m_idPolicy=StableIdPolicy::ById;}
         };
 
@@ -129,6 +130,7 @@ struct DwgSyncInfo
             DWG_EXPORT Utf8String GetDwgName();
             DWG_EXPORT Utf8String GetVersionGuid();   // changes on each DWG save
             DWG_EXPORT bool GetCannotUseElementIds();
+            DWG_EXPORT Utf8String GetRootName();
             DWG_EXPORT uint64_t GetLastModifiedTime(); // (Unix time in seconds)
             DWG_EXPORT uint64_t GetFileSize();
             DWG_EXPORT double GetLastSaveTime(); // (Unix time in seconds)
