@@ -180,6 +180,8 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <IncludePath>$(IncludePath);$(SrcRoot)DgnPlatform\PublicApi\DgnPlatform\;$(SrcRoot)DgnPlatform\DgnCore\ECDb\</IncludePath>
+    <NMakeBuildCommandLine>bb -r DgnPlatform -f DgnPlatform -p DgnPlatform-Gtest rebuild -s DgnPlatform:UnitTests-NonPublished DgnPlatform:UnitTests-Published DgnPlatform:Gtest</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -r DgnPlatform -f DgnPlatform -p DgnPlatform-Gtest rebuild DgnPlatform:DgnPlatform-Gtest DgnPlatform:DgnPlatform-Tests</NMakeReBuildCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>

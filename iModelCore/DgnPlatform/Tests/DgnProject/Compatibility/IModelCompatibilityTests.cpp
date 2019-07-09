@@ -573,11 +573,11 @@ TEST_F(IModelCompatibilityTestFixture, SchemaManager_EC31KindOfQuantities)
 
     auto assertReferencedUnitsAndFormatsSchema = [] (TestIModel const& testDb, ECSchemaCR koqSchema)
         {
-        auto it = koqSchema.GetReferencedSchemas().Find(SchemaKey("Units", 1, 0), ECN::SchemaMatchType::Identical);
+        auto it = koqSchema.GetReferencedSchemas().Find(SchemaKey("Units", 1, 0), ECN::SchemaMatchType::LatestReadCompatible);
         ASSERT_FALSE(it == koqSchema.GetReferencedSchemas().end()) << testDb.GetDescription();
         ASSERT_EQ(testDb.SupportsFeature(ECDbFeature::UnitsAndFormats), it->second->HasId()) << testDb.GetDescription();
 
-        it = koqSchema.GetReferencedSchemas().Find(SchemaKey("Formats", 1, 0), ECN::SchemaMatchType::Identical);
+        it = koqSchema.GetReferencedSchemas().Find(SchemaKey("Formats", 1, 0), ECN::SchemaMatchType::LatestReadCompatible);
         ASSERT_FALSE(it == koqSchema.GetReferencedSchemas().end()) << testDb.GetDescription();
         ASSERT_EQ(testDb.SupportsFeature(ECDbFeature::UnitsAndFormats), it->second->HasId()) << testDb.GetDescription();
         };
