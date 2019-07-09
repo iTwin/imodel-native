@@ -23,6 +23,7 @@
 #include "../iModelBridgeLdClient.h"
 #include "iModelCrashProcessor.h"
 #include "iModelBridgeErrorHandling.h"
+#include <regex>
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -993,6 +994,62 @@ static BeFileName findBridgeAssetsDir(BeFileNameCR bridgeLibDir)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static void setEmbeddedFileIdRecipe(iModelBridge::Params& params)
+    {
+    auto tempVarCheck = getenv("iModelBridge_MatchOnEmbeddedFileBasename");     // TODO: Replace this with a settings service parameter check
+    if ((nullptr == tempVarCheck) || (*tempVarCheck == '0'))
+        return;
+
+    Utf8String regexStr(tempVarCheck);
+
+    if (regexStr.StartsWith("\"") && regexStr.EndsWith("\""))
+        {
+        regexStr.DropQuotes();
+        }
+
+    bool isRegex = false;
+    if (!regexStr.Equals("1"))
+        {
+        // assume user has supplied a suffix regex to be used in a recipe.
+        try {
+            // but first make sure it's valid.
+            std::regex rgx(regexStr.c_str());
+            // If no exception, then go ahead with it.
+            isRegex = true;
+            }
+        catch (...)
+            {
+            LOG.errorv(L"%s is an invalid regular expression. This was found as the value of the iModelBridge_MatchOnEmbeddedFileBasename environment variable.", tempVarCheck);
+            isRegex = false; // default to old behavior - maybe the user set envvar to Yes or True or something
+            }
+        }
+
+    if (!isRegex)
+        {
+        // Set up the recipe that we had been using
+        iModelBridge::Params::FileIdRecipe recipe;
+        recipe.m_ignorePackage = true;
+        recipe.m_ignoreCase = false;
+        recipe.m_ignoreExtension = false;
+        recipe.m_ignorePwDocId = false;
+        recipe.m_suffixRegex = "";
+        params.SetEmbeddedFileIdRecipe(recipe);
+        return;
+        }
+    
+    // Set up a recipe with the new features, including a suffix recognizer
+    iModelBridge::Params::FileIdRecipe recipe;
+    recipe.m_ignorePackage = true;
+    recipe.m_ignoreCase = true;
+    recipe.m_ignoreExtension = true;
+    recipe.m_ignorePwDocId = true;
+    recipe.m_suffixRegex = regexStr.c_str();
+    params.SetEmbeddedFileIdRecipe(recipe);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params, FwkRepoAdmin* ra)
@@ -1024,9 +1081,17 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params, FwkRepoAdmin
 	if (!m_jobEnvArgs.m_jobSubjectName.empty())
 		params.SetBridgeJobName(m_jobEnvArgs.m_jobSubjectName);
     params.SetMergeDefinitions(m_jobEnvArgs.m_mergeDefinitions);
-    auto tempVarCheck = getenv("iModelBridge_MatchOnEmbeddedFileBasename");     // TODO: Replace this with a settings service parameter check
-    if (tempVarCheck && *tempVarCheck == '1')
-        params.SetMatchOnEmbeddedFileBasename(true);
+
+    setEmbeddedFileIdRecipe(params);
+
+    if (params.GetEmbeddedFileIdRecipe() != nullptr)
+        {
+        auto recipe = params.GetEmbeddedFileIdRecipe();
+        GetLogger().infov("bridge:%s iModel:%s - EmbeddedFileIdRecipe=C:%d X:%d P:%d I:%d R:%s", 
+            Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str(),
+            recipe->m_ignoreCase, recipe->m_ignoreExtension, recipe->m_ignorePackage, recipe->m_ignorePwDocId, recipe->m_suffixRegex.c_str());
+        }
+
     if (m_useIModelHub)
         {
         params.SetUrlEnvironment(m_iModelHubArgs->m_environment);
@@ -1409,7 +1474,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-int iModelBridgeFwk::PullMergeAndPushChange(Utf8StringCR description, bool releaseLocks)
+int iModelBridgeFwk::PullMergeAndPushChange(Utf8StringCR description, bool releaseLocks, bool reopenDb)
     {
     GetLogger().infov("bridge:%s iModel:%s - PullMergeAndPushChange %s.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str(), description.c_str());
 
@@ -1424,6 +1489,8 @@ int iModelBridgeFwk::PullMergeAndPushChange(Utf8StringCR description, bool relea
         Briefcase_ReleaseAllPublicLocks();
 
     // >------> pullmergepush *may* have pulled schema changes -- close and re-open the briefcase in order to merge them in <-----------<
+    if (!reopenDb)
+        return SUCCESS;
 
     DbResult dbres;
     bool madeSchemaChanges = false;
@@ -1520,7 +1587,7 @@ BentleyStatus   iModelBridgeFwk::TryOpenBimWithOptions(DgnDb::OpenParams& oparam
     //                                       *** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
     if (madeSchemaChanges || iModelBridge::AnyChangesToPush(*m_briefcaseDgnDb))
         {
-        if (0 != PullMergeAndPushChange("domain schema upgrade", true))  // pullmergepush + re-open
+        if (0 != PullMergeAndPushChange("domain schema upgrade", true, oparams.GetProfileUpgradeOptions() != EC::ECDb::ProfileUpgradeOptions::Upgrade))  // pullmergepush + re-open
             return BSIERROR;
         }
 
@@ -1587,7 +1654,7 @@ BentleyStatus   iModelBridgeFwk::GetSchemaLock()
         if (retryAttempt > 0)
             {
             GetLogger().infov("GetSchemaLock failed. Retrying.");
-            if (0 != PullMergeAndPushChange("GetSchemaLock", false))  // pullmergepush + re-open
+            if (0 != PullMergeAndPushChange("GetSchemaLock", false, true))  // pullmergepush + re-open
                 return BSIERROR;
             }
         status = m_briefcaseDgnDb->BriefcaseManager().LockSchemas().Result();
@@ -1642,7 +1709,7 @@ int iModelBridgeFwk::MakeSchemaChanges(iModelBridgeCallOpenCloseFunctions& callC
             GetLogger().infov("_MakeSchemaChanges failed. Retrying.");
             callCloseOnReturn.CallCloseFunctions(iModelBridge::ClosePurpose::SchemaUpgrade); // re-initialize the bridge, to clear out the side-effects of the previous failed attempt
             m_briefcaseDgnDb->AbandonChanges();
-            if (BSISUCCESS != PullMergeAndPushChange("dynamic schemas", false))    // make sure that we are at the tip and that we have absorbed any schema changes from the server
+            if (BSISUCCESS != PullMergeAndPushChange("dynamic schemas", false, true))    // make sure that we are at the tip and that we have absorbed any schema changes from the server
                 return RETURN_STATUS_SERVER_ERROR;
             callCloseOnReturn.CallOpenFunctions(*m_briefcaseDgnDb);
             bridgeSchemaChangeStatus = m_bridge->_MakeSchemaChanges();
@@ -1662,7 +1729,7 @@ int iModelBridgeFwk::MakeSchemaChanges(iModelBridgeCallOpenCloseFunctions& callC
         BeAssert(iModelBridge::HoldsSchemaLock(*m_briefcaseDgnDb));
 
         callCloseOnReturn.CallCloseFunctions(iModelBridge::ClosePurpose::SchemaUpgrade);
-        if (0 != PullMergeAndPushChange("dynamic schemas", false))  // pullmergepush + re-open
+        if (0 != PullMergeAndPushChange("dynamic schemas", false, true))  // pullmergepush + re-open
             return BSIERROR;
         callCloseOnReturn.CallOpenFunctions(*m_briefcaseDgnDb);
 

@@ -362,6 +362,10 @@ DgnDbStatus DwgImporter::UpdateResults (ElementImportResults& results, DgnElemen
     // pointer, we have to make a copy.
     results.m_importedElement = ret->CopyForEdit ();
 
+    // tell the change detector that we have seen this element
+    auto& changeDetector = this->_GetChangeDetector ();
+    changeDetector._OnElementSeen (*this, results.m_importedElement->GetElementId());
+
     if (results.m_childElements.empty())
         return  status;
 
@@ -542,10 +546,16 @@ void UpdaterChangeDetector::_DetectDeletedModels(DwgImporter& importer, DwgSyncI
             if (m_dwgModelsSkipped.find(modelRowId) != m_dwgModelsSkipped.end())
                 continue;   // we skipped this DWG model, so we don't expect to see it in m_dwgModelsSeen
 
+            // only delete models owned by this import job
+            auto model = importer.GetDgnDb().Models().GetModel(wasModel.GetModelId());
+            auto modelElementId = model->GetModeledElementId();
+            auto jobSubjectId = importer.GetImportJob().GetSubject().GetElementId();
+            if (!DwgHelper::IsElementOwnedByJobSubject(model->GetDgnDb(), modelElementId, jobSubjectId))
+                continue;
+
             // not found, delete this model
             Utf8CP  name = wasModel.GetDwgName ();
             LOG.tracev("Delete model %lld [%s]", wasModel.GetModelId().GetValue(), nullptr == name ? "no name" : name);
-            auto model = importer.GetDgnDb().Models().GetModel(wasModel.GetModelId());
             model->Delete();
             importer.GetSyncInfo().DeleteModel (wasModel.GetDwgModelSyncInfoId());
 
@@ -716,7 +726,8 @@ void UpdaterChangeDetector::_OnViewSeen (DwgImporter& importer, DgnViewId viewId
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UpdaterChangeDetector::_DetectDeletedViews (DwgImporter& importer)
     {
-    auto&   elements = importer.GetDgnDb().Elements ();
+    auto&   db = importer.GetDgnDb();
+    auto&   elements = db.Elements ();
     auto&   syncInfo = importer.GetSyncInfo ();
     auto    jobModelId = importer.GetOrCreateJobDefinitionModel()->GetModelId ();
 
@@ -726,7 +737,7 @@ void UpdaterChangeDetector::_DetectDeletedViews (DwgImporter& importer)
         if (m_viewsSeen.find(viewId) == m_viewsSeen.end())
             {
             // don't delete views not created by us:
-            auto view = entry.GetSpatialViewDefinition ();
+            auto view = ViewDefinition::Get (db, viewId);
             if (view.IsValid() && view->GetModel()->GetModelId() != jobModelId)
                 continue;
 
@@ -761,12 +772,16 @@ void UpdaterChangeDetector::_DetectDetachedXrefs (DwgImporter& importer)
     auto&   syncInfo = importer.GetSyncInfo ();
     auto&   loadedXrefs = importer.GetLoadedXrefs ();
     auto    rootfileId = DwgSyncInfo::DwgFileId::GetFrom (importer.GetDwgDb());
+    auto    currentRootName = syncInfo.GetUniqueName (importer.GetDwgDb().GetFileName().c_str());
 
     DwgSyncInfo::FileIterator files(db, nullptr);
     for (auto file : files)
         {
         // skip the root file
         if (file.GetSyncId() == rootfileId)
+            continue;
+        // skip the file if not under current root xRef hierachy
+        if (currentRootName.CompareToI(file.GetRootName()) != 0)
             continue;
         
         bool    detached = true;

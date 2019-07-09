@@ -1888,3 +1888,29 @@ Utf8String DwgHelper::CompareSubcatAppearance (DgnSubCategory::Appearance const&
     return  diff;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          04/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DwgHelper::IsElementOwnedByJobSubject(DgnDbCR db, DgnElementId checkId, DgnElementId jobSubjectId)
+    {
+    if (checkId != db.Elements().GetRootSubjectId())
+        {
+        auto checkElement = db.Elements().GetElement(checkId);
+        if (checkElement.IsValid())
+            {
+            auto ownerId = checkElement->GetParentId();
+            if (ownerId.IsValid())
+                {
+                if (ownerId == jobSubjectId)
+                    return true;
+                }
+            else
+                {
+                ownerId = checkElement->GetModel()->GetModeledElementId();
+                }
+            return IsElementOwnedByJobSubject(db, ownerId, jobSubjectId);
+            }
+        }
+    return  false;
+    }
+

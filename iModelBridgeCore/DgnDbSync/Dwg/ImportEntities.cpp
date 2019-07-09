@@ -212,6 +212,7 @@ DwgDbEntityCP   GetSourceEntity () const { return m_sourceEntity; }
 DwgDbDatabaseP  GetDatabase () { return m_dwgdb.get(); }
 DwgImporter&    GetDwgImporter () { return  m_dwgImporter; }
 bool            IsDisplayed () { return m_isDisplayed; }
+void            SetLinetypeContinuous () { m_linetypeId = m_dwgdb->GetLinetypeContinuousId(); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
@@ -907,6 +908,7 @@ private:
     bvector<BlockInfo>                  m_blockStack;
     bvector<int64_t>                    m_parasolidBodies;
     bool                                m_isTargetModel2d;
+    size_t                              m_geometryCount;
     
 public:
 // the constructor
@@ -923,6 +925,7 @@ GeometryFactory (DwgImporter::ElementCreateParams& createParams, DrawParameters&
     m_spatialFilter = nullptr;
     m_parasolidBodies.clear ();
     m_isTargetModel2d = !createParams.GetModel().Is3d ();
+    m_geometryCount = 0;
 
     // start block stack by input entity's block
     auto dwg = nullptr == ent ? m_drawParams.GetDatabase() : ent->GetDatabase().get();
@@ -1212,6 +1215,7 @@ virtual void    _Pline (DwgDbPolylineCR pline, size_t fromIndex = 0, size_t numS
             {
             curveVector = shape;
             m_drawParams._SetFillType (DwgGiFillType::Always);
+            m_drawParams.SetLinetypeContinuous ();
             }
 
         if (m_isTargetModel2d)
@@ -1223,9 +1227,14 @@ virtual void    _Pline (DwgDbPolylineCR pline, size_t fromIndex = 0, size_t numS
         // extrude the polyline if it has a thickness
         GeometricPrimitivePtr   extruded = plineFactory.ApplyThicknessTo (curveVector);
         if (extruded.IsValid())
+            {
             this->AppendGeometry (*extruded.get());
+            m_drawParams.SetLinetypeContinuous ();
+            }
         else
+            {
             this->AppendGeometry (*curveVector.get());
+            }
         }
     }
 
@@ -2081,6 +2090,7 @@ void            AppendGeometry (GeometricPrimitiveR geometry)
     geomEntry.SetBlockName (block.GetBlockName());
     geomEntry.SetBlockId (blockId);
     geomEntry.SetDwgFileId (block.GetFileId());
+    geomEntry.SetPartIndex (m_geometryCount++);
 
     // cache the new entry for the block
     auto found = m_outputGeometryMap.find (blockId);
@@ -2401,12 +2411,13 @@ bool    ElementFactory::Validate2dTransform (TransformR transform) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String  ElementFactory::BuildPartCodeValue (DwgImporter::GeometryEntry const& geomEntry, size_t partNo)
+Utf8String  ElementFactory::BuildPartCodeValue (DwgImporter::GeometryEntry const& geomEntry)
     {
     // set a persistent code value, "blockName[fileId:blockId]-partIndex"
     auto name = geomEntry.GetBlockName().c_str ();
     auto blockid = geomEntry.GetBlockId().ToUInt64 ();
     auto fileid = geomEntry.GetDwgFileId ();
+    auto partNo = geomEntry.GetPartIndex ();
 
     // a different code value for a mirrored block
     if (m_basePartScale < 0.0)
@@ -2492,11 +2503,11 @@ BentleyStatus ElementFactory::GetGeometryPart (DRange3dR range, double& partScal
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   ElementFactory::GetOrCreateGeometryPart (DwgImporter::SharedPartEntry& part, DwgImporter::GeometryEntry const& geomEntry, size_t partNo)
+BentleyStatus   ElementFactory::GetOrCreateGeometryPart (DwgImporter::SharedPartEntry& part, DwgImporter::GeometryEntry const& geomEntry)
     {
     // this method creates a new shared part geometry
     auto& db = m_importer.GetDgnDb ();
-    auto partTag = this->BuildPartCodeValue (geomEntry, partNo);
+    auto partTag = this->BuildPartCodeValue (geomEntry);
     auto geomToLocal = geomEntry.GetTransform ();
     double partScale = 0.0;
     DRange3d range;
@@ -2541,7 +2552,6 @@ BentleyStatus   ElementFactory::CreateSharedParts ()
     if (nullptr == sourceInsert)
         return  status;
 
-    size_t  partIndex = 0;
     DwgImporter::T_SharedPartList parts;
 
     // create shared parts from geometry collection
@@ -2552,7 +2562,7 @@ BentleyStatus   ElementFactory::CreateSharedParts ()
             {
             // create a new geometry builder:
             DwgImporter::SharedPartEntry  part;
-            status = this->GetOrCreateGeometryPart (part, geomEntry, partIndex++);
+            status = this->GetOrCreateGeometryPart (part, geomEntry);
             if (status == BSISUCCESS)
                 parts.push_back (part);
 
@@ -3225,6 +3235,11 @@ BentleyStatus   DwgImporter::ImportOrUpdateEntity (ElementImportInputs& inputs)
             // no change - just update input entity for output results
             elementResults.SetExistingElement (detectionResults.GetObjectMapping());
             changeDetector._OnElementSeen (*this, detectionResults.GetExistingElementId());
+            // add children into the element seen list
+            DgnElementIdSet allFromSameSource;
+            if (m_syncInfo.FindElements(allFromSameSource, object->GetObjectId()))
+            for (auto elementId : allFromSameSource)
+                changeDetector._OnElementSeen (*this, elementId);
             break;
             }
 

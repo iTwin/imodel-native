@@ -824,7 +824,7 @@ struct Converter
         L10N_STRING(FailedToImportLinkError)      // =="Failed to import link on element %llu in file '%s' (new ElementId: %llu)"==
         L10N_STRING(InvalidSheetAttachment)      // =="Sheet [%s] - Unsupported sheet attachment: [%s]"==
         L10N_STRING(UnrecognizedDetailingSymbol) // =="[%s] is an unrecognized kind of detailing symbol. Capturing graphics only."==
-        L10N_STRING(UnsupportedPrimaryInstance)   // =="[%s] has an unsupported primary ECInstance. Capturing graphics only."==
+        L10N_STRING(UnsupportedPrimaryInstance)   // =="[%s] has an unsupported primary ECInstance. Creating a secondary instance instead."==
         L10N_STRING(SchemaLockFailed)           // =="Failed to import schemas due to a problem acquiring lock on the schemas"==
         L10N_STRING(CouldNotAcquireLocksOrCodes) // =="Failed to import schemas due to a problem acquiring lock on codes or schemas"==
         L10N_STRING(ImportTargetECSchemas)      // =="Failed to import V8 ECSchemas"==
@@ -833,6 +833,7 @@ struct Converter
         L10N_STRING(FailedToConvertThumbnails)  // =="Failed to convert thumbnails"==
         L10N_STRING(ProjectExtentsAdjusted)      // =="Project Extents have been adjusted to exclude outlying elements"==
         L10N_STRING(FailedToCreatePresentationRules)    // =="Failed to create presentation rules"==
+        L10N_STRING(InconsistentTransformsForEmbeddedReference)    // =="Inconsistent transform used for embedded reference %s. It was first seen with a different transform in %s"==
             
         IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
@@ -1114,7 +1115,7 @@ public:
     static bool IsEmbeddedFileName(Utf8StringCR fullName) {return IsEmbeddedFileName0(WString(fullName.c_str(), true).c_str());}
     static bool IsEmbeddedFileName(WStringCR fullName) {return IsEmbeddedFileName0(fullName.c_str());}
 
-    DGNDBSYNC_EXPORT Utf8String ComputeEffectiveEmbeddedFileName(Utf8StringCR fullName);
+    DGNDBSYNC_EXPORT Utf8String ComputeEffectiveEmbeddedFileName(Utf8StringCR fullName, iModelBridge::Params::FileIdRecipe const* recipe);
 
     //! Open the specified V8File
     DGNDBSYNC_EXPORT static DgnFilePtr OpenDgnV8File(DgnV8Api::DgnFileStatus&, BeFileNameCR, Utf8CP password);
@@ -1128,9 +1129,6 @@ public:
     DGNDBSYNC_EXPORT static void InitializeDllPath(BentleyApi::BeFileName const& thisLibraryPath);
     DGNDBSYNC_EXPORT static void InitializeDgnv8Platform(BentleyApi::BeFileName const& thisLibraryPath);
     DGNDBSYNC_EXPORT static void GetAffinity(WCharP buffer, const size_t bufferSize, iModelBridgeAffinityLevel& affinityLevel,WCharCP affinityLibraryPathStr, WCharCP sourceFileNameStr);
-    
-    //! Compute the code value and URI that should be used for a RepositoryLink to the specified file
-    void ComputeRepositoryLinkCodeValueAndUri(Utf8StringR Code, Utf8StringR uri, DgnV8FileR file);
     
     DGNDBSYNC_EXPORT static Utf8String GetPwUrnFromFileProvenance(DgnV8FileCR);
 
@@ -2577,6 +2575,7 @@ protected:
     DGNDBSYNC_EXPORT void _AddResolvedModelMapping(ResolvedModelMapping const&) override;
     DGNDBSYNC_EXPORT ResolvedModelMapping _GetResolvedModelMapping(DgnV8ModelRefCR, TransformCR) override;
     DGNDBSYNC_EXPORT ResolvedModelMapping _FindResolvedModelMapping(DgnV8ModelR v8Model, TransformCR) override;
+    bool DetectInconsistentEmbeddedReference(DgnV8ModelR v8Model, TransformCR trans);
     DGNDBSYNC_EXPORT ResolvedModelMapping _FindFirstResolvedModelMapping(DgnV8ModelR v8Model) override;
     DGNDBSYNC_EXPORT ResolvedModelMapping _FindResolvedModelMappingByModelId(DgnModelId) override;
     DGNDBSYNC_EXPORT bvector<ResolvedModelMapping> FindResolvedModelMappings(DgnV8ModelR v8Model);
@@ -2973,9 +2972,19 @@ struct RealityMeshAttachmentConversion
                          
 };
 
+//=======================================================================================
+// @bsiclass                                                    Daryl Holmwood 06/19
+//=======================================================================================
+struct CifTerrainElementHandler : DgnV8Api::ExtendedElementHandler
+    {    
+    enum { ELEMENTHANDLER_SUBTYPE_DTMENTITY = 12,
+        XATTRIBUTEID_CifTerrainModel = 22739};
+    DEFINE_T_SUPER(DgnV8Api::ExtendedElementHandler)
+        DGNV8_ELEMENTHANDLER_DECLARE_MEMBERS(CifTerrainElementHandler, );
+    };
 
 //=======================================================================================
-// @bsiclass                                                    Mathieu.St-Pierre 07/17
+// @bsiclass                                                    Daryl Holmwood 07/17
 //=======================================================================================
 struct ConvertScalableMeshAttachment : ConvertToDgnDbElementExtension
 {
@@ -2984,14 +2993,13 @@ struct ConvertScalableMeshAttachment : ConvertToDgnDbElementExtension
 };
 
 //=======================================================================================
-// @bsiclass                                                    Mathieu.St-Pierre 07/17
+// @bsiclass                                                    Daryl Holmwood 07/17
 //=======================================================================================
 struct ConvertDTMElement : ConvertScalableMeshAttachment
     {
     static void Register();
-#ifdef DTMUSING3MX
     Result DoConvert(DgnV8EhCR v8el, WCharCP url, Converter& converter, ResolvedModelMapping const& v8mm);
-#endif
+
     Result _PreConvertElement(DgnV8EhCR, Converter&, ResolvedModelMapping const&) override;
     };
 //=======================================================================================

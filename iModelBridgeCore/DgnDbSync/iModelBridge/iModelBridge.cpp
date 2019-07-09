@@ -521,7 +521,7 @@ BentleyStatus iModelBridge::Params::ParseJsonArgs(JsonValueCR obj, bool isForInp
         {
         if (propName.EqualsI(json_transform()))
             {
-            if (obj.isMember(json_gcs()))
+            if (obj.isMember(json_gcs())|| obj.isMember(json_ecef()))
                 {
                 BeAssert(false);
                 fprintf(stderr, "Specify transform or GCS, but not both\n");
@@ -533,7 +533,7 @@ BentleyStatus iModelBridge::Params::ParseJsonArgs(JsonValueCR obj, bool isForInp
             }
         else if (propName.EqualsI(json_gcs()))
             {
-            if (obj.isMember(json_transform()))
+            if (obj.isMember(json_transform()) || obj.isMember(json_ecef()))
                 {
                 BeAssert(false);
                 fprintf(stderr, "Specify transform or GCS, but not both\n");
@@ -551,6 +551,17 @@ BentleyStatus iModelBridge::Params::ParseJsonArgs(JsonValueCR obj, bool isForInp
 
             if (BSISUCCESS != status)
                 return status;
+            }
+        else if (propName.EqualsI(json_ecef()))
+            {
+            if (obj.isMember(json_transform()) || obj.isMember(json_gcs()))
+                {
+                BeAssert(false);
+                fprintf(stderr, "Specify transform or GCS, but not both\n");
+                return BSIERROR;
+                }
+            m_ecEFLocation.FromJson(obj[json_ecef()]);
+            return m_ecEFLocation.m_isValid ? SUCCESS : ERROR;
             }
         else
             {
@@ -797,7 +808,7 @@ SHA1 iModelBridge::ComputeRepositoryLinkHash(RepositoryLinkCR el)
 * @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void iModelBridge::GetRepositoryLinkInfo(DgnCode& code, iModelBridgeDocumentProperties& docProps, DgnDbR db, Params const& params, 
-                                                BeFileNameCR localFileName, Utf8StringCR defaultCode, Utf8StringCR defaultURN, InformationModelR lmodel)
+                                                BeFileNameCR localFileName, Utf8StringCR defaultCode, Utf8StringCR defaultURN, InformationModelR lmodel, bool preferDefaultCode)
     {
     if (nullptr != params.GetDocumentPropertiesAccessor())
         params.GetDocumentPropertiesAccessor()->_GetDocumentProperties(docProps, localFileName); 
@@ -816,11 +827,18 @@ void iModelBridge::GetRepositoryLinkInfo(DgnCode& code, iModelBridgeDocumentProp
             docProps.m_docGuid = guid.ToString();
         }
 
-    // Code. Prefer the document GUID (that's how this was originally coded, and now clients, such as iModelBridgeSyncInfoFile, depend on this behavior).
-    Utf8String codeStr(docProps.m_docGuid);
+    // Code. 
+    
+    // By default, prefer the document GUID (that's how this was originally coded, and now clients, such as iModelBridgeSyncInfoFile, depend on this behavior).
+    // As an option, prefer the code supplied by the caller (that's how DgnV8Converter wants it to work, because it has to deal with i.dgns).
+    Utf8String firstChoice(docProps.m_docGuid), secondChoice(defaultCode);
+    if (preferDefaultCode)
+        std::swap(firstChoice, secondChoice);
+
+    Utf8String codeStr(firstChoice);
     if (codeStr.empty())
         {
-        if ((codeStr = defaultCode).empty())
+        if ((codeStr = secondChoice).empty())
             {
             if ((codeStr = docProps.m_desktopURN).empty())
                 codeStr = Utf8String(localFileName);
@@ -836,7 +854,7 @@ void iModelBridge::GetRepositoryLinkInfo(DgnCode& code, iModelBridgeDocumentProp
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryLinkPtr iModelBridge::MakeRepositoryLink(DgnDbR db, Params const& params, BeFileNameCR localFileName, Utf8StringCR defaultCode, Utf8StringCR defaultURN)
+RepositoryLinkPtr iModelBridge::MakeRepositoryLink(DgnDbR db, Params const& params, BeFileNameCR localFileName, Utf8StringCR defaultCode, Utf8StringCR defaultURN, bool preferDefaultCode)
     {
     auto lmodel = db.GetRepositoryModel();
     if (!lmodel.IsValid())
@@ -844,7 +862,7 @@ RepositoryLinkPtr iModelBridge::MakeRepositoryLink(DgnDbR db, Params const& para
 
     DgnCode code;
     iModelBridgeDocumentProperties docProps;
-    GetRepositoryLinkInfo(code, docProps, db, params, localFileName, defaultCode, defaultURN, *lmodel);
+    GetRepositoryLinkInfo(code, docProps, db, params, localFileName, defaultCode, defaultURN, *lmodel, preferDefaultCode);
 
     RepositoryLinkCPtr rlinkPersist = db.Elements().Get<RepositoryLink>(db.Elements().QueryElementIdByCode(code));
     
