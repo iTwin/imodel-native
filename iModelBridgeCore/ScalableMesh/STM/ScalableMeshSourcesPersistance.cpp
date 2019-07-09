@@ -190,6 +190,15 @@ template <> void SaveSourceMetadata<IDTMDgnReferenceLevelSource>(const IDTMDgnRe
     sourceData.SetLevelName(source.GetLevelName());
     }
 
+#ifdef VANCOUVER_API
+template <> void SaveSourceMetadata<IDTMDgnTerrainModelSource>(const IDTMDgnTerrainModelSource& source, SourceDataSQLite& sourceData)
+    {
+    sourceData.SetDTMSourceID(DTMSourceId::DTM_SOURCE_ID_DGN_TERRAIN_MODEL_V0);
+    sourceData.SetTerrainModelID(source.GetTerrainModelID());
+    sourceData.SetTerrainModelName(source.GetTerrainModelName());
+    }
+#endif
+
 /*---------------------------------------------------------------------------------**//**
 * @description 
 * @bsimethod                                                  Raymond.Gauthier   03/2011
@@ -223,9 +232,11 @@ bool SourcesSaver::Save(const IDTMSource& source,
 
     SaveSourceMetadata(source, m_sourceData);
 
+#ifdef VANCOUVER_API
     const IDTMDgnLevelSource* dgnLevelSource = dynamic_cast<const IDTMDgnLevelSource*>(&source);
     if (nullptr != dgnLevelSource)
         SaveSourceMetadata(*dgnLevelSource, m_sourceData);
+#endif
 
     const IDTMDgnModelSource* dgnModelSource = dynamic_cast<const IDTMDgnModelSource*>(&source);
     if (nullptr != dgnModelSource)
@@ -239,6 +250,11 @@ bool SourcesSaver::Save(const IDTMSource& source,
     if (nullptr != dgnRefLSource)
         SaveSourceMetadata(*dgnRefLSource, m_sourceData);
 
+#ifdef VANCOUVER_API
+    const IDTMDgnTerrainModelSource* dgnTerrainModelSource = dynamic_cast<const IDTMDgnTerrainModelSource*>(&source);
+    if (nullptr != dgnTerrainModelSource)
+        SaveSourceMetadata(*dgnTerrainModelSource, m_sourceData);
+#endif
 
     // Serializing content config
     {
@@ -672,7 +688,7 @@ IDTMSourcePtr SourcesLoader::CreateSource(SourceDataSQLite& sourceData)
 }
 
 
-IDTMSourcePtr SourcesLoader::CreateSource (IScalableMeshSourceImporterStoragePtr&       sourceImporterStoragePtr, 
+IDTMSourcePtr SourcesLoader::CreateSource (IScalableMeshSourceImporterStoragePtr&       sourceImporterStoragePtr,
                                            IScalableMeshSourceImporterStorage::GroupId& groupId)
     {
 

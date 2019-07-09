@@ -9,7 +9,7 @@ folly::Future<std::shared_ptr<Policy>> PolicyProviderMock::GetPolicy()
     return folly::makeFuture(m_mockedGetPolicy);
     }
 
-folly::Future<std::shared_ptr<Policy>> PolicyProviderMock::GetPolicyWithKey(Utf8StringCR accessKey)
+folly::Future<std::shared_ptr<Policy>> PolicyProviderMock::GetPolicyWithKey(Utf8StringCR accessKey, Utf8StringCR ultimateId)
     {
     m_getPolicyWithKeyCalls++;
     return folly::makeFuture(m_mockedGetPolicyWithKey);

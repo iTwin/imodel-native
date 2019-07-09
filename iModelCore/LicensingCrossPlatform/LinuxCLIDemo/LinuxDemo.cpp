@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <unistd.h>
 
 #include <Bentley/Desktop/FileSystem.h>
 #include <BeHttp/HttpClient.h>
@@ -47,8 +48,10 @@ const string logArgList = "\n\
     - log error\n\
 \n";
 
-int main()
+int main(int argc, char* argv[])
     {
+    m_fullPath = argv[1];
+
     m_client = nullptr;
     m_accessKeyClient = nullptr;
     m_saasClient = nullptr;
@@ -203,7 +206,10 @@ void Initialize()
     NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::CONSOLE_LOGGING_PROVIDER);
     NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_LICENSING, BentleyApi::NativeLogging::LOG_ERROR);
 
-    BeFileName assetsDir(BeFileName::FileNameParts::Directory, L"./assets/");
+    // BeFileName assetsDir(get_current_dir_name());
+    // assetsDir.AppendToPath(L"LicensingDemoTemp/src/assets");
+    BeFileName assetsDir(m_fullPath.c_str());
+    assetsDir.AppendToPath(L"assets");
     Http::HttpClient::Initialize(assetsDir);
 
     BeFileName tempDir;

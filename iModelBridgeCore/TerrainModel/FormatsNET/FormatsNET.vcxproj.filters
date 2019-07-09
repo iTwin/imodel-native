@@ -30,13 +30,13 @@
     <ClCompile Include="Lidar.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="TerrainExporter.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ImagePP.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Inroads.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TwelvedXML.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -59,13 +59,13 @@
     <ClInclude Include="Lidar.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="TerrainExporter.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ImagePP.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Inroads.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TwelvedXML.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

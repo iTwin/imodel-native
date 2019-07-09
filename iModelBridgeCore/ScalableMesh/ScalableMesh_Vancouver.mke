@@ -347,6 +347,8 @@ $(o)ScalableMeshSaveAs$(oext) : $(stmDir)ScalableMeshSaveAs.cpp ${MultiCompileDe
 
 $(o)ScalableMeshContourExtractor$(oext) : $(stmDir)ScalableMeshContourExtractor.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
+$(o)ScalableMeshModuleInfo$(oext) : $(stmDir)ScalableMeshModuleInfo.cpp $(stmDir)ScalableMeshModuleInfo.h ${MultiCompileDepends}
+
 #-----------------------------------------------------------------------
 #   Build Tile Publisher
 #-----------------------------------------------------------------------

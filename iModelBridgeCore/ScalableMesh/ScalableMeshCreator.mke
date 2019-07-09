@@ -331,6 +331,8 @@ $(o)ScalableMeshFrom3MX$(oext) : $(stmDir)ScalableMeshFrom3MX.cpp $(SCMPublicAPI
 
 #$(o)ScalableMeshClippingOptions$(oext) : $(stmDir)ScalableMeshClippingOptions.cpp $(stmDir)ScalableMeshClippingOptions.h ${MultiCompileDepends}
 
+$(o)ScalableMeshModuleInfo$(oext) : $(stmDir)ScalableMeshModuleInfo.cpp $(stmDir)ScalableMeshModuleInfo.h ${MultiCompileDepends}
+
 #-----------------------------------------------------------------------
 #   Build Tile Publisher
 #-----------------------------------------------------------------------
@@ -466,6 +468,7 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)$(BaseGeocoordLib) \
     ws2_32.lib \
     Urlmon.lib \
+    Version.lib \
     $(ContextSubpartsLibs)$(TerrainModelCoreLib) \
     $(ContextSubpartsLibs)$(TerrainModelFormatsLib) \
     $(ContextSubpartsLibs)BeCurl.lib \

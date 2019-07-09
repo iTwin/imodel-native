@@ -50,11 +50,11 @@ folly::Future<std::shared_ptr<Policy>> PolicyProvider::GetPolicy()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<std::shared_ptr<Policy>> PolicyProvider::GetPolicyWithKey(Utf8StringCR accessKey)
+folly::Future<std::shared_ptr<Policy>> PolicyProvider::GetPolicyWithKey(Utf8StringCR accessKey, Utf8StringCR ultimateId)
     {
     LOG.debug("ClientImpl::GetPolicyWithKey");
 
-    return folly::collectAll(GetCertificate(), PerformGetPolicyWithKeyRequest(accessKey)).then(
+    return folly::collectAll(GetCertificate(), PerformGetPolicyWithKeyRequest(accessKey, ultimateId)).then(
         [](const std::tuple<folly::Try<Utf8String>, folly::Try<Utf8String>>& tup)
         {
         Utf8String cert = std::get<0>(tup).value();
@@ -151,7 +151,7 @@ folly::Future<Utf8String> PolicyProvider::PerformGetPolicyRequest()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<Utf8String> PolicyProvider::PerformGetPolicyWithKeyRequest(Utf8StringCR accessKey)
+folly::Future<Utf8String> PolicyProvider::PerformGetPolicyWithKeyRequest(Utf8StringCR accessKey, Utf8StringCR ultimateId)
     {
     LOG.debug("ClientImpl::PerformGetPolicyWithKeyRequest");
 
@@ -166,11 +166,15 @@ folly::Future<Utf8String> PolicyProvider::PerformGetPolicyWithKeyRequest(Utf8Str
 
     auto request = client.CreatePostRequest(url);
     Json::Value requestJson(Json::objectValue);
-    requestJson["MachineName"] = m_applicationInfo->GetDeviceId();
+
+    // don't need to pass machine name if using a machine agnostic AccessKey
+    requestJson["MachineName"] = ultimateId == "" ? m_applicationInfo->GetDeviceId() : "";
     requestJson["ClientDateTime"] = DateTime::GetCurrentTimeUtc().ToString();
     requestJson["Locale"] = m_applicationInfo->GetLanguage();
     requestJson["AppliesTo"] = GETPOLICY_RequestData_AppliesTo_Url;
-    requestJson["MachineSID"] = gsid.GetMachineSID(m_applicationInfo->GetDeviceId()).c_str();
+
+    // pass ultimate ID as MachineSID field if using a machine agnostic AccessKey
+    requestJson["MachineSID"] = ultimateId == "" ? gsid.GetMachineSID(m_applicationInfo->GetDeviceId()).c_str() : ultimateId;
     requestJson["AccessKey"] = accessKey;
 
     Json::Value requestedSecurable(Json::objectValue);

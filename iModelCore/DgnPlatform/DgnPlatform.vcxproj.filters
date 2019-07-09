@@ -41,6 +41,9 @@
     <Filter Include="DgnHandlers">
       <UniqueIdentifier>{4c41e1d5-99ac-49de-838f-0c6a9c21a416}</UniqueIdentifier>
     </Filter>
+    <Filter Include="DgnBRep">
+      <UniqueIdentifier>{920db32e-1ac1-4f7d-a77a-3cc3d507c7af}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PublicAPI\DgnPlatform\Annotations\AnnotationFrame.h">
@@ -1181,8 +1184,44 @@
     <ClCompile Include="DgnCore\ElementTileTree.cpp">
       <Filter>DgnCore</Filter>
     </ClCompile>
-    <ClCompile Include="DgnCore\IModelTileWriter.cpp">
-      <Filter>DgnCore</Filter>
+    <ClCompile Include="DgnBRep\PSolidAttrib.cpp">
+      <Filter>DgnBRep</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnBRep\PSolidBSpline.cpp">
+      <Filter>DgnBRep</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnBRep\PSolidCreate.cpp">
+      <Filter>DgnBRep</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnBRep\PSolidFacet.cpp">
+      <Filter>DgnBRep</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnBRep\PSolidKernelEntity.cpp">
+      <Filter>DgnBRep</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnBRep\PSolidKernelManager.cpp">
+      <Filter>DgnBRep</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnBRep\PSolidModify.cpp">
+      <Filter>DgnBRep</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnBRep\PSolidPolyface.cpp">
+      <Filter>DgnBRep</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnBRep\PSolidThreadUtil.cpp">
+      <Filter>DgnBRep</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnBRep\PSolidTopo.cpp">
+      <Filter>DgnBRep</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnBRep\PSolidTopoId.cpp">
+      <Filter>DgnBRep</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnBRep\PSolidUtil.cpp">
+      <Filter>DgnBRep</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnBRep\SolidKernelUtil.cpp">
+      <Filter>DgnBRep</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

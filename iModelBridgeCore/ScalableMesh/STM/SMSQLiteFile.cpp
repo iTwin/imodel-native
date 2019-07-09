@@ -1525,6 +1525,9 @@ bool SMSQLiteFile::SaveSource(SourcesDataSQLite& sourcesData)
         Utf8String levelNameUtf8String;
         BeStringUtilities::WCharToUtf8(levelNameUtf8String, sourceData.GetLevelName().GetWCharCP());
 
+        Utf8String terrainModelNameUtf8String;
+        BeStringUtilities::WCharToUtf8(terrainModelNameUtf8String, sourceData.GetTerrainModelName().GetWCharCP());
+
         Utf8String rootToRefPersistentPathUtf8String;
         BeStringUtilities::WCharToUtf8(rootToRefPersistentPathUtf8String, sourceData.GetRootToRefPersistentPath().GetWCharCP());
        
@@ -1587,6 +1590,10 @@ bool SMSQLiteFile::SaveSource(SourcesDataSQLite& sourcesData)
         stmt->BindInt(27, (int)smData.GetLinearFeatureType());
         stmt->BindInt(28, (int)smData.GetPolygonFeatureType());
         stmt->BindInt(29, smData.IsGridData() ? 1 : 0);
+
+        //stmt->BindInt64(30, sourceData.GetTerrainModelID());
+        //BIND_VALUE_STR(stmt, 31, terrainModelNameUtf8String, MAKE_COPY_NO);
+
         DbResult status = stmt->Step();
         assert((status == BE_SQLITE_DONE) || (status == BE_SQLITE_ROW));
 
@@ -1722,6 +1729,10 @@ bool SMSQLiteFile::LoadSources(SourcesDataSQLite& sourcesData)
         smData.SetLinearFeatureType(DTMFeatureType(stmt->GetValueInt(26)));
         smData.SetPolygonFeatureType(DTMFeatureType(stmt->GetValueInt(27)));
         smData.SetIsGridData(stmt->GetValueInt(28) ? true : false);
+
+        //sourceData.SetTerrainModelID(stmt->GetValueInt64(29));
+        //sourceData.SetTerrainModelName(WSTRING_FROM_CSTR(Utf8String(GET_VALUE_STR(stmt, 30)).c_str()));
+
         sourceData.SetScalableMeshData(smData);
       
 

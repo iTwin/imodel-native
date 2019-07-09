@@ -330,7 +330,7 @@ folly::Future<BentleyStatus> UlasProvider::RealtimeMarkFeature(Utf8StringCR acce
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<Json::Value> UlasProvider::GetAccessKeyInfo(ApplicationInfoPtr applicationInfo, Utf8StringCR accessKey)
+folly::Future<Json::Value> UlasProvider::GetAccessKeyInfo(ApplicationInfoPtr applicationInfo, Utf8StringCR accessKey, Utf8StringCR ultimateId)
     {
     LOG.debug("UlasProvider::GetAccessKeyInfo");
 
@@ -345,7 +345,9 @@ folly::Future<Json::Value> UlasProvider::GetAccessKeyInfo(ApplicationInfoPtr app
     GenerateSID gsid;
 
     requestJson["accesskey"] = accessKey;
-    requestJson["cSID"] = gsid.GetMachineSID(applicationInfo->GetDeviceId()); // need hash
+
+    // pass ultimate ID as MachineSID field if using a machine agnostic AccessKey
+    requestJson["cSID"] = ultimateId == "" ? gsid.GetMachineSID(applicationInfo->GetDeviceId()) : ultimateId;
 
     Utf8String jsonBody = Json::FastWriter().write(requestJson);
 
