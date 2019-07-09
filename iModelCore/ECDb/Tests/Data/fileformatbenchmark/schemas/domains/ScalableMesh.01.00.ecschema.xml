@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="ScalableMesh" alias="ScalableMesh" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+
+    <ECSchemaReference name="BisCore" version="01.00" alias="bis" />
+
+    <ECEntityClass typeName="ScalableMeshModel">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+        <BaseClass>bis:SpatialModel</BaseClass>
+    </ECEntityClass>
+
+</ECSchema>
