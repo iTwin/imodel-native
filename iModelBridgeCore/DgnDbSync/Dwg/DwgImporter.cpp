@@ -818,7 +818,7 @@ DgnElementId    DwgImporter::CreateModelElement (DwgDbBlockTableRecordCR block, 
     if (dgndbSchemas.GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalModel) == classId)
         {
         // modelspace or xref model
-        SubjectCPtr             rootSubject = m_dgndb->Elements().GetRootSubject ();
+        SubjectCPtr             rootSubject = this->GetSpatialParentSubject ();
         DgnCode                 partitionCode = PhysicalPartition::CreateUniqueCode (*rootSubject, modelName.c_str());
         PhysicalPartitionCPtr   partition = PhysicalPartition::CreateAndInsert (*rootSubject, partitionCode.GetValueUtf8CP(), descr.c_str());
         if (partition.IsValid())
@@ -1394,6 +1394,9 @@ BentleyStatus   DwgImporter::_ImportDwgModels ()
     for (auto xref : m_loadedXrefFiles)
         this->ImportXrefModelsFrom (xref, *parentSubject, hasPushedReferencesSubject);
 
+    if (hasPushedReferencesSubject)
+        this->SetSpatialParentSubject(*parentSubject);
+
     // create models for paperspaces
     for (auto paperspaceId : m_paperspaceBlockIds)
         {
@@ -1594,16 +1597,13 @@ BentleyStatus DwgImporter::GetOrCreateGeometryPartsModel ()
         return  BSIERROR;
         }
 
-    // push spatial parent subject
-    this->SetSpatialParentSubject (*partsSubject);
-
     // get or create GeometryParts partition
-    auto partitionCode = DefinitionPartition::CreateCode (*m_spatialParentSubject, partitionName);
+    auto partitionCode = DefinitionPartition::CreateCode (*partsSubject, partitionName);
     auto partitionId = m_dgndb->Elements().QueryElementIdByCode (partitionCode);
     if (!partitionId.IsValid())
         {
         // create a new partition
-        auto   partition = DefinitionPartition::CreateAndInsert (*m_spatialParentSubject, partitionCode.GetValueUtf8CP());
+        auto   partition = DefinitionPartition::CreateAndInsert (*partsSubject, partitionCode.GetValueUtf8CP());
         if (!partition.IsValid())
             {
             this->ReportError (IssueCategory::Unknown(), Issue::CantCreateModel(), partitionName.c_str());\

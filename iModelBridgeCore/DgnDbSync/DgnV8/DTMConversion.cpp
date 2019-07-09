@@ -142,7 +142,7 @@ ConvertToDgnDbElementExtension::Result ConvertDTMElement::_PreConvertElement(Dgn
     Bentley::TerrainModel::DTMPtr dtm;
     auto rootTransform = converter.GetRootTrans();
     Bentley::Transform trsf;
-    for(int i = 0; i < 4; i++)
+    for(int i = 0; i < 3; i++)
         for (int j = 0; j < 4; j++)
             trsf.form3d[i][j] = rootTransform.form3d[i][j];
 
@@ -211,6 +211,9 @@ ConvertToDgnDbElementExtension::Result ConvertDTMElement::_PreConvertElement(Dgn
 //+---------------+---------------+---------------+---------------+---------------+-------
 void ConvertDTMElement::Register()
     {
+    if (!DgnV8Api::ConfigurationManager::IsVariableDefinedAndTrue(L"DGNDB_DTMTOTILES"))
+        return;
+
     ConvertDTMElement* instance = new ConvertDTMElement();
     const int TMElementMajorId = 22764;
     const int ELEMENTHANDLER_DTMELEMENT = 11;
@@ -221,9 +224,7 @@ void ConvertDTMElement::Register()
     assert(elHandler != nullptr);
 
     if (elHandler != nullptr)
-        {
         RegisterExtension(*elHandler, *instance);
-        }
 
     DgnV8Api::ElementHandlerId cifHandlerId(CifTerrainElementHandler::XATTRIBUTEID_CifTerrainModel, CifTerrainElementHandler::ELEMENTHANDLER_SUBTYPE_DTMENTITY );
     DgnV8Api::Handler* cifElHandler = DgnV8Api::ElementHandlerManager::FindHandler(handlerId);
@@ -231,7 +232,5 @@ void ConvertDTMElement::Register()
     assert(cifElHandler != nullptr);
 
     if (cifElHandler != nullptr)
-        {
         RegisterExtension(*cifElHandler, *instance);
-        }
     }

@@ -98,7 +98,8 @@ BentleyStatus DwgSyncInfo::CreateTables()
                     "LastSaveTime REAL,"
                     "LastModified BIGINT,"
                     "FileSize BIGINT,"
-                    "UseHash BOOL");
+                    "UseHash BOOL,"
+                    "RootName CHAR NOT NULL");
 
     m_dgndb->CreateTable(SYNCINFO_ATTACH(SYNC_TABLE_Model), 
                     "ModelId BIGINT NOT NULL,"
@@ -470,6 +471,10 @@ DwgSyncInfo::FileProvenance::FileProvenance(DwgDbDatabaseCR dwg, DwgSyncInfo& sy
     WString     fullFilename(dwg.GetFileName().c_str());
     m_dwgName = Utf8String(fullFilename);
     m_uniqueName = sync.GetUniqueName (fullFilename);
+
+    // set root name from current root DWG file name
+    fullFilename.assign (sync.GetDwgImporter().GetDwgDb().GetFileName().c_str());
+    m_rootName = sync.GetUniqueName (fullFilename);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -487,7 +492,7 @@ DwgSyncInfo::FileProvenance::FileProvenance(BeFileNameCR name, DwgSyncInfo& sync
 DbResult DwgSyncInfo::FileProvenance::Insert ()
     {
     Statement stmt;
-    stmt.Prepare(*m_syncInfo.m_dgndb, "INSERT INTO " SYNCINFO_ATTACH(SYNC_TABLE_File) "(UniqueName,DwgName,VersionGuid,LastSaveTime,LastModified,FileSize,UseHash) VALUES (?,?,?,?,?,?,?)");
+    stmt.Prepare(*m_syncInfo.m_dgndb, "INSERT INTO " SYNCINFO_ATTACH(SYNC_TABLE_File) "(UniqueName,DwgName,VersionGuid,LastSaveTime,LastModified,FileSize,UseHash,RootName) VALUES (?,?,?,?,?,?,?,?)");
 
     int col = 1;
     stmt.BindText(col++, m_uniqueName, Statement::MakeCopy::No);
@@ -497,6 +502,7 @@ DbResult DwgSyncInfo::FileProvenance::Insert ()
     stmt.BindInt64(col++, m_lastModifiedTime);
     stmt.BindInt64(col++, m_fileSize);
     stmt.BindInt(col++, m_idPolicy==StableIdPolicy::ByHash ? 1 : 0);
+    stmt.BindText(col++, m_rootName, Statement::MakeCopy::No);
 
     DbResult rc = stmt.Step();
     BeAssert(rc == BE_SQLITE_DONE);
@@ -533,7 +539,7 @@ DbResult DwgSyncInfo::FileProvenance::Update ()
 bool DwgSyncInfo::FileProvenance::FindByName(bool fillLastMod)
     {
     CachedStatementPtr stmt;
-    m_syncInfo.m_dgndb->GetCachedStatement(stmt, "SELECT Id,UniqueName,DwgName,VersionGuid,UseHash,LastSaveTime,LastModified,FileSize FROM " SYNCINFO_ATTACH(SYNC_TABLE_File) " WHERE UniqueName=?");
+    m_syncInfo.m_dgndb->GetCachedStatement(stmt, "SELECT Id,UniqueName,DwgName,VersionGuid,UseHash,RootName,LastSaveTime,LastModified,FileSize FROM " SYNCINFO_ATTACH(SYNC_TABLE_File) " WHERE UniqueName=?");
     stmt->BindText(1, m_uniqueName, Statement::MakeCopy::No);
 
     auto result = stmt->Step();
@@ -549,6 +555,7 @@ bool DwgSyncInfo::FileProvenance::FindByName(bool fillLastMod)
     m_dwgName       = stmt->GetValueText(col++);            // DwgName
     m_versionGuid   = stmt->GetValueText(col++);            // VersionGUID
     m_idPolicy      = stmt->GetValueInt(col++)==1 ? StableIdPolicy::ByHash : StableIdPolicy::ById;
+    m_rootName      = stmt->GetValueText(col++);
 
     if (fillLastMod)
         {
@@ -614,10 +621,11 @@ DwgSyncInfo::DwgFileId DwgSyncInfo::FileIterator::Entry::GetSyncId() {return Dwg
 Utf8String DwgSyncInfo::FileIterator::Entry::GetUniqueName() {return m_sql->GetValueText(1);}
 Utf8String DwgSyncInfo::FileIterator::Entry::GetDwgName() {return m_sql->GetValueText(2);}
 Utf8String DwgSyncInfo::FileIterator::Entry::GetVersionGuid() {return m_sql->GetValueText(3);}
-bool DwgSyncInfo::FileIterator::Entry::GetCannotUseElementIds() {return 0 != m_sql->GetValueInt(4);}
-double DwgSyncInfo::FileIterator::Entry::GetLastSaveTime() {return m_sql->GetValueDouble(5);}
-uint64_t DwgSyncInfo::FileIterator::Entry::GetLastModifiedTime() {return m_sql->GetValueInt64(6);}
-uint64_t DwgSyncInfo::FileIterator::Entry::GetFileSize() {return m_sql->GetValueInt64(7);}
+double DwgSyncInfo::FileIterator::Entry::GetLastSaveTime() {return m_sql->GetValueDouble(4);}
+uint64_t DwgSyncInfo::FileIterator::Entry::GetLastModifiedTime() {return m_sql->GetValueInt64(5);}
+uint64_t DwgSyncInfo::FileIterator::Entry::GetFileSize() {return m_sql->GetValueInt64(6);}
+bool DwgSyncInfo::FileIterator::Entry::GetCannotUseElementIds() {return 0 != m_sql->GetValueInt(7);}
+Utf8String DwgSyncInfo::FileIterator::Entry::GetRootName() {return m_sql->GetValueText(8);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/15
@@ -625,7 +633,7 @@ uint64_t DwgSyncInfo::FileIterator::Entry::GetFileSize() {return m_sql->GetValue
 DwgSyncInfo::FileIterator::FileIterator(DgnDbCR db, Utf8CP where) : BeSQLite::DbTableIterator(db)
     {
     m_params.SetWhere(where);
-    Utf8String sqlString = MakeSqlString("SELECT Id,UniqueName,DwgName,VersionGuid,UseHash,LastSaveTime,LastModified,FileSize FROM " SYNCINFO_ATTACH(SYNC_TABLE_File));
+    Utf8String sqlString = MakeSqlString("SELECT Id,UniqueName,DwgName,VersionGuid,LastSaveTime,LastModified,FileSize,UseHash,RootName FROM " SYNCINFO_ATTACH(SYNC_TABLE_File));
     m_db->GetCachedStatement(m_stmt, sqlString.c_str());
     }
 
