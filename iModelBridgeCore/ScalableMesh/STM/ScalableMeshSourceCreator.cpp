@@ -54,6 +54,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include <ImagePP\all\h\HRFUtility.h>
 #include "MosaicTextureProvider.h"
 #include "RasterUtilities.h"
+#include "CGALEdgeCollapse.h"
 
 using namespace ISMStore;
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
@@ -591,6 +592,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
     bool restrictLevelForPropagation
     )
     {
+
     using namespace ISMStore;
 
     HFCPtr<MeshIndexType>          pDataIndex;

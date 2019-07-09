@@ -28,10 +28,10 @@ GridSurface::GridSurface
 CreateParams const& params
 ) : T_Super(params) 
     {
-    if (params.m_classId.IsValid()) // elements created via handler have no classid.
-        {
-        SetAxisId(params.m_gridAxisId);
-        }
+    if(params.m_isLoadingElement)
+        return;
+
+    SetAxisId(params.m_gridAxisId);
     }
 
 /*---------------------------------------------------------------------------------**//**

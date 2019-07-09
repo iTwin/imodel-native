@@ -21,6 +21,8 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 void StitchSegmentsAtJunctions(bvector<bvector<DPoint3d>>& polylines, const bvector<DSegment3d>& segments)
     {
+    if(segments.empty()) return;
+
     bmap<DPoint3d, bvector<size_t>, DPoint3dZYXTolerancedSortComparison> mapOfPoints(DPoint3dZYXTolerancedSortComparison(1e-5, 0));
 
     for (auto& seg : segments)
@@ -43,34 +45,36 @@ void StitchSegmentsAtJunctions(bvector<bvector<DPoint3d>>& polylines, const bvec
         }
 
     std::vector<int> segUpdatedValues(segments.size(), -1);
-
+    
     for (auto it = mapOfPoints.begin(); it != mapOfPoints.end(); it++)
         {
         if (it->second.size() == 2)
             {
             size_t minVal = std::min(it->second[0], it->second[1]);
             size_t maxVal = std::max(it->second[0], it->second[1]);
+            if(minVal >= polylines.size() || maxVal >= polylines.size()) continue;
             size_t updatedMinVal = segUpdatedValues[minVal] != -1 ? (int)segUpdatedValues[minVal] : minVal;
             size_t updatedMaxVal = segUpdatedValues[maxVal] != -1 ? (int)segUpdatedValues[maxVal] : maxVal;
             while (segUpdatedValues[updatedMinVal] != -1)
                 updatedMinVal = (int)segUpdatedValues[updatedMinVal];
             while (segUpdatedValues[updatedMaxVal] != -1)
                 updatedMaxVal = (int)segUpdatedValues[updatedMaxVal];
-
+    
             if (updatedMinVal == updatedMaxVal)
                 continue;
             DPoint3d firstVal = it->first;
            // assert(polylines[updatedMinVal].front().IsEqual(it->first) || polylines[updatedMinVal].back().IsEqual(it->first));
            // assert(polylines[updatedMaxVal].front().IsEqual(it->first) || polylines[updatedMaxVal].back().IsEqual(it->first));
-
+    
             size_t posToAppendSeg = polylines[updatedMinVal].front() == it->first ? 0 : polylines[updatedMinVal].size();
-            bool reverseSeg = (posToAppendSeg == 0 && !polylines[updatedMaxVal].back().IsEqual(it->first)) || (posToAppendSeg != 0 && !polylines[updatedMaxVal].front().IsEqual(it->first));
-
+            bool reverseSeg = (posToAppendSeg == 0 && !polylines[updatedMaxVal].back().IsEqual(it->first, 1e-8)) || (posToAppendSeg != 0 && !polylines[updatedMaxVal].front().IsEqual(it->first, 1e-8));
+            int maxOffset = posToAppendSeg == 0 ? 0 : 1;
 
             if(reverseSeg)
-                polylines[updatedMinVal].insert(polylines[updatedMinVal].begin() + posToAppendSeg, polylines[updatedMaxVal].rbegin(), polylines[updatedMaxVal].rend());
+                polylines[updatedMinVal].insert(polylines[updatedMinVal].begin() + posToAppendSeg, polylines[updatedMaxVal].rbegin() + maxOffset, polylines[updatedMaxVal].rend() + maxOffset - 1);
             else
-                polylines[updatedMinVal].insert(polylines[updatedMinVal].begin() + posToAppendSeg, polylines[updatedMaxVal].begin(), polylines[updatedMaxVal].end());
+                polylines[updatedMinVal].insert(polylines[updatedMinVal].begin() + posToAppendSeg, polylines[updatedMaxVal].begin() + maxOffset, polylines[updatedMaxVal].end() + maxOffset - 1);
+
             segUpdatedValues[updatedMaxVal] = (int)updatedMinVal;
             polylines[updatedMaxVal].clear();
             }

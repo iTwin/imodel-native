@@ -18,7 +18,7 @@ struct PolicyProviderMock : IPolicyProvider
 {
 public:
     folly::Future<std::shared_ptr<Policy>> GetPolicy() override;
-    folly::Future<std::shared_ptr<Policy>> GetPolicyWithKey(Utf8StringCR accessKey) override;
+    folly::Future<std::shared_ptr<Policy>> GetPolicyWithKey(Utf8StringCR accessKey, Utf8StringCR ultimateId) override;
     void MockGetPolicy(std::shared_ptr<Policy> mocked) { m_mockedGetPolicy = mocked; }
     void MockGetPolicyWithKey(std::shared_ptr<Policy> mocked) { m_mockedGetPolicyWithKey = mocked; }
     int GetPolicyCalls() const { return m_getPolicyCalls; }

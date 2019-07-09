@@ -1339,7 +1339,7 @@ TEST_F(FileFormatCompatibilityTests, ProfileUpgrade)
     EXPECT_STREQ("CoreCustomAttributes", ecsqlStmt.GetValueText(0));
     EXPECT_EQ(1, ecsqlStmt.GetValueInt(1));
     EXPECT_EQ(0, ecsqlStmt.GetValueInt(2));
-    EXPECT_EQ(2, ecsqlStmt.GetValueInt(3));
+    EXPECT_EQ(3, ecsqlStmt.GetValueInt(3));
     ASSERT_EQ(BE_SQLITE_ROW, ecsqlStmt.Step());
     EXPECT_STREQ("ECDbFileInfo", ecsqlStmt.GetValueText(0));
     EXPECT_EQ(2, ecsqlStmt.GetValueInt(1));

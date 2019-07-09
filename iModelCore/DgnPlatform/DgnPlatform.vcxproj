@@ -262,6 +262,19 @@
     <Xml Include="DgnPlatform.PartFile.xml" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="DgnBRep\PSolidAttrib.cpp" />
+    <ClCompile Include="DgnBRep\PSolidBSpline.cpp" />
+    <ClCompile Include="DgnBRep\PSolidCreate.cpp" />
+    <ClCompile Include="DgnBRep\PSolidFacet.cpp" />
+    <ClCompile Include="DgnBRep\PSolidKernelEntity.cpp" />
+    <ClCompile Include="DgnBRep\PSolidKernelManager.cpp" />
+    <ClCompile Include="DgnBRep\PSolidModify.cpp" />
+    <ClCompile Include="DgnBRep\PSolidPolyface.cpp" />
+    <ClCompile Include="DgnBRep\PSolidThreadUtil.cpp" />
+    <ClCompile Include="DgnBRep\PSolidTopo.cpp" />
+    <ClCompile Include="DgnBRep\PSolidTopoId.cpp" />
+    <ClCompile Include="DgnBRep\PSolidUtil.cpp" />
+    <ClCompile Include="DgnBRep\SolidKernelUtil.cpp" />
     <ClCompile Include="DgnCore\ACSManager.cpp" />
     <ClCompile Include="DgnCore\Annotations\AnnotationFrame.cpp" />
     <ClCompile Include="DgnCore\Annotations\AnnotationFrameDraw.cpp" />

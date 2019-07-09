@@ -25,21 +25,22 @@ struct EXPORT_VTABLE_ATTRIBUTE GridAxis : Dgn::GroupInformationElement
         DEFINE_T_SUPER(GridAxis::T_Super::CreateParams);
         Dgn::DgnElementId m_gridId;
 
-        //! Creates create parameters for orthogonal grid
-        //! @param[in] model              model for the PlanCartesianGridSurface
+        //! Creates create parameters for a grid axis
+        //! @param[in] model        Model of the grid that will contain this axis
+        //! @param[in] classId      ClassId of the grid that will contain this axis
+        //! @param[in] gridId       Element id of the grid that this axis is being created from
         CreateParams(Dgn::DgnModelCR model, Dgn::DgnClassId classId, Dgn::DgnElementId gridId) :
             T_Super::CreateParams(model.GetDgnDb(), model.GetModelId(), classId), m_gridId(gridId)
             {}
 
 
         //! Creates create parameters for grid axis
-        //! @param[in] grid  grid this axis belongs to
-        //! @param[in] classId  class id of specifi axis type
+        //! @param[in] grid         Grid this axis belongs to
+        //! @param[in] classId      ClassId of the grid that will contain this axis
         CreateParams(GridCR grid, Dgn::DgnClassId classId);
 
         //! Constructor from base params. Chiefly for internal use.
-        //! @param[in]      params   The base element parameters
-        //! @return 
+        //! @param[in] params       The base element parameters
         explicit CreateParams(Dgn::DgnElement::CreateParams const& params)
             : T_Super(params), m_gridId(Dgn::DgnElementId())
             {}
@@ -136,16 +137,15 @@ struct EXPORT_VTABLE_ATTRIBUTE OrthogonalAxisX : GridAxis
         {
         DEFINE_T_SUPER(OrthogonalAxisX::T_Super::CreateParams);
 
-        //! Creates create parameters for grid axis
-        //! @param[in] grid  grid this axis belongs to
+        //! Creates create parameters for an orthogonal grid x axis
+        //! @param[in] grid         Grid this axis belongs to
         CreateParams(OrthogonalGridCR grid) :
             T_Super::CreateParams(grid, QueryClassId(grid.GetDgnDb()))
             {
             }
 
         //! Constructor from base params. Chiefly for internal use.
-        //! @param[in]      params   The base element parameters
-        //! @return 
+        //! @param[in] params       The base element parameters
         explicit GRIDELEMENTS_EXPORT CreateParams(Dgn::DgnElement::CreateParams const& params)
             : T_Super(params)
             {
@@ -166,16 +166,14 @@ struct EXPORT_VTABLE_ATTRIBUTE OrthogonalAxisX : GridAxis
         //---------------------------------------------------------------------------------------
         // Creation
         //---------------------------------------------------------------------------------------
-        //! Creates an empty grid axis
-        //! @param[in]  model   model for the axis
-        //! @param[in]  grid    grid this axis belongs to
-        //! @return             sketch grid
+        //! Creates an empty orthogonal grid x axis
+        //! @param[in] grid         Grid this axis belongs to
+        //! @return                 Orthogonal grid x axis
         GRIDELEMENTS_EXPORT static OrthogonalAxisXPtr Create(OrthogonalGridCR grid);
 
-        //! Creates and inserts an empty grid axis
-        //! @param[in]  model   model for the axis
-        //! @param[in]  grid    grid this axis belongs to
-        //! @return             sketch grid
+        //! Creates and inserts an empty orthogonal grid x axis
+        //! @param[in] grid         Grid this axis belongs to
+        //! @return                 Orthogonal grid x axis
         GRIDELEMENTS_EXPORT static OrthogonalAxisXPtr CreateAndInsert(OrthogonalGridCR grid);
     };
 
@@ -190,15 +188,14 @@ struct EXPORT_VTABLE_ATTRIBUTE OrthogonalAxisY : GridAxis
         {
         DEFINE_T_SUPER(OrthogonalAxisY::T_Super::CreateParams);
 
-        //! Creates create parameters for grid axis
-        //! @param[in] grid  grid this axis belongs to
+        //! Creates create parameters for an orthogonal grid y axis
+        //! @param[in] grid         Grid this axis belongs to
         CreateParams(OrthogonalGridCR grid) :
             T_Super::CreateParams(grid, QueryClassId(grid.GetDgnDb()))
             {}
 
         //! Constructor from base params. Chiefly for internal use.
-        //! @param[in]      params   The base element parameters
-        //! @return 
+        //! @param[in] params       The base element parameters
         explicit GRIDELEMENTS_EXPORT CreateParams(Dgn::DgnElement::CreateParams const& params)
             : T_Super(params)
             {}
@@ -218,16 +215,14 @@ struct EXPORT_VTABLE_ATTRIBUTE OrthogonalAxisY : GridAxis
         //---------------------------------------------------------------------------------------
         // Creation
         //---------------------------------------------------------------------------------------
-        //! Creates an empty grid axis
-        //! @param[in]  model   model for the axis
-        //! @param[in]  grid    grid this axis belongs to
-        //! @return             sketch grid
+        //! Creates an empty orthogonal grid y axis
+        //! @param[in] grid         Grid this axis belongs to
+        //! @return                 Orthogonal grid x axis
         GRIDELEMENTS_EXPORT static OrthogonalAxisYPtr Create(OrthogonalGridCR grid);
 
-        //! Creates and inserts an empty grid axis
-        //! @param[in]  model   model for the axis
-        //! @param[in]  grid    grid this axis belongs to
-        //! @return             sketch grid
+        //! Creates and inserts an empty orthogonal grid y axis
+        //! @param[in] grid         Grid this axis belongs to
+        //! @return                 Orthogonal grid y axis
         GRIDELEMENTS_EXPORT static OrthogonalAxisYPtr CreateAndInsert(OrthogonalGridCR grid);
     };
 
@@ -242,15 +237,14 @@ struct EXPORT_VTABLE_ATTRIBUTE CircularAxis : GridAxis
         {
         DEFINE_T_SUPER(CircularAxis::T_Super::CreateParams);
 
-        //! Creates create parameters for grid axis
-        //! @param[in] grid  grid this axis belongs to
+        //! Creates create parameters for a circular grid axis
+        //! @param[in] grid         Grid this axis belongs to
         CreateParams(RadialGridCR grid) :
             T_Super::CreateParams(grid, QueryClassId(grid.GetDgnDb()))
             {}
 
         //! Constructor from base params. Chiefly for internal use.
-        //! @param[in]      params   The base element parameters
-        //! @return 
+        //! @param[in] params       The base element parameters
         explicit GRIDELEMENTS_EXPORT CreateParams(Dgn::DgnElement::CreateParams const& params)
             : T_Super(params)
             {}
@@ -270,16 +264,14 @@ struct EXPORT_VTABLE_ATTRIBUTE CircularAxis : GridAxis
         //---------------------------------------------------------------------------------------
         // Creation
         //---------------------------------------------------------------------------------------
-        //! Creates an empty grid axis
-        //! @param[in]  model   model for the axis
-        //! @param[in]  grid    grid this axis belongs to
-        //! @return             sketch grid
+        //! Creates an empty circular grid axis
+        //! @param[in] grid         Grid this axis belongs to
+        //! @return                 Circular grid axis
         GRIDELEMENTS_EXPORT static CircularAxisPtr Create(RadialGridCR grid);
 
-        //! Creates and inserts an empty grid axis
-        //! @param[in]  model   model for the axis
-        //! @param[in]  grid    grid this axis belongs to
-        //! @return             sketch grid
+        //! Creates and inserts an empty circular grid axis
+        //! @param[in] grid         Grid this axis belongs to
+        //! @return                 Circular grid axis
         GRIDELEMENTS_EXPORT static CircularAxisPtr CreateAndInsert(RadialGridCR grid);
     };
 
@@ -294,15 +286,15 @@ struct EXPORT_VTABLE_ATTRIBUTE RadialAxis : GridAxis
         {
         DEFINE_T_SUPER(RadialAxis::T_Super::CreateParams);
 
-        //! Creates create parameters for grid axis
-        //! @param[in] grid  grid this axis belongs to
+        //! Creates create parameters for a radial grid axis
+        //! @param[in] grid         Grid this axis belongs to
         CreateParams(RadialGridCR grid) :
             T_Super::CreateParams(grid, QueryClassId(grid.GetDgnDb()))
             {}
 
         //! Constructor from base params. Chiefly for internal use.
-        //! @param[in]      params   The base element parameters
-        //! @return 
+        //! @param[in] params       The base element parameters
+
         explicit GRIDELEMENTS_EXPORT CreateParams(Dgn::DgnElement::CreateParams const& params)
             : T_Super(params)
             {}
@@ -323,16 +315,14 @@ struct EXPORT_VTABLE_ATTRIBUTE RadialAxis : GridAxis
         //---------------------------------------------------------------------------------------
         // Creation
         //---------------------------------------------------------------------------------------
-        //! Creates an empty grid axis
-        //! @param[in]  model   model for the axis
-        //! @param[in]  grid    grid this axis belongs to
-        //! @return             sketch grid
+        //! Creates an empty radial grid axis
+        //! @param[in] grid         Grid this axis belongs to
+        //! @return                 Radial grid axis
         GRIDELEMENTS_EXPORT static RadialAxisPtr Create(RadialGridCR grid);
 
-        //! Creates and inserts an empty grid axis
-        //! @param[in]  model   model for the axis
-        //! @param[in]  grid    grid this axis belongs to
-        //! @return             sketch grid
+        //! Creates and inserts an empty radial grid axis
+        //! @param[in] grid         Grid this axis belongs to
+        //! @return                 Radial grid axis
         GRIDELEMENTS_EXPORT static RadialAxisPtr CreateAndInsert(RadialGridCR grid);
     };
 
@@ -347,15 +337,14 @@ struct EXPORT_VTABLE_ATTRIBUTE GeneralGridAxis : GridAxis
         {
         DEFINE_T_SUPER(GeneralGridAxis::T_Super::CreateParams);
 
-        //! Creates create parameters for grid axis
-        //! @param[in] grid  grid this axis belongs to
+        //! Creates create parameters for a general grid axis
+        //! @param[in] grid         Grid this axis belongs to
         CreateParams(GridCR grid) :
             T_Super(grid, QueryClassId(grid.GetDgnDb()))
             {}
 
         //! Constructor from base params. Chiefly for internal use.
-        //! @param[in]      params   The base element parameters
-        //! @return 
+        //! @param[in] params       The base element parameters
         explicit GRIDELEMENTS_EXPORT CreateParams(Dgn::DgnElement::CreateParams const& params)
             : T_Super(params)
             {}
@@ -376,16 +365,14 @@ struct EXPORT_VTABLE_ATTRIBUTE GeneralGridAxis : GridAxis
         //---------------------------------------------------------------------------------------
         // Creation
         //---------------------------------------------------------------------------------------
-        //! Creates an empty grid axis
-        //! @param[in]  model   model for the axis
-        //! @param[in]  grid    grid this axis belongs to
-        //! @return             sketch grid
+        //! Creates an empty general grid axis
+        //! @param[in] grid         Grid this axis belongs to
+        //! @return                 General grid axis
         GRIDELEMENTS_EXPORT static GeneralGridAxisPtr Create(GridCR grid);
 
-        //! Creates and inserts an empty grid axis
-        //! @param[in]  model   model for the axis
-        //! @param[in]  grid    grid this axis belongs to
-        //! @return             sketch grid
+        //! Creates and inserts an empty general grid axis
+        //! @param[in] grid         Grid this axis belongs to
+        //! @return                 General grid axis
         GRIDELEMENTS_EXPORT static GeneralGridAxisPtr CreateAndInsert(GridCR grid);
     };
 END_GRIDS_NAMESPACE

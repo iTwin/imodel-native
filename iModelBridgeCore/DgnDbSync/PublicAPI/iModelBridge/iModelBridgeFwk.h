@@ -341,7 +341,7 @@ protected:
     BentleyStatus StageInputFile();
     BentleyStatus StageWorkspace();
     BentleyStatus SetupDmsFiles();
-    int PullMergeAndPushChange(Utf8StringCR description, bool releaseLocks);
+    int PullMergeAndPushChange(Utf8StringCR description, bool releaseLocks, bool reopenDataBase);
     int StoreHeaderInformation();
     
     bool EnableECProfileUpgrade() const;

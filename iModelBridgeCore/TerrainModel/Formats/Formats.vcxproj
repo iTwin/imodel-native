@@ -167,6 +167,7 @@ xcopy /Y /r $(OutRoot)Winx64\Build\TerrainModel\TerrainModelFormats\TerrainModel
     <ClInclude Include="MXModelFile.h" />
     <ClInclude Include="mxtriangle.h" />
     <ClInclude Include="PublicAPI\InroadsExporter.h" />
+    <ClInclude Include="PublicAPI\TwelvedXMLImporter.h" />
     <ClInclude Include="TriangulationPreserver.h" />
     <ClInclude Include="PublicAPI\Esri.h" />
     <ClInclude Include="PublicAPI\Formats.h" />
@@ -281,6 +282,7 @@ xcopy /Y /r $(OutRoot)Winx64\Build\TerrainModel\TerrainModelFormats\TerrainModel
     <ClCompile Include="TriangulationPreserver.cpp" />
     <ClCompile Include="TerrainExporter.cpp" />
     <ClCompile Include="TerrainImporter.cpp" />
+    <ClCompile Include="TwelvedXMLImporter.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="formats.mke" />

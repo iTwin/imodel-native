@@ -63,9 +63,12 @@ AccessKeyClientImplPtr CreateWithKeyTestClient(IPolicyProviderPtr policyProvider
         ulasProvider,
         "",
         "",
-        licensingDb
+        licensingDb,
+        ""
         );
     }
+
+// TODO: add a client create function with ultimate ID for unit test with machine agnostic key?
 
 // TODO: move to Integration tests
 //ClientPtr CreateWithKeyTestClientFromFactory(Utf8StringCR productId = TEST_PRODUCT_ID)
@@ -301,6 +304,8 @@ TEST_F(AccessKeyClientTests, WithKeyStartApplication_StopApplication_Success)
     EXPECT_LE(1, GetLicensingDbMock().GetOfflineGracePeriodStartCount());
     EXPECT_LE(1, GetPolicyProviderMock().GetPolicyWithKeyCalls());
     EXPECT_LE(1, GetUlasProviderMock().GetAccessKeyInfoCalls());
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     EXPECT_SUCCESS(client->StopApplication());
     EXPECT_EQ(1, GetLicensingDbMock().CloseCount());

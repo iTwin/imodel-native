@@ -24,7 +24,9 @@ struct                              IDTMDgnLevelSource;
 struct                              IDTMDgnReferenceSource;
 struct                              IDTMDgnReferenceLevelSource;
 struct                              IDTMSourceGroup;
-
+#ifdef VANCOUVER_API
+struct                              IDTMDgnTerrainModelSource;
+#endif
 
 struct IDTMSourceVisitor
     {
@@ -37,6 +39,9 @@ struct IDTMSourceVisitor
     virtual void                    _Visit                         (const IDTMDgnReferenceSource&           source) = 0;
     virtual void                    _Visit                         (const IDTMDgnReferenceLevelSource&      source) = 0;
     virtual void                    _Visit                         (const IDTMSourceGroup&              source) = 0;
+#ifdef VANCOUVER_API
+    virtual void                    _Visit                         (const IDTMDgnTerrainModelSource&               source) = 0;
+#endif
     };
 
 

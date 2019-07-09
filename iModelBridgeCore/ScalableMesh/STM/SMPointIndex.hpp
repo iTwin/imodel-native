@@ -1930,30 +1930,29 @@ void SMPointIndexNode<POINT, EXTENT>::PushNodeDown(size_t targetLevel)
         this->AdviseSubNodeIDChanged(m_pSubNodeNoSplit);
 
         // We copy the whole content to this sub-node
-        RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodePtsPtr(m_pSubNodeNoSplit->GetPointsPtr());
         RefCountedPtr<SMMemoryPoolVectorItem<POINT>> ptsPtr(GetPointsPtr());
-
-        if (ptsPtr->size() > 0)
-            subNodePtsPtr->reserve(ptsPtr->size());
 
         m_pSubNodeNoSplit->m_nodeHeader.m_arePoints3d = m_nodeHeader.m_arePoints3d;
         if (!m_pSubNodeNoSplit->m_nodeHeader.m_arePoints3d) m_pSubNodeNoSplit->SetNumberOfSubNodesOnSplit(4);
         else m_pSubNodeNoSplit->SetNumberOfSubNodesOnSplit(8);
-        OnPushNodeDown(); //we push the feature definitions first so that they can take care of their own point data
-
-        if (ptsPtr->size() > 0)
+        
+        if(ptsPtr->size() > 0)
             {
+            RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodePtsPtr(m_pSubNodeNoSplit->GetPointsPtr());
+            subNodePtsPtr->reserve(ptsPtr->size());
+            OnPushNodeDown(); //we push the feature definitions first so that they can take care of their own point data
+
             subNodePtsPtr->push_back(&(*ptsPtr)[0], ptsPtr->size());
+
+            m_pSubNodeNoSplit->m_nodeHeader.m_totalCount = subNodePtsPtr->size();
+            ptsPtr->clear();
             }
 
         m_pSubNodeNoSplit->m_nodeHeader.m_contentExtent = m_nodeHeader.m_contentExtent;
         m_pSubNodeNoSplit->m_nodeHeader.m_contentExtentDefined = m_nodeHeader.m_contentExtentDefined;
-        m_pSubNodeNoSplit->m_nodeHeader.m_totalCount = subNodePtsPtr->size();
 
         SetupNeighborNodesAfterPushDown();
         
-        ptsPtr->clear();        
-
         // Check if the new node is deep enough
         if (m_pSubNodeNoSplit->GetLevel() < targetLevel)
             m_pSubNodeNoSplit->PushNodeDown(targetLevel);
@@ -3172,8 +3171,8 @@ void SMPointIndexNode<POINT, EXTENT>::SetNeighborRelationAfterSplit(size_t subNo
 
     if (m_apNeighborNodes[parentNeighborInd].size() == 1)
         {
-        size_t parentNeighborSubNodeInd = 0;
         size_t parentNeighborSubNodeNeighorInd = 0;
+        bvector<std::pair<int,int>> parentNeighborSubNodeInd;
 
         switch (parentNeighborInd)
             {
@@ -3185,10 +3184,10 @@ void SMPointIndexNode<POINT, EXTENT>::SetNeighborRelationAfterSplit(size_t subNo
                 switch (subNodeInd)
                     {
                     case 0:
-                        parentNeighborSubNodeInd = 3;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(3,0));
                         break;
                     case 4:
-                        parentNeighborSubNodeInd = 7;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(7,0));
                         break;
 
                     default:
@@ -3204,16 +3203,17 @@ void SMPointIndexNode<POINT, EXTENT>::SetNeighborRelationAfterSplit(size_t subNo
                 switch (subNodeInd)
                     {
                     case 0:
-                        parentNeighborSubNodeInd = 2;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(2,1));
+                        parentNeighborSubNodeInd.push_back(std::make_pair(3,2));
                         break;
                     case 1:
-                        parentNeighborSubNodeInd = 3;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(3,0));
                         break;
                     case 4:
-                        parentNeighborSubNodeInd = 6;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(6,0));
                         break;
                     case 5:
-                        parentNeighborSubNodeInd = 7;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(7,0));
                         break;
 
                     default:
@@ -3229,10 +3229,10 @@ void SMPointIndexNode<POINT, EXTENT>::SetNeighborRelationAfterSplit(size_t subNo
                 switch (subNodeInd)
                     {
                     case 1:
-                        parentNeighborSubNodeInd = 2;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(2,2));
                         break;
                     case 5:
-                        parentNeighborSubNodeInd = 6;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(6,0));
                         break;
 
                     default:
@@ -3249,16 +3249,18 @@ void SMPointIndexNode<POINT, EXTENT>::SetNeighborRelationAfterSplit(size_t subNo
                 switch (subNodeInd)
                     {
                     case 0:
-                        parentNeighborSubNodeInd = 1;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(1,3));
+                        parentNeighborSubNodeInd.push_back(std::make_pair(3,5));
                         break;
                     case 2:
-                        parentNeighborSubNodeInd = 3;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(1,0));
+                        parentNeighborSubNodeInd.push_back(std::make_pair(3,3));
                         break;
                     case 4:
-                        parentNeighborSubNodeInd = 5;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(5,0));
                         break;
                     case 6:
-                        parentNeighborSubNodeInd = 7;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(7,0));
                         break;
 
                     default:
@@ -3274,16 +3276,18 @@ void SMPointIndexNode<POINT, EXTENT>::SetNeighborRelationAfterSplit(size_t subNo
                 switch (subNodeInd)
                     {
                     case 1:
-                        parentNeighborSubNodeInd = 0;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(0,4));
+                        parentNeighborSubNodeInd.push_back(std::make_pair(2,7));
                         break;
                     case 3:
-                        parentNeighborSubNodeInd = 2;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(2,4));
+                        parentNeighborSubNodeInd.push_back(std::make_pair(0,2));
                         break;
                     case 5:
-                        parentNeighborSubNodeInd = 4;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(4,0));
                         break;
                     case 7:
-                        parentNeighborSubNodeInd = 6;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(6,0));
                         break;
 
                     default:
@@ -3299,10 +3303,10 @@ void SMPointIndexNode<POINT, EXTENT>::SetNeighborRelationAfterSplit(size_t subNo
                 switch (subNodeInd)
                     {
                     case 2:
-                        parentNeighborSubNodeInd = 1;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(1,5));
                         break;
                     case 6:
-                        parentNeighborSubNodeInd = 5;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(5,0));
                         break;
 
                     default:
@@ -3318,16 +3322,18 @@ void SMPointIndexNode<POINT, EXTENT>::SetNeighborRelationAfterSplit(size_t subNo
                 switch (subNodeInd)
                     {
                     case 2:
-                        parentNeighborSubNodeInd = 0;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(0,6));
+                        parentNeighborSubNodeInd.push_back(std::make_pair(1,7));
                         break;
                     case 3:
-                        parentNeighborSubNodeInd = 1;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(1,6));
+                        parentNeighborSubNodeInd.push_back(std::make_pair(0,5));
                         break;
                     case 6:
-                        parentNeighborSubNodeInd = 4;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(4,0));
                         break;
                     case 7:
-                        parentNeighborSubNodeInd = 5;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(5,0));
                         break;
 
                     default:
@@ -3343,10 +3349,10 @@ void SMPointIndexNode<POINT, EXTENT>::SetNeighborRelationAfterSplit(size_t subNo
                 switch (subNodeInd)
                     {
                     case 3:
-                        parentNeighborSubNodeInd = 0;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(0,7));
                         break;
                     case 7:
-                        parentNeighborSubNodeInd = 4;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(4,0));
                         break;
 
                     default:
@@ -3363,7 +3369,7 @@ void SMPointIndexNode<POINT, EXTENT>::SetNeighborRelationAfterSplit(size_t subNo
                 switch (subNodeInd)
                     {
                     case 0:
-                        parentNeighborSubNodeInd = 7;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(7,0));
                         break;
 
                     default:
@@ -3379,11 +3385,11 @@ void SMPointIndexNode<POINT, EXTENT>::SetNeighborRelationAfterSplit(size_t subNo
                 switch (subNodeInd)
                     {
                     case 0:
-                        parentNeighborSubNodeInd = 6;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(6,0));
                         break;
 
                     case 1:
-                        parentNeighborSubNodeInd = 7;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(7,0));
                         break;
 
                     default:
@@ -3399,7 +3405,7 @@ void SMPointIndexNode<POINT, EXTENT>::SetNeighborRelationAfterSplit(size_t subNo
                 switch (subNodeInd)
                     {
                     case 1:
-                        parentNeighborSubNodeInd = 6;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(6,0));
                         break;
 
                     default:
@@ -3415,11 +3421,11 @@ void SMPointIndexNode<POINT, EXTENT>::SetNeighborRelationAfterSplit(size_t subNo
                 switch (subNodeInd)
                     {
                     case 0:
-                        parentNeighborSubNodeInd = 5;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(5,0));
                         break;
 
                     case 2:
-                        parentNeighborSubNodeInd = 7;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(7,0));
                         break;
 
                     default:
@@ -3435,19 +3441,19 @@ void SMPointIndexNode<POINT, EXTENT>::SetNeighborRelationAfterSplit(size_t subNo
                 switch (subNodeInd)
                     {
                     case 0:
-                        parentNeighborSubNodeInd = 4;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(4,0));
                         break;
 
                     case 1:
-                        parentNeighborSubNodeInd = 5;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(5,0));
                         break;
 
                     case 2:
-                        parentNeighborSubNodeInd = 6;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(6,0));
                         break;
 
                     case 3:
-                        parentNeighborSubNodeInd = 7;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(7,0));
                         break;
 
                     default:
@@ -3463,11 +3469,11 @@ void SMPointIndexNode<POINT, EXTENT>::SetNeighborRelationAfterSplit(size_t subNo
                 switch (subNodeInd)
                     {
                     case 1:
-                        parentNeighborSubNodeInd = 4;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(4,0));
                         break;
 
                     case 3:
-                        parentNeighborSubNodeInd = 6;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(6,0));
                         break;
 
                     default:
@@ -3483,7 +3489,7 @@ void SMPointIndexNode<POINT, EXTENT>::SetNeighborRelationAfterSplit(size_t subNo
                 switch (subNodeInd)
                     {
                     case 2:
-                        parentNeighborSubNodeInd = 5;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(5,0));
                         break;
 
                     default:
@@ -3499,11 +3505,11 @@ void SMPointIndexNode<POINT, EXTENT>::SetNeighborRelationAfterSplit(size_t subNo
                 switch (subNodeInd)
                     {
                     case 2:
-                        parentNeighborSubNodeInd = 4;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(4,0));
                         break;
 
                     case 3:
-                        parentNeighborSubNodeInd = 5;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(5,0));
                         break;
 
                     default:
@@ -3519,7 +3525,7 @@ void SMPointIndexNode<POINT, EXTENT>::SetNeighborRelationAfterSplit(size_t subNo
                 switch (subNodeInd)
                     {
                     case 3:
-                        parentNeighborSubNodeInd = 4;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(4,0));
                         break;
 
                     default:
@@ -3536,7 +3542,7 @@ void SMPointIndexNode<POINT, EXTENT>::SetNeighborRelationAfterSplit(size_t subNo
                 switch (subNodeInd)
                     {
                     case 4:
-                        parentNeighborSubNodeInd = 3;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(3,0));
                         break;
 
                     default:
@@ -3552,11 +3558,11 @@ void SMPointIndexNode<POINT, EXTENT>::SetNeighborRelationAfterSplit(size_t subNo
                 switch (subNodeInd)
                     {
                     case 4:
-                        parentNeighborSubNodeInd = 2;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(2,0));
                         break;
 
                     case 5:
-                        parentNeighborSubNodeInd = 3;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(3,0));
                         break;
 
                     default:
@@ -3572,7 +3578,7 @@ void SMPointIndexNode<POINT, EXTENT>::SetNeighborRelationAfterSplit(size_t subNo
                 switch (subNodeInd)
                     {
                     case 5:
-                        parentNeighborSubNodeInd = 2;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(2,0));
                         break;
 
                     default:
@@ -3588,11 +3594,11 @@ void SMPointIndexNode<POINT, EXTENT>::SetNeighborRelationAfterSplit(size_t subNo
                 switch (subNodeInd)
                     {
                     case 4:
-                        parentNeighborSubNodeInd = 1;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(1,0));
                         break;
 
                     case 6:
-                        parentNeighborSubNodeInd = 3;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(3,0));
                         break;
 
                     default:
@@ -3608,19 +3614,19 @@ void SMPointIndexNode<POINT, EXTENT>::SetNeighborRelationAfterSplit(size_t subNo
                 switch (subNodeInd)
                     {
                     case 4:
-                        parentNeighborSubNodeInd = 0;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(0,0));
                         break;
 
                     case 5:
-                        parentNeighborSubNodeInd = 1;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(1,0));
                         break;
 
                     case 6:
-                        parentNeighborSubNodeInd = 2;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(2,0));
                         break;
 
                     case 7:
-                        parentNeighborSubNodeInd = 3;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(3,0));
                         break;
 
                     default:
@@ -3636,11 +3642,11 @@ void SMPointIndexNode<POINT, EXTENT>::SetNeighborRelationAfterSplit(size_t subNo
                 switch (subNodeInd)
                     {
                     case 5:
-                        parentNeighborSubNodeInd = 0;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(0,0));
                         break;
 
                     case 7:
-                        parentNeighborSubNodeInd = 2;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(2,0));
                         break;
 
                     default:
@@ -3656,7 +3662,7 @@ void SMPointIndexNode<POINT, EXTENT>::SetNeighborRelationAfterSplit(size_t subNo
                 switch (subNodeInd)
                     {
                     case 6:
-                        parentNeighborSubNodeInd = 1;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(1,0));
                         break;
 
                     default:
@@ -3672,11 +3678,11 @@ void SMPointIndexNode<POINT, EXTENT>::SetNeighborRelationAfterSplit(size_t subNo
                 switch (subNodeInd)
                     {
                     case 6:
-                        parentNeighborSubNodeInd = 0;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(0,0));
                         break;
 
                     case 7:
-                        parentNeighborSubNodeInd = 1;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(1,0));
                         break;
 
                     default:
@@ -3692,7 +3698,7 @@ void SMPointIndexNode<POINT, EXTENT>::SetNeighborRelationAfterSplit(size_t subNo
                 switch (subNodeInd)
                     {
                     case 7:
-                        parentNeighborSubNodeInd = 0;
+                        parentNeighborSubNodeInd.push_back(std::make_pair(0,0));
                         break;
 
                     default:
@@ -3703,16 +3709,19 @@ void SMPointIndexNode<POINT, EXTENT>::SetNeighborRelationAfterSplit(size_t subNo
             }
 
 
-            if (m_apNeighborNodes[parentNeighborInd][0]->m_apSubNodes.size() >= parentNeighborSubNodeInd && m_apNeighborNodes[parentNeighborInd][0]->m_apSubNodes[parentNeighborSubNodeInd] != 0)
+        for(int i = 0; i < parentNeighborSubNodeInd.size(); i++)
             {
-            //NEEDS_WORK_SM:Reactivate this
-           // assert(m_apNeighborNodes[parentNeighborInd][0]->m_apSubNodes[parentNeighborSubNodeInd]->m_nodeHeader.m_level == m_apSubNodes[subNodeInd]->m_nodeHeader.m_level);
-           // assert(m_apSubNodes[subNodeInd]->m_apNeighborNodes[parentNeighborInd].size() == 0);
+            if(m_apNeighborNodes[parentNeighborInd][0]->m_apSubNodes.size() >= parentNeighborSubNodeInd[i].first && m_apNeighborNodes[parentNeighborInd][0]->m_apSubNodes[parentNeighborSubNodeInd[i].first] != 0)
+                {
+                //NEEDS_WORK_SM:Reactivate this
+               // assert(m_apNeighborNodes[parentNeighborInd][0]->m_apSubNodes[parentNeighborSubNodeInd[i]]->m_nodeHeader.m_level == m_apSubNodes[subNodeInd]->m_nodeHeader.m_level);
+               // assert(m_apSubNodes[subNodeInd]->m_apNeighborNodes[parentNeighborInd].size() == 0);
 
-            m_apSubNodes[subNodeInd]->m_apNeighborNodes[parentNeighborInd].push_back(m_apNeighborNodes[parentNeighborInd][0]->m_apSubNodes[parentNeighborSubNodeInd]);
-            //NEEDS_WORK_SM:Reactivate this
-           // assert(m_apNeighborNodes[parentNeighborInd][0]->m_apSubNodes[parentNeighborSubNodeInd]->m_apNeighborNodes[parentNeighborSubNodeNeighorInd].size() == 0);
-            m_apNeighborNodes[parentNeighborInd][0]->m_apSubNodes[parentNeighborSubNodeInd]->m_apNeighborNodes[parentNeighborSubNodeNeighorInd].push_back(m_apSubNodes[subNodeInd]);
+                m_apSubNodes[subNodeInd]->m_apNeighborNodes[parentNeighborSubNodeInd[i].second].push_back(m_apNeighborNodes[parentNeighborInd][0]->m_apSubNodes[parentNeighborSubNodeInd[i].first]);
+                //NEEDS_WORK_SM:Reactivate this
+               // assert(m_apNeighborNodes[parentNeighborInd][0]->m_apSubNodes[parentNeighborSubNodeInd[i]]->m_apNeighborNodes[parentNeighborSubNodeNeighorInd].size() == 0);
+                m_apNeighborNodes[parentNeighborInd][0]->m_apSubNodes[parentNeighborSubNodeInd[i].first]->m_apNeighborNodes[parentNeighborSubNodeNeighorInd].push_back(m_apSubNodes[subNodeInd]);
+                }
             }
         }
     }

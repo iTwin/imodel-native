@@ -15,7 +15,7 @@
 BEGIN_GRIDS_NAMESPACE
 
 //=======================================================================================
-//! planar grid surface element
+//! An abstract planar (flat) grid surface element.
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GridPlanarSurface : GridSurface
 {
@@ -57,7 +57,7 @@ public:
 };
 
 //=======================================================================================
-//! plan grid planar surface element
+//! An abstract planar (flat) and upwards facing grid surface element.
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE PlanGridPlanarSurface : GridPlanarSurface, IPlanGridSurface
 {
@@ -68,15 +68,18 @@ public:
         {
         DEFINE_T_SUPER (GridPlanarSurface::CreateParams);
 
-        //! Creates create parameters for orthogonal grid
-        //! @param[in] model              model for the PlanGridPlanarSurface
+        //! Creates create parameters for a plan grid planar surface
+        //! @param[in] model            Model of the grid that will contain this surface
+        //! @param[in] classId          ClassId of the grid that will contain this surface
+        //! @param[in] gridAxisId       Element id of the axis that this surface is being created from
+        //! @param[in] startElevation   Start (bottom) elevation for the surface
+        //! @param[in] endElevation     End (top) elevation for the surface
         CreateParams (Dgn::SpatialLocationModelCR model, Dgn::DgnClassId classId, Dgn::DgnElementId gridAxisId, double staElevation, double endElevation) :
             T_Super (model, classId, gridAxisId), IPlanGridSurface::CreateParams(staElevation, endElevation)
             {}
 
         //! Constructor from base params. Chiefly for internal use.
-        //! @param[in]      params   The base element parameters
-        //! @return 
+        //! @param[in] params           The base element parameters
         explicit GRIDELEMENTS_EXPORT CreateParams (Dgn::DgnElement::CreateParams const& params)
             : T_Super (params), IPlanGridSurface::CreateParams (0.0, 0.0)
             {}
@@ -99,7 +102,8 @@ public:
 };
 
 //=======================================================================================
-//! plan grid planar surface element
+//! A planar (flat) and upwards facing grid surface element
+//! that is placed perpendicular to x or y axis.
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE PlanCartesianGridSurface : PlanGridPlanarSurface
     {
@@ -113,19 +117,24 @@ struct EXPORT_VTABLE_ATTRIBUTE PlanCartesianGridSurface : PlanGridPlanarSurface
             double m_startExtent;
             double m_endExtent;
 
-            //! Creates create parameters for orthogonal grid
-            //! @param[in] model              model for the PlanCartesianGridSurface
-            CreateParams (Dgn::SpatialLocationModelCR model, GridAxisCR gridAxis, double coordinate, double staExtent, double endExtent, double staElevation, double endElevation) :
-                T_Super::CreateParams (model, QueryClassId (model.GetDgnDb ()), gridAxis.GetElementId(), staElevation, endElevation)
+            //! Creates create parameters for a plan cartesian grid surface
+            //! @param[in] model            Model of the grid that will contain this surface
+            //! @param[in] gridAxis         Axis that this surface is being created from
+            //! @param[in] coordinate       Coordinate (starting point on the same axis) of the grid surface 
+            //! @param[in] startExtent      Starting extent (length from the coordinate on the perpendicular axis) for the grid surface
+            //! @param[in] endExtent        End extent (length from the coordinate on the perpendicular axis) for the grid surface
+            //! @param[in] startElevation   Start (bottom) elevation for the surface
+            //! @param[in] endElevation     End (top) elevation for the surface
+            CreateParams (Dgn::SpatialLocationModelCR model, GridAxisCR gridAxis, double coordinate, double startExtent, double endExtent, double startElevation, double endElevation) :
+                T_Super::CreateParams (model, QueryClassId (model.GetDgnDb ()), gridAxis.GetElementId(), startElevation, endElevation)
                 {
                 m_coordinate = coordinate;
-                m_startExtent = staExtent;
+                m_startExtent = startExtent;
                 m_endExtent = endExtent;
                 }
 
             //! Constructor from base params. Chiefly for internal use.
-            //! @param[in]      params   The base element parameters
-            //! @return 
+            //! @param[in] params           The base element parameters
             explicit GRIDELEMENTS_EXPORT CreateParams (Dgn::DgnElement::CreateParams const& params)
                 : T_Super (params)
                 {
@@ -196,9 +205,9 @@ struct EXPORT_VTABLE_ATTRIBUTE PlanCartesianGridSurface : PlanGridPlanarSurface
         GRIDELEMENTS_EXPORT void        SetEndExtent (double endExtent) { SetPropertyValue (prop_EndExtent (), endExtent); };
     };
 
-
 //=======================================================================================
-//! plan grid planar surface element
+//! A planar (flat) and upwards facing grid surface element
+//! that is placed at an angle to x or y axis.
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE PlanRadialGridSurface : PlanGridPlanarSurface
     {
@@ -212,8 +221,14 @@ struct EXPORT_VTABLE_ATTRIBUTE PlanRadialGridSurface : PlanGridPlanarSurface
             double m_startRadius;
             double m_endRadius;
 
-            //! Creates create parameters for orthogonal grid
-            //! @param[in] model              model for the PlanCartesianGridSurface
+            //! Creates create parameters for a plan radial grid surface
+            //! @param[in] model            Model of the grid that will contain this surface
+            //! @param[in] gridAxis         Axis that this surface is being created from
+            //! @param[in] angle            Angle at which this surface will be placed
+            //! @param[in] startRadius      Start radius (distance from the starting point) for the radial grid surface
+            //! @param[in] endRadius        Ends radius (distance from the starting point) for the radial grid surface
+            //! @param[in] startElevation   Start (bottom) elevation for the surface
+            //! @param[in] endElevation     End (top) elevation for the surface
             CreateParams(Dgn::SpatialLocationModelCR model, GridAxisCR gridAxis, double angle, double startRadius, double endRadius, double staElevation, double endElevation) :
                 T_Super::CreateParams(model, QueryClassId(model.GetDgnDb()), gridAxis.GetElementId(), staElevation, endElevation)
                 {
@@ -223,8 +238,7 @@ struct EXPORT_VTABLE_ATTRIBUTE PlanRadialGridSurface : PlanGridPlanarSurface
                 }
 
             //! Constructor from base params. Chiefly for internal use.
-            //! @param[in]      params   The base element parameters
-            //! @return 
+            //! @param[in] params           The base element parameters
             explicit GRIDELEMENTS_EXPORT CreateParams(Dgn::DgnElement::CreateParams const& params)
                 : T_Super(params)
                 {
@@ -294,7 +308,8 @@ struct EXPORT_VTABLE_ATTRIBUTE PlanRadialGridSurface : PlanGridPlanarSurface
     };
 
 //=======================================================================================
-//! plan grid planar surface element
+//! A planar (flat) grid surface element that is a transverse (horizontal) plane.
+//! Can either be infinite or bound by a curve vector.
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ElevationGridSurface : 
                                 GridPlanarSurface, 
@@ -310,8 +325,11 @@ struct EXPORT_VTABLE_ATTRIBUTE ElevationGridSurface :
             double m_elevation;
             CurveVectorPtr m_surface;
 
-            //! Creates create parameters for elevation grid
-            //! @param[in] model              model for the PlanCartesianGridSurface
+            //! Creates create parameters for an elevation grid surface
+            //! @param[in] model            Model of the grid that will contain this surface
+            //! @param[in] gridAxis         Axis that this surface is being created from
+            //! @param[in] surface          Optional. Curve that defines the shape of a surface
+            //! @param[in] elevation        Elevation at which this surface will be placed
             CreateParams (Dgn::SpatialLocationModelCR model, GridAxisCR gridAxis, CurveVectorP surface, double elevation) :
                 T_Super::CreateParams (model, QueryClassId (model.GetDgnDb ()), gridAxis.GetElementId())
                 {
@@ -320,8 +338,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ElevationGridSurface :
                 }
 
             //! Constructor from base params. Chiefly for internal use.
-            //! @param[in]      params   The base element parameters
-            //! @return 
+            //! @param[in] params           The base element parameters
             explicit GRIDELEMENTS_EXPORT CreateParams (Dgn::DgnElement::CreateParams const& params)
                 : T_Super (params)
                 {
@@ -386,7 +403,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ElevationGridSurface :
     };
 
 //=======================================================================================
-//! plan grid planar surface element
+//! A planar (flat) and upwards facing sketch grid surface element
+//! that is created from a customly drawn line
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE SketchLineGridSurface : PlanGridPlanarSurface
     {
@@ -399,18 +417,22 @@ struct EXPORT_VTABLE_ATTRIBUTE SketchLineGridSurface : PlanGridPlanarSurface
             DPoint2d m_startPoint;
             DPoint2d m_endPoint;
 
-            //! Creates create parameters for orthogonal grid
-            //! @param[in] model              model for the PlanCartesianGridSurface
-            CreateParams (Dgn::SpatialLocationModelCR model, GridAxisCR gridAxis, double staElevation, double endElevation, DPoint2d staPoint, DPoint2d endPoint) :
-                T_Super::CreateParams (model, QueryClassId (model.GetDgnDb ()), gridAxis.GetElementId (), staElevation, endElevation)
+            //! Creates create parameters for an sketch line grid surface
+            //! @param[in] model            Model of the grid that will contain this surface
+            //! @param[in] gridAxis         Axis that this surface is being created from
+            //! @param[in] startElevation   Start (bottom) elevation for the surface
+            //! @param[in] endElevation     End (top) elevation for the surface
+            //! @param[in] startPoint       Starting point of the surface
+            //! @param[in] endPoint         End point of the surface
+            CreateParams (Dgn::SpatialLocationModelCR model, GridAxisCR gridAxis, double startElevation, double endElevation, DPoint2d startPoint, DPoint2d endPoint) :
+                T_Super::CreateParams (model, QueryClassId (model.GetDgnDb ()), gridAxis.GetElementId (), startElevation, endElevation)
                 {
-                m_startPoint = staPoint;
+                m_startPoint = startPoint;
                 m_endPoint = endPoint;
                 }
 
             //! Constructor from base params. Chiefly for internal use.
-            //! @param[in]      params   The base element parameters
-            //! @return 
+            //! @param[in] params           The base element parameters
             explicit GRIDELEMENTS_EXPORT CreateParams (Dgn::DgnElement::CreateParams const& params)
                 : T_Super (params)
                 {

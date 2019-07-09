@@ -108,9 +108,9 @@
     <NMakeOutput>
     </NMakeOutput>
     <NMakePreprocessorDefinitions>DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions);</NMakePreprocessorDefinitions>
-    <NMakeBuildCommandLine>bb re Licensing</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>bb re Licensing -s</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>bb re Licensing -c</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>bb -ax64 re Licensing</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -ax64 re Licensing -s</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -ax64 re Licensing -c</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <IncludePath>$(SrcRoot)licensingcrossplatform\PublicAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\VendorAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\PublicAPI;$(IncludePath);$(SrcRoot)licensing\LicensingCrossPlatform\PublicAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\VendorAPI;$(OutRoot)crossplatformlic\out\Winx64\BuildContexts\LicensingCrossPlatform\PublicAPI</IncludePath>
     <OutDir>$(OutRoot)VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
