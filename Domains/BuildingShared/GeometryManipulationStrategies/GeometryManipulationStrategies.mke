@@ -1,0 +1,125 @@
+#----------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#----------------------------------------------------------------------
+%if defined (DGNV8_BUILD)
+    PolicyFile = $(SrcBsicommon)sharedmki/AssertCommonCompileLinkPolicy.mki
+%endif
+AppName = GeometryManipulationStrategies
+CCompPDBName = $(AppName)
+
+%include mdl.mki
+
+o = $(OutputRootDir)build/BuildingShared/GeometryManipulationStrategies/
+
+%if defined (DGNV8_BUILD)
+    nameToDefine = DGNV8_BUILD
+    %include cdefapnd.mki
+%endif
+
+nameToDefine = __GEOMETRYMANIPULATIONSTRATEGIES_BUILD__
+%include cdefapnd.mki
+
+%if !defined (BMAKE_DELETE_ALL_TARGETS)
+    $(o):
+        ~@mkdir $@
+%else
+    always:
+        -$(rmdirRecursiveCmd) $(o)
+%endif
+
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)GeometryManipulationStrategyBase$(oext) : $(_MakeFilePath)GeometryManipulationStrategyBase.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GeometryManipulationStrategyBase.h
+
+$(o)GeometryManipulationStrategy$(oext) : $(_MakeFilePath)GeometryManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GeometryManipulationStrategy.h
+
+$(o)CurveVectorManipulationStrategy$(oext) : $(_MakeFilePath)CurveVectorManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/CurveVectorManipulationStrategy.h
+
+$(o)CurvePrimitiveManipulationStrategy$(oext) : $(_MakeFilePath)CurvePrimitiveManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/CurvePrimitiveManipulationStrategy.h
+
+$(o)ChildCurveVectorManipulationStrategy$(oext) : $(_MakeFilePath)ChildCurveVectorManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ChildCurveVectorManipulationStrategy.h
+
+$(o)LineManipulationStrategy$(oext) : $(_MakeFilePath)LineManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/LineManipulationStrategy.h
+
+$(o)LinePlacementStrategy$(oext)    : $(_MakeFilePath)LinePlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/LinePlacementStrategy.h
+
+$(o)EllipseManipulationStrategy$(oext) : $(_MakeFilePath)EllipseManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/EllipseManipulationStrategy.h
+
+$(o)ArcManipulationStrategy$(oext) : $(_MakeFilePath)ArcManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ArcManipulationStrategy.h
+
+$(o)GeometryPlacementStrategy$(oext) : $(_MakeFilePath)GeometryPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GeometryPlacementStrategy.h
+
+$(o)CurveVectorPlacementStrategy$(oext) : $(_MakeFilePath)CurveVectorPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/CurveVectorPlacementStrategy.h
+
+$(o)CurvePrimitivePlacementStrategy$(oext) : $(_MakeFilePath)CurvePrimitivePlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/CurvePrimitivePlacementStrategy.h
+
+$(o)ChildCurveVectorPlacementStrategy$(oext) : $(_MakeFilePath)ChildCurveVectorPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ChildCurveVectorPlacementStrategy.h
+
+$(o)ArcPlacementStrategy$(oext) : $(_MakeFilePath)ArcPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ArcPlacementStrategy.h
+
+$(o)ArcStartCenterPlacementMethod$(oext) : $(_MakeFilePath)ArcStartCenterPlacementMethod.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ArcStartCenterPlacementMethod.h
+
+$(o)ArcCenterStartPlacementMethod$(oext) : $(_MakeFilePath)ArcCenterStartPlacementMethod.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ArcCenterStartPlacementMethod.h
+
+$(o)ArcStartMidEndPlacementMethod$(oext) : $(_MakeFilePath)ArcStartMidEndPlacementMethod.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ArcStartMidEndPlacementMethod.h
+
+$(o)ArcStartEndMidPlacementMethod$(oext) : $(_MakeFilePath)ArcStartEndMidPlacementMethod.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ArcStartEndMidPlacementMethod.h
+
+$(o)SplineManipulationStrategy$(oext) : $(_MakeFilePath)SplineManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/SplineManipulationStrategy.h
+
+$(o)ElementPlacementStrategy$(oext) : $(_MakeFilePath)ElementPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ElementPlacementStrategy.h
+
+$(o)LineStringManipulationStrategy$(oext) : $(_MakeFilePath)LineStringManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/LineStringManipulationStrategy.h
+
+$(o)LineStringPlacementStrategy$(oext) : $(_MakeFilePath)LineStringPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/LineStringPlacementStrategy.h
+
+$(o)SplinePlacementStrategy$(oext) : $(_MakeFilePath)SplinePlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/SplinePlacementStrategy.h
+
+$(o)ElementManipulationStrategy$(oext) : $(_MakeFilePath)ElementManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ElementManipulationStrategy.h
+
+$(o)LineStringMetesAndBoundsPlacementStrategy$(oext) : $(_MakeFilePath)LineStringMetesAndBoundsPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/LineStringMetesAndBoundsPlacementStrategy.h
+
+$(o)SolidPrimitiveManipulationStrategy$(oext) : $(_MakeFilePath)SolidPrimitiveManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/SolidPrimitiveManipulationStrategy.h
+
+$(o)ExtrusionManipulationStrategy$(oext) : $(_MakeFilePath)ExtrusionManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ExtrusionManipulationStrategy.h
+
+$(o)SolidPrimitivePlacementStrategy$(oext) : $(_MakeFilePath)SolidPrimitivePlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/SolidPrimitivePlacementStrategy.h
+
+$(o)ExtrusionPlacementStrategy$(oext) : $(_MakeFilePath)ExtrusionPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ExtrusionPlacementStrategy.h
+
+$(o)RectanglePlacementStrategy$(oext) : $(_MakeFilePath)RectanglePlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/RectanglePlacementStrategy.h
+
+$(o)ScopedDynamicKeyPointResetter$(oext) : $(_MakeFilePath)ScopedDynamicKeyPointResetter.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ScopedDynamicKeyPointResetter.h
+
+$(o)PointPlacementStrategy$(oext) : $(_MakeFilePath)PointPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/PointPlacementStrategy.h
+
+$(o)PointManipulationStrategy$(oext) : $(_MakeFilePath)PointManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/PointManipulationStrategy.h
+
+$(o)IArcElementKeyPointContainer$(oext) : $(_MakeFilePath)IArcElementKeyPointContainer.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/IArcElementKeyPointContainer.h
+
+
+%include MultiCppCompileGo.mki
+objs +% $(MultiCompileObjectList)
+
+DLM_CONTEXT_LOCATION = $(ContextDeliveryDir)
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+DLM_DEST = $(o)
+DLM_EXPORT_DEST = $(o)
+DLM_EXPORT_OBJS = $(objs)
+DLM_LIB_CONTEXT_LOCATION = $(ContextDeliveryDir)
+DLM_NAME = $(AppName)
+DLM_NOENTRY = 1
+DLM_OBJECT_DEST = $(o)
+DLM_OBJECT_FILES = $(objs)
+
+%if defined (DGNV8_BUILD)
+    DLM_NO_DLS = 1
+    DLM_NO_DEF = 1
+%endif
+
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BuildingUtils$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BuildingUnits$(libext)
+
+%include $(sharedMki)linkLibrary.mki

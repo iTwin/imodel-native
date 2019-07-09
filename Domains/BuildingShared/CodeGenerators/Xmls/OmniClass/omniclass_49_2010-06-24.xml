@@ -1,0 +1,4435 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<Table>
+    <Name>Table 49 - Properties</Name>
+    <Source>Construction Specifications Institute (CSI)</Source>
+    <Version>Major Version No=&apos;OmniClass License Rev&apos;  Major Date=&apos;21st July 2011&apos;  Minor Version No=&apos;OmniClass License Rev&apos;  Minor Date=&apos;21st July 2011&apos;  Major=&apos;&apos;  Minor=&apos;&apos; </Version>
+    <Section>
+        <Code>49-11 00 00</Code>
+        <Name>Identification Properties</Name>
+        <Section>
+            <Code>49-11 11 00</Code>
+            <Name>Facility Identifications</Name>
+            <Section>
+                <Code>49-11 11 11</Code>
+                <Name>Site ID</Name>
+            </Section>
+            <Section>
+                <Code>49-11 11 13</Code>
+                <Name>Site Type</Name>
+            </Section>
+            <Section>
+                <Code>49-11 11 15</Code>
+                <Name>Landmark ID</Name>
+            </Section>
+            <Section>
+                <Code>49-11 11 17</Code>
+                <Name>Facilities Group</Name>
+            </Section>
+            <Section>
+                <Code>49-11 11 19</Code>
+                <Name>Facility Name</Name>
+            </Section>
+            <Section>
+                <Code>49-11 11 21</Code>
+                <Name>Facility Number</Name>
+            </Section>
+            <Section>
+                <Code>49-11 11 23</Code>
+                <Name>Street Address</Name>
+                <Section>
+                    <Code>49-11 11 23 11</Code>
+                    <Name>Address Suffix</Name>
+                </Section>
+                <Section>
+                    <Code>49-11 11 23 13</Code>
+                    <Name>Unit Number</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-11 11 24</Code>
+                <Name>Street Name</Name>
+            </Section>
+            <Section>
+                <Code>49-11 11 25</Code>
+                <Name>Zip or Postal Code</Name>
+            </Section>
+            <Section>
+                <Code>49-11 11 27</Code>
+                <Name>Emergency Services Information</Name>
+                <Section>
+                    <Code>49-11 11 27 11</Code>
+                    <Name>Building Data Access Policy </Name>
+                </Section>
+                <Section>
+                    <Code>49-11 11 27 13</Code>
+                    <Name>Facility Monitoring Company</Name>
+                </Section>
+                <Section>
+                    <Code>49-11 11 27 15</Code>
+                    <Name>Public Service Answering Point (PSAP)</Name>
+                </Section>
+                <Section>
+                    <Code>49-11 11 27 17</Code>
+                    <Name>Agency ID</Name>
+                </Section>
+                <Section>
+                    <Code>49-11 11 27 19</Code>
+                    <Name>Master Street Address Guide (MSAG)</Name>
+                </Section>
+                <Section>
+                    <Code>49-11 11 27 21</Code>
+                    <Name>Emergency Service Number (ESN)</Name>
+                </Section>
+                <Section>
+                    <Code>49-11 11 27 23</Code>
+                    <Name>Road Segment ID</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-11 31 00</Code>
+            <Name>Space Identifications</Name>
+            <Section>
+                <Code>49-11 31 11</Code>
+                <Name>Floor Number</Name>
+            </Section>
+            <Section>
+                <Code>49-11 31 13</Code>
+                <Name>Owner Space Name</Name>
+            </Section>
+            <Section>
+                <Code>49-11 31 15</Code>
+                <Name>Standard Space Name</Name>
+            </Section>
+            <Section>
+                <Code>49-11 31 17</Code>
+                <Name>Owner Space Number</Name>
+            </Section>
+            <Section>
+                <Code>49-11 31 19</Code>
+                <Name>Space Number</Name>
+            </Section>
+            <Section>
+                <Code>49-11 31 21</Code>
+                <Name>Means of Egress</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-11 51 00</Code>
+            <Name>Occupancy Identifications</Name>
+            <Section>
+                <Code>49-11 51 11</Code>
+                <Name>Occupancy Class</Name>
+            </Section>
+            <Section>
+                <Code>49-11 51 13</Code>
+                <Name>Occupant Organizational Groups</Name>
+            </Section>
+            <Section>
+                <Code>49-11 51 15</Code>
+                <Name>Occupant Demographics</Name>
+            </Section>
+            <Section>
+                <Code>49-11 51 17</Code>
+                <Name>Animal Occupants</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-11 71 00</Code>
+            <Name>Work Result Identifications</Name>
+            <Section>
+                <Code>49-11 71 11</Code>
+                <Name>Category</Name>
+            </Section>
+            <Section>
+                <Code>49-11 71 13</Code>
+                <Name>Subcategory</Name>
+            </Section>
+            <Section>
+                <Code>49-11 71 15</Code>
+                <Name>Version</Name>
+            </Section>
+            <Section>
+                <Code>49-11 71 17</Code>
+                <Name>Material ID Ref</Name>
+            </Section>
+            <Section>
+                <Code>49-11 71 19</Code>
+                <Name>Object ID</Name>
+            </Section>
+            <Section>
+                <Code>49-11 71 21</Code>
+                <Name>Industry Foundation Class</Name>
+            </Section>
+            <Section>
+                <Code>49-11 71 23</Code>
+                <Name>International Framework for Dictionaries</Name>
+            </Section>
+            <Section>
+                <Code>49-11 71 25</Code>
+                <Name>Label Type</Name>
+            </Section>
+            <Section>
+                <Code>49-11 71 27</Code>
+                <Name>Radio Frequency ID (RFID)</Name>
+            </Section>
+            <Section>
+                <Code>49-11 71 29</Code>
+                <Name>Bar Code Marking</Name>
+            </Section>
+            <Section>
+                <Code>49-11 71 31</Code>
+                <Name>Tracking Number</Name>
+            </Section>
+            <Section>
+                <Code>49-11 71 33</Code>
+                <Name>Source of Data</Name>
+            </Section>
+            <Section>
+                <Code>49-11 71 35</Code>
+                <Name>Seat Numbers</Name>
+            </Section>
+            <Section>
+                <Code>49-11 71 37</Code>
+                <Name>Referencing Detail</Name>
+            </Section>
+            <Section>
+                <Code>49-11 71 39</Code>
+                <Name>Current Revision</Name>
+            </Section>
+            <Section>
+                <Code>49-11 71 41</Code>
+                <Name>Certified By</Name>
+            </Section>
+            <Section>
+                <Code>49-11 71 43</Code>
+                <Name>Approved By</Name>
+            </Section>
+            <Section>
+                <Code>49-11 71 45</Code>
+                <Name>Designed By</Name>
+            </Section>
+            <Section>
+                <Code>49-11 71 47</Code>
+                <Name>Checked By</Name>
+            </Section>
+            <Section>
+                <Code>49-11 71 49</Code>
+                <Name>Drawn By</Name>
+            </Section>
+            <Section>
+                <Code>49-11 71 51</Code>
+                <Name>File Path</Name>
+            </Section>
+            <Section>
+                <Code>49-11 71 53</Code>
+                <Name>Issued To</Name>
+            </Section>
+            <Section>
+                <Code>49-11 71 55</Code>
+                <Name>Issued By</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-11 81 00</Code>
+            <Name>Proprietary Identifications</Name>
+            <Section>
+                <Code>49-11 81 11</Code>
+                <Name>Brand Name</Name>
+            </Section>
+            <Section>
+                <Code>49-11 81 13</Code>
+                <Name>Fabricator Name</Name>
+            </Section>
+            <Section>
+                <Code>49-11 81 15</Code>
+                <Name>SKU Number</Name>
+            </Section>
+            <Section>
+                <Code>49-11 81 17</Code>
+                <Name>EAN Number</Name>
+            </Section>
+            <Section>
+                <Code>49-11 81 19</Code>
+                <Name>Trademark</Name>
+            </Section>
+            <Section>
+                <Code>49-11 81 21</Code>
+                <Name>UPC Code</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-11 91 00</Code>
+            <Name>Communication Identifications</Name>
+            <Section>
+                <Code>49-11 91 11</Code>
+                <Name>URL</Name>
+            </Section>
+            <Section>
+                <Code>49-11 91 13</Code>
+                <Name>Internet Country Code</Name>
+            </Section>
+            <Section>
+                <Code>49-11 91 15</Code>
+                <Name>Telephone Number</Name>
+            </Section>
+            <Section>
+                <Code>49-11 91 17</Code>
+                <Name>Fax Number</Name>
+            </Section>
+            <Section>
+                <Code>49-11 91 19</Code>
+                <Name>Email Address</Name>
+            </Section>
+            <Section>
+                <Code>49-11 91 21</Code>
+                <Name>IP Address</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>49-21 00 00</Code>
+        <Name>Location Properties</Name>
+        <Section>
+            <Code>49-21 11 00</Code>
+            <Name>Geographic Locations</Name>
+            <Section>
+                <Code>49-21 11 11</Code>
+                <Name>Latitude</Name>
+            </Section>
+            <Section>
+                <Code>49-21 11 13</Code>
+                <Name>Longitude</Name>
+            </Section>
+            <Section>
+                <Code>49-21 11 15</Code>
+                <Name>Altitude</Name>
+            </Section>
+            <Section>
+                <Code>49-21 11 17</Code>
+                <Name>State Plane Coordinates</Name>
+            </Section>
+            <Section>
+                <Code>49-21 11 19</Code>
+                <Name>GPS position</Name>
+            </Section>
+            <Section>
+                <Code>49-21 11 21</Code>
+                <Name>WGS84</Name>
+            </Section>
+            <Section>
+                <Code>49-21 11 23</Code>
+                <Name>Compass Orientation</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-21 51 00</Code>
+            <Name>Political / Legal Locations</Name>
+            <Section>
+                <Code>49-21 51 11</Code>
+                <Name>Country</Name>
+            </Section>
+            <Section>
+                <Code>49-21 51 13</Code>
+                <Name>Region</Name>
+            </Section>
+            <Section>
+                <Code>49-21 51 15</Code>
+                <Name>State / Province</Name>
+            </Section>
+            <Section>
+                <Code>49-21 51 17</Code>
+                <Name>County </Name>
+            </Section>
+            <Section>
+                <Code>49-21 51 19</Code>
+                <Name>Municipality</Name>
+            </Section>
+            <Section>
+                <Code>49-21 51 21</Code>
+                <Name>Municipality Division</Name>
+            </Section>
+            <Section>
+                <Code>49-21 51 23</Code>
+                <Name>Authority Having Jurisdiction (AHJ)</Name>
+            </Section>
+            <Section>
+                <Code>49-21 51 25</Code>
+                <Name>Zoning District</Name>
+            </Section>
+            <Section>
+                <Code>49-21 51 27</Code>
+                <Name>Planning District</Name>
+            </Section>
+            <Section>
+                <Code>49-21 51 29</Code>
+                <Name>Legal Description</Name>
+            </Section>
+            <Section>
+                <Code>49-21 51 31</Code>
+                <Name>Land Parcel</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-21 71 00</Code>
+            <Name>Manufacturing and Product Locations </Name>
+            <Section>
+                <Code>49-21 71 11</Code>
+                <Name>Manufacturer Location</Name>
+            </Section>
+            <Section>
+                <Code>49-21 71 13</Code>
+                <Name>Assembly Location</Name>
+            </Section>
+            <Section>
+                <Code>49-21 71 15</Code>
+                <Name>Warehouse Location</Name>
+            </Section>
+            <Section>
+                <Code>49-21 71 17</Code>
+                <Name>Product Harvest Location</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>49-41 00 00</Code>
+        <Name>Properties of Time and Money</Name>
+        <Section>
+            <Code>49-41 31 00</Code>
+            <Name>Time and Scheduling Properties</Name>
+            <Section>
+                <Code>49-41 31 11</Code>
+                <Name>Age</Name>
+            </Section>
+            <Section>
+                <Code>49-41 31 13</Code>
+                <Name>Age Range</Name>
+            </Section>
+            <Section>
+                <Code>49-41 31 15</Code>
+                <Name>Time Span</Name>
+            </Section>
+            <Section>
+                <Code>49-41 31 17</Code>
+                <Name>Time Increment</Name>
+            </Section>
+            <Section>
+                <Code>49-41 31 19</Code>
+                <Name>Elapsed Time</Name>
+            </Section>
+            <Section>
+                <Code>49-41 31 21</Code>
+                <Name>Actual Life Span</Name>
+            </Section>
+            <Section>
+                <Code>49-41 31 23</Code>
+                <Name>Expected Life Span</Name>
+            </Section>
+            <Section>
+                <Code>49-41 31 25</Code>
+                <Name>Purchase Date</Name>
+            </Section>
+            <Section>
+                <Code>49-41 31 27</Code>
+                <Name>Extraction Date</Name>
+            </Section>
+            <Section>
+                <Code>49-41 31 29</Code>
+                <Name>Harvest Date</Name>
+            </Section>
+            <Section>
+                <Code>49-41 31 31</Code>
+                <Name>Manufacture Date</Name>
+            </Section>
+            <Section>
+                <Code>49-41 31 33</Code>
+                <Name>Date Updated</Name>
+            </Section>
+            <Section>
+                <Code>49-41 31 35</Code>
+                <Name>Day Type</Name>
+            </Section>
+            <Section>
+                <Code>49-41 31 37</Code>
+                <Name>Manufacturing Lead Time</Name>
+                <Section>
+                    <Code>49-41 31 39</Code>
+                    <Name>Set Up Time</Name>
+                </Section>
+                <Section>
+                    <Code>49-41 31 41</Code>
+                    <Name>Run Time</Name>
+                </Section>
+                <Section>
+                    <Code>49-41 31 43</Code>
+                    <Name>Process Time</Name>
+                </Section>
+                <Section>
+                    <Code>49-41 31 45</Code>
+                    <Name>Idle Time</Name>
+                </Section>
+                <Section>
+                    <Code>49-41 31 47</Code>
+                    <Name>Cycle Time</Name>
+                </Section>
+                <Section>
+                    <Code>49-41 31 49</Code>
+                    <Name>Throughput Time</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-41 31 51</Code>
+                <Name>Ship Date</Name>
+                <Section>
+                    <Code>49-41 31 53</Code>
+                    <Name>Shipping Time</Name>
+                </Section>
+                <Section>
+                    <Code>49-41 31 55</Code>
+                    <Name>Delivery Time</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-41 31 57</Code>
+                <Name>Delivery Date</Name>
+            </Section>
+            <Section>
+                <Code>49-41 31 59</Code>
+                <Name>Installation Start Date</Name>
+            </Section>
+            <Section>
+                <Code>49-41 31 61</Code>
+                <Name>Installation End Date</Name>
+                <Section>
+                    <Code>49-41 31 61 11</Code>
+                    <Name>Setting Time</Name>
+                </Section>
+                <Section>
+                    <Code>49-41 31 61 13</Code>
+                    <Name>Pot Life</Name>
+                </Section>
+                <Section>
+                    <Code>49-41 31 61 15</Code>
+                    <Name>Shelf Life</Name>
+                </Section>
+                <Section>
+                    <Code>49-41 31 61 17</Code>
+                    <Name>Tack Free Time</Name>
+                </Section>
+                <Section>
+                    <Code>49-41 31 61 19</Code>
+                    <Name>Recoat Time</Name>
+                </Section>
+                <Section>
+                    <Code>49-41 31 61 21</Code>
+                    <Name>Cure Time</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-41 31 63</Code>
+                <Name>Site Inspection Date</Name>
+            </Section>
+            <Section>
+                <Code>49-41 31 65</Code>
+                <Name>Site Test Date</Name>
+            </Section>
+            <Section>
+                <Code>49-41 31 67</Code>
+                <Name>Acceptance Date</Name>
+            </Section>
+            <Section>
+                <Code>49-41 31 69</Code>
+                <Name>Commissioning Date</Name>
+            </Section>
+            <Section>
+                <Code>49-41 31 75</Code>
+                <Name>Project Phase</Name>
+                <Section>
+                    <Code>49-41 31 75 11</Code>
+                    <Name>Phase Created</Name>
+                </Section>
+                <Section>
+                    <Code>49-41 31 75 13</Code>
+                    <Name>Phase Demolished</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-41 31 77</Code>
+                <Name>Service Response Time</Name>
+            </Section>
+            <Section>
+                <Code>49-41 31 79</Code>
+                <Name>Date Put in Storage</Name>
+            </Section>
+            <Section>
+                <Code>49-41 31 81</Code>
+                <Name>Maximum Storage Time</Name>
+            </Section>
+            <Section>
+                <Code>49-41 31 83</Code>
+                <Name>Operations and Maintenance</Name>
+                <Section>
+                    <Code>49-41 31 83 11</Code>
+                    <Name>Depreciation Schedule</Name>
+                </Section>
+                <Section>
+                    <Code>49-41 31 83 13</Code>
+                    <Name>Maintenance Schedule</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-41 31 85</Code>
+                <Name>Decommissioning Date</Name>
+            </Section>
+            <Section>
+                <Code>49-41 31 87</Code>
+                <Name>Demolition Date</Name>
+            </Section>
+            <Section>
+                <Code>49-41 31 89</Code>
+                <Name>Disposal Date</Name>
+            </Section>
+            <Section>
+                <Code>49-41 31 91</Code>
+                <Name>Recycled Date</Name>
+            </Section>
+            <Section>
+                <Code>49-41 31 93</Code>
+                <Name>Removal Date</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-41 61 00</Code>
+            <Name>Cost Properties</Name>
+            <Section>
+                <Code>49-41 61 11</Code>
+                <Name>Cost Value</Name>
+            </Section>
+            <Section>
+                <Code>49-41 61 13</Code>
+                <Name>Currency Type</Name>
+            </Section>
+            <Section>
+                <Code>49-41 61 15</Code>
+                <Name>Unit Price</Name>
+            </Section>
+            <Section>
+                <Code>49-41 61 17</Code>
+                <Name>Wholesale Cost</Name>
+            </Section>
+            <Section>
+                <Code>49-41 61 19</Code>
+                <Name>Retail Cost</Name>
+            </Section>
+            <Section>
+                <Code>49-41 61 21</Code>
+                <Name>Manufacturers Suggested Retail Price</Name>
+            </Section>
+            <Section>
+                <Code>49-41 61 23</Code>
+                <Name>Cost Discount</Name>
+            </Section>
+            <Section>
+                <Code>49-41 61 25</Code>
+                <Name>Shipping Cost</Name>
+            </Section>
+            <Section>
+                <Code>49-41 61 27</Code>
+                <Name>Installation Cost</Name>
+            </Section>
+            <Section>
+                <Code>49-41 61 29</Code>
+                <Name>Purchase Terms</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>49-61 00 00</Code>
+        <Name>Source Properties</Name>
+        <Section>
+            <Code>49-61 11 00</Code>
+            <Name>Manufacturer Properties</Name>
+            <Section>
+                <Code>49-61 11 11</Code>
+                <Name>Source Limitations</Name>
+            </Section>
+            <Section>
+                <Code>49-61 11 13</Code>
+                <Name>Manufacturer Name</Name>
+            </Section>
+            <Section>
+                <Code>49-61 11 15</Code>
+                <Name>Manufacturer Experience</Name>
+            </Section>
+            <Section>
+                <Code>49-61 11 17</Code>
+                <Name>Manufacture Production Rate</Name>
+                <Section>
+                    <Code>49-61 11 17 11</Code>
+                    <Name>Management Level</Name>
+                </Section>
+                <Section>
+                    <Code>49-61 11 17 13</Code>
+                    <Name>Operators Level</Name>
+                </Section>
+                <Section>
+                    <Code>49-61 11 17 15</Code>
+                    <Name>Controllers Level</Name>
+                </Section>
+                <Section>
+                    <Code>49-61 11 17 17</Code>
+                    <Name>Field Level</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-61 11 19</Code>
+                <Name>Designer Name</Name>
+            </Section>
+            <Section>
+                <Code>49-61 11 21</Code>
+                <Name>Method of Manufacture</Name>
+            </Section>
+            <Section>
+                <Code>49-61 11 23</Code>
+                <Name>Manufacturers Certification</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-61 41 00</Code>
+            <Name>Product Properties</Name>
+            <Section>
+                <Code>49-61 41 11</Code>
+                <Name>Product Name</Name>
+            </Section>
+            <Section>
+                <Code>49-61 41 13</Code>
+                <Name>Stock or Custom</Name>
+            </Section>
+            <Section>
+                <Code>49-61 41 15</Code>
+                <Name>In-Stock</Name>
+            </Section>
+            <Section>
+                <Code>49-61 41 17</Code>
+                <Name>Pre-Assembled</Name>
+            </Section>
+            <Section>
+                <Code>49-61 41 19</Code>
+                <Name>Product Certification</Name>
+            </Section>
+            <Section>
+                <Code>49-61 41 21</Code>
+                <Name>Packaging</Name>
+            </Section>
+            <Section>
+                <Code>49-61 41 23</Code>
+                <Name>Level of Quality </Name>
+            </Section>
+            <Section>
+                <Code>49-61 41 25</Code>
+                <Name>Grade</Name>
+                <Section>
+                    <Code>49-61 41 25 11</Code>
+                    <Name>Residential</Name>
+                </Section>
+                <Section>
+                    <Code>49-61 41 25 13</Code>
+                    <Name>Commercial</Name>
+                </Section>
+                <Section>
+                    <Code>49-61 41 25 15</Code>
+                    <Name>Heavy-Duty</Name>
+                </Section>
+                <Section>
+                    <Code>49-61 41 25 17</Code>
+                    <Name>Extra Heavy Duty </Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-61 41 27</Code>
+                <Name>Species</Name>
+            </Section>
+            <Section>
+                <Code>49-61 41 29</Code>
+                <Name>Product Construction</Name>
+                <Section>
+                    <Code>49-61 41 29 11</Code>
+                    <Name>Surface Type</Name>
+                </Section>
+                <Section>
+                    <Code>49-61 41 29 13</Code>
+                    <Name>Backing Type</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-61 41 31</Code>
+                <Name>Style</Name>
+            </Section>
+            <Section>
+                <Code>49-61 41 33</Code>
+                <Name>Pattern</Name>
+            </Section>
+            <Section>
+                <Code>49-61 41 35</Code>
+                <Name>Relief Pattern</Name>
+                <Section>
+                    <Code>49-61 41 35 11</Code>
+                    <Name>Relief Pattern Height</Name>
+                </Section>
+                <Section>
+                    <Code>49-61 41 35 13</Code>
+                    <Name>Relief Pattern Scale</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-61 41 37</Code>
+                <Name>Perforations</Name>
+            </Section>
+            <Section>
+                <Code>49-61 41 39</Code>
+                <Name>Product Enclosure</Name>
+            </Section>
+            <Section>
+                <Code>49-61 41 41</Code>
+                <Name>Product Modifications</Name>
+            </Section>
+            <Section>
+                <Code>49-61 41 43</Code>
+                <Name>Factory Settings</Name>
+            </Section>
+            <Section>
+                <Code>49-61 41 45</Code>
+                <Name>Service Access</Name>
+            </Section>
+            <Section>
+                <Code>49-61 41 47</Code>
+                <Name>Product Features</Name>
+            </Section>
+            <Section>
+                <Code>49-61 41 49</Code>
+                <Name>Accessories</Name>
+            </Section>
+            <Section>
+                <Code>49-61 41 51</Code>
+                <Name>Options</Name>
+            </Section>
+            <Section>
+                <Code>49-61 41 53</Code>
+                <Name>Color</Name>
+                <Section>
+                    <Code>49-61 41 53 11</Code>
+                    <Name>Interior Color</Name>
+                </Section>
+                <Section>
+                    <Code>49-61 41 53 13</Code>
+                    <Name>Exterior Color</Name>
+                </Section>
+                <Section>
+                    <Code>49-61 41 53 15</Code>
+                    <Name>Color Coding</Name>
+                </Section>
+                <Section>
+                    <Code>49-61 41 53 17</Code>
+                    <Name>Dye Lot</Name>
+                </Section>
+                <Section>
+                    <Code>49-61 41 53 19</Code>
+                    <Name>Integral Color</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-61 41 55</Code>
+                <Name>Orientation</Name>
+            </Section>
+            <Section>
+                <Code>49-61 41 57</Code>
+                <Name>Finish</Name>
+                <Section>
+                    <Code>49-61 41 57 11</Code>
+                    <Name>Finish - Applied</Name>
+                </Section>
+                <Section>
+                    <Code>49-61 41 57 13</Code>
+                    <Name>Finish - Integral</Name>
+                </Section>
+                <Section>
+                    <Code>49-61 41 57 15</Code>
+                    <Name>Face Finish</Name>
+                </Section>
+                <Section>
+                    <Code>49-61 41 57 17</Code>
+                    <Name>Field Finishing Material</Name>
+                </Section>
+                <Section>
+                    <Code>49-61 41 57 19</Code>
+                    <Name>Field Finishing Method</Name>
+                </Section>
+                <Section>
+                    <Code>49-61 41 57 21</Code>
+                    <Name>Texture</Name>
+                </Section>
+                <Section>
+                    <Code>49-61 41 57 23</Code>
+                    <Name>Base Finish</Name>
+                </Section>
+                <Section>
+                    <Code>49-61 41 57 25</Code>
+                    <Name>Ceiling Finish</Name>
+                </Section>
+                <Section>
+                    <Code>49-61 41 57 27</Code>
+                    <Name>Wall Finish</Name>
+                </Section>
+                <Section>
+                    <Code>49-61 41 57 29</Code>
+                    <Name>Floor Finish</Name>
+                </Section>
+                <Section>
+                    <Code>49-61 41 57 31</Code>
+                    <Name>Gloss</Name>
+                </Section>
+                <Section>
+                    <Code>49-61 41 57 33</Code>
+                    <Name>Sheen </Name>
+                </Section>
+                <Section>
+                    <Code>49-61 41 57 35</Code>
+                    <Name>Patina</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-61 41 59</Code>
+                <Name>Treatment</Name>
+                <Section>
+                    <Code>49-61 41 59 11</Code>
+                    <Name>Anti-Microbial Treatment</Name>
+                </Section>
+                <Section>
+                    <Code>49-61 41 59 13</Code>
+                    <Name>Pressure Treatment</Name>
+                </Section>
+                <Section>
+                    <Code>49-61 41 59 15</Code>
+                    <Name>Fire Retardant Treatment</Name>
+                </Section>
+                <Section>
+                    <Code>49-61 41 59 17</Code>
+                    <Name>Herbicide Treatment</Name>
+                </Section>
+                <Section>
+                    <Code>49-61 41 59 19</Code>
+                    <Name>Pesticide Treatment</Name>
+                </Section>
+                <Section>
+                    <Code>49-61 41 59 21</Code>
+                    <Name>Anti-Corrosive Treatment</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-61 51 00</Code>
+            <Name>Warranty Properties</Name>
+            <Section>
+                <Code>49-61 51 11</Code>
+                <Name>Manufacturers Warranty Type</Name>
+            </Section>
+            <Section>
+                <Code>49-61 51 13</Code>
+                <Name>Manufacturers Warranty Terms</Name>
+            </Section>
+            <Section>
+                <Code>49-61 51 15</Code>
+                <Name>Installers Warranty Type</Name>
+            </Section>
+            <Section>
+                <Code>49-61 51 17</Code>
+                <Name>Installers Warranty Terms</Name>
+            </Section>
+            <Section>
+                <Code>49-61 51 19</Code>
+                <Name>Warranty Service Location</Name>
+            </Section>
+            <Section>
+                <Code>49-61 51 21</Code>
+                <Name>Warranty Period </Name>
+                <Section>
+                    <Code>49-61 51 21 11</Code>
+                    <Name>Warranty Start Date</Name>
+                </Section>
+                <Section>
+                    <Code>49-61 51 21 13</Code>
+                    <Name>Warranty End Date</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-61 71 00</Code>
+            <Name>Shipping Properties</Name>
+            <Section>
+                <Code>49-61 71 11</Code>
+                <Name>Shipping Mode</Name>
+            </Section>
+            <Section>
+                <Code>49-61 71 13</Code>
+                <Name>Shipper Type</Name>
+            </Section>
+            <Section>
+                <Code>49-61 71 15</Code>
+                <Name>Shipping Packaging</Name>
+            </Section>
+            <Section>
+                <Code>49-61 71 17</Code>
+                <Name>Delivery Marking</Name>
+            </Section>
+            <Section>
+                <Code>49-61 71 19</Code>
+                <Name>Delivery Terms</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-61 81 00</Code>
+            <Name>Installation Properties </Name>
+            <Section>
+                <Code>49-61 81 11</Code>
+                <Name>Installation Configuration</Name>
+            </Section>
+            <Section>
+                <Code>49-61 81 13</Code>
+                <Name>Surface Preparation</Name>
+            </Section>
+            <Section>
+                <Code>49-61 81 15</Code>
+                <Name>Installation Method</Name>
+                <Section>
+                    <Code>49-61 81 15 11</Code>
+                    <Name>Mechanical Attached Method</Name>
+                </Section>
+                <Section>
+                    <Code>49-61 81 15 13</Code>
+                    <Name>Adhered Method</Name>
+                </Section>
+                <Section>
+                    <Code>49-61 81 15 15</Code>
+                    <Name>Loose-Laid Method</Name>
+                </Section>
+                <Section>
+                    <Code>49-61 81 15 17</Code>
+                    <Name>Ballasted Method</Name>
+                </Section>
+                <Section>
+                    <Code>49-61 81 15 19</Code>
+                    <Name>Adhesive Type Method</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-61 81 17</Code>
+                <Name>Fastening Method </Name>
+            </Section>
+            <Section>
+                <Code>49-61 81 19</Code>
+                <Name>Fastener Type</Name>
+            </Section>
+            <Section>
+                <Code>49-61 81 21</Code>
+                <Name>Installer Properties</Name>
+                <Section>
+                    <Code>49-61 81 21 11</Code>
+                    <Name>Installer Experience</Name>
+                </Section>
+                <Section>
+                    <Code>49-61 81 21 13</Code>
+                    <Name>Installer Qualifications</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-61 81 23</Code>
+                <Name>Application Rate</Name>
+                <Section>
+                    <Code>49-61 81 23 11</Code>
+                    <Name>Theoretical Application Rate</Name>
+                </Section>
+                <Section>
+                    <Code>49-61 81 23 13</Code>
+                    <Name>Actual Application Rate</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-61 81 25</Code>
+                <Name>Coverage</Name>
+                <Section>
+                    <Code>49-61 81 25 11</Code>
+                    <Name>Theoretical Coverage</Name>
+                </Section>
+                <Section>
+                    <Code>49-61 81 25 13</Code>
+                    <Name>Actual Coverage</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-61 81 27</Code>
+                <Name>Mounting Method</Name>
+            </Section>
+            <Section>
+                <Code>49-61 81 29</Code>
+                <Name>Joining Method</Name>
+                <Section>
+                    <Code>49-61 81 29 11</Code>
+                    <Name>Joint Type</Name>
+                </Section>
+                <Section>
+                    <Code>49-61 81 29 13</Code>
+                    <Name>Seam Type</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-61 81 31</Code>
+                <Name>Ambient Temperature during Installation</Name>
+            </Section>
+            <Section>
+                <Code>49-61 81 33</Code>
+                <Name>Cleaning Method</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>49-71 00 00</Code>
+        <Name>Physical Properties</Name>
+        <Section>
+            <Code>49-71 11 00</Code>
+            <Name>Quantity Properties</Name>
+            <Section>
+                <Code>49-71 11 11</Code>
+                <Name>Unit of Measure</Name>
+                <Section>
+                    <Code>49-71 11 11 11</Code>
+                    <Name>Metric</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 11 11 13</Code>
+                    <Name>Imperial</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-71 11 11 15</Code>
+                <Name>Single </Name>
+            </Section>
+            <Section>
+                <Code>49-71 11 11 17</Code>
+                <Name>Set</Name>
+            </Section>
+            <Section>
+                <Code>49-71 11 11 19</Code>
+                <Name>Pair</Name>
+            </Section>
+            <Section>
+                <Code>49-71 11 11 21</Code>
+                <Name>Number</Name>
+            </Section>
+            <Section>
+                <Code>49-71 11 11 23</Code>
+                <Name>Amount of Substance</Name>
+            </Section>
+            <Section>
+                <Code>49-71 11 11 25</Code>
+                <Name>Concentration</Name>
+            </Section>
+            <Section>
+                <Code>49-71 11 11 27</Code>
+                <Name>Distribution</Name>
+            </Section>
+            <Section>
+                <Code>49-71 11 11 29</Code>
+                <Name>Capacity</Name>
+            </Section>
+            <Section>
+                <Code>49-71 11 11 31</Code>
+                <Name>Yield</Name>
+            </Section>
+            <Section>
+                <Code>49-71 11 11 33</Code>
+                <Name>Mean Size</Name>
+            </Section>
+            <Section>
+                <Code>49-71 11 11 35</Code>
+                <Name>Batch Size</Name>
+            </Section>
+            <Section>
+                <Code>49-71 11 11 37</Code>
+                <Name>Clearance Requirements</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-71 15 00</Code>
+            <Name>Shape Properties </Name>
+            <Section>
+                <Code>49-71 15 11</Code>
+                <Name>Form </Name>
+            </Section>
+            <Section>
+                <Code>49-71 15 13</Code>
+                <Name>Shape </Name>
+            </Section>
+            <Section>
+                <Code>49-71 15 15</Code>
+                <Name>Geometry</Name>
+            </Section>
+            <Section>
+                <Code>49-71 15 17</Code>
+                <Name>Modular</Name>
+            </Section>
+            <Section>
+                <Code>49-71 15 19</Code>
+                <Name>Hand - Left or Right</Name>
+            </Section>
+            <Section>
+                <Code>49-71 15 21</Code>
+                <Name>Profile</Name>
+            </Section>
+            <Section>
+                <Code>49-71 15 23</Code>
+                <Name>Face</Name>
+            </Section>
+            <Section>
+                <Code>49-71 15 25</Code>
+                <Name>Edge</Name>
+            </Section>
+            <Section>
+                <Code>49-71 15 27</Code>
+                <Name>Edge Profile</Name>
+            </Section>
+            <Section>
+                <Code>49-71 15 29</Code>
+                <Name>Vertex</Name>
+            </Section>
+            <Section>
+                <Code>49-71 15 31</Code>
+                <Name>Point</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-71 19 00</Code>
+            <Name>Single Dimensions</Name>
+            <Section>
+                <Code>49-71 19 11</Code>
+                <Name>Standard or Custom Size</Name>
+            </Section>
+            <Section>
+                <Code>49-71 19 13</Code>
+                <Name>Length </Name>
+            </Section>
+            <Section>
+                <Code>49-71 19 15</Code>
+                <Name>Width </Name>
+            </Section>
+            <Section>
+                <Code>49-71 19 17</Code>
+                <Name>Distance </Name>
+            </Section>
+            <Section>
+                <Code>49-71 19 19</Code>
+                <Name>Span </Name>
+            </Section>
+            <Section>
+                <Code>49-71 19 21</Code>
+                <Name>Height </Name>
+                <Section>
+                    <Code>49-71 19 21 11</Code>
+                    <Name>Sill Height</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 19 21 13</Code>
+                    <Name>Head Height</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-71 19 23</Code>
+                <Name>Depth</Name>
+            </Section>
+            <Section>
+                <Code>49-71 19 25</Code>
+                <Name>Thickness</Name>
+                <Section>
+                    <Code>49-71 19 25 11</Code>
+                    <Name>Thickness of Cover</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 19 25 13</Code>
+                    <Name>Product Thickness</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 19 25 15</Code>
+                    <Name>Dry Film Thickness</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-71 19 27</Code>
+                <Name>Gauge </Name>
+            </Section>
+            <Section>
+                <Code>49-71 19 29</Code>
+                <Name>Radius</Name>
+            </Section>
+            <Section>
+                <Code>49-71 19 31</Code>
+                <Name>Spacing</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-71 23 00</Code>
+            <Name>Area Dimensions</Name>
+            <Section>
+                <Code>49-71 23 11</Code>
+                <Name>Angular Dimensions</Name>
+            </Section>
+            <Section>
+                <Code>49-71 23 13</Code>
+                <Name>Arbitrary Dimension</Name>
+            </Section>
+            <Section>
+                <Code>49-71 23 15</Code>
+                <Name>Net Rentable Area</Name>
+            </Section>
+            <Section>
+                <Code>49-71 23 17</Code>
+                <Name>Floor Area Per Occupant</Name>
+            </Section>
+            <Section>
+                <Code>49-71 23 19</Code>
+                <Name>Floor Area Ratio</Name>
+            </Section>
+            <Section>
+                <Code>49-71 23 21</Code>
+                <Name>Inside Diameter</Name>
+            </Section>
+            <Section>
+                <Code>49-71 23 23</Code>
+                <Name>Outside Diameter</Name>
+            </Section>
+            <Section>
+                <Code>49-71 23 25</Code>
+                <Name>Circumference </Name>
+            </Section>
+            <Section>
+                <Code>49-71 23 27</Code>
+                <Name>Perimeter</Name>
+            </Section>
+            <Section>
+                <Code>49-71 23 29</Code>
+                <Name>Plane Angle</Name>
+            </Section>
+            <Section>
+                <Code>49-71 23 31</Code>
+                <Name>Rise </Name>
+            </Section>
+            <Section>
+                <Code>49-71 23 33</Code>
+                <Name>Fall </Name>
+            </Section>
+            <Section>
+                <Code>49-71 23 35</Code>
+                <Name>Slope Angle</Name>
+            </Section>
+            <Section>
+                <Code>49-71 23 37</Code>
+                <Name>Solid Angle</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-71 27 00</Code>
+            <Name>Volumes</Name>
+            <Section>
+                <Code>49-71 27 11</Code>
+                <Name>Fluid Volume</Name>
+            </Section>
+            <Section>
+                <Code>49-71 27 13</Code>
+                <Name>Dry Volume</Name>
+            </Section>
+            <Section>
+                <Code>49-71 27 15</Code>
+                <Name>Specific Volume</Name>
+            </Section>
+            <Section>
+                <Code>49-71 27 17</Code>
+                <Name>Volume per Unit Time</Name>
+            </Section>
+            <Section>
+                <Code>49-71 27 19</Code>
+                <Name>Air Infiltration Volume</Name>
+            </Section>
+            <Section>
+                <Code>49-71 27 21</Code>
+                <Name>Air Specific Volume</Name>
+            </Section>
+            <Section>
+                <Code>49-71 27 23</Code>
+                <Name>Water Penetration Volume</Name>
+            </Section>
+            <Section>
+                <Code>49-71 27 25</Code>
+                <Name>Section Modulus </Name>
+            </Section>
+            <Section>
+                <Code>49-71 27 27</Code>
+                <Name>Second Moment of Area</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-71 31 00</Code>
+            <Name>Relational Measurements</Name>
+            <Section>
+                <Code>49-71 31 11</Code>
+                <Name>Acceleration</Name>
+            </Section>
+            <Section>
+                <Code>49-71 31 13</Code>
+                <Name>Angular Acceleration</Name>
+            </Section>
+            <Section>
+                <Code>49-71 31 15</Code>
+                <Name>Aspect Ratio</Name>
+            </Section>
+            <Section>
+                <Code>49-71 31 17</Code>
+                <Name>Dependent Variable</Name>
+            </Section>
+            <Section>
+                <Code>49-71 31 19</Code>
+                <Name>Dependent Value</Name>
+            </Section>
+            <Section>
+                <Code>49-71 31 21</Code>
+                <Name>Frequency</Name>
+            </Section>
+            <Section>
+                <Code>49-71 31 23</Code>
+                <Name>Relative Age</Name>
+            </Section>
+            <Section>
+                <Code>49-71 31 25</Code>
+                <Name>Relative Humidity</Name>
+            </Section>
+            <Section>
+                <Code>49-71 31 27</Code>
+                <Name>Relative Power </Name>
+            </Section>
+            <Section>
+                <Code>49-71 31 29</Code>
+                <Name>Relative Range</Name>
+            </Section>
+            <Section>
+                <Code>49-71 31 31</Code>
+                <Name>Relative Sound</Name>
+            </Section>
+            <Section>
+                <Code>49-71 31 33</Code>
+                <Name>Relative Time</Name>
+            </Section>
+            <Section>
+                <Code>49-71 31 35</Code>
+                <Name>Rotational Frequency</Name>
+            </Section>
+            <Section>
+                <Code>49-71 31 37</Code>
+                <Name>Speed</Name>
+            </Section>
+            <Section>
+                <Code>49-71 31 39</Code>
+                <Name>Unit of Analysis</Name>
+            </Section>
+            <Section>
+                <Code>49-71 31 41</Code>
+                <Name>Velocity</Name>
+                <Section>
+                    <Code>49-71 31 41 11</Code>
+                    <Name>Angular Velocity</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 31 41 13</Code>
+                    <Name>Relative Velocity</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-71 35 00</Code>
+            <Name>Properties of Sustainablity</Name>
+            <Section>
+                <Code>49-71 35 11</Code>
+                <Name>Building and Material Reuse</Name>
+                <Section>
+                    <Code>49-71 35 11 11</Code>
+                    <Name>Salvaged Materials</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 35 11 13</Code>
+                    <Name>Refurbished Materials</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 35 11 15</Code>
+                    <Name>Reused Materials</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 35 11 17</Code>
+                    <Name>Existing Walls Reuse</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 35 11 19</Code>
+                    <Name>Existing Floors Reuse</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 35 11 21</Code>
+                    <Name>Existing Roof Reuse</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-71 35 13</Code>
+                <Name>Harvest Method</Name>
+            </Section>
+            <Section>
+                <Code>49-71 35 15</Code>
+                <Name>Extraction Method</Name>
+            </Section>
+            <Section>
+                <Code>49-71 35 17</Code>
+                <Name>Recycled Content</Name>
+                <Section>
+                    <Code>49-71 35 17 11</Code>
+                    <Name>Recycled Content by Mass</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 35 17 13</Code>
+                    <Name>Post-industrial recycled content</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 35 17 15</Code>
+                    <Name>Pre-consumer recycled content</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 35 17 17</Code>
+                    <Name>Post-consumer recycled content </Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-71 35 19</Code>
+                <Name>Rapidly Renewable Materials </Name>
+            </Section>
+            <Section>
+                <Code>49-71 35 21</Code>
+                <Name>Non-Renewable Materials </Name>
+            </Section>
+            <Section>
+                <Code>49-71 35 23</Code>
+                <Name>Sustainable Product Certification</Name>
+            </Section>
+            <Section>
+                <Code>49-71 35 25</Code>
+                <Name>Sustainable Manufacturing Certification</Name>
+                <Section>
+                    <Code>49-71 35 25 11</Code>
+                    <Name>Water Intake</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 35 25 13</Code>
+                    <Name>VOC Emissions</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 35 25 15</Code>
+                    <Name>Recycled Waste</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 35 25 17</Code>
+                    <Name>Liquid Wastes</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 35 25 19</Code>
+                    <Name>Air Pollution</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 35 25 21</Code>
+                    <Name>Toxic Emissions</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 35 25 23</Code>
+                    <Name>Particulate Pollution</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-71 35 27</Code>
+                <Name>Life Cycle Analysis (LCA)</Name>
+                <Section>
+                    <Code>49-71 35 27 11</Code>
+                    <Name>Life Cycle Inventory</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 35 27 13</Code>
+                    <Name>Life Cycle Cost Analysis</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 35 27 15</Code>
+                    <Name>Life Cycle Impact Assessment (LCIA)</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 35 27 17</Code>
+                    <Name>Environmental Impact</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 35 27 19</Code>
+                    <Name>Green House Gas Emissions</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-71 35 29</Code>
+                <Name>Environmental Product Declaration (EPD)</Name>
+            </Section>
+            <Section>
+                <Code>49-71 35 31</Code>
+                <Name>Environmental Footprint of Supply Chain </Name>
+            </Section>
+            <Section>
+                <Code>49-71 35 33</Code>
+                <Name>Environmental Stewardship</Name>
+            </Section>
+            <Section>
+                <Code>49-71 35 35</Code>
+                <Name>Relocatability</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-71 39 00</Code>
+            <Name>Properties of Chemical Composition</Name>
+            <Section>
+                <Code>49-71 39 15</Code>
+                <Name>Chemical Aging</Name>
+                <Section>
+                    <Code>49-71 39 15 11</Code>
+                    <Name>Corrosion Rate</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 39 15 13</Code>
+                    <Name>Activation Energy</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 39 15 15</Code>
+                    <Name>Hydration Rate</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 39 15 17</Code>
+                    <Name>Diffusion Rate</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-71 39 17</Code>
+                <Name>Chemical Composition</Name>
+            </Section>
+            <Section>
+                <Code>49-71 39 19</Code>
+                <Name>Compatibility</Name>
+            </Section>
+            <Section>
+                <Code>49-71 39 21</Code>
+                <Name>Constituent Materials</Name>
+            </Section>
+            <Section>
+                <Code>49-71 39 23</Code>
+                <Name>Ductility</Name>
+            </Section>
+            <Section>
+                <Code>49-71 39 25</Code>
+                <Name>Malleability</Name>
+            </Section>
+            <Section>
+                <Code>49-71 39 27</Code>
+                <Name>Solubility</Name>
+            </Section>
+            <Section>
+                <Code>49-71 39 29</Code>
+                <Name>Expansion</Name>
+            </Section>
+            <Section>
+                <Code>49-71 39 31</Code>
+                <Name>Shrinkage</Name>
+            </Section>
+            <Section>
+                <Code>49-71 39 33</Code>
+                <Name>Dielectric Constant</Name>
+            </Section>
+            <Section>
+                <Code>49-71 39 35</Code>
+                <Name>Galvanic Constant </Name>
+            </Section>
+            <Section>
+                <Code>49-71 39 37</Code>
+                <Name>Raw Material</Name>
+            </Section>
+            <Section>
+                <Code>49-71 39 39</Code>
+                <Name>Odor</Name>
+            </Section>
+            <Section>
+                <Code>49-71 39 11</Code>
+                <Name>Alloy, Temper</Name>
+            </Section>
+            <Section>
+                <Code>49-71 39 13</Code>
+                <Name>Biodegradability</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-71 45 00</Code>
+            <Name>Properties of Regulated Content </Name>
+            <Section>
+                <Code>49-71 45 11</Code>
+                <Name>VOC Content</Name>
+            </Section>
+            <Section>
+                <Code>49-71 45 13</Code>
+                <Name>VOC Compliance</Name>
+            </Section>
+            <Section>
+                <Code>49-71 45 15</Code>
+                <Name>Asbestos Content</Name>
+            </Section>
+            <Section>
+                <Code>49-71 45 17</Code>
+                <Name>Formaldehyde Content</Name>
+            </Section>
+            <Section>
+                <Code>49-71 45 19</Code>
+                <Name>Lead Content</Name>
+            </Section>
+            <Section>
+                <Code>49-71 45 21</Code>
+                <Name>Radiation Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-71 45 23</Code>
+                <Name>Ozone Depletion Content</Name>
+            </Section>
+            <Section>
+                <Code>49-71 45 25</Code>
+                <Name>Persistent, Bioaccumulative, and Toxic Pollutants (PBTs)</Name>
+            </Section>
+            <Section>
+                <Code>49-71 45 27</Code>
+                <Name>Chlorofluorocarbon (CFC) Emissions</Name>
+            </Section>
+            <Section>
+                <Code>49-71 45 29</Code>
+                <Name>Hydrochlorofluorocarbons (HCFC) Emissions</Name>
+            </Section>
+            <Section>
+                <Code>49-71 45 31</Code>
+                <Name>Toxic Content</Name>
+            </Section>
+            <Section>
+                <Code>49-71 45 33</Code>
+                <Name>Ecological Toxicity</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-71 51 00</Code>
+            <Name>Properties of Temperature</Name>
+            <Section>
+                <Code>49-71 51 11</Code>
+                <Name>Absolute Temperature</Name>
+            </Section>
+            <Section>
+                <Code>49-71 51 13</Code>
+                <Name>Ambient Temperature</Name>
+                <Section>
+                    <Code>49-71 51 13 11</Code>
+                    <Name>Ambient Outdoor Temperature</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 51 13 13</Code>
+                    <Name>Ambient Temperature during Installation</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-71 51 15</Code>
+                <Name>Brittleness Temperature</Name>
+            </Section>
+            <Section>
+                <Code>49-71 51 17</Code>
+                <Name>Design Temperature</Name>
+            </Section>
+            <Section>
+                <Code>49-71 51 19</Code>
+                <Name>Temperature Types</Name>
+                <Section>
+                    <Code>49-71 51 19 11</Code>
+                    <Name>Condensation Temperature</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 51 19 13</Code>
+                    <Name>Deflection Temperature</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 51 19 15</Code>
+                    <Name>Ground Temperature</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 51 19 17</Code>
+                    <Name>Mean Temperature</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 51 19 19</Code>
+                    <Name>Heat Radiated Temperature</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 51 19 21</Code>
+                    <Name>Inside Air Temperature</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 51 19 23</Code>
+                    <Name>Outside Air Temperature</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 51 19 25</Code>
+                    <Name>Supply Air Temperature</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 51 19 27</Code>
+                    <Name>Surface Temperature</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 51 19 29</Code>
+                    <Name>Summer Dry Bulb Temperature</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 51 19 31</Code>
+                    <Name>Winter Dry Bulb Temperature</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 51 19 33</Code>
+                    <Name>Wet-Bulb (WB) Temperature</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 51 19 35</Code>
+                    <Name>Summer Wet Bulb Temperature</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-71 51 21</Code>
+                <Name>Temperature Points</Name>
+                <Section>
+                    <Code>49-71 51 21 11</Code>
+                    <Name>Minimum Temperature</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 51 21 13</Code>
+                    <Name>Maximum Temperature</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 51 21 15</Code>
+                    <Name>Boiling Point Temperature</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 51 21 17</Code>
+                    <Name>Dew Point Temperature</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 51 21 19</Code>
+                    <Name>Flash Point Temperature</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 51 21 21</Code>
+                    <Name>Freezing Point Temperature</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 51 21 23</Code>
+                    <Name>Melting Point Temperature</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 51 21 25</Code>
+                    <Name>Cooling Setpoint</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 51 21 27</Code>
+                    <Name>Heating Setpoint</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-71 51 23</Code>
+                <Name>Temperature Ranges</Name>
+                <Section>
+                    <Code>49-71 51 23 11</Code>
+                    <Name>Acceptable Temperature Range</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 51 23 13</Code>
+                    <Name>Cycling Temperature Range</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 51 23 15</Code>
+                    <Name>Service Temperature Range</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 51 23 17</Code>
+                    <Name>Mean Daily Range</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 51 23 19</Code>
+                    <Name>Delta T</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-71 51 25</Code>
+                <Name>Phase Temperatures</Name>
+                <Section>
+                    <Code>49-71 51 25 11</Code>
+                    <Name>Phase Transition Temperature</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 51 25 13</Code>
+                    <Name>Phase Transition Pressure</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 51 25 15</Code>
+                    <Name>Glass Transition Temperature</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 51 25 17</Code>
+                    <Name>Curie Temperature</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 51 25 19</Code>
+                    <Name>Neel Temperature</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 51 25 21</Code>
+                    <Name>Triple Point Temperature</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-71 51 27</Code>
+                <Name>Temperature Rise</Name>
+            </Section>
+            <Section>
+                <Code>49-71 51 29</Code>
+                <Name>Temperature Interval </Name>
+            </Section>
+            <Section>
+                <Code>49-71 51 31</Code>
+                <Name>Temperature Differential </Name>
+            </Section>
+            <Section>
+                <Code>49-71 51 33</Code>
+                <Name>Heat Index</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-71 53 00</Code>
+            <Name>Properties of Structural Loading</Name>
+            <Section>
+                <Code>49-71 53 11</Code>
+                <Name>Static Loads</Name>
+                <Section>
+                    <Code>49-71 53 11 11</Code>
+                    <Name>Hardness Testing Method </Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-71 53 13</Code>
+                <Name>Dynamic Loads</Name>
+                <Section>
+                    <Code>49-71 53 13 11</Code>
+                    <Name>Uniform Design Load</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 53 13 13</Code>
+                    <Name>Wind Load</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 53 13 15</Code>
+                    <Name>Snow Load</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 53 13 17</Code>
+                    <Name>Horizontal Live Load</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 53 13 19</Code>
+                    <Name>Impact Load</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 53 13 21</Code>
+                    <Name>Seismic Load</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 53 13 23</Code>
+                    <Name>Moving Load</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-71 57 00</Code>
+            <Name>Properties of Air and Other Gases</Name>
+            <Section>
+                <Code>49-71 57 11</Code>
+                <Name>Indoor Air Quality (IAQ)</Name>
+            </Section>
+            <Section>
+                <Code>49-71 57 13</Code>
+                <Name>Vapor Transmission</Name>
+            </Section>
+            <Section>
+                <Code>49-71 57 15</Code>
+                <Name>Criteria Air Pollutants</Name>
+            </Section>
+            <Section>
+                <Code>49-71 57 17</Code>
+                <Name>Carbon Dioxide Level</Name>
+            </Section>
+            <Section>
+                <Code>49-71 57 19</Code>
+                <Name>Methane Level</Name>
+            </Section>
+            <Section>
+                <Code>49-71 57 21</Code>
+                <Name>Nitrous Oxide Level</Name>
+            </Section>
+            <Section>
+                <Code>49-71 57 23</Code>
+                <Name>Smog Level</Name>
+            </Section>
+            <Section>
+                <Code>49-71 57 25</Code>
+                <Name>Visibility</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-71 63 00</Code>
+            <Name>Properties of Liquids</Name>
+            <Section>
+                <Code>49-71 63 11</Code>
+                <Name>Liquid Concentration</Name>
+            </Section>
+            <Section>
+                <Code>49-71 63 13</Code>
+                <Name>Liquid Evaporation Rate</Name>
+            </Section>
+            <Section>
+                <Code>49-71 63 15</Code>
+                <Name>Liquid pH</Name>
+            </Section>
+            <Section>
+                <Code>49-71 63 17</Code>
+                <Name>Hygrometric Expansion</Name>
+            </Section>
+            <Section>
+                <Code>49-71 63 19</Code>
+                <Name>Hygroscopicity</Name>
+            </Section>
+            <Section>
+                <Code>49-71 63 21</Code>
+                <Name>Fluid Viscosity</Name>
+            </Section>
+            <Section>
+                <Code>49-71 63 23</Code>
+                <Name>Fluid Density</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-71 69 00</Code>
+            <Name>Properties of Mass</Name>
+            <Section>
+                <Code>49-71 69 11</Code>
+                <Name>Mass</Name>
+                <Section>
+                    <Code>49-71 69 11 11</Code>
+                    <Name>Mass per unit length</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 69 11 13</Code>
+                    <Name>Mass per unit area</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 69 11 15</Code>
+                    <Name>Mass per unit time</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 69 11 17</Code>
+                    <Name>Molar Mass</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-71 69 13</Code>
+                <Name>Weight </Name>
+                <Section>
+                    <Code>49-71 69 13 11</Code>
+                    <Name>Weight Classification</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 69 13 13</Code>
+                    <Name>Shipping Weight</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-71 69 15</Code>
+                <Name>Density</Name>
+                <Section>
+                    <Code>49-71 69 15 11</Code>
+                    <Name>Bulk Density</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 69 15 13</Code>
+                    <Name>Specific Gravity Density</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 69 15 15</Code>
+                    <Name>Angular Momentum Density</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 69 15 17</Code>
+                    <Name>Moment of Inertia Density</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 69 15 19</Code>
+                    <Name>Momentum Density</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-71 69 17</Code>
+                <Name>Specific Gravity</Name>
+            </Section>
+            <Section>
+                <Code>49-71 69 19</Code>
+                <Name>Momentum</Name>
+                <Section>
+                    <Code>49-71 69 19 11</Code>
+                    <Name>Angular Momentum</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-71 69 21</Code>
+                <Name>Exchange Effectiveness</Name>
+            </Section>
+            <Section>
+                <Code>49-71 69 23</Code>
+                <Name>Initial Moisture Content</Name>
+            </Section>
+            <Section>
+                <Code>49-71 69 25</Code>
+                <Name>Final Moisture Content</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-71 73 00</Code>
+            <Name>Properties of Force</Name>
+            <Section>
+                <Code>49-71 73 11</Code>
+                <Name>Force, General Properties</Name>
+            </Section>
+            <Section>
+                <Code>49-71 73 13</Code>
+                <Name>Applied Forces</Name>
+            </Section>
+            <Section>
+                <Code>49-71 73 15</Code>
+                <Name>Force Per Unit Length</Name>
+            </Section>
+            <Section>
+                <Code>49-71 73 17</Code>
+                <Name>Surface Tension</Name>
+            </Section>
+            <Section>
+                <Code>49-71 73 19</Code>
+                <Name>Thrust to Mass Ratio</Name>
+            </Section>
+            <Section>
+                <Code>49-71 73 21</Code>
+                <Name>Viscosity</Name>
+                <Section>
+                    <Code>49-71 73 21 11</Code>
+                    <Name>Dynamic Viscosity</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 73 21 13</Code>
+                    <Name>Kinematic Viscosity</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-71 73 23</Code>
+                <Name>Moment of Force</Name>
+            </Section>
+            <Section>
+                <Code>49-71 73 25</Code>
+                <Name>Moment of Inertia</Name>
+            </Section>
+            <Section>
+                <Code>49-71 73 27</Code>
+                <Name>Torque</Name>
+            </Section>
+            <Section>
+                <Code>49-71 73 29</Code>
+                <Name>Electromotive Force</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-71 75 00</Code>
+            <Name>Properties of Pressure</Name>
+            <Section>
+                <Code>49-71 75 11</Code>
+                <Name>Absolute Pressure</Name>
+            </Section>
+            <Section>
+                <Code>49-71 75 13</Code>
+                <Name>Air Pressure</Name>
+                <Section>
+                    <Code>49-71 75 13 11</Code>
+                    <Name>Cyclic Static Air Pressure</Name>
+                </Section>
+                <Section>
+                    <Code>49-71 75 13 13</Code>
+                    <Name>Uniform Static Air Pressure</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-71 75 15</Code>
+                <Name>Ambient Pressure</Name>
+            </Section>
+            <Section>
+                <Code>49-71 75 17</Code>
+                <Name>Applied Pressures</Name>
+            </Section>
+            <Section>
+                <Code>49-71 75 19</Code>
+                <Name>Atmospheric Pressure</Name>
+            </Section>
+            <Section>
+                <Code>49-71 75 21</Code>
+                <Name>Calibrated Pressure</Name>
+            </Section>
+            <Section>
+                <Code>49-71 75 23</Code>
+                <Name>Design Pressure</Name>
+            </Section>
+            <Section>
+                <Code>49-71 75 25</Code>
+                <Name>Gage Pressure</Name>
+            </Section>
+            <Section>
+                <Code>49-71 75 27</Code>
+                <Name>Leakage Under Pressure </Name>
+            </Section>
+            <Section>
+                <Code>49-71 75 29</Code>
+                <Name>Residual Pressure</Name>
+            </Section>
+            <Section>
+                <Code>49-71 75 31</Code>
+                <Name>Static Pressure</Name>
+            </Section>
+            <Section>
+                <Code>49-71 75 33</Code>
+                <Name>Static Pressure Differential</Name>
+            </Section>
+            <Section>
+                <Code>49-71 75 35</Code>
+                <Name>Pressure Drop</Name>
+            </Section>
+            <Section>
+                <Code>49-71 75 37</Code>
+                <Name>Vacuum Pressure</Name>
+            </Section>
+            <Section>
+                <Code>49-71 75 39</Code>
+                <Name>Vapor Pressure </Name>
+            </Section>
+            <Section>
+                <Code>49-71 75 41</Code>
+                <Name>Wind Pressure</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-71 81 00</Code>
+            <Name>Properties of Magnetism</Name>
+            <Section>
+                <Code>49-71 81 11</Code>
+                <Name>Magnetic Flux</Name>
+            </Section>
+            <Section>
+                <Code>49-71 81 13</Code>
+                <Name>Magnetic Vector Potential</Name>
+            </Section>
+            <Section>
+                <Code>49-71 81 15</Code>
+                <Name>Magnetic Permeance</Name>
+            </Section>
+            <Section>
+                <Code>49-71 81 17</Code>
+                <Name>Mutual Inductance</Name>
+            </Section>
+            <Section>
+                <Code>49-71 81 19</Code>
+                <Name>Magnetic Potential Difference</Name>
+            </Section>
+            <Section>
+                <Code>49-71 81 21</Code>
+                <Name>Magnetomotive Force</Name>
+            </Section>
+            <Section>
+                <Code>49-71 81 23</Code>
+                <Name>Magnetic Induction</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-71 91 00</Code>
+            <Name>Environmental Properties </Name>
+            <Section>
+                <Code>49-71 91 11</Code>
+                <Name>Seismic Classification</Name>
+            </Section>
+            <Section>
+                <Code>49-71 91 13</Code>
+                <Name>Design Criteria</Name>
+            </Section>
+            <Section>
+                <Code>49-71 91 15</Code>
+                <Name>Wind Speed</Name>
+            </Section>
+            <Section>
+                <Code>49-71 91 17</Code>
+                <Name>Weather Class</Name>
+            </Section>
+            <Section>
+                <Code>49-71 91 19</Code>
+                <Name>Ozone Concentration</Name>
+            </Section>
+            <Section>
+                <Code>49-71 91 21</Code>
+                <Name>Land Features</Name>
+            </Section>
+            <Section>
+                <Code>49-71 91 23</Code>
+                <Name>Water Body Type</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>49-81 00 00</Code>
+        <Name>Performance Properties</Name>
+        <Section>
+            <Code>49-81 11 00</Code>
+            <Name>Testing Properties</Name>
+            <Section>
+                <Code>49-81 11 11</Code>
+                <Name>Test Method</Name>
+            </Section>
+            <Section>
+                <Code>49-81 11 13</Code>
+                <Name>Test Authority</Name>
+            </Section>
+            <Section>
+                <Code>49-81 11 15</Code>
+                <Name>Pre-Test Conditions</Name>
+            </Section>
+            <Section>
+                <Code>49-81 11 17</Code>
+                <Name>Test Conditions</Name>
+            </Section>
+            <Section>
+                <Code>49-81 11 19</Code>
+                <Name>Reference Standard</Name>
+            </Section>
+            <Section>
+                <Code>49-81 11 21</Code>
+                <Name>Inspection Protocol</Name>
+            </Section>
+            <Section>
+                <Code>49-81 11 23</Code>
+                <Name>Factory Testing</Name>
+                <Section>
+                    <Code>49-81 11 23 11</Code>
+                    <Name>Factory Inspection Method</Name>
+                </Section>
+                <Section>
+                    <Code>49-81 11 23 13</Code>
+                    <Name>Factory Test Date</Name>
+                </Section>
+                <Section>
+                    <Code>49-81 11 23 15</Code>
+                    <Name>Factory Test Method</Name>
+                </Section>
+                <Section>
+                    <Code>49-81 11 23 17</Code>
+                    <Name>Factory Level of Compliance</Name>
+                </Section>
+                <Section>
+                    <Code>49-81 11 23 19</Code>
+                    <Name>Factory Reference Grade</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-81 11 25</Code>
+                <Name>Field Testing</Name>
+                <Section>
+                    <Code>49-81 11 25 11</Code>
+                    <Name>Field Inspection Method</Name>
+                </Section>
+                <Section>
+                    <Code>49-81 11 25 13</Code>
+                    <Name>Field Test Method</Name>
+                </Section>
+                <Section>
+                    <Code>49-81 11 25 15</Code>
+                    <Name>Field Level of Compliance</Name>
+                </Section>
+                <Section>
+                    <Code>49-81 11 25 17</Code>
+                    <Name>Field Reference Grade</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-81 15 00</Code>
+            <Name>Tolerance Properties</Name>
+            <Section>
+                <Code>49-81 15 11</Code>
+                <Name>Deflection Tolerance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 15 13</Code>
+                <Name>Dimensional Tolerance</Name>
+                <Section>
+                    <Code>49-81 15 13 11</Code>
+                    <Name>Flatness Tolerance</Name>
+                </Section>
+                <Section>
+                    <Code>49-81 15 13 13</Code>
+                    <Name>Length Tolerance</Name>
+                </Section>
+                <Section>
+                    <Code>49-81 15 13 15</Code>
+                    <Name>Thickness Tolerance</Name>
+                </Section>
+                <Section>
+                    <Code>49-81 15 13 17</Code>
+                    <Name>Warp Tolerance</Name>
+                </Section>
+                <Section>
+                    <Code>49-81 15 13 19</Code>
+                    <Name>Width Tolerance</Name>
+                </Section>
+                <Section>
+                    <Code>49-81 15 13 21</Code>
+                    <Name>Camber</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-81 15 15</Code>
+                <Name>Shape Tolerance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 15 17</Code>
+                <Name>Installation Tolerance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 15 19</Code>
+                <Name>Plumbness</Name>
+            </Section>
+            <Section>
+                <Code>49-81 15 21</Code>
+                <Name>Squareness </Name>
+            </Section>
+            <Section>
+                <Code>49-81 15 23</Code>
+                <Name>Levelness</Name>
+            </Section>
+            <Section>
+                <Code>49-81 15 25</Code>
+                <Name>Texture Tolerance</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-81 21 00</Code>
+            <Name>Function and Use Properties</Name>
+            <Section>
+                <Code>49-81 21 11</Code>
+                <Name>Functional Efficiency</Name>
+            </Section>
+            <Section>
+                <Code>49-81 21 13</Code>
+                <Name>Functional Limitations</Name>
+            </Section>
+            <Section>
+                <Code>49-81 21 15</Code>
+                <Name>Method of Operation</Name>
+                <Section>
+                    <Code>49-81 21 15 11</Code>
+                    <Name>Manual Operation</Name>
+                </Section>
+                <Section>
+                    <Code>49-81 21 15 13</Code>
+                    <Name>Electric Operation</Name>
+                </Section>
+                <Section>
+                    <Code>49-81 21 15 15</Code>
+                    <Name>Pneumatic Operation</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-81 21 17</Code>
+                <Name>Functional Capacity</Name>
+                <Section>
+                    <Code>49-81 21 17 11</Code>
+                    <Name>Maximum Occupancy </Name>
+                </Section>
+                <Section>
+                    <Code>49-81 21 17 13</Code>
+                    <Name>Operational Capacity</Name>
+                </Section>
+                <Section>
+                    <Code>49-81 21 17 15</Code>
+                    <Name>Rated Capacity</Name>
+                </Section>
+                <Section>
+                    <Code>49-81 21 17 17</Code>
+                    <Name>Breaking Capacity</Name>
+                </Section>
+                <Section>
+                    <Code>49-81 21 17 19</Code>
+                    <Name>Cyclic Capacity</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-81 21 19</Code>
+                <Name>Code Performance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 21 21</Code>
+                <Name>Coverage Rate</Name>
+            </Section>
+            <Section>
+                <Code>49-81 21 23</Code>
+                <Name>Ease of</Name>
+                <Section>
+                    <Code>49-81 21 23 11</Code>
+                    <Name>Ease of adding on</Name>
+                </Section>
+                <Section>
+                    <Code>49-81 21 23 13</Code>
+                    <Name>Ease of application</Name>
+                </Section>
+                <Section>
+                    <Code>49-81 21 23 15</Code>
+                    <Name>Ease of assembly</Name>
+                </Section>
+                <Section>
+                    <Code>49-81 21 23 17</Code>
+                    <Name>Ease of installation</Name>
+                </Section>
+                <Section>
+                    <Code>49-81 21 23 19</Code>
+                    <Name>Ease of moving</Name>
+                </Section>
+                <Section>
+                    <Code>49-81 21 23 21</Code>
+                    <Name>Ease of placing</Name>
+                </Section>
+                <Section>
+                    <Code>49-81 21 23 23</Code>
+                    <Name>Ease of relocation</Name>
+                </Section>
+                <Section>
+                    <Code>49-81 21 23 25</Code>
+                    <Name>Ease of removal</Name>
+                </Section>
+                <Section>
+                    <Code>49-81 21 23 27</Code>
+                    <Name>Ease of storing</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-81 21 25</Code>
+                <Name>Serviceability</Name>
+            </Section>
+            <Section>
+                <Code>49-81 21 27</Code>
+                <Name>Suitability</Name>
+                <Section>
+                    <Code>49-81 21 27 11</Code>
+                    <Name>Suitable for Exterior Exposure</Name>
+                </Section>
+                <Section>
+                    <Code>49-81 21 27 13</Code>
+                    <Name>Suitable for Continuous Immersion</Name>
+                </Section>
+                <Section>
+                    <Code>49-81 21 27 15</Code>
+                    <Name>Suitable for Ground Contact</Name>
+                </Section>
+                <Section>
+                    <Code>49-81 21 27 17</Code>
+                    <Name>Suitable for Marine Use</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-81 21 29</Code>
+                <Name>Workability</Name>
+            </Section>
+            <Section>
+                <Code>49-81 21 31</Code>
+                <Name>Weatherability</Name>
+            </Section>
+            <Section>
+                <Code>49-81 21 33</Code>
+                <Name>Waste Produced in Use</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-81 31 00</Code>
+            <Name>Strength Properties</Name>
+            <Section>
+                <Code>49-81 31 11</Code>
+                <Name>Adhesion Strength</Name>
+            </Section>
+            <Section>
+                <Code>49-81 31 13</Code>
+                <Name>Bendability</Name>
+            </Section>
+            <Section>
+                <Code>49-81 31 15</Code>
+                <Name>Bending Moment</Name>
+            </Section>
+            <Section>
+                <Code>49-81 31 17</Code>
+                <Name>Bending Radius</Name>
+            </Section>
+            <Section>
+                <Code>49-81 31 19</Code>
+                <Name>Bending Strength</Name>
+            </Section>
+            <Section>
+                <Code>49-81 31 21</Code>
+                <Name>Bond Strength</Name>
+            </Section>
+            <Section>
+                <Code>49-81 31 23</Code>
+                <Name>Compressibility</Name>
+            </Section>
+            <Section>
+                <Code>49-81 31 25</Code>
+                <Name>Compressive Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 31 27</Code>
+                <Name>Compressive Strength</Name>
+            </Section>
+            <Section>
+                <Code>49-81 31 29</Code>
+                <Name>Creep Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 31 31</Code>
+                <Name>Ductility </Name>
+            </Section>
+            <Section>
+                <Code>49-81 31 33</Code>
+                <Name>Elasticity </Name>
+            </Section>
+            <Section>
+                <Code>49-81 31 35</Code>
+                <Name>Elongation </Name>
+                <Section>
+                    <Code>49-81 31 35 11</Code>
+                    <Name>Elongation at Yield </Name>
+                </Section>
+                <Section>
+                    <Code>49-81 31 35 13</Code>
+                    <Name>Ultimate Elongation</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-81 31 37</Code>
+                <Name>Fastener Pullout Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 31 39</Code>
+                <Name>Fatigue Strength</Name>
+            </Section>
+            <Section>
+                <Code>49-81 31 41</Code>
+                <Name>Fiber Strength</Name>
+            </Section>
+            <Section>
+                <Code>49-81 31 43</Code>
+                <Name>Flexural Strength</Name>
+                <Section>
+                    <Code>49-81 31 43 11</Code>
+                    <Name>Flexural Strength, parallel</Name>
+                </Section>
+                <Section>
+                    <Code>49-81 31 43 13</Code>
+                    <Name>Flexural Strength, perpendicular</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-81 31 45</Code>
+                <Name>Fracture Energy</Name>
+            </Section>
+            <Section>
+                <Code>49-81 31 47</Code>
+                <Name>Fracture Toughness</Name>
+            </Section>
+            <Section>
+                <Code>49-81 31 49</Code>
+                <Name>Friction </Name>
+            </Section>
+            <Section>
+                <Code>49-81 31 51</Code>
+                <Name>Hardness </Name>
+            </Section>
+            <Section>
+                <Code>49-81 31 53</Code>
+                <Name>Impact Strength</Name>
+            </Section>
+            <Section>
+                <Code>49-81 31 55</Code>
+                <Name>Resistance to Intentional Attack</Name>
+                <Section>
+                    <Code>49-81 31 55 11</Code>
+                    <Name>Theft Resistance</Name>
+                </Section>
+                <Section>
+                    <Code>49-81 31 55 13</Code>
+                    <Name>Ballistic Resistance</Name>
+                </Section>
+                <Section>
+                    <Code>49-81 31 55 15</Code>
+                    <Name>Blast Resistance</Name>
+                </Section>
+                <Section>
+                    <Code>49-81 31 55 17</Code>
+                    <Name>Bullet Resistance</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-81 31 57</Code>
+                <Name>Magnetic Field Strength</Name>
+            </Section>
+            <Section>
+                <Code>49-81 31 59</Code>
+                <Name>Modulus of Elasticity </Name>
+            </Section>
+            <Section>
+                <Code>49-81 31 61</Code>
+                <Name>Peel Strength</Name>
+            </Section>
+            <Section>
+                <Code>49-81 31 63</Code>
+                <Name>Proportional Limit</Name>
+            </Section>
+            <Section>
+                <Code>49-81 31 65</Code>
+                <Name>Puncture Resistance</Name>
+                <Section>
+                    <Code>49-81 31 65 11</Code>
+                    <Name>Static Puncture Resistance</Name>
+                </Section>
+                <Section>
+                    <Code>49-81 31 65 13</Code>
+                    <Name>Dynamic Puncture Resistance</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-81 31 67</Code>
+                <Name>Release Strength</Name>
+            </Section>
+            <Section>
+                <Code>49-81 31 69</Code>
+                <Name>Shear Strength</Name>
+            </Section>
+            <Section>
+                <Code>49-81 31 71</Code>
+                <Name>Stiffness </Name>
+            </Section>
+            <Section>
+                <Code>49-81 31 73</Code>
+                <Name>Strain</Name>
+            </Section>
+            <Section>
+                <Code>49-81 31 75</Code>
+                <Name>Stress</Name>
+            </Section>
+            <Section>
+                <Code>49-81 31 77</Code>
+                <Name>Stress Rating</Name>
+            </Section>
+            <Section>
+                <Code>49-81 31 79</Code>
+                <Name>Surface Tension</Name>
+            </Section>
+            <Section>
+                <Code>49-81 31 81</Code>
+                <Name>Tear Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 31 83</Code>
+                <Name>Tear Strength</Name>
+            </Section>
+            <Section>
+                <Code>49-81 31 85</Code>
+                <Name>Tensile Strength</Name>
+            </Section>
+            <Section>
+                <Code>49-81 31 87</Code>
+                <Name>Ultimate Strength</Name>
+            </Section>
+            <Section>
+                <Code>49-81 31 89</Code>
+                <Name>Uniform Wind Load Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 31 91</Code>
+                <Name>Vibration </Name>
+            </Section>
+            <Section>
+                <Code>49-81 31 93</Code>
+                <Name>Wind Uplift Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 31 95</Code>
+                <Name>Yield Strength</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-81 41 00</Code>
+            <Name>Durability Properties</Name>
+            <Section>
+                <Code>49-81 41 11</Code>
+                <Name>Abrasion Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 41 13</Code>
+                <Name>Abuse Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 41 15</Code>
+                <Name>Acid Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 41 17</Code>
+                <Name>Alkali Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 41 19</Code>
+                <Name>Animal Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 41 21</Code>
+                <Name>Bacteria Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 41 23</Code>
+                <Name>Chemical Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 41 25</Code>
+                <Name>Corrosion Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 41 27</Code>
+                <Name>Crack Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 41 29</Code>
+                <Name>Decay Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 41 31</Code>
+                <Name>Degradation Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 41 33</Code>
+                <Name>Delamination Rate</Name>
+            </Section>
+            <Section>
+                <Code>49-81 41 35</Code>
+                <Name>Fade Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 41 37</Code>
+                <Name>Fatigue Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 41 39</Code>
+                <Name>Friction Coefficient</Name>
+            </Section>
+            <Section>
+                <Code>49-81 41 41</Code>
+                <Name>Fungus Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 41 43</Code>
+                <Name>Impact Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 41 45</Code>
+                <Name>Indentation Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 41 47</Code>
+                <Name>Infrared Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 41 49</Code>
+                <Name>Insect Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 41 51</Code>
+                <Name>Lubricity</Name>
+            </Section>
+            <Section>
+                <Code>49-81 41 53</Code>
+                <Name>Maintenance Durability</Name>
+            </Section>
+            <Section>
+                <Code>49-81 41 55</Code>
+                <Name>Mechanical Durability</Name>
+            </Section>
+            <Section>
+                <Code>49-81 41 57</Code>
+                <Name>Microorganism Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 41 59</Code>
+                <Name>Mildew Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 41 61</Code>
+                <Name>Ozone Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 41 63</Code>
+                <Name>Plant growth Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 41 65</Code>
+                <Name>Stain Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 41 67</Code>
+                <Name>Termite Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 41 69</Code>
+                <Name>Thermal Shock Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 41 71</Code>
+                <Name>Ultraviolet (UV) Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 41 73</Code>
+                <Name>Wear Coefficient</Name>
+            </Section>
+            <Section>
+                <Code>49-81 41 75</Code>
+                <Name>Wear Rate</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-81 51 00</Code>
+            <Name>Combustion Properties</Name>
+            <Section>
+                <Code>49-81 51 11</Code>
+                <Name>Artificial Heat Source</Name>
+            </Section>
+            <Section>
+                <Code>49-81 51 13</Code>
+                <Name>Combustibility</Name>
+            </Section>
+            <Section>
+                <Code>49-81 51 15</Code>
+                <Name>Fire Resistance Rating</Name>
+            </Section>
+            <Section>
+                <Code>49-81 51 17</Code>
+                <Name>Fire Severity</Name>
+            </Section>
+            <Section>
+                <Code>49-81 51 19</Code>
+                <Name>Fire Source</Name>
+            </Section>
+            <Section>
+                <Code>49-81 51 21</Code>
+                <Name>Fire Type</Name>
+            </Section>
+            <Section>
+                <Code>49-81 51 23</Code>
+                <Name>Flame Propagation</Name>
+            </Section>
+            <Section>
+                <Code>49-81 51 25</Code>
+                <Name>Flame Spread Index</Name>
+            </Section>
+            <Section>
+                <Code>49-81 51 27</Code>
+                <Name>Flammability</Name>
+            </Section>
+            <Section>
+                <Code>49-81 51 29</Code>
+                <Name>Ignitibility</Name>
+            </Section>
+            <Section>
+                <Code>49-81 51 31</Code>
+                <Name>Heat Release Rate</Name>
+            </Section>
+            <Section>
+                <Code>49-81 51 33</Code>
+                <Name>Smoke Density</Name>
+            </Section>
+            <Section>
+                <Code>49-81 51 35</Code>
+                <Name>Smoke Developed Index</Name>
+            </Section>
+            <Section>
+                <Code>49-81 51 37</Code>
+                <Name>Smoke Produced</Name>
+            </Section>
+            <Section>
+                <Code>49-81 51 39</Code>
+                <Name>Surface Burning Characteristics</Name>
+            </Section>
+            <Section>
+                <Code>49-81 51 41</Code>
+                <Name>Explosion Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 51 43</Code>
+                <Name>Fire Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 51 45</Code>
+                <Name>Ignition Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 51 47</Code>
+                <Name>Critical Radiant Flux</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-81 61 00</Code>
+            <Name>Properties of the Envelope</Name>
+            <Section>
+                <Code>49-81 61 11</Code>
+                <Name>Absorptance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 61 13</Code>
+                <Name>Air Infiltration</Name>
+            </Section>
+            <Section>
+                <Code>49-81 61 15</Code>
+                <Name>Air Tightness</Name>
+            </Section>
+            <Section>
+                <Code>49-81 61 17</Code>
+                <Name>Air Leakage</Name>
+            </Section>
+            <Section>
+                <Code>49-81 61 19</Code>
+                <Name>Water Penetration</Name>
+            </Section>
+            <Section>
+                <Code>49-81 61 21</Code>
+                <Name>Condensation Resistance Factor (CRF)</Name>
+            </Section>
+            <Section>
+                <Code>49-81 61 23</Code>
+                <Name>R-Value</Name>
+            </Section>
+            <Section>
+                <Code>49-81 61 25</Code>
+                <Name>R-Value Système International (RSI)</Name>
+            </Section>
+            <Section>
+                <Code>49-81 61 27</Code>
+                <Name>U-Value</Name>
+            </Section>
+            <Section>
+                <Code>49-81 61 29</Code>
+                <Name>USI</Name>
+            </Section>
+            <Section>
+                <Code>49-81 61 31</Code>
+                <Name>Insulation Density</Name>
+            </Section>
+            <Section>
+                <Code>49-81 61 33</Code>
+                <Name>Insulation Profile</Name>
+                <Section>
+                    <Code>49-81 61 33 11</Code>
+                    <Name>Tapered</Name>
+                </Section>
+                <Section>
+                    <Code>49-81 61 33 13</Code>
+                    <Name>Flat</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-81 61 35</Code>
+                <Name>Properties of Openings</Name>
+                <Section>
+                    <Code>49-81 61 35 11</Code>
+                    <Name>Opening Type</Name>
+                </Section>
+                <Section>
+                    <Code>49-81 61 35 13</Code>
+                    <Name>Opening Number</Name>
+                </Section>
+                <Section>
+                    <Code>49-81 61 35 15</Code>
+                    <Name>Opening Transmittance</Name>
+                </Section>
+                <Section>
+                    <Code>49-81 61 35 17</Code>
+                    <Name>Opening Reflectance</Name>
+                </Section>
+                <Section>
+                    <Code>49-81 61 35 19</Code>
+                    <Name>Opening Emittance</Name>
+                </Section>
+                <Section>
+                    <Code>49-81 61 35 21</Code>
+                    <Name>Opening Conductivity</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-81 61 37</Code>
+                <Name>Solar Heat Gain Coefficient (SHGC)</Name>
+            </Section>
+            <Section>
+                <Code>49-81 61 39</Code>
+                <Name>Shading Coefficient</Name>
+            </Section>
+            <Section>
+                <Code>49-81 61 41</Code>
+                <Name>Heat Transfer Coefficient</Name>
+            </Section>
+            <Section>
+                <Code>49-81 61 43</Code>
+                <Name>Specific Heat </Name>
+            </Section>
+            <Section>
+                <Code>49-81 61 45</Code>
+                <Name>Internal Thermal Energy</Name>
+            </Section>
+            <Section>
+                <Code>49-81 61 47</Code>
+                <Name>Linear Thermal Expansion Coefficient</Name>
+            </Section>
+            <Section>
+                <Code>49-81 61 49</Code>
+                <Name>Long-Term Thermal Resistance (LTTR)</Name>
+            </Section>
+            <Section>
+                <Code>49-81 61 51</Code>
+                <Name>Specific Heat Input</Name>
+            </Section>
+            <Section>
+                <Code>49-81 61 53</Code>
+                <Name>Thermal Break</Name>
+            </Section>
+            <Section>
+                <Code>49-81 61 55</Code>
+                <Name>Thermal Conductance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 61 57</Code>
+                <Name>Thermal Conductivity</Name>
+            </Section>
+            <Section>
+                <Code>49-81 61 59</Code>
+                <Name>Thermal Diffusivity</Name>
+            </Section>
+            <Section>
+                <Code>49-81 61 61</Code>
+                <Name>Thermal Insulance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 61 63</Code>
+                <Name>Wind Uplift Resistance</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-81 71 00</Code>
+            <Name>Properties of Permeability and Moisture Resistance</Name>
+            <Section>
+                <Code>49-81 71 11</Code>
+                <Name>Condensation Resistance </Name>
+            </Section>
+            <Section>
+                <Code>49-81 71 13</Code>
+                <Name>Freeze-Thaw Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 71 15</Code>
+                <Name>Frost Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 71 17</Code>
+                <Name>Gas Permeability</Name>
+            </Section>
+            <Section>
+                <Code>49-81 71 19</Code>
+                <Name>Percent Perviousness </Name>
+            </Section>
+            <Section>
+                <Code>49-81 71 21</Code>
+                <Name>Magnetic Permeability</Name>
+            </Section>
+            <Section>
+                <Code>49-81 71 23</Code>
+                <Name>Moisture Absorption Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 71 25</Code>
+                <Name>Moisture Content</Name>
+            </Section>
+            <Section>
+                <Code>49-81 71 27</Code>
+                <Name>Pollutant Permeability</Name>
+            </Section>
+            <Section>
+                <Code>49-81 71 29</Code>
+                <Name>Porosity</Name>
+            </Section>
+            <Section>
+                <Code>49-81 71 31</Code>
+                <Name>Resistance to Rising Damp</Name>
+            </Section>
+            <Section>
+                <Code>49-81 71 33</Code>
+                <Name>Vapor Permeability</Name>
+            </Section>
+            <Section>
+                <Code>49-81 71 35</Code>
+                <Name>Vapor Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 71 37</Code>
+                <Name>Velocity Permeability</Name>
+            </Section>
+            <Section>
+                <Code>49-81 71 39</Code>
+                <Name>Water Absorption</Name>
+            </Section>
+            <Section>
+                <Code>49-81 71 41</Code>
+                <Name>Water Absorption Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 71 43</Code>
+                <Name>Water Imperviousness Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 71 45</Code>
+                <Name>Water Permeability Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 71 47</Code>
+                <Name>Surface Water Absorption</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-81 81 00</Code>
+            <Name>Acoustic Properties</Name>
+            <Section>
+                <Code>49-81 81 11</Code>
+                <Name>Acoustic Impedance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 81 13</Code>
+                <Name>Reverberation Time</Name>
+            </Section>
+            <Section>
+                <Code>49-81 81 15</Code>
+                <Name>Noise Level</Name>
+            </Section>
+            <Section>
+                <Code>49-81 81 17</Code>
+                <Name>Noise Reduction Coefficient (NRC)</Name>
+            </Section>
+            <Section>
+                <Code>49-81 81 19</Code>
+                <Name>Acoustical Absorption</Name>
+            </Section>
+            <Section>
+                <Code>49-81 81 21</Code>
+                <Name>Sound Absorption</Name>
+            </Section>
+            <Section>
+                <Code>49-81 81 23</Code>
+                <Name>Sound Absorption Average (SAA)</Name>
+            </Section>
+            <Section>
+                <Code>49-81 81 25</Code>
+                <Name>Sound Attenuation</Name>
+            </Section>
+            <Section>
+                <Code>49-81 81 27</Code>
+                <Name>Sound Energy Density</Name>
+            </Section>
+            <Section>
+                <Code>49-81 81 29</Code>
+                <Name>Sound Energy Flux</Name>
+            </Section>
+            <Section>
+                <Code>49-81 81 31</Code>
+                <Name>Sound Frequency</Name>
+            </Section>
+            <Section>
+                <Code>49-81 81 33</Code>
+                <Name>Acoustical Insulation</Name>
+            </Section>
+            <Section>
+                <Code>49-81 81 35</Code>
+                <Name>Sound Insulation</Name>
+            </Section>
+            <Section>
+                <Code>49-81 81 37</Code>
+                <Name>Sound Intensity</Name>
+            </Section>
+            <Section>
+                <Code>49-81 81 39</Code>
+                <Name>Sound Isolation</Name>
+            </Section>
+            <Section>
+                <Code>49-81 81 41</Code>
+                <Name>Sound Power</Name>
+            </Section>
+            <Section>
+                <Code>49-81 81 43</Code>
+                <Name>Sound Pressure</Name>
+            </Section>
+            <Section>
+                <Code>49-81 81 45</Code>
+                <Name>Sound Speed</Name>
+            </Section>
+            <Section>
+                <Code>49-81 81 47</Code>
+                <Name>Sound Reflectance</Name>
+            </Section>
+            <Section>
+                <Code>49-81 81 49</Code>
+                <Name>Sound Transmission Class (STC)</Name>
+            </Section>
+            <Section>
+                <Code>49-81 81 51</Code>
+                <Name>Speech Intelligibility</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>49-91 00 00</Code>
+        <Name>Properties of Facility Services</Name>
+        <Section>
+            <Code>49-91 11 00</Code>
+            <Name>General Properties of Facility Services</Name>
+            <Section>
+                <Code>49-91 11 11</Code>
+                <Name>Accuracy</Name>
+            </Section>
+            <Section>
+                <Code>49-91 11 13</Code>
+                <Name>Area Covered</Name>
+            </Section>
+            <Section>
+                <Code>49-91 11 15</Code>
+                <Name>Capacity</Name>
+            </Section>
+            <Section>
+                <Code>49-91 11 17</Code>
+                <Name>Components</Name>
+            </Section>
+            <Section>
+                <Code>49-91 11 19</Code>
+                <Name>Connections</Name>
+            </Section>
+            <Section>
+                <Code>49-91 11 21</Code>
+                <Name>Constituents</Name>
+            </Section>
+            <Section>
+                <Code>49-91 11 23</Code>
+                <Name>Parts</Name>
+            </Section>
+            <Section>
+                <Code>49-91 11 25</Code>
+                <Name>System Equipment</Name>
+            </Section>
+            <Section>
+                <Code>49-91 11 27</Code>
+                <Name>Equipment Type</Name>
+            </Section>
+            <Section>
+                <Code>49-91 11 29</Code>
+                <Name>System Name</Name>
+            </Section>
+            <Section>
+                <Code>49-91 11 31</Code>
+                <Name>Controls</Name>
+            </Section>
+            <Section>
+                <Code>49-91 11 33</Code>
+                <Name>Flow Factor</Name>
+            </Section>
+            <Section>
+                <Code>49-91 11 35</Code>
+                <Name>Flow Configuration</Name>
+            </Section>
+            <Section>
+                <Code>49-91 11 37</Code>
+                <Name>Flow Direction</Name>
+            </Section>
+            <Section>
+                <Code>49-91 11 39</Code>
+                <Name>Flow Conversion Method</Name>
+            </Section>
+            <Section>
+                <Code>49-91 11 41</Code>
+                <Name>Design Flow Rate</Name>
+            </Section>
+            <Section>
+                <Code>49-91 11 43</Code>
+                <Name>Instrumentation</Name>
+            </Section>
+            <Section>
+                <Code>49-91 11 45</Code>
+                <Name>Inputs</Name>
+            </Section>
+            <Section>
+                <Code>49-91 11 47</Code>
+                <Name>Outputs</Name>
+            </Section>
+            <Section>
+                <Code>49-91 11 49</Code>
+                <Name>Loss Method</Name>
+            </Section>
+            <Section>
+                <Code>49-91 11 51</Code>
+                <Name>Mode</Name>
+            </Section>
+            <Section>
+                <Code>49-91 11 53</Code>
+                <Name>Number of Elements</Name>
+            </Section>
+            <Section>
+                <Code>49-91 11 55</Code>
+                <Name>Service Connections</Name>
+            </Section>
+            <Section>
+                <Code>49-91 11 57</Code>
+                <Name>Sensor Type</Name>
+            </Section>
+            <Section>
+                <Code>49-91 11 59</Code>
+                <Name>Sensor Zone</Name>
+            </Section>
+            <Section>
+                <Code>49-91 11 61</Code>
+                <Name>Sensor Detail Text</Name>
+            </Section>
+            <Section>
+                <Code>49-91 11 63</Code>
+                <Name>Sensor Location</Name>
+            </Section>
+            <Section>
+                <Code>49-91 11 65</Code>
+                <Name>System Type</Name>
+            </Section>
+            <Section>
+                <Code>49-91 11 67</Code>
+                <Name>Service Type</Name>
+            </Section>
+            <Section>
+                <Code>49-91 11 69</Code>
+                <Name>System Limitations</Name>
+            </Section>
+            <Section>
+                <Code>49-91 11 71</Code>
+                <Name>Zone</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-91 21 00</Code>
+            <Name>Properties of Fire Protection Systems</Name>
+            <Section>
+                <Code>49-91 21 11</Code>
+                <Name>Fire Protection Class</Name>
+            </Section>
+            <Section>
+                <Code>49-91 21 13</Code>
+                <Name>Sprinkler Type</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-91 23 00</Code>
+            <Name>Properties of Plumbing Systems</Name>
+            <Section>
+                <Code>49-91 23 11</Code>
+                <Name>Domestic Cold Water</Name>
+            </Section>
+            <Section>
+                <Code>49-91 23 13</Code>
+                <Name>Domestic Hot Water</Name>
+            </Section>
+            <Section>
+                <Code>49-91 23 15</Code>
+                <Name>Sanitary Water</Name>
+            </Section>
+            <Section>
+                <Code>49-91 23 17</Code>
+                <Name>Waste Water</Name>
+            </Section>
+            <Section>
+                <Code>49-91 23 19</Code>
+                <Name>Storm Water</Name>
+            </Section>
+            <Section>
+                <Code>49-91 23 21</Code>
+                <Name>Fire Department Water</Name>
+            </Section>
+            <Section>
+                <Code>49-91 23 23</Code>
+                <Name>Plumbing Volume</Name>
+            </Section>
+            <Section>
+                <Code>49-91 23 25</Code>
+                <Name>Plumbing Fixture Units</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-91 25 00</Code>
+            <Name>Properties of HVAC Systems</Name>
+            <Section>
+                <Code>49-91 25 11</Code>
+                <Name>HVAC System Type</Name>
+            </Section>
+            <Section>
+                <Code>49-91 25 13</Code>
+                <Name>HVAC Efficiency</Name>
+            </Section>
+            <Section>
+                <Code>49-91 25 15</Code>
+                <Name>HVAC Loads</Name>
+                <Section>
+                    <Code>49-91 25 15 11</Code>
+                    <Name>Design HVAC Load per area</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 25 15 13</Code>
+                    <Name>Actual HVAC Load</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 25 15 15</Code>
+                    <Name>Design Other HVAC Load per area</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 25 15 17</Code>
+                    <Name>Actual Other HVAC Load</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 25 15 19</Code>
+                    <Name>Calculated Heating Load</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 25 15 21</Code>
+                    <Name>Design Heating Load</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 25 15 23</Code>
+                    <Name>Calculated Cooling Load</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 25 15 25</Code>
+                    <Name>Design Cooling Load</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 25 15 27</Code>
+                    <Name>Zone Cooling Load</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-91 25 17</Code>
+                <Name>HVAC Airflow</Name>
+                <Section>
+                    <Code>49-91 25 17 11</Code>
+                    <Name>Specified Supply Airflow</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 25 17 13</Code>
+                    <Name>Calculated Supply Airflow</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 25 17 15</Code>
+                    <Name>Actual Supply Airflow</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 25 17 17</Code>
+                    <Name>Return Airflow</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 25 17 19</Code>
+                    <Name>Specified Exhaust Airflow</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 25 17 21</Code>
+                    <Name>Actual Exhaust Airflow</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-91 25 19</Code>
+                <Name>Air Volume Calculation Type</Name>
+            </Section>
+            <Section>
+                <Code>49-91 25 21</Code>
+                <Name>HVAC Capacity</Name>
+                <Section>
+                    <Code>49-91 25 21 11</Code>
+                    <Name>Capacity Unit</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 25 21 13</Code>
+                    <Name>Heating Capacity</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 25 21 15</Code>
+                    <Name>Cooling Total Capacity</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 25 21 17</Code>
+                    <Name>Cooling Sensible Capacity</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 25 21 19</Code>
+                    <Name>Cooling Latent</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 25 21 21</Code>
+                    <Name>Cooling Sensible Heat Ratio (SHR)</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-91 25 23</Code>
+                <Name>HVAC Conditioning</Name>
+                <Section>
+                    <Code>49-91 25 23 11</Code>
+                    <Name>Conditioning Unit</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 25 23 13</Code>
+                    <Name>Condition Heated</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 25 23 15</Code>
+                    <Name>Condition Cooled</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 25 23 17</Code>
+                    <Name>Condition Heated and Cooled</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 25 23 19</Code>
+                    <Name>Unconditioned</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 25 23 21</Code>
+                    <Name>Vented</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 25 23 23</Code>
+                    <Name>Naturally Vented Only</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-91 25 25</Code>
+                <Name>HVAC Controls</Name>
+                <Section>
+                    <Code>49-91 25 25 11</Code>
+                    <Name>HVAC Fan Control</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 25 25 13</Code>
+                    <Name>HVAC Pump Control</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 25 25 15</Code>
+                    <Name>HVAC Valve Control</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-91 25 27</Code>
+                <Name>K Coefficient</Name>
+            </Section>
+            <Section>
+                <Code>49-91 25 29</Code>
+                <Name>HVAC Calculated Results</Name>
+                <Section>
+                    <Code>49-91 25 29 11</Code>
+                    <Name>Peak Cooling Total Load </Name>
+                </Section>
+                <Section>
+                    <Code>49-91 25 29 13</Code>
+                    <Name>Peak Cooling Month and Hour</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 25 29 15</Code>
+                    <Name>Peak Cooling Sensible Load </Name>
+                </Section>
+                <Section>
+                    <Code>49-91 25 29 17</Code>
+                    <Name>Maximum Cooling Capacity </Name>
+                </Section>
+                <Section>
+                    <Code>49-91 25 29 19</Code>
+                    <Name>Peak Cooling Airflow </Name>
+                </Section>
+                <Section>
+                    <Code>49-91 25 29 21</Code>
+                    <Name>Peak Heating Load</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 25 29 23</Code>
+                    <Name>Peak Heating Airflow </Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-91 25 31</Code>
+                <Name>HVAC Checksums</Name>
+                <Section>
+                    <Code>49-91 25 31 11</Code>
+                    <Name>Cooling Load Density </Name>
+                </Section>
+                <Section>
+                    <Code>49-91 25 31 13</Code>
+                    <Name>Cooling Flow Density </Name>
+                </Section>
+                <Section>
+                    <Code>49-91 25 31 15</Code>
+                    <Name>Cooling Flow/Load </Name>
+                </Section>
+                <Section>
+                    <Code>49-91 25 31 17</Code>
+                    <Name>Cooling Area/Load </Name>
+                </Section>
+                <Section>
+                    <Code>49-91 25 31 19</Code>
+                    <Name>Heating Load Density </Name>
+                </Section>
+                <Section>
+                    <Code>49-91 25 31 21</Code>
+                    <Name>Heating Flow Density </Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-91 25 33</Code>
+                <Name>Minimum Efficiency Reporting Value (MERV) Rating </Name>
+            </Section>
+            <Section>
+                <Code>49-91 25 35</Code>
+                <Name>Manufacturer’s coil bypass factor</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-91 31 00</Code>
+            <Name>Properties of Integrated Automation Systems</Name>
+            <Section>
+                <Code>49-91 31 11</Code>
+                <Name>Standard Network Variable Type (SNVT)</Name>
+            </Section>
+            <Section>
+                <Code>49-91 31 13</Code>
+                <Name>Control Type</Name>
+            </Section>
+            <Section>
+                <Code>49-91 31 15</Code>
+                <Name>Expected Engineering Units</Name>
+            </Section>
+            <Section>
+                <Code>49-91 31 17</Code>
+                <Name>Node ID</Name>
+            </Section>
+            <Section>
+                <Code>49-91 31 19</Code>
+                <Name>Domain Address</Name>
+            </Section>
+            <Section>
+                <Code>49-91 31 21</Code>
+                <Name>Subnet Address</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-91 41 00</Code>
+            <Name>Properties of Electrical Systems</Name>
+            <Section>
+                <Code>49-91 41 11</Code>
+                <Name>Amperage</Name>
+            </Section>
+            <Section>
+                <Code>49-91 41 13</Code>
+                <Name>Voltage</Name>
+                <Section>
+                    <Code>49-91 41 13 11</Code>
+                    <Name>Voltage Drop</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-91 41 15</Code>
+                <Name>Electrical Source</Name>
+            </Section>
+            <Section>
+                <Code>49-91 41 17</Code>
+                <Name>Electrical Power Factor</Name>
+            </Section>
+            <Section>
+                <Code>49-91 41 19</Code>
+                <Name>Electrical Power Factor State</Name>
+            </Section>
+            <Section>
+                <Code>49-91 41 21</Code>
+                <Name>Properties of Electrical Currents</Name>
+                <Section>
+                    <Code>49-91 41 21 11</Code>
+                    <Name>Current Draw</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 41 21 13</Code>
+                    <Name>Electrical Current Density</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 41 21 15</Code>
+                    <Name>True Current</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 41 21 17</Code>
+                    <Name>True Current and Phase</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-91 41 23</Code>
+                <Name>Properties of Electrical Loads</Name>
+                <Section>
+                    <Code>49-91 41 23 11</Code>
+                    <Name>Load Classification</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 41 23 13</Code>
+                    <Name>True Load</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 41 23 15</Code>
+                    <Name>Balanced Load</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-91 41 25</Code>
+                <Name>Properties of Electrical Panels</Name>
+                <Section>
+                    <Code>49-91 41 25 11</Code>
+                    <Name>Panel Name</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 41 25 13</Code>
+                    <Name>Panel Number</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 41 25 15</Code>
+                    <Name>Number of Poles</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 41 25 17</Code>
+                    <Name>Maximum Number of Pole Breakers</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 41 25 19</Code>
+                    <Name>Main Ratings</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 41 25 21</Code>
+                    <Name>Apparent Load and Phase</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-91 41 27</Code>
+                <Name>Properties of Circuits</Name>
+                <Section>
+                    <Code>49-91 41 27 11</Code>
+                    <Name>Circuit Name</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 41 27 13</Code>
+                    <Name>Circuit Number</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 41 27 15</Code>
+                    <Name>Circuit Load Name</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 41 27 17</Code>
+                    <Name>Dedicated Circuit</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 41 27 19</Code>
+                    <Name>Wire Type</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 41 27 21</Code>
+                    <Name>Wire Size</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 41 27 23</Code>
+                    <Name>Number of Runs</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 41 27 25</Code>
+                    <Name>Number of Hot Conductors</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 41 27 27</Code>
+                    <Name>Number of Neutral Conductors</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 41 27 29</Code>
+                    <Name>Number of Ground Conductors</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-91 41 29</Code>
+                <Name>Estimated and Connected Demands</Name>
+                <Section>
+                    <Code>49-91 41 29 11</Code>
+                    <Name>HVAC Total Estimated Demand</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 41 29 13</Code>
+                    <Name>HVAC Total Connected</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 41 29 15</Code>
+                    <Name>Lighting Total Estimated Demand</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 41 29 17</Code>
+                    <Name>Lighting Total Connected</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 41 29 19</Code>
+                    <Name>Power Total Estimated Demand</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 41 29 21</Code>
+                    <Name>Power Total Connected</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 41 29 23</Code>
+                    <Name>Other Total Estimated Demand</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 41 29 25</Code>
+                    <Name>Other Total Connected</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 41 29 27</Code>
+                    <Name>Total Estimated Demand</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 41 29 29</Code>
+                    <Name>Total Connected</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-91 41 31</Code>
+                <Name>Dielectric Constant</Name>
+            </Section>
+            <Section>
+                <Code>49-91 41 33</Code>
+                <Name>Earth Ground Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-91 41 35</Code>
+                <Name>Electrical Admittance</Name>
+            </Section>
+            <Section>
+                <Code>49-91 41 37</Code>
+                <Name>Electrical Capacitance</Name>
+            </Section>
+            <Section>
+                <Code>49-91 41 39</Code>
+                <Name>Electrical Charge</Name>
+            </Section>
+            <Section>
+                <Code>49-91 41 41</Code>
+                <Name>Electrical Charge Density</Name>
+            </Section>
+            <Section>
+                <Code>49-91 41 43</Code>
+                <Name>Electrical Conductance</Name>
+            </Section>
+            <Section>
+                <Code>49-91 41 45</Code>
+                <Name>Electrical Conductivity</Name>
+            </Section>
+            <Section>
+                <Code>49-91 41 47</Code>
+                <Name>Electrical Field Strength</Name>
+            </Section>
+            <Section>
+                <Code>49-91 41 49</Code>
+                <Name>Electrical Flux Density</Name>
+            </Section>
+            <Section>
+                <Code>49-91 41 51</Code>
+                <Name>Electrical Frequency</Name>
+            </Section>
+            <Section>
+                <Code>49-91 41 53</Code>
+                <Name>Electrical Inductance</Name>
+            </Section>
+            <Section>
+                <Code>49-91 41 55</Code>
+                <Name>Electrical Insulation</Name>
+            </Section>
+            <Section>
+                <Code>49-91 41 57</Code>
+                <Name>Electrical Potential Difference</Name>
+            </Section>
+            <Section>
+                <Code>49-91 41 59</Code>
+                <Name>Electrical Reluctance</Name>
+            </Section>
+            <Section>
+                <Code>49-91 41 61</Code>
+                <Name>Electrical Resistance</Name>
+            </Section>
+            <Section>
+                <Code>49-91 41 63</Code>
+                <Name>Electrical Susceptance</Name>
+            </Section>
+            <Section>
+                <Code>49-91 41 65</Code>
+                <Name>Electrical Permittivity</Name>
+            </Section>
+            <Section>
+                <Code>49-91 41 67</Code>
+                <Name>Electrical Phase</Name>
+            </Section>
+            <Section>
+                <Code>49-91 41 69</Code>
+                <Name>Input Impedance</Name>
+            </Section>
+            <Section>
+                <Code>49-91 41 71</Code>
+                <Name>Output Impedance</Name>
+            </Section>
+            <Section>
+                <Code>49-91 41 73</Code>
+                <Name>Self Inductance</Name>
+            </Section>
+            <Section>
+                <Code>49-91 41 75</Code>
+                <Name>Solid State </Name>
+            </Section>
+            <Section>
+                <Code>49-91 41 77</Code>
+                <Name>Surge Content</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-91 51 00</Code>
+            <Name>Properties of Lighting Systems</Name>
+            <Section>
+                <Code>49-91 51 11</Code>
+                <Name>IEEE Illumination Levels</Name>
+            </Section>
+            <Section>
+                <Code>49-91 51 13</Code>
+                <Name>Average Estimated Illumination</Name>
+            </Section>
+            <Section>
+                <Code>49-91 51 15</Code>
+                <Name>Footcandles</Name>
+            </Section>
+            <Section>
+                <Code>49-91 51 17</Code>
+                <Name>Glare</Name>
+            </Section>
+            <Section>
+                <Code>49-91 51 19</Code>
+                <Name>Glare Index</Name>
+            </Section>
+            <Section>
+                <Code>49-91 51 21</Code>
+                <Name>Index of Refraction</Name>
+            </Section>
+            <Section>
+                <Code>49-91 51 23</Code>
+                <Name>Illuminance</Name>
+            </Section>
+            <Section>
+                <Code>49-91 51 25</Code>
+                <Name>Light Absorption</Name>
+            </Section>
+            <Section>
+                <Code>49-91 51 27</Code>
+                <Name>Light Brightness</Name>
+            </Section>
+            <Section>
+                <Code>49-91 51 29</Code>
+                <Name>Lighting Calculation Workplane</Name>
+            </Section>
+            <Section>
+                <Code>49-91 51 31</Code>
+                <Name>Light Emission</Name>
+            </Section>
+            <Section>
+                <Code>49-91 51 33</Code>
+                <Name>Light Exposure</Name>
+            </Section>
+            <Section>
+                <Code>49-91 51 35</Code>
+                <Name>Light Illuminance</Name>
+            </Section>
+            <Section>
+                <Code>49-91 51 37</Code>
+                <Name>Light Polarization</Name>
+            </Section>
+            <Section>
+                <Code>49-91 51 39</Code>
+                <Name>Light Reflectance</Name>
+            </Section>
+            <Section>
+                <Code>49-91 51 41</Code>
+                <Name>Light Refractive Index</Name>
+            </Section>
+            <Section>
+                <Code>49-91 51 43</Code>
+                <Name>Light Source</Name>
+            </Section>
+            <Section>
+                <Code>49-91 51 45</Code>
+                <Name>Light Transmission</Name>
+            </Section>
+            <Section>
+                <Code>49-91 51 47</Code>
+                <Name>Lighting Controls</Name>
+                <Section>
+                    <Code>49-91 51 47 11</Code>
+                    <Name>Light Control ID</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-91 51 49</Code>
+                <Name>Luminance</Name>
+                <Section>
+                    <Code>49-91 51 49 11</Code>
+                    <Name>Lumens Per Lamp</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 51 49 13</Code>
+                    <Name>Luminous Efficacy</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 51 49 15</Code>
+                    <Name>Luminous Flux</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 51 49 17</Code>
+                    <Name>Luminous Intensity</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-91 51 51</Code>
+                <Name>Reflectance</Name>
+                <Section>
+                    <Code>49-91 51 51 11</Code>
+                    <Name>Ceiling Reflectance</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 51 51 13</Code>
+                    <Name>Wall Reflectance</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 51 51 15</Code>
+                    <Name>Floor Reflectance</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 51 51 17</Code>
+                    <Name>Solar Reflectance</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 51 51 19</Code>
+                    <Name>Solar Reflectance Index (SRI) </Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-91 51 53</Code>
+                <Name>Room Cavity Ratio</Name>
+            </Section>
+            <Section>
+                <Code>49-91 51 55</Code>
+                <Name>Translucence</Name>
+            </Section>
+            <Section>
+                <Code>49-91 51 57</Code>
+                <Name>Transparency</Name>
+            </Section>
+            <Section>
+                <Code>49-91 51 59</Code>
+                <Name>Opacity</Name>
+            </Section>
+            <Section>
+                <Code>49-91 51 61</Code>
+                <Name>Ultraviolet Light</Name>
+            </Section>
+            <Section>
+                <Code>49-91 51 63</Code>
+                <Name>Visible Light </Name>
+            </Section>
+            <Section>
+                <Code>49-91 51 65</Code>
+                <Name>Visible Light Transmittance</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-91 61 00</Code>
+            <Name>Properties of Communication Systems</Name>
+            <Section>
+                <Code>49-91 61 11</Code>
+                <Name>Cable Category</Name>
+            </Section>
+            <Section>
+                <Code>49-91 61 13</Code>
+                <Name>Cable Classification</Name>
+            </Section>
+            <Section>
+                <Code>49-91 61 15</Code>
+                <Name>Cable Listing</Name>
+            </Section>
+            <Section>
+                <Code>49-91 61 17</Code>
+                <Name>Cable Material</Name>
+            </Section>
+            <Section>
+                <Code>49-91 61 19</Code>
+                <Name>Cable Rating</Name>
+            </Section>
+            <Section>
+                <Code>49-91 61 21</Code>
+                <Name>Cable Terminations</Name>
+            </Section>
+            <Section>
+                <Code>49-91 61 23</Code>
+                <Name>Cable Type</Name>
+                <Section>
+                    <Code>49-91 61 23 11</Code>
+                    <Name>Unsheilded Twisted Pair (UTP)</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 61 23 13</Code>
+                    <Name>Twisted Pair</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-91 61 25</Code>
+                <Name>Fiber Count</Name>
+            </Section>
+            <Section>
+                <Code>49-91 61 27</Code>
+                <Name>Fiber Type</Name>
+                <Section>
+                    <Code>49-91 61 27 11</Code>
+                    <Name>Fiber Optic</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 61 27 13</Code>
+                    <Name>Nonconductive</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 61 27 15</Code>
+                    <Name>General Purpose</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 61 27 17</Code>
+                    <Name>Communications Plenum</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 61 27 19</Code>
+                    <Name>Communications Riser</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-91 61 29</Code>
+                <Name>Shielding</Name>
+            </Section>
+            <Section>
+                <Code>49-91 61 31</Code>
+                <Name>Signal Set Choice</Name>
+            </Section>
+            <Section>
+                <Code>49-91 61 33</Code>
+                <Name>Signal Type</Name>
+                <Section>
+                    <Code>49-91 61 33 11</Code>
+                    <Name>Broadband</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 61 33 13</Code>
+                    <Name>Modulated</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-91 61 35</Code>
+                <Name>Signal-to-Noise Ratio</Name>
+            </Section>
+            <Section>
+                <Code>49-91 61 37</Code>
+                <Name>Transmission Performance Rating</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-91 71 00</Code>
+            <Name>Properties of Safety and Security Systems</Name>
+            <Section>
+                <Code>49-91 71 11</Code>
+                <Name>Alarm Type</Name>
+            </Section>
+            <Section>
+                <Code>49-91 71 13</Code>
+                <Name>Status Code</Name>
+            </Section>
+            <Section>
+                <Code>49-91 71 15</Code>
+                <Name>Audit Trail</Name>
+            </Section>
+            <Section>
+                <Code>49-91 71 17</Code>
+                <Name>System Status</Name>
+            </Section>
+            <Section>
+                <Code>49-91 71 19</Code>
+                <Name>Backup Battery Capacity</Name>
+            </Section>
+            <Section>
+                <Code>49-91 71 21</Code>
+                <Name>Control Point</Name>
+            </Section>
+            <Section>
+                <Code>49-91 71 23</Code>
+                <Name>Display Type</Name>
+            </Section>
+            <Section>
+                <Code>49-91 71 25</Code>
+                <Name>Fail-Safe Capability</Name>
+            </Section>
+            <Section>
+                <Code>49-91 71 27</Code>
+                <Name>Logic Points</Name>
+            </Section>
+            <Section>
+                <Code>49-91 71 29</Code>
+                <Name>Report Type</Name>
+            </Section>
+            <Section>
+                <Code>49-91 71 31</Code>
+                <Name>Reporting Area</Name>
+            </Section>
+            <Section>
+                <Code>49-91 71 33</Code>
+                <Name>Termination Point</Name>
+            </Section>
+            <Section>
+                <Code>49-91 71 35</Code>
+                <Name>Time Stamp</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>49-91 81 00</Code>
+            <Name>Properties of Energy Systems</Name>
+            <Section>
+                <Code>49-91 81 11</Code>
+                <Name>Energy Consumption</Name>
+            </Section>
+            <Section>
+                <Code>49-91 81 13</Code>
+                <Name>Energy Demand</Name>
+            </Section>
+            <Section>
+                <Code>49-91 81 15</Code>
+                <Name>Energy Unit</Name>
+            </Section>
+            <Section>
+                <Code>49-91 81 17</Code>
+                <Name>Energy Per Unit Area Time</Name>
+            </Section>
+            <Section>
+                <Code>49-91 81 19</Code>
+                <Name>Energy Density</Name>
+            </Section>
+            <Section>
+                <Code>49-91 81 21</Code>
+                <Name>Energy Efficiency</Name>
+                <Section>
+                    <Code>49-91 81 21 11</Code>
+                    <Name>Energy Efficiency Measurement</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 81 21 13</Code>
+                    <Name>Energy Efficiency Verification</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 81 21 15</Code>
+                    <Name>Water Efficiency</Name>
+                </Section>
+                <Section>
+                    <Code>49-91 81 21 17</Code>
+                    <Name>Fuel Efficiency</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>49-91 81 23</Code>
+                <Name>Heat Flux Density</Name>
+            </Section>
+            <Section>
+                <Code>49-91 81 25</Code>
+                <Name>Impact Energy Absorption</Name>
+            </Section>
+            <Section>
+                <Code>49-91 81 27</Code>
+                <Name>Potential Energy </Name>
+            </Section>
+            <Section>
+                <Code>49-91 81 29</Code>
+                <Name>Power Output</Name>
+            </Section>
+            <Section>
+                <Code>49-91 81 31</Code>
+                <Name>Radiance</Name>
+            </Section>
+            <Section>
+                <Code>49-91 81 33</Code>
+                <Name>Radiant Intensity</Name>
+            </Section>
+            <Section>
+                <Code>49-91 81 35</Code>
+                <Name>Irradiance</Name>
+            </Section>
+            <Section>
+                <Code>49-91 81 37</Code>
+                <Name>Specific Energy</Name>
+            </Section>
+            <Section>
+                <Code>49-91 81 39</Code>
+                <Name>Total Solar Energy </Name>
+            </Section>
+            <Section>
+                <Code>49-91 81 41</Code>
+                <Name>Total Solar Energy Reflectance</Name>
+            </Section>
+        </Section>
+    </Section>
+</Table>

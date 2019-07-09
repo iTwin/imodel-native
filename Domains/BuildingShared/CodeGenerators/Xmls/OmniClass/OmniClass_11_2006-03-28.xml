@@ -1,0 +1,1707 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<Table>
+    <Name>Table 11 - Construction Entities by Function</Name>
+    <Source>The Secretariat for the OCCS Development Committee</Source>
+    <Version>Major Version No=&apos; Edition:1.0&apos;  Major Date=&apos;2006-03-28 Release&apos;  Minor Version No=&apos; Edition:1.0&apos;  Minor Date=&apos;2006-03-28 Release&apos;  Major=&apos;&apos;  Minor=&apos;&apos; </Version>
+    <Section>
+        <Code>11-11 00 00</Code>
+        <Name>Assembly Facilities</Name>
+        <Section>
+            <Code>11-11 11 00</Code>
+            <Name>Convention and Exhibition Facilities</Name>
+            <Section>
+                <Code>11-11 11 11</Code>
+                <Name>Convention Center</Name>
+            </Section>
+            <Section>
+                <Code>11-11 11 14</Code>
+                <Name>Exhibition Hall</Name>
+            </Section>
+            <Section>
+                <Code>11-11 11 17</Code>
+                <Name>Conference Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-11 11 21</Code>
+                <Name>Training Center</Name>
+            </Section>
+            <Section>
+                <Code>11-11 11 99</Code>
+                <Name>Other Convention and Exhibition Facilities</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>11-11 21 00</Code>
+            <Name>Entertainment Facilities</Name>
+            <Section>
+                <Code>11-11 21 11</Code>
+                <Name>Cinema</Name>
+            </Section>
+            <Section>
+                <Code>11-11 21 14</Code>
+                <Name>Broadcasting Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-11 21 17</Code>
+                <Name>Performing Arts Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-11 21 21</Code>
+                <Name>Casino</Name>
+            </Section>
+            <Section>
+                <Code>11-11 21 24</Code>
+                <Name>Race Tracks</Name>
+                <Section>
+                    <Code>11-11 21 24 11</Code>
+                    <Name>Horse Racing Track</Name>
+                </Section>
+                <Section>
+                    <Code>11-11 21 24 14</Code>
+                    <Name>Dog Racing Track</Name>
+                </Section>
+                <Section>
+                    <Code>11-11 21 24 17</Code>
+                    <Name>Automobile Race Track</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>11-11 21 27</Code>
+                <Name>Arena</Name>
+            </Section>
+            <Section>
+                <Code>11-11 21 31</Code>
+                <Name>Discotheque</Name>
+            </Section>
+            <Section>
+                <Code>11-11 21 99</Code>
+                <Name>Other Entertainment Facilities</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>11-12 00 00</Code>
+        <Name>Learning Facilities</Name>
+        <Section>
+            <Code>11-12 11 00</Code>
+            <Name>Daycare and Preschool Facilities</Name>
+            <Section>
+                <Code>11-12 11 11</Code>
+                <Name>Daycare Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-12 11 14</Code>
+                <Name>Preschool Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-12 11 17</Code>
+                <Name>Proprietary Preschool Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-12 11 99</Code>
+                <Name>Other Daycare and Preschool Facilities</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>11-12 21 00</Code>
+            <Name>K through 12 Learning Facilities</Name>
+            <Section>
+                <Code>11-12 21 11</Code>
+                <Name>Kindergarten</Name>
+            </Section>
+            <Section>
+                <Code>11-12 21 14</Code>
+                <Name>Elementary School</Name>
+            </Section>
+            <Section>
+                <Code>11-12 21 17</Code>
+                <Name>Primary School</Name>
+            </Section>
+            <Section>
+                <Code>11-12 21 21</Code>
+                <Name>Middle School</Name>
+            </Section>
+            <Section>
+                <Code>11-12 21 24</Code>
+                <Name>Junior High School</Name>
+            </Section>
+            <Section>
+                <Code>11-12 21 27</Code>
+                <Name>Secondary School</Name>
+            </Section>
+            <Section>
+                <Code>11-12 21 31</Code>
+                <Name>High School</Name>
+            </Section>
+            <Section>
+                <Code>11-12 21 34</Code>
+                <Name>Magnet School</Name>
+            </Section>
+            <Section>
+                <Code>11-12 21 37</Code>
+                <Name>Charter School</Name>
+            </Section>
+            <Section>
+                <Code>11-12 21 99</Code>
+                <Name>Other K through 12 Learning Facilities</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>11-12 24 00</Code>
+            <Name>Higher Education Facilities</Name>
+            <Section>
+                <Code>11-12 24 11</Code>
+                <Name>University</Name>
+            </Section>
+            <Section>
+                <Code>11-12 24 13</Code>
+                <Name>Business School</Name>
+            </Section>
+            <Section>
+                <Code>11-12 24 14</Code>
+                <Name>Science College</Name>
+            </Section>
+            <Section>
+                <Code>11-12 24 17</Code>
+                <Name>Agricultural School</Name>
+            </Section>
+            <Section>
+                <Code>11-12 24 21</Code>
+                <Name>Art School</Name>
+            </Section>
+            <Section>
+                <Code>11-12 24 24</Code>
+                <Name>Vocational College</Name>
+            </Section>
+            <Section>
+                <Code>11-12 24 27</Code>
+                <Name>Human Arts College</Name>
+            </Section>
+            <Section>
+                <Code>11-12 24 31</Code>
+                <Name>Military Academy</Name>
+            </Section>
+            <Section>
+                <Code>11-12 24 34</Code>
+                <Name>Professional College</Name>
+            </Section>
+            <Section>
+                <Code>11-12 24 99</Code>
+                <Name>Other Higher Education Facilities</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>11-12 27 00</Code>
+            <Name>Research Facilities</Name>
+            <Section>
+                <Code>11-12 27 11</Code>
+                <Name>Biomedical Research Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-12 27 14</Code>
+                <Name>Chemical Research Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-12 27 21</Code>
+                <Name>Computing Research Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-12 27 24</Code>
+                <Name>Engineering Research Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-12 27 31</Code>
+                <Name>Life Sciences Research Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-12 27 34</Code>
+                <Name>High Hazard Research Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-12 27 37</Code>
+                <Name>Containment Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-12 27 41</Code>
+                <Name>Nanotechnology Research Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-12 27 44</Code>
+                <Name>Electronics Research Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-12 27 99</Code>
+                <Name>Other Research Facilities</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>11-13 00 00</Code>
+        <Name>Public Service Facilities</Name>
+        <Section>
+            <Code>11-13 11 00</Code>
+            <Name>Government Facilities</Name>
+            <Section>
+                <Code>11-13 11 11</Code>
+                <Name>Administrative Government Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-13 11 14</Code>
+                <Name>Regulatory Agency Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-13 11 17</Code>
+                <Name>Courthouse</Name>
+            </Section>
+            <Section>
+                <Code>11-13 11 21</Code>
+                <Name>Legislative Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-13 11 24</Code>
+                <Name>Police Station</Name>
+            </Section>
+            <Section>
+                <Code>11-13 11 27</Code>
+                <Name>Post Office</Name>
+            </Section>
+            <Section>
+                <Code>11-13 11 31</Code>
+                <Name>Fire Station</Name>
+            </Section>
+            <Section>
+                <Code>11-13 11 33</Code>
+                <Name>Detention Centers</Name>
+                <Section>
+                    <Code>11-13 11 33 11</Code>
+                    <Name>Prison</Name>
+                </Section>
+                <Section>
+                    <Code>11-13 11 33 14</Code>
+                    <Name>Jail</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>11-13 11 34</Code>
+                <Name>Embassy</Name>
+            </Section>
+            <Section>
+                <Code>11-13 11 99</Code>
+                <Name>Other Government Facilities</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>11-13 21 00</Code>
+            <Name>Military Facilities</Name>
+            <Section>
+                <Code>11-13 21 11</Code>
+                <Name>Military Headquarters</Name>
+            </Section>
+            <Section>
+                <Code>11-13 21 12</Code>
+                <Name>Administrative Military Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-13 21 14</Code>
+                <Name>Military Training Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-13 21 17</Code>
+                <Name>Military Research Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-13 21 21</Code>
+                <Name>Military Base</Name>
+            </Section>
+            <Section>
+                <Code>11-13 21 24</Code>
+                <Name>Military Field Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-13 21 99</Code>
+                <Name>Other Military Facilities</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>11-13 24 00</Code>
+            <Name>Health Facilities</Name>
+            <Section>
+                <Code>11-13 24 11</Code>
+                <Name>Hospital</Name>
+            </Section>
+            <Section>
+                <Code>11-13 24 14</Code>
+                <Name>Clinic</Name>
+            </Section>
+            <Section>
+                <Code>11-13 24 17</Code>
+                <Name>Rehabilitation Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-13 24 21</Code>
+                <Name>Geriatric Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-13 24 24</Code>
+                <Name>Psychiatric Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-13 24 27</Code>
+                <Name>Maternity Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-13 24 31</Code>
+                <Name>Animal Healthcare Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-13 24 99</Code>
+                <Name>Other Health Facilities</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>11-13 27 00</Code>
+            <Name>Public Welfare Facilities</Name>
+            <Section>
+                <Code>11-13 27 11</Code>
+                <Name>Homeless Shelter</Name>
+            </Section>
+            <Section>
+                <Code>11-13 27 14</Code>
+                <Name>Food Bank</Name>
+            </Section>
+            <Section>
+                <Code>11-13 27 99</Code>
+                <Name>Other Public Welfare Facilities</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>11-13 31 00</Code>
+            <Name>Death Facilities</Name>
+            <Section>
+                <Code>11-13 31 11</Code>
+                <Name>Funeral Home</Name>
+            </Section>
+            <Section>
+                <Code>11-13 31 14</Code>
+                <Name>Cremation Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-13 31 17</Code>
+                <Name>Cemetery</Name>
+            </Section>
+            <Section>
+                <Code>11-13 31 99</Code>
+                <Name>Other Death Facilities</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>11-14 00 00</Code>
+        <Name>Cultural Facilities</Name>
+        <Section>
+            <Code>11-14 11 00</Code>
+            <Name>Libraries</Name>
+            <Section>
+                <Code>11-14 11 11</Code>
+                <Name>General Purpose Library</Name>
+            </Section>
+            <Section>
+                <Code>11-14 11 14</Code>
+                <Name>Children’s Library</Name>
+            </Section>
+            <Section>
+                <Code>11-14 11 17</Code>
+                <Name>Special Library</Name>
+            </Section>
+            <Section>
+                <Code>11-14 11 21</Code>
+                <Name>Academic Library</Name>
+            </Section>
+            <Section>
+                <Code>11-14 11 99</Code>
+                <Name>Other Libraries</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>11-14 21 00</Code>
+            <Name>Museums</Name>
+            <Section>
+                <Code>11-14 21 11</Code>
+                <Name>Art Museum</Name>
+            </Section>
+            <Section>
+                <Code>11-14 21 14</Code>
+                <Name>History Museum</Name>
+            </Section>
+            <Section>
+                <Code>11-14 21 17</Code>
+                <Name>Science and Technology Museum</Name>
+            </Section>
+            <Section>
+                <Code>11-14 21 21</Code>
+                <Name>Children’s Museum</Name>
+            </Section>
+            <Section>
+                <Code>11-14 21 24</Code>
+                <Name>Special Purpose Museum</Name>
+            </Section>
+            <Section>
+                <Code>11-14 21 99</Code>
+                <Name>Other Museums</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>11-14 24 00</Code>
+            <Name>Religious Facilities</Name>
+            <Section>
+                <Code>11-14 24 11</Code>
+                <Name>Local Religious Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-14 24 14</Code>
+                <Name>Regional Religious Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-14 24 17</Code>
+                <Name>National or International Religious Center</Name>
+            </Section>
+            <Section>
+                <Code>11-14 24 21</Code>
+                <Name>Religious Pilgrimage Site</Name>
+            </Section>
+            <Section>
+                <Code>11-14 24 24</Code>
+                <Name>Religious Retreat</Name>
+            </Section>
+            <Section>
+                <Code>11-14 24 27</Code>
+                <Name>Specialized Religious Center</Name>
+            </Section>
+            <Section>
+                <Code>11-14 24 99</Code>
+                <Name>Other Religious Facilities</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>11-14 99 00</Code>
+            <Name>Other Cultural Facilities</Name>
+        </Section>
+    </Section>
+    <Section>
+        <Code>11-15 00 00</Code>
+        <Name>Recreation Facilities</Name>
+        <Section>
+            <Code>11-15 11 00</Code>
+            <Name>Outdoor Recreation Facilities</Name>
+            <Section>
+                <Code>11-15 11 11</Code>
+                <Name>Nature Preserve</Name>
+            </Section>
+            <Section>
+                <Code>11-15 11 14</Code>
+                <Name>Hunting Preserve</Name>
+            </Section>
+            <Section>
+                <Code>11-15 11 21</Code>
+                <Name>Fishing Preserve</Name>
+            </Section>
+            <Section>
+                <Code>11-15 11 27</Code>
+                <Name>Target Range</Name>
+            </Section>
+            <Section>
+                <Code>11-15 11 34</Code>
+                <Name>Outdoor Winter Sports Facilities</Name>
+                <Section>
+                    <Code>11-15 11 34 11</Code>
+                    <Name>Ski Slope</Name>
+                </Section>
+                <Section>
+                    <Code>11-15 11 34 14</Code>
+                    <Name>Outdoor Skating Rink</Name>
+                </Section>
+                <Section>
+                    <Code>11-15 11 34 17</Code>
+                    <Name>Snowmobile Course</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>11-15 11 37</Code>
+                <Name>Golf Course</Name>
+            </Section>
+            <Section>
+                <Code>11-15 11 38</Code>
+                <Name>Miniature Golf Course</Name>
+            </Section>
+            <Section>
+                <Code>11-15 11 41</Code>
+                <Name>Outdoor Racquet Sports Facilities</Name>
+                <Section>
+                    <Code>11-15 11 41 11</Code>
+                    <Name>Outdoor Tennis Facility</Name>
+                </Section>
+                <Section>
+                    <Code>11-15 11 41 14</Code>
+                    <Name>Outdoor Squash Facility</Name>
+                </Section>
+                <Section>
+                    <Code>11-15 11 41 17</Code>
+                    <Name>Outdoor Racquetball Facility</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>11-15 11 44</Code>
+                <Name>Outdoor Water Recreation Facilities</Name>
+                <Section>
+                    <Code>11-15 11 44 11</Code>
+                    <Name>Outdoor Swimming Pool</Name>
+                </Section>
+                <Section>
+                    <Code>11-15 11 44 14</Code>
+                    <Name>Outdoor Water Park</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>11-15 11 47</Code>
+                <Name>Outdoor Team Sports Facilities</Name>
+                <Section>
+                    <Code>11-15 11 47 11</Code>
+                    <Name>Football Field</Name>
+                </Section>
+                <Section>
+                    <Code>11-15 11 47 14</Code>
+                    <Name>Soccer Field</Name>
+                </Section>
+                <Section>
+                    <Code>11-15 11 47 17</Code>
+                    <Name>Baseball or Softball Diamond</Name>
+                </Section>
+                <Section>
+                    <Code>11-15 11 47 21</Code>
+                    <Name>Basketball Court</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>11-15 11 98</Code>
+                <Name>Outdoor Multipurpose Recreation Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-15 11 99</Code>
+                <Name>Other Outdoor Recreation Facilities</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>11-15 21 00</Code>
+            <Name>Indoor Recreation Facilities</Name>
+            <Section>
+                <Code>11-15 21 11</Code>
+                <Name>Indoor Team Court Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-15 21 14</Code>
+                <Name>Indoor Ice Skating Rink</Name>
+            </Section>
+            <Section>
+                <Code>11-15 21 21</Code>
+                <Name>Indoor Water Recreation Facilities</Name>
+                <Section>
+                    <Code>11-15 21 21 11</Code>
+                    <Name>Indoor Swimming Pool</Name>
+                </Section>
+                <Section>
+                    <Code>11-15 21 21 14</Code>
+                    <Name>Indoor High Diving Facility</Name>
+                </Section>
+                <Section>
+                    <Code>11-15 21 21 17</Code>
+                    <Name>Indoor Water Park</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>11-15 21 24</Code>
+                <Name>Indoor Racquet Sports Facilities</Name>
+                <Section>
+                    <Code>11-15 21 24 11</Code>
+                    <Name>Indoor Tennis Facility</Name>
+                </Section>
+                <Section>
+                    <Code>11-15 21 24 14</Code>
+                    <Name>Indoor Squash Facility</Name>
+                </Section>
+                <Section>
+                    <Code>11-15 21 24 17</Code>
+                    <Name>Indoor Racquetball Facility</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>11-15 21 31</Code>
+                <Name>Indoor Individual Athletic Recreation Facilities</Name>
+                <Section>
+                    <Code>11-15 21 31 11</Code>
+                    <Name>Fitness and Training Facility</Name>
+                </Section>
+                <Section>
+                    <Code>11-15 21 31 14</Code>
+                    <Name>Martial Arts Facility</Name>
+                </Section>
+                <Section>
+                    <Code>11-15 21 31 17</Code>
+                    <Name>Boxing Facility</Name>
+                </Section>
+                <Section>
+                    <Code>11-15 21 31 21</Code>
+                    <Name>Gymnastics Facility</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>11-15 21 37</Code>
+                <Name>Non-Athletic Indoor Recreation Facilities</Name>
+                <Section>
+                    <Code>11-15 21 37 11</Code>
+                    <Name>Bowling Alley</Name>
+                </Section>
+                <Section>
+                    <Code>11-15 21 37 14</Code>
+                    <Name>Billiards Facility</Name>
+                </Section>
+                <Section>
+                    <Code>11-15 21 37 17</Code>
+                    <Name>Amusement Arcade</Name>
+                </Section>
+                <Section>
+                    <Code>11-15 21 37 21</Code>
+                    <Name>Social Club Facility</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>11-15 21 98</Code>
+                <Name>Indoor Multipurpose Recreation Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-15 21 99</Code>
+                <Name>Other Indoor Recreation Facilities</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>11-16 00 00</Code>
+        <Name>Residences</Name>
+        <Section>
+            <Code>11-16 11 11</Code>
+            <Name>Single Family Residences</Name>
+            <Section>
+                <Code>11-16 11 11</Code>
+                <Name>Studio Family Residence</Name>
+            </Section>
+            <Section>
+                <Code>11-16 11 14</Code>
+                <Name>One-Bedroom Family Residence</Name>
+            </Section>
+            <Section>
+                <Code>11-16 11 17</Code>
+                <Name>Multiple Bedroom Family Residence</Name>
+            </Section>
+            <Section>
+                <Code>11-16 11 99</Code>
+                <Name>Other Single Family Residences</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>11-16 21 16</Code>
+            <Name>Multiple Family Residences</Name>
+            <Section>
+                <Code>11-16 21 11</Code>
+                <Name>Duplex</Name>
+            </Section>
+            <Section>
+                <Code>11-16 21 14</Code>
+                <Name>Co-housing Multiple Family Residence</Name>
+            </Section>
+            <Section>
+                <Code>11-16 21 17</Code>
+                <Name>Small Complex Multiple Family Residence</Name>
+            </Section>
+            <Section>
+                <Code>11-16 21 21</Code>
+                <Name>Large Complex Multiple Family Residence</Name>
+            </Section>
+            <Section>
+                <Code>11-16 21 99</Code>
+                <Name>Other Multiple Family Residences</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>11-16 24 00</Code>
+            <Name>Hotels</Name>
+            <Section>
+                <Code>11-16 24 11</Code>
+                <Name>Urban Hotel</Name>
+            </Section>
+            <Section>
+                <Code>11-16 24 14</Code>
+                <Name>Motel</Name>
+            </Section>
+            <Section>
+                <Code>11-16 24 17</Code>
+                <Name>Bed and Breakfast</Name>
+            </Section>
+            <Section>
+                <Code>11-16 24 21</Code>
+                <Name>Residence Hotel</Name>
+            </Section>
+            <Section>
+                <Code>11-16 24 24</Code>
+                <Name>Resort Hotel</Name>
+            </Section>
+            <Section>
+                <Code>11-16 24 99</Code>
+                <Name>Other Hotels</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>11-16 27 00</Code>
+            <Name>Dormitories</Name>
+            <Section>
+                <Code>11-16 27 11</Code>
+                <Name>Single-Gender Dormitory</Name>
+            </Section>
+            <Section>
+                <Code>11-16 27 14</Code>
+                <Name>Mixed-Gender Dormitory</Name>
+            </Section>
+            <Section>
+                <Code>11-16 27 99</Code>
+                <Name>Other Dormitories</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>11-16 31 00</Code>
+            <Name>Special Care Residences</Name>
+            <Section>
+                <Code>11-16 31 11</Code>
+                <Name>Elderly Special Care Residence</Name>
+            </Section>
+            <Section>
+                <Code>11-16 31 14</Code>
+                <Name>Physical Disability Care Residence</Name>
+            </Section>
+            <Section>
+                <Code>11-16 31 17</Code>
+                <Name>Behavioral Disability Care Residence</Name>
+            </Section>
+            <Section>
+                <Code>11-16 31 99</Code>
+                <Name>Other Special Care Residences</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>11-17 00 00</Code>
+        <Name>Commercial Facilities</Name>
+        <Section>
+            <Code>11-17 11 00</Code>
+            <Name>Offices</Name>
+            <Section>
+                <Code>11-17 11 11</Code>
+                <Name>Headquarters Office</Name>
+            </Section>
+            <Section>
+                <Code>11-17 11 14</Code>
+                <Name>Regional Administrative Office</Name>
+            </Section>
+            <Section>
+                <Code>11-17 11 17</Code>
+                <Name>Multi-tenant Office Building</Name>
+            </Section>
+            <Section>
+                <Code>11-17 11 99</Code>
+                <Name>Other Offices</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>11-17 21 00</Code>
+            <Name>Exchanges and Markets</Name>
+            <Section>
+                <Code>11-17 21 11</Code>
+                <Name>Market</Name>
+            </Section>
+            <Section>
+                <Code>11-17 21 14</Code>
+                <Name>Bank</Name>
+            </Section>
+            <Section>
+                <Code>11-17 21 17</Code>
+                <Name>Stock Exchange</Name>
+            </Section>
+            <Section>
+                <Code>11-17 21 21</Code>
+                <Name>Auction House</Name>
+            </Section>
+            <Section>
+                <Code>11-17 21 99</Code>
+                <Name>Other Exchanges and Markets</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>11-17 24 00</Code>
+            <Name>Retail Commercial Facilities</Name>
+            <Section>
+                <Code>11-17 24 11</Code>
+                <Name>Department Store</Name>
+            </Section>
+            <Section>
+                <Code>11-17 24 14</Code>
+                <Name>Specialty Store</Name>
+            </Section>
+            <Section>
+                <Code>11-17 24 17</Code>
+                <Name>Grocery Store</Name>
+            </Section>
+            <Section>
+                <Code>11-17 24 21</Code>
+                <Name>Vehicle Dealership</Name>
+            </Section>
+            <Section>
+                <Code>11-17 24 24</Code>
+                <Name>Dining Establishments</Name>
+            </Section>
+            <Section>
+                <Code>11-17 24 99</Code>
+                <Name>Other Retail Commercial Facilities</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>11-17 27 00</Code>
+            <Name>Mixed-Commerce Facilities</Name>
+            <Section>
+                <Code>11-17 27 11</Code>
+                <Name>Commercial Malls</Name>
+            </Section>
+            <Section>
+                <Code>11-17 27 14</Code>
+                <Name>Shopping Centers</Name>
+            </Section>
+            <Section>
+                <Code>11-17 27 99</Code>
+                <Name>Other Mixed-Commerce Facilities</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>11-21 00 00</Code>
+        <Name>Production Facilities</Name>
+        <Section>
+            <Code>11-21 11 00</Code>
+            <Name>Manufacturing Facilities</Name>
+            <Section>
+                <Code>11-21 11 11</Code>
+                <Name>Pharmaceutical or Biotechnology Manufacturing Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-21 11 14</Code>
+                <Name>Food Processing and Manufacturing Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-21 11 17</Code>
+                <Name>Beverage or Tobacco Manufacturing Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-21 11 21</Code>
+                <Name>Textile Manufacturing Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-21 11 24</Code>
+                <Name>Leather and Allied Industry Manufacturing Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-21 11 27</Code>
+                <Name>Wood Product Manufacturing Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-21 11 31</Code>
+                <Name>Paper Manufacturing Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-21 11 34</Code>
+                <Name>Printing Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-21 11 37</Code>
+                <Name>Petroleum or Coal Products Manufacturing Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-21 11 41</Code>
+                <Name>Chemical Manufacturing Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-21 11 44</Code>
+                <Name>Plastics or Rubber Manufacturing Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-21 11 47</Code>
+                <Name>Nonmetallic Mineral Product Manufacturing Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-21 11 51</Code>
+                <Name>Primary Metal Manufacturing Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-21 11 54</Code>
+                <Name>Fabricated Metal Product Manufacturing Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-21 11 57</Code>
+                <Name>Machinery Manufacturing Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-21 11 61</Code>
+                <Name>Computer or Electronics Manufacturing Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-21 11 64</Code>
+                <Name>Electrical Equipment or Appliance Manufacturing Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-21 11 67</Code>
+                <Name>Transportation Manufacturing Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-21 11 71</Code>
+                <Name>Furniture Manufacturing Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-21 11 74</Code>
+                <Name>Light Manufacturing Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-21 11 99</Code>
+                <Name>Other Manufacturing Facilities</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>11-21 21 00</Code>
+            <Name>Agricultural Facilities</Name>
+            <Section>
+                <Code>11-21 21 11</Code>
+                <Name>Crop Farm</Name>
+            </Section>
+            <Section>
+                <Code>11-21 21 14</Code>
+                <Name>Ornamental Crop Farm</Name>
+            </Section>
+            <Section>
+                <Code>11-21 21 17</Code>
+                <Name>Orchard</Name>
+            </Section>
+            <Section>
+                <Code>11-21 21 21</Code>
+                <Name>Livestock Farm</Name>
+            </Section>
+            <Section>
+                <Code>11-21 21 24</Code>
+                <Name>Slaughterhouse and Processing Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-21 21 27</Code>
+                <Name>Forestry and Timber Fabrication Facilities</Name>
+            </Section>
+            <Section>
+                <Code>11-21 21 31</Code>
+                <Name>Green House</Name>
+            </Section>
+            <Section>
+                <Code>11-21 21 34</Code>
+                <Name>Aquaculture Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-21 21 99</Code>
+                <Name>Other Agricultural Facilities</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>11-21 24 00</Code>
+            <Name>Mineral Extraction Facilities</Name>
+            <Section>
+                <Code>11-21 24 11</Code>
+                <Name>Oil and Gas Extraction Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-21 24 14</Code>
+                <Name>Mining Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-21 24 99</Code>
+                <Name>Other Mineral Extraction Facilities</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>11-21 27 00</Code>
+            <Name>Craft Production Facilities</Name>
+            <Section>
+                <Code>11-21 27 11</Code>
+                <Name>Painting Craft Production Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-21 27 14</Code>
+                <Name>Wood and Plastic Craft Production Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-21 27 17</Code>
+                <Name>Metal Craft Production Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-21 27 21</Code>
+                <Name>Ceramic Craft Production Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-21 27 24</Code>
+                <Name>Glass-Making Craft Production Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-21 27 27</Code>
+                <Name>Craft Textile Production Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-21 27 99</Code>
+                <Name>Other Craft Production Facilities</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>11-24 00 00</Code>
+        <Name>Storage Facilities</Name>
+        <Section>
+            <Code>11-24 11 00</Code>
+            <Name>Dry Storage Facilities</Name>
+            <Section>
+                <Code>11-24 11 11</Code>
+                <Name>Food Storage Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-24 11 14</Code>
+                <Name>Consumer Products Storage Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-24 11 17</Code>
+                <Name>Parts Storage Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-24 11 21</Code>
+                <Name>Equipment Storage Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-24 11 24</Code>
+                <Name>Raw Material Storage Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-24 11 99</Code>
+                <Name>Other Dry Storage Facilities</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>11-24 21 00</Code>
+            <Name>Environmentally-Controlled Storage Facilities</Name>
+            <Section>
+                <Code>11-24 21 11</Code>
+                <Name>Cold Storage Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-24 21 14</Code>
+                <Name>Freezer Storage Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-24 21 17</Code>
+                <Name>Warm Storage Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-24 21 99</Code>
+                <Name>Other Environmentally-Controlled Storage Facilities</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>11-24 24 00</Code>
+            <Name>Hazardous Storage Facilities</Name>
+            <Section>
+                <Code>11-24 24 11</Code>
+                <Name>Explosives Storage Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-24 24 14</Code>
+                <Name>Toxins Storage Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-24 24 17</Code>
+                <Name>Radioactive Material Storage Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-24 24 99</Code>
+                <Name>Other Hazardous Storage Facilities</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>11-24 99 00</Code>
+            <Name>Other Storage Facilities</Name>
+        </Section>
+    </Section>
+    <Section>
+        <Code>11-41 00 00</Code>
+        <Name>Water Management Facilities</Name>
+        <Section>
+            <Code>11-41 11 00</Code>
+            <Name>Water Holding and Collection Facilities</Name>
+            <Section>
+                <Code>11-41 11 11</Code>
+                <Name>Water Tank or Tower</Name>
+            </Section>
+            <Section>
+                <Code>11-41 11 14</Code>
+                <Name>Dam</Name>
+            </Section>
+            <Section>
+                <Code>11-41 11 17</Code>
+                <Name>Reservoir</Name>
+            </Section>
+            <Section>
+                <Code>11-41 11 21</Code>
+                <Name>Pond</Name>
+            </Section>
+            <Section>
+                <Code>11-41 11 24</Code>
+                <Name>Lake</Name>
+            </Section>
+            <Section>
+                <Code>11-41 11 99</Code>
+                <Name>Other Water Holding and Collection Facilities</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>11-41 21 00</Code>
+            <Name>Water Distribution Facilities</Name>
+            <Section>
+                <Code>11-41 21 11</Code>
+                <Name>Potable Water Distribution</Name>
+            </Section>
+            <Section>
+                <Code>11-41 21 14</Code>
+                <Name>Storm Water Sewer Distribution</Name>
+            </Section>
+            <Section>
+                <Code>11-41 21 17</Code>
+                <Name>Sanitary Sewer Distribution</Name>
+            </Section>
+            <Section>
+                <Code>11-41 21 21</Code>
+                <Name>Irrigation Distribution Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-41 21 24</Code>
+                <Name>Canal</Name>
+            </Section>
+            <Section>
+                <Code>11-41 21 27</Code>
+                <Name>Canal Lock</Name>
+            </Section>
+            <Section>
+                <Code>11-41 21 31</Code>
+                <Name>Aqueduct</Name>
+            </Section>
+            <Section>
+                <Code>11-41 21 34</Code>
+                <Name>Stream</Name>
+            </Section>
+            <Section>
+                <Code>11-41 21 37</Code>
+                <Name>River</Name>
+            </Section>
+            <Section>
+                <Code>11-41 21 99</Code>
+                <Name>Other Water Distribution Facilities</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>11-41 24 00</Code>
+            <Name>Water Treatment Facilities</Name>
+            <Section>
+                <Code>11-41 24 11</Code>
+                <Name>Potable Water Treatment Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-41 24 14</Code>
+                <Name>Waste Water Treatment Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-41 24 17</Code>
+                <Name>Wetlands Water Treatment Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-41 24 99</Code>
+                <Name>Other Water Treatment</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>11-41 27 00</Code>
+            <Name>Special Water Production Facilities</Name>
+            <Section>
+                <Code>11-41 27 11</Code>
+                <Name>Water Distillation Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-41 27 14</Code>
+                <Name>Special Water Purification Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-41 27 17</Code>
+                <Name>Chilled Water Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-41 27 99</Code>
+                <Name>Other Special Water Production Facilities</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>11-42 00 00</Code>
+        <Name>Energy Management Facilities</Name>
+        <Section>
+            <Code>11-42 11 00</Code>
+            <Name>Energy Production Facilities</Name>
+            <Section>
+                <Code>11-42 11 11</Code>
+                <Name>Nuclear-Powered Electrical Generation Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-42 11 14</Code>
+                <Name>Wind-Powered Electrical Generation Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-42 11 17</Code>
+                <Name>Solar-Powered Electrical Generation Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-42 11 21</Code>
+                <Name>Hydroelectric Generation Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-42 11 24</Code>
+                <Name>Geothermal-Powered Electrical Generation Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-42 11 27</Code>
+                <Name>Gas-Powered Electrical Generation Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-42 11 31</Code>
+                <Name>Coal-Powered Electrical Generation Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-42 11 34</Code>
+                <Name>Oil-Powered Electrical Generation Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-42 11 37</Code>
+                <Name>Steam Production Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-42 11 99</Code>
+                <Name>Other Energy Production Facilities</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>11-42 21 00</Code>
+            <Name>Energy Distribution Nodes</Name>
+            <Section>
+                <Code>11-42 21 11</Code>
+                <Name>Electrical Substation</Name>
+            </Section>
+            <Section>
+                <Code>11-42 21 14</Code>
+                <Name>Switching Station</Name>
+            </Section>
+            <Section>
+                <Code>11-42 21 21</Code>
+                <Name>Electrical Transformer</Name>
+            </Section>
+            <Section>
+                <Code>11-42 21 24</Code>
+                <Name>Natural Gas Pumping Station</Name>
+            </Section>
+            <Section>
+                <Code>11-42 21 99</Code>
+                <Name>Other Energy Nodes</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>11-42 24 00</Code>
+            <Name>Energy Storage Facilities</Name>
+            <Section>
+                <Code>11-42 24 11</Code>
+                <Name>Liquid Fuel Storage</Name>
+            </Section>
+            <Section>
+                <Code>11-42 24 14</Code>
+                <Name>Solid Fuel Storage</Name>
+            </Section>
+            <Section>
+                <Code>11-42 24 17</Code>
+                <Name>Gas Fuel Storage</Name>
+            </Section>
+            <Section>
+                <Code>11-42 24 21</Code>
+                <Name>Electrical Storage</Name>
+            </Section>
+            <Section>
+                <Code>11-42 24 99</Code>
+                <Name>Other Energy Storage Facilities</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>11-42 27 00</Code>
+            <Name>Energy Distribution Facilities</Name>
+            <Section>
+                <Code>11-42 27 11</Code>
+                <Name>Power Tunnel</Name>
+            </Section>
+            <Section>
+                <Code>11-42 27 14</Code>
+                <Name>Power Trench</Name>
+            </Section>
+            <Section>
+                <Code>11-42 27 17</Code>
+                <Name>Pipe Line</Name>
+            </Section>
+            <Section>
+                <Code>11-42 27 21</Code>
+                <Name>Power Line</Name>
+            </Section>
+            <Section>
+                <Code>11-42 27 24</Code>
+                <Name>Steam Tunnel</Name>
+            </Section>
+            <Section>
+                <Code>11-42 27 27</Code>
+                <Name>Natural Gas Pipeline</Name>
+            </Section>
+            <Section>
+                <Code>11-42 27 99</Code>
+                <Name>Other Energy Distribution Facilities</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>11-43 00 00</Code>
+        <Name>Waste Management Facilities</Name>
+        <Section>
+            <Code>11-43 11 00</Code>
+            <Name>Waste Collection and Holding Facilities</Name>
+            <Section>
+                <Code>11-43 11 11</Code>
+                <Name>Land Fill</Name>
+            </Section>
+            <Section>
+                <Code>11-43 11 14</Code>
+                <Name>Special Waste Holding Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-43 11 99</Code>
+                <Name>Other Waste Collection and Holding Facilities</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>11-43 21 00</Code>
+            <Name>Waste Processing Facilities</Name>
+            <Section>
+                <Code>11-43 21 11</Code>
+                <Name>Recycling Center</Name>
+            </Section>
+            <Section>
+                <Code>11-43 21 14</Code>
+                <Name>Special Waste Reclamation Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-43 21 99</Code>
+                <Name>Other Waste Processing Facilities</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>11-44 00 00</Code>
+        <Name>Information Management Facilities</Name>
+        <Section>
+            <Code>11-44 11 00</Code>
+            <Name>Information Nodes</Name>
+            <Section>
+                <Code>11-44 11 11</Code>
+                <Name>Computing Center</Name>
+            </Section>
+            <Section>
+                <Code>11-44 11 14</Code>
+                <Name>Tier I Data Center</Name>
+            </Section>
+            <Section>
+                <Code>11-44 11 17</Code>
+                <Name>Tier II Data Center</Name>
+            </Section>
+            <Section>
+                <Code>11-44 11 21</Code>
+                <Name>Tier III Data Center</Name>
+            </Section>
+            <Section>
+                <Code>11-44 11 24</Code>
+                <Name>Tier IV Data Center</Name>
+            </Section>
+            <Section>
+                <Code>11-44 11 99</Code>
+                <Name>Other Information Nodes</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>11-44 21 00</Code>
+            <Name>Information Distribution Facilities</Name>
+            <Section>
+                <Code>11-44 21 11</Code>
+                <Name>Telecommunication Lines</Name>
+            </Section>
+            <Section>
+                <Code>11-44 21 14</Code>
+                <Name>Satellite Distribution Facilities</Name>
+            </Section>
+            <Section>
+                <Code>11-44 21 99</Code>
+                <Name>Other Information Distribution Facilities</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>11-51 00 00</Code>
+        <Name>Transportation Terminals</Name>
+        <Section>
+            <Code>11-51 11 00</Code>
+            <Name>Aerospace Transportation Terminals</Name>
+            <Section>
+                <Code>11-51 11 11</Code>
+                <Name>Rural/Isolated Airfield</Name>
+            </Section>
+            <Section>
+                <Code>11-51 11 14</Code>
+                <Name>Local or Municipal Airfield</Name>
+            </Section>
+            <Section>
+                <Code>11-51 11 17</Code>
+                <Name>Regional Airport</Name>
+            </Section>
+            <Section>
+                <Code>11-51 11 21</Code>
+                <Name>International Airport</Name>
+            </Section>
+            <Section>
+                <Code>11-51 11 24</Code>
+                <Name>Heliport</Name>
+            </Section>
+            <Section>
+                <Code>11-51 11 27</Code>
+                <Name>Extra-Atmospheric Aerospace Transportation Terminal</Name>
+            </Section>
+            <Section>
+                <Code>11-51 11 99</Code>
+                <Name>Other Aerospace Transportation Terminals</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>11-51 21 00</Code>
+            <Name>Marine Transportation Terminals</Name>
+            <Section>
+                <Code>11-51 21 11</Code>
+                <Name>Recreational Marina</Name>
+            </Section>
+            <Section>
+                <Code>11-51 21 14</Code>
+                <Name>Commercial Pier</Name>
+            </Section>
+            <Section>
+                <Code>11-51 21 17</Code>
+                <Name>Industrial Pier</Name>
+            </Section>
+            <Section>
+                <Code>11-51 21 99</Code>
+                <Name>Other Marine Transportation Terminals</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>11-51 24 00</Code>
+            <Name>Rail Transportation Terminals</Name>
+            <Section>
+                <Code>11-51 24 11</Code>
+                <Name>Rural Long Distance Rail Station</Name>
+            </Section>
+            <Section>
+                <Code>11-51 24 14</Code>
+                <Name>Urban Long Distance Rail Station</Name>
+            </Section>
+            <Section>
+                <Code>11-51 24 17</Code>
+                <Name>Local Transit Station</Name>
+            </Section>
+            <Section>
+                <Code>11-51 24 99</Code>
+                <Name>Other Rail Transportation Terminals</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>11-51 27 00</Code>
+            <Name>Motor Vehicle Transportation Terminals</Name>
+            <Section>
+                <Code>11-51 27 11</Code>
+                <Name>Long Distance Bus Station</Name>
+            </Section>
+            <Section>
+                <Code>11-51 27 14</Code>
+                <Name>Local Transit Bus Station</Name>
+            </Section>
+            <Section>
+                <Code>11-51 27 17</Code>
+                <Name>Roadside Truck Stop</Name>
+            </Section>
+            <Section>
+                <Code>11-51 27 21</Code>
+                <Name>Highway Rest Stop</Name>
+            </Section>
+            <Section>
+                <Code>11-51 27 99</Code>
+                <Name>Other Motor Vehicle Transportation Terminals</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>11-51 31 00</Code>
+            <Name>Vehicle Maintenance and Parking Facilities</Name>
+            <Section>
+                <Code>11-51 31 11</Code>
+                <Name>Auto Maintenance and Fueling Station</Name>
+            </Section>
+            <Section>
+                <Code>11-51 31 12</Code>
+                <Name>Automobile Parking Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-51 31 17</Code>
+                <Name>Rail Maintenance and Fueling Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-51 31 18</Code>
+                <Name>Rail Yard</Name>
+            </Section>
+            <Section>
+                <Code>11-51 31 21</Code>
+                <Name>Airplane Maintenance and Fueling Facility</Name>
+            </Section>
+            <Section>
+                <Code>11-51 31 24</Code>
+                <Name>Boat Maintenance and Fueling Dry Docks</Name>
+            </Section>
+            <Section>
+                <Code>11-51 31 99</Code>
+                <Name>Other Vehicle Maintenance and Parking Facilities</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>11-52 00 00</Code>
+        <Name>Transportation Routes</Name>
+        <Section>
+            <Code>11-52 11 00</Code>
+            <Name>Roadways</Name>
+            <Section>
+                <Code>11-52 11 11</Code>
+                <Name>Alley</Name>
+            </Section>
+            <Section>
+                <Code>11-52 11 14</Code>
+                <Name>Driveway</Name>
+            </Section>
+            <Section>
+                <Code>11-52 11 17</Code>
+                <Name>Street</Name>
+            </Section>
+            <Section>
+                <Code>11-52 11 24</Code>
+                <Name>Collector</Name>
+            </Section>
+            <Section>
+                <Code>11-52 11 27</Code>
+                <Name>Arterial Roadway</Name>
+            </Section>
+            <Section>
+                <Code>11-52 11 28</Code>
+                <Name>County Highway</Name>
+            </Section>
+            <Section>
+                <Code>11-52 11 31</Code>
+                <Name>State or Provincial Highway</Name>
+            </Section>
+            <Section>
+                <Code>11-52 11 34</Code>
+                <Name>Beltway</Name>
+            </Section>
+            <Section>
+                <Code>11-52 11 37</Code>
+                <Name>Interstate Highway</Name>
+            </Section>
+            <Section>
+                <Code>11-52 11 99</Code>
+                <Name>Other Roadways</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>11-52 21 00</Code>
+            <Name>Railways</Name>
+            <Section>
+                <Code>11-52 21 11</Code>
+                <Name>Heavy Railway</Name>
+            </Section>
+            <Section>
+                <Code>11-52 21 14</Code>
+                <Name>Light Railway</Name>
+            </Section>
+            <Section>
+                <Code>11-52 21 17</Code>
+                <Name>High Speed Railway</Name>
+            </Section>
+            <Section>
+                <Code>11-52 21 21</Code>
+                <Name>Monorail</Name>
+            </Section>
+            <Section>
+                <Code>11-52 21 24</Code>
+                <Name>Magnetic Levitation Railway</Name>
+            </Section>
+            <Section>
+                <Code>11-52 21 99</Code>
+                <Name>Other Railways</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>11-52 24 00</Code>
+            <Name>Bridges</Name>
+            <Section>
+                <Code>11-52 24 11</Code>
+                <Name>Vehicular Bridge</Name>
+            </Section>
+            <Section>
+                <Code>11-52 24 14</Code>
+                <Name>Rail Bridge</Name>
+            </Section>
+            <Section>
+                <Code>11-52 24 17</Code>
+                <Name>Pedestrian Bridge</Name>
+            </Section>
+            <Section>
+                <Code>11-52 24 99</Code>
+                <Name>Other Bridges</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>11-90 00 00</Code>
+        <Name>Mixed-Use Facilities</Name>
+    </Section>
+</Table>
