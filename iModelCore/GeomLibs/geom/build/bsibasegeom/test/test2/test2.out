@@ -1,0 +1,11 @@
+ geomlibs test environment -- command line arguments:
+ Tail of argv[0] = bsigeomtest2.exe
+<OK name="bsiDMatrix3d_getStandardRotation vs static"<row0>1,0,0</row0><row1>0,1,0</row1><row2>0,0,1]</row2>/>
+<OK name="bsiDMatrix3d_getStandardRotation vs static"<row0>1,0,0</row0><row1>0,-1,0</row1><row2>0,0,-1]</row2>/>
+<OK name="bsiDMatrix3d_getStandardRotation vs static"<row0>0,-1,0</row0><row1>0,0,1</row1><row2>-1,0,0]</row2>/>
+<OK name="bsiDMatrix3d_getStandardRotation vs static"<row0>0,1,0</row0><row1>0,0,1</row1><row2>1,0,0]</row2>/>
+<OK name="bsiDMatrix3d_getStandardRotation vs static"<row0>1,0,0</row0><row1>0,0,1</row1><row2>0,-1,0]</row2>/>
+<OK name="bsiDMatrix3d_getStandardRotation vs static"<row0>-1,0,0</row0><row1>0,0,1</row1><row2>0,1,0]</row2>/>
+<OK name="bsiDMatrix3d_getStandardRotation vs static"<row0>0.707107,-0.707107,0</row0><row1>0.408248,0.408248,0.816497</row1><row2>-0.57735,-0.57735,0.57735]</row2>/>
+<OK name="bsiDMatrix3d_getStandardRotation vs static"<row0>0.707107,0.707107,0</row0><row1>-0.408248,0.408248,0.816497</row1><row2>0.57735,-0.57735,0.57735]</row2>/>
+Exit with 0 errors, 8 OK

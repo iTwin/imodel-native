@@ -1,0 +1,44 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+%include    $(SOURCE)geomlibs/common/inc/geomlibsdev.mki
+%include    mdl.mki
+
+always:
+   !$(_bmake) $(bmopts) $(_MakeFilePath)\test1\test1.mke
+
+always:
+   !$(_bmake) $(bmopts) $(_MakeFilePath)\test2\test2.mke
+
+always:
+   !$(_bmake) $(bmopts) $(_MakeFilePath)\test3\test3.mke
+
+always:
+   !$(_bmake) $(bmopts) $(_MakeFilePath)\test4\test4.mke
+
+always:
+   !$(_bmake) $(bmopts) $(_MakeFilePath)\test5\test5.mke
+
+always:
+   !$(_bmake) $(bmopts) $(_MakeFilePath)\test6\test6.mke
+
+always:
+   !$(_bmake) $(bmopts) $(_MakeFilePath)\test7\test7.mke
+
+always:
+   !$(_bmake) $(bmopts) $(_MakeFilePath)\test8\test8.mke
+
+always:
+   !$(_bmake) $(bmopts) $(_MakeFilePath)\test9\test9.mke
+
+always:
+   !$(_bmake) $(bmopts) $(_MakeFilePath)\test10\test10.mke
+
+always:
+   !$(_bmake) $(bmopts) $(_MakeFilePath)\test11\test11.mke
+
+always:
+   !$(_bmake) $(bmopts) $(_MakeFilePath)\test12\test12.mke
+

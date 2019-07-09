@@ -1,0 +1,18 @@
+#*--------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------*/
+appName         = BentleyGeom
+CCompPDBName    = $(appName)
+
+srcGeomLibs     =$(SrcRoot)GeomLibs/
+%include $(srcGeomLibs)common/inc/geomlibsdev.mki
+
+nameToDefine    = jmdlgeom_internal
+%include cdefapnd.mki
+
+dirToSearch     = $(srcGeomLibs)PublicAPI/
+%include cincapnd.mki
+
+

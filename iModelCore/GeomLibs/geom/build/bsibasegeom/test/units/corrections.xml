@@ -1,0 +1,1886 @@
+<Unit_Attributes_WithChange>
+        <Name>ACRE</Name>
+        <Dimension>AREA</Dimension>
+        <OldConversionFactor>0.00024710538100000001</OldConversionFactor>
+        <NewConversionFactor>0.00024710538146716532</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>1.8905509380218177e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>CENTIMETRE_SQUARED</Name>
+        <Dimension>AREA</Dimension>
+        <OldConversionFactor>10000</OldConversionFactor>
+        <NewConversionFactor>10000</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>FOOT_SQUARED</Name>
+        <Dimension>AREA</Dimension>
+        <OldConversionFactor>10.7639104</OldConversionFactor>
+        <NewConversionFactor>10.763910416709722</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>1.5523838881037477e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>HECTARE</Name>
+        <Dimension>AREA</Dimension>
+        <OldConversionFactor>0.0001</OldConversionFactor>
+        <NewConversionFactor>0.0001</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>INCH_SQUARED</Name>
+        <Dimension>AREA</Dimension>
+        <OldConversionFactor>1550.0030999999999</OldConversionFactor>
+        <NewConversionFactor>1550.0031000062002</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>4.000133557724439e-012</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>KILOMETRE_SQUARED</Name>
+        <Dimension>AREA</Dimension>
+        <OldConversionFactor>9.9999999999999995e-007</OldConversionFactor>
+        <NewConversionFactor>9.9999999999999995e-007</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>METRE_SQUARED</Name>
+        <Dimension>AREA</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>MILE_SQUARED</Name>
+        <Dimension>AREA</Dimension>
+        <OldConversionFactor>3.8610215899999999e-007</OldConversionFactor>
+        <NewConversionFactor>3.8610215854244582e-007</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>1.1850598280460645e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>MILLIMETRE_SQUARED</Name>
+        <Dimension>AREA</Dimension>
+        <OldConversionFactor>1000000</OldConversionFactor>
+        <NewConversionFactor>1000000</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>THOUSAND_SQUARE_FEET</Name>
+        <Dimension>AREA</Dimension>
+        <OldConversionFactor>0.01076391</OldConversionFactor>
+        <NewConversionFactor>0.010763910416709722</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>3.8713599992412639e-008</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>YARD_SQUARED</Name>
+        <Dimension>AREA</Dimension>
+        <OldConversionFactor>1.19599005</OldConversionFactor>
+        <NewConversionFactor>1.1959900463010802</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>3.0927680416681369e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>ACRE_FEET_PER_DAY</Name>
+        <Dimension>FLOW</Dimension>
+        <OldConversionFactor>70.045619619999997</OldConversionFactor>
+        <NewConversionFactor>70.045619943448429</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>4.6176824586297016e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>ACRE_FEET_PER_HOUR</Name>
+        <Dimension>FLOW</Dimension>
+        <OldConversionFactor>2.918567484</OldConversionFactor>
+        <NewConversionFactor>2.9185674976436848</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>4.6747882231912286e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>ACRE_FEET_PER_MINUTE</Name>
+        <Dimension>FLOW</Dimension>
+        <OldConversionFactor>0.048642791400000003</OldConversionFactor>
+        <NewConversionFactor>0.048642791627394745</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>4.6747881121689261e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>ACRE_INCH_PER_HOUR</Name>
+        <Dimension>FLOW</Dimension>
+        <OldConversionFactor>35.022809807999998</OldConversionFactor>
+        <NewConversionFactor>35.022809971724222</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>4.674788334213531e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>ACRE_INCH_PER_MINUTE</Name>
+        <Dimension>FLOW</Dimension>
+        <OldConversionFactor>0.58371349679999995</OldConversionFactor>
+        <NewConversionFactor>0.58371349952873708</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>4.6747884452358335e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>CFM</Name>
+        <Dimension>FLOW</Dimension>
+        <OldConversionFactor>2118.8800200000001</OldConversionFactor>
+        <NewConversionFactor>2118.880003289315</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>7.8865650676718246e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>CFS</Name>
+        <Dimension>FLOW</Dimension>
+        <OldConversionFactor>35.314667</OldConversionFactor>
+        <NewConversionFactor>35.314666721488585</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>7.8865649566495222e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>CUBIC_FOOT_PER_DAY</Name>
+        <Dimension>FLOW</Dimension>
+        <OldConversionFactor>3051187.2289999998</OldConversionFactor>
+        <NewConversionFactor>3051187.2047366137</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>7.9521131901572062e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>CUBIC_FOOT_PER_MINUTE</Name>
+        <Dimension>FLOW</Dimension>
+        <OldConversionFactor>2118.8800200000001</OldConversionFactor>
+        <NewConversionFactor>2118.880003289315</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>7.8865650676718246e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>CUBIC_FOOT_PER_SECOND</Name>
+        <Dimension>FLOW</Dimension>
+        <OldConversionFactor>35.314667</OldConversionFactor>
+        <NewConversionFactor>35.314666721488585</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>7.8865649566495222e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>GALLON_IMPERIAL_PER_DAY</Name>
+        <Dimension>FLOW</Dimension>
+        <OldConversionFactor>19005356.16</OldConversionFactor>
+        <NewConversionFactor>19005343.053041179</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>6.8964552468742113e-007</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>GALLON_IMPERIAL_PER_MINUTE</Name>
+        <Dimension>FLOW</Dimension>
+        <OldConversionFactor>13198.164000000001</OldConversionFactor>
+        <NewConversionFactor>13198.154897945262</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>6.8964552479844343e-007</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>GALLON_IMPERIAL_PER_SECOND</Name>
+        <Dimension>FLOW</Dimension>
+        <OldConversionFactor>219.96940000000001</OldConversionFactor>
+        <NewConversionFactor>219.9692482990877</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>6.8964552479844343e-007</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>GALLON_PER_DAY</Name>
+        <Dimension>FLOW</Dimension>
+        <OldConversionFactor>22824465.120000001</OldConversionFactor>
+        <NewConversionFactor>22824465.323744025</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>8.9265628222534588e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>GALLON_PER_MINUTE</Name>
+        <Dimension>FLOW</Dimension>
+        <OldConversionFactor>15850.323</OldConversionFactor>
+        <NewConversionFactor>15850.323141488907</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>8.9265629332757612e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>GALLON_PER_SECOND</Name>
+        <Dimension>FLOW</Dimension>
+        <OldConversionFactor>264.17205000000001</OldConversionFactor>
+        <NewConversionFactor>264.17205235814845</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>8.9265628222534588e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>GPM</Name>
+        <Dimension>FLOW</Dimension>
+        <OldConversionFactor>15850.323</OldConversionFactor>
+        <NewConversionFactor>15850.323141488907</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>8.9265629332757612e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>LITRE_PER_DAY</Name>
+        <Dimension>FLOW</Dimension>
+        <OldConversionFactor>86400000</OldConversionFactor>
+        <NewConversionFactor>86400000</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>LITRE_PER_MINUTE</Name>
+        <Dimension>FLOW</Dimension>
+        <OldConversionFactor>60000</OldConversionFactor>
+        <NewConversionFactor>60000</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>LITRE_PER_SECOND</Name>
+        <Dimension>FLOW</Dimension>
+        <OldConversionFactor>1000</OldConversionFactor>
+        <NewConversionFactor>1000</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>MEGA_LITRE_PER_DAY</Name>
+        <Dimension>FLOW</Dimension>
+        <OldConversionFactor>86.400000000000006</OldConversionFactor>
+        <NewConversionFactor>86.400000000000006</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>METRE_CUBED_PER_DAY</Name>
+        <Dimension>FLOW</Dimension>
+        <OldConversionFactor>86400</OldConversionFactor>
+        <NewConversionFactor>86400</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>METRE_CUBED_PER_MINUTE</Name>
+        <Dimension>FLOW</Dimension>
+        <OldConversionFactor>60</OldConversionFactor>
+        <NewConversionFactor>60</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>METRE_CUBED_PER_SECOND</Name>
+        <Dimension>FLOW</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>MGD</Name>
+        <Dimension>FLOW</Dimension>
+        <OldConversionFactor>22.824465119999999</OldConversionFactor>
+        <NewConversionFactor>22.824465323744025</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>8.9265629332757612e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>MGD_IMPERIAL</Name>
+        <Dimension>FLOW</Dimension>
+        <OldConversionFactor>19.005356160000002</OldConversionFactor>
+        <NewConversionFactor>19.005343053041177</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>6.8964552490946573e-007</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>MILLION_LITRE_PER_DAY</Name>
+        <Dimension>FLOW</Dimension>
+        <OldConversionFactor>86.400000000000006</OldConversionFactor>
+        <NewConversionFactor>86.400000000000006</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>ACRE_FOOT</Name>
+        <Dimension>VOLUME</Dimension>
+        <OldConversionFactor>0.00081071319000000001</OldConversionFactor>
+        <NewConversionFactor>0.00081071319378991241</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>4.6747881121689261e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>ACRE_INCHES</Name>
+        <Dimension>VOLUME</Dimension>
+        <OldConversionFactor>0.009728558</OldConversionFactor>
+        <NewConversionFactor>0.0097285583254789511</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>3.3456031167666822e-008</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>CENTIMETRE_CUBED</Name>
+        <Dimension>VOLUME</Dimension>
+        <OldConversionFactor>1000000</OldConversionFactor>
+        <NewConversionFactor>1000000</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>CUBIC_FOOT</Name>
+        <Dimension>VOLUME</Dimension>
+        <OldConversionFactor>35.314667</OldConversionFactor>
+        <NewConversionFactor>35.314666721488585</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>7.8865649566495222e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>CUBIC_INCH</Name>
+        <Dimension>VOLUME</Dimension>
+        <OldConversionFactor>61023.739999999998</OldConversionFactor>
+        <NewConversionFactor>61023.74409473229</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>6.710064015535977e-008</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>CUBIC_YARD</Name>
+        <Dimension>VOLUME</Dimension>
+        <OldConversionFactor>1.3079506000000001</OldConversionFactor>
+        <NewConversionFactor>1.3079506193143922</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>1.4766912248553865e-008</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>GALLON</Name>
+        <Dimension>VOLUME</Dimension>
+        <OldConversionFactor>264.17205000000001</OldConversionFactor>
+        <NewConversionFactor>264.17205235814845</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>8.9265628222534588e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>GALLON_IMPERIAL</Name>
+        <Dimension>VOLUME</Dimension>
+        <OldConversionFactor>219.96940000000001</OldConversionFactor>
+        <NewConversionFactor>219.9692482990877</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>6.8964552479844343e-007</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>LITRE</Name>
+        <Dimension>VOLUME</Dimension>
+        <OldConversionFactor>1000</OldConversionFactor>
+        <NewConversionFactor>1000</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>METRE_CUBED</Name>
+        <Dimension>VOLUME</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>MILLION_GALLON</Name>
+        <Dimension>VOLUME</Dimension>
+        <OldConversionFactor>0.00026417204999999998</OldConversionFactor>
+        <NewConversionFactor>0.00026417205235814843</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>8.9265629332757612e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>MILLION_LITRE</Name>
+        <Dimension>VOLUME</Dimension>
+        <OldConversionFactor>0.001</OldConversionFactor>
+        <NewConversionFactor>0.001</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>THOUSAND_GALLON</Name>
+        <Dimension>VOLUME</Dimension>
+        <OldConversionFactor>0.26417204999999999</OldConversionFactor>
+        <NewConversionFactor>0.26417205235814845</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>8.9265629332757612e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>THOUSAND_LITRE</Name>
+        <Dimension>VOLUME</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>ANGLE_MINUTES</Name>
+        <Dimension>ANGLE</Dimension>
+        <OldConversionFactor>3437.7467999999999</OldConversionFactor>
+        <NewConversionFactor>3437.7467707849396</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>8.4983164949647971e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>ANGLE_QUADRANTS</Name>
+        <Dimension>ANGLE</Dimension>
+        <OldConversionFactor>0.63661977000000003</OldConversionFactor>
+        <NewConversionFactor>0.63661977236758138</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>3.7189881174626294e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>ANGLE_SECONDS</Name>
+        <Dimension>ANGLE</Dimension>
+        <OldConversionFactor>206264.81</OldConversionFactor>
+        <NewConversionFactor>206264.80624709636</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>1.8194589945785822e-008</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>DEGREE</Name>
+        <Dimension>ANGLE</Dimension>
+        <OldConversionFactor>57.295779000000003</OldConversionFactor>
+        <NewConversionFactor>57.295779513082323</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>8.9549757609219682e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>RADIAN</Name>
+        <Dimension>ANGLE</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>REVOLUTION</Name>
+        <Dimension>ANGLE</Dimension>
+        <OldConversionFactor>0.15915493999999999</OldConversionFactor>
+        <NewConversionFactor>0.15915494309189535</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>1.9426951491929856e-008</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_NoChange>
+        <Name>ATMOSPHERE</Name>
+        <Dimension>PRESSURE</Dimension>
+        <OldConversionFactor>0.0098692326700000003</OldConversionFactor>
+        <Remark>Need atm/KP factor</Remark>
+<Unit_Attributes_NoChange>
+<Unit_Attributes_WithChange>
+        <Name>BAR</Name>
+        <Dimension>PRESSURE</Dimension>
+        <OldConversionFactor>0.01</OldConversionFactor>
+        <NewConversionFactor>0.01</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_NoChange>
+        <Name>FOOT_OF_H2O</Name>
+        <Dimension>PRESSURE</Dimension>
+        <OldConversionFactor>0.33455255</OldConversionFactor>
+        <Remark>Need H2O pressure data</Remark>
+<Unit_Attributes_NoChange>
+<Unit_Attributes_NoChange>
+        <Name>KILOGRAM_PER_CENTIMETE_SQUARED</Name>
+        <Dimension>PRESSURE</Dimension>
+        <OldConversionFactor>0.01019716</OldConversionFactor>
+        <Remark>Need H2O pressure constant</Remark>
+<Unit_Attributes_NoChange>
+<Unit_Attributes_NoChange>
+        <Name>KILOGRAM_PER_METRE_SQUARED</Name>
+        <Dimension>PRESSURE</Dimension>
+        <OldConversionFactor>101.971621</OldConversionFactor>
+        <Remark>Need H2O pressure constant</Remark>
+<Unit_Attributes_NoChange>
+<Unit_Attributes_WithChange>
+        <Name>KILOPASCAL</Name>
+        <Dimension>PRESSURE</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_NoChange>
+        <Name>METER_OF_H2O</Name>
+        <Dimension>PRESSURE</Dimension>
+        <OldConversionFactor>0.10197199999999999</OldConversionFactor>
+        <Remark>Need H2O pressure constant</Remark>
+<Unit_Attributes_NoChange>
+<Unit_Attributes_NoChange>
+        <Name>MILLIMETER_OF_H2O</Name>
+        <Dimension>PRESSURE</Dimension>
+        <OldConversionFactor>101.97199999999999</OldConversionFactor>
+        <Remark>Need H2O pressure constant</Remark>
+<Unit_Attributes_NoChange>
+<Unit_Attributes_WithChange>
+        <Name>NEWTON_PER_METRE_SQUARED</Name>
+        <Dimension>PRESSURE</Dimension>
+        <OldConversionFactor>1000</OldConversionFactor>
+        <NewConversionFactor>1000</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>POUND_PER_SQUARE_FOOT</Name>
+        <Dimension>PRESSURE</Dimension>
+        <OldConversionFactor>20.885400000000001</OldConversionFactor>
+        <NewConversionFactor>20.885434233150129</NewConversionFactor>
+        <PASS_specialTol>1.9999999999999999e-006</PASS_specialTol>
+        <RelErr>1.6390920938302855e-006</RelErr>
+        <Remark>Consistent Newtons/pf</Remark>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>POUND_PER_SQUARE_INCH</Name>
+        <Dimension>PRESSURE</Dimension>
+        <OldConversionFactor>0.145037738</OldConversionFactor>
+        <NewConversionFactor>0.14503773773020923</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>1.8601419293773347e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>PSI</Name>
+        <Dimension>PRESSURE</Dimension>
+        <OldConversionFactor>0.145037738</OldConversionFactor>
+        <NewConversionFactor>0.14503773773020923</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>1.8601419293773347e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>CAPITA</Name>
+        <Dimension>POPULATION</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>CUSTOMER</Name>
+        <Dimension>POPULATION</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>EMPLOYEE</Name>
+        <Dimension>POPULATION</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>GUEST</Name>
+        <Dimension>POPULATION</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>HUNDRED_CAPITA</Name>
+        <Dimension>POPULATION</Dimension>
+        <OldConversionFactor>0.01</OldConversionFactor>
+        <NewConversionFactor>0.01</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>PASSENGER</Name>
+        <Dimension>POPULATION</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>PERSON</Name>
+        <Dimension>POPULATION</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>RESIDENT</Name>
+        <Dimension>POPULATION</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>STUDENT</Name>
+        <Dimension>POPULATION</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>THOUSAND_CAPITA</Name>
+        <Dimension>POPULATION</Dimension>
+        <OldConversionFactor>0.001</OldConversionFactor>
+        <NewConversionFactor>0.001</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>CENTIMETER_PER_HOUR</Name>
+        <Dimension>VELOCITY</Dimension>
+        <OldConversionFactor>360000</OldConversionFactor>
+        <NewConversionFactor>360000</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>CENTIMETER_PER_MINUTE</Name>
+        <Dimension>VELOCITY</Dimension>
+        <OldConversionFactor>6000</OldConversionFactor>
+        <NewConversionFactor>6000</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>CENTIMETER_PER_SECOND</Name>
+        <Dimension>VELOCITY</Dimension>
+        <OldConversionFactor>100</OldConversionFactor>
+        <NewConversionFactor>100</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>FOOT_PER_HOUR</Name>
+        <Dimension>VELOCITY</Dimension>
+        <OldConversionFactor>11811.0234</OldConversionFactor>
+        <NewConversionFactor>11811.023622047243</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>1.8799999890184438e-008</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>FOOT_PER_MINUTE</Name>
+        <Dimension>VELOCITY</Dimension>
+        <OldConversionFactor>196.85039</OldConversionFactor>
+        <NewConversionFactor>196.85039370078738</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>1.8799999890184438e-008</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>FOOT_PER_SECOND</Name>
+        <Dimension>VELOCITY</Dimension>
+        <OldConversionFactor>3.2808399000000001</OldConversionFactor>
+        <NewConversionFactor>3.280839895013123</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>1.5200001257653639e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>INCH_PER_HOUR</Name>
+        <Dimension>VELOCITY</Dimension>
+        <OldConversionFactor>141732.29999999999</OldConversionFactor>
+        <NewConversionFactor>141732.28346456692</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>1.1666665300502643e-007</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>INCH_PER_MINUTE</Name>
+        <Dimension>VELOCITY</Dimension>
+        <OldConversionFactor>2362.2047400000001</OldConversionFactor>
+        <NewConversionFactor>2362.2047244094488</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>6.5999999909749363e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>INCH_PER_SECOND</Name>
+        <Dimension>VELOCITY</Dimension>
+        <OldConversionFactor>39.370078999999997</OldConversionFactor>
+        <NewConversionFactor>39.370078740157481</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>6.5999998799526338e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>KILOMETER_PER_HOUR</Name>
+        <Dimension>VELOCITY</Dimension>
+        <OldConversionFactor>3.6000000000000001</OldConversionFactor>
+        <NewConversionFactor>3.6000000000000001</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>KNOT</Name>
+        <Dimension>VELOCITY</Dimension>
+        <OldConversionFactor>1.9426067629999999</OldConversionFactor>
+        <NewConversionFactor>1.942602569415665</NewConversionFactor>
+        <PASS_specialTol>3.0000000000000001e-006</PASS_specialTol>
+        <RelErr>2.1587407265100111e-006</RelErr>
+        <Remark>Admiralty Knot 6080 FT</Remark>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>KNOT_INTERNATIONAL</Name>
+        <Dimension>VELOCITY</Dimension>
+        <OldConversionFactor>1.9438444800000001</OldConversionFactor>
+        <NewConversionFactor>1.9438444924406046</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>6.3999998634045596e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>METRE_PER_HOUR</Name>
+        <Dimension>VELOCITY</Dimension>
+        <OldConversionFactor>3600</OldConversionFactor>
+        <NewConversionFactor>3600</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>METRE_PER_MINUTE</Name>
+        <Dimension>VELOCITY</Dimension>
+        <OldConversionFactor>60</OldConversionFactor>
+        <NewConversionFactor>60</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>METRE_PER_SECOND</Name>
+        <Dimension>VELOCITY</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>MILE_PER_HOUR</Name>
+        <Dimension>VELOCITY</Dimension>
+        <OldConversionFactor>2.2369363</OldConversionFactor>
+        <NewConversionFactor>2.236936292054402</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>3.5520001384625743e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>CENTIMETER_PER_METER</Name>
+        <Dimension>SLOPE</Dimension>
+        <OldConversionFactor>100</OldConversionFactor>
+        <NewConversionFactor>100</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>FOOT_PER_1000_FEET</Name>
+        <Dimension>SLOPE</Dimension>
+        <OldConversionFactor>1000</OldConversionFactor>
+        <NewConversionFactor>1000</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>FOOT_PER_MILE</Name>
+        <Dimension>SLOPE</Dimension>
+        <OldConversionFactor>5280</OldConversionFactor>
+        <NewConversionFactor>5280</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>INCH_PER_FOOT</Name>
+        <Dimension>SLOPE</Dimension>
+        <OldConversionFactor>12</OldConversionFactor>
+        <NewConversionFactor>12</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>METER_PER_KILOMETER</Name>
+        <Dimension>SLOPE</Dimension>
+        <OldConversionFactor>1000</OldConversionFactor>
+        <NewConversionFactor>1000</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_NoChange>
+        <Name>MILLIMETER_HORIZONTAL_PER_METER_VERTICAL</Name>
+        <Dimension>SLOPE</Dimension>
+        <OldConversionFactor>100000</OldConversionFactor>
+        <Remark>Why is this not 1000? implied percentage?</Remark>
+<Unit_Attributes_NoChange>
+<Unit_Attributes_WithChange>
+        <Name>MILLIMETER_PER_METER</Name>
+        <Dimension>SLOPE</Dimension>
+        <OldConversionFactor>1000</OldConversionFactor>
+        <NewConversionFactor>1000</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>MILLIMETER_VERTICAL_PER_METER_HORIZONTAL</Name>
+        <Dimension>SLOPE</Dimension>
+        <OldConversionFactor>1000</OldConversionFactor>
+        <NewConversionFactor>1000</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>ONE_OVER_SLOPE</Name>
+        <Dimension>SLOPE</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>PERCENT_SLOPE</Name>
+        <Dimension>SLOPE</Dimension>
+        <OldConversionFactor>100</OldConversionFactor>
+        <NewConversionFactor>100</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>CENTIMETRE</Name>
+        <Dimension>LENGTH</Dimension>
+        <OldConversionFactor>100</OldConversionFactor>
+        <NewConversionFactor>100</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>DECIMETRE</Name>
+        <Dimension>LENGTH</Dimension>
+        <OldConversionFactor>10</OldConversionFactor>
+        <NewConversionFactor>10</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>FOOT</Name>
+        <Dimension>LENGTH</Dimension>
+        <OldConversionFactor>3.2808398950000002</OldConversionFactor>
+        <NewConversionFactor>3.280839895013123</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>3.9998004908170515e-012</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>INCH</Name>
+        <Dimension>LENGTH</Dimension>
+        <OldConversionFactor>39.370078739999997</OldConversionFactor>
+        <NewConversionFactor>39.370078740157481</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>4.000133557724439e-012</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>KILOMETRE</Name>
+        <Dimension>LENGTH</Dimension>
+        <OldConversionFactor>0.001</OldConversionFactor>
+        <NewConversionFactor>0.001</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>METRE</Name>
+        <Dimension>LENGTH</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>MFEET</Name>
+        <Dimension>LENGTH</Dimension>
+        <OldConversionFactor>3280.8398950000001</OldConversionFactor>
+        <NewConversionFactor>3280.8398950131232</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>3.999911513119514e-012</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>MILE</Name>
+        <Dimension>LENGTH</Dimension>
+        <OldConversionFactor>0.00062137119219999996</OldConversionFactor>
+        <NewConversionFactor>0.00062137119223733392</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>6.0083160668966684e-011</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>MILLIFEET</Name>
+        <Dimension>LENGTH</Dimension>
+        <OldConversionFactor>3280.8398950000001</OldConversionFactor>
+        <NewConversionFactor>3280.8398950131232</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>3.999911513119514e-012</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>MILLIMETRE</Name>
+        <Dimension>LENGTH</Dimension>
+        <OldConversionFactor>1000</OldConversionFactor>
+        <NewConversionFactor>1000</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>YARD</Name>
+        <Dimension>LENGTH</Dimension>
+        <OldConversionFactor>1.0936132999999999</OldConversionFactor>
+        <NewConversionFactor>1.0936132983377078</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>1.519999903720759e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>CENTISTOKE</Name>
+        <Dimension>DIFFUSIVITY</Dimension>
+        <OldConversionFactor>1000000</OldConversionFactor>
+        <NewConversionFactor>1000000</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>FOOT_SQUARED_PER_SECOND</Name>
+        <Dimension>DIFFUSIVITY</Dimension>
+        <OldConversionFactor>10.763909999999999</OldConversionFactor>
+        <NewConversionFactor>10.763910416709722</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>3.8713599992412639e-008</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>METRE_SQUARED_PER_SECOND</Name>
+        <Dimension>DIFFUSIVITY</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>STOKES</Name>
+        <Dimension>DIFFUSIVITY</Dimension>
+        <OldConversionFactor>10000</OldConversionFactor>
+        <NewConversionFactor>10000</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>CFS_PER_ACRES</Name>
+        <Dimension>FLOW_DENSITY_PER_AREA</Dimension>
+        <OldConversionFactor>0.0016540967000000001</OldConversionFactor>
+        <NewConversionFactor>0.0016540901137357829</NewConversionFactor>
+        <PASS_specialTol>3.9999999999999998e-006</PASS_specialTol>
+        <RelErr>3.9817891041016296e-006</RelErr>
+        <Remark>2 incorrect digits in OldConversionFactor</Remark>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>CFS_PER_SQUARE_FOOT</Name>
+        <Dimension>FLOW_DENSITY_PER_AREA</Dimension>
+        <OldConversionFactor>3.797265e-008</OldConversionFactor>
+        <NewConversionFactor>3.7972683970059295e-008</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>8.9459199992258931e-007</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>CFS_PER_SQUARE_MILES</Name>
+        <Dimension>FLOW_DENSITY_PER_AREA</Dimension>
+        <OldConversionFactor>1.0586176700000001</OldConversionFactor>
+        <NewConversionFactor>1.0586176727909009</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>2.6363633498505123e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>CUBIC_METERS_PER_HECTARES_PER_DAY</Name>
+        <Dimension>FLOW_DENSITY_PER_AREA</Dimension>
+        <OldConversionFactor>10</OldConversionFactor>
+        <NewConversionFactor>10</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>CUBIC_METERS_PER_SQUARE_METER_PER_DAY</Name>
+        <Dimension>FLOW_DENSITY_PER_AREA</Dimension>
+        <OldConversionFactor>0.001</OldConversionFactor>
+        <NewConversionFactor>0.001</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>GPD_PER_ACRE</Name>
+        <Dimension>FLOW_DENSITY_PER_AREA</Dimension>
+        <OldConversionFactor>1069.070643</OldConversionFactor>
+        <NewConversionFactor>1069.066366704162</NewConversionFactor>
+        <PASS_specialTol>4.0999999999999997e-006</PASS_specialTol>
+        <RelErr>4.0000124089667466e-006</RelErr>
+        <Remark>4 incorrect digits in OldConversionFactor</Remark>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>GPD_PER_SQUARE_FEET</Name>
+        <Dimension>FLOW_DENSITY_PER_AREA</Dimension>
+        <OldConversionFactor>0.024542386699999998</OldConversionFactor>
+        <NewConversionFactor>0.02454238674711116</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>1.919583603182673e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>GPD_PER_SQUARE_MILE</Name>
+        <Dimension>FLOW_DENSITY_PER_AREA</Dimension>
+        <OldConversionFactor>684202.47469099995</OldConversionFactor>
+        <NewConversionFactor>684202.47469066374</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>4.9138471069909428e-013</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>GPM_PER_ACRE</Name>
+        <Dimension>FLOW_DENSITY_PER_AREA</Dimension>
+        <OldConversionFactor>0.74241016900000001</OldConversionFactor>
+        <NewConversionFactor>0.74240719910011255</NewConversionFactor>
+        <PASS_specialTol>4.0999999999999997e-006</PASS_specialTol>
+        <RelErr>4.0003491486029219e-006</RelErr>
+        <Remark>4 incorrect digits in OldConversionFactor</Remark>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>GPM_PER_FOOT_SQUARED</Name>
+        <Dimension>FLOW_DENSITY_PER_AREA</Dimension>
+        <OldConversionFactor>1.7043323999999999e-005</OldConversionFactor>
+        <NewConversionFactor>1.7043324129938306e-005</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>7.6240002089278391e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>GPM_PER_MILE_SQUARED</Name>
+        <Dimension>FLOW_DENSITY_PER_AREA</Dimension>
+        <OldConversionFactor>475.14060740000002</OldConversionFactor>
+        <NewConversionFactor>475.14060742407207</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>5.0663029327324693e-011</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>LITRE_PER_HECTARE_PER_DAY</Name>
+        <Dimension>FLOW_DENSITY_PER_AREA</Dimension>
+        <OldConversionFactor>10000</OldConversionFactor>
+        <NewConversionFactor>10000</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>LITRE_PER_KILOMETER_SQUARED_PER_DAY</Name>
+        <Dimension>FLOW_DENSITY_PER_AREA</Dimension>
+        <OldConversionFactor>1000000</OldConversionFactor>
+        <NewConversionFactor>1000000</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>LITRE_PER_METER_SQUARED_PER_DAY</Name>
+        <Dimension>FLOW_DENSITY_PER_AREA</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>METERS_CUBED_PER_KILOMETER_SQUARED_PER_DAY</Name>
+        <Dimension>FLOW_DENSITY_PER_AREA</Dimension>
+        <OldConversionFactor>1000</OldConversionFactor>
+        <NewConversionFactor>1000</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>CFS_PER_SQURE_ROOT_FOOT_H20</Name>
+        <Dimension>DISCHARGE_PER_PRESSURE_DROP</Dimension>
+        <OldConversionFactor>19.5</OldConversionFactor>
+        <NewConversionFactor>19.496766629009617</NewConversionFactor>
+        <PASS_specialTol>0.00020000000000000001</PASS_specialTol>
+        <RelErr>0.00016581389694270143</RelErr>
+        <Remark>Only 3 digits in OldConversionFactor</Remark>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>CMS_PER_SQUARE_ROOT_METER_H20</Name>
+        <Dimension>DISCHARGE_PER_PRESSURE_DROP</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_NoChange>
+        <Name>GPM_PER_SQUARE_ROOT_PSI</Name>
+        <Dimension>DISCHARGE_PER_PRESSURE_DROP</Dimension>
+        <OldConversionFactor>13290.377619999999</OldConversionFactor>
+        <Remark>Need water data?</Remark>
+<Unit_Attributes_NoChange>
+<Unit_Attributes_NoChange>
+        <Name>lPER_SEC_PER_SQUARE_ROOT_KPA</Name>
+        <Dimension>DISCHARGE_PER_PRESSURE_DROP</Dimension>
+        <OldConversionFactor>319.33054970000001</OldConversionFactor>
+        <Remark>Need water data?</Remark>
+<Unit_Attributes_NoChange>
+<Unit_Attributes_WithChange>
+        <Name>CUBIC_METRE_PER_HOUR</Name>
+        <Dimension>FLOW_RATE</Dimension>
+        <OldConversionFactor>3600</OldConversionFactor>
+        <NewConversionFactor>3600</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>DAY</Name>
+        <Dimension>TIME</Dimension>
+        <OldConversionFactor>0.041666666666666699</OldConversionFactor>
+        <NewConversionFactor>0.041666666666666664</NewConversionFactor>
+        <PASS_TINY_TOL/>
+        <RelErr>7.7715611723760958e-016</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>HOUR</Name>
+        <Dimension>TIME</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>MILLISECOND</Name>
+        <Dimension>TIME</Dimension>
+        <OldConversionFactor>3600000</OldConversionFactor>
+        <NewConversionFactor>3600000</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>MINUTE</Name>
+        <Dimension>TIME</Dimension>
+        <OldConversionFactor>60</OldConversionFactor>
+        <NewConversionFactor>60</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>SECOND</Name>
+        <Dimension>TIME</Dimension>
+        <OldConversionFactor>3600</OldConversionFactor>
+        <NewConversionFactor>3600</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>YEAR</Name>
+        <Dimension>TIME</Dimension>
+        <OldConversionFactor>0.000114155251141553</OldConversionFactor>
+        <NewConversionFactor>0.00011415525114155251</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>4.2188474935755949e-015</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>DOLLAR_PER_ACRE_FOOT</Name>
+        <Dimension>COST_PER_UNIT_VOLUME</Dimension>
+        <OldConversionFactor>1233.50191192796</OldConversionFactor>
+        <NewConversionFactor>1233.4818375475202</NewConversionFactor>
+        <PASS_specialTol>2.0000000000000002e-005</PASS_specialTol>
+        <RelErr>1.627430022255183e-005</RelErr>
+        <Remark>OldConversionFactor converts to 0.2540013 M/in</Remark>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>DOLLAR_PER_ACRE_INCH</Name>
+        <Dimension>COST_PER_UNIT_VOLUME</Dimension>
+        <OldConversionFactor>102.789712805542</OldConversionFactor>
+        <NewConversionFactor>102.79015312896</NewConversionFactor>
+        <PASS_specialTol>5.0000000000000004e-006</PASS_specialTol>
+        <RelErr>4.2837120541872054e-006</RelErr>
+        <Remark>OldConversionFactor converts to 0.25399963 M/in</Remark>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>DOLLAR_PER_CENTIMETER_CUBED</Name>
+        <Dimension>COST_PER_UNIT_VOLUME</Dimension>
+        <OldConversionFactor>9.9999999999999995e-007</OldConversionFactor>
+        <NewConversionFactor>9.9999999999999995e-007</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>DOLLAR_PER_FOOT_CUBED</Name>
+        <Dimension>COST_PER_UNIT_VOLUME</Dimension>
+        <OldConversionFactor>0.028316846368677401</OldConversionFactor>
+        <NewConversionFactor>0.028316846592000004</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>7.8865632913149852e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>DOLLAR_PER_GALLON</Name>
+        <Dimension>COST_PER_UNIT_VOLUME</Dimension>
+        <OldConversionFactor>0.0037854118177907199</OldConversionFactor>
+        <NewConversionFactor>0.0037854117839999997</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>8.9265638214541809e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>DOLLAR_PER_IMPERIAL_GALLON</Name>
+        <Dimension>COST_PER_UNIT_VOLUME</Dimension>
+        <OldConversionFactor>0.0045460868648093799</OldConversionFactor>
+        <NewConversionFactor>0.0045460900000000018</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>6.8964552435435422e-007</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>DOLLAR_PER_INCH_CUBED</Name>
+        <Dimension>COST_PER_UNIT_VOLUME</Dimension>
+        <OldConversionFactor>1.6387065099582599e-005</OldConversionFactor>
+        <NewConversionFactor>1.6387063999999999e-005</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>6.7100642708872726e-008</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>DOLLAR_PER_LITRE</Name>
+        <Dimension>COST_PER_UNIT_VOLUME</Dimension>
+        <OldConversionFactor>0.001</OldConversionFactor>
+        <NewConversionFactor>0.001</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>DOLLAR_PER_METER_CUBED</Name>
+        <Dimension>COST_PER_UNIT_VOLUME</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>DOLLAR_PER_MILLION_GALLON</Name>
+        <Dimension>COST_PER_UNIT_VOLUME</Dimension>
+        <OldConversionFactor>3785.0113550340602</OldConversionFactor>
+        <NewConversionFactor>3785.4117839999999</NewConversionFactor>
+        <PASS_specialTol>0.00020000000000000001</PASS_specialTol>
+        <RelErr>0.00010578214175593903</RelErr>
+        <Remark>OldConversion 0.253991 M/in</Remark>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>DOLLAR_PER_MILLION_LITRE</Name>
+        <Dimension>COST_PER_UNIT_VOLUME</Dimension>
+        <OldConversionFactor>1000</OldConversionFactor>
+        <NewConversionFactor>1000</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>DOLLAR_PER_THOUSAND_GALLON</Name>
+        <Dimension>COST_PER_UNIT_VOLUME</Dimension>
+        <OldConversionFactor>3.7854111013237199</OldConversionFactor>
+        <NewConversionFactor>3.7854117839999999</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>1.8034399396071876e-007</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>DOLLAR_PER_THOUSAND_LITRE</Name>
+        <Dimension>COST_PER_UNIT_VOLUME</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>DOLLAR_PER_YARD_CUBED</Name>
+        <Dimension>COST_PER_UNIT_VOLUME</Dimension>
+        <OldConversionFactor>0.76455486927411498</OldConversionFactor>
+        <NewConversionFactor>0.76455485798400002</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>1.4766912581620772e-008</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>DOLLAR_PER_FOOT</Name>
+        <Dimension>CURRENCY_PER_LENGTH</Dimension>
+        <OldConversionFactor>0.30480000000000002</OldConversionFactor>
+        <NewConversionFactor>0.30480000000000002</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>DOLLAR_PER_METER</Name>
+        <Dimension>CURRENCY_PER_LENGTH</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>DOLLAR_PER_HORSEPOWER</Name>
+        <Dimension>CURRENCY_PER_POWER</Dimension>
+        <OldConversionFactor>0.74569987199999999</OldConversionFactor>
+        <NewConversionFactor>0.74569987158227025</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>5.6018478744590539e-010</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>DOLLAR_PER_KILOWATT</Name>
+        <Dimension>CURRENCY_PER_POWER</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>DOLLAR_PER_KILOWATT_HOUR</Name>
+        <Dimension>CURRENCY_PER_ENERGY</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>DOLLARS</Name>
+        <Dimension>CURRENCY</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>FEET_PER_INCH</Name>
+        <Dimension>SCALE_DIMENSION</Dimension>
+        <OldConversionFactor>8.3333333330000006</OldConversionFactor>
+        <NewConversionFactor>8.3333333333333339</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>4.000000330961484e-011</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>METER_PER_CENTIMETER</Name>
+        <Dimension>SCALE_DIMENSION</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>FOOT_FEET</Name>
+        <Dimension>DIAMETER_LENGTH</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>440</NewConversionFactor>
+        <PASS_specialTol>440</PASS_specialTol>
+        <RelErr>0.99772727272727268</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>FOOT_MILE</Name>
+        <Dimension>DIAMETER_LENGTH</Dimension>
+        <OldConversionFactor>0.083333333333333301</OldConversionFactor>
+        <NewConversionFactor>0.083333333333333329</NewConversionFactor>
+        <PASS_TINY_TOL/>
+        <RelErr>3.3306690738754696e-016</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>INCH_FEET</Name>
+        <Dimension>DIAMETER_LENGTH</Dimension>
+        <OldConversionFactor>5280</OldConversionFactor>
+        <NewConversionFactor>5280</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>INCH_METER</Name>
+        <Dimension>DIAMETER_LENGTH</Dimension>
+        <OldConversionFactor>1609.3440000000001</OldConversionFactor>
+        <NewConversionFactor>1609.3440000000001</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>INCH_MILE</Name>
+        <Dimension>DIAMETER_LENGTH</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>METER_KILOMETER</Name>
+        <Dimension>DIAMETER_LENGTH</Dimension>
+        <OldConversionFactor>0.040877337999999999</OldConversionFactor>
+        <NewConversionFactor>0.040877337599999994</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>9.7853731784169895e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>METER_METERS</Name>
+        <Dimension>DIAMETER_LENGTH</Dimension>
+        <OldConversionFactor>40.877337599999997</OldConversionFactor>
+        <NewConversionFactor>40.877337599999997</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>MILLIMETER_KILOMETER</Name>
+        <Dimension>DIAMETER_LENGTH</Dimension>
+        <OldConversionFactor>40.877337599999997</OldConversionFactor>
+        <NewConversionFactor>40.877337599999997</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>MILLIMETER_METER</Name>
+        <Dimension>DIAMETER_LENGTH</Dimension>
+        <OldConversionFactor>40877.337599999999</OldConversionFactor>
+        <NewConversionFactor>40877.337599999999</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>MILLIMETER_MILE</Name>
+        <Dimension>DIAMETER_LENGTH</Dimension>
+        <OldConversionFactor>25.399999999999999</OldConversionFactor>
+        <NewConversionFactor>25.399999999999999</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>FOOT_POUNDAL</Name>
+        <Dimension>ENERGY</Dimension>
+        <OldConversionFactor>23.73</OldConversionFactor>
+        <NewConversionFactor>23.730360404231934</NewConversionFactor>
+        <PASS_specialTol>2.0000000000000002e-005</PASS_specialTol>
+        <RelErr>1.5187474011968405e-005</RelErr>
+        <Remark>Consistent Newton/pf, gravity</Remark>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>JOULE</Name>
+        <Dimension>ENERGY</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>KILOJOULE</Name>
+        <Dimension>ENERGY</Dimension>
+        <OldConversionFactor>0.001</OldConversionFactor>
+        <NewConversionFactor>0.001</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>KILOWATT_HOUR</Name>
+        <Dimension>ENERGY</Dimension>
+        <OldConversionFactor>2.7777777777777802e-007</OldConversionFactor>
+        <NewConversionFactor>2.7777777777777776e-007</NewConversionFactor>
+        <PASS_TINY_TOL/>
+        <RelErr>9.9920072216264089e-016</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>GPD_PER_CAPITA</Name>
+        <Dimension>FLOW_DENSITY_PER_CAPITA</Dimension>
+        <OldConversionFactor>0.26417200000000002</OldConversionFactor>
+        <NewConversionFactor>0.26417205235814845</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>1.98197152023738e-007</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>LITRE_PER_CAPITA_PER_DAY</Name>
+        <Dimension>FLOW_DENSITY_PER_CAPITA</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>GRAM</Name>
+        <Dimension>MASS</Dimension>
+        <OldConversionFactor>1000</OldConversionFactor>
+        <NewConversionFactor>1000</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>KILOGRAM</Name>
+        <Dimension>MASS</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>MILLIGRAM</Name>
+        <Dimension>MASS</Dimension>
+        <OldConversionFactor>1000000</OldConversionFactor>
+        <NewConversionFactor>1000000</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>POUND</Name>
+        <Dimension>MASS</Dimension>
+        <OldConversionFactor>2.2046226</OldConversionFactor>
+        <NewConversionFactor>2.2046226218487757</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>9.9104379147618715e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>GRAM_PER_DAY</Name>
+        <Dimension>MASS_RATE</Dimension>
+        <OldConversionFactor>86.400000000000006</OldConversionFactor>
+        <NewConversionFactor>86.400000000000006</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>GRAM_PER_HOUR</Name>
+        <Dimension>MASS_RATE</Dimension>
+        <OldConversionFactor>3.6000000000000001</OldConversionFactor>
+        <NewConversionFactor>3.6000000000000001</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>GRAM_PER_MINUTE</Name>
+        <Dimension>MASS_RATE</Dimension>
+        <OldConversionFactor>0.059999999999999998</OldConversionFactor>
+        <NewConversionFactor>0.059999999999999998</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>GRAM_PER_SECOND</Name>
+        <Dimension>MASS_RATE</Dimension>
+        <OldConversionFactor>0.001</OldConversionFactor>
+        <NewConversionFactor>0.001</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>KILOGRAM_PER_DAY</Name>
+        <Dimension>MASS_RATE</Dimension>
+        <OldConversionFactor>0.086400000000000005</OldConversionFactor>
+        <NewConversionFactor>0.086400000000000005</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>KILOGRAM_PER_HOUR</Name>
+        <Dimension>MASS_RATE</Dimension>
+        <OldConversionFactor>0.0035999999999999999</OldConversionFactor>
+        <NewConversionFactor>0.0035999999999999999</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>KILOGRAM_PER_MINUTE</Name>
+        <Dimension>MASS_RATE</Dimension>
+        <OldConversionFactor>6.0000000000000002e-005</OldConversionFactor>
+        <NewConversionFactor>6.0000000000000002e-005</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>KILOGRAM_PER_SECOND</Name>
+        <Dimension>MASS_RATE</Dimension>
+        <OldConversionFactor>9.9999999999999995e-007</OldConversionFactor>
+        <NewConversionFactor>9.9999999999999995e-007</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>MICROGRAM_PER_DAY</Name>
+        <Dimension>MASS_RATE</Dimension>
+        <OldConversionFactor>86400000</OldConversionFactor>
+        <NewConversionFactor>86400000</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>MICROGRAM_PER_HOUR</Name>
+        <Dimension>MASS_RATE</Dimension>
+        <OldConversionFactor>3600000</OldConversionFactor>
+        <NewConversionFactor>3600000</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>MICROGRAM_PER_MINUTE</Name>
+        <Dimension>MASS_RATE</Dimension>
+        <OldConversionFactor>60000</OldConversionFactor>
+        <NewConversionFactor>60000</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>MICROGRAM_PER_SECOND</Name>
+        <Dimension>MASS_RATE</Dimension>
+        <OldConversionFactor>1000</OldConversionFactor>
+        <NewConversionFactor>1000</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>MILLIGRAM_PER_DAY</Name>
+        <Dimension>MASS_RATE</Dimension>
+        <OldConversionFactor>86400</OldConversionFactor>
+        <NewConversionFactor>86400</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>MILLIGRAM_PER_HOUR</Name>
+        <Dimension>MASS_RATE</Dimension>
+        <OldConversionFactor>3600</OldConversionFactor>
+        <NewConversionFactor>3600</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>MILLIGRAM_PER_MINUTE</Name>
+        <Dimension>MASS_RATE</Dimension>
+        <OldConversionFactor>60</OldConversionFactor>
+        <NewConversionFactor>60</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>MILLIGRAM_PER_SECOND</Name>
+        <Dimension>MASS_RATE</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>POUND_PER_DAY</Name>
+        <Dimension>MASS_RATE</Dimension>
+        <OldConversionFactor>0.19047939259999999</OldConversionFactor>
+        <NewConversionFactor>0.19047939452773424</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>1.0120434601468276e-008</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>POUND_PER_HOUR</Name>
+        <Dimension>MASS_RATE</Dimension>
+        <OldConversionFactor>0.0079366413599999998</OldConversionFactor>
+        <NewConversionFactor>0.0079366414386555922</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>9.9104379147618715e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>POUND_PER_MINUTE</Name>
+        <Dimension>MASS_RATE</Dimension>
+        <OldConversionFactor>0.00013227735599999999</OldConversionFactor>
+        <NewConversionFactor>0.00013227735731092654</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>9.910438025784174e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>POUND_PER_SECOND</Name>
+        <Dimension>MASS_RATE</Dimension>
+        <OldConversionFactor>2.2046225999999999e-006</OldConversionFactor>
+        <NewConversionFactor>2.204622621848776e-006</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>9.9104381368064765e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>HERTZ</Name>
+        <Dimension>ELECTRICAL_FREQUENCY</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>HORSEPOWER</Name>
+        <Dimension>POWER</Dimension>
+        <OldConversionFactor>1.34124</OldConversionFactor>
+        <NewConversionFactor>1.3410220895950278</NewConversionFactor>
+        <PASS_specialTol>0.00040000000000000002</PASS_specialTol>
+        <RelErr>0.00016246936042185744</RelErr>
+        <Remark>Consistent Newton / pf</Remark>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>KILOWATT</Name>
+        <Dimension>POWER</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>WATT</Name>
+        <Dimension>POWER</Dimension>
+        <OldConversionFactor>1000</OldConversionFactor>
+        <NewConversionFactor>1000</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>KILOGRAM_PER_HECTARE</Name>
+        <Dimension>MASS_PER_AREA</Dimension>
+        <OldConversionFactor>1.12085116518377</OldConversionFactor>
+        <NewConversionFactor>1.1208511561944561</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>8.0200781571448942e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>POUND_PER_ACRE</Name>
+        <Dimension>MASS_PER_AREA</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>KILOGRAM_PER_METRE_CUBED</Name>
+        <Dimension>DENSITY</Dimension>
+        <OldConversionFactor>515.37879999999996</OldConversionFactor>
+        <NewConversionFactor>515.37881839319607</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>3.5688692445745573e-008</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>POUND_PER_CUBIC_FOOT</Name>
+        <Dimension>DENSITY</Dimension>
+        <OldConversionFactor>32.174053999999998</OldConversionFactor>
+        <NewConversionFactor>32.174048556430442</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>1.6919128553727347e-007</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>SLUG_PER_CUBIC_FOOT</Name>
+        <Dimension>DENSITY</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>KILONEWTON</Name>
+        <Dimension>FORCE</Dimension>
+        <OldConversionFactor>0.0044488221999999999</OldConversionFactor>
+        <NewConversionFactor>0.0044482216152604993</NewConversionFactor>
+        <PASS_specialTol>0.00020000000000000001</PASS_specialTol>
+        <RelErr>0.00013499859344812126</RelErr>
+        <Remark>Is double 8 in Haastead 4.448822 a typo?</Remark>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>KILOPOUND_FORCE</Name>
+        <Dimension>FORCE</Dimension>
+        <OldConversionFactor>0.001</OldConversionFactor>
+        <NewConversionFactor>0.001</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>NEWTON</Name>
+        <Dimension>FORCE</Dimension>
+        <OldConversionFactor>4.4488222000000004</OldConversionFactor>
+        <NewConversionFactor>4.4482216152604996</NewConversionFactor>
+        <PASS_specialTol>0.00020000000000000001</PASS_specialTol>
+        <RelErr>0.00013499859344812126</RelErr>
+        <Remark>Is double 8 in Haastead 4.448822 a typo?</Remark>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>POUND_FORCE</Name>
+        <Dimension>FORCE</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>KILONEWTON_PER_FOOT_CUBED</Name>
+        <Dimension>ENERGY_PER_UNIT_VOLUME</Dimension>
+        <OldConversionFactor>0.028316846368677401</OldConversionFactor>
+        <NewConversionFactor>0.028316846592000004</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>7.8865632913149852e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>KILOWATT_HOUR_PER_METRE_CUBED</Name>
+        <Dimension>ENERGY_PER_UNIT_VOLUME</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>KILOWATT_HOUR_PER_MILLION_GALLON</Name>
+        <Dimension>ENERGY_PER_UNIT_VOLUME</Dimension>
+        <OldConversionFactor>3785.0113550340602</OldConversionFactor>
+        <NewConversionFactor>3785.4117839999999</NewConversionFactor>
+        <PASS_specialTol>0.00020000000000000001</PASS_specialTol>
+        <RelErr>0.00010578214175593903</RelErr>
+        <Remark>OldConversionFactor looks like 1/0.0002642 -- only 4 digits</Remark>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>KILOWATT_HOUR_PER_MILLION_LITRE</Name>
+        <Dimension>ENERGY_PER_UNIT_VOLUME</Dimension>
+        <OldConversionFactor>1000</OldConversionFactor>
+        <NewConversionFactor>1000</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>KILONEWTON_PER_METER_CUBED</Name>
+        <Dimension>SPECIFIC_WEIGHT</Dimension>
+        <OldConversionFactor>0.001</OldConversionFactor>
+        <NewConversionFactor>0.001</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>NEWTON_PER_METRE_CUBED</Name>
+        <Dimension>SPECIFIC_WEIGHT</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>POUND_FORCE_PER_CUBIC_FOOT</Name>
+        <Dimension>SPECIFIC_WEIGHT</Dimension>
+        <OldConversionFactor>0.0063658819999999998</OldConversionFactor>
+        <NewConversionFactor>0.0063658803542641605</NewConversionFactor>
+        <PASS_specialTol>3.0000000000000001e-005</PASS_specialTol>
+        <RelErr>2.5852440233009588e-007</RelErr>
+        <Remark>Consistent Newton/pf</Remark>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>MICROGRAM_PER_LITRE</Name>
+        <Dimension>CONCENTRATION</Dimension>
+        <OldConversionFactor>1000</OldConversionFactor>
+        <NewConversionFactor>1000</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>MILLIGRAM_PER_LITRE</Name>
+        <Dimension>CONCENTRATION</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>PARTS_PER_BILLION</Name>
+        <Dimension>CONCENTRATION</Dimension>
+        <OldConversionFactor>1000</OldConversionFactor>
+        <NewConversionFactor>1000</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>PARTS_PER_MILLION</Name>
+        <Dimension>CONCENTRATION</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>POUND_PER_FOOT_CUBED</Name>
+        <Dimension>CONCENTRATION</Dimension>
+        <OldConversionFactor>6.2426210000000003e-005</OldConversionFactor>
+        <NewConversionFactor>6.2427960576144618e-005</NewConversionFactor>
+        <PASS_specialTol>3.0000000000000001e-005</PASS_specialTol>
+        <RelErr>2.8041539855805375e-005</RelErr>
+        <Remark>Consistent kg/pm</Remark>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>POUND_PER_MILLION_GALLON</Name>
+        <Dimension>CONCENTRATION</Dimension>
+        <OldConversionFactor>8.3452000000000002</OldConversionFactor>
+        <NewConversionFactor>8.3454044520193307</NewConversionFactor>
+        <PASS_specialTol>3.0000000000000001e-005</PASS_specialTol>
+        <RelErr>2.4498755034074726e-005</RelErr>
+        <Remark>Consistent kg/pm</Remark>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>NEWTON_METER_SQUARED</Name>
+        <Dimension>INERTIA</Dimension>
+        <OldConversionFactor>0.41325321999999998</OldConversionFactor>
+        <NewConversionFactor>0.41325331065141085</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>2.1936039840131372e-007</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>POUND_SQUARE_FEET</Name>
+        <Dimension>INERTIA</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>NEWTON_METRE</Name>
+        <Dimension>TORQUE</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>POUND_FOOT</Name>
+        <Dimension>TORQUE</Dimension>
+        <OldConversionFactor>0.73756200000000005</OldConversionFactor>
+        <NewConversionFactor>0.73756214927726538</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>2.0239279563405432e-007</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>NEWTON_PER_MILLIMETER</Name>
+        <Dimension>SPRING_CONSTANT</Dimension>
+        <OldConversionFactor>0.175126797</OldConversionFactor>
+        <NewConversionFactor>0.1751268352464764</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>2.1839300845538645e-007</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>POUND_PER_INCH</Name>
+        <Dimension>SPRING_CONSTANT</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>NONE</Name>
+        <Dimension>NONE</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>PERCENT_PERCENT</Name>
+        <Dimension>PERCENT</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>UNITLESS_PERCENT</Name>
+        <Dimension>PERCENT</Dimension>
+        <OldConversionFactor>0.01</OldConversionFactor>
+        <NewConversionFactor>0.01</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>PERSON_PER_ACRE</Name>
+        <Dimension>POPULATION_DENSITY_PER_AREA</Dimension>
+        <OldConversionFactor>4046.8564464278002</OldConversionFactor>
+        <NewConversionFactor>4046.8564224000002</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>5.9373986838195947e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>PERSON_PER_FOOT_SQUARED</Name>
+        <Dimension>POPULATION_DENSITY_PER_AREA</Dimension>
+        <OldConversionFactor>0.092903040000000006</OldConversionFactor>
+        <NewConversionFactor>0.092903040000000006</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>PERSON_PER_HECTARE</Name>
+        <Dimension>POPULATION_DENSITY_PER_AREA</Dimension>
+        <OldConversionFactor>10000</OldConversionFactor>
+        <NewConversionFactor>10000</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>PERSON_PER_KILOMETER_SQUARED</Name>
+        <Dimension>POPULATION_DENSITY_PER_AREA</Dimension>
+        <OldConversionFactor>1000000</OldConversionFactor>
+        <NewConversionFactor>1000000</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>PERSON_PER_METER_SQUARED</Name>
+        <Dimension>POPULATION_DENSITY_PER_AREA</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>PERSON_PER_MILE_SQUARED</Name>
+        <Dimension>POPULATION_DENSITY_PER_AREA</Dimension>
+        <OldConversionFactor>2589988.1005586698</OldConversionFactor>
+        <NewConversionFactor>2589988.1103360001</NewConversionFactor>
+        <PASS_defaultTol>9.9999999999999995e-007</PASS_defaultTol>
+        <RelErr>3.7750483850018668e-009</RelErr>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>REVOLUTION_PER_MINUTE</Name>
+        <Dimension>ROTATIONAL_FREQUENCY</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<Unit_Attributes_WithChange>
+        <Name>UNITLESS_UNIT</Name>
+        <Dimension>UNITLESS</Dimension>
+        <OldConversionFactor>1</OldConversionFactor>
+        <NewConversionFactor>1</NewConversionFactor>
+        <PASS_EXACT/>
+</Unit_Attributes_WithChange>
+<numExact>135</numExact>
+<numTiny>3</numTiny>
+<numDefaultOK>87</numDefaultOK>
+<numRelaxedTolOK>18</numRelaxedTolOK>
+<numFail>0</numFail>
+<numSkip>9</numSkip>

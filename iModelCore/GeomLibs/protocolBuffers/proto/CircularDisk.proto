@@ -1,0 +1,6 @@
+message CircularDisk
+{
+required IPlacement placement = 1;
+required double radius = 2;
+}
+
