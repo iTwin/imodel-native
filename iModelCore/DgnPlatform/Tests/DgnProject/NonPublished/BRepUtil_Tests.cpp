@@ -313,84 +313,87 @@ Dgn::IBRepEntityPtr createSheet()
     return sheet;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Elonas.Seviakovas 07/19
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(BRepUtilTests, IntersectSheetFaces_ParallelSheets_ReturnsNullptr)
-    {   
-    Dgn::IBRepEntityPtr sheet1 = createSheet();
-    sheet1->ApplyTransform(Transform::From(DPoint3d::From(0.0, 0.0, 1.0)));
+// Brien didn't want the SolidKernelUtil.cpp changes from http://bim0200.hgbranches.bentley.com/dgndb/dgnplatform/rev/31247d9570f6 merged,
+// so also commenting out related tests.
 
-    Dgn::IBRepEntityPtr sheet2 = createSheet();
-
-    CurveVectorPtr intersectionCurve;
-    BRepUtil::Modify::IntersectSheetFaces(intersectionCurve, *sheet1, *sheet2);
-
-    ASSERT_TRUE(intersectionCurve.IsNull());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Elonas.Seviakovas 07/19
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(BRepUtilTests, IntersectSheetFaces_CrossingSheets_ReturnsAnIntersection)
-    {   
-    Dgn::IBRepEntityPtr sheet1 = createSheet();
-    sheet1->ApplyTransform(Transform::From(RotMatrix::FromRotate90(DVec3d::UnitX())));
-    sheet1->ApplyTransform(Transform::From(DPoint3d::From(-5.0, 0.0, -5.0)));
-
-    Dgn::IBRepEntityPtr sheet2 = createSheet();
-    sheet2->ApplyTransform(Transform::From(DPoint3d::From(-5.0, -5.0, 0.0)));
-
-    auto range1 = sheet1->GetEntityRange();
-    auto range2 = sheet2->GetEntityRange();
-
-    CurveVectorPtr intersectionCurve;
-    BRepUtil::Modify::IntersectSheetFaces(intersectionCurve, *sheet1, *sheet2);
-
-    ASSERT_TRUE(intersectionCurve.IsValid());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Elonas.Seviakovas 07/19
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(BRepUtilTests, IntersectSheetFaces_PerpendicularNonCrossingSheets_ReturnsNullptr)
-    {   
-    Dgn::IBRepEntityPtr sheet1 = createSheet();
-    sheet1->ApplyTransform(Transform::From(RotMatrix::FromRotate90(DVec3d::UnitX())));
-    sheet1->ApplyTransform(Transform::From(DPoint3d::From(-5.0, 0.0, 5.0)));
-
-    Dgn::IBRepEntityPtr sheet2 = createSheet();
-    sheet2->ApplyTransform(Transform::From(DPoint3d::From(-5.0, -5.0, 0.0)));
-
-    auto range1 = sheet1->GetEntityRange();
-    auto range2 = sheet2->GetEntityRange();
-
-    CurveVectorPtr intersectionCurve;
-    BRepUtil::Modify::IntersectSheetFaces(intersectionCurve, *sheet1, *sheet2);
-
-    ASSERT_TRUE(intersectionCurve.IsNull());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Elonas.Seviakovas 07/19
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(BRepUtilTests, IntersectSheetFaces_ParallelCloseselyAtAnAngle_ReturnsNullptr)
-    {   
-    Dgn::IBRepEntityPtr sheet1 = createSheet();
-    sheet1->ApplyTransform(Transform::From(RotMatrix::FromAxisAndRotationAngle(0, 0.8)));
-    sheet1->ApplyTransform(Transform::From(DPoint3d::From(0.0, 0.0, 1.0)));
-
-    Dgn::IBRepEntityPtr sheet2 = createSheet();
-    sheet2->ApplyTransform(Transform::From(RotMatrix::FromAxisAndRotationAngle(0, 0.8)));
-
-    auto range1 = sheet1->GetEntityRange();
-    auto range2 = sheet2->GetEntityRange();
-
-    CurveVectorPtr intersectionCurve;
-    BRepUtil::Modify::IntersectSheetFaces(intersectionCurve, *sheet1, *sheet2);
-
-    ASSERT_TRUE(intersectionCurve.IsNull());
-    }
+///*---------------------------------------------------------------------------------**//**
+//* @bsimethod                                                    Elonas.Seviakovas 07/19
+//+---------------+---------------+---------------+---------------+---------------+------*/
+//TEST_F(BRepUtilTests, IntersectSheetFaces_ParallelSheets_ReturnsNullptr)
+//    {   
+//    Dgn::IBRepEntityPtr sheet1 = createSheet();
+//    sheet1->ApplyTransform(Transform::From(DPoint3d::From(0.0, 0.0, 1.0)));
+//
+//    Dgn::IBRepEntityPtr sheet2 = createSheet();
+//
+//    CurveVectorPtr intersectionCurve;
+//    BRepUtil::Modify::IntersectSheetFaces(intersectionCurve, *sheet1, *sheet2);
+//
+//    ASSERT_TRUE(intersectionCurve.IsNull());
+//    }
+//
+///*---------------------------------------------------------------------------------**//**
+//* @bsimethod                                                    Elonas.Seviakovas 07/19
+//+---------------+---------------+---------------+---------------+---------------+------*/
+//TEST_F(BRepUtilTests, IntersectSheetFaces_CrossingSheets_ReturnsAnIntersection)
+//    {   
+//    Dgn::IBRepEntityPtr sheet1 = createSheet();
+//    sheet1->ApplyTransform(Transform::From(RotMatrix::FromRotate90(DVec3d::UnitX())));
+//    sheet1->ApplyTransform(Transform::From(DPoint3d::From(-5.0, 0.0, -5.0)));
+//
+//    Dgn::IBRepEntityPtr sheet2 = createSheet();
+//    sheet2->ApplyTransform(Transform::From(DPoint3d::From(-5.0, -5.0, 0.0)));
+//
+//    auto range1 = sheet1->GetEntityRange();
+//    auto range2 = sheet2->GetEntityRange();
+//
+//    CurveVectorPtr intersectionCurve;
+//    BRepUtil::Modify::IntersectSheetFaces(intersectionCurve, *sheet1, *sheet2);
+//
+//    ASSERT_TRUE(intersectionCurve.IsValid());
+//    }
+//
+///*---------------------------------------------------------------------------------**//**
+//* @bsimethod                                                    Elonas.Seviakovas 07/19
+//+---------------+---------------+---------------+---------------+---------------+------*/
+//TEST_F(BRepUtilTests, IntersectSheetFaces_PerpendicularNonCrossingSheets_ReturnsNullptr)
+//    {   
+//    Dgn::IBRepEntityPtr sheet1 = createSheet();
+//    sheet1->ApplyTransform(Transform::From(RotMatrix::FromRotate90(DVec3d::UnitX())));
+//    sheet1->ApplyTransform(Transform::From(DPoint3d::From(-5.0, 0.0, 5.0)));
+//
+//    Dgn::IBRepEntityPtr sheet2 = createSheet();
+//    sheet2->ApplyTransform(Transform::From(DPoint3d::From(-5.0, -5.0, 0.0)));
+//
+//    auto range1 = sheet1->GetEntityRange();
+//    auto range2 = sheet2->GetEntityRange();
+//
+//    CurveVectorPtr intersectionCurve;
+//    BRepUtil::Modify::IntersectSheetFaces(intersectionCurve, *sheet1, *sheet2);
+//
+//    ASSERT_TRUE(intersectionCurve.IsNull());
+//    }
+//
+///*---------------------------------------------------------------------------------**//**
+//* @bsimethod                                                    Elonas.Seviakovas 07/19
+//+---------------+---------------+---------------+---------------+---------------+------*/
+//TEST_F(BRepUtilTests, IntersectSheetFaces_ParallelCloseselyAtAnAngle_ReturnsNullptr)
+//    {   
+//    Dgn::IBRepEntityPtr sheet1 = createSheet();
+//    sheet1->ApplyTransform(Transform::From(RotMatrix::FromAxisAndRotationAngle(0, 0.8)));
+//    sheet1->ApplyTransform(Transform::From(DPoint3d::From(0.0, 0.0, 1.0)));
+//
+//    Dgn::IBRepEntityPtr sheet2 = createSheet();
+//    sheet2->ApplyTransform(Transform::From(RotMatrix::FromAxisAndRotationAngle(0, 0.8)));
+//
+//    auto range1 = sheet1->GetEntityRange();
+//    auto range2 = sheet2->GetEntityRange();
+//
+//    CurveVectorPtr intersectionCurve;
+//    BRepUtil::Modify::IntersectSheetFaces(intersectionCurve, *sheet1, *sheet2);
+//
+//    ASSERT_TRUE(intersectionCurve.IsNull());
+//    }
 
 #endif
 
