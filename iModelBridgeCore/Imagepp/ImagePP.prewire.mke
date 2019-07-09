@@ -1,0 +1,31 @@
+#--------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------*/
+%include mdl.mki
+
+SrcImagePP      = $(SrcRoot)Imagepp/
+%include $(SrcImagepp)mki/imageppdirs.mki
+
+#----------------------------------------------------------------------
+#       Create output directories
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(ippOutPrivateLibs)
+     ~@mkdir $(ippOutPrivateApi)
+     
+PublicApiDir    = $(OutBuildContexts)ImagePP/PublicAPI/
+srcDir          = $(_MakeFilePath)
+
+# Wire in my own public header files.
+always:
+   ~linkdir "$(PublicApiDir)ImagePP=$(srcDir)PublicApi/ImagePP"
+
+ippExternalLibDir   = $(SrcImagepp)ext/
+
+# Wire in header files of private libs.
+always:
+   @CreateSymLinks.py -m"$(ippOutPrivateApi)ImagePPInternal/ext/MatrixFromTiePts=$(ippExternalLibDir)MatrixFromTiePts/h/MatrixFromTiePts.h"
+
+

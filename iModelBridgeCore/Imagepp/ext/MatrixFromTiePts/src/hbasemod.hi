@@ -1,0 +1,24 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
+/*mh================================================================== HMR
+**
+**  hbasemod.hi
+**
+**      This file declares the private definitions for the TileProcess
+**      class.
+**
+**========================================================================*/
+#ifndef __HBASEMOD_HI__
+#define __HBASEMOD_HI__
+
+typedef struct tagHBasicModelerAttr
+{
+        pMAT_   m_pMatrix;
+
+} HBasicModelerAttr;
+
+
+#endif /* __HBASEMOD_HI__ */
