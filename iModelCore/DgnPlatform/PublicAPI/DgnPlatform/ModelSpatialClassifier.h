@@ -61,10 +61,11 @@ private:
     double          m_expandDistance;
     Utf8String      m_name;
     bool            m_isActive;
+    bool            m_isVolumeClassifier;
 
 public:
     ModelSpatialClassifier()  { }
-    ModelSpatialClassifier(DgnModelId modelId, DgnCategoryId categoryId, DgnElementId elementId, Flags flags, Utf8StringCR name, double expandDistance, bool isActive) : m_modelId(modelId), m_categoryId(categoryId), m_elementId(elementId), m_name(name), m_flags(flags), m_expandDistance(expandDistance), m_isActive(isActive) { }
+    ModelSpatialClassifier(DgnModelId modelId, DgnCategoryId categoryId, DgnElementId elementId, Flags flags, Utf8StringCR name, double expandDistance, bool isActive, bool isVolumeClassifier) : m_modelId(modelId), m_categoryId(categoryId), m_elementId(elementId), m_name(name), m_flags(flags), m_expandDistance(expandDistance), m_isActive(isActive), m_isVolumeClassifier(isVolumeClassifier) { }
 
     DgnModelId GetModelId()  const { return m_modelId; }
     DgnCategoryId GetCategoryId() const { return m_categoryId; }
