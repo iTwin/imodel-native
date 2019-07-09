@@ -1,3 +1,0 @@
-# Test fails because of referenced ECDbFileInfo schema version mismatch between in-memory (latest) and ECDb (matching XML).
-# See PR#23331 comments in VSTS for details.
-ECDbCompatibilityTestFixture.EC31SchemaImportWithReadContextVariations

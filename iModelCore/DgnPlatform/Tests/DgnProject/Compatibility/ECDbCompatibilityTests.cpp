@@ -1090,21 +1090,14 @@ TEST_F(ECDbCompatibilityTestFixture, EC31SchemaImportWithReadContextVariations)
         ECSchemaPtr schema = nullptr;
         return SchemaReadStatus::Success == ECSchema::ReadFromXmlString(schema, R"xml(<?xml version="1.0" encoding="utf-8" ?>
                     <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-                        <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
-                        <ECSchemaReference name="ECDbFileInfo" version="02.00.00" alias="ecdbf" />
+                        <ECSchemaReference name="CoreCustomAttributes" version="01.00.02" alias="cca" />
                         <ECEntityClass typeName="Foo">
                                 <ECCustomAttributes>
-                                    <ClassMap xmlns="ECDbMap.02.00.00">
-                                        <MapStrategy>TablePerHierarchy</MapStrategy>
-                                    </ClassMap>
+                                    <HiddenClass xmlns="CoreCustomAttributes.01.00.02" />
                                 </ECCustomAttributes>
                                 <ECProperty propertyName="Code" typeName="int" />
                                 <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
                                 <ECProperty propertyName="Status" typeName="StatusEnum" />
-                        </ECEntityClass>
-                        <ECEntityClass typeName="MyFileInfo">
-                            <BaseClass>ecdbf:FileInfo</BaseClass>
-                            <ECProperty propertyName="Path" typeName="string" />
                         </ECEntityClass>
                         <KindOfQuantity typeName="ANGLE" displayLabel="Angle" persistenceUnit="RAD(DefaultReal)" presentationUnits="ARC_DEG(real2u);ARC_DEG(dms)" relativeError="0.0001"/>
                         <KindOfQuantity typeName="AREA" displayLabel="Area" persistenceUnit="SQ.M(DefaultReal)" presentationUnits="SQ.M(real4u);SQ.FT(real4u)" relativeError="0.0001"/>
@@ -1123,21 +1116,14 @@ TEST_F(ECDbCompatibilityTestFixture, EC31SchemaImportWithReadContextVariations)
         ECSchemaPtr schema = nullptr;
         ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, R"xml(<?xml version="1.0" encoding="utf-8" ?>
                     <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-                        <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
-                        <ECSchemaReference name="ECDbFileInfo" version="02.00.00" alias="ecdbf" />
+                        <ECSchemaReference name="CoreCustomAttributes" version="01.00.02" alias="cca" />
                         <ECEntityClass typeName="Foo">
                                 <ECCustomAttributes>
-                                    <ClassMap xmlns="ECDbMap.02.00.00">
-                                        <MapStrategy>TablePerHierarchy</MapStrategy>
-                                    </ClassMap>
+                                    <HiddenClass xmlns="CoreCustomAttributes.01.00.02" />
                                 </ECCustomAttributes>
                                 <ECProperty propertyName="Code" typeName="int" />
                                 <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
                                 <ECProperty propertyName="Status" typeName="StatusEnum" />
-                        </ECEntityClass>
-                        <ECEntityClass typeName="MyFileInfo">
-                            <BaseClass>ecdbf:FileInfo</BaseClass>
-                            <ECProperty propertyName="Path" typeName="string" />
                         </ECEntityClass>
                         <KindOfQuantity typeName="ANGLE" displayLabel="Angle" persistenceUnit="RAD(DefaultReal)" presentationUnits="ARC_DEG(real2u);ARC_DEG(dms)" relativeError="0.0001"/>
                         <KindOfQuantity typeName="AREA" displayLabel="Area" persistenceUnit="SQ.M(DefaultReal)" presentationUnits="SQ.M(real4u);SQ.FT(real4u)" relativeError="0.0001"/>
