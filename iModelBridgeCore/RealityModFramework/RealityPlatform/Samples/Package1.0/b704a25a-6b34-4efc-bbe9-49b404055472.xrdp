@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RealityDataPackage xmlns="http://www.bentley.com/RealityDataServer/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="..\..\RealityPackage.1.0.xsd" version="1.0">
+  <Name>b704a25a-6b34-4efc-bbe9-49b404055472</Name>
+  <CreationDate>2016-03-08T18:39:43.747Z</CreationDate>
+  <BoundingPolygon>-77.997007 35.853857 -77.959285 35.853857 -77.959285 35.820493 -77.997007 35.820493 -77.997007 35.853857</BoundingPolygon>
+  <TerrainGroup>
+    <TerrainData>
+      <Source uri="ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/Elevation/1/IMG/USGS_NED_1_n36w078_IMG.zip" type="IMG">
+        <Copyright>USGS NED 1 arc-second n36w078 1 x 1 degree IMG 2015 courtesy of the U.S. Geological Survey</Copyright>
+        <Id>567973f0e4b0da412f4fb772</Id>
+        <Provider>usgs</Provider>
+        <Filesize>43112</Filesize>
+        <Metadata>https://www.sciencebase.gov/catalog/file/get/567973f0e4b0da412f4fb772?f=__disk__0e%2Fcf%2F92%2F0ecf92e3465ca1433801f9be5683ad7a5c283f58</Metadata>
+      </Source>
+    </TerrainData>
+  </TerrainGroup>
+</RealityDataPackage>
