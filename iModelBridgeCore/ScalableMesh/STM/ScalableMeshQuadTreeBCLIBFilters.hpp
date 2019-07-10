@@ -643,9 +643,15 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
             size_t totalNumberOfFeaturePoints = 0;
             for(const auto& line : polylines)
                 totalNumberOfFeaturePoints += line.size();
-            bool shouldSimplifyFeatures = totalNumberOfPoints * 0.2 <= totalNumberOfFeaturePoints;
-            if(shouldSimplifyFeatures)
-		        SimplifyPolylines(polylines);
+
+            // backed out  part of changeset "beab95dcece7" to prevent crash in imodel publish (using IMBOB)
+            // files: $(atp-serv.bentley.com:/atp-root)\atp\building\development\tfbridge\scenario32\1MC08-BBV-DS-DMB-NS02_NL07-100005.dgn 
+            // see discussion in BUG https://bentleycs.visualstudio.com/iModelTechnologies/_workitems/edit/149245 
+
+            // WIP_NEEDS_WORK_2017 (original comment removed from changeset beab95dcece7)
+            //bool shouldSimplifyFeatures = totalNumberOfPoints * 0.2 <= totalNumberOfFeaturePoints;
+            //  if(shouldSimplifyFeatures)
+                //SimplifyPolylines(polylines);
 
             // Keep non simplified Hulls
 		    std::transform(polylines.begin(), polylines.end(), newLines.begin(), polylines.begin(),
