@@ -40,6 +40,7 @@ Json::Value ModelSpatialClassifier::ToJson() const
     value["modelId"] = m_modelId.ToHexStr(); 
     value["name"] = m_name;
     value["isActive"] = m_isActive;
+    value["isVolumeClassifier"] = m_isVolumeClassifier;                // Added by PMC 6/2019 to denote planar vs. volume classifiers.
 
     if (m_categoryId.IsValid())
         value["categoryId"] = m_categoryId.ToHexStr();
