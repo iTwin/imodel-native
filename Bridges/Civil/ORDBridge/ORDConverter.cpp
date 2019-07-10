@@ -339,7 +339,16 @@ void ORDAlignmentsConverter::AssociateRepresentElements(AlignmentCR cifAlignment
         if (auto bimGeomSourceCP = bimAlgElmPtr->ToGeometrySource())
             {
             if (!bimAlignment.QueryIsRepresentedBy(*bimGeomSourceCP))
+                {
                 RoadRailAlignment::Alignment::AddRepresentedBy(bimAlignment, *bimGeomSourceCP);
+
+                if (!Utf8String::IsNullOrEmpty(bimAlignment.GetUserLabel()))
+                    {
+                    auto ptr = bimAlignment.GetDgnDb().Elements().GetForEdit<DgnElement>(bimAlgElmPtr->GetElementId());
+                    ptr->SetUserLabel(bimAlignment.GetUserLabel());
+                    ptr->Update();
+                    }
+                }
             }
         }
 
@@ -1155,7 +1164,7 @@ ConvertORDElementXDomain::Result ConvertORDElementXDomain::_PreConvertElement(Dg
             }
         }
 
-    if (cifAlignmentPtr.IsValid())
+    if (cifAlignmentPtr.IsValid() && cifAlignmentPtr->IsFinalElement())
         {
         auto elmRefP = cifAlignmentPtr->GetElementHandle()->GetElementRef();
         if (m_alignmentV8RefSet.end() == m_alignmentV8RefSet.find(elmRefP))
