@@ -159,7 +159,7 @@ BentleyStatus ECUtils::ConvertECValueToJson(Json::Value& jv, ECN::ECValue const&
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECUtils::ConvertJsonToECValue(ECN::ECValue& v, Json::Value const& jsonValue, ECN::PrimitiveType typeRequired)
+BentleyStatus ECUtils::ConvertJsonToECValue(ECN::ECValue& v, Json::Value const& jsonValue, ECN::PrimitiveType typeRequired, Utf8CP extendedTypeName)
     {
     if (jsonValue.isBool())
         v = ECN::ECValue(jsonValue.asBool());
@@ -179,10 +179,20 @@ BentleyStatus ECUtils::ConvertJsonToECValue(ECN::ECValue& v, Json::Value const& 
             }
         else if (ECN::PRIMITIVETYPE_Binary == typeRequired)
             {
-            // *** TBD: need extended type to recognize GUID
-            // *** TBD: buffer = base64-decode(jsonValue.asCString());
-            // *** TBD: v = ECN::ECValue(buffer, buffersize);
-            v.SetIsNull(true);
+            if (extendedTypeName && (0 == BeStringUtilities::Stricmp(extendedTypeName, "BeGuid")))
+                {
+                BeGuid guid;
+                if (BentleyStatus::SUCCESS == guid.FromString(jsonValue.asCString()))
+                    v.SetBinary((Byte*)&guid, sizeof(guid), true);
+                else
+                    v.SetIsNull(true);
+                }
+            else
+                {
+                // *** TBD: buffer = base64-decode(jsonValue.asCString());
+                // *** TBD: v = ECN::ECValue(buffer, buffersize);
+                v.SetIsNull(true);
+                }
             }
         else if (ECN::PRIMITIVETYPE_Long == typeRequired)
             {

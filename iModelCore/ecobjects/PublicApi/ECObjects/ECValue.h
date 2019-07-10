@@ -597,7 +597,7 @@ struct ECValue
         //! @remarks This call will always succeed.  Previous data is cleared, and the type of the ECValue is set to a binary Primitive
         //! @param[in] data             The value to set
         //! @param[in] size             The size of the data
-        //! @param[in] holdADuplicate   Flag specifying whether the ECValue should make its own copy of the string, or store the actual pointer passed in
+        //! @param[in] holdADuplicate   Flag specifying whether the ECValue should make its own copy of the byte array, or store the actual pointer passed in
         ECOBJECTS_EXPORT BentleyStatus  SetBinary(const Byte * data, size_t size, bool holdADuplicate = false);
 
         //! Returns the IGeometry, if this ECValue holds a geometry value

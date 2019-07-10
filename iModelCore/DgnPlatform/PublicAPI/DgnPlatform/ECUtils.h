@@ -41,8 +41,9 @@ struct ECUtils
     //! @param[out] ecvalue  The ECValue to set
     //! @param json     The JSON value to convert
     //! @param typeRequired The ECType required, if known
+    //! @param extendedTypeName The optional extended type name
     //! @return non-zero if the property could not be converted.
-    DGNPLATFORM_EXPORT static BentleyStatus ConvertJsonToECValue(ECN::ECValue& ecvalue, Json::Value const& json, ECN::PrimitiveType typeRequired);
+    DGNPLATFORM_EXPORT static BentleyStatus ConvertJsonToECValue(ECN::ECValue& ecvalue, Json::Value const& json, ECN::PrimitiveType typeRequired, Utf8CP extendedTypeName=nullptr);
 
     //! Utility function to convert ECProperty values to JSON properties. 
     //! @note Only the following EC primitive types are supported: Boolean, Double, Integer, Long, String, Point2d, Point3d

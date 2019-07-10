@@ -623,7 +623,8 @@ static ECN::StandaloneECRelationshipInstancePtr getRelationshipProperties(ECN::E
         ++count;
 
         ECN::ECValue value;
-        ECUtils::ConvertJsonToECValue(value, inJson[jsPropName], ecprop->GetAsPrimitiveProperty()->GetType());
+        ECN::PrimitiveECPropertyCP primitiveProperty = ecprop->GetAsPrimitiveProperty();
+        ECUtils::ConvertJsonToECValue(value, inJson[jsPropName], primitiveProperty->GetType(), primitiveProperty->GetExtendedTypeName().c_str());
 
         relationshipInstance->SetValue(jsPropName.c_str(), value);
         }
