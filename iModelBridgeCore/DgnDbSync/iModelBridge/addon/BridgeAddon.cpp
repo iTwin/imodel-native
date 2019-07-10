@@ -252,7 +252,11 @@ int RunBridge(Env env, const char* jsonString)
     // Disable asserts since we may be running as a service (and perhaps on the cloud)
     BeAssertFunctions::SetBeAssertHandler(justLogAssertionFailures);
 
-    BridgeNative::JsInterop::InitLogging();
+    // TBI-149402-DisableSeqLogging
+    //      We have a working theory that SEQ logging inside a single threaded node.exe process
+    //      is the cause of our STATUS_STACK_BUFFER_OVERRUN error.  When this error occcurs, 
+    //      the process exists and no SEQ messages are sent out.
+    // BridgeNative::JsInterop::InitLogging();
 
     LogTrace("BridgeAddon.cpp: RunBridge() BEGIN");    
     logMessageToJobUtility("BridgeAddon.cpp: RunBridge() BEGIN");                 // [NEEDSWORK] This line just for testing.  Remove later.
