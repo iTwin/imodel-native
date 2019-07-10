@@ -184,6 +184,15 @@ BentleyStatus ECUtils::ConvertJsonToECValue(ECN::ECValue& v, Json::Value const& 
             // *** TBD: v = ECN::ECValue(buffer, buffersize);
             v.SetIsNull(true);
             }
+        else if (ECN::PRIMITIVETYPE_Long == typeRequired)
+            {
+            BentleyStatus parseStatus;
+            uint64_t longValue = BeStringUtilities::ParseUInt64(jsonValue.asCString(), &parseStatus);
+            if (BentleyStatus::SUCCESS == parseStatus)
+                v = ECN::ECValue(longValue);
+            else
+                v.SetIsNull(true);
+            }
         else
             {
             v = ECN::ECValue(jsonValue.asCString());
