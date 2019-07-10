@@ -170,22 +170,13 @@ ExportGraphicsBuilder(Render::GraphicBuilder::CreateParams const& cp, IGeometryP
     : T_Super(cp, gp, vc) { }
 virtual ~ExportGraphicsBuilder() { }
 
-// Ignore wireframe graphics, don't let SimplifyGraphic generate intermediates we always throw away
-void _AddLineString(int, DPoint3dCP) override { }
-void _AddLineString2d(int, DPoint2dCP, double) override { }
-void _AddPointString(int, DPoint3dCP) override { }
-void _AddPointString2d(int, DPoint2dCP, double) override { }
+// Don't let SimplifyGraphic generate intermediates we always throw away
 void _AddTextString(TextStringCR) override { }
 void _AddTextString2d(TextStringCR, double) override { }
 void _AddDgnOle(Render::DgnOleDraw*) override { }
 bool _WantStrokeLineStyle(Render::LineStyleSymbCR, IFacetOptionsPtr&) override { return false; }
 bool _WantStrokePattern(PatternParamsCR) override { return false; }
 Render::GraphicPtr _Finish() override {m_isOpen = false; return nullptr;} // we don't use output, don't allocate!
-
-void _AddBSplineCurve(MSBsplineCurveCR curve, bool filled) override
-    { if (curve.params.closed) return T_Super::_AddBSplineCurve(curve, filled); }
-void _AddBSplineCurve2d(MSBsplineCurveCR curve, bool filled, double zDepth) override
-    { if (curve.params.closed) return T_Super::_AddBSplineCurve2d(curve, filled, zDepth); }
 
 // Copy of SimplifyGraphic::_CreateSubGraphic to generate derived class
 Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR subToGraphic, ClipVectorCP clip) const override
@@ -263,13 +254,23 @@ public:
         DgnSubCategoryId    subCategoryId;
         ExportGraphicsMesh  mesh; 
         CachedEntry(ColorDef c, RenderMaterialId matId, DgnTextureId texId, DgnSubCategoryId subCat)
-            : color(c), materialId(matId), textureId(texId), subCategoryId(subCat)  { }
+            : color(c), materialId(matId), textureId(texId), subCategoryId(subCat) { }
         };
     bvector<CachedEntry>            m_cachedEntries;
+    struct CachedLineString
+        {
+        ColorDef            color;
+        DgnSubCategoryId    subCategoryId;
+        bvector<DPoint3d>   points;
+        CachedLineString(ColorDef c, DgnSubCategoryId subCat, bvector<DPoint3d>&& p)
+            : color(c), subCategoryId(subCat), points(std::move(p)) { }
+        };
+    bvector<CachedLineString>       m_cachedLineStrings;
     bool                            m_gotBadPolyface;
+    bool                            m_generateLines;
 
-    ExportGraphicsProcessor(DgnDbR db, IFacetOptionsR facetOptions) :
-        m_db(db), m_facetOptions(facetOptions), m_gotBadPolyface(false) { }
+    ExportGraphicsProcessor(DgnDbR db, IFacetOptionsR facetOptions, bool generateLines) :
+        m_db(db), m_facetOptions(facetOptions), m_gotBadPolyface(false), m_generateLines(generateLines) { }
     virtual ~ExportGraphicsProcessor() { }
 
 private:
@@ -284,6 +285,38 @@ private:
     UnhandledPreference _GetUnhandledPreference(PolyfaceQueryCR, SimplifyGraphic&) const override {return UnhandledPreference::Ignore;}
     UnhandledPreference _GetUnhandledPreference(IBRepEntityCR, SimplifyGraphic&) const override {return UnhandledPreference::Facet;}
     UnhandledPreference _GetUnhandledPreference(Render::TriMeshArgsCR, SimplifyGraphic&) const override {return UnhandledPreference::Facet;}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Matt.Gooding    07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual bool _ProcessCurveVector(CurveVectorCR curve, bool filled, SimplifyGraphic& sg) override
+    {
+    if (curve.IsAnyRegionType()) return false; // throw back to polyface processing if can be closed shape
+    if (!m_generateLines) return true;
+
+    bvector<DPoint3d> strokePoints;
+    curve.AddStrokePoints(strokePoints, m_facetOptions);
+    if (strokePoints.empty()) return true;
+
+    TransformCR transform = sg.GetLocalToWorldTransform();
+    if (!transform.IsIdentity()) transform.Multiply(&strokePoints[0], (int)strokePoints.size());
+
+    // Bucket together based on subcategory and color
+    DgnSubCategoryId subCategoryId = sg.GetCurrentGeometryParams().GetSubCategoryId();
+    ColorDef color = sg.GetCurrentGraphicParams().GetFillColor();
+    for (auto& cached : m_cachedLineStrings)
+        {
+        if (cached.color == color && cached.subCategoryId == subCategoryId)
+            {
+            cached.points.push_back(DPoint3d::From(DISCONNECT, DISCONNECT, DISCONNECT));
+            cached.points.insert(cached.points.end(), strokePoints.begin(), strokePoints.end());
+            return true;
+            }
+        }
+
+    m_cachedLineStrings.emplace_back(color, subCategoryId, std::move(strokePoints));
+    return true;
+    }
 
     struct MeshDisplayProps
     {
@@ -466,12 +499,11 @@ struct ExportGraphicsJob
     DgnDbR                          m_db;
     ExportGraphicsProcessor         m_processor;
     ExportGraphicsContext           m_context;
-    Napi::String                    m_elementIdString;
     DgnElementId                    m_elementId;
     bvector<PartInstanceRecord>     m_instances;
 
-ExportGraphicsJob(DgnDbR db, IFacetOptionsR fo, Napi::String elIdStr, DgnElementId elId, bool saveInstances)
-    : m_geom(db), m_db(db), m_processor(db, fo), m_elementIdString(elIdStr), m_elementId(elId),
+ExportGraphicsJob(DgnDbR db, IFacetOptionsR fo, DgnElementId elId, bool saveInstances, bool generateLines)
+    : m_geom(db), m_db(db), m_processor(db, fo, generateLines), m_elementId(elId),
     m_context(m_processor, saveInstances ? &m_instances : nullptr)
     {
     }
@@ -512,28 +544,74 @@ static IFacetOptionsPtr createFacetOptions(Napi::Object const& exportProps)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Matt.Gooding    07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static Napi::Value convertLines(Napi::Env& env, bvector<DPoint3d> const& points)
+    {
+    bvector<int> exportIndices; exportIndices.reserve(points.size());
+    bvector<double> exportPoints; exportPoints.reserve(points.size());
+
+    // Only attempts to compress to indices for contiguous points in line string. Full search for
+    // duplicate points seems like low ROI for runtime cost.
+
+    bool canReuseLastPoint = false;
+    for (int i = 1; i < (int)points.size(); ++i)
+        {
+        // Remove disconnects. Create index buffer set up for GL_LINES where every segment is two points.
+        // If there are any individual points, this will skip them.
+        while (i < (int)points.size() && points[i].IsDisconnect())
+            {
+            i += 2;
+            canReuseLastPoint = false;
+            }
+        if (i >= (int)points.size()) break;
+
+        if (canReuseLastPoint)
+            exportIndices.push_back(exportIndices.back());
+        else
+            {
+            exportIndices.push_back((int)exportPoints.size() / 3);
+            DPoint3dCR p0 = points[i-1];
+            exportPoints.insert(exportPoints.end(), { p0.x, p0.y, p0.z });
+            }
+
+        exportIndices.push_back((int)exportPoints.size() / 3);
+        DPoint3dCR p1 = points[i];
+        exportPoints.insert(exportPoints.end(), { p1.x, p1.y, p1.z });
+        canReuseLastPoint = true;
+        }
+
+    Napi::Int32Array indexArray = Napi::Int32Array::New(env, exportIndices.size());
+    memcpy (indexArray.Data(), &exportIndices[0], exportIndices.size() * sizeof(int));
+
+    Napi::Float64Array pointArray = Napi::Float64Array::New(env, exportPoints.size());
+    memcpy (pointArray.Data(), &exportPoints[0], exportPoints.size() * sizeof(double));
+
+    Napi::Object convertedLines = Napi::Object::New(env);
+    convertedLines.Set("indices", indexArray);
+    convertedLines.Set("points", pointArray);
+    return convertedLines;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Matt.Gooding    02/19
 +---------------+---------------+---------------+---------------+---------------+------*/
 static Napi::Value convertMesh(Napi::Env& env, ExportGraphicsMesh& mesh)
     {
-    Napi::Object convertedMesh = Napi::Object::New(env);
-
     Napi::Int32Array indexArray = Napi::Int32Array::New(env, mesh.indices.size());
     memcpy (indexArray.Data(), &mesh.indices[0], mesh.indices.size() * sizeof(int32_t));
-    convertedMesh.Set("indices", indexArray);
-
     Napi::Float64Array pointArray = Napi::Float64Array::New(env, mesh.points.size());
     memcpy (pointArray.Data(), &mesh.points[0], mesh.points.size() * sizeof(double));
-    convertedMesh.Set("points", pointArray);
-
     Napi::Float32Array normalArray = Napi::Float32Array::New(env, mesh.normals.size());
     memcpy (normalArray.Data(), &mesh.normals[0], mesh.normals.size() * sizeof(float));
-    convertedMesh.Set("normals", normalArray);
-
     Napi::Float32Array paramArray = Napi::Float32Array::New(env, mesh.params.size());
     memcpy (paramArray.Data(), &mesh.params[0], mesh.params.size() * sizeof(float));
-    convertedMesh.Set("params", paramArray);
 
+    Napi::Object convertedMesh = Napi::Object::New(env);
+    convertedMesh.Set("indices", indexArray);
+    convertedMesh.Set("points", pointArray);
+    convertedMesh.Set("normals", normalArray);
+    convertedMesh.Set("params", paramArray);
     return convertedMesh;
     }
 
@@ -620,6 +698,9 @@ DgnDbStatus JsInterop::ExportGraphics(DgnDbR db, Napi::Object const& exportProps
     Napi::Array napiPartArray = exportProps.Get("partInstanceArray").As<Napi::Array>();
     bool saveInstances = napiPartArray.IsArray();
 
+    Napi::Function onLineGraphicsCb = exportProps.Get("onLineGraphics").As<Napi::Function>();
+    bool generateLines = onLineGraphicsCb.IsFunction();
+
     for (uint32_t i = 0; i < elementIdArray.Length(); ++i)
         {
         Napi::String napiElementId = elementIdArray.Get(i).As<Napi::String>();
@@ -636,7 +717,7 @@ DgnDbStatus JsInterop::ExportGraphics(DgnDbR db, Napi::Object const& exportProps
         auto status = db.Elements().LoadGeometryStream(geomStream, stmt->GetValueBlob(1), stmt->GetColumnBytes(1));
         if (status != DgnDbStatus::Success) continue;
 
-        auto job = new ExportGraphicsJob(db, *facetOptions.get(), napiElementId, elementId, saveInstances);
+        auto job = new ExportGraphicsJob(db, *facetOptions.get(), elementId, saveInstances, generateLines);
         job->m_geom.m_categoryId = stmt->GetValueId<DgnCategoryId>(0);
         job->m_geom.m_placement = getPlacement(*stmt);
         job->m_geom.m_geomStream = std::move(geomStream);
@@ -659,10 +740,11 @@ DgnDbStatus JsInterop::ExportGraphics(DgnDbR db, Napi::Object const& exportProps
             JsInterop::GetLogger().errorv(errorMsg, job->m_elementId.GetValueUnchecked());
             }
 
+        Napi::String elementIdString = createIdString(Env(), job->m_elementId);
         for (auto& entry : job->m_processor.m_cachedEntries)
             {
             Napi::Object cbArgument = Napi::Object::New(Env());
-            cbArgument.Set("elementId", job->m_elementIdString);
+            cbArgument.Set("elementId", elementIdString);
             cbArgument.Set("mesh", convertMesh(Env(), entry.mesh));
             cbArgument.Set("color", Napi::Number::New(Env(), entry.color.GetValue()));
             cbArgument.Set("subCategory", createIdString(Env(), entry.subCategoryId));
@@ -671,6 +753,16 @@ DgnDbStatus JsInterop::ExportGraphics(DgnDbR db, Napi::Object const& exportProps
             if (entry.textureId.IsValid())
                 cbArgument.Set("textureId", createIdString(Env(), entry.textureId));
             onGraphicsCb.Call({ cbArgument });
+            }
+
+        for (auto& entry : job->m_processor.m_cachedLineStrings)
+            {
+            Napi::Object cbArgument = Napi::Object::New(Env());
+            cbArgument.Set("elementId", elementIdString);
+            cbArgument.Set("subCategory", createIdString(Env(), entry.subCategoryId));
+            cbArgument.Set("color", Napi::Number::New(Env(), entry.color.GetValue()));
+            cbArgument.Set("lines", convertLines(Env(), entry.points));
+            onLineGraphicsCb.Call({ cbArgument });
             }
 
         if (saveInstances && !job->m_instances.empty())
@@ -712,8 +804,11 @@ DgnDbStatus JsInterop::ExportPartGraphics(DgnDbR db, Napi::Object const& exportP
     geomParams.SetTransparency(displayProps.Get("elmTransparency").As<Napi::Number>());
     geomParams.SetLineColor(ColorDef(displayProps.Get("lineColor").As<Napi::Number>()));
 
+    Napi::Function onLineGraphicsCb = exportProps.Get("onPartLineGraphics").As<Napi::Function>();
+    bool generateLines = onLineGraphicsCb.IsFunction();
+
     IFacetOptionsPtr facetOptions = createFacetOptions(exportProps);
-    ExportGraphicsProcessor processor(db, *facetOptions.get());
+    ExportGraphicsProcessor processor(db, *facetOptions.get(), generateLines);
     ExportGraphicsContext context(processor, nullptr);
     context.SetDgnDb(db);
 
@@ -738,6 +833,14 @@ DgnDbStatus JsInterop::ExportPartGraphics(DgnDbR db, Napi::Object const& exportP
         if (entry.textureId.IsValid())
             cbArgument.Set("textureId", createIdString(Env(), entry.textureId));
         onGraphicsCb.Call({ cbArgument });
+        }
+
+    for (auto& entry : processor.m_cachedLineStrings)
+        {
+        Napi::Object cbArgument = Napi::Object::New(Env());
+        cbArgument.Set("color", Napi::Number::New(Env(), entry.color.GetValue()));
+        cbArgument.Set("lines", convertLines(Env(), entry.points));
+        onLineGraphicsCb.Call({ cbArgument });
         }
 
     return DgnDbStatus::Success;
