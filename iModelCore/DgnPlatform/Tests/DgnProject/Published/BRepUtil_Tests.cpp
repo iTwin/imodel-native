@@ -304,6 +304,9 @@ TEST_F(BRepUtilTests, CreateBodyFromLoft)
     ASSERT_EQ(4, BRepUtil::GetBodyVertices(NULL, *brep));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Elonas.Seviakovas 07/19
++---------------+---------------+---------------+---------------+---------------+------*/
 Dgn::IBRepEntityPtr createSheet()
     {
     CurveVectorPtr curve = CurveVector::CreateRectangle(0, 0, 10, 10, 0);
@@ -339,15 +342,15 @@ TEST_F(BRepUtilTests, IntersectSheetFaces_CrossingSheets_ReturnsAnIntersection)
     sheet1->ApplyTransform(Transform::From(DPoint3d::From(-5.0, 0.0, -5.0)));
 
     Dgn::IBRepEntityPtr sheet2 = createSheet();
-    sheet2->ApplyTransform(Transform::From(DPoint3d::From(-5.0, -5.0, 0.0)));
-
-    auto range1 = sheet1->GetEntityRange();
-    auto range2 = sheet2->GetEntityRange();
+    sheet2->ApplyTransform(Transform::From(DPoint3d::From(-5.0, -5.0, 1.0)));
 
     CurveVectorPtr intersectionCurve;
     BRepUtil::Modify::IntersectSheetFaces(intersectionCurve, *sheet1, *sheet2);
 
     ASSERT_TRUE(intersectionCurve.IsValid());
+
+    auto expectedCurve = ICurvePrimitive::CreateLine({5.0, 0.0, 1.0}, {-5.0, 0.0, 1.0});
+    ASSERT_TRUE(intersectionCurve->front()->IsSameStructureAndGeometry(*expectedCurve, 0.1));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -361,9 +364,6 @@ TEST_F(BRepUtilTests, IntersectSheetFaces_PerpendicularNonCrossingSheets_Returns
 
     Dgn::IBRepEntityPtr sheet2 = createSheet();
     sheet2->ApplyTransform(Transform::From(DPoint3d::From(-5.0, -5.0, 0.0)));
-
-    auto range1 = sheet1->GetEntityRange();
-    auto range2 = sheet2->GetEntityRange();
 
     CurveVectorPtr intersectionCurve;
     BRepUtil::Modify::IntersectSheetFaces(intersectionCurve, *sheet1, *sheet2);
@@ -382,9 +382,6 @@ TEST_F(BRepUtilTests, IntersectSheetFaces_ParallelCloseselyAtAnAngle_ReturnsNull
 
     Dgn::IBRepEntityPtr sheet2 = createSheet();
     sheet2->ApplyTransform(Transform::From(RotMatrix::FromAxisAndRotationAngle(0, 0.8)));
-
-    auto range1 = sheet1->GetEntityRange();
-    auto range2 = sheet2->GetEntityRange();
 
     CurveVectorPtr intersectionCurve;
     BRepUtil::Modify::IntersectSheetFaces(intersectionCurve, *sheet1, *sheet2);
