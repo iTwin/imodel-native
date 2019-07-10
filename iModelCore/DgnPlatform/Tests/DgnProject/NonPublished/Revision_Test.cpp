@@ -1383,19 +1383,19 @@ TEST_F(RevisionTestFixture, DbSchemaChanges)
     ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column2 FROM TestTable2 WHERE Id=1", 0)); // i.e., null value
     ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column2 FROM TestTable2 WHERE Id=2", 0)); // i.e., null value
 
-    // Reverse revision 4
+    // Reverse revision 4 (Note that all data or schema changes are entirely skipped in this apply)
     BeTest::SetFailOnAssert(false);
     EXPECT_EQ(RevisionStatus::ReverseOrReinstateSchemaChangesOnOpen, m_db->Revisions().ReverseRevision(*revision4));
     BeTest::SetFailOnAssert(true);
     ReverseSchemaRevision(*revision4);
-    ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column2 FROM TestTable1 WHERE Id=1", 0)); // i.e., null value
+    ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column2 FROM TestTable1 WHERE Id=1", 1));
 
-    // Reinstate revision 4
+    // Reinstate revision 4 (Note that all data or schema changes are entirely skipped in this apply)
     BeTest::SetFailOnAssert(false);
     EXPECT_EQ(RevisionStatus::ReverseOrReinstateSchemaChangesOnOpen, m_db->Revisions().ReinstateRevision(*revision4));
     BeTest::SetFailOnAssert(true);
     ReinstateSchemaRevision(*revision4);
-    ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column2 FROM TestTable1 WHERE Id=1", 1)); // i.e., null value
+    ASSERT_TRUE(ValidateValue(*m_db, "SELECT Column2 FROM TestTable1 WHERE Id=1", 1));
     }
 
 //---------------------------------------------------------------------------------------

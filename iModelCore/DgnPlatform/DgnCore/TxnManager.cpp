@@ -962,15 +962,23 @@ RevisionStatus TxnManager::MergeDataChangesInRevision(DgnRevisionCR revision, Re
 
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                Ramanujam.Raman                    02/2017
+ * @remarks Used only in revering or reinstating revisions. 
+ * @see TxnManager::MergeRevision
 +---------------+---------------+---------------+---------------+---------------+------*/
 RevisionStatus TxnManager::ApplyRevision(DgnRevisionCR revision, bool reverse)
     {
     BeFileNameCR revisionChangesFile = revision.GetRevisionChangesFile();
     RevisionChangesFileReader changeStream(revisionChangesFile, m_dgndb);
-    // Note: Change Set can be empty if it contains only schema changes
-    DbResult result = ApplyChanges(changeStream, reverse ? TxnAction::Reverse : TxnAction::Reinstate, false, nullptr, reverse);
-    if (result != BE_SQLITE_OK)
-        return RevisionStatus::ApplyError;
+    bool containsSchemaChanges = revision.ContainsSchemaChanges(m_dgndb);
+
+    if (!containsSchemaChanges)
+        {
+        // Skip the entire schema change set when reversing or reinstating - DDL and the meta-data changes. 
+        // Reversing meta data changes cause conflicts - see TFS#149046
+        DbResult result = ApplyChanges(changeStream, reverse ? TxnAction::Reverse : TxnAction::Reinstate, false, nullptr, reverse);
+        if (result != BE_SQLITE_OK)
+            return RevisionStatus::ApplyError;
+        }
     
     RevisionStatus status;
     RevisionManagerR revMgr = m_dgndb.Revisions();
@@ -992,6 +1000,7 @@ RevisionStatus TxnManager::ApplyRevision(DgnRevisionCR revision, bool reverse)
 
     if (status != RevisionStatus::Success)
         {
+        BeAssert(!containsSchemaChanges && "Never attempt to reverse or reinstate schema changes");
         // Ensure the entire transaction is rolled back to before the merge, and the txn tables are notified to
         // appropriately revert their in-memory state.
         ChangeTracker::OnCommitStatus cancelStatus = CancelChanges(changeStream);

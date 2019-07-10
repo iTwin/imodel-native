@@ -1746,15 +1746,6 @@ public:
         return Napi::Number::New(Env(), (int) status);
         }
 
-    Napi::Value ImportSchema(Napi::CallbackInfo const& info)
-        {
-        REQUIRE_DB_TO_BE_OPEN
-        REQUIRE_ARGUMENT_STRING(0, schemaPathnameStrObj, Env().Undefined());
-        BeFileName schemaPathname(schemaPathnameStrObj.c_str(), BentleyCharEncoding::Utf8);
-        auto stat = JsInterop::ImportSchemaDgnDb(GetDgnDb(), schemaPathname);
-        return Napi::Number::New(Env(), (int)stat);
-        }
-
     Napi::Value ImportFunctionalSchema(Napi::CallbackInfo const& info)
         {
         REQUIRE_DB_TO_BE_OPEN
@@ -2360,7 +2351,6 @@ public:
             InstanceMethod("hasUnsavedChanges", &NativeDgnDb::HasUnsavedChanges),
             InstanceMethod("hasSavedChanges", &NativeDgnDb::HasSavedChanges),
             InstanceMethod("importFunctionalSchema", &NativeDgnDb::ImportFunctionalSchema),
-            InstanceMethod("importSchema", &NativeDgnDb::ImportSchema),
             InstanceMethod("importSchemas", &NativeDgnDb::ImportSchemas),
             InstanceMethod("inBulkOperation", &NativeDgnDb::InBulkOperation),
             InstanceMethod("insertCodeSpec", &NativeDgnDb::InsertCodeSpec),

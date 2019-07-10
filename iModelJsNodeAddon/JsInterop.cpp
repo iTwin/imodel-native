@@ -829,33 +829,6 @@ DbResult JsInterop::ImportSchema(ECDbR ecdb, BeFileNameCR pathname)
     }
 
 //---------------------------------------------------------------------------------------
-// @deprecated It is better to import a collection of schemas together rather than individually.
-// @see ImportSchemasDgnDb
-// @bsimethod                               Ramanujam.Raman                 07/17
-//---------------------------------------------------------------------------------------
-DbResult JsInterop::ImportSchemaDgnDb(DgnDbR dgndb, BeFileNameCR pathname)
-    {
-    if (!pathname.DoesPathExist())
-        return BE_SQLITE_NOTFOUND;
-
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
-    schemaContext->SetFinalSchemaLocater(dgndb.GetSchemaLocater());
-
-    ECSchemaPtr schema;
-    SchemaReadStatus schemaStatus = ECSchema::ReadFromXmlFile(schema, pathname.GetName(), *schemaContext);
-    if (SchemaReadStatus::Success != schemaStatus)
-        return BE_SQLITE_ERROR;
-
-    bvector<ECSchemaCP> schemas;
-    schemas.push_back(schema.get());
-    SchemaStatus status = dgndb.ImportSchemas(schemas); // NOTE: this calls DgnDb::ImportSchemas which has additional processing over SchemaManager::ImportSchemas
-    if (status != SchemaStatus::Success)
-        return DgnDb::SchemaStatusToDbResult(status, true);
-
-    return dgndb.SaveChanges();
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                06/19
 //---------------------------------------------------------------------------------------
 DbResult JsInterop::ImportSchemasDgnDb(DgnDbR dgndb, bvector<Utf8String> const& schemaFileNames)
