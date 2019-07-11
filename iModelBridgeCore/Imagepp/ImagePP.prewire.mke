@@ -14,18 +14,21 @@ SrcImagePP      = $(SrcRoot)Imagepp/
 always:
     !~@mkdir $(ippOutPrivateLibs)
      ~@mkdir $(ippOutPrivateApi)
+     ~@mkdir ${ippOutPrivateApi}/ImagePPInternal
+     ~@mkdir ${ippOutPrivateApi}/ImagePPInternal/ext
+     ~@mkdir ${ippOutPrivateApi}/ImagePPInternal/ext/MatrixFromTiePts
      
 PublicApiDir    = $(OutBuildContexts)ImagePP/PublicAPI/
 srcDir          = $(_MakeFilePath)
 
 # Wire in my own public header files.
 always:
-   ~linkdir "$(PublicApiDir)ImagePP=$(srcDir)PublicApi/ImagePP"
+    ~linkdir "$(PublicApiDir)ImagePP=$(srcDir)PublicApi/ImagePP"
 
-ippExternalLibDir   = $(SrcImagepp)ext/
+#ippExternalLibDir   = $(SrcImagepp)ext/
 
 # Wire in header files of private libs.
 always:
-   @CreateSymLinks.py -m"$(ippOutPrivateApi)ImagePPInternal/ext/MatrixFromTiePts=$(ippExternalLibDir)MatrixFromTiePts/h/MatrixFromTiePts.h"
-
+    python $(SrcRoot)bsicommon/build/CreateSymLinks.py -f"${ippOutPrivateApi}/ImagePPInternal/ext/MatrixFromTiePts/MatrixFromTiePts.h=$(SrcImagePP)ext/MatrixFromTiePts/h/MatrixFromTiePts.h"
+#  ~linkfile                                             "${ippOutPrivateApi}/ImagePPInternal/ext/MatrixFromTiePts/MatrixFromTiePts.h=$(SrcImagePP)ext/MatrixFromTiePts/h/MatrixFromTiePts.h"
 
