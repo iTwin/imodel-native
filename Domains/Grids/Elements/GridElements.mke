@@ -1,6 +1,5 @@
 #----------------------------------------------------------------------
-#     $Source: Grids/Elements/GridElements.mke $
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #----------------------------------------------------------------------
 AppName = GridElements
 CCompPDBName = $(AppName)
@@ -69,6 +68,8 @@ $(o)GridCurveBundle$(oext) : $(_MakeFilePath)GridCurveBundle.cpp ${MultiCompileD
 $(o)GridSurfaceDrivesGridCurveBundleHandler$(oext) : $(_MakeFilePath)GridSurfaceDrivesGridCurveBundleHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridSurfaceDrivesGridCurveBundleHandler.h
 
 $(o)GridCurveBundleCreatesGridCurveHandler$(oext) : $(_MakeFilePath)GridCurveBundleCreatesGridCurveHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridCurveBundleCreatesGridCurveHandler.h
+
+$(o)GridLabel$(oext) : $(_MakeFilePath)GridLabel.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridLabel.h
 
 %include MultiCppCompileGo.mki
 objs +% $(MultiCompileObjectList)

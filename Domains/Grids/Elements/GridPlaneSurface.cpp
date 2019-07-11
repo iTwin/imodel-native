@@ -1,3 +1,8 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
 
 #include <Grids/Elements/GridElementsAPI.h>
 #include <DgnPlatform/DgnDb.h>
