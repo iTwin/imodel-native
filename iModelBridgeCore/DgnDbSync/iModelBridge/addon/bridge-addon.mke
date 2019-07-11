@@ -49,6 +49,8 @@ MultiCompileDepends = $(_MakeFileSpec)
 
 $(o)BridgeAddon$(oext) : $(baseDir)BridgeAddon.cpp $(baseDir)BridgeAddon.h ${MultiCompileDepends}
 
+$(o)BridgeAsyncWorker$(oext) : $(baseDir)BridgeAsyncWorker.cpp $(baseDir)BridgeAsyncWorker.h ${MultiCompileDepends}
+
 $(o)BridgeAddonLoggingInterop$(oext) : $(baseDir)BridgeAddonLoggingInterop.cpp $(baseDir)BridgeAddon.h ${MultiCompileDepends}
 
 $(o)OidcTokenProvider$(oext) : $(baseDir)OidcTokenProvider.cpp $(baseDir)OidcTokenProvider.h ${MultiCompileDepends}

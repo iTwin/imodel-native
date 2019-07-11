@@ -17,6 +17,7 @@
 #include "BridgeAddon.h"
 
 static intptr_t s_mainThreadId;
+
 static Napi::ObjectReference s_logger;
 static Napi::ObjectReference s_jobUtility;
 static Napi::Env *s_env;
@@ -27,10 +28,9 @@ Napi::String toJsString(Napi::Env env, Utf8StringCR str) { return toJsString(env
 Napi::String toJsString(Napi::Env env, BeInt64Id id) { return toJsString(env, id.ToHexStr()); }
 
 
-static void logMessageToJobUtility(Utf8CP msg) 
+static void logMessageToJobUtility(Utf8CP msg, Napi::Env& env)
     {
-    auto env = s_jobUtility.Env();
-    Napi::HandleScope scope(env);
+    //Napi::HandleScope scope(env);
 
     Utf8CP fname = "logMessage";
 
@@ -70,10 +70,9 @@ static void setBriefcaseIdJobUtility(uint32_t bcid)
     method({ msgJS });
     }    
 
-static void logMessageToJs(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP msg)
+static void logMessageToJs(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP msg, Napi::Env& env)
     {
-    auto env = s_logger.Env();
-    Napi::HandleScope scope(env);
+    //Napi::HandleScope scope(env);
 
     Utf8CP fname = (sev == NativeLogging::LOG_TRACE)?   "logTrace":
                 (sev == NativeLogging::LOG_DEBUG)?   "logTrace": // Logger does not distinguish between trace and debug
@@ -94,9 +93,9 @@ static void logMessageToJs(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP 
     method({catJS, msgJS});            
     } 
 
-static void LogTrace(Utf8CP msg)         
+static void LogTrace(Utf8CP msg, Napi::Env& env)
     {
-    logMessageToJs("iModelBridgeApiServer", NativeLogging::LOG_TRACE, msg);
+    logMessageToJs("iModelBridgeApiServer", NativeLogging::LOG_TRACE, msg, env);
     } 
 /*
 static void LogInfo(Utf8CP msg)         
@@ -104,9 +103,9 @@ static void LogInfo(Utf8CP msg)
         logMessageToJs("iModelBridgeApiServer", NativeLogging::LOG_INFO, msg);
     }        
 */
-static void LogError(Utf8CP msg)         
+static void LogError(Utf8CP msg, Napi::Env& env)
     {
-    logMessageToJs("iModelBridgeApiServer", NativeLogging::LOG_WARNING, msg);
+    logMessageToJs("iModelBridgeApiServer", NativeLogging::LOG_WARNING, msg, env);
     }      
 
 namespace BridgeNative {
@@ -139,7 +138,7 @@ namespace BridgeNative {
     //=======================================================================================
     static void SetLogger(Napi::CallbackInfo const& info)
         {
-        s_logger = Napi::ObjectReference::New(info[0].ToObject());
+        s_logger = Napi::Persistent(info[0].ToObject());
         s_logger.SuppressDestruct();
         }
 
@@ -162,14 +161,13 @@ namespace BridgeNative {
 // ***********************************************************************************
 // Functions outside of namespace BridgeNative
 // ***********************************************************************************
-
 Value _RunBridge(const CallbackInfo& info) 
     {
     Env env = info.Env();
     Napi::String str = info[0].As<Napi::String>();
     std::string strVal = str.Utf8Value();
 
-    int result = RunBridge(env, strVal.c_str());
+    int result = BridgeNative::BridgeWorker::RunBridge(env, strVal.c_str(), true);
     // return String::New(env, strVal.c_str());
 
     return String::New(env, std::to_string(result).c_str());
@@ -194,6 +192,7 @@ static Napi::Object RegisterModule(Napi::Env env, Napi::Object exports)
         Napi::PropertyDescriptor::Accessor(env, exports, "JobUtility", &BridgeNative::GetJobUtility, &BridgeNative::SetJobUtility),
         });
 
+    BridgeNative::BridgeWorker::InitAsyncWorker(env, exports);
     return exports;
     }
 
@@ -245,7 +244,7 @@ static void justLogAssertionFailures(WCharCP message, WCharCP file, uint32_t lin
 //=======================================================================================
 // @bsistruct                                   John.Majerle                  10/18
 //=======================================================================================
-int RunBridge(Env env, const char* jsonString)
+int BridgeNative::BridgeWorker::RunBridge(Napi::Env& env, const char* jsonString, bool doLogging)
     {
     int status = 1;  // Assume failure
 
@@ -258,8 +257,11 @@ int RunBridge(Env env, const char* jsonString)
     //      the process exists and no SEQ messages are sent out.
     // BridgeNative::JsInterop::InitLogging();
 
-    LogTrace("BridgeAddon.cpp: RunBridge() BEGIN");    
-    logMessageToJobUtility("BridgeAddon.cpp: RunBridge() BEGIN");                 // [NEEDSWORK] This line just for testing.  Remove later.
+    if (doLogging)
+        {
+        LogTrace("BridgeAddon.cpp: RunBridge() BEGIN",env);    
+        logMessageToJobUtility("BridgeAddon.cpp: RunBridge() BEGIN",env);                 // [NEEDSWORK] This line just for testing.  Remove later.
+        }
     
     // Convert JSON string into a JSON object
     Json::Value json;
@@ -313,8 +315,11 @@ int RunBridge(Env env, const char* jsonString)
     MAKE_ARGC_ARGV(argptrs, args);
 
     if(1 == argc) {
-        logMessageToJobUtility("BridgeAddon.cpp: RunBridge() No valid members passed in json");
-        LogError("BridgeAddon.cpp: RunBridge() No valid members passed in json"); 
+        if (doLogging)
+            {
+            logMessageToJobUtility("BridgeAddon.cpp: RunBridge() No valid members passed in json",env);
+            LogError("BridgeAddon.cpp: RunBridge() No valid members passed in json",env); 
+            }
         return status;    
     }
 
@@ -325,12 +330,15 @@ int RunBridge(Env env, const char* jsonString)
     //     sprintf(buffer, "BridgeAddon.cpp: argv[%d] = %S", ii, argv[ii]);
     //     logMessageToJobUtility(buffer);
     // }
-
-    LogTrace("BridgeAddon.cpp: RunBridge() argv[]:"); 
-    for(int ii = 0; ii < argc; ++ii) {
-        char buffer [MAX_PATH];
-        sprintf(buffer, "BridgeAddon.cpp: argv[%d] = %S", ii, argv[ii]);
-        LogTrace(buffer);
+    if (doLogging)
+        {
+        LogTrace("BridgeAddon.cpp: RunBridge() argv[]:",env); 
+        
+        for(int ii = 0; ii < argc; ++ii) {
+            char buffer [MAX_PATH];
+            sprintf(buffer, "BridgeAddon.cpp: argv[%d] = %S", ii, argv[ii]);
+            LogTrace(buffer,env);
+        }
     }
     
     try {
@@ -338,8 +346,11 @@ int RunBridge(Env env, const char* jsonString)
 
         // Initialze the bridge processor
         if (BentleyApi::BSISUCCESS != app.ParseCommandLine(argc, argv)) {
-            logMessageToJobUtility("BridgeAddon.cpp: RunBridge() ParseCommandLine failure");
-            LogError("BridgeAddon.cpp: RunBridge() ParseCommandLine failure"); 
+            if (doLogging)
+                {
+                logMessageToJobUtility("BridgeAddon.cpp: RunBridge() ParseCommandLine failure", env);
+                LogError("BridgeAddon.cpp: RunBridge() ParseCommandLine failure", env);
+                }
             return status;
         }
 
@@ -358,25 +369,36 @@ int RunBridge(Env env, const char* jsonString)
         // Relay the briefcaseId to the calling node.js TypeScript
         uint32_t bcid = app.GetBriefcaseId().GetValue();
 
-        setBriefcaseIdJobUtility(bcid);
+        if (doLogging)
+            setBriefcaseIdJobUtility(bcid);
 
         {
             char buffer [MAX_PATH];
             sprintf(buffer, "BridgeAddon.cpp: RunBridge() Run completed with status = %d briefcaseId = %d", status, bcid);
-            logMessageToJobUtility(buffer);   
-            LogTrace(buffer);          
+            if (doLogging)
+                {
+                logMessageToJobUtility(buffer,env);   
+                LogTrace(buffer,env);          
+                }
         }
 
     } catch (...) {
-        logMessageToJobUtility("BridgeAddon.cpp: RunBridge() exception occurred during bridging");
-        LogError("BridgeAddon.cpp: RunBridge() exception occurred during bridging"); 
+        if (doLogging)
+            {
+            logMessageToJobUtility("BridgeAddon.cpp: RunBridge() exception occurred during bridging",env);
+            LogError("BridgeAddon.cpp: RunBridge() exception occurred during bridging",env); 
+            }
         return status;
     }
 
-    logMessageToJobUtility("BridgeAddon.cpp: RunBridge() END"); // [NEEDSWORK] This line just for testing.  Remove later.
-    LogTrace("BridgeAddon.cpp: RunBridge() END");       
+    if (doLogging)
+        {
+        logMessageToJobUtility("BridgeAddon.cpp: RunBridge() END",env); // [NEEDSWORK] This line just for testing.  Remove later.
+        LogTrace("BridgeAddon.cpp: RunBridge() END",env);       
+        }
 
     return status;
     }
+
 
 NODE_API_MODULE(NODE_GYP_MODULE_NAME, RegisterModule)

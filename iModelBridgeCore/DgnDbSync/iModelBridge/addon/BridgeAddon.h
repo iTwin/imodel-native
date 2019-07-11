@@ -17,16 +17,20 @@ USING_NAMESPACE_BENTLEY_HTTP
 USING_NAMESPACE_BENTLEY_DGN
 using namespace Napi;
 
-int RunBridge(Napi::Env env, const char* json);
-
-
 namespace BridgeNative
 {
+
+struct BridgeWorker
+    {
+    static int RunBridge(Napi::Env& env, const char* json, bool doLogging);
+    static void InitAsyncWorker(Napi::Env& env, Napi::Object exports);
+    };
+
 //=======================================================================================
 // @bsistruct                                   Sam.Wilson                  06/18
 //=======================================================================================
 struct JsInterop
-{
+    {
     static bool IsMainThread();
 
     static void ThrowJsException(Utf8CP msg);
@@ -35,5 +39,5 @@ struct JsInterop
     static NativeLogging::ILogger &GetNativeLogger();
     static void LogMessage(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP msg);
     static bool IsSeverityEnabled(Utf8CP category, NativeLogging::SEVERITY sev);
-};
+    };
 } // namespace BridgeNative
