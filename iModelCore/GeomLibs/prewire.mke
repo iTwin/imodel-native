@@ -9,10 +9,10 @@ SrcGeomLibs             = $(SrcRoot)GeomLibs/
 GeomPublicAPISrc        = $(SrcGeomLibs)PublicAPI/
 
 always:
-    @CreateSymLinks.py  -d"$(BuildContextPublicApiDir)Geom=$(GeomPublicAPISrc)Geom"    \
-                        -d"$(BuildContextPublicApiDir)Mtg=$(GeomPublicAPISrc)Mtg"      \
-                        -d"$(BuildContextPublicApiDir)PlacementOnEarth=$(GeomPublicAPISrc)PlacementOnEarth"      \
-                        -d"$(BuildContextPublicApiDir)GeomJsonWireFormat=$(GeomPublicAPISrc)GeomJsonWireFormat"      \
-                        -d"$(BuildContextPublicApiDir)Regions=$(GeomPublicAPISrc)Regions"  \
-                        -d"$(BuildContextPublicApiDir)Vu=$(GeomPublicAPISrc)Vu"\
-                        -d"$(BuildContextPublicApiDir)GeomSerialization=$(GeomPublicAPISrc)GeomSerialization"\
+    ~linkdir "$(BuildContextPublicApiDir)Geom=$(GeomPublicAPISrc)Geom"
+    ~linkdir "$(BuildContextPublicApiDir)Mtg=$(GeomPublicAPISrc)Mtg"
+    ~linkdir "$(BuildContextPublicApiDir)PlacementOnEarth=$(GeomPublicAPISrc)PlacementOnEarth"
+    ~linkdir "$(BuildContextPublicApiDir)GeomJsonWireFormat=$(GeomPublicAPISrc)GeomJsonWireFormat"
+    ~linkdir "$(BuildContextPublicApiDir)Regions=$(GeomPublicAPISrc)Regions"
+    ~linkdir "$(BuildContextPublicApiDir)Vu=$(GeomPublicAPISrc)Vu"
+    ~linkdir "$(BuildContextPublicApiDir)GeomSerialization=$(GeomPublicAPISrc)GeomSerialization"
