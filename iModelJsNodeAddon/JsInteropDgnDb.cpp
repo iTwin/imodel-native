@@ -632,7 +632,7 @@ static ECN::StandaloneECRelationshipInstancePtr getRelationshipProperties(ECN::E
     // NB: don't include the sourceId and targetId properties. They are specified directly by insert
     //      and are not relevant to update
     
-    return relationshipInstance;
+    return (count > 0) ? relationshipInstance : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -644,14 +644,14 @@ DbResult JsInterop::InsertLinkTableRelationship(JsonValueR outJson, DgnDbR dgndb
     if (nullptr == relClass)
         return BE_SQLITE_ERROR;
 
-    DgnElementId sourceId, targetid;
+    DgnElementId sourceId, targetId;
     sourceId.FromJson(inJson["sourceId"]);
-    targetid.FromJson(inJson["targetId"]);
+    targetId.FromJson(inJson["targetId"]);
 
     ECN::StandaloneECRelationshipInstancePtr props = getRelationshipProperties(relClass, inJson);
 
     BeSQLite::EC::ECInstanceKey relKey;
-    auto rc = dgndb.InsertLinkTableRelationship(relKey, *relClass, sourceId, targetid, props.get());
+    auto rc = dgndb.InsertLinkTableRelationship(relKey, *relClass, sourceId, targetId, props.get()); // nullptr is okay if there are no props
     if (BE_SQLITE_OK != rc)
         return rc;
 
@@ -671,6 +671,8 @@ DbResult JsInterop::UpdateLinkTableRelationship(DgnDbR dgndb, JsonValueR inJson)
         return BE_SQLITE_NOTFOUND;
     
     ECN::StandaloneECRelationshipInstancePtr props = getRelationshipProperties(relClass, inJson);
+    if (!props.IsValid())
+        return BE_SQLITE_OK; // Relationship class had no properties - consider update successful
 
     return dgndb.UpdateLinkTableRelationshipProperties(relKey, *props);
     }
