@@ -27,9 +27,22 @@ public:
     // Creation
     //---------------------------------------------------------------------------------------
     //! Creates an empty sketch grid
-    //! @param[in]  model   model for the radialgridportion
-    //! @return             sketch grid
+    //! @param[in] model                    Model for the sketch grid
+    //! @param[in] scopeElementId           Element that contains sketch grid's model
+    //! @param[in] name                     Name of the sketch grid. Must be unique.
+    //! @param[in] defaultStartElevation    Default start elevation
+    //! @param[in] defaultEndElevation      Default end elevation
+    //! @return                             Sketch grid
     GRIDELEMENTS_EXPORT static SketchGridPtr Create (Dgn::SpatialModelCR model, Dgn::DgnElementId scopeElementId, Utf8CP name, double defaultStartElevation, double defaultEndElevation);
+
+    //! Creates and inserts an empty (no axes) sketch grid
+    //! @param[in] model                    Model for the sketch grid
+    //! @param[in] scopeElementId           Element that contains sketch grid's model
+    //! @param[in] name                     Name of the sketch grid. Must be unique.
+    //! @param[in] defaultStartElevation    Default start elevation
+    //! @param[in] defaultEndElevation      Default end elevation
+    //! @return                             Sketch grid
+    GRIDELEMENTS_EXPORT static SketchGridPtr CreateAndInsert (Dgn::SpatialModelCR model, Dgn::DgnElementId scopeElementId, Utf8CP name, double defaultStartElevation, double defaultEndElevation);
     };
 
 END_GRIDS_NAMESPACE

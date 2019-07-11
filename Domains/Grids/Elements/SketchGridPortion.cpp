@@ -1,4 +1,9 @@
-\
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
+
 #include <Grids/Elements/GridElementsAPI.h>
 #include <DgnPlatform/DgnDb.h>
 #include <DgnPlatform/DgnCategory.h>
@@ -25,20 +30,42 @@ T_Super::CreateParams const& params
 
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-SketchGridPtr        SketchGrid::Create
+SketchGridPtr SketchGrid::Create
 (
 Dgn::SpatialModelCR model,
 Dgn::DgnElementId scopeElementId,
-Utf8CP          name,
+Utf8CP name,
 double defaultStartElevation,
 double defaultEndElevation
 )
     {
     return new SketchGrid(PlanGrid::CreateParams(model, scopeElementId, name, QueryClassId(model.GetDgnDb()), defaultStartElevation, defaultEndElevation));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas               07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+SketchGridPtr SketchGrid::CreateAndInsert
+(
+Dgn::SpatialModelCR model,
+Dgn::DgnElementId scopeElementId,
+Utf8CP name,
+double defaultStartElevation,
+double defaultEndElevation
+)
+    {
+    SketchGridPtr grid = SketchGrid::Create(model, scopeElementId, name, defaultStartElevation, defaultEndElevation);
+
+    if(grid.IsNull())
+        return nullptr;
+
+    if(grid->Insert().IsNull())
+        return nullptr;
+
+    return grid;
     }
 
 END_GRIDS_NAMESPACE
