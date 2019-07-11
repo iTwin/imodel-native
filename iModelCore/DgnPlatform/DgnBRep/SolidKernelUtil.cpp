@@ -2364,12 +2364,6 @@ bool intersectFaces(CurveVectorR curveVector, const PK_FACE_t face1Tag, const PK
 
     PK_ERROR_code_t status = PK_FACE_intersect_face(face1Tag, face2Tag, &options, &vectorCount, &vectors, &curveCount, &curves, &bounds, &curvesTypes);
 
-    DRange3d range1;
-    PSolidUtil::GetEntityRange(range1, face1Tag);
-
-    DRange3d range2;
-    PSolidUtil::GetEntityRange(range2, face2Tag);
-
     if (status == PK_ERROR_none)
         {
         for (int curveIndex = 0; curveIndex < curveCount; curveIndex++)
@@ -2393,54 +2387,24 @@ bool intersectFaces(CurveVectorR curveVector, const PK_FACE_t face1Tag, const PK
 +---------------+---------------+---------------+---------------+---------------+------*/
 CurveVectorPtr intersectSheets(const PK_ENTITY_t sheet1Tag, const PK_ENTITY_t sheet2Tag)
     {
+    PK_FACE_t sheet1FaceTag = PK_ENTITY_null;
+    PK_FACE_t sheet2FaceTag = PK_ENTITY_null;
+    
+    if (SUCCESS != PK_BODY_ask_first_face(sheet1Tag, &sheet1FaceTag) || PK_ENTITY_null == sheet1FaceTag)
+        return nullptr;
+    
+    if (SUCCESS != PK_BODY_ask_first_face(sheet2Tag, &sheet2FaceTag) || PK_ENTITY_null == sheet2FaceTag)
+        return nullptr;
+
     PK_FACE_intersect_face_o_t options;
     PK_FACE_intersect_face_o_m(options);
 
-    int sheet1FaceCount = 0;
-    PK_FACE_t* sheet1Faces = nullptr;
-    PK_ERROR_code_t sheet1Status = PK_BODY_ask_faces(sheet1Tag, &sheet1FaceCount, &sheet1Faces);
-
     CurveVectorPtr vector = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
 
-    for (int i = 0; i < sheet1FaceCount; i++)
-        {
-        int sheet2FaceCount = 0;
-        PK_FACE_t* sheet2Faces = nullptr;
-        PK_ERROR_code_t sheet2Status = PK_BODY_ask_faces(sheet2Tag, &sheet2FaceCount, &sheet2Faces);
-
-        for (int j = 0; j < sheet2FaceCount; j++)
-            {
-            intersectFaces(*vector, sheet1Faces[i], sheet2Faces[j], options);
-            }   
-
-        PK_ENTITY_delete(sheet2FaceCount, sheet2Faces);
-        PK_MEMORY_free(sheet2Faces);
-        }
-
-    PK_ENTITY_delete(sheet1FaceCount, sheet1Faces);
-    PK_MEMORY_free(sheet1Faces);
+    if (!intersectFaces(*vector, sheet1FaceTag, sheet2FaceTag, options))
+        return nullptr;
 
     return vector;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Elonas.Seviakovas 07/19
-+---------------+---------------+---------------+---------------+---------------+------*/
-ICurvePrimitivePtr joinIntersections(CurveVectorCR curveVector)
-    {
-    MSBsplineCurvePtr joinedSpline = MSBsplineCurve::CreatePtr();
-    for (auto curvePrimitive : curveVector)
-        {
-        ICurvePrimitivePtr splineCurve = curvePrimitive->CloneAsBspline();
-        MSBsplineCurvePtr spline = splineCurve->GetBsplineCurvePtr();
-        joinedSpline->AppendCurve(*spline);
-        }
-
-    joinedSpline->AllocateWeights(joinedSpline->GetNumPoles());
-    for (int i = 0; i < joinedSpline->GetNumPoles(); i++)
-        joinedSpline->SetWeight(i, 1.0);
-
-    return ICurvePrimitive::CreateBsplineCurve(joinedSpline);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2452,7 +2416,8 @@ BentleyStatus BRepUtil::Modify::IntersectSheetFaces(CurveVectorPtr& vectorOut, I
     if (IBRepEntity::EntityType::Sheet != sheet1.GetEntityType() || IBRepEntity::EntityType::Sheet != sheet2.GetEntityType())
         return ERROR;
 
-    PK_ENTITY_t sheet1Tag = PSolidUtil::GetEntityTag(sheet1);
+    IBRepEntityPtr sheet1Clone = sheet1.Clone();
+    PK_ENTITY_t sheet1Tag = PSolidUtil::GetEntityTag(*sheet1Clone);
     if (sheet1Tag == PK_ENTITY_null)
         return ERROR;
 
@@ -2469,16 +2434,10 @@ BentleyStatus BRepUtil::Modify::IntersectSheetFaces(CurveVectorPtr& vectorOut, I
 
     vectorOut = intersectSheets(sheet1Tag, sheet2Tag);
 
-    if(vectorOut->size() == 0)
+    if(vectorOut.IsNull() || vectorOut->size() == 0)
         {
         vectorOut = nullptr;
         return ERROR;
-        }
-
-    if(vectorOut->size() > 1)
-        {
-        ICurvePrimitivePtr curve = joinIntersections(*vectorOut);
-        vectorOut = CurveVector::Create(curve, CurveVector::BOUNDARY_TYPE_None);
         }
 
     // apply sheet1 trans to curvevec here
