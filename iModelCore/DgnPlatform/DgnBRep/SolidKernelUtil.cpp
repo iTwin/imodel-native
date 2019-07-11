@@ -2353,6 +2353,7 @@ RefCountedPtr<IRefCounted> BRepUtil::Modify::CreateRollbackMark()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Elonas.Seviakovas 07/19
 +---------------+---------------+---------------+---------------+---------------+------*/
+#if defined (BENTLEYCONFIG_PARASOLID)
 bool intersectFaces(CurveVectorR curveVector, const PK_FACE_t face1Tag, const PK_FACE_t face2Tag, PK_FACE_intersect_face_o_t const& options)
     {
     int vectorCount = 0;
@@ -2406,6 +2407,7 @@ CurveVectorPtr intersectSheets(const PK_ENTITY_t sheet1Tag, const PK_ENTITY_t sh
 
     return vector;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Elonas.Seviakovas 07/19
