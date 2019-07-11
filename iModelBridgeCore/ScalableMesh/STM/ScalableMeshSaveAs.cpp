@@ -377,15 +377,20 @@ StatusInt Publish3DTiles(SMMeshIndex<DPoint3d,DRange3d>* index, const WString& p
     destinationGCS->InitFromEPSGCode(&warning, &warningMsg, 4326); // We do not care about warnings. This GCS exists in the dictionary
 
     auto ecefTrans = Transform::FromIdentity();
+    Transform toMeterTransform = Transform::FromIdentity();
     if(sourceGCS.IsValid())
         {
+        GeoCoords::Unit unit(GeoCoords::GetUnitFor(*sourceGCS));
+
+        toMeterTransform = Transform::FromRowValues(unit.GetRatioToBase(), 0, 0, 0.0,
+                                                    0, unit.GetRatioToBase(), 0, 0.0,
+                                                    0, 0, unit.GetRatioToBase(), 0.0);
+
         destinationGCS->SetVerticalDatumCode(sourceGCS->GetVerticalDatumCode());
 
 
         DRange3d range = index->GetContentExtent();
         DPoint3d origin = DPoint3d::FromInterpolate(range.low, .5, range.high);
-        //origin.z = 0; // always use ground plane
-
 
         GeoPoint originLatLong, yLatLong, tempLatLong;
         sourceGCS->LatLongFromCartesian(originLatLong, origin);
@@ -400,21 +405,18 @@ StatusInt Publish3DTiles(SMMeshIndex<DPoint3d,DRange3d>* index, const WString& p
         destinationGCS->XYZFromLatLong(ecefOrigin, originLatLong);
         destinationGCS->XYZFromLatLong(ecefY, yLatLong);
 
-        //ecefY = DPoint3d::FromSumOf(ecefOrigin, DPoint3d::From(0.0, 10.0, 0.0));
-
         RotMatrix rMatrix = RotMatrix::FromIdentity();
         DVec3d zVector, yVector;
         zVector.Normalize((DVec3dCR)ecefOrigin);
         yVector.NormalizedDifference(ecefY, ecefOrigin);
-
-        double product = yVector.x*zVector.x + yVector.y*zVector.y + yVector.z*zVector.z;
-        product;
 
         rMatrix.SetColumn(yVector, 1);
         rMatrix.SetColumn(zVector, 2);
         rMatrix.SquareAndNormalizeColumns(rMatrix, 1, 2);
 
         ecefTrans = Transform::From(rMatrix, ecefOrigin);
+
+        toMeterTransform.Multiply(origin);
 
         auto dbToTile = Transform::From(DPoint3d::From(-origin.x, -origin.y, -origin.z));
         ecefTrans = Transform::FromProduct(ecefTrans, dbToTile);
@@ -436,6 +438,7 @@ StatusInt Publish3DTiles(SMMeshIndex<DPoint3d,DRange3d>* index, const WString& p
     strategy->SetOldMasterHeader(oldMasterHeader);
     strategy->SetClipInfo(coverageID, isClipBoundary);
     //strategy->SetSourceAndDestinationGCS(sourceGCS, destinationGCS);
+    strategy->SetTransform(toMeterTransform);
     strategy->SetRootTransform(ecefTrans);
     strategy->AddGroup(rootNodeGroup.get());
     strategy->SetPublisherInfo(ScalableMeshModuleInfo());
@@ -485,7 +488,7 @@ StatusInt Publish3DTiles(SMMeshIndex<DPoint3d,DRange3d>* index, const WString& p
 
     SMSAVEAS_LOG.debug("Publishing nodes...");
 
-    Publish3DTile(nodeP, pDataStore, Transform::FromIdentity(), clips, coverageID, isClipBoundary, nullptr/*sourceGCS*/, nullptr/*destinationGCS*/, progress, outputTexture);
+    Publish3DTile(nodeP, pDataStore, toMeterTransform, clips, coverageID, isClipBoundary, nullptr/*sourceGCS*/, nullptr/*destinationGCS*/, progress, outputTexture);
 
     if (progress != nullptr) progress->Progress() = 1.0f;
 
