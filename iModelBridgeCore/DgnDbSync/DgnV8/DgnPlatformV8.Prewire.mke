@@ -343,8 +343,8 @@ $(modifiedHeadersOutputBaseDir).stamp : $[@wildcard $(DgnV8Sdk)PublicAPI/*.h]
     %endif
     !~@mkdir ${modifiedHeadersOutputBaseDir}
     !~@mkdir $(o)
-    ModifyIncludes.py $(PUBLISH_VERBOSE) -o${modifiedHeadersOutputBaseDir} -d$(DgnV8Sdk)PublicAPI $(cleanopt) --includeDirPrefix=$(includeDirPrefix) --symbolPrefix="DGNV8" --symbolsToPrefix=$(o)symbolsToPrefix
-    ModifyIncludes.py $(PUBLISH_VERBOSE) -o${modifiedHeadersOutputBaseDir} -d$(DgnV8Sdk)VendorAPI $(cleanopt) --includeDirPrefix=$(includeDirPrefix) --symbolPrefix="DGNV8" --symbolsToPrefix=$(o)symbolsToPrefix    
+    python $(SrcRoot)bsicommon/build/ModifyIncludes.py $(PUBLISH_VERBOSE) -o${modifiedHeadersOutputBaseDir} -d$(DgnV8Sdk)PublicAPI $(cleanopt) --includeDirPrefix=$(includeDirPrefix) --symbolPrefix="DGNV8" --symbolsToPrefix=$(o)symbolsToPrefix
+    python $(SrcRoot)bsicommon/build/ModifyIncludes.py $(PUBLISH_VERBOSE) -o${modifiedHeadersOutputBaseDir} -d$(DgnV8Sdk)VendorAPI $(cleanopt) --includeDirPrefix=$(includeDirPrefix) --symbolPrefix="DGNV8" --symbolsToPrefix=$(o)symbolsToPrefix    
     >$(o)replacements
 \"Bentley.h\"!<VersionedDgnV8Api\/Bentley\/Bentley.h>
 \"BeAssert.h\"!<VersionedDgnV8Api\/Bentley\/BeAssert.h>
