@@ -776,7 +776,8 @@ TEST_F(DgnElementTests, GetSetAutoHandledProperties)
         elementId = persistentEl->GetElementId();
         m_db->SaveChanges();
         }
-    // Before updatation of element check what stored in DB
+
+    // Before updating the element check what is stored in DB
     BeFileName fileName = m_db->GetFileName();
     m_db->CloseDb();
     m_db = nullptr;
@@ -1289,7 +1290,7 @@ TEST_F(DgnElementTests, GetSetAutoHandledStructArrayProperties)
     m_db->SaveChanges();
     }
 
-    // Before updatation of element check what stored in DB
+    // Before updating the element check what is stored in DB
     BeFileName fileName = m_db->GetFileName();
     m_db->CloseDb();
     m_db = nullptr;
@@ -2626,6 +2627,213 @@ TEST_F(DgnElementTests, RelatedElementFromJson)
         EXPECT_EQ(expectedRelClassId, related.m_relClassId);
         }
 
+    m_db->CloseDb();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Caleb.Shafer      07/2019
+//---------------------------------------------------------------------------------------
+TEST_F(DgnElementTests, ToJson)
+{
+    Utf8String validJsonString(R"json({
+  "arrayOfStructs": [
+    {
+      "city": {
+        "country": "US",
+        "name": "Exton",
+        "state": "PA",
+        "zip": 19341.0
+      },
+      "street": "690 Pennsylvania Drive"
+    },
+    {
+      "city": {
+        "country": "US",
+        "name": "Philadelphia",
+        "state": "PA",
+        "zip": 19102.0
+      },
+      "street": "1601 Cherry Street"
+    }
+  ],
+  "b": false,
+  "category": "0x12",
+  "classFullName": "DgnPlatformTest:TestElementWithNoHandler",
+  "code": {
+    "scope": "0x1",
+    "spec": "0x1",
+    "value": ""
+  },
+  "d": 3.14,
+  "dt": "2018-02-04T00:00:00.000",
+  "dtUtc": "2018-02-05T00:00:00.000Z",
+  "i": 50.0,
+  "iGeom": {
+    "lineSegment": [
+      [
+        -21908.999,
+        4111.625,
+        0.0
+      ],
+      [
+        -22956.749,
+        4111.625,
+        0.0
+      ]
+    ]
+  },
+  "id": "0x14",
+  "l": 100.0,
+  "model": "0x11",
+  "p2d": {
+    "x": 3.0,
+    "y": 5.0
+  },
+  "p3d": {
+    "x": 3.0,
+    "y": 5.0,
+    "z": 7.0
+  },
+  "placement": {
+    "angles": null,
+    "bbox": {
+      "high": [
+        -1.7976931348623157e+308,
+        -1.7976931348623157e+308,
+        -1.7976931348623157e+308
+      ],
+      "low": [
+        1.7976931348623157e+308,
+        1.7976931348623157e+308,
+        1.7976931348623157e+308
+      ]
+    },
+    "origin": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "s": "test string"
+})json");
+
+    Json::Value validJson;
+    EXPECT_TRUE(Json::Reader::Parse(validJsonString, validJson));
+
+    SetupSeedProject();
+
+    DgnElementId elementId;
+    DgnClassId classId(m_db->Schemas().GetClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME));
+    TestElement::CreateParams params(*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d(), DgnCode());
+
+    bool const b = false;
+    double const d = 3.14;
+    int32_t const i = 50;
+    int64_t const l = 100;
+    DateTime const dt(2018, 2, 4);
+    DateTime const dtUtc(2018, 2, 5);
+    auto const p2d = DPoint2d::From(3, 5);
+    auto const p3d = DPoint3d::From(3, 5, 7);
+    uint32_t iArrayOfStructs;
+
+    { // Create Element
+    TestElement el(params);
+
+    Json::Value lineSegmentObj(Json::ValueType::objectValue);
+    Json::Value lineSegments(Json::ValueType::arrayValue);
+    Json::Value lineSegment(Json::ValueType::arrayValue);
+    lineSegment[0u] = -21908.999;
+    lineSegment[1u] = 4111.625;
+    lineSegment[2u] = 0.0;
+
+    lineSegments[0u] = lineSegment;
+
+    Json::Value lineSegment2(Json::ValueType::arrayValue);
+    lineSegment2[0u] = -22956.749;
+    lineSegment2[1u] = 4111.625;
+    lineSegment2[2u] = 0.0;
+
+    lineSegments[1u] = lineSegment2;
+
+    lineSegmentObj["lineSegment"] = lineSegments;
+
+    IGeometryPtr geom = ECN::ECJsonUtilities::JsonToIGeometry(lineSegmentObj);
+
+    EXPECT_EQ(DgnDbStatus::Success, el.SetPropertyValue("b", b));
+    EXPECT_EQ(DgnDbStatus::Success, el.SetPropertyValue("d", d));
+    EXPECT_EQ(DgnDbStatus::Success, el.SetPropertyValue("dt", dt));
+    EXPECT_EQ(DgnDbStatus::Success, el.SetPropertyValue("dtUtc", dtUtc));
+    EXPECT_EQ(DgnDbStatus::Success, el.SetPropertyValue("i", i));
+    ECN::ECValue val;
+    val.SetIGeometry(*geom);
+    EXPECT_EQ(DgnDbStatus::Success, el.SetPropertyValue("IGeom", val));
+    EXPECT_EQ(DgnDbStatus::Success, el.SetPropertyValue("l", l));
+    EXPECT_EQ(DgnDbStatus::Success, el.SetPropertyValue("s", "test string"));
+    EXPECT_EQ(DgnDbStatus::Success, el.SetPropertyValue("p2d", p2d));
+    EXPECT_EQ(DgnDbStatus::Success, el.SetPropertyValue("p3d", p3d));
+
+    ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyIndex(iArrayOfStructs, "ArrayOfStructs"));
+
+    EXPECT_EQ(DgnDbStatus::Success, el.InsertPropertyArrayItems(iArrayOfStructs, 0, 4));
+
+    ECN::ECClassCP locationStruct = m_db->Schemas().GetClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_LOCATION_STRUCT_CLASS_NAME);
+    ASSERT_TRUE(nullptr != locationStruct);
+    ECN::StandaloneECEnablerPtr locationEnabler = locationStruct->GetDefaultStandaloneEnabler();
+
+    ECN::IECInstancePtr extonLocInstance = locationEnabler->CreateInstance().get();
+    extonLocInstance->SetValue("Street", ECN::ECValue("690 Pennsylvania Drive"));
+    extonLocInstance->SetValue("City.Name", ECN::ECValue("Exton"));
+    extonLocInstance->SetValue("City.State", ECN::ECValue("PA"));
+    extonLocInstance->SetValue("City.Country", ECN::ECValue("US"));
+    extonLocInstance->SetValue("City.Zip", ECN::ECValue(19341));
+
+    ECN::ECValue extonLocValue;
+    extonLocValue.SetStruct(extonLocInstance.get());
+    EXPECT_EQ(DgnDbStatus::Success, el.SetPropertyValue("ArrayOfStructs", extonLocValue, PropertyArrayIndex(1)));
+
+    ECN::IECInstancePtr phillyLocInstance = locationEnabler->CreateInstance().get();
+    phillyLocInstance->SetValue("Street", ECN::ECValue("1601 Cherry Street"));
+    phillyLocInstance->SetValue("City.Name", ECN::ECValue("Philadelphia"));
+    phillyLocInstance->SetValue("City.State", ECN::ECValue("PA"));
+    phillyLocInstance->SetValue("City.Country", ECN::ECValue("US"));
+    phillyLocInstance->SetValue("City.Zip", ECN::ECValue(19102));
+
+    ECN::ECValue phillyLocValue;
+    phillyLocValue.SetStruct(phillyLocInstance.get());
+    EXPECT_EQ(DgnDbStatus::Success, el.SetPropertyValue("ArrayOfStructs", phillyLocValue, PropertyArrayIndex(2)));
+
+    // Check that we see the stored value in memory in the correct JSON format.
+    //   Needed because we handle in-memory element data using ECJsonUtilities and from Db with JsonECSqlSelectAdapter for auto-handled properties.
+    // TODO: Fix ECJsonUtilities
+    // EXPECT_STREQ(el.ToJson().ToString().c_str(), validJson.ToString().c_str()); // Uses ECJsonUtilities
+
+    // Insert the element
+    DgnDbStatus stat;
+    DgnElementCPtr persistentEl = el.Insert(&stat);
+    ASSERT_EQ(DgnDbStatus::Success, stat);
+    ASSERT_TRUE(persistentEl.IsValid());
+
+    // Check that we see the stored value in memory in the correct JSON format.
+    //   Needed because we handle in-memory element data using ECJsonUtilities and from Db with JsonECSqlSelectAdapter for auto-handled properties.
+    EXPECT_STREQ(persistentEl->ToJson().ToString().c_str(), validJson.ToString().c_str()); // Uses JsonECSqlSelectAdapter
+
+    // persist the element into the db
+    elementId = persistentEl->GetElementId();
+    m_db->SaveChanges();
+    }
+
+    // Before updating the element check what is stored in DB
+    BeFileName fileName = m_db->GetFileName();
+    m_db->CloseDb();
+    m_db = nullptr;
+    OpenDb(m_db, fileName, Db::OpenMode::Readonly, true);
+
+    TestElementCPtr element = m_db->Elements().Get<TestElement>(elementId);
+    ASSERT_TRUE(element.IsValid());
+
+    // Check that we see the stored value in memory in the correct JSON format.
+    //   Needed because we handle in-memory element data using ECJsonUtilities and from Db with JsonECSqlSelectAdapter for auto-handled properties.
+    EXPECT_STREQ(element->ToJson().ToString().c_str(), validJson.ToString().c_str()); // Uses JsonECSqlSelectAdapter
     m_db->CloseDb();
     }
 

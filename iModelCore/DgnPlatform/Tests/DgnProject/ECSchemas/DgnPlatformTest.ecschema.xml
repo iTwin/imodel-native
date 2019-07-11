@@ -42,6 +42,7 @@
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="i" typeName="int"/>
+        <ECProperty propertyName="IGeom" typeName="Bentley.Geometry.Common.IGeometry"/>
         <ECProperty propertyName="l" typeName="long"/>
         <ECProperty propertyName="s" typeName="string"/>
         <ECProperty propertyName="p2d" typeName="point2d"/>
@@ -150,14 +151,14 @@
         </ECCustomAttributes>
         <ECProperty propertyName="TestUniqueAspectProperty" typeName="string"/>
         <ECProperty propertyName="Length" typeName="double"/>
-		<ECProperty propertyName="test1" typeName="double"/>
-		<ECProperty propertyName="test2" typeName="string"/>
-		<ECProperty propertyName="test3" typeName="double"/>
-		<ECProperty propertyName="test4" typeName="string"/>
-		<ECProperty propertyName="test5" typeName="double"/>
-		<ECProperty propertyName="test6" typeName="string"/>
-		<ECProperty propertyName="test7" typeName="double"/>
-		<ECProperty propertyName="test8" typeName="string"/>
+        <ECProperty propertyName="test1" typeName="double"/>
+        <ECProperty propertyName="test2" typeName="string"/>
+        <ECProperty propertyName="test3" typeName="double"/>
+        <ECProperty propertyName="test4" typeName="string"/>
+        <ECProperty propertyName="test5" typeName="double"/>
+        <ECProperty propertyName="test6" typeName="string"/>
+        <ECProperty propertyName="test7" typeName="double"/>
+        <ECProperty propertyName="test8" typeName="string"/>
     </ECEntityClass>
     <ECEntityClass typeName="TestMultiAspect">
         <BaseClass>bis:ElementMultiAspect</BaseClass>
