@@ -175,6 +175,31 @@ TEST_F(AsyncTaskTests, Then_MultipleChildrenAdded_ThenExecutedAfterAllChildrenTa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Benediktas.Lipnickas               03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(AsyncTaskTests, WhenAll_MultipleTasksUsed_ThenExecutedAfterAllTasksCompleted)
+    {
+    BeAtomic<int> tasksCompleted(0);
+
+    auto task1 = std::make_shared<PackagedAsyncTask<void>>([&] { tasksCompleted++; });
+    auto task2 = std::make_shared<PackagedAsyncTask<void>>([&] { tasksCompleted++; });
+
+    bool thenExecuted = false;
+    auto lastTask = AsyncTask::WhenAll(task1, task2)->Then([&]
+        {
+        EXPECT_TRUE(tasksCompleted == 2);
+        thenExecuted = true;
+        });
+
+    task1->Execute();
+    task2->Execute();
+
+    lastTask->Wait();
+
+    EXPECT_TRUE(thenExecuted);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas               03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(AsyncTaskTests, WhenAll_MultipleTasksAdded_ThenExecutedAfterAllTasksCompleted)
     {
     BeAtomic<int> tasksCompleted (0);
@@ -309,35 +334,25 @@ TEST_F(AsyncTaskTests, Push_GetCount_Pop)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    julius.cepukenas               11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(AsyncTaskTests, Performance_MultipleTasks_AllExecuted)
+TEST_F(AsyncTaskTests, Then_MultipleTasks_AllExecuted)
     {
-    BeTimePoint start, end;
-    BeDuration::Seconds seconds(2);
-    start = BeTimePoint::Now();
-    end = BeTimePoint::FromNow(BeDuration(seconds));
-    // int terminate = 1;
-    while(start < end)
+    bool taskExecuted = false;
+    bool thenExecuted = false;
+
+    auto task = std::make_shared<PackagedAsyncTask<void>>([&]
         {
-        bool taskExecuted = false;
-        bool thenExecuted = false;
+        taskExecuted = true;
+        });
 
-        auto task = std::make_shared<PackagedAsyncTask<void>>([&]
-            {
-            taskExecuted = true;
-            });
+    auto task2 = task->Then([&]
+        {
+        thenExecuted = true;
+        });
 
-        auto task2 = task->Then([&]
-            {
-            thenExecuted = true;
-            });
+    task->Execute();
 
-        task->Execute();
+    task2->Wait();
 
-        task2->Wait();
-
-        ASSERT_TRUE(taskExecuted);
-        ASSERT_TRUE(thenExecuted);
-
-        start = BeTimePoint::Now();
-        }
+    ASSERT_TRUE(taskExecuted);
+    ASSERT_TRUE(thenExecuted);
     }
