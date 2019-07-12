@@ -1223,6 +1223,10 @@ DgnDbStatus DgnModel::Insert()
         return DgnDbStatus::BadElement;
         }
 
+    DgnElementCPtr modeledElement = GetDgnDb().Elements().GetElement(m_modeledElementId);
+    if (!modeledElement.IsValid())
+        return DgnDbStatus::BadElement;
+
     DgnDbStatus status = _OnInsert();
     if (DgnDbStatus::Success != status)
         return status;
@@ -1230,13 +1234,10 @@ DgnDbStatus DgnModel::Insert()
     // A DgnModel's ID has the same value as the DgnElement that it is modeling
     m_modelId = DgnModelId(m_modeledElementId.GetValue());
 
-    // give the element being modeled a chance to reject the insert
-    DgnElementCPtr modeledElement = GetDgnDb().Elements().GetElement(GetModeledElementId());
-    BeAssert(modeledElement.IsValid());
-
     BeAssert(m_parentModelId == modeledElement->GetModelId()); // alert caller that we're going to change this value
     m_parentModelId = modeledElement->GetModelId(); // this is redundant data, make sure it's right
 
+    // give the element being modeled a chance to reject the insert
     if (modeledElement.IsValid() && (DgnDbStatus::Success != (status=modeledElement->_OnSubModelInsert(*this))))
         return status;
 
