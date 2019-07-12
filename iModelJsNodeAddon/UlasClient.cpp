@@ -15,15 +15,19 @@
 
 namespace Licensing
 {
-typedef std::shared_ptr<struct SaasClient> SaasClientPtr;
-
 struct SaasClient
     {
-    SaasClient() {}
-    static SaasClientPtr Create() { return std::make_shared<SaasClient>(); }
-    folly::Future<BentleyStatus> TrackUsage(Utf8StringCR accessToken, BeVersionCR appVersion, Utf8StringCR projectId)
+    SaasClient(int productId = -1) {}
+    static SaasClientPtr Create(int productId = -1) { return std::make_shared<SaasClient>(); }
+    folly::Future<BentleyStatus> TrackUsage(Utf8StringCR accessToken, BeVersionCR appVersion, Utf8StringCR projectId, Licensing::AuthType authType = Licensing::AuthType::OIDC, int productId = -1, Utf8StringCR deviceId = "", Licensing::UsageType usageType = Licensing::UsageType::Production, Utf8StringCR correlationId = "") const
         {
-        IModelJsNative::JsInterop::GetLogger().warning("Usage tracking not supported yet on Linux and MacOS.");
+        IModelJsNative::JsInterop::GetLogger().warning("Usage tracking not supported yet on MacOS.");
+        return folly::makeFuture(ERROR);
+        }
+
+    folly::Future<BentleyStatus> MarkFeature(Utf8StringCR accessToken, Licensing::FeatureEvent featureEvent, Licensing::AuthType authType = Licensing::AuthType::OIDC, int productId = -1, Utf8StringCR deviceId = "", Licensing::UsageType usageType = Licensing::UsageType::Production, Utf8StringCR correlationId = "") const
+        {
+        IModelJsNative::JsInterop::GetLogger().warning("Feature tracking not supported yet on MacOS.");
         return folly::makeFuture(ERROR);
         }
     };
@@ -85,7 +89,7 @@ void UlasClient::Initialize(Region region)
     WebServices::UrlProvider::Initialize(env, WebServices::UrlProvider::DefaultTimeout, &m_localState);
     JsInterop::GetLogger().infov("Initialized iModel.js addon to region '%s'.", WebServices::UrlProvider::ToEnvironmentString(env).c_str());
 
-    m_client = Licensing::SaasClient::Create();
+    m_client = Licensing::SaasClient::Create(2686);
     BeAssert(m_client != nullptr);
     }
 
@@ -101,7 +105,15 @@ void UlasClient::Uninitialize()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle             11/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus UlasClient::TrackUsage(Utf8StringCR accessToken, Utf8StringCR appVersionStr, Utf8StringCR projectId) const
+BentleyStatus UlasClient::TrackUsage(
+    Utf8StringCR accessToken,
+    BeVersionCR appVersion,
+    Utf8StringCR projectId,
+    Licensing::AuthType authType,
+    int productId,
+    Utf8StringCR deviceId,
+    Licensing::UsageType usageType,
+    Utf8StringCR correlationId) const
     {
     if (m_client == nullptr)
         {
@@ -111,18 +123,38 @@ BentleyStatus UlasClient::TrackUsage(Utf8StringCR accessToken, Utf8StringCR appV
 
     if (projectId.empty())
         {
-        JsInterop::GetLogger().error("Failed to set-up iModel.js usage tracking. ProjectId was not specified when opening the iModel.");
+        JsInterop::GetLogger().error("Failed to track iModel.js usage: projectId was not specified.");
         return ERROR;
         }
 
-    BeVersion appVersion(appVersionStr.c_str());
     if (appVersion.IsEmpty())
         {
-        JsInterop::GetLogger().error("Failed to set-up iModel.js usage tracking. Application version was not specified when opening the iModel or an invalid version string was passed.");
+        JsInterop::GetLogger().error("Failed to track iModel.js usage: application version was not specified or an invalid version string was passed.");
         return ERROR;
         }
 
-    return m_client->TrackUsage(accessToken, appVersion, projectId).onError([] (void* e) { return ERROR; }).get();
+    return m_client->TrackUsage(accessToken, appVersion, projectId, authType, productId, deviceId, usageType, correlationId).onError([] (void* e) { return ERROR; }).get();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Evan.Preslar                     05/2019
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus UlasClient::MarkFeature(
+    Utf8StringCR accessToken,
+    Licensing::FeatureEvent featureEvent,
+    Licensing::AuthType authType,
+    int productId,
+    Utf8StringCR deviceId,
+    Licensing::UsageType usageType,
+    Utf8StringCR correlationId) const
+    {
+    if (m_client == nullptr)
+        {
+        BeAssert(false && "Must call UlasClient::Initialize first.");
+        return ERROR;
+        }
+
+    return m_client->MarkFeature(accessToken, featureEvent, authType, productId, deviceId, usageType, correlationId).onError([] (void* e) { return ERROR; }).get();
     }
 
 //-------------------------------------------------------------------------------------

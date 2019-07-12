@@ -13,13 +13,41 @@
 #include <BeJsonCpp/BeJsonUtilities.h>
 
 #include <Bentley/BentleyConfig.h>
+
 // WIP_LICENSING_FOR_MACOS
 #if !defined(BENTLEYCONFIG_OS_APPLE_MACOS)
 #include <Licensing/SaasClient.h>
+#include <Licensing/Utils/FeatureEvent.h>
+#include <Licensing/AuthType.h>
+#include <Licensing/UsageType.h>
 #else
 namespace Licensing
 {
 typedef std::shared_ptr<struct SaasClient> SaasClientPtr;
+
+struct FeatureEvent 
+    {
+    FeatureEvent(Utf8StringCR featureId, BeVersionCR version) {}
+    FeatureEvent(Utf8StringCR featureId, BeVersionCR version, Utf8StringCR projectId) {}
+    };
+
+enum class AuthType
+    {
+    None = 0,
+    SAML = 1,
+    OIDC = 2
+    };
+
+enum class UsageType
+    {
+    Production = 0,
+    Trial = 1,
+    Beta = 2,
+    HomeUse = 3,
+    PreActivation = 4,
+    Evaluation = 5,
+    Academic = 6
+    };
 };
 #endif
 
@@ -55,6 +83,26 @@ namespace IModelJsNative
 
         void Initialize(Region);
         void Uninitialize();
-        BentleyStatus TrackUsage(Utf8StringCR accessToken, Utf8StringCR appVersion, Utf8StringCR projectId) const;
+
+        BentleyStatus TrackUsage(
+            Utf8StringCR accessToken,
+            BeVersionCR appVersion,
+            Utf8StringCR projectId,
+            Licensing::AuthType authType = Licensing::AuthType::OIDC,
+            int productId = -1,
+            Utf8StringCR deviceId = "",
+            Licensing::UsageType usageType = Licensing::UsageType::Production,
+            Utf8StringCR correlationId = ""
+        ) const;
+
+        BentleyStatus MarkFeature(
+            Utf8StringCR accessToken, 
+            Licensing::FeatureEvent featureEvent,
+            Licensing::AuthType authType = Licensing::AuthType::OIDC,
+            int productId = -1,
+            Utf8StringCR deviceId = "",
+            Licensing::UsageType usageType = Licensing::UsageType::Production,
+            Utf8StringCR correlationId = ""
+        ) const;
         };
     };

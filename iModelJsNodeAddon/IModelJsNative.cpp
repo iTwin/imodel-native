@@ -4621,6 +4621,95 @@ struct SnapRequest : BeObjectWrap<SnapRequest>
 };
 
 //=======================================================================================
+// @bsistruct                                     Evan.Preslar                    05/2019
+//=======================================================================================
+struct NativeUlasClient : BeObjectWrap<NativeUlasClient>
+    {
+    private:
+        //---------------------------------------------------------------------------------------
+        // @bsimethod                                   Krischan.Eberle                    12/18
+        //+---------------+---------------+---------------+---------------+---------------+------
+        static void InitializeRegion(Napi::CallbackInfo const& info)
+            {
+            Region region = Region::Prod;
+            if (info.Length() != 1 || !info[0].IsNumber())
+                JsInterop::GetLogger().error("Invalid region. Using PROD as fallback.");
+            else
+                region = (Region) (int) info[0].As<Napi::Number>().Int32Value();
+
+            UlasClient::Get().Initialize(region);
+            }
+
+        //---------------------------------------------------------------------------------------
+        // @bsimethod                                     Evan.Preslar                    05/2019
+        //+---------------+---------------+---------------+---------------+---------------+------
+        static Napi::Value TrackUsage(Napi::CallbackInfo const& info)
+            {
+            REQUIRE_ARGUMENT_STRING(0, accessToken, Napi::Number::New(info.Env(), (int) BentleyStatus::ERROR));
+            REQUIRE_ARGUMENT_STRING(1, appVersionStr, Napi::Number::New(info.Env(), (int) BentleyStatus::ERROR));
+            BeVersion appVersion = BeVersion(appVersionStr.c_str());
+            REQUIRE_ARGUMENT_STRING(2, projectId, Napi::Number::New(info.Env(), (int) BentleyStatus::ERROR));
+            OPTIONAL_ARGUMENT_INTEGER(3, authType, (int) Licensing::AuthType::OIDC, Napi::Number::New(info.Env(), (int) BentleyStatus::ERROR));
+            OPTIONAL_ARGUMENT_INTEGER(4, productId, -1, Napi::Number::New(info.Env(), (int) BentleyStatus::ERROR));
+            OPTIONAL_ARGUMENT_STRING(5, deviceId, Napi::Number::New(info.Env(), (int) BentleyStatus::ERROR));
+            OPTIONAL_ARGUMENT_INTEGER(6, usageType, (int) Licensing::UsageType::Production, Napi::Number::New(info.Env(), (int) BentleyStatus::ERROR));
+            OPTIONAL_ARGUMENT_STRING(7, correlationId, Napi::Number::New(info.Env(), (int) BentleyStatus::ERROR));
+
+            BentleyStatus status = UlasClient::Get().TrackUsage(accessToken, appVersion, projectId, (Licensing::AuthType) authType, productId, deviceId, (Licensing::UsageType) usageType, correlationId);
+
+            return Napi::Number::New(info.Env(), (int) status);
+            }
+
+        //---------------------------------------------------------------------------------------
+        // @bsimethod                                     Evan.Preslar                    05/2019
+        //+---------------+---------------+---------------+---------------+---------------+------
+        static Napi::Value MarkFeature(Napi::CallbackInfo const& info)
+            {
+            REQUIRE_ARGUMENT_STRING(0, accessToken, Napi::Number::New(info.Env(), (int) BentleyStatus::ERROR));
+
+            REQUIRE_ARGUMENT_ANY_OBJ(1, featureEventObj, Napi::Number::New(info.Env(), (int) BentleyStatus::ERROR));
+            if (!featureEventObj.Has("featureId"))
+                return Napi::Number::New(info.Env(), (int) BentleyStatus::ERROR);
+            Utf8String featureId = featureEventObj.Get("featureId").ToString().Utf8Value().c_str();
+
+            if (!featureEventObj.Has("versionStr"))
+                return Napi::Number::New(info.Env(), (int) BentleyStatus::ERROR);
+            BeVersion appVersion = BeVersion(featureEventObj.Get("versionStr").ToString().Utf8Value().c_str());
+            
+            Licensing::FeatureEvent featureEvent = !featureEventObj.Has("projectId")
+                ? Licensing::FeatureEvent(featureId, appVersion)
+                : Licensing::FeatureEvent(featureId, appVersion, featureEventObj.Get("projectId").ToString().Utf8Value().c_str());
+            
+            OPTIONAL_ARGUMENT_INTEGER(2, authType, (int) Licensing::AuthType::OIDC, Napi::Number::New(info.Env(), (int) BentleyStatus::ERROR));
+            OPTIONAL_ARGUMENT_INTEGER(3, productId, -1, Napi::Number::New(info.Env(), (int) BentleyStatus::ERROR));
+            OPTIONAL_ARGUMENT_STRING(4, deviceId, Napi::Number::New(info.Env(), (int) BentleyStatus::ERROR));
+            OPTIONAL_ARGUMENT_INTEGER(5, usageType, (int) Licensing::UsageType::Production, Napi::Number::New(info.Env(), (int) BentleyStatus::ERROR));
+            OPTIONAL_ARGUMENT_STRING(6, correlationId, Napi::Number::New(info.Env(), (int) BentleyStatus::ERROR));
+
+            BentleyStatus status = UlasClient::Get().MarkFeature(accessToken, featureEvent, (Licensing::AuthType) authType, productId, deviceId, (Licensing::UsageType) usageType, correlationId);
+
+            return Napi::Number::New(info.Env(), (int) status);  
+            }
+    public:
+        NativeUlasClient(Napi::CallbackInfo const &info) : BeObjectWrap<NativeUlasClient>(info) {}
+        ~NativeUlasClient() {SetInDestructor();}
+
+        //---------------------------------------------------------------------------------------
+        // @bsimethod                                     Evan.Preslar                    05/2019
+        //+---------------+---------------+---------------+---------------+---------------+------
+        static void Init(Napi::Env& env, Napi::Object exports)
+        {
+        Napi::HandleScope scope(env);
+        Napi::Function t = DefineClass(env, "NativeUlasClient", {
+            StaticMethod("initializeRegion", &NativeUlasClient::InitializeRegion),
+            StaticMethod("trackUsage", &NativeUlasClient::TrackUsage),
+            StaticMethod("markFeature", &NativeUlasClient::MarkFeature),
+        });
+        exports.Set("NativeUlasClient", t);
+        }
+    };
+
+//=======================================================================================
 // @bsistruct                                                   Paul.Connelly   09/18
 //=======================================================================================
 struct TileWorker : Napi::AsyncWorker
@@ -5469,20 +5558,6 @@ static void Init(Napi::Env env, Napi::Object exports)
     }
 };
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                    12/18
-//+---------------+---------------+---------------+---------------+---------------+------
-static void initializeRegion(Napi::CallbackInfo const& info)
-    {
-    Region region = Region::Prod;
-    if (info.Length() != 1 || !info[0].IsNumber())
-        JsInterop::GetLogger().error("Invalid region. Using PROD as fallback.");
-    else
-        region = (Region) (int) info[0].As<Napi::Number>().Int32Value();
-
-    UlasClient::Get().Initialize(region);
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/19
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -6111,6 +6186,7 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports)
     NativeECPresentationManager::Init(env, exports);
     NativeECSchemaXmlContext::Init(env, exports);
     SnapRequest::Init(env, exports);
+    NativeUlasClient::Init(env, exports);
     DisableNativeAssertions::Init(env, exports);
     NativeImportContext::Init(env, exports);
     NativeDevTools::Init(env, exports);
@@ -6123,7 +6199,6 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports)
     exports.DefineProperties(
         {
         Napi::PropertyDescriptor::Value("version", Napi::String::New(env, PACKAGE_VERSION), PROPERTY_ATTRIBUTES),
-        Napi::PropertyDescriptor::Function(env, exports, "initializeRegion", &initializeRegion),
         Napi::PropertyDescriptor::Accessor(env, exports, "logger", &getLogger, &setLogger),
         Napi::PropertyDescriptor::Function(env, exports, "setUseTileCache", &setUseTileCache),
         Napi::PropertyDescriptor::Function(env, exports, "setCrashReporting", &setCrashReporting),
