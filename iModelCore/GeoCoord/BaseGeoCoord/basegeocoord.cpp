@@ -1515,7 +1515,18 @@ StatusInt GetHorizontalDatumToCoordSys (WStringR wkt, BaseGCSR coordinateSystem)
                             {
                             // This case can occur when a datum has a null transformation to WGS84 but has not the same shape for the ellipsoid (example: SphereWGS84)
                             // In this case we simply check and go on
-                            if (!(distanceSame(deltaX, 0.0) && distanceSame(deltaY, 0.0) && distanceSame(deltaZ, 0.0) &&
+                            // It can also occur when the seleted datum is deprecated in which case we take the newly found one.
+                            if (finalNameDeprecated)
+                                {
+                                // If the previously selected datum was deprecated and the TOWGS84 are different then we keep the one we have found.
+                                finalDatumName = paramDatum;
+                                int foundIndex1 = FindDatumIndex(finalDatumName.c_str());
+
+                                if (foundIndex1 >= 0)
+                                    coordinateSystem.SetDatumCode(foundIndex1);
+                                }
+
+                            else if (!(distanceSame(deltaX, 0.0) && distanceSame(deltaY, 0.0) && distanceSame(deltaZ, 0.0) &&
                                 doubleSame(rotX, 0.0) && doubleSame(rotY, 0.0) && doubleSame(rotZ, 0.0) && doubleSame(scalePPM, 0.0)))
                                 {
                                 // If they are still different then it may be because the found datum is based on an eveloved method
@@ -1560,10 +1571,10 @@ StatusInt GetHorizontalDatumToCoordSys (WStringR wkt, BaseGCSR coordinateSystem)
             if (!FindDatumFromTransformationParams(paramDatum, coordinateSystem.GetEllipsoidName(), deltaX, deltaY, deltaZ, rotX, rotY, rotZ, scalePPM))
                 return ERROR;
     
-            int foundIndex = FindDatumIndex(paramDatum.c_str());
+            int foundIndex2 = FindDatumIndex(paramDatum.c_str());
     
-            if (foundIndex >= 0)
-                coordinateSystem.SetDatumCode(foundIndex);
+            if (foundIndex2 >= 0)
+                coordinateSystem.SetDatumCode(foundIndex2);
             else
                 return ERROR;
     
