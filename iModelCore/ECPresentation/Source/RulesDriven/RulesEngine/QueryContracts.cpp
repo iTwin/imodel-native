@@ -159,7 +159,7 @@ PresentationQueryContractFieldPtr PresentationQueryContract::CreateRelatedInstan
 +---------------+---------------+---------------+---------------+---------------+------*/
 PresentationQueryContractFieldPtr PresentationQueryContract::CreateDisplayLabelField(Utf8CP name, PresentationQueryContractFieldCR classIdField,
     PresentationQueryContractFieldCR instanceIdField, ECClassCP ecClass, bvector<RelatedClass> const& relatedClasses,
-    bvector<InstanceLabelOverrideValueSpecification const*> const& labelOverrideValueSpecs) 
+    bvector<InstanceLabelOverrideValueSpecification const*> const& labelOverrideValueSpecs)
     {
     ECPropertyCP labelProperty = nullptr != ecClass ? ecClass->GetInstanceLabelProperty() : nullptr;
     Utf8CP labelClause = nullptr != labelProperty ? labelProperty->GetName().c_str() : "''";
@@ -262,7 +262,7 @@ template<typename... Args> static bvector<Utf8String> CreateList(Args&&... args)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename... Args> 
+template<typename... Args>
 static bvector<RefCountedPtr<PresentationQueryContractField const>> CreateFieldsList(Args&&... args)
     {
     bvector<Utf8String> list;
@@ -431,10 +431,10 @@ ECClassGroupingNodesQueryContract::ECClassGroupingNodesQueryContract()
     m_ecClassIdField = PresentationQueryContractSimpleField::Create(ECClassIdFieldName, "ECClassId");
     m_ecInstanceIdField = PresentationQueryContractSimpleField::Create(ECInstanceIdFieldName, "ECInstanceId", true, false, FieldVisibility::Inner);
     m_dummyClassIdField = PresentationQueryContractSimpleField::Create("dummy", "0", false, false, FieldVisibility::Outer);
-    m_displayLabelField = PresentationQueryContractFunctionField::Create(DisplayLabelFieldName, FUNCTION_NAME_GetECClassDisplayLabel, 
+    m_displayLabelField = PresentationQueryContractFunctionField::Create(DisplayLabelFieldName, FUNCTION_NAME_GetECClassDisplayLabel,
         {m_ecClassIdField, PresentationQueryContractSimpleField::Create(nullptr, "COUNT(1)")},
         true, true, FieldVisibility::Outer);
-    m_groupedInstanceIdsField = PresentationQueryContractFunctionField::Create(GroupedInstanceIdsFieldName, 
+    m_groupedInstanceIdsField = PresentationQueryContractFunctionField::Create(GroupedInstanceIdsFieldName,
         FUNCTION_NAME_GetGroupedInstanceKeys, {m_ecClassIdField, m_ecInstanceIdField}, false, true);
     }
 /*---------------------------------------------------------------------------------**//**
@@ -474,7 +474,7 @@ Utf8CP DisplayLabelGroupingNodesQueryContract::GroupedInstanceIdsFieldName = "/G
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-DisplayLabelGroupingNodesQueryContract::DisplayLabelGroupingNodesQueryContract(ECClassCP ecClass, bool includeGroupedInstanceIdsField, bvector<RelatedClass> const& relatedClasses, 
+DisplayLabelGroupingNodesQueryContract::DisplayLabelGroupingNodesQueryContract(ECClassCP ecClass, bool includeGroupedInstanceIdsField, bvector<RelatedClass> const& relatedClasses,
     bvector<InstanceLabelOverrideValueSpecification const*> const& labelOverrideValueSpecs)
     {
     m_ecClassIdField = PresentationQueryContractSimpleField::Create(ECClassIdFieldName, "ECClassId", true, false, FieldVisibility::Inner);
@@ -578,27 +578,27 @@ Utf8CP ECPropertyGroupingNodesQueryContract::GroupedInstanceIdsFieldName = "/Gro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyGroupingNodesQueryContract::ECPropertyGroupingNodesQueryContract(ECClassCR ecClass, ECPropertyCR prop, Utf8String groupingPropertyClassAlias, PropertyGroupCR spec, ECClassCP foreignKeyClass) 
+ECPropertyGroupingNodesQueryContract::ECPropertyGroupingNodesQueryContract(ECClassCR ecClass, ECPropertyCR prop, Utf8String groupingPropertyClassAlias, PropertyGroupCR spec, ECClassCP foreignKeyClass)
     : m_property(prop), m_specification(spec), m_foreignKeyClass(foreignKeyClass), m_groupingPropertyClassAlias(groupingPropertyClassAlias)
     {
     m_ecInstanceIdField = PresentationQueryContractSimpleField::Create(ECInstanceIdFieldName, "ECInstanceId", true, false, FieldVisibility::Inner);
     m_ecClassIdField = PresentationQueryContractSimpleField::Create(ECClassIdFieldName, "ECClassId", true, false, FieldVisibility::Inner);
-    m_ecPropertyClassIdField = PresentationQueryContractSimpleField::Create(ECPropertyClassIdFieldName, 
+    m_ecPropertyClassIdField = PresentationQueryContractSimpleField::Create(ECPropertyClassIdFieldName,
         ecClass.GetId().ToString().c_str(), false);
-    m_ecPropertyNameField = PresentationQueryContractSimpleField::Create(ECPropertyNameFieldName, 
+    m_ecPropertyNameField = PresentationQueryContractSimpleField::Create(ECPropertyNameFieldName,
         Utf8PrintfString("'%s'", m_property.GetName().c_str()).c_str(), false);
-    m_groupingValuesField = PresentationQueryContractDynamicField::Create(GroupingValuesFieldName, 
+    m_groupingValuesField = PresentationQueryContractDynamicField::Create(GroupingValuesFieldName,
         std::bind(&ECPropertyGroupingNodesQueryContract::GetGroupingValuesClause, this, std::placeholders::_1), true, true);
-    m_imageIdField = PresentationQueryContractDynamicField::Create(ImageIdFieldName, 
+    m_imageIdField = PresentationQueryContractDynamicField::Create(ImageIdFieldName,
         std::bind(&ECPropertyGroupingNodesQueryContract::GetImageIdClause, this, std::placeholders::_1), true);
-    m_isRangeField = PresentationQueryContractSimpleField::Create(IsRangeFieldName, spec.GetRanges().empty() ? "false" : "true", false);    
-    m_groupedInstanceIdsField = PresentationQueryContractFunctionField::Create(GroupedInstanceIdsFieldName, FUNCTION_NAME_GetGroupedInstanceKeys, 
+    m_isRangeField = PresentationQueryContractSimpleField::Create(IsRangeFieldName, spec.GetRanges().empty() ? "false" : "true", false);
+    m_groupedInstanceIdsField = PresentationQueryContractFunctionField::Create(GroupedInstanceIdsFieldName, FUNCTION_NAME_GetGroupedInstanceKeys,
         {m_ecClassIdField, m_ecInstanceIdField}, false, true);
     bool groupByValue = (PropertyGroupingValue::PropertyValue == m_specification.GetPropertyGroupingValue());
     if (prop.GetIsPrimitive() && (PRIMITIVETYPE_Point3d == prop.GetAsPrimitiveProperty()->GetType() || PRIMITIVETYPE_Point2d == prop.GetAsPrimitiveProperty()->GetType()))
         {
         m_groupingValueField = PresentationQueryContractDynamicField::Create(GroupingValueFieldName,
-            std::bind(&ECPropertyGroupingNodesQueryContract::GetPropertyValueClause, this, std::placeholders::_1), 
+            std::bind(&ECPropertyGroupingNodesQueryContract::GetPropertyValueClause, this, std::placeholders::_1),
             true, false, groupByValue ? FieldVisibility::Both : FieldVisibility::Inner);
         }
     else
@@ -627,7 +627,7 @@ RefCountedPtr<PresentationQueryContractField> ECPropertyGroupingNodesQueryContra
     else
         {
         defaultLabelField = PresentationQueryContractDynamicField::Create(GroupingValueFieldName,
-            std::bind(&ECPropertyGroupingNodesQueryContract::GetPropertyValueClause, this, std::placeholders::_1), 
+            std::bind(&ECPropertyGroupingNodesQueryContract::GetPropertyValueClause, this, std::placeholders::_1),
             true, false, groupByValue ? FieldVisibility::Both : FieldVisibility::Inner);
         groupedInstancesCountField = PresentationQueryContractSimpleField::Create(nullptr, "0", false);
         }
@@ -666,7 +666,7 @@ static Utf8String GetPointAsJsonStringClause(Utf8StringCR propertyName, Utf8CP p
         {
         if (i > 0)
             clause.append(", ");
-        clause.append(prefixAndProperty).append(".").append(1, axis[i]);
+        clause.append("QUOTE(").append(prefixAndProperty).append(".").append(1, axis[i]).append(")");
         }
     clause.append(")");
     return clause;
@@ -764,7 +764,7 @@ PresentationQueryContractField const& ContentQueryContract::GetDisplayLabelField
         {
         PresentationQueryContractFieldCPtr classIdField = PresentationQueryContractSimpleField::Create("ECClassId", "ECClassId");
         PresentationQueryContractFieldCPtr instanceIdField = PresentationQueryContractSimpleField::Create("ECInstanceId", "ECInstanceId");
-        bvector<InstanceLabelOverrideValueSpecification const*> labelOverrideValuesList = 
+        bvector<InstanceLabelOverrideValueSpecification const*> labelOverrideValuesList =
             m_class ? QueryBuilderHelpers::SerializeECClassMapPolymorphically(field.GetOverrideValueSpecs(), *m_class) : bvector<InstanceLabelOverrideValueSpecification const*>();
         m_displayLabelField = CreateDisplayLabelField(field.GetName().c_str(), *classIdField, *instanceIdField, m_class, m_relatedClasses, labelOverrideValuesList);
         }
@@ -787,7 +787,7 @@ PresentationQueryContractFieldCPtr ContentQueryContract::GetCalculatedPropertyFi
 * @bsimethod                                    Grigas.Petraitis                11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentDescriptor::Property const* ContentQueryContract::FindMatchingProperty(ContentDescriptor::ECPropertiesField const& field, ECClassCP ecClass) const
-    {    
+    {
     if (nullptr == ecClass)
         ecClass = m_class;
 
@@ -855,7 +855,9 @@ static Utf8String PropertyValueSelectStringClause(Utf8CP prefix, Utf8CP property
         valueClause.append(QueryHelpers::Wrap(prefix)).append(".");
     valueClause.append(propertyAccessString);
 
-    if (propertyType == PRIMITIVETYPE_Point2d || propertyType == PRIMITIVETYPE_Point3d)
+    if (propertyType == PRIMITIVETYPE_Double)
+        valueClause = Utf8String("QUOTE(").append(valueClause).append(")");
+    else if (propertyType == PRIMITIVETYPE_Point2d || propertyType == PRIMITIVETYPE_Point3d)
         valueClause = GetPointAsJsonStringClause(propertyAccessString, prefix, propertyType == PRIMITIVETYPE_Point2d ? 2 : 3);
 
     return valueClause;
@@ -864,7 +866,7 @@ static Utf8String PropertyValueSelectStringClause(Utf8CP prefix, Utf8CP property
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-static PresentationQueryContractFieldCPtr CreatePropertySelectField(Utf8CP fieldName, Utf8CP prefix, Utf8CP propertyAccessString, 
+static PresentationQueryContractFieldCPtr CreatePropertySelectField(Utf8CP fieldName, Utf8CP prefix, Utf8CP propertyAccessString,
     ECPropertyCR prop, bool isGroupingField)
     {
     if (prop.GetIsPrimitive())
@@ -880,7 +882,7 @@ static PresentationQueryContractFieldCPtr CreatePropertySelectField(Utf8CP field
         }
     if (prop.GetIsNavigation())
         {
-        RefCountedPtr<PresentationQueryContractFunctionField> field = PresentationQueryContractFunctionField::Create(fieldName, FUNCTION_NAME_GetNavigationPropertyLabel, 
+        RefCountedPtr<PresentationQueryContractFunctionField> field = PresentationQueryContractFunctionField::Create(fieldName, FUNCTION_NAME_GetNavigationPropertyLabel,
             CreateFieldsList("ECClassId", "ECInstanceId"), true);
 
         field->SetPrefixOverride(prefix);
@@ -971,7 +973,7 @@ PresentationQueryContractFieldCPtr ContentQueryContract::CreateInstanceKeyField(
     ContentDescriptor::Property const* fieldPropertyForThisContract = FindMatchingProperty(*field.GetKeyFields().front(), m_class);
     if (nullptr != fieldPropertyForThisContract)
         {
-        return CreateInstanceKeyField(field.GetName().c_str(), fieldPropertyForThisContract->GetPrefix(), 
+        return CreateInstanceKeyField(field.GetName().c_str(), fieldPropertyForThisContract->GetPrefix(),
             fieldPropertyForThisContract->GetPropertyClass().GetId(), isMerging);
         }
 
@@ -997,7 +999,7 @@ static PresentationQueryContractFieldCPtr GetNavigationInstanceIdField(Utf8Strin
 bvector<PresentationQueryContractFieldCPtr> ContentQueryContract::_GetFields() const
     {
     bvector<PresentationQueryContractFieldCPtr> contractFields;
-    
+
     bvector<Utf8CP> selectAliases = m_queryInfo.GetSelectAliases(IQueryInfoProvider::SELECTION_SOURCE_From);
     if (!m_descriptor->OnlyDistinctValues())
         {
@@ -1032,7 +1034,7 @@ bvector<PresentationQueryContractFieldCPtr> ContentQueryContract::_GetFields() c
                         {
                         Utf8String propertyAccessor = GetPropertySelectClauseFromAccessString(fieldPropertyForThisContract->GetProperty().GetName());
                         ECPropertyCR ecProperty = fieldPropertyForThisContract->GetProperty();
-                        contractField = CreatePropertySelectField(propertiesField.GetName().c_str(), fieldPropertyForThisContract->GetPrefix(), 
+                        contractField = CreatePropertySelectField(propertiesField.GetName().c_str(), fieldPropertyForThisContract->GetPrefix(),
                             propertyAccessor.c_str(), ecProperty, m_descriptor->OnlyDistinctValues());
                         }
                     else

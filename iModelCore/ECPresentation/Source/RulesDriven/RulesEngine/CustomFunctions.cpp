@@ -575,13 +575,13 @@ struct GetPointAsJsonStringScalar : ECPresentation::ScalarFunction
 
         Utf8String str;
         str.append("{\"x\":");
-        str.append(std::to_string(args[0].GetValueDouble()).c_str());
+        str.append(args[0].GetValueText());
         str.append(",\"y\":");
-        str.append(std::to_string(args[1].GetValueDouble()).c_str());
+        str.append(args[1].GetValueText());
         if (3 == nArgs)
             {
             str.append(",\"z\":");
-            str.append(std::to_string(args[2].GetValueDouble()).c_str());
+            str.append(args[2].GetValueText());
             }
         str.append("}");
 
@@ -1645,6 +1645,76 @@ struct JoinOptionallyRequiredScalar : ECPresentation::ScalarFunction
         }
     };
 
+/*=================================================================================**//**
+* Based on https://randomascii.wordpress.com/2012/02/25/comparing-floating-point-numbers-2012-edition/
+* @bsiclass                                     Grigas.Petraitis                07/2019
++===============+===============+===============+===============+===============+======*/
+struct CompareDoublesScalar : ECPresentation::ScalarFunction
+    {
+    union Double_t
+        {
+        int64_t i;
+        double d;
+        Double_t(double num = 0) : d(num) {}
+        bool Negative() const { return i < 0; }
+        int64_t RawMantissa() const { return i & (((int64_t)1 << 52) - 1); }
+        int64_t RawExponent() const { return (i >> 52) & 0xFF; }
+#ifndef NDEBUG
+        struct
+            {
+            int64_t mantissa : 52;
+            int64_t exponent : 11;
+            int64_t sign : 1;
+            } parts;
+#endif
+        };
+    CompareDoublesScalar(CustomFunctionsManager const& manager)
+        : ScalarFunction(FUNCTION_NAME_CompareDoubles, 2, DbValueType::IntegerVal, manager)
+        {}
+    int AlmostEqualUlpsAndAbs(double lhs, double rhs, double maxDiff, int maxUlpsDiff)
+        {
+        // Check if the numbers are really close -- needed
+        // when comparing numbers near zero.
+        double absDiff = fabs(lhs - rhs);
+        if (absDiff <= maxDiff)
+            return 0;
+
+        Double_t uLhs(lhs);
+        Double_t uRhs(rhs);
+
+        // Different signs means they do not match.
+        if (uLhs.Negative() && !uRhs.Negative())
+            return -1;
+        if (!uLhs.Negative() && uRhs.Negative())
+            return 1;
+
+        // Find the difference in ULPs.
+        int64_t sub = uLhs.i - uRhs.i;
+        if (llabs(sub) <= maxUlpsDiff)
+            return 0;
+
+        return (sub < 0) ? -1 : 1;
+        }
+    void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
+        {
+        BeAssert(2 == nArgs);
+        bool isLhsNull = args[0].IsNull();
+        bool isRhsNull = args[1].IsNull();
+        if (isLhsNull && isRhsNull)
+            ctx.SetResultInt(0);
+        else if (isLhsNull && !isRhsNull)
+            ctx.SetResultInt(-1);
+        else if (!isLhsNull && isRhsNull)
+            ctx.SetResultInt(1);
+        else
+            {
+            double lhs = args[0].GetValueDouble();
+            double rhs = args[1].GetValueDouble();
+            ctx.SetResultInt(AlmostEqualUlpsAndAbs(lhs, rhs, DBL_EPSILON, 4));
+            }
+        }
+    };
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1897,6 +1967,7 @@ void CustomFunctionsInjector::CreateFunctions()
     m_scalarFunctions.push_back(new ParseBriefcaseIdScalar(CustomFunctionsManager::GetManager()));
     m_scalarFunctions.push_back(new ParseLocalIdScalar(CustomFunctionsManager::GetManager()));
     m_scalarFunctions.push_back(new JoinOptionallyRequiredScalar(CustomFunctionsManager::GetManager()));
+    m_scalarFunctions.push_back(new CompareDoublesScalar(CustomFunctionsManager::GetManager()));
 
     m_aggregateFunctions.push_back(new GetGroupedInstanceKeysAggregate(CustomFunctionsManager::GetManager()));
     m_aggregateFunctions.push_back(new GetMergedValueAggregate(CustomFunctionsManager::GetManager()));

@@ -1980,8 +1980,8 @@ TEST_F(QueryExecutorTests, GetDistinctStringValuesFromMergedECPropertyField)
 TEST_F(QueryExecutorTests, GetDistinctPointValuesFromPropertiesField)
     {
     ECEntityClassCP classH = s_project->GetECDbCR().Schemas().GetClass("RulesEngineTest", "ClassH")->GetEntityClassCP();
-    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classH, [](IECInstanceR instance){instance.SetValue("PointProperty", ECValue(DPoint3d::From(1.1234566666, 2.0, 3.0)));});
-    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classH, [](IECInstanceR instance){instance.SetValue("PointProperty", ECValue(DPoint3d::From(1.1234567777, 2.0, 3.0)));});
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classH, [](IECInstanceR instance){instance.SetValue("PointProperty", ECValue(DPoint3d::From(1.1234566666000001, 2.0, 3.0)));});
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classH, [](IECInstanceR instance){instance.SetValue("PointProperty", ECValue(DPoint3d::From(1.1234566666000002, 2.0, 3.0)));});
 
     RulesDrivenECPresentationManager::ContentOptions options(m_ruleset->GetRuleSetId());
     ContentDescriptorPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());

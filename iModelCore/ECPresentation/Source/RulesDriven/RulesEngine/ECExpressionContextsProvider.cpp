@@ -67,7 +67,7 @@ private:
     bvector<ProviderContext const*> m_contexts;
 
 private:
-    RulesEngineRootSymbolsContext() 
+    RulesEngineRootSymbolsContext()
         : ExpressionContext(nullptr)
         {
         m_internalContext = SymbolExpressionContext::Create(bvector<Utf8String>(), nullptr);
@@ -96,10 +96,10 @@ public:
 
     SymbolExpressionContext& GetSymbolsContext() const {return *m_internalContext;}
 
-    template<class TProviderContext> 
+    template<class TProviderContext>
     TProviderContext const& AddContext(TProviderContext const& ctx)
         {
-        m_contexts.push_back(&ctx); 
+        m_contexts.push_back(&ctx);
         return ctx;
         }
 };
@@ -122,12 +122,12 @@ public:
         InstanceExpressionContextPtr instanceContext = InstanceExpressionContext::Create(nullptr);
         if (m_key.IsValid())
             {
-            // load the instance 
+            // load the instance
             ECInstancesHelper::LoadInstance(instance, m_connection, m_key);
             }
         else if (m_key.GetClassId().IsValid())
             {
-            // if the instance id is not valid, create an empty instance - this 
+            // if the instance id is not valid, create an empty instance - this
             // makes sure we can further successfully use this instance in ECExpressions
             // and all its properties are NULL
             ECClassCP ecClass = m_connection.GetECDb().Schemas().GetClass(m_key.GetClassId());
@@ -186,15 +186,15 @@ private:
             {
             ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("ECInstanceMethodSymbolsProvider::IsOfClass: WrongNumberOfArguments. Expected 2, actually: %" PRIu64, (uint64_t)args.size()).c_str());
             return ExpressionStatus::WrongNumberOfArguments;
-            }          
-        
+            }
+
         IECInstancePtr instance;
         Utf8CP schemaname, classname;
         if (!SystemSymbolProvider::ExtractArg(classname, args[0])|| !SystemSymbolProvider::ExtractArg(schemaname, args[1]))
             {
             ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "ECInstanceMethodSymbolsProvider::IsOfClass class name or schema name is not a string");
             return ExpressionStatus::UnknownError;
-            }          
+            }
 
         bool found = false;
         for (IECInstancePtr const& instance: instanceData)
@@ -274,7 +274,7 @@ private:
             ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, "NodeSymbolsProvider::IsOfClass: Result: false (node does not have class id)");
             return ExpressionStatus::Success;
             }
-        
+
         ECClassCP nodeClass = ctx.m_connection.GetECDb().Schemas().GetClass(extendedData.GetECClassId());
         if (nullptr == nodeClass)
             {
@@ -282,7 +282,7 @@ private:
             ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "NodeSymbolsProvider::IsOfClass: UnkonwnError (node class not found)");
             return ExpressionStatus::UnknownError;
             }
-        
+
         evalResult.InitECValue().SetBoolean(nodeClass->Is(schemaname, classname));
         ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("NodeSymbolsProvider::IsOfClass: (%s is of class %s:%s) = %s", nodeClass->GetFullName(), schemaname, classname, evalResult.ToString().c_str()).c_str());
         return ExpressionStatus::Success;
@@ -352,7 +352,7 @@ protected:
                     case ECRelatedInstanceDirection::Backward: relationshipDirection = "Backward"; break;
                     case ECRelatedInstanceDirection::Forward:  relationshipDirection = "Forward"; break;
                     }
-                
+
                 ECClassCP parentClass = m_context.m_connection.GetECDb().Schemas().GetClass(nodeExtendedData.GetParentECClassId());
                 context.AddSymbol(*ValueSymbol::Create("ParentClassName", ECValue(parentClass->GetName().c_str(), false)));
                 context.AddSymbol(*ValueSymbol::Create("ParentSchemaName", ECValue(parentClass->GetSchema().GetName().c_str(), false)));
@@ -378,11 +378,11 @@ protected:
                 context.AddSymbol(*ValueSymbol::Create("ECInstance", ECValue()));
                 }
             }
-        context.AddSymbol(*MethodSymbol::Create("IsOfClass", &NodeSymbolsProvider::IsOfClass, 
+        context.AddSymbol(*MethodSymbol::Create("IsOfClass", &NodeSymbolsProvider::IsOfClass,
             nullptr, const_cast<Context*>(&m_context)));
         }
 public:
-    NodeSymbolsProvider(Context const& context) 
+    NodeSymbolsProvider(Context const& context)
         : m_context(context)
         {}
 };
@@ -403,7 +403,7 @@ private:
         : m_rootContext(rootContext), m_connection(connection), m_locale(locale), m_locater(locater), m_key(key), m_context(nullptr)
         {}
 public:
-    static RefCountedPtr<NodeContextEvaluator> Create(RulesEngineRootSymbolsContext& rootContext, IConnectionCR connection, 
+    static RefCountedPtr<NodeContextEvaluator> Create(RulesEngineRootSymbolsContext& rootContext, IConnectionCR connection,
         Utf8String locale, INavNodeLocaterCP locater, NavNodeKeyCP key)
         {
         return new NodeContextEvaluator(rootContext, connection, locale, locater, key);
@@ -439,7 +439,7 @@ struct RulesetVariablesSymbolsProvider : IECSymbolProvider
         {
         IUserSettings const& m_settings;
         IUsedUserSettingsListener* m_usedSettingsListener;
-        Context(IUserSettings const& settings, IUsedUserSettingsListener* usedSettingsListener) 
+        Context(IUserSettings const& settings, IUsedUserSettingsListener* usedSettingsListener)
             : m_settings(settings), m_usedSettingsListener(usedSettingsListener)
             {}
         };
@@ -487,11 +487,11 @@ private:
             ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "RulesetVariablesSymbolsProvider::GetIntVariableValue: Wrong argument type (first argument is not ECValue, or is not a string)");
             return ExpressionStatus::WrongType;
             }
-        
+
         Utf8CP variableId = arguments[0].GetECValue()->GetUtf8CP();
         Context const& context = *static_cast<Context*>(methodContext);
         evalResult.InitECValue().SetLong(context.m_settings.GetSettingIntValue(variableId));
-        
+
         OnVariableUsed(context, variableId);
 
         return ExpressionStatus::Success;
@@ -527,7 +527,7 @@ private:
             resultValues.push_back(r);
             }
         evalResult.SetValueList(*IValueListResult::Create(resultValues));
-        
+
         OnVariableUsed(context, variableId);
 
         return ExpressionStatus::Success;
@@ -627,7 +627,7 @@ private:
         else if (0 == BeStringUtilities::Stricmp("Backward", direction))
             {
             thisInstanceIdColumnName = "TargetECInstanceId";
-            thisClassIdColumnName = "TargetECClassId"; 
+            thisClassIdColumnName = "TargetECClassId";
             relatedInstanceIdColumnName = "SourceECInstanceId";
             relatedClassIdColumnName = "SourceECClassId";
             }
@@ -696,8 +696,8 @@ private:
         Utf8String queryFormat;
         ExpressionStatus stat = GetRelatedDisplayLabelQuery(queryFormat, args[0].GetECValue()->GetUtf8CP(), args[1].GetECValue()->GetUtf8CP(), args[2].GetECValue()->GetUtf8CP());
         if (ExpressionStatus::Success != stat)
-            return stat;    
-    
+            return stat;
+
         for (IECInstancePtr const& instance : instanceData)
             {
             Utf8PrintfString query(queryFormat.c_str(), instance->GetClass().GetECSqlName().c_str());
@@ -726,12 +726,12 @@ private:
                 return ExpressionStatus::Success;
                 }
             }
-    
+
         evalResult.InitECValue().SetToNull();
         ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("LabelOverrideSymbolsProvider::GetRelatedDisplayLabel: Result: %s", evalResult.ToString().c_str()).c_str());
         return ExpressionStatus::Success;
         }
-        
+
 protected:
     Utf8CP _GetName() const override {return "Label";}
     void _PublishSymbols(SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const override
@@ -739,7 +739,7 @@ protected:
         void* methodContext = const_cast<Context*>(&m_context);
         context.AddSymbol(*MethodSymbol::Create("GetRelatedDisplayLabel", nullptr, &GetRelatedDisplayLabel, methodContext));
         }
-        
+
 public:
     LabelSymbolsProvider(Context const& context) : m_context(context) {}
 };
@@ -778,7 +778,7 @@ ExpressionContextPtr ECExpressionContextsProvider::GetContentRulesContext(Conten
     // Ruleset variables
     RulesetVariablesSymbolsProvider rulesetVariablesSymbols(rootCtx->AddContext(*new RulesetVariablesSymbolsProvider::Context(params.GetUserSettings(), params.GetUsedSettingsListener())));
     rulesetVariablesSymbols.PublishSymbols(rootCtx->GetSymbolsContext(), bvector<Utf8String>());
-    
+
     // SelectedNode
     rootCtx->GetSymbolsContext().AddSymbol(*PropertySymbol::Create("SelectedNode", *NodeContextEvaluator::Create(*rootCtx, params.GetConnection(), params.GetLocale(), params.GetNodeLocater(), params.GetSelectedNodeKey())));
 
@@ -800,11 +800,11 @@ ExpressionContextPtr ECExpressionContextsProvider::GetContentRulesContext(Conten
 ExpressionContextPtr ECExpressionContextsProvider::GetCustomizationRulesContext(CustomizationRulesContextParameters const& params)
     {
     RulesEngineRootSymbolsContextPtr rootCtx = RulesEngineRootSymbolsContext::Create();
-    
+
     // Ruleset variables
     RulesetVariablesSymbolsProvider rulesetVariablesSymbols(rootCtx->AddContext(*new RulesetVariablesSymbolsProvider::Context(params.GetUserSettings(), params.GetUsedSettingsListener())));
     rulesetVariablesSymbols.PublishSymbols(rootCtx->GetSymbolsContext(), bvector<Utf8String>());
-    
+
     // ParentNode
     NodeSymbolsProvider parentNodeSymbols(rootCtx->AddContext(*new NodeSymbolsProvider::Context(params.GetConnection(), params.GetParentNode())));
     SymbolExpressionContextPtr parentNodeCtx = SymbolExpressionContext::Create(nullptr);
@@ -828,7 +828,7 @@ ExpressionContextPtr ECExpressionContextsProvider::GetCustomizationRulesContext(
     bvector<ItemExtendedData::RelatedInstanceKey> relatedInstanceKeys = extendedData.GetRelatedInstanceKeys();
     for (ItemExtendedData::RelatedInstanceKey const& key : relatedInstanceKeys)
         {
-        rootCtx->GetSymbolsContext().AddSymbol(*PropertySymbol::Create(key.GetAlias(), 
+        rootCtx->GetSymbolsContext().AddSymbol(*PropertySymbol::Create(key.GetAlias(),
             *ECInstanceContextEvaluator::Create(params.GetConnection(), key.GetInstanceKey())));
         }
 
@@ -951,7 +951,7 @@ private:
             }
         return true;
         }
-    
+
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            06/2015
     +---------------+---------------+---------------+---------------+---------------+--*/
@@ -971,7 +971,7 @@ private:
             }
         return true;
         }
-    
+
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            05/2016
     +---------------+---------------+---------------+---------------+---------------+--*/
@@ -990,7 +990,7 @@ private:
 
         m_ecsql.append(value);
         }
-    
+
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            05/2016
     +---------------+---------------+---------------+---------------+---------------+--*/
@@ -1001,7 +1001,7 @@ private:
             m_ecsql.append(" ");
             m_nodesStack.back().append(" ");
             }
-        
+
         if (m_inStructProperty)
             m_nodesStack.back().append(value);
         else
@@ -1009,7 +1009,7 @@ private:
 
         m_ecsql.append(value);
         }
-    
+
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Aidas.Vaiksnoras            08/2017
     +---------------+---------------+---------------+---------------+---------------+--*/
@@ -1023,7 +1023,7 @@ private:
         Append("AS TEXT)");
         Append("LIKE");
         }
-   
+
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            05/2016
     +---------------+---------------+---------------+---------------+---------------+--*/
@@ -1031,7 +1031,7 @@ private:
         {
         Append(Utf8PrintfString("[%s]", node.GetName()));
         }
-    
+
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            09/2016
     +---------------+---------------+---------------+---------------+---------------+--*/
@@ -1049,7 +1049,7 @@ private:
             }
         Append("NULL");
         }
-    
+
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            09/2016
     +---------------+---------------+---------------+---------------+---------------+--*/
@@ -1120,7 +1120,7 @@ private:
         Append(FUNCTION_NAME_GetECClassId);
         return true;
         }
-    
+
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            05/2016
     +---------------+---------------+---------------+---------------+---------------+--*/
@@ -1149,17 +1149,17 @@ private:
         Utf8String relationshipSchemaAndClassName = args.GetArgument(0)->ToString().Trim("\"");
         if (ECObjectsStatus::Success != ECClass::ParseClassName(info.RelationshipNames.SchemaName, info.RelationshipNames.ClassName, relationshipSchemaAndClassName))
             return ERROR;
-                
+
         Utf8String relatedSchemaAndClassName = args.GetArgument(2)->ToString().Trim("\"");
         if (ECObjectsStatus::Success != ECClass::ParseClassName(info.RelatedClassNames.SchemaName, info.RelatedClassNames.ClassName, relatedSchemaAndClassName))
             return ERROR;
 
-        
+
         m_usedClasses.push_back(relationshipSchemaAndClassName);
         m_usedClasses.push_back(relatedSchemaAndClassName);
         return SUCCESS;
         }
-    
+
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            05/2016
     +---------------+---------------+---------------+---------------+---------------+--*/
@@ -1195,7 +1195,7 @@ private:
         m_ignoreNextArguments = true;
         return true;
         }
-    
+
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            05/2016
     +---------------+---------------+---------------+---------------+---------------+--*/
@@ -1226,7 +1226,7 @@ private:
             "LIMIT 1"
             ")";
         Utf8String prefix = GetCallNodePrefix(node);
-        Utf8PrintfString ecsql(s_fmt, 
+        Utf8PrintfString ecsql(s_fmt,
             propertyName.c_str(),
             info.RelationshipNames.SchemaName.c_str(), info.RelationshipNames.ClassName.c_str(),
             info.RelatedClassNames.SchemaName.c_str(), info.RelatedClassNames.ClassName.c_str(),
@@ -1236,7 +1236,7 @@ private:
         m_ignoreNextArguments = true;
         return true;
         }
-    
+
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            12/2018
     +---------------+---------------+---------------+---------------+---------------+--*/
@@ -1264,7 +1264,7 @@ private:
             "WHERE [relationship].[%s] = %s.[ECClassId] AND [relationship].[%s] = %s.[ECInstanceId]"
             ")";
         Utf8String prefix = GetCallNodePrefix(node);
-        Utf8PrintfString ecsql(s_fmt, 
+        Utf8PrintfString ecsql(s_fmt,
             info.RelationshipNames.SchemaName.c_str(), info.RelationshipNames.ClassName.c_str(),
             info.RelatedClassNames.SchemaName.c_str(), info.RelatedClassNames.ClassName.c_str(),
             info.RelatedColumn.ClassIdColumnName.c_str(), info.RelatedColumn.InstanceIdColumnName.c_str(),
@@ -1273,7 +1273,7 @@ private:
         m_ignoreNextArguments = true;
         return true;
         }
-    
+
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            02/2018
     +---------------+---------------+---------------+---------------+---------------+--*/
@@ -1283,7 +1283,7 @@ private:
         m_ignoreNextArguments = true;
         return true;
         }
-    
+
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            03/2017
     +---------------+---------------+---------------+---------------+---------------+--*/
@@ -1304,7 +1304,7 @@ private:
         m_ignoreNextArguments = true;
         return true;
         }
-    
+
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            03/2017
     +---------------+---------------+---------------+---------------+---------------+--*/
@@ -1315,14 +1315,14 @@ private:
             BeAssert(false);
             return false;
             }
-        
+
         ArgumentTreeNodeCP args = node.GetArguments();
         if (nullptr == args || 1 != args->GetArgumentCount() || nullptr == dynamic_cast<LambdaNodeCP>(args->GetArgument(0)))
             {
             BeAssert(false && "Only a single lambda function is supported as an argument for AnyMatch function");
             return false;
             }
-        
+
         bool isGetUserSettingIntValuesSpecialCase = (0 == strcmp("GetVariableIntValues", m_currentValueListMethodNode->GetMethodName()));
         if (!isGetUserSettingIntValuesSpecialCase)
             {
@@ -1331,6 +1331,38 @@ private:
             }
 
         m_skipNextArgumentsOpeningBrace = true;
+        return true;
+        }
+
+    /*-----------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis            07/2019
+    +---------------+---------------+---------------+---------------+---------------+--*/
+    CallNodePtr CreateCallNode(Utf8CP functionName, NodeCR arg) const
+        {
+        ArgumentTreeNodePtr args = new ArgumentTreeNode();
+        args->PushArgument(const_cast<NodeR>(arg));
+        return CallNode::Create(*args, functionName, false);
+        }
+
+    /*-----------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis            07/2019
+    +---------------+---------------+---------------+---------------+---------------+--*/
+    bool HandleCompareDateTimesSpecialCase(CallNodeCR node)
+        {
+        ArgumentTreeNodeCP args = node.GetArguments();
+        if (nullptr == args || 2 != args->GetArgumentCount())
+            {
+            BeAssert(false);
+            return false;
+            }
+
+        Append("(");
+        NodePtr lhs = CreateCallNode("JULIANDAY", *args->GetArgument(0));
+        NodePtr rhs = CreateCallNode("JULIANDAY", *args->GetArgument(1));
+        Node::CreateArithmetic(ExpressionToken::TOKEN_Minus, *lhs, *rhs)->Traverse(*this);
+        Append(")");
+
+        m_ignoreNextArguments = true;
         return true;
         }
 
@@ -1374,10 +1406,12 @@ private:
             return;
         if (0 == strcmp("AnyMatch", nodeCopy->GetMethodName()) && HandleAnyMatchSpecialCase(*nodeCopy))
             return;
+        if (0 == strcmp("CompareDateTimes", nodeCopy->GetMethodName()) && HandleCompareDateTimesSpecialCase(*nodeCopy))
+            return;
 
         Append(nodeCopy->ToString());
         }
-    
+
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            03/2017
     +---------------+---------------+---------------+---------------+---------------+--*/
@@ -1431,7 +1465,7 @@ private:
         m_inArguments++;
         m_ignoreArguments++;
         }
-    
+
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            05/2016
     +---------------+---------------+---------------+---------------+---------------+--*/
@@ -1439,7 +1473,7 @@ private:
         {
         Append(node.GetName());
         }
-    
+
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            05/2016
     +---------------+---------------+---------------+---------------+---------------+--*/
@@ -1447,7 +1481,7 @@ private:
         {
         Append(node.ToString());
         }
-    
+
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            10/2017
     +---------------+---------------+---------------+---------------+---------------+--*/
@@ -1459,7 +1493,7 @@ private:
         if (left.EndsWith(".ClassName"))
             m_usedClasses.push_back(node.GetRightCP()->ToString().Trim("\""));
         }
-    
+
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            08/2018
     +---------------+---------------+---------------+---------------+---------------+--*/
@@ -1519,7 +1553,7 @@ public:
         if (m_inArguments)
             m_inArguments--;
 
-        // create an aggregated arguments' string and append it to the 
+        // create an aggregated arguments' string and append it to the
         // call node so it represents the whole call node
         Utf8String argsString;
         int pos = (int)m_nodesStack.size() - 1;
@@ -1559,7 +1593,7 @@ public:
     +---------------+---------------+---------------+---------------+---------------+--*/
     bool ProcessNode(NodeCR node) override
         {
-        ARGUMENTS_PRECONDITION(); 
+        ARGUMENTS_PRECONDITION();
 
         HandleScopeEnd();
 
@@ -1617,7 +1651,7 @@ public:
                 HandleEqualtyNode(static_cast<ComparisonNodeCR>(node));
                 break;
             case TOKEN_StringConst:
-                BeAssert(nullptr != dynamic_cast<LiteralNode const*>(&node) 
+                BeAssert(nullptr != dynamic_cast<LiteralNode const*>(&node)
                     && dynamic_cast<LiteralNode const*>(&node)->GetInternalValue().IsUtf8());
                 HandleStringConstNode(static_cast<LiteralNode const&>(node));
                 break;
@@ -1656,11 +1690,11 @@ public:
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            05/2016
     +---------------+---------------+---------------+---------------+---------------+--*/
-    ECExpressionToECSqlConverter() 
-        : m_inArguments(0), m_inStructProperty(0), m_ignoreArguments(0), m_previousToken(TOKEN_Unrecognized), 
+    ECExpressionToECSqlConverter()
+        : m_inArguments(0), m_inStructProperty(0), m_ignoreArguments(0), m_previousToken(TOKEN_Unrecognized),
         m_skipNextArgumentsOpeningBrace(false), m_ignoreNextArguments(false)
         {}
-    
+
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            08/2018
     +---------------+---------------+---------------+---------------+---------------+--*/
@@ -1672,7 +1706,7 @@ public:
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            05/2016
     +---------------+---------------+---------------+---------------+---------------+--*/
-    Utf8StringCR GetECSql(NodeCR node) 
+    Utf8StringCR GetECSql(NodeCR node)
         {
         m_ecsql.clear();
         node.Traverse(*this);
@@ -1680,7 +1714,7 @@ public:
         m_ecsql.ReplaceAll("parent].[parent", "parent.parent");
         return m_ecsql;
         }
-    
+
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            07/2016
     +---------------+---------------+---------------+---------------+---------------+--*/
@@ -1769,20 +1803,20 @@ static void RemoveExpressionWhitespaces(Utf8StringR expression)
     size_t currentIndex = 0;
     char* removedItems = std::remove_if
     (
-        expression.begin(), 
-        expression.end(), 
+        expression.begin(),
+        expression.end(),
         [&inQuatation, &lastAlphaNum, &nextAlphaNum, &expression, &currentIndex, &lastWSpace](Utf8Char c)
             {
             if ('\"' == c)
                 inQuatation = !inQuatation;
-            
+
             bool isWSpace = std::isspace(c);
             bool isAlphaNum = std::isalnum(c);
 
             if (isWSpace != lastWSpace) // Recheck next alpha num only if last one has changed for optimization
                 nextAlphaNum = IsNextNonWhiteSpaceAlphaNum(expression, currentIndex);
             bool remove = isWSpace && !inQuatation && !(lastAlphaNum && nextAlphaNum); // Remove whitespaces that are not between alphanum symbols
-            
+
             lastAlphaNum = isAlphaNum ? true : (isWSpace ? lastAlphaNum : false);
             lastWSpace = isWSpace;
 
@@ -1812,7 +1846,7 @@ NodePtr ECExpressionsHelper::GetNodeFromExpression(Utf8CP expr)
     // if we're only checking for class.
     expression.ReplaceAll(".ECInstance.IsOfClass(", ".IsOfClass(");
     expression.ReplaceAll("this.IsOfClass(", "ThisNode.IsOfClass(");
-    
+
     // LIKE operator special case
     expression.ReplaceAll("~", " LIKE ");
 

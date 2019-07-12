@@ -45,6 +45,7 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 #define FUNCTION_NAME_ParseBriefcaseId              "ParseBriefcaseId"
 #define FUNCTION_NAME_ParseLocalId                  "ParseLocalId"
 #define FUNCTION_NAME_JoinOptionallyRequired        "JoinOptionallyRequired"
+#define FUNCTION_NAME_CompareDoubles                "CompareDoubles"
 
 struct JsonNavNodesFactory;
 struct ILocalizationProvider;

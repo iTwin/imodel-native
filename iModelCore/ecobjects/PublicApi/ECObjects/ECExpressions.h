@@ -1038,15 +1038,15 @@ public:
     ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreateDateTimeLiteral (int64_t ticks);
     ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreatePoint2dLiteral (DPoint2dCR value);
     ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreatePoint3dLiteral (DPoint3dCR value);
-    static NodePtr          CreateUnaryArithmetic(ExpressionToken tokenId, NodeR left);
-    static NodePtr          CreateArithmetic(ExpressionToken  tokenId, NodeR left, NodeR right);
-    static NodePtr          CreateShift (ExpressionToken tokenId, NodeR left, NodeR right);
-    static NodePtr          CreateComparison(ExpressionToken   tokenId, NodeR left, NodeR right);
-    static NodePtr          CreateBitWise(ExpressionToken   op, NodeR left, NodeR right);
-    static NodePtr          CreateLogical(ExpressionToken   op, NodeR left, NodeR right);
-    static NodePtr          CreateAssignment(NodeR left, NodeR rightSide, ExpressionToken   assignmentSubtype);
-    static ArgumentTreeNodePtr CreateArgumentTree();
-    static NodePtr          CreateIIf(NodeR conditional, NodeR trueNode, NodeR falseNode);
+    ECOBJECTS_EXPORT static NodePtr          CreateUnaryArithmetic(ExpressionToken tokenId, NodeR left);
+    ECOBJECTS_EXPORT static NodePtr          CreateArithmetic(ExpressionToken  tokenId, NodeR left, NodeR right);
+    ECOBJECTS_EXPORT static NodePtr          CreateShift (ExpressionToken tokenId, NodeR left, NodeR right);
+    ECOBJECTS_EXPORT static NodePtr          CreateComparison(ExpressionToken   tokenId, NodeR left, NodeR right);
+    ECOBJECTS_EXPORT static NodePtr          CreateBitWise(ExpressionToken   op, NodeR left, NodeR right);
+    ECOBJECTS_EXPORT static NodePtr          CreateLogical(ExpressionToken   op, NodeR left, NodeR right);
+    ECOBJECTS_EXPORT static NodePtr          CreateAssignment(NodeR left, NodeR rightSide, ExpressionToken   assignmentSubtype);
+    ECOBJECTS_EXPORT static ArgumentTreeNodePtr CreateArgumentTree();
+    ECOBJECTS_EXPORT static NodePtr          CreateIIf(NodeR conditional, NodeR trueNode, NodeR falseNode);
 
     //  Add nodes for Where, Property, Relationship, ConstantSets, Filters
 

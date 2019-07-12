@@ -172,7 +172,7 @@ TEST_F(ECExpressionsToECSqlConverterTests, HasRelatedInstanceSpecialCase_Forward
         "FROM [TestSchema1].[RelationshipName] relationship "
         "JOIN [TestSchema2].[RelatedClassName] related ON [relationship].[TargetECClassId] = [related].[ECClassId] AND [relationship].[TargetECInstanceId] = [related].[ECInstanceId] "
         "WHERE [relationship].[SourceECInstanceId] = [this].[ECInstanceId]"
-        ")", 
+        ")",
         ecsql.c_str());
     }
 
@@ -187,7 +187,7 @@ TEST_F(ECExpressionsToECSqlConverterTests, HasRelatedInstanceSpecialCase_Backwar
         "FROM [TestSchema1].[RelationshipName] relationship "
         "JOIN [TestSchema2].[RelatedClassName] related ON [relationship].[SourceECClassId] = [related].[ECClassId] AND [relationship].[SourceECInstanceId] = [related].[ECInstanceId] "
         "WHERE [relationship].[TargetECInstanceId] = [this].[ECInstanceId]"
-        ")", 
+        ")",
         ecsql.c_str());
     }
 
@@ -203,7 +203,7 @@ TEST_F(ECExpressionsToECSqlConverterTests, GetRelatedInstancesCountSpecialCase_F
         "JOIN [TestSchema2].[RelatedClassName] related "
         "ON [related].[ECClassId] = [relationship].[TargetECClassId] AND [related].[ECInstanceId] = [relationship].[TargetECInstanceId] "
         "WHERE [relationship].[SourceECClassId] = [this].[ECClassId] AND [relationship].[SourceECInstanceId] = [this].[ECInstanceId]"
-        ")", 
+        ")",
         ecsql.c_str());
     }
 
@@ -219,7 +219,7 @@ TEST_F(ECExpressionsToECSqlConverterTests, GetRelatedInstancesCountSpecialCase_B
         "JOIN [TestSchema2].[RelatedClassName] related "
         "ON [related].[ECClassId] = [relationship].[SourceECClassId] AND [related].[ECInstanceId] = [relationship].[SourceECInstanceId] "
         "WHERE [relationship].[TargetECClassId] = [this].[ECClassId] AND [relationship].[TargetECInstanceId] = [this].[ECInstanceId]"
-        ")", 
+        ")",
         ecsql.c_str());
     }
 
@@ -235,7 +235,7 @@ TEST_F(ECExpressionsToECSqlConverterTests, GetRelatedValueSpecialCase_Forward)
         "WHERE [relationship].[SourceECClassId] = [this].[ECClassId] AND [relationship].[SourceECInstanceId] = [this].[ECInstanceId] "
         "AND [relationship].[TargetECClassId] = [related].[ECClassId] AND [relationship].[TargetECInstanceId] = [related].[ECInstanceId] "
         "LIMIT 1"
-        ")", 
+        ")",
         ecsql.c_str());
     }
 
@@ -251,7 +251,7 @@ TEST_F(ECExpressionsToECSqlConverterTests, GetRelatedValueSpecialCase_Backward)
         "WHERE [relationship].[TargetECClassId] = [this].[ECClassId] AND [relationship].[TargetECInstanceId] = [this].[ECInstanceId] "
         "AND [relationship].[SourceECClassId] = [related].[ECClassId] AND [relationship].[SourceECInstanceId] = [related].[ECInstanceId] "
         "LIMIT 1"
-        ")", 
+        ")",
         ecsql.c_str());
     }
 
@@ -267,7 +267,7 @@ TEST_F(ECExpressionsToECSqlConverterTests, GetRelatedValueSpecialCase_StructProp
         "WHERE [relationship].[SourceECClassId] = [this].[ECClassId] AND [relationship].[SourceECInstanceId] = [this].[ECInstanceId] "
         "AND [relationship].[TargetECClassId] = [related].[ECClassId] AND [relationship].[TargetECInstanceId] = [related].[ECInstanceId] "
         "LIMIT 1"
-        ")", 
+        ")",
         ecsql.c_str());
     }
 
@@ -284,7 +284,7 @@ TEST_F(ECExpressionsToECSqlConverterTests, FunctionNameSubstitution)
 
     ecsql = m_helper.ConvertToECSql("GetSettingBoolValue(\"setting_id\")");
     EXPECT_STREQ(FUNCTION_NAME_GetVariableBoolValue "('setting_id')", ecsql.c_str());
-    
+
     ecsql = m_helper.ConvertToECSql("HasSetting(\"setting_id\")");
     EXPECT_STREQ(FUNCTION_NAME_HasVariable "('setting_id')", ecsql.c_str());
     }
@@ -299,7 +299,7 @@ TEST_F(ECExpressionsToECSqlConverterTests, VariableIntValuesSpecialCase)
 
     ecsql = m_helper.ConvertToECSql("GetSettingIntValues(\"setting_id\").AnyMatch(x => this.SomeProperty = x)");
     EXPECT_STREQ(FUNCTION_NAME_InVariableIntValues "('setting_id', [this].[SomeProperty])", ecsql.c_str());
-    
+
     ecsql = m_helper.ConvertToECSql("GetVariableIntValues(\"setting_id\").AnyMatch(x => this.SomeProperty = x)");
     EXPECT_STREQ(FUNCTION_NAME_InVariableIntValues "('setting_id', [this].[SomeProperty])", ecsql.c_str());
     }
@@ -397,4 +397,13 @@ TEST_F(ECExpressionsToECSqlConverterTests, ParseValueExpressionAndCreateTree_Mul
     Utf8CP expectedString = "ParentNode.IsOfClass(\"Subject \",\"BisCore\")Or ThisNode.IsOfClass(\"Subject \",\"BisCore\")";
     NodePtr node = m_helper.GetNodeFromExpression("ParentNode.ECInstance.IsOfClass(\"Subject \", \"BisCore\") \tOr \n\tThisNode.IsOfClass(\"Subject \", \"BisCore\")");
     EXPECT_STREQ(expectedString, node->ToExpressionString().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECExpressionsToECSqlConverterTests, CompareDateTimes_WrapsAndComparesArguments)
+    {
+    Utf8String ecsql = m_helper.ConvertToECSql("CompareDateTimes(this.PropertyName, 2)");
+    EXPECT_STREQ("(JULIANDAY([this].[PropertyName]) - JULIANDAY(2))", ecsql.c_str());
     }

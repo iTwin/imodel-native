@@ -326,8 +326,22 @@ static bool IsValueMerged(Utf8CP value)
     return std::regex_search(value, s_regex);
     }
 
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod                                    Grigas.Petraitis                07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool IsNullQuotedDouble(PrimitiveType primitiveType, IECSqlValue const& value)
+    {
+    return primitiveType == PRIMITIVETYPE_Double
+        && 0 == strcmp("NULL", value.GetText());
+    }
+
 #define NULL_FORMATTED_VALUE_PRECONDITION(sqlValue) \
     if (sqlValue.IsNull()) \
+        return rapidjson::Document();
+
+#define NULL_FORMATTED_PRIMITIVE_VALUE_PRECONDITION(sqlValue, primitiveType) \
+    NULL_FORMATTED_VALUE_PRECONDITION(sqlValue) \
+    if (IsNullQuotedDouble(primitiveType, sqlValue)) \
         return rapidjson::Document();
 
 //=======================================================================================
@@ -363,7 +377,7 @@ private:
     +---------------+---------------+---------------+---------------+---------------+------*/
     static rapidjson::Document GetFallbackPrimitiveValue(ECPropertyCR prop, PrimitiveType type, IECSqlValue const& value, rapidjson::MemoryPoolAllocator<>* allocator)
         {
-        NULL_FORMATTED_VALUE_PRECONDITION(value);
+        NULL_FORMATTED_PRIMITIVE_VALUE_PRECONDITION(value, type);
         rapidjson::Document json(allocator);
         ECValue v = ValueHelpers::GetECValueFromSqlValue(type, value);
         Utf8String stringValue;
@@ -382,7 +396,7 @@ private:
     static rapidjson::Document GetFormattedPrimitiveValue(IECPropertyFormatter const& formatter, ECPropertyCR prop, PrimitiveType type,
         IECSqlValue const& value, rapidjson::MemoryPoolAllocator<>* allocator)
         {
-        NULL_FORMATTED_VALUE_PRECONDITION(value);
+        NULL_FORMATTED_PRIMITIVE_VALUE_PRECONDITION(value, type);
         rapidjson::Document json(allocator);
         Utf8String formattedValue;
         if (SUCCESS != formatter.GetFormattedPropertyValue(formattedValue, prop, ValueHelpers::GetECValueFromSqlValue(type, value)))
@@ -543,13 +557,20 @@ public:
         else if (ecProperty.GetIsPrimitive())
             {
             PrimitiveECPropertyCR primitiveProperty = *ecProperty.GetAsPrimitiveProperty();
-            rapidjson::Document valueJson = ValueHelpers::GetJsonFromPrimitiveValue(primitiveProperty.GetType(), value, &m_values.GetAllocator());
-            rapidjson::Document formattedValueJson(&m_displayValues.GetAllocator());
-            if (nullptr != propertyFormatter)
-                formattedValueJson = GetFormattedPrimitiveValue(*propertyFormatter, primitiveProperty, primitiveProperty.GetType(), value, &m_displayValues.GetAllocator());
+            if (IsNullQuotedDouble(primitiveProperty.GetType(), value))
+                {
+                AddNull(name, ADD_Both);
+                }
             else
-                formattedValueJson = GetFallbackPrimitiveValue(primitiveProperty, primitiveProperty.GetType(), value, &m_displayValues.GetAllocator());
-            AddValue(name, std::move(valueJson), std::move(formattedValueJson));
+                {
+                rapidjson::Document valueJson = ValueHelpers::GetJsonFromPrimitiveValue(primitiveProperty.GetType(), value, &m_values.GetAllocator());
+                rapidjson::Document formattedValueJson(&m_displayValues.GetAllocator());
+                if (nullptr != propertyFormatter)
+                    formattedValueJson = GetFormattedPrimitiveValue(*propertyFormatter, primitiveProperty, primitiveProperty.GetType(), value, &m_displayValues.GetAllocator());
+                else
+                    formattedValueJson = GetFallbackPrimitiveValue(primitiveProperty, primitiveProperty.GetType(), value, &m_displayValues.GetAllocator());
+                AddValue(name, std::move(valueJson), std::move(formattedValueJson));
+                }
             }
         else if (ecProperty.GetIsStruct())
             {
