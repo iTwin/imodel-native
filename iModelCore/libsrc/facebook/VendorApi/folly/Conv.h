@@ -1172,8 +1172,15 @@ FOLLY_WARN_UNUSED_RESULT inline typename std::enable_if<
     std::is_arithmetic<Tgt>::value,
     Expected<StringPiece, ConversionCode>>::type
 parseTo(StringPiece src, Tgt& out) {
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcomma"
+#endif
   return detail::convertTo<Tgt>(&src).then(
       [&](Tgt res) { return void(out = res), src; });
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
 }
 
 /*******************************************************************************
