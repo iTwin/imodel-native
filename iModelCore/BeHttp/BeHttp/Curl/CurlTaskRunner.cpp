@@ -146,6 +146,8 @@ bool CurlTaskRunner::PrepareRequestIfNotSuspended(CurlHttpRequest& curlRequest)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CurlTaskRunner::_RunAsyncTasksLoop()
     {
+    m_lastLoggedLongRunning = BeClock::Get().GetSteadyTime();
+    
     m_curlRunning.store(true);
     m_multi = curl_multi_init();
 
@@ -220,9 +222,9 @@ void CurlTaskRunner::_RunAsyncTasksLoop()
 #endif
 
         if (runningRequests > 0)
-            {
             WaitForData(1000);
-            }
+
+        LogLongRunningRequests();
 
 #ifdef LOG_WEB_TIMES
         uint64_t end = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
@@ -421,6 +423,44 @@ void CurlTaskRunner::WaitUntilStopped()
     Predicate predicate;
     predicate.curlRunning = &this->m_curlRunning;
     this->m_curlRunningCondition.WaitOnCondition(&predicate, BeConditionVariable::Infinite);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void CurlTaskRunner::LogLongRunningRequests()
+    {
+    if (!LOGTIMES.isSeverityEnabled(NativeLogging::LOG_INFO))
+        return;
+
+    if (!m_curlToRequestMap.empty())
+        return;
+        
+    if (BeClock::Get().GetSteadyTime() - m_lastLoggedLongRunning > BeDuration::Seconds(5))
+        return;
+
+    Utf8String list;
+    for (auto& pair : m_curlToRequestMap)
+        {
+        std::shared_ptr<CurlHttpRequest> request = pair.second->GetData();
+
+        double totalTimeSeconds = 0;
+        curl_easy_getinfo(request->GetCurlHandle(), CURLINFO_TOTAL_TIME, &totalTimeSeconds);
+
+        if (totalTimeSeconds < 5)
+            continue;
+
+        if (!list.empty())
+            list += ", ";
+
+        list += Utf8PrintfString("#%lld [%.2fs]", request->GetNumber(), totalTimeSeconds);
+        }
+
+    if (list.empty())
+        return;
+
+    LOGTIMES.infov("Processing: %s", list.c_str());
+    m_lastLoggedLongRunning = BeClock::Get().GetSteadyTime();
     }
 
 /*--------------------------------------------------------------------------------------+

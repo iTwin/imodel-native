@@ -43,12 +43,15 @@ public:
         BeAtomic<bool> m_curlRunning;
         BeConditionVariable m_curlRunningCondition;
 
+        BeTimePoint m_lastLoggedLongRunning;
+
     private:
         void WaitAndPopNewRequests();
         void AddTaskToCurlMultiMap(std::shared_ptr<AsyncTask> task);
         void ResolveFinishedCurl(CURLMsg* curlMsg);
         void ResolveRequestTask(CurlHttpRequestTaskPtr requestTask);
         void WaitForData(long topTimeoutMs);
+        void LogLongRunningRequests();
 
     protected:
         virtual void _RunAsyncTasksLoop() override;
