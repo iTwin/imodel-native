@@ -16,6 +16,7 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR HashableBase::GetHash(Utf8CP parentHash)
     {
+    BeMutexHolder lock(m_mutex);
     m_hash = _ComputeHash(parentHash).GetHashString();
     return m_hash;
     }
@@ -25,6 +26,7 @@ Utf8StringCR HashableBase::GetHash(Utf8CP parentHash)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR HashableBase::GetHash() const
     {
+    BeMutexHolder lock(m_mutex);
     if (m_hash.empty())
         {
         const_cast<HashableBase*>(this)->ComputeHash();
@@ -38,6 +40,7 @@ Utf8StringCR HashableBase::GetHash() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void HashableBase::InvalidateHash()
     {
+    BeMutexHolder lock(m_mutex);
     if (nullptr != m_parent)
         m_parent->InvalidateHash();
     m_hash.clear();
@@ -48,6 +51,8 @@ void HashableBase::InvalidateHash()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void HashableBase::ComputeHash()
     {
+    BeMutexHolder lock(m_mutex);
+
     // go up rules and specifications hierarchy and start computing hashes from the top
     if (nullptr != m_parent)
         {

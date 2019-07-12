@@ -19,12 +19,14 @@ struct HashableBase
     private:
         HashableBase* m_parent;
         mutable Utf8String m_hash;
+        mutable BeMutex m_mutex;
 
     private:
         void ComputeHash();
 
     protected:
         HashableBase() : m_parent(nullptr) {}
+        HashableBase(HashableBase const& other) : m_parent(other.m_parent), m_hash(other.m_hash) {}
         virtual ~HashableBase() {}
         virtual MD5 _ComputeHash(Utf8CP parentHash) const = 0;
 
@@ -41,7 +43,7 @@ struct HashableBase
         ECPRESENTATION_EXPORT void InvalidateHash();
 
         //! Sets parent.
-        void SetParent(HashableBase* parent) {m_parent = parent;}
+        void SetParent(HashableBase* parent) {BeMutexHolder lock(m_mutex); m_parent = parent;}
     };
 
 //! This enumerator contains trees for which the rule can be applied.
