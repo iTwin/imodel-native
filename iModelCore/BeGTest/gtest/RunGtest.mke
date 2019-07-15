@@ -97,7 +97,7 @@ always:
 			python $(SrcRoot)DgnDbTestingScripts/TestImpactAnalysis/CreateBatch.py $(exeName) "$(GTEST_EXTRA_ARGS) $(GTEST_FILTER)" $(SrcRoot)BeGTest\gtest\TeeGtest.py $(ResultsCapture)
 		%else			
 			>$(LogDir)run.bat
-			$(exeName) $(GTEST_EXTRA_ARGS) | $(_makeFilePath)TeeGtest.py $(ResultsCapture)		
+			$(exeName) $(GTEST_EXTRA_ARGS) | python $(_makeFilePath)TeeGtest.py $(ResultsCapture)		
 			exit
 			<
 		%endif			
