@@ -1,0 +1,10 @@
+#---------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#---------------------------------------------------------------------------------------+
+%include mdl.mki
+
+always:
+    python $(SrcRoot)bsicommon/build/CreateSymLinks.py -m"$(BuildContext)PublicAPI\StructuralDomain\=$(_MakeFilePath)PublicAPI\*.h"
+    python $(SrcRoot)bsicommon/build/CreateSymLinks.py -f"$(BuildContext)ECSchemas\Domain\StructuralPhysical.ecschema.xml=$(_MakeFilePath)StructuralPhysical.ecschema.xml"
