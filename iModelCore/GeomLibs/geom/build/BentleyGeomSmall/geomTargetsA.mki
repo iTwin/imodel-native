@@ -1,0 +1,861 @@
+#--------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------*/
+#
+# Include this file in your .mke file to get the complete list
+# of input/output dependencies, with the output names bracketed by
+# macroed names so you can vary the directory and type of dependency
+# each time you include the file.
+#
+
+# (begin structs_sources.mki)
+
+# March 7, 2012
+# Unresolved calls to:
+# DPoint4d::Zero, SetComponents, FromMultiply, GetProjectedXYZ
+# Transform::Multiply
+# DRange3d::Extend, Init
+# (And add any of those is a flood)
+
+# (begin structs_sources_pubinc.mki)
+
+#-$(OUT_DIR)embeddeddoublearray$(OUT_EXT)      : $(geomSrcMemory)embeddeddoublearray.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)embeddedintarray$(OUT_EXT)      : $(geomSrcMemory)embeddedintarray.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)embeddeddpoint2darray$(OUT_EXT)      : $(geomSrcMemory)embeddeddpoint2darray.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)embeddeddpoint3darray$(OUT_EXT)      : $(geomSrcMemory)embeddeddpoint3darray.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)embeddedarraycachemanager$(OUT_EXT)      : $(geomSrcMemory)embeddedarraycachemanager.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)dellipse3d$(OUT_EXT)      : $(geomSrcStructs)dellipse3d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)dellipse3dDMatrix3d$(OUT_EXT)  : $(geomSrcStructs)dellipse3dDMatrix3d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)dmap4d$(OUT_EXT)          : $(geomSrcStructs)dmap4d.cpp           $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)dmatrix2d$(OUT_EXT)       : $(geomSrcStructs)dmatrix2d.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)dmatrix3d$(OUT_EXT)       : $(geomSrcStructs)dmatrix3d.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)dmatrix4d$(OUT_EXT)       : $(geomSrcStructs)dmatrix4d.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)dpoint2d$(OUT_EXT)        : $(geomSrcStructs)dpoint2d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)dvec2d$(OUT_EXT)          : $(geomSrcStructs)dvec2d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)dpoint3d$(OUT_EXT)        : $(geomSrcStructs)dpoint3d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)XYZRangeTree$(OUT_EXT)    :$(geomSrcFuncs)XYZRangeTree.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+%if $(TARGET_PLATFORM)=="Windows"  # *** WIP_NONPORT
+#-$(OUT_DIR)CGWriter$(OUT_EXT)    :$(geomSrcFuncs)CGWriter.cpp $(OTHER_DEPENDENCIES) \
+#-                              $(geomSrcPubGeom)CGWriter.h \
+#-                              ${MultiCompileDepends}
+%endif
+
+#-$(OUT_DIR)TernaryRangeTree$(OUT_EXT)    :$(geomSrcFuncs)TernaryRangeTree.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)BinaryRangeHeap$(OUT_EXT) :$(geomSrcFuncs)BinaryRangeHeap.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+$(OUT_DIR)DPoint3dOps$(OUT_EXT)     : $(geomSrcFuncs)DPoint3dOps.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)DPoint3dOpsRangeHeap$(OUT_EXT)  : $(geomSrcFuncs)DPoint3dOpsRangeHeap.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)PolylineOps$(OUT_EXT)     : $(geomSrcFuncs)PolylineOps.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)PolygonOps$(OUT_EXT)     : $(geomSrcFuncs)PolygonOps.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)dpoint3ddvec3d$(OUT_EXT)  : $(geomSrcStructs)dpoint3ddvec3d.cpp   $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)dvec3d$(OUT_EXT)          : $(geomSrcStructs)dvec3d.cpp           $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)dvec3ddmatrix3d$(OUT_EXT) : $(geomSrcStructs)dvec3ddmatrix3d.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)dvec3drotmatrix$(OUT_EXT) : $(geomSrcStructs)dvec3drotmatrix.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)dvec3dtransform$(OUT_EXT) : $(geomSrcStructs)dvec3dtransform.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)dpoint4d$(OUT_EXT)        : $(geomSrcStructs)dpoint4d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)drange3d$(OUT_EXT)        : $(geomSrcStructs)drange3d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)drange2d$(OUT_EXT)        : $(geomSrcStructs)drange2d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)dtransform2d$(OUT_EXT)    : $(geomSrcStructs)dtransform2d.cpp     $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)dtransform3d$(OUT_EXT)    : $(geomSrcStructs)dtransform3d.cpp     $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)dplane3d$(OUT_EXT)        : $(geomSrcStructs)dplane3d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)transform$(OUT_EXT)       : $(geomSrcStructs)transform.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)rotmatrix$(OUT_EXT)       : $(geomSrcStructs)rotmatrix.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)dsegment3d$(OUT_EXT)      : $(geomSrcStructs)dsegment3d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)dsegment4d$(OUT_EXT)      : $(geomSrcStructs)dsegment4d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)proximitydata$(OUT_EXT)   : $(geomSrcStructs)proximitydata.cpp    $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)graphicspoint$(OUT_EXT)   : $(geomSrcStructs)graphicspoint.cpp    $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)dray3d$(OUT_EXT)          : $(geomSrcStructs)dray3d.cpp           $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)dellipsoid3d$(OUT_EXT)    : $(geomSrcStructs)dellipsoid3d.cpp     $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)dcone3d$(OUT_EXT)         : $(geomSrcStructs)dcone3d.cpp          $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)dtoroid3d$(OUT_EXT)       : $(geomSrcStructs)dtoroid3d.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)dconic4d$(OUT_EXT)        : $(geomSrcStructs)dconic4d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)ddisk3d$(OUT_EXT)         : $(geomSrcStructs)ddisk3d.cpp          $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)frange3d$(OUT_EXT)        : $(geomSrcStructs)frange3d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)fpoint3d$(OUT_EXT)        : $(geomSrcStructs)fpoint3d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)fpoint2d$(OUT_EXT)        : $(geomSrcStructs)fpoint2d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)frange2d$(OUT_EXT)        : $(geomSrcStructs)frange2d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+
+# (end structs_sources_pubinc.mki)
+# (begin structs_sources_bsiinc.mki)
+
+#-$(OUT_DIR)dellipse4d$(OUT_EXT)      : $(geomSrcStructs)dellipse4d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)smallsetrange1d$(OUT_EXT) : $(geomSrcStructs)smallsetrange1d.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)dspiral2dbase$(OUT_EXT) : $(geomSrcStructs)dspiral2dbase.cpp    $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+# (end structs_sources_bsiinc.mki)
+# (end structs_sources.mki)
+# (begin cppstructs_sources.mki)
+
+##-$(OUT_DIR)bsirect$(OUT_EXT)             : $(geomSrcStructsCpp)bsirect.cpp           $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)cppdellipse3d$(OUT_EXT)       : $(geomSrcStructsCpp)cppdellipse3d.cpp     $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)cppdmap4d$(OUT_EXT)           : $(geomSrcStructsCpp)cppdmap4d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)cppdmatrix3d$(OUT_EXT)        : $(geomSrcStructsCpp)cppdmatrix3d.cpp      $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)cppdmatrix4d$(OUT_EXT)        : $(geomSrcStructsCpp)cppdmatrix4d.cpp      $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)cppdpoint2d$(OUT_EXT)         : $(geomSrcStructsCpp)cppdpoint2d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)cppdpoint3d$(OUT_EXT)         : $(geomSrcStructsCpp)cppdpoint3d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)cppdpoint4d$(OUT_EXT)         : $(geomSrcStructsCpp)cppdpoint4d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)cppdplane3d$(OUT_EXT)         : $(geomSrcStructsCpp)cppdplane3d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)cppdrange2d$(OUT_EXT)         : $(geomSrcStructsCpp)cppdrange2d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)cppdrange3d$(OUT_EXT)         : $(geomSrcStructsCpp)cppdrange3d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)cppdray3d$(OUT_EXT)           : $(geomSrcStructsCpp)cppdray3d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)cppdsegment3d$(OUT_EXT)       : $(geomSrcStructsCpp)cppdsegment3d.cpp     $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)cppdtransform3d$(OUT_EXT)     : $(geomSrcStructsCpp)cppdtransform3d.cpp   $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)cppdvec3d$(OUT_EXT)           : $(geomSrcStructsCpp)cppdvec3d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)cppdvec2d$(OUT_EXT)           : $(geomSrcStructsCpp)cppdvec2d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)cpprotmatrix$(OUT_EXT)        : $(geomSrcStructsCpp)cpprotmatrix.cpp      $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)cpptransform$(OUT_EXT)        : $(geomSrcStructsCpp)cpptransform.cpp      $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)DMoments3d$(OUT_EXT)        : $(geomSrcStructsCpp)DMoments3d.cpp      $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)refdpoint2d$(OUT_EXT)         : $(geomSrcStructsCpp)refmethods/refdpoint2d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)refdpoint3d$(OUT_EXT)         : $(geomSrcStructsCpp)refmethods/refdpoint3d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)refdpoint4d$(OUT_EXT)         : $(geomSrcStructsCpp)refmethods/refdpoint4d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+
+$(OUT_DIR)refdvec3d$(OUT_EXT)         : $(geomSrcStructsCpp)refmethods/refdvec3d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)refdvec2d$(OUT_EXT)         : $(geomSrcStructsCpp)refmethods/refdvec2d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+
+$(OUT_DIR)refdrange3d$(OUT_EXT)         : $(geomSrcStructsCpp)refmethods/refdrange3d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)refdrange2d$(OUT_EXT)         : $(geomSrcStructsCpp)refmethods/refdrange2d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+
+#-$(OUT_DIR)refdellipse3d$(OUT_EXT)       : $(geomSrcStructsCpp)refmethods/refdellipse3d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)refdsegment3d$(OUT_EXT)       : $(geomSrcStructsCpp)refmethods/refdsegment3d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)refdsegment4d$(OUT_EXT)       : $(geomSrcStructsCpp)refmethods/refdsegment4d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)refrotmatrix$(OUT_EXT)       : $(geomSrcStructsCpp)refmethods/refrotmatrix.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)refrotmatrixMultiply$(OUT_EXT)   : $(geomSrcStructsCpp)refmethods/refrotmatrixMultiply.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)refrotmatrixInit$(OUT_EXT)       : $(geomSrcStructsCpp)refmethods/refrotmatrixInit.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)refrotmatrixInvert$(OUT_EXT)       : $(geomSrcStructsCpp)refmethods/refrotmatrixInvert.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)refrotmatrixQuery$(OUT_EXT)       : $(geomSrcStructsCpp)refmethods/refrotmatrixQuery.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)reftransform$(OUT_EXT)       : $(geomSrcStructsCpp)refmethods/reftransform.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)reftransformMultiply$(OUT_EXT)       : $(geomSrcStructsCpp)refmethods/reftransformMultiply.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)reftransformIsXXX$(OUT_EXT)       : $(geomSrcStructsCpp)refmethods/reftransformIsXXX.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)reftransformInvert$(OUT_EXT)       : $(geomSrcStructsCpp)refmethods/reftransformInvert.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)refdmatrix4d$(OUT_EXT)       : $(geomSrcStructsCpp)refmethods/refdmatrix4d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)refdmap4d$(OUT_EXT)       : $(geomSrcStructsCpp)refmethods/refdmap4d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)refdplane3d$(OUT_EXT)       : $(geomSrcStructsCpp)refmethods/refdplane3d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)refdray3d$(OUT_EXT)       : $(geomSrcStructsCpp)refmethods/refdray3d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+
+
+
+# (end cppstructs_sources.mki)
+# (begin funcs_sources.mki)
+
+
+# (begin funcs_sources_pubinc.mki)
+
+#-$(OUT_DIR)barycentric$(OUT_EXT)     : $(geomSrcFuncs)barycentric.cpp    $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)complex$(OUT_EXT)         : $(geomSrcFuncs)complex.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)ccctangent$(OUT_EXT)      : $(geomSrcFuncs)ccctangent.cpp     $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)ellipsefillet$(OUT_EXT)   : $(geomSrcFuncs)ellipsefillet.cpp     $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)linalg$(OUT_EXT)          : $(geomSrcFuncs)linalg.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)polysolv$(OUT_EXT)        : $(geomSrcFuncs)polysolv.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)quadeqn$(OUT_EXT)         : $(geomSrcFuncs)quadeqn.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)quadric$(OUT_EXT)         : $(geomSrcFuncs)quadric.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)svd$(OUT_EXT)             : $(geomSrcFuncs)svd.cpp            $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)trigfuncs$(OUT_EXT)       : $(geomSrcFuncs)trigfuncs.cpp      $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)Angle$(OUT_EXT)       : $(geomSrcFuncs)Angle.cpp      $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)lineargeom$(OUT_EXT)      : $(geomSrcFuncs)lineargeom.cpp     $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)quadraticgeom$(OUT_EXT)   : $(geomSrcFuncs)quadraticgeom.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)eigensys3d$(OUT_EXT)      : $(geomSrcFuncs)eigensys3d.cpp     $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)rename$(OUT_EXT)          : $(geomSrcFuncs)rename.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)doublefuncs$(OUT_EXT)     : $(geomSrcFuncs)doublefuncs.cpp    $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)rotations$(OUT_EXT)       : $(geomSrcFuncs)rotations.cpp      $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)polygon3d$(OUT_EXT)       : $(geomSrcFuncs)polygon3d.cpp      $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)polygon2d$(OUT_EXT)       : $(geomSrcFuncs)polygon2d.cpp      $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)polyline3d$(OUT_EXT)      : $(geomSrcFuncs)polyline3d.cpp     $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)polyline2d$(OUT_EXT)      : $(geomSrcFuncs)polyline2d.cpp     $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)polyplane4d$(OUT_EXT)     : $(geomSrcFuncs)polyplane4d.cpp    $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)dpoint3darray$(OUT_EXT)   : $(geomSrcFuncs)dpoint3darray.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)dpoint2darray$(OUT_EXT)   : $(geomSrcFuncs)dpoint2darray.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)simpson$(OUT_EXT)         : $(geomSrcFuncs)simpson.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)polygondecomp$(OUT_EXT)   : $(geomSrcFuncs)polygondecomp.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)ellipticintegrals$(OUT_EXT)   : $(geomSrcFuncs)ellipticintegrals.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+MSBsplineDependencies =
+MSBsplineDependencies + $(geomSrcPubGeom)BsplineStructs.h
+
+#-$(OUT_DIR)MSBsplineCurve$(OUT_EXT)      : $(geomSrcBspline)MSBsplineCurve.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+
+#-$(OUT_DIR)MSInterpolationCurve$(OUT_EXT)      : $(geomSrcBspline)MSInterpolationCurve.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies)
+
+#-$(OUT_DIR)BsplineParam$(OUT_EXT)      : $(geomSrcBspline)BsplineParam.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies)
+
+#-$(OUT_DIR)MSBsplineCurveCreate$(OUT_EXT)      : $(geomSrcBspline)MSBsplineCurveCreate.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies)
+
+#-$(OUT_DIR)MSBsplineCurve_transform$(OUT_EXT)      : $(geomSrcBspline)MSBsplineCurve_transform.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies)
+
+#-$(OUT_DIR)MSBsplineCurve_ByBezier$(OUT_EXT)      : $(geomSrcBspline)MSBsplineCurve_ByBezier.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies)
+
+#-$(OUT_DIR)MSBsplineCurve_ruledSurface$(OUT_EXT)      : $(geomSrcBspline)MSBsplineCurve_ruledSurface.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies)
+
+
+#-$(OUT_DIR)MSBsplineCurve_Modify$(OUT_EXT)      : $(geomSrcBspline)MSBsplineCurve_Modify.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies)
+
+#-$(OUT_DIR)MSBsplineSurface$(OUT_EXT)    : $(geomSrcBspline)MSBsplineSurface.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+
+#-$(OUT_DIR)MSBsplineSurfaceLofting$(OUT_EXT)    : $(geomSrcBspline)MSBsplineSurfaceLofting.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+
+
+#-$(OUT_DIR)BsplineCurveFit$(OUT_EXT)    : $(geomSrcBspline)BsplineCurveFit.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+
+#-$(OUT_DIR)BCurveSegment$(OUT_EXT)    : $(geomSrcBspline)BCurveSegment.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+
+#-$(OUT_DIR)Bspline1d$(OUT_EXT)    : $(geomSrcBspline)Bspline1d.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+
+##-$(OUT_DIR)ustnFuncs$(OUT_EXT)  : $(geomSrcBspline)ustnFuncs.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+
+#-$(OUT_DIR)bspLocal$(OUT_EXT)    : $(geomSrcBspline)bspLocal.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+
+$(OUT_DIR)sortutil$(OUT_EXT)    : $(geomSrcBspline)sortutil.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+
+#-$(OUT_DIR)bspv7$(OUT_EXT)    : $(geomSrcBspline)bspv7.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+
+#-$(OUT_DIR)bspcurvcurv$(OUT_EXT)    : $(geomSrcBspline)bspcurvcurv.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+
+#-$(OUT_DIR)bspcurv$(OUT_EXT)    : $(geomSrcBspline)bspcurv.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+
+#-$(OUT_DIR)bsputil$(OUT_EXT)    : $(geomSrcBspline)bsputil.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+
+#-$(OUT_DIR)bspmisc$(OUT_EXT)    : $(geomSrcBspline)bspmisc.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+
+#-$(OUT_DIR)bspCubicFit$(OUT_EXT)    : $(geomSrcBspline)bspCubicFit.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+
+
+#-$(OUT_DIR)bspsurf$(OUT_EXT)    : $(geomSrcBspline)bspsurf.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+
+#-$(OUT_DIR)bspconv$(OUT_EXT)    : $(geomSrcBspline)bspconv.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+
+#-$(OUT_DIR)bsprcurv$(OUT_EXT)    : $(geomSrcBspline)bsprcurv.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+
+#-$(OUT_DIR)bspsurfacetrim$(OUT_EXT)    : $(geomSrcBspline)bspsurfacetrim.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+
+#-$(OUT_DIR)bspproc$(OUT_EXT)    : $(geomSrcBspline)bspproc.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+
+#-$(OUT_DIR)bspbound$(OUT_EXT)    : $(geomSrcBspline)bspbound.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+
+##-$(OUT_DIR)bspstrok$(OUT_EXT)    : $(geomSrcBspline)bspstrok.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+
+#-$(OUT_DIR)bspfit$(OUT_EXT)    : $(geomSrcBspline)bspfit.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+
+#-$(OUT_DIR)bsprfit$(OUT_EXT)    : $(geomSrcBspline)bsprfit.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+
+#-$(OUT_DIR)bspdcurv$(OUT_EXT)    : $(geomSrcBspline)bspdcurv.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+
+##-$(OUT_DIR)mdlbsplineblt$(OUT_EXT)    : $(geomSrcBspline)mdlbsplineblt.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+
+##-$(OUT_DIR)bspbltwrappers$(OUT_EXT)    : $(geomSrcBspline)bspbltwrappers.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+
+#-$(OUT_DIR)bspprof$(OUT_EXT)    : $(geomSrcBspline)bspprof.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+
+#-$(OUT_DIR)bspdsurf$(OUT_EXT)    : $(geomSrcBspline)bspdsurf.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+
+#-$(OUT_DIR)bspssi$(OUT_EXT)    : $(geomSrcBspline)bspssi.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+
+#-$(OUT_DIR)bspicurv$(OUT_EXT)    : $(geomSrcBspline)bspicurv.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+
+#-$(OUT_DIR)bsprange$(OUT_EXT)    : $(geomSrcBspline)bsprange.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+
+#-$(OUT_DIR)plank$(OUT_EXT)    : $(geomSrcBspline)plank.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+
+#-$(OUT_DIR)bspplank$(OUT_EXT)    : $(geomSrcBspline)bspplank.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+
+#-$(OUT_DIR)bsp_curvature$(OUT_EXT)    : $(geomSrcBspline)bsp_curvature.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+
+#-$(OUT_DIR)bspbool$(OUT_EXT)    : $(geomSrcBspline)bspbool.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+
+#-$(OUT_DIR)bspmesh$(OUT_EXT)    : $(geomSrcBspline)bspmesh.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+
+#-$(OUT_DIR)tristrip$(OUT_EXT)    : $(geomSrcBspline)tristrip.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+
+##-$(OUT_DIR)bspcci$(OUT_EXT)    : $(geomSrcBspline)bspcci.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+
+#-$(OUT_DIR)bspcciStubs$(OUT_EXT)    : $(geomSrcBspline)bspcciStubs.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+
+#-$(OUT_DIR)bsp_mxspline$(OUT_EXT)    : $(geomSrcBspline)bsp_mxspline.cpp $(geomSrcBspline)mxspline.h $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+
+#-$(OUT_DIR)bsp_offset$(OUT_EXT)    : $(geomSrcBspline)bsp_offset.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+
+#-$(OUT_DIR)bsprsurf$(OUT_EXT)    : $(geomSrcBspline)bsprsurf.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+
+#-$(OUT_DIR)bspPolysolve$(OUT_EXT)    : $(geomSrcBspline)bspPolysolve.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+
+# (end funcs_sources_pubinc.mki)
+# (begin funcs_sources_bsiinc.mki)
+
+#-$(OUT_DIR)pencil$(OUT_EXT)          : $(geomSrcFuncs)pencil.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)polycoff$(OUT_EXT)        : $(geomSrcFuncs)polycoff.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)qsic$(OUT_EXT)            : $(geomSrcFuncs)qsic.cpp           $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)rctree$(OUT_EXT)          : $(geomSrcFuncs)rctree.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)rotconic$(OUT_EXT)        : $(geomSrcFuncs)rotconic.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)triquad$(OUT_EXT)         : $(geomSrcFuncs)triquad.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)analyticroots$(OUT_EXT)   : $(geomSrcFuncs)analyticroots.cpp          $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)newton$(OUT_EXT)          : $(geomSrcFuncs)newton.cpp          $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)memfuncs$(OUT_EXT)        : $(geomSrcFuncs)memfuncs.cpp          $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)BSIQuadrature$(OUT_EXT)   : $(geomSrcFuncs)BSIQuadrature.cpp          $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)XYRangeTree$(OUT_EXT)     : $(geomSrcFuncs)XYRangeTree.cpp          $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+##-$(OUT_DIR)XYZRangeTree$(OUT_EXT)     : $(geomSrcFuncs)XYZRangeTree.cpp          $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)XYPointSearch$(OUT_EXT)     : $(geomSrcFuncs)XYPointSearch.cpp          $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)TriDiagonalSolver$(OUT_EXT)     : $(geomSrcFuncs)TriDiagonalSolver.cpp          $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)cluster$(OUT_EXT)          : $(geomSrcFuncs)cluster.cpp          $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+
+# (end funcs_sources_bsiinc.mki)
+# (begin funcs_sources_privinc.mki)
+
+#-$(OUT_DIR)bench$(OUT_EXT)           : $(geomSrcFuncs)bench.cpp          $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+
+# (end funcs_sources_privinc.mki)
+# (end funcs_sources.mki)
+# (begin interfac_sources.mki)
+
+
+# (begin interfac_sources_pubinc.mki)
+
+#-$(OUT_DIR)dpoint3dconvertedtodvec3d$(OUT_EXT)   : $(geomSrcInterfac)dpoint3dconvertedtodvec3d.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)rotmatrix_dep$(OUT_EXT)               : $(geomSrcInterfac)rotmatrix_dep.cpp           $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)dmatrix3d_dep$(OUT_EXT)               : $(geomSrcInterfac)dmatrix3d_dep.cpp           $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+
+# (end interfac_sources_pubinc.mki)
+# (begin interfac_sources_bsiinc.mki)
+
+#-$(OUT_DIR)basegeom_2ms$(OUT_EXT)                : $(geomSrcInterfac)basegeom_2ms.cpp            $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+
+# (end interfac_sources_bsiinc.mki)
+# (end interfac_sources.mki)
+# (begin bezier_sources.mki)
+
+$(OUT_DIR)bezeval$(OUT_EXT)        : $(geomSrcBezier)bezeval.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)ruledBezier$(OUT_EXT)        : $(geomSrcBezier)ruledBezier.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)bezroot$(OUT_EXT)        : $(geomSrcBezier)bezroot.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)bezrootConics$(OUT_EXT)        : $(geomSrcBezier)bezrootConics.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)bezierDPoint4d$(OUT_EXT) : $(geomSrcBezier)bezierDPoint4d.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)bezierExtractionContext$(OUT_EXT) : $(geomSrcBezier)bezierExtractionContext.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)implicitbezier$(OUT_EXT) : $(geomSrcBezier)implicitbezier.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+#-$(OUT_DIR)Polynomials$(OUT_EXT) : $(geomSrcStructs)Polynomials.cpp $(geomSrcPubGeom)Polynomials.h $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+
+# (end bezier_sources.mki)# Set all the macros to warning values
+
+
+#-$(OUT_DIR)vu$(OUT_EXT)                  : $(vuSrc)vu.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)vucoord$(OUT_EXT)             : $(vuSrc)vucoord.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)vusmooth$(OUT_EXT)             : $(vuSrc)vusmooth.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)vusubset$(OUT_EXT)            : $(vuSrc)vusubset.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)vuarray$(OUT_EXT)             : $(vuSrc)vuarray.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)vumod$(OUT_EXT)               : $(vuSrc)vumod.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)vumod2$(OUT_EXT)              : $(vuSrc)vumod2.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)vuconvex$(OUT_EXT)            : $(vuSrc)vuconvex.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)vuaddedges$(OUT_EXT)          : $(vuSrc)vuaddedges.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)vuunion$(OUT_EXT)             : $(vuSrc)vuunion.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)vuprint$(OUT_EXT)             : $(vuSrc)vuprint.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+$(OUT_DIR)GeomPrintFuncs$(OUT_EXT)      : $(vuSrc)GeomPrintFuncs.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)vumerge$(OUT_EXT)             : $(vuSrc)vumerge.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)vumerge2$(OUT_EXT)            : $(vuSrc)vumerge2.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)vufilter$(OUT_EXT)            : $(vuSrc)vufilter.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)vutriang$(OUT_EXT)            : $(vuSrc)vutriang.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)vureg$(OUT_EXT)               : $(vuSrc)vureg.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)vustack$(OUT_EXT)             : $(vuSrc)vustack.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)vuexcise$(OUT_EXT)            : $(vuSrc)vuexcise.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)vucluster$(OUT_EXT)           : $(vuSrc)vucluster.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)vuperiodicconnect$(OUT_EXT)   : $(vuSrc)vuperiodicconnect.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)vugrid$(OUT_EXT)              : $(vuSrc)vugrid.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)pbfvu$(OUT_EXT)               : $(vuSrc)pbfvu.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)vumem$(OUT_EXT)          : $(vuSrc)vumem.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)vudangler$(OUT_EXT)           : $(vuSrc)vudangler.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)vumulticlip$(OUT_EXT)         : $(vuSrc)vumulticlip.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)vumaskops$(OUT_EXT)           : $(vuSrc)vumaskops.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)vuflood$(OUT_EXT)             : $(vuSrc)vuflood.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)vupoly$(OUT_EXT)              : $(vuSrc)vupoly.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)vupoly_bsplineBoundaryLoops$(OUT_EXT) : $(vuSrc)vupoly_bsplineBoundaryLoops.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)VuOps$(OUT_EXT)              : $(vuSrc)VuOps.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)PolygonArray$(OUT_EXT)       : $(vuSrc)PolygonArray.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)VuPositionDetail$(OUT_EXT)   : $(vuSrc)VuPositionDetail.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)vuSearch$(OUT_EXT)           : $(vuSrc)vuSearch.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)XYVisibilitySplitter$(OUT_EXT) : $(vuSrc)XYVisibilitySplitter.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+
+#-$(OUT_DIR)FacetOptions$(OUT_EXT)        : $(geomSrcPolyface)FacetOptions.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)IPolyfaceConstruction_Dispatchers$(OUT_EXT)        : $(geomSrcPolyface)IPolyfaceConstruction_Dispatchers.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)PolyfaceAdd$(OUT_EXT)            : $(geomSrcPolyface)PolyfaceAdd.cpp          $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)PolyfacePartition$(OUT_EXT)      : $(geomSrcPolyface)PolyfacePartition.cpp          $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)IPolyfaceConstruction_Add$(OUT_EXT)            : $(geomSrcPolyface)IPolyfaceConstruction_Add.cpp          $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)PolyfaceAddSolidPrimitive$(OUT_EXT)  : $(geomSrcPolyface)PolyfaceAddSolidPrimitive.cpp          $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)PolyfaceAddTriangulation$(OUT_EXT)            : $(geomSrcPolyface)PolyfaceAddTriangulation.cpp          $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)polyfaceAddNormals$(OUT_EXT) : $(geomSrcPolyface)polyfaceAddNormals.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+$(OUT_DIR)BlockedVector$(OUT_EXT)       : $(geomSrcPolyface)BlockedVector.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)PolyfaceStitch$(OUT_EXT)      : $(geomSrcPolyface)PolyfaceStitch.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)ClipPlaneSet$(OUT_EXT)      : $(geomSrcPolyface)ClipPlaneSet.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)ClipPlane$(OUT_EXT)      : $(geomSrcPolyface)ClipPlane.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+$(OUT_DIR)drange1d$(OUT_EXT)      : $(geomSrcStructs)drange1d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)DSegment1d$(OUT_EXT)      : $(geomSrcStructs)DSegment1d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+
+#-$(OUT_DIR)PolylineIntersections$(OUT_EXT) : $(geomSrcFuncs)PolylineIntersections.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+
+#-$(OUT_DIR)PolyfaceCoordinateMap$(OUT_EXT)      : $(geomSrcPolyface)PolyfaceCoordinateMap.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+%ifdef abc
+$(OUT_DIR)PolyfaceClip$(OUT_EXT)      : $(geomSrcPolyface)PolyfaceClip.cpp \
+                                        $(geomSrcPolyface)PolyfaceSection.h \
+                                        $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+$(OUT_DIR)PolyfaceClip1$(OUT_EXT)      : $(geomSrcPolyface)PolyfaceClip1.cpp \
+                                        $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+$(OUT_DIR)IndexedClipEdge$(OUT_EXT)      : $(geomSrcPolyface)IndexedClipEdge.cpp \
+					   $(geomSrcPolyface)IndexedClipEdge.h \
+                                        $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+%endif
+
+#-$(OUT_DIR)PolyfaceVectors$(OUT_EXT)      : $(geomSrcPolyface)PolyfaceVectors.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)Polyface$(OUT_EXT)      : $(geomSrcPolyface)Polyface.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)RgbFactor$(OUT_EXT)      : $(geomSrcPolyface)RgbFactor.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)PolyfaceVisitor$(OUT_EXT)      : $(geomSrcPolyface)PolyfaceVisitor.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)PolyfaceVisitorSearch$(OUT_EXT)      : $(geomSrcPolyface)PolyfaceVisitorSearch.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)FacetLocationDetail$(OUT_EXT)      : $(geomSrcPolyface)FacetLocationDetail.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)FacetFaceData$(OUT_EXT)      : $(geomSrcPolyface)FacetFaceData.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+
+#-$(OUT_DIR)PolyfaceQuery$(OUT_EXT)      : $(geomSrcPolyface)PolyfaceQuery.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)PolyfaceQueryCarrier$(OUT_EXT)      : $(geomSrcPolyface)PolyfaceQueryCarrier.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)polyfaceToMTG$(OUT_EXT)      : $(geomSrcPolyface)polyfaceToMTG.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)graphicspointarray$(OUT_EXT)      : $(geomSrcGpa)graphicspointarray.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)gp_bspline$(OUT_EXT)      : $(geomSrcGpa)gp_bspline.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)gp_properties$(OUT_EXT)    : $(geomSrcGpa)gp_properties.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)gpa_properties$(OUT_EXT)    : $(geomSrcGpa)gpa_properties.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)gpa_parser$(OUT_EXT)    : $(geomSrcGpa)gpa_parser.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)MSBsplineCurvePtr$(OUT_EXT)    : $(geomSrcBspline)MSBsplineCurvePtr.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)ICurvePrimitive$(OUT_EXT)    : $(geomSrcCurvePrimitive)ICurvePrimitive.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+
+#-$(OUT_DIR)SolidPrimitive$(OUT_EXT)    : $(geomSrcSolidPrimitive)SolidPrimitive.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)sp_RayIntersection$(OUT_EXT)  : $(geomSrcSolidPrimitive)sp_RayIntersection.cpp  $(geomSrcCurvePrimitive)CurveIntersectRotatedRay.h        $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)sp_ExtractFace$(OUT_EXT)  : $(geomSrcSolidPrimitive)sp_ExtractFace.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)sp_getSection$(OUT_EXT)  : $(geomSrcSolidPrimitive)sp_getSection.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+
+#-$(OUT_DIR)BoxFaces$(OUT_EXT)  : $(geomSrcSolidPrimitive)BoxFaces.cpp  $(geomSrcSolidPrimitive)BoxFaces.h        $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)sp_FaceIndices$(OUT_EXT)  : $(geomSrcSolidPrimitive)sp_FaceIndices.cpp  $(geomSrcSolidPrimitive)BoxFaces.h        $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)sp_UVToXYZ$(OUT_EXT)  : $(geomSrcSolidPrimitive)sp_UVToXYZ.cpp  $(geomSrcCurvePrimitive)CurveIntersectRotatedRay.h        $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+
+#-$(OUT_DIR)SolidLocationDetail$(OUT_EXT)  : $(geomSrcSolidPrimitive)SolidLocationDetail.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+
+#-$(OUT_DIR)IGeometryPtr$(OUT_EXT)    : $(geomSrcCurvePrimitive)IGeometryPtr.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)sp_Range$(OUT_EXT)    : $(geomSrcSolidPrimitive)sp_Range.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)sp_maxUVLength$(OUT_EXT)    : $(geomSrcSolidPrimitive)sp_maxUVLength.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+
+#-$(OUT_DIR)ICurvePrimitiveProcessor$(OUT_EXT)    : $(geomSrcCurvePrimitive)ICurvePrimitiveProcessor.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)CurveVectorProperties$(OUT_EXT)    : $(geomSrcCurvePrimitive)CurveVectorProperties.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)CurveVectorAreaBooleans$(OUT_EXT)    : $(geomSrcCurvePrimitive)CurveVectorAreaBooleans.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+
+#-$(OUT_DIR)CurveCurveIntersection$(OUT_EXT)    : $(geomSrcCurvePrimitive)CurveCurveIntersection.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+
+#-$(OUT_DIR)CurveCurveApproach$(OUT_EXT)    : $(geomSrcCurvePrimitive)CurveCurveApproach.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+
+#-$(OUT_DIR)CurvePrimitivePartialCurve$(OUT_EXT) : $(geomSrcCurvePrimitive)CurvePrimitivePartialCurve.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)CurveCurveProcessor$(OUT_EXT) : $(geomSrcCurvePrimitive)CurveCurveProcessor.cpp $(geomSrcCurvePrimitive)CurveCurveProcessor.h $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)CurvePlaneIntersection$(OUT_EXT)    : $(geomSrcCurvePrimitive)CurvePlaneIntersection.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)CurvePrimitive$(OUT_EXT)    : $(geomSrcCurvePrimitive)CurvePrimitive.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)CurvePrimitivePair$(OUT_EXT)    : $(geomSrcCurvePrimitive)CurvePrimitivePair.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)CurvePrimitiveBsplineCurve$(OUT_EXT)    : $(geomSrcCurvePrimitive)CurvePrimitiveBsplineCurve.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)CurveLocationDetail$(OUT_EXT)    : $(geomSrcCurvePrimitive)CurveLocationDetail.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)CurveLocationDetailPair$(OUT_EXT)    : $(geomSrcCurvePrimitive)CurveLocationDetailPair.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)CurveVector$(OUT_EXT)    : $(geomSrcCurvePrimitive)CurveVector.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)CurveVectorInOut$(OUT_EXT)    : $(geomSrcCurvePrimitive)CurveVectorInOut.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)CurveVectorOps$(OUT_EXT)    : $(geomSrcCurvePrimitive)CurveVectorOps.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)gpaCurvePrimitive$(OUT_EXT)    : $(geomSrcGpa)gpaCurvePrimitive.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)gp_prop1$(OUT_EXT)         : $(geomSrcGpa)gp_prop1.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)gp_beziersection$(OUT_EXT) : $(geomSrcGpa)gp_beziersection.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)gp_bool$(OUT_EXT) : $(geomSrcGpa)gp_bool.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)gp_ellipse$(OUT_EXT) : $(geomSrcGpa)gp_ellipse.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)gp_hatch$(OUT_EXT) : $(geomSrcGpa)gp_hatch.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)gp_hatchblock$(OUT_EXT) : $(geomSrcGpa)gp_hatchblock.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)gp_inout$(OUT_EXT) : $(geomSrcGpa)gp_inout.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)gp_intersectxy$(OUT_EXT) : $(geomSrcGpa)gp_intersectxy.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)gp_offset$(OUT_EXT) : $(geomSrcGpa)gp_offset.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)gp_pairs$(OUT_EXT) : $(geomSrcGpa)gp_pairs.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)gp_perptan$(OUT_EXT) : $(geomSrcGpa)gp_perptan.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)gp_silhouette$(OUT_EXT) : $(geomSrcGpa)gp_silhouette.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)gp_stroke$(OUT_EXT) : $(geomSrcGpa)gp_stroke.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)gp_xymoments$(OUT_EXT) : $(geomSrcGpa)gp_xymoments.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)bspintersect$(OUT_EXT) : $(geomSrcGpa)bspintersect.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)akima$(OUT_EXT) : $(geomSrcBspline)akima.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)gp_developable$(OUT_EXT) : $(geomSrcGpa)gp_developable.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+##-$(OUT_DIR)gp_polygon$(OUT_EXT) : $(geomSrcGpa)gp_polygon.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+
+# gp_clip -- needs ClipDescr
+
+# deprecated but still used -- most functionality maps to jmdlEmbeddedXXXArray, but
+# return values are StatusInt instead of BoolInt and call-side changes are dangerous.
+#-$(OUT_DIR)jmdl_dpnt3$(OUT_EXT) : $(geomSrcMemory)jmdl_dpnt3.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)jmdl_iarray$(OUT_EXT) : $(geomSrcMemory)jmdl_iarray.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)UnionFind$(OUT_EXT) : $(geomSrcMemory)UnionFind.cpp     $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+
+##-$(OUT_DIR)gp_fragments$(OUT_EXT) : $(geomSrcMTG)gp_fragments.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)MTGGraph$(OUT_EXT)      : $(geomSrcMTG)MTGGraph.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)jmdl_mtgbase1$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgbase1.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)jmdl_mtgmesh$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgmesh.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+
+%ifdef CompileAllMTG
+
+#-$(OUT_DIR)jmdl_facetmemory$(OUT_EXT) : $(geomSrcMTG)jmdl_facetmemory.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)jmdl_mtgmemory$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgmemory.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)jmdl_mtgfacet2$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgfacet2.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+%endif
+
+#-$(OUT_DIR)jmdl_mtgmask$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgmask.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)jmdl_mtgloop$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgloop.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)jmdl_mtgmarkset$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgmarkset.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)jmdl_mtgclip$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgclip.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)jmdl_mtgfacet$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgfacet.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)jmdl_mtgfacet3$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgfacet3.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)jmdl_mtgedgestar$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgedgestar.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)jmdl_mtgparity$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgparity.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)jmdl_mtgreduce$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgreduce.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)jmdl_mtgreg$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgreg.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)jmdl_mtgstitch$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgstitch.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)jmdl_mtgswap$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgswap.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)mtgflowlines$(OUT_EXT) : $(geomSrcMTG)mtgflowlines.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)unfold$(OUT_EXT) : $(geomSrcMTG)unfold.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+%ifdef CompileSmoothMeshNormals
+#-$(OUT_DIR)mtgSmoothNormals$(OUT_EXT) : $(geomSrcMTG)mtgSmoothNormals.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+%endif
+#-$(OUT_DIR)delauney$(OUT_EXT) : $(geomSrcMTG)delauney.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)facetout$(OUT_EXT) : $(geomSrcMTG)facetout.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#%ifdef CompileMtgPrint
+#-$(OUT_DIR)mtgprint$(OUT_EXT) : $(geomSrcMTG)mtgprint.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#%endif
+#-$(OUT_DIR)rg_header$(OUT_EXT)      : $(geomSrcRegions)rg_header.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)rg_fixface$(OUT_EXT)      : $(geomSrcRegions)rg_fixface.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)rg_gaps$(OUT_EXT)      : $(geomSrcRegions)rg_gaps.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)rg_geom$(OUT_EXT)      : $(geomSrcRegions)rg_geom.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)rg_loops$(OUT_EXT)      : $(geomSrcRegions)rg_loops.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)rg_intersections$(OUT_EXT) : $(geomSrcRegions)rg_intersections.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)rg_inwardparity$(OUT_EXT) : $(geomSrcRegions)rg_inwardparity.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)rg_merge$(OUT_EXT) : $(geomSrcRegions)rg_merge.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)rg_merge2$(OUT_EXT) : $(geomSrcRegions)rg_merge2.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)rg_rangeTree$(OUT_EXT) : $(geomSrcRegions)rg_rangeTree.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+# MTGNodeArray -- never used, kill.
+#-$(OUT_DIR)jmdl_mtgchain$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgchain.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+##-$(OUT_DIR)jmdl_polyhdr$(OUT_EXT)        :$(geomSrcGpa)jmdl_polyhdr.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)jmdl_planeset$(OUT_EXT)        :$(geomSrcGpa)jmdl_planeset.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)rimsbs_context$(OUT_EXT)        :$(geomSrcRimsbs)rimsbs_context.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)rimsbs_eval$(OUT_EXT)        :$(geomSrcRimsbs)rimsbs_eval.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)rimsbs_intersect$(OUT_EXT)        :$(geomSrcRimsbs)rimsbs_intersect.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)rimsbs_intersect1$(OUT_EXT)        :$(geomSrcRimsbs)rimsbs_intersect1.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)gpaff_context$(OUT_EXT)        :$(geomSrcRimsbs)gpaff_context.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)decimatexyz$(OUT_EXT)         :$(geomSrcMTG)decimatexyz.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+%ifdef COMPILE_PLATFORM_GEOMETRY
+
+#-$(OUT_DIR)virtualcurve$(OUT_EXT)         :$(geomSrcPlatform)virtualcurve.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)templatizedVector$(OUT_EXT)         :$(geomSrcPlatform)templatizedVector.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#-$(OUT_DIR)curvecurve$(OUT_EXT)         :$(geomSrcPlatform)curvecurve.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+%endif
+
+#-$(OUT_DIR)BSIRect$(OUT_EXT)         :$(geomSrcIntegerTYpes)BSIRect.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+OUT_DIR = BAD_OUT_DIR_VALUE_INHERITED_FROM_SOURCES.MKI
+OUT_EXT = BAD_OUT_EXT_VALUE_INHERITED_FROM_SOURCES.MKI
+OTHER_DEPENDENCIES = BAD_OTHER_DEPENDENCIES_VALUE_INHERITED_FROM_SOURCES.MKI
+

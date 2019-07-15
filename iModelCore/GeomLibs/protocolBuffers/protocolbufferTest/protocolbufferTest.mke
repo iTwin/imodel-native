@@ -1,0 +1,95 @@
+#----------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#----------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------
+# TODO: this is a temporary solution
+#----------------------------------------------------------------------------------------
+%include mdl.mki
+
+srcGeomLibs=$(SrcRoot)GeomLibs/
+%include    $(srcGeomLibs)common/inc/geomlibsdev.mki
+
+%include $(_MakefilePath)protocolBufferTest.mki
+testsDir=$(_MakefilePath)tests/
+
+%include $(_MakefilePath)../geomlibsTest.mki
+
+nameToDefine = GOOGLE_PROTOBUF_NO_THREAD_SAFETY
+%include cdefapnd.mki
+
+o = $(PartBuildDir)
+
+always:
+    ~mkdir $(o)
+
+#----------------------------------------------------------------------------------------
+#  General Configuration
+#----------------------------------------------------------------------------------------
+AppConfigurationMKI = $(_MakefilePath)protocolBufferTest.mki
+
+testDir = $(_MakefilePath)Tests/
+
+%include MultiCppCompileRule.mki
+pch = $(baseDir)src/checkers.h 
+
+BSI_PBCPP=$(_MakefilePath)../../../protocolBuffers/cpp/
+
+#########################################################################################
+# Tests - At this time if you want to include any other tests you just add them here.
+# Or if you only want to run a subset of tests then you just supply them as you want.
+# The tests will be automatically registered with the runner.
+#########################################################################################
+
+$(o)protocolBufferTest$(oext)   : $(_MakeFilePath)/protocolBufferTest.cpp        $(pch) ${MultiCompileDepends}
+
+$(o)t_protocolbuffer$(oext)   : $(_MakeFilePath)/tests/t_protocolbuffer.cpp  $(BSI_PBCPP)allcg.pb.cpp $(BSI_PBCPP)allcg.pb.h $(pch) ${MultiCompileDepends}
+
+$(o)StackExaminer$(oext)   : $(baseDir)src/StackExaminer.cpp $(pch) ${MultiCompileDepends}
+
+$(o)StackExaminerGtestHelper$(oext)   : $(baseDir)src/StackExaminerGtestHelper.cpp $(pch) ${MultiCompileDepends}
+
+$(o)checkers$(oext)   : $(baseDir)src/checkers.cpp $(pch) ${MultiCompileDepends}
+
+
+%include MultiCppCompileGo.mki
+
+CVTestObjs = $(MultiCompileObjectList)
+
+#----------------------------------------------------------------------------------------
+#   Link the executable
+#----------------------------------------------------------------------------------------
+
+%undef CPchOpts
+%undef CCPchOpts
+
+libsUsed + d:\topaz\out\Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\beprotobuf\Delivery\BeProtobuf.lib
+LOCAL_GUNITTEST_OBJS = $(PCHHeaderObject) $(CVTestObjs)
+GUNITTEST_OUT       = $(o)
+GUNITTEST_NAME      = $(appName)
+GUNITTEST_DEST      = $(o)
+GUNITTEST_LIBS      = $(libsUsed)
+#GUNITTEST_NTLIBS    = advapi32.lib
+GUNITTEST_OBJS      = $(PCHHeaderObject) $(CVTestObjs)
+GUNITTEST_PATH      = $(o)
+GUNITTEST_SYMB      = $(o)
+
+GUnitTestDir = $(UTILROOT)gtest/
+GTEST_MAIN_IS_SUPPLIED = 1
+#--------------------------------------------------------------------------------------
+# Additional code needed to create test
+#--------------------------------------------------------------------------------------
+dirToSearch = $(GUnitTestDir)
+%include cincapnd.mki
+
+dirToSearch = $(GUnitTestDir)include/
+%include cincapnd.mki
+
+%include $(GUnitTestDir)gtestobj.mki
+
+%message GunitTest source $(SharedMki)gunittest.mki
+%include $(SharedMki)gunittest.mki
+
+always:
+    @CreateSymLinks.py "$(BuildContext)Delivery\$(appName).exe=$(o)$(appName).exe"

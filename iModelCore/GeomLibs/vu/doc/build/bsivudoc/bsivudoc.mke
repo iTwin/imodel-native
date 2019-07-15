@@ -1,0 +1,95 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+#%if !defined (MSJ)
+#    %error Since bsivudoc is built with mdldoc, it must be compiled from within a MicroStation shell, not a Geomlibs shell.
+#%endif
+
+%include    $(SrcGeomLibs)/common/inc/geomlibsdev.mki
+%include    mdl.mki
+
+#---------------------------------------------
+#   Set mdldoc project
+#---------------------------------------------
+MDLDOC_ProjectName          = bsivudoc
+
+#---------------------------------------------
+#   Define input directories
+#---------------------------------------------
+MDLDOC_BaseDir              = $(_MakeFilePath)
+MDLDOC_SourceDir            = $(vu_include)
+
+#---------------------------------------------
+#   Define input files
+#---------------------------------------------
+MDLDOC_ContentFile          = $(MDLDOC_BaseDir)$(MDLDOC_ProjectName).cnt
+MDLDOC_HeaderFile           = $(MDLDOC_BaseDir)includehtml/$(MDLDOC_ProjectName)_head.txt
+MDLDOC_FooterFile           = $(MDLDOC_BaseDir)includehtml/$(MDLDOC_ProjectName)_foot.txt
+MDLDOC_ListFile             = $(MDLDOC_BaseDir)$(MDLDOC_ProjectName)_list.mki
+MDLDOC_XML                  = $(MDLDOC_BaseDir)$(MDLDOC_ProjectName).xml
+
+#---------------------------------------------
+#   Define output directories
+#---------------------------------------------
+MDLDOC_OutDir               = $(vu_buildDoc)
+MDLDOC_GensrcDir            = $(MDLDOC_OutDir)gensrc/
+MDLDOC_StampDir             = $(MDLDOC_OutDir)maketmp/
+MDLDOC_SpellDir             = $(MDLDOC_OutDir)spell/
+
+#---------------------------------------------
+#   Define output files
+#
+#   MDLDOC_OutputFile must be same as the
+#   Compiled file in $(MDLDOC_ProjectName).hhp!
+#---------------------------------------------
+MDLDOC_RequiredLibraryList  = $(MDLDOC_OutDir)requiredLibrary.lst
+MDLDOC_OutputFile           = $(vu_doc)$(MDLDOC_ProjectName).chm
+GEOMLIBS_OutputFile         = $(MDLDOC_BaseDir)../../$(MDLDOC_ProjectName).chm
+
+#---------------------------------------------
+#   Look for headers in Geomlibs output tree.
+#   Avoid pulling in std headers with -d macro.
+#   Don't bother with function version #s.
+#---------------------------------------------
+MDLDOC_Options              = -p$(MDLDOC_ProjectName) \
+                              -o$(MDLDOC_OutDir) \
+                              -c$(MDLDOC_ContentFile) \
+                              -h$(MDLDOC_HeaderFile) \
+                              -f$(MDLDOC_FooterFile) \
+                              -x$(MDLDOC_XML) \
+                              -i$(utilSharedInc) \
+                              -i$(vu_include) \
+                              -i$(baseGeom_include) \
+                              -i$(vu_include)vu/ \
+                              -i$(MDLDOC_BaseDir)examples/ \
+                              -L$(MDLDOC_RequiredLibraryList) \
+                              -dINCLUDE_FROM_MDLDOC \
+                              -e0.0.0
+
+#----------------------------------------------
+#   Create output directories
+#----------------------------------------------
+always:
+    ~mkdir $(MDLDOC_Outdir)
+    ~mkdir $(MDLDOC_GensrcDir)
+    ~mkdir $(MDLDOC_OutDir)html
+
+#----------------------------------------------
+#   Build list of functions & their library
+#----------------------------------------------
+# Run the command and generate the list of functions to dlls.
+$(MDLDOC_RequiredLibraryList)   : $(vu_bin)bsivu.dll
+    $(DumpExportsCmd) -FilenameAndDemangledFunction -NoAdornments -BaseFileName $(vu_bin)bsivu.dll >> $(MDLDOC_RequiredLibraryList)
+    ~time
+
+
+#---------------------------------------------
+#   Build docs
+#---------------------------------------------
+# preprocess headers
+%include $(_MakeFilePath)include/$(MDLDOC_ProjectName).mki
+
+%include    $(SrcGeomLibs)common/inc/builddocs.mki
+

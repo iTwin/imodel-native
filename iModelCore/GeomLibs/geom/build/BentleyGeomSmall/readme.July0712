@@ -1,0 +1,26 @@
+BentleyGeomSmall --- small geomlibs, only modern structs allowed.
+1) All refmethods files except dmap4d.
+2) Various support files (funcs, bezier)
+DPoint3dOps.cpp
+quadeqn.cpp
+svd.cpp
+Angle.cpp
+eigensys3d.cpp
+sortutil.cpp
+analyticroots.cpp
+newton.cpp
+memfuncs.cpp
+BSIQuadrature.cpp
+bezeval.cpp
+bezroot.cpp
+bezrootConics.cpp
+Polynomials.cpp
+PolygonArray.cpp
+3) Lots of vu
+  (not tried: multiclip, grid, smoothing)
+
+This can build with the standard PublicAPI (which will define many signatures of missing functions)
+or with stripped down PublicAPI under build\BentleyGeomSmall.
+
+To link with the small includes, rename top level PublicAPI and build a link directory from geomlibs\PublicAPI to the small PublicAPI.
+
