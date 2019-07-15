@@ -327,16 +327,16 @@ bool RulesPreprocessor::ProcessSpecificationsByHash(RuleType const& rule, ChildN
     {
     for (ChildNodeSpecificationP specification : searchIn)
         {
-        if (0 == strcmp(specification->GetHash().c_str(), specificationHash))
+        if (specification->GetHash().Equals(specificationHash))
             {
             if (requested)
                 PrioritySortedAdd(specs, ChildNodeRuleSpecification(*specification, rule));
-
-            stopProcessing = AddMatchingSpecifications(specification->GetNestedRules(), tree, ecexpressionsCache, specs, handled, optParams, contextPreparer);
+            else 
+                stopProcessing = AddMatchingSpecifications(specification->GetNestedRules(), tree, ecexpressionsCache, specs, handled, optParams, contextPreparer);
             stopProcessing |= requested;
             return true;
             }
-        else if (AddSpecificationsByHierarchy(specification->GetNestedRules(), specificationHash, requested, tree,
+        if (AddSpecificationsByHierarchy(specification->GetNestedRules(), specificationHash, requested, tree,
             ecexpressionsCache, depth + 1, specs, handled, stopProcessing, optParams, contextPreparer))
             {
             return true;

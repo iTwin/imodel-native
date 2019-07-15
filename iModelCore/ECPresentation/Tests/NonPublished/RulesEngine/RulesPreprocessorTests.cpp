@@ -518,11 +518,9 @@ TEST_F(RulesPreprocessorTests, GetChildNodeSpecifications_BySpecificationIdWithR
     RulesPreprocessor::ChildNodeRuleParameters params(*node, TargetTree_MainTree);
     ChildNodeRuleSpecificationsList specs = GetTestRulesPreprocessor(*rules).GetChildNodeSpecifications(params);
     // all sub-specs of the the spec that generated the node
-    ASSERT_EQ(3, specs.size());
+    ASSERT_EQ(1, specs.size());
     // use "supported schemas" string to identify expected specs
     ASSERT_STREQ("requested", (static_cast<AllInstanceNodesSpecificationCP>(&specs[0].GetSpecification()))->GetSupportedSchemas().c_str());
-    ASSERT_STREQ("one", (static_cast<AllInstanceNodesSpecificationCP>(&specs[1].GetSpecification()))->GetSupportedSchemas().c_str());
-    ASSERT_STREQ("two", (static_cast<AllInstanceNodesSpecificationCP>(&specs[2].GetSpecification()))->GetSupportedSchemas().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
