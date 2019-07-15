@@ -1,0 +1,103 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+//__PUBLISH_SECTION_START__
+
+    /**
+    @page ECSqlStatementOverview ECSqlStatement Overview
+
+    @tableofcontents
+
+    BentleyApi::BeSQLite::EC::ECSqlStatement is the heart of the %ECDb CRUD API. It uses @ref ECSQLOverview "ECSQL" as its query and command protocol.
+
+    It is @b data-centric (in contrast to instance-centric)
+    which allows clients to work with ECInstances in a very flexible way. Like a database ECSqlStatement
+    allows to retrieve or edit individual property values of an instance - without
+    having to go through the overhead of generating or decomposing higher-level objects like @ref BentleyApi::ECN::IECInstance "IECInstances"
+    or JSON objects.
+
+    For clients that do need to work with the data in a more aggregated way (e.g. @ref BentleyApi::ECN::IECInstance "IECInstances", JSON), @b adapters are provided.
+    (see @ref BentleyApi::BeSQLite::EC::ECInstanceECSqlSelectAdapter "ECInstanceECSqlSelectAdapter",
+    @ref BentleyApi::BeSQLite::EC::ECInstanceInserter "ECInstanceInserter", @ref BentleyApi::BeSQLite::EC::ECInstanceUpdater "ECInstanceUpdater",
+    @ref BentleyApi::BeSQLite::EC::ECInstanceDeleter "ECInstanceDeleter" for @ref BentleyApi::ECN::IECInstance "IECInstances" and
+    see @ref BentleyApi::BeSQLite::EC::JsonECSqlSelectAdapter "JsonECSqlSelectAdapter",
+    @ref BentleyApi::BeSQLite::EC::JsonInserter "JsonInserter" and @ref BentleyApi::BeSQLite::EC::JsonUpdater "JsonUpdater" for JSON.)
+
+    @see @ref ECDbCodeSamples
+
+    @section ECInstanceIdInECDb ECInstanceId in the ECDb API
+
+    In %ECDb @ref ECSqlSystemPropertyECInstanceId "ECSQL's ECInstanceId" is always a @b numeric value and serves
+    as the primary key of the table that corresponds to the domain @ref BentleyApi::ECN::ECClass "ECClasses".
+
+    @e Details
+    @li If not specified in the ECSQL INSERT statement, %ECDb generates the ECInstanceId automatically. In that case, the ECInstanceId
+    is a @ref BentleyApi::BeSQLite::BeBriefcaseBasedId "briefcase based id" and is incremented sequentially (which is the most efficient way to store primary keys in an @ref ECDbFile "ECDb file").
+    @li The columns in the @ref ECDbFile "ECDb file" holding the %ECInstanceId are equivalent to SQLite's system column @p rowid.
+    @li In the @ref ECDbGroup "ECDb API" the ECInstanceId is represented by the type @ref BentleyApi::BeSQLite::EC::ECInstanceId "ECInstanceId".
+
+    @note If the ECInstanceId is specified explicitly in the ECSQL INSERT statement, the caller is responsible to deal with possible primary key or other
+    constraint violations.
+
+    @section ECSqlStatementDiagnostics ECSqlStatement Diagnostics
+
+    ### How to enable the diagnostics
+    - turn on the log4cxx based @ref BentleyApi::NativeLogging "Bentley logging"
+    - in the <b>log4cxx configuration</b> define a @b logger or a <b>logging category</b> with the specified names below
+    and assign it the log severity @c @b DEBUG.
+
+    ### ECSQL Preparation Diagnostics
+    Logger name: <b>Diagnostics.ECSqlStatement.Prepare</b>
+
+    Preparing an @ref BentleyApi::BeSQLite::EC::ECSqlStatement "ECSqlStatement" can be expensive. So applications should always consider to reuse
+    ECSqlStatements where applicable.
+
+    In order to help applications analyze which statements to reuse and which not, applications can turn on
+    ECSqlStatement preparation diagnostics. With that enabled, %ECDb logs all prepared ECSQL statements (i.e. all calls to 
+    BentleyApi::BeSQLite::EC::ECSqlStatement::Prepare). For each call  the ECSQL string and the preparation time 
+    (in @b milliseconds) is logged.
+    The log output can then be analyzed for repetition patterns.
+
+    ### ECSqlStatementCache Diagnostics
+    Logger name: <b>Diagnostics.ECSqlStatement.Cache</b>
+
+    The @ref BentleyApi::BeSQLite::EC::ECSqlStatementCache "ECSqlStatementCache" helps prevent unnecessary repreparations of ECSQL. However, 
+    the cache has to remove statements from the cache if the cache size is exceeded, leading to repreparations. This diagnostics
+    captures the activity in the cache.
+
+    #### Example log4cxx config snippet
+
+    @code{.html}
+    ...
+    <appender name="ECSqlStatementPrepareDiagnostics" class="org.apache.log4j.FileAppender">
+       <param name="File" value="${LOCALAPPDATA}\\MyApp\\Logs\\ecsqlstatement_prepare_diagnostics.log"/>
+       <param name="createpath" value="true"/>
+       <layout class="org.apache.log4j.PatternLayout"> <param name="ConversionPattern" value="%m%n"/> </layout>
+       <param name="Append" value="false"/>
+    </appender>
+
+    <appender name="ECSqlStatementCacheDiagnostics" class="org.apache.log4j.FileAppender">
+       <param name="File" value="${LOCALAPPDATA}\\MyApp\\Logs\\ecsqlstatement_cache_diagnostics.log"/>
+       <param name="createpath" value="true"/>
+       <layout class="org.apache.log4j.PatternLayout"> <param name="ConversionPattern" value="%m%n"/> </layout>
+       <param name="Append" value="false"/>
+    </appender>
+    ...
+    <logger name="Diagnostics.ECSqlStatement.Prepare">
+       <priority value="debug" />
+       <appender-ref ref="ECSqlStatementPrepareDiagnostics"/>
+    </logger>
+
+    <logger name="Diagnostics.ECSqlStatement.Cache" additivity="false">
+       <priority value="debug" />
+       <appender-ref ref="ECSqlStatementCacheDiagnostics"/>
+    </logger>
+    ...
+
+    @endcode
+
+    */
+

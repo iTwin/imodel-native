@@ -1,0 +1,174 @@
+﻿{
+   "className" : "JsonTests.Document",
+   "Attributes" : [
+      {
+         "Label" : "Project Name",
+         "Name" : "ProjectName",
+         "Value" : "Spatial proj"
+      },
+      {
+         "Label" : "Project Number",
+         "Name" : "ProjectNumber",
+         "Value" : "123333"
+      },
+      {
+         "Label" : "Project Location",
+         "Name" : "ProjectLocation",
+         "Value" : "Vilnius"
+      },
+      {
+         "Label" : "Space1",
+         "Name" : "Space1",
+         "Value" : "{00000000-0000-0000-0000-000000000000}"
+      },
+      {
+         "Label" : "Document Location",
+         "Name" : "DocumentLocation",
+         "Value" : "pw:\\\\BSW-CONSTRUCT.bentley.com:PW_tem\\Documents\\Spatial info"
+      },
+      {
+         "Label" : "Document Type",
+         "Name" : "DocumentType",
+         "Value" : "C"
+      },
+      {
+         "Label" : "Title",
+         "Name" : "Title1",
+         "Value" : "A-MODEL.PDF"
+      },
+      {
+         "Label" : "Title2",
+         "Name" : "Title2",
+         "Value" : "A-MODEL"
+      },
+      {
+         "Label" : "Title3",
+         "Name" : "Title3",
+         "Value" : ""
+      },
+      {
+         "Label" : "Title4",
+         "Name" : "Title4",
+         "Value" : ""
+      },
+      {
+         "Label" : "Percent Complete",
+         "Name" : "PercentComplete",
+         "Value" : "40"
+      },
+      {
+         "Label" : "Attributes Updated",
+         "Name" : "AttributesUpdate",
+         "Value" : "2013-01-09T12:30:00.0000000Z"
+      },
+      {
+         "Label" : "Storage",
+         "Name" : "Storage",
+         "Value" : "Storage"
+      },
+      {
+         "Label" : "Space2",
+         "Name" : "Space2",
+         "Value" : "{00000000-0000-0000-0000-000000000000}"
+      },
+      {
+         "Label" : "Drawn By",
+         "Name" : "DrawnBy",
+         "Value" : "admin"
+      },
+      {
+         "Label" : "Date Drawn",
+         "Name" : "DateDrawn",
+         "Value" : "2013-01-09T12:30:00.0000000Z"
+      },
+      {
+         "Label" : "Approved By",
+         "Name" : "ApprovedBy",
+         "Value" : "admin"
+      },
+      {
+         "Label" : "Authorized By",
+         "Name" : "AuthorizedBy",
+         "Value" : "admin"
+      },
+      {
+         "Label" : "Date Approved",
+         "Name" : "DateApproved",
+         "Value" : "2013-01-09T12:30:00.0000000Z"
+      },
+      {
+         "Label" : "Date Authorized",
+         "Name" : "DateAuthorized",
+         "Value" : "2013-01-09T12:30:00.0000000Z"
+      },
+      {
+         "Label" : "Deliverable",
+         "Name" : "DeliverableCheckbox",
+         "Value" : ""
+      },
+      {
+         "Label" : "Original Drawing By",
+         "Name" : "OriginalDrawingBy",
+         "Value" : "admin"
+      },
+      {
+         "Label" : "Date Drawn",
+         "Name" : "OriginalDrawingDate",
+         "Value" : "2013-01-09T12:30:00.0000000Z"
+      },
+      {
+         "Label" : "Approved?",
+         "Name" : "DocumentApproved",
+         "Value" : "Yes"
+      },
+      {
+         "Label" : "Scale",
+         "Name" : "Scale",
+         "Value" : "2013-01-09"
+      },
+      {
+         "Label" : "As of",
+         "Name" : "PercentDate",
+         "Value" : "2013-01-09T07:00:00.0000000Z"
+      }
+   ],
+   "DateCreated" : "2013-01-08T08:12:04.523",
+   "DateModified" : "2013-01-09T12:29:32.160",
+   "Description" : "A-Model",
+   "Location" : {
+      "Center" : {
+         "x" : 1442316.5919489623,
+         "y" : 586684.08205638803,
+         "z" : 0.0
+      },
+      "Coordinates" : [
+         {
+            "x" : 1425966.6055165580,
+            "y" : 589914.91255909996,
+            "z" : 0.0
+         },
+         {
+            "x" : 1425966.6055165580,
+            "y" : 583453.25155367621,
+            "z" : 0.0
+         },
+         {
+            "x" : 1458666.5783813663,
+            "y" : 583453.25155367621,
+            "z" : 0.0
+         },
+         {
+            "x" : 1458666.5783813663,
+            "y" : 589914.91255909996,
+            "z" : 0.0
+         },
+         {
+            "x" : 1425966.6055165580,
+            "y" : 589914.91255909996,
+            "z" : 0.0
+         }
+      ],
+      "Type" : "polygon"
+   },
+   "Name" : "A-Model.pdf"
+}
