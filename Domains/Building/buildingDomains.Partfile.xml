@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../bsicommon/build/PartFile.xsd">
+
+    <Part Name="BuildingDomains" PrgOutputDir="DesignModelingDomainsSDK">
+        <SubPart PartName="RunBuildingDomainTests"/>
+        <SubPart PartName="DesignModelingDomainsSDK-Only"/>
+        <SubProduct ProductName="StructuralDomainsTested" PartFile="StructuralDomains"    Repository="DgnDomains-Structural"/>
+<!--        <SubProduct ProductName="AecUnitsTests"           PartFile="AecUnits"             Repository="DgnDomains-DesignModelingUnits"/> -->
+    </Part>
+
+    <Part Name="DesignModelingSDKDistribution" PrgOutputDir="DesignModelingDomainsSDK">
+        <SubPart PartName="BuildingDomains"/>
+        <SubNuGetProduct NuGetProductName="DesignModelingSDKForABD" />
+    </Part>
+
+    <!-- A convenience to platform developers that want to build platform and use Gist as their testbed. -->
+    <Part Name="BuildingDomainsWithGist" PrgOutputDir="DgnClientSdk" Sequential="true">
+        <SubPart PartName="DgnClientSdk-Tested" PartFile="DgnClientFx" Repository="DgnClientFx"/>
+        <SubPart PartName="Gist" PartFile="Gist" Repository="Gist"/>
+        <SubPart PartName="BuildingDomains"/>
+    </Part>
+
+
+    <Part Name="BuildingDomain" BentleyBuildMakeFile="Building.mke" ApiNumber="M02">
+        <SubPart PartName="BuildingPhysicalPublicAPI"/>
+        <SubPart PartName="AecUnitsDomain"             PartFile="AecUnits"              Repository="DgnDomains-DesignModelingUnits"/>
+        <SubPart PartName="BuildingSpatialDomain" Repository="DgnDomains-BuildingSpatial" PartFile="BuildingSpatial" />
+        <SubPart PartName="QuantityTakeoffsAspectsDomain" Repository="DgnDomains-QuantityTakeoffsAspects" PartFile="QuantityTakeoffsAspects" />
+        <SubPart PartName="SpatialCompositionDomain" Repository="DgnDomains-SpatialComposition" PartFile="SpatialComposition" />
+        <SubPart PartName="ClassificationSystemsDomain" Repository="DgnDomains-ClassificationSystems" PartFile="ClassificationSystems" />
+        <SubPart PartName="GeometryManipulationStrategies" Repository="BuildingShared" PartFile="BuildingShared" />
+        <!--SubPart PartName="ConstraintModelSchema"      PartFile="ConstraintSystem"      Repository="DgnDomains-ConstraintSystem"/-->
+        <SubPart PartName="Grids"                      PartFile="Grids"                 Repository="DgnDomains-Grids"/>
+        <SubPart PartName="StructuralDomainDLL"        PartFile="StructuralDomains"     Repository="DgnDomains-Structural"/>
+        <SubPart PartName="ProfilesDomainDLL"          PartFile="ProfilesDomain"        Repository="DgnDomains-Profiles"/>
+        <SubPart PartName="FormsDomainDLL"             PartFile="FormsDomain"           Repository="DgnDomains-Forms"/>
+        <SubPart PartName="DgnPlatformDLL"             PartFile="DgnPlatform"           Repository="DgnPlatform" />
+        <Bindings>
+            <Libs>Delivery/$(libprefix)BuildingDomain$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)BuildingDomain$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>   
+
+
+    <Part Name="BuildingPhysicalPublicAPI" BentleyBuildMakeFile="Building.prewire.mke" ApiNumber="M02">
+        <Bindings>
+            <PublicAPI Domain="BuildingDomain"/>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/ArchitecturalPhysical.ecschema.xml
+                ECSchemas/Domain/BuildingPhysical.ecschema.xml
+            </Files>
+
+            <Directory SourceName="PublicApi/BuildingDomain" ProductDirectoryName="BuildingDomainIncludes" />
+
+          <!--  <Directory SourceName="Dox/Pages/Building"  SubPartDirectory="Dox/Pages/Building"/>
+            <Directory SourceName="Dox/Images/Building" SubPartDirectory="Dox/Images/Building"/> -->
+        </Bindings>
+    </Part>
+
+  <Part Name="ProfilesPublicAPI" BentleyBuildMakeFile="Profiles.prewire.mke" ApiNumber="M02">
+    <Bindings>
+      <PublicAPI Domain="ProfilesDomain"/>
+      <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+        ECSchemas/Domain/Profiles.ecschema.xml
+      </Files>
+
+      <Directory SourceName="PublicApi/ProfilesDomain" ProductDirectoryName="ProfilesDomainIncludes" />
+    </Bindings>
+  </Part>
+  
+    <Part Name="BuildingDomainTestsExe" DeferType="BuildingDomainTests" BentleyBuildMakeFile="Tests/Tests.mke" OnlyPlatforms="x64">
+        <SubPart PartName="google_gtest_lib"           PartFile="gtest"                 Repository="util-gtest"  />
+        <SubPart PartName="DgnPlatformSqlang"          PartFile="DgnPlatform"           Repository="DgnPlatform" />
+        <SubPart PartName="BuildingDomain"/>
+        <SubPart PartName="StructuralDomainDLL"        PartFile="StructuralDomains"     Repository="DgnDomains-Structural"/>
+        <SubPart PartName="ProfilesDomainDLL"          PartFile="ProfilesDomain"        Repository="DgnDomains-Profiles"/>
+        <SubPart PartName="FormsDomainDLL"             PartFile="FormsDomain"           Repository="DgnDomains-Forms"/>
+        <!--SubPart PartName="ConstraintModelSchema"      PartFile="ConstraintSystem"      Repository="DgnDomains-ConstraintSystem"/-->
+        <SubPart PartName="Grids"                      PartFile="Grids"                 Repository="DgnDomains-Grids"/>
+        <SubPart PartName="AecUnitsDomain"             PartFile="AecUnits"              Repository="DgnDomains-DesignModelingUnits"/>
+        <Bindings>
+              <Assemblies>Delivery/$(shlibprefix)BuildingDomainTests.exe</Assemblies>
+              <Files ProductDirectoryName="Assets"> Delivery/BuildingDomainTests.logging.config.xml</Files>
+              <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang">Delivery/BuildingDomainTests_en-US.sqlang.db3</Files>
+        </Bindings>
+    </Part>
+
+    <ProductDirectoryList ListName="Tests">
+        <ProductDirectory Name="VendorNotices"                  Path="VendorNotices"/>
+        <ProductDirectory Name="Assemblies"                     Path="Assemblies"/>
+        <ProductDirectory Name="Libs"                           Path="Libs"/>
+        <ProductDirectory Name="Assets"                         Path="Assemblies/Assets"/>
+        <ProductDirectory Name="IgnoreList"                     Path="Ignore"/>
+        <ProductDirectory Name="DgnPlatformSqlang"              Path="sqlang"/>
+        <ProductDirectory Name="UnitTests-Assets"               Deliver="false"/>
+        <ProductDirectory Name="UnitTests-IgnoreList"           Deliver="false"/>
+        <ProductDirectory Name="UnitTests-Objects"              Deliver="false"/>
+
+        <!-- Adding these to silence the warnings... if you want them, deliver them properly... -->
+        <ProductDirectory Name="Assemblies" LibType="static" Deliver="false"/>
+        <ProductDirectory Name="VendorNotices" LibType="static" Deliver="false"/>
+        <ProductDirectory Name="BuildingSharedIncludes" Deliver="false"/>
+        <ProductDirectory Name="GridsIncludes" Deliver="false"/>
+        <ProductDirectory Name="ProfilesIncludes" Deliver="false"/>
+        <ProductDirectory Name="StructuralDomainIncludes" Deliver="false"/>
+        <ProductDirectory Name="FormsDomainIncludes" Deliver="false"/>
+        <ProductDirectory Name="BuildingDomainIncludes" Deliver="false"/>
+        <ProductDirectory Name="ClassificationSystemsIncludes" Deliver="false"/>
+        <ProductDirectory Name="QuantityTakeoffsAspectsIncludes" Deliver="false"/>
+    </ProductDirectoryList>
+
+    <Product Name="BuildingDomainTests" OnlyPlatforms="x64">
+        <SubPart PartName="BuildingDomainTestsExe"/>
+        <Directories DirectoryListName="Tests"/>
+    </Product>
+
+
+    <Part Name="RunBuildingDomainTests" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=BuildingDomainTests\Assemblies\  -dGTEST_NAME=BuildingDomainTests" OnlyPlatforms="x64" ExcludeLibType="Static">
+        <SubProduct ProductName="BuildingDomainTests" />
+        <SubPart PartName="Base"    PartFile="BeGTest"   Repository="BeGTest" />
+        <Bindings>
+            <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/BuildingDomainTests.log</Files>
+        </Bindings>
+    </Part>
+
+
+    <Part Name="DesignModelingDomainsSDK-Only" OnlyPlatforms="x64">
+        <SubProduct ProductName="DesignModelingDomainsSDK"/>
+    </Part>
+
+
+
+    <Product Name="DesignModelingDomainsSDK"  SaveProduct="true">
+    <!--
+        <SubPart PartName="ConstraintModelSchema"           PartFile="ConstraintSystem"         Repository="DgnDomains-ConstraintSystem"/>
+        <SubPart PartName="ConstraintModel"                 PartFile="ConstraintSystem"         Repository="DgnDomains-ConstraintSystem"/>
+        -->
+        <SubPart PartName="Grids"                           PartFile="Grids"                    Repository="DgnDomains-Grids"/>
+        <!--<SubPart PartName="SpacePlanningDomain"             PartFile="BuildingSpacePlanning"    Repository="DgnDomains-BuildingSpacePlanning"/> -->
+        <SubPart PartName="ClassificationSystemsDomain" Repository="DgnDomains-ClassificationSystems" PartFile="ClassificationSystems" />
+        <SubPart PartName="BuildingSpatialDomain"           Repository="DgnDomains-BuildingSpatial" PartFile="BuildingSpatial" />
+        <SubPart PartName="QuantityTakeoffsAspectsDomain" Repository="DgnDomains-QuantityTakeoffsAspects" PartFile="QuantityTakeoffsAspects" />
+        <SubPart PartName="SpatialCompositionDomain"        Repository="DgnDomains-SpatialComposition" PartFile="SpatialComposition" />
+        <SubPart PartName="StructuralDomainDLL"             PartFile="StructuralDomains"        Repository="DgnDomains-Structural"/>
+        <SubPart PartName="ProfilesDomainDLL"               PartFile="ProfilesDomain"           Repository="DgnDomains-Profiles"/>
+        <SubPart PartName="FormsDomainDLL"                  PartFile="FormsDomain"              Repository="DgnDomains-Forms"/>
+        <SubPart PartName="ElectricalDomains"               PartFile="ElectricalDomains"        Repository="DgnDomains-Electrical"/>
+<!--        <SubPart PartName="PlantPrototypeDomainHandler"     PartFile="PlantPrototypeDomain"     Repository="DgnDomain-PlantPrototype"/> 
+        <SubPart PartName="PlantDomainEverything"           PartFile="PlantDomain"              Repository="DgnDomains-Plant"/> -->
+        <SubPart PartName="AecUnitsDomain"                  PartFile="AecUnits"                 Repository="DgnDomains-DesignModelingUnits"/>
+        <SubPart PartName="BuildingDomain"/>
+        <Directories DirectoryListName="DesignModelingDomainsSDK"/>
+    </Product>
+
+    <ProductDirectoryList ListName="DesignModelingDomainsSDK">
+        <ProductDirectory Name="Root"                                                                       Path=""/>
+        <ProductDirectory Name="PublicAPI"                               Deliver="true" RelativeTo="Root"   Path="PublicAPI"/>
+        <ProductDirectory Name="VendorAPI"                               Deliver="true" RelativeTo="Root"   Path="VendorAPI"/>
+        <ProductDirectory Name="VendorNotices"                           Deliver="true" RelativeTo="Root"   Path="VendorNotices"/>
+        <ProductDirectory Name="VendorNotices"                           Deliver="true" RelativeTo="Root"   Path="VendorNotices" LibType="static"/>
+        <ProductDirectory Name="Assets"                                  Deliver="true" RelativeTo="Root"   Path="Assets"/>
+        <ProductDirectory Name="ComponentAssets"                         Deliver="true" RelativeTo="Root"   Path="Assets"/>
+        <ProductDirectory Name="Assets"                                  Deliver="true" RelativeTo="Root"   Path="Assets" LibType="static"/>
+        <ProductDirectory Name="Assemblies"                              Deliver="true" RelativeTo="Root"   Path="Assemblies"/>
+        <ProductDirectory Name="sqlang"                                  Deliver="true" RelativeTo="Assets" Path="sqlang" />
+        <ProductDirectory Name="sqlang"                                  Deliver="true" RelativeTo="Assets" Path="sqlang"  LibType="static"/>
+        <ProductDirectory Name="Libs"                                    Deliver="true" RelativeTo="Root"   Path="lib/x64"/>
+        <ProductDirectory Name="BuildingDomainIncludes"                  Deliver="true" RelativeTo="Root"   Path="Include/BuildingDomain"/>
+        <ProductDirectory Name="PlantPrototypeIncludes"                  Deliver="true" RelativeTo="Root"   Path="Include/PlantPrototype"/>
+        <ProductDirectory Name="SpacePlanningDomainIncludes"             Deliver="true" RelativeTo="Root"   Path="Include/SpacePlanningDomain"/>
+        <ProductDirectory Name="SpacePlanningIncludes"                   Deliver="true" RelativeTo="Root"   Path="Include/SpacePlanningDomain"/>
+        <ProductDirectory Name="StructuralDomainIncludes"                Deliver="true" RelativeTo="Root"   Path="Include/StructuralDomain"/>
+        <ProductDirectory Name="ProfilesDomainIncludes"                  Deliver="true" RelativeTo="Root"   Path="Include/ProfilesDomain"/>
+        <ProductDirectory Name="FormsDomainIncludes"                     Deliver="true" RelativeTo="Root"   Path="Include/FormsDomain"/>
+        <ProductDirectory Name="BuildingSpacePlanningDomainIncludes"     Deliver="true" RelativeTo="Root"   Path="Include/BuildingSpacePlanningDomain"/>
+        <ProductDirectory Name="GridsIncludes"                           Deliver="true" RelativeTo="Root"   Path="Include/Grids"/>
+        <ProductDirectory Name="QuantityTakeoffsAspectsIncludes"         Deliver="true" RelativeTo="Root"   Path="Include/QuantityTakeoffsAspects"/>
+        <ProductDirectory Name="ConstraintSystemIncludes"                Deliver="true" RelativeTo="Root"   Path="Include/ConstraintSystem"/>
+        <ProductDirectory Name="PlantDomainSchemasDir"                   Deliver="true" RelativeTo="Root"   Path="Assets/ECSchemas/Domain"/>
+        <ProductDirectory Name="PlantDomainAssembliesDir"                Deliver="true" RelativeTo="Root"   Path="Assemblies"/>
+
+        <!-- Adding these to silence the warnings... if you want them, deliver them properly... -->
+        <ProductDirectory Name="Assemblies" LibType="static" Deliver="false"/>
+        <ProductDirectory Name="BuildingSharedIncludes" Deliver="false"/>
+        <ProductDirectory Name="ProfilesIncludes" Deliver="false"/>
+        <ProductDirectory Name="ClassificationSystemsIncludes" Deliver="false"/>
+        
+    </ProductDirectoryList>
+
+    <NuGetProduct Name="DesignModelingSDKForABD" Description="DesignModelingSDKForABD"> 
+        <SubPart PartName="BuildingDomain"/>
+        <!--<SubPart PartName="SpacePlanningDomain"             PartFile="BuildingSpacePlanning"    Repository="DgnDomains-BuildingSpacePlanning"/>-->
+        <SubPart PartName="DesignModelingDomainsSDK-Only"/>
+        <SubPart PartName="DgnV8ConverterExe"               PartFile="DgnDbSync"                Repository="DgnDbSync"/>
+
+        <Directories DirectoryListName="DesignModelingDomainsSDK"/>
+        <Directories DirectoryListName="DgnV8BridgeDirList" PartFile="DgnDbSync" Repository="DgnDbSync"/>
+        <Directories DirectoryListName="DesignModelingSDKForABDNuGetOverride"/>
+    </NuGetProduct>
+	
+    <ProductDirectoryList ListName="DesignModelingSDKForABDNuGetOverride">
+        <ProductDirectory Name="Root"                       Path="native"/>
+        <ProductDirectory Name="applicationroot"            Path="native"/>
+        <!-- Just to make it smaller, clip out stuff we don't need -->
+        <ProductDirectory Name="sqlang"                                  Deliver="false"        LibType="static"/>
+        <ProductDirectory Name="Libs"                                    Deliver="false"        LibType="Static"/>
+
+        <!-- Adding these to silence the warnings... if you want them, deliver them properly... -->
+        <ProductDirectory Name="BuildingSharedIncludes" Deliver="false"/>
+        <ProductDirectory Name="ProfilesIncludes" Deliver="false"/>
+        <ProductDirectory Name="PublisherLoggingConfigXml" Deliver="false"/>
+        <ProductDirectory Name="VendorNotices" Deliver="false"/>
+    </ProductDirectoryList>
+
+</BuildContext>
