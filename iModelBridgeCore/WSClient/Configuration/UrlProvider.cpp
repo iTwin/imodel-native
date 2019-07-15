@@ -336,6 +336,15 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectProductSettingsServic
     &s_urlRegistry
     );
 
+const UrlProvider::UrlDescriptor UrlProvider::Urls::BentleyWeatherService(
+    "BentleyWeatherService.URL",
+    "https://dev-connect-weatherservice.bentley.com",
+    "https://qa-connect-weatherservice.bentley.com",
+    "https://connect-weatherservice.bentley.com",
+    "https://perf-connect-weatherservice.bentley.com",
+    &s_urlRegistry
+);
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                julius.cepukenas   11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
