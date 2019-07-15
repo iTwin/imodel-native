@@ -2100,7 +2100,7 @@ BentleyStatus Converter::GetECContentOfElement(V8ElementECContent& content, DgnV
         for (DgnV8Api::DgnECInstance* v8Instance : DgnV8Api::DgnECManager::GetManager().FindInstances(*scope, GetSelectAllV8ECQuery()))
             {
             ECClassName v8ClassName(v8Instance->GetClass());
-            if (0 == BeStringUtilities::Strnicmp("EWR", v8ClassName.GetSchemaName(), 3))
+            if (0 == BeStringUtilities::Strnicmp("EWR", v8ClassName.GetSchemaName(), 3) && 0 != strcmp("EWRData", v8ClassName.GetSchemaName()))
                 v8ClassName = ECClassName("EWR", v8ClassName.GetClassName());
 
             BisConversionRule conversionRule;
@@ -2125,12 +2125,15 @@ BentleyStatus Converter::GetECContentOfElement(V8ElementECContent& content, DgnV
 
             // In the situation where a class can be used as both a primary instance and a secondary instance, the conversionRule is going to come back is the Element rule and not ToAspectOnly.
             // Therefore, if we already have a primary instance set and the hasSecondary flag indicates that this ecClass also has ToAspect rule, then we just set it as a secondaryInstance.
-
+            // Also need to check if there is a 3dmismatch, in which case we make it an aspect
             if (BisConversionRuleHelper::IsSecondaryInstance(conversionRule) || (hasSecondary && !DgnV8Api::DgnECManager::GetManager().GetPrimaryInstanceId(v8eh, false, true).Equals(v8Instance->GetInstanceId())))
             //if (BisConversionRuleHelper::IsSecondaryInstance(conversionRule) || (hasSecondary && content.HasPrimaryInstance()))
                 {
                 content.m_secondaryV8Instances.push_back(std::make_pair(v8Instance, BisConversionRule::ToAspectOnly));
                 }
+            else if (hasSecondary && (v8mm.GetDgnModel().Is3dModel() && BisConversionRule::ToDrawingGraphic == conversionRule) || (!v8mm.GetDgnModel().Is3dModel() && BisConversionRule::ToDrawingGraphic != conversionRule))
+                content.m_secondaryV8Instances.push_back(std::make_pair(v8Instance, BisConversionRule::ToAspectOnly));
+
             else if (IsUpdating() && BisConversionRule::ToDefaultBisBaseClass == conversionRule)
                 {
                 // We must be trying to do an update, and we found a primary ECInstance from a class that had no instances when we first converted it.
@@ -2427,7 +2430,7 @@ DgnClassId Converter::_ComputeElementClass(DgnV8EhCR v8eh, V8ElementECContent co
     else
         elementClassName = BisConversionRuleHelper::GetElementBisBaseClassName(ecContent.m_elementConversionRule);
 
-    if (0 == BeStringUtilities::Strnicmp(elementClassName.GetSchemaName(), "EWR", 3))
+    if (0 == BeStringUtilities::Strnicmp(elementClassName.GetSchemaName(), "EWR", 3) && 0 != strcmp("EWRData", elementClassName.GetSchemaName()))
         elementClassName = ECClassName("EWR", elementClassName.GetClassName());
 
     ECN::ECClassId classId = m_dgndb->Schemas().GetClassId(elementClassName.GetSchemaName(), elementClassName.GetClassName());

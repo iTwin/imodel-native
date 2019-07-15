@@ -237,7 +237,7 @@ struct BisClassConverter
 
                 ECN::ECEntityClassP GetDefaultConstraintClass() const;
                 ECN::ECClassCP GetBaseClass(ECClassName className) const;
-                ECN::ECRelationshipClassCP GetDomainRelationshipBaseClass(ECN::ECRelationshipClassR inputClass) const;
+                ECN::ECRelationshipClassCP GetDomainRelationshipBaseClass(ECN::ECRelationshipClassR inputClass, ECN::ECSchemaP conversionSchema) const;
                 ECN::ECClassP GetInputClass(BentleyApi::Utf8CP schemaName, BentleyApi::Utf8CP className) const;
                 bmap<Utf8String, ECN::ECSchemaP> const& GetSchemas() const { return m_inputSchemaMap; }
                 bmap<ECN::ECClassCP, ECN::ECClassP> const& GetMixinAppliesToMapping() const { return m_mixinAppliesToMap; }

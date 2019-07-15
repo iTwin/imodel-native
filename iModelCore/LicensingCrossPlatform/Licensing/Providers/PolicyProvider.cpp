@@ -167,8 +167,9 @@ folly::Future<Utf8String> PolicyProvider::PerformGetPolicyWithKeyRequest(Utf8Str
     auto request = client.CreatePostRequest(url);
     Json::Value requestJson(Json::objectValue);
 
-    // don't need to pass machine name if using a machine agnostic AccessKey
-    requestJson["MachineName"] = ultimateId == "" ? m_applicationInfo->GetDeviceId() : "";
+    // MachineName is required by the Entitlement endpoint even though they don't use it when getting the policy
+    // pass placeholder value for agnostic machine name case
+    requestJson["MachineName"] = ultimateId == "" ? m_applicationInfo->GetDeviceId() : "agnostic";
     requestJson["ClientDateTime"] = DateTime::GetCurrentTimeUtc().ToString();
     requestJson["Locale"] = m_applicationInfo->GetLanguage();
     requestJson["AppliesTo"] = GETPOLICY_RequestData_AppliesTo_Url;

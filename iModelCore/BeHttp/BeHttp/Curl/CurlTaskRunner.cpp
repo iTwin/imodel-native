@@ -146,10 +146,12 @@ bool CurlTaskRunner::PrepareRequestIfNotSuspended(CurlHttpRequest& curlRequest)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CurlTaskRunner::_RunAsyncTasksLoop()
     {
+    m_lastLoggedLongRunning = BeClock::Get().GetSteadyTime();
+    
     m_curlRunning.store(true);
     m_multi = curl_multi_init();
 
-    if(0 != HttpClient::GetOptions().GetMaxConnectionsPerHost())
+    if (0 != HttpClient::GetOptions().GetMaxConnectionsPerHost())
         curl_multi_setopt(m_multi, CURLMOPT_MAX_HOST_CONNECTIONS, HttpClient::GetOptions().GetMaxConnectionsPerHost());
 
     if (0 != HttpClient::GetOptions().GetMaxTotalConnections())
@@ -202,9 +204,8 @@ void CurlTaskRunner::_RunAsyncTasksLoop()
             CURLMsg* curlMsg = curl_multi_info_read(m_multi, &messageCount);
 
             if (nullptr == curlMsg)
-                {
                 continue;
-                }
+
             if (curlMsg->msg != CURLMSG_DONE) // TODO: is CURLMSG_DONE check needed?
                 {
                 LOG.errorv("Unexpected CURLMsg message: %d", curlMsg->msg);
@@ -221,9 +222,9 @@ void CurlTaskRunner::_RunAsyncTasksLoop()
 #endif
 
         if (runningRequests > 0)
-            {
             WaitForData(1000);
-            }
+
+        LogLongRunningRequests();
 
 #ifdef LOG_WEB_TIMES
         uint64_t end = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
@@ -309,18 +310,18 @@ void CurlTaskRunner::AddTaskToCurlMultiMap(std::shared_ptr<AsyncTask> task)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    04/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CurlTaskRunner::ResolveFinishedCurl (CURLMsg* curlMsg)
+void CurlTaskRunner::ResolveFinishedCurl(CURLMsg* curlMsg)
     {
     CURL* finishedCurl = curlMsg->easy_handle;
     CURLcode code = curlMsg->data.result;
 
-    auto status = curl_multi_remove_handle (m_multi, finishedCurl);
-    BeAssert (CURLM_OK == status);
+    auto status = curl_multi_remove_handle(m_multi, finishedCurl);
+    BeAssert(CURLM_OK == status);
 
     auto requestTask = m_curlToRequestMap[finishedCurl];
     requestTask->GetData()->FinalizeRequest(code);
 
-    m_curlToRequestMap.erase (finishedCurl);
+    m_curlToRequestMap.erase(finishedCurl);
 
     ResolveRequestTask(requestTask);
     }
@@ -388,9 +389,8 @@ void CurlTaskRunner::WaitForData(long topTimeoutMs)
     // no timeout available (-1) - no requests running, set top value
     // timeout from requests - limit to top value
     if (curl_timeo < 0 || curl_timeo > topTimeoutMs)
-        {
         curl_timeo = topTimeoutMs;
-        }
+
     curl_timeo = topTimeoutMs;
 
     ::timeval timeout = MsToTimeval(curl_timeo);
@@ -417,15 +417,50 @@ void CurlTaskRunner::WaitUntilStopped()
     struct Predicate : IConditionVariablePredicate
         {
         BeAtomic<bool>* curlRunning = nullptr;
-        virtual bool _TestCondition(BeConditionVariable &cv) override
-            {
-            return !curlRunning->load();
-            }
+        virtual bool _TestCondition(BeConditionVariable &cv) override { return !curlRunning->load(); }
         };
 
     Predicate predicate;
     predicate.curlRunning = &this->m_curlRunning;
     this->m_curlRunningCondition.WaitOnCondition(&predicate, BeConditionVariable::Infinite);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void CurlTaskRunner::LogLongRunningRequests()
+    {
+    if (!LOGTIMES.isSeverityEnabled(NativeLogging::LOG_INFO))
+        return;
+
+    if (!m_curlToRequestMap.empty())
+        return;
+        
+    if (BeClock::Get().GetSteadyTime() - m_lastLoggedLongRunning > BeDuration::Seconds(5))
+        return;
+
+    Utf8String list;
+    for (auto& pair : m_curlToRequestMap)
+        {
+        std::shared_ptr<CurlHttpRequest> request = pair.second->GetData();
+
+        double totalTimeSeconds = 0;
+        curl_easy_getinfo(request->GetCurlHandle(), CURLINFO_TOTAL_TIME, &totalTimeSeconds);
+
+        if (totalTimeSeconds < 5)
+            continue;
+
+        if (!list.empty())
+            list += ", ";
+
+        list += Utf8PrintfString("#%lld [%.2fs]", request->GetNumber(), totalTimeSeconds);
+        }
+
+    if (list.empty())
+        return;
+
+    LOGTIMES.infov("Processing: %s", list.c_str());
+    m_lastLoggedLongRunning = BeClock::Get().GetSteadyTime();
     }
 
 /*--------------------------------------------------------------------------------------+

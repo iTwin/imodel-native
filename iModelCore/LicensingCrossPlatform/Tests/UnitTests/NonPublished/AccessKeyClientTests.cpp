@@ -293,6 +293,17 @@ TEST_F(AccessKeyClientTests, WithKeyStartApplication_StopApplication_Success)
     std::list<Json::Value> validPolicyList;
     validPolicyList.push_back(jsonPolicyValid);
 
+    // called in usage heartbeat
+    GetLicensingDbMock().MockRecordUsage(SUCCESS);
+
+    // LogPosting heartbeat
+    GetLicensingDbMock().MockGetUsageRecordCount(1);
+    GetLicensingDbMock().MockGetFeatureRecordCount(1);
+
+    GetUlasProviderMock().MockPostUsageLogs(SUCCESS);
+    GetUlasProviderMock().MockPostFeatureLogs(SUCCESS);
+
+    // policy heartbeat
     GetLicensingDbMock().MockKeyPolicyFiles(testAccessKey, validPolicyList);
     GetLicensingDbMock().MockGetOfflineGracePeriodStart("");
 
@@ -301,12 +312,17 @@ TEST_F(AccessKeyClientTests, WithKeyStartApplication_StopApplication_Success)
     EXPECT_LE(1, GetLicensingDbMock().AddOrUpdatePolicyFileCount());
     EXPECT_LE(1, GetLicensingDbMock().DeleteAllOtherPolicyFilesByKeyCount());
     EXPECT_LE(1, GetLicensingDbMock().GetPolicyFilesByKeyCount(testAccessKey));
-    EXPECT_LE(1, GetLicensingDbMock().GetOfflineGracePeriodStartCount());
     EXPECT_LE(1, GetPolicyProviderMock().GetPolicyWithKeyCalls());
     EXPECT_LE(1, GetUlasProviderMock().GetAccessKeyInfoCalls());
 
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     EXPECT_SUCCESS(client->StopApplication());
+    EXPECT_LE(1, GetUlasProviderMock().PostUsageLogsCalls());
+    EXPECT_LE(1, GetUlasProviderMock().PostFeatureLogsCalls());
+    EXPECT_LE(1, GetLicensingDbMock().RecordUsageCount()); // called in usage heartbeat
+    EXPECT_LE(1, GetLicensingDbMock().GetUsageRecordCountCount());
+    EXPECT_LE(1, GetLicensingDbMock().GetFeatureRecordCountCount());
+    EXPECT_LE(1, GetLicensingDbMock().GetOfflineGracePeriodStartCount());
     EXPECT_EQ(1, GetLicensingDbMock().CloseCount());
     }

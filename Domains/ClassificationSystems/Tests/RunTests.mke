@@ -57,7 +57,7 @@ always:
         $(exeName)
         <
         >$(LogDir)run.bat
-        $(exeName) | $(GTestDir)TeeGtest.py $(ResultsCapture)
+        $(exeName) | python $(GTestDir)TeeGtest.py $(ResultsCapture)
         exit
         <
         -$(RunPrefix) $(LogDir)run.bat

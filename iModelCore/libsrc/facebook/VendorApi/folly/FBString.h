@@ -1834,10 +1834,17 @@ private:
 template <typename E, class T, class A, class S>
 FOLLY_MALLOC_NOINLINE inline typename basic_fbstring<E, T, A, S>::size_type
 basic_fbstring<E, T, A, S>::traitsLength(const value_type* s) {
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcomma"
+#endif
   return s ? traits_type::length(s)
            : (std::__throw_logic_error(
                   "basic_fbstring: null pointer initializer not valid"),
               0);
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
 }
 
 template <typename E, class T, class A, class S>

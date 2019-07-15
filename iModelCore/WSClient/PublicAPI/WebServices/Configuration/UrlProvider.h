@@ -172,6 +172,7 @@ struct UrlProvider
             WSCLIENT_EXPORT static const UrlDescriptor ProjectSharedFederatedUIURL;
             WSCLIENT_EXPORT static const UrlDescriptor IMSOpenID;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectProductSettingsService;
+            WSCLIENT_EXPORT static const UrlDescriptor BentleyWeatherService;
             };
     };
 

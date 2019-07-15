@@ -40,7 +40,6 @@ public:
         Utf8StringCR ultimateId
         );
     LICENSING_EXPORT LicenseStatus StartApplication();
-    LICENSING_EXPORT BentleyStatus StopApplication();
 
     LICENSING_EXPORT LicenseStatus GetLicenseStatus();
 
