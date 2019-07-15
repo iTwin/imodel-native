@@ -3726,6 +3726,8 @@ TEST_F(GridsTestFixture, IntersectGridSurface_ElevationSurfaceWithoutCurve_Singl
 
     db.SaveChanges();
 
+    auto expectedCurve = ICurvePrimitive::CreateLineString({{10, 0, 5}, {0, 0, 5}});
+
     // Check if any intersections produced 
     int bundleCount = 0;
     for (ElementIdIteratorEntry const& bundleId : elevationSurface->MakeGridCurveBundleIterator())
@@ -3742,8 +3744,139 @@ TEST_F(GridsTestFixture, IntersectGridSurface_ElevationSurfaceWithoutCurve_Singl
         
         ASSERT_TRUE(range.DiagonalDistance() > 0) << "Curve is zero length";
 
+        ASSERT_TRUE(curve->GetCurve()->IsSameStructureAndGeometry(*expectedCurve, 0.1));
+
         bundleCount++;
         }
 
     ASSERT_EQ(1, bundleCount) << "Expected intersection count does not match.";
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Elonas.Seviakovas               07/2019
+//--------------+---------------+---------------+---------------+---------------+-------- 
+TEST_F(GridsTestFixture, IntersectGridSurface_ElevationSurfaceWithoutCurveAndAboveOtherSurface_NoIntersectionsCreated)
+    {
+    DgnDbR db = *DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
+
+    // Create Orthogonal grid and surface
+    OrthogonalGrid::CreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridUnconstrained();
+
+    OrthogonalGridPtr orthogonalGrid = OrthogonalGrid::CreateAndInsert(createParams);
+    ASSERT_TRUE(orthogonalGrid.IsValid());
+
+    PlanCartesianGridSurface::CreateParams surfaceParams(*orthogonalGrid->GetSurfacesModel(), *orthogonalGrid->GetXAxis(), 0.0, 0.0, 10.0, -10.0, -5.0);
+    PlanCartesianGridSurfacePtr surface = PlanCartesianGridSurface::CreateAndInsert(surfaceParams);
+    ASSERT_TRUE(surface.IsValid());
+
+    // Create elevation grid and surface
+    ElevationGridPtr floorGrid = ElevationGrid::CreateAndInsert(ElevationGrid::CreateParams(*m_model,db.Elements().GetRootSubject()->GetElementId(),"Floor-Grid"));
+    ASSERT_TRUE(floorGrid.IsValid());
+
+    floorGrid->SetPlacement(Placement3d(DPoint3d{0.0, 0.0, 7.0}, YawPitchRollAngles()));
+    floorGrid->Update();
+
+    ElevationGridSurface::CreateParams elevationSurfaceParams(*floorGrid->GetSurfacesModel(), *floorGrid->GetAxis(), nullptr, 10.0);
+    ElevationGridSurfacePtr elevationSurface = ElevationGridSurface::Create(elevationSurfaceParams);
+    ASSERT_TRUE(surface.IsValid());
+    ASSERT_TRUE(elevationSurface->Insert().IsValid());
+
+    // Intersect grids
+    GridCurvesSetPtr curvesSet = GridCurvesSet::Create(*m_model);
+    curvesSet->Insert();
+
+    BentleyStatus status = orthogonalGrid->IntersectGridSurface(elevationSurface.get(), *curvesSet);
+    ASSERT_EQ(BentleyStatus::SUCCESS, status) << "Failed to intersect grid surfaces";
+
+    db.SaveChanges();
+
+    // Check if any intersections produced 
+    for (ElementIdIteratorEntry const& bundleId : elevationSurface->MakeGridCurveBundleIterator())
+        {
+        GridCurveBundleCPtr curveBundle = db.Elements().Get<GridCurveBundle>(bundleId.GetElementId());
+        if(curveBundle.IsNull())
+            continue;
+
+        GridCurveCPtr curve = curveBundle->GetGridCurve();
+
+        ASSERT_TRUE(curve.IsNull()) << "Curve bundle has a curve";
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Elonas.Seviakovas               07/2019
+//--------------+---------------+---------------+---------------+---------------+-------- 
+TEST_F(GridsTestFixture, IntersectGridSurface_WavySketchSurface_SplineIntersectionsCreated)
+    {
+    DgnDbR db = *DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
+
+    // Create Orthogonal grid and surface
+    OrthogonalGrid::CreateParams createParams = GetTestDefaultCreateParamsForOrthogonalGridUnconstrained();
+
+    OrthogonalGridPtr orthogonalGrid = OrthogonalGrid::CreateAndInsert(createParams);
+    ASSERT_TRUE(orthogonalGrid.IsValid());
+
+    PlanCartesianGridSurface::CreateParams surfaceParams(*orthogonalGrid->GetSurfacesModel(), *orthogonalGrid->GetXAxis(), 0.0, 0.0, 10.0, 0.0, 20.0);
+    PlanCartesianGridSurfacePtr surface = PlanCartesianGridSurface::CreateAndInsert(surfaceParams);
+    ASSERT_TRUE(surface.IsValid());
+
+    // Create Sketch grid and surface
+    SketchGridPtr sketchGrid = SketchGrid::Create(*m_model, m_model->GetModeledElementId(), "SketchGrid", 0, 1);
+    ASSERT_TRUE(sketchGrid.IsValid());
+
+    ASSERT_TRUE(sketchGrid->Insert().IsValid());
+
+    Placement3d gridPlacement;
+    gridPlacement.TryApplyTransform(Transform::From(RotMatrix::FromRotate90(DVec3d::UnitX())));
+    gridPlacement.TryApplyTransform(Transform::From(DPoint3d::From(5.0, 0.0, 5.0)));
+
+    sketchGrid->SetPlacement(gridPlacement);
+    sketchGrid->Update();
+
+    GeneralGridAxisPtr sketchGridAxis = GeneralGridAxis::CreateAndInsert(*sketchGrid);
+
+    DPoint3d points[]{ {0.0, 0.0}, {2.0, 1.0}, {3.0, 2.0}, {4.0, 1.0}, {5.0, 1.0} };
+    MSBsplineCurvePtr bspline = MSBsplineCurve::CreateFromPolesAndOrder(points, 5, 3);
+    ICurvePrimitivePtr splineCurve = ICurvePrimitive::CreateBsplineCurve(bspline);
+
+    SketchSplineGridSurface::CreateParams sketchSurfaceParams(*sketchGrid->GetSurfacesModel(), *sketchGridAxis, -5.0, 5.0, *splineCurve);
+    auto sketchSurface = SketchSplineGridSurface::Create(sketchSurfaceParams);
+
+    ASSERT_TRUE(sketchSurface.IsValid());
+    ASSERT_TRUE(sketchSurface->Insert().IsValid());
+
+    // Intersect grids
+    GridCurvesSetPtr curvesSet = GridCurvesSet::Create(*m_model);
+    curvesSet->Insert();
+
+    BentleyStatus status = orthogonalGrid->IntersectGridSurface(sketchSurface.get(), *curvesSet);
+    ASSERT_EQ(BentleyStatus::SUCCESS, status) << "Failed to intersect grid surfaces";
+
+    db.SaveChanges();
+
+    DPoint3d expectedPoints[]{ {5.0, 0.0, 5.0}, {7.0, 0.0, 6.0}, {8.0, 0.0, 7.0}, {9.0, 0.0, 6.0}, {10.0, 0.0, 6.0} };
+    MSBsplineCurvePtr expectedSpline = MSBsplineCurve::CreateFromPolesAndOrder(expectedPoints, 5, 3);
+    ICurvePrimitivePtr expectedCurve = ICurvePrimitive::CreateBsplineCurve(expectedSpline);
+
+    // Check if any intersections produced 
+    for (ElementIdIteratorEntry const& bundleId : sketchSurface->MakeGridCurveBundleIterator())
+        {
+        GridCurveBundleCPtr curveBundle = db.Elements().Get<GridCurveBundle>(bundleId.GetElementId());
+        if(curveBundle.IsNull())
+            continue;
+
+        GridCurveCPtr curve = curveBundle->GetGridCurve();
+
+        ASSERT_TRUE(curve.IsValid()) << "No intersection for a curve bundle computed.";
+
+        AxisAlignedBox3d range = curve->CalculateRange3d();
+
+        ASSERT_TRUE(range.DiagonalDistance() > 0) << "Curve is zero length";
+        
+        auto points = curve->GetCurve()->GetPointStringCP();
+
+        ASSERT_TRUE(curve->GetCurve()->IsSameStructureAndGeometry(*expectedCurve, 0.1));
+        }
     }
