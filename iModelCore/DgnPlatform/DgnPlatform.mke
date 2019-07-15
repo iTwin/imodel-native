@@ -528,7 +528,7 @@ always:
 
 $(HandlerObjs)GeneratedSource/GeneratedHeaders/WordBreakData.h : $(DgnHandlersDir)WordBreakProperty.txt $(DgnHandlersDir)WordBreakDataGenerator.py
     |[== Building "$@", ($=) ==]
-    $(DgnHandlersDir)WordBreakDataGenerator.py -i$< -o$@
+    python $(DgnHandlersDir)WordBreakDataGenerator.py -i$< -o$@
 
 dirToSearch = $(HandlerObjs)GeneratedSource/
 %include cincapnd.mki

@@ -2349,75 +2349,101 @@ RefCountedPtr<IRefCounted> BRepUtil::Modify::CreateRollbackMark()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Jonas.Valiunas  01/18
+* @bsimethod                                                    Elonas.Seviakovas 07/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BRepUtil::Modify::IntersectSheetFaces(CurveVectorPtr& vectorOut, IBRepEntityCR sheet1, IBRepEntityCR sheet2)
-    {
 #if defined (BENTLEYCONFIG_PARASOLID)
-    if (IBRepEntity::EntityType::Sheet != sheet1.GetEntityType())
-        return ERROR;
-
-    if (IBRepEntity::EntityType::Sheet != sheet2.GetEntityType())
-        return ERROR;
-
-    IBRepEntityPtr sheet1Clone = sheet1.Clone();
-    IBRepEntityPtr sheet2Clone = sheet2.Clone();
-
-    PK_ENTITY_t sheet1Tag = PSolidUtil::GetEntityTag(*sheet1Clone);
-    PK_ENTITY_t sheet2Tag = PSolidUtil::GetEntityTag(*sheet2Clone);
-
-    Transform sheet1Transform = sheet1.GetEntityTransform();
-    Transform sheet2Transform = sheet2.GetEntityTransform();
-
-    // Apply bRep's tranforms to sheet geometry
-    PSolidUtil::TransformBody(sheet1Tag, sheet1Transform);
-    PSolidUtil::TransformBody(sheet2Tag, sheet2Transform);
-
-    if (PK_ENTITY_null == sheet1Tag || PK_ENTITY_null == sheet2Tag)
-        return ERROR;
-
-    PK_FACE_t  sheet2FaceTag = PK_ENTITY_null;
-    PK_FACE_t  sheet1FaceTag = PK_ENTITY_null;
-
-    if (SUCCESS != PK_BODY_ask_first_face(sheet1Tag, &sheet1FaceTag) || PK_ENTITY_null == sheet1FaceTag)
-        return ERROR;
-
-    if (SUCCESS != PK_BODY_ask_first_face(sheet2Tag, &sheet2FaceTag) || PK_ENTITY_null == sheet2FaceTag)
-        return ERROR;
-
-    PK_FACE_intersect_face_o_t options;
-    PK_FACE_intersect_face_o_m(options);
-
-    int numVectors = 0;
+bool intersectFaces(CurveVectorR curveVector, const PK_FACE_t face1Tag, const PK_FACE_t face2Tag, PK_FACE_intersect_face_o_t const& options)
+    {
+    int vectorCount = 0;
     PK_VECTOR_t* vectors = nullptr;
-    int numCurves = 0;
+    int curveCount = 0;
     PK_CURVE_t* curves = nullptr;
     PK_INTERVAL_t* bounds = nullptr;
     PK_intersect_curve_t* curvesTypes = nullptr;
 
-    BentleyStatus status = (SUCCESS == PK_FACE_intersect_face(sheet1FaceTag, sheet2FaceTag, &options, &numVectors, &vectors, &numCurves, &curves, &bounds, &curvesTypes) ? SUCCESS : ERROR);
-    
-    if (numCurves == 0)
-        status = ERROR;
+    PK_ERROR_code_t status = PK_FACE_intersect_face(face1Tag, face2Tag, &options, &vectorCount, &vectors, &curveCount, &curves, &bounds, &curvesTypes);
 
-    if (SUCCESS == status)
+    if (status == PK_ERROR_none)
         {
-        vectorOut = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
-
-        for (int i =0; i< numCurves; i++)
+        for (int curveIndex = 0; curveIndex < curveCount; curveIndex++)
             {
-            ICurvePrimitivePtr curvePrimitive = PSolidGeom::GetAsCurvePrimitive(curves[i], bounds[i], false);
-            vectorOut->push_back(curvePrimitive);
+            ICurvePrimitivePtr curvePrimitive = PSolidGeom::GetAsCurvePrimitive(curves[curveIndex], *bounds, false);
+            curveVector.push_back(curvePrimitive);
             }
         }
 
-    PK_ENTITY_delete(numCurves, curves);
+    PK_ENTITY_delete(curveCount, curves);
     PK_MEMORY_free(curves);
     PK_MEMORY_free(bounds);
     PK_MEMORY_free(vectors);
     PK_MEMORY_free(curvesTypes);
 
-    return status;
+    return status == PK_ERROR_none;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Elonas.Seviakovas 07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+CurveVectorPtr intersectSheets(const PK_ENTITY_t sheet1Tag, const PK_ENTITY_t sheet2Tag)
+    {
+    PK_FACE_t sheet1FaceTag = PK_ENTITY_null;
+    PK_FACE_t sheet2FaceTag = PK_ENTITY_null;
+    
+    if (SUCCESS != PK_BODY_ask_first_face(sheet1Tag, &sheet1FaceTag) || PK_ENTITY_null == sheet1FaceTag)
+        return nullptr;
+    
+    if (SUCCESS != PK_BODY_ask_first_face(sheet2Tag, &sheet2FaceTag) || PK_ENTITY_null == sheet2FaceTag)
+        return nullptr;
+
+    PK_FACE_intersect_face_o_t options;
+    PK_FACE_intersect_face_o_m(options);
+
+    CurveVectorPtr vector = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
+
+    if (!intersectFaces(*vector, sheet1FaceTag, sheet2FaceTag, options))
+        return nullptr;
+
+    return vector;
+    }
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Elonas.Seviakovas 07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Modify::IntersectSheetFaces(CurveVectorPtr& vectorOut, IBRepEntityCR sheet1, IBRepEntityCR sheet2)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    if (IBRepEntity::EntityType::Sheet != sheet1.GetEntityType() || IBRepEntity::EntityType::Sheet != sheet2.GetEntityType())
+        return ERROR;
+
+    IBRepEntityPtr sheet1Clone = sheet1.Clone();
+    PK_ENTITY_t sheet1Tag = PSolidUtil::GetEntityTag(*sheet1Clone);
+    if (sheet1Tag == PK_ENTITY_null)
+        return ERROR;
+
+    IBRepEntityPtr sheet2Clone = sheet2.Clone();
+    PK_ENTITY_t sheet2Tag = PSolidUtil::GetEntityTag(*sheet2Clone);
+    if (sheet2Tag == PK_ENTITY_null)
+        return ERROR;
+
+    Transform invTargetTransform = sheet1.GetEntityTransform().ValidatedInverse();
+    Transform toolTransform = Transform::FromProduct(invTargetTransform, sheet2.GetEntityTransform());
+
+    if (PSolidUtil::TransformBody(sheet2Tag, toolTransform) != SUCCESS)
+        return ERROR;
+
+    vectorOut = intersectSheets(sheet1Tag, sheet2Tag);
+
+    if(vectorOut.IsNull() || vectorOut->size() == 0)
+        {
+        vectorOut = nullptr;
+        return ERROR;
+        }
+
+    // apply sheet1 trans to curvevec here
+    vectorOut->TransformInPlace(sheet1.GetEntityTransform());
+
+    return SUCCESS;
 #else
     return ERROR;
 #endif
