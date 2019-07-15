@@ -3716,7 +3716,7 @@ TEST_F(GridsTestFixture, IntersectGridSurface_ElevationSurfaceWithoutCurve_Singl
 
     ElevationGridSurface::CreateParams elevationSurfaceParams(*floorGrid->GetSurfacesModel(), *floorGrid->GetAxis(), nullptr, 5.0);
     ElevationGridSurfacePtr elevationSurface = ElevationGridSurface::Create(elevationSurfaceParams);
-    ASSERT_TRUE(surface.IsValid());
+    ASSERT_TRUE(elevationSurface.IsValid());
     ASSERT_TRUE(elevationSurface->Insert().IsValid());
 
     // Intersect grids
@@ -3781,7 +3781,7 @@ TEST_F(GridsTestFixture, IntersectGridSurface_ElevationSurfaceWithoutCurveAndAbo
 
     ElevationGridSurface::CreateParams elevationSurfaceParams(*floorGrid->GetSurfacesModel(), *floorGrid->GetAxis(), nullptr, 10.0);
     ElevationGridSurfacePtr elevationSurface = ElevationGridSurface::Create(elevationSurfaceParams);
-    ASSERT_TRUE(surface.IsValid());
+    ASSERT_TRUE(elevationSurface.IsValid());
     ASSERT_TRUE(elevationSurface->Insert().IsValid());
 
     // Intersect grids
@@ -3805,6 +3805,74 @@ TEST_F(GridsTestFixture, IntersectGridSurface_ElevationSurfaceWithoutCurveAndAbo
         ASSERT_TRUE(curve.IsNull()) << "Curve bundle has a curve";
         }
     }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Elonas.Seviakovas               07/2019
+//--------------+---------------+---------------+---------------+---------------+-------- 
+TEST_F(GridsTestFixture, IntersectGridSurface_ElevationSurfaceWithGridArcSurface_CreatesIntersection)
+    {
+    DgnDbR db = *DgnClientApp::App().Project();
+    db.BriefcaseManager().StartBulkOperation();
+
+    // Create radial grid and surface
+    RadialGrid::CreateParams createParams = GetTestDefaultCreateParamsForRadialGrid();
+    RadialGridPtr radialGrid = RadialGrid::CreateAndInsert(createParams);
+    ASSERT_TRUE(radialGrid.IsValid());
+
+    double radius = 3.33;
+    double startAngle = 0.0;
+    double endAngle = 2.0;
+    PlanCircumferentialGridSurface::CreateParams surfaceParams(*radialGrid->GetSurfacesModel(), *radialGrid->GetCircularAxis(), radius, startAngle, endAngle, 0.0, 5.0);
+    PlanCircumferentialGridSurfacePtr surface = PlanCircumferentialGridSurface::CreateAndInsert(surfaceParams);
+    ASSERT_TRUE(surface.IsValid());
+
+    // Create elevation grid and surface
+    ElevationGridPtr floorGrid = ElevationGrid::CreateAndInsert(ElevationGrid::CreateParams(*m_model,db.Elements().GetRootSubject()->GetElementId(),"Floor-Grid"));
+    ASSERT_TRUE(floorGrid.IsValid());
+
+    floorGrid->SetPlacement(Placement3d(DPoint3d{0.0, 0.0, 0.0}, YawPitchRollAngles()));
+    floorGrid->Update();
+
+    double elevation = 2.5;
+    ElevationGridSurface::CreateParams elevationSurfaceParams(*floorGrid->GetSurfacesModel(), *floorGrid->GetAxis(), nullptr, elevation);
+    ElevationGridSurfacePtr elevationSurface = ElevationGridSurface::Create(elevationSurfaceParams);
+    ASSERT_TRUE(elevationSurface.IsValid());
+    ASSERT_TRUE(elevationSurface->Insert().IsValid());
+
+    // Intersect grids
+    GridCurvesSetPtr curvesSet = GridCurvesSet::Create(*m_model);
+    curvesSet->Insert();
+
+    BentleyStatus status = radialGrid->IntersectGridSurface(elevationSurface.get(), *curvesSet);
+    ASSERT_EQ(BentleyStatus::SUCCESS, status) << "Failed to intersect grid surfaces";
+
+    db.SaveChanges();
+
+    // Create an expected curve
+    DVec3d xVec = DVec3d::From(radius, 0.0, 0.0);
+    DVec3d yVec = DVec3d::From(0.0, radius, 0.0);
+    DPoint3d center = DPoint3d::From(0.0, 0.0, elevation);
+    DEllipse3d ellipse = DEllipse3d::FromVectors(center, xVec, yVec, startAngle, endAngle - startAngle);
+    auto expectedCurve = ICurvePrimitive::CreateArc(ellipse);
+
+    // Check if any intersections produced 
+    for (ElementIdIteratorEntry const& bundleId : elevationSurface->MakeGridCurveBundleIterator())
+        {
+        GridCurveBundleCPtr curveBundle = db.Elements().Get<GridCurveBundle>(bundleId.GetElementId());
+        if(curveBundle.IsNull())
+            continue;
+
+        GridCurveCPtr curve = curveBundle->GetGridCurve();
+
+        ASSERT_TRUE(curve.IsValid()) << "No intersection for a curve bundle computed.";
+
+        AxisAlignedBox3d range = curve->CalculateRange3d();
+        ASSERT_TRUE(range.DiagonalDistance() > 0) << "Curve is zero length";
+
+        ASSERT_TRUE(curve->GetCurve()->IsSameStructureAndGeometry(*expectedCurve, 0.1));
+        }
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Elonas.Seviakovas               07/2019
@@ -3874,10 +3942,7 @@ TEST_F(GridsTestFixture, IntersectGridSurface_WavySketchSurface_SplineIntersecti
         ASSERT_TRUE(curve.IsValid()) << "No intersection for a curve bundle computed.";
 
         AxisAlignedBox3d range = curve->CalculateRange3d();
-
         ASSERT_TRUE(range.DiagonalDistance() > 0) << "Curve is zero length";
-        
-        auto points = curve->GetCurve()->GetPointStringCP();
 
         ASSERT_TRUE(curve->GetCurve()->IsSameStructureAndGeometry(*expectedCurve, 0.1));
         }

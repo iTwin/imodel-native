@@ -88,7 +88,7 @@ struct EXPORT_VTABLE_ATTRIBUTE PlanCircumferentialGridSurface : PlanGridArcSurfa
             //! Creates create parameters for a plan circumferential grid surface
             //! @param[in] model            Model of the grid that will contain this surface
             //! @param[in] gridAxis         Axis that this surface is being created from
-            //! @param[in] radius           Radius (length) of the circumferential grid surface 
+            //! @param[in] radius           Starting point on radius for the circumferential grid surface
             //! @param[in] startAngle       Starting angle for the circumferential grid surface
             //! @param[in] endAngle         End angle for the circumferential grid surface
             //! @param[in] startElevation   Start (bottom) elevation for the surface
