@@ -1,0 +1,6 @@
+#*--------------------------------------------------------------------------------------+
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#--------------------------------------------------------------------------------------*/
+
+BB_INSTALLER_SKIP_WIXBUNDLE_INSIGNIA = 1
+INSTALLER_COMPILER_OPT + -dLANGUAGE_CULTURE=en

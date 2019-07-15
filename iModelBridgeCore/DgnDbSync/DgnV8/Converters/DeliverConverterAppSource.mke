@@ -1,0 +1,12 @@
+#*--------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------*/
+%include mdl.mki
+
+baseDir         = $(_MakeFilePath)
+
+always:
+    ~linkfile "$(BuildContext)Delivery/ConverterApp.cpp=$(baseDir)ConverterApp.cpp"
+

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="schematics_V3Conversion" nameSpacePrefix="schv3" version="1.07" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="ECv3ConversionAttributes" version="01.00" prefix="V2ToV3" />
+    <ECClass typeName="SCHEMATICS_BUSINESSKEY_DEFINITIONS" displayLabel="Schematics BusinessKey Definitions" isDomainClass="False" isCustomAttributeClass="True" >
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+
+    <ECClass typeName="SPEC_DEFINITION_CONTAINER" description="Specification Definition Container Class" displayLabel="Specification Definition Container Class" isDomainClass="False" isStructClass="True" >
+        <ECCustomAttributes>
+            <ForceStructClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+
+    <ECClass typeName="SPEC_DEFINITION_MAPPING" description="Specification Definition Mapping" displayLabel="Specification Definition Mapping" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SPEC_DEFINITION_MAPPING_FOR_OPENPLANT_SPECS" description="Specification Definition Mapping for OpenPlant specs" displayLabel="Specification Definition Mapping for OpenPlant Specs" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SPEC_POINTER" description="Pointer to spec mapping class" displayLabel="Pointer to spec mapping class" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+
+</ECSchema>
+
