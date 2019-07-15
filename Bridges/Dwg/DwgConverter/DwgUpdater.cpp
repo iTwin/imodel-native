@@ -790,7 +790,8 @@ void UpdaterChangeDetector::_OnViewSeen (DwgImporter& importer, DgnViewId viewId
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UpdaterChangeDetector::_DetectDeletedViews (DwgImporter& importer)
     {
-    auto&   elements = importer.GetDgnDb().Elements ();
+    auto&   db = importer.GetDgnDb();
+    auto&   elements = db.Elements ();
     auto    jobModelId = importer.GetOrCreateJobDefinitionModel()->GetModelId ();
 
     for (auto const& entry : ViewDefinition::MakeIterator(importer.GetDgnDb()))
@@ -799,7 +800,7 @@ void UpdaterChangeDetector::_DetectDeletedViews (DwgImporter& importer)
         if (m_viewsSeen.find(viewId) == m_viewsSeen.end())
             {
             // don't delete views not created by us:
-            auto view = entry.GetSpatialViewDefinition ();
+            auto view = ViewDefinition::Get (db, viewId);
             if (view.IsValid() && view->GetModel()->GetModelId() != jobModelId)
                 continue;
 
@@ -1245,9 +1246,9 @@ void UpdaterChangeDetector::_DetectDetachedXrefs (DwgImporter& importer)
     DwgSourceAspects::RepositoryLinkAspectIterator files(db, nullptr);
     for (auto file : files)
         {
-        // skip the root file
+        // skip the root file and files that do not belong to the root file(i.e. those created from different jobs)
         auto rlinkId = file.GetRepositoryLinkId();
-        if (rlinkId == rootfileId)
+        if (rlinkId == rootfileId || rootfileId != file.GetRootRepositoryLinkId())
             continue;
         
         BeFileName  filename(file.GetFileName());

@@ -59,7 +59,7 @@ DgnElementId    RepositoryLinkFactory::CreateOrUpdate (DwgDbDatabaseR dwg)
 
     // create a repository link aspect
     auto dwgInfo = DwgSourceAspects::DwgFileInfo(dwg, m_importer);
-    auto aspect = DwgSourceAspects::RepositoryLinkAspect::Create (m_dgndb, dwgInfo, m_importer.GetCurrentIdPolicy());
+    auto aspect = DwgSourceAspects::RepositoryLinkAspect::Create (m_dgndb, dwgInfo);
     if (!aspect.IsValid())
         return DgnElementId();
 
@@ -74,6 +74,19 @@ DgnElementId    RepositoryLinkFactory::CreateOrUpdate (DwgDbDatabaseR dwg)
 
     // also set file id policy
     dwg.SetFileIdPolicy (static_cast<uint32_t>(m_importer.GetCurrentIdPolicy()));
+
+    // for the root DWG, now we have a valid repository link ID, set itself as the root in the aspect
+    if (!dwgInfo.GetRootRepositoryLinkId().IsValid())
+        {
+        dwgInfo.SetRootRepositoryLinkId (RepositoryLinkId(linkId.GetValue()));
+        auto rlinkEdit = m_dgndb.Elements().GetForEdit <RepositoryLink> (linkId);
+        if (rlinkEdit.IsValid())
+            {
+            aspect = DwgSourceAspects::RepositoryLinkAspect::GetForEdit (*rlinkEdit);
+            aspect.Update (dwgInfo);
+            rlinkEdit->Update ();
+            }
+        }
 
     return linkId;
     }

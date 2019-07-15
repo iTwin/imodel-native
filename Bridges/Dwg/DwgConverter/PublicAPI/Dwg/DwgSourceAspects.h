@@ -93,21 +93,24 @@ public:
         Utf8String      m_versionGuid;
         double          m_lastSaveTime;
         StableIdPolicy  m_idPolicy;
+        RepositoryLinkId m_rootRepositoryLinkId;
 
         DwgFileInfo() : m_lastSaveTime(0.0), m_idPolicy(StableIdPolicy::ById) {}
-        DwgFileInfo(DwgDbDatabaseCR dwg, DwgImporter const& importer) { SetFrom(dwg, importer); }
+        DwgFileInfo(DwgDbDatabaseCR dwg, DwgImporter& importer) { SetFrom(dwg, importer); }
 
-        BentleyStatus SetFrom(DwgDbDatabaseCR, DwgImporter const&);
+        BentleyStatus SetFrom(DwgDbDatabaseCR, DwgImporter&);
         void SetUniqueName(Utf8CP name) { m_uniqueName.assign(name); }
         void SetDwgName(Utf8CP name) { m_dwgName.assign(name); }
         void SetVersionGuid(Utf8CP guid) { m_versionGuid.assign(guid); }
         void SetLastSaveTime(double t) { m_lastSaveTime = t; }
         void SetIdPolicy(StableIdPolicy policy) { m_idPolicy = policy; }
+        void SetRootRepositoryLinkId(RepositoryLinkId id) { m_rootRepositoryLinkId = id; }
         Utf8StringCR GetUniqueName() const { return m_uniqueName; }
         Utf8StringCR GetDwgName() const { return m_dwgName; }
         Utf8StringCR GetVersionGuid() const { return m_versionGuid; }
         double GetLastSaveTime () const { return m_lastSaveTime; }
         StableIdPolicy GetIdPolicy() const { return m_idPolicy; }
+        RepositoryLinkId GetRootRepositoryLinkId() const { return m_rootRepositoryLinkId; }
         };  // DwgFileInfo
     DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(DwgFileInfo)
 
@@ -129,7 +132,7 @@ public:
     public:
         RepositoryLinkAspect() : BaseAspect(nullptr) {} 
 
-        DWG_EXPORT static RepositoryLinkAspect Create(DgnDbR, DwgFileInfo const&, StableIdPolicy);
+        DWG_EXPORT static RepositoryLinkAspect Create(DgnDbR, DwgFileInfoCR);
         DWG_EXPORT void Update(DwgFileInfoCR);
 
         DWG_EXPORT static RepositoryLinkAspect FindByIdentifier(DgnDbR, Utf8StringCR identifier);
@@ -142,6 +145,7 @@ public:
         DWG_EXPORT BentleyStatus GetDwgFileInfo(DwgFileInfoR) const;
         DWG_EXPORT Utf8String GetUniqueName() const;
         DWG_EXPORT Utf8String GetDwgName() const;
+        DWG_EXPORT RepositoryLinkId GetRootRepositoryLinkId() const;
         };  // RepositoryLinkAspect
     DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(RepositoryLinkAspect)
 
@@ -518,7 +522,7 @@ public:
     //! Query ExternalSourceAspect of RespositoryLink by file name
     DWG_EXPORT RepositoryLinkAspect FindFileByFileName(BeFileNameCR);
     //! Query RepositoryLinkId previsouly saved on DWG database
-    DWG_EXPORT static DgnElementId GetRepositoryLinkId(DwgDbDatabaseR dwg);
+    DWG_EXPORT static RepositoryLinkId GetRepositoryLinkId(DwgDbDatabaseR dwg);
     //! @}
 
     //! @name Models

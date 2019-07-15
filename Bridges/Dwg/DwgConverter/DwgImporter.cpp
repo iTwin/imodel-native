@@ -1668,7 +1668,7 @@ DwgImporter::DwgImporter (DwgImporter::Options& options) : m_options(options), m
     m_wasAborted = false;
     m_rootFileName.Clear ();
     m_fileCount = 0;
-    m_currIdPolicy = StableIdPolicy::ById;
+    m_currIdPolicy = options.GetStableIdPolicy ();
     m_modelspaceXrefs.clear ();
     m_paperspaceXrefs.clear ();
     m_layersInSync.clear ();

@@ -39,7 +39,7 @@ DwgImporter::ImportJobCreateStatus   DwgImporter::InitializeJob (Utf8CP comments
     Utf8String  jobName = this->_ComputeImportJobName (*modelspaceBlock.get());
     BeAssert (!jobName.empty() && "Bridge job not defined!");
 
-    // Create RepositoryLink for the root DWG file
+    // Get RepositoryLink for the root DWG file
     auto rootlinkId = this->CreateOrUpdateRepositoryLink ();
     if (!rootlinkId.IsValid())
         {

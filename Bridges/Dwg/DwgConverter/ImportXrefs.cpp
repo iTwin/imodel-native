@@ -405,6 +405,9 @@ BentleyStatus XRefLoader::LoadXrefsInMasterFile ()
     if (!iter.IsValid() || !iter->IsValid())
         return  BentleyStatus::BSIERROR;
 
+    // create a repository link from the root file
+    auto rootlinkId = m_importer.CreateOrUpdateRepositoryLink ();
+
     /*-----------------------------------------------------------------------------------
     Iterate the block table once for multiple tasks per import job:
         1) Load xRef files from xRef block table records

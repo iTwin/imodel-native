@@ -23,6 +23,7 @@ struct FileProperty
     static constexpr char LastSaveTime[] = "LastSaveTime";
     static constexpr char FileSize[] = "FileSize";
     static constexpr char IdPolicy[] = "idPolicy";
+    static constexpr char RootRepositoryLink[] = "RootRepositoryLink";
     };  // FileProperty
 
 /*=================================================================================**//**
@@ -529,7 +530,7 @@ DwgDbHandle DwgSourceAspects::BaseAspect::GetIdentifierAsHandle () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DwgSourceAspects::RepositoryLinkAspect DwgSourceAspects::RepositoryLinkAspect::Create (DgnDbR db, DwgFileInfoCR finfo, StableIdPolicy policy)
+DwgSourceAspects::RepositoryLinkAspect DwgSourceAspects::RepositoryLinkAspect::Create (DgnDbR db, DwgFileInfoCR finfo)
     {
     auto aspectClass = iModelExternalSourceAspect::GetAspectClass(db);
     if (nullptr == aspectClass)
@@ -543,6 +544,8 @@ DwgSourceAspects::RepositoryLinkAspect DwgSourceAspects::RepositoryLinkAspect::C
         return nullptr;
     
     auto fileSize = iModelExternalSourceAspect::UInt64ToString(finfo.GetFileSize());
+    auto rlinkId = finfo.GetRootRepositoryLinkId();
+    auto rootReplinkId = rlinkId.IsValid() ? iModelExternalSourceAspect::UInt64ToString(rlinkId.GetValue()) : Utf8String();
 
     RepositoryLinkAspect aspect(ecInstance.get());
     
@@ -555,7 +558,8 @@ DwgSourceAspects::RepositoryLinkAspect DwgSourceAspects::RepositoryLinkAspect::C
     json.AddMember(FileProperty::VersionGuid, rapidjson::Value(finfo.GetVersionGuid().c_str(), allocator), allocator);
     json.AddMember(FileProperty::UniqueName, rapidjson::Value(finfo.GetUniqueName().c_str(), allocator), allocator);
     json.AddMember(FileProperty::DwgName, rapidjson::Value(finfo.GetDwgName().c_str(), allocator), allocator);
-    json.AddMember(FileProperty::IdPolicy, (int)policy, allocator);
+    json.AddMember(FileProperty::IdPolicy, (int)finfo.GetIdPolicy(), allocator);
+    json.AddMember(FileProperty::RootRepositoryLink, rapidjson::Value(rootReplinkId.c_str(), allocator), allocator);
 
     aspect.SetProperties(json);
 
@@ -572,11 +576,13 @@ void DwgSourceAspects::RepositoryLinkAspect::Update (DwgFileInfo const& finfo)
     SetSourceState(sourceState);
 
     auto fileSize = iModelExternalSourceAspect::UInt64ToString(finfo.GetFileSize());
+    auto rootReplinkId = iModelExternalSourceAspect::UInt64ToString(finfo.GetRootRepositoryLinkId().GetValue());
 
     // reset lastSaveTime & fileSize
     auto json = this->GetProperties();
     json[FileProperty::LastSaveTime] = finfo.GetLastSaveTime();
     json[FileProperty::FileSize] = rapidjson::Value(fileSize.c_str(), json.GetAllocator());
+    json[FileProperty::RootRepositoryLink] = rapidjson::Value(rootReplinkId.c_str(), json.GetAllocator());
 
     this->SetProperties(json);
     }
@@ -657,6 +663,9 @@ BentleyStatus DwgSourceAspects::RepositoryLinkAspect::GetDwgFileInfo (DwgSourceA
     finfo.SetIdPolicy (static_cast<StableIdPolicy>(json[FileProperty::IdPolicy].GetInt()));
     finfo.SetLastSaveTime (json[FileProperty::LastSaveTime].GetDouble());
     finfo.SetFileSize (::_atoi64(json[FileProperty::FileSize].GetString()));
+
+    uint64_t rootReplinkId = ::_atoi64(json[FileProperty::RootRepositoryLink].GetString());
+    finfo.SetRootRepositoryLinkId (RepositoryLinkId(rootReplinkId));
     return  BSISUCCESS;
     }
 
@@ -674,6 +683,16 @@ Utf8String DwgSourceAspects::RepositoryLinkAspect::GetDwgName () const
 Utf8String DwgSourceAspects::RepositoryLinkAspect::GetUniqueName () const
     {
     return this->GetProperties()[FileProperty::UniqueName].GetString();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+RepositoryLinkId DwgSourceAspects::RepositoryLinkAspect::GetRootRepositoryLinkId () const
+    {
+    auto idstr = this->GetProperties()[FileProperty::RootRepositoryLink].GetString();
+    uint64_t v = ::_atoi64(idstr);
+    return  RepositoryLinkId(v);
     }
 
 
@@ -1781,7 +1800,7 @@ BentleyStatus  DwgSourceAspects::DiskFileInfo::SetFrom (BeFileNameCR filename)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          04/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DwgSourceAspects::DwgFileInfo::SetFrom (DwgDbDatabaseCR dwg, DwgImporter const& importer)
+BentleyStatus   DwgSourceAspects::DwgFileInfo::SetFrom (DwgDbDatabaseCR dwg, DwgImporterR importer)
     {
     // set super info
     BeFileName  fullFilename(dwg.GetFileName().c_str());
@@ -1797,6 +1816,9 @@ BentleyStatus   DwgSourceAspects::DwgFileInfo::SetFrom (DwgDbDatabaseCR dwg, Dwg
     m_dwgName.Assign (fullFilename.c_str());
     m_uniqueName = importer._GetUniqueNameForFile (fullFilename);
     m_idPolicy = importer.GetOptions().GetStableIdPolicy ();
+
+    auto& rootDwg = importer.GetDwgDb ();
+    m_rootRepositoryLinkId = DwgSourceAspects::GetRepositoryLinkId(rootDwg);
 
     return status;
     }
@@ -1910,12 +1932,12 @@ DwgSourceAspects::RepositoryLinkAspect  DwgSourceAspects::FindFileByFileName (Be
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          04/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId  DwgSourceAspects::GetRepositoryLinkId(DwgDbDatabaseR dwg)
+RepositoryLinkId  DwgSourceAspects::GetRepositoryLinkId(DwgDbDatabaseR dwg)
     {
     uint64_t    linkId = 0;
     if (DwgDbStatus::Success != dwg.GetRepositoryLinkId(linkId))
-        BeAssert(false && "DwgSourceAspects::GetRepositoryLinkId is called before DWG file converted!");
-    return  DgnElementId(linkId);
+        linkId = 0;
+    return  RepositoryLinkId(linkId);
     }
 
 /*---------------------------------------------------------------------------------**//**
