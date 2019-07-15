@@ -1,0 +1,65 @@
+#----------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#----------------------------------------------------------------------
+
+%include mdl.mki
+%include $(SrcRoot)DgnDomains/Grids/publicmki/Grids.mki
+
+# The same value must be used across several variables; set AppName and reference it.
+AppName = GridsDomain
+CCompPDBName = $(AppName)
+
+o = $(OutputRootDir)build/ConceptBuilding/GridsDomain/
+
+#dirToSearch = $(GridsPublicApi)
+#%include cincapnd.mki
+
+#dirToSearch = $(GridElementsPublicApi)
+#%include cincapnd.mki
+
+#dirToSearch = $(GridHandlersPublicApi)
+#%include cincapnd.mki
+
+nameToDefine = __GRIDSDOMAIN_BUILD__
+%include cdefapnd.mki
+
+
+%if !defined (BMAKE_DELETE_ALL_TARGETS)
+    $(o):
+        ~@mkdir $@
+%else
+    always:
+        -$(rmdirRecursiveCmd) $(o)
+%endif
+
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)GridsDomain$(oext) : $(_MakeFilePath)GridsDomain.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridsDomain.h 
+
+%include MultiCppCompileGo.mki
+objs +% $(MultiCompileObjectList)
+
+DLM_CONTEXT_LOCATION = $(ContextDeliveryDir)
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+DLM_DEST = $(o)
+DLM_EXPORT_DEST = $(o)
+DLM_EXPORT_OBJS = $(objs)
+DLM_LIB_CONTEXT_LOCATION = $(ContextDeliveryDir)
+DLM_NAME = $(AppName)
+DLM_NOENTRY = 1
+DLM_OBJECT_DEST = $(o)
+DLM_OBJECT_FILES = $(objs)
+
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)GridHandlers$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)GridElements$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(stlibext)
+
+%include $(sharedMki)linkLibrary.mki
+
