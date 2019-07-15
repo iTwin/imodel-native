@@ -920,7 +920,7 @@ LIB_OBJS    + $(o)$(appName)PCH$(oext)
 %include creatlib.mki
 
 CreateBuildContext:
-    CreateSymLinks.py -m"$(OutBuildContexts)ImagePP/VendorAPI/ImagePP-GdalLib=$(ippGdalDir)gcore/*.h" \
+    python $(SrcRoot)bsicommon/build/CreateSymLinks.py -m"$(OutBuildContexts)ImagePP/VendorAPI/ImagePP-GdalLib=$(ippGdalDir)gcore/*.h" \
                       -m"$(OutBuildContexts)ImagePP/VendorAPI/ImagePP-GdalLib=$(ippGdalDir)port/*.h" \
                       -m"$(OutBuildContexts)ImagePP/VendorAPI/ImagePP-GdalLib=$(ippGdalDir)port/cpl_config.h.vc" \
                       -m"$(OutBuildContexts)ImagePP/VendorAPI/ImagePP-GdalLib=$(ippGdalDir)port/cpl_config.h.an" \
