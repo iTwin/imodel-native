@@ -4,24 +4,36 @@
 # clangVersionGrep=$(clang++ --version | head -n 1 | grep -o -E "[[:digit:]].[[:digit:]].[[:digit:]]" | uniq | sort)
 # echo $clangVersionGrep
 
+#if ! [ -x "$(command -v git)" ]; then
+#  echo 'Error: git is not installed.' >&2
+#  exit 1
+#fi
+
+#$ command -v foo >/dev/null 2>&1 || { echo >&2 "I require foo but it's not installed.  Aborting."; exit 1; }
+
 demodir="LicensingDemoTemp"
 
 srcdir="${demodir}/src"
 outdir="${demodir}/out"
 
-nugetVersion="2.1.0.192"
+nugetVersion="2.1.0.214"
 
 echo ${srcdir}
 
-#TODO: pull source for demo
+# TODO: make this follow the current iModelCore linux instructions better
 PullLinuxCLISource() {
 	
 	echo "Have you set up the scripts to authenticate with mercurial? (y/n)"
 	read yn
-	if [[ ${yn} == "n" ]]; then
+	if [ ${yn} == "n" ]; then
 		# get the proxy server
-		echo "Check out ntlmaps"
-		svn checkout http://svn.code.sf.net/p/ntlmaps/code/trunk ~/lib/ntlmaps
+		if ! [ -x "$(command -v svn > /dev/null)" ]; then
+			echo "Subversion not installed. Please install subverison. Reccomended command: sudo apt install subversion"
+			exit(1)
+		else
+			echo "Check out ntlmaps"
+			svn checkout http://svn.code.sf.net/p/ntlmaps/code/trunk ~/lib/ntlmaps
+		fi
 
 		echo "Get the scripts to authenticate mercurial"
 		rsync -r rsync-vcs1.bentley.com::tools/GetAndBuildBim2DcsOnLinux ~
@@ -46,24 +58,23 @@ PullLinuxCLISource() {
 		fi
 
 		echo "In the ~/.hgrc file, please replace ui.username your real Bentley login name. Press enter in this shell when you are done."
-		if type "vim" > /dev/null; then
-			gnome-terminal -- vim ~/.hgrc
+		if [ -x "$(command -v vi > /dev/null)" ]; then
+			gnome-terminal -- vi ~/.hgrc
 		fi
 		read x
 
 		echo "In the ~/scripts/ntlmaps.cfg file, please replace USER with your real Bentley login name. Press enter in this shell when you are done."
-		if type "vim" > /dev/null; then
-			gnome-terminal -- vim ~/scripts/ntlmaps.cfg
+		if [ -x "$(command -v vi > /dev/null)" ]; then
+			gnome-terminal -- vi ~/scripts/ntlmaps.cfg
 		fi
 		read x
 
 		rm -rf ~/GetAndBuildBim2DcsOnLinux
 	fi
 
-	#TODO: check if Ubuntu/Linux etc for the correct terminal to open
 	gnome-terminal -- ~/scripts/hgproxy.sh
 
-	echo "Type in your Bentley password in the new shell that opened. Press enter in this shell when you are done."
+	echo "Type in your Bentley password in the new shell that opened. This shell MUST remain open to pull the Sample App source. Press enter in this shell when you are done."
 	read x
 
 	echo "Cloning Licensing repo."
@@ -88,7 +99,7 @@ PullLinuxCLISource() {
 if [ -d "$srcdir" ]; then
 	echo "directory found"
 	if [ ! -d "${srcdir}/iModelCoreNuget_LinuxX64.${nugetVersion}" ]; then
-		if ! type "nuget" > /dev/null; then
+		if ! [ -x "$(command -v nuget > /dev/null)" ]; then
 			echo "nuget is not installed, please install nuget. Recommended command: 'sudo apt install nuget'"
 			exit 1
 		fi
@@ -107,7 +118,7 @@ else
 
 	PullLinuxCLISource
 
-	if ! type "nuget" > /dev/null; then
+	if ! [ -x "$(command -v nuget  > /dev/null)" ]; then
 		echo "nuget is not installed, please install nuget. Recommended command: 'sudo apt install nuget'"
 	fi
 	
@@ -119,16 +130,18 @@ if [ ! -d "$outdir" ]; then
 	mkdir -p ${outdir}
 fi
 
-if ! type "clang" > /dev/null; then
-	echo "clang is not installed, please install clang. Recommended command: 'sudo apt install clang'"
-	exit 1
-elif type "clang" > /dev/null; then
-	echo "clang is installed!"
+if ! [ -x "$(command -v clang > /dev/null)" ]; then
+	if ! [ -x "$(command -v clang-3.8 > /dev/null)" ]; then
+		echo "clang is not installed, please install clang. Recommended command: 'sudo apt install clang'"
+		exit 1
+	else
+		clang++-3.8 -std=c++14 -stdlib=libstdc++ --include-directory=${srcdir}/iModelCoreNuget_LinuxX64.${nugetVersion}/native/include --library-directory=${srcdir}/iModelCoreNuget_LinuxX64.${nugetVersion}/native/lib -o ./${outdir}/LinuxDemo ./${srcdir}/LinuxDemo.cpp -Wl,--start-group -lBaseGeoCoord -lBeCsmapStatic -lBeCurl -lBeFolly -lBeHttp -lBeIcu4c -lBeJpeg -lBeJsonCpp -lBeLibJpegTurbo -lBeLibxml2 -lBentley -lBentleyGeom -lBentleyGeomSerialization -lBeOpenSSL -lBePng -lBeSecurity -lBeSQLite -lBeSQLiteEC -lBeXml -lBeZlib -lDgnPlatform -lECObjects -lECPresentation -lfreetype2 -lLicensing -llzma -lnapi -lpskernel -lsnappy -lUnits -lWebServicesClient -lpthread -ldl -Wl,--end-group
+	fi
+else
+	clang++ -std=c++14 -stdlib=libstdc++ --include-directory=${srcdir}/iModelCoreNuget_LinuxX64.${nugetVersion}/native/include --library-directory=${srcdir}/iModelCoreNuget_LinuxX64.${nugetVersion}/native/lib -o ./${outdir}/LinuxDemo ./${srcdir}/LinuxDemo.cpp -Wl,--start-group -lBaseGeoCoord -lBeCsmapStatic -lBeCurl -lBeFolly -lBeHttp -lBeIcu4c -lBeJpeg -lBeJsonCpp -lBeLibJpegTurbo -lBeLibxml2 -lBentley -lBentleyGeom -lBentleyGeomSerialization -lBeOpenSSL -lBePng -lBeSecurity -lBeSQLite -lBeSQLiteEC -lBeXml -lBeZlib -lDgnPlatform -lECObjects -lECPresentation -lfreetype2 -lLicensing -llzma -lnapi -lpskernel -lsnappy -lUnits -lWebServicesClient -lpthread -ldl -Wl,--end-group
 fi
 
 #TODO: check for other requirements
-
-clang++ -std=c++14 -stdlib=libstdc++ --include-directory=${srcdir}/iModelCoreNuget_LinuxX64.${nugetVersion}/native/include --library-directory=${srcdir}/iModelCoreNuget_LinuxX64.${nugetVersion}/native/lib -o ./${outdir}/LinuxDemo ./${srcdir}/LinuxDemo.cpp -Wl,--start-group -lBaseGeoCoord -lBeCsmapStatic -lBeCurl -lBeFolly -lBeHttp -lBeIcu4c -lBeJpeg -lBeJsonCpp -lBeLibJpegTurbo -lBeLibxml2 -lBentley -lBentleyGeom -lBentleyGeomSerialization -lBeOpenSSL -lBePng -lBeSecurity -lBeSQLite -lBeSQLiteEC -lBeXml -lBeZlib -lDgnPlatform -lECObjects -lECPresentation -lfreetype2 -lLicensing -llzma -lnapi -lpskernel -lsnappy -lUnits -lWebServicesClient -lpthread -ldl -Wl,--end-group
 
 # pass source dir into the program to determine assets directory
 fullSourcePath=$(pwd)
