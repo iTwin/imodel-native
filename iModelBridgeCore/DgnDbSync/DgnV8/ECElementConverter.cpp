@@ -89,7 +89,7 @@ BECN::ECClassCP ElementConverter::GetDgnDbClass(ECObjectsV8::IECInstance const& 
     {
     ECObjectsV8::ECClassCR elementClass = v8Instance.GetClass();
     Utf8String schemaName(elementClass.GetSchema().GetName().c_str());
-    if (schemaName.StartsWith("EWR"))
+    if (schemaName.StartsWith("EWR") && ! schemaName.EqualsIAscii("EWRData"))
         schemaName.AssignOrClear("EWR");
 
     Utf8String className(elementClass.GetName().c_str());
