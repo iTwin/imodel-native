@@ -11,7 +11,7 @@
 
 #$ command -v foo >/dev/null 2>&1 || { echo >&2 "I require foo but it's not installed.  Aborting."; exit 1; }
 
-demodir="LicensingDemoTemp"
+demodir="LicensingSampleApp"
 
 srcdir="${demodir}/src"
 outdir="${demodir}/out"
@@ -27,9 +27,9 @@ PullLinuxCLISource() {
 	read yn
 	if [ ${yn} == "n" ]; then
 		# get the proxy server
-		if ! [ -x "$(command -v svn > /dev/null)" ]; then
+		if ! [ -x "$(command -v svn)" ]; then
 			echo "Subversion not installed. Please install subverison. Reccomended command: sudo apt install subversion"
-			exit(1)
+			exit 1
 		else
 			echo "Check out ntlmaps"
 			svn checkout http://svn.code.sf.net/p/ntlmaps/code/trunk ~/lib/ntlmaps
@@ -58,13 +58,13 @@ PullLinuxCLISource() {
 		fi
 
 		echo "In the ~/.hgrc file, please replace ui.username your real Bentley login name. Press enter in this shell when you are done."
-		if [ -x "$(command -v vi > /dev/null)" ]; then
+		if [ -x "$(command -v vi)" ]; then
 			gnome-terminal -- vi ~/.hgrc
 		fi
 		read x
 
 		echo "In the ~/scripts/ntlmaps.cfg file, please replace USER with your real Bentley login name. Press enter in this shell when you are done."
-		if [ -x "$(command -v vi > /dev/null)" ]; then
+		if [ -x "$(command -v vi)" ]; then
 			gnome-terminal -- vi ~/scripts/ntlmaps.cfg
 		fi
 		read x
@@ -99,7 +99,7 @@ PullLinuxCLISource() {
 if [ -d "$srcdir" ]; then
 	echo "directory found"
 	if [ ! -d "${srcdir}/iModelCoreNuget_LinuxX64.${nugetVersion}" ]; then
-		if ! [ -x "$(command -v nuget > /dev/null)" ]; then
+		if ! [ -x "$(command -v nuget)" ]; then
 			echo "nuget is not installed, please install nuget. Recommended command: 'sudo apt install nuget'"
 			exit 1
 		fi
@@ -118,7 +118,7 @@ else
 
 	PullLinuxCLISource
 
-	if ! [ -x "$(command -v nuget  > /dev/null)" ]; then
+	if ! [ -x "$(command -v nuget)" ]; then
 		echo "nuget is not installed, please install nuget. Recommended command: 'sudo apt install nuget'"
 	fi
 	
@@ -130,8 +130,8 @@ if [ ! -d "$outdir" ]; then
 	mkdir -p ${outdir}
 fi
 
-if ! [ -x "$(command -v clang > /dev/null)" ]; then
-	if ! [ -x "$(command -v clang-3.8 > /dev/null)" ]; then
+if ! [ -x "$(command -v clang)" ]; then
+	if ! [ -x "$(command -v clang-3.8)" ]; then
 		echo "clang is not installed, please install clang. Recommended command: 'sudo apt install clang'"
 		exit 1
 	else

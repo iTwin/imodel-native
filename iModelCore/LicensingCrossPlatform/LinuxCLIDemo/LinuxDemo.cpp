@@ -628,6 +628,7 @@ void CreateClient()
         else if(offlineModeInput == "help" || offlineModeInput == "h")
             {
             cout << "If offline, pushes usage in discrete intervals. If not offline, pushes usage continuously via stream.\n";
+            continue;
             }
 
         cout << "Invalid input, please enter \"true\" or \"false\"\n";
@@ -641,11 +642,11 @@ void CreateClient()
     Utf8String productId = Utf8String(productIdInput.c_str());
     Utf8String projectId = Utf8String(projectIdInput.c_str());
     Utf8String featureString = Utf8String(featureStringInput.c_str());
-    Utf8String versionString = Utf8String(versionInput.c_str());
+    BeVersion version(versionInput.c_str());
     Utf8String deviceId = Utf8String(deviceIdInput.c_str());
 
     // TODO: option to prompt for ClientInfo values, or default to "test" values
-    auto clientInfo = std::make_shared<WebServices::ClientInfo>("Bentley-Test", BeVersion(versionString), "TestAppGUID", deviceId, "TestSystem", productId);
+    auto clientInfo = std::make_shared<WebServices::ClientInfo>("Bentley-Test", version, "TestAppGUID", deviceId, "TestSystem", productId);
     if(clientInfo == nullptr)
         {
         cout << "failed to create ClientInfo\n";
@@ -714,7 +715,7 @@ void CreateClient()
 
     // NOTE: qa2_devuser2@mailinator.com only works for product ID 2223 (2545 on desktop)
     //Http::Credentials credentials("qa2_devuser2@mailinator.com", "bentley");
-    Http::Credentials credentials(Utf8String(email), Utf8String(password));
+    Http::Credentials credentials(Utf8String(email.c_str()), Utf8String(password.c_str()));
     auto signInResult = manager->SignInWithCredentials(credentials)->GetResult();
     if(!signInResult.IsSuccess())
         {
@@ -726,7 +727,7 @@ void CreateClient()
     else 
         cout << "Signed in.\n";
 
-    auto appInfo = std::make_shared<Licensing::ApplicationInfo>(BeVersion(versionString), deviceId, productId);
+    auto appInfo = std::make_shared<Licensing::ApplicationInfo>(version, deviceId, productId);
 
     if(appInfo == nullptr)
         {
@@ -781,7 +782,7 @@ void CreateAccessKeyClient()
     string versionInput;
     string deviceIdInput;
 
-    cout << "Enter the following values as prompted (leave blank and press Enter to make a value null)\n"
+    cout << "Enter the following values as prompted (leave blank and press Enter to make a value null)\n";
 
     cout << "Enter a product ID: ";
     getline(cin, productIdInput);
@@ -812,6 +813,12 @@ void CreateAccessKeyClient()
             offlineMode = false;
             break;
             }
+        else if(offlineModeInput == "help" || offlineModeInput == "h")
+            {
+            cout << "If offline, pushes usage in discrete intervals. If not offline, pushes usage continuously via stream.\n";
+            continue;
+            }
+
 
         cout << "Invalid input, please enter \"true\" or \"false\"\n";
         }
@@ -820,11 +827,11 @@ void CreateAccessKeyClient()
     Utf8String accessKey = Utf8String(accessKeyInput.c_str());
     Utf8String projectId = Utf8String(projectIdInput.c_str());
     Utf8String featureString = Utf8String(featureStringInput.c_str());
-    Utf8String versionString = Utf8String(versionInput.c_str());
+    BeVersion version(versionInput.c_str());
     Utf8String deviceId = Utf8String(deviceIdInput.c_str());
 
     // create the rest of the required info
-    auto appInfo = std::make_shared<Licensing::ApplicationInfo>(BeVersion(versionString), deviceId, productId);
+    auto appInfo = std::make_shared<Licensing::ApplicationInfo>(version, deviceId, productId);
 
     if(appInfo == nullptr)
         {
@@ -872,7 +879,7 @@ void CreateSaasClient()
     int productId = 0;
     string featureString = "";
 
-    cout << "Enter the following values as prompted (leave blank and press Enter to make a value null)\n"
+    cout << "Enter the following values as prompted (leave blank and press Enter to make a value null)\n";
 
     cout << "Enter a product ID: ";
     getline(cin, productIdInput);
