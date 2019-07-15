@@ -67,6 +67,36 @@ LicenseStatus AccessKeyClientImpl::StartApplication()
     {
     LOG.trace("AccessKeyClientImpl::StartApplication");
 
+    if (m_applicationInfo == nullptr)
+        {
+        LOG.error("ClientImpl::StartApplication ERROR - Application Information object is null.");
+        return LicenseStatus::Error;
+        }
+
+    if (BeFileName::IsNullOrEmpty(m_dbPath))
+        {
+        LOG.error("ClientImpl::StartApplication ERROR - Database path string is null or empty.");
+        return LicenseStatus::Error;
+        }
+
+    if (Utf8String::IsNullOrEmpty(m_correlationId.c_str()))
+        {
+        LOG.error("ClientImpl::StartApplication ERROR - Correlation ID (Usage ID) string is null or empty.");
+        return LicenseStatus::Error;
+        }
+
+    if (m_timeRetriever == nullptr)
+        {
+        LOG.error("ClientImpl::StartApplication ERROR - Time retriever object is null.");
+        return LicenseStatus::Error;
+        }
+
+    if (m_licensingDb == nullptr)
+        {
+        LOG.error("ClientImpl::StartApplication ERROR - Database object is null.");
+        return LicenseStatus::Error;
+        }
+
     if (SUCCESS != m_licensingDb->OpenOrCreate(m_dbPath))
         {
         LOG.error("AccessKeyClientImpl::StartApplication ERROR - Database creation failed.");
@@ -89,6 +119,15 @@ LicenseStatus AccessKeyClientImpl::StartApplication()
         (LicenseStatus::Trial == licStatus))
         {
         // Begin heartbeat
+        int64_t currentTime = m_timeRetriever->GetCurrentTimeAsUnixMillis();
+
+        m_lastRunningUsageHeartbeatStartTime = currentTime; // ensure that StopApplication knows that this heartbeat is started
+        CallOnInterval(m_stopUsageHeartbeatThread, m_usageHeartbeatThreadStopped, m_lastRunningUsageHeartbeatStartTime, HEARTBEAT_THREAD_DELAY_MS, [this]() { return UsageHeartbeat(); });
+
+        m_lastRunningLogPostingHeartbeatStartTime = currentTime; // ensure that StopApplication knows that this heartbeat is started
+        CallOnInterval(m_stopLogPostingHeartbeatThread, m_logPostingHeartbeatThreadStopped, m_lastRunningLogPostingHeartbeatStartTime, HEARTBEAT_THREAD_DELAY_MS, [this]() { return LogPostingHeartbeat(); });
+
+        m_lastRunningPolicyHeartbeatStartTime = currentTime; // ensure that StopApplication knows that this heartbeat is started
         CallOnInterval(m_stopPolicyHeartbeatThread, m_policyHeartbeatThreadStopped, m_lastRunningPolicyHeartbeatStartTime, HEARTBEAT_THREAD_DELAY_MS, [this]() { return PolicyHeartbeat(); });
         }
     else
@@ -97,17 +136,6 @@ LicenseStatus AccessKeyClientImpl::StartApplication()
         }
 
     return licStatus;
-    }
-
-BentleyStatus AccessKeyClientImpl::StopApplication()
-    {
-    LOG.trace("AccessKeyClientImpl::StopApplication");
-    StopPolicyHeartbeat(); // This will stop Policy heartbeat
-
-    m_licensingDb->Close();
-
-    LOG.debug("Stopped AccessKey heartbeat");
-    return SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------------+

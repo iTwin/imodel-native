@@ -5,7 +5,6 @@
 +--------------------------------------------------------------------------------------*/
 #include "PublicApi/GridElementsAPI.h"
 #include <BuildingShared/DgnUtils/BuildingDgnUtilsApi.h>
-#include <limits>
 
 USING_NAMESPACE_GRIDS
 USING_NAMESPACE_BENTLEY_DGN
@@ -135,15 +134,31 @@ Dgn::DgnDbStatus GridCurveBundle::_OnDelete() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Elonas.Seviakovas               07/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::IBRepEntityPtr getBRepFromElevationSurface(ElevationGridSurfaceCR surface)
+Dgn::IBRepEntityPtr getBRepFromElevationSurface(ElevationGridSurfaceCR surface, DRange3dCR range)
     {
-    Dgn::IBRepEntityPtr bRep;
-    
-    constexpr double minValue = std::numeric_limits<float>::lowest();
-    constexpr double maxValue = std::numeric_limits<float>::max();
+    CurveVectorPtr curve = surface.GetSurface2d();
 
-    CurveVectorCPtr curve = CurveVector::CreateRectangle(minValue, minValue, maxValue, maxValue, surface.GetElevation());
+    if (curve.IsNull())
+        {
+        curve = CurveVector::CreateRectangle(range.low.x, range.low.y, range.high.x, range.high.y, 0);
+        }
+
+    Dgn::IBRepEntityPtr bRep;
     BRepUtil::Create::BodyFromCurveVector(bRep, *curve);
+
+    if(bRep.IsNull())
+        return nullptr;
+
+    GridCPtr surfaceGrid = Grid::Get(surface.GetDgnDb(), surface.GetGridId());;
+
+    if(surfaceGrid.IsNull())
+        return nullptr;
+
+    Transform gridTransform = surfaceGrid->GetPlacementTransform();
+    double surfaceElevation = surface.GetElevation();
+
+    bRep->ApplyTransform(Transform::From(0.0, 0.0, surfaceElevation));
+    bRep->ApplyTransform(gridTransform);
 
     return bRep;
     }
@@ -151,7 +166,7 @@ Dgn::IBRepEntityPtr getBRepFromElevationSurface(ElevationGridSurfaceCR surface)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Elonas.Seviakovas               07/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::IBRepEntityPtr getBRepFromSurface(GridSurfaceCR surface)
+Dgn::IBRepEntityPtr getBRepFromSurface(GridSurfaceCR surface, DRange3dCR otherSurfaceRange)
     {
     if (!surface.HasGeometry())
         {
@@ -161,7 +176,7 @@ Dgn::IBRepEntityPtr getBRepFromSurface(GridSurfaceCR surface)
         if(!elevationSurface)
             return nullptr;
 
-        return getBRepFromElevationSurface(*elevationSurface);
+        return getBRepFromElevationSurface(*elevationSurface, otherSurfaceRange);
         }
 
     bvector<Dgn::IBRepEntityPtr> bReps;
@@ -183,11 +198,11 @@ GridSurfaceCR firstSurface,
 GridSurfaceCR secondSurface
 )
     {
-    Dgn::IBRepEntityPtr firstSurfaceBRep = getBRepFromSurface(firstSurface);
+    Dgn::IBRepEntityPtr firstSurfaceBRep = getBRepFromSurface(firstSurface, secondSurface.CalculateRange3d());
     if(firstSurfaceBRep.IsNull())
         return nullptr;
 
-    Dgn::IBRepEntityPtr secondSurfaceBRep = getBRepFromSurface(secondSurface);
+    Dgn::IBRepEntityPtr secondSurfaceBRep = getBRepFromSurface(secondSurface, firstSurface.CalculateRange3d());
     if (secondSurfaceBRep.IsNull())
         return nullptr;
 

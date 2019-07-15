@@ -6,6 +6,5 @@
 %include mdl.mki
 
 always:
-    @CreateSymLinks.py -m"$(BuildContext)PublicAPI\StructuralDomain\=$(_MakeFilePath)PublicAPI\*.h"
-    @CreateSymLinks.py -f"$(BuildContext)ECSchemas\Domain\StructuralPhysical.ecschema.xml=$(_MakeFilePath)StructuralPhysical.ecschema.xml"
-
+    python $(SrcRoot)bsicommon/build/CreateSymLinks.py -m"$(BuildContext)PublicAPI\StructuralDomain\=$(_MakeFilePath)PublicAPI\*.h"
+    python $(SrcRoot)bsicommon/build/CreateSymLinks.py -f"$(BuildContext)ECSchemas\Domain\StructuralPhysical.ecschema.xml=$(_MakeFilePath)StructuralPhysical.ecschema.xml"

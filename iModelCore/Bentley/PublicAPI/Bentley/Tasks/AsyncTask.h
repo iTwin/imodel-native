@@ -240,6 +240,15 @@ struct EXPORT_VTABLE_ATTRIBUTE AsyncTask : public std::enable_shared_from_this<A
 
         BENTLEYDLL_EXPORT void AddSubTask (std::shared_ptr<AsyncTask> task);
 
+        //! Create task that will complete once all task in list are completed.
+        //! @param task - first task to wait on
+        //! @param tasks - other tasks to wait on
+        template<typename T, typename... Args>
+        static std::shared_ptr<PackagedAsyncTask<void>> WhenAll(T task, Args... tasks)
+            {
+            return WhenAll(std::set<std::shared_ptr<AsyncTask>>{task, tasks...});
+            }
+
         //! Create task that will complete once all task in container are completed.
         //! @param tasks - contains std::shared_ptr<AsyncTask> or derived type tasks
         template<typename C>

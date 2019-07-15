@@ -46,6 +46,7 @@
     <ClCompile Include="DgnV8\DgnV8SyncInfo.cpp" />
     <ClCompile Include="DgnV8\DgnV8Text.cpp" />
     <ClCompile Include="DgnV8\DrawingConverter.cpp" />
+    <ClCompile Include="DgnV8\DTMConversion.cpp" />
     <ClCompile Include="DgnV8\ECElementConverter.cpp" />
     <ClCompile Include="DgnV8\GeometryConversion.cpp" />
     <ClCompile Include="DgnV8\ImportConfig\ImportConfig.cpp" />

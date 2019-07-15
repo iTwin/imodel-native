@@ -107,7 +107,7 @@ always:
 			<
 		%else			
 			>$(LogDir)run.bat
-			$(exeName) $(GTEST_EXTRA_ARGS) | $(_makeFilePath)TeeGtest.py $(ResultsCapture)		
+			$(exeName) $(GTEST_EXTRA_ARGS) | python $(_makeFilePath)TeeGtest.py $(ResultsCapture)		
 			exit
 			<
 		%endif			
