@@ -445,6 +445,31 @@ static void ValidateModelRange (DgnDbR db, Utf8Char* modelName, double x0, doubl
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            07/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+static void ValidateProjectExtents(double x0, double y0, double z0, double x1, double y1, double z1, BentleyApi::AxisAlignedBox3d extents)
+    {
+    bool areEqual = true;
+    if ((fabs(extents.low.x - x0) > 0.01) ||
+        (fabs(extents.low.y - y0) > 0.01) ||
+        (fabs(extents.low.z - z0) > 0.01) ||
+        (fabs(extents.high.x - x1) > 0.01) ||
+        (fabs(extents.high.y - y1) > 0.01) ||
+        (fabs(extents.high.z - z1) > 0.01))
+        areEqual = false;
+
+    if (!areEqual)
+        {
+        Utf8String msg;
+        msg.Sprintf("Project Extents are wrong. Expected: {%lf %lf %lf} {%lf %lf %lf}\nActual:   {%lf %lf %lf}{%lf %lf %lf}",
+                    x0, y0, z0, x1, y1, z1,
+                    extents.low.x, extents.low.y, extents.low.z, extents.high.x, extents.high.y, extents.high.z);
+        FAIL() << msg;
+        }
+
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry Bentley                   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -498,6 +523,7 @@ TEST_F(ConverterTests, GCSMultiFilesGOAndHelmert)
 
     ValidateModelRange (*db.get(), "SouthCenterGO", 174669.782, -357771.034, -0.0005, 289552.579, -230329.427, 0.0005);
     ValidateModelRange (*db.get(), "SouthWithGO", 174669.782, -357771.034, -0.0005, 289552.579, -230329.427, 0.0005);
+    ValidateProjectExtents(174588.644, -357775.920, -0.0005, 289574.018, -230329.427, 0.0005, db->GeoLocation().GetProjectExtents());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -547,6 +573,8 @@ TEST_F(ConverterTests, GCSMultiFilesReprojectImport)
     ValidateModelRange (*db.get(), "2D Site Data", 775473.879, 82772.289, -0.0005, 776530.835, 83720.500, 0.0005);
     ValidateModelRange(*db.get(), "Building 1", 775953.178862, 83335.970702, -0.0005, 776088.567471, 83467.103977, 0.0005);
     ValidateModelRange (*db.get(), "TPB Building", 775885.795, 83307.686, -0.0005, 775960.121, 83398.667, 0.0005);
+    ValidateProjectExtents(774782.254, 76257.877, -5.839, 783576.865, 87155.225, 20.159, db->GeoLocation().GetProjectExtents());
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -597,6 +625,7 @@ TEST_F(ConverterTests, GCSMultiFilesGCSTransformNoScale)
     ValidateModelRange (*db.get(), "2D Site Data", 775473.879, 82772.278, -0.0005, 776530.847, 83720.506, 0.0005);
     ValidateModelRange (*db.get(), "Building 1", 775953.177, 83335.970, -0.0005, 776088.568, 83467.105, 0.0005);
     ValidateModelRange (*db.get(), "TPB Building", 775885.794, 83307.685, -0.0005, 775960.122, 83398.668, 0.0005);
+    ValidateProjectExtents(774782.254, 76257.877, -5.839, 783576.865, 87155.225, 20.159, db->GeoLocation().GetProjectExtents());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -646,6 +675,7 @@ TEST_F(ConverterTests, GCSMultiFilesGCSTransformWithScale)
     ValidateModelRange (*db.get(), "2D Site Data", 775473.879, 82772.289, -0.0005, 776530.835, 83720.499, 0.0005);
     ValidateModelRange (*db.get(), "Building 1", 775953.179, 83335.971, -0.0005, 776088.567, 83467.104, 0.0005);
     ValidateModelRange (*db.get(), "TPB Building", 775885.795, 83307.686, -0.0005, 775960.121, 83398.667, 0.0005);
+    ValidateProjectExtents(774782.254, 76257.877, -5.839, 783576.865, 87155.225, 20.159, db->GeoLocation().GetProjectExtents());
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -1383,6 +1383,7 @@ TEST_F(ECConversionTests, IGeometryValue)
     EXPECT_EQ(EC::ECSqlStatus::Success, stmt.Prepare(*db, "SELECT * FROM test.TestClass2"));
 
     EC::ECInstanceECSqlSelectAdapter adapter(stmt);
+    int count = 0;
     while (stmt.Step() == BE_SQLITE_ROW)
         {
         BentleyApi::ECN::IECInstancePtr actual = adapter.GetInstance();
@@ -1392,7 +1393,9 @@ TEST_F(ECConversionTests, IGeometryValue)
         ASSERT_TRUE(v.IsIGeometry());
         BentleyApi::IGeometryPtr dbGeom = v.GetIGeometry();
         ASSERT_TRUE(dbGeom.IsValid());
+        count++;
         }
+    ASSERT_TRUE(count > 0);
     }
 
 //---------------------------------------------------------------------------------------
