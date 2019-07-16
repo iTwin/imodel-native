@@ -29,8 +29,11 @@
 #include <WebServices/Connect/ConnectSignInManager.h>
 
 #define TEST_PRODUCT_ID         "2545"
+#define TEST_ULTIMATE_ID        "1001389117"
 #define TEST_HEARTBEAT_INTERVAL 10 // this is not passed to the actual client, so it does nothing
 #define TEST_ACCESSKEY          "somekey"
+#define TEST_AGNOSTIC           "agnosticaccesskey"
+
 
 USING_NAMESPACE_BENTLEY_LICENSING
 USING_NAMESPACE_BENTLEY_LICENSING_UNIT_TESTS
@@ -68,7 +71,26 @@ AccessKeyClientImplPtr CreateWithKeyTestClient(IPolicyProviderPtr policyProvider
         );
     }
 
-// TODO: add a client create function with ultimate ID for unit test with machine agnostic key?
+AccessKeyClientImplPtr CreateWithAgnosticKeyTestClient(IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider, ILicensingDbPtr licensingDb, Utf8StringCR productId = TEST_PRODUCT_ID, Utf8StringCR ultimateId = TEST_ULTIMATE_ID)
+{
+	auto appInfo = std::make_shared<ApplicationInfo>(BeVersion(1, 0), "TestDeviceId", productId);
+
+	BeFileName dbPath = GetWithKeyLicensingDbPath();
+
+	return std::make_shared<AccessKeyClientImpl>
+		(
+			TEST_AGNOSTIC,
+			appInfo,
+			dbPath,
+			true,			
+			policyProvider,
+			ulasProvider,
+			"",
+			"",
+			licensingDb,
+			ultimateId
+		);
+}
 
 // TODO: move to Integration tests
 //ClientPtr CreateWithKeyTestClientFromFactory(Utf8StringCR productId = TEST_PRODUCT_ID)
@@ -326,3 +348,24 @@ TEST_F(AccessKeyClientTests, WithKeyStartApplication_StopApplication_Success)
     EXPECT_LE(1, GetLicensingDbMock().GetOfflineGracePeriodStartCount());
     EXPECT_EQ(1, GetLicensingDbMock().CloseCount());
     }
+
+TEST_F(AccessKeyClientTests, AgnosticKey_Validation)
+	{
+	auto client = CreateWithAgnosticKeyTestClient(GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr(), TEST_PRODUCT_ID, TEST_ULTIMATE_ID);
+	//validate machine, change machine name and validate again 
+	EXPECT_EQ(1, 1);
+	}
+
+TEST_F(AccessKeyClientTests, AgnosticKey_GetPolicy)
+	{
+	auto client = CreateWithAgnosticKeyTestClient(GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr(), TEST_PRODUCT_ID, TEST_ULTIMATE_ID);
+	//get policy from two different machines
+	EXPECT_EQ(1, 1);
+	}
+
+TEST_F(AccessKeyClientTests, AgnosticKey_Usage)
+	{
+	auto client = CreateWithAgnosticKeyTestClient(GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr(), TEST_PRODUCT_ID, TEST_ULTIMATE_ID);
+	//handle usage from multiple machines
+	EXPECT_EQ(1, 1);
+	}
