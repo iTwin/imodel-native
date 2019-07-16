@@ -953,50 +953,75 @@ public:
     ECOBJECTS_EXPORT BentleyStatus Compare(SchemaDiff&, bvector<ECN::ECSchemaCP> const& existingSet, bvector<ECN::ECSchemaCP> const& newSet, Options options = Options());
     };
 
+
 //=======================================================================================
-// @bsiclass                                                Affan.Khan            03/2016
+// @bsiclass                                                Affan.Khan            07/2019
 //+===============+===============+===============+===============+===============+======
 struct CustomAttributeValidator final : NonCopyableClass
     {
+    static Utf8String WILDCARD;
     enum class Policy
         {
         Accept,
         Reject
         };
 
+    enum class ChangeType
+        {
+        New = 1,
+        Modified = 2,
+        Delete = 4,
+        All = New | Modified | Delete,
+        };
+
+    struct PropertyRule final : RefCountedBase
+        {
+        private:
+            Utf8String m_accessString;
+            ChangeType m_changeType;
+            bvector<Utf8String> m_path;
+            Policy m_policy;
+            ECOBJECTS_EXPORT PropertyRule(Policy policy, Utf8CP accessString, ChangeType changeType);
+
+        public:
+            ~PropertyRule(){}
+            Utf8StringCR GetAccessString() const { return m_accessString; }
+            ChangeType GetChangeType() const { return m_changeType; }
+            bool ContainChange(ChangeType type) const { return  ((int) type &  (int) m_changeType) == (int) type; }
+            Policy GetPolicy() const { return m_policy; }
+            bvector<Utf8String> GetPath() const { return m_path; }
+            ECOBJECTS_EXPORT static RefCountedPtr<PropertyRule> Create(Policy policy,  Utf8CP accessString, ChangeType changeType);
+        };
+
+    struct ClassRule final : RefCountedBase
+        {
+        private:
+            Utf8String m_schemaFullName;
+            Utf8String m_customAttributeClassName;
+            ChangeType m_changeType;
+            Policy m_policy;
+            std::vector<RefCountedPtr<PropertyRule>> m_rules;
+            ClassRule(Policy policy, Utf8CP schemaFullName, Utf8CP customAttributeClassName, ChangeType changeType)
+                : m_schemaFullName(schemaFullName), m_customAttributeClassName (customAttributeClassName), m_changeType(changeType), m_policy(policy)
+                {}
+        public:
+            Utf8StringCR GetSchemaName() const { return m_schemaFullName; }
+            Utf8StringCR GetClassName() const { return m_customAttributeClassName; }
+            ChangeType GetChangeType() const { return m_changeType; }
+            Policy GetPolicy() const { return m_policy; }
+            bool ContainChange(ChangeType type) const { return  ((int) type &  (int) m_changeType) == (int) type; }
+            std::vector<RefCountedPtr<PropertyRule>> GetRules() const { return m_rules; }
+            ECOBJECTS_EXPORT ClassRule& Append(Policy policy, Utf8CP accessString, ChangeType changeType);
+            ECOBJECTS_EXPORT static RefCountedPtr<ClassRule> Create(Policy policy, Utf8CP schemaFullName, Utf8CP customAttributeClassName, ChangeType changeType);
+        };
     private:
-        struct Rule final : NonCopyableClass
-            {
-            private:
-                Policy m_policy = Policy::Accept;
-                std::vector<Utf8String> m_accessString;
-            public:
-                Rule(Policy policy, Utf8StringCR accessString);
-                bool Match(std::vector<Utf8String> const& accessString) const;
-                Policy GetPolicy() const { return m_policy; }
-            };
-
-        std::map<Utf8String, std::vector<std::unique_ptr<Rule>>> m_rules;
-        Utf8String m_wildcard = Utf8String("*");
-
-        std::vector<std::unique_ptr<Rule>> const& GetRelevantRules(CustomAttributeChange&) const;
-
-        static Utf8String GetSchemaName(Utf8StringCR path);
-
-        static std::vector<Utf8String> Split(Utf8StringCR path, bool stripArrayIndex = false);
-
+        std::vector<RefCountedPtr<ClassRule>> m_rules;
     public:
-        CustomAttributeValidator() 
-            { 
-            // add entry for wildcard rules
-            m_rules[m_wildcard].clear();
-            }
-
+        CustomAttributeValidator() {}
         ~CustomAttributeValidator() {}
-
-        ECOBJECTS_EXPORT void AddAcceptRule(Utf8StringCR accessString);
-        ECOBJECTS_EXPORT void AddRejectRule(Utf8StringCR accessString);
-        ECOBJECTS_EXPORT Policy Validate(CustomAttributeChange&) const;
+        ECOBJECTS_EXPORT ClassRule& Append(Policy policy, Utf8CP schemaFullName, Utf8CP customAttributeClassName, ChangeType changeType = ChangeType::All);
+        ECOBJECTS_EXPORT Policy Validate(CustomAttributeChange& change) const;
     };
+
 END_BENTLEY_ECOBJECT_NAMESPACE
 
