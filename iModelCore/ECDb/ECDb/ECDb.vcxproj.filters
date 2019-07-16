@@ -780,5 +780,8 @@
     <Xml Include="ECSchemas\ECDbFileInfo.02.00.01.ecschema.xml">
       <Filter>ECSchemas</Filter>
     </Xml>
+    <Xml Include="ECSchemas\ECDbMap.02.00.01.ecschema.xml">
+      <Filter>ECSchemas</Filter>
+    </Xml>
   </ItemGroup>
 </Project>

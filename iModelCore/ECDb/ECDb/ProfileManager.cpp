@@ -140,6 +140,9 @@ DbResult ProfileManager::RunUpgraders(ProfileVersion const& versionBeforeUpgrade
     if (versionBeforeUpgrade < ProfileVersion(4, 0, 0, 2))
         upgraders.push_back(std::make_unique<ProfileUpgrader_4002>());
 
+    if (versionBeforeUpgrade < ProfileVersion(4, 0, 0, 3))
+        upgraders.push_back(std::make_unique<ProfileUpgrader_4003>());
+
     for (std::unique_ptr<ProfileUpgrader> const& upgrader : upgraders)
         {
         DbResult stat = upgrader->Upgrade(m_ecdb);

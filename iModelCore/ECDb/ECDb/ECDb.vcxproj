@@ -258,8 +258,12 @@
     <Xml Include="ECSchemas\ECDbFileInfo.02.00.01.ecschema.xml">
       <SubType>Designer</SubType>
     </Xml>
-    <Xml Include="ECSchemas\ECDbMap.02.00.00.ecschema.xml" />
+    <Xml Include="ECSchemas\ECDbMap.02.00.00.ecschema.xml">
+      <SubType>Designer</SubType>
+    </Xml>
+    <Xml Include="ECSchemas\ECDbMap.02.00.01.ecschema.xml" />
     <Xml Include="ECSchemas\ECDbMeta.04.00.01.ecschema.xml">
+      <SubType>Designer</SubType>
     </Xml>
     <Xml Include="ECSchemas\ECDbSchemaPolicies.01.00.00.ecschema.xml" />
   </ItemGroup>
