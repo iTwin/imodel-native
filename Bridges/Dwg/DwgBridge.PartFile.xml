@@ -58,7 +58,7 @@
         <SubPart PartName="iModelBridgeFwkLib" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
         <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api" Repository="imodel02"/>
         <SubPart PartName="DwgImporterHeaderDelivery"/>
-        <SubPart PartName="NodeApiHeaderDelivery"/>
+        <SubPart PartName="SelectedVendorHeaderDelivery"/>
         <Directories DirectoryListName="OpenDwgBridgeSdkDirList"/>
         <Directories DirectoryListName="DwgSdkCommonDirList"/>
     </NuGetProduct>
@@ -114,10 +114,10 @@
         <SubPart PartName="Docs" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
         <SubPart PartName="CodeSamples" PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
         <SubPart PartName="DwgResources" PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
-        <SubPart PartName="iModelBridgeFwkLib" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
+        <SubPart PartName="iModelBridgeFwkExe" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
         <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api" Repository="imodel02"/>
         <SubPart PartName="DwgImporterHeaderDelivery"/>
-        <SubPart PartName="NodeApiHeaderDelivery"/>
+        <SubPart PartName="SelectedVendorHeaderDelivery"/>
         <Directories DirectoryListName="RealDwgBridgeSdkDirList"/>
         <Directories DirectoryListName="DwgSdkCommonDirList"/>
     </NuGetProduct>
@@ -128,10 +128,19 @@
             <Directory SourceName="PublicAPI/Dwg" ProductDirectoryName="DwgImportHeaders"/>
         </Bindings>
     </Part>
-    <Part Name="NodeApiHeaderDelivery">
+    <Part Name="SelectedVendorHeaderDelivery">
         <SubPart PartName="VendorAPI" PartFile="node-addon-api/node-addon-api" Repository="imodel02"/>
+        <SubPart PartName="PsolidShim_x64" PartFile="iModelCore/BRepCore/BRepCore" Repository="imodel02"/>
+        <SubPart PartName="folly" PartFile="iModelCore/libsrc/facebook/facebook" Repository="imodel02"/>
+        <SubPart PartName="LibXml2" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <SubPart PartName="RapidJson" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <Bindings>
             <Directory SourceName="VendorAPI/Napi" ProductDirectoryName="NodeAddonHeaders"/>
+            <Directory SourceName="VendorAPI/psolid" ProductDirectoryName="PSolidHeaders"/>
+            <Directory SourceName="VendorAPI/folly" ProductDirectoryName="FollyHeaders"/>
+            <Directory SourceName="VendorAPI/zlib" ProductDirectoryName="ZlibHeaders"/>
+            <Directory SourceName="VendorAPI/libxml" ProductDirectoryName="LibXmlHeaders"/>
+            <Directory SourceName="VendorAPI/rapidJson" ProductDirectoryName="RapidJsonHeaders"/>
         </Bindings>
     </Part>
 
@@ -158,7 +167,6 @@
         <ProductDirectory Name="VendorNotices"          RelativeTo="ApplicationRoot" Path="Notices" LibType="dynamic"/>
         <ProductDirectory Name="VendorNotices"          RelativeTo="ApplicationRoot" Path="Notices" LibType="Static"/>
         <ProductDirectory Name="BentleyEulaDelivery"    RelativeTo="ApplicationRoot" Path="Notices"/>
-        <ProductDirectory Name="NodeAddonHeaders"       RelativeTo="ApplicationRoot" Path="PublicAPI/Napi"/>
         <ProductDirectory Name="PublicAPI"              RelativeTo="ApplicationRoot" Path="PublicAPI" LibType="dynamic"/>
         <ProductDirectory Name="PublicAPI"              RelativeTo="ApplicationRoot" Path="PublicAPI" LibType="static"/>
         <ProductDirectory Name="Libs"                   RelativeTo="ApplicationRoot" Path="Libs" LibType="dynamic"/>
@@ -166,6 +174,13 @@
         <ProductDirectory Name="Assemblies"             RelativeTo="ApplicationRoot" Path="Dlls" LibType="dynamic"/>
         <ProductDirectory Name="Assemblies"             RelativeTo="ApplicationRoot" Path="Dlls" LibType="static"/>
         <ProductDirectory Name="PublisherLoggingConfigXml" RelativeTo="ApplicationRoot" Path="Dlls"/>
+        <!-- seleceted VendorAPI list -->
+        <ProductDirectory Name="NodeAddonHeaders"       RelativeTo="ApplicationRoot" Path="VendorAPI/napi"/>
+        <ProductDirectory Name="PSolidHeaders"          RelativeTo="ApplicationRoot" Path="VendorAPI/psolid"/>
+        <ProductDirectory Name="FollyHeaders"           RelativeTo="ApplicationRoot" Path="VendorAPI/folly"/>
+        <ProductDirectory Name="ZlibHeaders"            RelativeTo="ApplicationRoot" Path="VendorAPI/zlib"/>
+        <ProductDirectory Name="LibXmlHeaders"          RelativeTo="ApplicationRoot" Path="VendorAPI/libXml"/>
+        <ProductDirectory Name="RapidJsonHeaders"       RelativeTo="ApplicationRoot" Path="VendorAPI/rapidjson"/>
         <!-- exclude list -->
         <ProductDirectory Name="RealDwgAssemblies"      Deliver="false"/>
         <ProductDirectory Name="RealDwgAssembliesEnUS"  Deliver="false"/>
