@@ -1,5 +1,4 @@
 {
-  "$schema": "../../../../../../imodeljs/imodeljs-2/presentation/common/Ruleset.schema.json",
   "id": "BisCore",
   "supplementationInfo": {
     "supplementationPurpose": "BisCore specific customization rules"
@@ -231,6 +230,41 @@
           },
           "requiredDirection": "Forward",
           "isPolymorphic": true
+        },
+        {
+          "relationships": {
+            "schemaName": "BisCore",
+            "classNames": [
+              "ElementGroupsMembers"
+            ]
+          },
+          "relatedClasses": {
+            "schemaName": "BisCore",
+            "classNames": [
+              "GroupInformationElement"
+            ]
+          },
+          "requiredDirection": "Backward",
+          "isPolymorphic": true,
+          "nestedRelatedProperties": [
+            {
+              "relationships": {
+                "schemaName": "BisCore",
+                "classNames": [
+                  "ElementHasLinks"
+                ]
+              },
+              "relatedClasses": {
+                "schemaName": "BisCore",
+                "classNames": [
+                  "UrlLink"
+                ]
+              },
+              "requiredDirection": "Forward",
+              "isPolymorphic": true,
+              "propertyNames": ["Url"]
+            }
+          ]
         }
       ]
     },
