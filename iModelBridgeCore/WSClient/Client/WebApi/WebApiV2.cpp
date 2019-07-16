@@ -294,6 +294,29 @@ void WebApiV2::SetActivityIdToRequest(ActivityLoggerR activityLogger, ChunkedUpl
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod													simonas.mulevicius
++--------------------------------------------------------------------------------------*/
+void WebApiV2::CheckResponseActivityId(Http::Response& httpResponse, ActivityLogger activityLogger) const
+	{
+	if (!activityLogger.HasValidActivityInfo())
+		return;
+
+	Utf8StringCR actualActivityHeaderName = activityLogger.GetHeaderName();
+	Utf8StringCR actualActivityId = activityLogger.GetActivityId();
+	Utf8CP responseActivityId = httpResponse.GetHeaders().GetValue(actualActivityHeaderName);
+
+	Utf8CP idsMismatchMessagePrefix = "Request and response activity IDs do not match:";
+	if (!responseActivityId)
+		{
+		activityLogger.warningv("%s response ActivityId is empty", idsMismatchMessagePrefix);
+		return;
+		}
+
+	if (!actualActivityId.Equals(responseActivityId))
+		activityLogger.warningv("%s response ActivityId is %s", idsMismatchMessagePrefix, responseActivityId);
+	}
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
 Utf8String WebApiV2::CreateSelectPropertiesQuery(const bset<Utf8String>& properties) const
@@ -505,6 +528,8 @@ ICancellationTokenPtr ct
     request.SetCancellationToken(ct);
     return request.PerformAsync()->Then<WSRepositoryResult>([=] (Http::Response& response) mutable
         {
+		CheckResponseActivityId(response, activityLogger);
+
         if (!response.IsSuccess() && HttpStatus::InternalServerError != response.GetHttpStatus())
             return WSRepositoryResult::Error(response);
 
@@ -533,8 +558,9 @@ ICancellationTokenPtr ct
 
     SetActivityIdToRequest(activityLogger, request);
     request.SetCancellationToken(ct);
-    return request.PerformAsync()->Then<WSRepositoriesResult>([this] (Http::Response& httpResponse)
+    return request.PerformAsync()->Then<WSRepositoriesResult>([this, activityLogger] (Http::Response& httpResponse) mutable
         {
+		CheckResponseActivityId(httpResponse, activityLogger);
         return ResolveGetRepositoriesResponse(httpResponse);
         });
     }
@@ -554,10 +580,10 @@ ICancellationTokenPtr ct
     activityLogger.debug("Started");
 
     if (!objectId.IsValid())
-        {
-        activityLogger.errorv("Specified 'objectId' is not valid. 'objectId':'%s'", objectId.ToString().c_str());
-        return CreateCompletedAsyncTask(WSObjectsResult::Error(WSError::CreateFunctionalityNotSupportedError()));
-        }
+		{
+		activityLogger.errorv("Specified 'objectId' is not valid. 'objectId':'%s'", objectId.ToString().c_str());
+		return CreateCompletedAsyncTask(WSObjectsResult::Error(WSError::CreateFunctionalityNotSupportedError()));
+		}
 
     Utf8String url = GetUrl(CreateObjectSubPath(objectId));
     Http::Request request = m_configuration->GetHttpClient().CreateGetJsonRequest(url, eTag);
@@ -568,14 +594,15 @@ ICancellationTokenPtr ct
     request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::GetObject);
     request.SetCancellationToken(ct);
 
-    return request.PerformAsync()->Then<WSObjectsResult>([this, objectId] (Http::Response& httpResponse)
+    return request.PerformAsync()->Then<WSObjectsResult>([this, objectId, activityLogger] (Http::Response& httpResponse) mutable
         {
+		CheckResponseActivityId(httpResponse, activityLogger);
         return ResolveObjectsResponse(httpResponse, &objectId);
         });
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod
+* @bsimethod													simonas.mulevicius
 +--------------------------------------------------------------------------------------*/
 AsyncTaskPtr<WSObjectsResult> WebApiV2::SendGetChildrenRequest
 (
@@ -595,11 +622,12 @@ ICancellationTokenPtr ct
     SetActivityIdToRequest(activityLogger, request);
     request.SetCancellationToken(ct);
 
-    return request.PerformAsync()->Then<WSObjectsResult>([this] (Http::Response& httpResponse)
-        {
-        return ResolveObjectsResponse(httpResponse);
-        });
-    }
+	return request.PerformAsync()->Then<WSObjectsResult>([this, activityLogger](Http::Response& httpResponse) mutable
+		{
+		CheckResponseActivityId(httpResponse, activityLogger);
+		return ResolveObjectsResponse(httpResponse);
+		});
+	}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
@@ -637,6 +665,8 @@ ICancellationTokenPtr ct
     auto finalResult = std::make_shared<WSResult>();
     return request.PerformAsync()->Then([=] (Http::Response& response) mutable
         {
+		CheckResponseActivityId(response, activityLogger);
+
         if (HttpStatus::TemporaryRedirect != response.GetHttpStatus())
             {
             *finalResult = ResolveFileDownloadResponse(response);
@@ -645,8 +675,9 @@ ICancellationTokenPtr ct
 
         Utf8String redirectUrl = response.GetHeaders().GetLocation();
         Http::Request request = CreateFileDownloadRequest(redirectUrl, bodyResponseOut, eTag, activityLogger, downloadProgressCallback, ct);
-        request.PerformAsync()->Then([=] (Http::Response& response)
+        request.PerformAsync()->Then([=] (Http::Response& response) mutable
             {
+			CheckResponseActivityId(response, activityLogger);
             *finalResult = ResolveFileDownloadResponse(response);
             });
         })->Then<WSResult>([=]
@@ -716,8 +747,9 @@ ICancellationTokenPtr ct
     request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::GetObjects);
     request.SetCancellationToken(ct);
 
-    return request.PerformAsync()->Then<WSObjectsResult>([this] (Http::Response& httpResponse)
+    return request.PerformAsync()->Then<WSObjectsResult>([this, activityLogger] (Http::Response& httpResponse) mutable
         {
+		CheckResponseActivityId(httpResponse, activityLogger);
         return ResolveObjectsResponse(httpResponse);
         });
     }
@@ -765,8 +797,9 @@ ICancellationTokenPtr ct
     request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::GetObjects);
     request.SetCancellationToken(ct);
 
-    return request.PerformAsync()->Then<WSObjectsResult>([this] (Http::Response& httpResponse)
+    return request.PerformAsync()->Then<WSObjectsResult>([this, activityLogger] (Http::Response& httpResponse) mutable
         {
+		CheckResponseActivityId(httpResponse, activityLogger);
         return ResolveObjectsResponse(httpResponse);
         });
     }
@@ -806,12 +839,14 @@ ICancellationTokenPtr ct
     request.SetUploadProgressCallback(uploadProgressCallback);
 
     return m_jobApi->ExecuteViaJob(request, m_info, options ? options->GetJobOptions() : nullptr, ct)
-        ->Then<WSChangesetResult>([=] (HttpJobResult& response)
+        ->Then<WSChangesetResult>([=] (HttpJobResult& response) mutable
         {
         if (!response.IsSuccess())
             return WSChangesetResult::Error(response.GetError());
 
         auto httpResponse = response.GetValue();
+		CheckResponseActivityId(httpResponse, activityLogger);
+
         if (HttpStatus::OK != httpResponse.GetHttpStatus())
             {
             return WSChangesetResult::Error(httpResponse);
@@ -901,12 +936,14 @@ ICancellationTokenPtr ct
     request.SetCancellationToken(ct);
     request.SetUploadProgressCallback(uploadProgressCallback);
     return m_jobApi->ExecuteViaJob(request, m_info, options ? options->GetJobOptions() : nullptr, ct)
-        ->Then<WSCreateObjectResult>([=] (HttpJobResult& response)
+        ->Then<WSCreateObjectResult>([=] (HttpJobResult& response) mutable
         {
         if (!response.IsSuccess())
             return WSCreateObjectResult::Error(response.GetError());
 
         auto httpResponse = response.GetValue();
+		CheckResponseActivityId(httpResponse, activityLogger);
+
         if (HttpStatus::Created != httpResponse.GetHttpStatus() && HttpStatus::OK != httpResponse.GetHttpStatus())
             return WSCreateObjectResult::Error(httpResponse);
         return WSCreateObjectResult::Success(ResolveUploadResponse(httpResponse));
@@ -1005,12 +1042,13 @@ ICancellationTokenPtr ct
         request.SetTransferTimeoutSeconds(options->GetTransferTimeOut());
         
     return m_jobApi->ExecuteViaJob(request, m_info, options ? options->GetJobOptions() : nullptr, ct)
-        ->Then<WSDeleteObjectResult>([=] (HttpJobResult& response)
+        ->Then<WSDeleteObjectResult>([=] (HttpJobResult& response) mutable
         {
         if (!response.IsSuccess())
             return WSDeleteObjectResult::Error(response.GetError());
 
         auto httpResponse = response.GetValue();
+		CheckResponseActivityId(httpResponse, activityLogger);
         if (HttpStatus::OK == httpResponse.GetHttpStatus())
             {
             return WSDeleteObjectResult::Success();
@@ -1076,6 +1114,8 @@ ICancellationTokenPtr ct
             }
 
         auto httpResponse = response.GetValue();
+		CheckResponseActivityId(httpResponse, activityLogger);
+
         ResolveUpdateFileResponse(httpResponse, url, filePath, activityLogger, uploadProgressCallback, ct)
             ->Then([=] (WSUpdateFileResult result)
             {
@@ -1140,8 +1180,9 @@ ICancellationTokenPtr ct
             Http::Request request = m_configuration->GetHttpClient().CreateRequest(url, "PUT");
             SetActivityIdToRequest(activityLogger, request);
             request.GetHeaders().SetValue(HEADER_MasUploadConfirmationId, confirmationId);
-            request.PerformAsync()->Then([=] (Http::Response& response)
+            request.PerformAsync()->Then([=] (Http::Response& response) mutable
                 {
+				CheckResponseActivityId(httpResponse, activityLogger);
                 if (HttpStatus::OK != response.GetHttpStatus())
                     finalResult->SetError(response);
                 });

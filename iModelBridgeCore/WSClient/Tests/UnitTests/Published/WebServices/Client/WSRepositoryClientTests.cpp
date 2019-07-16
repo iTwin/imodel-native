@@ -894,6 +894,113 @@ TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_HeaderNameSetToXCorrelati
     client->SendGetChildrenRequestWithOptions(ObjectId(), nullptr, options)->GetResult();
     }
 
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                               Simonas.Mulevicius    07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, WebApi27SendGetChildrenRequest_WhenRequestAndResponseActivityIdsDontMatch_ShouldGiveWarningMessage)
+	{
+	//Arrange
+	auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+	IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
+	options->GetActivityOptions()->SetHeaderName(IWSRepositoryClient::ActivityOptions::HeaderName::MasRequestId);
+	options->GetActivityOptions()->SetActivityId("specifiedActivityId");
+
+	GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi27());
+	GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+		{
+		//Assert
+		auto actualRequestActivityId = request.GetHeaders().GetValue(HEADER_MasRequestId);
+		EXPECT_FALSE(Utf8String::IsNullOrEmpty(actualRequestActivityId));
+		EXPECT_STREQ("specifiedActivityId", actualRequestActivityId);
+
+		std::map<Utf8String, Utf8String> responseHeaders{{HEADER_MasRequestId, "differentSpecifiedActivityId"}};
+		return StubHttpResponse(HttpStatus::OK, "", responseHeaders);
+		});
+
+	////Act
+	client->SendGetChildrenRequestWithOptions(ObjectId(), nullptr, options)->GetResult();
+	}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                               Simonas.Mulevicius    07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, WebApi27SendGetChildrenRequest_WhenRequestAndResponseActivityIdsMatch_ShouldNotGiveWarningMessage)
+	{
+	//Arrange
+	auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+	IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
+	options->GetActivityOptions()->SetHeaderName(IWSRepositoryClient::ActivityOptions::HeaderName::MasRequestId);
+	options->GetActivityOptions()->SetActivityId("specifiedActivityId");
+
+	GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi27());
+	GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+		{
+		//Assert
+		auto actualRequestActivityId = request.GetHeaders().GetValue(HEADER_MasRequestId);
+		EXPECT_FALSE(Utf8String::IsNullOrEmpty(actualRequestActivityId));
+		EXPECT_STREQ("specifiedActivityId", actualRequestActivityId);
+
+		std::map<Utf8String, Utf8String> headers{ {HEADER_MasRequestId, "specifiedActivityId"} };
+		return StubHttpResponse(HttpStatus::OK, "", headers);
+		});
+
+	//Act
+	client->SendGetChildrenRequestWithOptions(ObjectId(), nullptr, options)->GetResult();
+	}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                               Simonas.Mulevicius    07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, WebApi26SendGetChildrenRequest_WhenResponseActivityIsReceived_ShouldNotGiveWarningMessage)
+	{
+	//Arrange
+	auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+	IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
+	options->GetActivityOptions()->SetHeaderName(IWSRepositoryClient::ActivityOptions::HeaderName::MasRequestId);
+	options->GetActivityOptions()->SetActivityId("specifiedActivityId");
+
+	GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi(BeVersion(2, 6)));
+	GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+		{
+		//Assert
+		auto actualRequestActivityId = request.GetHeaders().GetValue(HEADER_MasRequestId);
+		EXPECT_TRUE(Utf8String::IsNullOrEmpty(actualRequestActivityId));
+
+		std::map<Utf8String, Utf8String> headers{{HEADER_MasRequestId, "diffrentspecifiedActivityId"}}; 
+		return StubHttpResponse(HttpStatus::OK, "", headers);
+		});
+
+	//Act
+	client->SendGetChildrenRequestWithOptions(ObjectId(), nullptr, options)->GetResult();
+	}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                               Simonas.Mulevicius    07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, WebApi27SendGetChildrenRequest_WhenRequestActivityIdIsSetAndResponseActivityIdIsNotSet_ShouldGiveWarningMessage)
+	{
+	//Arrange
+	auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+	IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
+	options->GetActivityOptions()->SetHeaderName(IWSRepositoryClient::ActivityOptions::HeaderName::MasRequestId);
+	options->GetActivityOptions()->SetActivityId("specifiedActivityId");
+
+	GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi27());
+	GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+		{
+		//Assert
+		auto actualRequestActivityId = request.GetHeaders().GetValue(HEADER_MasRequestId);
+		EXPECT_FALSE(Utf8String::IsNullOrEmpty(actualRequestActivityId));
+		EXPECT_STREQ("specifiedActivityId", actualRequestActivityId);
+
+		return StubHttpResponse(HttpStatus::OK);
+		});
+
+	//Act
+	client->SendGetChildrenRequestWithOptions(ObjectId(), nullptr, options)->GetResult();
+	}
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
