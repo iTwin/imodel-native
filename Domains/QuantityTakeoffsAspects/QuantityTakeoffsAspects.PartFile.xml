@@ -45,6 +45,7 @@
     <Part Name="QuantityTakeoffsAspectsDomain" BentleyBuildMakeFile="Domain/QuantityTakeoffsAspectsDomain.mke" ApiNumber="B02">
         <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
         <SubPart PartName="QuantityTakeoffsAspectsApi"/>
+        <SubPart PartName="QuantityTakeoffsAspectsSchema" />
         <SubPart PartName="QuantityTakeoffsAspectsHandlers"/>
         <Bindings>
             <Libs>Delivery/$(libprefix)QuantityTakeoffsAspectsDomain$(libext)</Libs>
