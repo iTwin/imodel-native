@@ -1,8 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Grids/Domain/GridsDomain.cpp $
-|
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
 #include <Grids/Domain/GridsDomain.h>
@@ -60,6 +58,7 @@ GridsDomain::GridsDomain () : DgnDomain(GRIDS_SCHEMA_NAME, "Grids Domain", 1)
     RegisterHandler(GridCurveBundleCreatesGridCurveHandler::GetHandler());
 
     RegisterHandler(GridDrivesGridSurfaceHandler::GetHandler());
+    RegisterHandler(GridLabelHandler::GetHandler ());
     }
 
 //---------------------------------------------------------------------------------------
