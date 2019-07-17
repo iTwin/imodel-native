@@ -435,17 +435,16 @@ TEST_F(AccessKeyClientTests, AgnosticKey_Validation)
 
 
 
-TEST_F(AccessKeyClientTests, GetPolicy_HasUltimateIdUseUltimate)
-	{
-	auto client = CreateWithAgnosticKeyTestClient(GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr(), TEST_PRODUCT_ID, TEST_ULTIMATE_ID);
-	//request includes ultimate id 
-	EXPECT_EQ(1, 1);
-	}
+
 
 TEST_F(AccessKeyClientTests, GetPolicy_NoUltimateIdUseMachineName)
 {
 	auto client = CreateWithKeyTestClient(GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
-	//request includes machine name
+	Utf8StringCR testAccessKey = TEST_AGNOSTIC;
+	GetLicensingDbMock().MockOpenOrCreate(SUCCESS);
+	//request includes machine id
+	client->GetPolicy();
+	client->StartApplication();
 	//get policy from two different machines
 	EXPECT_EQ(1, 1);
 }
