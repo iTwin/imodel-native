@@ -1030,7 +1030,7 @@ ClassMappingStatus RelationshipClassLinkTableMap::MapSubClass(ClassMappingContex
     if (stat != ClassMappingStatus::Success)
         return stat;
 
-    AddIndices(ctx.GetImportCtx(), DetermineAllowDuplicateRelationshipsFlagFromRoot(*baseClass->GetRelationshipClassCP()));
+    AddIndices(ctx.GetImportCtx(), DetermineAllowDuplicateFromBaseHierarchy(GetRelationshipClass()));
     return ClassMappingStatus::Success;
     }
 
@@ -1356,28 +1356,37 @@ Utf8String RelationshipClassLinkTableMap::DetermineConstraintECClassIdColumnName
     }
 
 //----------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                10/2015
+// @bsimethod                                 Affan.Khan                 07/2019
 //+---------------+---------------+---------------+---------------+---------------+-
 //static
-bool RelationshipClassLinkTableMap::DetermineAllowDuplicateRelationshipsFlagFromRoot(ECRelationshipClassCR baseRelClass)
+bool RelationshipClassLinkTableMap::DetermineAllowDuplicateFromBaseHierarchy(ECRelationshipClassCR baseRelClass)
     {
+    // First look for AllowOnlyUniqueRelationshipsCustomAttribute until we hit LinkTableRelationshipMapCustomAttribute or if not then default
+    AllowOnlyUniqueRelationshipsCustomAttribute allowOnlyUniqueRelationships;
+    if (ECDbMapCustomAttributeHelper::TryGetAllowOnlyUniqueRelationships(allowOnlyUniqueRelationships, baseRelClass))
+        {
+        Nullable<bool> applyToSubClasses;
+        allowOnlyUniqueRelationships.TryGetApplyToSubClasses(applyToSubClasses);
+        if (baseRelClass.GetId() == GetClass().GetId() || GetApplyToSubClassesFlag(applyToSubClasses))
+            return false;
+        }
+
     LinkTableRelationshipMapCustomAttribute linkRelMap;
     if (ECDbMapCustomAttributeHelper::TryGetLinkTableRelationshipMap(linkRelMap, baseRelClass))
         {
         //default for AllowDuplicateRelationships: false
-        Nullable<bool> allowDuplicateRels;
-        linkRelMap.TryGetAllowDuplicateRelationships(allowDuplicateRels);
-        if (GetAllowDuplicateRelationshipsFlag(allowDuplicateRels))
-            return true;
+        Nullable<bool> allowDuplicateRelsOpt;
+        linkRelMap.TryGetAllowDuplicateRelationships(allowDuplicateRelsOpt);
+        return GetAllowDuplicateRelationshipsFlag(allowDuplicateRelsOpt);
         }
 
-    if (!baseRelClass.HasBaseClasses())
-        return false;
-
-    BeAssert(baseRelClass.GetBaseClasses()[0]->GetRelationshipClassCP() != nullptr);
-    return DetermineAllowDuplicateRelationshipsFlagFromRoot(*baseRelClass.GetBaseClasses()[0]->GetRelationshipClassCP());
+    if (!baseRelClass.HasBaseClasses()) 
+        return GetAllowDuplicateRelationshipsFlag(Nullable<bool>());
+        
+    const auto baseClass = baseRelClass.GetBaseClasses().front();
+    BeAssert(baseClass->GetRelationshipClassCP() != nullptr);
+    return DetermineAllowDuplicateFromBaseHierarchy(*baseClass->GetRelationshipClassCP());
     }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Affan.Khan                   01/15
 +---------------+---------------+---------------+---------------+---------------+------*/

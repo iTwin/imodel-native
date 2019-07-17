@@ -86,6 +86,16 @@ public:
     };
 
 //=======================================================================================
+// @bsiclass                                                  Affan.Khan     7/2019
+//+===============+===============+===============+===============+===============+======
+struct ProfileUpgrader_4003 final : ProfileUpgrader
+    {
+    //intentionally use compiler generated ctor, dtor, copy ctor and copy assignment op
+    private:
+        DbResult _Upgrade(ECDbCR) const override;
+    };
+
+//=======================================================================================
 // @bsiclass                                                 Krischan.Eberle     01/2018
 //+===============+===============+===============+===============+===============+======
 struct ProfileUpgrader_4002 final : ProfileUpgrader
