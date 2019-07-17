@@ -88,12 +88,12 @@ Utf8String DummyPolicyHelper::PolicyExpiresOn(Utf8StringCR date)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String DummyPolicyHelper::RequestData(int productId, Utf8StringCR featureString, Utf8StringCR userId, Utf8StringCR accessKey)
+Utf8String DummyPolicyHelper::RequestData(int productId, Utf8StringCR featureString, Utf8StringCR userId, Utf8StringCR accessKey, Utf8StringCR machineName = "TestDeviceId")
     {
 	Utf8String string;
     string += "\"RequestData\":{\"AccessKey\":";
     accessKey == "" ? string += "null" : string += "\"" + accessKey + "\"";
-    string += ", \"AppliesTo\":\"https://entitlement-search.bentley.com/\",\"CheckedOutDate\":null,\"ClientDateTime\":\"2018-07-25T21:13:42.048Z\",\"Locale\":\"en\",\"MachineName\":\"TestDeviceId\",\"MachineSID\":null,\"RequestedSecurables\":[{\"FeatureString\":\"";
+    string += ", \"AppliesTo\":\"https://entitlement-search.bentley.com/\",\"CheckedOutDate\":null,\"ClientDateTime\":\"2018-07-25T21:13:42.048Z\",\"Locale\":\"en\",\"MachineName\":\"" + machineName + "\",\"MachineSID\":null,\"RequestedSecurables\":[{\"FeatureString\":\"";
 	string += featureString;
 	string += "\",\"ProductId\":";
 	Utf8String productIdString;
@@ -290,7 +290,7 @@ Utf8String DummyPolicyHelper::DefaultQualifiers()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value DummyPolicyHelper::CreatePolicySpecific(PolicyType type, Utf8StringCR createdOn, Utf8StringCR expiresOn, Utf8StringCR aclExpiresOn, Utf8StringCR userId, int productId, Utf8StringCR featureString, int accessKind, bool isTrial, Utf8StringCR accessKey)
+Json::Value DummyPolicyHelper::CreatePolicySpecific(PolicyType type, Utf8StringCR createdOn, Utf8StringCR expiresOn, Utf8StringCR aclExpiresOn, Utf8StringCR userId, int productId, Utf8StringCR featureString, int accessKind, bool isTrial, Utf8StringCR accessKey, Utf8StringCR machineName)
     {
     bool isOnlineUsageAllowed = type != PolicyType::OfflineNotAllowed;
     // Create string
@@ -300,7 +300,7 @@ Json::Value DummyPolicyHelper::CreatePolicySpecific(PolicyType type, Utf8StringC
     string += PolicyVersion() += PN();
     string += PolicyCreatedOn(createdOn) += PN();
     string += PolicyExpiresOn(expiresOn) += PN();
-    if (type != PolicyType::NoRequestData) string += RequestData(productId, featureString, userId, accessKey) += PN();
+    if (type != PolicyType::NoRequestData) string += RequestData(productId, featureString, userId, accessKey, machineName) += PN();
     string += MachineSignature() += PN();
     string += AppliesToUserId(userId) += PN();
     string += AppliesToSecurableIds() += PN();
@@ -325,9 +325,9 @@ Json::Value DummyPolicyHelper::CreatePolicyFull(Utf8StringCR createdOn, Utf8Stri
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value DummyPolicyHelper::CreatePolicyFullWithKey(Utf8StringCR createdOn, Utf8StringCR expiresOn, Utf8StringCR aclExpiresOn, Utf8StringCR userId, int productId, Utf8StringCR featureString, int accessKind, bool isTrial, Utf8StringCR accessKey)
+Json::Value DummyPolicyHelper::CreatePolicyFullWithKey(Utf8StringCR createdOn, Utf8StringCR expiresOn, Utf8StringCR aclExpiresOn, Utf8StringCR userId, int productId, Utf8StringCR featureString, int accessKind, bool isTrial, Utf8StringCR accessKey, Utf8StringCR machineName = "TestDeviceId" )
     {
-    return CreatePolicySpecific(PolicyType::Full, createdOn, expiresOn, aclExpiresOn, userId, productId, featureString, accessKind, isTrial, accessKey);
+    return CreatePolicySpecific(PolicyType::Full, createdOn, expiresOn, aclExpiresOn, userId, productId, featureString, accessKind, isTrial, accessKey, machineName);
     };
 
 /*--------------------------------------------------------------------------------------+

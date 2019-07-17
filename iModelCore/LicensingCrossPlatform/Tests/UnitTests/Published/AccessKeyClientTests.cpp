@@ -299,7 +299,7 @@ TEST_F(AccessKeyClientTests, WithKeyStartApplication_StopApplication_Success)
     GetLicensingDbMock().MockOpenOrCreate(SUCCESS);
 
     Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
-    auto jsonPolicyValid = DummyPolicyHelper::CreatePolicyFullWithKey(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, std::atoi(TEST_PRODUCT_ID), "", 1, false, TEST_ACCESSKEY);
+    auto jsonPolicyValid = DummyPolicyHelper::CreatePolicyFullWithKey(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, std::atoi(TEST_PRODUCT_ID), "", 1, false, TEST_ACCESSKEY, "TestDeviceId");
     auto validPolicy = Policy::Create(jsonPolicyValid);
 
     Utf8StringCR testAccessKey = TEST_ACCESSKEY;
@@ -351,83 +351,87 @@ TEST_F(AccessKeyClientTests, WithKeyStartApplication_StopApplication_Success)
     EXPECT_EQ(1, GetLicensingDbMock().CloseCount());
     }
 
-//TEST_F(AccessKeyClientTests, AgnosticKey_Validation)
-//	{
-//	//auto client  = CreateWithAgnosticKeyTestClient(GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr(), TEST_PRODUCT_ID, TEST_ULTIMATE_ID);
-//	//auto client2 = CreateWithAgnosticKeyTestClient(GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr(), TEST_PRODUCT_ID, TEST_ULTIMATE_ID, TEST_MACHINE2);
-//	////validate machine, change machine name and validate again	
-//	//Utf8StringCR testAccessKey = TEST_AGNOSTIC;
-//	//GetLicensingDbMock().MockOpenOrCreate(SUCCESS);
-//
-//	//Utf8String userId = "da7cda78-92d0-4c80-82c8-c35c479e5d0e";
-//	//auto jsonPolicyValid = DummyPolicyHelper::CreatePolicyFullWithKey(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, std::atoi(TEST_PRODUCT_ID), "", 1, false, TEST_AGNOSTIC);
-//	//auto validPolicy = Policy::Create(jsonPolicyValid);
-//	//
-//	//GetPolicyProviderMock().MockGetPolicyWithKey(validPolicy);
-//
-//	//GetLicensingDbMock().MockAddOrUpdatePolicyFile(SUCCESS);
-//	//GetLicensingDbMock().MockDeleteAllOtherPolicyFilesByKey(SUCCESS);
-//
-//	//Json::Value jsonAccessKeyResponse(Json::objectValue);
-//	//jsonAccessKeyResponse["status"] = "Success";
-//
-//	//GetUlasProviderMock().MockGetAccessKeyInfo(jsonAccessKeyResponse);
-//
-//	//std::list<Json::Value> validPolicyList;
-//	//validPolicyList.push_back(jsonPolicyValid);
-//
-//	//// called in usage heartbeat
-//	//GetLicensingDbMock().MockRecordUsage(SUCCESS);
-//
-//	//// LogPosting heartbeat
-//	//GetLicensingDbMock().MockGetUsageRecordCount(1);
-//	//GetLicensingDbMock().MockGetFeatureRecordCount(1);
-//
-//	//GetUlasProviderMock().MockPostUsageLogs(SUCCESS);
-//	//GetUlasProviderMock().MockPostFeatureLogs(SUCCESS);
-//
-//	//// policy heartbeat
-//	//GetLicensingDbMock().MockKeyPolicyFiles(testAccessKey, validPolicyList);
-//	//GetLicensingDbMock().MockGetOfflineGracePeriodStart("");
-//
-//	//EXPECT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
-//	//EXPECT_EQ(1, GetLicensingDbMock().OpenOrCreateCount());
-//	//EXPECT_LE(1, GetLicensingDbMock().AddOrUpdatePolicyFileCount());
-//	//EXPECT_LE(1, GetLicensingDbMock().DeleteAllOtherPolicyFilesByKeyCount());
-//	//EXPECT_LE(1, GetLicensingDbMock().GetPolicyFilesByKeyCount(testAccessKey));
-//	//EXPECT_LE(1, GetPolicyProviderMock().GetPolicyWithKeyCalls());
-//	//EXPECT_LE(1, GetUlasProviderMock().GetAccessKeyInfoCalls());
-//
-//	//std::this_thread::sleep_for(std::chrono::milliseconds(100));
-//
-//	//EXPECT_SUCCESS(client->StopApplication());
-//	//EXPECT_LE(1, GetUlasProviderMock().PostUsageLogsCalls());
-//	//EXPECT_LE(1, GetUlasProviderMock().PostFeatureLogsCalls());
-//	//EXPECT_LE(1, GetLicensingDbMock().RecordUsageCount()); // called in usage heartbeat
-//	//EXPECT_LE(1, GetLicensingDbMock().GetUsageRecordCountCount());
-//	//EXPECT_LE(1, GetLicensingDbMock().GetFeatureRecordCountCount());
-//	//EXPECT_LE(1, GetLicensingDbMock().GetOfflineGracePeriodStartCount());
-//	//EXPECT_EQ(1, GetLicensingDbMock().CloseCount());
-//
-//	//EXPECT_NE(static_cast<int>(client2->StartApplication()), static_cast<int>(LicenseStatus::Error));
-//	//EXPECT_EQ(1, GetLicensingDbMock().OpenOrCreateCount());
-//	//EXPECT_LE(1, GetLicensingDbMock().AddOrUpdatePolicyFileCount());
-//	//EXPECT_LE(1, GetLicensingDbMock().DeleteAllOtherPolicyFilesByKeyCount());
-//	//EXPECT_LE(1, GetLicensingDbMock().GetPolicyFilesByKeyCount(testAccessKey));
-//	//EXPECT_LE(1, GetPolicyProviderMock().GetPolicyWithKeyCalls());
-//	//EXPECT_LE(1, GetUlasProviderMock().GetAccessKeyInfoCalls());
-//
-//	//std::this_thread::sleep_for(std::chrono::milliseconds(100));
-//
-//	//EXPECT_SUCCESS(client2->StopApplication());
-//	//EXPECT_LE(1, GetUlasProviderMock().PostUsageLogsCalls());
-//	//EXPECT_LE(1, GetUlasProviderMock().PostFeatureLogsCalls());
-//	//EXPECT_LE(1, GetLicensingDbMock().RecordUsageCount()); // called in usage heartbeat
-//	//EXPECT_LE(1, GetLicensingDbMock().GetUsageRecordCountCount());
-//	//EXPECT_LE(1, GetLicensingDbMock().GetFeatureRecordCountCount());
-//	//EXPECT_LE(1, GetLicensingDbMock().GetOfflineGracePeriodStartCount());
-//	//EXPECT_EQ(1, GetLicensingDbMock().CloseCount());
-//	}
+TEST_F(AccessKeyClientTests, AgnosticKey_Validation)
+	{
+	auto client  = CreateWithAgnosticKeyTestClient(GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr(), TEST_PRODUCT_ID, TEST_ULTIMATE_ID);
+	auto client2 = CreateWithAgnosticKeyTestClient(GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr(), TEST_PRODUCT_ID, TEST_ULTIMATE_ID, TEST_MACHINE2);
+	auto failclient = CreateWithKeyTestClient(GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr()); //should fail?
+
+	//validate machine, change machine name and validate again	
+	Utf8StringCR testAccessKey = TEST_AGNOSTIC;
+	GetLicensingDbMock().MockOpenOrCreate(SUCCESS);
+
+	Utf8String userId = "da7cda78-92d0-4c80-82c8-c35c479e5d0e";
+	auto jsonPolicyValid = DummyPolicyHelper::CreatePolicyFullWithKey(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, std::atoi(TEST_PRODUCT_ID), "", 1, false, TEST_AGNOSTIC, TEST_MACHINE2);
+	auto validPolicy = Policy::Create(jsonPolicyValid);
+	
+	GetPolicyProviderMock().MockGetPolicyWithKey(validPolicy);
+
+	GetLicensingDbMock().MockAddOrUpdatePolicyFile(SUCCESS);
+	GetLicensingDbMock().MockDeleteAllOtherPolicyFilesByKey(SUCCESS);
+
+	Json::Value jsonAccessKeyResponse(Json::objectValue);
+	jsonAccessKeyResponse["status"] = "Success";
+
+	GetUlasProviderMock().MockGetAccessKeyInfo(jsonAccessKeyResponse);
+
+	std::list<Json::Value> validPolicyList;
+	validPolicyList.push_back(jsonPolicyValid);
+
+	// called in usage heartbeat
+	GetLicensingDbMock().MockRecordUsage(SUCCESS);
+
+	// LogPosting heartbeat
+	GetLicensingDbMock().MockGetUsageRecordCount(1);
+	GetLicensingDbMock().MockGetFeatureRecordCount(1);
+
+	GetUlasProviderMock().MockPostUsageLogs(SUCCESS);
+	GetUlasProviderMock().MockPostFeatureLogs(SUCCESS);
+
+	// policy heartbeat
+	GetLicensingDbMock().MockKeyPolicyFiles(testAccessKey, validPolicyList);
+	GetLicensingDbMock().MockGetOfflineGracePeriodStart("");
+
+	EXPECT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
+	EXPECT_EQ(1, GetLicensingDbMock().OpenOrCreateCount());
+	EXPECT_LE(1, GetLicensingDbMock().AddOrUpdatePolicyFileCount());
+	EXPECT_LE(1, GetLicensingDbMock().DeleteAllOtherPolicyFilesByKeyCount());
+	EXPECT_LE(1, GetLicensingDbMock().GetPolicyFilesByKeyCount(testAccessKey));
+	EXPECT_LE(1, GetPolicyProviderMock().GetPolicyWithKeyCalls());
+	EXPECT_LE(1, GetUlasProviderMock().GetAccessKeyInfoCalls());
+
+	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+	EXPECT_SUCCESS(client->StopApplication());
+	EXPECT_LE(1, GetUlasProviderMock().PostUsageLogsCalls());
+	EXPECT_LE(1, GetUlasProviderMock().PostFeatureLogsCalls());
+	EXPECT_LE(1, GetLicensingDbMock().RecordUsageCount()); // called in usage heartbeat
+	EXPECT_LE(1, GetLicensingDbMock().GetUsageRecordCountCount());
+	EXPECT_LE(1, GetLicensingDbMock().GetFeatureRecordCountCount());
+	EXPECT_LE(1, GetLicensingDbMock().GetOfflineGracePeriodStartCount());
+	EXPECT_EQ(1, GetLicensingDbMock().CloseCount());
+
+	EXPECT_NE(static_cast<int>(client2->StartApplication()), static_cast<int>(LicenseStatus::Error));
+	EXPECT_EQ(2, GetLicensingDbMock().OpenOrCreateCount());
+	EXPECT_LE(1, GetLicensingDbMock().AddOrUpdatePolicyFileCount());
+	EXPECT_LE(1, GetLicensingDbMock().DeleteAllOtherPolicyFilesByKeyCount());
+	EXPECT_LE(1, GetLicensingDbMock().GetPolicyFilesByKeyCount(testAccessKey));
+	EXPECT_LE(1, GetPolicyProviderMock().GetPolicyWithKeyCalls());
+	EXPECT_LE(1, GetUlasProviderMock().GetAccessKeyInfoCalls());
+
+	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+	EXPECT_SUCCESS(client2->StopApplication());
+	EXPECT_LE(1, GetUlasProviderMock().PostUsageLogsCalls());
+	EXPECT_LE(1, GetUlasProviderMock().PostFeatureLogsCalls());
+	EXPECT_LE(1, GetLicensingDbMock().RecordUsageCount()); // called in usage heartbeat
+	EXPECT_LE(1, GetLicensingDbMock().GetUsageRecordCountCount());
+	EXPECT_LE(1, GetLicensingDbMock().GetFeatureRecordCountCount());
+	EXPECT_LE(1, GetLicensingDbMock().GetOfflineGracePeriodStartCount());
+	EXPECT_EQ(2, GetLicensingDbMock().CloseCount());
+
+	EXPECT_EQ(static_cast<int>(failclient->StartApplication()), static_cast<int>(LicenseStatus::NotEntitled));
+	}
 
 
 
