@@ -437,21 +437,6 @@ TEST_F(AccessKeyClientTests, AgnosticKey_Validation)
 
 
 
-TEST_F(AccessKeyClientTests, GetPolicy_NoUltimateIdUseMachineName)
-{
-	auto client = CreateWithKeyTestClient(GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr());
-	Utf8StringCR testAccessKey = TEST_AGNOSTIC;
-	GetLicensingDbMock().MockOpenOrCreate(SUCCESS);
-	//request includes machine id
-	client->GetPolicy();
-	client->StartApplication();
-	//get policy from two different machines
-	EXPECT_EQ(1, 1);
-}
 
-TEST_F(AccessKeyClientTests, AgnosticKey_Usage)
-	{
-	auto client = CreateWithAgnosticKeyTestClient(GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr(), TEST_PRODUCT_ID, TEST_ULTIMATE_ID);
-	//handle usage from multiple machines
-	EXPECT_EQ(1, 1);
-	}
+
+

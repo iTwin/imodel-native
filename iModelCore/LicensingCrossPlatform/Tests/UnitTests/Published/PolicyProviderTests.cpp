@@ -408,32 +408,6 @@ TEST_F(PolicyProviderTests, GetPolicyWithKey_Success)
     EXPECT_EQ(expectedJson, resultJson);
     }
 
-//TEST_F(PolicyProviderTests, GetPolicy_HasUltimateIdUseUltimate)
-//{
-//	auto client = CreateWithAgnosticKeyTestClient(GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr(), TEST_PRODUCT_ID, TEST_ULTIMATE_ID);
-//	Utf8StringCR testAccessKey = TEST_AGNOSTIC;
-//	GetLicensingDbMock().MockOpenOrCreate(SUCCESS);
-//
-//	Utf8String userId = "da7cda78-92d0-4c80-82c8-c35c479e5d0e";
-//	auto jsonPolicyValid = DummyPolicyHelper::CreatePolicyFullWithKey(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, std::atoi(TEST_PRODUCT_ID), "", 1, false, TEST_AGNOSTIC, TEST_MACHINE2);
-//	auto validPolicy = Policy::Create(jsonPolicyValid);
-//
-//	Json::Value jsonAccessKeyResponse(Json::objectValue);
-//	jsonAccessKeyResponse["status"] = "Success";
-//
-//	GetUlasProviderMock().MockGetAccessKeyInfo(jsonAccessKeyResponse);
-//
-//	std::list<Json::Value> validPolicyList;
-//	validPolicyList.push_back(jsonPolicyValid);
-//
-//	GetPolicyProviderMock().MockGetPolicyWithKey(validPolicy);
-//	//request includes ultimate id 
-//	client->GetPolicy();
-//	client->StartApplication();
-//	EXPECT_EQ(1, 1);
-//}
-
-// TODO: add a GetPolicyWithKey test with ultimate ID
 TEST_F(PolicyProviderTests, GetPolicyWithKey_SuccessAgnostic)
 {
 	// assert our outgoing request matches expectation
