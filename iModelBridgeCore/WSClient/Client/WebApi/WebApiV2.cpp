@@ -274,7 +274,7 @@ ActivityLogger WebApiV2::CreateActivityLogger(Utf8StringCR activityName, IWSRepo
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-void WebApiV2::SetActivityIdToRequest(ActivityLoggerR activityLogger, Http::RequestR request)
+void WebApiV2::SetActivityIdToRequest(ActivityLoggerR activityLogger, Http::RequestR request) const
     {
     if (!activityLogger.HasValidActivityInfo())
         return;
@@ -285,7 +285,7 @@ void WebApiV2::SetActivityIdToRequest(ActivityLoggerR activityLogger, Http::Requ
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-void WebApiV2::SetActivityIdToRequest(ActivityLoggerR activityLogger, ChunkedUploadRequestR request)
+void WebApiV2::SetActivityIdToRequest(ActivityLoggerR activityLogger, ChunkedUploadRequestR request) const
     {
     if (!activityLogger.HasValidActivityInfo())
         return;
@@ -371,7 +371,7 @@ std::shared_ptr<WSObjectsReader> WebApiV2::CreateJsonInstancesReader() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-Utf8String WebApiV2::GetNullableString(RapidJsonValueCR object, Utf8CP member)
+Utf8String WebApiV2::GetNullableString(RapidJsonValueCR object, Utf8CP member) const
     {
     if (!object.HasMember(member))
         return "";

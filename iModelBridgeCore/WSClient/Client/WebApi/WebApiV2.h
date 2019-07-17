@@ -41,8 +41,8 @@ struct WebApiV2 : public WebApi
         Utf8String CreateNavigationSubPath(ObjectIdCR parentId) const;
 
         ActivityLogger CreateActivityLogger(Utf8StringCR activityName, IWSRepositoryClient::RequestOptionsPtr options = nullptr) const;
-        static void SetActivityIdToRequest(ActivityLoggerR activityLogger, Http::RequestR request);
-        static void SetActivityIdToRequest(ActivityLoggerR activityLogger, ChunkedUploadRequestR request);
+        void SetActivityIdToRequest(ActivityLoggerR activityLogger, Http::RequestR request) const;
+        void SetActivityIdToRequest(ActivityLoggerR activityLogger, ChunkedUploadRequestR request) const;
 		void CheckResponseActivityId(Http::Response& httpResponse, ActivityLogger activityLogger) const;
 
         Utf8String CreateSelectPropertiesQuery(const bset<Utf8String>& properties) const;
@@ -50,7 +50,7 @@ struct WebApiV2 : public WebApi
         Http::Request CreateQueryRequest(WSQueryCR query) const;
 
         std::shared_ptr<WSObjectsReader> CreateJsonInstancesReader() const;
-        static Utf8String GetNullableString(RapidJsonValueCR object, Utf8CP member);
+        Utf8String GetNullableString(RapidJsonValueCR object, Utf8CP member) const;
 
         WSRepositoriesResult ResolveGetRepositoriesResponse(Http::Response& response) const;
         WSUpdateObjectResult ResolveUpdateObjectResponse(Http::Response& response) const;
