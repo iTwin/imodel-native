@@ -1,11 +1,21 @@
 
 [imodel02\imodelcore\besqlite\sqlite\closure.c]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\besqlite\revisionchangesfile.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
 [imodel02\imodelcore\besqlite\besqlite.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\besqlite\changeset.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\besqlite\belzma.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\besqlite\sqlite\zipvfs.c]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
 [imodel02\imodelcore\besqlite\sqlite\sqlite3.c]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
 [imodel02\imodelcore\besqlite\besqliteprofilemanager.h]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\besqlite\bebriefcasebasedidsequence.cpp]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
 [imodel02\imodelcore\besqlite\besqliteprofilemanager.cpp]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:

@@ -21,6 +21,8 @@
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
 [imodel02\imodelbridgecore\dgndbsync\dgnv8\scalablemeshconversion.cpp]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelbridgecore\dgndbsync\dgnv8\dtmconversion.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
 [imodel02\imodelbridgecore\dgndbsync\dgnv8\dynamicschemagenerator\dgnv8tags.cpp]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
 [imodel02\imodelbridgecore\dgndbsync\dgnv8\linkconverter.cpp]

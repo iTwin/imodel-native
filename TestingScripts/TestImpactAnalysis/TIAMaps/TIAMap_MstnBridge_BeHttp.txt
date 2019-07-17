@@ -1,13 +1,23 @@
 
+[imodel02\imodelcore\behttp\behttp\curl\notificationpipe.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
 [imodel02\imodelcore\behttp\behttp\curl\curltaskrunner.cpp]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
 [imodel02\imodelcore\behttp\behttp\curl\curlhttprequest.cpp]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
 [imodel02\imodelcore\behttp\behttp\httpclient.cpp]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\behttp\behttp\curl\threadcurlhttphandler.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\behttp\behttp\defaulthttphandler.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
 [imodel02\imodelcore\behttp\behttp\beuri.cpp]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
 [imodel02\imodelcore\behttp\behttp\credentials.cpp]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\behttp\behttp\curl\curlhttphandler.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
 [imodel02\imodelcore\behttp\behttp\httpproxy.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\behttp\behttp\curl\curlpool.cpp]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:

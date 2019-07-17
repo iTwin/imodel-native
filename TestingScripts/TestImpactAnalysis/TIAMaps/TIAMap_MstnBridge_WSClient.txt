@@ -1,6 +1,8 @@
 
 [imodel02\imodelcore\wsclient\client\wserror.cpp]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\wsclient\client\clientinfo.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
 [imodel02\imodelcore\wsclient\client\response\wsobjectsreaderv2.cpp]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
 [imodel02\imodelcore\wsclient\client\wsrepositoryclient.cpp]

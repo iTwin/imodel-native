@@ -2,7 +2,7 @@
 [imodel02\imodelcore\bentley\bentley\nonport\betest.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\bentley\bentley\datetimeconverter.cpp]
-%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:BasicTests.*:
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\bentley\tasks\asynctask.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\bentley\loggingsdk\src\native\interface\loggercache.cpp]
@@ -14,19 +14,21 @@
 [imodel02\imodelcore\bentley\bentley\nonport\befile.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\bentley\bentley\datetimeconverter.h]
-%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:BasicTests.*:
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\bentley\bentley\refcounted.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\bentley\bentley\nonport\base64utilities.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
+[imodel02\imodelcore\bentley\loggingsdk\src\native\interface\consoleprovider.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:
 [imodel02\imodelcore\bentley\bentley\datetime.cpp]
-%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:BasicTests.*:
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\bentley\bentley\nonport\valueformat.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
 [imodel02\imodelcore\bentley\bentley\nonport\betimeutilities.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\bentley\bentley\nonport\befilelistiterator.cpp]
-%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\bentley\loggingsdk\src\native\interface\providerproxy.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\bentley\bentley\sha1.cpp]
@@ -46,6 +48,6 @@
 [imodel02\imodelcore\bentley\loggingsdk\src\native\interface\loggingmanager.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\bentley\loggingsdk\src\native\interface\bsilog.cpp]
-%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\bentley\bentley\md5.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:

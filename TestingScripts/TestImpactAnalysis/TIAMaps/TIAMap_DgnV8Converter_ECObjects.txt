@@ -56,7 +56,7 @@
 [imodel02\imodelcore\ecobjects\src\ecenumeration.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ViewTests.*:NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:ECConversionTests.*:MultiBridgeTests.*:GeomPartTests.*:ConvertToDgnDbElementExtensionTests.*:V8AttachmentTests.*:TagTests.*:TextBlockTests.*:RulesetEmbedderTests.*:SkipSchemaImportTests.*:ECSchemaTests.*:RasterTests.*:DgnMaterialTests.*:ConverterAppTests.*:SheetCompositionTests.*:LightTests.*:ConverterTests.*:ModelTests.*:DimensionTests.*:
 [imodel02\imodelcore\ecobjects\src\standaloneecrelationshipinstance.cpp]
-%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:TransformTests.*:ConverterTests.*:
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:ConverterTests.*:TransformTests.*:
 [imodel02\imodelcore\ecobjects\src\stronglyconnectedgraph.h]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ViewTests.*:NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:ECConversionTests.*:MultiBridgeTests.*:GeomPartTests.*:ConvertToDgnDbElementExtensionTests.*:V8AttachmentTests.*:TagTests.*:TextBlockTests.*:RulesetEmbedderTests.*:SkipSchemaImportTests.*:ECSchemaTests.*:RasterTests.*:DgnMaterialTests.*:ConverterAppTests.*:SheetCompositionTests.*:LightTests.*:ConverterTests.*:ModelTests.*:DimensionTests.*:
 [imodel02\imodelcore\ecobjects\src\schemaxml.cpp]

@@ -1,41 +1,65 @@
 
+[imodel02\imodelcore\bentley\bentley\nonport\bedebugutilities.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
 [imodel02\imodelcore\bentley\bentley\nonport\betest.cpp]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
-[imodel02\imodelcore\bentley\bentley\nonport\befilename.cpp]
+[imodel02\imodelcore\bentley\bentley\datetimeconverter.cpp]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
-[imodel02\imodelcore\bentley\bentley\nonport\bestringutilities.cpp]
+[imodel02\imodelcore\bentley\bentley\datetime.cpp]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
 [imodel02\imodelcore\bentley\tasks\asynctask.cpp]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
-[imodel02\imodelcore\bentley\bentley\nonport\base64utilities.cpp]
-%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
 [imodel02\imodelcore\bentley\loggingsdk\src\native\interface\loggercache.cpp]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
-[imodel02\imodelcore\bentley\loggingsdk\src\native\interface\loggingmanager.cpp]
+[imodel02\imodelcore\bentley\bentley\wstring.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\bentley\bentley\nonport\bedirectoryiterator.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\bentley\bentley\nonport\befile.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\bentley\bentley\nonport\betimeutilities.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\bentley\bentley\refcounted.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\bentley\bentley\nonport\base64utilities.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\bentley\tasks\workerthreadpool.cpp]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
 [imodel02\imodelcore\bentley\loggingsdk\src\native\interface\consoleprovider.cpp]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
 [imodel02\imodelcore\bentley\tasks\asyncerror.cpp]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
-[imodel02\imodelcore\bentley\bentley\wstring.cpp]
+[imodel02\imodelcore\bentley\bentley\cancellationtoken.cpp]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
-[imodel02\imodelcore\bentley\loggingsdk\src\native\interface\bsilog.cpp]
+[imodel02\imodelcore\bentley\tasks\asynctaskrunnerpool.cpp]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
-[imodel02\imodelcore\bentley\bentley\nonport\betimeutilities.cpp]
+[imodel02\imodelcore\bentley\bentley\nonport\valueformat.cpp]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
-[imodel02\imodelcore\bentley\bentley\nonport\bethread.cpp]
-%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
-[imodel02\imodelcore\bentley\loggingsdk\src\native\interface\bsilogprivate.h]
-%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
-[imodel02\imodelcore\bentley\bentley\nonport\bedirectoryiterator.cpp]
-%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
-[imodel02\imodelcore\bentley\tasks\asynctasksmanager.cpp]
-%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
-[imodel02\imodelcore\bentley\bentley\nonport\befile.cpp]
+[imodel02\imodelcore\bentley\bentley\nonport\befilelistiterator.cpp]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
 [imodel02\imodelcore\bentley\loggingsdk\src\native\interface\providerproxy.cpp]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\bentley\bentley\nonport\begetprocaddress.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\bentley\bentley\nonport\bethread.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\bentley\bentley\nonport\besysteminfo.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\bentley\loggingsdk\src\native\interface\bsilogprivate.h]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\bentley\tasks\asynctasksmanager.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\bentley\bentley\sha1.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
 [imodel02\imodelcore\bentley\loggingsdk\src\native\interface\loggingconfig.cpp]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
-[imodel02\imodelcore\bentley\bentley\refcounted.cpp]
+[imodel02\imodelcore\bentley\bentley\nonport\befilename.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\bentley\bentley\nonport\bestringutilities.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\bentley\loggingsdk\src\native\interface\loggingmanager.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\bentley\loggingsdk\src\native\interface\bsilog.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\bentley\bentley\md5.cpp]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:

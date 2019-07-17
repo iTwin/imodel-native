@@ -1,7 +1,53 @@
 
+[imodel02\imodelcore\geomlibs\geom\src\curveprimitive\curvevector.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\curveprimitive\curveconstraint.cpp]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
-[imodel02\imodelcore\geomlibs\geom\src\polyface\facetoptions.cpp]
+[imodel02\imodelcore\geomlibs\geom\src\structs\dspiral2dbase.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\refrotmatrixmultiply.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\regions\rg_merge.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\reftransform.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\refdvec2d.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\mtg\jmdl_mtgmarkset.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\curveprimitive\cp_linestring.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\publicapi\mtg\mtgstructs.h]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\solidprimitive\sp_range.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\publicapi\geom\dsegment1d.h]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\curveprimitive\cp_directspiral.h]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\polyface\polyfacecoordinatemap.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\curveprimitive\cv_ops.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\refrotmatrixquery.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\bspline\bsppolyface.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\curveprimitive\cp_line.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\funcs\angle.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\funcs\polylineops.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\curveprimitive\cp_child.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\refdpoint3d.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\refdrange3darrays.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\vu\src\vuflood.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\reftransforminvert.cpp]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\mtg\jmdl_mtgbase1.cpp]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
@@ -9,17 +55,93 @@
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\mtg\mtggraph.cpp]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
-[imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\refdpoint3d.cpp]
+[imodel02\imodelcore\geomlibs\geom\src\bspline\bspccistubs.cpp]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
-[imodel02\imodelcore\geomlibs\publicapi\geom\counters.h]
+[imodel02\imodelcore\geomlibs\geom\src\curveprimitive\icurveprimitive.cpp]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
-[imodel02\imodelcore\geomlibs\vu\src\vumem.cpp]
+[imodel02\imodelcore\geomlibs\geom\src\funcs\rangetreetemplate.h]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\solidprimitive\sp_faceindices.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\solidprimitive\solidprimitive.cpp]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\refdvec3d.cpp]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\polyface\polyfacevisitor.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\refrotmatrixinit.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\funcs\trigfuncs.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\structs\dsegment1d.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\funcs\doubleops.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\deprecatedfunctions.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\polyface\polyfacequery.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\refrotmatrixinvert.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\curveprimitive\curveprimitivepartialcurve.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\refdrange2d.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\funcs\polyline3d.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\refoperatoroverload.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\refrotmatrix.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\structs\polynomials.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\polyface\pf_rangesearch.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\publicapi\geom\counters.h]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\reftransformisxxx.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\refdpoint2d.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\polyface\pf_indexedheaprangesearch.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
 [imodel02\imodelcore\geomlibs\vu\src\vuarray.cpp]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
-[imodel02\imodelcore\geomlibs\publicapi\mtg\mtgstructs.h]
+[imodel02\imodelcore\geomlibs\geom\src\funcs\dpoint3dops.cpp]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
-[imodel02\imodelcore\geomlibs\geom\src\funcs\angle.cpp]
+[imodel02\imodelcore\geomlibs\publicapi\mtg\mtgshortestpaths.h]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\curveprimitive\cp_spiral.h]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\curveprimitive\curveprimitivebsplinecurve.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\funcs\dpoint3dopsrangeheap.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\reftransformmultiply.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\polyface\facetoptions.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\refdrange3d.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\funcs\yawpitchrollanglesindegrees.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\publicapi\geom\xyrangetree.h]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\curveprimitive\cp_arc.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\publicapi\geom\xyzrangetree.h]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\polyface\ipolyfaceconstruction_dispatchers.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\polyface\rgbfactor.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\vu\src\vumem.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\placementonearth\placement.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\structs\drange1d.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\vu\src\xyvisibilitysplitter.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\curveprimitive\cp_catenary.h]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:

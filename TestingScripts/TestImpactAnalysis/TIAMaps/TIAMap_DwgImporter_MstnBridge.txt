@@ -6,4 +6,4 @@
 [imodel02\imodelbridgecore\dgndbsync\imodelbridge\imodelbridgesacadapter.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
 [imodel02\imodelbridgecore\dgndbsync\imodelbridge\imodelbridgesyncinfofile.cpp]
-%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:BasicTests.*:
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:

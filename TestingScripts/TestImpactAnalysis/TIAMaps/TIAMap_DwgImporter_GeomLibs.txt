@@ -1,32 +1,46 @@
 
 [imodel02\imodelcore\geomlibs\geom\src\curveprimitive\curveconstraint.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\funcs\dpoint3dopsrangeheap.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\refrotmatrixmultiply.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\regions\rg_merge.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\reftransform.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\refrotmatrixquery.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\curveprimitive\cp_linestring.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\bspline\bspccistubs.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:
 [imodel02\imodelcore\geomlibs\publicapi\mtg\mtgstructs.h]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\solidprimitive\sp_range.cpp]
-%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.CreateNewDwg:
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\geomlibs\publicapi\geom\dsegment1d.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\solidprimitive\sp_constructiveframe.cpp]
-%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.CreateNewDwg:
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\polyface\polyfacecoordinatemap.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\curveprimitive\cv_ops.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\refdvec2d.cpp]
-%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:BasicTests.*:
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\curveprimitive\cv_clone.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\polyface\pf_indexedheaprangesearch.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\curveprimitive\cp_line.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\funcs\angle.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\funcs\polylineops.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\curveprimitive\cp_directspiral.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\refdpoint3d.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\geomlibs\publicapi\geom\curvevector.h]
@@ -41,30 +55,40 @@
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\geomlibs\publicapi\placementonearth\placement.h]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\geomlibs\publicapi\mtg\mtgshortestpaths.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\curveprimitive\cp_spiral.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\reftransformisxxx.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\solidprimitive\solidprimitive.cpp]
-%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.CreateNewDwg:
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\refdellipse3d.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\funcs\dpoint3dops.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\refrotmatrixinit.cpp]
-%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:BasicTests.*:
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\solidprimitive\sp_faceindices.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\structs\dsegment1d.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\funcs\doubleops.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\refdrange3d.cpp]
-%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\refrotmatrixinvert.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\refdrange2d.cpp]
-%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\structs\drange1d.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\refrotmatrix.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\structs\polynomials.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\funcs\yawpitchrollanglesindegrees.cpp]
-%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:BasicTests.*:
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\geomlibs\publicapi\geom\counters.h]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\refdvec3d.cpp]
@@ -72,17 +96,21 @@
 [imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\refdrange3darrays.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\refdpoint2d.cpp]
-%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:BasicTests.*:
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
+[imodel02\imodelcore\geomlibs\vu\src\xyvisibilitysplitter.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:
 [imodel02\imodelcore\geomlibs\vu\src\vuarray.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\refdmatrix4d.cpp]
-%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.BudweiserBenchmarks:ImporterAppTests.Description:BasicTests.*:
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\refdsegment3d.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\curveprimitive\curvevector.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\curveprimitive\curveprimitivebsplinecurve.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\solidprimitive\sp_clone.cpp]
-%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.CreateNewDwg:
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\curveprimitive\cv_offset.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\reftransformmultiply.cpp]
@@ -91,15 +119,25 @@
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\geomlibs\publicapi\geom\geomapi.h]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\geomlibs\publicapi\geom\xyrangetree.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:
 [imodel02\imodelcore\geomlibs\publicapi\geom\angle.h]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\curveprimitive\cp_arc.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\geomlibs\publicapi\geom\xyzrangetree.h]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\curveprimitive\icurveprimitive.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\polyface\pf_rangesearch.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:
 [imodel02\imodelcore\geomlibs\vu\src\vumem.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:BasicTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\placementonearth\placement.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\funcs\polyline3d.cpp]
 %OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=BasicTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\funcs\trigfuncs.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:
+[imodel02\imodelcore\geomlibs\geom\src\polyface\rgbfactor.cpp]
+%OutRoot%Winx64\Product\DwgImporterTests\DwgImporterTests.exe --gtest_filter=ImporterAppTests.*:
