@@ -13,8 +13,7 @@
     </Part>
 
     <Part Name="QuantityTakeoffsAspectsSchema">
-        <SubPart PartName="QuantityTakeoffsAspects" Repository="BisSchemas" PartFile="BisSchemas" />
-        <SubPart PartName="AecUnitsPublicAPI" Repository="DgnDomains-DesignModelingUnits" PartFile="AecUnits" />
+        <SubPart PartName="QuantityTakeoffsAspectsSchema" Repository="BisSchemas" PartFile="BisSchemas" />
     </Part>
 
     <Part Name="QuantityTakeoffsAspectsApi" BentleyBuildMakeFile="QuantityTakeoffsAspectsApi.prewire.mke">
