@@ -881,14 +881,17 @@ struct GeometryFactory : public IDwgDrawGeometry
         DwgDbObjectId           m_blockId;
         Utf8String              m_blockName;
         DgnElementId            m_fileId;
+        size_t                  m_geometryCount;
     public:
         BlockInfo (DwgDbObjectIdCR id, DwgStringCR name, DgnElementId file) : m_blockId(id), m_fileId(file)
             {
             m_blockName.Assign (name.c_str());
+            m_geometryCount = 0;
             }
         DwgDbObjectIdCR GetBlockId () const { return m_blockId; }
         Utf8StringCR    GetBlockName () const { return m_blockName; }
         DgnElementId    GetFileId () const { return m_fileId; }
+        size_t  GetAndIncrementGeometryCount () { return m_geometryCount++; }
         };  // BlockInfo
 
 private:
@@ -908,7 +911,6 @@ private:
     bvector<BlockInfo>                  m_blockStack;
     bvector<int64_t>                    m_parasolidBodies;
     bool                                m_isTargetModel2d;
-    size_t                              m_geometryCount;
     
 public:
 // the constructor
@@ -925,7 +927,6 @@ GeometryFactory (DwgImporter::ElementCreateParams& createParams, DrawParameters&
     m_spatialFilter = nullptr;
     m_parasolidBodies.clear ();
     m_isTargetModel2d = !createParams.GetModel().Is3d ();
-    m_geometryCount = 0;
 
     // start block stack by input entity's block
     auto dwg = nullptr == ent || ent->GetDatabase().IsNull() ? m_drawParams.GetDatabase() : ent->GetDatabase().get();
@@ -2108,8 +2109,9 @@ void            AppendGeometry (GeometricPrimitiveR geometry)
     // convert other sub-entity traits to GeometryParams:
     m_drawParams.GetDisplayParams (display);
 
-    auto block = this->GetCurrentBlock ();
+    auto& block = this->GetCurrentBlock ();
     auto blockId = block.GetBlockId ();
+    auto perBlockCount = block.GetAndIncrementGeometryCount ();
 
     // build a new cache entry for the geometry
     DwgImporter::GeometryEntry   geomEntry;
@@ -2119,7 +2121,7 @@ void            AppendGeometry (GeometricPrimitiveR geometry)
     geomEntry.SetBlockName (block.GetBlockName());
     geomEntry.SetBlockId (blockId);
     geomEntry.SetDwgFileId (block.GetFileId());
-    geomEntry.SetPartIndex (m_geometryCount++);
+    geomEntry.SetPartIndex (perBlockCount);
 
     // cache the new entry for the block
     auto found = m_outputGeometryMap.find (blockId);
@@ -2293,7 +2295,7 @@ void    ElementFactory::SetBaseTransform (TransformCR blockTrans)
 
     A local part scale, m_basePartScale, is saved here only for the purpose of caching share
     parts in block-parts map for this block.  The cached parts are only used during the same 
-    import session. If this block is instanced multiple times at the same scale in the model,
+    import session. If this block is instantiated multiple times at the same scale in the model,
     the cached parts can be directly re-used, bypassing the whole step of CreateSharedParts().
     In essense, m_basePartScale serves for the sake of performance.  it does not participate 
     in the calculation of the share parts.
@@ -2448,8 +2450,17 @@ Utf8String  ElementFactory::BuildPartCodeValue (DwgImporter::GeometryEntry const
     auto fileid = geomEntry.GetDwgFileId().GetValue ();
     auto partNo = geomEntry.GetPartIndex ();
 
+    // check part scale per block
+    double checkPartScale = m_basePartScale;
+    if (m_sourceBlockId.ToUInt64() != blockid)
+        {
+        checkPartScale = geomEntry.GetTransform().Determinant ();
+        if (m_basePartScale < 0.0)
+            checkPartScale = -checkPartScale;
+        }
+
     // a different code value for a mirrored block
-    if (m_basePartScale < 0.0)
+    if (checkPartScale < 0.0)
         return Utf8PrintfString ("%s[%d:%llx:m]-%lld", name, fileid, blockid, partNo);
     else
         return Utf8PrintfString ("%s[%d:%llx]-%lld", name, fileid, blockid, partNo);

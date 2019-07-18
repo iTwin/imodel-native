@@ -297,6 +297,12 @@ StableIdPolicy  DwgImporter::_GetDwgFileIdPolicy () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   DwgImporter::OpenDwgFile (BeFileNameCR dwgdxfName)
     {
+    if (!dwgdxfName.DoesPathExist())
+        {
+        this->ReportError (IssueCategory::DiskIO(), Issue::FileNotFound(), dwgdxfName.c_str());
+        return  static_cast<BentleyStatus> (DgnDbStatus::FileNotFound);
+        }
+
     DwgFileVersion  dwgVersion = DwgFileVersion::Invalid;
     if (!DwgHelper::SniffDwgFile(dwgdxfName, &dwgVersion) && (DwgFileVersion::Newer == dwgVersion || !DwgHelper::SniffDxfFile(dwgdxfName, &dwgVersion)))
         {

@@ -138,6 +138,7 @@ void        DwgImporter::RegisterProtocolExtensions ()
     DwgRxClass::AddProtocolExtension (DwgDb3dSolid::SuperDesc(), protocolClass, DwgBrepExt::CreateObject());
     DwgRxClass::AddProtocolExtension (DwgDbRegion::SuperDesc(), protocolClass, DwgBrepExt::CreateObject());
     DwgRxClass::AddProtocolExtension (DwgDbBody::SuperDesc(), protocolClass, DwgBrepExt::CreateObject());
+    DwgRxClass::AddProtocolExtension (DwgDbSurface::SuperDesc(), protocolClass, DwgBrepExt::CreateObject());
     DwgRxClass::AddProtocolExtension (DwgDbExtrudedSurface::SuperDesc(), protocolClass, DwgBrepExt::CreateObject());
     DwgRxClass::AddProtocolExtension (DwgDbLoftedSurface::SuperDesc(), protocolClass, DwgBrepExt::CreateObject());
     DwgRxClass::AddProtocolExtension (DwgDbNurbSurface::SuperDesc(), protocolClass, DwgBrepExt::CreateObject());
