@@ -1274,3 +1274,46 @@ BentleyStatus	iModelBridge::TrackUsage()
     client->TrackUsage(token->ToAuthorizationString(),clientInfo->GetApplicationVersion(),_GetParams().GetProjectGuid());
     return SUCCESS;
 	}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+ void iModelBridge::LogPerformance(StopWatch& stopWatch, Utf8CP scope, Utf8CP description, va_list args)
+    {
+    stopWatch.Stop();
+    const NativeLogging::SEVERITY severity = NativeLogging::LOG_INFO;
+    NativeLogging::ILogger* logger = NativeLogging::LoggingManager::GetLogger("iModelBridge.Performance");
+    if (NULL == logger)
+        return;
+
+    if (!logger->isSeverityEnabled(severity))
+        return;
+
+    Utf8String formattedDescription;
+    formattedDescription.VSprintf(description, args);
+    
+    rapidjson::Document document;
+    document.SetObject();
+
+    auto& allocator = document.GetAllocator();
+    rapidjson::Value propValue(rapidjson::kObjectType);
+    document.AddMember("Scope", rapidjson::Value(scope, allocator), allocator);
+    document.AddMember("StepName", rapidjson::Value(formattedDescription.c_str(), allocator), allocator);
+    document.AddMember("Duration", rapidjson::Value(stopWatch.GetElapsedSeconds() * 1000.0), allocator);
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+    document.Accept(writer);
+
+    logger->messagev(severity, "%s",buffer.GetString());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+ void iModelBridge::LogPerformance(StopWatch& stopWatch, Utf8CP description, ...)
+    {
+     va_list args;
+     va_start(args, description);
+     LogPerformance(stopWatch, "iModelBridgeFwk", description, args);
+     va_end(args);
+    }

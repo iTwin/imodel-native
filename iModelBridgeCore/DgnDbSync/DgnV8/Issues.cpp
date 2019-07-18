@@ -409,26 +409,16 @@ bool ConverterLogging::IsSeverityEnabled(Namespace ns, NativeLogging::SEVERITY s
     return GetLogger(ns).isSeverityEnabled(sev);
     }
 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
 void ConverterLogging::LogPerformance(StopWatch& stopWatch, Utf8CP description, ...)
     {
-    stopWatch.Stop();
-    const NativeLogging::SEVERITY severity = NativeLogging::LOG_INFO;
-    NativeLogging::ILogger& logger = GetLogger(ConverterLogging::Namespace::Performance);
-    if (logger.isSeverityEnabled(severity))
-        {
-        va_list args;
-        va_start(args, description);
-        Utf8String formattedDescription;
-        formattedDescription.VSprintf(description, args);
-        va_end(args);
-
-        logger.messagev(severity, "%s|%.0f millisecs", formattedDescription.c_str(), stopWatch.GetElapsedSeconds() * 1000.0);
-        }
+    va_list args;
+    va_start(args, description);
+    iModelBridge::LogPerformance(stopWatch, "Dgnv8Converter", description, args);
+    va_end(args);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -38,7 +38,7 @@ struct iModelBridgeCallOpenCloseFunctions
         if (BSISUCCESS == m_bstatus)
             m_sstatus = m_bridge._OpenSource();
 
-        iModelBridgeFwk::LogPerformance(stopWatch, "Time required to open source file and BIM");
+        iModelBridge::LogPerformance(stopWatch, "Time required to open source file and BIM");
         }
 
     void CallCloseFunctions(iModelBridge::ClosePurpose purpose)
@@ -52,7 +52,7 @@ struct iModelBridgeCallOpenCloseFunctions
         
         m_bridge._OnCloseBim(m_status, purpose); // close the bim
 
-        iModelBridgeFwk::LogPerformance(stopWatch, "Time required to close source file and BIM");
+        iModelBridge::LogPerformance(stopWatch, "Time required to close source file and BIM");
         }
 
     bool IsReady() const {return (BSISUCCESS==m_bstatus) && (BSISUCCESS==m_sstatus);}
@@ -83,7 +83,7 @@ struct iModelBridgeBriefcaseCallOpenCloseFunctions
         StopWatch stopWatch(true);
         m_bstatus = m_bridge._OnOpenBim(db);
 
-        iModelBridgeFwk::LogPerformance(stopWatch, "Time required to open sBIM");
+        iModelBridge::LogPerformance(stopWatch, "Time required to open sBIM");
         }
 
     void CallCloseFunctions(iModelBridge::ClosePurpose purpose)
@@ -94,7 +94,7 @@ struct iModelBridgeBriefcaseCallOpenCloseFunctions
         
         m_bridge._OnCloseBim(m_status, purpose); // close the bim
 
-        iModelBridgeFwk::LogPerformance(stopWatch, "Time required to close BIM");
+        iModelBridge::LogPerformance(stopWatch, "Time required to close BIM");
         }
 
     bool IsReady() const {return (BSISUCCESS==m_bstatus);}

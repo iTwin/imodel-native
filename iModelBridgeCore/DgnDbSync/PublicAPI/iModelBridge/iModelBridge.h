@@ -1107,6 +1107,9 @@ public:
     //! @param params The bridge parameters structure
     IMODEL_BRIDGE_EXPORT static Utf8String ComputeJobSubjectName(SubjectCR parent, Params const& params, Utf8StringCR bridgeSpecificSuffix);
 
+
+    IMODEL_BRIDGE_EXPORT static void LogPerformance(StopWatch& stopWatch, Utf8CP scope, Utf8CP description, va_list argPtr);
+    IMODEL_BRIDGE_EXPORT static void LogPerformance(StopWatch& stopWatch, Utf8CP description, ...);
     //! @}
 
     //! @name Post-processing Callbacks

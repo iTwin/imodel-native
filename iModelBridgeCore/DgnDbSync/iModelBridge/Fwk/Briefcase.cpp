@@ -543,7 +543,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_PullMergePush(Utf8CP descIn, bool doPul
         }
 
     SetSyncState(SyncState::Pushed);
-    LogPerformance(pullpushTimer, "Briefcase_PullMergePush(%d,%d) to iModelHub", doPullAndMerge, doPush);
+    iModelBridge::LogPerformance(pullpushTimer, "Briefcase_PullMergePush(%d,%d) to iModelHub", doPullAndMerge, doPush);
     GetLogger().infov("%s %s : Done", opName, m_briefcaseBasename.c_str());
 
     return BSISUCCESS;
@@ -662,7 +662,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_ReleaseAllPublicLocks()
         }
 
     SetSyncState(SyncState::Initial);
-    LogPerformance(releaseLockTimer, "Briefcase_ReleaseAllPublicLocks to iModelHub");
+    iModelBridge::LogPerformance(releaseLockTimer, "Briefcase_ReleaseAllPublicLocks to iModelHub");
 
     BeAssert(!iModelBridge::HoldsSchemaLock(*m_briefcaseDgnDb));
 

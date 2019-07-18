@@ -1118,7 +1118,6 @@ BentleyStatus iModelBridgeFwk::ReleaseBridge()
     if (nullptr == m_bridge)
         return BentleyStatus::SUCCESS;
 
-    StopWatch releaseBridge (true);
     auto releaseFunc = m_jobEnvArgs.ReleaseBridge();
     if (nullptr == releaseFunc)
         {
@@ -1127,7 +1126,6 @@ BentleyStatus iModelBridgeFwk::ReleaseBridge()
 
     BentleyStatus status = releaseFunc(m_bridge);
     m_bridge = NULL;
-    LogPerformance(releaseBridge, "Release Bridge");
     return status;
     }
 
@@ -1159,7 +1157,7 @@ BentleyStatus iModelBridgeFwk::InitBridge()
 
     BeAssert((m_bridge->_GetParams().GetRepositoryAdmin() == m_repoAdmin) && "Bridge must use the RepositoryAdmin that the fwk supplies");
 
-    LogPerformance(initBridge, "Inititalize the bridge.");
+    iModelBridge::LogPerformance(initBridge, "Inititalize the bridge.");
     return BentleyStatus::SUCCESS;
     }
 
@@ -1382,7 +1380,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     static PrintfProgressMeter s_meter;
     T_HOST.SetProgressMeter(&s_meter);
 
-    LogPerformance(setUpTimer, "Initialized iModelBridge Fwk");
+    iModelBridge::LogPerformance(setUpTimer, "Initialized iModelBridge Fwk");
 
     iModelCrashProcessor::GetInstance().SetRunInfo(m_jobEnvArgs.m_jobRequestId, m_jobEnvArgs.m_jobRunCorrelationId);
 
@@ -1393,7 +1391,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     if (BSISUCCESS != Briefcase_Initialize(argc, argv))
         return RETURN_STATUS_SERVER_ERROR;
 
-    LogPerformance(iModelHubSignIn, "Logging into iModelHub");
+    iModelBridge::LogPerformance(iModelHubSignIn, "Logging into iModelHub");
     }
     
     LOG.tracev(L"Logging into iModel Hub : Done");
@@ -1428,7 +1426,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
         return RETURN_STATUS_SERVER_ERROR;
         }
 
-    LogPerformance(briefcaseTime, "Getting iModel Briefcase from iModelHub");
+    iModelBridge::LogPerformance(briefcaseTime, "Getting iModel Briefcase from iModelHub");
     LOG.tracev(L"Setting up iModel Briefcase for processing  : Done");
     }
 
@@ -1438,7 +1436,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
         {
         StopWatch updateExistingBim(true);
         status = UpdateExistingBimWithExceptionHandling();
-        LogPerformance(updateExistingBim, "Updating Existing Bim file.");
+        iModelBridge::LogPerformance(updateExistingBim, "Updating Existing Bim file.");
         }
     catch (...)
         {
@@ -1588,7 +1586,7 @@ BentleyStatus   iModelBridgeFwk::TryOpenBimWithOptions(DgnDb::OpenParams& oparam
             return BSIERROR;
         }
 
-    LogPerformance(openBimWithProfileUpgrade, "TryOpenBimWithBisSchemaUpgrade");
+    iModelBridge::LogPerformance(openBimWithProfileUpgrade, "TryOpenBimWithBisSchemaUpgrade");
     return SUCCESS;
     }
 
