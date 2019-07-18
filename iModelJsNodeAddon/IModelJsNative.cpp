@@ -5082,6 +5082,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         Napi::Function t = DefineClass(env, "ECPresentationManager", {
             InstanceMethod("forceLoadSchemas", &NativeECPresentationManager::ForceLoadSchemas),
             InstanceMethod("setupRulesetDirectories", &NativeECPresentationManager::SetupRulesetDirectories),
+            InstanceMethod("setupSupplementalRulesetDirectories", &NativeECPresentationManager::SetupSupplementalRulesetDirectories),
             InstanceMethod("setupLocaleDirectories", &NativeECPresentationManager::SetupLocaleDirectories),
             InstanceMethod("setRulesetVariableValue", &NativeECPresentationManager::SetRulesetVariableValue),
             InstanceMethod("getRulesetVariableValue", &NativeECPresentationManager::GetRulesetVariableValue),
@@ -5232,8 +5233,15 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
 
     Napi::Value SetupRulesetDirectories(Napi::CallbackInfo const& info)
         {
-        REQUIRE_ARGUMENT_STRING_ARRAY(0, rulesetDirectories, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "rulesetDirectories")));
-        ECPresentationResult result = ECPresentationUtils::SetupRulesetDirectories(*m_presentationManager, rulesetDirectories);
+        REQUIRE_ARGUMENT_STRING_ARRAY(0, directories, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "directories")));
+        ECPresentationResult result = ECPresentationUtils::SetupRulesetDirectories(*m_presentationManager, directories);
+        return CreateReturnValue(result);
+        }
+
+    Napi::Value SetupSupplementalRulesetDirectories(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_ARGUMENT_STRING_ARRAY(0, directories, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "directories")));
+        ECPresentationResult result = ECPresentationUtils::SetupSupplementalRulesetDirectories(*m_presentationManager, directories);
         return CreateReturnValue(result);
         }
 

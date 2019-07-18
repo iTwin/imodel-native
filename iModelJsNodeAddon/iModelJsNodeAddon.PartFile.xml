@@ -42,8 +42,6 @@
     <ProductDirectory Name="Assemblies" Deliver="false" LibType="Static"/>
     <ProductDirectory Name="Assets" Path="Assets" RelativeTo="AddonRoot"/>
     <ProductDirectory Name="Assets" Path="Assets" RelativeTo="AddonRoot" LibType="Static"/>
-    <ProductDirectory Name="PresentationRules" Path="PresentationRules" RelativeTo="AddonRoot"/>
-    <ProductDirectory Name="PresentationRules" Path="PresentationRules" RelativeTo="AddonRoot" LibType="Static"/>
     <ProductDirectory Name="VendorNotices"  RelativeTo="AddonRoot" Path="Notices"/>
     <ProductDirectory Name="VendorNotices"  RelativeTo="AddonRoot" Path="Notices" LibType="static"/>
   </ProductDirectoryList>
@@ -58,9 +56,6 @@
         <Files SubPartDirectory="imodeljs-addon-build-tools">
             Delivery/IModelJsNative_input_libs.mki
         </Files>
-        <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
-            Delivery/PresentationRules/*.json
-        </Files>
     </Bindings>
   </Part>
 
@@ -71,9 +66,6 @@
     <SubPart PartName="iModelJsNativeLibSqlang"/>
     <Bindings>
       <Files ProductDirectoryName="Assemblies">Delivery/imodeljs.node</Files>
-      <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
-        Delivery/PresentationRules/*.json
-      </Files>
       <VendorNotices IfNotPresent="Continue">
         Delivery/breakpad_notice.txt,
         Delivery/libdisasm_notice.txt
@@ -92,9 +84,6 @@
     <SubPart PartName="iModelJsNativeLibSqlang"/>
     <Bindings>
         <Files ProductDirectoryName="StaticAssemblies">Delivery/imodeljs.node</Files>
-        <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
-          Delivery/PresentationRules/*.json
-        </Files>
     </Bindings>
   </Part>
 

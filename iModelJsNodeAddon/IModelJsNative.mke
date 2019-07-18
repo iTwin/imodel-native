@@ -178,11 +178,3 @@ DLM_NO_CONTEXT_LINK = 1
 #----------------------------------------------------------------------
 $(BuildContext)Delivery/imodeljs.node : $(BENTLEY_TOOLCONTEXT_LINK_OUT_NAME)
     $(LinkFirstDepToFirstTarget)
-
-#----------------------------------------------------------------------
-# Deliver Presentation Rules
-#----------------------------------------------------------------------
-always:
-    ~linkdir "$(BuildContext)Delivery/PresentationRules=$(baseDir)/Assets/PresentationRules"
-
-

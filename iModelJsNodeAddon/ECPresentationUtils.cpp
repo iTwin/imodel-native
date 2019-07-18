@@ -1191,9 +1191,6 @@ RulesDrivenECPresentationManager* ECPresentationUtils::CreatePresentationManager
     RulesDrivenECPresentationManager* manager = new RulesDrivenECPresentationManager(params);
     manager->SetLocalizationProvider(new IModelJsECPresentationLocalizationProvider());
 
-    BeFileName supplementalsDirectory = BeFileName(assetsDir).AppendToPath(L"PresentationRules");
-    manager->GetLocaters().RegisterLocater(*SupplementalRuleSetLocater::Create(*DirectoryRuleSetLocater::Create(supplementalsDirectory.GetNameUtf8().c_str())));
-
     return manager;
     }
 
@@ -1204,6 +1201,16 @@ ECPresentationResult ECPresentationUtils::SetupRulesetDirectories(RulesDrivenECP
     {
     Utf8String joinedDirectories = BeStringUtilities::Join(directories, ";");
     manager.GetLocaters().RegisterLocater(*DirectoryRuleSetLocater::Create(joinedDirectories.c_str()));
+    return ECPresentationResult();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPresentationResult ECPresentationUtils::SetupSupplementalRulesetDirectories(RulesDrivenECPresentationManager& manager, bvector<Utf8String> const& directories)
+    {
+    Utf8String joinedDirectories = BeStringUtilities::Join(directories, ";");
+    manager.GetLocaters().RegisterLocater(*SupplementalRuleSetLocater::Create(*DirectoryRuleSetLocater::Create(joinedDirectories.c_str())));
     return ECPresentationResult();
     }
 
