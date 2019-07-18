@@ -49,3 +49,12 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDIntersectionWithEditsTest)
     ASSERT_TRUE(RunTestApp(WCharCP(L"NewIntersection.dgn"), WCharCP(L"ORDIntersectionTest.bim"), true));
     VerifyConvertedElements("ORDIntersectionTest.bim", 9, 4);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                               Jonathan.DeCarlo                     07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CiviliModelBridgesORDBridgeTests, ORDAllOneConversionTest)
+    {
+    ASSERT_TRUE(RunTestApp(WCharCP(L"All-One.dgn"), WCharCP(L"ORDAllOneTest.bim"), false));
+    VerifyConvertedElements("ORDAllOneTest.bim", 11, 1);
+    }

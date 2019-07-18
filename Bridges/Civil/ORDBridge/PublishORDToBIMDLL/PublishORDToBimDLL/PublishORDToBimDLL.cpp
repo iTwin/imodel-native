@@ -20,6 +20,8 @@ USING_NAMESPACE_BENTLEY_DGN
 #define RESULT_ERROR_FAILED_TO_INITIALIZE_BRIDGE    0x1002
 #define RESULT_ERROR_GENERAL            BentleyStatus::ERROR
 
+static bool s_hostInitialized = false;
+
 int PublishORDToBimDLL::RunBridge(int argc, WCharCP argv[])
     {
     //Initialize
@@ -34,9 +36,11 @@ int PublishORDToBimDLL::RunBridge(int argc, WCharCP argv[])
     bool shouldTryUpdate = saparams.ShouldTryUpdate();
     saparams.SetShouldTryUpdate(true);
 
-    //We're keeping the hosts alive, so don't initialize hosts if we've already done so
-    if(&DgnViewLib::GetHost() == nullptr)
+    if (!s_hostInitialized)
+        {
         iModelBridgeSacAdapter::InitializeHost(*iModelBridgeP);
+        s_hostInitialized = true;
+        }
 
     // Testing affinity interface
     WChar buffer[_MAX_PATH];

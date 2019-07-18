@@ -19,9 +19,19 @@ struct TestKnownLocationsAdmin : DgnPlatformLib::Host::IKnownLocationsAdmin
     };
 
 //=======================================================================================
+//! @bsiclass
+//=======================================================================================
+struct TestViewManager : ViewManager
+    {
+    protected:
+        virtual Display::SystemContext* _GetSystemContext() override { return nullptr; }
+        virtual bool _DoesHostHaveFocus() override { return true; }
+    };
+
+//=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct ORDBridgeTestsHostImpl : DgnPlatformLib::Host
+struct ORDBridgeTestsHostImpl : DgnViewLib::Host
     {
     bool m_isInitialized;
 
@@ -33,6 +43,7 @@ struct ORDBridgeTestsHostImpl : DgnPlatformLib::Host
 
     virtual void _SupplyProductName(Utf8StringR name) override { name.assign("ORDBridgeTestsHostImpl"); }
     virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() { return BeSQLite::L10N::SqlangFiles(BeFileName()); } // no translatable strings
+    virtual ViewManager& _SupplyViewManager() override { return *new TestViewManager(); }
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -137,12 +148,42 @@ void ORDBridgeTestsHost::CleanOutputDirectory()
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Jonathan.DeCarlo                07/2019
+//---------------------------------------------------------------------------------------
+DgnPlatformLib::Host::IKnownLocationsAdmin& ORDBridgeTestsHost::_SupplyIKnownLocationsAdmin()
+    {
+    return m_pimpl->_SupplyIKnownLocationsAdmin();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Jonathan.DeCarlo                07/2019
+//---------------------------------------------------------------------------------------
+void ORDBridgeTestsHost::_SupplyProductName(Utf8StringR name)
+    {
+    m_pimpl->_SupplyProductName(name);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Jonathan.DeCarlo                07/2019
+//---------------------------------------------------------------------------------------
+BeSQLite::L10N::SqlangFiles ORDBridgeTestsHost::_SupplySqlangFiles()
+    {
+    return m_pimpl->_SupplySqlangFiles();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Jonathan.DeCarlo                07/2019
+//---------------------------------------------------------------------------------------
+Dgn::ViewManager& ORDBridgeTestsHost::_SupplyViewManager()
+    {
+    return m_pimpl->_SupplyViewManager();
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    11/2014
 //---------------------------------------------------------------------------------------
 ORDBridgeTestsHostImpl::ORDBridgeTestsHostImpl() : m_isInitialized(false)
     {
-    BeAssert((DgnPlatformLib::QueryHost() == NULL) && L"This means an old host is still registered. You should have terminated it first before creating a new host.");
-
     m_isInitialized = true;
     }
 
@@ -151,10 +192,6 @@ ORDBridgeTestsHostImpl::ORDBridgeTestsHostImpl() : m_isInitialized(false)
 //---------------------------------------------------------------------------------------
 ORDBridgeTestsHostImpl::~ORDBridgeTestsHostImpl()
     {
-    if (m_isInitialized)
-        {
-        Terminate(false);
-        }
     }
 
 ORDBridgeTestsHost* CiviliModelBridgesORDBridgeTestsFixture::m_host = nullptr;
@@ -227,11 +264,6 @@ bool CiviliModelBridgesORDBridgeTestsFixture::RunTestApp(WCharCP input, WCharCP 
         {
         if (!outputPath.DoesPathExist())
             BeAssert(false);
-
-        BeFileName syncInfoPath(outputPath);
-        syncInfoPath.AppendA(".imodelbridge_syncinfo");
-        if (!syncInfoPath.DoesPathExist())
-            BeAssert(false);
         }
 
     return retVal;
@@ -262,13 +294,14 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedElements(Utf8CP
         BRRP_SCHEMA(BRRP_CLASS_Corridor) " c ");
     BeAssert(stmt.IsPrepared());
 
-    if (corridorCount == 0)
-        BeAssert(DbResult::BE_SQLITE_DONE == stmt.Step());
+    DbResult stepResult = stmt.Step();
+    if (stepResult == DbResult::BE_SQLITE_DONE)
+        BeAssert(corridorCount == 0);
     else
         {
-        BeAssert(DbResult::BE_SQLITE_ROW == stmt.Step());
+		BeAssert(stepResult == DbResult::BE_SQLITE_ROW);
         BeAssert(corridorCount == stmt.GetValueInt(0));
-        }
+		}
 
     return dgnDbPtr;
     }

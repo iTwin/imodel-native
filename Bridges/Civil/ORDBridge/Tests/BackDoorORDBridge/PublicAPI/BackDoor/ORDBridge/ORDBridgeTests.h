@@ -6,15 +6,17 @@
 #include <RoadRailAlignment/RoadRailAlignmentApi.h>
 #include <RoadRailPhysical/RoadRailPhysicalApi.h>
 #include <ORDBridge/PublishORDToBimDLL.h>
+#include <DgnView/DgnViewLib.h>
 
 struct ORDBridgeTestsHostImpl;
 
 //=======================================================================================
 //! A DgnPlatformLib host that can be used with "Published" tests
 //=======================================================================================
-struct ORDBridgeTestsHost
+struct ORDBridgeTestsHost : BentleyB0200::Dgn::DgnViewLib::Host
 {
 friend struct CiviliModelBridgesORDBridgeTestsFixture;
+DEFINE_T_SUPER(BentleyB0200::Dgn::DgnViewLib::Host)
 
 private:
     ORDBridgeTestsHostImpl* m_pimpl;
@@ -31,6 +33,10 @@ public:
     WString* GetInputFileArgument(BeFileName inputPath, WCharCP input);
     WString* GetOutputFileArgument(BeFileName outputPath, WCharCP bimFileName);
     BeFileName BuildProjectFileName(WCharCP);
+    virtual Dgn::DgnPlatformLib::Host::IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override;
+    virtual void _SupplyProductName(Utf8StringR) override;
+    virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override;
+    virtual Dgn::ViewManager& _SupplyViewManager() override;
 };
 
 //=======================================================================================

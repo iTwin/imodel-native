@@ -147,8 +147,8 @@ extern "C" void iModelBridge_getAffinity(WCharP buffer, const size_t bufferSize,
         }    
 
     //DgnPlatformCivilLib::Unload();
-    //if (nullptr == threadHost)
-    //    DgnV8Api::DgnPlatformLib::ForgetHost();
+    if (nullptr == threadHost)
+        DgnV8Api::DgnPlatformLib::ForgetHost();
 
     _wputenv(originalPath.c_str());
     }
