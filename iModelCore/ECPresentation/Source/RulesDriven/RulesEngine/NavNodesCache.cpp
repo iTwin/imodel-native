@@ -21,6 +21,7 @@ USING_NAMESPACE_BENTLEY_LOGGING
 #define NAVNODES_CACHE_BINARY_INDEX
 //#define NAVNODES_CACHE_DEBUG
 #ifdef NAVNODES_CACHE_DEBUG
+    // binary index is hard to read - use string index when debugging
     #undef NAVNODES_CACHE_BINARY_INDEX
 #endif
 
@@ -260,10 +261,10 @@ static JsonNavNodePtr CreateNodeFromStatement(Statement& stmt, JsonNavNodesFacto
 
     node->SetNodeId(stmt.GetValueUInt64(4));
     node->SetIsExpanded(!stmt.IsColumnNull(5));
+    node->SetParentNodeId(stmt.IsColumnNull(1) ? 0 : stmt.GetValueUInt64(1));
 
     NavNodeExtendedData extendedData(*node);
-    if (!stmt.IsColumnNull(2))
-        extendedData.SetVirtualParentId(stmt.GetValueUInt64(2));
+    extendedData.SetVirtualParentId(stmt.IsColumnNull(2) ? 0 : stmt.GetValueUInt64(2));
 
     node->SetNodeKey(*NavNodesHelper::CreateNodeKey(connection, *node, stmt.GetValueText(6)));
 
@@ -305,6 +306,7 @@ static Utf8String GetSerializedJson(RapidJsonValueCR json)
     }
 
 static PropertySpec s_versionPropertySpec("Version", "HierarchyCache");
+#ifndef NAVNODES_CACHE_DEBUG
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -315,6 +317,25 @@ static BeVersion GetCacheVersion(BeSQLite::Db const& db)
         return BeVersion();
 
     return BeVersion(versionStr.c_str());
+    }
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static DbResult CreateCacheDb(BeSQLite::Db& db, BeFileNameCR path, DefaultTxn txnLockType)
+    {
+    DbResult result = db.CreateNewDb(path, BeGuid(), Db::CreateParams(Db::PageSize::PAGESIZE_4K, Db::Encoding::Utf8,
+        true, txnLockType, new NavigationCacheBusyRetry()));
+
+    if (BE_SQLITE_OK == result)
+        {
+        // save the cache version
+        static BeVersion s_cacheVersion(NAVNODES_CACHE_DB_VERSION_MAJOR, NAVNODES_CACHE_DB_VERSION_MINOR);
+        db.SaveProperty(s_versionPropertySpec, s_cacheVersion.ToString(), nullptr, 0);
+        }
+
+    return result;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -337,11 +358,16 @@ void NodesCache::Initialize(BeFileNameCR tempDirectory)
         path.AppendToPath(NAVNODES_CACHE_DB_NAME);
 
 #ifdef NAVNODES_CACHE_DEBUG
+        // don't use Exclusive lock so we can have a look at the DB while debugging
         DefaultTxn txnLockType = DefaultTxn::Yes;
 #else
         DefaultTxn txnLockType = DefaultTxn::Exclusive;
 #endif
 
+#ifdef NAVNODES_CACHE_DEBUG
+        // always create a new cache if debugging
+        path.BeDeleteFile();
+#else
         if (path.DoesPathExist())
             {
             result = m_db.OpenBeSQLiteDb(path, Db::OpenParams(Db::OpenMode::ReadWrite, txnLockType, new NavigationCacheBusyRetry()));
@@ -353,16 +379,10 @@ void NodesCache::Initialize(BeFileNameCR tempDirectory)
                 result = BE_SQLITE_ERROR_ProfileTooOld;
                 }
             }
+#endif
 
         if (BE_SQLITE_OK != result && BE_SQLITE_BUSY != result)
-            {
-            result = m_db.CreateNewDb(path, BeGuid(), Db::CreateParams(Db::PageSize::PAGESIZE_4K, Db::Encoding::Utf8,
-                true, txnLockType, new NavigationCacheBusyRetry()));
-
-            // save the cache version
-            static BeVersion s_cacheVersion(NAVNODES_CACHE_DB_VERSION_MAJOR, NAVNODES_CACHE_DB_VERSION_MINOR);
-            m_db.SaveProperty(s_versionPropertySpec, s_cacheVersion.ToString(), nullptr, 0);
-            }
+            result = CreateCacheDb(m_db, path, txnLockType);
 
         if (BE_SQLITE_BUSY == result)
             {
@@ -370,8 +390,7 @@ void NodesCache::Initialize(BeFileNameCR tempDirectory)
             Utf8PrintfString fileName("HierarchyCache.%s.db", BeGuid(true).ToString().c_str());
             path.AppendUtf8(fileName.c_str());
 
-            result = m_db.CreateNewDb(path, BeGuid(), Db::CreateParams(Db::PageSize::PAGESIZE_4K, Db::Encoding::Utf8, true,
-                txnLockType, new NavigationCacheBusyRetry()));
+            result = CreateCacheDb(m_db, path, txnLockType);
             m_tempCache = true;
             }
         }
@@ -531,6 +550,7 @@ NodesCache::NodesCache(BeFileNameCR tempDirectory, JsonNavNodesFactoryCR nodesFa
     m_statements(50), m_type(type), m_tempCache(false), m_ecsqlStamementCache(ecsqlStatements), m_sizeLimit(0)
     {
 #ifdef NAVNODES_CACHE_DEBUG
+    // always use Disk cache when debugging
     m_type = NodesCacheType::Disk;
 #endif
     Initialize(tempDirectory);
@@ -667,6 +687,9 @@ void NodesCache::OnConnectionClosed(IConnectionCR connection)
     stmt->BindUInt64(2, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
     stmt->BindText(3, connection.GetId().c_str(), Statement::MakeCopy::No);
     stmt->Step();
+
+    m_quickDataSourceCache.clear();
+    m_quickNodesCache.clear();
 
 #ifdef NAVNODES_CACHE_DEBUG
     Persist();
@@ -1969,6 +1992,20 @@ void NodesCache::ResetDataSource(DataSourceInfo const& info)
 #endif
     }
 
+#define FLAT_HIERARCHY_TABLE_NAME "flat_hierarchy"
+#define FLAT_HIERARCHY_COLUMN_NAME_NodeId "NodeId"
+#define WITH_FLAT_HIERARCHY \
+    "WITH RECURSIVE" \
+    "    " FLAT_HIERARCHY_TABLE_NAME "(" FLAT_HIERARCHY_COLUMN_NAME_NodeId ") AS ( " \
+    "        VALUES(?) " \
+    "        UNION ALL " \
+    "        SELECT n.Id " \
+    "        FROM [" NODESCACHE_TABLENAME_Nodes "] as n " \
+    "        JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [n].[DataSourceId] " \
+    "        JOIN [" NODESCACHE_TABLENAME_HierarchyLevels "] as hl ON [hl].[Id] = [ds].[HierarchyLevelId] " \
+    "        JOIN " FLAT_HIERARCHY_TABLE_NAME " as parent ON [hl].[VirtualParentNodeId] = [parent].[" FLAT_HIERARCHY_COLUMN_NAME_NodeId "] OR [parent].[" FLAT_HIERARCHY_COLUMN_NAME_NodeId "] IS NULL AND [hl].[VirtualParentNodeId] IS NULL " \
+    "    )"
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2004,15 +2041,18 @@ void NodesCache::ChangeVisibility(uint64_t nodeId, bool isVirtual, bool updateCh
                     "      FROM [" NODESCACHE_TABLENAME_HierarchyLevels "] parentHl "
                     "      JOIN [" NODESCACHE_TABLENAME_DataSources "] parentDs ON [parentDs].[HierarchyLevelId] = [parentHl].[Id] "
                     "      JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[DataSourceId] = [parentDs].[Id] "
-                    "     WHERE [n].[Id] = [" NODESCACHE_TABLENAME_HierarchyLevels "].[VirtualParentNodeId] "
+                    "     WHERE [n].[Id] = [" NODESCACHE_TABLENAME_HierarchyLevels "].[PhysicalParentNodeId] "
                     ") "
-                    "WHERE [VirtualParentNodeId] = ?";
+                    "WHERE [PhysicalParentNodeId] = ?";
             }
         else
             {
-            query = "UPDATE [" NODESCACHE_TABLENAME_HierarchyLevels "] "
-                    "SET [PhysicalParentNodeId] = [VirtualParentNodeId] "
-                    "WHERE [VirtualParentNodeId] = ?";
+            query = WITH_FLAT_HIERARCHY
+                    "UPDATE [" NODESCACHE_TABLENAME_HierarchyLevels "] "
+                    "SET [PhysicalParentNodeId] = ? "
+                    "WHERE [VirtualParentNodeId] IN ( "
+                    "    SELECT " FLAT_HIERARCHY_COLUMN_NAME_NodeId " FROM " FLAT_HIERARCHY_TABLE_NAME
+                    ")";
             }
         if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), query))
             {
@@ -2020,9 +2060,12 @@ void NodesCache::ChangeVisibility(uint64_t nodeId, bool isVirtual, bool updateCh
             return;
             }
         stmt->BindUInt64(1, nodeId);
+        stmt->BindUInt64(2, nodeId);
         stmt->Step();
         LoggingHelper::LogMessage(Log::NavigationCache, Utf8PrintfString("    Affected child data sources: %d", m_db.GetModifiedRowCount()).c_str());
         }
+
+    m_quickNodesCache.clear();
 
 #ifdef NAVNODES_CACHE_DEBUG
     Persist();
