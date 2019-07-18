@@ -1,7 +1,1 @@
 # Tests that should not be run
-
-CiviliModelBridgesORDBridgeTests.ORDHelloWorldGeometryConversionTest
-CiviliModelBridgesORDBridgeTests.ORDHelloWorldCorridorConversionTest
-CiviliModelBridgesORDBridgeTests.ORDIntersectionWithEditsTest
-ORDFullyFederatedConversionTest
-ORDIHLConversionTest

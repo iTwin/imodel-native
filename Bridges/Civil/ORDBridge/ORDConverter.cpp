@@ -1768,7 +1768,6 @@ void ORDConverter::SetCorridorDesignAlignments()
                 bimMainAlignmentPtr = AlignmentBim::Alignment::GetForEdit(GetDgnDb(), elementAndAspectId.elementId);
                 if (bimMainAlignmentPtr.IsValid())
                     {
-                    BeAssert(!bimMainAlignmentPtr->GetSource().IsValid()); // Alignment already associated with another Corridor
                     bimMainAlignmentPtr->SetSource(corridorCPtr.get());
                     bimMainAlignmentPtr->Update();
 
