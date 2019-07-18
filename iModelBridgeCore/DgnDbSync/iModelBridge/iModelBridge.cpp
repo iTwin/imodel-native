@@ -13,6 +13,7 @@
 #include "iModelBridgeLdClient.h"
 #include <Licensing/SaasClient.h>
 #include <WebServices/Configuration/UrlProvider.h>
+#include "Fwk/OidcToken.h"
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_LOGGING
@@ -1271,7 +1272,8 @@ BentleyStatus	iModelBridge::TrackUsage()
     //TODO: IF it is a saml token get a an OIDC token.
 
     Licensing::SaasClientPtr client = GetUlasClientInstance(clientInfo);
-    client->TrackUsage(token->ToAuthorizationString(),clientInfo->GetApplicationVersion(),_GetParams().GetProjectGuid());
+    bool isOidcTokan = NULL != dynamic_cast<OidcToken*>(token.get());
+    client->TrackUsage(token->ToAuthorizationString(),clientInfo->GetApplicationVersion(),_GetParams().GetProjectGuid(), isOidcTokan ? Licensing::AuthType::OIDC : Licensing::AuthType::SAML);
     return SUCCESS;
 	}
 

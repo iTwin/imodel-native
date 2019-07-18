@@ -10,6 +10,7 @@
 #include <WebServices/Connect/ConnectAuthenticationHandler.h>
 
 #include <Logging/bentleylogging.h>
+#include "Fwk/OidcTokenProvider.h"
 
 USING_NAMESPACE_BENTLEY_LOGGING
 
@@ -253,12 +254,18 @@ std::shared_ptr<BentleyApi::WebServices::ConnectAuthenticationHandler> iModelBri
     auto configurationHandler = UrlProvider::GetSecurityConfigurator(nullptr);
 
     Utf8String baseUrl = UrlProvider::Urls::ConnectProductSettingsService.Get();
+
+    auto tokenProvider = m_signInMgr->GetTokenProvider(baseUrl);
+    bool isSaml = true;
+    if (NULL != dynamic_cast<OidcTokenProvider*>(tokenProvider.get()))
+        isSaml = false;
+
     m_authHandler = ConnectAuthenticationHandler::Create
                         (
                             baseUrl,
-                            m_signInMgr->GetTokenProvider(baseUrl),
+                            tokenProvider,
                             configurationHandler,
-                            TOKENPREFIX_Token
+                            isSaml ? TOKENPREFIX_Token : TOKENPREFIX_BEARER
                         );
     m_authHandler->EnableExpiredTokenRefresh();
     return m_authHandler;

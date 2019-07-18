@@ -1396,15 +1396,16 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     
     LOG.tracev(L"Logging into iModel Hub : Done");
     //Initialize the settings.
-    Utf8String projectGuid, iModelGuid;
+    Utf8String iModelGuid;
     if (m_iModelHubArgs)
-        projectGuid = m_client->GetProjectId();
-
+         connectProjectId = m_client->GetProjectId();
+    if (!connectProjectId.empty())
+        m_iModelHubArgs->m_bcsProjectId = connectProjectId;//Store the guid instead of the name once we successfully log into iModelHub.
     auto iModelInfo = m_client->GetIModelInfo();
     if (iModelInfo.IsValid())
         iModelGuid = iModelInfo->GetId();
 
-    iModelBridgeSettings settings(m_client->GetConnectSignInManager(), m_jobEnvArgs.m_jobRunCorrelationId, iModelGuid.c_str(), projectGuid.c_str());
+    iModelBridgeSettings settings(m_client->GetConnectSignInManager(), m_jobEnvArgs.m_jobRunCorrelationId, iModelGuid.c_str(), connectProjectId.c_str());
     FwkContext context(settings);
     // Stage the workspace and input file if  necessary.
     LOG.tracev(L"Setting up workspace for standalone bridges");
