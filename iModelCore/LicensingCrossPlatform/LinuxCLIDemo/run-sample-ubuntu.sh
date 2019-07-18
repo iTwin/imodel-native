@@ -28,7 +28,7 @@ PullLinuxCLISource() {
 	if [ ${yn} == "n" ]; then
 		# get the proxy server
 		if ! [ -x "$(command -v svn)" ]; then
-			echo "Subversion not installed. Please install subverison. Reccomended command: sudo apt install subversion"
+			echo "Subversion not installed. Please install subverison. Recomended command: sudo apt install subversion"
 			exit 1
 		else
 			echo "Check out ntlmaps"
@@ -57,13 +57,13 @@ PullLinuxCLISource() {
 			read x
 		fi
 
-		echo "In the ~/.hgrc file, please replace ui.username your real Bentley login name. Press enter in this shell when you are done."
+		echo "In the ~/.hgrc file, please replace ui.username your real Bentley login name (must have read access to the bim02 repo). Press enter in this shell when you are done."
 		if [ -x "$(command -v vi)" ]; then
 			gnome-terminal -- vi ~/.hgrc
 		fi
 		read x
 
-		echo "In the ~/scripts/ntlmaps.cfg file, please replace USER with your real Bentley login name. Press enter in this shell when you are done."
+		echo "In the ~/scripts/ntlmaps.cfg file, please replace USER with your real Bentley login name (must have read access to the bim02 repo). Press enter in this shell when you are done."
 		if [ -x "$(command -v vi)" ]; then
 			gnome-terminal -- vi ~/scripts/ntlmaps.cfg
 		fi
@@ -77,8 +77,13 @@ PullLinuxCLISource() {
 	echo "Type in your Bentley password in the new shell that opened. This shell MUST remain open to pull the Sample App source. Press enter in this shell when you are done."
 	read x
 
-	echo "Cloning Licensing repo."
-	hg clone http://bim0200.hgbranches.bentley.com/selserver/LicensingCrossPlatform ./${srcdir}/LicensingCrossPlatform
+	if ! [ -x "$(command -v hg)" ]; then
+		echo "Mercurial is not installed. Please install mercurial and try again. Recommended command: sudo apt install mercurial"
+		exit 1
+	else
+		echo "Cloning Licensing repo."
+		hg clone http://bim0200.hgbranches.bentley.com/selserver/LicensingCrossPlatform ./${srcdir}/LicensingCrossPlatform
+	fi
 
 	if [ ! -f "${srcdir}/LinuxDemo.h" ]; then
 		cp ./${srcdir}/LicensingCrossPlatform/LinuxCLIDemo/LinuxDemo.h ./${srcdir}/LinuxDemo.h
