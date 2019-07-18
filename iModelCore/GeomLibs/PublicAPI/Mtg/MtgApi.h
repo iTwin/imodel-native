@@ -245,6 +245,14 @@ PolyfaceQueryCR  polyface,  //!< [in] source polyface
 bool ignoreDegeneracies   //!< [in] true to ignore degenerate edges (e.g. polar edges on sphere)
 );
 
+
+void  GEOMDLLIMPEXP MTGFacets_CollectFlowPaths
+(
+    MTGFacets &facets,
+    bvector<DPoint3d> const &startPoints,
+    bvector<bvector<DPoint3d>> &paths
+);
+
 /*-----------------------------------------------------------------*//**
 * @description Add MTGFacets to an indexed polyface.
 * @param [in] pFacets source facets
