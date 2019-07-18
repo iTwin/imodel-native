@@ -4,6 +4,8 @@
 #include <iostream>
 #include <sstream>
 #include <unistd.h>
+#include <termios.h>
+#include <stdio.h>
 
 #include <Bentley/Desktop/FileSystem.h>
 #include <BeHttp/HttpClient.h>
@@ -200,6 +202,52 @@ vector<string> ParseInput(string input)
 
     return result;
     }
+
+    // these functions are to hide password input when typed
+    int getch() 
+        {
+        int ch;
+        struct termios t_old, t_new;
+
+        tcgetattr(STDIN_FILENO, &t_old);
+        t_new = t_old;
+        t_new.c_lflag &= ~(ICANON | ECHO);
+        tcsetattr(STDIN_FILENO, TCSANOW, &t_new);
+
+        ch = getchar();
+
+        tcsetattr(STDIN_FILENO, TCSANOW, &t_old);
+        return ch;
+        }
+    string getpass(bool show_asterisk)
+        {
+        const char BACKSPACE=127;
+        const char RETURN=10;
+
+        string password;
+        unsigned char ch=0;
+
+        while((ch=getch())!=RETURN)
+            {
+            if(ch==BACKSPACE)
+                {
+                if(password.length()!=0)
+                    {
+                    if(show_asterisk)
+                        cout <<"\b \b";
+                    password.resize(password.length()-1);
+                    }
+                }
+            else
+                {
+                password+=ch;
+                if(show_asterisk)
+                    cout <<'*';
+                }
+            }
+        cout << endl;
+        return password;
+        }
 
 void Initialize()
     {
@@ -662,56 +710,7 @@ void CreateClient()
     getline(cin, email);
 
     cout << "Enter your password: ";
-    string password = "";
-    getline(cin, password);
-    // TODO: get this without displaying typed password (use functions below?):
-    // int getch() 
-    //     {
-    //     int ch;
-    //     struct termios t_old, t_new;
-
-    //     tcgetattr(STDIN_FILENO, &t_old);
-    //     t_new = t_old;
-    //     t_new.c_lflag &= ~(ICANON | ECHO);
-    //     tcsetattr(STDIN_FILENO, TCSANOW, &t_new);
-
-    //     ch = getchar();
-
-    //     tcsetattr(STDIN_FILENO, TCSANOW, &t_old);
-    //     return ch;
-    //     }
-
-    // string getpass(const char *prompt, bool show_asterisk=true)
-    //     {
-    //     const char BACKSPACE=127;
-    //     const char RETURN=10;
-
-    //     string password;
-    //     unsigned char ch=0;
-
-    //     cout <<prompt<<endl;
-
-    //     while((ch=getch())!=RETURN)
-    //         {
-    //         if(ch==BACKSPACE)
-    //             {
-    //             if(password.length()!=0)
-    //                 {
-    //                 if(show_asterisk)
-    //                 cout <<"\b \b";
-    //                 password.resize(password.length()-1);
-    //                 }
-    //             }
-    //         else
-    //             {
-    //             password+=ch;
-    //             if(show_asterisk)
-    //                 cout <<'*';
-    //             }
-    //         }
-    //     cout <<endl;
-    //     return password;
-    //     }
+    string password = getpass(true);
 
     // NOTE: qa2_devuser2@mailinator.com only works for product ID 2223 (2545 on desktop)
     //Http::Credentials credentials("qa2_devuser2@mailinator.com", "bentley");
