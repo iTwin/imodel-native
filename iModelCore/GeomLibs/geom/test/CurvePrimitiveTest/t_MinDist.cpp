@@ -175,8 +175,8 @@ TEST(CurveVector, ConstructPlanarMinimunRadiusCurve)
         195, 225, 255,
         285, 315, 345
         };
-    double degrees0[] = {15,45};
-    double degrees1[] = {-15, -45};
+    // unused - double degrees0[] = {15,45};
+    // unused - double degrees1[] = {-15, -45};
     for (double radiusB : {2.0, 1.0, 3.0})
         {
         for (double degreesA : manyDegrees)
@@ -257,8 +257,8 @@ TEST(CurveVector, ConstructSpaceMinimunRadiusCurve)
         195, 225, 255,
         285, 315, 345
         };
-    double degrees0[] = { 15,45 };
-    double degrees1[] = { -15, -45 };
+    // unused - double degrees0[] = { 15,45 };
+    // unused - double degrees1[] = { -15, -45 };
     for (double degreesA : manyDegrees)
         {
         auto radiansA = Angle::DegreesToRadians(degreesA);
