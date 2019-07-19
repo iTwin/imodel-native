@@ -16,7 +16,7 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 /*----------------------------------------------------------------------+
 | Every node has 0 to 16 labels.                                        |
 | Every label is an integer.                                            |
-| The graph header maintains a mask indicating special properties of    |
+| The graph header maintains amask indicating special properties of    |
 | each label.                                                           |
 +----------------------------------------------------------------------*/
 

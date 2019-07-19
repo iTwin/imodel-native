@@ -154,3 +154,44 @@ TEST(Polyface,PunchSymmetric)
     Check::SaveTransformed (outside);
     Check::ClearGeometry ("Polyface.PunchSymmetric");
     }
+
+TEST(Polyface, FlowLines)
+    {
+    // Sort of a dtm ...
+    size_t numX = 21;
+    size_t numY = 21;
+    auto dtm = PolyfaceWithSinusoidalGrid(numX, numY, 0.02, 0.6, 0.3, -0.35);
+    dtm->ConvertToVariableSizeSignedOneBasedIndexedFaceLoops();
+    Check::SaveTransformed(*dtm);
+
+    // place somse start points on some ellipses ...
+    double z = 1.5;
+    double rx = numX * 0.45;
+    double ry = numY * 0.35;
+    DPoint3d center = DPoint3d::From ((numX - 1) * 0.5, (numY - 1) * 0.5, z);
+    bvector<DPoint3d> startPoints;
+    for (double lambda : {1.0, 0.8, 0.6, 0.3})
+        {
+        for (double degrees = 0.0; degrees < 360.0; degrees += 10)
+            {
+            double radians = Angle::DegreesToRadians (degrees);
+            DPoint3d xyz1 = center + DVec3d::From(lambda * rx * cos(radians), lambda * ry * sin(radians), 0);
+            DPoint3d xyz0 = DPoint3d::From (xyz1.x, xyz1.y, -z);
+            startPoints.push_back(xyz1);
+            Check::SaveTransformed (DSegment3d::From (xyz0, xyz1));
+            }
+        }
+    MTGFacets mtgFacets;
+    double dz = 0.01;
+    if (Check::True (PolyfaceToMTG_FromPolyfaceConnectivity(&mtgFacets, *dtm)))
+        {
+        bvector<bvector<DPoint3d>> paths;
+        MTGFacets_CollectFlowPaths (mtgFacets, startPoints, paths);
+        // Shift the paths upward in z to make them visible slightly above the facets.
+        Check::Shift (0,0,dz);
+        Check::SaveTransformed (paths);
+        Check::Shift(0, 0, -dz);
+        }
+
+    Check::ClearGeometry("Polyface.FlowLines");
+    }
