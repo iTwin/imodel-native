@@ -435,6 +435,15 @@ BentleyStatus XRefLoader::LoadXrefsInMasterFile ()
         // if the block is an xRef, load the file and cache the dwg:
         if (block->IsExternalReference())
             {
+            // skip unreferenced file
+            auto xrefStatus = block->GetXrefStatus ();
+            if (xrefStatus == DwgDbXrefStatus::Unreferenced)
+                {
+                Utf8String  path(block->GetPath().c_str());
+                m_importer.ReportIssue (DwgImporter::IssueSeverity::Info, IssueCategory::Filtering(), Issue::XrefFileSkipped(), path.c_str());
+                continue;
+                }
+
             DwgImporter::DwgXRefHolder  xref(*block, m_importer);
             if (xref.IsValid())
                 {
@@ -503,10 +512,18 @@ BentleyStatus XRefLoader::CacheUnresolvedXrefs ()
 
             if (block->IsExternalReference())
                 {
+                // skip unreferenced file
+                auto xrefPath = block->GetPath().c_str();
+                auto xrefStatus = block->GetXrefStatus ();
+                if (xrefStatus == DwgDbXrefStatus::Unreferenced)
+                    {
+                    m_importer.ReportIssue (DwgImporter::IssueSeverity::Info, IssueCategory::Filtering(), Issue::XrefFileSkipped(), Utf8String(xrefPath).c_str());
+                    continue;
+                    }
+
                 if (!this->IsXrefAlreadyLoaded(*block))
                     {
                     BeFileName  foundPath;
-                    auto xrefPath = block->GetPath().c_str();
                     if (DwgImportHost::GetHost()._FindFile(foundPath, xrefPath, &dwg, AcadFileType::XRefDrawing) == DwgDbStatus::Success)
                         unresolvedXrefs.insert (foundPath);
                     else

@@ -2060,6 +2060,44 @@ bool DwgHelper::IsElementOwnedByJobSubject(DgnDbCR db, DgnElementId checkId, Dgn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          06/19
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool DwgHelper::IsNonPlanarAsmObject (DwgDbEntityCP entity)
+    {
+    if (entity == nullptr)
+        return  false;
+    // None planar ASM entity types
+    return  DwgDb3dSolid::Cast(entity) != nullptr ||
+            DwgDbBody::Cast(entity) != nullptr ||
+            DwgDbSurface::Cast(entity) != nullptr ||
+            DwgDbExtrudedSurface::Cast(entity) != nullptr ||
+            DwgDbLoftedSurface::Cast(entity) != nullptr ||
+            DwgDbNurbSurface::Cast(entity) != nullptr ||
+            DwgDbRevolvedSurface::Cast(entity) != nullptr ||
+            DwgDbSweptSurface::Cast(entity) != nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DwgHelper::IsPlanarAsmObject (DwgDbEntityCP entity)
+    {
+    // Planar ASM entity types
+    return  DwgDbRegion::Cast(entity) != nullptr || DwgDbPlaneSurface::Cast(entity) != nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DwgHelper::IsAsmObject (DwgDbEntityCP entity)
+    {
+    if (entity == nullptr)
+        return  false;
+    // All ASM entity types
+    return  DwgHelper::IsNonPlanarAsmObject(entity) || DwgHelper::IsPlanarAsmObject(entity);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          06/19
++---------------+---------------+---------------+---------------+---------------+------*/
 SubjectCPtr DwgHelper::FindModelSubject(SubjectCR parent, Utf8StringCR modelName, Json::Value const& modelProps, DgnDbCR db)
     {
     for (auto id : parent.QueryChildren())

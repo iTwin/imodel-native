@@ -54,6 +54,7 @@ IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START (Issue, dwg_issue)
     L10N_STRING(FatalError)                  // =="A fatal error is stopping the conversion: %s"==
     L10N_STRING(ProgramExits)                // =="The importer must exit due to a fatal error!"==
     L10N_STRING(XrefFileFilteredOut)         // =="Xref file [%s] was not converted."==
+    L10N_STRING(XrefFileSkipped)             // =="Unreferenced Xref file [%s] was skipped."==
     L10N_STRING(FileInUse)                   // =="File [%s] is in use"==
     L10N_STRING(FileNotFound)                // =="File [%s] was not found"==
     L10N_STRING(FileReadOnly)                // =="The file is read-only"==

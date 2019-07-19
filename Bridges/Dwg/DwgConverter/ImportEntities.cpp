@@ -1813,32 +1813,19 @@ virtual void    _Draw (DwgGiDrawableR drawable) override
 
     // we want to use "this" factory to collect sub-entities, so override "this" sub-entity traits:
     DrawParameters  savedParams = m_drawParams;
+    DwgGiRegenType  savedRegentype = m_geometryOptions->_GetRegenType ();
+    DwgDbEntityP    entity = nullptr;
     DwgDbEntityPtr  child(drawable.GetId(), DwgDbOpenMode::ForRead);
-    if (!child.IsNull())
+    if (child.OpenStatus() == DwgDbStatus::Success)
         {
-        // don't bother to add invisible primitives.
-        if (DwgDbVisibility::Invisible == child->GetVisibility())
+        /*-------------------------------------------------------------------------------
+        We are drawing a child entity of current block in the draw stack.
+        Trivial reject the child as necessary, or create geometry from it if it has an
+        protocal extention; otherwise prepare for the next draw call in the stack.
+        -------------------------------------------------------------------------------*/
+        entity = child.get ();
+        if (!this->PreprocessBlockChildGeometry(entity))
             return;
-        // trivial reject the entity if it is clipped away as a whole
-        if (nullptr != m_spatialFilter && m_spatialFilter->IsEntityFilteredOut(*child.get()))
-            return;
-        // skip this entity if it should not be drawn
-        if (this->SkipBlockChildGeometry(child.get()))
-            return;
-
-        // give protocal extensions a chance to create their own geometry:
-        if (this->CreateBlockChildGeometry(child.get()) == BSISUCCESS)
-            return;
-
-        m_drawParams.Initialize (*child.get(), &savedParams);
-
-        // gradient fill causes world/viewportDraw to create mesh - remove gradient by setting the hatch as a solid fill:
-        DwgDbHatchP hatch = DwgDbHatch::Cast (child.get());
-        if (nullptr != hatch && hatch->IsGradient() && DwgDbStatus::Success == hatch->UpgradeOpen())
-            {
-            hatch->SetPattern (DwgDbHatch::PatternType::PreDefined, DwgString(L"SOLID"));
-            hatch->DowngradeOpen ();
-            }
         }
 
     // draw a primitive - could be a child entity, a primitive of an exploded parenty geometry, etc:
@@ -1853,15 +1840,55 @@ virtual void    _Draw (DwgGiDrawableR drawable) override
         }
 
     // for a nested a block reference followed by attributes, draw attributes now:
-    DwgDbEntityP    entity = child.get ();
     if (nullptr != entity)
         {
         DwgDbBlockReferenceCP   blockRef = DwgDbBlockReference::Cast (entity);
         if (nullptr != blockRef)
             this->DrawBlockAttributes (*blockRef);
 
+        // restore params & options for next child or popping back to previous draw stack
         m_drawParams.CopyFrom (savedParams);
+        m_geometryOptions->SetRegenType (savedRegentype);
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    PreprocessBlockChildGeometry (DwgDbEntityP entity)
+    {
+    if (entity == nullptr)
+        return  false;
+
+    // don't bother to add invisible primitives.
+    if (DwgDbVisibility::Invisible == entity->GetVisibility())
+        return  false;
+    // trivial reject the entity if it is clipped away as a whole
+    if (nullptr != m_spatialFilter && m_spatialFilter->IsEntityFilteredOut(*entity))
+        return  false;
+    // skip this entity if it should not be drawn
+    if (this->SkipBlockChildGeometry(entity))
+        return  false;
+
+    // give protocal extensions a chance to create their own geometry:
+    if (this->CreateBlockChildGeometry(entity) == BSISUCCESS)
+        return  false;
+
+    m_drawParams.Initialize (*entity, &m_drawParams);
+
+    // tell the toolkit to draw a failed ASM body as renderable geometry
+    if (DwgHelper::IsAsmObject(entity))
+        m_geometryOptions->SetRegenType (DwgGiRegenType::RenderCommand);
+
+    // gradient fill causes world/viewportDraw to create mesh - remove gradient by setting the hatch as a solid fill:
+    DwgDbHatchP hatch = DwgDbHatch::Cast (entity);
+    if (nullptr != hatch && hatch->IsGradient() && DwgDbStatus::Success == hatch->UpgradeOpen())
+        {
+        hatch->SetPattern (DwgDbHatch::PatternType::PreDefined, DwgString(L"SOLID"));
+        hatch->DowngradeOpen ();
+        }
+
+    return  true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1895,7 +1922,7 @@ BentleyStatus   CreateBlockChildGeometry (DwgDbEntityCP entity)
         return  BSIERROR;
 
     // trivial reject 3D elements in a 2D model
-    if (m_isTargetModel2d && DwgBrepExt::Cast(objExt) != nullptr && DwgDbRegion::Cast(entity) == nullptr && DwgDbPlaneSurface::Cast(entity) == nullptr)
+    if (m_isTargetModel2d && DwgBrepExt::Cast(objExt) != nullptr && !DwgHelper::IsPlanarAsmObject(entity))
         return  BSIERROR;
 
     auto geom = objExt->_ConvertToGeometry (entity, m_drawParams.GetDwgImporter());
@@ -3297,17 +3324,8 @@ bool            DwgImporter::_FilterEntity (ElementImportInputs& inputs) const
         return  true;
 
     // trivial reject 3D elements in a 2D model
-    if (!inputs.GetTargetModel().Is3d())
-        {
-        if (DwgDb3dSolid::Cast(entity) != nullptr ||
-            DwgDbBody::Cast(entity) != nullptr ||
-            DwgDbExtrudedSurface::Cast(entity) != nullptr ||
-            DwgDbLoftedSurface::Cast(entity) != nullptr ||
-            DwgDbNurbSurface::Cast(entity) != nullptr ||
-            DwgDbRevolvedSurface::Cast(entity) != nullptr ||
-            DwgDbSweptSurface::Cast(entity) != nullptr)
-            return  true;
-        }
+    if (!inputs.GetTargetModel().Is3d() && DwgHelper::IsNonPlanarAsmObject(entity))
+        return  true;
 
     return  false;
     }

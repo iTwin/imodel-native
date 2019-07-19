@@ -466,7 +466,7 @@ enum class DwgDbStatus
     NotSupported,
     UrlCacheError,
     NotPersistentObject,
-    };
+    };  // DwgDbStatus
 #define ToDwgDbStatus(status)   static_cast<DwgDbStatus> (##status)
 
 enum class DwgFileVersion
@@ -520,14 +520,14 @@ enum class DwgDbLineWeight
     WeightByLayer               = -1,
     WeightByBlock               = -2,
     WeightByDefault             = -3
-    };
+    };  // DwgDbLineWeight
 
 enum class DwgDbOpenMode
     {
     ForRead                     = 0,
     ForWrite                    = 1,
     ForNotify                   = 2
-    };
+    };  // DwgDbOpenMode
 #define ToDwgDbOpenMode(mode)   DWGDB_CASTFROMENUM_DB(OpenMode)(mode)   // from Toolkit
 #define FromDwgDbOpenMode(mode) DWGDB_CASTTOENUM_DB(OpenMode)(mode)     // to Toolkit
 
@@ -535,7 +535,7 @@ enum class DwgDbVisibility
     {
     Visible                     = 0,
     Invisible                   = 1
-    };
+    };  // DwgDbVisibility
 
 enum class DwgDbUnits           // == AcDb::UnitsValue
     {
@@ -575,7 +575,7 @@ enum class DwgDbLUnitFormat
     Architectural               = 4,
     Fractional                  = 5,
     WindowsDesktop              = 6,            // use Windows control panel settings.
-    };
+    };  // DwgDbLUnitFormat
 
 enum class DwgDbAngularUnits
     {
@@ -584,14 +584,14 @@ enum class DwgDbAngularUnits
     Gradians                    = 2,
     Radians                     = 3,
     Bearing                     = 4,
-    };
+    };  // DwgDbAngularUnits
 
 enum class DwgDbLightingUnits
     {
     None                        = 0,
     American                    = 1,    // US lighting units (foot-candles)
     International               = 2,    // International lighting units (lux)
-    };
+    };  // DwgDbLightingUnits
 
 enum class DwgDbPlotStyleNameType
     {
@@ -599,7 +599,7 @@ enum class DwgDbPlotStyleNameType
     ByBlock                     = 1,
     IsDictDefault               = 2,
     ById                        = 3,
-    };
+    };  // DwgDbPlotStyleNameType
 
 enum class DwgFilerType
     {
@@ -613,7 +613,7 @@ enum class DwgFilerType
     IdFiler,
     PurgeFiler,
     WblockCloneFiler
-    };
+    };  // DwgFilerType
 
 enum class DxfGroupCode
     {
@@ -807,7 +807,7 @@ enum class SnapIsoPair
     LeftIsoplane            = 0,
     TopIsoplane             = 1,
     RightIsoplane           = 2
-    };  // snapIsoPair
+    };  // SnapIsoPair
 
 enum class DwgDbXrefStatus
     {
@@ -817,7 +817,7 @@ enum class DwgDbXrefStatus
     Unreferenced            = DWGDB_SDKENUM_DB(kXrfUnreferenced),
     FileNotFound            = DWGDB_SDKENUM_DB(kXrfFileNotFound ),
     Unresolved              = DWGDB_SDKENUM_DB(kXrfUnresolved),
-    };  // XrefStatus
+    };  // DwgDbXrefStatus
 
 // platform types commonly used across OpenDWG & RealDWG
 typedef DWGDB_SDKNAME(bool,     Adesk::Boolean)     DwgDbBool;
