@@ -850,7 +850,7 @@ static ECObjectsStatus ExtractUnitFormatAndMap(Utf8StringR unitName, Utf8StringR
     unitName = Units::UnitNameMappings::TryGetECNameFromNewName(unitName.c_str());
     if (unitName.empty())
         {
-        LOG.errorv("Failed to find unit mapping for unit with name '%s' in legacy unit mappings", unitName.c_str());
+        LOG.errorv("Failed to find unit mapping for unit parsed from legacy descriptor '%s' in legacy unit mappings", descriptor);
         return ECObjectsStatus::InvalidUnitName;
         }
     Utf8CP mappedName = formatName.c_str();;
