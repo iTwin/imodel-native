@@ -245,7 +245,18 @@ PolyfaceQueryCR  polyface,  //!< [in] source polyface
 bool ignoreDegeneracies   //!< [in] true to ignore degenerate edges (e.g. polar edges on sphere)
 );
 
-
+//!-----------------------------------------------------------------
+//! For each start point:
+//! <ul>
+//! <li>Find the containing face.
+//! <li>Move in the direction of steepest descent, stepping from facet to facet until a low point is reached.
+//! <li>Return the path as an array in paths.
+//! </ul>
+//! @param facets facets to search.
+//! @param startPoints array of start points.
+//! @param paths array of arrays, each leaf array being a path from one start point.
+//!
+//!*----------------------------------------------------------------
 void  GEOMDLLIMPEXP MTGFacets_CollectFlowPaths
 (
     MTGFacets &facets,
