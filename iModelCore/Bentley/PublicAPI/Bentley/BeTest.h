@@ -495,6 +495,7 @@ BENTLEYDLL_EXPORT static void Fail(WCharCP msg = L"");
 //! It automatically adds Test case name and Test name. You will need to provide time in seconds, number of operations, some additional details and whether the additional details string should be wrapped in quotes or not.Last three arguments are optional.
 //! All entries go into PerformanceResult.csv which is located in your Performance test runners' run\Output\\PerformanceTestResults folder.
 #define LOGTODB PerformanceResultRecorder::WriteResults
+#define LOGPERFDB PerformanceResultRecorder::WriteResultsPerf
 #define PERFORMANCELOG (*NativeLogging::LoggingManager::GetLogger(L"Performance"))
 #define TEST_FIXTURE_NAME BeTest::GetNameOfCurrentTestCase()
 #define TEST_NAME BeTest::GetNameOfCurrentTest()
@@ -512,6 +513,7 @@ private:
 
 public:
     BENTLEYDLL_EXPORT static void WriteResults(Utf8CP testcaseName, Utf8CP testName, double timeInSeconds, int opCount = -1, Utf8CP testDescription = "", bool quoteTestDecription = false , Utf8String opType ="" , int initialCount=-1);
+    BENTLEYDLL_EXPORT static void WriteResultsPerf(Utf8CP testcaseName, Utf8CP testName, double timeInSeconds, Utf8CP info);
 };
 
 #define EXPECT_CONTAINS(container, value)                                       \

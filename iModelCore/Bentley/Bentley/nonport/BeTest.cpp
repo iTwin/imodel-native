@@ -1191,3 +1191,31 @@ void PerformanceResultRecorder::WriteResults(Utf8CP testcaseName, Utf8CP testNam
     fclose(logFile);
 }
 
+/*---------------------------------------------------------------------------------**//**
+* Writes time to a csv file in newer format for reporting
+*@bsimethod                                            Majd.Uddin          07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void PerformanceResultRecorder::WriteResultsPerf(Utf8CP testcaseName, Utf8CP testName, double timeInSeconds, Utf8CP info)
+{
+    FILE* logFile = nullptr;
+
+    BeFileName dir;
+    BeTest::GetHost().GetOutputRoot(dir);
+    dir.AppendToPath(L"PerfTestResults");
+    if (!dir.DoesPathExist())
+        BeFileName::CreateNewDirectory(dir.c_str());
+
+    dir.AppendToPath(L"PerfResults.csv");
+
+    bool existingFile = dir.DoesPathExist();
+
+    logFile = fopen(dir.GetNameUtf8().c_str(), "a+");
+    PERFORMANCELOG.infov(L"CSV Results filename: %ls\n", dir.GetName());
+
+    if (!existingFile)
+        fprintf(logFile, "TestSuite,TestName,ValueDescription,Value,Date,Info\n");
+
+    fprintf(logFile, "%s,%s,%s,%.6lf,%s,%s\n", testcaseName, testName, "ExecutionTime", timeInSeconds, DateTime::GetCurrentTimeUtc().ToString().c_str(), info);
+    fclose(logFile);
+}
+
