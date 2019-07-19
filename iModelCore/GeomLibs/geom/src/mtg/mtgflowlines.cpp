@@ -105,12 +105,12 @@ struct MTGPositionDetail
     //! @return MTGPositionDetail for this instance's edge mate;
     //!    The returned MTGPositionDetail's edgeFraction is {1 - this->EdgeFraction ())
     //!    to properly identify the "same" position relative to the other side.
-    MTGPositionDetail EdgeMate (MTGGraphCP graph) const
+    MTGPositionDetail EdgeMate (MTGGraph & graph) const
         {
         MTGPositionDetail result = *this;
         if (m_nodeId == MTG_NULL_NODEID)
             return result;
-        result.m_nodeId = graph->EdgeMate (m_nodeId);
+        result.m_nodeId = graph.EdgeMate (m_nodeId);
         if (m_edgeFraction != DBL_MAX)
             result.m_edgeFraction = 1.0 - m_edgeFraction;
         return result;
@@ -150,57 +150,32 @@ typedef MTGPositionDetail const * MTGPositionDetailCP;
 struct FlowLinesContext
 {
 private:
-MTGFacetsP m_facets;
-MTGGraphP m_graph;
+// REFERENCE (not owned) to subject facets.
+MTGFacets & m_facets;
+// REFERENCE (not owned) to graph of subject facets
+MTGGraph & m_graph;
 public:
 
-FlowLinesContext ()
-    : m_facets (NULL), m_graph (NULL)
+FlowLinesContext (MTGFacets & facets)
+    : m_facets (facets), m_graph (facets.graphHdr)
     {
-    }
-
-FlowLinesContext (MTGFacetsP facets)
-    : m_facets (NULL), m_graph (NULL)
-    {
-    SetFacets (facets);
     }
 
 ~FlowLinesContext ()
     {
-    SetFacets (NULL);
-    }
-
-// Install facets pointer for later use.
-// These facets will be freed in destructor !!!
-void SetFacets (MTGFacetsP facets)
-    {
-    jmdlMTGFacets_free (m_facets);
-    m_graph = NULL;
-    m_facets = facets;
-    if (m_facets != NULL)
-        m_graph = jmdlMTGFacets_getGraph (m_facets);
-    }
-
-MTGFacetsP GrabFacets ()
-    {
-    MTGFacetsP stash = m_facets;
-    m_facets = NULL;
-    m_graph = NULL;
-    return stash;
     }
 
 private:
 bool GetNormalAtNode (MTGNodeId nodeId, DVec3dR normal)
     {
-    MTGGraphP graph = jmdlMTGFacets_getGraph (m_facets);
-    if (graph->GetMaskAt (nodeId, MTG_EXTERIOR_MASK))
+    if (m_graph.GetMaskAt (nodeId, MTG_EXTERIOR_MASK))
         return false;
-    MTGNodeId nodeIdA = graph->FSucc (nodeId);
-    MTGNodeId nodeIdB = graph->FPred (nodeId);
+    MTGNodeId nodeIdA = m_graph.FSucc (nodeId);
+    MTGNodeId nodeIdB = m_graph.FPred (nodeId);
     DPoint3d xyzOrigin, xyzA, xyzB;
-    jmdlMTGFacets_getNodeCoordinates (m_facets, &xyzOrigin, nodeId);
-    jmdlMTGFacets_getNodeCoordinates (m_facets, &xyzA, nodeIdA);
-    jmdlMTGFacets_getNodeCoordinates (m_facets, &xyzB, nodeIdB);
+    xyzOrigin = m_facets.GetXYZ (nodeId);
+    xyzA = m_facets.GetXYZ(nodeIdA);
+    xyzB = m_facets.GetXYZ(nodeIdB);
     normal.CrossProductToPoints (xyzOrigin, xyzA, xyzB);
     return true;
     }
@@ -212,14 +187,13 @@ bool MinZAroundFace (MTGNodeId faceNodeId, MTGPositionDetailR minZDetail)
         return false;
 
     double minZ = DBL_MAX;
-    MTGARRAY_FACE_LOOP (currNodeId, m_graph, faceNodeId)
+    MTGARRAY_FACE_LOOP (currNodeId, &m_graph, faceNodeId)
         {
-        DPoint3d xyz;
-        jmdlMTGFacets_getNodeCoordinates (m_facets, &xyz, currNodeId);
+        DPoint3d xyz = m_facets.GetXYZ (currNodeId);
         if (xyz.z < minZ)
             minZDetail = MTGPositionDetail::FromVertex (currNodeId, xyz);
         }
-    MTGARRAY_END_FACE_LOOP (currNodeId, m_graph, faceNodeId)
+    MTGARRAY_END_FACE_LOOP (currNodeId, &m_graph, faceNodeId)
     return minZDetail.HasNodeId ();
     }
 
@@ -227,10 +201,9 @@ MTGPositionDetail MinZAlongEdge (MTGNodeId tailNodeId)
     {
     if (tailNodeId == MTG_NULL_NODEID)
         return MTGPositionDetail ();
-    DPoint3d xyz0, xyz1;
-    jmdlMTGFacets_getNodeCoordinates (m_facets, &xyz0, tailNodeId);
-    MTGNodeId headNodeId = m_graph->FSucc (tailNodeId);
-    jmdlMTGFacets_getNodeCoordinates (m_facets, &xyz1, headNodeId);
+    DPoint3d xyz0 = m_facets.GetXYZ (tailNodeId);
+    MTGNodeId headNodeId = m_graph.FSucc (tailNodeId);
+    DPoint3d xyz1 = m_facets.GetXYZ(headNodeId);
     return xyz0.z <= xyz1.z
             ? MTGPositionDetail::FromVertex (tailNodeId, xyz0)
             : MTGPositionDetail::FromVertex (headNodeId, xyz1);
@@ -252,11 +225,11 @@ MTGPositionDetail MinZAroundFaceOnSteepestDescent (MTGPositionDetailCR seedPos)
     DPoint3d xyzA, xyzB;
     MTGNodeId seedNodeId = seedPos.NodeId ();
     DPoint3d seedXYZ = seedPos.XYZ ();
-    MTGARRAY_FACE_LOOP (nodeIdA, m_graph, seedNodeId)
+    MTGARRAY_FACE_LOOP (nodeIdA, &m_graph, seedNodeId)
         {
-        MTGNodeId nodeIdB = m_graph->FSucc (nodeIdA);
-        jmdlMTGFacets_getNodeCoordinates (m_facets, &xyzA, nodeIdA);
-        jmdlMTGFacets_getNodeCoordinates (m_facets, &xyzB, nodeIdB);
+        MTGNodeId nodeIdB = m_graph.FSucc (nodeIdA);
+        xyzA = m_facets.GetXYZ (nodeIdA);
+        xyzB = m_facets.GetXYZ(nodeIdB);
         double hA = xyzA.DotDifference (seedXYZ, cutNormal);
         double hB = xyzB.DotDifference (seedXYZ, cutNormal);
         if (hA * hB < 0.0)
@@ -268,7 +241,7 @@ MTGPositionDetail MinZAroundFaceOnSteepestDescent (MTGPositionDetailCR seedPos)
                 result = MTGPositionDetail::FromEdge (nodeIdA, xyz, f);
             }
         }
-    MTGARRAY_END_FACE_LOOP (nodeIdA, m_graph, seedNodeId)
+    MTGARRAY_END_FACE_LOOP (nodeIdA, &m_graph, seedNodeId)
     return result;
     }
 
@@ -314,10 +287,9 @@ MTGPositionDetail MinZFromVertexOnSteepestDescent (MTGPositionDetailCR seedPos)
         return result;
     double minAngle = DBL_MAX;
     MTGNodeId seedNodeId = seedPos.NodeId ();
-    MTGARRAY_VERTEX_LOOP (nodeId, m_graph, seedNodeId)
+    MTGARRAY_VERTEX_LOOP (nodeId, &m_graph, seedNodeId)
         {
-        DPoint3d xyz;
-        jmdlMTGFacets_getNodeCoordinates (m_facets, &xyz, nodeId);  // should be same xyz all the way around
+        DPoint3d xyz = m_facets.GetXYZ (nodeId);
         MTGPositionDetail vertexPos = MTGPositionDetail::FromVertex (nodeId, xyz);
         MTGPositionDetail edgeCandidate = MinZAlongEdge (nodeId);
         MTGPositionDetail faceCandidate = MinZAroundFaceOnSteepestDescent (vertexPos);
@@ -326,7 +298,7 @@ MTGPositionDetail MinZFromVertexOnSteepestDescent (MTGPositionDetailCR seedPos)
         MTGPositionDetail::UpdateMinimizer (result, minAngle, edgeCandidate, edgeAngle);
         MTGPositionDetail::UpdateMinimizer (result, minAngle, faceCandidate, faceAngle);
         }
-    MTGARRAY_END_VERTEX_LOOP (nodeId, m_graph, seedNodeId)
+    MTGARRAY_END_VERTEX_LOOP (nodeId, &m_graph, seedNodeId)
 
     return result;
     }
@@ -375,14 +347,11 @@ void FollowFlowFromNodeAndPoint (MTGPositionDetailCR seedPos, bvector<DPoint3d> 
 bool FaceContainsPoint (MTGNodeId faceSeedNodeId, DPoint3dCR testXYZ, MTGPositionDetailR faceDetail)
     {
     faceDetail = MTGPositionDetail ();
-    MTGGraphP graph = jmdlMTGFacets_getGraph (m_facets);
-    MTGNodeId nodeIdA = graph->FSucc (faceSeedNodeId);
-    MTGNodeId nodeIdB = graph->FSucc (nodeIdA);
-    DPoint3d xyzOrigin, xyzA, xyzB;
-    jmdlMTGFacets_getNodeCoordinates (m_facets, &xyzOrigin, faceSeedNodeId);
-    jmdlMTGFacets_getNodeCoordinates (m_facets, &xyzA, nodeIdA);
-    DVec3d vectorQ;
-    vectorQ.DifferenceOf (testXYZ, xyzOrigin);
+    MTGNodeId nodeIdA = m_graph.FSucc (faceSeedNodeId);
+    MTGNodeId nodeIdB = m_graph.FSucc (nodeIdA);
+    DPoint3d xyzOrigin = m_facets.GetXYZ (faceSeedNodeId);
+    DPoint3d xyzA = m_facets.GetXYZ (nodeIdA);
+    DVec3d vectorQ = testXYZ - xyzOrigin;
     // Note.. xy cross products produce twice the area of triangles.
     //   All areas are doubled, doubling will cancel in ratios.
     int numPositiveHit = 0;
@@ -390,7 +359,7 @@ bool FaceContainsPoint (MTGNodeId faceSeedNodeId, DPoint3dCR testXYZ, MTGPositio
     double areaSum = 0.0;
     while (nodeIdB != faceSeedNodeId)
         {
-        jmdlMTGFacets_getNodeCoordinates (m_facets, &xyzB, nodeIdB);
+        DPoint3d xyzB = m_facets.GetXYZ (nodeIdB);
         DVec3d vectorA, vectorB;
         vectorA.DifferenceOf (xyzA, xyzOrigin);
         vectorB.DifferenceOf (xyzB, xyzOrigin);
@@ -416,7 +385,7 @@ bool FaceContainsPoint (MTGNodeId faceSeedNodeId, DPoint3dCR testXYZ, MTGPositio
             }
         nodeIdA = nodeIdB;
         xyzA = xyzB;
-        nodeIdB = graph->FSucc (nodeIdB);
+        nodeIdB = m_graph.FSucc (nodeIdB);
         }
     return ((numPositiveHit + numNegativeHit) & 0x01) != 0;
     }
@@ -424,20 +393,20 @@ bool FaceContainsPoint (MTGNodeId faceSeedNodeId, DPoint3dCR testXYZ, MTGPositio
 MTGPositionDetail FindContainingFace (DPoint3dCR seedXYZ)
     {
     MTGPositionDetail faceDetail = MTGPositionDetail ();
-    MTGMask visitMask = m_graph->GrabMask ();
-    m_graph->ClearMask (visitMask);
-    MTGARRAY_SET_LOOP (seedNodeId, m_graph)
+    MTGMask visitMask = m_graph.GrabMask ();
+    m_graph.ClearMask (visitMask);
+    MTGARRAY_SET_LOOP (seedNodeId, &m_graph)
         {
-        if (!m_graph->GetMaskAt (seedNodeId, visitMask | MTG_EXTERIOR_MASK))
+        if (!m_graph.GetMaskAt (seedNodeId, visitMask | MTG_EXTERIOR_MASK))
             {
-            m_graph->SetMaskAroundFace (seedNodeId, visitMask);
+            m_graph.SetMaskAroundFace (seedNodeId, visitMask);
             if (FaceContainsPoint (seedNodeId, seedXYZ, faceDetail))
                 goto cleanup;
             }
         }
-    MTGARRAY_END_SET_LOOP (seedNodeId, m_graph)
+    MTGARRAY_END_SET_LOOP (seedNodeId, &m_graph)
 cleanup:
-    m_graph->DropMask (visitMask);
+    m_graph.DropMask (visitMask);
     return faceDetail;
     }
 
@@ -473,8 +442,32 @@ void  MTGFacets_CollectFlowPaths
 )
     {
     paths.clear ();
-    FlowLinesContext context (&facets);
+    FlowLinesContext context (facets);
     context.CollectFlowPaths (startPoints, paths);
-    context.GrabFacets ();
     }
+/** Backward compatible wrapper for MTGFacets_CollectFlowPaths */
+Public void jmdlMTGFacets_collectFlowPaths
+(
+    MTGFacetsP facets,
+    DPoint3dCP points,
+    int   numPoints,
+    EmbeddedDPoint3dArrayP flowLinesWithDisconnects
+)
+    {
+    flowLinesWithDisconnects->clear ();
+    bvector<DPoint3d> seedPoints;
+    bvector<bvector<DPoint3d>> flowPaths;
+    for (int i = 0; i < numPoints; i++)
+        seedPoints.push_back (points[i]);
+    MTGFacets_CollectFlowPaths(*facets, seedPoints, flowPaths);
+    DPoint3d disconnect;
+    disconnect.InitDisconnect ();
+    for (auto &path : flowPaths)
+        {
+        for (auto &xyz : path)
+            flowLinesWithDisconnects->push_back (xyz);
+        flowLinesWithDisconnects->push_back (disconnect);
+        }
+    }
+
 END_BENTLEY_GEOMETRY_NAMESPACE
