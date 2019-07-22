@@ -1,0 +1,16 @@
+#*--------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------*/
+#PolicyFile=$(SrcRoot)Pointools/PointoolsCommon/mki/AssertPolicy.mki
+#%include mdl.mki
+
+#---------------------------------------------------------------------------------------------------------
+# Symlink example
+# INPUT: Example - Name of the example to deliver
+#---------------------------------------------------------------------------------------------------------
+DeliveryDir=$(BuildContext)/Delivery/
+
+always:
+    @CreateSymLinks.py   -d"$(DeliveryDir)Examples/$(Example)"=$(srcroot)/Pointools/PointoolsVortexAPI/Examples/$(Example)"
