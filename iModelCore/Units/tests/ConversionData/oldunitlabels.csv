@@ -1,0 +1,582 @@
+﻿Name,ShortLabel,Label
+METRE_SQUARED,m²,meters squared
+ACRE,acres,acres
+METRE_CUBED,m³,meters cubed
+ACRE_FOOT,acre·ft,acre feet
+METRE_CUBED_PER_SECOND,m³/s,meter cubed per second
+ACRE_FOOT_PER_DAY,acre·ft/day,acre foot per day
+ACRE_FOOT_PER_HOUR,acre·ft/h,acre foot per hour
+ACRE_FOOT_PER_MINUTE,acre·ft/min,acre foot per minute
+ACRE_INCH,acre·in,acre inches
+ACRE_INCH_PER_HOUR,acre·in/h,acre inch per hour
+ACRE_INCH_PER_MINUTE,acre·in/min,acre inch per minute
+AMPERE,A,ampere
+RADIAN,rad,radians
+ANGLE_MINUTE,',minutes
+ANGLE_QUADRANT,quadrants,quadrants
+ANGLE_SECOND,'',seconds
+KILOPASCAL,kPa,kilopascals
+ATMOSPHERE,atm,atmosphere
+BAR,bar,bar
+BAR_GAUGE,bar (Gauge),bar (Gauge)
+PASCAL_PER_METRE,Pa/m,Pa/m
+BAR_PER_KILOMETRE,bar/km,bar/km
+BARYE,ba,barye
+JOULE,J,joule
+BTU,Btu,British thermal unit
+WATT_PER_METRE_PER_DEGREE_KELVIN,W/(m·K),watt per meter per degree kelvin
+BTU_INCH_PER_FOOT_SQUARED_PER_HOUR_PER_DEGREE_FAHRENHEIT,Btu·in/(ft²·h·Δ°F),Btu inch per foot squared per hour per degree Fahrenheit
+WATT_PER_METRE_SQUARED_PER_DELTA_DEGREE_KELVIN,W/(m²·ΔK),watt per meter squared per delta degree kelvin
+BTU_PER_FOOT_SQUARED_PER_HOUR_PER_DELTA_DEGREE_FAHRENHEIT,Btu/(ft²·h·Δ°F),Btu per foot squared per hour per delta degree Fahrenheit
+KILOWATT,kW,kilowatt
+BTU_PER_HOUR,Btu/h,Btu per hour
+WATT_PER_METRE,W/m,Watt per meter
+BTU_PER_HOUR_PER_FOOT,Btu/(h·ft),Btu per hour per foot
+WATT_PER_METRE_CUBED,W/m³,Watt per meter cubed
+BTU_PER_HOUR_PER_FOOT_CUBED,Btu/(h·ft³),Btu per hour per foot cubed
+WATT_PER_METRE_SQUARED,W/m²,watt per meter squared
+BTU_PER_HOUR_PER_FOOT_SQUARED,Btu/(h·ft²),Btu per hour per foot squared
+GIGAJOULE_PER_MONTH,GJ/month,Gigajoule per month
+BTU_PER_MONTH,Btu/month,Btu per month
+MEGAJOULE_PER_KILOGRAM,MJ/kg,Megajoule per kilogram
+BTU_PER_POUND_MASS,Btu/lb,Btu per pound mass
+JOULE_PER_KILOGRAM_DELTA_DEGREE_KELVIN,J/(kg·ΔK),joule per kilogram delta degree kelvin
+BTU_PER_POUND_MASS_PER_DELTA_DEGREE_RANKINE,Btu/(lbm·Δ°R),btu per pound mass per delta degree rankine
+KILOJOULE_PER_KILOMOLE,kJ/kmol,kilojoule per kilomole
+BTU_PER_POUND_MOLE,Btu/lb-mol,btu per pound mole
+JOULE_PER_KILOMOLE_PER_DELTA_DEGREE_KELVIN,J/(kmol·ΔK),joule per kilomole per delta degree kelvin
+BTU_PER_POUND_MOLE_PER_DELTA_DEGREE_RANKINE,Btu/(lb-mol·Δ°R),btu per pound mole per delta degree rankine
+PERSON,person,person
+CAPITA,capita,capita
+METRE,m,meters
+CENTIMETRE,cm,centimeters
+CENTIMETRE_CUBED,cm³,centimeters cubed
+METRE_PER_SECOND,m/s,meters per second
+CENTIMETRE_PER_DAY,cm/day,cm/day
+CENTIMETRE_PER_HOUR,cm/h,centimeters per hour
+VERTICAL_PER_HORIZONTAL,slope,slope
+CENTIMETRE_PER_METRE,cm/m,centimeter per meter
+CENTIMETRE_PER_MINUTE,cm/min,centimeters per minute
+CENTIMETRE_PER_SECOND,cm/s,centimeters per second
+CENTIMETRE_SQUARED,cm²,centimeters squared
+METRE_TO_THE_FOURTH,m⁴,meter to the fourth
+CENTIMETRE_TO_THE_FOURTH,cm⁴,centimeter to the fourth
+METRE_TO_THE_SIXTH,m⁶,meter to the sixth
+CENTIMETRE_TO_THE_SIXTH,cm⁶,centimeter to the sixth
+PASCAL_SECOND,Pa·s,pascal seconds
+CENTIPOISE,cP,centipoise
+METRE_SQUARED_PER_SECOND,m²/s,meter squared per second
+CENTISTOKE,cSt,centiStoke
+CUSTOMER,customer,customer
+RADIAN_PER_SECOND,rad/sec,radian per second
+CYCLE_PER_HOUR,cycle/hr,cycle per hour
+CYCLE_PER_MINUTE,cycle/min,cycle per minute
+CYCLE_PER_SECOND,cycle/sec,cycle per second
+HOUR,h,hours
+DAY,days,days
+DECIMETRE,dm,decimeters
+DEGREE,°,degrees
+DEGREE_CELSIUS,°C,Celsius
+DEGREE_FAHRENHEIT,°F,Fahrenheit
+DEGREE_KELVIN,K,Kelvin
+DEGREE_PER_HOUR,deg/hr,degree per hour
+DEGREE_PER_MINUTE,deg/min,degree per minute
+DEGREE_PER_SECOND,deg/sec,degree per second
+DEGREE_RANKINE,°R,Rankine
+DELTA_DEGREE_CELSIUS,Δ°C,Delta Celsius
+DELTA_DEGREE_FAHRENHEIT,Δ°F,Delta Fahrenheit
+DELTA_DEGREE_KELVIN,ΔK,Delta Kelvin
+DELTA_DEGREE_KELVIN_PER_METRE,ΔK/m,delta degree Kelvin per meter
+DELTA_DEGREE_RANKINE,Δ°R,Delta Rankine
+DOLLAR,$,dollar
+POUND_FORCE,lbf,pound force
+DYNE,dyn,dynes
+EACH,ea,Each
+EMPLOYEE,employee,employee
+FOOT,ft,feet
+FOOT_CUBED,ft³,feet cubed
+LITRE_PER_METRE_SQUARED_PER_DAY,L/(m²·day),liters per meter squared per day
+FOOT_CUBED_PER_ACRE_PER_SECOND,ft³/(acres·s),feet cubed per acre per second
+FOOT_CUBED_PER_DAY,ft³/day,foot cubed per day
+FOOT_CUBED_PER_FOOT_SQUARED_PER_MINUTE,ft³/(ft²·min),Foot cubed per foot squared per minute
+FOOT_CUBED_PER_FOOT_SQUARED_PER_SECOND,ft³/(ft²·s),feet cubed per foot squared per second
+FOOT_CUBED_PER_MILE_SQUARED_PER_SECOND,ft³/(mi²·s),feet cubed per mile squared per second
+FOOT_CUBED_PER_MINUTE,ft³/min,Foot cubed per minute
+METRE_CUBED_PER_KILOGRAM,m³/kg,meter cubed per kilogram
+FOOT_CUBED_PER_POUND_MASS,ft³/lm,foot cubed per pound mass
+METRE_CUBED_PER_MOLE,m³/mol,meter cubed per mole
+FOOT_CUBED_PER_POUND_MOLE,ft³/lb-mol,foot cubed per pound mole
+FOOT_CUBED_PER_SECOND,ft³/s,foot cubed per second
+METRE_CUBED_PER_SECOND_PER_SQUARE_ROOT_METRE_H20,m³/(s·√mH2O),meter cubed per second per square root meter of water
+FOOT_CUBED_PER_SECOND_PER_SQUARE_ROOT_FOOT_H20,ft³/(s·√ftH2O),foot cubed per second per square root foot of water
+INCH_MILE,in·mi,inch mile
+FOOT_FOOT,ft·ft,foot foot
+FOOT_HORIZONTAL_PER_FOOT_VERTICAL,ft/ft (reciprocal slope),foot horizontal per foot vertical
+FOOT_MILE,ft·mi,foot mile
+FOOT_OF_H2O_CONVENTIONAL,ft H2O (Conv),feet of H2O (Conventional)
+FOOT_PER_1000_FOOT,ft/1000ft,foot per thousand feet
+FOOT_PER_DAY,ft/day,ft/day
+FOOT_PER_FOOT,ft/ft,foot per foot
+FOOT_PER_HOUR,ft/h,feet per hour
+FOOT_PER_INCH,ft/in,foot per inch
+FOOT_PER_MILE,ft/mi,foot per mile
+FOOT_PER_MINUTE,ft/min,feet per minute
+METRE_PER_RADIAN,m/rad,meter per radian
+FOOT_PER_REVOLUTION,ft/rev,foot per revolution
+FOOT_PER_SECOND,ft/s,feet per second
+FOOT_POUNDAL,ft*pdl,foot-poundal
+FOOT_SQUARED,ft²,feet squared
+METRE_SQUARED_DELTA_DEGREE_KELVIN_PER_WATT,m²·ΔK/W,meter squared delta degree kelvin per watt
+FOOT_SQUARED_HOUR_DELTA_DEGREE_FAHRENHEIT_PER_BTU,ft²·h·Δ°F/Btu,Foot squared hour delta degree Fahrenheit per Btu
+FOOT_SQUARED_PER_SECOND,ft²/s,foot squared per second
+FOOT_TO_THE_FOURTH,ft⁴,foot to the fourth
+FOOT_TO_THE_SIXTH,ft⁶,foot to the sixth
+FOOT_VERTICAL_PER_FOOT_HORIZONTAL,ft/ft (slope),foot vertical per foot horizontal
+GALLON,gal,gallons
+GALLON_IMPERIAL,gal (imp),imperial gallons
+GALLON_IMPERIAL_PER_DAY,gal (imp)/day,gallon imperial per day
+GALLON_IMPERIAL_PER_MINUTE,gal (imp)/min,gallon imperial per minute
+GALLON_IMPERIAL_PER_SECOND,gal (imp)/s,gallon imperial per second
+GALLON_PER_ACRE_PER_DAY,gal/(acre·day),gallons per acre per day
+GALLON_PER_ACRE_PER_MINUTE,gal/(acre·min),gallons per acre per minute
+GALLON_PER_DAY,gal/day,gallon per day
+LITRE_PER_SECOND_PER_PERSON,L/(s·person),liter per second per person
+GALLON_PER_DAY_PER_PERSON,gpd/capita,gpd/capita
+GALLON_PER_FOOT_SQUARED_PER_DAY,gal/(ft²·day),gallons per foot squared per day
+GALLON_PER_FOOT_SQUARED_PER_MINUTE,gal/(ft²·min),gallons per foot squared per minute
+GALLON_PER_MILE_SQUARED_PER_DAY,gal/(mi²·day),gallons per mile squared per day
+GALLON_PER_MILE_SQUARED_PER_MINUTE,gal/(mi²·min),gallons per mile squared per minute
+GALLON_PER_MINUTE,gal/min,gallon per minute
+GALLON_PER_MINUTE_PER_SQUARE_ROOT_PSI,gal/(min·√(lb/in²)),gallon per minute per square root pounds per inch squared
+GALLON_PER_SECOND,gal/s,gallon per second
+GIGAJOULE,GJ,Gigajoule
+GIGANEWTON_SECOND_PER_KILOGRAM,GN·s/kg,gigaNewton second per kilogram
+GIGANEWTON_SECOND_PER_KILOGRAM_PER_METRE,GN·s/(kg·m),giganewton second per kilogram meter
+GIGAWATT,GW,GW
+GIGAWATT_HOUR,GWh,GWh
+GRADIAN,grad,gradian
+KILOGRAM,kg,kilograms
+GRAIN,gr,grain
+GRAIN_FORCE_PER_HOUR_PER_FOOT_SQUARED_PER_INCH_HG_CONVENTIONAL,grf/(h·ft²·inHg),Grain mass per hour per foot squared per inch Mercury conventional
+MILLIGRAM_PER_HOUR_PER_METRE_SQUARED,mg/(h·m²),milligram per hour per meter squared
+GRAIN_MASS_PER_HOUR_PER_FOOT_SQUARED,gr/(h·ft²),grain mass per hour per foot squared
+KILOGRAM_PER_KILOGRAM,kg/kg,kilogram per kilogram
+GRAIN_MASS_PER_POUND_MASS,gr/lb,grain mass per pound mass
+GRAM,g,grams
+KILOGRAM_PER_METRE_CUBED,kg/m³,kilograms per meter cubed
+GRAM_PER_CENTIMETRE_CUBED,g/cm³,grams per centimeter cubed
+MILLIGRAM_PER_SECOND,mg/s,milligram per second
+GRAM_PER_DAY,g/day,gram per day
+GRAM_PER_HOUR,g/h,gram per hour
+POUND_PER_ACRE,lb/acre,pound per acre
+GRAM_PER_METRE_SQUARED,g/m²,gram per meter squared
+GRAM_PER_MINUTE,g/min,gram per minute
+GRAM_PER_SECOND,g/s,gram per second
+GUEST,guest,guest
+HECTARE,ha,hectares
+HECTOPASCAL,hPa,hPa
+HERTZ,Hz,hertz
+HORIZONTAL_PER_VERTICAL,reciprocal slope,reciprocal slope
+HORSEPOWER,hp,horsepower
+HUNDRED_CAPITA,100 Capita,hundred capita
+INCH,in,inches
+INCH_CUBED,in³,inches cubed
+INCH_FOOT,in·ft,inch foot
+INCH_METRE,in·m,inch meter
+INCH_OF_H2O_AT_32_FAHRENHEIT,inH2O@32°F,inches of H2O @ 32°F
+INCH_OF_H2O_AT_39_2_FAHRENHEIT,inH2O@39.2°F,inches of H2O @ 39.2°F
+INCH_OF_H2O_AT_60_FAHRENHEIT,inH2O@60°F,inches of H2O @ 60°F
+INCH_OF_HG_AT_32_FAHRENHEIT,inHg@32°F,inches of Mercury @ 32°F
+INCH_OF_HG_AT_60_FAHRENHEIT,inHg@60°F,inches of Mercury @ 60°F
+INCH_OF_HG_CONVENTIONAL,inHg (Conv),inches of mercury (Conventional)
+INCH_PER_DAY,in/day,in/day
+INCH_PER_DEGREE,in/deg,inch per degree
+INCH_PER_FOOT,in/ft,inch per foot
+INCH_PER_HOUR,in/h,inches per hour
+MILLIMETRE_PER_HOUR_PER_DEGREE_CELSIUS,mm/(h·Δ°C),millimeter per hour per degree celsius
+INCH_PER_HOUR_PER_DEGREE_FAHRENHEIT,in/h/F,in/h/F
+INCH_PER_MINUTE,in/min,inches per minute
+INCH_PER_RADIAN,in/rad,inch per radian
+INCH_PER_REVOLUTION,in/rev,inch per revolution
+INCH_PER_SECOND,in/s,inch per second
+INCH_POUND_FORCE_PER_SECOND_INCH_FAHRENHEIT,(in·lbf)/(s·in·°F),inch pound force per second inch fahrenheit
+INCH_SQUARED,in²,inches squared
+INCH_SQUARED_INCH_HG_CONVENTIONAL_HOUR_PER_GRAIN_MASS,in²·inHg·h/gr,Inch squared inch Mercury conventional hour per grain mass
+MILLIMETRE_SQUARED_PER_METRE_SQUARED,mm²/m²,millimeter squared per meter squared
+INCH_SQUARED_PER_FOOT_SQUARED,in²/ft²,inch squared per foot squared
+INCH_TO_THE_FOURTH,in⁴,inch to the fourth
+INCH_TO_THE_SIXTH,in⁶,inch to the sixth
+KILOWATT_HOUR_PER_METRE_CUBED,kW·h/m³,kilowatt hours per meter cubed
+JOULE_PER_METRE_CUBED,J/m³,J/m³
+KILOAMPERE,KA,kiloampere
+KILOBTU,kBtu,kiloBtu
+KILOBTU_PER_HOUR,kBtu/h,kiloBtu per hour
+KILOGRAM_FORCE,kgf,kilogram force
+POUND_FORCE_FOOT_SQUARED,lbf·ft²,pound force foot squared
+KILOGRAM_FORCE_METRE_SQUARED,kgf·m²,kgf·m²
+KILOGRAM_FORCE_PER_CENTIMETRE_SQUARED,kgf/cm²,kilogram force per centimeter squared
+KILOGRAM_FORCE_PER_CENTIMETRE_SQUARED_GAUGE,kgf/cm² (Gauge),kilogram force per centimeter squared (Gauge)
+KILOGRAM_FORCE_PER_METRE_SQUARED,kgf/m²,kilogram force per meter squared
+KILOGRAM_PER_CENTIMETRE_CUBED,kg/cm³,kilogram per centimeter cubed
+KILOGRAM_PER_DAY,kg/day,kilogram per day
+KILOGRAM_PER_DECIMETRE_CUBED,kg/dm³,kilograms per decimeter cubed
+KILOGRAM_PER_HECTARE,kg/ha,kilogram per hectare
+KILOGRAM_PER_HOUR,kg/h,kilogram per hour
+KILOGRAM_PER_KILOWATTHOUR,kg/(kW·h),kilogram per kilowatt hour
+KILOGRAM_PER_LITRE,kg/L,kilograms per liter
+KILOGRAM_PER_METRE,kg/m,kilogram per meter
+KILOGRAM_PER_METRE_PER_SECOND,kg/m/s,kg/m/s
+KILOGRAM_PER_METRE_SQUARED,kg/m²,kilogram per meter squared
+KILOGRAM_PER_MILLIMETRE,kg/mm,kilogram per millimeter
+KILOGRAM_PER_MINUTE,kg/min,kilogram per minute
+KILOGRAM_PER_SECOND,kg/s,kilogram per second
+KILOJOULE,kJ,kilojoule
+KILOJOULE_PER_KILOGRAM,kJ/kg,kilojoule per kilogram
+KILOJOULE_PER_KILOMOLE_PER_DELTA_DEGREE_KELVIN,kJ/(kmol·ΔK),kilojoule per kilomole per delta degree kelvin
+KILOJOULE_PER_METRE_CUBED,kJ/m³,kJ/m³
+KILOMETRE,km,kilometers
+KILOMETRE_PER_HOUR,km/h,kilometers per hour
+KILOMETRE_SQUARED,km²,kilometers squared
+MOLE_PER_METRE_CUBED,mol/m³,mole per meter cubed
+KILOMOLE_PER_METRE_CUBED,kmol/m³,kilomole per meter cubed
+MOLE_PER_SECOND,mol/s,mole per second
+KILOMOLE_PER_SECOND,kmol/s,kilomole per second
+KILONEWTON,kN,kilonewtons
+NEWTON_PER_METRE_CUBED,N/m³,Newton per meter cubed
+KILONEWTON_PER_FOOT_CUBED,kN/ft³,kiloNewton per foot cubed
+KILONEWTON_PER_METRE_CUBED,kN/m³,kiloNewton per meter cubed
+KILOPASCAL_GAUGE,kPa (Gauge),kilopascals (Gauge)
+KILOPOUND_FORCE,kpf,kilopound force
+VOLT,V,volt
+KILOVOLT,KV,kilovolt
+VOLT_AMPERE,VA,volt ampere
+KILOVOLT_AMPERE,KVA,kilovolt ampere
+VOLT_AMPERE_REACTIVE,var,volt ampere reactive
+KILOVOLT_AMPERE_REACTIVE,kvar,kilovolt ampere reactive
+KILOWATT_HOUR,kW·h,kilowatt hour
+KILOWATT_HOUR_PER_FOOT_CUBED,kWh/ft³,kWh/ft³
+KILOWATT_HOUR_PER_MILLION_GALLON,kW·h/million gal,kilowatt hours per million gallon
+KILOWATT_HOUR_PER_MILLION_LITRE,kW·h/million L,kilowatt hours per million liter
+KIP_FORCE_PER_INCH_SQUARED,kipf/in²,kip force per inch squared
+KIP_PER_FOOT_CUBED,kip/ft³,kips per foot cubed
+KNOT,knots,knots
+KNOT_INTERNATIONAL,knot (Int.),knot (International)
+LITRE,L,liters
+LITRE_PER_DAY,L/day,liter per day
+LITRE_PER_HECTARE_PER_DAY,L/(ha·day),liters per hectare per day
+LITRE_PER_HOUR,L/h,L/h
+LITRE_PER_KILOMETRE_SQUARED_PER_DAY,L/(km²·day),liters per kilometer squared per day
+LITRE_PER_METRE_SQUARED_PER_SECOND,L/(m²·s),liter per meter squared per second
+LITRE_PER_MINUTE,L/min,liter per minute
+LITRE_PER_SEC_PER_SQUARE_ROOT_KPA,L/(s·√kPa),liter per second per square root kilopascal
+LITRE_PER_SECOND,L/s,liter per second
+LONG_TON,tn (long),long ton
+LONG_TON_FORCE,tnf (long),long ton force
+LUMEN,lm,lumen
+LUX,lx,lux
+LUMEN_PER_FOOT_SQUARED,lm/ft²,lumen per foot squared
+MEGA_LITRE_PER_DAY,ML/day,megaliter per day
+MEGAGRAM,Mg,megagram
+MEGAJOULE,MJ,MJ
+MEGAJOULE_PER_METRE_CUBED,MJ/m³,MJ/m³
+MEGANEWTON_SECOND_PER_METRE_SQUARED,MN·s/m²,meganewton second per meter squared
+MEGAPASCAL,MPa,megapascals
+MEGAPASCAL_GAUGE,MPa (Gauge),megapascals (Gauge)
+MEGAVOLT,MV,megavolt
+MEGAVOLT_AMPERE,MVA,megavolt ampere
+MEGAVOLT_AMPERE_REACTIVE,mvar,megavolt ampere reactive
+MEGAWATT,MW,MW
+MEGAWATT_HOUR,MWh,MWh
+METRE_CUBED_PER_DAY,m³/day,meter cubed per day
+METRE_CUBED_PER_HECTARE_PER_DAY,m³/(ha·day),meters cubed per hectare per day
+METRE_CUBED_PER_HOUR,m³/h,meter cubed per hour
+METRE_CUBED_PER_KILOMETRE_SQUARED_PER_DAY,m³/(km²·day),meters cubed per kilometer squared per day
+METRE_CUBED_PER_KILOMOLE,m³/kmol,meter cubed per kilomole
+METRE_CUBED_PER_METRE_SQUARED_PER_DAY,m³/(m²·day),meters cubed per meter squared per day
+METRE_CUBED_PER_MINUTE,m³/min,meter cubed per minute
+METRE_HORIZONTAL_PER_METRE_VERTICAL,m/m (reciprocal slope),meter horizontal per meter vertical
+METRE_KILOMETRE,m·km,meter kilometer
+METRE_METRE,m·m,meter meter
+METRE_OF_H2O_CONVENTIONAL,mH2O (Conv),meters of H2O (Conventional)
+METRE_PER_CENTIMETRE,m/cm,meter per centimeter
+METRE_PER_DAY,m/day,m/day
+METRE_PER_DEGREE,m/deg,meter per degree
+METRE_PER_HOUR,m/h,meters per hour
+METRE_PER_KILOMETRE,m/km,meter per kilometer
+METRE_PER_METRE,m/m,meter per meter
+METRE_PER_MINUTE,m/min,meters per minute
+METRE_PER_REVOLUTION,m/rev,meter per revolution
+METRE_SQUARED_DELTA_DEGREE_CELSIUS_PER_WATT,m²·Δ°C/W,Meter squared delta degree Celsius per Watt
+METRE_VERTICAL_PER_METRE_HORIZONTAL,m/m (slope),meter vertical per meter horizontal
+MICROGRAM,µg,microgram
+MICROGRAM_PER_DAY,µg/day,microgram per day
+MICROGRAM_PER_FOOT_SQUARED_PER_DAY,µg/ft²/day,µg/ft²/day
+MICROGRAM_PER_HOUR,µg/h,microgram per hour
+MICROGRAM_PER_LITRE,µg/L,micrograms per liter
+MICROGRAM_PER_METRE_SQUARED_PER_DAY,µg/m²/day,µg/m²/day
+MICROGRAM_PER_METRE_SQUARED_PER_SECOND,µg/m²/s,µg/m²/s
+MICROGRAM_PER_MINUTE,µg/min,microgram per minute
+MICROGRAM_PER_SECOND,µg/s,microgram per second
+MICROINCH,µin,microinch
+MICROMETRE,µm,micrometer
+MILE,mi,miles
+MILE_PER_HOUR,mi/h,miles per hour
+MILE_SQUARED,mi²,miles squared
+MILLIBAR,mBar,millibar
+MILLIFOOT,mft,millifeet
+MILLIGRAM,mg,milligrams
+MILLIGRAM_PER_DAY,mg/day,milligram per day
+MILLIGRAM_PER_FOOT_SQUARED_PER_DAY,mg/ft²/day,mg/ft²/day
+MILLIGRAM_PER_HOUR,mg/h,milligram per hour
+MILLIGRAM_PER_LITRE,mg/L,milligrams per liter
+MILLIGRAM_PER_METRE_SQUARED_PER_DAY,mg/m²/day,mg/m²/day
+MILLIGRAM_PER_METRE_SQUARED_PER_SECOND,mg/m²/s,mg/m²/s
+MILLIGRAM_PER_MINUTE,mg/min,milligram per minute
+MILLIINCH,mil,milliinch
+MILLIMETRE,mm,millimeters
+MILLIMETRE_HORIZONTAL_PER_METRE_VERTICAL,mm/m (reciprocal slope),millimeter horizontal per meter vertical
+MILLIMETRE_KILOMETRE,mm·km,millimeter kilometer
+MILLIMETRE_METRE,mm·m,millimeter meter
+MILLIMETRE_MILE,mm·mi,millimeter mile
+MILLIMETRE_OF_H2O_CONVENTIONAL,mmH2O (Conv),millimeters of H2O (Conventional)
+MILLIMETRE_OF_HG_AT_32_FAHRENHEIT,mmHg@32°F,millimeters of Mercury @ 32°F
+MILLIMETRE_PER_DAY,mm/day,mm/day
+MILLIMETRE_PER_DEGREE,mm/deg,millimeter per degree
+MILLIMETRE_PER_HOUR,mm/h,mm/h
+MILLIMETRE_PER_METRE,mm/m,millimeter per meter
+MILLIMETRE_PER_MINUTE,mm/min,mm/min
+MILLIMETRE_PER_RADIAN,mm/rad,millimeter per radian
+MILLIMETRE_PER_REVOLUTION,mm/rev,millimeter per revolution
+MILLIMETRE_SQUARED,mm²,millimeters squared
+MILLIMETRE_TO_THE_FOURTH,mm⁴,millimeter to the fourth
+MILLIMETRE_TO_THE_SIXTH,mm⁶,millimeter to the sixth
+MILLIMETRE_VERTICAL_PER_METRE_HORIZONTAL,mm/m (slope),millimeter vertical per meter horizontal
+MILLINEWTON,mN,millinewtons
+MILLINEWTON_SECOND_PER_METRE_SQUARED,mN·s/m²,millinewton second per meter squared
+MILLION_GALLON,million gal,million gallons
+MILLION_GALLON_IMPERIAL_PER_DAY,million gal (imp)/day,million gallons imperial per day
+MILLION_GALLON_PER_DAY,million gal/day,million gallons per day
+MILLION_LITRE,million L,million liters
+MILLION_LITRE_PER_DAY,millon L/day,million liters per day
+MILLISECOND,ms,milliseconds
+MINUTE,min,minutes
+NEWTON,N,newtons
+NEWTON_METRE,N·m,newton meter
+NEWTON_METRE_PER_RADIAN,N·m/rad,newton meter per radian
+NEWTON_METRE_PER_DEGREE,N·m/deg,newton meter per degree
+NEWTON_METRE_SQUARED,N·m²,newton meter squared
+POUND_FORCE_PER_INCH,lbf/in,pound force per inch
+NEWTON_PER_METRE,N/m,newton per meter
+NEWTON_PER_METRE_SQUARED,N/m²,newtons per meter squared
+NEWTON_PER_MILLIMETRE,N/mm,newton per millimeter
+NEWTON_PER_MILLIMETRE_SQUARED,N/mm²,newton per millimeter squared
+NEWTON_PER_RADIAN,N/rad,newton per radian
+NONE,n/a,none
+ONE_OVER_SLOPE,1/slope,one per slope
+ONE_PER_METRE_CUBED,1/m³,one per meter cubed
+ONE_PER_ACRE_FOOT,1/(acre·ft),one per acre foot
+ONE_PER_ACRE_INCH,1/(acre·in),one per acre inch
+ONE_PER_PASCAL,1/Pa,1/Pa
+ONE_PER_BAR,1/Bar,1/Bar
+ONE_PER_MEGAJOULE,1/MJ,one per megajoule
+ONE_PER_BTU,1/Btu,one per Btu
+ONE_PER_CENTIMETRE_CUBED,1/cm³,one per centimeter cubed
+ONE_PER_DAY,1/day,1/day
+ONE_PER_METRE,1/m,one per meter
+ONE_PER_FOOT,1/ft,one per foot
+ONE_PER_FOOT_CUBED,1/ft³,one per foot cubed
+ONE_PER_METRE_SQUARED,1/m²,one per meter squared
+ONE_PER_FOOT_SQUARED,1/ft²,one per foot squared
+ONE_PER_GALLON,1/gal,one per gallon
+ONE_PER_KILOWATT,1/kW,one per kilowatt
+ONE_PER_HORSEPOWER,1/hp,one per horsepower
+ONE_PER_HOUR,1/h,one per hour
+ONE_PER_IMPERIAL_GALLON,1/gal (imp),one per gallon imperial
+ONE_PER_INCH_CUBED,1/in³,one per inch cubed
+ONE_PER_KILOMETRE,1/km,1/km
+ONE_PER_KILOWATT_HOUR,1/(kW·h),one per kilowatt hour
+ONE_PER_LITRE,1/L,one per litre
+ONE_PER_MILE,1/mile,1/mile
+ONE_PER_MILLIMETRE,1/mm,1/mm
+ONE_PER_MILLION_GALLON,1/(million gal),one per million gallons
+ONE_PER_MILLION_LITRE,1/(million L),one per million liters
+ONE_PER_MINUTE,1/min,1/min
+ONE_PER_TONNE,1/t,one per tonne
+ONE_PER_SHORT_TON,1/tn(short),one per short ton
+ONE_PER_THOUSAND_FOOT,1/1000 ft,1/1000 ft
+ONE_PER_THOUSAND_GALLON,1/(1000 gal),one per thousand gallon
+ONE_PER_THOUSAND_LITRE,1/(1000 L),one per thousand liters
+ONE_PER_YARD_CUBED,1/yd³,one per yard cubed
+ONE_PER_YEAR,1/yr,one per year
+PARTS_PER_MILLION,ppm,parts per million
+PARTS_PER_BILLION,ppb,parts per billion
+PASCAL,Pa,pascals
+PASSENGER,passenger,passenger
+PERCENT_PERCENT,%,percent
+PERCENT_SLOPE,%,percent slope
+PERSON_PER_METRE_SQUARED,p/m²,person per meter squared
+PERSON_PER_ACRE,p/acre,person per acre
+PERSON_PER_FOOT_SQUARED,p/ft²,person per foot squared
+PERSON_PER_HECTARE,p/ha,person per hectare
+PERSON_PER_KILOMETRE_SQUARED,p/km²,person per kilometer squared
+PERSON_PER_MILE_SQUARED,p/mi²,person per mile squared
+PIECE,pc,Piece
+POUND,lb,pounds
+POUND_FOOT,lbf·ft,pound force foot
+POUND_FORCE_PER_FOOT_CUBED,lbf/ft²,pound force per foot squared
+POUND_FORCE_PER_FOOT_SQUARED,lbf/ft²,pound force per foot squared
+POUND_FORCE_PER_INCH_SQUARED,lbf/in²,pound force per inch squared
+POUND_FORCE_PER_INCH_SQUARED_GAUGE,lbf/in² (Gauge),pound force per inch squared gauge
+POUND_FORCE_PER_INCH_SQUARED_PER_FOOT,lbf/(in²·ft),pound force per inch squared per foot
+POUND_MASS_PER_FOOT,lb/ft,pound per foot
+POUND_MASS_PER_FOOT_SQUARED,lb/ft²,pound mass per foot squared
+POUND_MASS_PER_INCH_SQUARED,lbm/in²,pound mass per inch squared
+POUND_MOLE_PER_FOOT_CUBED,lb-mol/ft³,pound mole per foot cubed
+POUND_PER_DAY,lb/day,pound per day
+POUND_PER_FOOT_CUBED,lb/ft³,pounds per foot cubed
+POUND_PER_GALLON,lb/gal,pounds per gallon
+POUND_PER_HOUR,lb/h,pound per hour
+POUND_PER_IMPERIAL_GALLON,lb/gal (imp),pounds per imperial gallon
+POUND_PER_INCH_CUBED,lb/in³,pounds per inch cubed
+POUND_PER_MILLION_GALLON,lb/million gal,pounds per million gallon
+POUND_PER_MINUTE,lb/min,pound per minute
+POUND_PER_SECOND,lb/s,pound per second
+RADIAN_PER_HOUR,rad/hr,radian per hour
+RADIAN_PER_MINUTE,rad/min,radian per minute
+RECIPROCAL_DELTA_DEGREE_KELVIN,1/ΔK,reciprocal delta degree kelvin
+RECIPROCAL_DELTA_DEGREE_CELSIUS,1/Δ°C,reciprocal delta degree celsius
+RECIPROCAL_DELTA_DEGREE_FAHRENHEIT,1/Δ°F,reciprocal delta degree fahrenheit
+RECIPROCAL_DELTA_DEGREE_RANKINE,1/Δ°R,reciprocal delta degree rankine
+RESIDENT,resident,resident
+REVOLUTION,r,revolutions
+REVOLUTION_PER_MINUTE,rpm,revolution per minute
+SECOND,s,seconds
+SHORT_TON,tn (short),short ton
+SHORT_TON_FORCE,tnf (short),short ton force
+SHORT_TON_PER_FOOT_CUBED,tn (short)/ft³,short tons per foot cubed
+SHORT_TON_PER_HOUR,tph,short ton per hour
+SIDE_WEIR_COEFFICIENT_US,ft^(1/3)/s,ft^(1/3)/s
+SIDE_WEIR_COEFFICIENT_SI,m^(1/3)/s,m^(1/3)/s
+SLUG_PER_FOOT_CUBED,slug/ft³,slugs per foot cubed
+STOKE,St,stoke
+STUDENT,student,student
+THOUSAND_CAPITA,thousand capita,thousand capita
+THOUSAND_FOOT_SQUARED,thousand ft²,thousand feet squared
+THOUSAND_GALLON,thousand gal,thousand gallons
+THOUSAND_LITRE,thousand L,thousand liter
+TONNE_PER_HOUR,tph,tonne per hour
+TORR,torr,torrs
+UNITLESS_PERCENT,%,unitless percent
+UNITLESS_UNIT,unitless,unitless unit
+UOR,uor,Units of Resolution
+UOR_CUBED,uor³,Units of Resolution Cubed
+UOR_SQUARED,uor²,Units of Resolution Squared
+US_SURVEY_FOOT,ft (US Survey),foot (US Survey)
+US_SURVEY_INCH,in (US Survey),inch (US Survey)
+US_SURVEY_MILE,mi (US Survey),mile (US Survey)
+WATT,W,watts
+WATT_PER_DELTA_DEGREE_KELVIN,W/ΔK,watt per delta degree kelvin
+WATT_PER_METRE_PER_DEGREE_CELSIUS,W/(m·Δ°C),Watt per meter degree Celsius
+WATT_PER_METRE_SQUARED_PER_DELTA_DEGREE_CELSIUS,W/(m²·Δ°C),Watt per meter squared delta degree Celsius
+WATT_SECOND,Ws,Ws
+WEIR_COEFFICIENT_US,ft^(1/2)/s,ft^(1/2)/s
+WEIR_COEFFICIENT_SI,m^(1/2)/s,m^(1/2)/s
+YARD,yd,yards
+YARD_CUBED,yd³,yards cubed
+YARD_SQUARED,yd²,yards squared
+YEAR,years,years
+MOL,mol,mol
+CD,cd,cd
+STERAD,sterad,sterad
+CHAIN,chain,chain
+US_SURVEY_YRD,yrd (US Survey),yrd (US Survey)
+US_SURVEY_CHAIN,chain (US Survey),chain (US Survey)
+NAUT_MILE,nmi,nautical mile (International)
+NG,ng,nanogram
+TONNE,tonne,tonne
+SLUG,slug,slug
+WEEK,week,week
+YEAR_SIDEREAL,Year (Sidereal),Year (Sidereal)
+YEAR_TROPICAL,Year (Tropical),Year (Tropical)
+MKS,µs,µs
+KMOL,kmol,kmol
+LB-MOL,lb-mol,lb-mol
+M/SEC.SQ,m/sec²,m/sec²
+CM/SEC.SQ,cm/sec²,cm/sec²
+FT/SEC.SQ,ft/sec²,ft/sec²
+SQ.MU,mu²,mu²
+SQ.DM,dm²,dm²
+ARE,are,are
+SQ.CHAIN,chain²,chain²
+SQ.US_SURVEY_IN,in² (US Survey),in² (US Survey)
+SQ.US_SURVEY_FT,ft² (US Survey),ft² (US Survey)
+SQ.US_SURVEY_YRD,yrd² (US Survey),yrd² (US Survey)
+SQ.US_SURVEY_MILE,mile² (US Survey),mile² (US Survey)
+SQ.US_SURVEY_CHAIN,chain² (US Survey),chain² (US Survey)
+US_SURVEY_ACRE,acre (US Survey),acre (US Survey)
+N/CUB.FT,N/ft³,N/ft³
+MILLIAMPERE,mA,mA
+MICROAMPERE,µA,µA
+COULOMB,C,C
+J/KG,J/kg,J/kg
+J/(MOL*K),J/(mol*K),J/(mol*K)
+CUB.IN/SEC,in³/sec,in³/sec
+CUB.IN/MIN,in³/min,in³/min
+ACRE_IN/DAY,acre_in/day,acre_in/day
+KHZ,KHz,KHz
+MHZ,MHz,MHz
+CUB.M/(SQ.M*SEC),m³/(m²*sec),m³/(m²*sec)
+OZF,ozf,ozf
+OZM,oz,oz
+PDL,pdl,pdl
+KIPF,kipf,kipf
+KIPM,kipm,kipm
+W/SQ.M,W/m²,W/m²
+N_CM,N·cm,N·cm
+MOL/CUB.DM,mol/dm³,mol/dm³
+MICROMOL/CUB.DM,µmol/dm³,µmol/dm³
+NMOL/CUB.DM,nmol/dm³,nmol/dm³
+PICOMOL/CUB.DM,picomol/dm³,picomol/dm³
+MOL/CUB.FT,mol/ft³,mol/ft³
+PA_GAUGE,Pa (gauge),Pa (gauge)
+KSI,ksi,ksi
+CM/REVOLUTION,cm/rev,cm/rev
+MM/SEC,mm/sec,mm/sec
+KM/SEC,km/sec,km/sec
+YRD/SEC,yrd/sec,yrd/sec
+POISE,poise,poise
+LBM/(FT*S),lbm/(ft*s),lbm/(ft*s)
+CUB.MU,mu³,mu³
+CUB.MM,mm³,mm³
+CUB.DM,dm³,dm³
+CUB.KM,km³,km³
+MICROLITRE,µliter,µliter
+CUB.MILE,mile³,mile³
+CUB.M/CUB.M,m³/m³,m³/m³
+LITRE/LITRE,liter/liter,liter/liter
+PI,Pi,Pi
+PI/4,Pi/4,Pi/4
+PI/2,Pi/2,Pi/2
+2PI,2Pi,2Pi
+360DEG,360°,360°
+STD_G,ɡ0,ɡ0
+DECI,deci,deci
+CENTI,centi,centi
+MILLI,milli,milli
+MICRO,micro,micro
+NANO,nano,nano
+PICO,pico,pico
+FEMTO,femto,femto
+ATTO,atto,atto
+ZEPTO,zepto,zepto
+YOCTO,yocto,yocto
+DEKA,deka,deka
+HECTO,hecto,hecto
+KILO,kilo,kilo
+MEGA,mega,mega
+GIGA,giga,giga
+TERA,tera,tera
+PETA,peta,peta
+EXA,exa,exa
+ZETTA,zetta,zetta
+YOTTA,yotta,yotta
