@@ -362,6 +362,11 @@ void ProcessClientCommand(vector<string> input)
             CreateAccessKeyClient();
             return;
             }
+        else if(input.at(2) == "ultimateaccesskeyclient" || input.at(2) == "ultimateaccesskey" || input.at(2) == "ua")
+            {
+            CreateUltimateLevelAccessKeyClient();
+            return;
+            }
         else if(input.at(2) == "saasclient" || input.at(2) == "saas" || input.at(2) == "s")
             {
             CreateSaasClient();
@@ -853,6 +858,114 @@ void CreateAccessKeyClient()
         appInfo,
         dbPath,
         offlineMode,
+        projectId,
+        featureString,
+        nullptr
+        );
+
+    if(m_accessKeyClient == nullptr)
+        {
+        cout << "Failed to create AccessKeyClient, please try again.\n";
+        return;
+        }
+    else
+        {
+        cout << "AccessKeyClient created successfully!\n";
+        return;
+        }
+    }
+
+// initialize required libraries and information and create the client
+void CreateUltimateLevelAccessKeyClient()
+    {
+    // TODO: option for full info or "test" info prompts?
+
+    // prompt for required values
+    string productIdInput;
+    string accessKeyInput;
+    string offlineModeInput;
+    string ultimateIdInput;
+    string projectIdInput;
+    string featureStringInput;
+    string versionInput;
+    string deviceIdInput;
+
+    cout << "Enter the following values as prompted (leave blank and press Enter to make a value null)\n";
+
+    cout << "Enter a product ID: ";
+    getline(cin, productIdInput);
+    cout << "Enter an AccessKey: ";
+    getline(cin, accessKeyInput);
+    cout << "Enter your organization's Ultimate ID: ";
+    getline(cin, ultimateIdInput);
+    cout << "Enter a projectId: ";
+    getline(cin, projectIdInput);
+    cout << "Enter a featureString: ";
+    getline(cin, featureStringInput);
+    cout << "Enter application version (e.g. 1.2.3.4): ";
+    getline(cin, versionInput);
+    cout << "Enter deviceId (also known as \'machine name\'): ";
+    getline(cin, deviceIdInput);
+
+    bool offlineMode;
+    while (true)
+        {
+        cout << "Offline mode? (true or false): ";
+        getline(cin, offlineModeInput);
+        std::transform(offlineModeInput.begin(), offlineModeInput.end(), offlineModeInput.begin(), ::tolower);
+        if(offlineModeInput == "true" || offlineModeInput == "t")
+            {
+            offlineMode = true;
+            break;
+            }
+        else if(offlineModeInput == "false" || offlineModeInput == "f")
+            {
+            offlineMode = false;
+            break;
+            }
+        else if(offlineModeInput == "help" || offlineModeInput == "h")
+            {
+            cout << "If offline, pushes usage in discrete intervals. If not offline, pushes usage continuously via stream.\n";
+            continue;
+            }
+
+
+        cout << "Invalid input, please enter \"true\" or \"false\"\n";
+        }
+
+    Utf8String productId = Utf8String(productIdInput.c_str());
+    Utf8String accessKey = Utf8String(accessKeyInput.c_str());
+    Utf8String ultimateId = Utf8String(ultimateIdInput.c_str());
+    Utf8String projectId = Utf8String(projectIdInput.c_str());
+    Utf8String featureString = Utf8String(featureStringInput.c_str());
+    BeVersion version(versionInput.c_str());
+    Utf8String deviceId = Utf8String(deviceIdInput.c_str());
+
+    // create the rest of the required info
+    auto appInfo = std::make_shared<Licensing::ApplicationInfo>(version, deviceId, productId);
+
+    if(appInfo == nullptr)
+        {
+        cout << "Failed to create ApplicationInfo\n";
+        return;
+        }
+
+    BeFileName dbPath;
+    if(Desktop::FileSystem::BeGetTempPath(dbPath) != BeFileNameStatus::Success)
+        {
+        cout << "Failed to find temporary directory.";
+        return;
+        }
+
+    dbPath.AppendToPath(L"License.db");
+
+    m_accessKeyClient = Licensing::AccessKeyClient::AgnosticCreateWithUltimate
+        (
+        accessKey,
+        appInfo,
+        dbPath,
+        offlineMode,
+        ultimateId,
         projectId,
         featureString,
         nullptr
