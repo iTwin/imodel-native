@@ -1,0 +1,25 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+
+
+appName         = ThreeMxReaderLegacy
+o               = $(OutBuildDir)ThreeMxReaderLegacy/
+
+DLM_NAME    = $(appName)
+CCompPDBName = $(appName)
+
+MultiCompileIntermediatePdbFile=$(o)$(CCompPDBName).pdb
+IntermediatePdbFile = $(MultiCompileIntermediatePdbFile)
+
+nameToDefine = OPENCTM_STATIC
+%include cdefapnd.mki
+
+#----------------------------------------------------------------------
+# We're building the ThreeMxReader lib
+#----------------------------------------------------------------------
+nameToDefine = __THREEMXREADER_BUILD__
+%include cdefapnd.mki
+

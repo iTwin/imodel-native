@@ -1,0 +1,24 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+appName  = ThreeMx
+o        = $(OutBuildDir)ThreeMx/
+
+DLM_NAME    = $(appName)
+CCompPDBName = $(appName)
+
+MultiCompileIntermediatePdbFile=$(o)$(CCompPDBName).pdb
+IntermediatePdbFile = $(MultiCompileIntermediatePdbFile)
+
+nameToDefine = OPENCTM_STATIC
+%include cdefapnd.mki
+
+#----------------------------------------------------------------------
+# We're building the ThreeMxSchema lib
+#----------------------------------------------------------------------
+nameToDefine = __THREEMX_BUILD__
+%include cdefapnd.mki
+
+
