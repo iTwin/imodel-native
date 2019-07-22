@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BuildContext
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd"
+    >
+
+
+    <ProductDirectoryList ListName="ClassificationSystemsDirectories">
+      <ProductDirectory Name="Assemblies" Path=""/>
+      <ProductDirectory Name="Assets" Path="Assets"/>
+      <ProductDirectory Name="Assets" LibType="static" Path="Assets"/>
+      <ProductDirectory Name="VendorNotices" Path="Notices"/>
+      <ProductDirectory Name="VendorNotices" Path="Notices" LibType="static" />
+      <ProductDirectory Name="BuildingSharedIncludes" Path="BuildingShared" />
+      <ProductDirectory Name="ClassificationSystemsIncludes" Path="ClassificationSystems" />
+    </ProductDirectoryList>
+
+    <ProductDirectoryList ListName="ClassificationSystemsGTestDirectories">
+      <ProductDirectory Name="Gtest-NativeAssemblies" Path=""/>
+      <ProductDirectory Name="Gtest-NativeAssemblies" Path="" LibType="Static"/>
+      <ProductDirectory Name="Assemblies" Path=""/>
+      <ProductDirectory Name="Assemblies" Path="" LibType="Static"/>
+      <ProductDirectory Name="Assets" Path="Assets-g"/>
+      <ProductDirectory Name="Assets" Path="Assets-g" LibType="static"/>
+      <ProductDirectory Name="Gtest-Assets" Path="Assets"/>
+      <ProductDirectory Name="Gtest-Assets" Path="Assets" LibType="Static"/>
+      <ProductDirectory Name="VendorNotices" Deliver="false" />
+      <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
+      <ProductDirectory Name="UnitTests-Objects" Path="unittests" />
+    </ProductDirectoryList>
+
+    <Part Name="ClassificationSystemsSchema">
+      <SubPart PartName="ClassificationSystems" Repository="BisSchemas" PartFile="BisSchemas"/>
+    </Part>
+
+    <Part Name="ClassificationSystemsApi" BentleyBuildMakeFile="ClassificationSystemsAPI.prewire.mke">
+      <Bindings>
+        <Directory SourceName="PublicApi/ClassificationSystems" ProductDirectoryName="ClassificationSystemsIncludes" />
+        <PublicAPI Domain="ClassificationSystems"/>
+      </Bindings>
+    </Part>
+    
+    <Part Name="ClassificationSystemsElements" BentleyBuildMakeFile="Elements/ClassificationSystemsElements.mke" ApiNumber="M02">
+        <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+        <SubPart PartName="ClassificationSystemsApi"/>
+        <SubPart PartName="BuildingDgnUtils" Repository="BuildingShared" PartFile="BuildingShared" />
+        <Bindings>
+            <Libs>Delivery/$(libprefix)ClassificationSystemsElements$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)ClassificationSystemsElements$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="ClassificationSystemsHandlers" BentleyBuildMakeFile="Handlers/ClassificationSystemsHandlers.mke" ApiNumber="M02">
+      <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+      <SubPart PartName="ClassificationSystemsElements"/>
+      <Bindings>
+        <Libs>Delivery/$(libprefix)ClassificationSystemsHandlers$(libext)</Libs>
+        <Assemblies>Delivery/$(shlibprefix)ClassificationSystemsHandlers$(ApiNumber)$(shlibext)</Assemblies>
+      </Bindings>
+    </Part>
+        
+    <Part Name="ClassificationSystems" >
+      <SubPart PartName="ClassificationSystemsDomain"/>
+      <SubPart PartName="ClassificationSystemsElements"/>
+      <SubPart PartName="ClassificationSystemsHandlers"/>
+      <SubPart PartName="ClassificationSystemsSchema"/>
+    </Part>
+
+
+    <Part Name="ClassificationSystems-Tested">
+      <SubPart PartName="ClassificationSystems"/>
+      <SubPart PartName="Gtest-RunAggregator"/>
+    </Part>
+
+    <Part Name="Gtest-RunAggregator" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/CheckLogfilesForFailures.mke" BentleyBuildMakeOptions="-dLogFilesDir=$(BuildContext)SubParts/Gtest/Logs" OnlyPlatforms="x86,x64,Linux*,MacOS*,WinRT*">
+      <SubPart PartName="RunGtest"/>
+    </Part>
+
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="Tests/RunTests.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/ClassificationSystems-GtestProduct/ClassificationSystemsTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+      <SubProduct ProductName="ClassificationSystems-GtestProduct" />
+      <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+      <Bindings>
+        <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/ClassificationSystemsTest.log</Files>
+      </Bindings>
+    </Part>
+
+    <Product Name="ClassificationSystems-GtestProduct" >
+      <SubPart PartName="ClassificationSystems-Gtest"/>
+      <Directories DirectoryListName="ClassificationSystemsDirectories"/>
+      <Directories DirectoryListName="ClassificationSystemsGTestDirectories"/>
+    </Product>
+
+    <Part Name="ClassificationSystems-Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke"
+      BentleyBuildMakeOptions="-dTEST_NAME=ClassificationSystemsTest -dTEST_COLLECTION_PRODUCT=ClassificationSystems-TestsProduct -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+      <SubProduct ProductName="ClassificationSystems-TestsProduct"/>
+      <SubPart PartName="DgnClientSdk-TestHelpers" Repository="DgnClientFx" PartFile="DgnClientFx"/>
+      <Bindings>
+        <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/ClassificationSystemsTest/Assemblies/*</Files>
+        <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/ClassificationSystemsTest/Assets" />
+      </Bindings>
+    </Part>
+
+    <Product Name="ClassificationSystems-TestsProduct">
+      <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
+      <SubPart PartName="ClassificationSystems-Tests"/>
+      <SubPart PartName="DgnPlatformSqlang" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+      <Directories DirectoryListName="ClassificationSystemsDirectories"/>
+      <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+    </Product>
+
+
+    <Part Name="ClassificationSystems-Tests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
+      <SubPart PartName="BuildSharedTestUtils" PartFile="BuildingShared" Repository="BuildingShared" />
+      <SubPart PartName="PrewireForUnitTests"/>
+      <SubPart PartName="BackdoorForUnitTests" Repository="DgnClientFx" PartFile="DgnClientFx"/>
+      <SubPart PartName="ClassificationSystems"/>
+	    <SubPart PartName="ClassificationSystemsDomain-GeneratedInserts"/>
+      <Bindings>
+        <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="ClassificationSystems/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
+      </Bindings>
+    </Part>
+
+    <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/Prewire.mke">
+      <Bindings>
+        <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="ClassificationSystems">
+          Delivery/UnitTests/ignore_list.txt
+        </Files>
+      </Bindings>
+    </Part>
+  
+    <Part Name="ClassificationSystemsDomain" BentleyBuildMakeFile="Domain/ClassificationSystemsDomain.mke" ApiNumber="M02">
+        <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+        <SubPart PartName="ClassificationSystemsHandlers"/>
+        <SubPart PartName="ClassificationSystemsSchema"/>
+        <SubPart PartName="BeJsonCpp" Repository="libsrc-jsoncpp" PartFile="BeJsonCpp"/>
+        <SubPart PartName="BuildingDgnUtils" Repository="BuildingShared" PartFile="BuildingShared" />
+        <Bindings>
+            <Libs>Delivery/$(libprefix)ClassificationSystemsDomain$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)ClassificationSystemsDomain$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+    
+	<Part Name="ClassificationSystemsDomain-GeneratedInserts" BentleyBuildMakeFile="Domain/GeneratedInserts/GeneratedInserts.mke" ApiNumber="M02">
+        <SubPart PartName="ClassificationSystemsDomain"/>
+		<SubPart PartName="BuildingDgnUtils" Repository="BuildingShared" PartFile="BuildingShared" />
+		<SubPart PartName="CodeGenerators" Repository="BuildingShared" PartFile="BuildingShared" />
+        <Bindings>
+            <Libs>Delivery/$(libprefix)ClassificationSystemsGeneratedInserts$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)ClassificationSystemsGeneratedInserts$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+	
+</BuildContext>
