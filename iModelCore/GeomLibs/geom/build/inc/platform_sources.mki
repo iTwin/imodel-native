@@ -1,0 +1,12 @@
+#*--------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------*/
+
+$(OUT_DIR)VirtualCurve$(OUT_EXT)   : $(geomSrcPlatform)VirtualCurve.cpp          $(OTHER_DEPENDENCIES)
+
+$(OUT_DIR)CurveCurve$(OUT_EXT)   : $(geomSrcPlatform)CurveCurve.cpp          $(OTHER_DEPENDENCIES)
+
+$(OUT_DIR)templatizedVector$(OUT_EXT)   : $(geomSrcPlatform)templatizedVector.cpp          $(OTHER_DEPENDENCIES)
+

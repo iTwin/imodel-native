@@ -1,0 +1,15 @@
+#*--------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------*/
+%include    $(srcGeomLibs)common/inc/geomlibsdev.mki
+
+nameToDefine = jmdlgeom_internal
+%include cdefapnd.mki
+
+nameToDefine = COMPILE_OLD_DVector
+%include cdefapnd.mki
+
+dirToSearch = $(srcGeomLibs)PublicAPI/
+%include cincapnd.mki

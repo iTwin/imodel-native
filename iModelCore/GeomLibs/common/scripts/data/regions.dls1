@@ -1,0 +1,13 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
+
+%Version 0x600
+
+%InterfaceType  dlm
+
+%ModuleName regions
+
+%Functions

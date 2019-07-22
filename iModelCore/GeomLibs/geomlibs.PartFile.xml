@@ -1,0 +1,336 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd"
+              >
+
+    <Part Name="ExternalDependencies">
+        <SubPart PartName="BentleyDll" PartFile="Bentley" Repository="Bentley" />
+    </Part>
+
+    <Part Name="PublishedApi" BentleyBuildMakeFile="PublicAPI/PublishApi.mke">
+        <!-- While the published api does not depend on the library, this subpart is a quick and maintainable way to ensure that all needed public apis are in the buildcontext. -->
+        <SubPart PartName="GeomDlls" />
+        <Bindings>
+            <Directory SubPartDirectory="PublishedApi/geomlibs" SourceName="Delivery/PublishedApi" ProductDirectoryName="PublishedAPI" Required="false"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="PublishedApi_Doc" DeferType="BuildDocs" BentleyBuildMakeFile="PublicAPI/BuildPublishedDoc.mke">
+        <RequiredRepository>bsitools-doxygen</RequiredRepository>
+        <SubPart PartName="PublishedApi" />
+        <Bindings>
+            <Files ProductDirectoryName="PublishedApi_Doc" IfNotPresent="Warn" Required="false">Delivery/GeomLibsAPI.chm</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Bind my own PublicAPI into BuildContext/PublicAPI. Note that this part does not cause any sub-part PublicAPIs to be bound. -->
+    <Part Name="PublicAPI" BentleyBuildMakeFile="prewire.mke">
+        <Bindings>
+            <PublicAPI Domain="Geom" />
+            <PublicAPI Domain="PlacementOnEarth" />
+            <PublicAPI Domain="GeomJsonWireFormat" />
+            <PublicAPI Domain="Mtg" />
+            <PublicAPI Domain="Vu" />
+            <PublicAPI Domain="Regions" />
+            <PublicAPI Domain="GeomSerialization" />
+        </Bindings>
+    </Part>
+
+    <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
+    <Part Name="GeomDlls" BentleyBuildMakeFile="geom/build/BentleyGeom/BentleyGeom.mke" ApiNumber="M02">
+        <SubPart PartName="BentleyDll" PartFile="Bentley" Repository="Bentley" />
+        <SubPart PartName="BeJsonCpp" PartFile="BeJsonCpp" Repository="Libsrc-JsonCpp"/>
+        <SubPart PartName="PublicAPI" />
+        <Bindings>
+            <Assemblies>Delivery/$(shlibprefix)BentleyGeom$(ApiNumber)$(shlibext)</Assemblies>
+            <Libs>Delivery/$(libprefix)BentleyGeom$(libext)</Libs>
+        </Bindings>
+    </Part>
+
+    <Part Name="GeomlibsSerialization" BentleyBuildMakeFile="serialization/src/serialization.mke" ApiNumber="M02">
+        <SubPart PartName="GeomDlls"/>
+        <SubPart PartName="BentleyDll" PartFile="Bentley" Repository="Bentley"/>
+        <SubPart PartName="FlatBuffers" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <SubPart PartName="BeXml" PartFile="Bentley" Repository="Bentley"/>
+        <SubPart PartName="BeJsonCpp"       PartFile="BeJsonCpp" Repository="Libsrc-JsonCpp"/>
+        <Bindings>
+            <Assemblies>Delivery/$(shlibprefix)BentleyGeomSerialization$(ApiNumber)$(shlibext)</Assemblies>
+            <Libs>Delivery/$(libprefix)BentleyGeomSerialization$(libext)</Libs>
+        </Bindings>
+    </Part>
+
+
+    <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
+    <Part Name="GeomDllA" BentleyBuildMakeFile="geom/build/BentleyGeomA/BentleyGeomA.mke" ApiNumber="M02">
+        <SubPart PartName="BentleyDll" PartFile="Bentley" Repository="Bentley" />
+        <SubPart PartName= "PublicAPI" />
+        <Bindings>
+            <Assemblies ProductDirectoryName="GeomANativeAssemblies">Delivery/$(shlibprefix)BentleyGeomA$(ApiNumber)$(shlibext)</Assemblies>
+            <Libs>Delivery/$(libprefix)BentleyGeomA$(libext)</Libs>
+        </Bindings>
+    </Part>
+
+    <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+    <!-- Tests. These are bundled into various test collections and test-runner products.      -->
+    <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+
+    <Part Name="TestBase" DeferType="BuildUnitTests" BentleyBuildMakeFile="geom/test/Prewire.mke">
+        <SubPart PartName="GeomDlls"/>
+        <SubPart PartName="GeomlibsSerialization"/>
+        <Bindings>
+            <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="GeomLibs" SubPartDirectory="UnitTests/GeomLibs">Delivery/UnitTests/ignore_list.txt</Files>
+            <!-- Not supported in DgnDb
+            <Directory ProductDirectoryName="UnitTests-GeomLibs-Tests-ProductData" ProductSubDirectory="GeomLibs-Tests-ProductData" SourceName="Delivery/UnitTests/GeomLibs-Tests-ProductData"/>
+            -->
+		    <Directory ProductDirectoryName="UnitTests-GeomLibsTestData" SourceName="Delivery/UnitTests/GeomLibsTestData"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="CheckersForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="geom/test/BuildTestCheckers.mke">
+        <SubPart PartName="TestBase" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="GeomLibs/Checkers" SourceName="Delivery/UnitTests/Objects/Checkers"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTests-PolylineOpsTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="geom/test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=PolylineOpsTest">
+        <SubPart PartName="CheckersForUnitTests" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="GeomLibs/PolylineOpsTest" SourceName="Delivery/UnitTests/Objects/PolylineOpsTest"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTests-BsplineTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="geom/test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=BsplineTest">
+        <SubPart PartName="CheckersForUnitTests" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="GeomLibs/BsplineTest" SourceName="Delivery/UnitTests/Objects/BsplineTest"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTests-RootTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="geom/test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=RootTest">
+        <SubPart PartName="CheckersForUnitTests" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="GeomLibs/RootTest" SourceName="Delivery/UnitTests/Objects/RootTest"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTests-PerformanceTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="geom/test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=PerformanceTest">
+        <SubPart PartName="CheckersForUnitTests" />
+        <!-- The Geomlibs performance tests have dependency on BeSQLite to test serialization cases. -->
+        <SubPart PartName="BeSQLite"        PartFile="BeSQLite"  Repository="BESQLite"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="GeomLibs/PerformanceTest" SourceName="Delivery/UnitTests/Objects/PerformanceTest"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTests-StructsTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="geom/test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=structsTest">
+        <SubPart PartName="CheckersForUnitTests" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="GeomLibs/structsTest" SourceName="Delivery/UnitTests/Objects/structsTest"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTests-CurvePrimitiveTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="geom/test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=CurvePrimitiveTest">
+        <SubPart PartName="CheckersForUnitTests" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="GeomLibs/CurvePrimitiveTest" SourceName="Delivery/UnitTests/Objects/CurvePrimitiveTest"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTests-bezierTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="geom/test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=bezierTest">
+        <SubPart PartName="CheckersForUnitTests" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="GeomLibs/bezierTest" SourceName="Delivery/UnitTests/Objects/bezierTest"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTests-PolyfaceTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="geom/test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=PolyfaceTest">
+        <SubPart PartName="CheckersForUnitTests" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="GeomLibs/PolyfaceTest" SourceName="Delivery/UnitTests/Objects/PolyfaceTest"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTests-SerializationTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="geom/test/BuildTests.mke"  BentleyBuildMakeOptions="-dTestDir=SerializationTest">
+        <SubPart PartName="CheckersForUnitTests" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="GeomLibs/SerializationTest" SourceName="Delivery/UnitTests/Objects/SerializationTest"/>
+        </Bindings>
+    </Part>
+    
+    <!-- Define a test collection part. This is included in DgnClientFx's TestsAggregate -->
+    <Part Name="Tests">
+        <SubPart PartName="UnitTests-StructsTest" />
+        <SubPart PartName="UnitTests-CurvePrimitiveTest" />
+        <SubPart PartName="UnitTests-bezierTest" />
+        <SubPart PartName="UnitTests-PolyfaceTest" />
+        <SubPart PartName="UnitTests-PolylineOpsTest" />
+        <SubPart PartName="UnitTests-BsplineTest" />
+        <SubPart PartName="UnitTests-RootTest" />
+        <SubPart PartName="UnitTests-SerializationTest" />
+    </Part>
+
+    <!-- Define a gtest program to run the tests. The Gtest and RunGtest parts are included in DgnClientFx's Gtest-Aggregator and RunGtest-DgnClientFxTests parts -->
+    <Product Name="GeomLibs-Tests">
+        <!-- *** TRICKY: Must depend on a part in begtest repository, in order to use a productdirectorylist from there. -->
+        <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
+        <SubPart PartName="Tests"/>
+        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+    </Product>
+	
+    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=GeomLibsTest -dTEST_COLLECTION_PRODUCT=GeomLibs-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+        <SubProduct ProductName="GeomLibs-Tests"/>
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/GeomLibsTest/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/GeomLibsTest/Assets" />
+        </Bindings>
+    </Part>
+	
+	
+    <Product Name="GeomLibs-Gtest" >
+        <SubPart PartName="Gtest"/>
+        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+		
+    </Product>
+	
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=GeomLibs-Gtest -dGTEST_NAME=GeomLibsTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="GeomLibs-Gtest" />
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+          <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/GeomLibsTest.log</Files>
+        </Bindings>
+		<SubPart PartName="comparedgnjs" />
+    </Part>
+
+	<!-- Memory leak testing of GeomLibs tests. Only called on demand -->
+	<Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=GeomLibs-Gtest -dGTEST_NAME=GeomLibsTest" OnlyPlatforms="x64">
+		<SubPart PartFile="DgnDbTestingScripts" Repository="DgnDbTestingScripts" PartName="MemLeakTests" />
+		<SubProduct ProductName="GeomLibs-Gtest" />
+    </Part>
+	
+	
+	<Part Name="comparedgnjs" BentleyBuildMakeFile="comparedgnjs/comparedgnjs.mke" OnlyPlatforms="x64">
+		<SubProduct ProductName="GeomLibs-Gtest" />
+    </Part>
+	
+    <!-- ********************** -->
+    <!-- **** AndroidJUnit **** -->
+    <!-- ********************** -->
+    <Part Name="AndroidJUnit" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_COLLECTION_PRODUCT=GeomLibs-Tests -dTEST_SHORT_NAME=GeomTst -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
+        <SubProduct ProductName="GeomLibs-Tests"/>
+        <SubPart PartName="AndroidJUnitTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="AndroidJUnit-Project" SourceName="Delivery/ANJUP" />
+        </Bindings>
+    </Part>
+
+    <Product Name="GeomLibs-AndroidJUnit" >
+        <SubPart PartName="AndroidJUnit" LibType="Static"/>
+        <Directories DirectoryListName="AndroidJUnitProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="RunAndroidJUnitTest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=GeomLibs-AndroidJUnit" OnlyPlatforms="Android*">
+        <SubProduct ProductName="GeomLibs-AndroidJUnit"/>
+        <Bindings>
+          <Files Required="false" SubPartDirectory="ANJU/Logs">Delivery/ANJU/Logs/GeomLibs-AndroidJUnit.log</Files>
+        </Bindings>
+    </Part>
+
+    <!-- ********************** -->
+    <!-- **** iOSXCTest **** -->
+    <!-- ********************** -->
+    <Part Name="iOSXCTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/iOS//MakeXCTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=geomlibs -dTEST_COLLECTION_PRODUCT=GeomLibs-Tests -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOS*">
+        <SubProduct ProductName="GeomLibs-Tests"/>
+        <SubPart PartName="iOSXCTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="iOSXCTestProject" SourceName="Delivery/iOSXCTest/GeomLibs/Project" />
+        </Bindings>
+    </Part>
+
+    <Product Name="GeomLibs-iOSXCTest" >
+        <SubPart PartName="iOSXCTest" LibType="Static"/>
+        <Directories DirectoryListName="iOSXCTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="RuniOSXCTest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/iOS//RunXCTestProject.mke" BentleyBuildMakeOptions="-dXCTEST_PRODUCT=GeomLibs-iOSXCTest" OnlyPlatforms="iOS*">
+        <SubProduct ProductName="GeomLibs-iOSXCTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="XCTest/Logs">Delivery/XCTest/Logs/GeomLibs-iOSXCTest.log</Files>
+        </Bindings>
+    </Part>
+
+    <!-- *********************************************************** -->
+    <!-- **** UWP Microsoft::VisualStudio::CppUnitTestFramework **** -->
+    <!-- *********************************************************** -->
+    <!-- N.B. ApiNumber is important here because we must manually reference some DLLs, and thus need an accruate suffix to find them. -->
+    <Part
+        Name="UwpTest" DeferType="BuildUnitTests"
+        BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/uwp//MakeUwpTestProject.mke"
+        BentleyBuildMakeOptions="-dTEST_NAME=GeomLibs -dTEST_COLLECTION_PRODUCT=GeomLibs-Tests"
+        OnlyPlatforms="WinRT*"
+        ApiNumber="M02"
+        >
+        <SubProduct ProductName="GeomLibs-Tests"/>
+        <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UwpTestProject" SourceName="Delivery/GeomLibsUwpTest"/>
+        </Bindings>
+    </Part>
+
+    <Product Name="GeomLibs-UwpTest">
+        <SubPart PartName="UwpTest"/>
+        <Directories DirectoryListName="UwpTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part
+        Name="RunUwpTest"
+        DeferType="RunUnitTests"
+        BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/uwp//RunUwpTestProject.mke"
+        BentleyBuildMakeOptions="-dUWPTEST_PRODUCT=GeomLibs-UwpTest"
+        OnlyPlatforms="WinRT*"
+        >
+        <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubProduct ProductName="GeomLibs-UwpTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="UwpTest/Logs">Delivery/UwpTest/Logs/GeomLibs-UwpTest.log</Files>
+        </Bindings>
+    </Part>
+
+    <!-- ***NEEDS WORK: Does this really need to be a product? Does PRG build it? -->
+    <ProductDirectoryList ListName="Empty" />
+    <Product Name="GeomLibsTested" AddIn="true" PrgOutputDir="GeomLibs" >
+        <SubPart PartName="RunGtest" />
+        <Directories DirectoryListName="Empty" />
+    </Product>
+
+
+    <!-- //////////////////////////////////////////////////////////////////////////////////////////////////// -->
+    <!-- GeomLibs Product -->
+    <!-- //////////////////////////////////////////////////////////////////////////////////////////////////// -->
+    <Product Name="GeomLibs" PrgOutputDir="Geomlibs">
+        <SubPart PartName= "GeomDlls" />
+        <SubPart PartName="GeomDlls" LibType="Static"/>
+        <SubPart PartName="GeomlibsSerialization"/>
+        <SubPart PartName="GeomlibsSerialization" LibType="Static"/>
+        <!--
+        <SubPart PartName="PublishedApi_Doc" />
+        -->
+        <Directories DirectoryListName="GeomLibsProductDirectories" />
+    </Product>
+
+    <ProductDirectoryList ListName="GeomLibsProductDirectories">
+        <ProductDirectory Name="VendorNotices"                      Deliver="false" />
+        <ProductDirectory Name="MergeModules"                       Deliver="false" />
+        <ProductDirectory Name="DgnDbPlatformFxLibs"                Deliver="false"/>
+        <ProductDirectory Name="Assemblies"            Deliver="false" LibType="static" />
+        <ProductDirectory Name="VendorNotices"                      Deliver="false" LibType="static" />
+
+        <ProductDirectory Name="Assemblies"            Path="" />
+        <ProductDirectory Name="BentleyDll"                         Path=""/>
+        <ProductDirectory Name="PublishedApi_Doc"                   Path="doc" />
+    </ProductDirectoryList>
+	
+	
+</BuildContext>

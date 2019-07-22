@@ -1,0 +1,16 @@
+#*--------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------*/
+%if !defined (MSJ)
+    %error Since geomlibs docs are built with mdldoc, they must be compiled from within a MicroStation shell, not a Geomlibs shell.
+%endif
+
+# build all geomlibs documentation (always start from scratch, since html help sometimes gets confused)
+
+always:
+    bmake +a $(_MakeFilePath)Geom/doc/build/bsibasegeomdoc/bsibasegeomdoc.mke
+
+always:
+    bmake +a $(_MakeFilePath)vu/doc/build/bsivudoc/bsivudoc.mke

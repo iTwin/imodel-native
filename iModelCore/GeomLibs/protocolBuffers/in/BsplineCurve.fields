@@ -1,0 +1,14 @@
+PRIMITIVE BsplineCurve
+<def name=SUMMARY>Poles, knots, and weights for a bspline curve
+</def>
+<def name=Interface_BaseList>IGeometry, IPrimitiveCurve</def>
+
+
+<def name=MEMBERS><value ItemType=int ItemTagName=Order ItemSemanticName=Order ItemParamName=order ItemMemberName=mOrder ItemDescription="Spline order (one more than degree)" ScaleMode=None/>
+<value ItemType=bool ItemTagName=Closed ItemSemanticName=Closed ItemParamName=closed ItemMemberName=mClosed ItemDescription="Closure flag." ScaleMode=None/>
+<list ItemType=DPoint3d ItemTagName=xyz ItemSemanticName=ControlPoint ItemParamName=controlPoint ListName=mControlPoint ItemDescription="Control point xyz" ScaleMode=Length/>
+<list ItemType=double ItemTagName=Weight ItemSemanticName=Weight ItemParamName=weight ListName=mWeight ItemDescription="Control point weight" ScaleMode=None/>
+<list ItemType=double ItemTagName=Knot ItemSemanticName=Knot ItemParamName=knot ListName=mKnot ItemDescription="knot" ScaleMode=None/>
+</def>
+
+END_PRIMITIVE

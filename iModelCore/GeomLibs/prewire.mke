@@ -1,0 +1,18 @@
+#--------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------*/
+%include mdl.mki
+
+SrcGeomLibs             = $(SrcRoot)GeomLibs/
+GeomPublicAPISrc        = $(SrcGeomLibs)PublicAPI/
+
+always:
+    ~linkdir "$(BuildContextPublicApiDir)Geom=$(GeomPublicAPISrc)Geom"
+    ~linkdir "$(BuildContextPublicApiDir)Mtg=$(GeomPublicAPISrc)Mtg"
+    ~linkdir "$(BuildContextPublicApiDir)PlacementOnEarth=$(GeomPublicAPISrc)PlacementOnEarth"
+    ~linkdir "$(BuildContextPublicApiDir)GeomJsonWireFormat=$(GeomPublicAPISrc)GeomJsonWireFormat"
+    ~linkdir "$(BuildContextPublicApiDir)Regions=$(GeomPublicAPISrc)Regions"
+    ~linkdir "$(BuildContextPublicApiDir)Vu=$(GeomPublicAPISrc)Vu"
+    ~linkdir "$(BuildContextPublicApiDir)GeomSerialization=$(GeomPublicAPISrc)GeomSerialization"
