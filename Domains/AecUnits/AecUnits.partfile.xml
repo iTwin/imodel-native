@@ -17,7 +17,7 @@
     </Part>   
 
     <Part Name="AecUnitsPublicAPI" BentleyBuildMakeFile="AecUnits.prewire.mke" ApiNumber="M02">
-        <SubPart PartName="AecUnitsSchema" Repository="BisSchemas" PartFile="BisSchemas" />
+        <SubPart PartName="AecUnitsSchema" Repository="BisSchemas" PartFile="BisSchemasIModelCore" />
         <Bindings>
             <PublicAPI Domain="AecUnits"/>
           <!--  <Directory SourceName="Dox/Pages/Building"  SubPartDirectory="Dox/Pages/Building"/>
