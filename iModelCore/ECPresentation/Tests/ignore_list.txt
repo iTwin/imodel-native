@@ -91,3 +91,18 @@ QueryBasedSpecificationNodesProviderTests.UsesRelatedInstancePropertiesWhenOverr
     # 2019-02-27 14:38:05.431361+0500 BeTestiOS[340:25608] TestRunner: QueryBasedSpecificationNodesProviderTests.UsesRelatedInstancePropertiesWhenOverridingLabel FAILED
     # Feb 27 14:38:05  Be[340] <Emergency>: TestRunner: QueryBasedSpecificationNodesProviderTests.UsesRelatedInstancePropertiesWhenOverridingLabel FAILED
     # /Users/naveed.khan/bsi-src/bim0200dev/out/iOSARM64/static/build/ECPresentation/XCodeProject/BeTestiOSTests/UnitTests.mm:2786: error: -[ECPNonPub_QueryBasedSpecificationNodesProviderTests testUsesRelatedInstancePropertiesWhenOverridingLabel] : ((0 == BETEST_TEST_RUNNER_FUNC(QueryBasedSpecificationNodesProviderTests,UsesRelatedInstancePropertiesWhenOverridingLabel) ()) is true) failed
+
+# Randomly fail in PRG.
+DiskNodesCacheTests.ShareCachedHierarchiesBetweenSessions
+# For example:
+    # [ RUN      ] DiskNodesCacheTests.ShareCachedHierarchiesBetweenSessions
+    # e:\Builds\dcsdk020002204\Source\ECPresentation\Tests\NonPublished\RulesEngine\NavNodesCacheTests.cpp(2139): error: Value of: m_cache->GetCombinedHierarchyLevel(updatedInfo).IsValid()
+    #   Actual: false
+    # Expected: true
+    # e:\Builds\dcsdk020002204\Source\ECPresentation\Tests\NonPublished\RulesEngine\NavNodesCacheTests.cpp(2140): error: Value of: m_cache->IsHierarchyLevelCached(nodes[0]->GetNodeId())
+    #   Actual: false
+    # Expected: true
+    # e:\Builds\dcsdk020002204\Source\ECPresentation\Tests\NonPublished\RulesEngine\NavNodesCacheTests.cpp(2141): error: Value of: m_cache->IsHierarchyLevelCached(nodes[1]->GetNodeId())
+    #   Actual: false
+    # Expected: true
+    # [  FAILED  ] DiskNodesCacheTests.ShareCachedHierarchiesBetweenSessions (346 ms)
