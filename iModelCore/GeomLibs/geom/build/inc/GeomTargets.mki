@@ -777,6 +777,8 @@ $(OUT_DIR)UnionFind$(OUT_EXT) : $(geomSrcMemory)UnionFind.cpp     $(OTHER_DEPEND
 
 $(OUT_DIR)MTGGraph$(OUT_EXT)      : $(geomSrcMTG)MTGGraph.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
+$(OUT_DIR)mtgflowlines$(OUT_EXT)      : $(geomSrcMTG)mtgflowlines.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
 $(OUT_DIR)jmdl_mtgbase1$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgbase1.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 $(OUT_DIR)MtgFacetPlanarMerge$(OUT_EXT) : $(geomSrcMTG)MtgFacetPlanarMerge.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}

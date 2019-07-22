@@ -16,6 +16,9 @@
 #include <BeSQLite/L10N.h>
 
 #define TEST_PRODUCT_ID     "2545"
+#define TEST_ULT_ID         "1001389117"
+#define TEST_DEVICE_ID      "TestDeviceId" 
+#define TEST_DEVICE_SID     "IXravQ3f71wUupkp+tLBK+vGmCc="
 
 USING_NAMESPACE_BENTLEY_LICENSING
 USING_NAMESPACE_BENTLEY_LICENSING_UNIT_TESTS
@@ -430,12 +433,44 @@ TEST_F(UlasProviderTests, GetAccessKeyInfo_Success)
     GetMockHttp().ForRequest(1, [=](Http::RequestCR request)
         {
         EXPECT_EQ(expectedUrl, request.GetUrl());
-
+		auto requeststr = request.GetRequestBody()->AsString();
+		Json::Value requestJSON = Json::Reader::DoParse(requeststr);
+		EXPECT_STREQ(TEST_DEVICE_SID, requestJSON["cSID"].asCString());
         return MockHttpHandler::StubHttpResponse(testJsonString);
         });
 
     EXPECT_NE(Json::Value::GetNull(), GetUlasProvider().GetAccessKeyInfo(appInfo, accessKey, "").get());
     }
+
+TEST_F(UlasProviderTests, GetAccessKeyInfo_SuccessAgnostic)
+{
+	auto appInfo = std::make_shared<ApplicationInfo>(BeVersion(1, 0), "TestDeviceId", TEST_PRODUCT_ID);
+	Utf8String accessKey = "TestAccessKey";
+	Utf8String mockUrl("https://ulasaccesskeymockurl.bentley.com");
+
+	BeFileName testJsonFile;
+	BeTest::GetHost().GetDgnPlatformAssetsDirectory(testJsonFile);
+	testJsonFile.AppendToPath(L"TestAssets/test.json");
+
+	Json::Value testJson = ReadJsonFile(testJsonFile);
+	Utf8String testJsonString = testJson.asString();
+
+	GetMockBuddi().MockUlasAccessKeyBaseUrl(mockUrl);
+	Utf8String expectedUrl = mockUrl + "/info";
+
+	GetMockHttp().ExpectRequests(1);
+	// return a mock location response
+	GetMockHttp().ForRequest(1, [=](Http::RequestCR request)
+	{
+		EXPECT_EQ(expectedUrl, request.GetUrl());
+		auto requeststr = request.GetRequestBody()->AsString();
+		Json::Value requestJSON = Json::Reader::DoParse(requeststr);		
+		EXPECT_STREQ(TEST_ULT_ID, requestJSON["cSID"].asCString());
+		return MockHttpHandler::StubHttpResponse(testJsonString);
+	});
+
+	EXPECT_NE(Json::Value::GetNull(), GetUlasProvider().GetAccessKeyInfo(appInfo, accessKey, TEST_ULT_ID).get());
+}
 
 // TODO: add a GetAccessKeyInfo success test with ultimate ID
 

@@ -14,7 +14,6 @@
 
     <Part Name="QuantityTakeoffsAspectsSchema">
         <SubPart PartName="QuantityTakeoffsAspects" Repository="BisSchemas" PartFile="BisSchemasIModelCore" />
-        <SubPart PartName="AecUnitsPublicAPI" Repository="imodel02" PartFile="Domains/AecUnits/AecUnits" />
     </Part>
 
     <Part Name="QuantityTakeoffsAspectsApi" BentleyBuildMakeFile="QuantityTakeoffsAspectsApi.prewire.mke">
@@ -45,6 +44,7 @@
     <Part Name="QuantityTakeoffsAspectsDomain" BentleyBuildMakeFile="Domain/QuantityTakeoffsAspectsDomain.mke" ApiNumber="M02">
         <SubPart PartName="DgnPlatformDLL" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
         <SubPart PartName="QuantityTakeoffsAspectsApi"/>
+        <SubPart PartName="QuantityTakeoffsAspectsSchema" />
         <SubPart PartName="QuantityTakeoffsAspectsHandlers"/>
         <Bindings>
             <Libs>Delivery/$(libprefix)QuantityTakeoffsAspectsDomain$(libext)</Libs>

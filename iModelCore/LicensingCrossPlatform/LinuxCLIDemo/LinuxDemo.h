@@ -21,6 +21,9 @@ JsonLocalState* m_localState;
 // command line processing functions
 std::vector<std::string> ParseInput(std::string input);
 
+int getch();
+std::string getpass(bool show_asterisk = true);
+
 void Initialize();
 
 void ProcessClientCommand(std::vector<std::string> input);

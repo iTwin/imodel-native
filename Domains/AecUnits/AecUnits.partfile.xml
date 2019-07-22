@@ -10,7 +10,6 @@
     <Part Name="AecUnitsDomain" BentleyBuildMakeFile="AecUnits.mke" ApiNumber="M02">
         <SubPart PartName="AecUnitsPublicAPI"/>
         <SubPart PartName="DgnPlatformDLL"        PartFile="iModelCore/DgnPlatform/DgnPlatform"  Repository="imodel02" />
-
         <Bindings>
             <Libs>Delivery/$(libprefix)AecUnits$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)AecUnits$(ApiNumber)$(shlibext)</Assemblies>
@@ -18,11 +17,9 @@
     </Part>   
 
     <Part Name="AecUnitsPublicAPI" BentleyBuildMakeFile="AecUnits.prewire.mke" ApiNumber="M02">
+        <SubPart PartName="AecUnitsSchema" Repository="BisSchemas" PartFile="BisSchemasIModelCore" />
         <Bindings>
             <PublicAPI Domain="AecUnits"/>
-            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
-                ECSchemas/Domain/AecUnits.ecschema.xml
-            </Files>
           <!--  <Directory SourceName="Dox/Pages/Building"  SubPartDirectory="Dox/Pages/Building"/>
             <Directory SourceName="Dox/Images/Building" SubPartDirectory="Dox/Images/Building"/> -->
         </Bindings>
