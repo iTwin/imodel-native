@@ -1,0 +1,7 @@
+//Shared buildscript configurations
+repositories {
+    jcenter()
+}
+dependencies {
+    classpath 'com.android.tools.build:gradle:1.5.0'
+}

@@ -1,0 +1,23 @@
+#--------------------------------------------------------------------------------
+# PLEASE keep this file structurized and add new issues to specific sections:
+# KNOWN, BREAKAGES, RANDOM, NEW
+#--------------------------------------------------------------------------------
+
+#--------------------------------------------------------------------------------
+# KNOWN issues with UrlProviderTests.VerifyClientConnection_Success
+#--------------------------------------------------------------------------------
+# TFS#854158
+UrlProviderTests.VerifyClientConnection_Success/Dev_RepositoryFederationServiceURL
+UrlProviderTests.VerifyClientConnection_Success/Dev_BeXMPP
+UrlProviderTests.VerifyClientConnection_Success/Dev_UsageLoggingServicesLocationUrl
+UrlProviderTests.VerifyClientConnection_Success/Dev_EntitlementPolicyServiceUrl
+UrlProviderTests.VerifyClientConnection_Success/Qa_RepositoryFederationServiceURL
+UrlProviderTests.VerifyClientConnection_Success/Qa_BeXMPP
+UrlProviderTests.VerifyClientConnection_Success/Qa_UsageLoggingServicesLocation
+UrlProviderTests.VerifyClientConnection_Success/Qa_EntitlementPolicyService
+UrlProviderTests.VerifyClientConnection_Success/Release_RepositoryFederationServiceURL
+UrlProviderTests.VerifyClientConnection_Success/Release_BeXMPP
+UrlProviderTests.VerifyClientConnection_Success/Perf_RepositoryFederationServiceURL
+UrlProviderTests.VerifyClientConnection_Success/Perf_BeXMPP
+UrlProviderTests.VerifyClientConnection_Success/Perf_iModelBridgeConfiguration
+UrlProviderTests.VerifyClientConnection_Success/Perf_EntitlementPolicyService
