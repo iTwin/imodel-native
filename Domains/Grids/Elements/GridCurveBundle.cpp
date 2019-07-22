@@ -140,7 +140,9 @@ Dgn::IBRepEntityPtr getBRepFromElevationSurface(ElevationGridSurfaceCR surface, 
 
     if (curve.IsNull())
         {
-        curve = CurveVector::CreateRectangle(range.low.x, range.low.y, range.high.x, range.high.y, 0);
+        // Limited by other surface range, because psolid only works in small box.
+        // Added 1 for when rounded curves get split into two at the plane edges
+        curve = CurveVector::CreateRectangle(range.low.x - 1, range.low.y - 1, range.high.x + 1, range.high.y + 1, 0);
         }
 
     Dgn::IBRepEntityPtr bRep;
