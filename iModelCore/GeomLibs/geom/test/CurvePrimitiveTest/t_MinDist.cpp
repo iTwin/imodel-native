@@ -7,6 +7,7 @@
 //
 #include "testHarness.h"
 USING_NAMESPACE_BENTLEY_GEOMETRY_INTERNAL
+#include "ConstructPointRadiusTangentPointTangentRadius.h"
 
 // Make a smooth bcurve.
 // evaluate its frenet frame at curveFraction
@@ -141,4 +142,229 @@ TEST(CurveVector, IsSameStructureAndGeometryWithTransform)
             Check::Near (placementB * inversePlacementA, transformAToB,"A to B");
             }
         }
+    }
+
+
+bool VerifyTangents(CurveVectorCR path)
+    {
+    bool stat = true;
+    for (size_t i = 0; i + 1 < path.size(); i++)
+        {
+        auto rayA = path.at(i)->FractionToPointAndUnitTangent (1.0).Value();
+        auto rayB = path.at(i+1)->FractionToPointAndUnitTangent(0.0).Value();
+        if (!Check::Near(rayA.origin, rayB.origin, "C0 within path")
+            || !Check::Near(rayA.direction, rayB.direction, "C1 within path"))
+            {
+            stat = false;
+            }
+        }
+    return stat;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  7/19
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(CurveVector, ConstructPlanarMinimunRadiusCurve)
+    {
+    static int s_noisy = 0;
+    DPoint3d pointA = DPoint3d::From (-1,0.5,0);
+    DPoint3d pointB = DPoint3d::From (9.1,-1.0,0);
+    double bigStep = 200.0;
+    double radiusA = 2.0;
+    double manyDegrees[] = {15, 45, 75,
+        105, 135, 165,
+        195, 225, 255,
+        285, 315, 345
+        };
+    // unused - double degrees0[] = {15,45};
+    // unused - double degrees1[] = {-15, -45};
+    for (double radiusB : {2.0, 1.0, 3.0})
+        {
+        for (double degreesA : manyDegrees)
+            {
+            auto radiansA = Angle::DegreesToRadians (degreesA);
+            SaveAndRestoreCheckTransform shifterA(bigStep, 0, 0);
+            for (double degreesB : manyDegrees)
+                {
+                SaveAndRestoreCheckTransform shifterA(0, bigStep, 0);
+                auto radiansB = Angle::DegreesToRadians(degreesB);
+                DVec3d tangentA = DVec3d::From (cos(radiansA), sin(radiansA));
+                DVec3d tangentB = DVec3d::From (cos(radiansB), sin(radiansB));
+                CurveVectorPtr shortestCurves = nullptr;
+                double minLength = 1.0e20;
+                for (DPoint2d signs : {
+                    DPoint2d::From ( 1, 1),
+                    DPoint2d::From ( 1,-1),
+                    DPoint2d::From (-1, 1),
+                    DPoint2d::From (-1,-1),
+                    })
+                    {
+                    SaveAndRestoreCheckTransform shifterA(0, 10, 0);
+                    auto c = ConstructTransition_PointTangentRadius_PointTangentRadius::ConstructOnXYPlane(
+                            pointA, tangentA, signs.x * radiusA,
+                            pointB, tangentB, signs.y * radiusB);
+                    if (s_noisy > 0)
+                        {
+                        Check::SaveTransformed (c);
+                        Check::SaveTransformedMarker (pointA);
+                        Check::SaveTransformedMarker (pointB);
+                        Check::SaveTransformed (DSegment3d::From (pointA, pointA + tangentA));
+                        Check::SaveTransformed(DSegment3d::From(pointB, pointB + tangentB));
+                        }
+                    double length = c->Length ();
+                    if (!VerifyTangents(*c))
+                        if (s_noisy == 0)       // don't rewrite if already noisy.
+                            Check::SaveTransformed(c);
+                    if (length < minLength)
+                        {
+                        minLength = length;
+                        shortestCurves = c;
+                        }
+                    if (s_noisy > 0)
+                        {
+                        DPoint3d pointA1, pointB1;
+                        DVec3d unitA1, unitB1;
+                        c->GetStartEnd (pointA1, pointB1, unitA1, unitB1);
+                        Check::SaveTransformed (DSegment3d::From (pointA1, pointA1 + 2.0 * unitA1));
+                        Check::SaveTransformed(DSegment3d::From(pointB1, pointB1 + 2.0 * unitB1));
+                        if (unitA1.DotProduct (tangentA) < 0)
+                            Check::SaveTransformedMarker (pointA1, -1.0);
+                        if (unitB1.DotProduct(tangentB) < 0)
+                            Check::SaveTransformedMarker(pointB1, -1.0);
+                        }
+                    }
+                Check::Shift(0, 20, 0);
+                Check::SaveTransformed(shortestCurves);
+                }
+            }
+
+        Check::Shift (3.0 * bigStep, 0, 0);
+        }
+    Check::ClearGeometry("CurveVector.ConstructPlanarMinimunRadiusCurve");
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  7/19
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(CurveVector, ConstructSpaceMinimunRadiusCurve)
+    {
+    static int s_noisy = 0;
+    DPoint3d pointA = DPoint3d::From(-1, 0.5, 0);
+    DPoint3d pointB = DPoint3d::From(9.1, -1.0, 1);
+    double bigStep = 200.0;
+    double radiusA = 2.0;
+    double radiusB = 1.0;
+    double manyDegrees[] = { 15, 45, 75,
+        105, 135, 165,
+        195, 225, 255,
+        285, 315, 345
+        };
+    // unused - double degrees0[] = { 15,45 };
+    // unused - double degrees1[] = { -15, -45 };
+    for (double degreesA : manyDegrees)
+        {
+        auto radiansA = Angle::DegreesToRadians(degreesA);
+        SaveAndRestoreCheckTransform shifterA(bigStep, 0, 0);
+        for (double degreesB : manyDegrees)
+            {
+            SaveAndRestoreCheckTransform shifterA(0, bigStep, 0);
+            auto radiansB = Angle::DegreesToRadians(degreesB);
+            DVec3d tangentA = DVec3d::From(cos(radiansA), sin(radiansA), 0);
+            DVec3d tangentB = DVec3d::From(cos(radiansB), sin(radiansB), -2);
+            CurveVectorPtr shortestCA = nullptr;
+            double minLengthA = 1.0e20;
+            CurveVectorPtr shortestCB = nullptr;
+            double minLengthB = 1.0e20;
+            for (DPoint2d signs : {
+                DPoint2d::From(1, 1),
+                    DPoint2d::From(1, -1),
+                    DPoint2d::From(-1, 1),
+                    DPoint2d::From(-1, -1),
+                })
+                {
+                SaveAndRestoreCheckTransform shifterA(0, 10, 0);
+                auto cA = ConstructTransition_PointTangentRadius_PointTangentRadius::ConstructOnPlaneFavoringFirstInput(
+                    pointA, tangentA, signs.x * radiusA,
+                    pointB, tangentB, signs.y * radiusB);
+                auto cB = ConstructTransition_PointTangentRadius_PointTangentRadius::ConstructOnPlaneFavoringFirstInput(
+                    pointB, -1.0 * tangentB, signs.y * radiusB,
+                    pointA, -1.0 * tangentA, signs.x * radiusA);
+                cB->ReverseCurvesInPlace();
+                if (s_noisy > 0)
+                    {
+                    Check::SaveTransformedMarker(pointA);
+                    Check::SaveTransformedMarker(pointB);
+                    Check::SaveTransformed(DSegment3d::From(pointA, pointA + tangentA));
+                    Check::SaveTransformed(DSegment3d::From(pointB, pointB + tangentB));
+                    }
+                double lengthA = cA->Length();
+                if (!VerifyTangents(*cA))
+                    Check::SaveTransformed(cA);
+                if (lengthA < minLengthA)
+                    {
+                    minLengthA = lengthA;
+                    shortestCA = cA;
+                    }
+
+                double lengthB = cB->Length();
+                if (!VerifyTangents(*cB))
+                    Check::SaveTransformed(cB);
+                if (lengthB < minLengthB)
+                    {
+                    minLengthB = lengthB;
+                    shortestCB = cB;
+                    }
+
+
+                if (s_noisy > 0)
+                    {
+                    Check::SaveTransformed (cA);
+                    Check::SaveTransformed(cB);
+                    DPoint3d pointA1, pointB1;
+                    DVec3d unitA1, unitB1;
+                    cA->GetStartEnd(pointA1, pointB1, unitA1, unitB1);
+                    Check::SaveTransformed(DSegment3d::From(pointA1, pointA1 + 2.0 * unitA1));
+                    Check::SaveTransformed(DSegment3d::From(pointB1, pointB1 + 2.0 * unitB1));
+                    if (unitA1.DotProduct(tangentA) < 0)
+                        Check::SaveTransformedMarker(pointA1, -1.0);
+                    if (unitB1.DotProduct(tangentB) < 0)
+                        Check::SaveTransformedMarker(pointB1, -1.0);
+                    }
+                }
+                Check::Shift(0, 20, 0);
+                Check::SaveTransformed(shortestCA);
+                Check::SaveTransformed(shortestCB);
+                auto cAB = ConstructTransition_PointTangentRadius_PointTangentRadius::ConstructMiddleCurveBlend (*shortestCA, *shortestCB, 17);
+                Check::SaveTransformed (cAB);
+            }
+        }
+    Check::ClearGeometry("CurveVector.ConstructSpatialMinimunRadiusCurve");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  7/19
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(CurveVector, SingleStepMinimumRadiusCurve)
+    {
+    DPoint3d pointA = DPoint3d::From(-1, 0.5, 0);
+    DPoint3d pointB = DPoint3d::From(9.1, 3.0, 1);
+    double bigStep = 20.0;
+    double radius = 2.0;
+    DVec3d tangentA = DVec3d::From (2,1,1);
+    for (DVec3d tangentB :
+        {
+        DVec3d::From (4,3,0),
+        DVec3d::From(2, 0, 0),
+        DVec3d::From(0,5,-1),
+        DVec3d::From(1, -3, 1),
+        DVec3d::From(3, 0, -1)
+        })
+        {
+        SaveAndRestoreCheckTransform shifterA(0, bigStep, 0);
+        auto curve = ConstructTransition_PointTangentRadius_PointTangentRadius::ConstructFull3DBlend(
+                pointA, tangentA, radius,
+                pointB, tangentB, radius);
+        Check::SaveTransformed(DSegment3d::From(pointA, pointA + tangentA));
+        Check::SaveTransformed(DSegment3d::From(pointB, pointB + tangentB));
+        Check::SaveTransformed(curve);
+        }
+    Check::ClearGeometry("CurveVector.SingleStepMinimumRadiusCurve");
     }

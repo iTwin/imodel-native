@@ -34,6 +34,8 @@
 
 #define TEST_ACCESSKEY_PRODUCT_ID      "1000"
 #define TEST_VALID_ACCESSKEY "3469AD8D095A53F3CBC9A905A8FF8926"
+#define TEST_ULTIMATE_ID        "1001389117"
+#define TEST_AGNOSTICKEY     "527A02AACC79A919A5FF3710DD0E6480"//QA Enviroment 
 
 USING_NAMESPACE_BENTLEY_LICENSING
 USING_NAMESPACE_BENTLEY_LICENSING_INTEGRATION_TESTS
@@ -212,6 +214,16 @@ TEST_F(AccessKeyClientIntegrationTests, GetLicenseStatusValidPolicy_Success)
     EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::Ok));
     EXPECT_SUCCESS(client->StopApplication());
     }
+
+TEST_F(AccessKeyClientIntegrationTests, GetLicenseStatusValidPolicy_SuccessAgnostic)
+{
+	auto client = CreateTestClientWithUltimate(TEST_ULTIMATE_ID, TEST_ACCESSKEY_PRODUCT_ID, TEST_AGNOSTICKEY);
+
+	ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
+
+	EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::Ok));
+	EXPECT_SUCCESS(client->StopApplication());
+}
 
 // The following are tests we use to verify behavior, not meant to be run on a regular basis
 

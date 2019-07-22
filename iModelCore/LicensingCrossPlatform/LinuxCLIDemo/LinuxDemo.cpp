@@ -4,6 +4,8 @@
 #include <iostream>
 #include <sstream>
 #include <unistd.h>
+#include <termios.h>
+#include <stdio.h>
 
 #include <Bentley/Desktop/FileSystem.h>
 #include <BeHttp/HttpClient.h>
@@ -31,7 +33,7 @@ const string clientArgList = "\n\
     - client start - for Client and AccessKeyClient, starts the licensing heartbeats. No effect for SaasClient.\n\
     - client stop - for Client and AccessKeyClient, stops the licensing heartbeats. No effect for SaasClient.\n\
     - client trackusage - for SaasClient, posts usage for the given product ID. No effect for Client and AccessKeyClient.\n\
-    - client markfeature - for all client flavors, posts a feature log in realtime for the given feature.\n\
+    - client markfeature - for all client flavors, posts a feature log offline (Client, AccessKeyClient), or in realtime (SaasClient) for the given feature.\n\
     - client licstatus - for AccessKeyClient get the license status of the current policy. No effect for Client and SaasClient.\n\
     - client help - get an explanation of the client and a list of valid client arguments.\n\
 \n";
@@ -200,6 +202,52 @@ vector<string> ParseInput(string input)
 
     return result;
     }
+
+    // these functions are to hide password input when typed
+    int getch() 
+        {
+        int ch;
+        struct termios t_old, t_new;
+
+        tcgetattr(STDIN_FILENO, &t_old);
+        t_new = t_old;
+        t_new.c_lflag &= ~(ICANON | ECHO);
+        tcsetattr(STDIN_FILENO, TCSANOW, &t_new);
+
+        ch = getchar();
+
+        tcsetattr(STDIN_FILENO, TCSANOW, &t_old);
+        return ch;
+        }
+    string getpass(bool show_asterisk)
+        {
+        const char BACKSPACE=127;
+        const char RETURN=10;
+
+        string password;
+        unsigned char ch=0;
+
+        while((ch=getch())!=RETURN)
+            {
+            if(ch==BACKSPACE)
+                {
+                if(password.length()!=0)
+                    {
+                    if(show_asterisk)
+                        cout <<"\b \b";
+                    password.resize(password.length()-1);
+                    }
+                }
+            else
+                {
+                password+=ch;
+                if(show_asterisk)
+                    cout <<'*';
+                }
+            }
+        cout << endl;
+        return password;
+        }
 
 void Initialize()
     {
@@ -596,6 +644,10 @@ void CreateClient()
     string offlineModeInput;
     string projectIdInput;
     string featureStringInput;
+    string versionInput;
+    string deviceIdInput;
+
+    cout << "Enter the following values as prompted (leave blank and press Enter to make a value null)\n";
 
     cout << "Enter a product ID: ";
     getline(cin, productIdInput);
@@ -608,7 +660,7 @@ void CreateClient()
     bool offlineMode;
     while (true)
         {
-        cout << "Offline mode? (true or false): ";
+        cout << "Offline mode? (true / false, \"help\" for a description of offline mode): ";
         getline(cin, offlineModeInput);
         std::transform(offlineModeInput.begin(), offlineModeInput.end(), offlineModeInput.begin(), ::tolower);
         if(offlineModeInput == "true" || offlineModeInput == "t")
@@ -621,61 +673,65 @@ void CreateClient()
             offlineMode = false;
             break;
             }
-        // TODO: allow "help" as input to get a description of offline mode
+        else if(offlineModeInput == "help" || offlineModeInput == "h")
+            {
+            cout << "If offline, pushes usage in discrete intervals. If not offline, pushes usage continuously via stream.\n";
+            continue;
+            }
 
         cout << "Invalid input, please enter \"true\" or \"false\"\n";
         }
 
+    cout << "Enter application version (e.g. 1.2.3.4): ";
+    getline(cin, versionInput);
+    cout << "Enter deviceId (also known as \'machine name\'): ";
+    getline(cin, deviceIdInput);
+
     Utf8String productId = Utf8String(productIdInput.c_str());
     Utf8String projectId = Utf8String(projectIdInput.c_str());
     Utf8String featureString = Utf8String(featureStringInput.c_str());
+    BeVersion version(versionInput.c_str());
+    Utf8String deviceId = Utf8String(deviceIdInput.c_str());
 
     // TODO: option to prompt for ClientInfo values, or default to "test" values
-    auto clientInfo = std::make_shared<WebServices::ClientInfo>("Bentley-Test", BeVersion(1,0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
+    auto clientInfo = std::make_shared<WebServices::ClientInfo>("Bentley-Test", version, "TestAppGUID", deviceId, "TestSystem", productId);
     if(clientInfo == nullptr)
         {
         cout << "failed to create ClientInfo\n";
         return;
         }
 
-    // prompt for sign in
-    bool signIn;
-    while (true)
-        {
-        cout << "Do you want to sign in? (yes or no): ";
-        getline(cin, signInInput);
-        std::transform(signInInput.begin(), signInInput.end(), signInInput.begin(), ::tolower);
-        if(signInInput == "yes" || signInInput == "y")
-            {
-            signIn = true;
-            break;
-            }
-        else if(signInInput == "no" || signInInput == "n")
-            {
-            signIn = false;
-            break;
-            }
-
-        cout << "Invalid input, please enter \"yes\" or \"no\"\n";
-        }
-
     auto manager = WebServices::ConnectSignInManager::Create(clientInfo, nullptr, m_localState);
-    if(signIn)
-        {
-        // TODO: prompt for user/pass
 
-        // NOTE: qa2_devuser2@mailinator.com only works for product ID 2223 (2545 on desktop)
-        Http::Credentials credentials("qa2_devuser2@mailinator.com", "bentley");
-        auto signInResult = manager->SignInWithCredentials(credentials)->GetResult();
-        if(!signInResult.IsSuccess())
-            {
-            cout << "Error: " << signInResult.GetError().GetMessage() << ". " << signInResult.GetError().GetDescription() << endl;
-            // TODO: re-prompt for user/password
-            cout << "Failed to create Client, please try again.";
-            return;
-            }
-        else 
-            cout << "Signed in\n";
+    // always sign in - no functionality if not signed in
+    // NOTE: if we decide we need manual testing for more than just normal workflows (e.g. not signed in), we can add support for that
+    string email = "";
+    cout << "Enter your bentley email address: ";
+    getline(cin, email);
+
+    cout << "Enter your password: ";
+    string password = getpass(true);
+
+    // NOTE: qa2_devuser2@mailinator.com only works for product ID 2223 (2545 on desktop)
+    //Http::Credentials credentials("qa2_devuser2@mailinator.com", "bentley");
+    Http::Credentials credentials(Utf8String(email.c_str()), Utf8String(password.c_str()));
+    auto signInResult = manager->SignInWithCredentials(credentials)->GetResult();
+    if(!signInResult.IsSuccess())
+        {
+        cout << "Error: " << signInResult.GetError().GetMessage() << ". " << signInResult.GetError().GetDescription() << endl;
+        // TODO: re-prompt for user/password
+        cout << "Sign in failed. Failed to create Client, please try again.";
+        return;
+        }
+    else 
+        cout << "Signed in.\n";
+
+    auto appInfo = std::make_shared<Licensing::ApplicationInfo>(version, deviceId, productId);
+
+    if(appInfo == nullptr)
+        {
+        cout << "Failed to create ApplicationInfo\n";
+        return;
         }
 
     BeFileName dbPath;
@@ -690,7 +746,7 @@ void CreateClient()
     m_client = Licensing::Client::Create
         (
         manager->GetUserInfo(),
-        clientInfo,
+        clientInfo, // TODO: make this ApplicationInfo
         manager,
         dbPath,
         offlineMode,
@@ -698,7 +754,6 @@ void CreateClient()
         featureString,
         nullptr
         );
-    cout << "after create\n";
 
     if(m_client == nullptr)
         {
@@ -715,7 +770,7 @@ void CreateClient()
 // initialize required libraries and information and create the client
 void CreateAccessKeyClient()
     {
-    // TODO: option for full info or "test" info prompts? - client info values?
+    // TODO: option for full info or "test" info prompts?
 
     // prompt for required values
     string productIdInput;
@@ -723,6 +778,10 @@ void CreateAccessKeyClient()
     string offlineModeInput;
     string projectIdInput;
     string featureStringInput;
+    string versionInput;
+    string deviceIdInput;
+
+    cout << "Enter the following values as prompted (leave blank and press Enter to make a value null)\n";
 
     cout << "Enter a product ID: ";
     getline(cin, productIdInput);
@@ -732,6 +791,10 @@ void CreateAccessKeyClient()
     getline(cin, projectIdInput);
     cout << "Enter a featureString: ";
     getline(cin, featureStringInput);
+    cout << "Enter application version (e.g. 1.2.3.4): ";
+    getline(cin, versionInput);
+    cout << "Enter deviceId (also known as \'machine name\'): ";
+    getline(cin, deviceIdInput);
 
     bool offlineMode;
     while (true)
@@ -749,6 +812,12 @@ void CreateAccessKeyClient()
             offlineMode = false;
             break;
             }
+        else if(offlineModeInput == "help" || offlineModeInput == "h")
+            {
+            cout << "If offline, pushes usage in discrete intervals. If not offline, pushes usage continuously via stream.\n";
+            continue;
+            }
+
 
         cout << "Invalid input, please enter \"true\" or \"false\"\n";
         }
@@ -757,13 +826,15 @@ void CreateAccessKeyClient()
     Utf8String accessKey = Utf8String(accessKeyInput.c_str());
     Utf8String projectId = Utf8String(projectIdInput.c_str());
     Utf8String featureString = Utf8String(featureStringInput.c_str());
+    BeVersion version(versionInput.c_str());
+    Utf8String deviceId = Utf8String(deviceIdInput.c_str());
 
     // create the rest of the required info
-    auto clientInfo = std::make_shared<WebServices::ClientInfo>("Bentley-Test", BeVersion(1,0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
+    auto appInfo = std::make_shared<Licensing::ApplicationInfo>(version, deviceId, productId);
 
-    if(clientInfo == nullptr)
+    if(appInfo == nullptr)
         {
-        cout << "failed to create ClientInfo\n";
+        cout << "Failed to create ApplicationInfo\n";
         return;
         }
 
@@ -778,8 +849,8 @@ void CreateAccessKeyClient()
 
     m_accessKeyClient = Licensing::AccessKeyClient::Create
         (
-        accessKey, // 3469AD8D095A53F3CBC9A905A8FF8926 -> valid with deviceId (aka machineName) = "TestDeviceId" and product ID 1000
-        clientInfo,
+        accessKey,
+        appInfo,
         dbPath,
         offlineMode,
         projectId,
@@ -806,6 +877,8 @@ void CreateSaasClient()
     string productIdInput = "";
     int productId = 0;
     string featureString = "";
+
+    cout << "Enter the following values as prompted (leave blank and press Enter to make a value null)\n";
 
     cout << "Enter a product ID: ";
     getline(cin, productIdInput);
@@ -846,6 +919,8 @@ void TrackUsage()
     Utf8String token = Utf8String(tokenInput.c_str());
     Utf8String projectId = projectIdInput == "" ? "00000000-0000-0000-0000-000000000000" : Utf8String(projectIdInput.c_str()); // TODO: move this logic to the license client
 
+    // TODO: support SAML, custom productId, deviceId, usageType, correleationId
+
     auto resultStatus = m_saasClient->TrackUsage(token, version, projectId).get();
     if(resultStatus != BentleyStatus::SUCCESS)
         {
@@ -875,7 +950,6 @@ void MarkFeature()
     getline(cin, featureId);
     cout << "Enter the version of the product (format: 1.2.3.4): ";
     getline(cin, version);
-    //TODO: make beversion here, reprompt if not successfull
     cout << "Enter a project ID: ";
     getline(cin, projectId);
 
@@ -940,7 +1014,6 @@ void AccessKeyMarkFeature()
     getline(cin, featureId);
     cout << "Enter the version of the product (format: 1.2.3.4): ";
     getline(cin, version);
-    //TODO: make beversion here, reprompt if not successfull
     cout << "Enter a project ID: ";
     getline(cin, projectId);
 
@@ -1007,7 +1080,6 @@ void SaasMarkFeature()
     getline(cin, featureId);
     cout << "Enter the version of the product: (format: 1.2.3.4): ";
     getline(cin, version);
-    //TODO: make beversion here, reprompt if not successfull
     cout << "Enter a project ID: ";
     getline(cin, projectIdInput);
 
@@ -1049,7 +1121,9 @@ void SaasMarkFeature()
 
     Licensing::FeatureEvent featureEvent = Licensing::FeatureEvent(Utf8String(featureId.c_str()), BeVersion(version.c_str()), projectId, featureData);
 
-    // use token from windows Integration Tests (OIDC native)
+    // use token from Windows Integration Tests (OIDC native)
+
+    // TODO: support SAML, custom productId, deviceId, usageType, correleationId
 
     auto resultStatus = m_saasClient->MarkFeature(Utf8String(token.c_str()), featureEvent).get();
     if(resultStatus != BentleyStatus::SUCCESS)

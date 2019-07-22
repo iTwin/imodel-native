@@ -40,7 +40,7 @@ public:
     //! @param[in] accessKey Access key generated for the ultimate to track usage against
     //! @param[in] clientInfo ClientInfoPtr from WSClient
     //! @param[in] dbPath Path for LicenseClient database
-    //! @param[in] offlineMode ignored for now, no usage in this client yet
+    //! @param[in] offlineMode If offline, pushes usage in discrete intervals. If not offline, pushes usage continuously via stream
     //! @param[in] projectId ProjectID string, defaults to an empty string
     //! @param[in] featureString product feature string, defaults to an empty string
     //! @param[in] customHttpHandler CustomHttpHandler, defaults to a nullptr
@@ -59,7 +59,7 @@ public:
     //! @param[in] accessKey Access key generated for the ultimate to track usage against
     //! @param[in] applicationInfo ApplicationInfoPtr
     //! @param[in] dbPath Path for LicenseClient database
-    //! @param[in] offlineMode ignored for now, no usage in this client yet
+    //! @param[in] offlineMode If offline, pushes usage in discrete intervals. If not offline, pushes usage continuously via stream
     //! @param[in] projectId ProjectID string, defaults to an empty string
     //! @param[in] featureString product feature string, defaults to an empty string
     //! @param[in] customHttpHandler CustomHttpHandler, defaults to a nullptr
@@ -78,7 +78,7 @@ public:
     //! @param[in] accessKey Access key generated for the ultimate to track usage against
     //! @param[in] applicationInfo ApplicationInfoPtr
     //! @param[in] dbPath Path for LicenseClient database
-    //! @param[in] offlineMode ignored for now, no usage in this client yet
+    //! @param[in] offlineMode If offline, pushes usage in discrete intervals. If not offline, pushes usage continuously via stream
     //! @param[in] ultimateId ultimate used instead of device ID to validate accessKey
     //! @param[in] projectId ProjectID string, defaults to an empty string
     //! @param[in] featureString product feature string, defaults to an empty string
