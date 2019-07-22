@@ -1,0 +1,407 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="Published\NotificationManager_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\Tag_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\UnitDefinition_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\UnitManager_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\valueformat_test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ValueParse_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Polyface_Test.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\ECDbInstances_Test.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\DgnECPerformanceTests.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\PerformanceTestFixture.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\TestSchemaHelper.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
+    <ClCompile Include="BackDoor\BackDoor.cpp">
+      <Filter>BackDoor</Filter>
+    </ClCompile>
+    <ClCompile Include="BackDoor\DgnElementHelpers.cpp">
+      <Filter>BackDoor</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\DgnColors_Test.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\DgnProject_Test.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\DgnStyles_Test.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\DgnViews_Test.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Raster_Test.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\TransactionManager_Test.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\ValidatePublishing_Test.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ImageUtilities_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\MarkupProject_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\DgnECNavigator_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\AnnotationTextBlock_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\AnnotationTextStyle_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\DgnSqlTest.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\DgnSqlTestDomain.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\ECExpressionTests.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\ElementProperties.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\ElementGeomPart_Tests.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\ElementGeometryBuilder_Tests.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="TestFixture\DgnDbTestFixtures.cpp">
+      <Filter>TestFixture</Filter>
+    </ClCompile>
+    <ClCompile Include="TestFixture\GeomHelper.cpp">
+      <Filter>TestFixture</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\TextAnnotationElement_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\TextString_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\AnnotationLeaderStyle_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\AnnotationFrameStyle_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\AnnotationLeader_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\AnnotationTestFixture.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\TextAnnotationSeed_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\ElementInsertPerformance.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\DgnElement_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\DgnModel_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ComponentModelTest.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\ElementMaterial_tests.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Category_Test.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\DgnAuthority_Test.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\DgnLight_Test.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\DgnMaterial_Test.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\DgnTexture_Test.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\ElementAspect_Test.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\GeomStream_Test.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\DgnFonts_Test.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ChangeSummary_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\DgnChangeSummary_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\DgnScriptContext_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\ECInstanceSelect_Tests.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\PerformanceECInstanceDeleteTests.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ElementGeometry_Tests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\Ecutils_Tests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ElementGroup_Tests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\PerformanceElementsCRUDTests.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
+    <ClCompile Include="BackDoor\DgnDbUtilities.cpp">
+      <Filter>BackDoor</Filter>
+    </ClCompile>
+    <ClCompile Include="BackDoor\DgnPlatformTestDomain.cpp">
+      <Filter>BackDoor</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\AnnotationTable_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ChangeTestFixture.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\DgnImportContext_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\FullTextSearch_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\MemoryManager_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\Revision_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\ElementDependencyGraph.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\MissingHandler_Test.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\ElementDependencyGraphPerformance.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\ConfigurationManager_Test.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\AnnotationFrame_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ComponentModelBasicTest.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\ComponentModel_PerfTest.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\DateTimeformat_test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\AnnotationParagraph_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\AnnotationLayout_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\VolumeElement_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\BriefcaseManager_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\DgnBaseDomainSchema_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ExampleTestGroup.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ViewAttachment_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\BackwardCompatibility_Tests.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\LinkElement_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\LinearDimension_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="TestFixture\GenericDgnModelTestFixture.cpp">
+      <Filter>TestFixture</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnDbTestUtils\DgnDbTestUtils.cpp">
+      <Filter>UnitTests</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\CsvFile_Test.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\CreateFromInstance_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\BRepUtil_Tests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\PerformanceBriefcaseManagerTests.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
+    <ClCompile Include="TestFixture\DgnPlatformSeedManager.cpp">
+      <Filter>TestFixture</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnDbTestUtils\RepositoryManagerUtil.cpp" />
+    <ClCompile Include="Published\Compatibility_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\SchemaVersion_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\ElementAspectPerformance.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\SchemaValidation_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Published\DgnHandlersTests.h">
+      <Filter>Published</Filter>
+    </ClInclude>
+    <ClInclude Include="NonPublished\DgnHandlersTests.h">
+      <Filter>NonPublished</Filter>
+    </ClInclude>
+    <ClInclude Include="Performance\DgnECPerformanceTests.h">
+      <Filter>Performance</Filter>
+    </ClInclude>
+    <ClInclude Include="Performance\PerformanceTestFixture.h">
+      <Filter>Performance</Filter>
+    </ClInclude>
+    <ClInclude Include="Performance\TestSchemaHelper.h">
+      <Filter>Performance</Filter>
+    </ClInclude>
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnProject\BackDoor.h">
+      <Filter>BackDoor</Filter>
+    </ClInclude>
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnProject\DgnElementHelpers.h">
+      <Filter>BackDoor</Filter>
+    </ClInclude>
+    <ClInclude Include="NonPublished\DgnSqlTestDomain.h">
+      <Filter>NonPublished</Filter>
+    </ClInclude>
+    <ClInclude Include="TestFixture\DgnDbTestFixtures.h">
+      <Filter>TestFixture</Filter>
+    </ClInclude>
+    <ClInclude Include="TestFixture\GeomHelper.h">
+      <Filter>TestFixture</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\AnnotationTestFixture.h">
+      <Filter>Published</Filter>
+    </ClInclude>
+    <ClInclude Include="Performance\PerformanceElementsCRUDTests.h">
+      <Filter>Performance</Filter>
+    </ClInclude>
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnProject\DgnDbUtilities.h">
+      <Filter>BackDoor</Filter>
+    </ClInclude>
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnProject\DgnPlatformTestDomain.h">
+      <Filter>BackDoor</Filter>
+    </ClInclude>
+    <ClInclude Include="TestFixture\GenericDgnModelTestFixture.h">
+      <Filter>TestFixture</Filter>
+    </ClInclude>
+    <ClInclude Include="TestFixture\BlankDgnDbTestFixture.h">
+      <Filter>TestFixture</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\ChangeTestFixture.h">
+      <Filter>Published</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\PublicAPI\DgnPlatform\UnitTests\DgnDbTestUtils.h">
+      <Filter>UnitTests</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\PublicAPI\DgnPlatform\UnitTests\ScopedDgnHost.h">
+      <Filter>UnitTests</Filter>
+    </ClInclude>
+    <ClInclude Include="TestFixture\DgnPlatformSeedManager.h">
+      <Filter>TestFixture</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\PublicAPI\DgnPlatform\UnitTests\RepositoryManagerUtil.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Published">
+      <UniqueIdentifier>{ea7005eb-3624-4506-aa4e-d143b3140233}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NonPublished">
+      <UniqueIdentifier>{ddecf192-6907-4ed1-befd-59402b488323}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Intermediate Files">
+      <UniqueIdentifier>{ec07e436-edb0-4501-9d77-00baee770a6b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Performance">
+      <UniqueIdentifier>{5448cd01-fe0e-4fa3-9e29-90affdeaff23}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="BackDoor">
+      <UniqueIdentifier>{6b4d526c-e397-4259-b44c-c7a9c52ef46b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="TestFixture">
+      <UniqueIdentifier>{55391e99-d1d3-4232-9d33-a3815859d015}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests">
+      <UniqueIdentifier>{1f5953d4-c76e-4e64-bb61-6757ff0d5019}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ignore_list.txt" />
+    <None Include="Published\DgnScriptTest.ts">
+      <Filter>Published</Filter>
+    </None>
+    <None Include="Published\TSG_Checker.ts">
+      <Filter>Published</Filter>
+    </None>
+    <None Include="Published\TSG_GeometryA.ts">
+      <Filter>Published</Filter>
+    </None>
+    <None Include="Published\TSG_GeometryB.ts">
+      <Filter>Published</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="..\..\DgnPlatform.PartFile.xml" />
+  </ItemGroup>
+</Project>
