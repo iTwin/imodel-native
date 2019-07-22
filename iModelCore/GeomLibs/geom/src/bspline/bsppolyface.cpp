@@ -3105,9 +3105,14 @@ MSBsplineSurface    *surfaceP                   /* => surface */
         {
         for (i=0; i<surfaceP->numBounds; i++)
             {
-            sourceRegions.push_back (MeshRegion ());
-            MeshRegion &newRegion = sourceRegions.back ();
-            newRegion.push_back (surfaceP->boundaries[i]);
+            // July 2019 -- caller code formerly killed boundaries if any were minimal points.
+            // now ignore them here.
+            if (surfaceP->boundaries[i].numPoints > 3)
+                {
+                sourceRegions.push_back (MeshRegion ());
+                MeshRegion &newRegion = sourceRegions.back ();
+                newRegion.push_back (surfaceP->boundaries[i]);
+                }
             }
         }
 
@@ -3321,8 +3326,10 @@ wrapup:
 bool validateBoundary (BsurfBoundary &boundary)
     {
     DRange1d range (-1.0, 2.0);
+    static bool s_rejectSmallVertexCount = false;
     if (boundary.numPoints < 4)
-        return false;
+        if (s_rejectSmallVertexCount)
+            return false;
     for (int i = 0; i < boundary.numPoints; i++)
         if (!(range.Contains (boundary.points[i].x) && range.Contains (boundary.points[i].y)))
             return false;

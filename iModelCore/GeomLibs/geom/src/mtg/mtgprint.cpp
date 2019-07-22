@@ -50,18 +50,18 @@ MTGGraph  *pGraph
 
     GEOMAPI_PRINTF("   (VertexLoops (vertexCounter (nodeId masks fSucc vSucc edgeMate)\n");
 
-    visitMask = jmdlMTGGraph_grabMask (pGraph);
-    jmdlMTGGraph_clearMaskInSet (pGraph, visitMask);
+    visitMask = pGraph->GrabMask ();
+    pGraph->ClearMask (visitMask);
 
     loopCount = 0;
     MTGARRAY_SET_LOOP (vertNodeId, pGraph)
         {
-        if (!jmdlMTGGraph_getMask (pGraph, vertNodeId, visitMask))
+        if (!pGraph->GetMaskAt (vertNodeId, visitMask))
             {
             MTGARRAY_VERTEX_LOOP (currNodeId, pGraph, vertNodeId)
                 {
                 jmdlMTGGraph_fillMaskString (maskString,
-                                    jmdlMTGGraph_getMask (pGraph, currNodeId, MTG_ALL_MASK_BITS));
+                                    pGraph->GetMaskAt (currNodeId, MTG_ALL_MASK_BITS));
                 if (currNodeId == vertNodeId)
                     GEOMAPI_PRINTF ("\n(%4d ", loopCount);
                 else
@@ -69,9 +69,9 @@ MTGGraph  *pGraph
                 GEOMAPI_PRINTF (" %6d %s fs%d vs%d em%d)",
                         currNodeId,
                         maskString,
-                        jmdlMTGGraph_getFSucc (pGraph, currNodeId),
-                        jmdlMTGGraph_getVSucc (pGraph, currNodeId),
-                        jmdlMTGGraph_getEdgeMate (pGraph, currNodeId)
+                        pGraph->FSucc (currNodeId),
+                        pGraph->VSucc (currNodeId),
+                        pGraph->EdgeMate (currNodeId)
                         );
 
                 jmdlMTGGraph_setMask (pGraph, currNodeId, visitMask);
@@ -83,7 +83,7 @@ MTGGraph  *pGraph
     MTGARRAY_END_SET_LOOP (vertNodeId, pGraph)
 
     GEOMAPI_PRINTF("   ) // (%d VertexLoops)\n", loopCount);
-    jmdlMTGGraph_dropMask (pGraph, visitMask);
+    pGraph->DropMask (visitMask);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -112,18 +112,18 @@ void        *pContext
 
     GEOMAPI_PRINTF("\n   (FaceLoops (faceCounter (nodeId masks fSucc vSucc edgeMate)\n");
 
-    visitMask = jmdlMTGGraph_grabMask (pGraph);
-    jmdlMTGGraph_clearMaskInSet (pGraph, visitMask);
+    visitMask = pGraph->GrabMask ();
+    pGraph->ClearMask (visitMask);
 
     loopCount = 0;
     MTGARRAY_SET_LOOP (startNodeId, pGraph)
         {
-        if (!jmdlMTGGraph_getMask (pGraph, startNodeId, visitMask))
+        if (!pGraph->GetMaskAt (startNodeId, visitMask))
             {
             MTGARRAY_FACE_LOOP (currNodeId, pGraph, startNodeId)
                 {
                 jmdlMTGGraph_fillMaskString (maskString,
-                                    jmdlMTGGraph_getMask (pGraph, currNodeId, MTG_ALL_MASK_BITS));
+                                    pGraph->GetMaskAt (currNodeId, MTG_ALL_MASK_BITS));
                 if (currNodeId == startNodeId)
                     GEOMAPI_PRINTF ("\n(%4d ", loopCount);
                 else
@@ -131,14 +131,14 @@ void        *pContext
                 GEOMAPI_PRINTF (" %3d %s %3dF %3dV %3dE)",
                         currNodeId,
                         maskString,
-                        jmdlMTGGraph_getFSucc (pGraph, currNodeId),
-                        jmdlMTGGraph_getVSucc (pGraph, currNodeId),
-                        jmdlMTGGraph_getEdgeMate (pGraph, currNodeId)
+                        pGraph->FSucc (currNodeId),
+                        pGraph->VSucc (currNodeId),
+                        pGraph->EdgeMate (currNodeId)
                         );
 
                 jmdlMTGGraph_setMask (pGraph, currNodeId, visitMask);
 
-                for (labelIndex = 0; jmdlMTGGraph_getLabel (pGraph, &label, currNodeId, labelIndex); labelIndex++)
+                for (labelIndex = 0; pGraph->TryGetLabel (currNodeId, labelIndex, label); labelIndex++)
                     {
                     GEOMAPI_PRINTF
                         (
@@ -166,7 +166,7 @@ void        *pContext
 
     GEOMAPI_PRINTF("   )\n");
     jmdlMTGGraph_printLoopCounts (pGraph);
-    jmdlMTGGraph_dropMask (pGraph, visitMask);
+    pGraph->DropMask (visitMask);
     }
 
 
@@ -203,53 +203,5 @@ MTGGraph  *pGraph
     GEOMAPI_PRINTF ("  V - E + F = %d\n", numVertex - numEdge + numFace);
     }
 
-/*
-Print array contents to console.
-@param pArray IN array to print
-@param pTitle IN title string
-*/
-Public GEOMDLLIMPEXP void jmdlEmbeddedIntArray_print
-(
-EmbeddedIntArray *pArray,
-char *pTitle
-)
-    {
-    int i, val;
-    static int s_numPerLine = 12;
-    int count = 0;
-    GEOMAPI_PRINTF ("%s", pTitle);
-    for (i = 0; jmdlEmbeddedIntArray_getInt (pArray, &val, i); i++)
-        {
-        GEOMAPI_PRINTF (" %4d", val);
-        count++;
-        if (count >= s_numPerLine)
-            {
-            GEOMAPI_PRINTF ("\n");
-            count = 0;
-            }
-        }
-    if (count > 0)
-        GEOMAPI_PRINTF ("\n");
-    }
-
-/*
-Print array contents to console.
-@param pArray IN array to print
-@param pTitle IN title string
-*/
-Public GEOMDLLIMPEXP void jmdlEmbeddedDPoint3dArray_print
-(
-EmbeddedDPoint3dArray *pArray,
-char *pTitle
-)
-    {
-    int i;
-    DPoint3d xyz;
-    GEOMAPI_PRINTF ("%s", pTitle);
-    for (i = 0; jmdlEmbeddedDPoint3dArray_getDPoint3d (pArray, &xyz, i); i++)
-        {
-        GEOMAPI_PRINTF ("%4d %lg,%lg,%lg\n", i, xyz.x, xyz.y, xyz.z);
-        }
-    }
 
 END_BENTLEY_GEOMETRY_NAMESPACE
