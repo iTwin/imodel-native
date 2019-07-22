@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BuildContext
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd"
+    >
+
+    <Part Name="MstnBridgePRG" PrgOutputDir="MstnBridge">
+        <SubProduct ProductName="MstnBridge"/>
+        <SubProduct ProductName="MstnBridgeTests"/>
+        
+        <!-- Because we rebuild these from source, need to re-test. 
+        <SubProduct ProductName="DgnV8ConverterTests" PartFile="DgnDbSync" Repository="DgnDbSync"/>
+        <SubProduct ProductName="iModelBridge-Gtest" PartFile="iModelBridge" Repository="DgnDbSync"/>
+-->
+    
+    </Part>
+
+    <Product Name="MstnBridge" SaveProduct="true" BuildInstallSet="true">
+        <SubPart PartName="MstnBridgeInstallFiles"/>
+        <SubPart PartName="DgnV8ConverterExe" PartFile="DgnDbSync" Repository="DgnDbSync"/>
+        <SubPart PartName="iModelBridgeFwkExe" PartFile="iModelBridge" Repository="DgnDbSync"/>
+        <SubPart PartName="MakePackages" PartFile="bridge-addon" Repository="DgnDbSync"/>
+        <SubPart PartName="StaticAppData" PartFile="MstnAppData" Repository="miscdev-mstnappdata"/>
+        
+        <InstallerWixFile SourceFile="Installer/MstnBridgeInstaller"/>
+        
+        <Directories DirectoryListName="DgnDbSyncAppCommonDirList" PartFile="DgnDbSync" Repository="DgnDbSync"/>
+        <Directories DirectoryListName="MstnBridgeDirList"/>
+    </Product>
+
+    <Part Name="MstnBridgeInstallFiles" OnlyPlatforms="x64" BentleyBuildMakeFile="Installer/MstnBridgeInstaller.prewire.mke">
+        <SubPart PartName="Eula" PartFile="Eula" Repository="Miscdev-Eula"/>
+        <SubPart PartName="InstallFrameworkBase" PartFile="InstallFramework" Repository="InstallFramework"/>
+        <SubPart PartName="Microsoft_VC_140" PartFile="Microsoft_VC_14_0" Repository="Mergemodule-Microsoft_VC_14.0"/>
+      
+        <Bindings>
+            <Files BindToWixBuild="true" SubPartDirectory="installer">
+                MstnBridgeInstallFiles/MstnBridgeInstallerBeforeCompile.mki
+                MstnBridgeInstallFiles/MstnBridgeInstaller.wxs
+            </Files>
+        </Bindings>
+    </Part>
+  
+    <ProductDirectoryList ListName="MstnBridgeDirList">
+        <ProductDirectory Name="applicationroot" Path=""/>
+        
+        <ProductDirectory Name="DgnPlatformV8TranskitEn"        Path="en"       RelativeTo="DgnV8Dlls"/>
+        <ProductDirectory Name="BentleyClientSharedAssemblies"  Path=""         RelativeTo="Assemblies"/>
+        <ProductDirectory Name="BentleyDesktopClientApi"        Path=""         RelativeTo="Assemblies"/>
+        <ProductDirectory Name="BentleyDesktopClientApi_Native" Path=""         RelativeTo="Assemblies"/>
+        <ProductDirectory Name="DgnV8DummyUstation"             Path="DgnV8"    RelativeTo="Assemblies"/>
+        <ProductDirectory Name="WorkSpace"                      Path=""         RelativeTo="DgnV8Dlls"/>
+
+        <ProductDirectory Name="DgnV8ConverterLibs"             Deliver="false"/>
+        <ProductDirectory Name="BentleyDesktopClientApi"        Deliver="false"/>
+        <ProductDirectory Name="BentleyDesktopClientApi_Native" Deliver="false"/>
+        <ProductDirectory Name="PublicApi"                      Deliver="false"/>
+        <ProductDirectory Name="PublicApi" LibType="Static"     Deliver="false"/>
+        <ProductDirectory Name="VersionedDgnV8Api"              Deliver="false"/>
+        <ProductDirectory Name="VendorApi"                      Deliver="false"/>
+        <ProductDirectory Name="VendorApi" LibType="Static"     Deliver="false"/>
+        <ProductDirectory Name="Libs"                           Deliver="false"/>
+        <ProductDirectory Name="Libs" LibType="Static"          Deliver="false"/>
+        <ProductDirectory Name="MergeModules"                   Deliver="false"/>
+    </ProductDirectoryList>
+
+    <Part Name="MstnBridgeTestsExe" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/MstnBridgeTests.mke">
+        <!-- HACK to use DgnDbSync from the build for PrivateApi files. -->
+        <RequiredRepository>DgnDbSync</RequiredRepository>
+
+        <SubPart PartName="DgnDbTestUtils" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+        <SubPart PartName="DgnPlatformSqlang" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+        <SubPart PartName="DgnPlatformUnitTestHelpers" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+        <SubPart PartName="DgnV8ConverterExe" PartFile="DgnDbSync" Repository="DgnDbSync"/>
+        <SubPart PartName="google_gtest_lib" PartFile="gtest" Repository="util-gtest"/>
+        <SubPart PartName="Gtest-Tools" PartFile="BeGTest" Repository="BeGTest"/>
+        <SubPart PartName="iModelBridgeFwkLib" PartFile="iModelBridge" Repository="DgnDbSync"/>
+
+        <Bindings>
+            <Files ProductDirectoryName="DgnV8ConverterTestsExe">Delivery/MstnBridgeTests.exe</Files>
+            <Files ProductDirectoryName="DgnV8ConverterTestsExe">Delivery/MstnBridgeTests.logging.config.xml</Files>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang">Delivery/MstnBridgeTests_en-US.sqlang.db3</Files>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="Ignore">Delivery/ignore_list.txt</Files>
+            <Directory SourceName="Delivery/MstnBridgeTestData" SubPartDirectory="TestData" ProductDirectoryName="DgnDbSync_TestData"/>
+        </Bindings>
+    </Part>
+
+    <Product Name="MstnBridgeTests">
+        <SubProduct ProductName="iModelBridgeFwk" Repository="dgndbsync" PartFile="iModelBridge"/>
+        <SubPart PartName="MstnBridgeTestsExe"/>
+        <SubPart PartName="StaticAppData" PartFile="MstnAppData" Repository="miscdev-mstnappdata"/>
+        <Directories DirectoryListName="DgnDbSyncAppCommonDirList" PartFile="DgnDbSync" Repository="DgnDbSync"/>
+        <Directories DirectoryListName="DgnV8ConverterDirList"  PartFile="DgnDbSync" Repository="DgnDbSync"/>
+        <Directories DirectoryListName="Tests" PartFile="DgnDbSync" Repository="DgnDbSync"/>
+    </Product>
+
+    <Part Name="RunMstnBridgeTests" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=MstnBridgeTests -dGTEST_NAME=MstnBridgeTests">
+        <SubProduct ProductName="MstnBridgeTests"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/MstnBridgeTests.log</Files>
+        </Bindings>
+    </Part>
+
+    <Product Name="MstnBridgeTested">
+        <SubProduct ProductName="MstnBridge"/>
+        <SubPart PartName="RunMstnBridgeTests" />
+        <Directories DirectoryListName="DgnDbSyncAppCommonDirList" PartFile="DgnDbSync" Repository="DgnDbSync"/>
+        <Directories DirectoryListName="MstnBridgeDirList"/>
+        <Directories DirectoryListName="DgnV8ConverterDirList"  PartFile="DgnDbSync" Repository="DgnDbSync"/>
+        <Directories DirectoryListName="Tests" PartFile="DgnDbSync" Repository="DgnDbSync"/>
+    </Product>
+
+</BuildContext>
