@@ -1,0 +1,12 @@
+#*--------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------*/
+%include mdl.mki
+%include $(SrcRoot)ecobjects/mki/ECObjects.mki
+
+# Wire in my own public header files.
+always:
+   ~linkdir "$(BuildContextPublicApiDir)ECObjects=$(ecobjectsPublicAPISrc)"
+   ~linkdir "$(BuildContextPublicApiDir)ECUnits=$(ecunitsPublicAPISrc)"

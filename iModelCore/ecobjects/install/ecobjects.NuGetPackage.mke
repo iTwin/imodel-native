@@ -1,0 +1,13 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+%include mdl.mki
+%include $(SrcRoot)ecobjects/mki/ECObjects.mki
+
+NUGET_BUILD_DIR=$(OutBuildDir)NuGet/
+NUGET_BASE_PATH=$(OutputRootDir)\Product\ECObjects
+
+NuGetBaseName=ecobjects
+%include $(sharedMki)nuspecCreate.mki
