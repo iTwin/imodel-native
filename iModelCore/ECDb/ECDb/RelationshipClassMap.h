@@ -241,14 +241,14 @@ struct RelationshipClassLinkTableMap final : RelationshipClassMap
         void DetermineConstraintClassIdColumnHandling(bool& addConstraintClassIdColumnNeeded, ECN::ECRelationshipConstraintCR) const;
         BentleyStatus _Load(ClassMapLoadContext&, DbClassMapLoadContext const&) override;
         DbColumn* ConfigureForeignECClassIdKey(SchemaImportContext&, LinkTableRelationshipMapCustomAttribute const&, ECN::ECRelationshipEnd);
+        bool DetermineAllowDuplicateFromBaseHierarchy(ECN::ECRelationshipClassCR baseRelClass);
         static void GenerateIndexColumnList(std::vector<DbColumn const*>&, DbColumn const* col1, DbColumn const* col2, DbColumn const* col3, DbColumn const* col4);
         
         static Utf8String DetermineConstraintECInstanceIdColumnName(LinkTableRelationshipMapCustomAttribute const&, ECN::ECRelationshipEnd);
         static Utf8String DetermineConstraintECClassIdColumnName(LinkTableRelationshipMapCustomAttribute const&, ECN::ECRelationshipEnd);
-        //AllowDuplicateRelationships flag is inherited from root rel class to actual rel class
-        static bool DetermineAllowDuplicateRelationshipsFlagFromRoot(ECN::ECRelationshipClassCR baseRelClass);
 
         static bool GetAllowDuplicateRelationshipsFlag(Nullable<bool> const& allowDuplicateRelationshipFlag) { return allowDuplicateRelationshipFlag.IsNull() ? false : allowDuplicateRelationshipFlag.Value(); }
+        static bool GetApplyToSubClassesFlag(Nullable<bool> const& applyToSubClasses) { return applyToSubClasses.IsNull() ? false : applyToSubClasses.Value(); }
 
     public:
         RelationshipClassLinkTableMap(ECDb const&, TableSpaceSchemaManager const&, ECN::ECClassCR, MapStrategyExtendedInfo const&);

@@ -95,6 +95,20 @@ bool ECDbMapCustomAttributeHelper::TryGetPropertyMap(PropertyMapCustomAttribute&
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                               Affan.Khan   07 / 2019
+//+---------------+---------------+---------------+---------------+---------------+------
+// static
+bool ECDbMapCustomAttributeHelper::TryGetAllowOnlyUniqueRelationships(AllowOnlyUniqueRelationshipsCustomAttribute& allowOnlyUniqueRelationship, ECN::ECRelationshipClassCR ecRelationship)
+    {
+    IECInstancePtr ca = CustomAttributeReader::Read(ecRelationship, ECDBMAP_SCHEMANAME, "AllowOnlyUniqueRelationships");
+    if (ca == nullptr)
+        return false;
+
+    allowOnlyUniqueRelationship = AllowOnlyUniqueRelationshipsCustomAttribute(ecRelationship, ca);
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
@@ -122,6 +136,22 @@ bool ECDbMapCustomAttributeHelper::TryGetForeignKeyConstraint(ForeignKeyConstrai
     return true;
     }
 
+//*****************************************************************
+//ForeignKeyConstraintCustomAttribute
+//*****************************************************************
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Affan.Khan   07 / 2019
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus AllowOnlyUniqueRelationshipsCustomAttribute::TryGetApplyToSubClasses(Nullable<bool>& applyToSubClasses) const
+    {
+    if (m_ca == nullptr)
+        return ERROR;
+
+    if (SUCCESS != CustomAttributeReader::TryGetBooleanValue(applyToSubClasses, *m_ca, "ApplyToSubclasses"))
+        return ERROR;
+
+    return ERROR;
+    }
 
 //*****************************************************************
 //SchemaMapCustomAttribute
@@ -478,7 +508,6 @@ BentleyStatus LinkTableRelationshipMapCustomAttribute::TryGetAllowDuplicateRelat
 
     return CustomAttributeReader::TryGetBooleanValue(allowDuplicateRelationshipsFlag, *m_ca, "AllowDuplicateRelationships");
     }
-
 
 //*****************************************************************
 //CustomAttributeReader

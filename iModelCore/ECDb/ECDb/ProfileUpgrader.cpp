@@ -11,7 +11,17 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //*************************************** ProfileUpgrader_XXX *********************************
-
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle    01/2018
+//+---------------+---------------+---------------+---------------+---------------+--------
+DbResult ProfileUpgrader_4003::_Upgrade(ECDbCR ecdb) const
+    {
+    // place holder for system schema update ECDMap.2.0.0 -> ECDMap.2.0.1
+    // We have to change profile version to trigger import of system schemas
+    // BisCore 1.0.5 depend on ECDbMap.2.0.1 and the only way it will find it
+    // is from ECDb locator. 
+    return BE_SQLITE_OK;
+    }
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle    01/2018
 //+---------------+---------------+---------------+---------------+---------------+--------
@@ -583,7 +593,7 @@ Utf8CP ProfileSchemaUpgrader::GetECDbSystemSchemaXml()
     {
     return "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='" ECSCHEMA_ECDbSystem "' alias='" ECSCHEMA_ALIAS_ECDbSystem "' description='Helper ECSchema for ECDb internal purposes.' version='5.0.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
-        "    <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap' /> "
+        "    <ECSchemaReference name='ECDbMap' version='02.00.01' alias='ecdbmap' /> "
         "    <ECEntityClass typeName='" ECDBSYS_CLASS_ClassECSqlSystemProperties "' modifier='Abstract' description='Defines the ECSQL system properties of an ECClass in an ECSQL statement.'>"
         "       <ECCustomAttributes>"
         "            <ClassMap xmlns='ECDbMap.02.00.00'>"
