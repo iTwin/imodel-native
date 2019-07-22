@@ -1,0 +1,132 @@
+#----------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#----------------------------------------------------------------------
+
+ALLOW_MSVC_PERMISSIVE=1 # otherwise we get errors Vancouver's header files; hopefully by the time permissive is Microsoft's default, Vancouver will have patched header files.
+
+%include mdl.mki
+
+%if !defined (REL_V)
+    REL_V=1
+    VERSIONMISSING=1
+%endif
+
+%if !defined (MAJ_V)
+    MAJ_V=00
+    VERSIONMISSING=1
+%endif
+
+%if !defined (MIN_V)
+    MIN_V=00
+    VERSIONMISSING=1
+%endif
+
+%if !defined (SUBMIN_V)
+    SUBMIN_V=00
+    VERSIONMISSING=1
+%endif
+
+%if defined(VERSIONMISSING)
+
+    always:
+        |-------------------------------------------------------------------------
+        | FYI : NO VERSION SPECIFIED IN ENVIRONMENT! USING $(REL_V).$(MAJ_V).$(MIN_V).$(SUBMIN_V)
+        |-------------------------------------------------------------------------
+
+%endif
+
+
+appName     = DgnV8Converter
+baseDir     = $(_MakeFilePath)
+
+# Need to ignore this because it's in Vancouver's header files.
+%if defined(MSVC_VERSION)
+%if MSVC_VERSION >= 1900
+    # C4312: 'type cast': conversion from '...' to '...' of greater size
+    CCompOpts + -wd4312
+
+    # C4091: '... ': ignored on left of '...' when no variable is declared
+    CCompOpts + -wd4091
+%endif
+%endif
+
+%ifdef DGNV8_DGNPLATFORM_SDK
+    cDefs +% -DDGNV8_DGNPLATFORM_SDK
+%endif
+
+o = $(OutputRootDir)Build/DgnDbSync/$(appName)/
+always:
+    ~mkdir $(o)
+
+#--------------------------------------------------------------------------------------
+# Create prg.h header with build version numbers
+#--------------------------------------------------------------------------------------
+%include $(SharedMki)CreateBuildVersionHeader.mki
+
+DgnDbSyncSyncDir = $(SrcRoot)DgnDbSync/
+DgnV8APISrc = $(DgnDbSyncSyncDir)/PublicAPI/DgnDbSync/DgnV8/
+
+DgnV8Depends = $(DgnV8APISrc)Converter.h  $(DgnV8APISrc)SyncInfo.h
+
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)ConverterApp.obj: $(baseDir)ConverterApp.cpp $(DgnV8Depends) ${MultiCompileDepends}
+
+$(o)DgnV8Converter.obj: $(baseDir)DgnV8Converter.cpp $(DgnV8Depends) ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+#----------------------------------------------------------------------
+#   Supporting libraries needed
+#----------------------------------------------------------------------
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)Bentley.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeSQLite.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeSQLiteEC.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)ECObjects.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)Units.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)BentleyGeom.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnPlatform.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)BaseGeoCoord.lib
+LINKER_LIBRARIES  + $(BuildContext)Delivery/DgnV8Converter.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)Raster.lib 
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeJsonCpp.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)ThreeMx.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)iModelBridge.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)WebServicesClient.lib
+LINKER_LIBRARIES  + user32.lib
+
+LINKER_LIBRARIES_DELAYLOADED  + $(BuildContext)SubParts/VersionedDgnV8Libs/DgnPlatform.lib
+LINKER_LIBRARIES_DELAYLOADED  + $(BuildContext)SubParts/VersionedDgnV8Libs/Bentley.lib
+
+#----------------------------------------------------------------------
+#   Link the shared library
+#----------------------------------------------------------------------
+DLM_NAME                = DgnV8Bridge
+DLM_DEST                = $(o)
+DLM_OBJECT_DEST         = $(o)
+DLM_EXPORT_DEST         = $(o)
+DLM_OBJECT_FILES        = $(MultiCompileObjectList)
+DLM_NOINITFUNC          = 1
+DLM_NOENTRY             = 1
+
+%include $(sharedMki)LinkLibrary.mki
+
+#----------------------------------------------------------------------
+#   Link the executable
+#----------------------------------------------------------------------
+EXE_DEST     = $(o)
+EXE_NAME     = $(appname)
+EXE_OBJS     = $(MultiCompileObjectList)
+EXE_LOPT1    = -entry:wmainCRTStartup
+EXE_TMP_DIR  = $(o)
+
+%include $(sharedMki)linktool.mki
+
+always:
+    ~linkfile "$(BuildContext)Delivery/$(appname)$(exeext)=$(o)$(appname)$(exeext)"
+
+$(BuildContext)Delivery/$(appName).logging.config.xml : $(baseDir)logging.config.xml
+    $(LinkFirstDepToFirstTarget)

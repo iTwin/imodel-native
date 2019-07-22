@@ -1,0 +1,20 @@
+#*--------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------*/
+
+LANGUAGE_CULTURE = en
+BENTLEYLANGUAGE = $(LANGUAGE)
+
+INSTALLER_COMPILER_OPT  + -dLANGUAGE_CULTURE=$(BENTLEYLANGUAGE)
+
+BB_INSTALLER_SKIP_WIXBUNDLE_INSIGNIA=1
+
+INSTALLER_SOURCE_LIST       + $(BBInstallerWixSourceFileDir)DwgRegistryFrag.wxs
+INSTALLER_SOURCE_LIST       + $(BBInstallerWixSourceFileDir)DwgMergeModuleFrag.wxs
+
+
+#INSTALLER_VALIDATOR_OPT     + -sice:ICE30
+
+

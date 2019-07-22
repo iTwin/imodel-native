@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BuildContext
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd"
+    >
+
+    <!--
+        The true purpose of iModelBridgeCore is to be the dependencies of "Bridges". As
+        such, this should closely mirror SdkDistribution:DgnClientSdkForPPParts on Vancouver.
+     -->
+    <Part Name="iModelBridgeCore" PrgOutputDir="iModelBridgeCore">
+        <SubProduct ProductName="DgnV8Bridge" PartFile="DgnDbSync" Repository="DgnDbSync"/>
+        <SubProduct ProductName="iModelBridgeFwk" PartFile="iModelBridge" Repository="DgnDbSync"/>
+        <SubProduct ProductName="iModelBridgeAssign" PartFile="iModelBridge" Repository="DgnDbSync"/>
+        <SubPart PartName="RunDgnV8ConverterTests" PartFile="DgnDbSync" Repository="DgnDbSync"/>
+    </Part>
+
+    <Part Name="iModelBridgeCore.Dev" PrgOutputDir="iModelBridgeCore">
+        <SubPart PartName="iModelCorePRG" PartFile="iModelCore" Repository="DgnPlatform"/>
+        <SubPart PartName="iModelBridgeCore"/>
+    </Part>
+</BuildContext>
