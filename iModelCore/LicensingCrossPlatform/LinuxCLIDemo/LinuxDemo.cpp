@@ -64,7 +64,7 @@ int main(int argc, char* argv[])
 
     m_localState = nullptr;
 
-    cout << "Welcome to the Cross Platform License Client CLI applicaion. Create a client, or type \'help\' to begin.\n"
+    cout << "Welcome to the Cross Platform License Client CLI applicaion. Create a client, or type \'help\' to begin.\n";
     cout << "Type \"exit\" or \"(q)uit\" to exit the program.\n";
 
     Initialize();
