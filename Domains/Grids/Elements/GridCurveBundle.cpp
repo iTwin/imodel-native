@@ -103,6 +103,14 @@ GridCurveCPtr GridCurveBundle::GetGridCurve() const
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Elonas.Seviakovas               07/2019
+//---------------+---------------+---------------+---------------+---------------+------
+ElementIdIterator GridCurveBundle::MakeDrivingSurfaceIterator() const
+    {
+    return GridSurfaceDrivesGridCurveBundleHandler::MakeGridSurfaceIterator(*this);
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                06/2018
 //---------------+---------------+---------------+---------------+---------------+------
 ElementIdIterator GridCurveBundle::MakeDrivingSurfaceIterator
@@ -113,8 +121,8 @@ ElementIdIterator GridCurveBundle::MakeDrivingSurfaceIterator
     GridCurveBundleCPtr bundle = GridCurveBundleCreatesGridCurveHandler::GetBundle(curve);
     if (bundle.IsNull())
         return ElementIdIterator();
-
-    return GridSurfaceDrivesGridCurveBundleHandler::MakeGridSurfaceIterator(*bundle);
+        
+    return bundle->MakeDrivingSurfaceIterator();
     }
 
 //--------------------------------------------------------------------------------------
