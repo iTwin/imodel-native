@@ -1323,7 +1323,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
         BECN::SchemaKey key = entry.GetSchemaKey();
         bool isDynamic = entry.GetMappingType() == SyncInfo::ECSchemaMappingType::Dynamic;
         Utf8String schemaName(key.GetName().c_str());
-        if (0 == BeStringUtilities::Strnicmp("EWR", schemaName.c_str(), 3))
+        if (0 == BeStringUtilities::Strnicmp("EWR", schemaName.c_str(), 3) && 0 != strcmp("EWRData", schemaName.c_str()))
             {
             schemaName.AssignOrClear("EWR");
             key.m_schemaName = schemaName;
@@ -2418,7 +2418,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::DoAnalyze(DgnV8Api::ElementHan
             if (nullptr != ecClass)
                 namedGroupOwnsMembers = ecClass->GetCustomAttribute("NamedGroupOwnsMembers") != nullptr;
             }
-        if (0 == BeStringUtilities::Strnicmp("EWR", v8ClassName.GetSchemaName(), 3))
+        if (0 == BeStringUtilities::Strnicmp("EWR", v8ClassName.GetSchemaName(), 3) && 0 != strcmp("EWRData", v8ClassName.GetSchemaName()))
             v8ClassName = ECClassName("EWR", v8ClassName.GetClassName());
 
         if (BentleyApi::SUCCESS != V8ECClassInfo::InsertOrUpdate(*this, v8Element, v8ClassName, namedGroupOwnsMembers, !isPrimary, targetModelInfo))
@@ -3011,7 +3011,7 @@ BentleyStatus DynamicSchemaGenerator::ProcessSchemaXml(const ECObjectsV8::Schema
 
             if (existingToNewVersionDiff >= 0)
                 {
-                if (existingToNewVersionDiff == 0 && existingSchemaKey.m_checkSum != schemaKey.m_checkSum)
+                if (existingToNewVersionDiff == 0 && existingSchemaKey.m_checkSum != schemaKey.m_checkSum && !ExcludeSchemaFromBisification(schemaName))
                     {
                     Utf8String error;
                     error.Sprintf("ECSchema %s already found in the V8 file with a different checksum (%u). Copy in model %s with checksum %u will be merged.  This may result in inconsistencies between the DgnDb version and the versions in the Dgn.",
@@ -3122,7 +3122,7 @@ void DynamicSchemaGenerator::InitializeECSchemaConversion()
 
         BeFileName v3ConversionECSchemasDir(ecschemasDir);
         v3ConversionECSchemasDir.AppendToPath(L"V3Conversion");
-        m_schemaReadContext->AddConversionSchemaPath(v3ConversionECSchemasDir.c_str());
+        m_syncReadContext->AddConversionSchemaPath(v3ConversionECSchemasDir.c_str());
 
         BeFileName dgndbECSchemasDir(ecschemasDir);
         dgndbECSchemasDir.AppendToPath(L"Standard");
@@ -3202,7 +3202,7 @@ void DynamicSchemaGenerator::CheckECSchemasForModel(DgnV8ModelR v8Model, bmap<Ut
 
         // It is possible we scanned the schema previously, but didn't import it.  Make sure it is actually in the db
         Utf8String bimSchemaName(v8SchemaName);
-        if (0 == BeStringUtilities::Strnicmp("EWR", v8SchemaName.c_str(), 3))
+        if (0 == BeStringUtilities::Strnicmp("EWR", v8SchemaName.c_str(), 3) && 0 != strcmp("EWRData", v8SchemaName.c_str()))
             bimSchemaName.AssignOrClear("EWR");
 
         // Supplemental schemas are not imported so won't find it in the existing imodel

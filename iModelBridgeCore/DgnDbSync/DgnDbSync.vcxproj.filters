@@ -183,6 +183,9 @@
     <ClCompile Include="DgnV8\RulesetEmbedder.cpp">
       <Filter>DgnV8</Filter>
     </ClCompile>
+    <ClCompile Include="DgnV8\DTMConversion.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="DgnV8\ImportConfig\ImportConfig.xml">

@@ -1442,9 +1442,11 @@ BentleyApi::BentleyStatus Converter::ConvertNamedGroupsRelationshipsInModel(DgnV
                     return DgnV8Api::MemberTraverseStatus::Continue;
                     }
 
-                GroupInformationElementCPtr group = elementTable.Get<GroupInformationElement>(m_parentId);
+                GroupInformationElementPtr group = elementTable.GetForEdit<GroupInformationElement>(m_parentId);
                 if (group.IsValid() && ! m_converter.GetSyncInfo().IsElementInNamedGroup(m_parentId, childElementId))
                     {
+                    if (Utf8String::IsNullOrEmpty(group->GetUserLabel()))
+                        group->SetUserLabel(Utf8String(ng->GetName().c_str()).c_str());
                     DgnDbStatus status;
                     if (DgnDbStatus::BadRequest == (status = ElementGroupsMembers::Insert(*group, *child, 0)))
                         {

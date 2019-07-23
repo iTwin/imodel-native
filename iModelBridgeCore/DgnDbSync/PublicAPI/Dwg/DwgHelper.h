@@ -88,6 +88,7 @@ public:
     DWG_EXPORT static bool             GetTransformForSharedParts (TransformP out, double* uniformScale, TransformCR inTrans);
     DWG_EXPORT static bool             NegateScaleForSharedParts (double& partScale, TransformCR blockTransform);
     DWG_EXPORT static Utf8String       CompareSubcatAppearance (DgnSubCategory::Appearance const& a1, DgnSubCategory::Appearance const& a2);
+    DWG_EXPORT static bool             IsElementOwnedByJobSubject (DgnDbCR db, DgnElementId checkId, DgnElementId jobSubjectId);
     };  // DwgHelper
 
 END_DWG_NAMESPACE

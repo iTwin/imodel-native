@@ -311,11 +311,16 @@ StatusInt   RealityMeshAttachmentConversion::ExtractAttachment (BentleyApi::Utf8
                 break;
                 }
             }
-        classifiedModelId = classifierMM.GetDgnModel().GetModelId();
-        
+        classifiedModelId = classifierMM.GetDgnModel().GetModelId();    
+
+        bool                    isPlanar = !classifierModelRef->Is3d();
+        Bentley::DRange3d       range;        
+        if (NULL != classifierModelRef->GetDgnModelP() && SUCCESS == classifierModelRef->GetDgnModelP()->GetRange(range))
+            isPlanar = (range.high.z - range.low.z) < 10.0;
+
 
         if (!levelName.empty())
-            {
+            {                                                                       
             DgnV8Api::LevelHandle         levelHandle = classifierModelRef->GetLevelCache().GetLevelByName (levelName.c_str());
             
             if (!levelHandle.IsValid())
@@ -325,8 +330,9 @@ StatusInt   RealityMeshAttachmentConversion::ExtractAttachment (BentleyApi::Utf8
                 }
             classifierCategoryId = converter.GetSyncInfo().FindCategory(levelHandle.GetLevelId(), *classifierMM.GetV8Model().GetDgnFileP(), SyncInfo::LevelExternalSourceAspect::Type::Spatial);
             }
+
         
-        classifiers.push_back(ModelSpatialClassifier(classifiedModelId, classifierCategoryId, classifierElementId, classifierFlags, Utf8String(wName.c_str()), expandDistance * converter.ComputeUnitsScaleFactor(*v8el.GetModelRef()->GetDgnModelP()), activeLinkId == classifierXai.GetId()));
+        classifiers.push_back(ModelSpatialClassifier(classifiedModelId, classifierCategoryId, classifierElementId, classifierFlags, Utf8String(wName.c_str()), expandDistance * converter.ComputeUnitsScaleFactor(*v8el.GetModelRef()->GetDgnModelP()), activeLinkId == classifierXai.GetId(), !isPlanar));
         }
 
 
@@ -346,7 +352,6 @@ StatusInt   RealityMeshAttachmentConversion::ExtractAttachment (BentleyApi::Utf8
 
     return SUCCESS;
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16

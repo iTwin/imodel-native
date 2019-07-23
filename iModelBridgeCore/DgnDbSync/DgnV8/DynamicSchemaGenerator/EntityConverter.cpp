@@ -654,7 +654,7 @@ BentleyStatus BisClassConverter::ConvertECRelationshipClass(ECClassRemovalContex
 
     if (!ignoreBisBase)
         {
-        BECN::ECRelationshipClassCP baseClass = context.GetDomainRelationshipBaseClass(inputClass);
+        BECN::ECRelationshipClassCP baseClass = context.GetDomainRelationshipBaseClass(inputClass, conversionSchema.get());
         if (baseClass == nullptr)
             {
             context.ReportIssue(Converter::IssueSeverity::Info, "Unable to bis-ify ECRelationshipClass '%s'.", inputClass.GetFullName());
@@ -1374,8 +1374,47 @@ BECN::ECClassCP BisClassConverter::SchemaConversionContext::GetBaseClass(ECClass
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Krischan.Eberle     04/2015
 //---------------------------------------------------------------------------------------
-BECN::ECRelationshipClassCP BisClassConverter::SchemaConversionContext::GetDomainRelationshipBaseClass(BECN::ECRelationshipClassR inputClass) const
+BECN::ECRelationshipClassCP BisClassConverter::SchemaConversionContext::GetDomainRelationshipBaseClass(BECN::ECRelationshipClassR inputClass, ECN::ECSchemaP conversionSchema) const
     {
+    if (nullptr != conversionSchema)
+        {
+        ECClassCP conversionClass = conversionSchema->GetClassCP(inputClass.GetName().c_str());
+        if (nullptr != conversionClass)
+            {
+            IECInstancePtr ca = conversionClass->GetCustomAttribute("RelationshipBaseClass");
+            if (ca.IsValid())
+                {
+                ECValue name;
+                if (ECObjectsStatus::Success == ca->GetValue(name, "Name"))
+                    {
+                    bvector<Utf8String> tokens;
+                    BeStringUtilities::Split(name.GetUtf8CP(), ":", tokens);
+                    if (tokens.size() == 2)
+                        {
+                        ECClassCP baseClass = GetBaseClass(ECClassName(tokens[0].c_str(), tokens[1].c_str()));
+                        if (nullptr != baseClass)
+                            {
+                            if (nullptr != baseClass->GetRelationshipClassCP())
+                                return baseClass->GetRelationshipClassCP();
+                            LOG.errorv("A relationship baseclass (%s) was specified for input class %s but it is not a relationship class.  Using default base class instead.", name.GetUtf8CP(), inputClass.GetFullName());
+                            }
+                        else
+                            {
+                            LOG.errorv("A relationship baseclass (%s) was specified for input class %s but could not be found.  Using default base class instead.", name.GetUtf8CP(), inputClass.GetFullName());
+                            }
+                        }
+                    else
+                        {
+                        LOG.errorv("A relationship baseclass (%s) was specified for input class %s but the name was not formatted correctly.  Using default base class instead.", name.GetUtf8CP(), inputClass.GetFullName());
+                        }
+                    }
+                else
+                    {
+                    LOG.errorv("A RelationshipBaseClass custom attribute was applied to input class %s but .  Using default base class instead.", name.GetUtf8CP(), inputClass.GetFullName());
+                    }
+                }
+            }
+        }
     if (m_domainRelationshipBaseClass == nullptr)
         {
         ECClassCP base = GetBaseClass(ECClassName(BIS_ECSCHEMA_NAME, BIS_REL_ElementRefersToElements))->GetRelationshipClassCP();
