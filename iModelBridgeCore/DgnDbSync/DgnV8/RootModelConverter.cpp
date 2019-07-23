@@ -1998,6 +1998,14 @@ BentleyStatus RootModelConverter::MakeDefinitionChanges()
     _ConvertSpatialLevels();
     _ConvertDrawingLevels();
 
+
+    for (auto xdomain : XDomainRegistry::s_xdomains)
+        {
+        LOG.tracev("calling XDomain::_MakeDefinitionChanges for %p", xdomain);
+        xdomain->_MakeDefinitionChanges(*this);
+        LOG.tracev("called XDomain::_MakeDefinitionChanges for %p", xdomain);
+        }
+
     // NB: It is up to ConvertData to call DoEndConversion. Don't do that here!
 
     // The framework (iModelBridgeFwk or SACAdapter) guarantees that ConvertData will be called in the same session. 

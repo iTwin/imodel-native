@@ -2898,6 +2898,9 @@ struct XDomain
     DGNDBSYNC_EXPORT static void UnRegister(XDomain& xd);
 
     //! This is invoked just after the V8 root model is opened but before any references are detected or any elements are converted. 
+    virtual void _MakeDefinitionChanges(Converter&) {}
+
+    //! This is invoked just after the V8 root model is opened but before any references are detected or any elements are converted. 
     virtual void _OnBeginConversion(Converter&, DgnV8ModelR rootModel) {}
     //! This is invoked by _FinishConversion, after all models and elements (and ECRelationships) have been processed.
     virtual void _OnFinishConversion(Converter&) = 0;
