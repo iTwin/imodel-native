@@ -1,3 +1,8 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
 
 #include <Grids/Elements/GridElementsAPI.h>
 #include <DgnPlatform/DgnDb.h>
@@ -103,6 +108,34 @@ Dgn::DgnDbStatus GridCurve::_OnUpdate(Dgn::DgnElementCR original)
         return DgnDbStatus::ValidationFailed;
 
     return T_Super::_OnUpdate(original);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  04/19
+//---------------------------------------------------------------------------------------
+GridLabelCPtr GridCurve::GetNonElevationSurfaceGridLabel () const
+    {
+    GridSurfaceCPtr labelOwner = GetFirstNonElevationIntersectingGridSurface ();
+    if (labelOwner.IsNull ())
+        return nullptr;
+
+    return labelOwner->GetGridLabel ();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  04/19
+//---------------------------------------------------------------------------------------
+GridSurfaceCPtr GridCurve::GetFirstNonElevationIntersectingGridSurface () const
+    {
+    bvector<DgnElementId> intersectingSurfaces = GetIntersectingSurfaceIds ();
+    for (DgnElementId surfaceId : intersectingSurfaces)
+        {
+        GridSurfaceCPtr surface = GetDgnDb ().Elements ().Get<GridSurface> (surfaceId);
+        if (nullptr == dynamic_cast<ElevationGridSurfaceCP>(surface.get ()))
+            return surface;
+        }
+
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
