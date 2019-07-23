@@ -41,6 +41,7 @@ const string clientArgList = "\n\
 const string createArgList = "\n\
     - client create client - Create the Client. You will be prompted to provide all required information.\n\
     - client create accesskeyclient - Create the AccessKeyClient. You will be prompted to provide all required information.\n\
+    - client create ultimateaccesskeyclient - Create an Ultimate-Level AccessKeyClient. You will be prompted to provide all required information.\n\
     - client create saasclient - Create the SaasClient. You will be prompted to provide all required information.\n\
 \n";
 
@@ -63,6 +64,7 @@ int main(int argc, char* argv[])
 
     m_localState = nullptr;
 
+    cout << "Welcome to the Cross Platform License Client CLI applicaion. Create a client, or type \'help\' to begin.\n"
     cout << "Type \"exit\" or \"(q)uit\" to exit the program.\n";
 
     Initialize();
@@ -392,7 +394,7 @@ void ProcessClientCommand(vector<string> input)
 
             if(Licensing::LicenseStatus::Ok == startResult)
                 {
-                cout << "Started the Licensing heartbeats.\n";
+                cout << "License Status: Ok. Started the Licensing heartbeats.\n";
                 m_heartbeatRunning = true;
                 return;
                 }
@@ -452,49 +454,49 @@ void ProcessClientCommand(vector<string> input)
 
             if(Licensing::LicenseStatus::Ok == startResult)
                 {
-                cout << "Started the Licensing policy heartbeat.\n";
+                cout << "License Status: Ok. Started the Licensing heartbeats.\n";
                 m_heartbeatRunning = true;
                 return;
                 }
             else if(Licensing::LicenseStatus::Offline == startResult)
                 {
-                cout << "Started the Licensing policy heartbeat. You are in offline mode.\n";
+                cout << "Started the Licensing heartbeats. You are in offline mode.\n";
                 m_heartbeatRunning = true;
                 return;
                 }
             else if(Licensing::LicenseStatus::Trial == startResult)
                 {
-                cout << "Started the Licensing policy heartbeat. You are in trial mode.\n";
+                cout << "Started the Licensing heartbeats. You are in trial mode.\n";
                 m_heartbeatRunning = true;
                 return;
                 }
             else if(Licensing::LicenseStatus::Expired == startResult)
                 {
-                cout << "Failed to start the Licensing policy heartbeat. License is expired.\n";
+                cout << "Failed to start the Licensing heartbeats. License is expired.\n";
                 m_heartbeatRunning = false;
                 return;
                 }
             else if(Licensing::LicenseStatus::AccessDenied == startResult)
                 {
-                cout << "Failed to start the Licensing policy heartbeat. Access denied.\n";
+                cout << "Failed to start the Licensing heartbeats. Access denied.\n";
                 m_heartbeatRunning = false;
                 return;
                 }
             else if(Licensing::LicenseStatus::DisabledByLogSend == startResult)
                 {
-                cout << "Failed to start the Licensing policy heartbeat. Disabled by log send.\n";
+                cout << "Failed to start the Licensing heartbeats. Disabled by log send.\n";
                 m_heartbeatRunning = false;
                 return;
                 }
             else if(Licensing::LicenseStatus::DisabledByPolicy == startResult)
                 {
-                cout << "Failed to start the Licensing policy heartbeat. Disabled by policy.\n";
+                cout << "Failed to start the Licensing heartbeats. Disabled by policy.\n";
                 m_heartbeatRunning = false;
                 return;
                 }
             else if(Licensing::LicenseStatus::NotEntitled == startResult)
                 {
-                cout << "Failed to start the Licensing policy heartbeat. Not entitled.\n";
+                cout << "Failed to start the Licensing heartbeats. Not entitled.\n";
                 m_heartbeatRunning = false;
                 return;
                 }
