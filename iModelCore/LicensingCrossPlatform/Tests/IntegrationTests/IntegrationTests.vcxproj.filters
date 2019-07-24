@@ -8,17 +8,17 @@
     <None Include="Prewire.mke" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Published\AccessKeyClientIntegrationTests.cpp" />
-    <ClCompile Include="Published\ClientIntegrationTests.cpp" />
-    <ClCompile Include="Published\DummyPolicyHelper.cpp" />
-    <ClCompile Include="Published\SaasClientIntegrationTests.cpp" />
-    <ClCompile Include="Published\TestsHelper.cpp" />
+    <ClCompile Include="NonPublished\AccessKeyClientIntegrationTests.cpp" />
+    <ClCompile Include="NonPublished\ClientIntegrationTests.cpp" />
+    <ClCompile Include="NonPublished\DummyPolicyHelper.cpp" />
+    <ClCompile Include="NonPublished\SaasClientIntegrationTests.cpp" />
+    <ClCompile Include="NonPublished\TestsHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Published\AccessKeyClientIntegrationTests.h" />
-    <ClInclude Include="Published\ClientIntegrationTests.h" />
-    <ClInclude Include="Published\DummyPolicyHelper.h" />
-    <ClInclude Include="Published\SaasClientIntegrationTests.h" />
-    <ClInclude Include="Published\TestsHelper.h" />
+    <ClInclude Include="NonPublished\AccessKeyClientIntegrationTests.h" />
+    <ClInclude Include="NonPublished\ClientIntegrationTests.h" />
+    <ClInclude Include="NonPublished\DummyPolicyHelper.h" />
+    <ClInclude Include="NonPublished\SaasClientIntegrationTests.h" />
+    <ClInclude Include="NonPublished\TestsHelper.h" />
   </ItemGroup>
 </Project>
