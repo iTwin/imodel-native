@@ -26,6 +26,17 @@ StubInstances::StubRelationshipInstances StubInstances::Add(ObjectIdCR objectId,
     return StubRelationshipInstances(m_instances.back().relationshipInstances);
     }
 
+StubInstances::StubRelationshipInstances StubInstances::Add(ObjectIdCR objectId, Json::Value const* propertiesJson, Utf8StringCR eTag)
+    {
+    std::map<Utf8String, Json::Value> properties;
+
+    if (nullptr != propertiesJson)
+        for (auto& name : propertiesJson->getMemberNames())
+            properties[name] = (*propertiesJson)[name];
+
+    return Add(objectId, properties, eTag);
+    }
+
 Json::Value StubInstances::ConvertStubInstanceToJson(const StubInstance& instance) const
     {
     Json::Value instanceJson;
@@ -37,14 +48,10 @@ Json::Value StubInstances::ConvertStubInstanceToJson(const StubInstance& instanc
     instanceJson["properties"] = Json::objectValue;
 
     for (auto& property : instance.properties)
-        {
         instanceJson["properties"][property.first] = property.second;
-        }
 
     for (auto& relationshipInstance : instance.relationshipInstances)
-        {
         instanceJson["relationshipInstances"].append(ConvertStubRelationshipInstanceToJson(*relationshipInstance));
-        }
 
     return instanceJson;
     }
@@ -59,9 +66,7 @@ Json::Value StubInstances::ConvertStubRelationshipInstanceToJson(const StubRelat
     instanceJson["properties"] = Json::objectValue;
 
     for (auto& property : instance.properties)
-        {
         instanceJson["properties"][property.first] = property.second;
-        }
 
     instanceJson["relatedInstance"] = ConvertStubInstanceToJson(instance.relatedInstance);
     instanceJson["direction"] = BentleyApi::ECN::ECRelatedInstanceDirection::Forward == instance.direction ? "forward" : "backward";
@@ -102,9 +107,7 @@ Utf8String StubInstances::ToJsonWebApiV2() const
     dataJson["instances"] = Json::arrayValue;
 
     for (auto& instance : m_instances)
-        {
         dataJson["instances"].append(ConvertStubInstanceToJson(instance));
-        }
 
     return dataJson.toStyledString();
     }
