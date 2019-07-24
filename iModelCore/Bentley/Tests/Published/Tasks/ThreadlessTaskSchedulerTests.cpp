@@ -13,7 +13,7 @@
 
 USING_NAMESPACE_BENTLEY_TASKS
 
-struct ThreadlessTaskSchedulerTests : public ::testing::Test {};
+struct ThreadlessTaskSchedulerTests : ::testing::Test {};
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Vincas.Razma

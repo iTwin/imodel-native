@@ -93,15 +93,9 @@
     <ClInclude Include="Published\DateTimeTestHelpers.h" />
     <ClInclude Include="Published\DirectoryObserverTests.h" />
     <ClInclude Include="Published\shared_mutex.h" />
-    <ClInclude Include="Published\Tasks\AsyncResultTests.h" />
-    <ClInclude Include="Published\Tasks\AsyncTaskTests.h" />
     <ClInclude Include="Published\Tasks\AsyncTestCheckpoint.h" />
-    <ClInclude Include="Published\Tasks\LimitingTaskQueueTests.h" />
     <ClInclude Include="Published\Tasks\StubTaskScheduler.h" />
     <ClInclude Include="Published\Tasks\TasksTestsHelper.h" />
-    <ClInclude Include="Published\Tasks\UniqueTaskHolderTests.h" />
-    <ClInclude Include="Published\Tasks\UniqueTasksHolderTests.h" />
-    <ClInclude Include="Published\Tasks\WorkerThreadTests.h" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="Published\datetimedstanalysis.logging.config.xml" />

@@ -4,7 +4,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "AsyncTaskTests.h"
+#include <Bentley/BeTest.h>
+#include <Bentley/Tasks/Tasks.h>
 
 #include <Bentley/BeDebugLog.h>
 #include <Bentley/BeTimeUtilities.h>
@@ -14,6 +15,10 @@
 #include <Bentley/Tasks/TaskScheduler.h>
 
 #include <atomic>
+
+USING_NAMESPACE_BENTLEY_TASKS
+
+struct AsyncTaskTests : ::testing::Test {};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Benediktas.Lipnickas               03/16

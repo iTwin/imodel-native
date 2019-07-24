@@ -4,10 +4,12 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "UniqueTasksHolderTests.h"
+#include <Bentley/BeTest.h>
 #include "AsyncTestCheckpoint.h"
 #include <Bentley/Tasks/UniqueTaskHolder.h>
 #include <Bentley/Tasks/WorkerThread.h>
+
+struct UniqueTasksHolderTests : ::testing::Test {};
 
 template<typename T>
 static bset<T> StubBSet (std::initializer_list<T> list)

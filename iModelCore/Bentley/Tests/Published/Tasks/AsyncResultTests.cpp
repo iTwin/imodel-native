@@ -4,7 +4,12 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "AsyncResultTests.h"
+#include <Bentley/BeTest.h>
+#include <Bentley/Tasks/Tasks.h>
+
+USING_NAMESPACE_BENTLEY_TASKS
+
+struct AsyncResultTests : ::testing::Test {};
 
 #include <Bentley/Tasks/AsyncResult.h>
 

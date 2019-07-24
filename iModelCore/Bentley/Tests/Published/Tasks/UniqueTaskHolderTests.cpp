@@ -4,11 +4,16 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "UniqueTaskHolderTests.h"
+#include <Bentley/BeTest.h>
+#include <Bentley/Tasks/Tasks.h>
 
 #include <Bentley/Tasks/UniqueTaskHolder.h>
 #include <Bentley/Tasks/WorkerThread.h>
 #include "AsyncTestCheckpoint.h"
+
+USING_NAMESPACE_BENTLEY_TASKS
+
+struct UniqueTaskHolderTests : ::testing::Test {};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Benediktas.Lipnickas                03/16

@@ -3,11 +3,27 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include "LimitingTaskQueueTests.h"
+#include <Bentley/BeTest.h>
+#include <Bentley/Tasks/AsyncTasksManager.h>
+
 #include <Bentley/Tasks/LimitingTaskQueue.h>
 #include <Bentley/Tasks/WorkerThread.h>
 #include "AsyncTestCheckpoint.h"
 #include "StubTaskScheduler.h"
+
+USING_NAMESPACE_BENTLEY_TASKS
+
+struct LimitingTaskQueueTests : ::testing::Test
+    {
+    void SetUp()
+        {
+        AsyncTasksManager::SetDefaultScheduler(nullptr);
+        }
+    void TearDown()
+        {
+        AsyncTasksManager::SetDefaultScheduler(nullptr);
+        }
+    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Benediktas.Lipnickas            03/16

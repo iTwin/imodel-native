@@ -4,10 +4,15 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "WorkerThreadTests.h"
+#include <Bentley/BeTest.h>
+#include <Bentley/Tasks/Tasks.h>
 
 #include <Bentley/Tasks/WorkerThread.h>
 #include <Bentley/Tasks/WorkerThreadPool.h>
+
+USING_NAMESPACE_BENTLEY_TASKS
+
+struct WorkerThreadTests : ::testing::Test {};
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Benediktas.Lipnickas
