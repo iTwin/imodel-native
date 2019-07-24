@@ -12,7 +12,7 @@ USING_NAMESPACE_DWG
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-AnnotationTextStyleCP   DwgImporter::_ImportTextStyle (DwgDbTextStyleTableRecordCR dwgStyle)
+AnnotationTextStyleCPtr DwgImporter::_ImportTextStyle (DwgDbTextStyleTableRecordCR dwgStyle)
     {
     Utf8String          name;
     DwgHelper::ValidateStyleName (name, dwgStyle.GetName());
@@ -27,12 +27,17 @@ AnnotationTextStyleCP   DwgImporter::_ImportTextStyle (DwgDbTextStyleTableRecord
     DgnFontCP   dgnFont = this->GetDgnFontFor (fontInfo);
     if (nullptr == dgnFont)
         {
-        this->ReportError (IssueCategory::VisualFidelity(), Issue::FontMissing(), Utf8PrintfString("for text style %s", name.c_str()).c_str());
+        this->ReportError (IssueCategory::VisualFidelity(), Issue::Message(), Utf8PrintfString("Text style %s has no font", name.c_str()).c_str());
         return  nullptr;
         }
 
     auto model = this->GetOptions().GetMergeDefinitions() ? &this->GetDgnDb().GetDictionaryModel() : this->GetOrCreateJobDefinitionModel().get();
-    AnnotationTextStylePtr  dgnStyle = AnnotationTextStyle::Create (*model);
+    AnnotationTextStylePtr  dgnStyle = AnnotationTextStyle::GetForEdit (*model, name.c_str());
+
+    bool updating = dgnStyle.IsValid();
+    if (!updating)
+        dgnStyle = AnnotationTextStyle::Create (*model);
+
     if (!dgnStyle.IsValid())
         return  nullptr;
 
@@ -69,9 +74,9 @@ AnnotationTextStyleCP   DwgImporter::_ImportTextStyle (DwgDbTextStyleTableRecord
     // WIP - set linespacing
     // dgnStyle->SetLineSpacingFactor (1.0);
 
-    AnnotationTextStyleCPtr     newStyle = dgnStyle->Insert ();
+    AnnotationTextStyleCPtr     newStyle = updating ? dgnStyle->Update() : dgnStyle->Insert ();
 
-    return  newStyle.IsValid() ? newStyle.get() : nullptr;
+    return  newStyle.IsValid() ? newStyle : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -105,16 +110,25 @@ BentleyStatus   DwgImporter::_ImportTextStyleSection ()
         DwgString       name = textstyle->GetName ();
         if (name.IsEmpty())
             {
-            this->ReportIssue (IssueSeverity::Info, IssueCategory::UnexpectedData(), Issue::ConfigUsingDefault(), Utf8String(name.c_str()).c_str());
+            if (textstyle->UpgradeOpen() == DwgDbStatus::Success)
+                {
+                name.Assign (WPrintfString(L"Unnamed-%d", count).c_str());
+                textstyle->SetName (name);
+                this->ReportIssue (IssueSeverity::Info, IssueCategory::UnexpectedData(), Issue::Message(), Utf8PrintfString("Unamed text style is assigned a name %ls", name.c_str()).c_str());
+                }
+            else
+                {
+                this->ReportIssue (IssueSeverity::Info, IssueCategory::UnexpectedData(), Issue::Message(), "Unamed text styles exist");
+                }
             }
         else
             {
             LOG_TEXTSTYLE.tracev("Processinging DWG textstyle %ls", name.c_str());
             }
 
-        AnnotationTextStyleCP   dgnStyle = this->_ImportTextStyle (*textstyle.get());
+        auto dgnStyle = this->_ImportTextStyle (*textstyle.get());
 
-        if (nullptr != dgnStyle)
+        if (!dgnStyle.IsValid())
             {
             // set the active style as the default style, but if no active style exists, use the first style:
             if (textstyle->IsActiveTextStyle() || !m_defaultTextstyleId.IsValid())
@@ -167,7 +181,8 @@ DgnFontCP       DwgImporter::ResolveFont (DgnFontCP font)
     auto type = font->GetType();
     auto name = font->GetName();
     auto found = m_dgndb->Fonts().FindFontByTypeAndName(type, name.c_str());
-    if (nullptr == found || !found->IsResolved())
+    // don't check IsResolved - at this time LastResortTrueTypeFont returns false!
+    if (nullptr == found)
         found = m_loadedFonts.FindDgnFont(type, name);
     return  found;    
     }
@@ -214,7 +229,7 @@ DgnFontCP       DwgImporter::WorkingFonts::FindDgnFont (DgnFontType type, Utf8St
     Utf8String  fontName = name;
     fontName.ToLower ();
 
-    // remove file extension name:
+    // remove file extension from input font name:
     if (DgnFontType::Shx == type)
         fontName = fontName.substr (0, fontName.rfind(".shx"));
     else
@@ -227,7 +242,8 @@ DgnFontCP       DwgImporter::WorkingFonts::FindDgnFont (DgnFontType type, Utf8St
         }
     else if (warning && m_missingFonts.find(fontName) == m_missingFonts.end())
         {
-        m_dwgImporter.ReportIssueV (IssueSeverity::Warning, IssueCategory::MissingData(), Issue::FontMissing(), "LoadedFonts", "SHX", name.c_str());
+        Utf8CP typestr = DgnFontType::Shx == type ? "SHX" : "TTF";
+        m_dwgImporter.ReportIssueV (IssueSeverity::Warning, IssueCategory::MissingData(), Issue::FontMissing(), nullptr, typestr, name.c_str());
         m_missingFonts.insert (fontName);
         }
 
@@ -536,11 +552,18 @@ void    DwgImporter::_EmbedFonts ()
         if (nullptr == workingFont)
             continue;
 
-        if (!shouldEmbedUsedFont(m_config, fontEntry.GetType(), fontEntry.GetName()))
+        auto fontType = fontEntry.GetType ();
+        auto fontName = fontEntry.GetName ();
+        if (!shouldEmbedUsedFont(m_config, fontType, fontName))
+            continue;
+
+        // if the font has been embedded, don't bother again - VSTS 131026.
+        auto& fontData = m_dgndb->Fonts().DbFaceData ();
+        if (fontData.Exists(DgnFonts::DbFaceDataDirect::FaceKey(fontType, fontName, DgnFonts::DbFaceDataDirect::FaceKey::FACE_NAME_Regular)))
             continue;
         
-        if (BSISUCCESS != DgnFontPersistence::Db::Embed(m_dgndb->Fonts().DbFaceData(), *workingFont))
-            ReportIssueV(IssueSeverity::Warning, IssueCategory::MissingData(), Issue::CannotEmbedFont(), nullptr, (int)fontEntry.GetType(), fontEntry.GetName());
+        if (BSISUCCESS != DgnFontPersistence::Db::Embed(fontData, *workingFont))
+            ReportIssueV(IssueSeverity::Warning, IssueCategory::MissingData(), Issue::CannotEmbedFont(), nullptr, (int)fontType, fontName);
         
         Progress();
         }

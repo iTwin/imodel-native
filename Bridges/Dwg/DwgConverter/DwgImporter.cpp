@@ -1453,6 +1453,7 @@ void            DwgImporter::_FinishImport ()
                 if (nullptr != (dwg = xref.GetDatabaseP()))
                     {
                     changeDetector._DetectDeletedElementsInFile (*this, *dwg);
+                    changeDetector._DetectDeletedModelsInFile (*this, *dwg);
                     }
                 }
             changeDetector._DetectDeletedMaterials (*this);

@@ -1824,7 +1824,7 @@ virtual void    _Draw (DwgGiDrawableR drawable) override
         protocal extention; otherwise prepare for the next draw call in the stack.
         -------------------------------------------------------------------------------*/
         entity = child.get ();
-        if (!this->PreprocessBlockChildGeometry(entity))
+        if (!this->PreprocessBlockChildGeometry(entity, savedParams))
             return;
         }
 
@@ -1855,7 +1855,7 @@ virtual void    _Draw (DwgGiDrawableR drawable) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool    PreprocessBlockChildGeometry (DwgDbEntityP entity)
+bool    PreprocessBlockChildGeometry (DwgDbEntityP entity, DrawParameters& savedParams)
     {
     if (entity == nullptr)
         return  false;
@@ -1870,11 +1870,14 @@ bool    PreprocessBlockChildGeometry (DwgDbEntityP entity)
     if (this->SkipBlockChildGeometry(entity))
         return  false;
 
+    m_drawParams.Initialize (*entity, &m_drawParams);
+
     // give protocal extensions a chance to create their own geometry:
     if (this->CreateBlockChildGeometry(entity) == BSISUCCESS)
+        {
+        m_drawParams.CopyFrom (savedParams);
         return  false;
-
-    m_drawParams.Initialize (*entity, &m_drawParams);
+        }
 
     // tell the toolkit to draw a failed ASM body as renderable geometry
     if (DwgHelper::IsAsmObject(entity))

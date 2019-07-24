@@ -1177,7 +1177,7 @@ protected:
     //! @{
     // The text style section contains all text styles used in a DWG file
     DWG_EXPORT virtual BentleyStatus          _ImportTextStyleSection ();
-    DWG_EXPORT virtual AnnotationTextStyleCP  _ImportTextStyle (DwgDbTextStyleTableRecordCR dwgStyle);
+    DWG_EXPORT virtual AnnotationTextStyleCPtr _ImportTextStyle (DwgDbTextStyleTableRecordCR dwgStyle);
     DWG_EXPORT virtual void                   _EmbedFonts ();
 
     //! @name  Importing line type table

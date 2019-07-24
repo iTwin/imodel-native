@@ -62,7 +62,6 @@ IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START (Issue, dwg_issue)
     L10N_STRING(FontIllegalNumber)           // =="Illegal font number %u."==
     L10N_STRING(FontMissing)                 // =="Missing %s font '%s'. Some elements may not display properly."==
     L10N_STRING(FontNotEmbedded)             // =="Did not embed %s font '%s' due to importer configuration. Some elements may not display properly."==
-    L10N_STRING(FontNumberError)             // =="Could not resolve font number %u."==
     L10N_STRING(GroupError)                  // =="Group import error [%s]"==
     L10N_STRING(InvalidLayer)                // =="Invalid Layer [%s] could not be converted"==
     L10N_STRING(InvalidRange)                // =="Invalid Range"==
