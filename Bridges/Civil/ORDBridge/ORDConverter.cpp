@@ -1560,10 +1560,7 @@ void ConvertORDElementXDomain::_ProcessResults(DgnDbSync::DgnV8::ElementConversi
         return;
 
     for (auto& func : m_aspectAssignFuncs)
-        {
-        if ((this->*func)(*elRes.m_element, v8el))
-            break;
-        }
+        (this->*func)(*elRes.m_element, v8el);
 
     m_converter.m_v8ToBimElmMap.insert({ v8el.GetElementRef(), elRes.m_element.get() });
     }
