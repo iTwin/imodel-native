@@ -755,7 +755,7 @@ void PerformanceElementsCRUDTestFixture::LogTiming(StopWatch& timer, Utf8CP desc
     Utf8String initCount;
     initCount.Sprintf("%d", initialInstanceCount);
     LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), opCount, totalDescription.c_str(), true, opType.ToUpper(), initialInstanceCount);
-    Utf8String js = "\"{\"Description\":\"" + desc + "\",\"testClassName\":\"" + testClassName + "\",\"initalInstanceCount\":" + initCount + ",\"opCount\":" + oCount + ",\"opType\":\"" + opType + "\"}\"";
+    Utf8String js = "\"{\"\"Description\"\":\"\"" + desc + "\"\",\"\"testClassName\"\":\"\"" + testClassName + "\"\",\"\"initalInstanceCount\"\":" + initCount + ",\"\"opCount\"\":" + oCount + ",\"\"opType\"\":\"\"" + opType + "\"\"}\"";
     LOGPERFDB(TEST_DETAILS, timer.GetElapsedSeconds(), js.c_str());
 #ifdef PERF_ELEM_CRUD_LOG_TO_CONSOLE
     printf("%.8f %s\n", timer.GetElapsedSeconds(), totalDescription.c_str());
