@@ -28,102 +28,54 @@ struct LimitingTaskQueueTests : ::testing::Test
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Benediktas.Lipnickas            03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (LimitingTaskQueueTests, Push_LimitSetToZeroAndTwoTasks_RunsTasksWhenPushed)
+TEST_F(LimitingTaskQueueTests, Push_LimitSetToZeroAndTwoTasks_RunsTasksWhenPushed)
     {
-    auto thread1 = WorkerThread::Create ("TestThread");
-    auto thread2 = WorkerThread::Create ("TestThread");
+    auto thread1 = WorkerThread::Create("TestThread");
+    auto thread2 = WorkerThread::Create("TestThread");
     AsyncTestCheckpoint a;
     LimitingTaskQueue<int> queue;
-    queue.SetLimit (0);
+    queue.SetLimit(0);
     int number = 0;
-    auto t1 = queue.Push ([&]
+    auto t1 = queue.Push([&]
         {
         number = 1;
-        return thread1->ExecuteAsync<int> ([&]
+        return thread1->ExecuteAsync<int>([&]
             {
-            a.CheckinAndWait ();
+            a.CheckinAndWait();
             return 0;
             });
         }, nullptr);
-    EXPECT_EQ (1, number);
-    a.WaitUntilReached ();
-    auto t2 = queue.Push ([&]
+    EXPECT_EQ(1, number);
+    a.WaitUntilReached();
+    auto t2 = queue.Push([&]
         {
         number = 2;
-        return thread2->ExecuteAsync<int> ([&]
+        return thread2->ExecuteAsync<int>([&]
             {
             return 0;
             });
         }, nullptr);
 
-    EXPECT_EQ (2, number);
-    a.Continue ();
-    t1->WaitFor (20);
-    t2->WaitFor (22);
+    EXPECT_EQ(2, number);
+    a.Continue();
+    t1->WaitFor(20);
+    t2->WaitFor(22);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Benediktas.Lipnickas            03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (LimitingTaskQueueTests, Push_LimitSetToOneAndTwoTasks_RunsSecondTaskAfterFirstFinishes)
-    {
-    auto thread1 = WorkerThread::Create ("TestThread");
-    auto thread2 = WorkerThread::Create ("TestThread");
-    AsyncTestCheckpoint a;
-
-    LimitingTaskQueue<int> queue;
-    queue.SetLimit (1);
-
-    int number = 0;
-    auto t1 = queue.Push ([&]
-        {
-        number = 1;
-        return thread1->ExecuteAsync<int> ([&]
-            {
-            a.CheckinAndWait ();
-            return 0;
-            });
-        }, nullptr);
-
-    EXPECT_EQ (1, number);
-
-    auto t2 = queue.Push ([&]
-        {
-        number = 2;
-        return thread2->ExecuteAsync<int> ([&]
-            {
-            return 0;
-            });
-        }, nullptr);
-
-    a.WaitUntilReached ();
-    EXPECT_EQ (1, number);
-    a.Continue ();
-
-    t1->Wait ();
-    t2->Wait ();
-
-    EXPECT_EQ (2, number);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Benediktas.Lipnickas            03/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(LimitingTaskQueueTests, Push_LimitSetToOneAndTwoTasks_RunsSecondTaskAfterFirstFinishesAndUsesProvidedShedulerInsteadOfDefault)
+TEST_F(LimitingTaskQueueTests, Push_LimitSetToOneAndTwoTasks_RunsSecondTaskAfterFirstFinishes)
     {
     auto thread1 = WorkerThread::Create("TestThread");
     auto thread2 = WorkerThread::Create("TestThread");
     AsyncTestCheckpoint a;
 
-    auto sheduler = std::make_shared<StubTaskScheduler>();
-    AsyncTasksManager::SetDefaultScheduler(sheduler);
-
-    auto queueSheduler = WorkerThread::Create("QueueSheduler");
-    LimitingTaskQueue<int> queue(queueSheduler);
+    LimitingTaskQueue<int> queue;
     queue.SetLimit(1);
 
     int number = 0;
-    auto t1 = queue.Push([&] 
+    auto t1 = queue.Push([&]
         {
         number = 1;
         return thread1->ExecuteAsync<int>([&]
@@ -157,126 +109,174 @@ TEST_F(LimitingTaskQueueTests, Push_LimitSetToOneAndTwoTasks_RunsSecondTaskAfter
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Benediktas.Lipnickas            03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (LimitingTaskQueueTests, Push_TaskReturnsValue_SameValueReturned)
+TEST_F(LimitingTaskQueueTests, Push_LimitSetToOneAndTwoTasks_RunsSecondTaskAfterFirstFinishesAndUsesProvidedShedulerInsteadOfDefault)
     {
-    auto thread = WorkerThread::Create ("TestThread");
+    auto thread1 = WorkerThread::Create("TestThread");
+    auto thread2 = WorkerThread::Create("TestThread");
+    AsyncTestCheckpoint a;
 
-    LimitingTaskQueue<int> queue;
-    queue.SetLimit (0);
+    auto sheduler = std::make_shared<StubTaskScheduler>();
+    AsyncTasksManager::SetDefaultScheduler(sheduler);
 
-    auto result = queue.Push ([&]
+    auto queueSheduler = WorkerThread::Create("QueueSheduler");
+    LimitingTaskQueue<int> queue(queueSheduler);
+    queue.SetLimit(1);
+
+    int number = 0;
+    auto t1 = queue.Push([&]
         {
-        return thread->ExecuteAsync<int> ([&]
+        number = 1;
+        return thread1->ExecuteAsync<int>([&]
             {
-            return 42;
+            a.CheckinAndWait();
+            return 0;
             });
-        }, nullptr)->GetResult ();
+        }, nullptr);
 
-    EXPECT_EQ (42, result);
+    EXPECT_EQ(1, number);
+
+    auto t2 = queue.Push([&]
+        {
+        number = 2;
+        return thread2->ExecuteAsync<int>([&]
+            {
+            return 0;
+            });
+        }, nullptr);
+
+    a.WaitUntilReached();
+    EXPECT_EQ(1, number);
+    a.Continue();
+
+    t1->Wait();
+    t2->Wait();
+
+    EXPECT_EQ(2, number);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Benediktas.Lipnickas            03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (LimitingTaskQueueTests, Push_QueuedTaskIsCanceled_RunsQuenedTaskOnCancelationEvent)
+TEST_F(LimitingTaskQueueTests, Push_TaskReturnsValue_SameValueReturned)
     {
-    auto thread1 = WorkerThread::Create ("TestThread");
-    auto thread2 = WorkerThread::Create ("TestThread");
+    auto thread = WorkerThread::Create("TestThread");
+
+    LimitingTaskQueue<int> queue;
+    queue.SetLimit(0);
+
+    auto result = queue.Push([&]
+        {
+        return thread->ExecuteAsync<int>([&]
+            {
+            return 42;
+            });
+        }, nullptr)->GetResult();
+
+        EXPECT_EQ(42, result);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas            03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(LimitingTaskQueueTests, Push_QueuedTaskIsCanceled_RunsQuenedTaskOnCancelationEvent)
+    {
+    auto thread1 = WorkerThread::Create("TestThread");
+    auto thread2 = WorkerThread::Create("TestThread");
     AsyncTestCheckpoint a;
 
     LimitingTaskQueue<int> queue;
-    queue.SetLimit (1);
+    queue.SetLimit(1);
 
     int number = 0;
 
-    auto ct1 = SimpleCancellationToken::Create ();
-    auto t1 = queue.Push ([&]
+    auto ct1 = SimpleCancellationToken::Create();
+    auto t1 = queue.Push([&]
         {
         number = 1;
-        return thread1->ExecuteAsync<int> ([&]
+        return thread1->ExecuteAsync<int>([&]
             {
-            a.CheckinAndWait ();
+            a.CheckinAndWait();
             return 111;
             });
         }, ct1);
 
-    EXPECT_EQ (1, number);
+    EXPECT_EQ(1, number);
 
-    auto ct2 = SimpleCancellationToken::Create ();
-    auto t2 = queue.Push ([&]
+    auto ct2 = SimpleCancellationToken::Create();
+    auto t2 = queue.Push([&]
         {
         number = 2;
-        return thread2->ExecuteAsync<int> ([&]
+        return thread2->ExecuteAsync<int>([&]
             {
             return 222;
             });
         }, ct2);
 
-    a.WaitUntilReached ();
-    EXPECT_EQ (1, number);
+    a.WaitUntilReached();
+    EXPECT_EQ(1, number);
 
-    ct2->SetCanceled ();
-    EXPECT_EQ (2, number);
+    ct2->SetCanceled();
+    EXPECT_EQ(2, number);
 
-    a.Continue ();
+    a.Continue();
 
-    EXPECT_EQ (t1->GetResult (), 111);
-    EXPECT_EQ (t2->GetResult (), 222);
+    EXPECT_EQ(t1->GetResult(), 111);
+    EXPECT_EQ(t2->GetResult(), 222);
 
-    EXPECT_EQ (2, number);
+    EXPECT_EQ(2, number);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Benediktas.Lipnickas                03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (LimitingTaskQueueTests, Push_TaskAddedToQueueWithinOtherAsyncTask_OuterAsyncTaskIsBlockedUntilTaskGetsFinished)
+TEST_F(LimitingTaskQueueTests, Push_TaskAddedToQueueWithinOtherAsyncTask_OuterAsyncTaskIsBlockedUntilTaskGetsFinished)
     {
-    auto thread1 = WorkerThread::Create ("TestThread");
-    auto thread2 = WorkerThread::Create ("TestThread2");
-    auto thread3 = WorkerThread::Create ("TestThread3");
+    auto thread1 = WorkerThread::Create("TestThread");
+    auto thread2 = WorkerThread::Create("TestThread2");
+    auto thread3 = WorkerThread::Create("TestThread3");
     AsyncTestCheckpoint a;
 
     LimitingTaskQueue<int> queue;
-    queue.SetLimit (1);
+    queue.SetLimit(1);
 
-    auto t1 = queue.Push ([&]
+    auto t1 = queue.Push([&]
         {
-        return thread1->ExecuteAsync<int> ([&]
+        return thread1->ExecuteAsync<int>([&]
             {
-            a.CheckinAndWait ();
+            a.CheckinAndWait();
             return 0;
             });
         }, nullptr);
 
     bool outerFinished = false;
-    auto outerTask = thread3->ExecuteAsync ([&]
+    auto outerTask = thread3->ExecuteAsync([&]
         {
-        queue.Push ([&]
+        queue.Push([&]
             {
-            return thread2->ExecuteAsync<int> ([&]
+            return thread2->ExecuteAsync<int>([&]
                 {
                 return 0;
                 });
             }, nullptr);
         });
 
-    auto t3 = outerTask->Then ([&]
+    auto t3 = outerTask->Then([&]
         {
         outerFinished = true;
         });
 
-    a.WaitUntilReached ();
-    thread3->ExecuteAsync ([&]
+    a.WaitUntilReached();
+    thread3->ExecuteAsync([&]
         {
         // Wait until all previous tasks in thread are finished
-        })->Wait ();
+        })->Wait();
 
-    EXPECT_FALSE (outerFinished);
+        EXPECT_FALSE(outerFinished);
 
-    a.Continue ();
+        a.Continue();
 
-    t1->Wait ();
-    t3->Wait ();
+        t1->Wait();
+        t3->Wait();
 
-    EXPECT_TRUE (outerFinished);
+        EXPECT_TRUE(outerFinished);
     }
