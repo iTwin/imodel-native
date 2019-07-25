@@ -290,6 +290,7 @@ protected:
     void LogStderr();
     void CleanJobWorkdir();
     void InitLogging();
+    void GetLoggingConfigFileNameFromFeatureValue();
     bool _IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) override;
     void _QueryAllFilesAssignedToBridge(bvector<BeFileName>& fns, wchar_t const* bridgeRegSubKey) override;
     BentleyStatus _GetDocumentProperties(iModelBridgeDocumentProperties&, BeFileNameCR fn) override;
@@ -364,6 +365,7 @@ public:
     BeFileName GetLoggingConfigFileName() const {return m_jobEnvArgs.m_loggingConfigFileName;}
     void SetBriefcaseBim(DgnDbR db) { m_briefcaseDgnDb = &db; }
     DgnDbPtr GetBriefcaseBim() { return m_briefcaseDgnDb; }
+
     //! @private
     IMODEL_BRIDGE_FWK_EXPORT static BeFileName ComputeReportFileName(BeFileNameCR bcName);
     //! @private
@@ -384,6 +386,8 @@ public:
     IMODEL_BRIDGE_FWK_EXPORT void SetConnectSignInManager(WebServices::ConnectSignInManagerPtr mgr);
 
     IMODEL_BRIDGE_FWK_EXPORT BentleyStatus TestFeatureFlag (CharCP ff, bool& flag) const;
+
+    IMODEL_BRIDGE_FWK_EXPORT BentleyStatus GetFeatureValue(Utf8StringR value, CharCP featureName) const;
 
     IRepositoryManagerP GetRepositoryManager(DgnDbR db) const;
 

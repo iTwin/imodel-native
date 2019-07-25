@@ -220,15 +220,38 @@ void iModelBridgeFwk::JobDefArgs::PrintUsage()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void iModelBridgeFwk::InitLogging()
     {
+    // Was the logging config file name specified by --fwk-logging-config-file ?
+    if (m_jobEnvArgs.m_loggingConfigFileName.empty() || (false == m_jobEnvArgs.m_loggingConfigFileName.DoesPathExist()))
+        {
+        // Check to see if one was defined with a Launch Darkly feature value
+        GetLoggingConfigFileNameFromFeatureValue();
+        }
+
+    // If logging config file name still not defined check deployment directory
+    if (m_jobEnvArgs.m_loggingConfigFileName.empty())
+        {
+        m_jobEnvArgs.m_loggingConfigFileName = Desktop::FileSystem::GetExecutableDir();
+        m_jobEnvArgs.m_loggingConfigFileName.AppendToPath(L"iModelBridgeFwk.logging.config.xml");
+        }
+
+    if (!m_jobEnvArgs.m_loggingConfigFileName.DoesPathExist())
+        {
+        fwprintf(stdout, L"%ls: file not found.\n", m_jobEnvArgs.m_loggingConfigFileName.c_str());
+
+        m_jobEnvArgs.m_loggingConfigFileName.Clear();
+        }
+
     if (!m_jobEnvArgs.m_loggingConfigFileName.empty() && m_jobEnvArgs.m_loggingConfigFileName.DoesPathExist())
         {
         NativeLogging::LoggingConfig::SetOption(CONFIG_OPTION_CONFIG_FILE, m_jobEnvArgs.m_loggingConfigFileName);
         if (NULL == m_logProvider)
             m_logProvider = new NativeLogging::Provider::Log4cxxProvider();
         NativeLogging::LoggingConfig::ActivateProvider(m_logProvider);
+
         return;
         }
 
+    // Default to the console logging provider.
     fprintf(stderr, "Logging.config.xml not specified. Activating default logging using console provider.\n");
     NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::CONSOLE_LOGGING_PROVIDER);
     NativeLogging::LoggingConfig::SetSeverity(L"iModelBridge", NativeLogging::LOG_TRACE);
@@ -469,6 +492,37 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
     return BSISUCCESS;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    John.Majerle                 07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeFwk::GetLoggingConfigFileNameFromFeatureValue()
+    {
+    Utf8String loggingLevel = Utf8String("");
+
+    // Check to see if logging config file is being configured by a feature value.
+    if (BentleyApi::BSISUCCESS == GetFeatureValue(loggingLevel, "imodelbridge-logging-level"))
+        {
+        WPrintfString fileName(L"iModelBridgeFwk.%S.logging.config.xml", loggingLevel.c_str());
+
+        BeFileName loggingConfigFileName = m_jobEnvArgs.m_bridgeAssetsDir;
+        loggingConfigFileName.AppendToPath(fileName.c_str());
+
+        if (!loggingConfigFileName.DoesPathExist())
+            {
+            loggingConfigFileName = m_jobEnvArgs.m_fwkAssetsDir;
+            loggingConfigFileName.AppendToPath(fileName.c_str());
+            }
+
+        if (!loggingConfigFileName.empty() && loggingConfigFileName.DoesPathExist())
+            {
+            m_jobEnvArgs.m_loggingConfigFileName = loggingConfigFileName;
+
+            // The selected logging.config.xml file requires FWK_STAGINGDIR be assigned to the staging directory
+            putenv(Utf8PrintfString("FWK_STAGINGDIR=%ls", m_jobEnvArgs.m_stagingDir.c_str()).c_str());
+            }
+        }
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      10/17
 //---------------------------------------------------------------------------------------
@@ -498,17 +552,6 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::Validate(int argc, WCharCP argv[])
         {
         fwprintf(stderr, L"[%ls] is not a directory. The --fwk-staging-dir argument must be the name of the directory where the briefcase and other bridge-specific files are stored.\n", m_stagingDir.c_str());
         return BSIERROR;
-        }
-
-    if (m_loggingConfigFileName.empty())
-        {
-        m_loggingConfigFileName = Desktop::FileSystem::GetExecutableDir();
-        m_loggingConfigFileName.AppendToPath(L"iModelBridgeFwk.logging.config.xml");
-        }
-
-    if (!m_loggingConfigFileName.DoesPathExist())
-        {
-        fwprintf(stdout, L"%ls: file not found.\n", m_loggingConfigFileName.c_str());
         }
 
     return BSISUCCESS;
@@ -585,8 +628,6 @@ BentleyStatus iModelBridgeFwk::ParseCommandLine(int argc, WCharCP argv[])
     // Redirect stderr to a file in m_stagingDir. This is how we report some errors back to the calling program.
     RedirectStderr();
 
-    InitLogging();
-
     bvector<WCharCP> unparsedArgPtrs;          // Forward non-fwk args to next parser and get ready to accumulate the args that it does not recognize.
     std::swap(unparsedArgPtrs, m_bargptrs);
     m_bargptrs.push_back(argv[0]);
@@ -639,6 +680,8 @@ BentleyStatus iModelBridgeFwk::ParseCommandLine(int argc, WCharCP argv[])
         dmsCredentialsAreEncrypted = m_iModelHubArgs->m_isEncrypted;
         }
 
+    InitLogging();
+       
     // Parse --dms args and push all unrecognized args to m_bargptrs
     if ((BSISUCCESS != m_dmsServerArgs.ParseCommandLine(m_bargptrs, (int) unparsedArgPtrs.size(), unparsedArgPtrs.data(), dmsCredentialsAreEncrypted)) || (BSISUCCESS != m_dmsServerArgs.Validate((int) unparsedArgPtrs.size(), unparsedArgPtrs.data())))
         {
@@ -2129,6 +2172,9 @@ iModelBridgeFwk::iModelBridgeFwk()
     m_client = nullptr;
     m_bcMgrForBridges = new IBriefcaseManagerForBridges(*this);
     m_lastBridgePushStatus = iModelBridge::IBriefcaseManager::PushStatus::Success;
+
+    m_useIModelHub = nullptr;
+    m_iModelHubArgs = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2375,6 +2421,29 @@ BentleyStatus iModelBridgeFwk::TestFeatureFlag(CharCP ff, bool& flag) const
         if (SUCCESS != iModelBridgeLdClient::GetInstance(m_iModelHubArgs->m_environment).IsFeatureOn(flag, ff))
             {
             LOG.errorv("Testing feature flag %s failed for environment %d", ff, m_iModelHubArgs->m_environment);
+            return ERROR;
+            }
+        return BSISUCCESS;
+        }
+    return BSIERROR; 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    John.Majerle                 07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridgeFwk::GetFeatureValue(Utf8StringR value, CharCP featureName) const
+    {
+    if (m_bridge != nullptr) 
+        {
+        value = m_bridge->GetFeatureValue(featureName); 
+        return BSISUCCESS; 
+        } 
+
+    if (m_useIModelHub && m_iModelHubArgs)
+        {
+        if (SUCCESS != iModelBridgeLdClient::GetInstance(m_iModelHubArgs->m_environment).GetFeatureValue(value, featureName))
+            {
+            LOG.errorv("get feature value %s failed for environment %d", featureName, m_iModelHubArgs->m_environment);
             return ERROR;
             }
         return BSISUCCESS;

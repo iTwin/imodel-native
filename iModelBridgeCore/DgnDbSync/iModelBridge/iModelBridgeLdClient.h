@@ -34,4 +34,5 @@ struct iModelBridgeLdClient
         IMODEL_BRIDGE_EXPORT BentleyStatus Close();
         IMODEL_BRIDGE_EXPORT ~iModelBridgeLdClient();
         IMODEL_BRIDGE_EXPORT BentleyStatus IsFeatureOn(bool &, CharCP featureName);
+        IMODEL_BRIDGE_EXPORT BentleyStatus GetFeatureValue(Utf8StringR value, CharCP featureName);
     };

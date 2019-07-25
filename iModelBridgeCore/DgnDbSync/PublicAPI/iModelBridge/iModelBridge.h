@@ -1128,6 +1128,11 @@ public:
     //! Test whether to enable launch darkly flag
     IMODEL_BRIDGE_EXPORT bool TestFeatureFlag(CharCP featureFlag);
 
+    //! @name Feature Configuration
+    //! @{
+    //! Get value of launch darkly flag
+    IMODEL_BRIDGE_EXPORT Utf8String GetFeatureValue(CharCP featureName);
+
     //! Report usage from the bridge to ULAS
     IMODEL_BRIDGE_EXPORT BentleyStatus TrackUsage();
 

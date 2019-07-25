@@ -194,6 +194,15 @@
         <Assemblies>Delivery/$(libprefix)iModelBridgeFwkLib$(ApiNumber)$(shlibext)</Assemblies>
         <Libs Required="false">Delivery/$(libprefix)iModelBridgeFwkLib$(libext)</Libs>
         <Files ProductDirectoryName="PublisherLoggingConfigXml">Delivery/iModelBridgeFwkLib/iModelBridgeFwk.logging.config.xml</Files>
+        <Files ProductDirectoryName="Assets">
+            Delivery/iModelBridgeFwkLib/iModelBridgeFwk.debug.logging.config.xml
+            Delivery/iModelBridgeFwkLib/iModelBridgeFwk.error.logging.config.xml
+            Delivery/iModelBridgeFwkLib/iModelBridgeFwk.fatal.logging.config.xml
+            Delivery/iModelBridgeFwkLib/iModelBridgeFwk.info.logging.config.xml
+            Delivery/iModelBridgeFwkLib/iModelBridgeFwk.none.logging.config.xml
+            Delivery/iModelBridgeFwkLib/iModelBridgeFwk.trace.logging.config.xml
+            Delivery/iModelBridgeFwkLib/iModelBridgeFwk.warn.logging.config.xml
+        </Files>
       </Bindings>
     </Part>
 

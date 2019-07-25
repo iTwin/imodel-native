@@ -1167,6 +1167,16 @@ bool iModelBridge::TestFeatureFlag(CharCP ff)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    John.Majerle                      07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String iModelBridge::GetFeatureValue(CharCP ff)
+    {
+    Utf8String value;
+    iModelBridgeLdClient::GetInstance((WebServices::UrlProvider::Environment)GetParamsCR().GetUrlEnvironment()).GetFeatureValue(value, ff);
+    return value;
+    }    
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridge::doParseCommandLine(int argc, WCharCP argv[])

@@ -110,6 +110,36 @@ BentleyStatus   iModelBridgeLdClient::IsFeatureOn(bool& flag, CharCP featureName
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    John.Majerle                  07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   iModelBridgeLdClient::GetFeatureValue(Utf8StringR value, CharCP featureName)
+    {
+    if (NULL == m_client)
+        {
+        if (SUCCESS != InitClient())
+            return ERROR;
+        }
+
+    //static int timeOut = 60 * 1000;
+    bool isInitialized = LDClientIsInitialized(m_client);
+    for (int index = 0; index < 60 && !isInitialized; ++index)
+        {
+        BeDuration::FromMilliseconds(1000).Sleep();
+        isInitialized = LDClientIsInitialized(m_client);
+        }
+
+    if (!isInitialized)
+        return ERROR;
+
+    char *const s = LDStringVariationAlloc(m_client, featureName, "");    
+
+    value = Utf8String(s);
+    free(s);
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModelBridgeLdClient& iModelBridgeLdClient::GetInstance(WebServices::UrlProvider::Environment environment)

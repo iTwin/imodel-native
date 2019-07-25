@@ -97,3 +97,25 @@ LINKER_LIBRARIES  + Crypt32.lib
 
 $(BuildContext)Delivery/$(appname)/iModelBridgeFwk.logging.config.xml : $(baseDir)logging.config.xml
     $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/$(appname)/iModelBridgeFwk.trace.logging.config.xml : $(baseDir)iModelBridgeFwk.trace.logging.config.xml
+    $(LinkFirstDepToFirstTarget)    
+
+$(BuildContext)Delivery/$(appname)/iModelBridgeFwk.info.logging.config.xml : $(baseDir)iModelBridgeFwk.info.logging.config.xml
+    $(LinkFirstDepToFirstTarget) 
+    
+$(BuildContext)Delivery/$(appname)/iModelBridgeFwk.debug.logging.config.xml : $(baseDir)iModelBridgeFwk.debug.logging.config.xml
+    $(LinkFirstDepToFirstTarget)  
+
+$(BuildContext)Delivery/$(appname)/iModelBridgeFwk.warn.logging.config.xml : $(baseDir)iModelBridgeFwk.warn.logging.config.xml
+    $(LinkFirstDepToFirstTarget)  
+
+$(BuildContext)Delivery/$(appname)/iModelBridgeFwk.error.logging.config.xml : $(baseDir)iModelBridgeFwk.error.logging.config.xml
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/$(appname)/iModelBridgeFwk.fatal.logging.config.xml : $(baseDir)iModelBridgeFwk.fatal.logging.config.xml
+    $(LinkFirstDepToFirstTarget)  
+
+$(BuildContext)Delivery/$(appname)/iModelBridgeFwk.none.logging.config.xml : $(baseDir)iModelBridgeFwk.none.logging.config.xml
+    $(LinkFirstDepToFirstTarget)  
+                       
