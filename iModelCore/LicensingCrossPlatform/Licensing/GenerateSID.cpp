@@ -55,7 +55,7 @@ Utf8String GenerateSID::PrepareUserData(Utf8StringCR userName, Utf8StringCR mach
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String GenerateSID::PrepareMachineData(Utf8StringCR machineName) const
     {
-    static Utf8String newMachineName = machineName;
+    Utf8String newMachineName = machineName;
     newMachineName.ToLower();
 
     

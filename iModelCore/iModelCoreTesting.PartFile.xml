@@ -20,7 +20,7 @@
         <SubPart PartName="RunGtest" PartFile="iModelCore/ecobjects/ECObjects" Repository="imodel02"/>
         <SubPart PartName="RunGtest" PartFile="iModelCore/ECPresentation/ECPresentation" Repository="imodel02"/>
         <SubPart PartName="RunGtest" PartFile="iModelCore/GeomLibs/geomlibs" Repository="imodel02"/>
-        <!-- <SubPart PartName="RunGtestUnit" PartFile="iModelCore/LicensingCrossPlatform/LicensingCrossPlatform" Repository="imodel02"/> -->
+        <SubPart PartName="RunGtestUnit" PartFile="iModelCore/LicensingCrossPlatform/LicensingCrossPlatform" Repository="imodel02"/>
         <SubPart PartName="RunGtest" PartFile="iModelCore/Units/Units" Repository="imodel02"/>
         <SubPart PartName="RunGtest" PartFile="iModelCore/WSClient/WSClient" Repository="imodel02"/>
 
