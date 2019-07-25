@@ -176,6 +176,7 @@ Render::TextureMapping::Trans2x3 RenderingAsset::Trans2x3Builder::Build() const
     trans.m_val[0][0] = cosAngle / scale.x;
     trans.m_val[0][1] = sinAngle / scale.x;
     trans.m_val[1][0] =  sinAngle / scale.y;
+    // Invert V value so that we don't need to flip textures on load
     trans.m_val[1][1] = -cosAngle / scale.y;
 
     if (Mode::ElevationDrape == m_mode)

@@ -412,6 +412,7 @@ bool _ProcessPolyface(PolyfaceQueryCR pfQuery, bool filled, SimplifyGraphic& sg)
                 {
                 DPoint2d srcParam = srcParams[srcParamIndices[i + j] - 1];
                 computedParams[computedParamCount + j].x = static_cast<float>(srcParam.x);
+                // Unlike params computed from texture map (see below), V does not need to inverted for raw params.
                 computedParams[computedParamCount + j].y = static_cast<float>(srcParam.y);
                 }
             // Apply mirror transform while constructing so we don't have to iterate through again
@@ -433,7 +434,9 @@ bool _ProcessPolyface(PolyfaceQueryCR pfQuery, bool filled, SimplifyGraphic& sg)
             for (int i = 0; i < 3; ++i)
                 {
                 computedParams[computedParamCount + i].x = static_cast<float>(perFaceParams[i].x);
-                computedParams[computedParamCount + i].y = static_cast<float>(perFaceParams[i].y);
+                // TextureMapping::Trans2x3 inverts V so that the frontend doesn't need to flip textures
+                // on load. We need to invert back to match interchange conventions.
+                computedParams[computedParamCount + i].y = 1.0f - static_cast<float>(perFaceParams[i].y);
                 }
             // Apply mirror transform while constructing so we don't have to iterate through again
             if (isMirrored) std::swap(computedParams[computedParamCount + 1], computedParams[computedParamCount + 2]);
