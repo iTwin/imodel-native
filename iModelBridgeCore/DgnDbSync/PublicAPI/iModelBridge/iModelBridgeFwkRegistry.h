@@ -64,6 +64,17 @@ END_BENTLEY_DGN_NAMESPACE
  *  @note This function will be called in a separate process from the bridge. The iModelBridge_getAffinity function can (and must) do its own initialization as required to compute affinity.
  * @ingroup GROUP_iModelBridge
  */
+
+/*! \typedef typedef bool T_iModelBridge_isMyFile(BentleyApi::WCharP buffer, const size_t bufferSize, BentleyApi::Dgn::iModelBridgeAffinityLevel& affinityLevel, void* dgnFileP);
+ *  \brief The signature of the <code>iModelBridge_isMyFile</code> function that a shared library can implement.  The base DgnV8Bridge will call this method, if it exists, to ask the bridge if it can handle
+ *  the given DgnFileP.  In this way, any bridge that is based on the DgnV8Bridge does not need to handle opening the DgnFile and confirming it is a valid V8 file.
+ *  \param[out] buffer              Return the name of the bridge if it can handle this file
+ *  \param[in] bufferSize           Size of the buffer for storing the bridge name
+ *  \param[in] affinityLibraryPath  The full path to the affinity library that implements this function. This is a convenience, in case this function needs to locate assets relative to itself.
+ *  \param[in] sourceFIleName       The name of the source file to check
+ *  \param[in] dgnFileP             DgnFileP that points to an open and validated dgn file.
+ * @ingroup GROUP_iModelBridge
+*/
 extern "C"
     {
     typedef void T_iModelBridge_getAffinity (BentleyApi::WCharP buffer,
@@ -71,6 +82,11 @@ extern "C"
                                              BentleyApi::Dgn::iModelBridgeAffinityLevel& affinityLevel,
                                              BentleyApi::WCharCP affinityLibraryPath,
                                              BentleyApi::WCharCP sourceFileName);
+
+    typedef bool T_iModelBridge_isMyFile(BentleyApi::WCharP buffer,
+                                         const size_t bufferSize,
+                                         BentleyApi::Dgn::iModelBridgeAffinityLevel& affinityLevel,
+                                         void* dgnFileP);
     };
 
 #ifdef __IMODEL_BRIDGE_FWK_BUILD__

@@ -22,6 +22,7 @@
 #include <ScalableMesh/ScalableMeshLib.h>
 #include <RealityPlatformTools/RealityDataService.h>
 #include <Bentley/Desktop/FileSystem.h>
+#include <Bentley/BeGetProcAddress.h>
 #include "RulesetEmbedder.h"
 #include <VersionedDgnV8Api/TerrainModel/ElementHandler/DTMElementHandlerManager.h>
 
@@ -756,10 +757,28 @@ void   Converter::InitializeDgnv8Platform(BentleyApi::BeFileName const& thisLibr
         });
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            07/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+void * Converter::GetBridgeFunction(BeFileNameCR bridgeDllName, Utf8CP funcName)
+    {
+    BeFileName pathname(BeFileName::FileNameParts::DevAndDir, bridgeDllName);
+
+    BeGetProcAddress::SetLibrarySearchPath(pathname);
+    auto hinst = BeGetProcAddress::LoadLibrary(bridgeDllName);
+    if (!hinst)
+        {
+        LOG.fatalv(L"%ls: not found or could not be loaded", bridgeDllName.c_str());
+        return nullptr;
+        }
+
+    return BeGetProcAddress::GetProcAddress(hinst, funcName);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Converter::GetAuthoringFileInfo(WCharP buffer, const size_t bufferSize, iModelBridgeAffinityLevel& affinityLevel, BentleyApi::BeFileName const& sourceFileName)
+BentleyStatus Converter::GetAuthoringFileInfo(WCharP buffer, const size_t bufferSize, iModelBridgeAffinityLevel& affinityLevel, BentleyApi::BeFileName const& sourceFileName, BentleyApi::BeFileName const& affinityLibraryPath)
     {
     //  The generic V8 bridge has an affinity to any file that V8 can open.
 
@@ -804,6 +823,14 @@ BentleyStatus Converter::GetAuthoringFileInfo(WCharP buffer, const size_t buffer
         return BSISUCCESS;
         }
 
+    auto isMyFile = (T_iModelBridge_isMyFile*) getBridgeFunction(affinityLibraryPath, "iModelBridge_isMyFile");
+    if (isMyFile)
+        {
+        if (isMyFile(buffer, bufferSize, affinityLevel, file.get()))
+            {
+            return BSISUCCESS;
+            }
+        }
 #ifdef USEABDFILECHECKER
     if (dgnFile_isABDFile(file))
         {
@@ -865,7 +892,7 @@ void            Converter::GetAffinity(WCharP buffer, const size_t bufferSize, i
 
     BentleyB0200::BeFileName sourceFileName(sourceFileNameStr);
     
-    if (BSISUCCESS != Converter::GetAuthoringFileInfo(buffer, bufferSize, affinityLevel, sourceFileName))
+    if (BSISUCCESS != Converter::GetAuthoringFileInfo(buffer, bufferSize, affinityLevel, sourceFileName, affinityLibraryPath))
         {
         //Log error.
         }
