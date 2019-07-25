@@ -14,42 +14,10 @@
 
 #include <Bentley/BentleyConfig.h>
 
-// WIP_LICENSING_FOR_MACOS
-#if !defined(BENTLEYCONFIG_OS_APPLE_MACOS)
 #include <Licensing/SaasClient.h>
 #include <Licensing/Utils/FeatureEvent.h>
 #include <Licensing/AuthType.h>
 #include <Licensing/UsageType.h>
-#else
-namespace Licensing
-{
-typedef std::shared_ptr<struct SaasClient> SaasClientPtr;
-
-struct FeatureEvent 
-    {
-    FeatureEvent(Utf8StringCR featureId, BeVersionCR version) {}
-    FeatureEvent(Utf8StringCR featureId, BeVersionCR version, Utf8StringCR projectId) {}
-    };
-
-enum class AuthType
-    {
-    None = 0,
-    SAML = 1,
-    OIDC = 2
-    };
-
-enum class UsageType
-    {
-    Production = 0,
-    Trial = 1,
-    Beta = 2,
-    HomeUse = 3,
-    PreActivation = 4,
-    Evaluation = 5,
-    Academic = 6
-    };
-};
-#endif
 
 USING_NAMESPACE_BENTLEY
 

@@ -8,32 +8,6 @@
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <WebServices/Configuration/UrlProvider.h>
 
-// WIP_LICENSING_FOR_MACOS
-#if defined(BENTLEYCONFIG_OS_APPLE_MACOS)
-#include <folly/BeFolly.h>
-#include <folly/futures/Future.h>
-
-namespace Licensing
-{
-struct SaasClient
-    {
-    SaasClient(int productId = -1) {}
-    static SaasClientPtr Create(int productId = -1) { return std::make_shared<SaasClient>(); }
-    folly::Future<BentleyStatus> TrackUsage(Utf8StringCR accessToken, BeVersionCR appVersion, Utf8StringCR projectId, Licensing::AuthType authType = Licensing::AuthType::OIDC, int productId = -1, Utf8StringCR deviceId = "", Licensing::UsageType usageType = Licensing::UsageType::Production, Utf8StringCR correlationId = "") const
-        {
-        IModelJsNative::JsInterop::GetLogger().warning("Usage tracking not supported yet on MacOS.");
-        return folly::makeFuture(ERROR);
-        }
-
-    folly::Future<BentleyStatus> MarkFeature(Utf8StringCR accessToken, Licensing::FeatureEvent featureEvent, Licensing::AuthType authType = Licensing::AuthType::OIDC, int productId = -1, Utf8StringCR deviceId = "", Licensing::UsageType usageType = Licensing::UsageType::Production, Utf8StringCR correlationId = "") const
-        {
-        IModelJsNative::JsInterop::GetLogger().warning("Feature tracking not supported yet on MacOS.");
-        return folly::makeFuture(ERROR);
-        }
-    };
-};
-#endif
-
 namespace IModelJsNative
     {
 
