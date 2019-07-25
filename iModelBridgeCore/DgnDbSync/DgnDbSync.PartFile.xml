@@ -248,7 +248,7 @@
 
     <Part Name="ConverterApp-Source" BentleyBuildMakeFile="DgnV8/Converters/DeliverConverterAppSource.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
         <Bindings>
-            <Files SubPartDirectory="DgnDbSync/ConverterApp">Delivery\ConverterApp.cpp</Files>
+            <Files SubPartDirectory="DgnDbSync/ConverterApp">Delivery\DgnV8Bridge.cpp</Files>
         </Bindings>
     </Part>
 
@@ -259,16 +259,25 @@
         </Bindings>
     </Part>
 
+    <Part Name="DgnV8BridgeBase" BentleyBuildMakeFile="DgnV8\Converters/DgnV8Bridge.mke" ApiNumber="B02" OnlyPlatforms="x64" ExcludeLibType="Static" >
+        <SubPart PartName="LoggingNative" PartFile="LoggingSDK" Repository="loggingsdk" />
+        <SubPart PartName="DgnV8ConverterDLL" />
+        <Bindings>
+            <Assemblies>Delivery/$(shlibprefix)DgnV8BridgeBase$(ApiNumber)$(shlibext)</Assemblies>
+            <Libs>Delivery/$(libprefix)DgnV8BridgeBase$(libext)</Libs>
+        </Bindings>
+    </Part>
+
     <Part Name="DgnV8ConverterExe" BentleyBuildMakeFile="DgnV8/Converters/DgnV8Converter.mke" ApiNumber="B02" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SubPart PartName="LoggingNative" PartFile="LoggingSDK" Repository="loggingsdk" />
         <SubPart PartName="DgnV8ConverterDLL" />
+        <SubPart PartName="DgnV8BridgeBase"/>
         <SubPart PartName="DgnView" PartFile="DgnDisplay" Repository="DgnDisplay" />
         <SubPart PartName="GeoCoordData" PartFile="csmap" Repository="libsrc-csmap"/>
         <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridge"     Repository="DgnDbSync" />
         <SubPart PartName="iModelBridgeFwk-en" PartFile="iModelBridge"     Repository="DgnDbSync" />
         <SubPart PartName="DgnV8ConverterSqlang" />
         <SubPart PartName="iModelBridgeFwkLib" PartFile="iModelBridge"     Repository="DgnDbSync" />
-        
         <Bindings>
             <Files ProductDirectoryName="ApplicationRoot">Delivery\DgnV8Converter.exe</Files>
             <Files ProductDirectoryName="PublisherLoggingConfigXml">Delivery/DgnV8Converter.logging.config.xml</Files>

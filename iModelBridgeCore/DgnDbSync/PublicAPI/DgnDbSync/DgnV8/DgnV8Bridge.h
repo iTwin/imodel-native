@@ -27,6 +27,12 @@ USING_NAMESPACE_BENTLEY_SQLITE
 
 #define LOG (*NativeLogging::LoggingManager::GetLogger(L"DgnV8Converter"))
 
+#ifdef __DGNV8_BRIDGE_BUILD__
+#define DGNV8_BRIDGE_EXPORT EXPORT_ATTRIBUTE
+#else
+#define DGNV8_BRIDGE_EXPORT IMPORT_ATTRIBUTE
+#endif
+
 BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 
 //=======================================================================================
@@ -43,17 +49,17 @@ struct ConverterApp : iModelBridge
 
 protected:
     // iModelBridge
-    WString _SupplySqlangRelPath() override;
+    DGNV8_BRIDGE_EXPORT WString _SupplySqlangRelPath() override;
     BentleyStatus _ParseCommandLine(int argc, WCharCP argv[]) override {return doParseCommandLine(argc, argv);}
-    CmdLineArgStatus _ParseCommandLineArg(int iarg, int argc, WCharCP argv[]) override;
-    BentleyStatus _Initialize(int argc, WCharCP argv[]) override;
-    void _Terminate(BentleyStatus) override;
+    DGNV8_BRIDGE_EXPORT CmdLineArgStatus _ParseCommandLineArg(int iarg, int argc, WCharCP argv[]) override;
+    DGNV8_BRIDGE_EXPORT BentleyStatus _Initialize(int argc, WCharCP argv[]) override;
+    DGNV8_BRIDGE_EXPORT void _Terminate(BentleyStatus) override;
 
     //  For subclasses to override:
     virtual Converter::Params& _GetConverterParams() = 0;
-    virtual BeFileName _GetLoggingConfigurationFilename(WCharCP argv0);
+    DGNV8_BRIDGE_EXPORT virtual BeFileName _GetLoggingConfigurationFilename(WCharCP argv0);
 
-    WString GetCommonCommandLineOptions();
+    DGNV8_BRIDGE_EXPORT WString GetCommonCommandLineOptions();
 
     RootModelConverter::Params m_spatialParams;
     bool                m_wasUpdateEmpty;
@@ -64,13 +70,13 @@ protected:
     BentleyStatus GetEnv (BeFileName& fn, WCharCP envname);
     DgnProgressMeter& GetProgressMeter() const;
 public:
-    BentleyStatus Run(int argc, WCharCP argv[]);
+    DGNV8_BRIDGE_EXPORT BentleyStatus Run(int argc, WCharCP argv[]);
 };
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   02/15
 //=======================================================================================
-struct RootModelConverterApp : ConverterApp
+struct EXPORT_VTABLE_ATTRIBUTE DgnV8Bridge : ConverterApp
 {
     DEFINE_T_SUPER(ConverterApp)
 
@@ -83,27 +89,27 @@ protected:
     Converter::Params& _GetConverterParams() override {return m_params;}
 
     // iModelBridge:
-    void _PrintUsage() override;
+    DGNV8_BRIDGE_EXPORT void _PrintUsage() override;
     iModelBridge::Params& _GetParams() override {return m_params;}
-    CmdLineArgStatus _ParseCommandLineArg(int iArg, int argc, WCharCP argv[]);
-    BentleyStatus _ConvertToBim(Dgn::SubjectCR jobSubject) override;
-    BentleyStatus _OnAllDocumentsProcessed() override;
-    BentleyStatus _Initialize(int argc, WCharCP argv[]) override;
-    Dgn::SubjectCPtr _InitializeJob() override;
-    BentleyStatus _OnOpenBim(DgnDbR db) override;
-    void _OnCloseBim(BentleyStatus, iModelBridge::ClosePurpose purpose) override;
-    Dgn::SubjectCPtr _FindJob() override;
-    BentleyStatus _MakeDefinitionChanges(SubjectCR) override;
-    BentleyStatus _OpenSource() override;
-    void _CloseSource(BentleyStatus , iModelBridge::ClosePurpose) override;
-    BentleyStatus _DetectDeletedDocuments() override;
-    BentleyStatus _MakeSchemaChanges() override;
+    DGNV8_BRIDGE_EXPORT CmdLineArgStatus _ParseCommandLineArg(int iArg, int argc, WCharCP argv[]);
+    DGNV8_BRIDGE_EXPORT BentleyStatus _ConvertToBim(Dgn::SubjectCR jobSubject) override;
+    DGNV8_BRIDGE_EXPORT BentleyStatus _OnAllDocumentsProcessed() override;
+    DGNV8_BRIDGE_EXPORT BentleyStatus _Initialize(int argc, WCharCP argv[]) override;
+    DGNV8_BRIDGE_EXPORT Dgn::SubjectCPtr _InitializeJob() override;
+    DGNV8_BRIDGE_EXPORT BentleyStatus _OnOpenBim(DgnDbR db) override;
+    DGNV8_BRIDGE_EXPORT void _OnCloseBim(BentleyStatus, iModelBridge::ClosePurpose purpose) override;
+    DGNV8_BRIDGE_EXPORT Dgn::SubjectCPtr _FindJob() override;
+    DGNV8_BRIDGE_EXPORT BentleyStatus _MakeDefinitionChanges(SubjectCR) override;
+    DGNV8_BRIDGE_EXPORT BentleyStatus _OpenSource() override;
+    DGNV8_BRIDGE_EXPORT void _CloseSource(BentleyStatus , iModelBridge::ClosePurpose) override;
+    DGNV8_BRIDGE_EXPORT BentleyStatus _DetectDeletedDocuments() override;
+    DGNV8_BRIDGE_EXPORT BentleyStatus _MakeSchemaChanges() override;
 
     DgnFontCP _TryResolveFont(DgnFontCP font) override {return m_converter->TryResolveFont(font);}
 
 public:
-    RootModelConverterApp();
-    ~RootModelConverterApp() {BeAssert(nullptr == m_converter.get());}
+    DGNV8_BRIDGE_EXPORT DgnV8Bridge();
+    ~DgnV8Bridge() {BeAssert(nullptr == m_converter.get());}
     
 };
 

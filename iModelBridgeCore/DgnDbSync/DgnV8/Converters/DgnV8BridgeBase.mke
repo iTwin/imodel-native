@@ -8,7 +8,36 @@ ALLOW_MSVC_PERMISSIVE=1 # otherwise we get errors Vancouver's header files; hope
 
 %include mdl.mki
 
-appName     = DgnV8Converter
+%if !defined (REL_V)
+    REL_V=1
+    VERSIONMISSING=1
+%endif
+
+%if !defined (MAJ_V)
+    MAJ_V=00
+    VERSIONMISSING=1
+%endif
+
+%if !defined (MIN_V)
+    MIN_V=00
+    VERSIONMISSING=1
+%endif
+
+%if !defined (SUBMIN_V)
+    SUBMIN_V=00
+    VERSIONMISSING=1
+%endif
+
+%if defined(VERSIONMISSING)
+
+    always:
+        |-------------------------------------------------------------------------
+        | FYI : NO VERSION SPECIFIED IN ENVIRONMENT! USING $(REL_V).$(MAJ_V).$(MIN_V).$(SUBMIN_V)
+        |-------------------------------------------------------------------------
+
+%endif
+
+appName     = DgnV8BridgeBase
 baseDir     = $(_MakeFilePath)
 
 # Need to ignore this because it's in Vancouver's header files.
@@ -30,18 +59,24 @@ o = $(OutputRootDir)Build/DgnDbSync/$(appName)/
 always:
     ~mkdir $(o)
 
+#--------------------------------------------------------------------------------------
+# Create prg.h header with build version numbers
+#--------------------------------------------------------------------------------------
+%include $(SharedMki)CreateBuildVersionHeader.mki
+
+
 nameToDefine = __DGNV8_BRIDGE_BUILD__
 %include cdefapnd.mki
 
 DgnDbSyncSyncDir = $(SrcRoot)DgnDbSync/
 DgnV8APISrc = $(DgnDbSyncSyncDir)/PublicAPI/DgnDbSync/DgnV8/
 
-DgnV8Depends = $(DgnV8APISrc)Converter.h  $(DgnV8APISrc)SyncInfo.h
+DgnV8Depends = $(DgnV8APISrc)DgnV8Bridge.h  $(DgnV8APISrc)SyncInfo.h
 
 MultiCompileDepends = $(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-$(o)DgnV8Converter.obj: $(baseDir)DgnV8Converter.cpp $(DgnV8Depends) ${MultiCompileDepends}
+$(o)DgnV8Bridge.obj: $(baseDir)DgnV8Bridge.cpp $(DgnV8Depends) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 
@@ -58,7 +93,6 @@ LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnPlatform.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BaseGeoCoord.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnView.lib
 LINKER_LIBRARIES  + $(BuildContext)Delivery/DgnV8Converter.lib
-LINKER_LIBRARIES  + $(BuildContext)Delivery/DgnV8BridgeBase.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)Raster.lib 
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeJsonCpp.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)ThreeMx.lib
@@ -72,7 +106,7 @@ LINKER_LIBRARIES_DELAYLOADED  + $(BuildContext)SubParts/VersionedDgnV8Libs/Bentl
 #----------------------------------------------------------------------
 #   Link the shared library
 #----------------------------------------------------------------------
-DLM_NAME                = DgnV8Bridge
+DLM_NAME                = $(appName)
 DLM_DEST                = $(o)
 DLM_OBJECT_DEST         = $(o)
 DLM_EXPORT_DEST         = $(o)
@@ -82,19 +116,3 @@ DLM_NOENTRY             = 1
 
 %include $(sharedMki)LinkLibrary.mki
 
-#----------------------------------------------------------------------
-#   Link the executable
-#----------------------------------------------------------------------
-EXE_DEST     = $(o)
-EXE_NAME     = $(appname)
-EXE_OBJS     = $(MultiCompileObjectList)
-EXE_LOPT1    = -entry:wmainCRTStartup
-EXE_TMP_DIR  = $(o)
-
-%include $(sharedMki)linktool.mki
-
-always:
-    ~linkfile "$(BuildContext)Delivery/$(appname)$(exeext)=$(o)$(appname)$(exeext)"
-
-$(BuildContext)Delivery/$(appName).logging.config.xml : $(baseDir)logging.config.xml
-    $(LinkFirstDepToFirstTarget)
