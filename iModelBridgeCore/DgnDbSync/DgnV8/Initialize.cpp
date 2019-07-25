@@ -760,7 +760,7 @@ void   Converter::InitializeDgnv8Platform(BentleyApi::BeFileName const& thisLibr
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            07/2019
 //---------------+---------------+---------------+---------------+---------------+-------
-void * Converter::GetBridgeFunction(BeFileNameCR bridgeDllName, Utf8CP funcName)
+void * getBridgeFunction(BeFileNameCR bridgeDllName, Utf8CP funcName)
     {
     BeFileName pathname(BeFileName::FileNameParts::DevAndDir, bridgeDllName);
 

@@ -259,7 +259,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="DgnV8BridgeBase" BentleyBuildMakeFile="DgnV8\Converters/DgnV8Bridge.mke" ApiNumber="B02" OnlyPlatforms="x64" ExcludeLibType="Static" >
+    <Part Name="DgnV8BridgeBase" BentleyBuildMakeFile="DgnV8\Converters/DgnV8BridgeBase.mke" ApiNumber="B02" OnlyPlatforms="x64" ExcludeLibType="Static" >
         <SubPart PartName="LoggingNative" PartFile="LoggingSDK" Repository="loggingsdk" />
         <SubPart PartName="DgnV8ConverterDLL" />
         <Bindings>

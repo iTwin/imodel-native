@@ -1129,7 +1129,6 @@ public:
     DGNDBSYNC_EXPORT static void InitializeDllPath(BentleyApi::BeFileName const& thisLibraryPath);
     DGNDBSYNC_EXPORT static void InitializeDgnv8Platform(BentleyApi::BeFileName const& thisLibraryPath);
     DGNDBSYNC_EXPORT static void GetAffinity(WCharP buffer, const size_t bufferSize, iModelBridgeAffinityLevel& affinityLevel,WCharCP affinityLibraryPathStr, WCharCP sourceFileNameStr);
-    DGNDBSYNC_EXPORT static void* GetBridgeFunction(BeFileNameCR bridgeDllName, Utf8CP funcName);
     
     DGNDBSYNC_EXPORT static Utf8String GetPwUrnFromFileProvenance(DgnV8FileCR);
 
