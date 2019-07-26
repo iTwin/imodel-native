@@ -256,7 +256,7 @@ public:
     static bmap<Utf8String,Utf8String> GetCrashReportCustomProperties(CrashReportingConfig const&);
 
     static void InitializeCrashReporting(CrashReportingConfig const&)
-#if defined (USING_GOOGLE_BREAKPAD)
+#if defined (USING_GOOGLE_BREAKPAD) || defined (BENTLEYCONFIG_CRASHPAD)
         ;
 #else
         {}

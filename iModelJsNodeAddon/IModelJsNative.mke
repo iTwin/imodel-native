@@ -33,19 +33,6 @@ USING_BREAKPAD = 0
         ~linkmultifiles "$(BuildContext)SubParts/Libs=$(SrcRoot)thirdparty/breakpad_54fa71efbe50/lib/*.lib"
         ~linkfile "$(BuildContext)Delivery/breakpad_notice.txt=$(SrcRoot)thirdparty/breakpad_54fa71efbe50/share/breakpad/copyright"
         ~linkfile "$(BuildContext)Delivery/libdisasm_notice.txt=$(SrcRoot)thirdparty/breakpad_54fa71efbe50/share/libdisasm/copyright"
-
-# %elif $(TARGET_PROCESSOR_ARCHITECTURE) == "LinuxX64"
-#  PROBLEM: I can't get a build of breakpad for Linux that is based on clang and -stdlib=libc++    I can only get a GCC cpplib build, which is not binary compatible with our addon, at least for linking.
-#             If we wanted to go with breakpad, we would have to build a separate program (using GCC) that links with breakpad and runs separate from node. It would then service requests 
-#             from our addon.
-#     USING_BREAKPAD = 1
-# 
-#     always:
-#         ~linkdir "$(BuildContext)VendorAPI/breakpad=$(SrcRoot)thirdparty/breakpad_54fa71efbe50/x64-linux/include"
-#         ~linkmultifiles "$(BuildContext)SubParts/Libs=$(SrcRoot)thirdparty/breakpad_54fa71efbe50/x64-linux/lib/*.a"
-#         ~linkfile "$(BuildContext)Delivery/breakpad_notice.txt=$(SrcRoot)thirdparty/breakpad_54fa71efbe50/x64-linux/share/breakpad/copyright"
-#         ~linkfile "$(BuildContext)Delivery/libdisasm_notice.txt=$(SrcRoot)thirdparty/breakpad_54fa71efbe50/x64-linux/share/libdisasm/copyright"
-# 
 %endif
 
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -74,6 +61,12 @@ cIncs + -I$(o)
     # So, we have to add the breakpad directory itself to the include path
     cIncs + -I$(BuildContext)VendorAPI/breakpad
 
+%endif
+
+# Add this so we don't have to modify vendor code.
+%if defined(BENTLEYCONFIG_CRASHPAD)
+    dirToSearch = $(BuildContext)VendorAPI/crashpad
+    %include cincapnd.mki
 %endif
 
 # DLM_NAME and CCompPDBName must be the same.
@@ -108,11 +101,11 @@ $(o)CrashReportingCommon$(oext) : $(baseDir)CrashReportingCommon.cpp $(baseDir)I
 
 %if (($(TARGET_PROCESSOR_ARCHITECTURE) == "x64") && (USING_BREAKPAD == 1))
 
-$(o)CrashReportingWindows$(oext) : $(baseDir)CrashReportingWindows.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends}
+    $(o)CrashReportingWindows$(oext) : $(baseDir)CrashReportingWindows.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends}
 
-%elif (($(TARGET_PROCESSOR_ARCHITECTURE) == "LinuxX64") && (USING_BREAKPAD == 1))
-
-$(o)CrashReportingLinux$(oext) : $(baseDir)CrashReportingLinux.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends}
+%elif defined(BENTLEYCONFIG_CRASHPAD)
+ 
+    $(o)CrashReportingLinuxCrashpad$(oext) : $(baseDir)CrashReportingLinuxCrashpad.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends}
 
 %endif
 

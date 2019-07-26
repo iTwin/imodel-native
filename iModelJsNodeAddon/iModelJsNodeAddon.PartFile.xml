@@ -44,6 +44,7 @@
     <ProductDirectory Name="Assets" Path="Assets" RelativeTo="AddonRoot" LibType="Static"/>
     <ProductDirectory Name="VendorNotices"  RelativeTo="AddonRoot" Path="Notices"/>
     <ProductDirectory Name="VendorNotices"  RelativeTo="AddonRoot" Path="Notices" LibType="static"/>
+    <ProductDirectory Name="CrashpadHandler" RelativeTo="AddonRoot" LibType="Static"/>
   </ProductDirectoryList>
 
   <Part Name="iModelJsNative-Mobile" BentleyBuildMakeFile="IModelJsNative.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=iModelJs -dBUILD_FOR_IMODELJS_MOBILE=1" >
@@ -82,6 +83,7 @@
     <SubPart PartName="napi-lib"  PartFile="node-addon-api/node-addon-api"/>
     <SubPart PartName="iModelJsNativeLibCommon"/>
     <SubPart PartName="iModelJsNativeLibSqlang"/>
+    <SubPart PartName="crashpad_handler" PartFile="iModelCore/libsrc/crashpad/crashpad"/>
     <Bindings>
         <Files ProductDirectoryName="StaticAssemblies">Delivery/imodeljs.node</Files>
     </Bindings>
