@@ -469,12 +469,65 @@ static void insertCode(DgnCodeSet& into, DgnCodeCR code, DgnCodeSet& ifNotIn)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                Sam.Wilson                         07/2019
+//---------------------------------------------------------------------------------------
+static void detectLockedModels(DgnModelIdSet& exclusiveModelIds, DgnDbCR dgndb)
+    {
+    IBriefcaseManager* mgr = dgndb.GetExistingBriefcaseManager();
+    IOwnedLocksIteratorPtr locksIter = (mgr != nullptr) ? mgr->GetOwnedLocks() : nullptr;
+    while(locksIter.IsValid() && locksIter->IsValid())
+        {
+        DgnLockCR lock = **locksIter;
+        if (lock.GetType() == LockableType::Model && lock.GetLevel() == LockLevel::Exclusive)
+            {
+            DgnModelId modelId(lock.GetId().GetValue());
+            exclusiveModelIds.insert(modelId);
+            }
+
+        ++(*locksIter);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Sam.Wilson                         07/2019
+//---------------------------------------------------------------------------------------
+static void getModelIdFromIter(DgnModelId& modelId, DgnModelId& oldModelId, ChangeIterator::RowEntry const& entry, ChangeIterator::ColumnIterator columnIter)
+    {
+    switch (entry.GetDbOpcode())
+        {
+        case DbOpcode::Insert:  modelId = GetModelIdFromChangeOrDb(columnIter, Changes::Change::Stage::New); break;
+        case DbOpcode::Delete:  modelId = GetModelIdFromChangeOrDb(columnIter, Changes::Change::Stage::Old); break;
+        case DbOpcode::Update:
+            {
+            modelId = GetModelIdFromChangeOrDb(columnIter, Changes::Change::Stage::New);
+            oldModelId = GetModelIdFromChangeOrDb(columnIter, Changes::Change::Stage::Old);
+            break;
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Sam.Wilson                         07/2019
+//---------------------------------------------------------------------------------------
+static DgnModelId getCurrentModelIdFromIter(ChangeIterator::RowEntry const& entry, ChangeIterator::ColumnIterator columnIter)
+    {
+    DgnModelId modelId, oldModelId;
+    getModelIdFromIter(modelId, oldModelId, entry, columnIter);
+    return modelId;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    11/2016
 //---------------------------------------------------------------------------------------
 void DgnRevision::ExtractCodes(DgnCodeSet& assignedCodes, DgnCodeSet& discardedCodes, DgnDbCR dgndb) const
     {
     ECClassCP elemClass = dgndb.Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_Element);
     BeAssert(elemClass != nullptr);
+
+    DgnModelIdSet exclusiveModelIds;
+    bool ignoreCodesInLockedModels = (dgndb.GetExistingBriefcaseManager() && !dgndb.GetExistingBriefcaseManager()->ShouldReportCodesInLockedModels());
+    if (ignoreCodesInLockedModels)
+        detectLockedModels(exclusiveModelIds, dgndb);
 
     RevisionChangesFileReader revisionReader(m_revChangesFile, dgndb);
     ChangeIterator changeIter(dgndb, revisionReader);
@@ -496,6 +549,9 @@ void DgnRevision::ExtractCodes(DgnCodeSet& assignedCodes, DgnCodeSet& discardedC
         DbOpcode dbOpcode = entry.GetDbOpcode();
         ChangeIterator::ColumnIterator columnIter = entry.MakeColumnIterator(*primaryClass); // Note: ColumnIterator needs to be in the stack to access column
 
+        if (ignoreCodesInLockedModels && (exclusiveModelIds.find(getCurrentModelIdFromIter(entry,columnIter)) != exclusiveModelIds.end()))
+            continue;
+
         DgnCode oldCode = (dbOpcode == DbOpcode::Insert) ? DgnCode() : GetCodeFromChangeOrDb(dgndb, columnIter, Changes::Change::Stage::Old);
         DgnCode newCode = (dbOpcode == DbOpcode::Delete) ? DgnCode() : GetCodeFromChangeOrDb(dgndb, columnIter, Changes::Change::Stage::New);
 
@@ -512,6 +568,12 @@ void DgnRevision::ExtractCodes(DgnCodeSet& assignedCodes, DgnCodeSet& discardedC
 //---------------------------------------------------------------------------------------
 void DgnRevision::ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb, bool extractInserted, bool avoidExclusiveModelElements) const
     {
+    if (dgndb.GetExistingBriefcaseManager() && !dgndb.GetExistingBriefcaseManager()->ShouldIncludeUsedLocksInChangeSet())
+        {
+        usedLocks.clear();
+        return;
+        }
+
     LockRequest lockRequest;
 
     if (ContainsSchemaChanges(dgndb))
@@ -540,20 +602,9 @@ void DgnRevision::ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb, bool extrac
     DgnModelIdSet exclusiveModelIds;
     if (avoidExclusiveModelElements)
         {
-        IBriefcaseManager* mgr = dgndb.GetExistingBriefcaseManager();
-        IOwnedLocksIteratorPtr locksIter = (mgr != nullptr) ? mgr->GetOwnedLocks() : nullptr;
-        while(locksIter.IsValid() && locksIter->IsValid())
-            {
-            DgnLockCR lock = **locksIter;
-            if (lock.GetType() == LockableType::Model && lock.GetLevel() == LockLevel::Exclusive)
-                {
-                DgnModelId modelId(lock.GetId().GetValue());
-                exclusiveModelIds.insert(modelId);
-                lockRequest.InsertLock(LockableId(modelId), LockLevel::Exclusive);
-                }
-
-            ++(*locksIter);
-            }
+        detectLockedModels(exclusiveModelIds, dgndb);
+        for (auto modelId: exclusiveModelIds)
+            lockRequest.InsertLock(LockableId(modelId), LockLevel::Exclusive);
         }
 
     for (ChangeIterator::RowEntry const& entry : changeIter)
@@ -570,21 +621,11 @@ void DgnRevision::ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb, bool extrac
 
         ChangeIterator::ColumnIterator columnIter = entry.MakeColumnIterator(*primaryClass); // Note: ColumnIterator needs to be in the stack to access column
 
-        DgnModelId modelId;
-        switch (entry.GetDbOpcode())
-            {
-                case DbOpcode::Insert:  modelId = GetModelIdFromChangeOrDb(columnIter, Changes::Change::Stage::New); break;
-                case DbOpcode::Delete:  modelId = GetModelIdFromChangeOrDb(columnIter, Changes::Change::Stage::Old); break;
-                case DbOpcode::Update:
-                    {
-                    modelId = GetModelIdFromChangeOrDb(columnIter, Changes::Change::Stage::New);
-                    auto oldModelId = GetModelIdFromChangeOrDb(columnIter, Changes::Change::Stage::Old);
-                    if (oldModelId != modelId)
-                        lockRequest.InsertLock(LockableId(oldModelId), LockLevel::Shared);
+        DgnModelId modelId, oldModelId;
+        getModelIdFromIter(modelId, oldModelId, entry, columnIter);
 
-                    break;
-                    }
-            }
+        if ((entry.GetDbOpcode() == DbOpcode::Update) && (oldModelId != modelId))
+            lockRequest.InsertLock(LockableId(oldModelId), LockLevel::Shared);
         
         // TFS#788401: Avoid inserting locks if exclusively locked models
         if (exclusiveModelIds.Contains(modelId))

@@ -219,6 +219,17 @@ DgnCategoryId Converter::ConvertLevelToCategory(DgnV8Api::LevelHandle const& lev
     if (!definitionModel.IsValid())
         return DgnCategoryId();
 
+    if (definitionModel.get() == &m_dgndb->GetDictionaryModel())
+        {
+        if (BSISUCCESS != MustBeInSharedChannel("ConvertLevelToCategory may only merge levels to the DictionaryModel in the shared channel."))
+            return DgnCategoryId();
+        }
+    else
+        {
+        if (BSISUCCESS != MustBeInNormalChannel("ConvertLevelToCategory may only write levels to the Job's definition model in the normal channel."))
+            return DgnCategoryId();
+        }
+
     DgnCode categoryCode = is3d ? SpatialCategory::CreateCode(*definitionModel, dbCategoryName.c_str()) : DrawingCategory::CreateCode(*definitionModel, dbCategoryName.c_str());
     DgnCategoryId dbCategoryId = DgnCategory::QueryCategoryId(GetDgnDb(), categoryCode);
     if (dbCategoryId.IsValid())
@@ -309,15 +320,47 @@ void Converter::ConvertAllSpatialLevels(DgnV8FileR v8file)
 
         if (IsDefaultLevel(level))
             {
-            GetSyncInfo().InsertLevel(DgnCategory::GetDefaultSubCategoryId(GetUncategorizedCategory()), v8file.GetDictionaryModel(), level);
-
-            if (LOG_LEVEL_IS_SEVERITY_ENABLED (NativeLogging::LOG_TRACE))
-                LOG_LEVEL.tracev("merged level [%s] (%d) -> %d", Utf8String(level.GetName()).c_str(), level.GetLevelId(), GetUncategorizedCategory().GetValue());
-            continue;
+            continue;   // This must be converted in _ConvertBridgeSpecificLevelsInLevelTable
             }
 
         ConvertLevelToCategory(level, v8file, true);
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void Converter::MapDefaultLevelToUncategorized(DgnV8FileR v8file)
+    {
+    if (BSISUCCESS != MustBeInNormalChannel("MapDefaultLevelToUncategorized must be called only in the normal channel."))
+        return;
+
+    if (LOG_LEVEL_IS_SEVERITY_ENABLED (NativeLogging::LOG_TRACE))
+        LOG_LEVEL.tracev(L"importing bridge-specific levels from level table from file %ls", v8file.GetFileName().c_str());
+
+    DgnV8Api::FileLevelCache& cache = v8file.GetLevelCacheR();
+
+    uint32_t count=0;
+    for (DgnV8Api::LevelHandle const& level : cache)
+        {
+        if (IsUpdating())
+            {
+            DgnCategoryId categoryId = GetSyncInfo().FindCategory(level.GetLevelId(), v8file, SyncInfo::LevelExternalSourceAspect::Type::Spatial);
+            if (categoryId.IsValid())
+                continue;
+            }
+
+        //  Only the default level is bridge-specific
+        if (!IsDefaultLevel(level))
+            continue;
+
+        GetSyncInfo().InsertLevel(DgnCategory::GetDefaultSubCategoryId(GetUncategorizedCategory()), v8file.GetDictionaryModel(), level);
+        GetSyncInfo().InsertLevel(DgnCategory::GetDefaultSubCategoryId(GetUncategorizedDrawingCategory()), v8file.GetDictionaryModel(), level);
+
+        if (LOG_LEVEL_IS_SEVERITY_ENABLED (NativeLogging::LOG_TRACE))
+            LOG_LEVEL.tracev("Mapped default level [%s] (%d) -> %d", Utf8String(level.GetName()).c_str(), level.GetLevelId(), GetUncategorizedCategory().GetValue());
+        }
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -565,19 +608,22 @@ void Converter::AddAllSpatialCategories(DgnCategoryIdSet& categories)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Converter::InitUncategorizedCategory()
+DgnCategoryId Converter::GetUncategorizedCategory()
     {
+    if (m_uncategorizedCategoryId.IsValid())
+        return m_uncategorizedCategoryId;
+
     DefinitionModelPtr definitionModel = GetJobDefinitionModel();
     if (!definitionModel.IsValid())
         {
         BeAssert(false);
-        return;
+        return DgnCategoryId();
         }
 
     m_uncategorizedCategoryId = SpatialCategory::QueryCategoryId(*definitionModel, CATEGORY_NAME_Uncategorized);
 
     if (m_uncategorizedCategoryId.IsValid())
-        return;
+        return m_uncategorizedCategoryId;
 
     SpatialCategory category(*definitionModel, CATEGORY_NAME_Uncategorized, DgnCategory::Rank::Application);
     if (!category.Insert(DgnSubCategory::Appearance()).IsValid())
@@ -586,24 +632,29 @@ void Converter::InitUncategorizedCategory()
         }
 
     m_uncategorizedCategoryId = category.GetCategoryId();
+
+    return m_uncategorizedCategoryId;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Converter::InitUncategorizedDrawingCategory()
+DgnCategoryId Converter::GetUncategorizedDrawingCategory()
     {
+    if (m_uncategorizedDrawingCategoryId.IsValid())
+        return m_uncategorizedDrawingCategoryId;
+
     DefinitionModelPtr definitionModel = GetJobDefinitionModel();
     if (!definitionModel.IsValid())
         {
         BeAssert(false);
-        return;
+        return DgnCategoryId();
         }
 
     m_uncategorizedDrawingCategoryId = DrawingCategory::QueryCategoryId(*definitionModel, CATEGORY_NAME_Uncategorized);
 
     if (m_uncategorizedDrawingCategoryId.IsValid())
-        return;
+        return m_uncategorizedDrawingCategoryId;
 
     DrawingCategory category(*definitionModel, CATEGORY_NAME_Uncategorized, DgnCategory::Rank::Application);
     if (!category.Insert(DgnSubCategory::Appearance()).IsValid())
@@ -612,6 +663,8 @@ void Converter::InitUncategorizedDrawingCategory()
         }
 
     m_uncategorizedDrawingCategoryId = category.GetCategoryId();
+
+    return m_uncategorizedDrawingCategoryId;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -638,11 +691,7 @@ DgnCategoryId Converter::ConvertDrawingLevel(DgnV8FileR v8file, DgnV8Api::LevelI
 
     if (IsDefaultLevel(level))
         {
-        m_syncInfo.InsertLevel(DgnCategory::GetDefaultSubCategoryId(GetUncategorizedDrawingCategory()), v8file.GetDictionaryModel(), level);
-
-        if (LOG_LEVEL_IS_SEVERITY_ENABLED (NativeLogging::LOG_TRACE))
-            LOG_LEVEL.tracev("merged level [%s] (%d) -> %d", Utf8String(level.GetName()).c_str(), level.GetLevelId(), GetUncategorizedDrawingCategory().GetValue());
-        return GetUncategorizedDrawingCategory();
+        return DgnCategoryId(); // This must be done in the normal channel by GetUncategorizedDrawingCategory!
         }
 
     return ConvertLevelToCategory(level, v8file, false);

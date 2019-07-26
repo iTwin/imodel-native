@@ -1854,8 +1854,6 @@ void Converter::GetOrCreateJobPartitions()
     InitDrawingListModel();
     InitSheetListModel();
 
-    InitUncategorizedCategory(); // Create the "Default" category for elements that can't be categorized without application/domain help
-    InitUncategorizedDrawingCategory();
     InitBusinessKeyCodeSpec();
     }
 
@@ -4021,6 +4019,19 @@ void Converter::CheckForAndSaveChanges()
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Converter::ShouldMergeDefinitions() const
+    {
+    if (!GetParams().GetMergeDefinitions() && !m_config.GetOptionValueBool("MergeDefinitions", false))
+        return false;
+
+    if (GetDgnDb().BriefcaseManager().StayInChannel() && !GetDgnDb().BriefcaseManager().IsSharedChannel())
+        return false;
+
+    return true;
+    }
 
 END_DGNDBSYNC_DGNV8_NAMESPACE
 

@@ -544,6 +544,9 @@ LineStyleStatus LineStyleConverter::GetOrConvertElementLineCode(DgnStyleId& newI
 //---------------------------------------------------------------------------------------
 LineStyleStatus LineStyleConverter::ConvertLineStyle (DgnStyleId& newId, double& componentScale, DgnV8Api::LsDefinition*v8ls, DgnV8Api::DgnFile&v8File)
     {
+    if (BSISUCCESS != m_converter.MustBeInSharedChannel("linestyles must be converted in the shared channel."))
+        return LineStyleStatus::LINESTYLE_STATUS_Error;
+
     Utf8String  lineStyleName(v8ls->GetStyleName().c_str());
         
     //  First check to see if it is already mapped.  There are some files with line style names that 
@@ -630,6 +633,7 @@ LineStyleStatus LineStyleConverter::ConvertLineStyle (DgnStyleId& newId, double&
         {
         //  I think the final argument can be eliminated.  I've added "BeAssert(1.0 == lsScale)" to ConvertLsComponent to prove it.
         ConvertLsComponent(v10ComponentId, v8File, *v8component, 1.0);
+        // NB: Since we don't specify a model, the Insert function will automatically put the new linestyle element in the DictionaryModel.
         result = GetDgnDb().LineStyles().Insert(newId, lineStyleName.c_str(), v10ComponentId, lineStyleAttributes, lsUnitDef);
         }
 
@@ -756,6 +760,9 @@ DgnStyleId Converter::_RemapLineStyle(double&unitsScale, DgnV8Api::DgnFile&v8Fil
 //---------------------------------------------------------------------------------------
 void Converter::ConvertAllLineStyles(DgnV8Api::DgnFile&v8File)
     {
+    if (BSISUCCESS != MustBeInSharedChannel("linestyles must be converted in the shared channel."))
+        return;
+    
     // Initialize the graphics subsystem to produce bitmaps of linestyles.
     // This was required when the line style converter converted line styles to textures
     //  at conversion time.  We haven't done that in a long time so I think this is no longer

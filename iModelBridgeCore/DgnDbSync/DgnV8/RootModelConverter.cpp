@@ -165,6 +165,8 @@ SpatialConverterBase::ImportJobLoadStatus SpatialConverterBase::FindJob()
     if (!m_importJob.IsValid())
         return ImportJobLoadStatus::FailedNotFound;
 
+    GetDgnDb().BriefcaseManager().GetChannelPropsR().channelParentId = m_importJob.GetSubject().GetElementId();
+
     // *** TRICKY: If this is called by the framework as a check *after* it calls _IntializeJob, then don't change the change detector!
     if (!_HaveChangeDetector() || IsUpdating())
         _SetChangeDetector(true);
@@ -626,6 +628,8 @@ SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(
     if (!jobSubject.IsValid())
         return ImportJobCreateStatus::FailedInsertFailure;
 
+    GetDgnDb().BriefcaseManager().GetChannelPropsR().channelParentId = jobSubject->GetElementId();
+
     // Set up m_importJob with the subject. Do this before calling GetOrCreateJobPartitions.
     m_importJob = ResolvedImportJob(*jobSubject, jtype);
 
@@ -953,15 +957,30 @@ void RootModelConverter::_ConvertSpatialLevels()
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void RootModelConverter::_ConvertBridgeSpecificLevels()
+    {
+    for (DgnV8FileP v8File : m_v8Files)
+        {
+        if (IsFileAssignedToBridge(*v8File))
+            _ConvertBridgeSpecificLevelsInLevelTable(*v8File);
+        }
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            05/2019
 //---------------+---------------+---------------+---------------+---------------+-------
 void RootModelConverter::_ConvertDrawingLevels()
     {
+    if (SUCCESS != MustBeInSharedChannel("_ConvertDrawingLevels must be called in the definitions phase"))
+        return;
+
     // Need to create these categories upfront since we don't know whether we'll need them until we're converting the data and that is too late to create categories
     if (!m_nonSpatialModelsInModelIndexOrder.empty())
         {
-        GetOrCreateDrawingCategoryId(*GetJobDefinitionModel(), CATEGORY_NAME_Attachments);
+        GetOrCreateDrawingCategoryId(GetDgnDb().GetDictionaryModel(), CATEGORY_NAME_Attachments);   // Doing this in the definitions phase, we must write to the DictionaryModel, not the Job def'n model.
         GetExtractionCategoryId(Converter::V8NamedViewType::Other);
         GetExtractionCategoryId(Converter::V8NamedViewType::Section);
         GetExtractionCategoryId(Converter::V8NamedViewType::Plan);
@@ -1876,8 +1895,9 @@ struct ConvertModelACSTraverser : DgnV8Api::IACSTraversalHandler
     {
     ResolvedModelMapping    m_v8mm;
     double                  m_toMeters;
+    DefinitionModelP        m_definitionModel;
 
-    ConvertModelACSTraverser(ResolvedModelMapping const& v8mm, double toMeters) : m_v8mm(v8mm), m_toMeters(toMeters) {}
+    ConvertModelACSTraverser(ResolvedModelMapping const& v8mm, DefinitionModelP dm, double toMeters) : m_v8mm(v8mm), m_toMeters(toMeters), m_definitionModel(dm) {}
     UInt32 _GetACSTraversalOptions() override { return 0; }
 
     /*---------------------------------------------------------------------------------**//**
@@ -1901,7 +1921,7 @@ struct ConvertModelACSTraverser : DgnV8Api::IACSTraversalHandler
         if (acsId.IsValid()) // Do we need to do something here for update???
             return false;
 
-        AuxCoordSystemPtr   acsElm = AuxCoordSystem::CreateNew(m_v8mm.GetDgnModel(), nullptr, acsName);
+        AuxCoordSystemPtr   acsElm = AuxCoordSystem::CreateNew(m_v8mm.GetDgnModel(), m_definitionModel, acsName);
         Bentley::DPoint3d   acsOrigin;
         Bentley::RotMatrix  acsRMatrix;
 
@@ -1972,6 +1992,9 @@ BentleyStatus RootModelConverter::DoFinishConversion()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus RootModelConverter::MakeDefinitionChanges()
     {
+    if (BSISUCCESS != MustBeInSharedChannel("MakeDefinitionChanges must be called only in the shared channel."))
+        return BSIERROR;
+
     if (!m_isRootModelSpatial)
         return BSISUCCESS;
 
@@ -2016,6 +2039,9 @@ BentleyStatus RootModelConverter::MakeDefinitionChanges()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus  RootModelConverter::ConvertData()
     {
+    if (BSISUCCESS != MustBeInNormalChannel("ConvertData must be called in the normal channel."))
+        return BSIERROR;
+
     if (!m_beginConversionCalled)
         {
         if (SUCCESS != DoBeginConversion() || WasAborted())     // must call this first, to initialize the ChangeDetector, which MakeDefinitionChanges will use
@@ -2031,6 +2057,8 @@ BentleyStatus  RootModelConverter::ConvertData()
     StopWatch timer(true);
 
     ConverterLogging::LogPerformance(timer, "Begin Conversion");
+
+    _ConvertBridgeSpecificLevels();
 
     timer.Start();
 
@@ -2051,7 +2079,7 @@ BentleyStatus  RootModelConverter::ConvertData()
         if (!IsFileAssignedToBridge(*modelMapping.GetV8Model().GetDgnFileP()))
             continue;
 
-        ConvertModelACSTraverser acsTraverser(modelMapping, ComputeUnitsScaleFactor(modelMapping.GetV8Model()));
+        ConvertModelACSTraverser acsTraverser(modelMapping, GetJobDefinitionModel().get(), ComputeUnitsScaleFactor(modelMapping.GetV8Model()));
         DgnV8Api::IACSManager::GetManager().Traverse(acsTraverser, &modelMapping.GetV8Model());
         }
 

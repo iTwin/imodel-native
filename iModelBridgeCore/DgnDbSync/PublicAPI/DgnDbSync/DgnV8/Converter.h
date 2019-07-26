@@ -1219,6 +1219,8 @@ public:
     //! category created will be the same as the name of the input level.
     DGNDBSYNC_EXPORT void ConvertAllSpatialLevels(DgnV8FileR v8file);
     
+    DGNDBSYNC_EXPORT void MapDefaultLevelToUncategorized(DgnV8FileR v8file);
+
     void ComputeSubCategoryAppearanceFromLevel(DgnSubCategory::Appearance&, DgnV8Api::LevelHandle const&);
     void MakeSubCategoryInvisibleInView(ViewDefinitionR theView, DgnSubCategoryId subcatId);
     DgnSubCategoryId ConvertLevelToSubCategory(DgnV8Api::LevelHandle const&, DgnV8ModelCR, DgnCategoryId);
@@ -1831,16 +1833,13 @@ public:
     //! @deprecated  Callers should be changed to call FindFirstElementMappedTo directly.
     DGNDBSYNC_EXPORT bool TryFindElement(DgnElementId& elementId, DgnV8EhCR eh);
 
-    DGNDBSYNC_EXPORT void InitUncategorizedCategory();
-    DGNDBSYNC_EXPORT void InitUncategorizedDrawingCategory();
-
     //! Get the category for spatial elements that are unable to be categorized during the DgnV8 to DgnDb conversion process.
     //! @note This should only be used as a last resort when other attempts to categorize fail
-    DgnCategoryId GetUncategorizedCategory() const {return m_uncategorizedCategoryId;}
+    DGNDBSYNC_EXPORT DgnCategoryId GetUncategorizedCategory();
 
     //! Get the category for drawing elements that are unable to be categorized during the DgnV8 to DgnDb conversion process.
     //! @note This should only be used as a last resort when other attempts to categorize fail
-    DgnCategoryId GetUncategorizedDrawingCategory() const {return m_uncategorizedDrawingCategoryId;}
+    DGNDBSYNC_EXPORT DgnCategoryId GetUncategorizedDrawingCategory();
 
     //! @}
 
@@ -1960,7 +1959,7 @@ public:
     virtual Utf8String _GetNamePrefix() const = 0;
 
     //! Should definitions such as levels and materials be merged by name
-    bool ShouldMergeDefinitions() const {return GetParams().GetMergeDefinitions() || m_config.GetOptionValueBool("MergeDefinitions", false);}
+    DGNDBSYNC_EXPORT bool ShouldMergeDefinitions() const;
 
     Params const& GetParams() const {return _GetParams();}
 
@@ -1990,6 +1989,15 @@ public:
 
     //! Report an error, where the message is to be formatted with addition arguments.
     void ReportError(IssueCategory::StringId category, Issue::StringId issue, WCharCP details) {ReportError(category,issue,Utf8String(details).c_str());}
+
+    //! @private
+    DGNDBSYNC_EXPORT BentleyStatus MustBeInChannel(IBriefcaseManager::ChannelType, Utf8StringCR details);
+
+    //! Assert that an opertion must be performed in the shared channel
+    BentleyStatus MustBeInSharedChannel(Utf8StringCR details) {return MustBeInChannel(IBriefcaseManager::ChannelType::Shared, details);}
+
+    //! Assert that an opertion must be performed in the normal channel
+    BentleyStatus MustBeInNormalChannel(Utf8StringCR details) {return MustBeInChannel(IBriefcaseManager::ChannelType::Normal, details);}
 
     //! Report a problem opening a V8 file
     DGNDBSYNC_EXPORT void ReportDgnV8FileOpenError(DgnV8Api::DgnFileStatus, WCharCP fn);
@@ -2424,7 +2432,8 @@ public:
 
     //! @name Converting levels
     //! @{
-    DGNDBSYNC_EXPORT virtual void _ConvertSpatialLevelTable(DgnV8FileR v8file);
+    DGNDBSYNC_EXPORT virtual void _ConvertSpatialLevelTable(DgnV8FileR v8file);     // NB! Convert only the levels that are to be shared!
+    virtual void _ConvertBridgeSpecificLevelsInLevelTable(DgnV8FileR v8file) {MapDefaultLevelToUncategorized(v8file);}
     DGNDBSYNC_EXPORT void _OnUpdateLevel(DgnV8Api::LevelHandle const& level, DgnCategoryId cat, DgnV8FileR file) override;
     //! @}
 };
@@ -2616,6 +2625,7 @@ protected:
     DGNDBSYNC_EXPORT virtual void _BeginConversion();
     DGNDBSYNC_EXPORT virtual void _ConvertSpatialViews();
     DGNDBSYNC_EXPORT virtual void _ConvertSpatialLevels();
+    DGNDBSYNC_EXPORT virtual void _ConvertBridgeSpecificLevels();
     DGNDBSYNC_EXPORT virtual void _ConvertDrawingLevels();
     DGNDBSYNC_EXPORT virtual void _ConvertLineStyles();
     DGNDBSYNC_EXPORT virtual void _ConvertModels();
@@ -3095,11 +3105,12 @@ struct ConverterLogging
 //! <h2>Level and LineStyle Mappings</h2>
 //! Before converting any elements, you must define mappings from the levels and linestyles
 //! used by those elements to Categories and LineStyles in the target BIM. Call 
-//! ConvertAllLineStyles, InitUncategorizedCategory, ConvertAllSpatialLevels, and/or RecordLevelMappingForModel.
+//! ConvertAllLineStyles, InitUncategorizedCategory, ConvertAllSpatialLevels, MapDefaultLevelToUncategorized, and/or RecordLevelMappingForModel.
 //! @code
 //! cvt.ConvertAllLineStyles(v8File);       // This is necessary to support both element and level conversion
 //! cvt.InitUncategorizedCategory();        // This is important, in case the converter hits an element with a bad or unmapped level
 //! cvt.ConvertAllSpatialLevels(v8File);    // This is how you can map all (3D) levels in one shot
+//! cvt.MapDefaultLevelToUncategorized(v8File); // Map the V8 default level to the so-called "uncategorized" Category.
 //! cvt.RecordLevelMappingForModel(DGNV8_LEVEL_DEFAULT_LEVEL_ID, someBimCategory->GetDefaultSubCategoryId(), v8File); // this is how to map levels one by one
 //! @endcode
 //!

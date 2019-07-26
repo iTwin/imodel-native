@@ -1,0 +1,8 @@
+MstnBridgeTests.MultiBridgeSequencing # SamW - temporary?
+
+MstnBridgeTests.ConvertCve # Causes crash
+
+# This is permanently disabled. It is not a unit test. It is a developer tool.
+# A developer may using this "test" run a specified bridge on a specified file, using imodel-bank as the server.
+# All inputs are specified 
+Bridge.File

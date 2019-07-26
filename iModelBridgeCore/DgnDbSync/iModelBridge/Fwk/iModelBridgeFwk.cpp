@@ -1371,7 +1371,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
         GetRegistry()._FindBridgeInRegistry(m_jobEnvArgs.m_bridgeLibraryName, m_jobEnvArgs.m_bridgeAssetsDir, m_jobEnvArgs.m_bridgeRegSubKey);
         if (m_jobEnvArgs.m_bridgeLibraryName.empty())
             {
-            LOG.fatalv(L"%s - no bridge with this subkey is in the state db", m_jobEnvArgs.m_bridgeRegSubKey.c_str());
+            LOG.fatalv(L"%s - no bridge with this subkey is in the registry db", m_jobEnvArgs.m_bridgeRegSubKey.c_str());
             return RETURN_STATUS_LOCAL_ERROR;
             }
         }
@@ -1533,6 +1533,7 @@ int iModelBridgeFwk::PullMergeAndPushChange(Utf8StringCR description, bool relea
 
     DbResult dbres;
     bool madeSchemaChanges = false;
+    auto channelProps = m_briefcaseDgnDb->BriefcaseManager().GetChannelProps();
     m_briefcaseDgnDb = nullptr; // close the current connection to the briefcase db before attempting to reopen it!
     m_briefcaseDgnDb = iModelBridge::OpenBimAndMergeSchemaChanges(dbres, madeSchemaChanges, m_briefcaseName);
     if (!m_briefcaseDgnDb.IsValid())
@@ -1541,6 +1542,7 @@ int iModelBridgeFwk::PullMergeAndPushChange(Utf8StringCR description, bool relea
         GetLogger().fatalv("OpenDgnDb failed with error %s (%x)", BeSQLite::Db::InterpretDbResult(dbres), dbres);
         return BentleyStatus::ERROR;
         }
+    m_briefcaseDgnDb->BriefcaseManager().SetChannelProps(channelProps);
 
     BeAssert(!madeSchemaChanges && "No further domain schema changes were expected.");
     return 0;
@@ -1623,6 +1625,7 @@ BentleyStatus   iModelBridgeFwk::TryOpenBimWithOptions(DgnDb::OpenParams& oparam
         GetLogger().fatalv("OpenDgnDb failed with error %s (%x)", BeSQLite::Db::InterpretDbResult(dbres), dbres);
         return BentleyStatus::ERROR;
         }
+
     //                                       *** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
     if (madeSchemaChanges || iModelBridge::AnyChangesToPush(*m_briefcaseDgnDb))
         {
@@ -1729,6 +1732,7 @@ void iModelBridgeFwk::OnUnhandledException(Utf8CP phase)
 +---------------+---------------+---------------+---------------+---------------+------*/
 int iModelBridgeFwk::MakeSchemaChanges(iModelBridgeCallOpenCloseFunctions& callCloseOnReturn)
     {
+    BeAssert(m_briefcaseDgnDb->BriefcaseManager().IsSharedChannel());
     BeAssert(iModelBridge::HoldsSchemaLock(*m_briefcaseDgnDb));
 
     GetLogger().infov("bridge:%s iModel:%s - MakeSchemaChanges.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
@@ -1780,6 +1784,7 @@ int iModelBridgeFwk::MakeSchemaChanges(iModelBridgeCallOpenCloseFunctions& callC
             m_briefcaseDgnDb->BriefcaseManager().EndBulkOperation();
         }
 
+    BeAssert(m_briefcaseDgnDb->BriefcaseManager().IsSharedChannel());
     BeAssert(iModelBridge::HoldsSchemaLock(*m_briefcaseDgnDb));
     BeAssert(!iModelBridge::AnyTxns(*m_briefcaseDgnDb)); // (Note that _OnOpenBim might have made IN-MEMORY changes to be_prop table.)
 
@@ -1791,6 +1796,7 @@ int iModelBridgeFwk::MakeSchemaChanges(iModelBridgeCallOpenCloseFunctions& callC
 +---------------+---------------+---------------+---------------+---------------+------*/
 int iModelBridgeFwk::MakeDefinitionChanges(SubjectCPtr& jobsubj, iModelBridgeCallOpenCloseFunctions& callCloseOnReturn)
     {
+    BeAssert(m_briefcaseDgnDb->BriefcaseManager().IsSharedChannel());
     BeAssert(iModelBridge::HoldsSchemaLock(*m_briefcaseDgnDb));
 
     GetLogger().infov("bridge:%s iModel:%s - MakeDefinitionChanges.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
@@ -1822,6 +1828,7 @@ int iModelBridgeFwk::MakeDefinitionChanges(SubjectCPtr& jobsubj, iModelBridgeCal
             return BSIERROR;
         }
 
+    BeAssert(m_briefcaseDgnDb->BriefcaseManager().IsSharedChannel());
     BeAssert(iModelBridge::HoldsSchemaLock(*m_briefcaseDgnDb));
     BeAssert(!iModelBridge::AnyChangesToPush(*m_briefcaseDgnDb));
 
@@ -1834,8 +1841,10 @@ int iModelBridgeFwk::MakeDefinitionChanges(SubjectCPtr& jobsubj, iModelBridgeCal
 int iModelBridgeFwk::DoNormalUpdate()
     {
     // ---------------------------------------------------
-    //  I. Definition Changes => shared channel
+    //  Definition Changes => shared channel
     // ---------------------------------------------------
+    m_briefcaseDgnDb->BriefcaseManager().GetChannelPropsR().channelType = IBriefcaseManager::ChannelType::Shared;
+    m_briefcaseDgnDb->BriefcaseManager().GetChannelPropsR().channelParentId = m_briefcaseDgnDb->Elements().GetRootSubjectId();
 
     if (BSISUCCESS != GetSchemaLock())  // must get schema lock preemptively. This ensures that only one bridge at a time can make schema and definition changes. That then allows me to pull/merge/push between the definition and data steps without closing and reopening
         {
@@ -1885,17 +1894,14 @@ int iModelBridgeFwk::DoNormalUpdate()
     Briefcase_ReleaseAllPublicLocks();
 
     // ---------------------------------------------------
-    //  I. Normal data changes => bridge's private channel
+    //  Normal data changes => bridge's private channel
     // ---------------------------------------------------
+    m_briefcaseDgnDb->BriefcaseManager().GetChannelPropsR().channelType = IBriefcaseManager::ChannelType::Normal;
+    m_briefcaseDgnDb->BriefcaseManager().GetChannelPropsR().channelParentId = DgnElementId(); // don't yet know the Job Subject element
+
     BeAssert(!iModelBridge::HoldsSchemaLock(*m_briefcaseDgnDb));
     BeAssert(!iModelBridge::AnyTxns(*m_briefcaseDgnDb));
     GetLogger().infov("bridge:%s iModel:%s - Convert Data.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
-
-    if (m_bridge->_ConvertToBimRequiresExclusiveLock())       // TODO: Get rid of this option
-        {                                                     // TODO: Get rid of this option
-        if (BSISUCCESS != GetSchemaLock())                    // TODO: Get rid of this option
-            return RETURN_STATUS_SERVER_ERROR;                // TODO: Get rid of this option
-        }
 
     BentleyStatus bridgeCvtStatus = m_bridge->DoConvertToExistingBim(*m_briefcaseDgnDb, *jobsubj, true);
     if (BSISUCCESS != bridgeCvtStatus)
@@ -1919,6 +1925,9 @@ int iModelBridgeFwk::DoNormalUpdate()
 +---------------+---------------+---------------+---------------+---------------+------*/
 int iModelBridgeFwk::OnAllDocsProcessed()
     {
+    m_briefcaseDgnDb->BriefcaseManager().GetChannelPropsR().channelType = IBriefcaseManager::ChannelType::Normal;
+    m_briefcaseDgnDb->BriefcaseManager().GetChannelPropsR().channelParentId = DgnElementId(); // don't yet know the Job Subject element
+
     //  Tell the bridge that the briefcase is now open. (Do NOT ask it to open a source file.)
     iModelBridgeBriefcaseCallOpenCloseFunctions callCloseOnReturn(*m_bridge, *m_briefcaseDgnDb);
     if (!callCloseOnReturn.IsReady())                                                  
@@ -2110,6 +2119,9 @@ int iModelBridgeFwk::UpdateExistingBim()
         }
 
     //                                       *** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
+
+    // Set this value as a report of the Bridge/BriefcaseManager's policy, so that callers can find out afterwards.
+    m_areCodesInLockedModelsReported = m_briefcaseDgnDb->BriefcaseManager().ShouldIncludeUsedLocksInChangeSet();
 
     // POST-CONDITIONS
     BeAssert((!iModelBridge::AnyTxns(*m_briefcaseDgnDb) && (SyncState::Initial == GetSyncState())) && "Local changes should have been pushed");

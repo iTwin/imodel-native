@@ -4,7 +4,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "MstnBridgeTestsFixture.h"
-#include <iModelBridge/TestIModelHubClientForBridges.h>
 #include <iModelBridge/iModelBridgeFwk.h>
 #include <iModelBridge/FakeRegistry.h>
 #include <DgnPlatform/DesktopTools/KnownDesktopLocationsAdmin.h>
@@ -18,6 +17,7 @@ extern "C"
 USING_NAMESPACE_BENTLEY_DGN
 
 #define MSTN_BRIDGE_REG_SUB_KEY L"iModelBridgeForMstn"
+#define MSTN_BRIDGE_REG_SUB_KEY_A "iModelBridgeForMstn"
 
 //=======================================================================================
 // @bsistruct                              
@@ -26,7 +26,10 @@ struct MstnBridgeTests : public MstnBridgeTestsFixture
     {
     void SetupTwoRefs(bvector<WString>& args, BentleyApi::BeFileName& masterFile, BentleyApi::BeFileName& refFile1, 
                       BentleyApi::BeFileName& refFile2, BentleyApi::BeFileName const& testDir, FakeRegistry& testRegistry);
-    void VerifyLineHasCode(int prevCount, BeFileNameCR bcName, int64_t srcId, Utf8CP codeValuePrefix, bool codeShouldBeRecorded);
+    void VerifyCodeIsRegistered(DbFileInfo&, DgnCodeCR, Utf8CP codeValuePrefix, bool codeShouldBeRecorded);
+    void VerifyElementHasCode(DgnElementCR, Utf8CP codeValuePrefix);
+    void VerifyElementHasCode(BeFileNameCR bcName, DgnElementId eid, Utf8CP codeValuePrefix, bool codeShouldBeRecorded);
+    void VerifyConvertedElementHasCode(int prevCount, BeFileNameCR bcName, int64_t srcId, Utf8CP codeValuePrefix, bool codeShouldBeRecorded);
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -332,6 +335,33 @@ TEST_F(MstnBridgeTests, ConvertLinesUsingBridgeFwk)
         RunTheBridge(args);
         EXPECT_EQ(1 + prevCount, DbFileInfo(m_briefcaseName).GetElementCount());
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MstnBridgeTests, ConvertCve)
+    {
+    auto testDir = CreateTestDir();
+
+    bvector<WString> args;
+    SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY);
+    
+    BentleyApi::BeFileName emptyFile = GetTestDataFileName(L"Test3d.dgn");
+    BentleyApi::BeFileName cveFile = GetTestDataFileName(L"cve.dgn");
+
+    args.push_back(L"--fwk-skip-assignment-check");
+
+    SetupClient();
+    CreateRepository();
+    auto runningServer = StartServer();
+    
+    args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", emptyFile.c_str()));
+    RunTheBridge(args);
+    
+    args.pop_back();
+    args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", cveFile.c_str()));
+    RunTheBridge(args);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -726,7 +756,7 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridge)
         bvector<WString> rargs(args);
         rargs.push_back(L"--fwk-bridge-regsubkey=ABD");
         RunTheBridge(rargs);
-        ASSERT_EQ(modelCount + 1, DbFileInfo(m_briefcaseName).GetModelCount()) << "ABD bridge should have detected and converted the new attachments, and it should have that both point to the same model.";
+        ASSERT_EQ(modelCount + 2, DbFileInfo(m_briefcaseName).GetModelCount()) << "ABD bridge should have detected and converted the new attachments, and it should have that both point to the same model. It will also create its own Definitions model.";
         }
     }
 
@@ -867,24 +897,13 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridgeSharedReference)
 //Sandwich test ?
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/2019
+* @bsimethod                                    Sam.Wilson                      07/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MstnBridgeTests::VerifyLineHasCode(int prevCount, BeFileNameCR bcName, int64_t srcId, Utf8CP codeValuePrefix, bool codeShouldBeRecorded)
+void MstnBridgeTests::VerifyCodeIsRegistered(DbFileInfo& bcInfo, DgnCodeCR code, Utf8CP codeValuePrefix, bool codeShouldBeRecorded)
     {
-    // Verify that the line has the expected code
-    DbFileInfo bcInfo(bcName);
-    EXPECT_EQ(1 + prevCount, bcInfo.GetElementCount());
-
-    DgnElementId eid;
-    ASSERT_EQ(BSISUCCESS, bcInfo.GetiModelElementByDgnElementId(eid, srcId));
-    auto el = bcInfo.m_db->Elements().GetElement(eid);
-    ASSERT_TRUE(el.IsValid());
-    ASSERT_TRUE(el->GetCode().IsValid());
-    ASSERT_TRUE(el->GetCode().GetValueUtf8().StartsWith(codeValuePrefix));
-
-    // Verify that the server has or has not registered the line's code as expected.
+    // Verify that the server has or has not registered the element's code as expected.
     DgnCodeInfo codeInfo;
-    auto status = bcInfo.GetCodeInfo(codeInfo, el->GetCode(), GetClient());
+    auto status = bcInfo.GetCodeInfo(codeInfo, code, GetClient());
     if (codeShouldBeRecorded)
         {
         ASSERT_EQ(BentleyApi::BSISUCCESS, status);
@@ -895,6 +914,48 @@ void MstnBridgeTests::VerifyLineHasCode(int prevCount, BeFileNameCR bcName, int6
         {
         ASSERT_NE(BentleyApi::BSISUCCESS, status);
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void MstnBridgeTests::VerifyElementHasCode(DgnElementCR el, Utf8CP codeValuePrefix)
+    {
+    ASSERT_TRUE(el.GetCode().IsValid());
+    ASSERT_TRUE(el.GetCode().GetValueUtf8().StartsWith(codeValuePrefix));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void MstnBridgeTests::VerifyElementHasCode(BeFileNameCR bcName, DgnElementId eid, Utf8CP codeValuePrefix, bool codeShouldBeRecorded)
+    {
+    DbFileInfo bcInfo(bcName);
+
+    auto el = bcInfo.m_db->Elements().GetElement(eid);
+    ASSERT_TRUE(el.IsValid());
+
+    VerifyElementHasCode(*el, codeValuePrefix);
+
+    VerifyCodeIsRegistered(bcInfo, el->GetCode(), codeValuePrefix, codeShouldBeRecorded);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void MstnBridgeTests::VerifyConvertedElementHasCode(int prevCount, BeFileNameCR bcName, int64_t srcId, Utf8CP codeValuePrefix, bool codeShouldBeRecorded)
+    {
+    DbFileInfo bcInfo(bcName);
+
+    DgnElementId eid;
+    ASSERT_EQ(BSISUCCESS, bcInfo.GetiModelElementByDgnElementId(eid, srcId));
+    auto el = bcInfo.m_db->Elements().GetElement(eid);
+    ASSERT_TRUE(el.IsValid());
+
+    VerifyElementHasCode(*el, codeValuePrefix);
+
+    EXPECT_EQ(1 + prevCount, bcInfo.GetElementCount());
+    VerifyCodeIsRegistered(bcInfo, el->GetCode(), codeValuePrefix, codeShouldBeRecorded);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -909,25 +970,22 @@ TEST_F(MstnBridgeTests, CodeReservation)
     
     bool usingIModelBank = (GetIModelBankServerJs() != nullptr);
 
-    if (usingIModelBank)
-        {
-        Utf8PrintfString rules(
-            R"(   [                                 
-                      {                            
-                          "user": "user1",             
-                          "rules": [                   
-                              {                        
-                                  "request": "Code/Create",
-                                  "rule": { "verb": "ifnofile", "object": "%s" }                        
-                              }                        
-                          ]                            
-                      }                
-                  ]                               
-              )", Utf8String(noCodesAllowed).c_str());
-        rules.ReplaceAll("\\", "/");
+    Utf8PrintfString rules(
+        R"(   [                                 
+                    {                            
+                        "user": "user1",             
+                        "rules": [                   
+                            {                        
+                                "request": "Code/Create",
+                                "rule": { "verb": "ifnofile", "object": "%s" }                        
+                            }                        
+                        ]                            
+                    }                
+                ]                               
+            )", Utf8String(noCodesAllowed).c_str());
+    rules.ReplaceAll("\\", "/");
 
-        SetRulesFileInEnv setRulesFileVar(WriteRulesFile(L"testCodeReservation.json", rules.c_str()));
-        }
+    SetRulesFileInEnv setRulesFileVar(WriteRulesFile(L"testCodeReservation.json", rules.c_str()));
 
     BentleyApi::BeFileName inputFile;
     MakeCopyOfFile(inputFile, L"Test3d.dgn", NULL);
@@ -953,6 +1011,7 @@ TEST_F(MstnBridgeTests, CodeReservation)
     argvMaker.SetSkipAssignmentCheck();
 
     BeFileName bcName;
+    bool expectCodesInLockedModelsToBeReported = true;
     if (true)
         {
         // Must allow Code reservations during the initial conversion. That is where the bridge creates the Subject 
@@ -963,11 +1022,13 @@ TEST_F(MstnBridgeTests, CodeReservation)
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argvMaker.GetArgC(), argvMaker.GetArgV()));
         ASSERT_EQ(0, fwk.Run(argvMaker.GetArgC(), argvMaker.GetArgV()));
         bcName = fwk.GetBriefcaseName();
+
+        // TRICKY! Must ask fwk for this information now!
+        expectCodesInLockedModelsToBeReported = fwk.AreCodesInLockedModelsReported();
         }
 
     // Get information about the jobsubject and the spatial model that we will be using.
     int prevCount = 0;
-    DgnElementId rootSubjectId;
     DgnElementId jobSubjectId;
     DgnModelId spatialModelId;
     RepositoryLinkId repositoryLinkId;
@@ -996,14 +1057,18 @@ TEST_F(MstnBridgeTests, CodeReservation)
         EXPECT_EQ(BentleyApi::BSISUCCESS, bcInfo.GetCodeInfo(codeInfo, repositoryLink->GetCode(), GetClient()));
         EXPECT_TRUE(codeInfo.IsUsed());
 
-        rootSubjectId = bcInfo.m_db->Elements().GetRootSubjectId();
+        // expectCodesInLockedModelsToBeReported = bcInfo.m_db->BriefcaseManager().ShouldReportCodesInLockedModels();  -- NO! It's too late to ask this here. You will get the wrong BriefcaseManager!
         }
+
+    VerifyElementHasCode(bcName, repositoryLinkId, "test3d.dgn", true); // Code should be recorded. This element is not inside the Job channel.
+    VerifyElementHasCode(bcName, jobSubjectId, MSTN_BRIDGE_REG_SUB_KEY_A, true); // Code should be recorded. This element is not inside the Job channel.
+    VerifyElementHasCode(bcName, DgnElementId(spatialModelId.GetValue()), "Test3d", true /* expectCodesInLockedModelsToBeReported */); // While this Code should NOT be recorded because this element is inside the Job channel, we don't yet have enough control over revision manager to make that true.
 
     // Add a line using MODEL-SCOPED CODES, where the model is one that is exclusively owned by the bridge.
     Utf8CP prefix = nullptr;
     int64_t srcId = AddLine(inputFile);
         {
-        if (usingIModelBank)
+        if (usingIModelBank && !expectCodesInLockedModelsToBeReported)
             createFile(noCodesAllowed);
 
         ScopedCodeAssignerXDomain assignCodes(spatialModelId, prefix="Model");
@@ -1013,13 +1078,13 @@ TEST_F(MstnBridgeTests, CodeReservation)
         ASSERT_EQ(0, fwk.Run(argvMaker.GetArgC(), argvMaker.GetArgV()));
         }
 
-    VerifyLineHasCode(prevCount, bcName, srcId, prefix, true);  // TODO: This should be false -- when we finally control locks and codes, there will be no code reservation in this case.
+    VerifyConvertedElementHasCode(prevCount, bcName, srcId, prefix, expectCodesInLockedModelsToBeReported);
     ++prevCount;
 
     // Add a line using RELATED-ELEMENT-SCOPED CODES, where the related element is exclusively owned by the bridge.
     srcId = AddLine(inputFile);
         {
-        if (usingIModelBank)
+        if (usingIModelBank && !expectCodesInLockedModelsToBeReported)
             createFile(noCodesAllowed);
 
         ScopedCodeAssignerXDomain assignCodes(jobSubjectId, prefix="Related", CodeScope::Related);
@@ -1029,39 +1094,39 @@ TEST_F(MstnBridgeTests, CodeReservation)
         ASSERT_EQ(0, fwk.Run(argvMaker.GetArgC(), argvMaker.GetArgV()));
         }
 
-    VerifyLineHasCode(prevCount, bcName, srcId, prefix, true);  // TODO: This should be false -- when we finally control locks and codes, there will be no code reservation in this case.
+    VerifyConvertedElementHasCode(prevCount, bcName, srcId, prefix, expectCodesInLockedModelsToBeReported);
     ++prevCount;
 
-    // Add a line using RELATED-ELEMENT-SCOPED CODES, where the related is NOT exclusively owned by the bridge.
-    srcId = AddLine(inputFile);
-        {
-        if (usingIModelBank)
-            BeFileName::BeDeleteFile(noCodesAllowed.c_str());
+    // Add a line using RELATED-ELEMENT-SCOPED CODES, where the related is NOT exclusively owned by the bridge. *** Removed this case - a bridge may not do this during the data phase.
+    // srcId = AddLine(inputFile);
+    //     {
+    //     if (usingIModelBank)
+    //         BeFileName::BeDeleteFile(noCodesAllowed.c_str());
 
-        ScopedCodeAssignerXDomain assignCodes(rootSubjectId, prefix="RelatedNotLocked", CodeScope::Related);
+    //     ScopedCodeAssignerXDomain assignCodes(jobSubjectId, prefix="RelatedNotLocked", CodeScope::Related);
 
-        iModelBridgeFwk fwk;
-        ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argvMaker.GetArgC(), argvMaker.GetArgV()));
-        ASSERT_EQ(0, fwk.Run(argvMaker.GetArgC(), argvMaker.GetArgV()));
-        }
+    //     iModelBridgeFwk fwk;
+    //     ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argvMaker.GetArgC(), argvMaker.GetArgV()));
+    //     ASSERT_EQ(0, fwk.Run(argvMaker.GetArgC(), argvMaker.GetArgV()));
+    //     }
     
-    VerifyLineHasCode(prevCount, bcName, srcId, prefix, true);
-    ++prevCount;
+    // VerifyConvertedElementHasCode(prevCount, bcName, srcId, prefix, true);
+    // ++prevCount;
 
-    // Add a line using REPOSITORY-SCOPED CODES
+    // Add a line using REPOSITORY-SCOPED CODES -- note that we must still provide a scope element id that is exclusively owned by the bridge for codes added in the data phase.. Changing the code scope type does not remove this constraint.
     srcId = AddLine(inputFile);
         {
-        if (usingIModelBank)
-            BeFileName::BeDeleteFile(noCodesAllowed.c_str());
+        if (usingIModelBank && !expectCodesInLockedModelsToBeReported)
+            createFile(noCodesAllowed);
 
-        ScopedCodeAssignerXDomain assignCodes(rootSubjectId, prefix="Repository", CodeScope::Repository);
+        ScopedCodeAssignerXDomain assignCodes(jobSubjectId, prefix="Repository", CodeScope::Repository);
 
         iModelBridgeFwk fwk;
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argvMaker.GetArgC(), argvMaker.GetArgV()));
         ASSERT_EQ(0, fwk.Run(argvMaker.GetArgC(), argvMaker.GetArgV()));
         }
 
-    VerifyLineHasCode(prevCount, bcName, srcId, prefix, true);
+    VerifyConvertedElementHasCode(prevCount, bcName, srcId, prefix, expectCodesInLockedModelsToBeReported);
     ++prevCount;
 
 
@@ -1639,3 +1704,108 @@ TEST_P (SynchInfoTests, TestSynchInfoAspect)
 
 const WString params[] = {L"Model", L"Element", L"Level", /*L"NamedView"*/ };
 INSTANTIATE_TEST_CASE_P (AllSynchInfoTests, SynchInfoTests, ::testing::ValuesIn (params));
+
+//=======================================================================================
+// @bsistruct                              
+//=======================================================================================
+struct Bridge : public MstnBridgeTestsFixture
+    {
+    static WCharCP s_loggingConfigFile;
+
+    static BentleyStatus GetFileNameFromEnv (BeFileName& fn, CharCP envname)
+        {
+        WString filepath (getenv(envname), BentleyCharEncoding::Utf8);
+        if (filepath.empty())
+            return ERROR;
+        fn.SetName (filepath);
+        return SUCCESS;
+        }
+
+    static BentleyStatus GetLogConfigurationFilename (BeFileName& configFile)
+        {
+        if (SUCCESS == GetFileNameFromEnv (configFile, "BRIDGE_FILE_LOGGING_CONFIG"))
+            {
+            if (BeFileName::DoesPathExist (configFile))
+                {
+                printf ("Configuring logging with %s (Set by BRIDGE_FILE_LOGGING_CONFIG environment variable.)\n", Utf8String(configFile.GetName()).c_str());
+                return SUCCESS;
+                }
+            }
+
+        configFile = BeFileName(BentleyApi::Desktop::FileSystem::GetExecutableDir());
+        configFile.AppendToPath (s_loggingConfigFile);
+        configFile.BeGetFullPathName ();
+        if (BeFileName::DoesPathExist (configFile))
+            {
+            printf ("Configuring logging using %s. Override by setting BRIDGE_FILE_LOGGING_CONFIG in environment.\n", Utf8String(configFile.GetName()).c_str());
+            return SUCCESS;
+            }
+
+        return ERROR;
+        }
+
+    static void SetUpTestCase()
+        {
+        BeFileName configFile;
+        if (SUCCESS == GetLogConfigurationFilename(configFile))
+            {
+            NativeLogging::LoggingConfig::SetOption (CONFIG_OPTION_CONFIG_FILE, configFile);
+            NativeLogging::LoggingConfig::ActivateProvider (NativeLogging::LOG4CXX_LOGGING_PROVIDER);
+            }
+        else
+            {
+            printf ("Logging.config.xml not found. Set by BRIDGE_FILE_LOGGING_CONFIG environment variable. Configuring default logging using console provider.\n");
+            NativeLogging::LoggingConfig::ActivateProvider (NativeLogging::CONSOLE_LOGGING_PROVIDER);
+            }
+        InitializeHost();
+        }
+    };
+
+WCharCP Bridge::s_loggingConfigFile = L"MstnBridgeTests.logging.config.xml";
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(Bridge, File)
+    {
+    if (s_argc != 3)
+        {
+        FAIL() << Utf8PrintfString("syntax: %s <bridgedllpath> <filename>", s_argv[0]);
+        }
+
+    BeFileName bridgeDllName(s_argv[1], true);
+    BeFileName inputFile(s_argv[2], true);
+    WCharCP bridgeRegSubkey = L"bridgeRegSubKey";
+    WCharCP iModelName = L"Test";
+
+    if (!bridgeDllName.DoesPathExist())
+        {
+        FAIL() << WPrintfString(L"%ls - Bridge DLL file not found", bridgeDllName.c_str()).c_str();
+        }
+
+    if (!inputFile.DoesPathExist())
+        {
+        FAIL() << WPrintfString(L"%ls - Input file not found", inputFile.c_str()).c_str();
+        }
+
+    auto testDir = CreateTestDir();
+
+    auto useBank = GetIModelBankServerJs();
+    auto rspFileName = useBank? L"imodel-bank.rsp": L"imodel-hub.rsp";
+
+    FwkArgvMaker argvMaker;
+    argvMaker.SetUpBridgeProcessingArgs(testDir.c_str(), bridgeRegSubkey, bridgeDllName, iModelName, useBank, rspFileName);
+
+    argvMaker.SetSkipAssignmentCheck();
+
+    SetupClient();
+    CreateRepository();
+    auto runningServer = StartServer();
+    
+    argvMaker.SetInputFileArg(GetTestDataFileName(L"Test3d.dgn"));
+    RunTheBridge(argvMaker.GetArgVector());
+    
+    argvMaker.PopArg();
+    argvMaker.SetInputFileArg(inputFile);
+    RunTheBridge(argvMaker.GetArgVector());
+    }

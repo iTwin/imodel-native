@@ -4,12 +4,75 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-    {
-        "name": "(Windows) Attach",
-        "type": "cppvsdbg",
-        "request": "attach",
-        "processId": "${command:pickProcess}"
-    },
+        {
+            "name": "Bridge.File",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}WinX64/Product/MstnBridgeTests/MstnBridgeTests.exe",
+            "args": [
+                "--gtest_break_on_failure",
+                "--gtest_filter=Bridge.File",
+                "${env:OutRoot}Winx64/Product/MstnBridge/DgnV8BridgeM02.dll",
+                "${env:IMODEL_BRIDGE_FWK_TEST_STAGING_DIR}sourceFiles/test3d.dgn"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [
+                { "name": "imodel-bridge-fwk-briefcase-manager", "value": "1" }
+            ],
+            "externalConsole": false
+        },
+        {
+            "name": "iModelBridgeFwk.exe",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}Winx64/Product/iModelBridgeFwk/bin/iModelBridgeFwk.exe",
+            "args": [
+                "@${env:IMODEL_BRIDGE_FWK_TEST_STAGING_DIR}iModelBridgeForMstn.rsp",
+                "--fwk-input=${env:IMODEL_BRIDGE_FWK_TEST_STAGING_DIR}sourceFiles/cve.dgn",
+                "--server-repository=Test36",
+                "--fwk-staging-dir=${env:IMODEL_BRIDGE_FWK_TEST_STAGING_DIR}bridge",
+                "--fwk-assetsDir=${env:OutRoot}Winx64/Product/MstnBridge/assets"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${env:IMODEL_BRIDGE_FWK_TEST_STAGING_DIR}bridge",
+            "environment": [
+                { "name": "imodel-bridge-fwk-briefcase-manager", "value": "1" }
+            ],
+            "externalConsole": false
+        },
+        {
+            "name": "MstnBridgeTests.exe",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}WinX64/Product/MstnBridgeTests/MstnBridgeTests.exe",
+            "args": [
+                "--gtest_break_on_failure"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [
+                {
+                    "name": "MSTN_BRIDGE_TESTS_IMODEL_BANK_SERVER_JS",
+                    "value": "${env:SrcRoot}imodel-bank/server/lib/WebServer/hub-api/runWebServer.js"
+                },
+                { 
+                    "name": "imodel-bridge-fwk-briefcase-manager",
+                    "value": "1"
+                },
+                {
+                    "name": "IMODEL_BRIDGE_TRAP",
+                    "value": "none"
+                }
+            ],
+            "externalConsole": false
+        },
+        {
+            "name": "(Windows) Attach",
+            "type": "cppvsdbg",
+            "request": "attach",
+            "processId": "${command:pickProcess}"
+        },
         {
             "name": "LNX Native BeHttpTest",
             "type": "cppdbg",
@@ -209,14 +272,21 @@
             "args": [
                 "/workspace/imodeljs/core/backend/node_modules/mocha/bin/_mocha",
                 "--check-leaks",
-                "--require", "source-map-support/register",
-                "--watch-extensions", "ts",
-                "-u", "tdd",
-                "--timeout", "999999",
+                "--require",
+                "source-map-support/register",
+                "--watch-extensions",
+                "ts",
+                "-u",
+                "tdd",
+                "--timeout",
+                "999999",
                 "--colors",
-                "--reporter", "/workspace/imodeljs/tools/build/mocha-reporter/index.js",
-                "--reporter-options", "mochaFile=/workspace/imodeljs/core/backend/lib/test/junit_results.xml",
-                "--grep", "\\#integration",
+                "--reporter",
+                "/workspace/imodeljs/tools/build/mocha-reporter/index.js",
+                "--reporter-options",
+                "mochaFile=/workspace/imodeljs/core/backend/lib/test/junit_results.xml",
+                "--grep",
+                "\\#integration",
                 "--invert",
                 "--offline",
                 "mock",
@@ -258,7 +328,8 @@
                 "--debug",
                 "--recursive",
                 "--offline=mock",
-                "--grep", "\\#integration",
+                "--grep",
+                "\\#integration",
                 "--invert"
             ],
             "port": 9229,

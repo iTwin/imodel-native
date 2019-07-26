@@ -83,13 +83,13 @@
     </category>
 
     <category name="iModelBridge">
-        <priority value="warn"/>
+        <priority value="info"/>
     </category>
     <category name="iModelBridgeFwk">
-        <priority value="warn"/>
+        <priority value="info"/>
     </category>
     <category name="iModelHub">
-        <priority value="warn"/>
+        <priority value="info"/>
     </category>
     <category name="Bentley.Http">
         <priority value="warn"/>

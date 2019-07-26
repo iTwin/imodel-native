@@ -85,12 +85,12 @@ DgnCategoryId Converter::GetExtractionCategoryId(V8NamedViewType vt)
         case V8NamedViewType::Detail:       catName = CATEGORY_NAME_Detail;    break;
         }
 
-    DefinitionModelPtr definitionModel = GetJobDefinitionModel();
-    DgnCategoryId categoryId = DgnCategory::QueryCategoryId(GetDgnDb(), DrawingCategory::CreateCode(*definitionModel, catName));
+    DefinitionModelR definitionModel = GetDgnDb().GetDictionaryModel(); // *Conversion* is done in the definitions phase (in the shared channel) and so the dictionary model must be used.
+    DgnCategoryId categoryId = DgnCategory::QueryCategoryId(GetDgnDb(), DrawingCategory::CreateCode(definitionModel, catName));
     if (categoryId.IsValid())
         return categoryId;
 
-    categoryId = GetOrCreateDrawingCategoryId(*definitionModel, catName);
+    categoryId = GetOrCreateDrawingCategoryId(definitionModel, catName);
     GetOrCreateSubCategoryId(categoryId, SUBCATEGORY_NAME_Cut);
     GetOrCreateSubCategoryId(categoryId, SUBCATEGORY_NAME_InsideForward);
     GetOrCreateSubCategoryId(categoryId, SUBCATEGORY_NAME_InsideBackward);
@@ -562,28 +562,31 @@ static TargetDrawingBoundary getTargetDrawingBoundary(DgnV8EhCR viewEH, Converte
         if (regionLink->GetECTarget (scope, query, nullptr, getCreateOptions()))
             {
             DgnV8Api::DgnECInstanceIterable targetInstances = DgnV8Api::DgnECManager::GetManager().FindInstances (*scope, *query);
-            DgnV8Api::DgnECInstanceIterable::const_iterator targetInstance = targetInstances.begin ();
-            if (targetInstance != targetInstances.end ())
+            if (!targetInstances.IsNull() && !targetInstances.empty())
                 {
-                DgnECInstanceP instance = const_cast <DgnECInstanceP>(*targetInstance);
-                auto host = instance->GetInstanceHost();
-                auto hostType = instance->GetHostType();
-                if (host.IsElement())
+                DgnV8Api::DgnECInstanceIterable::const_iterator targetInstance = targetInstances.begin ();
+                if (targetInstance != targetInstances.end ())
                     {
-                    //printf(" ==>> %s\n", Converter::IssueReporter::FmtElement(*host.GetElementHandle()).c_str());
-                    TargetDrawingBoundary tdb;
-                    auto dbEh = host.GetElementHandle();
-                    if (dbEh != nullptr)
+                    DgnECInstanceP instance = const_cast <DgnECInstanceP>(*targetInstance);
+                    auto host = instance->GetInstanceHost();
+                    auto hostType = instance->GetHostType();
+                    if (host.IsElement())
                         {
-                        // Note: scope may be holding the V8 model open, and it may close and free all of its V8 ElementRefs when we return.
-                        tdb.m_modelMapping = cvt.FindFirstResolvedModelMapping(*dbEh->GetDgnModelP());
-                        tdb.m_eid = dbEh->GetElementId();
-                        return tdb;
+                        //printf(" ==>> %s\n", Converter::IssueReporter::FmtElement(*host.GetElementHandle()).c_str());
+                        TargetDrawingBoundary tdb;
+                        auto dbEh = host.GetElementHandle();
+                        if (dbEh != nullptr)
+                            {
+                            // Note: scope may be holding the V8 model open, and it may close and free all of its V8 ElementRefs when we return.
+                            tdb.m_modelMapping = cvt.FindFirstResolvedModelMapping(*dbEh->GetDgnModelP());
+                            tdb.m_eid = dbEh->GetElementId();
+                            return tdb;
+                            }
                         }
-                    }
 
-                //else if (host.IsModel())
-                //    printf(" ==>> %s\n", Converter::IssueReporter::FmtModel(*host.GetModel()).c_str());
+                    //else if (host.IsModel())
+                    //    printf(" ==>> %s\n", Converter::IssueReporter::FmtModel(*host.GetModel()).c_str());
+                    }
                 }
             }
 

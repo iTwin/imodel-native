@@ -1690,7 +1690,7 @@ DgnDbStatus IBriefcaseManager::OnModelOperation(DgnModelCR model, BeSQLite::DbOp
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus IBriefcaseManager::PerformAction(Request& req, PrepareAction action)
+RepositoryStatus IBriefcaseManager::_PerformPrepareAction(Request& req, PrepareAction action)
     {
     auto status = RepositoryStatus::Success;
     if (!req.IsEmpty())
@@ -1724,6 +1724,8 @@ RepositoryStatus IBriefcaseManager::PerformAction(Request& req, PrepareAction ac
     return status;
     }
 
+RepositoryStatus IBriefcaseManager::PerformPrepareAction(Request& req, PrepareAction action) {return _PerformPrepareAction(req, action);}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1734,7 +1736,7 @@ RepositoryStatus IBriefcaseManager::PrepareForElementOperation(Request& req, Dgn
 
     auto status = _PrepareForElementOperation(req, el, op);
     if (RepositoryStatus::Success == status)
-        status = PerformAction(req, action);
+        status = PerformPrepareAction(req, action);
 
     return status;
     }
@@ -1749,7 +1751,7 @@ RepositoryStatus IBriefcaseManager::PrepareForModelOperation(Request& req, DgnMo
 
     auto status = _PrepareForModelOperation(req, model, op);
     if (RepositoryStatus::Success == status)
-        status = PerformAction(req, action);
+        status = PerformPrepareAction(req, action);
 
     return status;
     }
@@ -2775,3 +2777,12 @@ void BulkUpdateBriefcaseManager::_OnUndoRedo(TxnManager& mgr, TxnAction action)
     T_Super::_OnUndoRedo(mgr, action);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+RepositoryStatus IRepositoryManager::_QueryHeldLocks(DgnLockSet& locks, DgnDbR db)
+    {
+    DgnLockSet unavailableLocks;
+    DgnCodeSet codes, unavailableCodes;
+    return QueryHeldResources(locks, codes, unavailableLocks, unavailableCodes, db);
+    }

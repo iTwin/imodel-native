@@ -9,7 +9,7 @@
 #include <DgnPlatform/DgnDb.h>
 #include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h>
 #include <iModelBridge/IModelClientForBridges.h>
-#include <iModelBridge/TestIModelHubClientForBridges.h>
+#include <iModelBridge/TestiModelHubClientForBridges.h>
 #include <WebServices/iModelHub/Client/Client.h>
 #include "MstnBridgeTestsLogProvider.h"
 #include "CodeScope.h"
@@ -123,6 +123,8 @@ struct MstnBridgeTestsFixture : ::testing::Test
     friend struct LogProcessor;
     protected:
     static MstnBridgeTestsLogProvider s_logProvider;
+    static int s_argc;
+    static char **s_argv;
     BentleyApi::BeFileName m_briefcaseName;
     BentleyApi::Dgn::IModelClientForBridges* m_client {};
     BentleyApi::BeFileName GetIModelParentDir();
@@ -166,10 +168,14 @@ struct MstnBridgeTestsFixture : ::testing::Test
     static BentleyApi::Utf8String ComputeAccessToken(Utf8CP uname);
     static BentleyApi::WString ComputeAccessTokenW(Utf8CP uname) {auto atok = ComputeAccessToken(uname); return BentleyApi::WString(atok.c_str(), true);}
 
+    static void InitializeHost();
+
     MstnBridgeTestsFixture() : m_client(nullptr) {}
     ~MstnBridgeTestsFixture();
 
     public:
+    static void SetArgcArgv(int c, char** v) {s_argc=c; s_argv=v;}
+
     static BentleyApi::BeFileName GetOutputDir();
 
     static BentleyApi::BeFileName  GetOutputFileName(BentleyApi::WCharCP filename);
@@ -280,9 +286,11 @@ struct FwkArgvMaker
     static BentleyApi::WString ReadRspFileFromTestData(BentleyApi::WCharCP rspFileBaseName);
     void SetUpBridgeProcessingArgs(WCharCP stagingDir, WCharCP bridgeRegSubkey, BentleyApi::BeFileNameCR bridgeDllName, WCharCP iModelName, bool useBank, WCharCP rspFileName);
     void PushArg(BentleyApi::WStringCR);
+    BentleyApi::WString PopArg();
 
     wchar_t const** GetArgV() const {return const_cast<wchar_t const**>(m_ptrs.data());}
     int GetArgC() const {return (int)m_ptrs.size();}
+    BentleyApi::bvector<BentleyApi::WString> GetArgVector() const {return BentleyApi::bvector<BentleyApi::WString> (m_ptrs.begin(), m_ptrs.end());}
 
     static void ReplaceArgValue(BentleyApi::bvector<BentleyApi::WString>& args, WCharCP argName, WCharCP newValue);
     static void ReplaceArgValue(BentleyApi::bvector<BentleyApi::WCharCP>& ptrs, WCharCP argName, WCharCP newValue);

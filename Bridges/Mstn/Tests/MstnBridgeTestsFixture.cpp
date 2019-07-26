@@ -7,7 +7,6 @@
 #include <tlhelp32.h>
 #include "ConverterInternal.h"
 #include "MstnBridgeTestsFixture.h"
-#include <iModelBridge/TestIModelHubClientForBridges.h>
 #include <iModelBridge/iModelBridgeFwk.h>
 #include <iModelBridge/FakeRegistry.h>
 #include <BeHttp/HttpClient.h>
@@ -17,6 +16,8 @@
 #include <Bentley/Desktop/FileSystem.h>
 
 MstnBridgeTestsLogProvider MstnBridgeTestsFixture::s_logProvider;
+int MstnBridgeTestsFixture::s_argc;
+char **MstnBridgeTestsFixture::s_argv;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  10/2018
@@ -97,7 +98,7 @@ BentleyApi::BeFileName MstnBridgeTestsFixture::GetSeedFile()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MstnBridgeTestsFixture::SetUpTestCase()
+void MstnBridgeTestsFixture::InitializeHost()
     {
     BentleyApi::NativeLogging::LoggingConfig::ActivateProvider(&s_logProvider);
 
@@ -117,11 +118,22 @@ void MstnBridgeTestsFixture::SetUpTestCase()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void MstnBridgeTestsFixture::SetUpTestCase()
+    {
+    BentleyApi::NativeLogging::LoggingConfig::ActivateProvider(&s_logProvider);
+    InitializeHost();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  02/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MstnBridgeTestsFixture::TearDownTestCase()
     {
     BentleyApi::BeFileName::EmptyAndRemoveDirectory(GetOutputDir());
+    BentleyApi::NativeLogging::LoggingConfig::DeactivateProvider();
+    BentleyApi::Http::HttpClient::Uninitialize();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -570,6 +582,16 @@ void FwkArgvMaker::Clear()
 void FwkArgvMaker::PushArg(BentleyApi::WStringCR arg)
     {
     m_ptrs.push_back(_wcsdup(arg.c_str()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyApi::WString FwkArgvMaker::PopArg()
+    {
+    auto lastArg = m_ptrs.back();
+    m_ptrs.pop_back();
+    return lastArg;
     }
 
 /*---------------------------------------------------------------------------------**//**

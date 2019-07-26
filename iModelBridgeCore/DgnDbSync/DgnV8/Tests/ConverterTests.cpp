@@ -735,7 +735,6 @@ static void convertSomeElements(DgnDbR outputBim, Bentley::DgnFileR v8File, Bent
     //      Instead, you can ask the converter to convert all of the levels in the V8 file to BIM categories with the same names.
     //      If you do that, you must first tell the converter to convert linestyles and to create the "Default" category.
     cvt.ConvertAllLineStyles(v8File);
-    cvt.InitUncategorizedCategory();
     cvt.ConvertAllSpatialLevels(v8File);
 
     //  Set up the source GCS -> BIM GCS transformation.

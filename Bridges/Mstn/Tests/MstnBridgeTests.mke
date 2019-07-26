@@ -15,7 +15,7 @@ dirToSearch = $(BuildContext)SubParts/UnitTests/include
 %include cincapnd.mki
 
 # -- HACK -- HACK -- HACK -- HACK -- HACK -- HACK -- HACK -- HACK -- HACK -- HACK -- HACK -- HACK --
-# We reach into privateapi to get TestIModelHubClientForBridges.h
+# We reach into privateapi to get TestIModelHubClientForBridges.h and FakeRegistry.h
 iModelBridgePrivateAPISrc = $(SrcRoot)imodel02/iModelBridgeCore/DgnDbSync/PrivateAPI/
 dirToSearch  = $(iModelBridgePrivateAPISrc)
 %include cincapnd.mki

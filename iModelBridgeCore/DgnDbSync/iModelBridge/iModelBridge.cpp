@@ -126,10 +126,10 @@ DgnDbPtr iModelBridge::DoCreateDgnDb(bvector<DgnModelId>& jobModels, Utf8CP root
         LOG.fatalv("_MakeSchemaChanges failed");
         return nullptr; // caller must call abandon changes
         }
-    //We will need import the provenance schema
-    bool madeChanges;
     
+    db->BriefcaseManager().GetChannelPropsR().isInitializingChannel = true;
     auto jobsubj = _InitializeJob();
+    db->BriefcaseManager().GetChannelPropsR().isInitializingChannel = false;
     if (!jobsubj.IsValid())
         {
         LOG.fatalv("Failed to create job structure");
@@ -220,6 +220,8 @@ DgnDbPtr iModelBridge::OpenBimAndMergeSchemaChanges(BeSQLite::DbResult& dbres, b
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridge::DoMakeDefinitionChanges(SubjectCPtr& jobsubj, DgnDbR db)
     {
+    BeAssert(db.BriefcaseManager().IsSharedChannel());
+
     if (_GetParams().GetInputFileName().empty())
         return BSISUCCESS;
 
@@ -236,7 +238,9 @@ BentleyStatus iModelBridge::DoMakeDefinitionChanges(SubjectCPtr& jobsubj, DgnDbR
     if (!jobsubj.IsValid())
         {
         _GetParams().SetIsUpdating(false);
-        jobsubj = _InitializeJob();    // this is probably the first time that this bridge has tried to convert this input file into this iModel
+        db.BriefcaseManager().GetChannelPropsR().isInitializingChannel = true;
+        jobsubj = _InitializeJob();    // this is the first time that this bridge has tried to convert this input file into this iModel
+        db.BriefcaseManager().GetChannelPropsR().isInitializingChannel = false;
         if (!jobsubj.IsValid())
             {
             LOG.fatalv("Failed to create job structure");
@@ -245,6 +249,7 @@ BentleyStatus iModelBridge::DoMakeDefinitionChanges(SubjectCPtr& jobsubj, DgnDbR
         }
 
     _GetParams().SetJobSubjectId(jobsubj->GetElementId());
+    db.BriefcaseManager().GetChannelPropsR().channelParentId = jobsubj->GetElementId();
 
     //  Now make normal definition changes, such as converting levels into Categories.
     if (BSISUCCESS != _MakeDefinitionChanges(*jobsubj))
@@ -271,6 +276,7 @@ BentleyStatus iModelBridge::DoMakeDefinitionChanges(SubjectCPtr& jobsubj, DgnDbR
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridge::DoConvertToExistingBim(DgnDbR db, SubjectCR jobsubj, bool detectDeletedFiles)
     {
+    BeAssert(db.BriefcaseManager().IsNormalChannel());
     BeAssert(!db.BriefcaseManager().IsBulkOperation());
 
     db.BriefcaseManager().StartBulkOperation();
@@ -306,6 +312,7 @@ BentleyStatus iModelBridge::DoConvertToExistingBim(DgnDbR db, SubjectCR jobsubj,
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridge::DoOnAllDocumentsProcessed(DgnDbR db)
     {
+    BeAssert(db.BriefcaseManager().IsNormalChannel());
     BeAssert(!db.BriefcaseManager().IsBulkOperation());
 
     db.BriefcaseManager().StartBulkOperation();
@@ -1328,4 +1335,49 @@ BentleyStatus	iModelBridge::TrackUsage()
      va_start(args, description);
      LogPerformance(stopWatch, "iModelBridgeFwk", description, args);
      va_end(args);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridge::FindParentJobSubject(iModelBridge::JobMemberInfo& info, DgnElementCR child)
+    {
+    if (child.GetElementId() == child.GetDgnDb().Elements().GetRootSubjectId())
+        return;
+
+    auto thisParent = child.GetDgnDb().Elements().GetElement(child.GetParentId());
+    if (!thisParent.IsValid())
+        {
+        // If the child has no parent, then see if its model is a child of the JobSubject
+        return FindParentJobSubject(info, *child.GetModel()->GetModeledElement());
+        }
+
+    // The element has a parent.
+
+    // See if the parent is a Job Subject.
+    auto parentSubject = dynamic_cast<SubjectCP>(thisParent.get());
+    if ((nullptr != parentSubject) && JobSubjectUtils::IsJobSubject(*parentSubject))
+        {
+        info.m_jobSubject = parentSubject;
+        return;     // found it!
+        }
+
+    // The element's parent is not a Subject or is not a Job Subject. 
+    // Recurse to see if the parent is the child of a Job Subject.
+    return FindParentJobSubject(info, *thisParent);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+iModelBridge::JobMemberInfo iModelBridge::ComputeJobMemberInfo(DgnElementCR el)
+    {
+    iModelBridge::JobMemberInfo info(el, nullptr);
+
+    auto subj = dynamic_cast<SubjectCP>(&el);
+    if ((nullptr != subj) && JobSubjectUtils::IsJobSubject((*subj)))
+        info.m_jobSubject = subj;
+    else
+        iModelBridge::FindParentJobSubject(info, el);
+    return info;
     }

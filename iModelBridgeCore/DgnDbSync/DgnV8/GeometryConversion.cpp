@@ -1117,6 +1117,9 @@ virtual StatusInt _GetRange(Bentley::DRange3d& range) const override
 //---------------------------------------------------------------------------------------
 LineStyleStatus LineStyleConverter::ConvertPointSymbol(LsComponentId& v10Id, DgnV8Api::DgnFile&v8File, DgnV8Api::LsCacheSymbolComponent const& symbolComponent, double lsScale)
     {
+    if (BSISUCCESS != m_converter.MustBeInSharedChannel("linestyles must be converted in the shared channel."))
+        return LineStyleStatus::LINESTYLE_STATUS_Error;
+
     v10Id = LsComponentId();
 
     DisplayPointSymbol  displaySymbol(symbolComponent);
@@ -1146,7 +1149,7 @@ LineStyleStatus LineStyleConverter::ConvertPointSymbol(LsComponentId& v10Id, Dgn
         builder->Append(*elemGeom);
         }
 
-    DgnGeometryPartPtr geomPart = DgnGeometryPart::Create(*(m_converter.GetJobDefinitionModel()));
+    DgnGeometryPartPtr geomPart = DgnGeometryPart::Create(GetDgnDb().GetDictionaryModel()); // Yes, the geom parts for lstyles go into the dictionary model, because the lstyles themselves go there. This is in the Shared channel.
     if (SUCCESS != builder->Finish(*geomPart))
         return LINESTYLE_STATUS_ConvertingComponent;
 

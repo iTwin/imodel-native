@@ -394,6 +394,20 @@ void Converter::_DeleteFileAndContents(RepositoryLinkId repositoryLinkId)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static void setChannelParentFromModel(DgnModelR model)
+    {
+    auto modeledElement = model.GetModeledElement();
+    if (!modeledElement.IsValid())
+        return;
+
+    auto jobMemberInfo = iModelBridge::ComputeJobMemberInfo(*modeledElement);
+    if (jobMemberInfo.IsChildOfJob())
+        model.GetDgnDb().BriefcaseManager().GetChannelPropsR().channelParentId = jobMemberInfo.m_jobSubject->GetElementId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RootModelConverter::DeleteEmbeddedFileAndContents(RepositoryLinkId repositoryLinkId)
@@ -402,6 +416,8 @@ void RootModelConverter::DeleteEmbeddedFileAndContents(RepositoryLinkId reposito
     if (!rlink.IsValid())
         return;
     
+    bool hasSetChannelParent = false;
+
     SyncInfo::V8ModelExternalSourceAspectIterator modelsInFile(*rlink);
     for (auto wasModel : modelsInFile)
         {
@@ -410,6 +426,17 @@ void RootModelConverter::DeleteEmbeddedFileAndContents(RepositoryLinkId reposito
             {
             BeAssert(false && "I found a Model *aspect*, and yet I cannot access the model that it points to. That's impossible.:");
             continue;
+            }
+
+        if (!hasSetChannelParent)
+            {
+            // TRICKY! 
+            // I have to impersonate this job. The caller will push, and so the push will go to the job's channel.
+            // Note that this only works if all jobs for a bridge use the same briefcase Id.
+            // Here I iook up the Job Subject for the master file represented by `repositoryLinkId`.
+            // Since all models converted from a given file are processed by the same job, I can do the look-up using the first one I encounter.
+            setChannelParentFromModel(*model);
+            hasSetChannelParent = true;
             }
 
         SyncInfo::V8ElementExternalSourceAspectIterator elementsInModel(*model);

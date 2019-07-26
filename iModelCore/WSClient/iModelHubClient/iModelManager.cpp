@@ -140,6 +140,31 @@ RepositoryStatus iModelManager::_QueryHeldResources(DgnLockSet& locks, DgnCodeSe
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Sam.Wilson                      07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+RepositoryStatus iModelManager::_QueryHeldLocks(DgnLockSet& locks, DgnDbR db)
+    {
+    if (m_connection.IsNull())
+        return RepositoryStatus::ServerUnavailable;
+
+    auto result = ExecuteAsync(m_connection->QueryLocksByBriefcaseId(db.GetBriefcaseId(), m_cancellationToken()));
+
+    if (result->IsSuccess())
+        {
+        auto& lockInfos = result->GetValue();
+        for (auto const& lockInfo : lockInfos)
+            {
+            locks.insert(DgnLock(lockInfo.GetLockableId(), lockInfo.GetOwnership().GetLockLevel()));
+            }
+        return RepositoryStatus::Success;
+        }
+    else
+        {
+        return RepositoryStatus::ServerUnavailable;//NEEDSWORK: Use appropriate status
+        }
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Eligijus.Mauragas               01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 RepositoryStatus iModelManager::_QueryStates(DgnLockInfoSet& lockStates, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, 

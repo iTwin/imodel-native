@@ -157,7 +157,19 @@ public:
         DGNPLATFORM_EXPORT void ToJson(JsonValueR value) const; //!< Convert to JSON representation
         DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
     };
-        
+
+    enum class ChannelType { None, Shared, Normal };
+
+    struct ChannelProps
+        {
+        ChannelType channelType = ChannelType::None;
+        bool isInitializingChannel {};
+        bool reportCodesInLockedModels = true;
+        bool includeUsedLocksInChangeSet = true;
+        bool stayInChannel = false;
+        DgnElementId channelParentId;
+        };
+
     //! Options for querying availability of locks and codes
     enum class FastQuery
     {
@@ -166,7 +178,10 @@ public:
     };
 private:
     DgnDbR  m_db;
+protected:
+    ChannelProps m_channelProps;
 
+private:
     void ReformulateLockRequest(LockRequestR, Response const&) const;
     void ReformulateCodeRequest(DgnCodeSet&, Response const&) const;
     void RemoveElements(LockRequestR, DgnModelId) const;
@@ -205,16 +220,33 @@ protected:
     virtual void _ExtractRequestFromBulkOperation(Request&, bool locks, bool codes) {;}
     virtual bset<CodeSpecId> _GetFilteredCodeSpecIds() { return bset<CodeSpecId>(); }
 
+    DGNPLATFORM_EXPORT virtual RepositoryStatus _PerformPrepareAction(Request& req, PrepareAction action);
+
     DGNPLATFORM_EXPORT IRepositoryManagerP GetRepositoryManager() const;
     DGNPLATFORM_EXPORT bool LocksRequired() const;
     DGNPLATFORM_EXPORT RepositoryStatus PrepareForElementOperation(Request& req, DgnElementCR el, BeSQLite::DbOpcode opcode, PrepareAction action);
     DGNPLATFORM_EXPORT RepositoryStatus PrepareForModelOperation(Request& req, DgnModelCR model, BeSQLite::DbOpcode opcode, PrepareAction action);
-    RepositoryStatus PerformAction(Request& req, PrepareAction action);
+    RepositoryStatus PerformPrepareAction(Request& req, PrepareAction action);
     DgnDbStatus OnElementOperation(DgnElementCR el, BeSQLite::DbOpcode opcode);
     DgnDbStatus OnModelOperation(DgnModelCR model, BeSQLite::DbOpcode opcode);
     static DgnDbStatus ToDgnDbStatus(RepositoryStatus repoStatus, Request const& request);
 public:
     DgnDbR GetDgnDb() const { return m_db; } //!< The DgnDb managed by this object
+
+    bool IsNoChannel() const {return ChannelType::None == m_channelProps.channelType;}
+    bool IsSharedChannel() const {return ChannelType::Shared == m_channelProps.channelType;}
+    bool IsNormalChannel() const {return ChannelType::Normal == m_channelProps.channelType;}
+
+    // Should the changeset be examined to determine what locks are needed before pushing?
+    bool ShouldIncludeUsedLocksInChangeSet() {return m_channelProps.includeUsedLocksInChangeSet;}
+    // Should the Codes found on elements in exclusively locked models be reported as used to the Code service?
+    bool ShouldReportCodesInLockedModels() {return m_channelProps.reportCodesInLockedModels;}
+    // Should client code be restricted to write to shared definition models *only* in the Shared channel and to bridge models *only* in the Normal channel
+    bool StayInChannel() {return m_channelProps.stayInChannel;}
+
+    ChannelProps GetChannelProps() const {return m_channelProps;}
+    ChannelProps& GetChannelPropsR() {return m_channelProps;}
+    void SetChannelProps(ChannelProps const& p) {m_channelProps=p;}
 
     //! @name Managing both Locks and Codes
     //@{
@@ -475,6 +507,8 @@ protected:
     virtual RepositoryStatus _Relinquish(Resources which, DgnDbR db) = 0;
     virtual RepositoryStatus _QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnLockSet& unavailableLocks, DgnCodeSet& unavailableCodes, DgnDbR db) = 0;
     virtual RepositoryStatus _QueryStates(DgnLockInfoSet& lockStates, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, DgnCodeSet const& codes) = 0;
+    DGNPLATFORM_EXPORT virtual RepositoryStatus _QueryHeldLocks(DgnLockSet&, DgnDbR);
+
 public:
     //! Process a briefcase's request to acquire locks and/or reserve codes
     //! @param[in]      req The set of desired codes and/or locks, and options for customizing what data is included in the response
@@ -531,6 +565,14 @@ public:
     //! @param[in]      locks  The set of locks to query
     //! @return Success, or an error status
     DGNPLATFORM_EXPORT RepositoryStatus QueryLockStates(DgnLockInfoSet& states, LockableIdSet const& locks);
+
+    //! Returns all locks held by the briefcase.
+    //! @param[in]      states Upon successful return, holds the state of each lock held by the briefcase
+    //! @param[in]      db    The requesting briefcase
+    //! @return Success, or an error status
+    //! @remarks This method only returns locks tracked by the repository - e.g., excluding locks implicitly held for elements/models created locally by this briefcase and not yet committed to the repository
+    DGNPLATFORM_EXPORT RepositoryStatus QueryHeldLocks(DgnLockSet& states, DgnDbR db) { return _QueryHeldLocks(states, db); };
+
 };
 
 ENUM_IS_FLAGS(IBriefcaseManager::ResponseOptions);

@@ -12,6 +12,7 @@
 #include <Bentley/BeFileName.h>
 #include <Logging/bentleylogging.h>
 #include <Bentley/Desktop/FileSystem.h>
+#include "MstnBridgeTestsFixture.h"
 
 /*---------------------------------------------------------------------------------**//**
 * This class knows how data files are linked into the Product/ECObjectsXXXTests directory structure.
@@ -235,6 +236,8 @@ extern "C" int main (int argc, char **argv)
         args.push_back(argv[i]);
         }
     ::testing::InitGoogleTest (&argc, argv);
+
+    MstnBridgeTestsFixture::SetArgcArgv(argc, argv);
 
     //listener with test failure output
     ::testing::TestEventListeners& listeners = ::testing::UnitTest::GetInstance()->listeners();

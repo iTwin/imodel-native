@@ -250,6 +250,7 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         {
         iModelBridgeFwk& m_fwk;
         IRepositoryManagerP _GetRepositoryManager(DgnDbR db) const override;
+        IBriefcaseManagerPtr _CreateBriefcaseManager(DgnDbR db) const override;
         FwkRepoAdmin(iModelBridgeFwk& fwk) : m_fwk(fwk) {}
         };
 
@@ -278,6 +279,7 @@ protected:
     Utf8String m_briefcaseBasename;
     int m_maxRetryCount;
     bool m_isCreatingNewRepo {};
+    bool m_areCodesInLockedModelsReported = true;    // This an OUTPUT variable, set to the result of calling a method on the BriefcaseManager
     DmsServerArgs m_dmsServerArgs;
     FwkRepoAdmin* m_repoAdmin {};
     IDmsSupport*    m_dmsSupport;
@@ -358,6 +360,7 @@ public:
     IMODEL_BRIDGE_FWK_EXPORT int Run(int argc, WCharCP argv[]);
 
     BeFileName GetBriefcaseName() const {return m_briefcaseName;}
+    bool AreCodesInLockedModelsReported() const {return m_areCodesInLockedModelsReported;}  //<! Query if the briefcase manager reports Codes in locked models to the Code service
 
     static NativeLogging::ILogger& GetLogger() { return *NativeLogging::LoggingManager::GetLogger("iModelBridge"); }
     bool GetCreateRepositoryIfNecessary() const {return m_jobEnvArgs.m_createRepositoryIfNecessary;}

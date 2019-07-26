@@ -503,6 +503,16 @@ struct iModelBridge
         virtual PushStatus _Push(Utf8CP revisionComment) = 0;
         };
 
+    //! Information about an element that is in a bridge's Job Subject child element/model hierarchy, that is, in the Job's channel.
+    struct JobMemberInfo
+        {
+        SubjectCPtr m_jobSubject;   //!< If valid, the Job Subject element, which is the parent of the channel that contains the member element.
+        DgnElementId m_memberElementId; //!< The ID of an element that is to be checked for membership in a Job channel
+        JobMemberInfo(DgnElementCR el, SubjectCP s) : m_jobSubject(s), m_memberElementId(el.GetElementId()) {}
+        bool IsJobOrChild() const {return m_jobSubject.IsValid();} //!< Is the member element the Job Subject or a child of it?
+        bool IsChildOfJob() const {return m_jobSubject.IsValid() && (m_memberElementId != m_jobSubject->GetElementId());} //!< Is the member element a child of the Job Subject?
+        };
+
     //! Parameters that are common to all bridges.
     //! These parameters are set up by the iModelBridgeFwk based on job definition parameters and other sources.
     //! In a standalone converter, they are set from the command line.
@@ -908,8 +918,6 @@ public:
     //! @return non-zero error status if the bridge cannot make the changes that it requires. See @ref ANCHOR_BridgeIssuesAndLogging "reporting issues"
     //! @note The bridge should *not* convert elements or models in this function.
     //! @note The schema lock is held (by the framework) when this function is called.
-    //! @note If the bridge must make definition changes in public models as part of its _ConvertToBim function, then the bridge
-    //! must override _ConvertToBimRequiresExclusiveLock to return true.
     virtual BentleyStatus _MakeDefinitionChanges(SubjectCR jobSubject) {return BSISUCCESS;}
 
     //! Try to find an existing @ref ANCHOR_BridgeJobSubject "job subject" in the BIM.
@@ -960,9 +968,6 @@ public:
     //! Called after all calls to this bridge have been made (either on all masterfiles in a full run or all changed masterfiles in an incremental run).
     //! This is not a request to convert anything. In fact, the inputFile property of Params may be empty.
     virtual BentleyStatus _OnAllDocumentsProcessed() {return BSISUCCESS;}
-
-    //! Query if the bridge must have exclusive access to the iModel while converting data.
-    virtual bool _ConvertToBimRequiresExclusiveLock() {return false;}
 
     //! Returns true if the DgnDb itself is being generated from an empty file (rare).
     bool IsCreatingNewDgnDb() {return _GetParams().IsCreatingNewDgnDb();}
@@ -1107,6 +1112,11 @@ public:
     //! @param params The bridge parameters structure
     IMODEL_BRIDGE_EXPORT static Utf8String ComputeJobSubjectName(SubjectCR parent, Params const& params, Utf8StringCR bridgeSpecificSuffix);
 
+    //! Given an element, look up the bridge "job" Subject that is the parent of the subject hierarchy and/or model breakdown structure containing the element.
+    //! If el is not the child of any bridge job, then the returned JobMemberInfo's IsJobOrChild IsChildOfJob functions will return false, and the subject element pointer will be invalid.
+    IMODEL_BRIDGE_EXPORT static JobMemberInfo ComputeJobMemberInfo(DgnElementCR el);
+
+    IMODEL_BRIDGE_EXPORT static void FindParentJobSubject(JobMemberInfo&, DgnElementCR child);
 
     IMODEL_BRIDGE_EXPORT static void LogPerformance(StopWatch& stopWatch, Utf8CP scope, Utf8CP description, va_list argPtr);
     IMODEL_BRIDGE_EXPORT static void LogPerformance(StopWatch& stopWatch, Utf8CP description, ...);

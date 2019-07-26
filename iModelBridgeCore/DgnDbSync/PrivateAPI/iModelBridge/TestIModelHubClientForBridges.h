@@ -13,55 +13,225 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct TestRepositoryAdmin : IRepositoryManager
     {
-    BeSQLite::BeBriefcaseId m_holdsSchemaLock;
+    DgnLockInfoSet m_lockDb;
+    DgnCodeInfoSet m_codeStates;
 
     static DgnLock GetSchemaLock(DgnDbR db) {return DgnLock(db.Schemas(), LockLevel::Exclusive);}
 
-    virtual Response _ProcessRequest(Request const& req, DgnDbR db, bool queryOnly)
+    LockLevel GetLevelHeldByBriefcase(DgnLockOwnership const& ownership, BeSQLite::BeBriefcaseId bcId)
         {
-        Response response(queryOnly ? IBriefcaseManager::RequestPurpose::Query : IBriefcaseManager::RequestPurpose::Acquire, req.Options());
-        response.SetResult(RepositoryStatus::Success);
-        if (req.Locks().GetLockSet().find(GetSchemaLock(db)) != req.Locks().GetLockSet().end())
+        auto const &exc = ownership.GetExclusiveOwner();
+        if (exc.IsValid())
+            return (exc == bcId)? LockLevel::Exclusive: LockLevel::None;
+        auto const &sharedOwners = ownership.GetSharedOwners();
+        return (sharedOwners.find(bcId) != sharedOwners.end())? LockLevel::Shared: LockLevel::None;
+        }
+
+    DgnLockInfo MakeLockInfo(DgnLock const& lock)
+        {
+        return DgnLockInfo(lock.GetLockableId());
+        }
+
+
+    void ReleaseLock(DgnLockInfo& held, BeSQLite::BeBriefcaseId bcId, Utf8StringCR revisionId)
+        {
+        DgnLockOwnership& heldOwnership = held.GetOwnership();
+
+        if (heldOwnership.GetExclusiveOwner() == bcId)
             {
-            if (m_holdsSchemaLock == db.GetBriefcaseId())
-                response.SetResult(RepositoryStatus::LockAlreadyHeld);
-            else
-                m_holdsSchemaLock = db.GetBriefcaseId();
+            held.Reset();
+            held.SetRevisionId(revisionId);
+            BeAssert(!held.IsTracked());
+            return;
+            }
+
+        auto sharedOwners = heldOwnership.GetSharedOwners();
+        BeAssert(sharedOwners.find(bcId) != sharedOwners.end());
+        sharedOwners.erase(bcId);
+        if (sharedOwners.empty())
+            {
+            held.Reset();
+            held.SetRevisionId(revisionId);
+            BeAssert(!held.IsTracked());
+            return;
+            }
+
+        heldOwnership.Reset();
+        for (auto const& otherOwner: sharedOwners)
+            heldOwnership.AddSharedOwner(otherOwner);
+
+        held.SetRevisionId(revisionId);
+        }
+
+    void TakeUnownedLock(DgnLock const& requestedLock, BeSQLite::BeBriefcaseId bcId, Utf8StringCR clientParentRevisionId)
+        {
+        auto iHeld = m_lockDb.find(MakeLockInfo(requestedLock));
+
+        if (iHeld == m_lockDb.end())
+            iHeld = m_lockDb.insert(DgnLockInfo(requestedLock.GetLockableId(), true)).first;
+        else
+            {
+            BeAssert(iHeld->GetOwnership().GetLockLevel() == LockLevel::None);
+    
+            // TODO: if indexof(clientParentRevisionId) < indexof(held.GetRevisionId())
+            //          Pull is required
+            }
+
+        DgnLockOwnership newOwner;
+        if (requestedLock.GetLevel() == LockLevel::Exclusive)
+            newOwner.SetExclusiveOwner(bcId);
+        else
+            newOwner.AddSharedOwner(bcId);
+
+        iHeld->SetTracked();
+        iHeld->GetOwnership() = newOwner;
+        }
+
+    Response ProcessQuery(Request const& req, DgnDbR db)
+        {
+        auto bcId = db.GetBriefcaseId();
+        Response response(IBriefcaseManager::RequestPurpose::Query, req.Options());
+        response.SetResult(RepositoryStatus::Success);
+        auto& requestedLockSet = req.Locks().GetLockSet();
+        for (auto const& requestedLock: requestedLockSet)
+            {
+            auto iHeld = m_lockDb.find(MakeLockInfo(requestedLock));
+            if (iHeld != m_lockDb.end())
+                response.LockStates().insert(*iHeld);       // *** NEEDS WORK: Should return only the locks that the briefcase owns?
+            }
+        return response;
+        } 
+
+    void ProcessedUpdateLockRequest(Response& response, DgnLock const& requestedLock, BeSQLite::BeBriefcaseId bcId, Utf8StringCR clientParentRevisionId)
+        {
+        auto requestedLevel = requestedLock.GetLevel();
+        BeAssert(requestedLevel > LockLevel::None && "Should use _Demote to downgrade or release locks");
+
+        auto iHeld = m_lockDb.find(MakeLockInfo(requestedLock));
+
+        if ((iHeld == m_lockDb.end()) || (iHeld->GetOwnership().GetLockLevel() == LockLevel::None))
+            {
+            TakeUnownedLock(requestedLock, bcId, clientParentRevisionId);
+            return;
+            }
+
+        // Lock is held.
+        auto& held = *iHeld;
+        auto& heldOwnership = held.GetOwnership();
+
+        auto levelHeldByThisBriefcase = GetLevelHeldByBriefcase(heldOwnership, bcId);  // May be LockLevel::None
+        if (levelHeldByThisBriefcase >= requestedLevel)
+            {
+            return;
+            }
+
+        if (heldOwnership.GetLockLevel() == LockLevel::Exclusive)
+            {
+            BeAssert(heldOwnership.GetExclusiveOwner() != bcId);
+            response.SetResult(RepositoryStatus::LockAlreadyHeld);
+            response.LockStates().insert(*iHeld);
+            return;
+            }
+
+        BeAssert(heldOwnership.GetLockLevel() == LockLevel::Shared);
+        BeAssert(levelHeldByThisBriefcase <= LockLevel::Shared); // if the lock was already held at the exclusive level, we would have returned early before getting here.
+
+        if (requestedLevel == LockLevel::Exclusive)
+            {
+            if (levelHeldByThisBriefcase == LockLevel::Shared)
+                {
+                auto sharedOwners = heldOwnership.GetSharedOwners();
+                BeAssert(sharedOwners.find(bcId) != sharedOwners.end());
+                if (sharedOwners.size() == 1)
+                    {
+                    heldOwnership.SetExclusiveOwner(bcId);
+                    return;
+                    }
+                response.SetResult(RepositoryStatus::LockAlreadyHeld);  // There are other shared owners. Can't upgrade to Exclusive.
+                response.LockStates().insert(*iHeld);
+                return;
+                }
+            }
+
+        BeAssert(requestedLevel == LockLevel::Shared);
+        BeAssert(levelHeldByThisBriefcase <= LockLevel::None);
+        heldOwnership.AddSharedOwner(bcId);
+        }
+
+    Response ProcessUpdate(Request const& req, DgnDbR db)
+        {
+        auto bcId = db.GetBriefcaseId();
+        Response response(IBriefcaseManager::RequestPurpose::Query, req.Options());
+        response.SetResult(RepositoryStatus::Success);
+        for (auto const& l: req.Locks().GetLockSet())
+            {
+            ProcessedUpdateLockRequest(response, l, bcId, db.Revisions().GetParentRevisionId());
             }
         return response;
         }
 
+    virtual Response _ProcessRequest(Request const& req, DgnDbR db, bool queryOnly)
+        {
+        return queryOnly? ProcessQuery(req, db): ProcessUpdate(req, db);
+        }
+
     virtual RepositoryStatus _Demote(DgnLockSet const& locks, DgnCodeSet const& codes, DgnDbR db)
         {
-        if (locks.find(GetSchemaLock(db)) != locks.end())
+        auto bcId = db.GetBriefcaseId();
+        for (auto const& lock: locks)
             {
-            if (m_holdsSchemaLock != db.GetBriefcaseId())
+            auto iHeld = m_lockDb.find(MakeLockInfo(lock));
+            if (iHeld == m_lockDb.end())
                 return RepositoryStatus::LockNotHeld;
-            m_holdsSchemaLock = BeSQLite::BeBriefcaseId();
+            auto& held = *iHeld;
+            auto& heldOwnership = held.GetOwnership();
+            auto requestedLevel = lock.GetLevel();
+            if (requestedLevel == LockLevel::None)
+                ReleaseLock(*iHeld, bcId, db.Revisions().GetParentRevisionId());
+            else
+                {
+                BeAssert(requestedLevel == LockLevel::Shared);
+                BeAssert (heldOwnership.GetExclusiveOwner() == bcId);
+                heldOwnership.Reset();
+                heldOwnership.AddSharedOwner(bcId);
+                }
             }
         return RepositoryStatus::Success;
         }
     virtual RepositoryStatus _Relinquish(Resources which, DgnDbR db)
         {
-        if (Resources::Locks == (which & Resources::Locks))
+        auto bcId = db.GetBriefcaseId();
+        for (auto& lockInfo: m_lockDb)
             {
-            if (m_holdsSchemaLock == db.GetBriefcaseId())
-                m_holdsSchemaLock = BeSQLite::BeBriefcaseId();
+            if (GetLevelHeldByBriefcase(lockInfo.GetOwnership(), bcId) == LockLevel::None)
+                continue;
+            ReleaseLock(lockInfo, bcId, db.Revisions().GetParentRevisionId());
             }
         return RepositoryStatus::Success;
         }
     virtual RepositoryStatus _QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnLockSet& unavailableLocks, DgnCodeSet& unavailableCodes, DgnDbR db)
         {
-        if (m_holdsSchemaLock == db.GetBriefcaseId())
+        auto bcId = db.GetBriefcaseId();
+        for (auto const& lockInfo: m_lockDb)
             {
-            locks.insert(GetSchemaLock(db));
+            DgnLock lock(lockInfo.GetLockableId(), lockInfo.GetOwnership().GetLockLevel());
+            if (GetLevelHeldByBriefcase(lockInfo.GetOwnership(), bcId) != LockLevel::None)
+               locks.insert(lock);
+            else if (lockInfo.GetOwnership().GetLockLevel() != LockLevel::None)
+                unavailableLocks.insert(lock);
             }
         return RepositoryStatus::Success;
         }
     virtual RepositoryStatus _QueryStates(DgnLockInfoSet& lockStates, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, DgnCodeSet const& codes)
         {
-        if (m_holdsSchemaLock.IsValid())
-            lockStates.insert(DgnLockInfo(LockableId(LockableType::Schemas, BeInt64Id((uint64_t)1))));
+        for (auto const& l: locks)
+            {
+            auto i = m_lockDb.find(DgnLockInfo(l));
+            if (i == m_lockDb.end())
+                lockStates.insert(DgnLockInfo(l));
+            else
+                lockStates.insert(*i);
+            }
         return RepositoryStatus::Success;
         }
     };

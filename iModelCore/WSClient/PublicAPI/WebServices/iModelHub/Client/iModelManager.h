@@ -35,6 +35,8 @@ protected:
                                          DgnDbR db) override;
     RepositoryStatus _QueryStates(DgnLockInfoSet& lockStates, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, 
                                   DgnCodeSet const& codes) override;
+                                  
+    RepositoryStatus _QueryHeldLocks(DgnLockSet& locks, DgnDbR db) override;
 
 public:
     static iModelManagerPtr Create(iModelConnectionPtr connection) {return new iModelManager(connection);}

@@ -567,8 +567,26 @@ void Converter::ReportFailedThumbnails()
     ReportIssue(IssueSeverity::Error, IssueCategory::Unknown(), Issue::FailedToConvertThumbnails(), nullptr);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/1
++---------------+---------------+---------------+---------------+---------------+------*/
 void Converter::ReportFailedPresentationRules()
     {
     ReportIssue(IssueSeverity::Error, IssueCategory::Unknown(), Issue::FailedToCreatePresentationRules(), nullptr);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus Converter::MustBeInChannel(IBriefcaseManager::ChannelType requiredChannelType, Utf8StringCR details)
+    {
+    if (GetDgnDb().BriefcaseManager().IsNoChannel() || (GetDgnDb().BriefcaseManager().GetChannelProps().channelType == requiredChannelType))
+        return BentleyStatus::BSISUCCESS;
+
+    BeAssert(false);
+    LOG.fatalv("Channel error - %s", details.c_str());
+    OnFatalError();
+    return BentleyStatus::BSIERROR;
+    }
+
 END_DGNDBSYNC_DGNV8_NAMESPACE
