@@ -128,7 +128,7 @@ struct JsonValue final
 
         bool operator==(JsonValue const& rhs) const;
         bool operator!=(JsonValue const& rhs) const { return !(*this == rhs); }
-        Json::Value const &Value() const { return m_value; }
+
         Utf8String ToString() const { return m_value.ToString(); }
     };
 

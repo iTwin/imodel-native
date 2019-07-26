@@ -94,22 +94,9 @@ struct SchemaWriter final
         public:
             explicit Context(SchemaImportContext& ctx) : m_importCtx(ctx)
                 {
-                const auto ACCEPT = ECN::CustomAttributeValidator::Policy::Accept;
-                const auto REJECT = ECN::CustomAttributeValidator::Policy::Reject;
-                const auto ALL = ECN::CustomAttributeValidator::ChangeType::All;
-                const auto MODIFIED = ECN::CustomAttributeValidator::ChangeType::Modified;
-                const auto NEW = ECN::CustomAttributeValidator::ChangeType::New;
-                auto& rules = m_schemaUpgradeCustomAttributeValidator;
-                
                 m_ec32AvailableInFile = FeatureManager::IsEC32Available(GetECDb());
-                rules
-                    .Append(ACCEPT, "ECDbMap", "LinkTableRelationshipMap", MODIFIED) // allow modification
-                        .Append(ACCEPT, "AllowDuplicateRelationships", ALL); // only this property can be modified
-
-                rules.Append(ACCEPT, "ECDbMap", "AllowOnlyUniqueRelationships", NEW);
-                rules.Append(REJECT, "ECDbMap", "*", ALL);
-                rules.Append(REJECT, "CoreCustomAttributes", "IsMixin", ALL);
-                rules.Append(ACCEPT, "*", "*", ALL);
+                m_schemaUpgradeCustomAttributeValidator.AddRejectRule("CoreCustomAttributes:IsMixin.*");
+                m_schemaUpgradeCustomAttributeValidator.AddRejectRule("ECDbMap:*");
                 }
 
             BentleyStatus PreprocessSchemas(bvector<ECN::ECSchemaCP>& out, bvector<ECN::ECSchemaCP> const& in);
