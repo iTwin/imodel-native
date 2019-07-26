@@ -66,7 +66,7 @@ void IModelBankClient::SetUrlAndAccessToken(iModelBridgeFwk::IModelBankArgs cons
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-IModelHubClient::IModelHubClient(iModelBridgeFwk::IModelHubArgs const& args, WebServices::ClientInfoPtr info) : 
+IModelHubClient::IModelHubClient(iModelBridgeFwk::IModelHubArgs const& args, WebServices::ClientInfoPtr info, iModelBridgeError& error) :
     IModelClientBase(info, args.m_maxRetryCount, args.m_environment, UrlProvider::DefaultTimeout),
     m_args(args)
     {
@@ -80,6 +80,9 @@ IModelHubClient::IModelHubClient(iModelBridgeFwk::IModelHubArgs const& args, Web
         m_client = ClientHelper::GetInstance()->SignInWithCredentials(&serror, args.m_credentials);
     if (m_client == nullptr)
         {
+        error.m_message = serror.GetMessage();
+        error.m_description = serror.GetDescription();
+        error.m_id = static_cast<iModelBridgeErrorId>(iModel::Hub::Error::Id::UserDoesNotHaveAccess);
         GetLogger().fatalv("Connect sign-in failed: %s - %s", serror.GetMessage().c_str(), serror.GetDescription().c_str());
         BeAssert(!IsConnected());
         return;
@@ -95,9 +98,16 @@ IModelHubClient::IModelHubClient(iModelBridgeFwk::IModelHubArgs const& args, Web
         m_projectId = ClientHelper::GetInstance()->QueryProjectId(&wserror, args.m_bcsProjectId);
         if (m_projectId.empty())
             {
-            GetLogger().fatalv("Cannot find iModelHub project: [%s]", args.m_bcsProjectId.c_str());
+            Utf8PrintfString errorMsg("Cannot find iModelHub project: [%s]", args.m_bcsProjectId.c_str());
+            GetLogger().fatalv(errorMsg.c_str());
             if (wserror.GetStatus() != WebServices::WSError::Status::None)
+                {
+                error.m_message = "Failed to get project";
+                error.m_description = errorMsg.c_str();
+                error.m_extendedData = wserror.GetData();
+                error.m_id = static_cast<iModelBridgeErrorId>(iModel::Hub::Error::Id::FailedToGetProjectById);
                 GetLogger().fatalv("%s - %s", wserror.GetDisplayMessage().c_str(), wserror.GetDisplayDescription().c_str());
+                }
             m_client = nullptr;
             BeAssert(!IsConnected());
             return;

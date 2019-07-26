@@ -134,7 +134,7 @@ struct IMODEL_BRIDGE_FWK_EXPORT IModelHubClient : IModelClientBase, IModelHubCli
     iModelBridgeFwk::IModelHubArgs m_args;
     Utf8String m_iModelId;
 
-    IModelHubClient(iModelBridgeFwk::IModelHubArgs const&, WebServices::ClientInfoPtr info);
+    IModelHubClient(iModelBridgeFwk::IModelHubArgs const&, WebServices::ClientInfoPtr info, iModelBridgeError& error);
     ~IModelHubClient() {}
 
     iModel::Hub::iModelInfoPtr GetIModelInfo() override;

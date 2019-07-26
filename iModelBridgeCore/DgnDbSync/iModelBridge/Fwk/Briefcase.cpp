@@ -339,8 +339,6 @@ void iModelBridgeFwk::Briefcase_MakeBriefcaseName()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridgeFwk::Briefcase_AcquireBriefcase(iModelBridgeFwk::FwkContext& context)
     {
-    m_lastServerError = EffectiveServerError::Unknown;
-
     GetLogger().info("AcquireBriefcase");
     GetProgressMeter().SetCurrentStepName("AcquireBriefcase");
 
@@ -366,13 +364,16 @@ BentleyStatus iModelBridgeFwk::Briefcase_AcquireBriefcase(iModelBridgeFwk::FwkCo
     if (briefcaseId.IsValid())
         {
         if (BSISUCCESS != m_client->RestoreBriefcase(m_briefcaseName, m_briefcaseBasename.c_str(), briefcaseId))
+            {
+            context.m_error = iModelBridgeError(m_client->GetLastError());
             return BSIERROR;
+            }
         }
     else if (BSISUCCESS != m_client->AcquireBriefcase(m_briefcaseName, m_briefcaseBasename.c_str()))
         {
+        context.m_error = iModelBridgeError(m_client->GetLastError());
         if (Error::Id::iModelDoesNotExist == m_client->GetLastError().GetId())
             {
-            m_lastServerError = EffectiveServerError::iModelDoesNotExist;
             GetLogger().errorv("%s - iModel not found in project\n", m_briefcaseBasename.c_str());
             }
         else
@@ -426,8 +427,6 @@ bool iModelBridgeFwk::Briefcase_IsBriefcase()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridgeFwk::Briefcase_IModelHub_CreateRepository()
     {
-    m_lastServerError = EffectiveServerError::Unknown;
-
     auto hubClient = dynamic_cast<IModelHubClientForBridges*>(m_client);
 
     if (nullptr == hubClient || !hubClient->IsConnected())
@@ -472,8 +471,6 @@ BentleyStatus iModelBridgeFwk::Briefcase_PullMergePush(Utf8CP descIn, bool doPul
     Utf8CP opName = doPullMergeAndPush? "PullMergePush": doPullAndMerge? "PullAndMerge": "Push";
 
     StopWatch pullpushTimer(true);
-    m_lastServerError = EffectiveServerError::Unknown;
-
     if (doPush)
         m_lastBridgePushStatus = iModelBridge::IBriefcaseManager::PushStatus::Success;
 
@@ -701,7 +698,7 @@ void iModelBridgeFwk::ClearIModelClientForBridgesForTesting()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridgeFwk::Briefcase_Initialize(int argc, WCharCP argv[])
+BentleyStatus iModelBridgeFwk::Briefcase_Initialize(int argc, WCharCP argv[], iModelBridgeError& context)
     {
     if (nullptr == DgnPlatformLib::QueryHost())
         {
@@ -712,7 +709,6 @@ BentleyStatus iModelBridgeFwk::Briefcase_Initialize(int argc, WCharCP argv[])
     // Note that we use the framework's asset directory, which is different from the bridge's assets dir.
     BeFileName assetsDir = m_jobEnvArgs.m_fwkAssetsDir;
 
-    m_lastServerError = EffectiveServerError::Unknown;
 
     Http::HttpClient::Initialize(assetsDir);
     Http::HttpClient::Reinitialize(); // In case Unintialize was called prior to this.
@@ -731,7 +727,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_Initialize(int argc, WCharCP argv[])
         {
         if (m_useIModelHub)
             {
-            IModelHubClient* client = new IModelHubClient(*m_iModelHubArgs, clientInfo);
+            IModelHubClient* client = new IModelHubClient(*m_iModelHubArgs, clientInfo, context);
             m_client = client;
             }
         else
@@ -740,6 +736,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_Initialize(int argc, WCharCP argv[])
 
     if (!m_client->IsConnected())
         {
+        context = iModelBridgeError(m_client->GetLastError());
         GetLogger().error("iModelBridgeFwk client is not connected.");
         return BSIERROR;
         }

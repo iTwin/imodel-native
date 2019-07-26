@@ -9,6 +9,7 @@
 #elif defined(__linux)
 #include <unistd.h>
 #endif
+#include <iModelBridge/iModelBridgeError.h>
 #include <iModelBridge/iModelBridgeFwk.h>
 #include <iModelBridge/iModelBridgeSacAdapter.h>
 #include <Bentley/BeDirectoryIterator.h>
@@ -25,6 +26,7 @@
 #include "iModelBridgeErrorHandling.h"
 #include <regex>
 #include "../iModelBridgeSettings.h"
+#include <WebServices/iModelHub/Client/Error.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -98,12 +100,15 @@ void* iModelBridgeFwk::GetBridgeFunction(BeFileNameCR bridgeDllName, Utf8CP func
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      10/17
 //---------------------------------------------------------------------------------------
-T_iModelBridge_getInstance* iModelBridgeFwk::JobDefArgs::LoadBridge()
+T_iModelBridge_getInstance* iModelBridgeFwk::JobDefArgs::LoadBridge(iModelBridgeError& errorContext)
     {
     auto getInstance = (T_iModelBridge_getInstance*) GetBridgeFunction(m_bridgeLibraryName, "iModelBridge_getInstance");
     if (!getInstance)
         {
-        LOG.fatalv(L"%ls: Does not export a function called 'iModelBridge_getInstance'", m_bridgeLibraryName.c_str());
+        Utf8PrintfString errorMsg("%ls: Does not export a function called 'iModelBridge_getInstance'", m_bridgeLibraryName.c_str());
+        errorContext.m_id = iModelBridgeErrorId::MissingFunctionExport;
+        errorContext.m_message = errorMsg;
+        LOG.fatalv(errorMsg.c_str());
         return nullptr;
         }
 
@@ -721,7 +726,7 @@ iModelBridgeFwk::SyncState iModelBridgeFwk::GetSyncState()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult iModelBridgeFwk::OpenOrCreateStateDb()
+BeSQLite::DbResult iModelBridgeFwk::OpenOrCreateStateDb(iModelBridgeError& errorContext)
     {
     BeFileName tempDir;
     Desktop::FileSystem::BeGetTempPath(tempDir);
@@ -758,7 +763,9 @@ BeSQLite::DbResult iModelBridgeFwk::OpenOrCreateStateDb()
         ProfileVersion ver(propStr.c_str());
         if (ver.IsEmpty() || ver.GetMajor() != s_schemaVer.GetMajor())
             {
-            LOG.fatalv(L"%ls - version %ls is too old", stateFileName.c_str(), WString(ver.ToString().c_str(), true).c_str());
+            errorContext.m_id = static_cast<iModelBridgeErrorId>(BE_SQLITE_ERROR_ProfileTooOld);
+            Utf8PrintfString errorMessage("%ls - version %ls is too old", stateFileName.c_str(), ver.ToString().c_str());
+            LOG.fatalv(errorMessage.c_str());
             return BE_SQLITE_ERROR_ProfileTooOld;
             }
         }
@@ -872,7 +879,7 @@ BentleyStatus iModelBridgeFwk::DoInitial(iModelBridgeFwk::FwkContext& context)
         }
 
     //  Can't acquire a briefcase
-    if (EffectiveServerError::iModelDoesNotExist != m_lastServerError)
+    if (iModel::Hub::Error::Id::iModelDoesNotExist != static_cast<iModel::Hub::Error::Id>(context.m_error.m_id))
         {
         // Probably some kind of communications failure, or incorrect credentials.
         // This is a recoverable error. Stay in Initial state.
@@ -935,7 +942,7 @@ BentleyStatus iModelBridgeFwk::IModelHub_DoCreatedRepository(iModelBridgeFwk::Fw
     if (BSISUCCESS != Briefcase_AcquireBriefcase(context))
         {
         BeAssert(false && "we think we have created a repository, but it must have failed");
-        if (EffectiveServerError::iModelDoesNotExist == m_lastServerError)
+        if (iModel::Hub::Error::Id::iModelDoesNotExist != static_cast<iModel::Hub::Error::Id>(context.m_error.m_id))
             {
             SetState(BootstrappingState::Initial);
             return BSISUCCESS;
@@ -1131,7 +1138,7 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params, FwkRepoAdmin
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridgeFwk::LoadBridge()
+BentleyStatus iModelBridgeFwk::LoadBridge(iModelBridgeError& errorContext)
     {
     if (s_bridgeForTesting)
         {
@@ -1139,15 +1146,18 @@ BentleyStatus iModelBridgeFwk::LoadBridge()
         return BentleyStatus::SUCCESS;
         }
 
-    auto getInstance = m_jobEnvArgs.LoadBridge();
+    auto getInstance = m_jobEnvArgs.LoadBridge(errorContext);
     if (nullptr == getInstance)
-        return BentleyStatus::ERROR;
+        return errorContext.GetBentleyStatus();
 
     m_bridge = getInstance(m_jobEnvArgs.m_bridgeRegSubKey.c_str());
     if (nullptr == m_bridge)
         {
-        LOG.fatalv(L"%ls: iModelBridge_getInstance function returned a nullptr", m_jobEnvArgs.m_bridgeLibraryName.c_str());
-        return BentleyStatus::ERROR;
+        Utf8PrintfString errorMsg("%ls: iModelBridge_getInstance function returned a nullptr", m_jobEnvArgs.m_bridgeLibraryName.c_str());
+        errorContext.m_id = iModelBridgeErrorId::MissingInstance;
+        errorContext.m_message = errorMsg;
+        LOG.fatalv(errorMsg.c_str());
+        return errorContext.GetBentleyStatus();
         }
 
     return BentleyStatus::SUCCESS;
@@ -1352,17 +1362,23 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
 
     DbResult dbres;
 
+    iModelBridgeError errorContext;
     iModelBridgeSacAdapter::InitCrt(false);
 
     Briefcase_MakeBriefcaseName();
     BeFileName::BeDeleteFile(ComputeReportFileName(m_briefcaseName));  // delete any old issues file hanging round from the previous run
+    BeFileName errorFile(m_briefcaseName);
+    errorFile.append(L"-errors.json");
+    BeFileName::BeDeleteFile(errorFile);  // delete any old error file hanging round from the previous run
+
 
     //  Open our state db.
-    dbres = OpenOrCreateStateDb();
+    dbres = OpenOrCreateStateDb(errorContext);
     if (BE_SQLITE_OK != dbres)
         {
         LOG.fatal("OpenOrCreateStateDb failed");
-        return RETURN_STATUS_LOCAL_ERROR;
+        errorContext.WriteErrorMessage(errorFile);
+        return errorContext.GetIntErrorId();
         }
 
     //  Resolve the bridge to run
@@ -1371,8 +1387,12 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
         GetRegistry()._FindBridgeInRegistry(m_jobEnvArgs.m_bridgeLibraryName, m_jobEnvArgs.m_bridgeAssetsDir, m_jobEnvArgs.m_bridgeRegSubKey);
         if (m_jobEnvArgs.m_bridgeLibraryName.empty())
             {
-            LOG.fatalv(L"%s - no bridge with this subkey is in the registry db", m_jobEnvArgs.m_bridgeRegSubKey.c_str());
-            return RETURN_STATUS_LOCAL_ERROR;
+            Utf8PrintfString errorMsg("%ls - no bridge with this subkey is in the registry db", m_jobEnvArgs.m_bridgeRegSubKey.c_str());
+            LOG.fatalv(errorMsg.c_str());
+            errorContext.m_id = iModelBridgeErrorId::MissingBridgeInRegistry;
+            errorContext.m_message = errorMsg;
+            errorContext.WriteErrorMessage(errorFile);
+            return errorContext.GetIntErrorId();
             }
         }
 
@@ -1386,8 +1406,11 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
 
     // Load the bridge ... but don't initialize it.
     // *** TRICKY: Do not call InitBridge until AFTER we acquire the briefcase (or decide to create a new DgnDb).
-    if (BentleyStatus::SUCCESS != LoadBridge())
-        return RETURN_STATUS_CONVERTER_ERROR;
+    if (BentleyStatus::SUCCESS != LoadBridge(errorContext))
+        {
+        errorContext.WriteErrorMessage(errorFile);
+        return errorContext.GetIntErrorId();
+        }
 
     //Initialize the launch darkly client;
     if (m_useIModelHub)
@@ -1431,8 +1454,11 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     {
     StopWatch iModelHubSignIn(true);
     //  Sign into the iModelHub
-    if (BSISUCCESS != Briefcase_Initialize(argc, argv))
-        return RETURN_STATUS_SERVER_ERROR;
+    if (BSISUCCESS != Briefcase_Initialize(argc, argv, errorContext))
+        {
+        errorContext.WriteErrorMessage(errorFile);
+        return errorContext.GetIntErrorId();
+        }
 
     iModelBridge::LogPerformance(iModelHubSignIn, "Logging into iModelHub");
     }
@@ -1448,13 +1474,16 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     if (iModelInfo.IsValid())
         iModelGuid = iModelInfo->GetId();
 
+
     iModelBridgeSettings settings(m_client->GetConnectSignInManager(), m_jobEnvArgs.m_jobRunCorrelationId, iModelGuid.c_str(), connectProjectId.c_str());
-    FwkContext context(settings);
+    FwkContext context(settings, errorContext);
     // Stage the workspace and input file if  necessary.
     LOG.tracev(L"Setting up workspace for standalone bridges");
-    if (BSISUCCESS != SetupDmsFiles())
-        return RETURN_STATUS_SERVER_ERROR;
-
+    if (BSISUCCESS != SetupDmsFiles(context))
+        {
+        errorContext.WriteErrorMessage(errorFile);
+        return errorContext.GetIntErrorId();
+        }
     LOG.tracev(L"Setting up workspace for standalone bridges  : Done");
 
     //  Make sure we have a briefcase.
@@ -1467,7 +1496,8 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     if (BSISUCCESS != BootstrapBriefcase(createdNewRepo, context))
         {
         m_briefcaseDgnDb = nullptr;
-        return RETURN_STATUS_SERVER_ERROR;
+        errorContext.WriteErrorMessage(errorFile);
+        return errorContext.GetIntErrorId();
         }
 
     iModelBridge::LogPerformance(briefcaseTime, "Getting iModel Briefcase from iModelHub");
@@ -1507,6 +1537,11 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     if (m_useIModelHub)
         iModelBridgeLdClient::GetInstance(m_iModelHubArgs->m_environment).Close();
 
+    if (SUCCESS != status)
+        {
+        errorContext.WriteErrorMessage(errorFile);
+        return errorContext.GetIntErrorId();
+        }
     return status;
     }
 
@@ -2471,4 +2506,11 @@ bool            iModelBridgeFwk::EnableECProfileUpgrade() const
     bool allowProfileUpgrade = false;
     TestFeatureFlag("allow-ec-schema-3-2", allowProfileUpgrade);
     return allowProfileUpgrade;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeFwk::WriteErrorDocument()
+    {
     }

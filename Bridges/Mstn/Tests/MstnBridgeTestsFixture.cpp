@@ -704,8 +704,8 @@ BentleyApi::Dgn::IModelHubClient* MstnBridgeTestsFixture::CreateIModelHubClient(
     EXPECT_EQ(0, argvMaker.m_bargptrs.size());
 
     // TODO: get userid from accessToken
-
-    return new IModelHubClient(imhArgs, GetClientInfo());
+	iModelBridgeError error;
+    return new IModelHubClient(imhArgs, GetClientInfo(), error);
     }
 
 /*---------------------------------------------------------------------------------**//**

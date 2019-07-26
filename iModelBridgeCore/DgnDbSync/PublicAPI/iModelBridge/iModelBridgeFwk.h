@@ -14,6 +14,7 @@
 #include <WebServices/iModelHub/Client/ClientHelper.h>
 #include <iModelDmsSupport/iModelDmsSupport.h>
 #include <WebServices/Connect/IConnectTokenProvider.h>
+#include <iModelBridge/iModelBridgeError.h>
 
 BEGIN_BENTLEY_LOGGING_NAMESPACE
 namespace Provider //Forward declaration for logging provider;
@@ -46,17 +47,15 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
 {
     friend struct IBriefcaseManagerForBridges;
 
-    enum class EffectiveServerError
-        {
-        Unknown = 1,
-        iModelDoesNotExist = 2
-        };
 
     struct FwkContext
         {
         iModelBridgeSettings& m_settings;
-        FwkContext (iModelBridgeSettings& settings): m_settings(settings)
+        iModelBridgeError& m_error;
+        FwkContext (iModelBridgeSettings& settings, iModelBridgeError& error)
+            :m_settings(settings), m_error(error)
         {}
+        
         };
     // BootstrappingState tells us where we are in the bootstrapping process.
     //
@@ -160,7 +159,7 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         static void PrintUsage();
 
         //! Load the bridge library and resolve its T_iModelBridge_getInstance function.
-        T_iModelBridge_getInstance* LoadBridge();
+        T_iModelBridge_getInstance* LoadBridge(iModelBridgeError& errorContext);
 
         T_iModelBridge_releaseInstance* ReleaseBridge();
 
@@ -231,7 +230,7 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         Utf8String          GetDocumentGuid();
         DmsServerArgs();
 
-        T_iModelDmsSupport_getInstance*   LoadDmsLibrary();
+        T_iModelDmsSupport_getInstance*   LoadDmsLibrary(iModelBridgeError& error);
         //void*   ReleaseDmsLibrary();
 
         //! Parse the command-line arguments required by the iModelBridgeFwk itself, and return a vector of pointers to the remaining
@@ -262,7 +261,6 @@ protected:
     BeFileName m_stdoutFileName;
     BeFileName m_stderrFileName;
     IModelClientForBridges* m_client;
-    EffectiveServerError m_lastServerError;
     iModelBridge::IBriefcaseManager::PushStatus m_lastBridgePushStatus;
     
     iModelBridge* m_bridge;
@@ -286,7 +284,7 @@ protected:
     NativeLogging::Provider::Log4cxxProvider* m_logProvider;
     IBriefcaseManagerForBridgesPtr m_bcMgrForBridges;
 
-    BeSQLite::DbResult OpenOrCreateStateDb();
+    BeSQLite::DbResult OpenOrCreateStateDb(iModelBridgeError& errorContext);
     void PrintUsage(WCharCP programName);
     void RedirectStderr();
     void LogStderr();
@@ -304,7 +302,7 @@ protected:
 
     //! @name sync with server
     //! @{
-    BentleyStatus Briefcase_Initialize(int argc, WCharCP argv[]);
+    BentleyStatus Briefcase_Initialize(int argc, WCharCP argv[], iModelBridgeError& errorcontext);
     bool Briefcase_IsInitialized() const {return nullptr != m_client;}
     void Briefcase_PrintUsage();
     void Briefcase_Shutdown();
@@ -336,18 +334,23 @@ protected:
     Utf8String GetRevisionComment();
     void SetBridgeParams(iModelBridge::Params&, FwkRepoAdmin*);
     BentleyStatus ReleaseBridge();
-    BentleyStatus LoadBridge();
+    BentleyStatus LoadBridge(iModelBridgeError& errorContext);
     BentleyStatus InitBridge();
 
-    BentleyStatus LoadDmsLibrary();
+    BentleyStatus LoadDmsLibrary(iModelBridgeError& errorContext);
     BentleyStatus ReleaseDmsLibrary();
-    BentleyStatus StageInputFile();
-    BentleyStatus StageWorkspace();
-    BentleyStatus SetupDmsFiles();
+
+    BentleyStatus StageInputFile(FwkContext& context);
+    BentleyStatus StageWorkspace(FwkContext& context);
+    BentleyStatus SetupDmsFiles(FwkContext& context);
     int PullMergeAndPushChange(Utf8StringCR description, bool releaseLocks, bool reopenDataBase);
+
     int StoreHeaderInformation();
     
     bool EnableECProfileUpgrade() const;
+
+    void WriteErrorDocument();
+
 public:
 
     IMODEL_BRIDGE_FWK_EXPORT iModelBridgeFwk();

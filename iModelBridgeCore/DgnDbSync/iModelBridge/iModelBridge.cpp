@@ -14,7 +14,7 @@
 #include <Licensing/SaasClient.h>
 #include <WebServices/Configuration/UrlProvider.h>
 #include "Fwk/OidcToken.h"
-
+#include <iModelBridge/iModelBridgeError.h>
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_LOGGING
 USING_NAMESPACE_BENTLEY_SQLITE

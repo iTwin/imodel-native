@@ -22,12 +22,14 @@ USING_NAMESPACE_BENTLEY_LOGGING
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-T_iModelDmsSupport_getInstance* iModelBridgeFwk::DmsServerArgs::LoadDmsLibrary()
+T_iModelDmsSupport_getInstance* iModelBridgeFwk::DmsServerArgs::LoadDmsLibrary(iModelBridgeError& error)
     {
     auto getInstance = (T_iModelDmsSupport_getInstance*) GetBridgeFunction(m_dmsLibraryName, "iModelDmsSupport_getInstance");
     if (!getInstance)
         {
-        LOG.errorv(L"%ls: Does not export a function called 'iModelBridge_releaseInstance'", m_dmsLibraryName.c_str());
+        Utf8PrintfString errorString("%ls: Does not export a function called 'iModelBridge_releaseInstance'", m_dmsLibraryName.c_str());
+        error.m_message = errorString;
+        error.m_id = iModelBridgeErrorId::MissingFunctionExport;
         return nullptr;
         }
 
@@ -37,29 +39,39 @@ T_iModelDmsSupport_getInstance* iModelBridgeFwk::DmsServerArgs::LoadDmsLibrary()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   iModelBridgeFwk::LoadDmsLibrary()
+BentleyStatus   iModelBridgeFwk::LoadDmsLibrary(iModelBridgeError& errorContext)
     {
-    auto getInstance = m_dmsServerArgs.LoadDmsLibrary();
+    auto getInstance = m_dmsServerArgs.LoadDmsLibrary(errorContext);
     if (nullptr == getInstance)
-        return BentleyStatus::ERROR;
+        return errorContext.GetBentleyStatus();
 
     m_dmsSupport = getInstance(m_dmsServerArgs.m_dmsType, m_dmsServerArgs.m_dmsCredentials.GetUsername(), m_dmsServerArgs.m_dmsCredentials.GetPassword());//m_dmsCredentials
     
     if (nullptr == m_dmsSupport)
         {
-        LOG.fatalv(L"%ls: iModelDmsSupport_getInstance function returned a nullptr", m_dmsServerArgs.m_dmsLibraryName.c_str());
-        return BentleyStatus::ERROR;
+        Utf8PrintfString errorString("%ls: iModelDmsSupport_getInstance function returned a nullptr", m_dmsServerArgs.m_dmsLibraryName.c_str());
+        errorContext.m_message = errorString;
+        errorContext.m_id = iModelBridgeErrorId::MissingInstance;
+        return errorContext.GetBentleyStatus();
         }
     
     if (!m_dmsServerArgs.m_inputFileUrn.empty())
         {
         if (!m_dmsSupport->_InitializeSession(m_dmsServerArgs.m_inputFileUrn))
-            return BentleyStatus::ERROR;
+            {
+            errorContext.m_message = "Error communicating with projectwise.";
+            errorContext.m_id = iModelBridgeErrorId::ProjectwiseError;
+            return errorContext.GetBentleyStatus();
+            }
         }
     else if (!m_dmsServerArgs.m_dataSource.empty())
         {
         if (!m_dmsSupport->_InitializeSessionFromDataSource(m_dmsServerArgs.m_dataSource))
-            return BentleyStatus::ERROR;
+            {
+            errorContext.m_message = "Error communicating with projectwise.";
+            errorContext.m_id = iModelBridgeErrorId::ProjectwiseError;
+            return errorContext.GetBentleyStatus();
+            }
         }
     return BentleyStatus::SUCCESS;
     }
@@ -78,19 +90,19 @@ BentleyStatus   iModelBridgeFwk::ReleaseDmsLibrary()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   iModelBridgeFwk::SetupDmsFiles()
+BentleyStatus   iModelBridgeFwk::SetupDmsFiles(FwkContext& context)
     {
     BentleyStatus status = BentleyStatus::SUCCESS;
     if (m_dmsServerArgs.m_dmsLibraryName.empty())
         return status;
 
-    if (SUCCESS != (status = LoadDmsLibrary()))
+    if (SUCCESS != (status = LoadDmsLibrary(context.m_error)))
         return status;
 
-    if (SUCCESS != (status = StageInputFile()))
+    if (SUCCESS != (status = StageInputFile(context)))
         return ReleaseDmsLibrary();
 
-    if (SUCCESS != (status = StageWorkspace()))
+    if (SUCCESS != (status = StageWorkspace(context)))
         return ReleaseDmsLibrary();
 
     return status;
@@ -99,14 +111,17 @@ BentleyStatus   iModelBridgeFwk::SetupDmsFiles()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   iModelBridgeFwk::StageInputFile()
+BentleyStatus   iModelBridgeFwk::StageInputFile(FwkContext& context)
     {
     m_dmsSupport->_Initialize();
     m_dmsSupport->SetApplicationResourcePath(m_dmsServerArgs.m_applicationWorkspace);
 
     BentleyStatus status = BentleyStatus::SUCCESS;
     if (!m_dmsSupport->_StageInputFile(m_jobEnvArgs.m_inputFileName))
-        status = ERROR;
+        {
+        context.m_error.m_message = "Error communicating with projectwise.";
+        context.m_error.m_id = iModelBridgeErrorId::ProjectwiseError;
+        }
 
     m_dmsSupport->_UnInitialize();
     return status;
@@ -125,7 +140,7 @@ void            iModelBridgeFwk::DmsServerArgs::SetDgnArg(WString argName, WStri
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   iModelBridgeFwk::StageWorkspace()
+BentleyStatus   iModelBridgeFwk::StageWorkspace(FwkContext& context)
     {
     BentleyStatus status = BentleyStatus::SUCCESS;
     m_dmsSupport->_Initialize();

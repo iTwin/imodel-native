@@ -25,6 +25,8 @@ MultiCompileDepends = $(_MakeFileSpec)
 
 $(o)iModelBridge$(oext) : $(_MakeFilePath)iModelBridge.cpp $(iModelBridgeAPISrc)iModelBridge.h ${MultiCompileDepends}
 
+$(o)iModelBridgeError$(oext) : $(_MakeFilePath)iModelBridgeError.cpp $(iModelBridgeAPISrc)iModelBridge.h $(iModelBridgeAPISrc)iModelBridgeError.h ${MultiCompileDepends}
+
 $(o)iModelBridgeSacAdapter$(oext) : $(_MakeFilePath)iModelBridgeSacAdapter.cpp $(iModelBridgeAPISrc)iModelBridge.h $(iModelBridgeAPISrc)iModelBridgeSacAdapter.h ${MultiCompileDepends}
 
 $(o)iModelBridgeBimHost$(oext) : $(_MakeFilePath)iModelBridgeBimHost.cpp $(iModelBridgeAPISrc)iModelBridge.h $(iModelBridgeAPISrc)iModelBridgeBimHost.h ${MultiCompileDepends}
