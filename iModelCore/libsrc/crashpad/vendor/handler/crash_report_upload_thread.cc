@@ -293,6 +293,18 @@ CrashReportUploadThread::UploadResult CrashReportUploadThread::UploadReport(
                                            "application/octet-stream");
 
   std::unique_ptr<HTTPTransport> http_transport(HTTPTransport::Create());
+  
+  // BENTLEY_CHANGE
+  // At least the sentry.io service requires the Host HTTP header (https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Host).
+  // The spec suggests this is optional for HTTP/1.0, which Google is specifying here, but empirically the remote service requires it.
+  // It should also be noted Google does NOT append User-Agent either, though we have not found that to be a requirement yet.
+  std::string unused_std_string, hostname;
+  if (!CrackURL(url_, &unused_std_string, &hostname, &unused_std_string, &unused_std_string)) {
+    LOG(WARNING) << "Failed to crack URL " << url_.c_str() << " to determine HTTP Host header; NOT appending it.";
+  } else {
+    http_transport->SetHeader("Host", hostname.c_str());
+  }
+
   HTTPHeaders content_headers;
   http_multipart_builder.PopulateContentHeaders(&content_headers);
   for (const auto& content_header : content_headers) {

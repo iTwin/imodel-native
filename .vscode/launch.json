@@ -275,8 +275,15 @@
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",
-                    "text": "-enable-pretty-printing",
-                    "ignoreFailures": true
+                    "text": "-enable-pretty-printing"
+                },
+                {
+                    "description": "set detach-on-fork on",
+                    "text": "set detach-on-fork on"
+                },
+                {
+                    "description": "set follow-fork-mode child",
+                    "text": "set follow-fork-mode child"
                 }
             ]
         }

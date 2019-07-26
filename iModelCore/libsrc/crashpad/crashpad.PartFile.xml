@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BuildContext
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../build/PartFile.xsd"
+    >
+
+    <Part Name="crashpad_client" BentleyBuildMakeFile="client.mke" OnlyPlatforms="linux*">
+        <SubPart LibType="Static" PartName="OpenSsl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <SubPart LibType="Static" PartName="Compress" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <Bindings>
+            <VendorAPI Domain="crashpad"/>
+            <Assemblies>Delivery/$(shlibprefix)crashpad_client$(ApiNumber)$(shlibext)</Assemblies>
+            <Libs>Delivery/$(libprefix)crashpad_client$(libext)</Libs>
+            <VendorNotices>Delivery/crashpad-license.txt</VendorNotices>
+        </Bindings>
+    </Part>
+
+    <Part Name="crashpad_handler" BentleyBuildMakeFile="handler.mke" OnlyPlatforms="linux*">
+        <SubPart LibType="Static" PartName="crashpad_client"/>
+        <Bindings>
+            <Files ProductDirectoryName="CrashpadHandler" Required="false">Delivery/crashpad_handler$(exeext)</Files>
+        </Bindings>
+    </Part>
+
+</BuildContext>

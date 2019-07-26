@@ -49,6 +49,10 @@ THIN_ARCHIVE_INPUTS  + $(ContextSubpartsLibs)libBeOpenSSL.a
     THIN_ARCHIVE_INPUTS + $(ContextSubPartsLibs)libdisasm.a
 %endif
 
+%if defined(BENTLEYCONFIG_CRASHPAD)
+    THIN_ARCHIVE_INPUTS + $(ContextSubPartsLibs)libcrashpad_client.a
+%endif
+
 %else
 
 DLM_OBJECT_FILES + $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(stlibext)
@@ -69,11 +73,14 @@ LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)WebServicesClient$(libext)
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeHttp$(stlibext)
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeOpenSSL$(libext)
 
-
 %if $(USING_BREAKPAD) == 1
     LINKER_LIBRARIES  + $(ContextSubpartsLibs)libbreakpad.lib
     LINKER_LIBRARIES  + $(ContextSubpartsLibs)libbreakpad_client.lib
     LINKER_LIBRARIES  + $(ContextSubpartsLibs)libdisasm.lib
+%endif
+
+%if defined(BENTLEYCONFIG_CRASHPAD)
+    LINKER_LIBRARIES + $(ContextSubpartsLibs)libcrashpad_client.lib
 %endif
 
 %endif

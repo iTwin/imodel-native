@@ -267,7 +267,7 @@ ElfImageReader::NoteReader::Result ElfImageReader::NoteReader::ReadNote(
     NoteType* type,
     std::string* desc,
     VMAddress* desc_address) {
-  static_assert(sizeof(*type) >= sizeof(NhdrType::n_namesz),
+  static_assert(sizeof(*type) >= sizeof(Elf64_Word), // BENTLEY_CHANGE - clang 3.8 doesn't like the original code, but we only care about 64-bit.
                 "Note field size mismatch");
   DCHECK_LT(current_address_, segment_end_address_);
 
