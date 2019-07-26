@@ -134,7 +134,7 @@ public:
     ~TestECDb() { _Close(); }
 
     static Iterable GetPermutationsFor(TestFile const&);
-    ProfileVersion const& GetECDbProfileVersion() const { return m_ecdb.GetECDbProfileVersion(); }
+
     void AssertProfileVersion() const;
     };
 
@@ -196,8 +196,7 @@ struct TestIModel final : TestDb
 
         DgnDbR GetDgnDb() const { BeAssert(m_dgndb != nullptr); return *m_dgndb; }
         static Iterable GetPermutationsFor(TestFile const&);
-        DgnDbProfileVersion  GetDgnDbProfileVersion() const { return m_dgndb->GetProfileVersion(); }
+
         void AssertProfileVersion() const;
     };
 
-  

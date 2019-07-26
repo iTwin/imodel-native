@@ -355,6 +355,7 @@ SchemaStatus DgnDomain::ImportSchema(DgnDbR dgndb)
     {
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
     schemaContext->SetFinalSchemaLocater(dgndb.GetSchemaLocater());
+
     ECSchemaPtr schema = ReadSchema(*schemaContext);
     if (!schema.IsValid())
         return SchemaStatus::SchemaReadFailed;
@@ -509,9 +510,19 @@ ECSchemaReadContextPtr DgnDomains::PrepareSchemaReadContext() const
     standardSchemasPath.AppendToPath(L"Standard");
     context->AddSchemaPath(standardSchemasPath);
 
-    BeFileName ecdbSchemasPath(schemaPath);
-    ecdbSchemasPath.AppendToPath(L"ECDb");
-    context->AddSchemaPath(ecdbSchemasPath);
+    // Legacy file handling: When importing/upgrading domain schemas into a file that does not support EC 3.2 yet (corresponds to ECDb profile 4.0.0.1 or older)
+    // the ECDb schema assets must not be included, because they are all EC3.2 schemas and the schema locate
+    // would prefer those over the ones in the DgnDb file. For the legacy file handling case we cannot import EC3.2 schemas though.
+    // We can safely ignore those for legacy files, as the ECDbSchemaPolicies schema is already included in any legacy iModel (because BisCore references it). 
+    // So we never have to look that schema up from disk for legacy files.
+    if (GetDgnDb().GetECDbProfileVersion() >= BeVersion(4, 0, 0, 2))
+        {
+        //Not all ECDb schemas are always included in the ECDb file, e.g. ECDbSchemaPolicies. Therefore make those locatable
+        //from the assets dir
+        BeFileName ecdbSchemasPath(schemaPath);
+        ecdbSchemasPath.AppendToPath(L"ECDb");
+        context->AddSchemaPath(ecdbSchemasPath);
+        }
 
     context->SetFinalSchemaLocater(GetDgnDb().GetSchemaLocater()); // Schemas must first be located in disk (i.e., domain schemas) before finding them in the Db.
     return context;
