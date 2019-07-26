@@ -14,7 +14,7 @@ $(BuildContext)PublicAPI/ECDb : $(_MakeFilePath)PublicAPI/ECDb
 $(BuildContext)ECSchemas/ECDb/ECDbFileInfo.02.00.01.ecschema.xml : $(_MakeFilePath)ECDb/ECSchemas/ECDbFileInfo.02.00.01.ecschema.xml
     $(LinkFirstDepToFirstTarget)
 
-$(BuildContext)ECSchemas/ECDb/ECDbMap.02.00.01.ecschema.xml : $(_MakeFilePath)ECDb/ECSchemas/ECDbMap.02.00.01.ecschema.xml
+$(BuildContext)ECSchemas/ECDb/ECDbMap.02.00.00.ecschema.xml : $(_MakeFilePath)ECDb/ECSchemas/ECDbMap.02.00.00.ecschema.xml
     $(LinkFirstDepToFirstTarget)
 
 $(BuildContext)ECSchemas/ECDb/ECDbMeta.04.00.01.ecschema.xml : $(_MakeFilePath)ECDb/ECSchemas/ECDbMeta.04.00.01.ecschema.xml
