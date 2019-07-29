@@ -1,0 +1,31 @@
+﻿{
+  "$schema": "https://dev.bentley.com/json_schemas/ec/32/schemaitem",
+  "schema": "ExampleSchema",
+  "schemaVersion": "03.01.00",
+  "schemaItemType": "RelationshipClass",
+  "name": "ExampleRelationship",
+  "modifier": "Sealed",
+  "strength": "Embedding",
+  "strengthDirection": "Forward",
+  "source": {
+    "multiplicity": "(0..1)",
+    "roleLabel": "source roleLabel",
+    "polymorphic": true,
+    "constraintClasses": [
+      "ExampleSchema.ExampleSource"
+    ],
+    "customAttributes": [
+      {
+        "className" : "ExampleSchema.ExampleCustomAttribute"
+      }
+    ]
+  },
+  "target": {
+    "multiplicity": "(0..1)",
+    "roleLabel": "target roleLabel",
+    "polymorphic": true,
+    "constraintClasses": [
+      "ExampleSchema.ExampleTarget"
+    ]
+  }
+}
