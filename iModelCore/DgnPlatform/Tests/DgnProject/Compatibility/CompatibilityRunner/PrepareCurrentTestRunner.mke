@@ -1,0 +1,18 @@
+#----------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#----------------------------------------------------------------------
+
+#----------------------------------------------------------
+# Set up all the standard stuff.
+#----------------------------------------------------------
+%include  mdl.mki
+%include $(SrcRoot)DgnPlatform/Tests/DgnProject/Compatibility/CompatibilityRunner/common.mki
+
+CURRENTTESTRUNNER_TESTFILES_DIR = $(CURRENTTESTRUNNER_RUN_DIR)/TestFiles
+
+always:
+    ~mkdir $(TESTFILES_DIR)
+    ~mkdir $(CURRENTTESTRUNNER_TESTFILES_DIR)
+    python Tests/DgnProject/Compatibility/CompatibilityRunner/PrepareCurrentTestRunner.py $(TESTFILES_DIR) $(CURRENTTESTRUNNER_TESTFILES_DIR)

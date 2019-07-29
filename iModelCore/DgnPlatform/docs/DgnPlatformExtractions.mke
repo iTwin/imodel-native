@@ -1,0 +1,62 @@
+#----------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#----------------------------------------------------------------------------------------
+%include mdl.mki
+
+PublishExtractInput = $(OutputRootDir)build/DgnPlatform/PublishExtract/Input/
+PublishExtractOutput = $(OutputRootDir)build/DgnPlatform/PublishExtract/Output/
+PublishExtractStamp = $(PublishExtractOutput)PublishExtract.stamp
+
+always:
+    !~@mkdir ${PublishExtractInput}
+    !~@mkdir ${PublishExtractOutput}
+
+#----------------------------------------------------------------------------------------
+#   Gather files that contain code samples into PublishExtractInput
+#----------------------------------------------------------------------------------------
+$(PublishExtractInput)DgnModel.cpp : $(_MakeFilePath)../DgnCore/DgnModel.cpp
+    $(LinkFirstDepToFirstTarget)
+
+$(PublishExtractInput)DgnSqlTest.cpp : $(_MakeFilePath)../Tests/DgnProject/NonPublished/DgnSqlTest.cpp
+    $(LinkFirstDepToFirstTarget)
+
+$(PublishExtractInput)TransactionManager_Test.cpp : $(_MakeFilePath)../Tests/DgnProject/NonPublished/TransactionManager_Test.cpp
+    $(LinkFirstDepToFirstTarget)
+
+$(PublishExtractInput)Category.sample.cpp : $(_MakeFilePath)samplecode/Category.sample.cpp
+    $(LinkFirstDepToFirstTarget)
+
+$(PublishExtractInput)RefCounted.sample.cpp : $(_MakeFilePath)samplecode/RefCounted.sample.cpp
+    $(LinkFirstDepToFirstTarget)
+
+$(PublishExtractInput)View.sample.cpp : $(_MakeFilePath)samplecode/View.sample.cpp
+    $(LinkFirstDepToFirstTarget)
+
+$(PublishExtractInput)TxnManager.sample.cpp : $(_MakeFilePath)samplecode/TxnManager.sample.cpp
+    $(LinkFirstDepToFirstTarget)
+
+#----------------------------------------------------------------------------------------
+#   Extract the code samples into PublishExtractOutput
+#----------------------------------------------------------------------------------------
+%if defined (BMAKE_DELETE_ALL_TARGETS)
+    cleanopt = --clean
+%else
+    cleanopt =
+%endif
+
+%if defined (VERBOSE)
+    PUBLISH_VERBOSE = -v6
+%else
+    PUBLISH_VERBOSE = -v3   # INFO_LEVEL_VeryInteresting
+%endif
+
+always:
+    PublishExtract.py -d${PublishExtractInput} $(PUBLISH_VERBOSE) $(cleanopt) -o${PublishExtractOutput} -s$(PublishExtractStamp) --noProvenance
+
+#----------------------------------------------------------------------------------------
+#   Link in code sample extractions for input into PublishApi by consuming SDKs
+#----------------------------------------------------------------------------------------
+$(BuildContext)Dox/Extractions/DgnPlatform : ${PublishExtractOutput}
+    $(LinkFirstDepToFirstTargetAsDirectory)
