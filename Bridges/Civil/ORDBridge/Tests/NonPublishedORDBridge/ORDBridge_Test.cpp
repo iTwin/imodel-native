@@ -47,7 +47,7 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDIntersectionWithEditsTest)
 
     ASSERT_TRUE(CopyTestFile("Intersection\\NewIntersection-Edits.dgn", "NewIntersection.dgn"));
     ASSERT_TRUE(RunTestApp(WCharCP(L"NewIntersection.dgn"), WCharCP(L"ORDIntersectionTest.bim"), true));
-    VerifyConvertedElements("ORDIntersectionTest.bim", 9, 4);
+    VerifyConvertedElements("ORDIntersectionTest.bim", 11, 4);
     }
 
 /*---------------------------------------------------------------------------------**//**

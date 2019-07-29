@@ -299,9 +299,9 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedElements(Utf8CP
         BeAssert(corridorCount == 0);
     else
         {
-		BeAssert(stepResult == DbResult::BE_SQLITE_ROW);
+        BeAssert(stepResult == DbResult::BE_SQLITE_ROW);
         BeAssert(corridorCount == stmt.GetValueInt(0));
-		}
+        }
 
     return dgnDbPtr;
     }
