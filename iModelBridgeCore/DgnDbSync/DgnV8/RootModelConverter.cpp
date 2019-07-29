@@ -1824,7 +1824,7 @@ void RootModelConverter::_FinishConversion()
         LOG.tracev ("calling XDomain::_GetManuallyCreatedElementIds for %p", xdomain);
 
         // Add elements that were manually created by the grid domain to the seen element list
-        for (BentleyB0200::Dgn::DgnElementId const& elementId : xdomain->_GetManuallyCreatedElementIds(*this))
+        for (DgnElementId const& elementId : xdomain->_GetManuallyCreatedElementIds(*this))
             GetChangeDetector()._OnElementSeen(*this, elementId);
 
         LOG.tracev ("called XDomain::_GetManuallyCreatedElementIds for %p", xdomain);
