@@ -1,0 +1,55 @@
+#----------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#----------------------------------------------------------------------
+
+%include mdl.mki
+
+nameToDefine = __BIM_FROM_DGNDB_BUILD__
+%include cdefapnd.mki
+
+appName     = BimFromDgnDb
+baseDir     = $(_MakeFilePath)
+
+o = $(OutputRootDir)Build/BimFromDgnDb/$(appName)/
+always:
+    ~mkdir $(o)
+
+PublicApi = $(SrcRoot)DgnDbSync/PublicApi/BimFromDgnDb/
+
+HeaderFiles = $(PublicApi)BimFromDgnDb.h $(PublicApi)DgnDb0601ToJson.h $(PublicApi)BimFromJson.h
+
+$(o)BimFromDgnDb$(oext): $(baseDir)BimFromDgnDb.cpp $(HeaderFiles)
+
+$(o)InteropHostProvider$(oext): $(baseDir)InteropHostProvider.cpp $(HeaderFiles) $(baseDir)InteropHostProvider.h
+
+
+#----------------------------------------------------------------------
+#   Link the library
+#----------------------------------------------------------------------
+
+DgnDbLibs=$(BuildContext)SubParts/DgnDbLibs/
+
+DLM_DEST        = $(o)
+DLM_NAME        = $(appname)
+DLM_OBJECT_DEST     = $(o)
+DLM_EXPORT_DEST     = $(o)
+DLM_OBJECT_FILES    = $(o)BimFromDgnDb$(oext) $(o)InteropHostProvider$(oext)
+DLM_NOINITFUN   = 1
+DLM_NOENTRY     = 1
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnDb0601ToJson$(libext)
+LINKER_LIBRARIES  + $(BuildContext)Delivery/BimFromJson$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)Bentley$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BaseGeoCoord$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(stlibext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext)
+LINKER_LIBRARIES  + user32$(libext)
+
+%include $(sharedMki)LinkLibrary.mki
+
