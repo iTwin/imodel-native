@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd" >
+
+<!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+<!-- ///////////////////// Runtime Parts ///////////////////////////////////////////////// -->
+<!-- / This section contains parts that make the UNITS Runtime ///////////////////////////// -->
+<!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+
+    <Part Name="Logging" ExcludeLibType="Static" ExcludePlatforms="MacOS*,WinRT*"> <!-- Trim off dynamic-only parts here so we don't have to download the (non-existant) partfiles) -->
+        <SubPart PartName="LoggingNative" PartFile="LoggingSDK" Repository="loggingsdk" />
+    </Part>
+
+    <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
+    <Part Name="UnitsNative" BentleyBuildMakeFile="Units.mke" ApiNumber="M02">
+        <SubPart PartName="PublicAPI" />
+        <SubPart PartName="BentleyDll"  PartFile="Bentley"      Repository="Bentley" />
+        <SubPart PartName="BeJsonCpp"   PartFile="BeJsonCpp"    Repository="Libsrc-JsonCpp"/>
+        <SubPart PartName="Logging" />
+        <Bindings>
+            <Libs>Delivery/$(libprefix)Units$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)Units$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <!-- Bind my own PublicAPI into BuildContext/PublicAPI. Note that this part does not cause any sub-part PublicAPIs to be bound. -->
+    <Part Name="PublicAPI" BentleyBuildMakeFile="Units.Prewire.mke">
+        <Bindings>
+            <PublicAPI Domain="Units" />
+            <PublicAPI Domain="Formatting" />
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitsConversionData" BentleyBuildMakeFile="tests/ConversionData.prewire.mke">
+        <Bindings>
+            <Files SubPartDirectory="ConversionData" ProductDirectoryName="UnitTests-Assets" ProductSubDirectory="ConversionData">Delivery/ConversionData/*csv</Files>
+        </Bindings>
+    </Part>
+
+<!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+<!-- ////////////////////////////////// Products ///////////////////////////////////////// -->
+<!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+
+    <!-- Cross-platform test part and product definitions -->
+    <!-- Only/ExcludePlatforms attributes should NOT be used in this section -->
+
+    <ProductDirectoryList ListName="UnitsTested" >
+        <ProductDirectory Name="PublicAPI"                          Deliver="false"/>
+        <ProductDirectory Name="VendorAPI"                          Deliver="false" />
+        <ProductDirectory Name="VendorNotices"                      Deliver="false" />
+        <ProductDirectory Name="LoggingWorkspaceData"               Deliver="false"/>
+        <ProductDirectory Name="LoggingOptionalManagedAssemblies"   Deliver="false"/>
+        <ProductDirectory Name="libs"                               Deliver="false"/>
+
+        <ProductDirectory Name="PublicAPI"              LibType="Static"    Deliver="false"/>
+        <ProductDirectory Name="VendorAPI"              LibType="Static"    Deliver="false" />
+        <ProductDirectory Name="VendorNotices"          LibType="Static"    Deliver="false" />
+        <ProductDirectory Name="libs"                   LibType="Static"    Deliver="false"/>
+        <ProductDirectory Name="Assemblies"             LibType="Static"    Deliver="false"/>
+        <ProductDirectory Name="UnitsNativeAssemblies"  LibType="Static"    Deliver="false"/>
+
+        <ProductDirectory Name="LoggingOptionalNativeAssemblies" Path="Runtime"/>
+        <ProductDirectory Name="Assemblies"                      Path="Runtime"/>
+        <ProductDirectory Name="UnitsNativeAssemblies"           Path="Runtime"/>
+        <ProductDirectory Name="PublishedApi"                    Path="Include"/>
+        <ProductDirectory Name="PublishedApi_Doc"                Path="Docs"/>
+        <ProductDirectory Name="VendorNotices"                   Path="Notices"/>
+    </ProductDirectoryList>
+
+    <Product Name="UnitsTested" PrgOutputDir="Units" SaveProduct="true" AddIn="true">
+        <SubPart PartName="RunGtest" />
+        <SubPart PartName="RunAndroidJUnitTest" />
+        <SubPart PartName="RuniOSXCTest" />
+        <Directories DirectoryListName="UnitsTested"/>
+    </Product>
+
+    <Part Name="TestDependencies" DeferType="BuildUnitTests" BentleyBuildMakeFile="tests/Prewire.mke">
+        <SubPart PartName="UnitsNative" />
+        <SubPart PartName="UnitsConversionData" />
+        <Bindings>
+            <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="Units" SubPartDirectory="UnitTests/Units">
+                Delivery/UnitTests/ignore_list.txt
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="TestFixture" DeferType="BuildUnitTests" BentleyBuildMakeFile="tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=TestFixture">
+        <SubPart PartName="TestDependencies"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="Units/TestFixture" SourceName="Delivery/UnitTests/Objects/TestFixture"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="PublishedTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dIsPublished=1">
+        <SubPart PartName="TestFixture"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="Units/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="PerformanceTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Performance">
+        <SubPart PartName="TestFixture"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="Units/Performance" SourceName="Delivery/UnitTests/Objects/Performance"/>
+        </Bindings>
+    </Part>
+
+    <Product Name="Units-Tests">
+        <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
+        <SubPart PartName="Tests"/>
+        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+    </Product>
+
+    <!-- This part is the default test collection. It is included in DgnDb's aggregate test collection. -->
+    <Part Name="Tests" DeferType="BuildUnitTests">
+        <SubPart PartName="PublishedTests" />
+        <SubPart PartName="PerformanceTests" />
+    </Part>
+
+    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=UnitsTest -dTEST_COLLECTION_PRODUCT=Units-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+        <SubProduct ProductName="Units-Tests"/>
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/UnitsTest/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/UnitsTest/Assets" />
+        </Bindings>
+    </Part>
+
+    <Product Name="Units-Gtest" >
+        <SubPart PartName="Gtest"/>
+        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=Units-Gtest -dGTEST_NAME=UnitsTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="Units-Gtest" />
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/UnitsTest.log</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/UnitsTest/Assets" />
+        </Bindings>
+    </Part>
+
+    <!-- Memory leak testing of Units tests. Only called on demand -->
+    <Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=Units-Gtest -dGTEST_NAME=UnitsTest" OnlyPlatforms="x64">
+        <SubPart PartFile="DgnDbTestingScripts" Repository="DgnDbTestingScripts" PartName="MemLeakTests" />
+        <SubProduct ProductName="Units-Gtest" />
+    </Part>
+
+    <!-- *** AndroidJUnit *** -->
+    <Part Name="AndroidJUnit" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_COLLECTION_PRODUCT=Units-Tests -dTEST_SHORT_NAME=UnitsTst -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
+        <SubProduct ProductName="Units-Tests"/>
+        <SubPart PartName="AndroidJUnitTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="AndroidJUnit-Project" SourceName="Delivery/ANJUP" />
+        </Bindings>
+    </Part>
+
+    <Product Name="Units-AndroidJUnit" >
+        <SubPart PartName="AndroidJUnit" LibType="Static"/>
+        <Directories DirectoryListName="AndroidJUnitProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="RunAndroidJUnitTest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=Units-AndroidJUnit" OnlyPlatforms="Android*">
+        <SubProduct ProductName="Units-AndroidJUnit"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="ANJU/Logs">Delivery/ANJU/Logs/Units-AndroidJUnit.log</Files>
+        </Bindings>
+    </Part>
+
+    <!-- *** iOSXCTest *** -->
+    <Part Name="iOSXCTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/iOS//MakeXCTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=Units -dTEST_COLLECTION_PRODUCT=Units-Tests -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOS*">
+        <SubProduct ProductName="Units-Tests"/>
+        <SubPart PartName="iOSXCTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="iOSXCTestProject" SourceName="Delivery/iOSXCTest/Units/Project" />
+        </Bindings>
+    </Part>
+
+    <Product Name="Units-iOSXCTest" >
+        <SubPart PartName="iOSXCTest" LibType="Static"/>
+        <Directories DirectoryListName="iOSXCTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="RuniOSXCTest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/iOS//RunXCTestProject.mke" BentleyBuildMakeOptions="-dXCTEST_PRODUCT=Units-iOSXCTest" OnlyPlatforms="iOS*">
+        <SubProduct ProductName="Units-iOSXCTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="XCTest/Logs">Delivery/XCTest/Logs/Units-iOSXCTest.log</Files>
+        </Bindings>
+    </Part>
+
+    <!-- *********************************************************** -->
+    <!-- **** UWP Microsoft::VisualStudio::CppUnitTestFramework **** -->
+    <!-- *********************************************************** -->
+    <!-- N.B. ApiNumber is important here because we must manually reference some DLLs, and thus need an accruate suffix to find them. -->
+    <Part
+        Name="UwpTest" DeferType="BuildUnitTests"
+        BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/uwp//MakeUwpTestProject.mke"
+        BentleyBuildMakeOptions="-dTEST_NAME=Units -dTEST_COLLECTION_PRODUCT=Units-Tests"
+        OnlyPlatforms="WinRT*"
+        ApiNumber="M02"
+        >
+        <SubProduct ProductName="Units-Tests"/>
+        <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UwpTestProject" SourceName="Delivery/UnitsUwpTest"/>
+        </Bindings>
+    </Part>
+
+    <Product Name="Units-UwpTest">
+        <SubPart PartName="UwpTest"/>
+        <Directories DirectoryListName="UwpTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part
+        Name="RunUwpTest"
+        DeferType="RunUnitTests"
+        BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/uwp//RunUwpTestProject.mke"
+        BentleyBuildMakeOptions="-dUWPTEST_PRODUCT=Units-UwpTest"
+        OnlyPlatforms="WinRT*"
+        >
+        <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubProduct ProductName="Units-UwpTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="UwpTest/Logs">Delivery/UwpTest/Logs/Units-UwpTest.log</Files>
+        </Bindings>
+    </Part>
+</BuildContext>
