@@ -101,6 +101,14 @@ GridCurveCPtr GridCurveBundle::GetGridCurve() const
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Elonas.Seviakovas               07/2019
+//---------------+---------------+---------------+---------------+---------------+------
+ElementIdIterator GridCurveBundle::MakeDrivingSurfaceIterator() const
+    {
+    return GridSurfaceDrivesGridCurveBundleHandler::MakeGridSurfaceIterator(*this);
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                06/2018
 //---------------+---------------+---------------+---------------+---------------+------
 ElementIdIterator GridCurveBundle::MakeDrivingSurfaceIterator
@@ -111,8 +119,8 @@ ElementIdIterator GridCurveBundle::MakeDrivingSurfaceIterator
     GridCurveBundleCPtr bundle = GridCurveBundleCreatesGridCurveHandler::GetBundle(curve);
     if (bundle.IsNull())
         return ElementIdIterator();
-
-    return GridSurfaceDrivesGridCurveBundleHandler::MakeGridSurfaceIterator(*bundle);
+        
+    return bundle->MakeDrivingSurfaceIterator();
     }
 
 //--------------------------------------------------------------------------------------
@@ -218,6 +226,19 @@ GridSurfaceCR secondSurface
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Elonas.Seviakovas               07/2019
+//---------------+---------------+---------------+---------------+---------------+------
+Utf8String createCurveLabel(GridSurfaceCPtr surface1, GridSurfaceCPtr surface2)
+    {
+    auto elevationSurfaceClassId = surface2->GetDgnDb().GetClassLocater().LocateClassId(GRIDS_SCHEMA_NAME, GRIDS_CLASS_ElevationGridSurface);
+
+    if(surface2->GetElementClassId() == elevationSurfaceClassId && surface1->GetElementClassId() != elevationSurfaceClassId)
+        return Utf8String(surface2->GetUserLabel()) + "-" + Utf8String(surface1->GetUserLabel());
+
+    return Utf8String(surface1->GetUserLabel()) + "-" + Utf8String(surface2->GetUserLabel());
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                06/2018
 //---------------+---------------+---------------+---------------+---------------+------
 void GridCurveBundle::UpdateGridCurve()
@@ -241,6 +262,7 @@ void GridCurveBundle::UpdateGridCurve()
         if (intersection.IsValid())
             {
             gridCurve->SetCurve(intersection);
+            gridCurve->SetUserLabel(createCurveLabel(surface1, surface2).c_str());
             gridCurve->Update();
             }
         else
@@ -263,6 +285,8 @@ void GridCurveBundle::UpdateGridCurve()
             gridCurve = GridArc::Create(*portion, intersection);
         else if (intersection->GetBsplineCurveCP() || intersection->GetInterpolationCurveCP())
             gridCurve = GridSpline::Create(*portion, intersection);
+
+        gridCurve->SetUserLabel(createCurveLabel(surface1, surface2).c_str());
 
         Dgn::DgnDbStatus status;
         gridCurve->Insert(&status);

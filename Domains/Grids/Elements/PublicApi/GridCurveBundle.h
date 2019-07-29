@@ -44,6 +44,8 @@ struct GridCurveBundle : Dgn::DriverBundleElement, Dgn::IDependencyGraphNode
 
         GRIDELEMENTS_EXPORT Dgn::DgnElementId GetCurvesSetId() const;
         GRIDELEMENTS_EXPORT GridCurveCPtr GetGridCurve() const;
+
+        BENTLEY_BUILDING_SHARED_NAMESPACE_NAME::ElementIdIterator MakeDrivingSurfaceIterator() const;
         static BENTLEY_BUILDING_SHARED_NAMESPACE_NAME::ElementIdIterator MakeDrivingSurfaceIterator(GridCurveCR curve);
 
         static GridCurveBundlePtr CreateAndInsert(Dgn::DgnDbR db, GridCurvesSetCR portion, GridSurfaceCR surface1, GridSurfaceCR surface2);
