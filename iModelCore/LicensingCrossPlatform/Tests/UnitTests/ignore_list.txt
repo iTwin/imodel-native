@@ -1,0 +1,5 @@
+
+# ---- Example tests ----
+ClientTests.JsonExample
+AccessKeyClientTests.JsonExample
+SaasClientTests.JsonExample
