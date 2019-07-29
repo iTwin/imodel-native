@@ -314,7 +314,7 @@ CodeSpecPtr CodeSpec::Create(DgnDbR db, Utf8CP codeSpecName, CodeScopeSpecCR sco
 +---------------+---------------+---------------+---------------+---------------+------*/
 CodeSpecPtr CodeSpec::Create(DgnDbR db, Utf8CP codeSpecName, JsonValueCR jsonProperties)
     {
-    if (!jsonProperties.isMember(CodeSpec::json_spec()) || !jsonProperties.isMember(CodeSpec::json_scopeSpec())) // quick sanity check of incoming JSON
+    if (!jsonProperties.isMember(CodeSpec::json_spec()) && !jsonProperties.isMember(CodeSpec::json_scopeSpec())) // quick sanity check of incoming JSON
         return nullptr;
 
     CreateParams params(db, codeSpecName, CodeSpecId());
