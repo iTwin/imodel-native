@@ -30,6 +30,7 @@
 
 #define USING_NAMESPACE_BENTLEY_DGN         using namespace BentleyApi::Dgn;
 #define USING_NAMESPACE_BENTLEY_RENDER      using namespace BentleyApi::Dgn::Render;
+#define USING_NAMESPACE_BENTLEY_RENDER_PRIMITIVES using namespace BentleyApi::Dgn::Render::Primitives;
 
 #define DGNPLATFORM_TYPEDEFS(_name_) \
     BEGIN_BENTLEY_DGN_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) END_BENTLEY_DGN_NAMESPACE
@@ -383,6 +384,11 @@ BEGIN_BENTLEY_RENDER_NAMESPACE
     DEFINE_REF_COUNTED_PTR(ThematicGradientSettings);
     DEFINE_REF_COUNTED_PTR(RgbaSprite);
 END_BENTLEY_RENDER_NAMESPACE
+
+BEGIN_BENTLEY_RENDER_PRIMITIVES_NAMESPACE
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(MaterialAtlas);
+    DEFINE_REF_COUNTED_PTR(MaterialAtlas);
+END_BENTLEY_RENDER_PRIMITIVES_NAMESPACE
 
 BEGIN_DGN_CESIUM_NAMESPACE
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Root);
@@ -895,5 +901,9 @@ enum class SelectionScope
     Model = 4,           //!< All elements in same model as selected element
     };
 
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   07/19
+//=======================================================================================
+enum class CompareResult : uint8_t { Less, Equal, Greater };
 
 END_BENTLEY_DGN_NAMESPACE

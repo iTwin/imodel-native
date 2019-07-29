@@ -380,9 +380,10 @@ struct IModelTile
         static constexpr Version V2() { return Version(2, 1); }
         static constexpr Version V3() { return Version(3, 0); }
         static constexpr Version V4() { return Version(4, 0); }
+        static constexpr Version V5() { return Version(5, 0); }
 
         // !!! IMPORTANT !!! If you change the major version you must update IModelTile::Version::FromMajorVersion !!!
-        static constexpr Version Current() { return V4(); }
+        static constexpr Version Current() { return V5(); }
 
         DGNPLATFORM_EXPORT static Version FromMajorVersion(uint16_t major);
 
@@ -426,11 +427,6 @@ struct IModelTile
 
 DGNPLATFORM_EXPORT BentleyStatus WriteDgnTile(StreamBufferR streamBuffer, ElementAlignedBox3dCR contentRange, Render::Primitives::GeometryCollectionCR geometry, GeometricModelR model, bool isLeaf, double const* zoomFactor);
 DGNPLATFORM_EXPORT ReadStatus ReadDgnTile(ElementAlignedBox3dR contentRange, Render::Primitives::GeometryCollectionR geometry, StreamBufferR streamBuffer, GeometricModelR model, Render::System& renderSystem, bool& isLeaf, DRange3dCR tileRange);
-
-// Read meshes from cache data into a MeshBuilderMap, optionally excluding specific elements.
-DGNPLATFORM_EXPORT ReadStatus ReadDgnTile(Render::Primitives::MeshBuilderMapR builderMap, StreamBufferR streamBuffer, GeometricModelR model, Render::System& renderSystem, DgnTile::Flags& flags, DgnElementIdSet const& skipElems=DgnElementIdSet());
-
-DGNPLATFORM_EXPORT ReadStatus ReadDgnTile(ElementAlignedBox3dR contentRange, Render::Primitives::GeometryCollectionR geometry, StreamBufferR streamBuffer, GeometricModelR model, Render::System& renderSystem, bool& isLeaf, DRange3dCR tileRange, DgnElementIdSet const& skipElems);
 
 // Read geometry from one of the web-standard tile formats (i3dm, b3dm, cmpt, pnts, vctr)
 DGNPLATFORM_EXPORT ReadStatus ReadWebTile(Render::Primitives::GeometryCollectionR geometry, StreamBufferR streamBuffer, GeometricModelR model, Render::System& renderSystem);

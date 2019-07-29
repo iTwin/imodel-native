@@ -624,8 +624,13 @@ uint32_t Strokes::ComputePointCount() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-SurfaceMaterial::SurfaceMaterial(MaterialR material, TextureMapping::Trans2x3 const* transform) : m_material(&material)
+SurfaceMaterial::SurfaceMaterial(MaterialR material, TextureMapping::Trans2x3 const* transform)
     {
+    // Do not bother with a material that has no effect on rendering in iModel.js.
+    if (!material.GetTextureMapping().IsValid() && MaterialComparison::MatchesDefaults(&material))
+        return;
+
+    m_material = &material;
     m_textureMapping = material.GetTextureMapping();
     if (m_textureMapping.IsValid() && nullptr != transform)
         m_textureMapping.SetTransform(*transform);
@@ -984,12 +989,35 @@ bool DisplayParams::IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose) cons
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SurfaceMaterial::IsLessThan(SurfaceMaterialCR rhs, ComparePurpose purpose) const
     {
-    TEST_LESS_THAN(IsValid());
-    if (!IsValid())
-        return false;
-
-    TEST_LESS_THAN(GetMaterial());
     TEST_LESS_THAN(GetTextureMapping().GetTexture());
+
+    if (ComparePurpose::Merge == purpose)
+        {
+        // Batching uses material atlases. Atlases don't permit mixing opaque and translucent materials.
+        auto lhCat = nullptr != GetMaterial() ? GetMaterial()->GetParams().m_transparency.Categorize() : Material::Transparency::None;
+        auto rhCat = nullptr != rhs.GetMaterial() ? rhs.GetMaterial()->GetParams().m_transparency.Categorize() : Material::Transparency::None;
+        if (lhCat != rhCat)
+            return lhCat < rhCat;
+        }
+    else
+        {
+        TEST_LESS_THAN(IsValid());
+        if (!IsValid())
+            return false;
+
+        if (ComparePurpose::Instance == purpose)
+            {
+            // Instancing requires the materials to have equivalent properties.
+            auto compareMaterials = MaterialComparison::Compare(GetMaterial(), rhs.GetMaterial());
+            if (CompareResult::Equal != compareMaterials)
+                return CompareResult::Less == compareMaterials;
+            }
+        else
+            {
+            TEST_LESS_THAN(GetMaterial());
+            }
+        }
+
 
     // NB: ComparePurpose::Instance requires equal UV transform.
     if (ComparePurpose::Merge == purpose || !GetTextureMapping().IsValid())
@@ -1057,8 +1085,25 @@ bool SurfaceMaterial::IsEqualTo(SurfaceMaterialCR rhs, ComparePurpose purpose) c
     if (!IsValid())
         return true;
 
-    TEST_EQUAL(GetMaterial());
     TEST_EQUAL(GetTextureMapping().GetTexture());
+    if (ComparePurpose::Merge == purpose)
+        {
+        // Batching uses material atlases. Atlases don't permit mixing opaque and translucent materials.
+        auto lhCat = nullptr != GetMaterial() ? GetMaterial()->GetParams().m_transparency.Categorize() : Material::Transparency::None;
+        auto rhCat = nullptr != rhs.GetMaterial() ? rhs.GetMaterial()->GetParams().m_transparency.Categorize() : Material::Transparency::None;
+        if (lhCat != rhCat)
+            return false;
+        }
+    else if (ComparePurpose::Instance == purpose)
+        {
+        if (!MaterialComparison::Equals(GetMaterial(), rhs.GetMaterial()))
+            return false;
+        }
+    else
+        {
+        TEST_EQUAL(GetMaterial());
+        }
+
 
     // NB: ComparePurpose::Instance requires equal UV transform
     if (ComparePurpose::Merge != purpose && GetTextureMapping().IsValid())
@@ -1248,12 +1293,13 @@ template<typename T, typename U> static void insertVertexAttribute(bvector<uint1
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t Mesh::AddVertex(QPoint3dCR vert, OctEncodedNormalCP normal, DPoint2dCP param, uint32_t fillColor, FeatureCR feature)
+uint32_t Mesh::AddVertex(QPoint3dCR vert, OctEncodedNormalCP normal, DPoint2dCP param, uint32_t fillColor, FeatureCR feature, uint8_t materialIndex)
     {
     auto index = static_cast<uint32_t>(m_verts.size());
 
     m_verts.push_back(vert);
     m_features.Add(feature, m_verts.size());
+    m_materials.Add(materialIndex, m_verts.size());
 
     if (nullptr != normal)
         m_normals.push_back(*normal);
@@ -1262,6 +1308,7 @@ uint32_t Mesh::AddVertex(QPoint3dCR vert, OctEncodedNormalCP normal, DPoint2dCP 
         m_uvParams.push_back(toFPoint2d(*param));
 
     insertVertexAttribute(m_colors, m_colorTable, fillColor, m_verts);
+
     return index;
     }
 
@@ -1305,6 +1352,31 @@ void Mesh::Features::Add(FeatureCR feat, size_t numVerts)
         m_indices.resize(numVerts - 1);
         std::fill(m_indices.begin(), m_indices.end(), m_uniform);
         m_indices.push_back(index);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void Mesh::Materials::Add(uint8_t materialIndex, size_t numVerts)
+    {
+    if (!m_haveAtlas)
+        return;
+
+    if (!m_initialized)
+        {
+        m_uniform = materialIndex;
+        m_initialized = true;
+        }
+    else if (!m_indices.empty())
+        {
+        m_indices.push_back(materialIndex);
+        }
+    else if (m_uniform != materialIndex)
+        {
+        m_indices.resize(numVerts - 1);
+        std::fill(m_indices.begin(), m_indices.end(), m_uniform);
+        m_indices.push_back(materialIndex);
         }
     }
 
@@ -1459,7 +1531,8 @@ bool VertexKey::operator<(VertexKeyCR rhs) const
     static_assert(0x20 == offsetof(VertexKey, m_subcatId), "unexpected offset");
     static_assert(0x28 == offsetof(VertexKey, m_fillColor), "unexpected offset");
     static_assert(0x2C == offsetof(VertexKey, m_class), "unexpected offset");
-    static_assert(0x2D == offsetof(VertexKey, m_normalValid), "unexpected offset");
+    static_assert(0x2D == offsetof(VertexKey, m_materialIndex), "unexpected offset");
+    static_assert(0x2E == offsetof(VertexKey, m_normalValid), "unexpected offset");
 
     // TFS#874608: This used to add 2 bytes to `offset` if m_normalValid=false to avoid unnecessarily comparing normals.
     // But invalid normals are initialized to 0 so they will not affect memcmp(), and optimizer was producing incorrect comparisons here.
@@ -1496,7 +1569,7 @@ void MeshBuilder::AddTriangle(TriangleCR triangle)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR mappedTexture, DgnDbR dgnDb, FeatureCR feature, bool includeParams, uint32_t fillColor, bool requireNormals)
+void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR mappedTexture, DgnDbR dgnDb, FeatureCR feature, bool includeParams, uint32_t fillColor, bool requireNormals, uint8_t materialIndex)
     {
     if (visitor.Point().size() < 3)
         return;
@@ -1538,7 +1611,9 @@ void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappin
         auto computeIndex   = [=](size_t i) { return (0 == i) ? 0 : iTriangle + i; };
         auto makeVertexKey  = [&](size_t index)
             {
-            return VertexKey(points[index], feature, fillColor, m_mesh->Verts().GetParams(), requireNormals ? &visitor.Normal()[index] : nullptr, haveParams ? &params[index] : nullptr);
+            auto normal = requireNormals ? &visitor.Normal()[index] : nullptr;
+            auto param = haveParams ? &params[index] : nullptr;
+            return VertexKey(points[index], feature, fillColor, m_mesh->Verts().GetParams(), materialIndex, normal, param);
             };
 
         size_t indices[3]       = { computeIndex(0), computeIndex(1), computeIndex(2) };
@@ -1557,7 +1632,7 @@ void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappin
             if (visitor.GetAuxDataCP().IsValid())
                 {
                 // No deduplication with auxData (for now...)
-                newTriangle[i] = m_mesh->AddVertex(vertex.GetPosition(), vertex.GetNormal(), vertex.GetParam(), vertex.GetFillColor(), vertex.GetFeature());
+                newTriangle[i] = m_mesh->AddVertex(vertex.GetPosition(), vertex.GetNormal(), vertex.GetParam(), vertex.GetFillColor(), vertex.GetFeature(), vertex.GetMaterialIndex());
                 m_mesh->AddAuxData(*visitor.GetAuxDataCP(), index);
                 }
             else
@@ -1582,7 +1657,7 @@ void MeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureCR feature
 
     for (auto& point : points)
         {
-        VertexKey vertex(point, feature, fillColor, m_mesh->Verts().GetParams());
+        VertexKey vertex(point, feature, fillColor, m_mesh->Verts().GetParams(), 0);
         newPolyline.GetIndices().push_back (AddVertex(vertex));
         }
 
@@ -1597,7 +1672,7 @@ void MeshBuilder::AddPolyline(bvector<QPoint3d> const& points, FeatureCR feature
     MeshPolyline newPolyline(startDistance);
     for (auto const& point : points)
         {
-        VertexKey key(point, feature, fillColor, nullptr, nullptr);
+        VertexKey key(point, feature, fillColor, nullptr, nullptr, 0);
         newPolyline.GetIndices().push_back(AddVertex(key));
         }
 
@@ -1618,7 +1693,7 @@ void MeshBuilder::AddPointString(bvector<DPoint3d> const& points, FeatureCR feat
         {
         QPoint3d qpoint(point, m_mesh->Verts().GetParams());
         auto index = static_cast<uint32_t>(m_mesh->Verts().size());
-        m_mesh->AddVertex(qpoint, nullptr, nullptr, fillColor, feature);
+        m_mesh->AddVertex(qpoint, nullptr, nullptr, fillColor, feature, 0);
         polyline.GetIndices().push_back(index);
         }
 
@@ -1638,6 +1713,24 @@ void Mesh::AddPolyline(MeshPolylineCR polyline)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+uint8_t Mesh::GetMaterialIndex(MaterialP material) const
+    {
+    MaterialIndex index;
+    if (m_materialAtlas.IsValid())
+        {
+        index = m_materialAtlas->Find(material);
+        BeAssert(index.IsValid());
+        }
+
+    if (index.IsValid())
+        return index.Unwrap();
+
+    return 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 uint32_t MeshBuilder::AddVertex(VertexMap& verts, VertexKey const& vertex)
@@ -1646,7 +1739,7 @@ uint32_t MeshBuilder::AddVertex(VertexMap& verts, VertexKey const& vertex)
     auto index = static_cast<uint32_t>(m_mesh->Verts().size());
     auto insertPair = verts.Insert(vertex, index);
     if (insertPair.second)
-        m_mesh->AddVertex(vertex.GetPosition(), vertex.GetNormal(), vertex.GetParam(), vertex.GetFillColor(), vertex.GetFeature());
+        m_mesh->AddVertex(vertex.GetPosition(), vertex.GetNormal(), vertex.GetParam(), vertex.GetFillColor(), vertex.GetFeature(), vertex.GetMaterialIndex());
 
     return insertPair.first->second;
     }
@@ -1835,7 +1928,6 @@ PolyfaceList SharedGeom::GetPolyfaces(double chordTolerance, NormalMode normalMo
     PolyfaceList polyfaces;
     for (auto& geometry : m_geometries)
         {
-        BeAssert(geometry->GetTransform().IsIdentity());
         PolyfaceList thisPolyfaces = geometry->GetPolyfaces (chordTolerance, normalMode, context);
 
         for (auto const& thisPolyface : thisPolyfaces)
@@ -2133,7 +2225,6 @@ PolyfaceList PrimitiveGeometry::_GetPolyfaces(IFacetOptionsR facetOptions, ViewC
         // Make sure params, normals, etc present if needed. Note we wait until now so that the tolerance can be computed...
         polyface = FixPolyface(*polyface, facetOptions);
 
-        BeAssertOnce(GetTransform().IsIdentity()); // Polyfaces are transformed during collection.
         return PolyfaceList(1, Polyface(GetDisplayParams(), *polyface, true, false, nullptr, facetOptions.GetChordTolerance()));
         }
 
@@ -2239,7 +2330,7 @@ PolyfaceList SolidKernelGeometry::_GetPolyfaces(IFacetOptionsR facetOptions, Vie
         pFacetOptions->SetChordTolerance (minChordTolerance);
 
     pFacetOptions->SetParamsRequired (true); // Can't rely on HasTexture due to face attached material that may have texture.
-
+    pFacetOptions->SetBRepConcurrentFacetting(false); // Concurrent facetting is actually slower...
     if (nullptr != m_entity->GetFaceMaterialAttachments())
         {
         bvector<PolyfaceHeaderPtr>  polyfaces;
@@ -2470,28 +2561,15 @@ bool GeometryAccumulator::Add(TextStringR textString, DisplayParamsCR displayPar
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/17
+* @bsimethod                                                    Paul.Connelly   07/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-MeshBuilderMap GeometryAccumulator::ToMeshBuilders(GeometryOptionsCR options, double tolerance, FeatureTableP featureTable, ViewContextR context) const
-    {
-    return ToMeshBuilderMap(options, tolerance, featureTable, context);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-MeshBuilderMap GeometryAccumulator::ToMeshBuilderMap(GeometryOptionsCR options, double tolerance, FeatureTableP featureTable, ViewContextR context) const
+MeshBuilderSet GeometryAccumulator::ToMeshBuilders(GeometryOptionsCR options, double tolerance, FeatureTableP featureTable, ViewContextR context) const
     {
     DRange3d range = m_geometries.ComputeRange();
     bool is2d = !range.IsNull() && range.IsAlmostZeroZ();
 
-    MeshBuilderMap builderMap(tolerance, featureTable, range, is2d);
-    if (m_geometries.empty())
-        return builderMap;
+    MeshBuilderSet builders(tolerance, featureTable, range, is2d);
 
-    // This ensures the builder map is organized in the same order as the geometry list, and no meshes are merged.
-    // This is required to make overlay decorations render correctly.
-    uint16_t    order = 0;
     for (auto const& geom : m_geometries)
         {
         auto polyfaces = geom->GetPolyfaces(tolerance, options.m_normalMode, context);
@@ -2504,18 +2582,19 @@ MeshBuilderMap GeometryAccumulator::ToMeshBuilderMap(GeometryOptionsCR options, 
             DisplayParamsCPtr displayParams = tilePolyface.m_displayParams;
             bool hasTexture = displayParams.IsValid() && displayParams->IsTextured();
 
-            MeshBuilderMap::Key key(*displayParams, nullptr != polyface->GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, tilePolyface.m_isPlanar);
-            if (options.WantPreserveOrder())
-                key.SetOrder(order++);
-
-            MeshBuilderR meshBuilder = builderMap[key];
+            MeshBuilderKey key(*displayParams, nullptr != polyface->GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, tilePolyface.m_isPlanar);
+            MeshBuilderR meshBuilder = builders[key];
 
             auto edgeOptions = (options.WantEdges() && tilePolyface.m_displayEdges) ? MeshEdgeCreationOptions::DefaultEdges : MeshEdgeCreationOptions::NoEdges;
             meshBuilder.BeginPolyface(*polyface, edgeOptions);
 
             uint32_t fillColor = displayParams->GetFillColor();
+            uint8_t materialIndex = meshBuilder.GetMaterialIndex(displayParams->GetSurfaceMaterial().GetMaterial());
+            auto feature = geom->GetFeature();
+            auto hasNormals = nullptr != polyface->GetNormalCP();
+            auto const& texMap = displayParams->GetSurfaceMaterial().GetTextureMapping();
             for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
-                meshBuilder.AddFromPolyfaceVisitor(*visitor, displayParams->GetSurfaceMaterial().GetTextureMapping(), GetDgnDb(), geom->GetFeature(), hasTexture, fillColor, nullptr != polyface->GetNormalCP());
+                meshBuilder.AddFromPolyfaceVisitor(*visitor, texMap, GetDgnDb(), feature, hasTexture, fillColor, hasNormals, materialIndex);
 
             meshBuilder.EndPolyface();
             }
@@ -2526,11 +2605,9 @@ MeshBuilderMap GeometryAccumulator::ToMeshBuilderMap(GeometryOptionsCR options, 
             for (auto& tileStrokes : tileStrokesArray)
                 {
                 DisplayParamsCPtr displayParams = tileStrokes.m_displayParams;
-                MeshBuilderMap::Key key(*displayParams, false, tileStrokes.m_disjoint ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline, tileStrokes.m_isPlanar);
-                if (options.WantPreserveOrder())
-                    key.SetOrder(order++);
-
-                MeshBuilderR builder = builderMap[key];
+                auto type = tileStrokes.m_disjoint ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline;
+                MeshBuilderKey key(*displayParams, false, type, tileStrokes.m_isPlanar);
+                MeshBuilderR builder = builders[key];
                 uint32_t fillColor = displayParams->GetLineColor();
                 for (auto& strokePoints : tileStrokes.m_strokes)
                     {
@@ -2543,7 +2620,7 @@ MeshBuilderMap GeometryAccumulator::ToMeshBuilderMap(GeometryOptionsCR options, 
             }
         }
 
-    return builderMap;
+    return builders;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2555,15 +2632,8 @@ MeshList GeometryAccumulator::ToMeshes(GeometryOptionsCR options, double toleran
     if (m_geometries.empty())
         return meshes;
 
-    MeshBuilderMap builderMap = ToMeshBuilderMap(options, tolerance, featureTable, context);
-
-    for (auto& builder : builderMap)
-        {
-        MeshP mesh = builder.second->GetMesh();
-        if (!mesh->IsEmpty())
-            meshes.push_back(mesh);
-        }
-
+    auto builders = ToMeshBuilders(options, tolerance, featureTable, context);
+    builders.GetMeshes(meshes);
     return meshes;
     }
 
@@ -2996,7 +3066,20 @@ bool MeshArgs::Init(MeshCR mesh)
         Set(m_normals, mesh.Normals());
 
     m_texture = const_cast<TextureP>(mesh.GetDisplayParams().GetSurfaceMaterial().GetTextureMapping().GetTexture()); // ###TODO: constness...
-    m_material = mesh.GetDisplayParams().GetSurfaceMaterial().GetMaterial();
+
+    // NB: The atlas may contain unused materials. Only write it out if at least 2 are used.
+    MaterialAtlasP atlas = mesh.GetMaterialAtlas();
+    if (nullptr != atlas && mesh.HasMultipleMaterials())
+        {
+        m_materialIndices = mesh.GetMaterialIndices();
+        m_material.m_atlas = atlas;
+        m_material.m_indices = &m_materialIndices.front();
+        }
+    else
+        {
+        m_material.m_material = mesh.GetDisplayParams().GetSurfaceMaterial().GetMaterial();
+        }
+
     m_fillFlags = mesh.GetDisplayParams().GetFillFlags();
     m_isPlanar = mesh.IsPlanar();
     m_is2d = mesh.Is2d();
@@ -3049,6 +3132,11 @@ void MeshArgs::Clear()
 
     m_polylineEdges.clear();
     m_edges.Clear();
+
+    m_materialIndices.clear();
+    m_material.m_atlas = nullptr;
+    m_material.m_indices = nullptr;
+    m_material.m_material = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3852,25 +3940,247 @@ ColorDef DisplayParams::AdjustTransparency(ColorDef color)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   04/19
+* @bsimethod                                                    Paul.Connelly   07/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-MeshBuilderPtr MeshBuilderMap::Find(Key const& key) const
+MeshBuilderList::MeshBuilderList(MeshBuilderKeyCR key, MeshBuilderSetCR set) : m_key(key), m_set(set)
     {
-    auto found = m_map.find(key);
-    return m_map.end() != found ? found->second : nullptr;
+    m_head = CreateMeshBuilder(m_key.GetDisplayParams());
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/17
+* @bsimethod                                                    Paul.Connelly   07/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-MeshBuilderR MeshBuilderMap::operator[](Key const& key)
+MeshBuilderPtr MeshBuilderList::CreateMeshBuilder(DisplayParamsCR params) const
     {
-    auto found = m_map.find(key);
-    if (m_map.end() == found)
+    MaterialAtlasPtr atlas;
+    if (Mesh::PrimitiveType::Mesh == m_key.GetPrimitiveType() && !m_key.GetDisplayParams().IgnoresLighting())
         {
-        MeshBuilderPtr builder = MeshBuilder::Create(*key.m_params, m_vertexTolerance, m_facetAreaTolerance, m_featureTable, key.m_type, m_range, m_is2d, key.m_isPlanar, key.m_nodeIndex);
-        found = m_map.Insert(key, builder).first;
+        auto const& mat = params.GetSurfaceMaterial();
+        if (!mat.GetTextureMapping().IsValid() && nullptr == mat.GetGradient())
+            atlas = MaterialAtlas::Create(mat.GetMaterial(), m_set.GetMaxMaterialsPerMesh());
         }
 
-    return *found->second;
+    auto vertTol = m_set.GetVertexTolerance();
+    auto areaTol = m_set.GetFacetAreaTolerance();
+    auto featureTable = m_set.GetFeatureTable();
+    auto type = m_key.GetPrimitiveType();
+    auto isPlanar = m_key.IsPlanar();
+    auto nodeIndex = m_key.GetNodeIndex();
+    return MeshBuilder::Create(params, vertTol, areaTol, featureTable, type, m_set.GetRange(), m_set.Is2d(), isPlanar, nodeIndex, atlas.get());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+MeshBuilderR MeshBuilderList::GetMeshBuilder(DisplayParamsCR params)
+    {
+    // Find a builder whose material atlas is not full, or whose atlas already contains a compatible material, or who doesn't support material atlas.
+    // (The latter will be true for: point strings, polylines, any surface with a texture/gradient or which ignores lighting).
+    MeshBuilderPtr builder = m_head;
+    MeshBuilderPtr tail = builder;
+    auto material = params.GetSurfaceMaterial().GetMaterial();
+    do {
+        auto atlas = builder->GetMesh()->GetMaterialAtlas();
+        if (nullptr == atlas || atlas->Insert(material).IsValid())
+            return *builder;
+
+        tail = builder;
+        builder = builder->m_next;
+    } while (builder.IsValid());
+
+    // No room in any builder's atlas - must create a new one
+    builder = CreateMeshBuilder(params);
+    tail->m_next = builder;
+
+    return *builder;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t MeshBuilderList::GetVertexCount() const
+    {
+    size_t count = 0;
+    ForEach([&](MeshBuilderCR builder, bool&) { count += builder.GetMesh()->Points().size(); });
+    return count;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshBuilderList::GetMeshes(MeshListR meshes) const
+    {
+    ForEach([&](MeshBuilderCR builder, bool&)
+        {
+        auto mesh = builder.m_mesh;
+        if (!mesh->IsEmpty())
+            meshes.push_back(mesh);
+        });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshBuilderList::GetMeshes(bvector<MeshPtr>& meshes, SharedGeomCR sharedGeom) const
+    {
+    ForEach([&](MeshBuilderCR builder, bool&)
+        {
+        auto mesh = builder.m_mesh;
+        if (!mesh->IsEmpty())
+            {
+            mesh->SetSharedGeom(sharedGeom);
+            meshes.push_back(mesh);
+            }
+        });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+MaterialIndex MaterialAtlas::Insert(MaterialP mat)
+    {
+    auto trans = nullptr != mat ? mat->GetParams().m_transparency.Categorize() : TransparencyCategory::None;
+    if (trans != GetTransparency())
+        return MaterialIndex();
+
+    if (nullptr != mat && mat->GetTextureMapping().IsValid())
+        return MaterialIndex();
+
+    auto index = Find(mat);
+    if (index.IsValid())
+        return index;
+
+    if (IsFull())
+        return MaterialIndex();
+
+    uint8_t newIndex = NumMaterials();
+    m_materialToIndex[mat] = newIndex;
+    return MaterialIndex(newIndex);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<Material::CreateParams> MaterialAtlas::ToList() const
+    {
+    bvector<Material::CreateParams> list(m_materialToIndex.size());
+    for (auto const& kvp : m_materialToIndex)
+        {
+        auto const& mat = kvp.first;
+        list[kvp.second] = mat.IsValid() ? mat->GetParams() : Material::CreateParams();
+        }
+
+    return list;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+Material::CreateParams const& MaterialComparison::GetDefaults()
+    {
+    static Material::CreateParams s_defaults;
+    return s_defaults;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+CompareResult MaterialComparison::Compare(MaterialP lhs, MaterialP rhs)
+    {
+    if (lhs == rhs)
+        return CompareResult::Equal;
+
+    auto const& lhParams = nullptr != lhs ? lhs->GetParams() : GetDefaults();
+    auto const& rhParams = nullptr != rhs ? rhs->GetParams() : GetDefaults();
+
+    return Compare(lhParams, rhParams);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool MaterialComparison::MatchesDefaults(MaterialP mat)
+    {
+    return nullptr == mat || MatchesDefaults(mat->GetParams());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool MaterialComparison::MatchesDefaults(Material::CreateParams const& params)
+    {
+    if (params.m_textureMapping.IsValid())
+        return false;
+
+    auto const& defaults = GetDefaults();
+    return Equals(params, defaults);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+CompareResult MaterialComparison::Compare(Material::CreateParams const& lhs, Material::CreateParams const& rhs)
+    {
+    auto cmp = lhs.m_diffuseColor.Compare(rhs.m_diffuseColor);
+    if (CompareResult::Equal == cmp)
+        {
+        cmp = lhs.m_specularColor.Compare(rhs.m_specularColor);
+        if (CompareResult::Equal == cmp)
+            cmp = lhs.m_transparency.Compare(rhs.m_transparency);
+        }
+
+    if (CompareResult::Equal != cmp)
+        return cmp;
+
+#define COMPARE_MAT(X) if (lhs.X != rhs.X) return lhs.X < rhs.X ? CompareResult::Less : CompareResult::Greater
+
+    COMPARE_MAT(m_specularExponent);
+    COMPARE_MAT(m_diffuse);
+    COMPARE_MAT(m_specular);
+
+    return CompareResult::Equal;
+
+#undef COMPARE_MAT
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+MeshBuilderListPtr MeshBuilderSet::FindList(MeshBuilderKeyCR key) const
+    {
+    auto found = m_set.find(key);
+    return m_set.end() != found ? *found : nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+MeshBuilderR MeshBuilderSet::operator[](MeshBuilderKeyCR key)
+    {
+    auto found = m_set.find(key);
+    if (m_set.end() == found)
+        found = m_set.insert(MeshBuilderList::Create(key, *this)).first;
+
+    // std::set iterators are const, but we know the members used by our comparator will not change.
+    MeshBuilderListR list = const_cast<MeshBuilderListR>(**found);
+    return list.GetMeshBuilder(key.GetDisplayParams());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshBuilderSet::GetMeshes(MeshListR meshes) const
+    {
+    for (auto const& builder : m_set)
+        builder->GetMeshes(meshes);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshBuilderSet::GetMeshes(bvector<MeshPtr>& meshes, SharedGeomCR sharedGeom) const
+    {
+    for (auto const& builder : m_set)
+        builder->GetMeshes(meshes, sharedGeom);
+    }
+

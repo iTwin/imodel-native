@@ -418,8 +418,8 @@ Material::CreateParams::CreateParams(MaterialKeyCR key, RenderingAssetCR asset, 
     if (asset.GetBool(RENDER_MATERIAL_FlagHasFinish, false))
         m_specularExponent = asset.GetDouble(RENDER_MATERIAL_Finish, Defaults::SpecularExponent());
 
-    if (asset.GetBool(RENDER_MATERIAL_FlagHasTransmit, false))
-        m_transparency = asset.GetDouble(RENDER_MATERIAL_Transmit, 0.0);
+    auto transparency = asset.GetBool(RENDER_MATERIAL_FlagHasTransmit, false) ? asset.GetDouble(RENDER_MATERIAL_Transmit, 0.0) : 0.0;
+    m_transparency.SetValue(transparency);
 
     if (asset.GetBool(RENDER_MATERIAL_FlagHasDiffuse, false))
         m_diffuse = asset.GetDouble(RENDER_MATERIAL_Diffuse, Defaults::Diffuse());
@@ -535,5 +535,18 @@ FeatureTable PackedFeatureTable::Unpack() const
         table.Insert(GetFeature(i), i);
 
     return table;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+CompareResult Material::CreateParams::MatColor::Compare(MatColor const& other) const
+    {
+    if (IsValid() != other.IsValid())
+        return IsValid() ? CompareResult::Greater : CompareResult::Less;
+    else if (!IsValid() || m_value.GetValueNoAlpha() == other.m_value.GetValueNoAlpha())
+        return CompareResult::Equal;
+    else
+        return m_value.GetValueNoAlpha() < other.m_value.GetValueNoAlpha() ? CompareResult::Less : CompareResult::Greater;
     }
 

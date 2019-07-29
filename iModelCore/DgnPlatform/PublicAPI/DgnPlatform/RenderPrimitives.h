@@ -10,10 +10,7 @@
 #include <DgnPlatform/DgnTexture.h>
 #include <DgnPlatform/DgnMaterial.h>
 #include <BRepCore/SolidKernel.h>
-
-#define BEGIN_BENTLEY_RENDER_PRIMITIVES_NAMESPACE BEGIN_BENTLEY_RENDER_NAMESPACE namespace Primitives {
-#define END_BENTLEY_RENDER_PRIMITIVES_NAMESPACE } END_BENTLEY_RENDER_NAMESPACE
-#define USING_NAMESPACE_BENTLEY_RENDER_PRIMITIVES using namespace BentleyApi::Dgn::Render::Primitives;
+#include <set>
 
 BEGIN_BENTLEY_RENDER_PRIMITIVES_NAMESPACE
 
@@ -23,7 +20,9 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(DisplayParamsCache);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Triangle);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Mesh);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshBuilder);
-DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshBuilderMap);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshBuilderKey);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshBuilderList);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshBuilderSet);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Geometry);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryList);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Polyface);
@@ -44,6 +43,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(ThematicMeshBuilder);
 DEFINE_REF_COUNTED_PTR(DisplayParams);
 DEFINE_REF_COUNTED_PTR(Mesh);
 DEFINE_REF_COUNTED_PTR(MeshBuilder);
+DEFINE_REF_COUNTED_PTR(MeshBuilderList);
 DEFINE_REF_COUNTED_PTR(Geometry);
 DEFINE_REF_COUNTED_PTR(SharedGeom);
 DEFINE_REF_COUNTED_PTR(PartGeom);
@@ -72,21 +72,18 @@ enum class NormalMode
 struct GeometryOptions
 {
     enum class SurfacesOnly { No, Yes }; //!< Yes indicates polylines will not be generated, only meshes.
-    enum class PreserveOrder { No, Yes }; //!< Yes indicates primitives will not be merged, and the order in which they were added to the GraphicBuilder will be preserved.
     enum class GenerateEdges { No, Yes }; //!< Yes indicates edges will be generated for surfaces.
 
     NormalMode          m_normalMode;
     SurfacesOnly        m_surfaces;
-    PreserveOrder       m_preserveOrder;
     GenerateEdges       m_generateEdges;
 
-    explicit GeometryOptions(NormalMode normals=NormalMode::Always, SurfacesOnly surfaces=SurfacesOnly::No, PreserveOrder preserveOrder=PreserveOrder::No, GenerateEdges edges=GenerateEdges::Yes)
-        : m_normalMode(normals), m_surfaces(surfaces), m_preserveOrder(preserveOrder), m_generateEdges(edges) { }
+    explicit GeometryOptions(NormalMode normals=NormalMode::Always, SurfacesOnly surfaces=SurfacesOnly::No, GenerateEdges edges=GenerateEdges::Yes)
+        : m_normalMode(normals), m_surfaces(surfaces), m_generateEdges(edges) { }
     explicit GeometryOptions(GraphicBuilder::CreateParams const& params, NormalMode normals=NormalMode::Always, SurfacesOnly surfaces=SurfacesOnly::No)
-        : GeometryOptions(normals, surfaces, (params.IsOverlay() || params.IsViewBackground()) ? PreserveOrder::Yes : PreserveOrder::No, params.IsSceneGraphic() ? GenerateEdges::Yes : GenerateEdges::No) { }
+        : GeometryOptions(normals, surfaces, params.IsSceneGraphic() ? GenerateEdges::Yes : GenerateEdges::No) { }
 
     bool WantSurfacesOnly() const { return SurfacesOnly::Yes == m_surfaces; }
-    bool WantPreserveOrder() const { return PreserveOrder::Yes == m_preserveOrder; }
     bool WantEdges() const { return GenerateEdges::Yes == m_generateEdges; }
 };
 
@@ -120,7 +117,7 @@ private:
 public:
     SurfaceMaterial() { }
     explicit SurfaceMaterial(TextureMappingCR textureMapping, GradientSymbCP gradient = nullptr) : m_gradient(gradient), m_textureMapping(textureMapping) { }
-    SurfaceMaterial(MaterialR material, TextureMapping::Trans2x3 const* transform = nullptr);
+    DGNPLATFORM_EXPORT SurfaceMaterial(MaterialR material, TextureMapping::Trans2x3 const* transform = nullptr);
 
     bool IsValid() const { return m_textureMapping.IsValid() || m_material.IsValid(); }
     bool IsEqualTo(SurfaceMaterialCR, ComparePurpose) const;
@@ -129,6 +126,30 @@ public:
     MaterialP GetMaterial() const { return m_material.get(); }
     TextureMappingCR GetTextureMapping() const { return m_textureMapping; }
     GradientSymbCP GetGradient() const { return m_gradient.get(); }
+};
+
+//=======================================================================================
+//! Compares Render::Materials based on the properties used by the iModel.js tile-based renderer.
+//! NB: MatchesDefaults returns false if the material has a valid texture mapping - but IsLessThan and
+//! Equals ignore the texture mapping entirely (it is intended for use with MaterialAtlas, which does
+//! not permit textured materials).
+// @bsistruct                                                   Paul.Connelly   07/19
+//=======================================================================================
+struct MaterialComparison
+{
+private:
+    static Material::CreateParams const& GetDefaults();
+public:
+    DGNPLATFORM_EXPORT static CompareResult Compare(MaterialP lhs, MaterialP rhs);
+    DGNPLATFORM_EXPORT static CompareResult Compare(Material::CreateParams const& lhs, Material::CreateParams const& rhs);
+
+    DGNPLATFORM_EXPORT static bool MatchesDefaults(MaterialP material);
+    DGNPLATFORM_EXPORT static bool MatchesDefaults(Material::CreateParams const& params);
+
+    static bool IsLessThan(MaterialP lhs, MaterialP rhs) { return CompareResult::Less == Compare(lhs, rhs); }
+    static bool Equals(MaterialP lhs, MaterialP rhs) { return CompareResult::Equal == Compare(lhs, rhs); }
+    static bool IsLessThan(Material::CreateParams const& lhs, Material::CreateParams const& rhs) { return CompareResult::Less == Compare(lhs, rhs); }
+    static bool Equals(Material::CreateParams const& lhs, Material::CreateParams const& rhs) { return CompareResult::Equal == Compare(lhs, rhs); }
 };
 
 //=======================================================================================
@@ -141,7 +162,7 @@ struct DisplayParams : RefCountedBase
 
     enum class Type { Mesh, Linear, Text };
     enum class RegionEdgeType { None, Default, Outline };
-private:
+protected:
     Type                m_type;
     DgnCategoryId       m_categoryId;
     DgnSubCategoryId    m_subCategoryId;
@@ -156,11 +177,11 @@ private:
 
     virtual uint32_t _GetExcessiveRefCountThreshold() const override { return 0x7fffffff; }
 
-    DisplayParamsCPtr Clone() const;
+    DGNPLATFORM_EXPORT DisplayParamsCPtr Clone() const;
 
-    static DisplayParams ForMesh(GraphicParamsCR gf, GeometryParamsCP geom, bool filled, DgnDbR db, System& sys);
-    static DisplayParams ForLinear(GraphicParamsCR gf, GeometryParamsCP geom);
-    static DisplayParams ForText(GraphicParamsCR gf, GeometryParamsCP geom);
+    DGNPLATFORM_EXPORT static DisplayParams ForMesh(GraphicParamsCR gf, GeometryParamsCP geom, bool filled, DgnDbR db, System& sys);
+    DGNPLATFORM_EXPORT static DisplayParams ForLinear(GraphicParamsCR gf, GeometryParamsCP geom);
+    DGNPLATFORM_EXPORT static DisplayParams ForText(GraphicParamsCR gf, GeometryParamsCP geom);
     static DisplayParams ForType(Type type, GraphicParamsCR gf, GeometryParamsCP geom, bool filled, DgnDbR db, System& sys);
 
     DisplayParams(DisplayParamsCR rhs) = default;
@@ -173,7 +194,7 @@ private:
     void InitGeomParams(DgnCategoryId, DgnSubCategoryId, DgnGeometryClass);
     void InitText(ColorDef lineColor, DgnCategoryId, DgnSubCategoryId, DgnGeometryClass);
     void InitLinear(ColorDef lineColor, uint32_t width, LinePixels, DgnCategoryId, DgnSubCategoryId, DgnGeometryClass);
-    void InitMesh(ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels, SurfaceMaterialCR, FillFlags, DgnCategoryId, DgnSubCategoryId, DgnGeometryClass);
+    DGNPLATFORM_EXPORT void InitMesh(ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels, SurfaceMaterialCR, FillFlags, DgnCategoryId, DgnSubCategoryId, DgnGeometryClass);
 public:
     Type GetType() const { return m_type; }
     ColorDef GetFillColorDef() const { return m_fillColor; }
@@ -211,7 +232,7 @@ public:
     DisplayParamsCPtr CloneForRasterText(TextureCR raster) const;
     DisplayParamsCPtr CloneWithTextureOverride(TextureMappingCR textureMapping) const;
     DisplayParamsCPtr CloneForMeshedLineString() const;
-    DisplayParamsCPtr Clone(ColorDef fillColor, ColorDef lineColor, uint32_t lineWidth, LinePixels linePixels) const;
+    DGNPLATFORM_EXPORT DisplayParamsCPtr Clone(ColorDef fillColor, ColorDef lineColor, uint32_t lineWidth, LinePixels linePixels) const;
 
     DGNPLATFORM_EXPORT Utf8String ToDebugString() const; //!< @private
 
@@ -358,6 +379,7 @@ struct MeshArgs : TriMeshArgs
 {
     bvector<uint32_t>                   m_colorTable;
     bvector<PolylineEdgeArgs::Polyline> m_polylineEdges;
+    bvector<uint8_t>                    m_materialIndices;
 
     template<typename T, typename U> void Set(T& ptr, U const& src) { ptr = (0 != src.size() ? src.data() : nullptr); }
     template<typename T, typename U> void Set(uint32_t& count, T& ptr, U const& src)
@@ -395,6 +417,91 @@ struct MeshGraphicArgs
 };
 
 //=======================================================================================
+// @bsistruct                                                   Paul.Connelly   07/19
+//=======================================================================================
+struct MaterialIndex
+{
+private:
+    uint8_t m_index;
+    bool    m_valid;
+public:
+    explicit MaterialIndex(uint8_t index) : m_index(index), m_valid(true) { }
+    MaterialIndex() : m_valid(false) { }
+
+    bool IsValid() const { return m_valid; }
+    uint8_t Unwrap() const
+        {
+        BeAssert(IsValid());
+        return m_index;
+        }
+};
+
+//=======================================================================================
+//! Holds no more than 255 materials. Materials are compared based on the properties
+//! actually used for rendering in iModel.js; if those properties are all the same, the
+//! materials use the same material index. Each vertex in the mesh is assigned a material
+//! index corresponding to its material's position in the material atlas; the material
+//! atlas itself is appended to the VertexTable, with each material's properties encoded
+//! into 4 rgba entries.
+//! A single atlas may *only* hold opaque *or* translucent materials, not a combination of both.
+//! An opaque material atlas can include the "default material" (represented by a NULL MaterialPtr) for
+//! meshes that do not define a custom material.
+// @bsistruct                                                   Paul.Connelly   07/19
+//=======================================================================================
+struct MaterialAtlas : RefCountedBase
+{
+private:
+    struct Comparator
+    {
+        bool operator()(MaterialPtr const& lhs, MaterialPtr const& rhs) const
+            {
+            return MaterialComparison::IsLessThan(lhs.get(), rhs.get());
+            }
+    };
+
+    using Map = bmap<MaterialPtr, uint8_t, Comparator>;
+    using TransparencyCategory = Material::Transparency::Category;
+
+    Map                     m_materialToIndex;
+    uint8_t                 m_maxMaterials;
+    TransparencyCategory    m_transparencyCategory;
+
+    MaterialAtlas(MaterialP material, uint8_t maxMaterials) : m_maxMaterials(maxMaterials)
+        {
+        m_materialToIndex[material] = 0;
+        m_transparencyCategory = nullptr != material ? material->GetParams().m_transparency.Categorize() : TransparencyCategory::None;
+        }
+public:
+    static MaterialAtlasPtr Create(MaterialP material, uint8_t maxMaterials = 255)
+        {
+        if (maxMaterials == 0)
+            return nullptr;
+        else if (nullptr != material && material->GetTextureMapping().IsValid())
+            return nullptr;
+
+        return maxMaterials > 0 ? new MaterialAtlas(material, maxMaterials) : nullptr;
+        }
+
+    uint8_t NumMaterials() const { return static_cast<uint8_t>(m_materialToIndex.size()); }
+    bool IsFull() const { return NumMaterials() >= m_maxMaterials; }
+
+    TransparencyCategory GetTransparency() const { return m_transparencyCategory; }
+    bool IsTranslucent() const { return TransparencyCategory::Translucent == GetTransparency(); }
+    bool IsOpaque() const { return TransparencyCategory::Opaque == GetTransparency(); }
+    bool OverridesAlpha() const { return TransparencyCategory::None != GetTransparency(); }
+
+    MaterialIndex Find(MaterialP material) const
+        {
+        auto found = m_materialToIndex.find(material);
+        return m_materialToIndex.end() == found ? MaterialIndex() : MaterialIndex(found->second);
+        }
+
+    DGNPLATFORM_EXPORT MaterialIndex Insert(MaterialP material);
+
+    DGNPLATFORM_EXPORT bvector<Material::CreateParams> ToList() const;
+};
+
+//=======================================================================================
 // @bsistruct                                                   Paul.Connelly   12/16
 //=======================================================================================
 struct Mesh : RefCountedBase
@@ -421,7 +528,24 @@ private:
         DGNPLATFORM_EXPORT void ToFeatureIndex(FeatureIndex& index) const;
         void SetIndices(bvector<uint32_t>&& indices);
     };
+public:
+    struct Materials
+    {
+    protected:
+        bvector<uint8_t>    m_indices;
+        uint8_t             m_uniform;
+        bool                m_initialized = false;
+        bool                m_haveAtlas;
+    public:
+        explicit Materials(bool haveAtlas) : m_haveAtlas(haveAtlas) { }
+        DGNPLATFORM_EXPORT void Add(uint8_t materialIndex, size_t numVerts);
+        bvector<uint8_t> const& GetIndices() const { return m_indices; }
 
+        bool IsEmpty() const { return !m_initialized; }
+        bool IsUniform() const { return m_initialized && m_indices.empty(); }
+        bool IsNonUniform() const { return m_initialized && !m_indices.empty(); }
+    };
+private:
     DisplayParamsCPtr               m_displayParams;
     TriangleList                    m_triangles;
     PolylineList                    m_polylines;
@@ -431,6 +555,7 @@ private:
     ColorTable                      m_colorTable;
     bvector<uint16_t>               m_colors;
     Features                        m_features;
+    Materials                       m_materials;
     PrimitiveType                   m_type;
     mutable MeshEdgesPtr            m_edges;
     bool                            m_is2d;
@@ -438,15 +563,16 @@ private:
     PolyfaceAuxData::Channels       m_auxChannels;
     size_t                          m_nodeIndex;
     SharedGeomCPtr                  m_sharedGeom;
+    MaterialAtlasPtr                m_materialAtlas;
 
-    Mesh(DisplayParamsCR params, FeatureTableP featureTable, PrimitiveType type, DRange3dCR range, bool is2d, bool isPlanar, size_t nodeIndex)
-        : m_displayParams(&params), m_features(featureTable), m_type(type), m_verts(range), m_is2d(is2d), m_isPlanar(isPlanar), m_nodeIndex(nodeIndex) { }
+    Mesh(DisplayParamsCR params, FeatureTableP featureTable, PrimitiveType type, DRange3dCR range, bool is2d, bool isPlanar, size_t nodeIndex, MaterialAtlasP materialAtlas)
+        : m_displayParams(&params), m_features(featureTable), m_type(type), m_verts(range), m_is2d(is2d), m_isPlanar(isPlanar), m_nodeIndex(nodeIndex), m_materialAtlas(materialAtlas), m_materials(nullptr != materialAtlas) { }
 
     friend struct MeshBuilder;
     void SetDisplayParams(DisplayParamsCR params) { m_displayParams = &params; }
 public:
-    static MeshPtr Create(DisplayParamsCR params, FeatureTableP featureTable, PrimitiveType type, DRange3dCR range, bool is2d, bool isPlanar, size_t nodeIndex)
-        { return new Mesh(params, featureTable, type, range, is2d, isPlanar, nodeIndex); }
+    static MeshPtr Create(DisplayParamsCR params, FeatureTableP featureTable, PrimitiveType type, DRange3dCR range, bool is2d, bool isPlanar, size_t nodeIndex, MaterialAtlasP materialAtlas)
+        { return new Mesh(params, featureTable, type, range, is2d, isPlanar, nodeIndex, materialAtlas); }
 
     DPoint3d                        GetPoint(uint32_t index) const;
     DGNPLATFORM_EXPORT DRange3d     GetTriangleRange(TriangleCR triangle) const;
@@ -477,6 +603,11 @@ public:
     void                            CompressVertexQuantization();
     size_t                          GetNodeIndex() const { return m_nodeIndex; }
 
+    MaterialAtlasP                  GetMaterialAtlas() const { return m_materialAtlas.get(); }
+    uint8_t                         GetMaterialIndex(MaterialP material) const;
+    bvector<uint8_t> const&         GetMaterialIndices() const { return m_materials.GetIndices(); }
+    bool                            HasMultipleMaterials() const { return m_materials.IsNonUniform(); }
+
     bool IsEmpty() const { return m_triangles.Empty() && m_polylines.empty(); }
     bool Is2d() const { return m_is2d; }
     bool IsPlanar() const { return m_isPlanar; }
@@ -489,7 +620,7 @@ public:
 
     void AddTriangle(TriangleCR triangle) { BeAssert(PrimitiveType::Mesh == GetType()); m_triangles.AddTriangle(triangle); }
     void AddPolyline(MeshPolylineCR polyline);
-    uint32_t AddVertex(QPoint3dCR vertex, OctEncodedNormalCP normal, DPoint2dCP param, uint32_t fillColor, FeatureCR feature);
+    uint32_t AddVertex(QPoint3dCR vertex, OctEncodedNormalCP normal, DPoint2dCP param, uint32_t fillColor, FeatureCR feature, uint8_t materialIndex);
     void AddAuxData(PolyfaceAuxDataCR auxData, size_t index);
 
     GraphicPtr GetGraphics (MeshGraphicArgs& args, Dgn::Render::SystemCR system, DgnDbR db) const;
@@ -508,86 +639,61 @@ struct ToleranceRatio
 };
 
 //=======================================================================================
-// @bsistruct                                                   Paul.Connelly   10/17
+// @bsistruct                                                   Paul.Connelly   07/19
 //=======================================================================================
-struct MeshBuilderMap
+struct MeshBuilderKey
 {
-    struct Key
+    enum class Flags : uint8_t
     {
-        friend struct MeshBuilderMap;
-    private:
-        DisplayParamsCPtr   m_params;
-        uint16_t            m_order = 0;
-        Mesh::PrimitiveType m_type;
-        bool                m_hasNormals;
-        bool                m_isPlanar;
-        uint64_t            m_nodeIndex = 0;
-
-        Key(DisplayParamsCP params, Mesh::PrimitiveType type, bool hasNormals, bool isPlanar, uint64_t nodeIndex = 0) : m_params(params), m_type(type), m_hasNormals(hasNormals), m_isPlanar(isPlanar), m_nodeIndex(nodeIndex) { }
-    public:
-        Key() : Key(nullptr, Mesh::PrimitiveType::Mesh,false, false) { }
-        explicit Key(MeshCR mesh) : Key(mesh.GetDisplayParams(), !mesh.Normals().empty(), mesh.GetType(), mesh.IsPlanar()) { }
-        Key(DisplayParamsCR params, bool hasNormals, Mesh::PrimitiveType type, bool isPlanar, uint64_t elementId = 0) : Key(&params, type, hasNormals, isPlanar, elementId) { }
-
-        void SetOrder(uint16_t order) { m_order = order; }
-
-        DisplayParamsCR GetDisplayParams() const { return *m_params; }
-        Mesh::PrimitiveType GetPrimitiveType() const { return m_type; }
-        bool IsPlanar() const { return m_isPlanar; }
-        uint64_t GetNodeIndex() const { return m_nodeIndex; }
-
-        bool operator<(Key const& rhs) const
-            {
-            // NB: This *must* be tested first.
-            if (m_order != rhs.m_order)
-                return m_order < rhs.m_order;
-
-            if (m_type != rhs.m_type)
-                return m_type < rhs.m_type;
-
-            if (m_isPlanar != rhs.m_isPlanar)
-                return !m_isPlanar;
-
-            if (m_hasNormals != rhs.m_hasNormals)
-                return !m_hasNormals;
-
-            if (m_nodeIndex != rhs.m_nodeIndex)
-                return m_nodeIndex < rhs.m_nodeIndex;
-
-            BeAssert(m_params.IsValid() && rhs.m_params.IsValid());
-            return m_params->IsLessThan(*rhs.m_params, ComparePurpose::Merge);
-            }
+    None = 0,
+    HasNormals = 1 << 0,
+    IsPlanar = 1 << 2,
+    All = HasNormals | IsPlanar,
     };
+
 private:
-    typedef bmap<Key, MeshBuilderPtr> Map;
+    DisplayParamsCPtr   m_params;
+    uint64_t            m_nodeIndex;
+    Mesh::PrimitiveType m_type;
+    Flags               m_flags;
 
-    Map             m_map;
-    double          m_vertexTolerance;
-    double          m_facetAreaTolerance;
-    DRange3d        m_range;
-    FeatureTableP   m_featureTable;
-    bool            m_is2d;
+    MeshBuilderKey(DisplayParamsCP params, Mesh::PrimitiveType type, Flags flags, uint64_t nodeIndex = 0) : m_params(params), m_type(type), m_flags(flags), m_nodeIndex(nodeIndex) { }
 public:
-    MeshBuilderMap(double tolerance, FeatureTableP features, DRange3dCR range, bool is2d) :
-        m_vertexTolerance(tolerance*ToleranceRatio::Vertex()), m_facetAreaTolerance(tolerance*ToleranceRatio::FacetArea()), m_featureTable(features), m_range(range), m_is2d(is2d) { }
-    MeshBuilderMap() : MeshBuilderMap(0.0, nullptr, DRange3d::NullRange(), false) { }
+    MeshBuilderKey() : MeshBuilderKey(nullptr, Mesh::PrimitiveType::Mesh, Flags::None) { }
+    MeshBuilderKey(DisplayParamsCR params, Mesh::PrimitiveType type, Flags flags, uint64_t elementId = 0)
+        : MeshBuilderKey(&params, type, flags, elementId) { }
+    MeshBuilderKey(DisplayParamsCR params, bool hasNormals, Mesh::PrimitiveType type, bool isPlanar, uint64_t elementId = 0)
+        : MeshBuilderKey(params, type, MakeFlags(hasNormals, isPlanar), elementId) { }
 
-    DGNPLATFORM_EXPORT MeshBuilderR operator[](Key const& key);
-    MeshBuilderPtr Find(Key const& key) const;
+    DisplayParamsCR GetDisplayParams() const { return *m_params; }
+    Mesh::PrimitiveType GetPrimitiveType() const { return m_type; }
+    bool IsPlanar() const { return Flags::IsPlanar == m_flags || Flags::All == m_flags; }
+    uint64_t GetNodeIndex() const { return m_nodeIndex; }
 
-    using const_iterator = Map::const_iterator;
+    bool operator<(MeshBuilderKeyCR rhs) const
+        {
+        if (m_type != rhs.m_type)
+            return m_type < rhs.m_type;
 
-    size_t size() const { return m_map.size(); }
-    bool empty() const { return m_map.empty(); }
-    void clear() { m_map.clear(); }
-    const_iterator begin() const { return m_map.begin(); }
-    const_iterator end() const { return m_map.end(); }
+        if (m_flags != rhs.m_flags)
+            return m_flags < rhs.m_flags;
 
-    DRange3dCR GetRange() const { return m_range; }
-    void SetRange(DRange3dCR range) { BeAssert(empty()); m_range = range; }
-    void SetFeatureTable(FeatureTableR table) { m_featureTable = &table; }
-    void SetMaxFeatures(uint32_t maxFeatures) { if (nullptr != m_featureTable) m_featureTable->SetMaxFeatures(maxFeatures); }
-    FeatureTableP GetFeatureTable() { return m_featureTable; }
+        if (m_nodeIndex != rhs.m_nodeIndex)
+            return m_nodeIndex < rhs.m_nodeIndex;
+
+        BeAssert(m_params.IsValid() && rhs.m_params.IsValid());
+        return m_params->IsLessThan(*rhs.m_params, ComparePurpose::Merge);
+        }
+
+    static Flags MakeFlags(bool hasNormals, bool isPlanar)
+        {
+        if (hasNormals && isPlanar)
+            return Flags::All;
+        else if (hasNormals)
+            return Flags::HasNormals;
+        else
+            return isPlanar ? Flags::IsPlanar : Flags::None;
+        }
 };
 
 //=======================================================================================
@@ -616,22 +722,23 @@ private:
     uint64_t            m_subcatId;         // 20
     uint32_t            m_fillColor;        // 28
     DgnGeometryClass    m_class;            // 2C
-    bool                m_normalValid;      // 2D
-    bool                m_paramValid;       // 2E
+    uint8_t             m_materialIndex;    // 2D
+    bool                m_normalValid;      // 2E
+    bool                m_paramValid;       // 2F
 
-    VertexKey(QPoint3dCR point, FeatureCR feature, uint32_t fillColor, uint16_t normal, bool normalValid, bool paramValid)
+    VertexKey(QPoint3dCR point, FeatureCR feature, uint32_t fillColor, uint16_t normal, bool normalValid, bool paramValid, uint8_t materialIndex)
         : m_normalAndPos(point, normal), m_elemId(feature.GetElementId().GetValueUnchecked()), m_subcatId(feature.GetSubCategoryId().GetValueUnchecked()),
-        m_fillColor(fillColor), m_class(feature.GetClass()), m_normalValid(normalValid), m_paramValid(paramValid) { }
+        m_fillColor(fillColor), m_class(feature.GetClass()), m_normalValid(normalValid), m_paramValid(paramValid), m_materialIndex(materialIndex) { }
 public:
     VertexKey() { }
-    VertexKey(DPoint3dCR point, FeatureCR feature, uint32_t fillColor, QPoint3d::ParamsCR qParams, DVec3dCP normal=nullptr, DPoint2dCP param=nullptr)
-        : VertexKey(QPoint3d(point, qParams), feature, fillColor, nullptr != normal ? OctEncodedNormal::From(*normal).Value() : 0, nullptr != normal, nullptr != param)
+    VertexKey(DPoint3dCR point, FeatureCR feature, uint32_t fillColor, QPoint3d::ParamsCR qParams, uint8_t materialIndex, DVec3dCP normal=nullptr, DPoint2dCP param=nullptr)
+        : VertexKey(QPoint3d(point, qParams), feature, fillColor, nullptr != normal ? OctEncodedNormal::From(*normal).Value() : 0, nullptr != normal, nullptr != param, materialIndex)
         {
         if (m_paramValid)
             m_param = *param;
         }
-    VertexKey(QPoint3dCR point, FeatureCR feature, uint32_t fillColor, OctEncodedNormalCP normal, FPoint2dCP param)
-        : VertexKey(point, feature, fillColor, nullptr != normal ? normal->Value() : 0, nullptr != normal, nullptr != param)
+    VertexKey(QPoint3dCR point, FeatureCR feature, uint32_t fillColor, OctEncodedNormalCP normal, FPoint2dCP param, uint8_t materialIndex)
+        : VertexKey(point, feature, fillColor, nullptr != normal ? normal->Value() : 0, nullptr != normal, nullptr != param, materialIndex)
         {
         if (m_paramValid)
             m_param = DPoint2d::From(param->x, param->y);
@@ -644,6 +751,7 @@ public:
     uint32_t GetFillColor() const { return m_fillColor; }
     OctEncodedNormalCP GetNormal() const { return m_normalValid ? reinterpret_cast<OctEncodedNormalCP>(m_normalAndPos.m_data) : nullptr; }
     DPoint2dCP GetParam() const { return m_paramValid ? &m_param : nullptr; }
+    uint8_t GetMaterialIndex() const { return m_materialIndex; }
 };
 
 //=======================================================================================
@@ -662,7 +770,6 @@ struct TriangleKey
 typedef bmap<VertexKey, uint32_t> VertexMap;
 typedef bset<TriangleKey> TriangleSet;
 
-
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   12/16
 //=======================================================================================
@@ -679,6 +786,8 @@ struct MeshBuilder : RefCountedBase
         };
 
 private:
+    friend struct MeshBuilderList;
+
     MeshPtr                         m_mesh;
     VertexMap                       m_vertexMap;
     TriangleSet                     m_triangleSet;
@@ -686,16 +795,17 @@ private:
     double                          m_areaTolerance;
     RefCountedPtr<Polyface>         m_currentPolyface;
     DRange3d                        m_tileRange;
+    MeshBuilderPtr                  m_next;
 
-    MeshBuilder(DisplayParamsCR params, double tolerance, double areaTolerance, FeatureTableP featureTable, Mesh::PrimitiveType type, DRange3dCR range, bool is2d, bool isPlanar, size_t nodeIndex)
-        : m_mesh(Mesh::Create(params, featureTable, type, range, is2d, isPlanar, nodeIndex)), m_tolerance(tolerance), m_areaTolerance(areaTolerance), m_tileRange(range) { }
+    MeshBuilder(DisplayParamsCR params, double tolerance, double areaTolerance, FeatureTableP featureTable, Mesh::PrimitiveType type, DRange3dCR range, bool is2d, bool isPlanar, size_t nodeIndex, MaterialAtlasP materialAtlas)
+        : m_mesh(Mesh::Create(params, featureTable, type, range, is2d, isPlanar, nodeIndex, materialAtlas)), m_tolerance(tolerance), m_areaTolerance(areaTolerance), m_tileRange(range) { }
 
     uint32_t AddVertex(VertexMap& vertices, VertexKeyCR vertex);
 public:
-    static MeshBuilderPtr Create(DisplayParamsCR params, double tolerance, double areaTolerance, FeatureTableP featureTable, Mesh::PrimitiveType type, DRange3dCR range, bool is2d, bool isPlanar, size_t nodeIndex)
-        { return new MeshBuilder(params, tolerance, areaTolerance, featureTable, type, range, is2d, isPlanar, nodeIndex); }
+    static MeshBuilderPtr Create(DisplayParamsCR params, double tolerance, double areaTolerance, FeatureTableP featureTable, Mesh::PrimitiveType type, DRange3dCR range, bool is2d, bool isPlanar, size_t nodeIndex, MaterialAtlasP materialAtlas)
+        { return new MeshBuilder(params, tolerance, areaTolerance, featureTable, type, range, is2d, isPlanar, nodeIndex, materialAtlas); }
 
-    DGNPLATFORM_EXPORT void AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR, DgnDbR dgnDb, FeatureCR feature, bool includeParams, uint32_t fillColor, bool requireNormals);
+    DGNPLATFORM_EXPORT void AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR, DgnDbR dgnDb, FeatureCR feature, bool includeParams, uint32_t fillColor, bool requireNormals, uint8_t materialIndex);
     DGNPLATFORM_EXPORT void AddPolyline(bvector<DPoint3d>const& polyline, FeatureCR feature, uint32_t fillColor, double startDistance);
     void AddPolyline(bvector<QPoint3d> const&, FeatureCR, uint32_t fillColor, double startDistance);
     void AddPointString(bvector<DPoint3d> const& pointString, FeatureCR feature, uint32_t fillColor, double startDistance);
@@ -707,8 +817,108 @@ public:
     uint32_t AddVertex(VertexKey const& vertex) { return AddVertex(m_vertexMap, vertex); }
 
     MeshP GetMesh() { return m_mesh.get(); } //!< The mesh under construction
+    MeshCP GetMesh() const { return m_mesh.get(); }
     double GetTolerance() const { return m_tolerance; }
     void SetDisplayParams(DisplayParamsCR params) { m_mesh->SetDisplayParams(params); }
+
+    uint8_t GetMaterialIndex(MaterialP material) const { return m_mesh->GetMaterialIndex(material); }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   07/19
+//=======================================================================================
+struct MeshBuilderList : RefCountedBase
+{
+private:
+    MeshBuilderKey      m_key;
+    MeshBuilderPtr      m_head;
+    MeshBuilderSetCR    m_set;
+
+    DGNPLATFORM_EXPORT MeshBuilderList(MeshBuilderKeyCR key, MeshBuilderSetCR set);
+
+    MeshBuilderPtr CreateMeshBuilder(DisplayParamsCR) const;
+public:
+    static MeshBuilderListPtr Create(MeshBuilderKeyCR key, MeshBuilderSetCR set) { return new MeshBuilderList(key, set); }
+
+    DGNPLATFORM_EXPORT MeshBuilderR GetMeshBuilder(DisplayParamsCR params);
+    DGNPLATFORM_EXPORT MeshBuilderKeyCR GetKey() const { return m_key; }
+
+    template<typename T> void ForEach(T func) const
+        {
+        bool stop = false;
+        MeshBuilderCPtr list = m_head;
+        do
+            {
+            func(*list, stop);
+            if (stop)
+                break;
+
+            list = list->m_next;
+            }
+        while (list.IsValid());
+        }
+
+    DGNPLATFORM_EXPORT size_t GetVertexCount() const;
+    size_t size() const
+        {
+        size_t count = 0;
+        ForEach([&](MeshBuilderCR, bool&) { ++count; });
+        return count;
+        }
+
+    void GetMeshes(MeshListR meshes) const;
+    void GetMeshes(bvector<MeshPtr>& meshes, SharedGeomCR) const;
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   07/19
+//=======================================================================================
+struct MeshBuilderKeyComparator
+{
+    using is_transparent = std::true_type;
+
+    bool operator()(MeshBuilderKeyCR lhs, MeshBuilderKeyCR rhs) const { return lhs < rhs; }
+    bool operator()(MeshBuilderListPtr const& lhs, MeshBuilderListPtr const& rhs) const { return lhs->GetKey() < rhs->GetKey(); }
+    bool operator()(MeshBuilderListPtr const& lhs, MeshBuilderKeyCR rhs) const { return lhs->GetKey() < rhs; }
+    bool operator()(MeshBuilderKeyCR lhs, MeshBuilderListPtr const& rhs) const { return lhs < rhs->GetKey(); }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   07/19
+//=======================================================================================
+struct MeshBuilderSet
+{
+private:
+    using Set = std::set<MeshBuilderListPtr, MeshBuilderKeyComparator>;
+
+    Set m_set;
+    double              m_vertexTolerance;
+    double              m_facetAreaTolerance;
+    DRange3d            m_range;
+    FeatureTableP       m_featureTable;
+    bool                m_is2d;
+    uint8_t             m_maxMaterialsPerMesh;
+public:
+    MeshBuilderSet(uint8_t maxMaterialsPerMesh = 255) : MeshBuilderSet(0.0, nullptr, DRange3d::NullRange(), false, maxMaterialsPerMesh) { }
+    MeshBuilderSet(double tolerance, FeatureTableP features, DRange3dCR range, bool is2d, uint8_t maxMaterialsPerMesh = 255) :
+        m_vertexTolerance(tolerance*ToleranceRatio::Vertex()), m_facetAreaTolerance(tolerance*ToleranceRatio::FacetArea()),
+        m_featureTable(features), m_range(range), m_is2d(is2d), m_maxMaterialsPerMesh(maxMaterialsPerMesh) { }
+
+    DGNPLATFORM_EXPORT MeshBuilderR operator[](MeshBuilderKeyCR key);
+    DGNPLATFORM_EXPORT MeshBuilderListPtr FindList(MeshBuilderKeyCR key) const;
+
+    DRange3dCR GetRange() const { return m_range; }
+    FeatureTableP GetFeatureTable() const { return m_featureTable; }
+    double GetVertexTolerance() const { return m_vertexTolerance; }
+    double GetFacetAreaTolerance() const { return m_facetAreaTolerance; }
+    bool Is2d() const { return m_is2d; }
+    uint8_t GetMaxMaterialsPerMesh() const { return m_maxMaterialsPerMesh; }
+
+    size_t size() const { return m_set.size(); }
+
+    void SetFeatureTable(FeatureTableR table) { m_featureTable = &table; }
+    DGNPLATFORM_EXPORT void GetMeshes(MeshListR meshes) const;
+    void GetMeshes(bvector<MeshPtr>& meshes, SharedGeomCR) const;
 };
 
 //=======================================================================================
@@ -1120,8 +1330,6 @@ private:
 
     bool AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsCR displayParams, TransformCR transform, ClipVectorCP clip, bool disjoint);
     bool AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsCR displayParams, TransformCR transform, ClipVectorCP clip, DRange3dCR range, bool disjoint);
-
-    MeshBuilderMap ToMeshBuilderMap(GeometryOptionsCR, double tolerance, FeatureTableP, ViewContextR) const;
 public:
     GeometryAccumulator(DgnDbR db, System& system, TransformCR transform, DRange3dCR tileRange, bool surfacesOnly) : m_transform(transform), m_tileRange(tileRange), m_displayParamsCache(db, system), m_surfacesOnly(surfacesOnly), m_haveTransform(!transform.IsIdentity()) { }
     GeometryAccumulator(DgnDbR db, System& system, bool surfacesOnly=false) : m_transform(Transform::FromIdentity()), m_displayParamsCache(db, system), m_surfacesOnly(surfacesOnly), m_haveTransform(false), m_tileRange(DRange3d::NullRange()) { }
@@ -1154,7 +1362,7 @@ public:
 
     //! Convert the geometry accumulated by this builder into a set of meshes.
     DGNPLATFORM_EXPORT MeshList ToMeshes(GeometryOptionsCR options, double tolerance, ViewContextR, FeatureTableP featureTable=nullptr) const;
-    DGNPLATFORM_EXPORT MeshBuilderMap ToMeshBuilders(GeometryOptionsCR options, double tolerance, FeatureTableP featureTable, ViewContextR) const;
+    DGNPLATFORM_EXPORT MeshBuilderSet ToMeshBuilders(GeometryOptionsCR options, double tolerance, FeatureTableP featureTable, ViewContextR) const;
 
     //! Populate a list of Graphic objects from the accumulated Geometry objects.
     DGNPLATFORM_EXPORT void SaveToGraphicList(bvector<Render::GraphicPtr>& graphics, GeometryOptionsCR options, double tolerance, ViewContextR, bool isWorldCoords) const;

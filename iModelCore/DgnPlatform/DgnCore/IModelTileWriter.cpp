@@ -90,7 +90,7 @@ protected:
         }
 
     LUTVertex(QPoint3dCR pos, uint16_t colorIndexOrNormal, uint32_t feature) : m_position(pos), m_colorIndexOrNormal(colorIndexOrNormal), m_featureIndex(feature) { }
-    template<typename Args, typename ExtraVertexData> LUTVertex(Args const& args, uint32_t idx, ExtraVertexData const& extraVertexData)
+    template<typename Args> LUTVertex(Args const& args, uint32_t idx)
         : LUTVertex(GetPosition(args, idx), GetColorIndex(args, idx), GetFeatureIndex(args, idx)) { }
 };
 static_assert(0x0C == sizeof(LUTVertex), "unexpected size");
@@ -99,24 +99,38 @@ static_assert(0 == (sizeof(LUTVertex) % 4), "unexpected size");
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   01/18
 //=======================================================================================
-struct SimpleVertex : LUTVertex
+struct LinearVertex : LUTVertex
 {
-    template<typename Args, typename ExtraVertexData> SimpleVertex(Args const& args, uint32_t idx, ExtraVertexData const& extra) : LUTVertex(args, idx, extra) { }
+    template<typename Args> LinearVertex(Args const& args, uint32_t idx, int ignored) : LUTVertex(args, idx) { }
+};
 
-    static constexpr uint8_t NumRgba() { return sizeof(SimpleVertex) / 4; }
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   07/19
+//=======================================================================================
+struct MeshVertex : LUTVertex
+{
+    MeshVertex(TriMeshArgsCR args, uint32_t idx, QPoint2d::ParamsCR uvParams) : LUTVertex(args, idx)
+        {
+        if (nullptr != args.m_material.m_indices)
+            {
+            uint32_t materialIndex = args.m_material.m_indices[idx] << 24;
+            m_featureIndex |= materialIndex;
+            }
+        }
 };
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   01/18
 //=======================================================================================
-struct TexturedMeshVertex : LUTVertex
+struct TexturedMeshVertex : MeshVertex
 {
     QPoint2d    m_textureUV;    // 0x0C
 
-    TexturedMeshVertex(QPoint3dCR pos, uint32_t feature, QPoint2dCR uv, uint16_t normal=0) : LUTVertex(pos, normal, feature), m_textureUV(uv) { }
-    TexturedMeshVertex(TriMeshArgsCR args, uint32_t idx, QPoint2d::ParamsCR uvParams) : TexturedMeshVertex(args, idx, uvParams, 0) { }
-    TexturedMeshVertex(TriMeshArgsCR args, uint32_t idx, QPoint2d::ParamsCR uvParams, uint16_t normal)
-        : TexturedMeshVertex(GetPosition(args, idx), GetFeatureIndex(args, idx), QPoint2d(args.m_textureUV[idx], uvParams), normal) { }
+    TexturedMeshVertex(TriMeshArgsCR args, uint32_t idx, QPoint2d::ParamsCR uvParams)
+        : MeshVertex(args, idx, uvParams)
+        {
+        m_textureUV = QPoint2d(args.m_textureUV[idx], uvParams);
+        }
 };
 static_assert(0x10 == sizeof(TexturedMeshVertex), "unexpected size");
 static_assert(0 == (sizeof(TexturedMeshVertex) % 4), "unexpected size");
@@ -126,21 +140,23 @@ static_assert(0 == (sizeof(TexturedMeshVertex) % 4), "unexpected size");
 //=======================================================================================
 struct TexturedLitMeshVertex : TexturedMeshVertex
 {
-    TexturedLitMeshVertex(QPoint3dCR pos, uint32_t feature, QPoint2dCR uv, OctEncodedNormal normal) : TexturedMeshVertex(pos, feature, uv, normal.Value()) { }
-    TexturedLitMeshVertex(TriMeshArgsCR args, uint32_t idx, QPoint2d::ParamsCR uvParams) : TexturedMeshVertex(args, idx, uvParams, args.m_normals[idx].Value()) { }
+    TexturedLitMeshVertex(TriMeshArgsCR args, uint32_t idx, QPoint2d::ParamsCR uvParams)
+        : TexturedMeshVertex(args, idx, uvParams)
+        {
+        m_colorIndexOrNormal = args.m_normals[idx].Value();
+        }
 };
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   01/18
 //=======================================================================================
-struct LitMeshVertex : LUTVertex
+struct LitMeshVertex : MeshVertex
 {
     uint16_t    m_normal;   // 0x0C
     uint16_t    m_unused;   // 0x0E
 
-    LitMeshVertex(QPoint3dCR pos, uint16_t colorIndex, uint32_t feature, OctEncodedNormal normal) : LUTVertex(pos, colorIndex, feature), m_normal(normal.Value()) { }
     LitMeshVertex(TriMeshArgsCR args, uint32_t idx, QPoint2d::ParamsCR uvParams)
-        : LitMeshVertex(GetPosition(args, idx), GetColorIndex(args, idx), GetFeatureIndex(args, idx), args.m_normals[idx]) { }
+        : MeshVertex(args, idx, uvParams), m_normal(args.m_normals[idx].Value()), m_unused(0) { }
 };
 static_assert(0x10 == sizeof(LitMeshVertex), "unexpected size");
 static_assert(0 == (sizeof(LitMeshVertex) % 4), "unexpected size");
@@ -171,21 +187,24 @@ struct FeaturesInfo
 struct ColorInfo
 {
     ColorDef    m_uniform;
+    uint16_t    m_numColors;
     bool        m_isUniform;
     bool        m_hasAlpha;
 
-    ColorInfo() : m_isUniform(false), m_hasAlpha(false) { }
+    ColorInfo() : m_isUniform(false), m_hasAlpha(false), m_numColors(0) { }
 
     explicit ColorInfo(ColorIndex const& colorIndex) : m_isUniform(colorIndex.IsUniform())
         {
         if (m_isUniform)
             {
+            m_numColors = 0;
             m_uniform = ColorDef(colorIndex.m_uniform);
             m_hasAlpha = 0 != m_uniform.GetAlpha();
             }
         else
             {
             m_hasAlpha = colorIndex.m_nonUniform.m_hasAlpha;
+            m_numColors = colorIndex.m_numColors;
             }
         }
 };
@@ -228,13 +247,13 @@ private:
     uint8_t*        m_pDataEnd = nullptr;
 
 public:
-
     ByteStream              m_data;
     LUTDimensions           m_dimensions;
     uint32_t                m_numVertices = 0;
     uint32_t                m_numRgbaPerVertex = 0;
     FeaturesInfo            m_features;
     ColorInfo               m_colors;
+    MaterialAtlasPtr        m_materialAtlas;
 
     uint32_t CurrSize() const { return static_cast<uint32_t> (m_pDataEnd - m_data.GetDataP()); }
 
@@ -245,6 +264,11 @@ public:
             memcpy(m_pDataEnd, pData, dataSize);
             m_pDataEnd += dataSize;
             }
+        }
+
+    void AppendUInt32(uint32_t value)
+        {
+        AppendData(&value, sizeof(value));
         }
 
     template<typename T_Vertex, typename T_Args, typename T_ExtraData> void Init(T_Args const& args, T_ExtraData const& extraData, uint32_t nExtraRgba = 0)
@@ -281,8 +305,119 @@ public:
             }
         }
 
+    template<typename T_Vertex> void InitMesh(TriMeshArgsCR args, QPoint2d::ParamsCR uvParams)
+        {
+        m_materialAtlas = args.m_material.m_atlas;
+        Init<T_Vertex>(args, uvParams, m_materialAtlas.IsValid() ? m_materialAtlas->NumMaterials() * 4 : 0);
+
+        if (m_materialAtlas.IsValid())
+            {
+            auto materials = m_materialAtlas->ToList();
+            for (auto const& material : materials)
+                AppendMaterial(material);
+            }
+        }
+
     explicit VertexTable() { }
+
+    void AppendMaterial(Render::Material::CreateParams const& mat);
 };
+
+//=======================================================================================
+//! A 32-bit floating point value encoded into 4 bytes.
+// @bsistruct                                                   Paul.Connelly   06/18
+//=======================================================================================
+struct PackedFloat
+{
+    union Repr
+    {
+        uint32_t    m_value;
+        uint8_t     m_bytes[4];
+    };
+
+    Repr    m_repr;
+
+    static constexpr float Bias() { return 38.0; }
+
+    explicit PackedFloat(float value) { m_repr = Pack(value); }
+    explicit PackedFloat (double value) : PackedFloat(static_cast<float>(value)) { }
+
+    static Repr Pack(float value);
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/18
++---------------+---------------+---------------+---------------+---------------+------*/
+PackedFloat::Repr PackedFloat::Pack(float value)
+    {
+    Repr repr;
+
+    if (0.0 == value)
+        {
+        repr.m_value = 0;
+        return repr;
+        }
+
+    float sign = value < 0.0f ? 1.0f : 0.0f;
+    value = std::fabs(value);
+    float exponent = floor(log10(value)) + 1.0f;
+    value = value / pow(10.0f, exponent);
+
+    float temp = value * 256.0f;
+    repr.m_bytes[0] = static_cast<uint8_t>(floor(temp));
+    temp = (temp - repr.m_bytes[0]) * 256.0f;
+    repr.m_bytes[1] = static_cast<uint8_t>(floor(temp));
+    temp = (temp - repr.m_bytes[1]) * 256.0f;
+    repr.m_bytes[2] = static_cast<uint8_t>(floor(temp));
+    repr.m_bytes[3] = static_cast<uint8_t>((exponent + Bias()) * 2.0f + sign);
+
+    return repr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static uint8_t scaleWeight(double f)
+    {
+    if (f < 0.0)
+        f = 0.0;
+    else if (f > 1.0)
+        f = 1.0;
+
+    return static_cast<uint8_t>(f * 255 + 0.5);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void VertexTable::AppendMaterial(Render::Material::CreateParams const& params)
+    {
+    // diffuse rgb; alpha
+    auto rgbOverridden = params.m_diffuseColor.IsValid();
+    auto diffuseColor = rgbOverridden ? params.m_diffuseColor.m_value : ColorDef::White();
+
+    auto alphaOverridden = params.m_transparency.IsOverridden();
+    uint8_t alpha = alphaOverridden ? 255 - scaleWeight(params.m_transparency.GetValue()) : 255;
+    diffuseColor.SetAlpha(alpha);
+
+    AppendUInt32(diffuseColor.GetValue());
+
+    // unused, diffuse weight, specular weight, flags (1 = rgb overridden, 2 = alpha overridden)
+    // NB: Texture weight is not represented in atlas because textured materials never end up in an atlas.
+    uint8_t flags = (rgbOverridden ? 1 : 0) | (alphaOverridden ? 2 : 0);
+
+    ColorDef weightsAndFlags(0, scaleWeight(params.m_diffuse), scaleWeight(params.m_specular), flags);
+    AppendUInt32(weightsAndFlags.GetValue());
+
+    // specular rgb; unused
+    auto specularColor = params.m_specularColor.IsValid() ? params.m_specularColor.m_value : ColorDef::White();
+    specularColor.SetAlpha(0);
+    AppendUInt32(specularColor.GetValue());
+
+    // specular exponent (packed float)
+    PackedFloat specularExponent(params.m_specularExponent);
+    AppendUInt32(specularExponent.m_repr.m_value);
+    }
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   01/19
@@ -513,7 +648,7 @@ private:
     template<typename VertexType> void Init(TriMeshArgsCR args)
         {
         m_uvParams = InitUVParams(args);
-        m_lutParams.Init<VertexType>(args, m_uvParams);
+        m_lutParams.InitMesh<VertexType>(args, m_uvParams);
         m_auxChannels.Init(args);
         }
 public:
@@ -722,7 +857,7 @@ struct PointStringParams
 
     explicit PointStringParams(IndexedPolylineArgsCR args) : m_vertexParams(args.m_pointParams)
         {
-        m_lutParams.Init<SimpleVertex>(args, 0);
+        m_lutParams.Init<LinearVertex>(args, 0);
         uint32_t nVertices = 0;
         for (uint32_t lineIdx = 0; lineIdx < args.m_numLines; lineIdx++)
             nVertices += args.m_lines[lineIdx].m_numIndices;
@@ -856,7 +991,7 @@ MeshParams::MeshParams(TriMeshArgsCR args, bool isVolumeClassifier) : m_vertexPa
         case SurfaceType::Lit:          Init<LitMeshVertex>(args); break;
         case SurfaceType::Textured:     Init<TexturedMeshVertex>(args); break;
         case SurfaceType::TexturedLit:  Init<TexturedLitMeshVertex>(args); break;
-        default:                        Init<SimpleVertex>(args); break;
+        default:                        Init<MeshVertex>(args); break;
         }
     }
 
@@ -1155,7 +1290,7 @@ PolylineEdgeParamsUPtr PolylineEdgeParams::Create(TriMeshArgsCR args)
 PolylineParams::PolylineParams(IndexedPolylineArgsCR args, TesselatedPolyline&& polyline) : m_polyline(std::move(polyline)),
     m_vertexParams(args.m_pointParams)
     {
-    m_lutParams.Init<SimpleVertex>(args, 0);
+    m_lutParams.Init<LinearVertex>(args, 0);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1326,8 +1461,17 @@ void IModelTileWriter::AddVertexTable(Json::Value& primitiveJson, VertexTable co
         primitiveJson["vertices"]["featureID"] = table.m_features.m_uniform;
 
     primitiveJson["vertices"]["hasTranslucency"] = table.m_colors.m_hasAlpha;
+    primitiveJson["vertices"]["numColors"] = table.m_colors.m_numColors;
     if (table.m_colors.m_isUniform)
         primitiveJson["vertices"]["uniformColor"] = table.m_colors.m_uniform.GetValue();
+
+    auto atlas = table.m_materialAtlas;
+    if (atlas.IsValid())
+        {
+        primitiveJson["vertices"]["materialAtlas"]["numMaterials"] = atlas->NumMaterials();
+        primitiveJson["vertices"]["materialAtlas"]["hasTranslucency"] = atlas->IsTranslucent();
+        primitiveJson["vertices"]["materialAtlas"]["overridesAlpha"] = atlas->OverridesAlpha();
+        }
 
     primitiveJson["vertices"]["count"] = table.m_numVertices;
     primitiveJson["vertices"]["width"] = table.m_dimensions.GetWidth();
@@ -1572,7 +1716,7 @@ BentleyStatus IModelTileWriter::CreateDisplayParamJson(Json::Value& matJson, Mes
         matJson["subCategoryId"] = displayParams.GetSubCategoryId().ToHexStr();
 
     // ###TODO: Support non-persistent materials if/when necessary...
-    auto material = displayParams.GetSurfaceMaterial().GetMaterial();
+    auto material = (nullptr == mesh.GetMaterialAtlas() || mesh.GetMaterialAtlas()->NumMaterials() < 2) ? displayParams.GetSurfaceMaterial().GetMaterial() : nullptr;
     if (nullptr != material && material->GetKey().IsPersistent())
         {
         matJson["materialId"] = material->GetKey().GetId().ToHexStr();
@@ -1644,8 +1788,9 @@ BentleyStatus IModelTileWriter::AddMaterialJson(Render::MaterialCR material)
                 {
                 materialJson["specularExponent"] = asset->GetDouble(RENDER_MATERIAL_Finish, Material::Defaults::SpecularExponent());
                 }
-            if (asset->GetBool(RENDER_MATERIAL_FlagHasTransmit, false))
-                materialJson["transparency"] = asset->GetDouble(RENDER_MATERIAL_Transmit, 0.0);
+
+            auto transparency = asset->GetBool(RENDER_MATERIAL_FlagHasTransmit, false) ? asset->GetDouble(RENDER_MATERIAL_Transmit, 0.0) : 0.0;
+            materialJson["transparency"] = transparency;
 
             if (asset->GetBool(RENDER_MATERIAL_FlagHasDiffuse, false))
                 materialJson["diffuse"] = asset->GetDouble(RENDER_MATERIAL_Diffuse, Material::Defaults::Diffuse());
@@ -1882,6 +2027,7 @@ IModelTile::Version IModelTile::Version::FromMajorVersion(uint16_t major)
         case 2: return V2();
         case 3: return V3();
         case 4: return V4();
+        case 5: return V5();
         default: return Invalid();
         }
     }

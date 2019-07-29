@@ -784,7 +784,7 @@ void CesiumTileOutput::_AddTriMesh(TriMeshArgsCR args)
     ColorTable colorTable;
     auto index = static_cast<size_t>(m_primitives.size());
     Utf8String idStr(std::to_string(index).c_str());
-    MeshMaterial material(idStr, args.m_material.get(), args.m_texture.get());
+    MeshMaterial material(idStr, args.m_material.m_material.get(), args.m_texture.get());
 
     m_range.Extend(args.m_pointParams.GetRange());
     m_writer.AddTriMesh(m_primitives, args, colorTable, material, index);

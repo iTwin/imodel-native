@@ -667,6 +667,40 @@ public:
 //=======================================================================================
 struct Material : RefCounted<NonCopyableClass>
 {
+    struct Transparency
+    {
+        enum Category { None, Opaque, Translucent };
+    private:
+        double  m_value;
+    public:
+        explicit Transparency(double value = -1.0) { SetValue(value); }
+
+        Category Categorize() const { return m_value < 0.0 ? Category::None : (m_value > 0.0 ? Category::Translucent : Category::Opaque); }
+        bool IsTranslucent() const { return Translucent == Categorize(); }
+        bool IsOpaque() const { return Opaque == Categorize(); }
+        bool IsOverridden() const { return None != Categorize(); }
+
+        void SetOpaque() { SetValue(0.0); }
+        void SetNotOverridden() { SetValue(-1.0); }
+
+        double GetValue() const { return m_value; }
+        void SetValue(double value)
+            {
+            if (value < 0.0)
+                value = -1.0;
+            else if (value > 1.0)
+                value = 1.0;
+
+            m_value = value;
+            }
+
+        CompareResult Compare(Transparency other) const
+            {
+            auto a = Categorize(), b = other.Categorize();
+            return a == b ? CompareResult::Equal : (a < b ? CompareResult::Less : CompareResult::Greater);
+            }
+    };
+
     // QVision defaults...
     struct Defaults
     {
@@ -683,6 +717,7 @@ struct Material : RefCounted<NonCopyableClass>
     {
         using Defaults = Material::Defaults;
 
+        // NB: The alpha value is ignored.
         struct MatColor
         {
             bool m_valid = false;
@@ -690,6 +725,12 @@ struct Material : RefCounted<NonCopyableClass>
             MatColor(){}
             MatColor(ColorDef val) {m_valid=true; m_value=val;}
             bool IsValid() const {return m_valid;}
+
+            DGNPLATFORM_EXPORT CompareResult Compare(MatColor const& other) const;
+
+            bool operator==(MatColor const& other) const { return CompareResult::Equal == Compare(other); }
+            bool operator!=(MatColor const& other) const { return CompareResult::Equal != Compare(other); }
+            bool operator<(MatColor const& other) const { return CompareResult::Less == Compare(other); }
         };
 
         MatColor m_diffuseColor;
@@ -702,7 +743,7 @@ struct Material : RefCounted<NonCopyableClass>
         double m_specular = Defaults::Specular();
         double m_specularExponent = Defaults::SpecularExponent();
         double m_reflect = Defaults::Reflect();
-        double m_transparency = 0.0;
+        Transparency m_transparency;
         double m_refract = 1.0;
         double m_ambient = .3;
         bool   m_shadows = true;
@@ -718,7 +759,6 @@ struct Material : RefCounted<NonCopyableClass>
         void SetAmbient(double val) {m_ambient = val;} //<! Set surface ambient reflectivity
         void SetSpecularExponent(double val) {m_specularExponent = val;} //<! Set surface shininess (range 0 to 128)
         void SetReflect(double val) {m_reflect = val;} //<! Set surface environmental reflectivity
-        void SetTransparency(double val) {m_transparency = val;} //<! Set surface transparency
         void SetSpecular(double val) {m_specular = val;} //<! Set surface specular reflectivity
         void SetRefract(double val) {m_refract = val;} //<! Set index of refraction
         void SetShadows(bool val) {m_shadows = val;} //! If false, do not cast shadows
@@ -727,16 +767,16 @@ struct Material : RefCounted<NonCopyableClass>
     };
 
 protected:
-    TextureMapping  m_textureMapping;
-    MaterialKey     m_key;
+    CreateParams    m_params;
 
     uint32_t _GetExcessiveRefCountThreshold() const override {return 100000;}
 
-    explicit Material(CreateParams const& params) : m_textureMapping(params.m_textureMapping), m_key(params.m_key) { }
+    explicit Material(CreateParams const& params) : m_params(params) { }
 public:
-    bool HasTextureMapping() const {return m_textureMapping.IsValid();}
-    TextureMappingCR GetTextureMapping() const {return m_textureMapping;}
-    MaterialKeyCR GetKey() const {return m_key;}
+    bool HasTextureMapping() const {return m_params.m_textureMapping.IsValid();}
+    TextureMappingCR GetTextureMapping() const {return m_params.m_textureMapping;}
+    MaterialKeyCR GetKey() const {return m_params.m_key;}
+    CreateParams const& GetParams() const {return m_params;}
 };
 
 //=======================================================================================
@@ -2568,6 +2608,20 @@ struct PolylineEdgeArgs
 };
 
 //=======================================================================================
+//! The material or material atlas associated with a TriMeshArgs.
+// @bsistruct                                                   Paul.Connelly   07/19
+//=======================================================================================
+struct TriMeshMaterial
+{
+    // Non-null if a single material
+    MaterialPtr         m_material;
+    // Non-null if more than one material
+    Primitives::MaterialAtlasPtr    m_atlas;
+    // If more than one material, the per-vertex indices into the atlas
+    uint8_t const*      m_indices;
+};
+
+//=======================================================================================
 //! Information needed to draw a triangle mesh and its edges.
 // @bsiclass                                                    Keith.Bentley   06/16
 //=======================================================================================
@@ -2597,7 +2651,7 @@ struct TriMeshArgs
     ColorIndex                      m_colors;
     FeatureIndex                    m_features;
     QPoint3d::Params                m_pointParams;
-    MaterialPtr                     m_material;
+    TriMeshMaterial                 m_material;
     FillFlags                       m_fillFlags = FillFlags::None;
     bool                            m_isPlanar = false;
     bool                            m_is2d = false;

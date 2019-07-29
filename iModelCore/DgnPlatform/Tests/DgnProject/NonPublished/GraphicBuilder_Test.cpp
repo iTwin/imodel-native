@@ -305,7 +305,7 @@ struct MeshBuilderTest : GraphicProcessorTest
     friend struct TestGraphic;
 protected:
     FeatureTable    m_features;
-    MeshBuilderMap  m_builders;
+    MeshBuilderSet  m_builders;
     DRange3d        m_range;
     uint64_t        m_curElemId = 0ull;
 
@@ -326,7 +326,7 @@ protected:
         GraphicPtr _CreateBranch(GraphicBranch&, DgnDbR, TransformCR, ClipVectorCP) override { BeAssert(false); return nullptr; }
     };
 
-    // Accumulates geometric primitives into a MeshBuilderMap.
+    // Accumulates geometric primitives into a MeshBuilderSet.
     struct TestGraphic : PrimitiveBuilder
     {
         MeshBuilderTest&    m_test;
@@ -365,17 +365,13 @@ protected:
         for (auto const& kvp : m_features)
             geom.Meshes().m_features.Insert(kvp.first, kvp.second);
 
-        for (auto& builder : m_builders)
+        m_builders.GetMeshes(geom.Meshes());
+        for (auto const& mesh : geom.Meshes())
             {
-            MeshP mesh = builder.second->GetMesh();
-            if (!mesh->IsEmpty())
-                {
-                geom.Meshes().push_back(mesh);
-                if (contentRange.IsNull())
-                    contentRange = ElementAlignedBox3d(mesh->ComputeRange());
-                else
-                    contentRange.Extend(mesh->ComputeRange());
-                }
+            if (contentRange.IsNull())
+                contentRange = ElementAlignedBox3d(mesh->ComputeRange());
+            else
+                contentRange.Extend(mesh->ComputeRange());
             }
 
         centroid.Interpolate(contentRange.low, 0.5, contentRange.high);
@@ -771,106 +767,6 @@ template<typename T> void MeshBuilderTest::RoundTripGeometryCollection(T populat
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Test that we can write a GeometryCollection to a binary+json stream and read it back
-* into a MeshBuilderMap, optionally omitting some elements when reading it back.
-* @bsimethod                                                    Paul.Connelly   10/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T> void MeshBuilderTest::RoundTripMeshBuilders(T populateGraphic)
-    {
-    // Populate the graphic with various elements (1 per geometric primitive)
-    uint64_t firstElemId = m_curElemId + 1;
-
-    PopulateGraphic(populateGraphic);
-
-    uint64_t lastElemId = m_curElemId;
-    size_t nFeatures = m_features.size();
-    EXPECT_EQ(nFeatures, lastElemId + 1 - firstElemId);
-
-    DgnElementIdSet allElemIds;
-    for (uint64_t id = firstElemId; id <= lastElemId; id++)
-        allElemIds.insert(DgnElementId(id));
-
-    // Serialize to stream buffer
-    ElementAlignedBox3d contentRange;
-    DPoint3d centroid;
-    auto geom = GetGeometryCollection(contentRange, centroid);
-    StreamBuffer writeBytes;
-    GeometricModelR model = *GetDefaultPhysicalModel();
-    EXPECT_EQ(SUCCESS, Dgn::Tile::IO::WriteDgnTile(writeBytes, contentRange, geom, model, true, nullptr));
-
-    // Round-trip, omitting no elements
-    RoundTripMeshBuilders(writeBytes, DgnElementIdSet(), allElemIds);
-
-    // Round-trip, omitting all elements
-    RoundTripMeshBuilders(writeBytes, allElemIds, allElemIds);
-
-    // Round-trip, omitting one element
-    DgnElementIdSet skipElems;
-    skipElems.insert(*allElemIds.begin());
-    RoundTripMeshBuilders(writeBytes, skipElems, allElemIds);
-
-    // Round-trip, omitting all but one element
-    skipElems = allElemIds;
-    skipElems.erase(*allElemIds.begin());
-    RoundTripMeshBuilders(writeBytes, skipElems, allElemIds);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void MeshBuilderTest::RoundTripMeshBuilders(StreamBufferR writeBytes, DgnElementIdSet const& skipElems, DgnElementIdSet const& allElems)
-    {
-    // Read into mesh builder map
-    m_builders.clear();
-    m_builders.SetRange(m_range);
-    BeAssert(!m_range.IsNull());
-    m_features.clear();
-    Dgn::Tile::IO::DgnTile::Flags flags;
-    writeBytes.SetPos(0);
-    GeometricModelR model = *GetDefaultPhysicalModel();
-    EXPECT_EQ(Dgn::Tile::IO::ReadStatus::Success, Dgn::Tile::IO::ReadDgnTile(m_builders, writeBytes, model, m_system, flags, skipElems));
-
-    // Confirm we really skipped the elems specified
-    size_t nTotalElems = allElems.size();
-    EXPECT_EQ(nTotalElems - skipElems.size(), m_features.size());
-    for (auto const& skipElem : skipElems)
-        {
-        uint32_t featIndex;
-        EXPECT_FALSE(m_features.FindIndex(featIndex, Feature(skipElem, DgnCategory::GetDefaultSubCategoryId(GetDefaultCategoryId()), DgnGeometryClass::Primary)));
-        }
-
-    ElementAlignedBox3d readContentRange;
-    DPoint3d readCentroid;
-    auto geom = GetGeometryCollection(readContentRange, readCentroid);
-    EXPECT_EQ(nTotalElems == skipElems.size(), geom.Meshes().empty());
-
-    // Serialize the new geometry collection, compare to input
-    StreamBuffer roundTripBytes;
-    EXPECT_EQ(SUCCESS, Dgn::Tile::IO::WriteDgnTile(roundTripBytes, readContentRange, geom, model, true, nullptr));
-    if (skipElems.empty())
-        {
-        ExpectEqualGeometry(writeBytes, roundTripBytes);
-        }
-    else
-        {
-        EXPECT_TRUE(roundTripBytes.size() < writeBytes.size());
-
-        // Now merge back in all the elements which were omitted and confirm same geometry produced.
-        DgnElementIdSet invSkipElems;
-        for (auto const& elemId : allElems)
-            if (skipElems.end() == skipElems.find(elemId))
-                invSkipElems.insert(elemId);
-
-        writeBytes.SetPos(0);
-        EXPECT_EQ(Dgn::Tile::IO::ReadStatus::Success, Dgn::Tile::IO::ReadDgnTile(m_builders, writeBytes, model, m_system, flags, invSkipElems));
-        auto geom = GetGeometryCollection(readContentRange, readCentroid);
-        StreamBuffer mergeBytes;
-        EXPECT_EQ(SUCCESS, Dgn::Tile::IO::WriteDgnTile(mergeBytes, readContentRange, geom, model, true, nullptr));
-        ExpectEqualGeometry(writeBytes, mergeBytes);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MeshBuilderTest::BuildGraphic(GraphicBuilderR gf)
@@ -916,15 +812,5 @@ TEST_F(MeshBuilderTest, RoundTripTileIO)
     SetupSeedProject();
 
     RoundTripGeometryCollection([&](GraphicBuilderR gf) { BuildGraphic(gf); });
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MeshBuilderTest, RoundTripMeshBuilders)
-    {
-    SetupSeedProject();
-
-    RoundTripMeshBuilders([&](GraphicBuilderR gf) { BuildGraphic(gf); });
     }
 

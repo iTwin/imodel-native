@@ -965,13 +965,13 @@ struct MeshGenerator : ViewContext
 protected:
     GeometryLoaderCR    m_loader;
     GeometryOptions     m_options;
-    MeshBuilderMap      m_builderMap;
+    MeshBuilderSet      m_builders;
     DRange3d            m_contentRange = DRange3d::NullRange();
     bool                m_didDecimate = false;
 
     static double DecimateStrokes(StrokesR strokesOut, StrokesR strokesIn);
 
-    MeshBuilderR GetMeshBuilder(MeshBuilderMap::Key const& key);
+    MeshBuilderR GetMeshBuilder(MeshBuilderKey const& key);
 
     void AddPolyfaces(PolyfaceList& polyfaces, DgnElementId, double rangePixels, bool isContained);
     void AddClippedPolyface(PolyfaceQueryCR, DgnElementId, DisplayParamsCR, MeshEdgeCreationOptions, bool isPlanar);
@@ -1008,7 +1008,7 @@ public:
     void AddMeshes(GeometryR geom, bool doRangeTest);
 
     // Return a list of all meshes currently in the builder map
-    DRange3dCR GetTileRange() const { return m_builderMap.GetRange(); }
+    DRange3dCR GetTileRange() const { return m_builders.GetRange(); }
     GeometryLoaderCR GetLoader() const { return m_loader; }
     GeometryOptionsCR GetOptions() const { return m_options; }
 
@@ -1021,9 +1021,9 @@ public:
     void ExtendContentRange(bvector<DPoint3d> const& points) { m_contentRange.Extend(points); }
     void ExtendContentRange(DRange3dR range) { m_contentRange.Extend(range); }
 
-    MeshBuilderPtr FindMeshBuilder(MeshBuilderMap::Key const& key) const
+    MeshBuilderListPtr FindMeshBuilderList(MeshBuilderKey const& key) const
         {
-        return m_builderMap.Find(key);
+        return m_builders.FindList(key);
         }
 
     void AddPolyface(Polyface& polyface, DgnElementId, double rangePixels, bool isContained, bool doDefer=true);
@@ -1047,7 +1047,7 @@ public:
     ElementMeshGenerator(GeometryLoaderCR loader, GeometryOptionsCR options) : MeshGenerator(loader, loader.GetTolerance(), options, loader.GetTileRange()),
         m_featureTable(loader.GetTree().GetModelId(), loader.GetRenderSystem()._GetMaxFeaturesPerBatch())
         {
-        m_builderMap.SetFeatureTable(m_featureTable);
+        m_builders.SetFeatureTable(m_featureTable);
         }
 
     FeatureTableR GetFeatureTable() final { return m_featureTable; }
@@ -1108,7 +1108,7 @@ public:
 
     virtual size_t GetSharedVertexCount() const = 0;
     virtual DisplayParamsCR GetDisplayParams() const = 0;
-    virtual MeshBuilderMap::Key GetMeshBuilderMapKey() const = 0;
+    virtual MeshBuilderKey GetMeshBuilderKey() const = 0;
     virtual DRange3d ComputeRange() const = 0;
 
     bool operator<(InstanceableGeomCR rhs) const { return GetVertexCount() < rhs.GetVertexCount(); }
@@ -1150,9 +1150,9 @@ public:
     DisplayParamsCR GetDisplayParams() const final { return *m_polyface.m_displayParams; }
     DRange3d ComputeRange() const final { return m_polyface.m_polyface->PointRange(); }
 
-    MeshBuilderMap::Key GetMeshBuilderMapKey() const final
+    MeshBuilderKey GetMeshBuilderKey() const final
         {
-        return MeshBuilderMap::Key(GetDisplayParams(), nullptr != m_polyface.m_polyface->GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, m_polyface.m_isPlanar);
+        return MeshBuilderKey(GetDisplayParams(), nullptr != m_polyface.m_polyface->GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, m_polyface.m_isPlanar);
         }
 };
 
@@ -1202,9 +1202,9 @@ public:
         return range;
         }
 
-    MeshBuilderMap::Key GetMeshBuilderMapKey() const final
+    MeshBuilderKey GetMeshBuilderKey() const final
         {
-        return MeshBuilderMap::Key(GetDisplayParams(), false, m_strokes.m_disjoint ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline, m_strokes.m_isPlanar);
+        return MeshBuilderKey(GetDisplayParams(), false, m_strokes.m_disjoint ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline, m_strokes.m_isPlanar);
         }
 };
 
@@ -1223,12 +1223,12 @@ private:
     mutable bvector<InstanceableGeomPtr> m_geom;
     mutable size_t m_numInstanceableVertices = 0;
     DisplayParamsCPtr m_displayParams;
-    mutable MeshBuilderPtr m_compatibleMeshBuilder; // Contains uninstanced Mesh with compatible DisplayParams
+    mutable MeshBuilderListPtr m_compatibleMeshBuilderList; // Contains uninstanced Mesh with compatible DisplayParams
 public:
     explicit InstanceableGeomBucket(DisplayParamsCR displayParams) : m_displayParams(&displayParams) { }
 
     InstanceableGeomBucket(InstanceableGeomBucket&& src) : m_geom(std::move(src.m_geom)), m_numInstanceableVertices(src.m_numInstanceableVertices),
-        m_displayParams(src.m_displayParams), m_compatibleMeshBuilder(src.m_compatibleMeshBuilder) {}
+        m_displayParams(src.m_displayParams), m_compatibleMeshBuilderList(src.m_compatibleMeshBuilderList) {}
 
     InstanceableGeomBucket& operator=(InstanceableGeomBucket&& src)
         {
@@ -1236,7 +1236,7 @@ public:
             {
             m_geom = std::move(src.m_geom);
             m_numInstanceableVertices = src.m_numInstanceableVertices;
-            m_compatibleMeshBuilder = src.m_compatibleMeshBuilder;
+            m_compatibleMeshBuilderList = src.m_compatibleMeshBuilderList;
             m_displayParams = src.m_displayParams;
             }
 
@@ -1274,13 +1274,11 @@ public:
     size_t GetInstanceableVertexCount() const { return m_numInstanceableVertices; }
     size_t GetUninstanceableVertexCount() const
         {
-        auto mesh = m_compatibleMeshBuilder.IsValid() ? m_compatibleMeshBuilder->GetMesh() : nullptr;
-        return nullptr != mesh ? mesh->Points().size() : 0;
+        return m_compatibleMeshBuilderList.IsValid() ? m_compatibleMeshBuilderList->GetVertexCount() : 0;
         }
 
     DisplayParamsCR GetDisplayParams() const { return *m_displayParams; }
-    void SetCompatibleMeshBuilder(MeshBuilderP builder) const { m_compatibleMeshBuilder = builder; }
-    MeshBuilderP GetCompatibleMeshBuilder() const { return m_compatibleMeshBuilder.get(); }
+    void SetCompatibleMeshBuilderList(MeshBuilderListP list) const { m_compatibleMeshBuilderList = list; }
 
     struct Comparator
     {
@@ -1372,7 +1370,7 @@ public:
         if (inserted.second)
             {
             // We just created+inserted this bucket - find a compatible MeshBuilder for uninstanced geometry
-            inserted.first->SetCompatibleMeshBuilder(m_meshGenerator.FindMeshBuilder(geom.GetMeshBuilderMapKey()).get());
+            inserted.first->SetCompatibleMeshBuilderList(m_meshGenerator.FindMeshBuilderList(geom.GetMeshBuilderKey()).get());
             }
         }
 
@@ -3097,7 +3095,7 @@ bool GeometryLoader::GenerateGeometry()
 +---------------+---------------+---------------+---------------+---------------+------*/
 MeshGenerator::MeshGenerator(GeometryLoaderCR loader, double tolerance, GeometryOptionsCR options, DRange3dCR range)
   : m_loader(loader), m_options(options),
-    m_builderMap(tolerance, nullptr, range, loader.Is2d())
+    m_builders(tolerance, nullptr, range, loader.Is2d())
     {
     SetDgnDb(loader.GetDgnDb());
     m_is3dView = loader.Is3d();
@@ -3107,9 +3105,9 @@ MeshGenerator::MeshGenerator(GeometryLoaderCR loader, double tolerance, Geometry
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-MeshBuilderR MeshGenerator::GetMeshBuilder(MeshBuilderMap::Key const& key)
+MeshBuilderR MeshGenerator::GetMeshBuilder(MeshBuilderKey const& key)
     {
-    return m_builderMap[key];
+    return m_builders[key];
     }
 
 // #define DEBUG_DUMP_TEXTURE_ATLAS_DIR L"E:\\texture_atlas\\"
@@ -3470,13 +3468,14 @@ template<typename T> static void addClippedPolyface(MeshBuilderR builder, Polyfa
     bool hasNormals = nullptr != polyface.GetNormalCP();
     bool hasTexture = displayParams.IsTextured();
     TextureMappingCR texture = displayParams.GetSurfaceMaterial().GetTextureMapping();
+    uint8_t materialIndex = builder.GetMaterialIndex(displayParams.GetSurfaceMaterial().GetMaterial());
 
     builder.BeginPolyface(polyface, edgeOptions);
 
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); /**/)
         {
         anyContributed = true;
-        builder.AddFromPolyfaceVisitor(*visitor, texture, db, feature, hasTexture, fillColor, hasNormals);
+        builder.AddFromPolyfaceVisitor(*visitor, texture, db, feature, hasTexture, fillColor, hasNormals, materialIndex);
         extendContentRange(visitor->Point());
         }
 
@@ -3500,7 +3499,7 @@ void MeshGenerator::AddClippedPolyface(PolyfaceQueryCR polyface, DgnElementId el
     {
     DgnDbR              db = m_loader.GetDgnDb();
     uint64_t            keyElementId = m_loader.GetLoader().GetNodeId(elemId); // Create separate primitives per element if classifying.
-    MeshBuilderMap::Key key(displayParams, nullptr != polyface.GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, isPlanar, keyElementId);
+    MeshBuilderKey      key(displayParams, nullptr != polyface.GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, isPlanar, keyElementId);
     MeshBuilderR        builder = GetMeshBuilder(key);
 
     auto extendRange = [&](bvector<DPoint3d> const& points) { ExtendContentRange(points); };
@@ -3662,8 +3661,8 @@ void MeshGenerator::AddStrokes(StrokesR strokes, DgnElementId elemId, double ran
     if (strokes.m_strokes.empty())
         return; // avoid potentially creating the builder below...
 
-    DisplayParamsCR     displayParams = strokes.GetDisplayParams();
-    MeshBuilderMap::Key key(displayParams, false, strokes.m_disjoint ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline, strokes.m_isPlanar);
+    DisplayParamsCR displayParams = strokes.GetDisplayParams();
+    MeshBuilderKey key(displayParams, false, strokes.m_disjoint ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline, strokes.m_isPlanar);
     MeshBuilderR builder = GetMeshBuilder(key);
 
     // Decimate if possible
@@ -4251,13 +4250,13 @@ void InstanceableStrokes::AddInstanced(MeshGeneratorR meshGen, MeshBuilderR buil
 +---------------+---------------+---------------+---------------+---------------+------*/
 void InstanceableGeom::AddInstanced(ElementMeshGeneratorR meshGen, SubRangesR subRanges)
     {
-    auto key = GetMeshBuilderMapKey();
+    auto key = GetMeshBuilderKey();
     SharedGeomCR geom = GetSharedGeom();
     auto tolerance = geom.GetTolerance(meshGen.GetTolerance());
     auto vertTol = tolerance * ToleranceRatio::Vertex();
     auto areaTol = tolerance * ToleranceRatio::FacetArea(); // ###TODO AFAICT this is vestigial and ratio is same as vertex anyway...
 
-    MeshBuilderPtr builder = MeshBuilder::Create(key.GetDisplayParams(), vertTol, areaTol, nullptr, key.GetPrimitiveType(), geom.GetRange(), meshGen.GetLoader().Is2d(), key.IsPlanar(), key.GetNodeIndex());
+    MeshBuilderPtr builder = MeshBuilder::Create(key.GetDisplayParams(), vertTol, areaTol, nullptr, key.GetPrimitiveType(), geom.GetRange(), meshGen.GetLoader().Is2d(), key.IsPlanar(), key.GetNodeIndex(), nullptr);
 
     DRange3d contentRange = DRange3d::NullRange();
     AddInstanced(meshGen, *builder, contentRange);
@@ -4297,12 +4296,7 @@ void InstanceableGeom::AddInstanced(ElementMeshGeneratorR meshGen, SubRangesR su
 MeshList ElementMeshGenerator::GetMeshes()
     {
     MeshList meshes;
-    for (auto& builder : m_builderMap)
-        {
-        MeshP mesh = builder.second->GetMesh();
-        if (!mesh->IsEmpty())
-            meshes.push_back(mesh);
-        }
+    m_builders.GetMeshes(meshes);
 
     // Do not allow vertices outside of this tile's range to expand its content range
     clipContentRangeToTileRange(m_contentRange, GetTileRange());
@@ -4348,14 +4342,6 @@ DRange3d SharedMeshGenerator::ComputeContentRange(SubRangesR subRanges) const
 void SharedMeshGenerator::AddMeshes(bvector<MeshPtr>& meshes)
     {
     MeshGenerator::AddMeshes(m_geom.GetGeometries(), false);
-    for (auto& builder : m_builderMap)
-        {
-        MeshP mesh = builder.second->GetMesh();
-        if (!mesh->IsEmpty())
-            {
-            mesh->SetSharedGeom(m_geom);
-            meshes.push_back(mesh);
-            }
-        }
+    m_builders.GetMeshes(meshes, m_geom);
     }
 
