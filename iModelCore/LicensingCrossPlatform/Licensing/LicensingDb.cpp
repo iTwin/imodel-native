@@ -135,57 +135,63 @@ BentleyStatus LicensingDb::SetUpTables()
         return ERROR;
         }
 
-    // Create Usage Record table
+    // Create offline Usage record table
+    // These values are listed as they must appear in the offline usage CSV, and in the correct order
     if (m_db.CreateTable("Usage",
-                         "UltimateSAPId INTEGER, "
+                         "UltimateId BIGINT, "
                          "PrincipalId NVARCHAR(20), "
-                         "ImsId NVARCHAR(20), "
-                         "MachineName NVARCHAR(255), "
-                         "MachineSID NVARCHAR(255), "
-                         "UserName NVARCHAR(255), "
-                         "UserSID NVARCHAR(255), "
-                         "PolicyId NVARCHAR(20), "
-                         "SecurableId NVARCHAR(20), "
                          "ProductId INTEGER, "
+                         "UsageCountryISO NVARCHAR(20), "
                          "FeatureString NVARCHAR(255), "
-                         "ProductVersion INTEGER, "
+                         "IMSId NVARCHAR(20), "
+                         "MachineName NVARCHAR(255), "
+                         "ComputerSID NVARCHAR(255), "
+                         "Username NVARCHAR(255), "
+                         "UserSID NVARCHAR(255), "
+                         "PolicyId NVARCHAR(255), "
+                         "ProductVersion BIGINT, "
                          "ProjectId NVARCHAR(20), "
                          "CorrelationId NVARCHAR(20), "
-                         "EventTime NVARCHAR(20), "
-                         "SchemaVersion REAL, "
+                         "LogVersion BIGINT, "
                          "LogPostingSource NVARCHAR(20), "
-                         "Country NVARCHAR(20), "
-                         "UsageType NVARCHAR(20)") != DbResult::BE_SQLITE_OK)
+                         "UsageType NVARCHAR(20), "
+                         "StartTimeUTC NVARCHAR(20), "
+                         "EndTimeUTC NVARCHAR(20), "
+                         "EntryDate NVARCHAR(20), "
+                         "PartitionId INTEGER") != DbResult::BE_SQLITE_OK)
         {
         LOG.error("Failed to create Usage table.");
         return ERROR;
         }
 
-    // Create Feature table
+    // Create Offline Feature record table
+    // NOTE: If we want to add realtime feature tracking, we need to add the following values to the DB:
+    // "PrincipalId NVARCHAR(20)"
+    // "PolicyId NVARCHAR(20), "
+    // "SecurableId NVARCHAR(20), "
+    // "EventTime NVARCHAR(20), "
+    // "SchemaVersion REAL, "
+    // "LogPostingSource NVARCHAR(20), "
+    // "UsageType NVARCHAR(20), "
+
     if (m_db.CreateTable("Feature",
-                         "UltimateSAPId INTEGER, "
-                         "PrincipalId NVARCHAR(20), "
-                         "ImsId NVARCHAR(20), "
-                         "MachineName NVARCHAR(255), "
-                         "MachineSID NVARCHAR(255), "
-                         "UserName NVARCHAR(255), "
-                         "UserSID NVARCHAR(255), "
-                         "PolicyId NVARCHAR(20), "
-                         "SecurableId NVARCHAR(20), "
+                         "UltimateId INTEGER, "
+                         "CountryIso NVARCHAR(20), "
                          "ProductId INTEGER, "
                          "FeatureString NVARCHAR(255), "
-                         "ProductVersion INTEGER, "
+                         "VersionNumber INTEGER, "
+                         "MachineName NVARCHAR(255), "
+                         "ComputerSid NVARCHAR(255), "
+                         "UserName NVARCHAR(255), "
+                         "UserSid NVARCHAR(255), "
+                         "ImsId NVARCHAR(20), "
                          "ProjectId NVARCHAR(20), "
-                         "CorrelationId NVARCHAR(20), "
-                         "EventTime NVARCHAR(20), "
-                         "SchemaVersion REAL, "
-                         "LogPostingSource NVARCHAR(20), "
-                         "Country NVARCHAR(20), "
-                         "UsageType NVARCHAR(20), "
+                         "SessionId NVARCHAR(20), "
                          "FeatureId NVARCHAR(20), "
-                         "StartDate NVARCHAR(20), "
-                         "EndDate NVARCHAR(20), "
-                         "UserData NVARCHAR(900)") != DbResult::BE_SQLITE_OK)
+                         "StartTime NVARCHAR(20), "
+                         "EndTime NVARCHAR(20), "
+                         "DurationTracked NVARCHAR(20), "
+                         "MetaData NVARCHAR(900)") != DbResult::BE_SQLITE_OK)
         {
         LOG.error("Failed to create Feature table.");
         return ERROR;
@@ -265,7 +271,7 @@ Utf8String LicensingDb::GetLastUsageRecordedTime()
     
     Statement stmt;
 
-    stmt.Prepare(m_db, "SELECT MAX(EventTime) FROM Usage");
+    stmt.Prepare(m_db, "SELECT MAX(EntryDate) FROM Usage");
 
     DbResult result = stmt.Step();
     if (result != DbResult::BE_SQLITE_ROW)
@@ -340,27 +346,52 @@ BentleyStatus LicensingDb::WriteUsageToCSVFile(BeFileNameCR path)
 
     DbResult result = stmt.Step();
 
+    // add header row
+    writter.AddRow("UltimateId",
+                   "PrincipalId",
+                   "ProductId",
+                   "UsageCountryISO",
+                   "FeatureString",
+                   "IMSId",
+                   "MachineName",
+                   "ComputerSID",
+                   "Username",
+                   "UserSID",
+                   "PolicyId",
+                   "ProductVersion",
+                   "ProjectId",
+                   "CorrelationId",
+                   "LogVersion",
+                   "LogPostingSource",
+                   "UsageType",
+                   "StartTimeUTC",
+                   "EndTimeUTC",
+                   "EntryDate",
+                   "PartitionId");
+
     while (result == DbResult::BE_SQLITE_ROW)
         {
         writter.AddRow(stmt.GetValueInt64(0),
                        stmt.GetValueText(1),
-                       stmt.GetValueText(2),
+                       stmt.GetValueInt(2),
                        stmt.GetValueText(3),
                        stmt.GetValueText(4),
                        stmt.GetValueText(5),
                        stmt.GetValueText(6),
                        stmt.GetValueText(7),
                        stmt.GetValueText(8),
-                       stmt.GetValueInt(9),
+                       stmt.GetValueText(9),
                        stmt.GetValueText(10),
                        stmt.GetValueInt64(11),
                        stmt.GetValueText(12),
                        stmt.GetValueText(13),
-                       stmt.GetValueText(14),
-                       stmt.GetValueDouble(15),
+                       stmt.GetValueInt64(14),
+                       stmt.GetValueText(15),
                        stmt.GetValueText(16),
                        stmt.GetValueText(17),
-                       stmt.GetValueText(18));
+                       stmt.GetValueText(18),
+                       stmt.GetValueText(19),
+                       stmt.GetValueInt(20));
 
         result = stmt.Step();
         }
@@ -389,31 +420,44 @@ BentleyStatus LicensingDb::WriteFeatureToCSVFile(BeFileNameCR path)
 
     DbResult result = stmt.Step();
 
+    // add header row
+    writter.AddRow("UltimateId",
+                   "CountryIso",
+                   "ProductId",
+                   "FeatureString",
+                   "VersionNumber",
+                   "MachineName",
+                   "ComputerSid",
+                   "UserName",
+                   "UserSid",
+                   "ImsId",
+                   "ProjectId",
+                   "SessionId",
+                   "FeatureId",
+                   "StartTime",
+                   "EndTime",
+                   "DurationTracked",
+                   "MetaData");
+
     while (result == DbResult::BE_SQLITE_ROW)
         {
         writter.AddRow(stmt.GetValueInt64(0),
                        stmt.GetValueText(1),
-                       stmt.GetValueText(2),
+                       stmt.GetValueInt(2),
                        stmt.GetValueText(3),
-                       stmt.GetValueText(4),
+                       stmt.GetValueInt64(4),
                        stmt.GetValueText(5),
                        stmt.GetValueText(6),
                        stmt.GetValueText(7),
                        stmt.GetValueText(8),
-                       stmt.GetValueInt(9),
+                       stmt.GetValueText(9),
                        stmt.GetValueText(10),
-                       stmt.GetValueInt64(11),
+                       stmt.GetValueText(11),
                        stmt.GetValueText(12),
                        stmt.GetValueText(13),
                        stmt.GetValueText(14),
-                       stmt.GetValueDouble(15),
-                       stmt.GetValueText(16),
-                       stmt.GetValueText(17),
-                       stmt.GetValueText(18),
-                       stmt.GetValueText(19),
-                       stmt.GetValueText(20),
-                       stmt.GetValueText(21),
-                       stmt.GetValueText(22));
+                       stmt.GetValueText(15),
+                       stmt.GetValueText(16));
 
         result = stmt.Step();
         }
@@ -787,39 +831,63 @@ BentleyStatus LicensingDb::CleanUpFeatures()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus LicensingDb::RecordUsage(int64_t ultimateSAPId, Utf8StringCR principalId, Utf8StringCR imsId, Utf8String machineName,
-                                   Utf8StringCR machineSID, Utf8StringCR userName, Utf8StringCR userSID, Utf8StringCR policyId,
-                                   Utf8StringCR securableId, int productId, Utf8String featureString, int64_t productVersion, 
-                                   Utf8StringCR projectId, Utf8String correlationId, Utf8StringCR eventTime, double schemaVersion,
-                                   Utf8StringCR logPostingSource, Utf8StringCR country, Utf8StringCR usageType)
+BentleyStatus LicensingDb::RecordUsage
+    (
+    int64_t ultimateId,
+    Utf8StringCR principalId,
+    int productId,
+    Utf8StringCR usageCountryIso,
+    Utf8String featureString,
+    Utf8StringCR imsId,
+    Utf8String machineName,
+    Utf8StringCR machineSID, // aka deviceId aka computerSID
+    Utf8StringCR userName,
+    Utf8StringCR userSID,
+    Utf8StringCR policyId,
+    int64_t productVersion,
+    Utf8StringCR projectId,
+    Utf8StringCR correlationId, // aka sessionId
+    int64_t logVersion, // aka schemaVersion
+    Utf8StringCR logPostingSource,
+    Utf8StringCR usageType,
+    Utf8StringCR startTimeUtc,
+    Utf8StringCR endTimeUtc,
+    Utf8StringCR entryDate, // aka eventTimeZ
+    int partitionId // 1
+    )
     {
     LOG.info("LicensingDb::RecordUsage");
+
+    // NOTE: if we want to add realtime feature log posting, we must add the following fields:
+    // Utf8StringCR securableId
 
     Statement stmt;
 
     if (m_db.IsDbOpen())
         {
-        stmt.Prepare(m_db, "INSERT INTO Usage VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        stmt.BindInt64(1, ultimateSAPId);
+        stmt.Prepare(m_db, "INSERT INTO Usage VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        stmt.BindInt64(1, ultimateId);
         stmt.BindText(2, principalId, Statement::MakeCopy::No);
-        stmt.BindText(3, imsId, Statement::MakeCopy::No);
-        stmt.BindText(4, machineName, Statement::MakeCopy::No);
-        stmt.BindText(5, machineSID, Statement::MakeCopy::No);
-        stmt.BindText(6, userName, Statement::MakeCopy::No);
-        stmt.BindText(7, userSID, Statement::MakeCopy::No);
-        stmt.BindText(8, policyId, Statement::MakeCopy::No);
-        stmt.BindText(9, securableId, Statement::MakeCopy::No);
-        stmt.BindInt(10, productId);
-        stmt.BindText(11, featureString, Statement::MakeCopy::No);
+        stmt.BindInt(3, productId);
+        stmt.BindText(4, usageCountryIso, Statement::MakeCopy::No);
+        stmt.BindText(5, featureString, Statement::MakeCopy::No);
+        stmt.BindText(6, imsId, Statement::MakeCopy::No);
+        stmt.BindText(7, machineName, Statement::MakeCopy::No);
+        stmt.BindText(8, machineSID, Statement::MakeCopy::No);
+        stmt.BindText(9, userName, Statement::MakeCopy::No);
+        stmt.BindText(10, userSID, Statement::MakeCopy::No);
+        stmt.BindText(11, policyId, Statement::MakeCopy::No);
         stmt.BindInt64(12, productVersion);
         stmt.BindText(13, projectId, Statement::MakeCopy::No);
         stmt.BindText(14, correlationId, Statement::MakeCopy::No);
-        stmt.BindText(15, eventTime, Statement::MakeCopy::No);
-        stmt.BindDouble(16, schemaVersion);
-        stmt.BindText(17, logPostingSource, Statement::MakeCopy::No);
-        stmt.BindText(18, country, Statement::MakeCopy::No);
-        stmt.BindText(19, usageType, Statement::MakeCopy::No);
-        
+        stmt.BindInt64(15, logVersion);
+        stmt.BindText(16, logPostingSource, Statement::MakeCopy::No);
+        stmt.BindText(17, usageType, Statement::MakeCopy::No);
+        stmt.BindText(18, startTimeUtc, Statement::MakeCopy::No);
+        stmt.BindText(19, endTimeUtc, Statement::MakeCopy::No);
+        stmt.BindText(20, entryDate, Statement::MakeCopy::No);
+        stmt.BindInt(21, partitionId);
+
         DbResult result = stmt.Step();
 
         if (result == DbResult::BE_SQLITE_DONE)
@@ -834,43 +902,60 @@ BentleyStatus LicensingDb::RecordUsage(int64_t ultimateSAPId, Utf8StringCR princ
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus LicensingDb::RecordFeature(int64_t ultimateSAPId, Utf8StringCR principalId, Utf8StringCR imsId, Utf8String machineName,
-                                     Utf8StringCR machineSID, Utf8StringCR userName, Utf8StringCR userSID, Utf8StringCR policyId,
-                                     Utf8StringCR securableId, int productId, Utf8String featureString, int64_t productVersion,
-                                     Utf8StringCR projectId, Utf8String correlationId, Utf8StringCR eventTime, double schemaVersion,
-                                     Utf8StringCR logPostingSource, Utf8StringCR country, Utf8StringCR usageType, Utf8StringCR featureId,
-                                     Utf8StringCR startDate, Utf8String endDate, Utf8String userData)
+BentleyStatus LicensingDb::RecordFeature
+    (
+    int64_t ultimateId, // aka ultimateSAPId
+    Utf8StringCR countryIso,
+    int productId,
+    Utf8String featureString,
+    int64_t productVersion, // aka versionNumber
+    Utf8String machineName, // aka deviceId aka computerSID
+    Utf8StringCR machineSID,
+    Utf8StringCR userName,
+    Utf8StringCR userSID,
+    Utf8StringCR imsId,
+    Utf8StringCR projectId,
+    Utf8String correlationId, // aka sessionId
+    Utf8StringCR featureId,
+    Utf8StringCR startTime, // aka startTimeUtc
+    Utf8String endTime, // aka endTimeUtc
+    bool durationTracked,
+    Utf8StringCR userData // aka metaData
+    )
     {
     LOG.info("LicensingDb::RecordFeature");
+
+    // NOTE: if we want to add realtime feature log posting, we must add the following fields:
+    // Utf8StringCR principalId,
+    // Utf8StringCR policyId,
+    // Utf8StringCR securableId,
+    // Utf8StringCR eventTime,
+    // double schemaVersion,
+    // Utf8StringCR logPostingSource,
+    // Utf8StringCR usageType,
 
     Statement stmt;
 
     if (m_db.IsDbOpen())
         {
-        stmt.Prepare(m_db, "INSERT INTO Feature VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        stmt.BindInt64(1, ultimateSAPId);
-        stmt.BindText(2, principalId, Statement::MakeCopy::No);
-        stmt.BindText(3, imsId, Statement::MakeCopy::No);
-        stmt.BindText(4, machineName, Statement::MakeCopy::No);
-        stmt.BindText(5, machineSID, Statement::MakeCopy::No);
-        stmt.BindText(6, userName, Statement::MakeCopy::No);
-        stmt.BindText(7, userSID, Statement::MakeCopy::No);
-        stmt.BindText(8, policyId, Statement::MakeCopy::No);
-        stmt.BindText(9, securableId, Statement::MakeCopy::No);
-        stmt.BindInt(10, productId);
-        stmt.BindText(11, featureString, Statement::MakeCopy::No);
-        stmt.BindInt64(12, productVersion);
-        stmt.BindText(13, projectId, Statement::MakeCopy::No);
-        stmt.BindText(14, correlationId, Statement::MakeCopy::No);
-        stmt.BindText(15, eventTime, Statement::MakeCopy::No);
-        stmt.BindDouble(16, schemaVersion);
-        stmt.BindText(17, logPostingSource, Statement::MakeCopy::No);
-        stmt.BindText(18, country, Statement::MakeCopy::No);
-        stmt.BindText(19, usageType, Statement::MakeCopy::No);
-        stmt.BindText(20, featureId, Statement::MakeCopy::No);
-        stmt.BindText(21, startDate, Statement::MakeCopy::No);
-        stmt.BindText(22, endDate, Statement::MakeCopy::No);
-        stmt.BindText(23, userData, Statement::MakeCopy::No);
+        stmt.Prepare(m_db, "INSERT INTO Feature VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        stmt.BindInt64(1, ultimateId);
+        stmt.BindText(2, countryIso, Statement::MakeCopy::No);
+        stmt.BindInt(3, productId);
+        stmt.BindText(4, featureString, Statement::MakeCopy::No);
+        stmt.BindInt64(5, productVersion);
+        stmt.BindText(6, machineName, Statement::MakeCopy::No);
+        stmt.BindText(7, machineSID, Statement::MakeCopy::No);
+        stmt.BindText(8, userName, Statement::MakeCopy::No);
+        stmt.BindText(9, userSID, Statement::MakeCopy::No);
+        stmt.BindText(10, imsId, Statement::MakeCopy::No);
+        stmt.BindText(11, projectId, Statement::MakeCopy::No);
+        stmt.BindText(12, correlationId, Statement::MakeCopy::No);
+        stmt.BindText(13, featureId, Statement::MakeCopy::No);
+        stmt.BindText(14, startTime, Statement::MakeCopy::No);
+        stmt.BindText(15, endTime, Statement::MakeCopy::No);
+        durationTracked ? stmt.BindText(16, "true", Statement::MakeCopy::No) : stmt.BindText(16, "false", Statement::MakeCopy::No);
+        stmt.BindText(17, userData, Statement::MakeCopy::No);
 
         DbResult result = stmt.Step();
 
