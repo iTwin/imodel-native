@@ -30,9 +30,7 @@ THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libfreetype2.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)liblzma.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libsnappy.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libUnits.a
-%if $(TARGET_PLATFORM)!="MacOS"
-    THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libLicensing.a
-%endif
+THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libLicensing.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libWebServicesClient.a
 THIN_ARCHIVE_INPUTS  + $(ContextSubpartsLibs)libBeHttp.a
 THIN_ARCHIVE_INPUTS  + $(ContextSubpartsLibs)libBeOpenSSL.a

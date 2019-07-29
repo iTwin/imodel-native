@@ -18,5 +18,5 @@ else
   export tempDir=$1
 fi
 
-cp $OutRoot/MacOSX64/imodeljsnodeaddon_pkgs/imodeljs-native/*          $tempDir/core/backend/node_modules/@bentley/imodeljs-native
-cp -r $OutRoot/MacOSX64/imodeljsnodeaddon_pkgs/imodeljs-n_10-darwin-x64 $tempDir/core/backend/node_modules/@bentley/imodeljs-native
+cp $OutRoot/MacOSX64/imodeljsnodeaddon_pkgs/imodeljs-native/* $tempDir/core/backend/node_modules/@bentley/imodeljs-native
+cp -r $OutRoot/MacOSX64/imodeljsnodeaddon_pkgs/imodeljs-darwin-x64 $tempDir/core/backend/node_modules/@bentley/imodeljs-native
