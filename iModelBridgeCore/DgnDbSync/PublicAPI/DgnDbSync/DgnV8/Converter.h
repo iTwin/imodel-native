@@ -1125,7 +1125,7 @@ public:
 
     //! @private
     //! This is called in a separate process to check bridge file affinity only.
-    DGNDBSYNC_EXPORT static BentleyStatus GetAuthoringFileInfo(WCharP buffer, const size_t bufferSize, iModelBridgeAffinityLevel& affinityLevel, BentleyApi::BeFileName const& sourceFileName);
+    DGNDBSYNC_EXPORT static BentleyStatus GetAuthoringFileInfo(WCharP buffer, const size_t bufferSize, iModelBridgeAffinityLevel& affinityLevel, BentleyApi::BeFileName const& sourceFileName, BentleyApi::BeFileName const& affinityLibraryPath);
     DGNDBSYNC_EXPORT static void InitializeDllPath(BentleyApi::BeFileName const& thisLibraryPath);
     DGNDBSYNC_EXPORT static void InitializeDgnv8Platform(BentleyApi::BeFileName const& thisLibraryPath);
     DGNDBSYNC_EXPORT static void GetAffinity(WCharP buffer, const size_t bufferSize, iModelBridgeAffinityLevel& affinityLevel,WCharCP affinityLibraryPathStr, WCharCP sourceFileNameStr);
@@ -2898,9 +2898,14 @@ struct XDomain
     DGNDBSYNC_EXPORT static void UnRegister(XDomain& xd);
 
     //! This is invoked just after the V8 root model is opened but before any references are detected or any elements are converted. 
+    virtual void _MakeDefinitionChanges(Converter&) {}
+
+    //! This is invoked just after the V8 root model is opened but before any references are detected or any elements are converted. 
     virtual void _OnBeginConversion(Converter&, DgnV8ModelR rootModel) {}
     //! This is invoked by _FinishConversion, after all models and elements (and ECRelationships) have been processed.
     virtual void _OnFinishConversion(Converter&) = 0;
+    //! This is invoked after _OnFinishConversion to get all the elements that have an external source aspect and were manually created during _OnFinishConversion.
+    virtual DgnElementIdSet _GetManuallyCreatedElementIds(Converter&) const { return DgnElementIdSet(); };
 };
 
 //=======================================================================================

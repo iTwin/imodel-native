@@ -8,7 +8,6 @@ ALLOW_MSVC_PERMISSIVE=1 # otherwise we get errors Vancouver's header files; hope
 
 %include mdl.mki
 
-
 %if !defined (REL_V)
     REL_V=1
     VERSIONMISSING=1
@@ -38,23 +37,8 @@ ALLOW_MSVC_PERMISSIVE=1 # otherwise we get errors Vancouver's header files; hope
 
 %endif
 
-
-appName             = TiledDgnV8Converter
-baseDir             = $(_MakeFilePath)
-
-o                   = $(OutputRootDir)Build/DgnDbSync/$(appName)/
-always:
-    ~mkdir $(o)
-
-    
-#--------------------------------------------------------------------------------------
-# Create prg.h header with build version numbers
-#--------------------------------------------------------------------------------------
-%include $(SharedMki)CreateBuildVersionHeader.mki
-
-DgnDbSyncSyncDir    = $(SrcRoot)DgnDbSync/
-DgnV8APISrc         = $(DgnDbSyncSyncDir)/PublicAPI/DgnDbSync/DgnV8/
-DgnV8Depends        = $(DgnV8APISrc)Converter.h  $(DgnV8APISrc)SyncInfo.h
+appName     = DgnV8BridgeBase
+baseDir     = $(_MakeFilePath)
 
 # Need to ignore this because it's in Vancouver's header files.
 %if defined(MSVC_VERSION)
@@ -71,21 +55,34 @@ DgnV8Depends        = $(DgnV8APISrc)Converter.h  $(DgnV8APISrc)SyncInfo.h
     cDefs +% -DDGNV8_DGNPLATFORM_SDK
 %endif
 
+o = $(OutputRootDir)Build/DgnDbSync/$(appName)/
+always:
+    ~mkdir $(o)
+
+#--------------------------------------------------------------------------------------
+# Create prg.h header with build version numbers
+#--------------------------------------------------------------------------------------
+%include $(SharedMki)CreateBuildVersionHeader.mki
+
+
+nameToDefine = __DGNV8_BRIDGE_BUILD__
+%include cdefapnd.mki
+
+DgnDbSyncSyncDir = $(SrcRoot)DgnDbSync/
+DgnV8APISrc = $(DgnDbSyncSyncDir)/PublicAPI/DgnDbSync/DgnV8/
+
+DgnV8Depends = $(DgnV8APISrc)DgnV8Bridge.h  $(DgnV8APISrc)SyncInfo.h
+
 MultiCompileDepends = $(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-$(o)TiledConverterApp.obj : $(baseDir)TiledConverterApp.cpp $(DgnV8Depends) ${MultiCompileDepends}
+$(o)DgnV8Bridge.obj: $(baseDir)DgnV8Bridge.cpp $(DgnV8Depends) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 
 #----------------------------------------------------------------------
-#   Link the executable
+#   Supporting libraries needed
 #----------------------------------------------------------------------
-
-EXE_DEST          = $(o)
-EXE_NAME          = $(appname)
-EXE_OBJS          = $(MultiCompileObjectList)
-EXE_LOPT1         = -entry:wmainCRTStartup
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)Bentley.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeSQLite.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeSQLiteEC.lib
@@ -94,8 +91,8 @@ LINKER_LIBRARIES  + $(ContextSubpartsLibs)Units.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BentleyGeom.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnPlatform.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BaseGeoCoord.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnView.lib
 LINKER_LIBRARIES  + $(BuildContext)Delivery/DgnV8Converter.lib
-LINKER_LIBRARIES  + $(BuildContext)Delivery/DgnV8BridgeBase.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)Raster.lib 
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeJsonCpp.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)ThreeMx.lib
@@ -106,18 +103,16 @@ LINKER_LIBRARIES  + user32.lib
 LINKER_LIBRARIES_DELAYLOADED  + $(BuildContext)SubParts/VersionedDgnV8Libs/DgnPlatform.lib
 LINKER_LIBRARIES_DELAYLOADED  + $(BuildContext)SubParts/VersionedDgnV8Libs/Bentley.lib
 
-EXE_TMP_DIR  = $(o)
+#----------------------------------------------------------------------
+#   Link the shared library
+#----------------------------------------------------------------------
+DLM_NAME                = $(appName)
+DLM_DEST                = $(o)
+DLM_OBJECT_DEST         = $(o)
+DLM_EXPORT_DEST         = $(o)
+DLM_OBJECT_FILES        = $(MultiCompileObjectList)
+DLM_NOINITFUNC          = 1
+DLM_NOENTRY             = 1
 
-%include $(sharedMki)linktool.mki
+%include $(sharedMki)LinkLibrary.mki
 
-always:
-    ~linkfile "$(BuildContext)Delivery/$(appname)$(exeext)=$(o)$(appname)$(exeext)"
-
-$(BuildContext)Delivery/$(appName).logging.config.xml : $(baseDir)logging.config.xml
-    $(LinkFirstDepToFirstTarget)
-
-# Create the sqlang database
-SQLANG_OutputDb     = $(o)$(appname)_en-US.sqlang.db3
-SQLANG_DeliveryDir  = $(BuildContext)Delivery/
-SQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff
-%include $(SrcRoot)bsicommon\sqlang\mki\XliffsToDb.mke

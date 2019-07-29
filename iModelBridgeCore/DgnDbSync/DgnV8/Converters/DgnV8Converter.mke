@@ -8,36 +8,6 @@ ALLOW_MSVC_PERMISSIVE=1 # otherwise we get errors Vancouver's header files; hope
 
 %include mdl.mki
 
-%if !defined (REL_V)
-    REL_V=1
-    VERSIONMISSING=1
-%endif
-
-%if !defined (MAJ_V)
-    MAJ_V=00
-    VERSIONMISSING=1
-%endif
-
-%if !defined (MIN_V)
-    MIN_V=00
-    VERSIONMISSING=1
-%endif
-
-%if !defined (SUBMIN_V)
-    SUBMIN_V=00
-    VERSIONMISSING=1
-%endif
-
-%if defined(VERSIONMISSING)
-
-    always:
-        |-------------------------------------------------------------------------
-        | FYI : NO VERSION SPECIFIED IN ENVIRONMENT! USING $(REL_V).$(MAJ_V).$(MIN_V).$(SUBMIN_V)
-        |-------------------------------------------------------------------------
-
-%endif
-
-
 appName     = DgnV8Converter
 baseDir     = $(_MakeFilePath)
 
@@ -60,10 +30,8 @@ o = $(OutputRootDir)Build/DgnDbSync/$(appName)/
 always:
     ~mkdir $(o)
 
-#--------------------------------------------------------------------------------------
-# Create prg.h header with build version numbers
-#--------------------------------------------------------------------------------------
-%include $(SharedMki)CreateBuildVersionHeader.mki
+nameToDefine = __DGNV8_BRIDGE_BUILD__
+%include cdefapnd.mki
 
 DgnDbSyncSyncDir = $(SrcRoot)DgnDbSync/
 DgnV8APISrc = $(DgnDbSyncSyncDir)/PublicAPI/DgnDbSync/DgnV8/
@@ -72,8 +40,6 @@ DgnV8Depends = $(DgnV8APISrc)Converter.h  $(DgnV8APISrc)SyncInfo.h
 
 MultiCompileDepends = $(_MakeFileSpec)
 %include MultiCppCompileRule.mki
-
-$(o)ConverterApp.obj: $(baseDir)ConverterApp.cpp $(DgnV8Depends) ${MultiCompileDepends}
 
 $(o)DgnV8Converter.obj: $(baseDir)DgnV8Converter.cpp $(DgnV8Depends) ${MultiCompileDepends}
 
@@ -91,6 +57,7 @@ LINKER_LIBRARIES  + $(ContextSubpartsLibs)BentleyGeom.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnPlatform.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BaseGeoCoord.lib
 LINKER_LIBRARIES  + $(BuildContext)Delivery/DgnV8Converter.lib
+LINKER_LIBRARIES  + $(BuildContext)Delivery/DgnV8BridgeBase.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)Raster.lib 
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeJsonCpp.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)ThreeMx.lib

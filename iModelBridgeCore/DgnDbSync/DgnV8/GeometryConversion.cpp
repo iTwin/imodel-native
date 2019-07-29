@@ -461,7 +461,14 @@ void Converter::ConvertTextString(TextStringPtr& clone, Bentley::TextStringCR v8
     static ShimGlyphLayoutListener s_shimGlyphLayoutListener;
 
     // Force the DgnV8 TextString to do its layout pass.
-    v8Text.LoadGlyphs(&s_shimGlyphLayoutListener);
+    // If it cannot perform layout (should never happen, but we've seen issues resolving fallback fonts), then we cannot
+	// transplant corrupt V8 layout data and pretend the TextString is valid... need to let DgnDb try to recover later.
+	if (SUCCESS != v8Text.LoadGlyphs(&s_shimGlyphLayoutListener))
+		{
+		// TODO: log that this element won't necessarily match fidelity.
+		clone = dbText.Clone();
+		return;
+		}
 
     // Mark the DB TextString as valid so it doesn't try to perform its own layout later.
     dbText.m_isValid = true;
