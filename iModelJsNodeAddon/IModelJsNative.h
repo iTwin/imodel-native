@@ -165,7 +165,7 @@ public:
     static DbResult InsertLinkTableRelationship(JsonValueR results, DgnDbR db, Json::Value& props);
     static DbResult UpdateLinkTableRelationship(DgnDbR db, Json::Value& props);
     static DbResult DeleteLinkTableRelationship(DgnDbR db, Json::Value& props);
-    static DgnDbStatus InsertCodeSpec(Utf8StringR idStr, DgnDbR db, Utf8StringCR name, CodeScopeSpec::Type cstype, CodeScopeSpec::ScopeRequirement cssreq);
+    static DgnDbStatus InsertCodeSpec(Utf8StringR idStr, DgnDbR db, Utf8StringCR name, Json::Value const& jsonProperties);
     static DgnDbStatus InsertModel(JsonValueR results, DgnDbR db, Json::Value &props);
     static DgnDbStatus UpdateModel(DgnDbR db, Json::Value &props);
     static DgnDbStatus DeleteModel(DgnDbR db, Utf8StringCR idStr);

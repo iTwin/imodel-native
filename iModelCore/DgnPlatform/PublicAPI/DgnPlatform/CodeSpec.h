@@ -286,6 +286,7 @@ public:
     DGNPLATFORM_EXPORT DgnDbStatus Insert();
 
     DGNPLATFORM_EXPORT static CodeSpecPtr Create(DgnDbR db, Utf8CP name, CodeScopeSpecCR scopeSpec=CodeScopeSpec::CreateRepositoryScope());
+    DGNPLATFORM_EXPORT static CodeSpecPtr Create(DgnDbR db, Utf8CP name, JsonValueCR jsonProperties);
 
     CodeScopeSpecCR GetScope() const {return m_scopeSpec;}
     CodeScopeSpec::ScopeRequirement GetScopeRequirement() const {return GetScope().GetScopeRequirement();}

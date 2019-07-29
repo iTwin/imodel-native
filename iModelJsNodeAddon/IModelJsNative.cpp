@@ -1688,18 +1688,10 @@ public:
         {
         REQUIRE_DB_TO_BE_OPEN
         REQUIRE_ARGUMENT_STRING(0, name, Env().Undefined());
-        REQUIRE_ARGUMENT_INTEGER(1, specType, Env().Undefined());
-        REQUIRE_ARGUMENT_INTEGER(2, scopeReq, Env().Undefined());
-
-        if ((uint32_t)CodeScopeSpec::Type::Model != specType && (uint32_t)CodeScopeSpec::Type::ParentElement != specType &&
-            (uint32_t)CodeScopeSpec::Type::RelatedElement != specType && (uint32_t)CodeScopeSpec::Type::Repository != specType)
-            THROW_TYPE_EXCEPTION_AND_RETURN("Argument 1 must be a CodeScopeSpec.Type", Env().Undefined());
-
-        if ((uint32_t)CodeScopeSpec::ScopeRequirement::ElementId != scopeReq && (uint32_t)CodeScopeSpec::ScopeRequirement::FederationGuid != scopeReq)
-            THROW_TYPE_EXCEPTION_AND_RETURN("Argument 2 must be a CodeScopeSpec.ScopeRequirement", Env().Undefined());
-
+        REQUIRE_ARGUMENT_STRING(1, jsonPropertiesStr, Env().Undefined());
+        Json::Value jsonProperties = Json::Value::From(jsonPropertiesStr);
         Utf8String idStr;
-        DgnDbStatus status = JsInterop::InsertCodeSpec(idStr, GetDgnDb(), name, (CodeScopeSpec::Type)specType, (CodeScopeSpec::ScopeRequirement)scopeReq);
+        DgnDbStatus status = JsInterop::InsertCodeSpec(idStr, GetDgnDb(), name, jsonProperties);
         return CreateBentleyReturnObject(status, toJsString(Env(), idStr));
         }
 

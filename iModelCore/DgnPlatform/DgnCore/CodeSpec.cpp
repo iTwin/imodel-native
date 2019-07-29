@@ -310,6 +310,22 @@ CodeSpecPtr CodeSpec::Create(DgnDbR db, Utf8CP codeSpecName, CodeScopeSpecCR sco
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+CodeSpecPtr CodeSpec::Create(DgnDbR db, Utf8CP codeSpecName, JsonValueCR jsonProperties)
+    {
+    if (!jsonProperties.isMember(CodeSpec::json_spec()) || !jsonProperties.isMember(CodeSpec::json_scopeSpec())) // quick sanity check of incoming JSON
+        return nullptr;
+
+    CreateParams params(db, codeSpecName, CodeSpecId());
+    CodeSpecPtr codeSpec = dgn_CodeSpecHandler::CodeSpec::GetHandler().Create(params).get();
+    if (codeSpec.IsValid())
+        codeSpec->FromPropertiesJson(jsonProperties);
+
+    return codeSpec;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DgnDbStatus insertCodeSpec(DgnDbR db, Utf8CP name, CodeScopeSpecCR scope, CodeSpecId expectedId=CodeSpecId())
