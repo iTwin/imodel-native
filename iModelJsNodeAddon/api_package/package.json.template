@@ -6,6 +6,10 @@
     "Bentley",
     "iModel"
   ],
+  "repository": {
+    "type" : "git",
+    "url" : "https://github.com/imodeljs/imodeljs"
+  },
   "description": "iModel.js native module",
   "author": {
     "name": "Bentley Systems, Inc.",

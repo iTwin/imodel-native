@@ -6,6 +6,13 @@ Rolling a new version of the native platform code is a two-step process:
 
 These steps are described in more detail in the sections below.
 
+# Supported Platforms
+
+The ./api_package/installNativePlatform.js script contains a hard-wired list of all supported platforms. Keep this list up to date!
+
+installNativePlatform.js is the post-install script for imodeljs-native. It decides which addon to install to fit
+the current platform. When it detects an unsupported platform, it prints a user-friendly error message and exits.
+
 # Changing and Publishing the Native Platform Packages
 
 ## 1. Change, Build and Test

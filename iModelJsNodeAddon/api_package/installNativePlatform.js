@@ -8,6 +8,60 @@ const os = require("os");
 const version = require("./package.json").version;
 const formatPackageName = require("./loadNativePlatform.js").formatPackageName;
 
+// This is the list of all supported platforms. Keep it up to date.
+const supportedPlatforms = [
+  {
+    name: "win32",
+    description: "Microsoft Windows",
+    architectures: ["x64"]
+  },
+  {
+    name: "linux",
+    description: "Linux",
+    architectures: ["x64"]
+  },
+  {
+    name: "darwin",
+    description: "OSX",
+    architectures: ["x64"]
+  }
+];
+
+// Before attempting to install the platform-specific addon, check that this
+// platform is supported. If not, exit with a friendly error message.
+
+function showErrorAndExit(msg, alsoShowSupported) {
+  console.log("ERROR - iModel.js cannot be installed.");
+  console.log(msg);
+  if (alsoShowSupported) {
+    console.log("iModel.js runs on:");
+    for (const supportedPlatform of supportedPlatforms) {
+      console.log(`\t${supportedPlatform.description} (${supportedPlatform.architectures.join()})`);
+    }
+  }
+  process.exit(1);
+}
+
+function checkSupportedPlatform() {
+  for (const supportedPlatform of supportedPlatforms) {
+    if (supportedPlatform.name === process.platform) {
+      // This platform is supported. But what about the architecture?
+      for (const supportedArchitecture of supportedPlatform.architectures) {
+        if (process.arch === supportedArchitecture) {
+          return;
+        }
+        showErrorAndExit(`iModel.js does not run on the ${process.arch} version of ${supportedPlatform.description}. iModel.js runs on ${supportedPlatform.architectures.join()} only.`);
+      }
+    }
+    showErrorAndExit(`iModel.js does not run on the ${process.platform} platform.`, true);
+  }
+}
+
+checkSupportedPlatform();
+
+// This platform is supported. Try to install the appropriate addon package.
+
+// Utility function to copy a directory and all subdirectories 
 function copyFolderRecursiveSync(source, target) {
   if (!fs.existsSync(target))
     fs.mkdirSync(target);
