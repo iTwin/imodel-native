@@ -20,7 +20,7 @@
 [imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\reftransform.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ViewTests.*:NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:ECConversionTests.*:MultiBridgeTests.*:GeomPartTests.*:ConvertToDgnDbElementExtensionTests.*:V8AttachmentTests.*:TagTests.*:TextBlockTests.*:RulesetEmbedderTests.*:SkipSchemaImportTests.*:ECSchemaTests.*:RasterTests.*:DgnMaterialTests.*:ConverterAppTests.*:SheetCompositionTests.*:LightTests.*:ConverterTests.*:ModelTests.*:DimensionTests.*:
 [imodel02\imodelcore\geomlibs\publicapi\mtg\mtgshortestpaths.h]
-%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:ConverterTests.*:TransformTests.*:
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:TransformTests.*:ConverterTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\bezier\bezroot.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=V8AttachmentTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\refdray3d.cpp]
@@ -34,7 +34,7 @@
 [imodel02\imodelcore\geomlibs\geom\src\solidprimitive\sp_clone.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=LightTests.*:DgnMaterialTests.*:BasicGeometryTests.*:ConverterTests.*:SheetCompositionTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\mtg\jmdl_mtgmarkset.cpp]
-%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:ConverterTests.*:TransformTests.*:
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:TransformTests.*:ConverterTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\curveprimitive\cp_linestring.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=BasicGeometryTests.*:NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ECConversionTests.*:MultiBridgeTests.*:ConverterTests.*:RasterTests.*:SheetCompositionTests.*:SkipSchemaImportTests.*:ModelTests.*:ECSchemaTests.*:LightTests.*:ItemTypesTests.*:DrawingTests.*:GeomPartTests.*:DimensionTests.*:V8AttachmentTests.*:TagTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\bspline\bsprsurf.cpp]
@@ -56,19 +56,19 @@
 [imodel02\imodelcore\geomlibs\geom\src\funcs\memfuncs.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=BasicGeometryTests.*:RasterTests.*:V8AttachmentTests.*:
 [imodel02\imodelcore\geomlibs\publicapi\geom\xyzrangetree.h]
-%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:ConverterTests.*:TransformTests.*:
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:TransformTests.*:ConverterTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\polyface\ipolyfaceconstruction_dispatchers.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=V8AttachmentTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\placementonearth\placement.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:ECConversionTests.*:GeomPartTests.*:V8AttachmentTests.*:TagTests.*:MultiBridgeTests.*:SheetCompositionTests.*:SkipSchemaImportTests.*:ECSchemaTests.*:RasterTests.*:DgnMaterialTests.*:TextBlockTests.*:LightTests.*:ConverterTests.*:ModelTests.*:DimensionTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\funcs\dpoint3dopsrangeheap.cpp]
-%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:ConverterTests.*:TransformTests.*:
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:TransformTests.*:ConverterTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\bspline\msbsplinesurface.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=V8AttachmentTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\structs\dspiral2dbase.cpp]
-%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:ConverterTests.*:TransformTests.*:
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:TransformTests.*:ConverterTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\regions\rg_merge.cpp]
-%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:ConverterTests.*:TransformTests.*:
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:TransformTests.*:ConverterTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\polyface\polyfacequerycarrier.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=V8AttachmentTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\bspline\tensorproducts.cpp]
@@ -86,7 +86,7 @@
 [imodel02\imodelcore\geomlibs\geom\src\bspline\msbsplinesurface_getset.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=V8AttachmentTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\polyface\pf_indexedheaprangesearch.cpp]
-%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:ConverterTests.*:TransformTests.*:
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:TransformTests.*:ConverterTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\curveprimitive\cp_line.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=SheetCompositionTests.*:BasicGeometryTests.*:ConverterTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\curveprimitive\cp_child.cpp]
@@ -104,7 +104,7 @@
 [imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\refrotmatrixinit.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ViewTests.*:NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:ECConversionTests.*:MultiBridgeTests.*:GeomPartTests.*:ConvertToDgnDbElementExtensionTests.*:V8AttachmentTests.*:TagTests.*:TextBlockTests.*:RulesetEmbedderTests.*:SkipSchemaImportTests.*:ECSchemaTests.*:RasterTests.*:DgnMaterialTests.*:ConverterAppTests.*:SheetCompositionTests.*:LightTests.*:ConverterTests.*:ModelTests.*:DimensionTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\funcs\trigfuncs.cpp]
-%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:ConverterTests.*:TransformTests.*:
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:TransformTests.*:ConverterTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\funcs\doubleops.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ViewTests.*:NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:ECConversionTests.*:GeomPartTests.*:ConvertToDgnDbElementExtensionTests.*:V8AttachmentTests.*:TagTests.*:MultiBridgeTests.*:SheetCompositionTests.*:SkipSchemaImportTests.*:ECSchemaTests.*:RasterTests.*:DgnMaterialTests.*:TextBlockTests.*:LightTests.*:ConverterTests.*:ModelTests.*:DimensionTests.*:
 [imodel02\imodelcore\geomlibs\vu\src\vucoord.cpp]
@@ -112,7 +112,7 @@
 [imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\refdrange3d.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ViewTests.*:NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:ECConversionTests.*:MultiBridgeTests.*:GeomPartTests.*:ConvertToDgnDbElementExtensionTests.*:V8AttachmentTests.*:TagTests.*:TextBlockTests.*:RulesetEmbedderTests.*:SkipSchemaImportTests.*:ECSchemaTests.*:RasterTests.*:DgnMaterialTests.*:ConverterAppTests.*:SheetCompositionTests.*:LightTests.*:ConverterTests.*:ModelTests.*:DimensionTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\refrotmatrixinvert.cpp]
-%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=TextBlockTests.*:BasicGeometryTests.*:TransformTests.*:ECSchemaTests.*:LevelTests.*:ImportConfigTests.*:ECConversionTests.*:MultiBridgeTests.*:ConverterTests.*:RasterTests.*:SheetCompositionTests.*:ModelTests.*:DimensionTests.*:LightTests.*:DrawingTests.*:GeomPartTests.*:V8AttachmentTests.*:TagTests.*:
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=TextBlockTests.*:BasicGeometryTests.*:DimensionTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ECConversionTests.*:MultiBridgeTests.*:ConverterTests.*:RasterTests.*:SheetCompositionTests.*:ModelTests.*:ECSchemaTests.*:LightTests.*:DrawingTests.*:GeomPartTests.*:V8AttachmentTests.*:TagTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\refdrange2d.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ViewTests.*:NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:ECConversionTests.*:MultiBridgeTests.*:GeomPartTests.*:ConvertToDgnDbElementExtensionTests.*:V8AttachmentTests.*:TagTests.*:TextBlockTests.*:RulesetEmbedderTests.*:SkipSchemaImportTests.*:ECSchemaTests.*:RasterTests.*:DgnMaterialTests.*:ConverterAppTests.*:SheetCompositionTests.*:LightTests.*:ConverterTests.*:ModelTests.*:DimensionTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\polyface\polyfaceadd.cpp]
@@ -124,7 +124,7 @@
 [imodel02\imodelcore\geomlibs\geom\src\bspline\bspsurfacetrim.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=V8AttachmentTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\polyface\pf_rangesearch.cpp]
-%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:ConverterTests.*:TransformTests.*:
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:TransformTests.*:ConverterTests.*:
 [imodel02\imodelcore\geomlibs\vu\src\vutriang.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=V8AttachmentTests.*:
 [imodel02\imodelcore\geomlibs\vu\src\vuarray.cpp]
@@ -144,9 +144,9 @@
 [imodel02\imodelcore\geomlibs\vu\src\vumem.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ViewTests.*:NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:ECConversionTests.*:MultiBridgeTests.*:GeomPartTests.*:ConvertToDgnDbElementExtensionTests.*:V8AttachmentTests.*:TagTests.*:TextBlockTests.*:RulesetEmbedderTests.*:SkipSchemaImportTests.*:ECSchemaTests.*:RasterTests.*:DgnMaterialTests.*:ConverterAppTests.*:SheetCompositionTests.*:LightTests.*:ConverterTests.*:ModelTests.*:DimensionTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\funcs\polyline3d.cpp]
-%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=NamedGroupTests.*:TransformTests.*:MultiBridgeTests.*:ImportConfigTests.*:ECConversionTests.*:LevelTests.*:ConverterTests.*:RasterTests.*:SheetCompositionTests.*:SkipSchemaImportTests.*:ModelTests.*:ECSchemaTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:DimensionTests.*:V8AttachmentTests.*:TagTests.*:
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ECConversionTests.*:MultiBridgeTests.*:ConverterTests.*:RasterTests.*:SheetCompositionTests.*:SkipSchemaImportTests.*:ModelTests.*:ECSchemaTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:DimensionTests.*:V8AttachmentTests.*:TagTests.*:
 [imodel02\imodelcore\geomlibs\vu\src\xyvisibilitysplitter.cpp]
-%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:ConverterTests.*:TransformTests.*:
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:TransformTests.*:ConverterTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\polyface\rgbfactor.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ViewTests.*:NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:ECConversionTests.*:GeomPartTests.*:ConvertToDgnDbElementExtensionTests.*:V8AttachmentTests.*:TagTests.*:MultiBridgeTests.*:SheetCompositionTests.*:SkipSchemaImportTests.*:ECSchemaTests.*:RasterTests.*:DgnMaterialTests.*:TextBlockTests.*:LightTests.*:ConverterTests.*:ModelTests.*:DimensionTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\curveprimitive\curveconstraint.cpp]
@@ -162,9 +162,9 @@
 [imodel02\imodelcore\geomlibs\geom\src\bspline\bsputil.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=BasicGeometryTests.*:RasterTests.*:V8AttachmentTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\curveprimitive\cv_ops.cpp]
-%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=NamedGroupTests.*:TransformTests.*:MultiBridgeTests.*:ImportConfigTests.*:ECConversionTests.*:LevelTests.*:ConverterTests.*:RasterTests.*:SheetCompositionTests.*:SkipSchemaImportTests.*:ModelTests.*:ECSchemaTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:DimensionTests.*:V8AttachmentTests.*:TagTests.*:
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ECConversionTests.*:MultiBridgeTests.*:ConverterTests.*:RasterTests.*:SheetCompositionTests.*:SkipSchemaImportTests.*:ModelTests.*:ECSchemaTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:DimensionTests.*:V8AttachmentTests.*:TagTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\bspline\bspccistubs.cpp]
-%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:ConverterTests.*:TransformTests.*:
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:TransformTests.*:ConverterTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\curveprimitive\cv_properties.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=SheetCompositionTests.*:ConverterTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\refdpoint3d.cpp]
@@ -172,7 +172,7 @@
 [imodel02\imodelcore\geomlibs\publicapi\geom\curvevector.h]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=BasicGeometryTests.*:NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ECConversionTests.*:MultiBridgeTests.*:ConverterTests.*:RasterTests.*:SheetCompositionTests.*:SkipSchemaImportTests.*:ModelTests.*:ECSchemaTests.*:LightTests.*:ItemTypesTests.*:DrawingTests.*:GeomPartTests.*:DimensionTests.*:V8AttachmentTests.*:TagTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\reftransforminvert.cpp]
-%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=TextBlockTests.*:BasicGeometryTests.*:TransformTests.*:DgnMaterialTests.*:LevelTests.*:ImportConfigTests.*:ECConversionTests.*:MultiBridgeTests.*:ConverterTests.*:RasterTests.*:SheetCompositionTests.*:ModelTests.*:ECSchemaTests.*:LightTests.*:DrawingTests.*:GeomPartTests.*:V8AttachmentTests.*:TagTests.*:DimensionTests.*:
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=TextBlockTests.*:BasicGeometryTests.*:TransformTests.*:DgnMaterialTests.*:LevelTests.*:ImportConfigTests.*:ECConversionTests.*:MultiBridgeTests.*:ConverterTests.*:RasterTests.*:SheetCompositionTests.*:ModelTests.*:DimensionTests.*:LightTests.*:DrawingTests.*:GeomPartTests.*:V8AttachmentTests.*:TagTests.*:ECSchemaTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\memory\arraywrapper.h]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=V8AttachmentTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\mtg\mtggraph.cpp]
@@ -180,11 +180,11 @@
 [imodel02\imodelcore\geomlibs\geom\src\bspline\bcurvesegment.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=BasicGeometryTests.*:V8AttachmentTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\solidprimitive\sp_faceindices.cpp]
-%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:ConverterTests.*:TransformTests.*:
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:TransformTests.*:ConverterTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\refdellipse3d.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=GeomPartTests.*:LightTests.*:ECConversionTests.*:ConverterTests.*:RasterTests.*:SheetCompositionTests.*:DrawingTests.*:BasicGeometryTests.*:V8AttachmentTests.*:DgnMaterialTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\funcs\rangetreetemplate.h]
-%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:ConverterTests.*:TransformTests.*:
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:TransformTests.*:ConverterTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\bezier\bezierdpoint4d.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=BasicGeometryTests.*:V8AttachmentTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\polyface\facetfacedata.cpp]
@@ -192,17 +192,17 @@
 [imodel02\imodelcore\geomlibs\geom\src\polyface\polyfacequery.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=V8AttachmentTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\curveprimitive\curveprimitivepartialcurve.cpp]
-%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:ConverterTests.*:TransformTests.*:
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:TransformTests.*:ConverterTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\bspline\tristrip.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=V8AttachmentTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\curveprimitive\cp_catenary.h]
-%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:ConverterTests.*:TransformTests.*:
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:TransformTests.*:ConverterTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\funcs\dpoint3dops.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=BasicGeometryTests.*:NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ECConversionTests.*:MultiBridgeTests.*:ConverterTests.*:RasterTests.*:SheetCompositionTests.*:SkipSchemaImportTests.*:ModelTests.*:ECSchemaTests.*:LightTests.*:ItemTypesTests.*:DrawingTests.*:GeomPartTests.*:DimensionTests.*:V8AttachmentTests.*:TagTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\refdsegment3d.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=SheetCompositionTests.*:BasicGeometryTests.*:ConverterTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\curveprimitive\cp_spiral.h]
-%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:ConverterTests.*:TransformTests.*:
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:TransformTests.*:ConverterTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\bspline\msbsplinecurve_getset.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=BasicGeometryTests.*:RasterTests.*:V8AttachmentTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\polyface\facetoptions.cpp]
@@ -230,7 +230,7 @@
 [imodel02\imodelcore\geomlibs\publicapi\mtg\mtgstructs.h]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ViewTests.*:NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:ECConversionTests.*:MultiBridgeTests.*:GeomPartTests.*:ConvertToDgnDbElementExtensionTests.*:V8AttachmentTests.*:TagTests.*:TextBlockTests.*:RulesetEmbedderTests.*:SkipSchemaImportTests.*:ECSchemaTests.*:RasterTests.*:DgnMaterialTests.*:ConverterAppTests.*:SheetCompositionTests.*:LightTests.*:ConverterTests.*:ModelTests.*:DimensionTests.*:
 [imodel02\imodelcore\geomlibs\publicapi\geom\dsegment1d.h]
-%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:ConverterTests.*:TransformTests.*:
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:TransformTests.*:ConverterTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\polyface\polyfacecoordinatemap.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=V8AttachmentTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\funcs\eigensys3d.cpp]
@@ -240,9 +240,9 @@
 [imodel02\imodelcore\geomlibs\geom\src\funcs\angle.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ViewTests.*:NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:ECConversionTests.*:MultiBridgeTests.*:GeomPartTests.*:ConvertToDgnDbElementExtensionTests.*:V8AttachmentTests.*:TagTests.*:TextBlockTests.*:RulesetEmbedderTests.*:SkipSchemaImportTests.*:ECSchemaTests.*:RasterTests.*:DgnMaterialTests.*:ConverterAppTests.*:SheetCompositionTests.*:LightTests.*:ConverterTests.*:ModelTests.*:DimensionTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\funcs\polylineops.cpp]
-%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=NamedGroupTests.*:TransformTests.*:MultiBridgeTests.*:ImportConfigTests.*:ECConversionTests.*:LevelTests.*:ConverterTests.*:RasterTests.*:SheetCompositionTests.*:SkipSchemaImportTests.*:ModelTests.*:ECSchemaTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:DimensionTests.*:V8AttachmentTests.*:TagTests.*:
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ECConversionTests.*:MultiBridgeTests.*:ConverterTests.*:RasterTests.*:SheetCompositionTests.*:SkipSchemaImportTests.*:ModelTests.*:ECSchemaTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:DimensionTests.*:V8AttachmentTests.*:TagTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\curveprimitive\cp_directspiral.h]
-%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:ConverterTests.*:TransformTests.*:
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:TransformTests.*:ConverterTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\bezier\bezeval.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=BasicGeometryTests.*:V8AttachmentTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\bspline\bspmisc.cpp]
@@ -256,7 +256,7 @@
 [imodel02\imodelcore\geomlibs\geom\src\bspline\bsurfpatch.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=V8AttachmentTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\structs\dsegment1d.cpp]
-%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:ConverterTests.*:TransformTests.*:
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:TransformTests.*:ConverterTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\deprecatedfunctions.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=V8AttachmentTests.*:
 [imodel02\imodelcore\geomlibs\vu\src\vuunion.cpp]
@@ -264,7 +264,7 @@
 [imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\refrotmatrixquery.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ViewTests.*:NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:ECConversionTests.*:GeomPartTests.*:ConvertToDgnDbElementExtensionTests.*:V8AttachmentTests.*:TagTests.*:MultiBridgeTests.*:SheetCompositionTests.*:SkipSchemaImportTests.*:ECSchemaTests.*:RasterTests.*:DgnMaterialTests.*:TextBlockTests.*:LightTests.*:ConverterTests.*:ModelTests.*:DimensionTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\structs\polynomials.cpp]
-%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:ConverterTests.*:TransformTests.*:
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:TransformTests.*:ConverterTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\funcs\yawpitchrollanglesindegrees.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ViewTests.*:NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:ECConversionTests.*:GeomPartTests.*:ConvertToDgnDbElementExtensionTests.*:V8AttachmentTests.*:TagTests.*:MultiBridgeTests.*:SheetCompositionTests.*:SkipSchemaImportTests.*:ECSchemaTests.*:RasterTests.*:DgnMaterialTests.*:TextBlockTests.*:LightTests.*:ConverterTests.*:ModelTests.*:DimensionTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\bspline\msbsplinecurve_transform.cpp]
@@ -284,7 +284,7 @@
 [imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\reftransformmultiply.cpp]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ViewTests.*:NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:ECConversionTests.*:GeomPartTests.*:ConvertToDgnDbElementExtensionTests.*:V8AttachmentTests.*:TagTests.*:MultiBridgeTests.*:SheetCompositionTests.*:SkipSchemaImportTests.*:ECSchemaTests.*:RasterTests.*:DgnMaterialTests.*:TextBlockTests.*:LightTests.*:ConverterTests.*:ModelTests.*:DimensionTests.*:
 [imodel02\imodelcore\geomlibs\publicapi\geom\xyrangetree.h]
-%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:ConverterTests.*:TransformTests.*:
+%OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=MultiBridgeTests.*:TransformTests.*:ConverterTests.*:
 [imodel02\imodelcore\geomlibs\publicapi\geom\angle.h]
 %OutRoot%Winx64\Product\DgnV8ConverterTests\DgnV8ConverterTests.exe --gtest_filter=ViewTests.*:NamedGroupTests.*:TransformTests.*:LevelTests.*:ImportConfigTests.*:ItemTypesTests.*:DrawingTests.*:BasicGeometryTests.*:ECConversionTests.*:GeomPartTests.*:ConvertToDgnDbElementExtensionTests.*:V8AttachmentTests.*:TagTests.*:MultiBridgeTests.*:SheetCompositionTests.*:SkipSchemaImportTests.*:ECSchemaTests.*:RasterTests.*:DgnMaterialTests.*:TextBlockTests.*:LightTests.*:ConverterTests.*:ModelTests.*:DimensionTests.*:
 [imodel02\imodelcore\geomlibs\vu\src\vu.cpp]

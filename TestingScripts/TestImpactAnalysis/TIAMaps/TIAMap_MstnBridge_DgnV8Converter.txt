@@ -3,6 +3,8 @@
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
 [imodel02\imodelbridgecore\dgndbsync\dgnv8\rootmodelconverter.cpp]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelbridgecore\dgndbsync\dgnv8\dynamicschemagenerator\ecdiff.h]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
 [imodel02\imodelbridgecore\dgndbsync\dgnv8\rulesetembedder.h]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
 [imodel02\imodelbridgecore\dgndbsync\dgnv8\initialize.cpp]
@@ -14,6 +16,8 @@
 [imodel02\imodelbridgecore\dgndbsync\dgnv8\convertlights.cpp]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
 [imodel02\imodelbridgecore\dgndbsync\dgnv8\dynamicschemagenerator\ecconversion.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelbridgecore\dgndbsync\dgnv8\convertviewattachments.cpp]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
 [imodel02\imodelbridgecore\dgndbsync\dgnv8\thumbnails.cpp]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
@@ -54,6 +58,8 @@
 [imodel02\imodelbridgecore\dgndbsync\dgnv8\materialconverter.cpp]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
 [imodel02\imodelbridgecore\dgndbsync\dgnv8\sheetconverter.cpp]
+%OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
+[imodel02\imodelbridgecore\dgndbsync\dgnv8\dynamicschemagenerator\ecdiff.cpp]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:
 [imodel02\imodelbridgecore\dgndbsync\dgnv8\threemxconversion.cpp]
 %OutRoot%Winx64\Product\MstnBridgeTests\MstnBridgeTests.exe --gtest_filter=MstnBridgeTests.*:

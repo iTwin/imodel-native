@@ -14,11 +14,11 @@
 [imodel02\imodelcore\geomlibs\geom\src\curveprimitive\cp_directspiral.h]
 %OutRoot%Winx64\Product\ECDb-GTest\ECDbTest.exe --gtest_filter=ECInstanceId.*:SQLiteRegression.*:ECDbInit.*:ECDbTestFixture.*:
 [imodel02\imodelcore\geomlibs\geom\src\polyface\polyfacecoordinatemap.cpp]
-%OutRoot%Winx64\Product\ECDb-GTest\ECDbTest.exe --gtest_filter=FileFormatCompatibilityTests.*:JsonReaderTests.*:ECSqlStatementTestFixture.*:ECSqlExecutionFrameworkTests.*:JsonECSqlSelectAdapterTests.*:
+%OutRoot%Winx64\Product\ECDb-GTest\ECDbTest.exe --gtest_filter=FileFormatCompatibilityTests.*:JsonReaderTests.*:ECSqlStatementTestFixture.*:JsonECSqlSelectAdapterTests.*:ECSqlExecutionFrameworkTests.*:
 [imodel02\imodelcore\geomlibs\publicapi\geom\polyface.h]
 %OutRoot%Winx64\Product\ECDb-GTest\ECDbTest.exe --gtest_filter=FileFormatCompatibilityTests.*:ECSqlDeletePrepareTests.*:SchemaManagerTests.*:ECSqlSelectPrepareTests.*:ECSqlInsertPrepareTests.*:ECSqlExecutionFrameworkTests.*:ECSqlUpdatePrepareTests.*:ECSqlStatementTestFixture.*:ECSqlPrepareTestFixture.*:JsonECSqlSelectAdapterTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\refdvec2d.cpp]
-%OutRoot%Winx64\Product\ECDb-GTest\ECDbTest.exe --gtest_filter=FileFormatCompatibilityTests.*:JsonReaderTests.*:ECSqlStatementTestFixture.*:ECSqlExecutionFrameworkTests.*:JsonECSqlSelectAdapterTests.*:
+%OutRoot%Winx64\Product\ECDb-GTest\ECDbTest.exe --gtest_filter=FileFormatCompatibilityTests.*:JsonReaderTests.*:ECSqlStatementTestFixture.*:JsonECSqlSelectAdapterTests.*:ECSqlExecutionFrameworkTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\curveprimitive\cp_offsetcurve.cpp]
 %OutRoot%Winx64\Product\ECDb-GTest\ECDbTest.exe --gtest_filter=FileFormatCompatibilityTests.*:ECSqlDeletePrepareTests.*:SchemaManagerTests.*:ECSqlSelectPrepareTests.*:ECSqlInsertPrepareTests.*:ECSqlExecutionFrameworkTests.*:ECSqlUpdatePrepareTests.*:ECSqlStatementTestFixture.*:ECSqlPrepareTestFixture.*:JsonECSqlSelectAdapterTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\polyface\pf_indexedheaprangesearch.cpp]
@@ -52,7 +52,7 @@
 [imodel02\imodelcore\geomlibs\geom\src\polyface\polyfacevisitor.cpp]
 %OutRoot%Winx64\Product\ECDb-GTest\ECDbTest.exe --gtest_filter=FileFormatCompatibilityTests.*:ECSqlDeletePrepareTests.*:SchemaManagerTests.*:ECSqlSelectPrepareTests.*:ECSqlInsertPrepareTests.*:ECSqlExecutionFrameworkTests.*:ECSqlUpdatePrepareTests.*:ECSqlStatementTestFixture.*:ECSqlPrepareTestFixture.*:JsonECSqlSelectAdapterTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\structs\dsegment1d.cpp]
-%OutRoot%Winx64\Product\ECDb-GTest\ECDbTest.exe --gtest_filter=FileFormatCompatibilityTests.*:JsonReaderTests.*:ECSqlStatementTestFixture.*:ECSqlExecutionFrameworkTests.*:JsonECSqlSelectAdapterTests.*:
+%OutRoot%Winx64\Product\ECDb-GTest\ECDbTest.exe --gtest_filter=FileFormatCompatibilityTests.*:JsonReaderTests.*:ECSqlStatementTestFixture.*:JsonECSqlSelectAdapterTests.*:ECSqlExecutionFrameworkTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\funcs\doubleops.cpp]
 %OutRoot%Winx64\Product\ECDb-GTest\ECDbTest.exe --gtest_filter=DbMappingTestFixture.*:PrimArrayJsonInserterTests.*:ECSqlStatementTestFixture.*:
 [imodel02\imodelcore\geomlibs\geom\src\polyface\polyfacequery.cpp]
@@ -64,7 +64,7 @@
 [imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\refdrange2d.cpp]
 %OutRoot%Winx64\Product\ECDb-GTest\ECDbTest.exe --gtest_filter=ECSqlRangeTreeTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\structs\drange1d.cpp]
-%OutRoot%Winx64\Product\ECDb-GTest\ECDbTest.exe --gtest_filter=FileFormatCompatibilityTests.*:JsonReaderTests.*:ECSqlStatementTestFixture.*:ECSqlExecutionFrameworkTests.*:JsonECSqlSelectAdapterTests.*:
+%OutRoot%Winx64\Product\ECDb-GTest\ECDbTest.exe --gtest_filter=FileFormatCompatibilityTests.*:JsonReaderTests.*:ECSqlStatementTestFixture.*:JsonECSqlSelectAdapterTests.*:ECSqlExecutionFrameworkTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\solidprimitive\solidprimitive.cpp]
 %OutRoot%Winx64\Product\ECDb-GTest\ECDbTest.exe --gtest_filter=FileFormatCompatibilityTests.*:ECSqlDeletePrepareTests.*:SchemaManagerTests.*:ECSqlSelectPrepareTests.*:ECSqlInsertPrepareTests.*:ECSqlExecutionFrameworkTests.*:ECSqlUpdatePrepareTests.*:ECSqlStatementTestFixture.*:ECSqlPrepareTestFixture.*:JsonECSqlSelectAdapterTests.*:
 [imodel02\imodelcore\geomlibs\geom\src\structs\cpp\refmethods\refdpoint3d.cpp]
