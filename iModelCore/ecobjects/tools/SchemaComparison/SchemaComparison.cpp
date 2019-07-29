@@ -163,18 +163,18 @@ int CompareSchemas(SchemaComparisonOptions& options, BeFileName& assetsDir)
 
         if (options.UseStandardUnitsAndFormatsSchemas)
             {
-            ECN::ECSchemaPtr schema;
-            BeFileName unitsSchemaPath(assetsDir);
-            unitsSchemaPath.AppendUtf8("/ECSchemas/Standard/Units.01.00.00.ecschema.xml");
-            BeFileName formatsSchemaPath(assetsDir);
-            formatsSchemaPath.AppendUtf8("/ECSchemas/Standard/Formats.01.00.00.ecschema.xml");
-            
-            if(ECN::SchemaReadStatus::Success != ECN::ECSchema::ReadFromXmlFile(schema, unitsSchemaPath, *contexts[i]))
+            static ECN::SchemaKey units("Units", 1, 0, 0);
+            static ECN::SchemaKey formats("Formats", 1, 0, 0);
+
+            ECN::ECSchemaPtr unitsSchema = contexts[i]->LocateSchema(units, ECN::SchemaMatchType::LatestWriteCompatible);
+            if (!unitsSchema.IsValid())
                 {
                 s_logger->errorv("Failed to load standard 'Units' schema.");
                 return SCHEMA_COMPARISON_EXIT_FAILURE;
                 }
-            if( ECN::SchemaReadStatus::Success != ECN::ECSchema::ReadFromXmlFile(schema, formatsSchemaPath, *contexts[i]))
+
+            ECN::ECSchemaPtr formatsSchema = contexts[i]->LocateSchema(formats, ECN::SchemaMatchType::LatestWriteCompatible);
+            if (!formatsSchema.IsValid())
                 {
                 s_logger->errorv("Failed to load standard 'Formats' schema.");
                 return SCHEMA_COMPARISON_EXIT_FAILURE;
