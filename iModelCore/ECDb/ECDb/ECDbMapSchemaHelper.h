@@ -18,7 +18,6 @@ struct DbIndexListCustomAttribute;
 struct PropertyMapCustomAttribute;
 struct LinkTableRelationshipMapCustomAttribute;
 struct ForeignKeyConstraintCustomAttribute;
-struct AllowOnlyUniqueRelationshipsCustomAttribute;
 
 //=======================================================================================    
 //! ECDbMapCustomAttributeHelper is a convenience API for the custom attributes defined
@@ -78,12 +77,6 @@ struct ECDbMapCustomAttributeHelper final
         //! @param[in] navProp Navigation property to retrieve the custom attribute from.
         //! @return true if @p navProp has the custom attribute. false, if @p navProp doesn't have the custom attribute
         static bool TryGetForeignKeyConstraint(ForeignKeyConstraintCustomAttribute& foreignKeyConstraint, ECN::NavigationECPropertyCR navProp);
-
-        //! Tries to retrieve the ForeignKeyConstraint custom attribute from the specified navigation property.
-        //! @param[out] allowOnlyUniqueRelationship Retrieved CA
-        //! @param[in] relClass RelationshipClass that have the CA.
-        //! @return true if @p allowOnlyUniqueRelationship has the custom attribute. false, if @p allowOnlyUniqueRelationship doesn't have the custom attribute
-        static bool TryGetAllowOnlyUniqueRelationships(AllowOnlyUniqueRelationshipsCustomAttribute& allowOnlyUniqueRelationship, ECN::ECRelationshipClassCR relClass);
     };
 
 //=======================================================================================    
@@ -384,30 +377,9 @@ struct LinkTableRelationshipMapCustomAttribute final
         //! @param[out] allowDuplicateRelationships AllowDuplicateRelationships flag. IsNull() is true, if the AllowDuplicateRelationships property wasn't set in the LinkTableRelationshipMap.
         //! @return SUCCESS if AllowDuplicateRelationships was set or unset in the LinkTableRelationshipMap, ERROR otherwise
         BentleyStatus TryGetAllowDuplicateRelationships(Nullable<bool>& allowDuplicateRelationships) const;
+
     };
 
-//=======================================================================================    
-//! SchemaMapCustomAttribute is a convenience wrapper around the SchemaMap custom attribute that simplifies
-//! reading the values of that custom attribute
-//! @bsiclass
-//=======================================================================================    
-struct AllowOnlyUniqueRelationshipsCustomAttribute final
-    {
-    friend struct ECDbMapCustomAttributeHelper;
-
-    private:
-        ECN::ECRelationshipClassCP m_relClass = nullptr;
-        ECN::IECInstancePtr m_ca = nullptr;
-
-        AllowOnlyUniqueRelationshipsCustomAttribute(ECN::ECRelationshipClassCR relClass, ECN::IECInstancePtr ca) : m_relClass(&relClass), m_ca(ca) {}
-
-    public:
-        AllowOnlyUniqueRelationshipsCustomAttribute() {}
-        //! Tries to get the value of the applyToSubClasses property in the AllowOnlyUniqueRelationships.
-        //! @param[out] applyToSubClasses IsNull() is true, the value of the property was not set
-        //! @return SUCCESS if applyToSubClasses was set or unset in the AllowOnlyUniqueRelationships. ERROR if applyToSubClasses didn't have a valid value,
-        BentleyStatus TryGetApplyToSubClasses(Nullable<bool>& applyToSubClasses) const;
-    };
 //*****************************************************************
 //CustomAttributeReader
 //*****************************************************************
