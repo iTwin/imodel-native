@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="..\bsicommon\build\PartFile.xsd">
+
+    <Part Name="LoggingNativeAtp" BentleyBuildMakeFile="src\native\atp\atp.mke">
+    </Part>
+
+    <Part Name="LoggingNativeInterfaceAtp" BentleyBuildMakeFile="src\native\interface\atp\bsilogtest.mke">
+        <SubPart PartName="cppunittest" PartFile="lib"        Repository="Util-lib" />
+    </Part>
+
+    <Part Name="LoggingNativeLog4cxxAtp" BentleyBuildMakeFile="src\native\log4cxx\atp\log4cxxtest.mke">
+    </Part>
+
+    <Part Name="BentleyApi" >
+        <!--This part provides Bentley PublicAPI-->
+        <SubPart PartName="Base" PartFile="Bentley" Repository="Bentley" />
+    </Part>
+
+    <Part Name="LoggingNativeLog4cxx" BentleyBuildMakeFile="src/native/log4cxx/log4cxx.mke" ApiNumber="M02">
+        <SubPart LibType="Static" PartName="Log4Cxx" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <SubPart PartName="BentleyApi" />
+        <!-- Cannot use libsmtp in DgnDb due to licensing concerns. -->
+        <!-- <SubPart PartName="libsmtp"                 PartFile="libsmtp"    Repository="libsrc-Libsmtp" /> -->
+        <Bindings>
+            <PublicAPI Domain="BentleyLog4cxx"/>
+            <Libs>Delivery/$(stlibprefix)bentleylog4cxx$(libext)</Libs>
+            <Assemblies>Delivery/$(stlibprefix)bentleylog4cxx$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="LoggingNative" OnlyPlatforms="x86,x64,Android*,iOS*" >
+        <!-- Cannot use libsmtp in DgnDb due to licensing concerns. -->
+        <!-- <SubPart PartName="libsmtp"                 PartFile="libsmtp"    Repository="libsrc-Libsmtp" /> -->
+        <SubPart LibType="Static" PartName="Log4Cxx" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <SubPart PartName="LoggingNativeLog4cxx" />
+    </Part>
+
+    <Part Name="LoggingManagedInterface" BentleyBuildMakeFile="src\managed\interface\interface.mke" ExcludeLibType="Static" ApiNumber="M02" OnlyPlatforms="x64">
+        <Bindings>
+            <Assemblies>Delivery\Bentley.logging$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="LoggingManagedConsole" BentleyBuildMakeFile="src\managed\console\console.mke" ExcludeLibType="Static" ApiNumber="M02">
+        <SubPart PartName="LoggingManagedLog4net"/>
+        <Bindings>
+            <Assemblies>Delivery\Bentley.Logging.console$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="LoggingManagedLog4net" BentleyBuildMakeFile="src\managed\log4net\log4net.mke" ExcludeLibType="Static" ApiNumber="M02">
+        <RequiredRepository>Bsitools-NuGet</RequiredRepository>
+        <NuGetPackage>log4net</NuGetPackage>
+        <SubPart PartName="LoggingManagedInterface"/>
+        <Bindings>
+            <Assemblies>
+                Nuget\Net40-Client\log4net.dll
+                Delivery\Bentley.Logging.log4net$(ApiNumber)$(shlibext)
+            </Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="LoggingManagedInterop" BentleyBuildMakeFile="src\managed\interop\interop.mke" ExcludeLibType="Static" ApiNumber="M02" OnlyPlatforms="x64">
+        <SubPart PartName="BentleyDll"              PartFile="Bentley"    Repository="Bentley" />
+        <SubPart PartName="LoggingManagedInterface"/>
+        <Bindings>
+          <Libs>Delivery\Bentley.Logging.interop$(libext)</Libs>
+          <Assemblies>Delivery\Bentley.Logging.interop$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="LoggingManagedTest" BentleyBuildMakeFile="src\managed\test\test.mke">
+      <Bindings>
+        <Assemblies ProductDirectoryName="LoggingTests">Delivery\Bentley.Logging.test-2.0.exe</Assemblies>
+        <Files ProductDirectoryName="LoggingTests">Delivery\example_log4net_configuration.xml</Files>
+      </Bindings>
+    </Part>
+
+    <Part Name="LoggingManaged">
+        <SubPart PartName="LoggingManagedInterface" />
+        <SubPart PartName="LoggingManagedLog4net" />
+        <SubPart PartName="LoggingManagedConsole" />
+    </Part>
+
+
+    <Part Name="LoggingServer" BentleyBuildMakeFile="src\server\server.mke" ExcludeLibType="Static">
+        <Bindings>
+            <Assemblies>
+                Delivery\BentleyLoggingServer-2.0.exe
+                Delivery\BentleyLoggingServer.exe.config
+            </Assemblies>
+        </Bindings>
+    </Part>
+    
+    <Part Name="LoggingManagedInstall" BentleyBuildMakeFile="install\ManagedMergeModule.mke" >
+        <RequiredRepository>Bsitools-Wix_3.0.2925.0</RequiredRepository>
+        <RequiredRepository>Miscdev-Eula</RequiredRepository>
+        <SubPart PartName="LoggingSDK" />
+        <Bindings>
+            <MergeModules ProductDirectoryName="LoggingInstallers">
+                Install\ManagedLogClientMergeModule.msm
+            </MergeModules>
+        </Bindings>
+    </Part>
+
+    <Part Name="LoggingInstall" BentleyBuildMakeFile="install\NativeMergeModule.mke">
+        <RequiredRepository>Bsitools-Wix_3.0.2925.0</RequiredRepository>
+        <RequiredRepository>Miscdev-Eula</RequiredRepository>
+        <Bindings>
+            <MergeModules ProductDirectoryName="LoggingInstallers">
+                Install\NativeLogClientMergeModule.msm
+            </MergeModules>
+<!--                Install\LoggingServerMergeModule.msm - not used anywhere yet. Maybe Part LoggingServerInstall must be created. -->
+<!--                Install\BentleyLoggingServer.x64.msi   Don't know how to handle the name -->
+        </Bindings>
+    </Part>
+
+    <Part Name="LoggingSDK" OnlyPlatforms="x86,x64" ExcludeLibType="Static">
+        <SubPart PartName="LoggingNative" />
+        <!-- LoggingManaged is used by Navigator Mobile Publisher -->
+        <SubPart PartName="LoggingManaged" />
+        <!-- <SubPart PartName="LoggingManagedInterop" /> -->
+        <!-- LoggingServer are not currently part of any deliverable in Graphite
+        <SubPart PartName="LoggingServer" />
+        -->
+    </Part>
+
+    <Part Name="LoggingSDKTest">
+        <!-- For now I'm putting this in the tested part so everyone doesn't have to update their products -->
+        <SubPart PartName="LoggingManagedInstall" />
+        <SubPart PartName="LoggingSDK" />
+        <SubPart PartName="LoggingNativeInterfaceAtp" />
+        <SubPart PartName="LoggingNativeLog4cxxAtp" />
+        <SubPart PartName="LoggingNativeAtp" />
+        <SubPart PartName="LoggingManagedTest" />
+        <SubPart PartName="LoggingInstall" />
+    </Part>
+
+    <!-- LoggingSDK Core Product and Tests including test execution -->
+    <ProductDirectoryList ListName="LoggingSDKTested">
+        <ProductDirectory Name="VendorAPI"                  Deliver="false" />
+        <ProductDirectory Name="LoggingInstallers"          Deliver="false"/>
+        <ProductDirectory Name="Libs"                       Path="library"/>
+        <ProductDirectory Name="PublicAPI"                  Path="include"/>
+        <ProductDirectory Name="Assemblies"    Path="bin"/>
+        <ProductDirectory Name="LoggingTests"               Path="bin"/>
+
+        <ProductDirectory Name="PublicAPI"                  LibType="Static"    Deliver="false"/>
+        <ProductDirectory Name="VendorAPI"                  LibType="Static"    Deliver="false" />
+        <ProductDirectory Name="libs"                       LibType="Static"    Deliver="false"/>
+    </ProductDirectoryList>
+    
+    <Product Name="LoggingSDKTested" PrgOutputDir="LoggingSDK">
+        <SubPart PartName="LoggingSDK" />
+        <SubPart PartName="LoggingSDKTest" />        
+        <Directories DirectoryListName="LoggingSDKTested"/>
+    </Product>
+
+</BuildContext>
+
