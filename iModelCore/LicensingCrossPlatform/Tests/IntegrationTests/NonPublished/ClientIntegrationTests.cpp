@@ -96,6 +96,7 @@ ClientPtr ClientIntegrationTests::CreateTestClient(bool signIn, Utf8StringCR pro
 
     auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
 
+    // NOTE: all of these tests fail because this policy is expired... see if we can renew this
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
     auto manager = ConnectSignInManager::Create(clientInfo, proxy, localState);
     if (signIn)
@@ -183,7 +184,12 @@ TEST_F(ClientIntegrationTests, FactoryStartStopApplication_Success)
         {
         FAIL() << "client is null";
         }
-    ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
+    auto startStatus = client->StartApplication();
+    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::Error));
+    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::NotEntitled));
+    
+    std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+
     EXPECT_SUCCESS(client->StopApplication());
     }
 
@@ -191,7 +197,10 @@ TEST_F(ClientIntegrationTests, FactoryStartStopApplication_Success)
 TEST_F(ClientIntegrationTests, StartStopApplication_Success)
     {
     auto client = CreateTestClientImpl(true, TEST_PRODUCT_ID);
-    ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
+    auto startStatus = client->StartApplication();
+    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::Error));
+    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::NotEntitled));
+
     EXPECT_SUCCESS(client->StopApplication());
     }
 
@@ -209,7 +218,9 @@ TEST_F(ClientIntegrationTests, MarkFeature_Success)
     featureData->AddAttribute("Website", "https://www.w3schools.com");
     featureData->AddAttribute("Title", "Mobile App");
 
-    ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
+    auto startStatus = client->StartApplication();
+    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::Error));
+    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::NotEntitled));
 
     client->AddPolicyToDb(Policy::Create(jsonPolicyValid));
 
@@ -225,7 +236,9 @@ TEST_F(ClientIntegrationTests, GetLicenseStatusValidTrialPolicy_Test)
     Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
     auto jsonPolicyValidTrial = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, std::atoi(TEST_PRODUCT_ID), "", 1, true);
 
-    ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
+    auto startStatus = client->StartApplication();
+    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::Error));
+    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::NotEntitled));
 
     client->AddPolicyToDb(Policy::Create(jsonPolicyValidTrial));
 
@@ -241,7 +254,9 @@ TEST_F(ClientIntegrationTests, GetLicenseStatusValidExpiredTrialPolicy_Test)
     Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
     auto jsonPolicyValidTrialExpired = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(-1), userId, std::atoi(TEST_PRODUCT_ID), "", 1, true);
 
-    ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
+    auto startStatus = client->StartApplication();
+    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::Error));
+    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::NotEntitled));
 
     client->AddPolicyToDb(Policy::Create(jsonPolicyValidTrialExpired));
 
@@ -260,7 +275,9 @@ TEST_F(ClientIntegrationTests, GetLicenseStatusValidPolicyWithGracePeriod_Test)
     auto timestamp = DateHelper::GetCurrentTime();
     auto timestampPast = DateHelper::AddDaysToCurrentTime(-14); // Two weeks ago; default offline period allowed is only 1 week
 
-    ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
+    auto startStatus = client->StartApplication();
+    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::Error));
+    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::NotEntitled));
 
     client->AddPolicyToDb(Policy::Create(jsonPolicyValid));
 
@@ -284,7 +301,9 @@ TEST_F(ClientIntegrationTests, GetLicenseStatusOfflineNotAllowedPolicy_Test)
 
     auto timestamp = DateHelper::GetCurrentTime();
 
-    ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
+    auto startStatus = client->StartApplication();
+    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::Error));
+    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::NotEntitled));
 
     client->AddPolicyToDb(Policy::Create(jsonPolicyOfflineNotAllowed));
 

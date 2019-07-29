@@ -170,14 +170,20 @@ AccessKeyClientImplPtr AccessKeyClientIntegrationTests::CreateTestClientImpl(Utf
 TEST_F(AccessKeyClientIntegrationTests, FactoryStartStopApplication_Success)
     {
     auto client = CreateTestClient(TEST_ACCESSKEY_PRODUCT_ID, TEST_VALID_ACCESSKEY);
-    ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
+    auto startStatus = client->StartApplication();
+    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::Error));
+    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::NotEntitled));
+
     EXPECT_SUCCESS(client->StopApplication());
     }
 
 TEST_F(AccessKeyClientIntegrationTests, StartStopApplication_Success)
     {
     auto client = CreateTestClientImpl(TEST_ACCESSKEY_PRODUCT_ID, TEST_VALID_ACCESSKEY);
-    ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
+    auto startStatus = client->StartApplication();
+    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::Error));
+    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::NotEntitled));
+
     EXPECT_SUCCESS(client->StopApplication());
     }
 
@@ -200,7 +206,10 @@ TEST_F(AccessKeyClientIntegrationTests, MarkFeature_Success)
     featureData->AddAttribute("Website", "https://www.w3schools.com");
     featureData->AddAttribute("Title", "Mobile App");
 
-    ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
+    auto startStatus = client->StartApplication();
+    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::Error));
+    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::NotEntitled));
+
     EXPECT_EQ(static_cast<int>(client->MarkFeature("TestFeatureId", featureData)), static_cast<int>(BentleyStatus::SUCCESS));
     EXPECT_SUCCESS(client->StopApplication());
     }
@@ -209,7 +218,9 @@ TEST_F(AccessKeyClientIntegrationTests, GetLicenseStatusValidPolicy_Success)
     {
     auto client = CreateTestClientImpl(TEST_ACCESSKEY_PRODUCT_ID); // TEST_VALID_ACCESSKEY is entitled to microstation (1000)
 
-    ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
+    auto startStatus = client->StartApplication();
+    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::Error));
+    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::NotEntitled));
 
     EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::Ok));
     EXPECT_SUCCESS(client->StopApplication());
@@ -219,32 +230,47 @@ TEST_F(AccessKeyClientIntegrationTests, GetLicenseStatusValidPolicy_SuccessAgnos
 {
 	auto client = CreateTestClientWithUltimate(TEST_ULTIMATE_ID, TEST_ACCESSKEY_PRODUCT_ID, TEST_AGNOSTICKEY);
 
-	ASSERT_NE(static_cast<int>(client->StartApplication()), static_cast<int>(LicenseStatus::Error));
+    auto startStatus = client->StartApplication();
+    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::Error));
+    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::NotEntitled));
 
 	EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::Ok));
 	EXPECT_SUCCESS(client->StopApplication());
 }
 
+//TEST_F(AccessKeyClientIntegrationTests, GetDaysRemainingValidPolicy_Success)
+//    {
+//    auto client = CreateTestClientImpl(TEST_ACCESSKEY_PRODUCT_ID); // TEST_VALID_ACCESSKEY is entitled to microstation (1000)
+//
+//    auto startStatus = client->StartApplication();
+//    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::Error));
+//    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::NotEntitled));
+//
+//    EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::Ok));
+//    EXPECT_SUCCESS(client->StopApplication());
+//    }
+
 // The following are tests we use to verify behavior, not meant to be run on a regular basis
 
-TEST_F(AccessKeyClientIntegrationTests, AccessKeyClientTestPolicyHeartbeat_Test)
-    {
-    // I am using this test to manually debug/test the heartbeat to make sure of the following:
-    // - policy heartbeat does in fact run as expected (heartbeat every 1 second, refresh policy by PolicyInterval)
-    // - policy heartbeat cleans up as expected (after StopApplication is called, it doens't try to access disposed resources)
-    // - maybe: policy heartbeat handles going offline well (keeps using old policy and access key until policy expires)
-    auto client = CreateTestClient();
-    ASSERT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
-
-    // use std::chrono::seconds(2); to wait in tests
-    // PolicyRefresh: make a custom policy with a fast refresh! -> right now it is set for 60 days!
-    // Heartbeat: check that function is entered multiple times [GOOD]
-    // Cleanup: stop application and wait and check if anything is accessed [double check!]
-
-    std::this_thread::sleep_for(std::chrono::seconds(10));
-
-    EXPECT_SUCCESS(client->StopApplication());
-    }
+//TEST_F(AccessKeyClientIntegrationTests, AccessKeyClientTestPolicyHeartbeat_Test)
+//    {
+//    // I am using this test to manually debug/test the heartbeat to make sure of the following:
+//    // - policy heartbeat does in fact run as expected (heartbeat every 1 second, refresh policy by PolicyInterval)
+//    // - policy heartbeat cleans up as expected (after StopApplication is called, it doens't try to access disposed resources)
+//    // - maybe: policy heartbeat handles going offline well (keeps using old policy and access key until policy expires)
+//    auto client = CreateTestClient(TEST_ACCESSKEY_PRODUCT_ID, TEST_VALID_ACCESSKEY);
+//    //ASSERT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
+//
+//    while (true)
+//        {
+//        auto startStatus = client->StartApplication();
+//        ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::Error));
+//        ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::NotEntitled));
+//
+//        std::this_thread::sleep_for(std::chrono::seconds(10));
+//        ASSERT_NE(client->StopApplication(), BentleyStatus::ERROR);
+//        }
+//    }
 
 TEST_F(AccessKeyClientIntegrationTests, HeartbeatWithUltimateId_Test)
     {
@@ -252,9 +278,9 @@ TEST_F(AccessKeyClientIntegrationTests, HeartbeatWithUltimateId_Test)
 
     // I am using this test to manually debug/test the heartbeat when using ultimate ID vs device ID
     auto client = CreateTestClientWithUltimate("12345678"); // check for this ultimate in the network call to fiddler
-    client->StartApplication(), (int)LicenseStatus::Error;
-
-    // use std::chrono::seconds(2); to wait in tests
+    auto startStatus = client->StartApplication();
+    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::Error));
+    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::NotEntitled));
 
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
