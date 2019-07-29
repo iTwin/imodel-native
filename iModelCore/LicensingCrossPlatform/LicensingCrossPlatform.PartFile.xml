@@ -32,12 +32,12 @@
         </Bindings>
     </Part>
 
-    <Part Name="UnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/UnitTests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published">
+    <Part Name="UnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/UnitTests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="Licensing" />
 
         <Bindings>
-            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="Licensing/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="Licensing/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
         </Bindings>
     </Part>
 
@@ -174,13 +174,13 @@
         </Bindings>
     </Part>
     
-    <Part Name="IntegrationTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/IntegrationTests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published">
+    <Part Name="IntegrationTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/IntegrationTests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
         <SubPart PartName="PrewireForIntegrationTests" />
         <SubPart PartName="OidcNativeClient" />
         <SubPart PartName="Licensing" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
-            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="Licensing/IntegrationTests/Published" SourceName="Delivery/IntegrationTests/Objects/Published"/>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="Licensing/IntegrationTests/NonPublished" SourceName="Delivery/IntegrationTests/Objects/NonPublished"/>
         </Bindings>
     </Part>
 

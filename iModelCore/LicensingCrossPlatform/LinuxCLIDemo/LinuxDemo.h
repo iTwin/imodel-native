@@ -33,6 +33,8 @@ void CreateClient();
 
 void CreateAccessKeyClient();
 
+void CreateUltimateLevelAccessKeyClient();
+
 void CreateSaasClient();
 
 void TrackUsage();
