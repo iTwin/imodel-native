@@ -13,7 +13,7 @@
 
 USING_NAMESPACE_BENTLEY_TASKS
 
-struct ThreadlessTaskSchedulerTests : public ::testing::Test {};
+struct ThreadlessTaskSchedulerTests : ::testing::Test {};
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Vincas.Razma
@@ -138,18 +138,18 @@ TEST_F(ThreadlessTaskSchedulerTests, Push_ViaThenForNotCompletedTask_TaskIsExecu
         {
         cp1.CheckinAndWait();
         })
-    ->Then(scheduler, [&]
-        {
-        EXPECT_EQ(thread->GetThreadId(), BeThreadUtilities::GetCurrentThreadId());
-        cp2.Checkin();
-        });
+        ->Then(scheduler, [&]
+            {
+            EXPECT_EQ(thread->GetThreadId(), BeThreadUtilities::GetCurrentThreadId());
+            cp2.Checkin();
+            });
 
-    cp1.WaitUntilReached();
-    cp1.Continue();
+        cp1.WaitUntilReached();
+        cp1.Continue();
 
-    task->Wait();
-    thread->OnEmpty()->Wait();
-    EXPECT_TRUE(cp2.WasReached());
+        task->Wait();
+        thread->OnEmpty()->Wait();
+        EXPECT_TRUE(cp2.WasReached());
     }
 
 //---------------------------------------------------------------------------------------
@@ -162,7 +162,7 @@ TEST_F(ThreadlessTaskSchedulerTests, Push_ViaThen_TaskIsExecutedInSameThread)
 
     AsyncTestCheckpoint cp2;
 
-    auto task0 = thread->ExecuteAsync([&]{});
+    auto task0 = thread->ExecuteAsync([&] {});
     task0->Wait();
 
     auto currentThreadId = BeThreadUtilities::GetCurrentThreadId();
@@ -188,7 +188,7 @@ TEST_F(ThreadlessTaskSchedulerTests, Push_WithinParentTask_ParentExecutionProlon
     auto thread2 = WorkerThread::Create("TestThread");
 
     AsyncTestCheckpoint cp;
-     
+
     auto task = thread1->ExecuteAsync([&]
         {
         AsyncTestCheckpoint delay;
@@ -196,12 +196,12 @@ TEST_F(ThreadlessTaskSchedulerTests, Push_WithinParentTask_ParentExecutionProlon
             {
             delay.CheckinAndWait();
             })
-        ->Then(scheduler, [&]
-            {
-            cp.CheckinAndWait();
-            });
-        delay.WaitUntilReached();
-        delay.Continue();
+            ->Then(scheduler, [&]
+                {
+                cp.CheckinAndWait();
+                });
+            delay.WaitUntilReached();
+            delay.Continue();
         });
 
     cp.WaitUntilReached();

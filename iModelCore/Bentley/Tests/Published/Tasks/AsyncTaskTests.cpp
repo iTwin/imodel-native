@@ -4,7 +4,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "AsyncTaskTests.h"
+#include <Bentley/BeTest.h>
+#include <Bentley/Tasks/Tasks.h>
 
 #include <Bentley/BeDebugLog.h>
 #include <Bentley/BeTimeUtilities.h>
@@ -15,12 +16,16 @@
 
 #include <atomic>
 
+USING_NAMESPACE_BENTLEY_TASKS
+
+struct AsyncTaskTests : ::testing::Test {};
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Benediktas.Lipnickas               03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(AsyncTaskTests, IsCompleted_TaskNotExecuted_False)
     {
-    auto task = std::make_shared<PackagedAsyncTask<void>>([] { });
+    auto task = std::make_shared<PackagedAsyncTask<void>>([] {});
     EXPECT_FALSE(task->IsCompleted());
     }
 
@@ -43,7 +48,7 @@ TEST_F(AsyncTaskTests, Wait_TaskPushedToScheduler_BlocksUntilTaskIsExecuted)
 
     auto workerThread = WorkerThread::Create();
     auto task = workerThread->ExecuteAsync([&] { executed = true; });
-    
+
     task->Wait();
 
     EXPECT_TRUE(executed);
@@ -89,7 +94,7 @@ TEST_F(AsyncTaskTests, GetPriority_Constructed_PriorityNormalByDefault)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(AsyncTaskTests, Then_ThenCallbackAdded_ExecutedAfterOriginalTaskWasExecuted)
     {
-    BeAtomic<int> result (0);
+    BeAtomic<int> result(0);
 
     auto task = std::make_shared<PackagedAsyncTask<void>>([&] { result.store(1); });
 
@@ -109,32 +114,32 @@ TEST_F(AsyncTaskTests, Then_ThenCallbackAdded_ExecutedAfterOriginalTaskWasExecut
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(AsyncTaskTests, Then_MultipleThensChained_AllExecutedInCorrectOrder)
     {
-    BeAtomic<int> lastCompletedThenTask (0);
+    BeAtomic<int> lastCompletedThenTask(0);
 
     auto task = std::make_shared<PackagedAsyncTask<void>>([&] {});
 
-    auto lastTask = 
-    task->Then([&] 
-            {
-            EXPECT_TRUE(lastCompletedThenTask == 0);
-            lastCompletedThenTask.store(1);
-            })
-        ->Then([&] 
+    auto lastTask =
+        task->Then([&]
+        {
+        EXPECT_TRUE(lastCompletedThenTask == 0);
+        lastCompletedThenTask.store(1);
+        })
+        ->Then([&]
             {
             EXPECT_TRUE(lastCompletedThenTask == 1);
             lastCompletedThenTask.store(2);
             })
-        ->Then([&] 
-            {
-            EXPECT_TRUE(lastCompletedThenTask == 2);
-            lastCompletedThenTask.store(3);
-            });
+            ->Then([&]
+                {
+                EXPECT_TRUE(lastCompletedThenTask == 2);
+                lastCompletedThenTask.store(3);
+                });
 
-    task->Execute();
+            task->Execute();
 
-    lastTask->Wait();
+            lastTask->Wait();
 
-    EXPECT_TRUE(lastCompletedThenTask == 3);
+            EXPECT_TRUE(lastCompletedThenTask == 3);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -142,15 +147,15 @@ TEST_F(AsyncTaskTests, Then_MultipleThensChained_AllExecutedInCorrectOrder)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(AsyncTaskTests, Then_MultipleChildrenAdded_ThenExecutedAfterAllChildrenTasksCompleted)
     {
-    BeAtomic<int> childrenCompleted (0);
+    BeAtomic<int> childrenCompleted(0);
 
-    auto task = std::make_shared<PackagedAsyncTask<void>>([&] { });
+    auto task = std::make_shared<PackagedAsyncTask<void>>([&] {});
 
     auto childrenTask1 = std::make_shared<PackagedAsyncTask<void>>([&] { childrenCompleted++; });
     auto childrenTask2 = std::make_shared<PackagedAsyncTask<void>>([&] { childrenCompleted++; });
     childrenTask2->Then([&]
-        { 
-        childrenCompleted++; 
+        {
+        childrenCompleted++;
         });
 
     task->AddSubTask(childrenTask1);
@@ -159,7 +164,7 @@ TEST_F(AsyncTaskTests, Then_MultipleChildrenAdded_ThenExecutedAfterAllChildrenTa
     bool thenExecuted = false;
     auto lastTask = task->Then([&]
         {
-        EXPECT_TRUE(childrenCompleted == 3); 
+        EXPECT_TRUE(childrenCompleted == 3);
         thenExecuted = true;
         });
 
@@ -202,14 +207,14 @@ TEST_F(AsyncTaskTests, WhenAll_MultipleTasksUsed_ThenExecutedAfterAllTasksComple
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(AsyncTaskTests, WhenAll_MultipleTasksAdded_ThenExecutedAfterAllTasksCompleted)
     {
-    BeAtomic<int> tasksCompleted (0);
+    BeAtomic<int> tasksCompleted(0);
 
     auto task1 = std::make_shared<PackagedAsyncTask<void>>([&] { tasksCompleted++; });
     auto task2 = std::make_shared<PackagedAsyncTask<void>>([&] { tasksCompleted++; });
 
     bset<std::shared_ptr<AsyncTask>> tasks;
-    tasks.insert (task1);
-    tasks.insert (task2);
+    tasks.insert(task1);
+    tasks.insert(task2);
 
     bool thenExecuted = false;
     auto lastTask = AsyncTask::WhenAll(tasks)->Then([&]
@@ -269,7 +274,7 @@ TEST_F(AsyncTaskTests, WhenAll_MultipleTasksInSetAddedWithReturnValues_GetResult
         task->Execute();
     lastTask->Wait();
 
-    int i=0;
+    int i = 0;
     for (auto task : tasks)
         EXPECT_EQ(++i, task->GetResult());
     }
@@ -277,31 +282,31 @@ TEST_F(AsyncTaskTests, WhenAll_MultipleTasksInSetAddedWithReturnValues_GetResult
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Benediktas.Lipnickas               03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (AsyncTaskTests, Then_MultipleThenCallbackAdded_AllThenCallbacksExecuted)
+TEST_F(AsyncTaskTests, Then_MultipleThenCallbackAdded_AllThenCallbacksExecuted)
     {
-    auto task = std::make_shared<PackagedAsyncTask<void>> ([&]
+    auto task = std::make_shared<PackagedAsyncTask<void>>([&]
         {
         });
 
     bool task1Executed = false;
-    auto thenTask1 = task->Then ([&]
+    auto thenTask1 = task->Then([&]
         {
         task1Executed = true;
         });
 
     bool task2Executed = false;
-    auto thenTask2 = task->Then ([&]
+    auto thenTask2 = task->Then([&]
         {
         task2Executed = true;
         });
 
-    task->Execute ();
+    task->Execute();
 
-    thenTask1->Wait ();
-    thenTask2->Wait ();
+    thenTask1->Wait();
+    thenTask2->Wait();
 
-    EXPECT_TRUE (task1Executed);
-    EXPECT_TRUE (task2Executed);
+    EXPECT_TRUE(task1Executed);
+    EXPECT_TRUE(task2Executed);
     }
 
 //---------------------------------------------------------------------------------------

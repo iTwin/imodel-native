@@ -164,14 +164,31 @@ struct UniqueTaskHolder : private UniqueTasksHolder<int, T, maxQueue>
     {
     public:
         //! Ensure that only one task is running. Will return running task or get new one using given callback.
+        //! NOTE: task will not be cancelled with CancelTask(). User overload to retrieve cancellation token for new task instead.
         //! @param[in] executeNewTaskCallback Callback that should start and return new async task if needed
         AsyncTaskPtr<T> GetTask(std::function<AsyncTaskPtr<T>()> executeNewTaskCallback)
             {
-            return UniqueTasksHolder<int, T, maxQueue>::GetTask(0, [=] (ICancellationTokenPtr token)
+            return GetTask([=] (ICancellationTokenPtr token)
                 {
                 return executeNewTaskCallback();
                 });
             }
+
+        //! Ensure that only one task is running. Will return running task or get new one using given callback.
+        //! @param[in] executeNewTaskCallback Callback that should start and return new async task if needed
+        AsyncTaskPtr<T> GetTask(std::function<AsyncTaskPtr<T>(ICancellationTokenPtr token)> executeNewTaskCallback)
+            {
+            return UniqueTasksHolder<int, T, maxQueue>::GetTask(0, [=] (ICancellationTokenPtr token)
+                {
+                return executeNewTaskCallback(token);
+                });
+            }
+
+        // Cancel currently running task. Returns task if found, nullptr if not.
+        AsyncTaskPtr<T> CancelTask() { return UniqueTasksHolder<int, T, maxQueue>::CancelTask(0); }
+
+        // Check if task is running at a given moment
+        bool IsTaskRunning() { return UniqueTasksHolder<int, T, maxQueue>::IsTaskRunning(0); }
     };
 
 END_BENTLEY_TASKS_NAMESPACE

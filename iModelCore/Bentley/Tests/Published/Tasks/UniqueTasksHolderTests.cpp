@@ -4,18 +4,20 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "UniqueTasksHolderTests.h"
+#include <Bentley/BeTest.h>
 #include "AsyncTestCheckpoint.h"
 #include <Bentley/Tasks/UniqueTaskHolder.h>
 #include <Bentley/Tasks/WorkerThread.h>
 
+struct UniqueTasksHolderTests : ::testing::Test {};
+
 template<typename T>
-static bset<T> StubBSet (std::initializer_list<T> list)
+static bset<T> StubBSet(std::initializer_list<T> list)
     {
-    bset<T> set (list.begin (), list.end ());
+    bset<T> set(list.begin(), list.end());
     return set;
     }
- 
+
 template<typename T>
 AsyncTaskPtr<T> StubStartedAsyncTask(T returnValue)
     {
@@ -28,7 +30,7 @@ AsyncTaskPtr<T> StubStartedAsyncTask(T returnValue)
 //---------------------------------------------------------------------------------------
 // @betest                                      Benediktas.Lipnickas
 //---------------------------------------------------------------------------------------
-TEST_F (UniqueTasksHolderTests, GetTask_CalledWithDifferentIds_ReturnsDifferentTasks)
+TEST_F(UniqueTasksHolderTests, GetTask_CalledWithDifferentIds_ReturnsDifferentTasks)
     {
     UniqueTasksHolder<int, int> holder;
 
@@ -39,17 +41,17 @@ TEST_F (UniqueTasksHolderTests, GetTask_CalledWithDifferentIds_ReturnsDifferentT
         return StubStartedAsyncTask<int>(1);
         };
 
-    auto t1 = holder.GetTask (1, newTaskCallback);
-    auto t2 = holder.GetTask (2, newTaskCallback);
+    auto t1 = holder.GetTask(1, newTaskCallback);
+    auto t2 = holder.GetTask(2, newTaskCallback);
 
-    EXPECT_FALSE (t1.get () == t2.get ());
-    EXPECT_EQ (2, timesCalled);
+    EXPECT_FALSE(t1.get() == t2.get());
+    EXPECT_EQ(2, timesCalled);
     }
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Benediktas.Lipnickas
 //---------------------------------------------------------------------------------------
-TEST_F (UniqueTasksHolderTests, GetTask_CalledWithSameId_ReturnsSameTaskWithoutCallingNewTaskCallbackSecondTime)
+TEST_F(UniqueTasksHolderTests, GetTask_CalledWithSameId_ReturnsSameTaskWithoutCallingNewTaskCallbackSecondTime)
     {
     UniqueTasksHolder<int, int> holder;
 
@@ -60,17 +62,17 @@ TEST_F (UniqueTasksHolderTests, GetTask_CalledWithSameId_ReturnsSameTaskWithoutC
         return StubStartedAsyncTask<int>(1);
         };
 
-    auto t1 = holder.GetTask (1, newTaskCallback);
-    auto t2 = holder.GetTask (1, newTaskCallback);
+    auto t1 = holder.GetTask(1, newTaskCallback);
+    auto t2 = holder.GetTask(1, newTaskCallback);
 
-    EXPECT_TRUE (t1.get () == t2.get ());
-    EXPECT_EQ (1, timesCalled);
+    EXPECT_TRUE(t1.get() == t2.get());
+    EXPECT_EQ(1, timesCalled);
     }
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Benediktas.Lipnickas
 //---------------------------------------------------------------------------------------
-TEST_F (UniqueTasksHolderTests, GetTask_CalledTwiceInSequence_ReturnsSameTaskAndParentTaskGetsBlockedByExistingTaskRetrieval)
+TEST_F(UniqueTasksHolderTests, GetTask_CalledTwiceInSequence_ReturnsSameTaskAndParentTaskGetsBlockedByExistingTaskRetrieval)
     {
     UniqueTasksHolder<int, int> holder;
 
@@ -84,49 +86,49 @@ TEST_F (UniqueTasksHolderTests, GetTask_CalledTwiceInSequence_ReturnsSameTaskAnd
     auto newTaskCallback = [&] (ICancellationTokenPtr token)
         {
         timesCalled++;
-        return thread2->ExecuteAsync<int> ([&]
+        return thread2->ExecuteAsync<int>([&]
             {
-            checkpointA.CheckinAndWait ();
+            checkpointA.CheckinAndWait();
             return 42;
             });
         };
 
-    auto t1 = holder.GetTask (1, newTaskCallback);
+    auto t1 = holder.GetTask(1, newTaskCallback);
 
     bool thenOnParentTaskCalled = false;
     bool thenOnSubTaskCalled = false;
 
-    auto t2 = thread->ExecuteAsync ([&]
-        { 
-        holder.GetTask (1, newTaskCallback)
-        ->Then ([&] (int)
+    auto t2 = thread->ExecuteAsync([&]
+        {
+        holder.GetTask(1, newTaskCallback)
+            ->Then([&] (int)
             {
             thenOnSubTaskCalled = true;
             });
-        checkpointB.CheckinAndWait ();
+        checkpointB.CheckinAndWait();
         })
-    ->Then ([&]
-        {
-        thenOnParentTaskCalled = true;
-        EXPECT_TRUE (thenOnSubTaskCalled);
-        });
+        ->Then([&]
+            {
+            thenOnParentTaskCalled = true;
+            EXPECT_TRUE(thenOnSubTaskCalled);
+            });
 
-    checkpointB.WaitUntilReached ();
-    checkpointB.Continue ();
+        checkpointB.WaitUntilReached();
+        checkpointB.Continue();
 
-    checkpointA.WaitUntilReached ();
-    checkpointA.Continue ();
+        checkpointA.WaitUntilReached();
+        checkpointA.Continue();
 
-    AsyncTask::WhenAll (StubBSet<std::shared_ptr<AsyncTask>> ({t1, t2}))->Wait ();
-    EXPECT_EQ (1, timesCalled);
-    EXPECT_TRUE (thenOnSubTaskCalled);
-    EXPECT_TRUE (thenOnParentTaskCalled);
+        AsyncTask::WhenAll(StubBSet<std::shared_ptr<AsyncTask>>({ t1, t2 }))->Wait();
+        EXPECT_EQ(1, timesCalled);
+        EXPECT_TRUE(thenOnSubTaskCalled);
+        EXPECT_TRUE(thenOnParentTaskCalled);
     }
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Benediktas.Lipnickas
 //---------------------------------------------------------------------------------------
-TEST_F (UniqueTasksHolderTests, GetTask_CalledAfterTaskIsFinished_ReturnsDifferentTask)
+TEST_F(UniqueTasksHolderTests, GetTask_CalledAfterTaskIsFinished_ReturnsDifferentTask)
     {
     UniqueTasksHolder<int, int> holder;
 
@@ -137,20 +139,20 @@ TEST_F (UniqueTasksHolderTests, GetTask_CalledAfterTaskIsFinished_ReturnsDiffere
         return StubStartedAsyncTask<int>(1);
         };
 
-    auto t1 = holder.GetTask (1, newTaskCallback);
-    t1->Execute ();
-    t1->Wait ();
+    auto t1 = holder.GetTask(1, newTaskCallback);
+    t1->Execute();
+    t1->Wait();
 
-    auto t2 = holder.GetTask (1, newTaskCallback);
+    auto t2 = holder.GetTask(1, newTaskCallback);
 
-    EXPECT_FALSE (t1.get () == t2.get ());
-    EXPECT_EQ (2, timesCalled);
+    EXPECT_FALSE(t1.get() == t2.get());
+    EXPECT_EQ(2, timesCalled);
     }
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Benediktas.Lipnickas
 //---------------------------------------------------------------------------------------
-TEST_F (UniqueTasksHolderTests, GetTask_CalledAfterTaskIsCanceled_ReturnsDifferentTask)
+TEST_F(UniqueTasksHolderTests, GetTask_CalledAfterTaskIsCanceled_ReturnsDifferentTask)
     {
     UniqueTasksHolder<int, int> holder;
 
@@ -159,78 +161,78 @@ TEST_F (UniqueTasksHolderTests, GetTask_CalledAfterTaskIsCanceled_ReturnsDiffere
         return StubStartedAsyncTask<int>(1);
         };
 
-    auto t1 = holder.GetTask (1, newTaskCallback);
-    holder.CancelTask (1);
-    auto t2 = holder.GetTask (1, newTaskCallback);
+    auto t1 = holder.GetTask(1, newTaskCallback);
+    holder.CancelTask(1);
+    auto t2 = holder.GetTask(1, newTaskCallback);
 
-    EXPECT_FALSE (t1.get () == t2.get ());
+    EXPECT_FALSE(t1.get() == t2.get());
     }
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Benediktas.Lipnickas
 //---------------------------------------------------------------------------------------
-TEST_F (UniqueTasksHolderTests, GetTask_CalledAfterSameIdTaskIsCanceledButIsNotFinishedYet_SecondTaskCanAlsoBeCanceled)
+TEST_F(UniqueTasksHolderTests, GetTask_CalledAfterSameIdTaskIsCanceledButIsNotFinishedYet_SecondTaskCanAlsoBeCanceled)
     {
-    auto thread1 = WorkerThread::Create ();
-    auto thread2 = WorkerThread::Create ();
+    auto thread1 = WorkerThread::Create();
+    auto thread2 = WorkerThread::Create();
     EXPECT_FALSE(thread1->HasRunningTasks());
     UniqueTasksHolder<int, int> holder;
     AsyncTestCheckpoint a, b, c;
 
-    auto t1 = holder.GetTask (42, [&] (ICancellationTokenPtr token)
+    auto t1 = holder.GetTask(42, [&] (ICancellationTokenPtr token)
         {
-        EXPECT_FALSE(token->IsCanceled ());
-        return thread1->ExecuteAsync<int> ([&, token]
+        EXPECT_FALSE(token->IsCanceled());
+        return thread1->ExecuteAsync<int>([&, token]
             {
-            a.CheckinAndWait ();
-            EXPECT_TRUE(token->IsCanceled ());
-            b.CheckinAndWait ();
+            a.CheckinAndWait();
+            EXPECT_TRUE(token->IsCanceled());
+            b.CheckinAndWait();
             return 0;
             });
         });
     EXPECT_TRUE(thread1->HasRunningTasks());
-    a.WaitUntilReached ();
-    holder.CancelTask (42);
-    a.Continue ();
+    a.WaitUntilReached();
+    holder.CancelTask(42);
+    a.Continue();
 
-    auto t2 = holder.GetTask (42, [&] (ICancellationTokenPtr token)
+    auto t2 = holder.GetTask(42, [&] (ICancellationTokenPtr token)
         {
-        EXPECT_FALSE (token->IsCanceled ());
-        return thread2->ExecuteAsync<int> ([&, token]
+        EXPECT_FALSE(token->IsCanceled());
+        return thread2->ExecuteAsync<int>([&, token]
             {
-            c.CheckinAndWait ();
-            EXPECT_TRUE (token->IsCanceled ());
+            c.CheckinAndWait();
+            EXPECT_TRUE(token->IsCanceled());
             return 0;
             });
         });
 
-    b.Continue ();
-    t1->Wait ();
+    b.Continue();
+    t1->Wait();
 
-    holder.CancelTask (42);
+    holder.CancelTask(42);
 
-    c.Continue ();
-    t2->Wait ();
+    c.Continue();
+    t2->Wait();
     }
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Benediktas.Lipnickas
 //---------------------------------------------------------------------------------------
-TEST_F (UniqueTasksHolderTests, CancelTask_CalledForExistingTask_TaskTokenIsSetToCanceled)
+TEST_F(UniqueTasksHolderTests, CancelTask_CalledForExistingTask_TaskTokenIsSetToCanceled)
     {
     UniqueTasksHolder<int, int> holder;
 
-    auto t1 = holder.GetTask (1, [&] (ICancellationTokenPtr token)
+    auto t1 = holder.GetTask(1, [&] (ICancellationTokenPtr token)
         {
-        return std::make_shared<PackagedAsyncTask<int>> ([=]
+        return std::make_shared<PackagedAsyncTask<int>>([=]
             {
-            EXPECT_TRUE (token->IsCanceled ());
+            EXPECT_TRUE(token->IsCanceled());
             return 1;
             });
         });
-    holder.CancelTask (1);
+    holder.CancelTask(1);
 
-    t1->Execute ();
+    t1->Execute();
     }
 
 //---------------------------------------------------------------------------------------
@@ -268,89 +270,89 @@ TEST_F(UniqueTasksHolderTests, CancelTask_CalledForNotExistingTask_ReturnsNull)
 //---------------------------------------------------------------------------------------
 // @betest                                      Benediktas.Lipnickas
 //---------------------------------------------------------------------------------------
-TEST_F (UniqueTasksHolderTests, CancelTask_CalledForExistingTask_TaskTokenForNewTaskIsNotCanceled)
+TEST_F(UniqueTasksHolderTests, CancelTask_CalledForExistingTask_TaskTokenForNewTaskIsNotCanceled)
     {
     UniqueTasksHolder<int, int> holder;
 
-    auto t1 = holder.GetTask (1, [&] (ICancellationTokenPtr token)
+    auto t1 = holder.GetTask(1, [&] (ICancellationTokenPtr token)
         {
-        return std::make_shared<PackagedAsyncTask<int>> ([=]
+        return std::make_shared<PackagedAsyncTask<int>>([=]
             {
-            EXPECT_TRUE (token->IsCanceled ());
+            EXPECT_TRUE(token->IsCanceled());
             return 1;
             });
         });
-    holder.CancelTask (1);
+    holder.CancelTask(1);
 
-    auto t2 = holder.GetTask (1, [&] (ICancellationTokenPtr token)
+    auto t2 = holder.GetTask(1, [&] (ICancellationTokenPtr token)
         {
-        return std::make_shared<PackagedAsyncTask<int>> ([=]
+        return std::make_shared<PackagedAsyncTask<int>>([=]
             {
-            EXPECT_FALSE (token->IsCanceled ());
+            EXPECT_FALSE(token->IsCanceled());
             return 1;
             });
         });
 
-    t2->Execute ();
-    t1->Execute ();
+    t2->Execute();
+    t1->Execute();
     }
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Benediktas.Lipnickas
 //---------------------------------------------------------------------------------------
-TEST_F (UniqueTasksHolderTests, IsTaskRunning_CalledForNotExistingTask_False)
+TEST_F(UniqueTasksHolderTests, IsTaskRunning_CalledForNotExistingTask_False)
     {
     UniqueTasksHolder<int, int> holder;
 
-    EXPECT_FALSE (holder.IsTaskRunning (42));
+    EXPECT_FALSE(holder.IsTaskRunning(42));
     }
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Benediktas.Lipnickas
 //---------------------------------------------------------------------------------------
-TEST_F (UniqueTasksHolderTests, IsTaskRunning_FinishedTask_False)
+TEST_F(UniqueTasksHolderTests, IsTaskRunning_FinishedTask_False)
     {
-    auto thread = WorkerThread::Create ();
+    auto thread = WorkerThread::Create();
     UniqueTasksHolder<int, int> holder;
 
-    auto t1 = holder.GetTask (42, [&] (ICancellationTokenPtr token)
+    auto t1 = holder.GetTask(42, [&] (ICancellationTokenPtr token)
         {
-        return thread->ExecuteAsync<int> ([]
+        return thread->ExecuteAsync<int>([]
             {
             return 0;
             });
         });
-    t1->Wait ();
+    t1->Wait();
 
-    EXPECT_FALSE (holder.IsTaskRunning (42));
+    EXPECT_FALSE(holder.IsTaskRunning(42));
     }
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Benediktas.Lipnickas
 //---------------------------------------------------------------------------------------
-TEST_F (UniqueTasksHolderTests, IsTaskRunning_TaskNotYetFinished_True)
+TEST_F(UniqueTasksHolderTests, IsTaskRunning_TaskNotYetFinished_True)
     {
-    auto thread = WorkerThread::Create ();
+    auto thread = WorkerThread::Create();
 
     UniqueTasksHolder<int, int> holder;
     AsyncTestCheckpoint a;
 
-    auto t1 = holder.GetTask (42, [&] (ICancellationTokenPtr token)
+    auto t1 = holder.GetTask(42, [&] (ICancellationTokenPtr token)
         {
-        return thread->ExecuteAsync<int> ([&]
+        return thread->ExecuteAsync<int>([&]
             {
-            a.CheckinAndWait ();
+            a.CheckinAndWait();
             return 0;
             });
         });
 
-    a.WaitUntilReached ();
-    EXPECT_TRUE (holder.IsTaskRunning (42));
+    a.WaitUntilReached();
+    EXPECT_TRUE(holder.IsTaskRunning(42));
 
-    a.Continue ();
-    t1->Wait ();
+    a.Continue();
+    t1->Wait();
 
-    EXPECT_FALSE (holder.IsTaskRunning (42));
+    EXPECT_FALSE(holder.IsTaskRunning(42));
     }
 
 //---------------------------------------------------------------------------------------
@@ -441,8 +443,8 @@ TEST_F(UniqueTasksHolderTests, GetTask_MaxQueueIsOneAndCalledWithSameId_StartsNe
             finished1 = true;
             return 1;
             });
-        }; 
-     
+        };
+
     auto t1 = holder.GetTask(1, newTaskCallback1);
 
     auto newTaskCallback2 = [&] (ICancellationTokenPtr token)
@@ -450,7 +452,7 @@ TEST_F(UniqueTasksHolderTests, GetTask_MaxQueueIsOneAndCalledWithSameId_StartsNe
         called2 = true;
         EXPECT_TRUE(finished1);
         return CreateCompletedAsyncTask<int>(2);
-        }; 
+        };
 
     auto t2 = holder.GetTask(1, newTaskCallback2);
 
@@ -501,20 +503,20 @@ TEST_F(UniqueTasksHolderTests, GetTask_MaxQueueIsOneAndCalledTwiceInSequence_Que
             });
         checkpointB.CheckinAndWait();
         })
-    ->Then([&]
-        {
-        thenOnParentTaskCalled = true;
+        ->Then([&]
+            {
+            thenOnParentTaskCalled = true;
+            EXPECT_TRUE(thenOnSubTaskCalled);
+            });
+
+        checkpointB.WaitUntilReached();
+        checkpointB.Continue();
+
+        checkpointA.WaitUntilReached();
+        checkpointA.Continue();
+
+        AsyncTask::WhenAll(StubBSet<std::shared_ptr<AsyncTask>>({ t1, t2 }))->Wait();
+        EXPECT_EQ(2, timesCalled);
         EXPECT_TRUE(thenOnSubTaskCalled);
-        });
-
-    checkpointB.WaitUntilReached();
-    checkpointB.Continue();
-
-    checkpointA.WaitUntilReached();
-    checkpointA.Continue();
-
-    AsyncTask::WhenAll(StubBSet<std::shared_ptr<AsyncTask>>({t1, t2}))->Wait();
-    EXPECT_EQ(2, timesCalled);
-    EXPECT_TRUE(thenOnSubTaskCalled);
-    EXPECT_TRUE(thenOnParentTaskCalled);
+        EXPECT_TRUE(thenOnParentTaskCalled);
     }
