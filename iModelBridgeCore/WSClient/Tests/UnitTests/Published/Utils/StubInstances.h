@@ -33,8 +33,15 @@ struct StubInstances
         //! Add instance with optional properties and eTag
         StubRelationshipInstances Add
             (
-            ObjectIdCR objectId, std::map<Utf8String,
-            Json::Value> properties = std::map<Utf8String, Json::Value>(),
+            ObjectIdCR objectId,
+            std::map<Utf8String,Json::Value> properties = std::map<Utf8String, Json::Value>(),
+            Utf8StringCR eTag = ""
+            );
+        //! Add instance with properties and eTag
+        StubRelationshipInstances Add
+            (
+            ObjectIdCR objectId,
+            Json::Value const* properties,
             Utf8StringCR eTag = ""
             );
         //! Create server objects result to be used in caching
