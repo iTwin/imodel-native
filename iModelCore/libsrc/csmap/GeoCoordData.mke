@@ -1,0 +1,55 @@
+#----------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#----------------------------------------------------------------------------------------
+
+# The vast majority of data is pre-built and was moved to the thirdparty-csmap_data_2017A repo.
+# However, one file remained in the source repo for a non-minimal build.
+
+#----------------------------------------------------------------
+#
+# Make file for CS_MAP GeoCoordinate Data that must be shipped with the GeoCoord libraries.
+#
+#----------------------------------------------------------------------
+#----------------------------------------------------------------------
+#   Define standard macros.
+#----------------------------------------------------------------------
+%include mdl.mki
+
+%if defined (Minimal)
+    GeoCoordData = $(BuildContext)Delivery/GeoCoordDataMinimal/
+%else
+    GeoCoordData = $(BuildContext)Delivery/GeoCoordData/
+%endif
+
+#----------------------------------------------------------------------
+#   We link the CSMap data subdirectories to our output directory
+#----------------------------------------------------------------------
+csDictionarySourcesDir    	= $(baseDir)DictionarySources/
+
+#----------------------------------------------------------------------
+#   Create output directories.
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+    ~@mkdir $(GeoCoordData)
+
+#---------------------------------------------------------------------
+#   This is the remainder of the datum conversion data and the coordinate system dictionary.
+#---------------------------------------------------------------------
+%if !defined (Minimal)
+
+#    Geodetic Data Catalog files, which are used in conjunction with .las, .los files:
+always:
+    ~linkfile "$(GeoCoordData)coordsys.dty.xml=$(csDictionarySourcesDir)coordsys.dty.xml"
+    ~linkfile "$(GeoCoordData)UserOverrideGeodeticTransformSeed.asc=$(csDictionarySourcesDir)UserOverrideGeodeticTransformSeed.asc"
+
+%endif
+    
+##### NOT_NOW_GRAPHITE_WIP #####
+%if !defined (Minimal) && $(TARGET_PLATFORM)=="Windows" && defined (NOT_NOW_GRAPHITE_WIP)
+    installer:
+        $(_bmake) $(make_opt) $(baseDir)install/GeoCoordDataMergeModule.mke
+
+%endif
