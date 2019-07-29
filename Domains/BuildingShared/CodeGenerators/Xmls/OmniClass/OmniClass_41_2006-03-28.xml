@@ -1,0 +1,1111 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<Table>
+    <Name>Table 41 - Materials</Name>
+    <Source>The Secretariat for the OCCS Development Committee</Source>
+    <Version>Major Version No=&apos; Edition:1.0&apos;  Major Date=&apos;2006-03-28 Release&apos;  Minor Version No=&apos; Edition:1.0&apos;  Minor Date=&apos;2006-03-28 Release&apos;  Major=&apos;&apos;  Minor=&apos;&apos; </Version>
+    <Section>
+        <Code>41-10 00 00</Code>
+        <Name>Chemical Elements</Name>
+        <Section>
+            <Code>41-10 10 00</Code>
+            <Name>Non-Metallic Solid Elements</Name>
+            <Section>
+                <Code>41-10 10 06</Code>
+                <Name>Carbon </Name>
+            </Section>
+            <Section>
+                <Code>41-10 10 14</Code>
+                <Name>Silicon</Name>
+            </Section>
+            <Section>
+                <Code>41-10 10 15</Code>
+                <Name>Phosphorus</Name>
+            </Section>
+            <Section>
+                <Code>41-10 10 16</Code>
+                <Name>Sulfur</Name>
+            </Section>
+            <Section>
+                <Code>41-10 10 20</Code>
+                <Name>Calcium</Name>
+            </Section>
+            <Section>
+                <Code>41-10 10 53</Code>
+                <Name>Iodine</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>41-10 20 00</Code>
+            <Name>Metallic Elements</Name>
+            <Section>
+                <Code>41-10 20 05</Code>
+                <Name>Boron</Name>
+            </Section>
+            <Section>
+                <Code>41-10 20 12</Code>
+                <Name>Magnesium</Name>
+            </Section>
+            <Section>
+                <Code>41-10 20 13</Code>
+                <Name>Aluminum</Name>
+            </Section>
+            <Section>
+                <Code>41-10 20 19</Code>
+                <Name>Potassium</Name>
+            </Section>
+            <Section>
+                <Code>41-10 20 22</Code>
+                <Name>Titanium</Name>
+            </Section>
+            <Section>
+                <Code>41-10 20 23</Code>
+                <Name>Vanadium</Name>
+            </Section>
+            <Section>
+                <Code>41-10 20 24</Code>
+                <Name>Chromium</Name>
+            </Section>
+            <Section>
+                <Code>41-10 20 25</Code>
+                <Name>Manganese</Name>
+            </Section>
+            <Section>
+                <Code>41-10 20 26</Code>
+                <Name>Iron</Name>
+            </Section>
+            <Section>
+                <Code>41-10 20 27</Code>
+                <Name>Cobalt</Name>
+            </Section>
+            <Section>
+                <Code>41-10 20 28</Code>
+                <Name>Nickel</Name>
+            </Section>
+            <Section>
+                <Code>41-10 20 29</Code>
+                <Name>Copper</Name>
+            </Section>
+            <Section>
+                <Code>41-10 20 30</Code>
+                <Name>Zinc</Name>
+            </Section>
+            <Section>
+                <Code>41-10 20 33</Code>
+                <Name>Arsenic</Name>
+            </Section>
+            <Section>
+                <Code>41-10 20 42</Code>
+                <Name>Molybdenum</Name>
+            </Section>
+            <Section>
+                <Code>41-10 20 47</Code>
+                <Name>Silver</Name>
+            </Section>
+            <Section>
+                <Code>41-10 20 48</Code>
+                <Name>Cadmium</Name>
+            </Section>
+            <Section>
+                <Code>41-10 20 50</Code>
+                <Name>Tin</Name>
+            </Section>
+            <Section>
+                <Code>41-10 20 51</Code>
+                <Name>Antimony</Name>
+            </Section>
+            <Section>
+                <Code>41-10 20 74</Code>
+                <Name>Tungsten</Name>
+            </Section>
+            <Section>
+                <Code>41-10 20 79</Code>
+                <Name>Gold</Name>
+            </Section>
+            <Section>
+                <Code>41-10 20 82</Code>
+                <Name>Lead</Name>
+            </Section>
+            <Section>
+                <Code>41-10 20 83</Code>
+                <Name>Bismuth</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>41-10 50 00</Code>
+            <Name>Liquid Elements</Name>
+            <Section>
+                <Code>41-10 50 80</Code>
+                <Name>Mercury</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>41-10 70 00</Code>
+            <Name>Gaseous Elements</Name>
+            <Section>
+                <Code>41-10 70 01</Code>
+                <Name>Hydrogen</Name>
+            </Section>
+            <Section>
+                <Code>41-10 70 02</Code>
+                <Name>Helium</Name>
+            </Section>
+            <Section>
+                <Code>41-10 70 07</Code>
+                <Name>Nitrogen</Name>
+            </Section>
+            <Section>
+                <Code>41-10 70 08</Code>
+                <Name>Oxygen</Name>
+            </Section>
+            <Section>
+                <Code>41-10 70 09</Code>
+                <Name>Fluorine</Name>
+            </Section>
+            <Section>
+                <Code>41-10 70 10</Code>
+                <Name>Neon</Name>
+            </Section>
+            <Section>
+                <Code>41-10 70 17</Code>
+                <Name>Chlorine</Name>
+            </Section>
+            <Section>
+                <Code>41-10 70 18</Code>
+                <Name>Argon</Name>
+            </Section>
+            <Section>
+                <Code>41-10 70 36</Code>
+                <Name>Krypton</Name>
+            </Section>
+            <Section>
+                <Code>41-10 70 54</Code>
+                <Name>Xenon</Name>
+            </Section>
+            <Section>
+                <Code>41-10 70 86</Code>
+                <Name>Radon</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>41-30 00 00</Code>
+        <Name>Solid Compounds</Name>
+        <Section>
+            <Code>41-30 10 00</Code>
+            <Name>Mineral Compounds</Name>
+            <Section>
+                <Code>41-30 10 11</Code>
+                <Name>Rocks</Name>
+                <Section>
+                    <Code>41-30 10 11 11</Code>
+                    <Name>Granites</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 10 11 14</Code>
+                    <Name>Limestones</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 10 11 17</Code>
+                    <Name>Marbles</Name>
+                    <Section>
+                        <Code>41-30 10 11 17 11</Code>
+                        <Name>Marble Stone</Name>
+                    </Section>
+                    <Section>
+                        <Code>41-30 10 11 17 14</Code>
+                        <Name>Travertine</Name>
+                    </Section>
+                    <Section>
+                        <Code>41-30 10 11 17 17</Code>
+                        <Name>Limestone Marble</Name>
+                    </Section>
+                    <Section>
+                        <Code>41-30 10 11 17 21</Code>
+                        <Name>Onyx</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>41-30 10 11 21</Code>
+                    <Name>Quartz-Based Rocks</Name>
+                    <Section>
+                        <Code>41-30 10 11 21 11</Code>
+                        <Name>Quartz</Name>
+                    </Section>
+                    <Section>
+                        <Code>41-30 10 11 21 14</Code>
+                        <Name>Quartzitic-Sandstone</Name>
+                    </Section>
+                    <Section>
+                        <Code>41-30 10 11 21 17</Code>
+                        <Name>Sandstone</Name>
+                    </Section>
+                    <Section>
+                        <Code>41-30 10 11 21 21</Code>
+                        <Name>Sand</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>41-30 10 11 24</Code>
+                    <Name>Slates</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 10 11 27</Code>
+                    <Name>Rock Fibers</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 10 11 31</Code>
+                    <Name>Other Rocks</Name>
+                    <Section>
+                        <Code>41-30 10 11 31 11</Code>
+                        <Name>Barite</Name>
+                    </Section>
+                    <Section>
+                        <Code>41-30 10 11 31 14</Code>
+                        <Name>Chalk</Name>
+                    </Section>
+                    <Section>
+                        <Code>41-30 10 11 31 17</Code>
+                        <Name>Tufa</Name>
+                    </Section>
+                    <Section>
+                        <Code>41-30 10 11 31 21</Code>
+                        <Name>Perlite</Name>
+                        <Section>
+                            <Code>41-30 10 11 31 21 11</Code>
+                            <Name>Expanded Perlite</Name>
+                        </Section>
+                    </Section>
+                    <Section>
+                        <Code>41-30 10 11 31 24</Code>
+                        <Name>Shale</Name>
+                        <Section>
+                            <Code>41-30 10 11 31 24 11</Code>
+                            <Name>Expanded Shale</Name>
+                        </Section>
+                    </Section>
+                    <Section>
+                        <Code>41-30 10 11 31 27</Code>
+                        <Name>Mica</Name>
+                        <Section>
+                            <Code>41-30 10 11 31 27 11</Code>
+                            <Name>Expanded Mica</Name>
+                        </Section>
+                    </Section>
+                    <Section>
+                        <Code>41-30 10 11 31 31</Code>
+                        <Name>Expanded Vermiculite</Name>
+                    </Section>
+                </Section>
+            </Section>
+            <Section>
+                <Code>41-30 10 14</Code>
+                <Name>Clays</Name>
+                <Section>
+                    <Code>41-30 10 14 11</Code>
+                    <Name>Clay</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 10 14 14</Code>
+                    <Name>Fire Clay</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 10 14 17</Code>
+                    <Name>Bentonite</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 10 14 21</Code>
+                    <Name>Expanded Clay</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 10 14 24</Code>
+                    <Name>Ceramics</Name>
+                    <Section>
+                        <Code>41-30 10 14 24 11</Code>
+                        <Name>Brick</Name>
+                    </Section>
+                    <Section>
+                        <Code>41-30 10 14 24 14</Code>
+                        <Name>Earthenware</Name>
+                    </Section>
+                    <Section>
+                        <Code>41-30 10 14 24 17</Code>
+                        <Name>Terracotta </Name>
+                    </Section>
+                    <Section>
+                        <Code>41-30 10 14 24 21</Code>
+                        <Name>Fired Shale</Name>
+                    </Section>
+                    <Section>
+                        <Code>41-30 10 14 24 24</Code>
+                        <Name>Porcelain</Name>
+                    </Section>
+                    <Section>
+                        <Code>41-30 10 14 24 27</Code>
+                        <Name>Vitreous China</Name>
+                    </Section>
+                </Section>
+            </Section>
+            <Section>
+                <Code>41-30 10 17</Code>
+                <Name>Other Cementitious Materials</Name>
+                <Section>
+                    <Code>41-30 10 17 11</Code>
+                    <Name>Soils</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 10 17 14</Code>
+                    <Name>Cements</Name>
+                    <Section>
+                        <Code>41-30 10 17 14 11</Code>
+                        <Name>Portland Cement</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>41-30 10 17 17</Code>
+                    <Name>Limes</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 10 17 17 11</Code>
+                    <Name>Hydrated Lime</Name>
+                    <Section>
+                        <Code>41-30 10 17 17 14</Code>
+                        <Name>Quicklime</Name>
+                    </Section>
+                    <Section>
+                        <Code>41-30 10 17 17 17</Code>
+                        <Name>Slaked Lime</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>41-30 10 17 21</Code>
+                    <Name>Gypsums</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 10 17 24</Code>
+                    <Name>Calcium Silicate</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 10 17 27</Code>
+                    <Name>Magnesia</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>41-30 10 21</Code>
+                <Name>Bituminous and Petrochemical Minerals</Name>
+                <Section>
+                    <Code>41-30 10 21 11</Code>
+                    <Name>Asphalts</Name>
+                    <Section>
+                        <Code>41-30 10 21 11 11</Code>
+                        <Name>Asphalt</Name>
+                    </Section>
+                    <Section>
+                        <Code>41-30 10 21 11 14</Code>
+                        <Name>Polymer Modified Asphalt</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>41-30 10 21 14</Code>
+                    <Name>Coal Tars</Name>
+                    <Section>
+                        <Code>41-30 10 21 14 11</Code>
+                        <Name>Coal Tar Pitch</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>41-30 10 21 17</Code>
+                    <Name>Paraffins</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>41-30 10 24</Code>
+                <Name>Other Non-Metallic Natural Minerals</Name>
+                <Section>
+                    <Code>41-30 10 24 11</Code>
+                    <Name>Asbestos</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 10 24 14</Code>
+                    <Name>Graphite</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 10 24 17</Code>
+                    <Name>Carbon Black</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 10 24 21</Code>
+                    <Name>Salt (Sodium Chloride)</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>41-30 10 27</Code>
+                <Name>Other Minerals Not Occurring Naturally</Name>
+                <Section>
+                    <Code>41-30 10 27 11</Code>
+                    <Name>Glasses and Glass-Like Materials</Name>
+                    <Section>
+                        <Code>41-30 10 27 11 11</Code>
+                        <Name>Glass</Name>
+                    </Section>
+                    <Section>
+                        <Code>41-30 10 27 11 14</Code>
+                        <Name>Porcelain Enamel</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>41-30 10 27 14</Code>
+                    <Name>Other Minerals</Name>
+                    <Section>
+                        <Code>41-30 10 27 14 11</Code>
+                        <Name>Fly Ash</Name>
+                    </Section>
+                    <Section>
+                        <Code>41-30 10 27 14 14</Code>
+                        <Name>Carbon Fiber</Name>
+                    </Section>
+                    <Section>
+                        <Code>41-30 10 27 14 17</Code>
+                        <Name>Silicon Carbide</Name>
+                    </Section>
+                    <Section>
+                        <Code>41-30 10 27 14 21</Code>
+                        <Name>Cermet</Name>
+                    </Section>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>41-30 20 00</Code>
+            <Name>Metallic Compounds</Name>
+            <Section>
+                <Code>41-30 20 11</Code>
+                <Name>Iron Alloys</Name>
+                <Section>
+                    <Code>41-30 20 11 11</Code>
+                    <Name>Carbon Steels</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 20 11 14</Code>
+                    <Name>Stainless Steels</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 20 11 21</Code>
+                    <Name>Other Steels</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 20 11 99</Code>
+                    <Name>Other Iron Alloys</Name>
+                    <Section>
+                        <Code>41-30 20 11 99 11</Code>
+                        <Name>Cast Iron</Name>
+                    </Section>
+                    <Section>
+                        <Code>41-30 20 11 99 14</Code>
+                        <Name>Wrought Iron</Name>
+                    </Section>
+                    <Section>
+                        <Code>41-30 20 11 99 17</Code>
+                        <Name>Ductile Iron</Name>
+                    </Section>
+                    <Section>
+                        <Code>41-30 20 11 99 21</Code>
+                        <Name>Malleable Iron</Name>
+                    </Section>
+                </Section>
+            </Section>
+            <Section>
+                <Code>41-30 20 14</Code>
+                <Name>Aluminum Alloys</Name>
+                <Section>
+                    <Code>41-30 20 14 11</Code>
+                    <Name>Aluminum-Zinc Alloys</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>41-30 20 17</Code>
+                <Name>Copper Alloys</Name>
+                <Section>
+                    <Code>41-30 20 17 11</Code>
+                    <Name>Brasses</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 20 17 14</Code>
+                    <Name>Bronzes</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>41-30 20 21</Code>
+                <Name>Zinc Alloys</Name>
+                <Section>
+                    <Code>41-30 20 21 11</Code>
+                    <Name>Zinc-Lead Alloys</Name>
+                    <Section>
+                        <Code>41-30 20 21 11 11</Code>
+                        <Name>Zamac</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>41-30 20 21 14</Code>
+                    <Name>Other Zinc Alloys</Name>
+                    <Section>
+                        <Code>41-30 20 21 14 11</Code>
+                        <Name>Mazac</Name>
+                    </Section>
+                </Section>
+            </Section>
+            <Section>
+                <Code>41-30 20 24</Code>
+                <Name>Lead Alloys</Name>
+                <Section>
+                    <Code>41-30 20 24 11</Code>
+                    <Name>Lead and Tin Alloys</Name>
+                    <Section>
+                        <Code>41-30 20 24 11 11</Code>
+                        <Name>Terne</Name>
+                    </Section>
+                </Section>
+            </Section>
+            <Section>
+                <Code>41-30 20 27</Code>
+                <Name>Other Alloys</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>41-30 30 00</Code>
+            <Name>Plant Materials</Name>
+            <Section>
+                <Code>41-30 30 21</Code>
+                <Name>Materials from Other Plants</Name>
+                <Section>
+                    <Code>41-30 34 11</Code>
+                    <Name>Natural Rubber</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 34 12</Code>
+                    <Name>Cotton</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 34 13</Code>
+                    <Name>Jute</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>41-30 30 11</Code>
+                <Name>Materials from Plants in General</Name>
+                <Section>
+                    <Code>41-30 30 11 11</Code>
+                    <Name>Cellulose</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 30 11 14</Code>
+                    <Name>Paper</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 30 11 17</Code>
+                    <Name>Textiles</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 30 11 21</Code>
+                    <Name>Combustion Residues</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>41-30 30 14</Code>
+                <Name>Materials from Trees</Name>
+                <Section>
+                    <Code>41-30 30 14 11</Code>
+                    <Name>Timber</Name>
+                    <Section>
+                        <Code>41-30 30 14 11 11</Code>
+                        <Name>Softwood Timber</Name>
+                        <Section>
+                            <Code>41-30 30 14 11 11 11</Code>
+                            <Name>Southern Pine</Name>
+                        </Section>
+                        <Section>
+                            <Code>41-30 30 14 11 11 14</Code>
+                            <Name>Douglas Fir-Larch</Name>
+                        </Section>
+                        <Section>
+                            <Code>41-30 30 14 11 11 17</Code>
+                            <Name>Spruce-Pine-Fir</Name>
+                        </Section>
+                        <Section>
+                            <Code>41-30 30 14 11 11 21</Code>
+                            <Name>Redwood</Name>
+                        </Section>
+                        <Section>
+                            <Code>41-30 30 14 11 11 24</Code>
+                            <Name>Western Red Cedar</Name>
+                        </Section>
+                    </Section>
+                    <Section>
+                        <Code>41-30 30 14 11 14</Code>
+                        <Name>Hardwood Timber</Name>
+                        <Section>
+                            <Code>41-30 30 14 11 14 11</Code>
+                            <Name>White Oak</Name>
+                        </Section>
+                        <Section>
+                            <Code>41-30 30 14 11 14 14</Code>
+                            <Name>Red Oak</Name>
+                        </Section>
+                        <Section>
+                            <Code>41-30 30 14 11 14 17</Code>
+                            <Name>Maple</Name>
+                        </Section>
+                        <Section>
+                            <Code>41-30 30 14 11 14 21</Code>
+                            <Name>Cherry</Name>
+                        </Section>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>41-30 30 14 14</Code>
+                    <Name>Other Tree Parts</Name>
+                    <Section>
+                        <Code>41-30 30 14 14 11</Code>
+                        <Name>Tree Bark</Name>
+                    </Section>
+                    <Section>
+                        <Code>41-30 30 14 14 14</Code>
+                        <Name>Coir</Name>
+                    </Section>
+                    <Section>
+                        <Code>41-30 30 14 14 17</Code>
+                        <Name>Cork</Name>
+                    </Section>
+                </Section>
+            </Section>
+            <Section>
+                <Code>41-30 30 17</Code>
+                <Name>Materials from Grasses</Name>
+                <Section>
+                    <Code>41-30 30 17 11</Code>
+                    <Name>Bamboo</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 30 17 14</Code>
+                    <Name>Grass</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 30 17 17</Code>
+                    <Name>Linen</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 30 17 21</Code>
+                    <Name>Reeds</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 30 17 24</Code>
+                    <Name>Straw</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>41-30 40 00</Code>
+            <Name>Other Organic Materials</Name>
+            <Section>
+                <Code>41-30 40 11</Code>
+                <Name>Materials from Animals</Name>
+                <Section>
+                    <Code>41-30 40 11 11</Code>
+                    <Name>Animal Hair Materials</Name>
+                    <Section>
+                        <Code>41-30 40 11 11 11</Code>
+                        <Name>Wool</Name>
+                    </Section>
+                    <Section>
+                        <Code>41-30 40 11 11 14</Code>
+                        <Name>Horsehair</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>41-30 40 11 14</Code>
+                    <Name>Other Animal-Based Materials</Name>
+                    <Section>
+                        <Code>41-30 40 11 14 11</Code>
+                        <Name>Leather</Name>
+                    </Section>
+                    <Section>
+                        <Code>41-30 40 11 14 14</Code>
+                        <Name>Tallow</Name>
+                    </Section>
+                </Section>
+            </Section>
+            <Section>
+                <Code>41-30 40 14</Code>
+                <Name>Materials from Insects</Name>
+                <Section>
+                    <Code>41-30 40 14 11</Code>
+                    <Name>Silk</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 40 14 14</Code>
+                    <Name>Beeswax</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>41-30 50 00</Code>
+            <Name>Synthetic Solid Compounds</Name>
+            <Section>
+                <Code>41-30 50 11</Code>
+                <Name>Acids</Name>
+            </Section>
+            <Section>
+                <Code>41-30 50 14</Code>
+                <Name>Bases (Alkalis)</Name>
+            </Section>
+            <Section>
+                <Code>41-30 50 17</Code>
+                <Name>Salts</Name>
+            </Section>
+            <Section>
+                <Code>41-30 50 21</Code>
+                <Name>Plastics</Name>
+                <Section>
+                    <Code>41-30 50 21 11</Code>
+                    <Name>Acrylonitrile-Butadiene-Styrene (ABS)</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 50 21 14</Code>
+                    <Name>Acrylic, Polymethyl Methacrylate</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 50 21 17</Code>
+                    <Name>Epoxy</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 50 21 21</Code>
+                    <Name>Polyamide</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 50 21 24</Code>
+                    <Name>Polybutylene (PB)</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 50 21 27</Code>
+                    <Name>Phenolic</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 50 21 31</Code>
+                    <Name>Polycarbonate</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 50 21 34</Code>
+                    <Name>Polyester</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 50 21 37</Code>
+                    <Name>Polyethylene, Polythene (PE)</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 50 21 41</Code>
+                    <Name>Polyisocyanurate</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 50 21 51</Code>
+                    <Name>Polypropylene</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 50 21 54</Code>
+                    <Name>Polystyrene</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 50 21 61</Code>
+                    <Name>Polyurethane</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 50 21 64</Code>
+                    <Name>Polyvinyl Chloride, Plasticised (PVC)</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 50 21 71</Code>
+                    <Name>Polyvinyl Chloride, Unplasticised (PVC-U)</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 50 21 74</Code>
+                    <Name>Polyvinylidene Fluoride</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 50 21 81</Code>
+                    <Name>Urea Formaldehyde</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 50 21 84</Code>
+                    <Name>Vinyl</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>41-30 50 24</Code>
+                <Name>Rubbers</Name>
+                <Section>
+                    <Code>41-30 50 24 11</Code>
+                    <Name>Butyl Rubber</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 50 24 14</Code>
+                    <Name>Neoprene</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 50 24 17</Code>
+                    <Name>Silicone</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 50 24 21</Code>
+                    <Name>Polysulfide</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>41-30 50 27</Code>
+                <Name>Other Petrochemical Compounds</Name>
+                <Section>
+                    <Code>41-30 50 27 11</Code>
+                    <Name>Paraffin</Name>
+                </Section>
+                <Section>
+                    <Code>41-30 50 27 14</Code>
+                    <Name>Waxes</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>41-30 50 99</Code>
+                <Name>Other Synthetic Solid Compounds</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>41-50 00 00</Code>
+        <Name>Liquids</Name>
+        <Section>
+            <Code>41-50 10 00</Code>
+            <Name>Water</Name>
+            <Section>
+                <Code>41-50 10 11</Code>
+                <Name>Fresh Waters</Name>
+                <Section>
+                    <Code>41-50 10 11 11</Code>
+                    <Name>Rain Water</Name>
+                </Section>
+                <Section>
+                    <Code>41-50 10 11 14</Code>
+                    <Name>Ground Water</Name>
+                </Section>
+                <Section>
+                    <Code>41-50 10 11 17</Code>
+                    <Name>Distilled Water</Name>
+                </Section>
+                <Section>
+                    <Code>41-50 10 11 21</Code>
+                    <Name>Deionized Water</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>41-50 10 14</Code>
+                <Name>Salt Waters</Name>
+                <Section>
+                    <Code>41-50 10 14 11</Code>
+                    <Name>Sea Water</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>41-50 20 00</Code>
+            <Name>Water-Based Solutions</Name>
+            <Section>
+                <Code>41-50 20 11</Code>
+                <Name>Water-Based Acid Solutions</Name>
+            </Section>
+            <Section>
+                <Code>41-50 20 14</Code>
+                <Name>Water-Based Base (Alkali) Solutions</Name>
+            </Section>
+            <Section>
+                <Code>41-50 20 99</Code>
+                <Name>Other Water-Based Solutions</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>41-50 30 00</Code>
+            <Name>Mineral Liquids</Name>
+            <Section>
+                <Code>41-50 30 11</Code>
+                <Name>Petroleum Products</Name>
+                <Section>
+                    <Code>41-50 30 11 11</Code>
+                    <Name>Gasoline</Name>
+                </Section>
+                <Section>
+                    <Code>41-50 30 11 14</Code>
+                    <Name>Diesel Oils</Name>
+                </Section>
+                <Section>
+                    <Code>41-50 30 11 17</Code>
+                    <Name>Fuel Oils</Name>
+                </Section>
+                <Section>
+                    <Code>41-50 30 11 21</Code>
+                    <Name>Kerosene</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>41-50 30 14</Code>
+                <Name>Mineral Oils</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>41-50 40 00</Code>
+            <Name>Plant Derived Liquids</Name>
+            <Section>
+                <Code>41-50 40 11</Code>
+                <Name>Vegetable Oils</Name>
+            </Section>
+            <Section>
+                <Code>41-50 40 99</Code>
+                <Name>Other Plant-Derived Liquids</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>41-50 50 00</Code>
+            <Name>Animal-Derived Liquids</Name>
+            <Section>
+                <Code>41-50 50 11</Code>
+                <Name>Fish Oils</Name>
+            </Section>
+            <Section>
+                <Code>41-50 50 99</Code>
+                <Name>Other Animal-Derived Liquids</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>41-50 60 00</Code>
+            <Name>Synthetic Liquids</Name>
+            <Section>
+                <Code>41-50 60 11</Code>
+                <Name>Alcohols</Name>
+            </Section>
+            <Section>
+                <Code>41-50 60 14</Code>
+                <Name>Lubricants</Name>
+            </Section>
+            <Section>
+                <Code>41-50 60 17</Code>
+                <Name>Ammonia</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>41-50 99 00</Code>
+            <Name>Other Liquids</Name>
+        </Section>
+    </Section>
+    <Section>
+        <Code>41-70 00 00</Code>
+        <Name>Gases</Name>
+        <Section>
+            <Code>41-70 10 00</Code>
+            <Name>Natural Gases</Name>
+            <Section>
+                <Code>41-70 10 11</Code>
+                <Name>Natural Air</Name>
+            </Section>
+            <Section>
+                <Code>41-70 10 14</Code>
+                <Name>Carbon Dioxide</Name>
+            </Section>
+            <Section>
+                <Code>41-70 10 17</Code>
+                <Name>Carbon Monoxide</Name>
+            </Section>
+            <Section>
+                <Code>41-70 10 21</Code>
+                <Name>Water Vapor</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>41-70 20 00</Code>
+            <Name>Hydrocarbon Gases</Name>
+            <Section>
+                <Code>41-70 20 11</Code>
+                <Name>Propane</Name>
+            </Section>
+            <Section>
+                <Code>41-70 20 14</Code>
+                <Name>Butane</Name>
+            </Section>
+            <Section>
+                <Code>41-70 20 17</Code>
+                <Name>LPG</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>41-70 30 00</Code>
+            <Name>Refrigerants</Name>
+            <Section>
+                <Code>41-70 30 11</Code>
+                <Name>Fluorocarbons</Name>
+                <Section>
+                    <Code>41-70 30 11 11</Code>
+                    <Name>Trichlorofluoromethane (CFC-11)</Name>
+                </Section>
+                <Section>
+                    <Code>41-70 30 11 12</Code>
+                    <Name>Dichlorodifluoromethane (CFC-12)</Name>
+                </Section>
+                <Section>
+                    <Code>41-70 30 11 13</Code>
+                    <Name>Chlorotrifluoromethane (CFC-13)</Name>
+                </Section>
+                <Section>
+                    <Code>41-70 30 11 14</Code>
+                    <Name>Chlorodifluoromethane (HCFC-22)</Name>
+                </Section>
+                <Section>
+                    <Code>41-70 30 11 15</Code>
+                    <Name>Trifluoromethane (HFC-23)</Name>
+                </Section>
+                <Section>
+                    <Code>41-70 30 11 16</Code>
+                    <Name>Trichlorotrifluoroethane (CFC-113)</Name>
+                </Section>
+                <Section>
+                    <Code>41-70 30 11 17</Code>
+                    <Name>Dichloro-Tetrafluoroethane (CFC-114)</Name>
+                </Section>
+                <Section>
+                    <Code>41-70 30 11 18</Code>
+                    <Name>Chloro-Pentafluoroethane (CFC-115)</Name>
+                </Section>
+                <Section>
+                    <Code>41-70 30 11 19</Code>
+                    <Name>Hexachloroethane (CFC-116)</Name>
+                </Section>
+                <Section>
+                    <Code>41-70 30 11 20</Code>
+                    <Name>Tetrafluoroethane (HFC-134a)</Name>
+                </Section>
+                <Section>
+                    <Code>41-70 30 11 21</Code>
+                    <Name>Heptafluoropropane (HFC-227ea)</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>41-70 99 00</Code>
+            <Name>Other Gases</Name>
+            <Section>
+                <Code>41-70 99 11</Code>
+                <Name>Halon</Name>
+                <Section>
+                    <Code>41-70 99 11 11</Code>
+                    <Name>Bromochlorodifluoromethane (Halon 1211)</Name>
+                </Section>
+                <Section>
+                    <Code>41-70 99 11 12</Code>
+                    <Name>Bromotrifluoromethane (Halon 1301)</Name>
+                </Section>
+            </Section>
+        </Section>
+    </Section>
+</Table>
