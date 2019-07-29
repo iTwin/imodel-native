@@ -1,0 +1,85 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+# THIS IS WIP!!!  Eventually all fdfs below need to be included.
+#
+# Makefile directives to put bsigeom fdf files together into a single top-level file
+# appropriate for mdldoc.
+#
+# Concatenate master header file msgeomstructs.h with all public .fdf files into a new file
+#   called msgeomstructs.h so that this header is the "Required Header" displayed for each function
+#
+# NOTE: Keep current with msgeomstructs.h #include list.
+#
+GEOM_FILES=$(geomSrcPubGeom)GeomApi.h
+GEOM_FILES+$(geomSrcPubGeom)barycentric.fdf
+GEOM_FILES+$(geomSrcPubGeom)ccctangent.fdf
+GEOM_FILES+$(geomSrcPubGeom)complex.fdf
+GEOM_FILES+$(geomSrcPubGeom)dcone3d.fdf
+GEOM_FILES+$(geomSrcPubGeom)dconic4d.fdf
+#GEOM_FILES+$(geomSrcPubGeom)ddisk3d.fdf
+#GEOM_FILES+$(geomSrcPubGeom)dellipse3d.fdf
+#GEOM_FILES+$(geomSrcPubGeom)dellipsoid3d.fdf
+#GEOM_FILES+$(geomSrcPubGeom)dmap4d.fdf
+#GEOM_FILES+$(geomSrcPubGeom)dmatrix2d.fdf
+#GEOM_FILES+$(geomSrcPubGeom)dmatrix3d.fdf
+#GEOM_FILES+$(geomSrcPubGeom)dmatrix3d_dep.fdf
+#GEOM_FILES+$(geomSrcPubGeom)dmatrix4d.fdf
+#GEOM_FILES+$(geomSrcPubGeom)doublefuncs.fdf
+GEOM_FILES+$(geomSrcPubGeom)dplane3d.fdf
+#GEOM_FILES+$(geomSrcPubGeom)dpoint2d.fdf
+#GEOM_FILES+$(geomSrcPubGeom)dpoint2darray.fdf
+GEOM_FILES+$(geomSrcPubGeom)dpoint3d.fdf
+GEOM_FILES+$(geomSrcPubGeom)dpoint3darray.fdf
+#GEOM_FILES+$(geomSrcPubGeom)dpoint3dconvertedtodvec3d.fdf
+#GEOM_FILES+$(geomSrcPubGeom)dpoint3ddvec3d.fdf
+#GEOM_FILES+$(geomSrcPubGeom)dpoint4d.fdf
+#GEOM_FILES+$(geomSrcPubGeom)drange2d.fdf
+#GEOM_FILES+$(geomSrcPubGeom)drange3d.fdf
+#GEOM_FILES+$(geomSrcPubGeom)dray3d.fdf
+#GEOM_FILES+$(geomSrcPubGeom)dsegment3d.fdf
+#GEOM_FILES+$(geomSrcPubGeom)dsegment4d.fdf
+#GEOM_FILES+$(geomSrcPubGeom)dtoroid3d.fdf
+#GEOM_FILES+$(geomSrcPubGeom)dtransform2d.fdf
+#GEOM_FILES+$(geomSrcPubGeom)dtransform3d.fdf
+#GEOM_FILES+$(geomSrcPubGeom)dvec3d.fdf
+#GEOM_FILES+$(geomSrcPubGeom)dvec3ddmatrix3d.fdf
+#GEOM_FILES+$(geomSrcPubGeom)dvec3drotmatrix.fdf
+#GEOM_FILES+$(geomSrcPubGeom)dvec3dtransform.fdf
+#GEOM_FILES+$(geomSrcPubGeom)eigensys3d.fdf
+GEOM_FILES+$(geomSrcPubGeom)ellipticintegrals.fdf
+#GEOM_FILES+$(geomSrcPubGeom)fpoint2d.fdf
+#GEOM_FILES+$(geomSrcPubGeom)fpoint3d.fdf
+#GEOM_FILES+$(geomSrcPubGeom)frange2d.fdf
+#GEOM_FILES+$(geomSrcPubGeom)frange3d.fdf
+#GEOM_FILES+$(geomSrcPubGeom)graphicspoint.fdf
+#GEOM_FILES+$(geomSrcPubGeom)linalg.fdf
+#GEOM_FILES+$(geomSrcPubGeom)lineargeom.fdf
+#GEOM_FILES+$(geomSrcPubGeom)polygon2d.fdf
+GEOM_FILES+$(geomSrcPubGeom)polygon3d.fdf
+#GEOM_FILES+$(geomSrcPubGeom)polygondecomp.fdf
+#GEOM_FILES+$(geomSrcPubGeom)polyline2d.fdf
+#GEOM_FILES+$(geomSrcPubGeom)polyline3d.fdf
+#GEOM_FILES+$(geomSrcPubGeom)polyplane4d.fdf
+#GEOM_FILES+$(geomSrcPubGeom)polysolv.fdf
+#GEOM_FILES+$(geomSrcPubGeom)proximitydata.fdf
+#GEOM_FILES+$(geomSrcPubGeom)quadeqn.fdf
+#GEOM_FILES+$(geomSrcPubGeom)quadraticgeom.fdf
+#GEOM_FILES+$(geomSrcPubGeom)quadric.fdf
+GEOM_FILES+$(geomSrcPubGeom)rename.fdf
+#GEOM_FILES+$(geomSrcPubGeom)rotations.fdf
+#GEOM_FILES+$(geomSrcPubGeom)rotmatrix.fdf
+#GEOM_FILES+$(geomSrcPubGeom)rotmatrix_dep.fdf
+#GEOM_FILES+$(geomSrcPubGeom)simpson.fdf
+GEOM_FILES+$(geomSrcPubGeom)svd.fdf
+#GEOM_FILES+$(geomSrcPubGeom)transform.fdf
+#GEOM_FILES+$(geomSrcPubGeom)trigfuncs.fdf
+
+$(MDLDOC_GensrcDir)GeomApi.h : $(GEOM_FILES)
+        type $(GEOM_FILES) >$@
+
+# According to Earlin:
+# * skip dellipse4d (therefore, skip rotconic, smallsetrange1d, range1d)
+# * fpoints at lowest priority

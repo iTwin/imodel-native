@@ -1,0 +1,254 @@
+/*--------------------------------------------------------------------------------------+
+|    $RCSfile: copyright.txt,v $
+|   $Revision: 1.1 $
+|       $Date: 2006/08/02 18:07:13 $
+|     $Author: DavidAssaf $
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+/*__BENTLEY_INTERNAL_ONLY__*/
+
+/* DO NOT EDIT!  THIS FILE IS GENERATED. */
+
+
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+
+/*----------------------------------------------------------------------+
+|                                                                       |
+| name          vu_addDPoint2dLoop                                      |
+|                                                                       |
+|                                                                       |
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP void vu_addDPoint2dLoop
+(
+VuSetP      graphP,
+DPoint2d    *pointP,
+int         numPoint
+);
+
+/*----------------------------------------------------------------------+
+|                                                                       |
+| name          vu_addBsurfBoundaries                                   |
+|                                                                       |
+|                                                                       |
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP void vu_addBsurfBoundaries
+(
+VuSetP          graphP,
+BsurfBoundary   *boundsP,
+int             numBounds
+);
+
+/*----------------------------------------------------------------------+
+|                                                                       |
+| name          vu_addRange                                             |
+|                                                                       |
+|                                                                       |
+| Add a rectangular loop to the graph.                                  |
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP void vu_addRange
+(
+VuSetP          graphP,
+double          xmin,
+double          ymin,
+double          xmax,
+double          ymax
+);
+
+/*----------------------------------------------------------------------+
+|                                                                       |
+| name          vu_collectConnectedComponent                            |
+|                                                                       |
+|                                                                       |
+| Add a rectangular loop to the graph.                                  |
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP void vu_collectConnectedComponent
+(
+VuSetP          graphP,             /* IN OUT  graph to search and mark */
+VuArrayP        componentArrayP,    /* OUT     array of component members */
+VuArrayP        stackP,             /* IN OUT  work array */
+VuP             startP,             /* IN      seed of component */
+VuMask          mask                /* IN      mask to apply to visited nodes */
+
+);
+
+/*----------------------------------------------------------------------+
+|                                                                       |
+| name          vu_markConnectedParity                                  |
+|                                                                       |
+|                                                                       |
+| Fixup loops with xor (parity) merge.   Eliminate "external"           |
+| edges.                                                                |
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP void vu_markConnectedParity
+(
+VuSetP                  graphP          /* IN OUT  analyzed graph.  Changed by analysis */
+);
+
+/*----------------------------------------------------------------------+
+|                                                                       |
+| name          vu_breakCompoundVertices                                |
+|                                                                       |
+|                                                                       |
+| Split vertex loops as needed so that no more than one outgoing edge   |
+| has a given mask.                                                     |
+| Usual use: call with VU_EXTERIOR_MASK so that multiple polygons that  |
+| share a vertx become disconnected.                                    |
+| Returns the number of splits performed.                               |
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP int vu_breakCompoundVertices
+(
+VuSetP          graphP,             /* IN OUT  containing graph */
+VuMask          mask
+);
+
+/*----------------------------------------------------------------------+
+|                                                                       |
+| name          vu_transverseSeamCoordinate                             |
+|                                                                       |
+|                                                                       |
+| Return the value of the coordinate going transverse to the specified  |
+| seam direction.                                                       |
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP double   vu_transverseSeamCoordinate
+(
+VuP             nodeP,
+bool            isVerticalSeam      /* True for vertical seam (left and right),
+                                        False for horizontal seam (top and bottom)*/
+);
+
+/*----------------------------------------------------------------------+
+|                                                                       |
+| name          vu_seamCoordinate                                       |
+|                                                                       |
+|                                                                       |
+| Return the value of the coordinate going along the specified seam     |
+| direction.                                                            |
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP double   vu_seamCoordinate
+(
+VuP             nodeP,
+bool            isVerticalSeam      /* True for vertical seam (left and right),
+                                        False for horizontal seam (top and bottom)*/
+);
+
+/*----------------------------------------------------------------------+
+|                                                                       |
+| name          vu_isExteriorSeamNode                                   |
+|                                                                       |
+|                                                                       |
+| Test if nodeP is an exterior node on the specified seam.              |
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP bool     vu_isExteriorSeamNode
+(
+VuP             nodeP,
+double          param,
+bool            isVerticalSeam      /* True for vertical seam (left and right),
+                                        False for horizontal seam (top and bottom)*/
+);
+
+/*----------------------------------------------------------------------+
+|                                                                       |
+| name          vu_pasteSeams                                           |
+|                                                                       |
+|                                                                       |
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP int      vu_pasteSeams
+(
+VuSetP          graphP,             /* IN OUT  containing graph */
+VuMask          seamJumpMask,       /* IN      Mask to apply to (both sides of)
+                                                    edges which jump the seam. */
+
+double          lowParam,
+double          highParam,
+bool            isVerticalSeam      /* True for vertical seam (left and right),
+                                        False for horizontal seam (top and bottom)*/
+);
+
+/*----------------------------------------------------------------------+
+|                                                                       |
+| name          vu_collectPolygons                                      |
+|                                                                       |
+|                                                                       |
+| Collect parent-child polygons from a graph with full parity and       |
+| and connectivity.                                                     |
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP void vu_collectPolygonsExt
+(
+VuSetP          graphP,
+BsurfBoundary   **boundsPP,     /* OUT     array of loops, parent first then children */
+int             **parentPP,     /* OUT     for the boundsPP[i], index of parent loop */
+int             *numBoundsP,
+bool            duplicateStart, /* true to have the start point
+                                    duplicated at the end of each loop. */
+int             direction,       /* IN      0 for all CCW
+                                      1 for all CW
+                                      2 for all outer CCW, inner CW
+                                      3 for outer CW, inner CCW
+                                */
+VuMask          seamJumpMask    /* mask to mark which jump seam. */
+);
+
+/*----------------------------------------------------------------------+
+|                                                                       |
+| name          vu_collectPolygons                                      |
+|                                                                       |
+|                                                                       |
+| Collect parent-child polygons from a graph with full parity and       |
+| and connectivity.                                                     |
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP void vu_collectPolygons
+(
+VuSetP          graphP,
+BsurfBoundary   **boundsPP,     /* OUT     array of loops, parent first then children */
+int             **parentPP,     /* OUT     for the boundsPP[i], index of parent loop */
+int             *numBoundsP,
+bool            duplicateStart, /* true to have the start point
+                                    duplicated at the end of each loop. */
+int             direction       /* IN      0 for all CCW
+                                      1 for all CW
+                                      2 for all outer CCW, inner CW
+                                      3 for outer CW, inner CCW
+                                */
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @description Do parity fixup on 2d loop data.
+* @param [out] outLoops returned loops
+* @param [in] rawLoops input loops
+* @param [in] minEdge minimum number of edges in output loops (usually 3, to eliminate null faces)
+* @param [in] numWrap number of wraparound coordinates.  (e.g. 1 to get first point duplicated)
+* @group "VU Edges"
+* @bsimethod                                                    BentleySystems  05/14
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void vu_fixupLoopParity
+(
+bvector <bvector <DPoint2d> > &outLoops,
+bvector <bvector <DPoint2d> > &rawLoops,
+size_t minCount = 3,
+size_t numWrap = 1
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @description Collect xy data of interior loops
+* @param [in] graph source graph
+* @param [out] loops collected loops
+* @param [in] minEdge minimum number of edges in output loops (usually 3, to eliminate null faces)
+* @param [in] numWrap number of wraparound coordinates.  (e.g. 1 to get first point duplicated)
+* @group "VU Edges"
+* @bsimethod                                                    BentleySystems  05/14
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void vu_collectInteriorLoopCoordinates
+(
+VuSetP graph,
+bvector<bvector<DPoint2d> > &loops,
+size_t minCount = 3,
+size_t numWrap = 1
+);
+
+END_BENTLEY_GEOMETRY_NAMESPACE
+

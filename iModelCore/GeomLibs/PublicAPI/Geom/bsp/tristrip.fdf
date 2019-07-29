@@ -1,0 +1,64 @@
+/*--------------------------------------------------------------------------------------+
+|    $RCSfile: copyright.txt,v $
+|   $Revision: 1.1 $
+|       $Date: 2006/08/02 18:07:13 $
+|     $Author: DavidAssaf $
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+/*__BENTLEY_INTERNAL_ONLY__*/
+/* DO NOT EDIT!  THIS FILE IS GENERATED. */
+
+
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  10/94
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void tristrip_init       /* initialize the tristrip buffer */
+(
+DPoint2d **refParamPP,
+DPoint3d *refPointP,
+DPoint3d *refNormalP,
+int (*triangleFunction)(),
+void *userDataP,
+DPoint2d *scaleP
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  10/94
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int tristrip_addTriangle         /* Put a (possibly permuted) triangle in the buffer */
+(
+int i0,         /* First vertex index */
+int i1,         /* Second vertex index */
+int i2          /* Third vertex index */
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  10/94
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int tristrip_flush       /* Flush the tristrip buffer */
+(
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  10/94
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void bspmesh_startCounters       /* Clear tristrip statistics counters */
+(
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BentleySystems  10/94
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void bspmesh_summaryCounters
+(
+);
+
+END_BENTLEY_GEOMETRY_NAMESPACE
+

@@ -1,0 +1,8 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+TESTAPP_NAME=tDCone3dBezier
+
+%include    $(_MakeFilePath)/../testapp.mki

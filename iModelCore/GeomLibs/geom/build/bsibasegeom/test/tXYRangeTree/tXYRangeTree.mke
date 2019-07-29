@@ -1,0 +1,10 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+TESTAPP_NAME=tXYRangeTree
+
+#dependencies + XYPointSearch.cpp XYPointSearch.h
+
+%include    $(_MakeFilePath)/../testapp.mki
