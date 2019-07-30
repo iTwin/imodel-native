@@ -228,7 +228,8 @@ struct RelationshipClassLinkTableMap final : RelationshipClassMap
             {
             Source,
             Target,
-            SourceAndTarget
+            SourceAndTarget, 
+            SourceAndTargetAndClassId
             };
 
     private:
@@ -241,7 +242,7 @@ struct RelationshipClassLinkTableMap final : RelationshipClassMap
         void DetermineConstraintClassIdColumnHandling(bool& addConstraintClassIdColumnNeeded, ECN::ECRelationshipConstraintCR) const;
         BentleyStatus _Load(ClassMapLoadContext&, DbClassMapLoadContext const&) override;
         DbColumn* ConfigureForeignECClassIdKey(SchemaImportContext&, LinkTableRelationshipMapCustomAttribute const&, ECN::ECRelationshipEnd);
-        static void GenerateIndexColumnList(std::vector<DbColumn const*>&, DbColumn const* col1, DbColumn const* col2, DbColumn const* col3, DbColumn const* col4);
+        static void GenerateIndexColumnList(std::vector<DbColumn const*>&, DbColumn const* col1, DbColumn const* col2, DbColumn const* col3, DbColumn const* col4, DbColumn const* col5);
         
         static Utf8String DetermineConstraintECInstanceIdColumnName(LinkTableRelationshipMapCustomAttribute const&, ECN::ECRelationshipEnd);
         static Utf8String DetermineConstraintECClassIdColumnName(LinkTableRelationshipMapCustomAttribute const&, ECN::ECRelationshipEnd);
@@ -249,7 +250,7 @@ struct RelationshipClassLinkTableMap final : RelationshipClassMap
         static bool DetermineAllowDuplicateRelationshipsFlagFromRoot(ECN::ECRelationshipClassCR baseRelClass);
 
         static bool GetAllowDuplicateRelationshipsFlag(Nullable<bool> const& allowDuplicateRelationshipFlag) { return allowDuplicateRelationshipFlag.IsNull() ? false : allowDuplicateRelationshipFlag.Value(); }
-
+        void AddDefaultIndexes(SchemaImportContext& ctx);
     public:
         RelationshipClassLinkTableMap(ECDb const&, TableSpaceSchemaManager const&, ECN::ECClassCR, MapStrategyExtendedInfo const&);
         ~RelationshipClassLinkTableMap() {}

@@ -1850,7 +1850,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, InheritingAllowDuplicateRelationshi
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, a.GetClassId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, b.GetInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, b.GetClassId()));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Insert of duplicate relationship: " << m_ecdb.GetLastError().c_str();
+    ASSERT_NE(BE_SQLITE_DONE, stmt.Step()) << "Insert of duplicate relationship: " << m_ecdb.GetLastError().c_str();
     }
 
 END_ECDBUNITTESTS_NAMESPACE
