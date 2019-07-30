@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/UnitTests/Published/Utils/MockHttpHandler.cpp $
+|     $Source: Tests/UnitTests/NonPublished/Utils/MockHttpHandler.cpp $
 |
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/UnitTests/Published/Utils/SCVWritterTests.h $
+|     $Source: Tests/UnitTests/NonPublished/Utils/SCVWritterTests.h $
 |
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |

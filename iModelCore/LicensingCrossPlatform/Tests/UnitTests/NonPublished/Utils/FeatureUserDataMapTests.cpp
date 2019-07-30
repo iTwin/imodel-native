@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/UnitTests/Published/Utils/FeatureUserDataMapTests.cpp $
+|     $Source: Tests/UnitTests/NonPublished/Utils/FeatureUserDataMapTests.cpp $
 |
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |

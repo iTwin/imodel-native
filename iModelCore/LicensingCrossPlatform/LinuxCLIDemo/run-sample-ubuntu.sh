@@ -16,7 +16,7 @@ demodir="LicensingSampleApp"
 srcdir="${demodir}/src"
 outdir="${demodir}/out"
 
-nugetVersion="2.1.0.214"
+nugetVersion="2.1.0.230"
 
 echo ${srcdir}
 

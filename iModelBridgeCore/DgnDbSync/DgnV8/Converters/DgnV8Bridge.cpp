@@ -8,16 +8,13 @@
     #include <Windows.h>
 #endif
 
-#include <DgnDbSync/DgnV8/ConverterApp.h>
+#include <DgnDbSync/DgnV8/DgnV8Bridge.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <Bentley/BeDirectoryIterator.h>
 #include <DgnPlatform/DgnIModel.h>
 #include <DgnPlatform/WebMercator.h>
 #include <iModelBridge/iModelBridgeSacAdapter.h>
 #include <WebServices/Client/ClientInfo.h>
-
-#define LOG (*NativeLogging::LoggingManager::GetLogger(L"DgnV8Converter"))
-
 BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
@@ -353,7 +350,7 @@ BentleyStatus ConverterApp::_Initialize(int argc, WCharCP argv[])
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus RootModelConverterApp::_Initialize(int argc, WCharCP argv[])
+BentleyStatus DgnV8Bridge::_Initialize(int argc, WCharCP argv[])
     {
     DetectDrawingsDirs();    // populate m_params.m_drawingAndSheetFiles
     BentleyStatus status = SUCCESS;
@@ -377,7 +374,7 @@ void ConverterApp::_Terminate(BentleyStatus)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-RootModelConverterApp::RootModelConverterApp()
+DgnV8Bridge::DgnV8Bridge()
     { 
     RootModelConverter::RootModelChoice c;
     c.m_method = RootModelConverter::RootModelChoice::Method::FromActiveViewGroup;
@@ -396,7 +393,7 @@ RootModelConverterApp::RootModelConverterApp()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RootModelConverterApp::DetectDrawingsDirs()
+void DgnV8Bridge::DetectDrawingsDirs()
     {
     if (m_params.GetDrawingsDirs().empty())
         return;
@@ -419,7 +416,7 @@ void RootModelConverterApp::DetectDrawingsDirs()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RootModelConverterApp::_PrintUsage()
+void DgnV8Bridge::_PrintUsage()
     {
     fwprintf (stderr, L"\
 --root-model={<modelname>|.active|.default}    (optional)  Identifies the root model in the input file\n\
@@ -442,7 +439,7 @@ void RootModelConverterApp::_PrintUsage()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-iModelBridge::CmdLineArgStatus RootModelConverterApp::_ParseCommandLineArg(int iArg, int argc, WCharCP argv[])
+iModelBridge::CmdLineArgStatus DgnV8Bridge::_ParseCommandLineArg(int iArg, int argc, WCharCP argv[])
     {
     if (argv[iArg] == wcsstr(argv[iArg], L"--name-prefix="))
         {
@@ -512,7 +509,7 @@ WString ConverterApp::_SupplySqlangRelPath()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus RootModelConverterApp::_MakeSchemaChanges()
+BentleyStatus DgnV8Bridge::_MakeSchemaChanges()
     {
     auto status = m_converter->MakeSchemaChanges();
     return ((BSISUCCESS != status) || m_converter->WasAborted())? BSIERROR: BSISUCCESS;
@@ -521,7 +518,7 @@ BentleyStatus RootModelConverterApp::_MakeSchemaChanges()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus RootModelConverterApp::_MakeDefinitionChanges(SubjectCR jobsubj)
+BentleyStatus DgnV8Bridge::_MakeDefinitionChanges(SubjectCR jobsubj)
     {
     auto status = m_converter->MakeDefinitionChanges();
     return ((BSISUCCESS != status) || m_converter->WasAborted())? BSIERROR: BSISUCCESS;
@@ -530,7 +527,7 @@ BentleyStatus RootModelConverterApp::_MakeDefinitionChanges(SubjectCR jobsubj)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus RootModelConverterApp::_OnOpenBim(DgnDbR db)
+BentleyStatus DgnV8Bridge::_OnOpenBim(DgnDbR db)
     {
     bool skipECData = false;
     if (nullptr != m_converter)
@@ -545,7 +542,7 @@ BentleyStatus RootModelConverterApp::_OnOpenBim(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RootModelConverterApp::_OnCloseBim(BentleyStatus, iModelBridge::ClosePurpose purpose)
+void DgnV8Bridge::_OnCloseBim(BentleyStatus, iModelBridge::ClosePurpose purpose)
     {
     // NB: It is up to RootModelConverter::ConvertData to call DoEndConversion. Don't do that here!
 
@@ -564,7 +561,7 @@ void RootModelConverterApp::_OnCloseBim(BentleyStatus, iModelBridge::ClosePurpos
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus RootModelConverterApp::_OpenSource()
+BentleyStatus DgnV8Bridge::_OpenSource()
     {
     auto initStat = m_converter->InitRootModel();
     if (DgnV8Api::DGNFILE_STATUS_Success != initStat)
@@ -590,7 +587,7 @@ BentleyStatus RootModelConverterApp::_OpenSource()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RootModelConverterApp::_CloseSource(BentleyStatus, iModelBridge::ClosePurpose)
+void DgnV8Bridge::_CloseSource(BentleyStatus, iModelBridge::ClosePurpose)
     {
     // _OnCloseBim will close the source files
     }
@@ -598,7 +595,7 @@ void RootModelConverterApp::_CloseSource(BentleyStatus, iModelBridge::ClosePurpo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-SubjectCPtr RootModelConverterApp::_FindJob()
+SubjectCPtr DgnV8Bridge::_FindJob()
     {
     auto status = m_converter->FindJob();
     return (SpatialConverterBase::ImportJobLoadStatus::Success == status)? &m_converter->GetImportJob().GetSubject(): nullptr;
@@ -607,7 +604,7 @@ SubjectCPtr RootModelConverterApp::_FindJob()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-SubjectCPtr RootModelConverterApp::_InitializeJob()
+SubjectCPtr DgnV8Bridge::_InitializeJob()
     {
 //    BeAssert(m_converter->IsFileAssignedToBridge(*m_converter->GetRootV8File()) && "The bridge assigned to the root file/model must be the bridge that creates the root subject");
 
@@ -634,7 +631,7 @@ SubjectCPtr RootModelConverterApp::_InitializeJob()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus RootModelConverterApp::_ConvertToBim(Dgn::SubjectCR jobSubject)
+BentleyStatus DgnV8Bridge::_ConvertToBim(Dgn::SubjectCR jobSubject)
     {
     m_converter->ConvertData();
     m_hadAnyChanges = m_converter->HadAnyChanges();
@@ -644,7 +641,7 @@ BentleyStatus RootModelConverterApp::_ConvertToBim(Dgn::SubjectCR jobSubject)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus RootModelConverterApp::_DetectDeletedDocuments()
+BentleyStatus DgnV8Bridge::_DetectDeletedDocuments()
     {
     m_converter->_DetectDeletedDocuments();
     return m_converter->WasAborted()? BSIERROR: BSISUCCESS;
@@ -653,7 +650,7 @@ BentleyStatus RootModelConverterApp::_DetectDeletedDocuments()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus RootModelConverterApp::_OnAllDocumentsProcessed()
+BentleyStatus DgnV8Bridge::_OnAllDocumentsProcessed()
     {
     m_converter->DetectDeletedEmbeddedFiles();
     m_hadAnyChanges |= m_converter->HadAnyChanges();

@@ -5080,6 +5080,85 @@ TEST_F(DataSourceCacheTests, CacheResponse_InstanceWithCalculatedPropertyWithVal
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, CacheResponse_InstanceWithNonEmptyArrayProperty_CachesNonEmptyArray)
+    {
+    auto cache = GetTestCache();
+
+    Json::Value properties;
+    properties["TestProperty"] = "A";
+    properties["TestStructProperty"]["TestStringProperty"] = "B";
+    properties["TestStructProperty"]["TestArrayProperty"].append("C");
+    properties["TestArrayProperty"].append("D");
+    properties["TestStructArrayProperty"][0]["TestStringProperty"] = "E";
+
+    Json::Value expectedProperties = properties;
+
+    auto instance = StubInstanceInCacheJson(*cache, { "TestSchema.TestClassWithStruct", "Foo" }, properties);
+    auto cachedProperties = ReadInstance(*cache, instance);
+
+    cachedProperties.removeMember("id");
+    cachedProperties.removeMember("className");
+
+    EXPECT_EQ(cachedProperties, expectedProperties);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, CacheResponse_InstanceWithEmptyArrayProperty_CachesNullArrayDueToECDbLimitation)
+    {
+    auto cache = GetTestCache();
+
+    Json::Value properties;
+    properties["TestProperty"] = "A";
+    properties["TestStructProperty"]["TestStringProperty"] = "B";
+    properties["TestStructProperty"]["TestArrayProperty"] = Json::arrayValue;
+    properties["TestArrayProperty"] = Json::arrayValue;
+    properties["TestStructArrayProperty"] = Json::arrayValue;
+
+    Json::Value expectedProperties;
+    expectedProperties["TestProperty"] = "A";
+    expectedProperties["TestStructProperty"]["TestStringProperty"] = "B";
+
+    auto instance = StubInstanceInCacheJson(*cache, { "TestSchema.TestClassWithStruct", "Foo" }, properties);
+    auto cachedProperties = ReadInstance(*cache, instance);
+
+    cachedProperties.removeMember("id");
+    cachedProperties.removeMember("className");
+
+    EXPECT_EQ(cachedProperties, expectedProperties);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, CacheResponse_InstanceWithNullArrayProperty_CachesNullArray)
+    {
+    auto cache = GetTestCache();
+
+    Json::Value properties;
+    properties["TestProperty"] = "A";
+    properties["TestStructProperty"]["TestStringProperty"] = "B";
+    properties["TestStructProperty"]["TestArrayProperty"] = Json::nullValue;
+    properties["TestArrayProperty"] = Json::nullValue;
+    properties["TestStructArrayProperty"] = Json::nullValue;
+
+    Json::Value expectedProperties;
+    expectedProperties["TestProperty"] = "A";
+    expectedProperties["TestStructProperty"]["TestStringProperty"] = "B";
+
+    auto instance = StubInstanceInCacheJson(*cache, { "TestSchema.TestClassWithStruct", "Foo" }, properties);
+    auto cachedProperties = ReadInstance(*cache, instance);
+
+    cachedProperties.removeMember("id");
+    cachedProperties.removeMember("className");
+
+    EXPECT_EQ(cachedProperties, expectedProperties);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, IsResponseCached_ParentDoesNotExist_False)
     {
     auto cache = GetTestCache();

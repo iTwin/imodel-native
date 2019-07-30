@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/UnitTests/Published/DummyPolicyHelper.h $
+|     $Source: Tests/UnitTests/NonPublished/DummyPolicyHelper.h $
 |
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |

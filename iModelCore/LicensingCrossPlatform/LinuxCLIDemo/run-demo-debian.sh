@@ -16,7 +16,7 @@ demodir="LicensingSampleApp"
 srcdir="${demodir}/src"
 outdir="${demodir}/out"
 
-nugetVersion="2.1.0.214"
+nugetVersion="2.1.0.230"
 
 echo ${srcdir}
 
@@ -38,7 +38,7 @@ PullLinuxCLISource() {
 
 	# check if we rebooted via this script after setting up proxy
 	if [ -f ./resume_after_reboot.txt ]; then
-		rm ./resume_after_reboot.txt
+		rm -rf ./resume_after_reboot.txt
 		echo "Cloning Licensing repo."
 		hg clone http://bim0200.hgbranches.bentley.com/selserver/LicensingCrossPlatform ./${srcdir}/LicensingCrossPlatform
 
@@ -60,8 +60,8 @@ PullLinuxCLISource() {
 	elif [ -f ./resume_before_reboot.txt ]; then
 		echo "Did you reboot manually? (y/n)"
 		read ynrebooted
-		if [${ynrebooted} == "y"] || [${ynrebooted} == "Y"]; then
-			rm ./resume_before_reboot.txt
+		if [ ${ynrebooted} == "y" ] || [ ${ynrebooted} == "Y" ]; then
+			rm -rf ./resume_before_reboot.txt
 			echo "Cloning Licensing repo."
 			hg clone http://bim0200.hgbranches.bentley.com/selserver/LicensingCrossPlatform ./${srcdir}/LicensingCrossPlatform
 
@@ -78,14 +78,14 @@ PullLinuxCLISource() {
 
 			echo "Deleting cloned source"
 			rm -rf ./${srcdir}/LicensingCrossPlatform
-		elif [${ynrebooted} == "n"] || [${ynrebooted} == "N"]; then
+		elif [ ${ynrebooted} == "n" ] || [ ${ynrebooted} == "N" ]; then
 			echo "Reboot is required to continue. Continue and reboot now? (y/n)"
 			read ynreboot
-			if [${ynreboot} == "y"] || [${ynreboot} == "Y"]; then
+			if [ ${ynreboot} == "y" ] || [ ${ynreboot} == "Y" ]; then
 				echo "resume licensing CLI setup shell after reboot" > ./resume_after_reboot.txt
 				sudo shutdown -r now
 				exit 1
-			elif [${ynreboot} == "n"] || [${ynreboot} == "N"]; then
+			elif [ ${ynreboot} == "n" ] || [ ${ynreboot} == "N" ]; then
 				echo "resume before reboot" > ./resume_before_reboot.txt
 				echo "A reboot is required to continue. Exiting."
 				exit 1
@@ -105,8 +105,9 @@ PullLinuxCLISource() {
 		echo "Enter your domain password (see readme for information about how your password is stored and used within this script):"
 		read -s password
 
+		#need sudo here for /etc
 		echo \
-		$'[GENERAL]\
+		$"[GENERAL]\
 		LISTEN_PORT:5865\
 		PARENT_PROXY:\
 		PARENT_PROXY_PORT:\
@@ -128,32 +129,32 @@ PullLinuxCLISource() {
 		DEBUG:0\
 		BIN_DEBUG:0\
 		SCR_DEBUG:0\
-		AUTH_DEBUG:0'> /etc/ntlmaps/server.cfg
+		AUTH_DEBUG:0" | sudo tee /etc/ntlmaps/server.cfg 1> /dev/null
 
 		# check for the bsi-createremote.py file and create it if it doesn't exist
 		if [ ! -d "/usr/bin/bentley" ]; then
 			mkdir /usr/bin/bentley
 			rsync rsync-vcs1.bentley.com::tools/GetAndBuildBim2DcsOnLinux/scripts/bsi-createremote.py /usr/bin/bentley
-		elif [! -f "/usr/bin/bentley/bsi-createremote.py" ]
+		elif [ ! -f "/usr/bin/bentley/bsi-createremote.py" ]; then
 			rsync rsync-vcs1.bentley.com::tools/GetAndBuildBim2DcsOnLinux/scripts/bsi-createremote.py /usr/bin/bentley
 		fi
 
 		echo \
-		$'[ui]\
-		username = ${username}
+		$"[ui]\
+		username = ${username}\
 		[http_proxy]\
 		host = 127.0.0.1:5865\
 		[extensions]\
 		bsi-createremote = /usr/bin/bentley/bsi-createremote.py\
-		largefiles ='> ~/.hgrc
+		largefiles ="> ~/.hgrc
 
 		echo "Reboot is required to continue. Continue and reboot now? (y/n)"
 		read ynreboot
-		if [${ynreboot} == "y"] || [${ynreboot} == "Y"]; then
+		if [ ${ynreboot} == "y" ] || [ ${ynreboot} == "Y" ]; then
 			echo "resume licensing CLI setup shell after reboot" > ./resume_after_reboot.txt
 			sudo shutdown -r now
 			exit 1
-		elif [${ynreboot} == "n"] || [${ynreboot} == "N"]; then
+		elif [ ${ynreboot} == "n" ] || [ ${ynreboot} == "N" ]; then
 			echo "resume before reboot" > ./resume_before_reboot.txt
 			echo "A reboot is required to continue. Exiting."
 			exit 1

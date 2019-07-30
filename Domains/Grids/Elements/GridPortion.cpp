@@ -189,6 +189,32 @@ Dgn::DgnDbStatus Grid::_OnDelete() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas               07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool doesAlreadyHaveBundle
+(
+Dgn::DgnElementId targetSurfaceId,
+GridSurfaceCR innerSurface
+)
+    {
+    for (Building::Shared::ElementIdIteratorEntry const& bundleIdEntry : innerSurface.MakeGridCurveBundleIterator())
+        {
+        GridCurveBundleCPtr curveBundle = GridCurveBundle::Get(innerSurface.GetDgnDb(), bundleIdEntry.GetElementId());
+
+        if(curveBundle.IsNull())
+            continue;
+
+        for (Building::Shared::ElementIdIteratorEntry const& drivingSurfaceIdEntry : curveBundle->MakeDrivingSurfaceIterator())
+            {
+            if (targetSurfaceId == drivingSurfaceIdEntry.GetElementId())
+                return true;
+            }
+        }
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   Grid::IntersectGridSurface 
@@ -197,21 +223,18 @@ GridSurfaceCPtr surface,
 GridCurvesSetCR targetPortion
 ) const
     {
-    Dgn::DgnModelPtr model = GetSubModel ();
-    if (!model.IsValid ())
-        {
-        return ERROR;
-        }
+    Dgn::DgnDbR db = GetDgnDb();
 
-    Dgn::DgnDbR db = model->GetDgnDb ();
-
-    for (Dgn::ElementIteratorEntry elementEntry : model->MakeIterator ())
+    for (Dgn::ElementIteratorEntry const& surfaceEntry : MakeIterator())
         {
-        GridSurfaceCPtr innerSurface = db.Elements ().Get<GridSurface> (elementEntry.GetElementId ());
-        if (innerSurface.IsValid())
-            {
-            GridCurveBundle::CreateAndInsert(db, targetPortion, *innerSurface, *surface);
-            }
+        GridSurfaceCPtr innerSurface = db.Elements().Get<GridSurface>(surfaceEntry.GetElementId());
+        if (innerSurface.IsNull())
+            continue;
+
+        if (doesAlreadyHaveBundle(surface->GetElementId(), *innerSurface))
+            continue;
+
+        GridCurveBundle::CreateAndInsert(db, targetPortion, *innerSurface, *surface);
         }
 
     return SUCCESS;

@@ -41,6 +41,7 @@ const string clientArgList = "\n\
 const string createArgList = "\n\
     - client create client - Create the Client. You will be prompted to provide all required information.\n\
     - client create accesskeyclient - Create the AccessKeyClient. You will be prompted to provide all required information.\n\
+    - client create ultimateaccesskeyclient - Create an Ultimate-Level AccessKeyClient. You will be prompted to provide all required information.\n\
     - client create saasclient - Create the SaasClient. You will be prompted to provide all required information.\n\
 \n";
 
@@ -63,6 +64,7 @@ int main(int argc, char* argv[])
 
     m_localState = nullptr;
 
+    cout << "Welcome to the Cross Platform License Client CLI applicaion. Create a client, or type \'help\' to begin.\n";
     cout << "Type \"exit\" or \"(q)uit\" to exit the program.\n";
 
     Initialize();
@@ -362,6 +364,11 @@ void ProcessClientCommand(vector<string> input)
             CreateAccessKeyClient();
             return;
             }
+        else if(input.at(2) == "ultimateaccesskeyclient" || input.at(2) == "ultimateaccesskey" || input.at(2) == "ua")
+            {
+            CreateUltimateLevelAccessKeyClient();
+            return;
+            }
         else if(input.at(2) == "saasclient" || input.at(2) == "saas" || input.at(2) == "s")
             {
             CreateSaasClient();
@@ -387,7 +394,7 @@ void ProcessClientCommand(vector<string> input)
 
             if(Licensing::LicenseStatus::Ok == startResult)
                 {
-                cout << "Started the Licensing heartbeats.\n";
+                cout << "License Status: Ok. Started the Licensing heartbeats.\n";
                 m_heartbeatRunning = true;
                 return;
                 }
@@ -447,49 +454,49 @@ void ProcessClientCommand(vector<string> input)
 
             if(Licensing::LicenseStatus::Ok == startResult)
                 {
-                cout << "Started the Licensing policy heartbeat.\n";
+                cout << "License Status: Ok. Started the Licensing heartbeats.\n";
                 m_heartbeatRunning = true;
                 return;
                 }
             else if(Licensing::LicenseStatus::Offline == startResult)
                 {
-                cout << "Started the Licensing policy heartbeat. You are in offline mode.\n";
+                cout << "Started the Licensing heartbeats. You are in offline mode.\n";
                 m_heartbeatRunning = true;
                 return;
                 }
             else if(Licensing::LicenseStatus::Trial == startResult)
                 {
-                cout << "Started the Licensing policy heartbeat. You are in trial mode.\n";
+                cout << "Started the Licensing heartbeats. You are in trial mode.\n";
                 m_heartbeatRunning = true;
                 return;
                 }
             else if(Licensing::LicenseStatus::Expired == startResult)
                 {
-                cout << "Failed to start the Licensing policy heartbeat. License is expired.\n";
+                cout << "Failed to start the Licensing heartbeats. License is expired.\n";
                 m_heartbeatRunning = false;
                 return;
                 }
             else if(Licensing::LicenseStatus::AccessDenied == startResult)
                 {
-                cout << "Failed to start the Licensing policy heartbeat. Access denied.\n";
+                cout << "Failed to start the Licensing heartbeats. Access denied.\n";
                 m_heartbeatRunning = false;
                 return;
                 }
             else if(Licensing::LicenseStatus::DisabledByLogSend == startResult)
                 {
-                cout << "Failed to start the Licensing policy heartbeat. Disabled by log send.\n";
+                cout << "Failed to start the Licensing heartbeats. Disabled by log send.\n";
                 m_heartbeatRunning = false;
                 return;
                 }
             else if(Licensing::LicenseStatus::DisabledByPolicy == startResult)
                 {
-                cout << "Failed to start the Licensing policy heartbeat. Disabled by policy.\n";
+                cout << "Failed to start the Licensing heartbeats. Disabled by policy.\n";
                 m_heartbeatRunning = false;
                 return;
                 }
             else if(Licensing::LicenseStatus::NotEntitled == startResult)
                 {
-                cout << "Failed to start the Licensing policy heartbeat. Not entitled.\n";
+                cout << "Failed to start the Licensing heartbeats. Not entitled.\n";
                 m_heartbeatRunning = false;
                 return;
                 }
@@ -853,6 +860,114 @@ void CreateAccessKeyClient()
         appInfo,
         dbPath,
         offlineMode,
+        projectId,
+        featureString,
+        nullptr
+        );
+
+    if(m_accessKeyClient == nullptr)
+        {
+        cout << "Failed to create AccessKeyClient, please try again.\n";
+        return;
+        }
+    else
+        {
+        cout << "AccessKeyClient created successfully!\n";
+        return;
+        }
+    }
+
+// initialize required libraries and information and create the client
+void CreateUltimateLevelAccessKeyClient()
+    {
+    // TODO: option for full info or "test" info prompts?
+
+    // prompt for required values
+    string productIdInput;
+    string accessKeyInput;
+    string offlineModeInput;
+    string ultimateIdInput;
+    string projectIdInput;
+    string featureStringInput;
+    string versionInput;
+    string deviceIdInput;
+
+    cout << "Enter the following values as prompted (leave blank and press Enter to make a value null)\n";
+
+    cout << "Enter a product ID: ";
+    getline(cin, productIdInput);
+    cout << "Enter an AccessKey: ";
+    getline(cin, accessKeyInput);
+    cout << "Enter your organization's Ultimate ID: ";
+    getline(cin, ultimateIdInput);
+    cout << "Enter a projectId: ";
+    getline(cin, projectIdInput);
+    cout << "Enter a featureString: ";
+    getline(cin, featureStringInput);
+    cout << "Enter application version (e.g. 1.2.3.4): ";
+    getline(cin, versionInput);
+    cout << "Enter deviceId (also known as \'machine name\'): ";
+    getline(cin, deviceIdInput);
+
+    bool offlineMode;
+    while (true)
+        {
+        cout << "Offline mode? (true or false): ";
+        getline(cin, offlineModeInput);
+        std::transform(offlineModeInput.begin(), offlineModeInput.end(), offlineModeInput.begin(), ::tolower);
+        if(offlineModeInput == "true" || offlineModeInput == "t")
+            {
+            offlineMode = true;
+            break;
+            }
+        else if(offlineModeInput == "false" || offlineModeInput == "f")
+            {
+            offlineMode = false;
+            break;
+            }
+        else if(offlineModeInput == "help" || offlineModeInput == "h")
+            {
+            cout << "If offline, pushes usage in discrete intervals. If not offline, pushes usage continuously via stream.\n";
+            continue;
+            }
+
+
+        cout << "Invalid input, please enter \"true\" or \"false\"\n";
+        }
+
+    Utf8String productId = Utf8String(productIdInput.c_str());
+    Utf8String accessKey = Utf8String(accessKeyInput.c_str());
+    Utf8String ultimateId = Utf8String(ultimateIdInput.c_str());
+    Utf8String projectId = Utf8String(projectIdInput.c_str());
+    Utf8String featureString = Utf8String(featureStringInput.c_str());
+    BeVersion version(versionInput.c_str());
+    Utf8String deviceId = Utf8String(deviceIdInput.c_str());
+
+    // create the rest of the required info
+    auto appInfo = std::make_shared<Licensing::ApplicationInfo>(version, deviceId, productId);
+
+    if(appInfo == nullptr)
+        {
+        cout << "Failed to create ApplicationInfo\n";
+        return;
+        }
+
+    BeFileName dbPath;
+    if(Desktop::FileSystem::BeGetTempPath(dbPath) != BeFileNameStatus::Success)
+        {
+        cout << "Failed to find temporary directory.";
+        return;
+        }
+
+    dbPath.AppendToPath(L"License.db");
+
+    m_accessKeyClient = Licensing::AccessKeyClient::AgnosticCreateWithUltimate
+        (
+        accessKey,
+        appInfo,
+        dbPath,
+        offlineMode,
+        ultimateId,
         projectId,
         featureString,
         nullptr

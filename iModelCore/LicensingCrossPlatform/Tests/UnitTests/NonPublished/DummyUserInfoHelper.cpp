@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/UnitTests/Published/DummyUserInfoHelper.cpp $
+|     $Source: Tests/UnitTests/NonPublished/DummyUserInfoHelper.cpp $
 |
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |

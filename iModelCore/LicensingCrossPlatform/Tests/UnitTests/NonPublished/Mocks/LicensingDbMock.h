@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/UnitTests/Published/Mocks/LicensingDbMock.h $
+|     $Source: Tests/UnitTests/NonPublished/Mocks/LicensingDbMock.h $
 |
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |

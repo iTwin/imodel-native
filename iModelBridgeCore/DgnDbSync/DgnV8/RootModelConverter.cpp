@@ -1839,6 +1839,14 @@ void RootModelConverter::_FinishConversion()
         LOG.tracev ("calling XDomain::_OnFinishConversion for %p", xdomain);
         xdomain->_OnFinishConversion(*this);
         LOG.tracev ("called XDomain::_OnFinishConversion for %p", xdomain);
+
+        LOG.tracev ("calling XDomain::_GetManuallyCreatedElementIds for %p", xdomain);
+
+        // Add elements that were manually created by the grid domain to the seen element list
+        for (DgnElementId const& elementId : xdomain->_GetManuallyCreatedElementIds(*this))
+            GetChangeDetector()._OnElementSeen(*this, elementId);
+
+        LOG.tracev ("called XDomain::_GetManuallyCreatedElementIds for %p", xdomain);
         }
 
     if (!IsUpdating())
@@ -2022,6 +2030,14 @@ BentleyStatus RootModelConverter::MakeDefinitionChanges()
 
     _ConvertSpatialLevels();
     _ConvertDrawingLevels();
+
+
+    for (auto xdomain : XDomainRegistry::s_xdomains)
+        {
+        LOG.tracev("calling XDomain::_MakeDefinitionChanges for %p", xdomain);
+        xdomain->_MakeDefinitionChanges(*this);
+        LOG.tracev("called XDomain::_MakeDefinitionChanges for %p", xdomain);
+        }
 
     // NB: It is up to ConvertData to call DoEndConversion. Don't do that here!
 

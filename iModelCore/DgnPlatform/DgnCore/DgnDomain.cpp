@@ -354,6 +354,7 @@ SchemaStatus DgnDomain::ImportSchema(DgnDbR dgndb)
     {
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
     schemaContext->SetFinalSchemaLocater(dgndb.GetSchemaLocater());
+
     ECSchemaPtr schema = ReadSchema(*schemaContext);
     if (!schema.IsValid())
         return SchemaStatus::SchemaReadFailed;
