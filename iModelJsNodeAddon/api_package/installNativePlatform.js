@@ -43,18 +43,12 @@ function showErrorAndExit(msg, alsoShowSupported) {
 }
 
 function checkSupportedPlatform() {
-  for (const supportedPlatform of supportedPlatforms) {
-    if (supportedPlatform.name === process.platform) {
-      // This platform is supported. But what about the architecture?
-      for (const supportedArchitecture of supportedPlatform.architectures) {
-        if (process.arch === supportedArchitecture) {
-          return;
-        }
-        showErrorAndExit(`iModel.js does not run on the ${process.arch} version of ${supportedPlatform.description}. iModel.js runs on ${supportedPlatform.architectures.join()} only.`);
-      }
-    }
+  const knownPlatform = supportedPlatforms.find(p => p.name === process.platform);
+  if (!knownPlatform)
     showErrorAndExit(`iModel.js does not run on the ${process.platform} platform.`, true);
-  }
+
+  if (!knownPlatform.architectures.find(a => a === process.arch))
+    showErrorAndExit(`iModel.js does not run on the ${process.arch} version of ${knownPlatform.description}. iModel.js runs on ${knownPlatform.architectures.join()} only.`);
 }
 
 checkSupportedPlatform();
