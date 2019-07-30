@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/UnitTests/Published/Mocks/UlasProviderMock.h $
+|     $Source: Tests/UnitTests/NonPublished/Mocks/UlasProviderMock.h $
 |
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |

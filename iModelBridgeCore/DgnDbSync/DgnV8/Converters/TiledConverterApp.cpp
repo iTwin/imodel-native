@@ -3,7 +3,7 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include <DgnDbSync/DgnV8/ConverterApp.h>
+#include <DgnDbSync/DgnV8/DgnV8Bridge.h>
 
 BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 

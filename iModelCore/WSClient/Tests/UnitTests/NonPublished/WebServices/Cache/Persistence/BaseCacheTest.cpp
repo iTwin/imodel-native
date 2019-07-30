@@ -48,6 +48,8 @@ ECSchemaPtr BaseCacheTest::GetTestSchema()
             <ECClass typeName="TestClassWithStruct" >
                 <ECProperty propertyName="TestProperty" typeName="string" />
                 <ECStructProperty propertyName="TestStructProperty" typeName="TestStructClass" />
+                <ECArrayProperty propertyName="TestArrayProperty" typeName="string"  minOccurs="0" maxOccurs="unbounded" />
+                <ECArrayProperty propertyName="TestStructArrayProperty" typeName="TestStructClass"  minOccurs="0" maxOccurs="unbounded" />
             </ECClass>
             <ECClass typeName="TestStructClass" isStruct="True" isDomainClass="False">
                 <ECProperty propertyName="TestStringProperty" typeName="string" />

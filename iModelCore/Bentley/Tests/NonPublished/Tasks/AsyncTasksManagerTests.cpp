@@ -17,7 +17,7 @@
 
 USING_NAMESPACE_BENTLEY_TASKS
 
-class AsyncTasksManagerTests : public ::testing::Test {};
+struct AsyncTasksManagerTests : ::testing::Test {};
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Vincas.Razma

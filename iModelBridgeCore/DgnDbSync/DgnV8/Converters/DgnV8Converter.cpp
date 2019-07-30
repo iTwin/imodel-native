@@ -3,7 +3,7 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include <DgnDbSync/DgnV8/ConverterApp.h>
+#include <DgnDbSync/DgnV8/DgnV8Bridge.h>
 #if defined (BENTLEYCONFIG_PARASOLID)
 #include <BRepCore/PSolidUtil.h>
 #endif
@@ -13,7 +13,7 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 int wmain (int argc, wchar_t const* argv[])
     {
-    RootModelConverterApp app;
+    DgnV8Bridge app;
     return app.Run(argc, argv);
     }
 
@@ -24,7 +24,7 @@ iModelBridge* iModelBridge_getInstance(wchar_t const* bridgeRegSubKey)
     {
     // Note that bridgeRegSubKey may not be "DgnV8Bridge". The ABD bridge, for example, reuses the v8 bridge code and customizes it at run time. The ABD bridge uses its own
     //  registry subkey. We have no way currently to check if brigeRegSubKey is reasonable. We'll just have to trust that the fwk knows what it's doing.
-    return new RootModelConverterApp;
+    return new DgnV8Bridge;
     }
 
 /*---------------------------------------------------------------------------------**//**

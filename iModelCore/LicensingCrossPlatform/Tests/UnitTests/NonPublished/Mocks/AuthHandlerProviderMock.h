@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/UnitTests/Published/Mocks/AuthHandlerProviderMock.h $
+|     $Source: Tests/UnitTests/NonPublished/Mocks/AuthHandlerProviderMock.h $
 |
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |

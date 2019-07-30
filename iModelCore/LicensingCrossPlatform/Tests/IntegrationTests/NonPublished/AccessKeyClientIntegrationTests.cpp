@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/IntegrationTests/Published/AccessKeyClientIntegrationTests.cpp $
+|     $Source: Tests/IntegrationTests/NonPublished/AccessKeyClientIntegrationTests.cpp $
 |
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |

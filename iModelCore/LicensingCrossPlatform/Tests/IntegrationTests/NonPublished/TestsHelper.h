@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/IntegrationTests/Published/TestsHelper.h $
+|     $Source: Tests/IntegrationTests/NonPublished/TestsHelper.h $
 |
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |

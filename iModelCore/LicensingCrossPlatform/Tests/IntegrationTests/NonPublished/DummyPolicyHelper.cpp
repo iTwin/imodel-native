@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/IntegrationTests/Published/DummyPolicyHelper.cpp $
+|     $Source: Tests/IntegrationTests/NonPublished/DummyPolicyHelper.cpp $
 |
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |

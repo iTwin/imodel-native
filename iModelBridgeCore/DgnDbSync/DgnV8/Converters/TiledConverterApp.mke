@@ -74,8 +74,6 @@ DgnV8Depends        = $(DgnV8APISrc)Converter.h  $(DgnV8APISrc)SyncInfo.h
 MultiCompileDepends = $(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-$(o)ConverterApp.obj : $(baseDir)ConverterApp.cpp $(DgnV8Depends) ${MultiCompileDepends}
-
 $(o)TiledConverterApp.obj : $(baseDir)TiledConverterApp.cpp $(DgnV8Depends) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
@@ -97,6 +95,7 @@ LINKER_LIBRARIES  + $(ContextSubpartsLibs)BentleyGeom.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnPlatform.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BaseGeoCoord.lib
 LINKER_LIBRARIES  + $(BuildContext)Delivery/DgnV8Converter.lib
+LINKER_LIBRARIES  + $(BuildContext)Delivery/DgnV8BridgeBase.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)Raster.lib 
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeJsonCpp.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)ThreeMx.lib

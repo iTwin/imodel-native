@@ -382,24 +382,24 @@ void test_random ()
 //  std::shared_ptr
 void test_shared_ptr ()
     {
-	std::shared_ptr<int> p1(new int);	// count is 1
+    std::shared_ptr<int> p1(new int);	// count is 1
     ASSERT_TRUE( p1.use_count() == 1 );
     if (true)
-	    {
-		std::shared_ptr<int> p2(p1);	// count is 2
+        {
+        std::shared_ptr<int> p2(p1);	// count is 2
         ASSERT_TRUE( p1.use_count() == 2 );
         ASSERT_TRUE( p2.use_count() == 2 );
         if (true)
-		    {
-			std::shared_ptr<int> p3(p1);	// count is 3
+            {
+            std::shared_ptr<int> p3(p1);	// count is 3
             ASSERT_TRUE( *p3 == *p1 );
             ASSERT_TRUE( p1.use_count() == 3 );
             ASSERT_TRUE( p2.use_count() == 3 );
             ASSERT_TRUE( p3.use_count() == 3 );
-		    }	// count goes back down to 2
+            }	// count goes back down to 2
         ASSERT_TRUE( p1.use_count() == 2 );
         ASSERT_TRUE( p2.use_count() == 2 );
-	    } // count goes back down to 1
+        } // count goes back down to 1
     ASSERT_TRUE( p1.use_count() == 1 );
 
     std::shared_ptr<int> spi (new int);
@@ -718,12 +718,12 @@ void test_explicitConversionOperator ()
         /*WCharCP*/char32_t const* utf32   = U"This is a Unicode Character: \u2018.";
         // *** TBD: tests
         
-	printf ("%s\n", utf8);
-	if (utf16 == NULL)
-		printf ("why?");
-	if (utf32 == NULL)
-		printf ("why?");
-	}
+    printf ("%s\n", utf8);
+    if (utf16 == NULL)
+        printf ("why?");
+    if (utf32 == NULL)
+        printf ("why?");
+    }
 #endif
 
 //  ---------------------------------------------------------------------

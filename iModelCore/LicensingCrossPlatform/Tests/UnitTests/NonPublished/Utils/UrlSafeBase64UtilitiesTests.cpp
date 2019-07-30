@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/UnitTests/Published/Utils/UrlSafeBase64UtilitiesTests.cpp $
+|     $Source: Tests/UnitTests/NonPublished/Utils/UrlSafeBase64UtilitiesTests.cpp $
 |
 |  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
