@@ -425,7 +425,11 @@ BentleyStatus ClientImpl::MarkFeature(Utf8StringCR featureId, FeatureUserDataMap
     GenerateSID gsid;
 
     // Create feature record
-    Utf8String eventTimeZ = DateTime::GetCurrentTimeUtc().ToString();
+    bool durationTracked = false; // TODO: where to get this?
+
+    Utf8String startTimeUtc = DateTime::GetCurrentTimeUtc().ToString(); // TODO: find start time
+    Utf8String endTimeUtc = DateTime::GetCurrentTimeUtc().ToString();
+    Utf8String entryDate = endTimeUtc;
 
     Utf8StringVector featureUserDataKeys;
     Utf8String userDataString;
@@ -450,56 +454,60 @@ BentleyStatus ClientImpl::MarkFeature(Utf8StringCR featureId, FeatureUserDataMap
     versionString.Sprintf("%d%.4d%.4d%.4d", m_applicationInfo->GetVersion().GetMajor(), m_applicationInfo->GetVersion().GetMinor(),
                           m_applicationInfo->GetVersion().GetSub1(), m_applicationInfo->GetVersion().GetSub2());
 
-    LOG.debugv("ClientImpl::MarkFeature - UsageLogEntry: ultimateId:%ld, principalId:%s, userId:%s, machineName:%s, machineSID:%s, userName:%s, userSID:%s, policyId:%s, securableId:%s, "
-               "productId:%ld, featureString:%s, version:%ld, projectId:%s, correlationId:%s, eventTimeZ:%s, schemaVer:%f, source:%s, country:%s, usageType:%s, featureId:%s, startTime:%s, "
-               "endTime:%s, featureUserData:%s",
-               m_policy->GetUltimateSAPId(),
-               m_policy->GetPrincipalId().c_str(),
-               m_policy->GetAppliesToUserId().c_str(),
-               m_applicationInfo->GetDeviceId().c_str(),
-               gsid.GetMachineSID(m_applicationInfo->GetDeviceId()).c_str(),
-               m_userInfo.username.c_str(),
-               gsid.GetUserSID(m_userInfo.username, m_applicationInfo->GetDeviceId()).c_str(),
-               m_policy->GetPolicyId().c_str(),
-               m_policy->GetSecurableId().c_str(),
-               atoi(m_applicationInfo->GetProductId().c_str()),
-               m_featureString.c_str(),
-               atoll(versionString.c_str()),
-               m_projectId.c_str(),
-               m_correlationId.c_str(),
-               eventTimeZ.c_str(),
-               LICENSE_CLIENT_SCHEMA_VERSION,
-               GetLoggingPostSource().c_str(),
-               m_policy->GetCountry().c_str(),
-               m_policy->GetUsageType().c_str(),
-               featureId.c_str(),
-               eventTimeZ.c_str(),
-               eventTimeZ.c_str(),
-               userDataString.c_str());
+    LOG.debugv("ClientImpl::MarkFeature - "
+        "FeatureLogEntry: "
+        "ultimateId:%ld, "
+        "usageCountryIso:%s, "
+        "productId:%ld, "
+        "featureString:%s, "
+        "productVersion:%ld, "
+        "machineName:%s, "
+        "machineSID:%s, "
+        "userName:%s, "
+        "userSID:%s, "
+        "imsId:%s, "
+        "projectId:%s, "
+        "correlationId:%s, "
+        "featureId:%s, "
+        "startTime:%s, "
+        "endTime:%s, "
+        "durationTracked:%s"
+        "userData:%s ",
+        m_policy->GetUltimateSAPId(),
+        m_policy->GetCountry().c_str(),
+        atoi(m_applicationInfo->GetProductId().c_str()),
+        m_featureString.c_str(),
+        atoll(versionString.c_str()),
+        m_applicationInfo->GetDeviceId().c_str(),
+        gsid.GetMachineSID(m_applicationInfo->GetDeviceId()).c_str(),
+        m_userInfo.username.c_str(),
+        gsid.GetUserSID(m_userInfo.username, m_applicationInfo->GetDeviceId()).c_str(),
+        m_policy->GetAppliesToUserId().c_str(),
+        m_projectId.c_str(),
+        m_correlationId.c_str(),
+        featureId.c_str(),
+        startTimeUtc.c_str(),
+        endTimeUtc.c_str(),
+        durationTracked ? "true" : "false",
+        userDataString.c_str());
 
     if (SUCCESS != m_licensingDb->RecordFeature(m_policy->GetUltimateSAPId(),
-                                            m_policy->GetPrincipalId(),
-                                            m_policy->GetAppliesToUserId(),
-                                            m_applicationInfo->GetDeviceId(),
-                                            gsid.GetMachineSID(m_applicationInfo->GetDeviceId()),
-                                            m_userInfo.username,
-                                            gsid.GetUserSID(m_userInfo.username, m_applicationInfo->GetDeviceId()),
-                                            m_policy->GetPolicyId(),
-                                            m_policy->GetSecurableId(),
-                                            atoi(m_applicationInfo->GetProductId().c_str()),
-                                            m_featureString,
-                                            atoll(versionString.c_str()),
-                                            m_projectId,
-                                            m_correlationId,
-                                            eventTimeZ,
-                                            LICENSE_CLIENT_SCHEMA_VERSION,
-                                            GetLoggingPostSource(),
-                                            m_policy->GetCountry(),
-                                            m_policy->GetUsageType(),
-                                            featureId,
-                                            eventTimeZ,
-                                            eventTimeZ,
-                                            userDataString))
+                                                m_policy->GetCountry(),
+                                                atoi(m_applicationInfo->GetProductId().c_str()),
+                                                m_featureString,
+                                                atoll(versionString.c_str()),
+                                                m_applicationInfo->GetDeviceId(),
+                                                gsid.GetMachineSID(m_applicationInfo->GetDeviceId()),
+                                                m_userInfo.username,
+                                                gsid.GetUserSID(m_userInfo.username, m_applicationInfo->GetDeviceId()),
+                                                m_policy->GetAppliesToUserId(),
+                                                m_projectId,
+                                                m_correlationId,
+                                                featureId,
+                                                startTimeUtc,
+                                                endTimeUtc,
+                                                durationTracked ? "true" : "false",
+                                                userDataString))
         {
         LOG.error("ClientImpl::MarkFeature ERROR - Feature usage failed to be recorded.");
         return ERROR;
@@ -525,53 +533,79 @@ BentleyStatus ClientImpl::RecordUsage()
     GenerateSID gsid;
 
     // Create usage record
-    Utf8String eventTimeZ = DateTime::GetCurrentTimeUtc().ToString();
+    Utf8String startTimeUtc = DateTime::GetCurrentTimeUtc().ToString(); // TODO: find start time
+    Utf8String endTimeUtc = DateTime::GetCurrentTimeUtc().ToString();
+    Utf8String entryDate = endTimeUtc;
 
     versionString.Sprintf("%d%.4d%.4d%.4d", m_applicationInfo->GetVersion().GetMajor(), m_applicationInfo->GetVersion().GetMinor(),
                           m_applicationInfo->GetVersion().GetSub1(), m_applicationInfo->GetVersion().GetSub2());
 
-    LOG.debugv("ClientImpl::RecordUsage - UsageLogEntry: ultimateId:%ld, principalId:%s, userId:%s, machineName:%s, machineSID:%s, userName:%s, userSID:%s, policyId:%s, securableId:%s, "
-               "productId:%ld, featureString:%s, version:%ld, projectId:%s, correlationId:%s, eventTimeZ:%s, schemaVer:%f, source:%s, country:%s, usageType:%s",
+    LOG.debugv("ClientImpl::RecordUsage - "
+               "UsageLogEntry: "
+               "ultimateId:%ld, "
+               "principalId:%s, "
+               "productId:%ld, "
+               "usageCountryIso:%s, "
+               "featureString:%s, "
+               "imsId:%s, "
+               "machineName:%s, "
+               "machineSID:%s, "
+               "userName:%s, "
+               "userSID:%s, "
+               "policyId:%s, "
+               "productVersion:%ld, "
+               "projectId:%s, "
+               "correlationId:%s, "
+               "logVersion:%ld, "
+               "logPostingSource:%s, "
+               "usageType:%s, "
+               "startTimeUtc:%s, "
+               "endTimeUtc:%s, "
+               "entryDate:%s, "
+               "partitionId:%i ",
                m_policy->GetUltimateSAPId(),
                m_policy->GetPrincipalId().c_str(),
+               atoi(m_applicationInfo->GetProductId().c_str()),
+               m_policy->GetCountry().c_str(),
+               m_featureString.c_str(),
                m_policy->GetAppliesToUserId().c_str(),
                m_applicationInfo->GetDeviceId().c_str(),
                gsid.GetMachineSID(m_applicationInfo->GetDeviceId()).c_str(),
                m_userInfo.username.c_str(),
                gsid.GetUserSID(m_userInfo.username, m_applicationInfo->GetDeviceId()).c_str(),
                m_policy->GetPolicyId().c_str(),
-               m_policy->GetSecurableId().c_str(),
-               atoi(m_applicationInfo->GetProductId().c_str()),
-               m_featureString.c_str(),
                atoll(versionString.c_str()),
                m_projectId.c_str(),
                m_correlationId.c_str(),
-               eventTimeZ.c_str(),
-               LICENSE_CLIENT_SCHEMA_VERSION,
+               LOG_VERSION,
                GetLoggingPostSource().c_str(),
-               m_policy->GetCountry().c_str(),
-               m_policy->GetUsageType().c_str());
-
+               m_policy->GetUsageType().c_str(),
+               startTimeUtc.c_str(),
+               endTimeUtc.c_str(),
+               entryDate.c_str(),
+               PARTITION_ID);
 
     if (SUCCESS != m_licensingDb->RecordUsage(m_policy->GetUltimateSAPId(),
-                                          m_policy->GetPrincipalId(),
-                                          m_policy->GetAppliesToUserId(),
-                                          m_applicationInfo->GetDeviceId(),
-                                          gsid.GetMachineSID(m_applicationInfo->GetDeviceId()),
-                                          m_userInfo.username,
-                                          gsid.GetUserSID(m_userInfo.username, m_applicationInfo->GetDeviceId()),
-                                          m_policy->GetPolicyId(),
-                                          m_policy->GetSecurableId(),
-                                          atoi(m_applicationInfo->GetProductId().c_str()),
-                                          m_featureString,
-                                          atoll(versionString.c_str()),
-                                          m_projectId,
-                                          m_correlationId,
-                                          eventTimeZ,
-                                          LICENSE_CLIENT_SCHEMA_VERSION,
-                                          GetLoggingPostSource(),
-                                          m_policy->GetCountry(),
-                                          m_policy->GetUsageType()))
+                                              m_policy->GetPrincipalId(),
+                                              atoi(m_applicationInfo->GetProductId().c_str()),
+                                              m_policy->GetCountry(),
+                                              m_featureString,
+                                              m_policy->GetAppliesToUserId(),
+                                              m_applicationInfo->GetDeviceId(),
+                                              gsid.GetMachineSID(m_applicationInfo->GetDeviceId()),
+                                              m_userInfo.username,
+                                              gsid.GetUserSID(m_userInfo.username, m_applicationInfo->GetDeviceId()),
+                                              m_policy->GetPolicyId(),
+                                              atoll(versionString.c_str()),
+                                              m_projectId,
+                                              m_correlationId,
+                                              LOG_VERSION,
+                                              GetLoggingPostSource(),
+                                              m_policy->GetUsageType(),
+                                              startTimeUtc,
+                                              endTimeUtc,
+                                              entryDate,
+                                              PARTITION_ID))
         {
         LOG.error("ClientImpl::RecordUsage - ERROR: Usage failed to be recorded.");
         return ERROR;
@@ -636,16 +670,19 @@ Utf8String ClientImpl::GetLoggingPostSource() const
     {
     LOG.debug("ClientImpl::GetLoggingPostSource");
 
-    // Check for checked out license
-    auto qualifier = m_policy->GetQualifier("IsCheckedOut", m_applicationInfo->GetProductId().c_str(), m_featureString);
+    // TEMPORARY: only allow offline for this value, we do not support realtime at the moment
+    return "Offline";
 
-    if (qualifier->GetValue().Equals("true"))
-        return "Checkout";
+    //// Check for checked out license
+    //auto qualifier = m_policy->GetQualifier("IsCheckedOut", m_applicationInfo->GetProductId().c_str(), m_featureString);
 
-    if (m_offlineMode)
-        return "Offline";
-    else
-        return "RealTime";
+    //if (qualifier->GetValue().Equals("true"))
+    //    return "Checkout";
+
+    //if (m_offlineMode)
+    //    return "Offline";
+    //else
+    //    return "RealTime";
     }
 
 /*--------------------------------------------------------------------------------------+

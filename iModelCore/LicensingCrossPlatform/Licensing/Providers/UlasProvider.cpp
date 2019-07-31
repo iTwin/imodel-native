@@ -106,6 +106,9 @@ folly::Future<folly::Unit> UlasProvider::SendUsageLogs(ApplicationInfoPtr applic
         auto status = jsonBody["status"].asString();
         auto epUri = jsonBody["epUri"].asString();
         auto sharedAccessSignature = jsonBody["epInfo"]["SharedAccessSignature"].asString();
+        auto requestId = jsonBody["reqID"].asCString();
+
+        LOG.infov("SendUsageLogs LocationService request ID: %s", requestId);
 
         HttpClient client(nullptr, m_httpHandler);
         auto uploadRequest = client.CreateRequest(epUri + sharedAccessSignature, "PUT");
@@ -209,6 +212,9 @@ folly::Future<folly::Unit> UlasProvider::SendFeatureLogs(ApplicationInfoPtr appl
         auto status = jsonBody["status"].asString();
         auto epUri = jsonBody["epUri"].asString();
         auto sharedAccessSignature = jsonBody["epInfo"]["SharedAccessSignature"].asString();
+        auto requestId = jsonBody["reqID"].asCString();
+
+        LOG.infov("SendFeatureLogs LocationService request ID: %s", requestId);
 
         HttpClient client(nullptr, m_httpHandler);
         auto uploadRequest = client.CreateRequest(epUri + sharedAccessSignature, "PUT");

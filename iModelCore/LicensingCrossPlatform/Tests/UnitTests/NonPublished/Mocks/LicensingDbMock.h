@@ -48,19 +48,51 @@ public:
     BentleyStatus CleanUpUsages() override;
     BentleyStatus CleanUpFeatures() override;
 
-    BentleyStatus RecordUsage(int64_t ultimateSAPId, Utf8StringCR principalId, Utf8StringCR imsId, Utf8String machineName,
-        Utf8StringCR machineSID, Utf8StringCR userName, Utf8StringCR userSID, Utf8StringCR policyId,
-        Utf8StringCR securableId, int productId, Utf8String featureString, int64_t productVersion,
-        Utf8StringCR projectId, Utf8String correlationId, Utf8StringCR eventTime, double schemaVersion,
-        Utf8StringCR logPostingSource, Utf8StringCR country, Utf8StringCR usageType) override;
+    BentleyStatus RecordUsage
+        (
+        int64_t ultimateId,
+        Utf8StringCR principalId,
+        int productId,
+        Utf8StringCR usageCountryIso,
+        Utf8String featureString,
+        Utf8StringCR imsId,
+        Utf8String machineName,
+        Utf8StringCR machineSID, // aka deviceId aka computerSID
+        Utf8StringCR userName,
+        Utf8StringCR userSID,
+        Utf8StringCR policyId,
+        int64_t productVersion,
+        Utf8StringCR projectId,
+        Utf8StringCR correlationId, // aka sessionId
+        int64_t logVersion, // aka schemaVersion
+        Utf8StringCR logPostingSource,
+        Utf8StringCR usageType,
+        Utf8StringCR startTimeUtc,
+        Utf8StringCR endTimeUtc,
+        Utf8StringCR entryDate, // aka eventTime
+        int partitionId // 1
+        ) override;
 
-    BentleyStatus RecordFeature(
-        int64_t ultimateSAPId, Utf8StringCR principalId, Utf8StringCR imsId, Utf8String machineName,
-        Utf8StringCR machineSID, Utf8StringCR userName, Utf8StringCR userSID, Utf8StringCR policyId,
-        Utf8StringCR securableId, int productId, Utf8String featureString, int64_t productVersion,
-        Utf8StringCR projectId, Utf8String correlationId, Utf8StringCR eventTime, double schemaVersion,
-        Utf8StringCR logPostingSource, Utf8StringCR country, Utf8StringCR usageType, Utf8StringCR featureId,
-        Utf8StringCR startDate, Utf8String endDate, Utf8String userData) override;
+    BentleyStatus RecordFeature
+        (
+        int64_t ultimateId, // aka ultimateSAPId
+        Utf8StringCR countryIso,
+        int productId,
+        Utf8String featureString,
+        int64_t productVersion, // aka versionNumber
+        Utf8String machineName, // aka deviceId aka computerSID
+        Utf8StringCR machineSID,
+        Utf8StringCR userName,
+        Utf8StringCR userSID,
+        Utf8StringCR imsId,
+        Utf8StringCR projectId,
+        Utf8String correlationId, // aka sessionId
+        Utf8StringCR featureId,
+        Utf8StringCR startTime,
+        Utf8String endTime,
+        bool durationTracked,
+        Utf8StringCR userData // aka metaData
+        ) override;
 
     // Mocking/Testing API
     // Function return value is passed into mock method
