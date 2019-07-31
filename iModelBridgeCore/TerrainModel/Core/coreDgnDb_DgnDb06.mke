@@ -1,0 +1,280 @@
+#------------------------------------------------------------------------------------
+#
+#   Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+NO_DEFAULT_CLANG_WARNINGS = 1
+
+%include  mdl.mki
+%include $(SrcRoot)TerrainModel/privmki/TerrainModelCommon.mki
+
+#----------------------------------------------------------------------
+#   Macros
+#----------------------------------------------------------------------
+coreDir             = $(_MakeFilePath)
+MultiCompileDepends = $(_MakeFileSpec)
+
+CCompOpts + -wd4456 -wd4457 -wd4458 -wd4459
+
+CompileOptionsMki =$(coreDir)coredgnDb_DgnDb06.mki
+%include $(CompileOptionsMki)
+
+o =% $(terrainModelCoreObj)
+always:
+    !~@mkdir $(o)
+
+ASSEMBLY_STRONGNAME   = 1
+
+DependsOnHeadersCPP =\
+$(TerrainModelCoreAPISrc)IDTM.h \
+$(TerrainModelCoreAPISrc)bcDTM.h \
+$(TerrainModelCoreAPISrc)bcDTMBaseDef.h \
+$(TerrainModelCoreAPISrc)bcDTMClass.h \
+$(TerrainModelCoreAPISrc)TMTransformHelper.h \
+$(TerrainModelCoreAPISrc)DTMIterators.h \
+$(TerrainModelCoreAPISrc)TMEditor.h \
+$(coreDir)cppwrappers/bcDTMImpl.h
+
+DependsOnHeaders = \
+$(TerrainModelCoreAPISrc)DTMDefs.h \
+$(TerrainModelCoreAPISrc)PartitionArray.h 
+
+#---------------------------------------------------------
+#  Set up for signing
+#---------------------------------------------------------
+%ifdef todo_signing
+RIGHTSCOMPLIANT = true
+%include    $(SrcTerrainModel)privmki/TerrainModelSignatureDefaults.mki
+
+%if !defined (MSJ_SKIP_SIGNRSCS) && !defined (DLM_NO_SIGN)
+    %include signrightscompliantdefs.mki
+    %include signrscsdefs.mki
+%endif
+%endif
+
+#----------------------------------------------------------------------
+#       Inform user of compile options
+#----------------------------------------------------------------------
+always:
+        |  Compiler options: $(cDefs)$(cDefsPost) $(copt)
+        |  -------- --------
+
+%include MultiCppCompileRule.mki
+
+$(o)bcdtmInitialise$(oext) : $(coreDir)2d/bcdtmInitialise.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)DTMIterators$(oext) : $(coreDir)cppwrappers/DTMIterators.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+
+$(o)DTM$(oext) : $(coreDir)cppwrappers/DTM.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+
+$(o)TMEditor$(oext) : $(coreDir)cppwrappers/TMEditor.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+
+$(o)bcdtmStream$(oext) : $(coreDir)2d/bcdtmStream.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+
+$(o)bcdtmMemory$(oext) : $(coreDir)2d/bcdtmMemory.cpp	 $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+
+$(o)bcDTMClass$(oext) : $(coreDir)cppwrappers/bcDTMClass.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+
+$(o)bcDTMDrapedLineClass$(oext) : $(coreDir)cppwrappers/bcDTMDrapedLineClass.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+
+
+$(o)bcDTMFeatureClass$(oext) : $(coreDir)cppwrappers/bcDTMFeatureClass.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+
+$(o)bcDTMFeatureEnumeratorClass$(oext) : $(coreDir)cppwrappers/bcDTMFeatureEnumeratorClass.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+
+$(o)bcDTMFeatureMapClass$(oext) : $(coreDir)cppwrappers/bcDTMFeatureMapClass.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+
+$(o)bcDTMInputClass$(oext) : $(coreDir)cppwrappers/bcDTMInputClass.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+
+$(o)bcDTMMesh$(oext) : $(coreDir)cppwrappers/bcDTMMesh.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+
+$(o)dtmio$(oext) : $(coreDir)2d/dtmio.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmBtree$(oext) : $(coreDir)2d/bcdtmBtree.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmCheck$(oext) : $(coreDir)2d/bcdtmCheck.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmClean$(oext) : $(coreDir)2d/bcdtmClean.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmClip$(oext) : $(coreDir)2d/bcdtmClip.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmClip1$(oext) : $(coreDir)2d/bcdtmClip1.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmConnect$(oext) : $(coreDir)2d/bcdtmConnect.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmData$(oext) : $(coreDir)2d/bcdtmData.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmDelta$(oext) : $(coreDir)2d/bcdtmDelta.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmDrape$(oext) : $(coreDir)2d/bcdtmDrape.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+# $(o)bcdtmDrainage00$(oext) : $(coreDir)2d/bcdtmDrainage00.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+# $(o)bcdtmDrainage01$(oext) : $(coreDir)2d/bcdtmDrainage01.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+# $(o)bcdtmDrainage02$(oext) : $(coreDir)2d/bcdtmDrainage02.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+# $(o)bcdtmDrainage03$(oext) : $(coreDir)2d/bcdtmDrainage03.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+# $(o)bcdtmDrainage04$(oext) : $(coreDir)2d/bcdtmDrainage04.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmEdit$(oext) : $(coreDir)2d/bcdtmEdit.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+#$(o)bcdtmEsri$(oext) : $(coreDir)2d/bcdtmEsri.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmEditDraw$(oext) : $(coreDir)2d/bcdtmEditDraw.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmFilter$(oext) : $(coreDir)2d/bcdtmFilter.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmFnd$(oext) : $(coreDir)2d/bcdtmFnd.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmGeopak$(oext) : $(coreDir)2d/bcdtmGeopak.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmGrade$(oext) : $(coreDir)2d/bcdtmGrade.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmInsert$(oext) : $(coreDir)2d/bcdtmInsert.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmInterpolate$(oext) : $(coreDir)2d/bcdtmInterpolate.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmIo$(oext) : $(coreDir)2d/bcdtmIo.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmJoin$(oext) : $(coreDir)2d/bcdtmJoin.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmLattice$(oext) : $(coreDir)2d/bcdtmLattice.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmLatticeVolume$(oext) : $(coreDir)2d/bcdtmLatticeVolume.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmLidarFilter$(oext) : $(coreDir)2d/bcdtmLidarFilter.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmList$(oext) : $(coreDir)2d/bcdtmList.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmLoadContours$(oext) : $(coreDir)2d/bcdtmLoadContours.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmLoadFeatures$(oext) : $(coreDir)2d/bcdtmLoadFeatures.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmLoadMesh$(oext) : $(coreDir)2d/bcdtmLoadMesh.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmLos$(oext) : $(coreDir)2d/bcdtmLos.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmMark$(oext) : $(coreDir)2d/bcdtmMark.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmMath$(oext) : $(coreDir)2d/bcdtmMath.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmMem$(oext) : $(coreDir)2d/bcdtmMem.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmMerge$(oext) : $(coreDir)2d/bcdtmMerge.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmNgp$(oext) : $(coreDir)2d/bcdtmNgp.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmObj$(oext) : $(coreDir)2d/bcdtmObj.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmPatch$(oext) : $(coreDir)2d/bcdtmPatch.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmPolyContour$(oext) : $(coreDir)2d/bcdtmPolyContour.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmPolygon$(oext) : $(coreDir)2d/bcdtmPolygon.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmReport$(oext) : $(coreDir)2d/bcdtmReport.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmSideSlope$(oext) : $(coreDir)2d/bcdtmSideSlope.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmSite$(oext) : $(coreDir)2d/bcdtmSite.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmSlope$(oext) : $(coreDir)2d/bcdtmSlope.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmSort$(oext) : $(coreDir)2d/bcdtmSort.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmTheme$(oext) : $(coreDir)2d/bcdtmTheme.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmTile$(oext) : $(coreDir)2d/bcdtmTile.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmTin$(oext) : $(coreDir)2d/bcdtmTin.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmTinVolume$(oext) : $(coreDir)2d/bcdtmTinVolume.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmTrg$(oext) : $(coreDir)2d/bcdtmTrg.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmcleanup$(oext) : $(coreDir)2d/bcdtmcleanup.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmUtility$(oext) : $(coreDir)2d/bcdtmUtility.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmLoadTriangles$(oext) : $(coreDir)2d/bcdtmLoadTriangles.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmLoadRegions$(oext) : $(coreDir)2d/bcdtmLoadRegions.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmStockPile$(oext) : $(coreDir)2d/bcdtmStockPile.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtm3DModel$(oext) : $(coreDir)2d/bcdtm3DModel.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+
+$(o)bcdtmExport$(oext) : $(coreDir)2d/bcdtmExport.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+# New Modules
+
+$(o)bcdtmFlags$(oext) : $(coreDir)2d/bcdtmFlags.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmString$(oext) : $(coreDir)2d/bcdtmString.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)bcdtmGeopakIO$(oext) : $(coreDir)2d/bcdtmGeopakIO.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+
+$(o)bcdtmDllMain$(oext) : $(coreDir)2d/bcdtmDllMain.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+%if $(BUILD_TOOLSET) != "APPLE_CLANG" && $(BUILD_TOOLSET) != "ANDROID_CLANG"
+%include MultiCppCompileGo.mki
+
+CoreFileObjectList =% $(MultiCompileObjectList)
+
+# Drainage files
+
+nameToDefine = __BENTLEYTMDRAINAGE_BUILD__
+%include cdefapnd.mki
+
+#cuser + -wd4189
+
+%include MultiCppCompileRule.mki
+%endif
+
+$(o)bcdtmDrainage$(oext)          : $(coreDir)../Drainage/bcdtmDrainage.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+
+$(o)bcdtmDrainageCatchment$(oext) : $(coreDir)../Drainage/bcdtmDrainageCatchment.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+
+$(o)bcdtmDrainageFeatures$(oext)  : $(coreDir)../Drainage/bcdtmDrainageFeatures.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+
+$(o)bcdtmDrainageList$(oext)      : $(coreDir)../Drainage/bcdtmDrainageList.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+
+$(o)bcdtmDrainagePond$(oext)      : $(coreDir)../Drainage/bcdtmDrainagePond.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+
+$(o)bcdtmDrainageTables$(oext)    : $(coreDir)../Drainage/bcdtmDrainageTables.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+
+$(o)bcdtmDrainageTrace$(oext)     : $(coreDir)../Drainage/bcdtmDrainageTrace.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+
+$(o)bcdtmDrainageUtility$(oext)   : $(coreDir)../Drainage/bcdtmDrainageUtility.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+
+$(o)WaterAnalysis$(oext)            : $(baseDir)../Drainage/WaterAnalysis.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) $(baseDir)../Drainage/PublicAPI/WaterAnalysis.h ${MultiCompileDepends}
+
+
+%include MultiCppCompileGo.mki
+
+#----------------------------------------------------------------------
+#   Link the mixed assembly
+#----------------------------------------------------------------------
+DLM_NAME                    = $(appName)
+DLM_DEST                    = $(o)
+DLM_OBJECT_DEST             = $(DLM_DEST)
+DLM_OBJECT_FILES            = $(MultiCompileObjectList) $(CoreFileObjectList)
+DLM_EXPORT_DEST             = $(o)
+DLM_SYMB_DEST               = $(o)
+DLM_NOINITFUNC          = 1
+DLM_NOMSBUILTINS        = 1
+DLM_NO_DEF              = 1
+DLM_NO_DLS              = 1
+DLM_NOENTRY             = 1
+
+LINKER_LIBRARIES = $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
+
+DLM_CONTEXT_LOCATION        = $(ContextDeliveryDir)/
+DLM_LIB_CONTEXT_LOCATION    = $(ContextDeliveryDir)/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+%include $(sharedMki)LinkLibrary.mki
