@@ -1,0 +1,38 @@
+#----------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#----------------------------------------------------------------------
+
+# Artefact dir outside of product folder (all contents which should not be published)
+ARTEFACTS_ROOTDIR = $(OutputRootDir)iModelEvolutionTests
+
+# Root folder to which nugets are downloaded
+NUGET_DIR = $(ARTEFACTS_ROOTDIR)/Nugets
+
+# Folder where test file nugets are downloaded to
+TESTFILES_NUGET_DIR = $(NUGET_DIR)/testfiles
+
+# Folder where test runner nugets are downloaded to
+TESTRUNNERS_NUGET_DIR = $(NUGET_DIR)/testrunners
+
+# Central place where all pulled test files are copied to.
+# Test runners will copy them into their own sandbox folders form here
+TESTFILES_DIR = $(ARTEFACTS_ROOTDIR)/TestFiles
+
+
+
+# Current test runner (the test runner of the current software version).
+CURRENTTESTRUNNER_DIR = $(OutputRootDir)Product/iModelEvolutionGTest
+
+# Run folder of the current test runner (the test runner of the current software version).
+# It holds all artefacts needed and created by the current test runner's run
+CURRENTTESTRUNNER_RUN_DIR = $(CURRENTTESTRUNNER_DIR)/run
+
+# Test files created by the current test runner
+NEWFILES_DIR = $(CURRENTTESTRUNNER_RUN_DIR)/NewFiles
+
+# Root folder to which all pulled test runners are copied and run
+TESTRUNNERS_SANDBOXDIR = $(CURRENTTESTRUNNER_RUN_DIR)/pulledtestrunners
+
+TESTRUNNER_EXE = iModelEvolutionTests.exe
