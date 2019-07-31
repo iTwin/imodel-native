@@ -2107,15 +2107,10 @@ TEST_F(RelationshipMappingTestFixture, LinkTablesAndSharedColumns)
     ASSERT_TRUE(linkTableClassId.IsValid());
     ECClassId linkTableSubClassId = m_ecdb.Schemas().GetClassId("TestSchema", "LinkTableSub");
     ASSERT_TRUE(linkTableSubClassId.IsValid());
-    EXPECT_EQ(6, GetHelper().GetIndexNamesForTable("ts_LinkTable").size());
+    EXPECT_EQ(3, GetHelper().GetIndexNamesForTable("ts_LinkTable").size());
     EXPECT_STRCASEEQ(IndexInfo("ix_ts_LinkTable_ecclassid", false, "ts_LinkTable", "ECClassId").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_ts_LinkTable_ecclassid").c_str());
-    EXPECT_STRCASEEQ(IndexInfo("ix_ts_LinkTable_source", false, "ts_LinkTable", "SourceId").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_ts_LinkTable_source").c_str());
     EXPECT_STRCASEEQ(IndexInfo("ix_ts_LinkTable_target", false, "ts_LinkTable", "TargetId").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_ts_LinkTable_target").c_str());
-    EXPECT_STRCASEEQ(IndexInfo("uix_ts_LinkTable_sourcetarget", true, "ts_LinkTable", std::vector<Utf8String>{"SourceId","TargetId"}, IndexInfo::WhereClause(linkTableClassId)).ToDdl().c_str(), GetHelper().GetIndexDdl("uix_ts_LinkTable_sourcetarget").c_str());
-
-    EXPECT_STRCASEEQ(IndexInfo("uix_ts_LinkTableSub_source", true, "ts_LinkTable", "SourceId", IndexInfo::WhereClause(linkTableSubClassId)).ToDdl().c_str(), GetHelper().GetIndexDdl("uix_ts_LinkTableSub_source").c_str());
-    EXPECT_FALSE(GetHelper().IndexExists("ix_ts_LinkTableSub_target")) << "Redundant index to the one created for the base class";
-    EXPECT_STRCASEEQ(IndexInfo("uix_ts_LinkTableSub_sourcetarget", true, "ts_LinkTable", std::vector<Utf8String>{"SourceId","TargetId"}, IndexInfo::WhereClause(linkTableSubClassId)).ToDdl().c_str(), GetHelper().GetIndexDdl("uix_ts_LinkTableSub_sourcetarget").c_str());
+    EXPECT_STRCASEEQ(IndexInfo("uix_ts_LinkTable_sourcetargetclassid", true, "ts_LinkTable", std::vector<Utf8String>{"SourceId","TargetId", "ECClassId"}).ToDdl().c_str(), GetHelper().GetIndexDdl("uix_ts_LinkTable_sourcetargetclassid").c_str());
     }
 
 

@@ -6864,9 +6864,9 @@ TEST_F(DbMappingTestFixture, DuplicateRelationshipsFlagForSubClassesInLinkTable)
     assertECSql("INSERT INTO t.B(ECInstanceId, B_Prop) VALUES(1, 'B1')", m_ecdb, ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
     assertECSql("INSERT INTO t.C(ECInstanceId, C_Prop) VALUES(2, 'C1')", m_ecdb, ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
     assertECSql("INSERT INTO t.BHasB(ECInstanceId, SourceECInstanceId, TargetECInstanceId) VALUES(1, 1, 2)", m_ecdb, ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
-    assertECSql("INSERT INTO t.BHasB(ECInstanceId, SourceECInstanceId, TargetECInstanceId) VALUES(2, 1, 2)", m_ecdb, ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+    assertECSql("INSERT INTO t.BHasB(ECInstanceId, SourceECInstanceId, TargetECInstanceId) VALUES(2, 1, 2)", m_ecdb, ECSqlStatus::Success, DbResult::BE_SQLITE_CONSTRAINT_UNIQUE);
     assertECSql("INSERT INTO t.CHasC(ECInstanceId, SourceECInstanceId, TargetECInstanceId) VALUES(3, 1, 2)", m_ecdb, ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
-    assertECSql("INSERT INTO t.CHasC(ECInstanceId, SourceECInstanceId, TargetECInstanceId) VALUES(4, 1, 2)", m_ecdb, ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+    assertECSql("INSERT INTO t.CHasC(ECInstanceId, SourceECInstanceId, TargetECInstanceId) VALUES(4, 1, 2)", m_ecdb, ECSqlStatus::Success, DbResult::BE_SQLITE_CONSTRAINT_UNIQUE);
     }
 
 
@@ -10910,5 +10910,482 @@ TEST_F(DbMappingTestFixture, SchemaImportWithDoNotFailSchemaValidationForLegacyI
 
     ASSERT_EQ(SUCCESS, m_ecdb.Schemas().ImportSchemas(ctx->GetCache().GetSchemas(), SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues)) << "Multi inheritance in legacy mode";
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Affan.Khan                          07/19
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, LinkTable_DefaultBehaviour)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("AllowDuplicateRelationship.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
+                <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+                <ECEntityClass typeName="Element">
+                    <ECCustomAttributes>
+                        <ClassMap xmlns="ECDbMap.02.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                    </ECCustomAttributes>
+                </ECEntityClass>
 
+                <ECRelationshipClass typeName="ElementRefsElement" modifier="None" strength="referencing">
+                    <Source multiplicity="(1..*)" roleLabel="owns" polymorphic="true">
+                        <Class class="Element"/>
+                    </Source>
+                    <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+                        <Class class="Element"/>
+                    </Target>
+                </ECRelationshipClass>
+
+                <ECRelationshipClass typeName="ElementRefsElement2" modifier="None" strength="referencing">
+                    <BaseClass>ElementRefsElement</BaseClass>
+                    <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="true">
+                        <Class class="Element"/>
+                    </Source>
+                    <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+                        <Class class="Element"/>
+                    </Target>
+                </ECRelationshipClass>
+
+            </ECSchema>)xml")));
+
+
+    auto insertEl = [&] ()
+        {
+        ECInstanceKey id;
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "insert into ts.Element(ecinstanceId) values (null)"));
+        EXPECT_EQ(BE_SQLITE_DONE, stmt.Step(id));
+        return id.GetInstanceId();
+        };
+
+    auto insertRel = [&] (ECInstanceId sourceId, ECInstanceId targetId)
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "insert into ts.ElementRefsElement(sourceECInstanceId, targetECInstanceId) values (?, ?)"));
+        stmt.BindId(1, sourceId);
+        stmt.BindId(2, targetId);
+        return stmt.Step();
+        };
+
+    auto insertRel2 = [&] (ECInstanceId sourceId, ECInstanceId targetId)
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "insert into ts.ElementRefsElement2(sourceECInstanceId, targetECInstanceId) values (?, ?)"));
+        stmt.BindId(1, sourceId);
+        stmt.BindId(2, targetId);
+        return stmt.Step();
+        };
+
+    auto e1 = insertEl();
+    auto e2 = insertEl();
+    auto e3 = insertEl();
+    auto e4 = insertEl();
+    m_ecdb.SaveChanges();
+
+    ASSERT_EQ(BE_SQLITE_DONE, insertRel(e1, e2));
+    ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, insertRel(e1, e2));
+
+    ASSERT_EQ(BE_SQLITE_DONE, insertRel2(e1, e2));
+    ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, insertRel2(e1, e2)); // Duplicate Relationships
+    ASSERT_EQ(BE_SQLITE_DONE, insertRel2(e1, e3));
+    ASSERT_NE(BE_SQLITE_CONSTRAINT_UNIQUE, insertRel2(e4, e3)); // Duplicate N side, We do not enforce this anymore. 
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Affan.Khan                          07/19
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, LinkTable_DefaultBehaviour_WithCustomAttribute)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("AllowDuplicateRelationship.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
+                <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+                <ECEntityClass typeName="Element">
+                    <ECCustomAttributes>
+                        <ClassMap xmlns="ECDbMap.02.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                    </ECCustomAttributes>
+                </ECEntityClass>
+
+                <ECRelationshipClass typeName="ElementRefsElement" modifier="None" strength="referencing">
+                    <ECCustomAttributes>
+                        <LinkTableRelationshipMap xmlns="ECDbMap.2.0">
+                            <AllowDuplicateRelationships>False</AllowDuplicateRelationships>
+                        </LinkTableRelationshipMap>
+                    </ECCustomAttributes>
+                    <Source multiplicity="(1..*)" roleLabel="owns" polymorphic="true">
+                        <Class class="Element"/>
+                    </Source>
+                    <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+                        <Class class="Element"/>
+                    </Target>
+                </ECRelationshipClass>
+
+                <ECRelationshipClass typeName="ElementRefsElement2" modifier="None" strength="referencing">
+                    <BaseClass>ElementRefsElement</BaseClass>
+                    <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="true">
+                        <Class class="Element"/>
+                    </Source>
+                    <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+                        <Class class="Element"/>
+                    </Target>
+                </ECRelationshipClass>
+
+            </ECSchema>)xml")));
+
+
+    auto insertEl = [&] ()
+        {
+        ECInstanceKey id;
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "insert into ts.Element(ecinstanceId) values (null)"));
+        EXPECT_EQ(BE_SQLITE_DONE, stmt.Step(id));
+        return id.GetInstanceId();
+        };
+
+    auto insertRel = [&] (ECInstanceId sourceId, ECInstanceId targetId)
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "insert into ts.ElementRefsElement(sourceECInstanceId, targetECInstanceId) values (?, ?)"));
+        stmt.BindId(1, sourceId);
+        stmt.BindId(2, targetId);
+        return stmt.Step();
+        };
+
+    auto insertRel2 = [&] (ECInstanceId sourceId, ECInstanceId targetId)
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "insert into ts.ElementRefsElement2(sourceECInstanceId, targetECInstanceId) values (?, ?)"));
+        stmt.BindId(1, sourceId);
+        stmt.BindId(2, targetId);
+        return stmt.Step();
+        };
+
+    auto e1 = insertEl();
+    auto e2 = insertEl();
+    auto e3 = insertEl();
+    auto e4 = insertEl();
+    m_ecdb.SaveChanges();
+
+    ASSERT_EQ(BE_SQLITE_DONE, insertRel(e1, e2));
+    ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, insertRel(e1, e2));
+
+    ASSERT_EQ(BE_SQLITE_DONE, insertRel2(e1, e2));
+    ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, insertRel2(e1, e2)); // Duplicate Relationships
+    ASSERT_EQ(BE_SQLITE_DONE, insertRel2(e1, e3));
+    ASSERT_NE(BE_SQLITE_CONSTRAINT_UNIQUE, insertRel2(e4, e3)); // Duplicate N side, We do not enforce this anymore. 
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Affan.Khan                          07/19
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, LinkTable_NoDuplicateRelationships)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("AllowDuplicateRelationship.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="Element">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+            </ECEntityClass>
+
+            <ECRelationshipClass typeName="ElementRefsElement" modifier="None" strength="referencing">
+                <ECCustomAttributes>
+                    <LinkTableRelationshipMap xmlns="ECDbMap.2.0">
+                        <AllowDuplicateRelationships>True</AllowDuplicateRelationships>
+                    </LinkTableRelationshipMap>
+                </ECCustomAttributes>
+                <Source multiplicity="(1..*)" roleLabel="owns" polymorphic="true">
+                    <Class class="Element"/>
+                </Source>
+                <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+                    <Class class="Element"/>
+                </Target>
+            </ECRelationshipClass>
+
+            <ECRelationshipClass typeName="ElementRefsElement2" modifier="None" strength="referencing">
+                <BaseClass>ElementRefsElement</BaseClass>
+                <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="true">
+                    <Class class="Element"/>
+                </Source>
+                <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+                    <Class class="Element"/>
+                </Target>
+            </ECRelationshipClass>
+
+        </ECSchema>)xml")));
+
+
+    auto insertEl = [&] ()
+        {
+        ECInstanceKey id;
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "insert into ts.Element(ecinstanceId) values (null)"));
+        EXPECT_EQ(BE_SQLITE_DONE, stmt.Step(id));
+        return id.GetInstanceId();
+        };
+
+    auto insertRel = [&] (ECInstanceId sourceId, ECInstanceId targetId)
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "insert into ts.ElementRefsElement(sourceECInstanceId, targetECInstanceId) values (?, ?)"));
+        stmt.BindId(1, sourceId);
+        stmt.BindId(2, targetId);
+        return stmt.Step();
+        };
+
+    auto insertRel2 = [&] (ECInstanceId sourceId, ECInstanceId targetId)
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "insert into ts.ElementRefsElement2(sourceECInstanceId, targetECInstanceId) values (?, ?)"));
+        stmt.BindId(1, sourceId);
+        stmt.BindId(2, targetId);
+        return stmt.Step();
+        };
+
+    auto e1 = insertEl();
+    auto e2 = insertEl();
+    auto e3 = insertEl();
+    auto e4 = insertEl();
+    m_ecdb.SaveChanges();
+
+    ASSERT_EQ(BE_SQLITE_DONE, insertRel(e1, e2));
+    ASSERT_NE(BE_SQLITE_DONE, insertRel(e1, e2));  //! Deprecated attribute AllowDuplicateRelationships
+
+    ASSERT_EQ(BE_SQLITE_DONE, insertRel2(e1, e2));
+    ASSERT_NE(BE_SQLITE_DONE, insertRel2(e1, e2)); //! Deprecated attribute AllowDuplicateRelationships
+    ASSERT_EQ(BE_SQLITE_DONE, insertRel2(e1, e3));
+    ASSERT_EQ(BE_SQLITE_DONE, insertRel2(e4, e3)); //! Deprecated attribute AllowDuplicateRelationships
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Affan.Khan                          07/19
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, LinkTable_NoDuplicateRelationshipsForChildClass)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("AllowDuplicateRelationship.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="Element">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+            </ECEntityClass>
+
+            <ECRelationshipClass typeName="ElementRefsElement" modifier="None" strength="referencing">
+                <ECCustomAttributes>
+                    <LinkTableRelationshipMap xmlns="ECDbMap.2.0">
+                        <AllowDuplicateRelationships>True</AllowDuplicateRelationships>
+                    </LinkTableRelationshipMap>
+                </ECCustomAttributes>
+                <Source multiplicity="(1..*)" roleLabel="owns" polymorphic="true">
+                    <Class class="Element"/>
+                </Source>
+                <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+                    <Class class="Element"/>
+                </Target>
+            </ECRelationshipClass>
+
+            <ECRelationshipClass typeName="ElementRefsElement2" modifier="None" strength="referencing">
+                <BaseClass>ElementRefsElement</BaseClass>
+                <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="true">
+                    <Class class="Element"/>
+                </Source>
+                <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+                    <Class class="Element"/>
+                </Target>
+            </ECRelationshipClass>
+
+            <ECRelationshipClass typeName="ElementRefsElement3" modifier="None" strength="referencing">
+                <BaseClass>ElementRefsElement2</BaseClass>
+                <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="true">
+                    <Class class="Element"/>
+                </Source>
+                <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+                    <Class class="Element"/>
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml")));
+
+
+    auto insertEl = [&] ()
+        {
+        ECInstanceKey id;
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "insert into ts.Element(ecinstanceId) values (null)"));
+        EXPECT_EQ(BE_SQLITE_DONE, stmt.Step(id));
+        return id.GetInstanceId();
+        };
+
+    auto insertRel = [&] (ECInstanceId sourceId, ECInstanceId targetId)
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "insert into ts.ElementRefsElement(sourceECInstanceId, targetECInstanceId) values (?, ?)"));
+        stmt.BindId(1, sourceId);
+        stmt.BindId(2, targetId);
+        return stmt.Step();
+        };
+
+    auto insertRel2 = [&] (ECInstanceId sourceId, ECInstanceId targetId)
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "insert into ts.ElementRefsElement2(sourceECInstanceId, targetECInstanceId) values (?, ?)"));
+        stmt.BindId(1, sourceId);
+        stmt.BindId(2, targetId);
+        return stmt.Step();
+        };
+
+    auto insertRel3 = [&] (ECInstanceId sourceId, ECInstanceId targetId)
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "insert into ts.ElementRefsElement3(sourceECInstanceId, targetECInstanceId) values (?, ?)"));
+        stmt.BindId(1, sourceId);
+        stmt.BindId(2, targetId);
+        return stmt.Step();
+        };
+
+    auto e1 = insertEl();
+    auto e2 = insertEl();
+    auto e3 = insertEl();
+    auto e4 = insertEl();
+    m_ecdb.SaveChanges();
+
+    ASSERT_EQ(BE_SQLITE_DONE, insertRel(e1, e2));
+    ASSERT_NE(BE_SQLITE_DONE, insertRel(e1, e2)); //! Deprecated attribute AllowDuplicateRelationships
+    // Has AllowOnlyUniqueRelationships
+    ASSERT_EQ(BE_SQLITE_DONE, insertRel2(e1, e2));
+    ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, insertRel2(e1, e2)); // Duplicate Relationships
+    ASSERT_EQ(BE_SQLITE_DONE, insertRel2(e1, e3));
+    ASSERT_NE(BE_SQLITE_CONSTRAINT_UNIQUE, insertRel2(e4, e3)); // Duplicate N side
+    // Should not inherit AllowOnlyUniqueRelationships by default
+    ASSERT_EQ(BE_SQLITE_DONE, insertRel3(e1, e2));
+    ASSERT_NE(BE_SQLITE_DONE, insertRel3(e1, e2));
+    ASSERT_EQ(BE_SQLITE_DONE, insertRel3(e1, e3));
+    ASSERT_EQ(BE_SQLITE_DONE, insertRel3(e4, e3));
+
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Affan.Khan                          07/19
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, LinkTable_NoDuplicateRelationshipsForChildHierarchy)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("AllowDuplicateRelationship.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
+        <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+        <ECEntityClass typeName="Element">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+            </ECCustomAttributes>
+        </ECEntityClass>
+
+        <ECRelationshipClass typeName="ElementRefsElement" modifier="None" strength="referencing">
+            <ECCustomAttributes>
+                <LinkTableRelationshipMap xmlns="ECDbMap.2.0">
+                    <AllowDuplicateRelationships>True</AllowDuplicateRelationships>
+                </LinkTableRelationshipMap>
+            </ECCustomAttributes>
+            <Source multiplicity="(1..*)" roleLabel="owns" polymorphic="true">
+                <Class class="Element"/>
+            </Source>
+            <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+                <Class class="Element"/>
+            </Target>
+        </ECRelationshipClass>
+
+        <ECRelationshipClass typeName="ElementRefsElement2" modifier="None" strength="referencing">
+            <BaseClass>ElementRefsElement</BaseClass>
+            <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="true">
+                <Class class="Element"/>
+            </Source>
+            <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+                <Class class="Element"/>
+            </Target>
+        </ECRelationshipClass>
+
+        <ECRelationshipClass typeName="ElementRefsElement3" modifier="None" strength="referencing">
+            <BaseClass>ElementRefsElement2</BaseClass>
+            <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="true">
+                <Class class="Element"/>
+            </Source>
+            <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+                <Class class="Element"/>
+            </Target>
+        </ECRelationshipClass>
+    </ECSchema>)xml")));
+
+
+    auto insertEl = [&] ()
+        {
+        ECInstanceKey id;
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "insert into ts.Element(ecinstanceId) values (null)"));
+        EXPECT_EQ(BE_SQLITE_DONE, stmt.Step(id));
+        return id.GetInstanceId();
+        };
+
+    auto insertRel = [&] (ECInstanceId sourceId, ECInstanceId targetId)
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "insert into ts.ElementRefsElement(sourceECInstanceId, targetECInstanceId) values (?, ?)"));
+        stmt.BindId(1, sourceId);
+        stmt.BindId(2, targetId);
+        return stmt.Step();
+        };
+
+    auto insertRel2 = [&] (ECInstanceId sourceId, ECInstanceId targetId)
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "insert into ts.ElementRefsElement2(sourceECInstanceId, targetECInstanceId) values (?, ?)"));
+        stmt.BindId(1, sourceId);
+        stmt.BindId(2, targetId);
+        return stmt.Step();
+        };
+
+    auto insertRel3 = [&] (ECInstanceId sourceId, ECInstanceId targetId)
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "insert into ts.ElementRefsElement3(sourceECInstanceId, targetECInstanceId) values (?, ?)"));
+        stmt.BindId(1, sourceId);
+        stmt.BindId(2, targetId);
+        return stmt.Step();
+        };
+
+    auto e1 = insertEl();
+    auto e2 = insertEl();
+    auto e3 = insertEl();
+    auto e4 = insertEl();
+    m_ecdb.SaveChanges();
+
+    ASSERT_EQ(BE_SQLITE_DONE, insertRel(e1, e2));
+    ASSERT_NE(BE_SQLITE_DONE, insertRel(e1, e2));
+    // Has AllowOnlyUniqueRelationships
+    ASSERT_EQ(BE_SQLITE_DONE, insertRel2(e1, e2));
+    ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, insertRel2(e1, e2)); // Duplicate Relationships
+    ASSERT_EQ(BE_SQLITE_DONE, insertRel2(e1, e3));
+    ASSERT_NE(BE_SQLITE_CONSTRAINT_UNIQUE, insertRel2(e4, e3)); // Duplicate N side
+    // Should inherit AllowOnlyUniqueRelationships by default
+    ASSERT_EQ(BE_SQLITE_DONE, insertRel3(e1, e2));
+    ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, insertRel3(e1, e2));
+    ASSERT_EQ(BE_SQLITE_DONE, insertRel3(e1, e3));
+    ASSERT_NE(BE_SQLITE_CONSTRAINT_UNIQUE, insertRel3(e4, e3));
+
+    }
 END_ECDBUNITTESTS_NAMESPACE

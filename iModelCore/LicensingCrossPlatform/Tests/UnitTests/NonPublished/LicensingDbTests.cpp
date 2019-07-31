@@ -53,13 +53,15 @@ TEST_F(LicensingDbTests, OpenOrCreate_OpenExistingDb_ContainsInsertedRows)
     LicensingDb db;
     EXPECT_SUCCESS(OpenOrCreateTestDb(db));
 
+    Utf8String startTime = DateTime::GetCurrentTimeUtc().ToString();
+    Utf8String endTime = DateTime::GetCurrentTimeUtc().ToString();
     Utf8String eventTime = DateTime::GetCurrentTimeUtc().ToString();
 
-    EXPECT_SUCCESS(db.RecordUsage(99, "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "TestDeviceId",
-                                  "IXravQ3f71wUupkp+tLBK+vGmCc=", "qa2_devuser2@mailinator.com", "3Q746c3/YJfSzlDyMbrq6oMUbMQ=",
-                                  "7a265495-71a8-4557-bbaf-de57f31b26b8", "4d701223-37ca-4ffb-b91c-f650a937d6fd", 2545, "", 1000000000000,
-                                  "00000000-0000-0000-0000-000000000000", "c0d1ed44-3b6c-4316-9f3e-e856c85b4995", eventTime,
-                                  1.0, "RealTime", "US", "Production"));
+    EXPECT_SUCCESS(db.RecordUsage(99, "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", 2545, "US", "", "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "TestDeviceId",
+                                      "IXravQ3f71wUupkp+tLBK+vGmCc=", "qa2_devuser2@mailinator.com", "3Q746c3/YJfSzlDyMbrq6oMUbMQ=",
+                                      "7a265495-71a8-4557-bbaf-de57f31b26b8", 1000000000000, "00000000-0000-0000-0000-000000000000",
+                                      "c0d1ed44-3b6c-4316-9f3e-e856c85b4995", 1000000000000, "Offline", "Production", startTime, endTime,
+                                      eventTime, 1));
 
     EXPECT_TRUE(db.GetLastUsageRecordedTime().Equals(eventTime));
 
@@ -77,13 +79,15 @@ TEST_F(LicensingDbTests, OpenOrCreate_DifferentDb_OpensNewDb)
     LicensingDb db;
     EXPECT_SUCCESS(OpenOrCreateTestDb(db));
 
+    Utf8String startTime = DateTime::GetCurrentTimeUtc().ToString();
+    Utf8String endTime = DateTime::GetCurrentTimeUtc().ToString();
     Utf8String eventTime = DateTime::GetCurrentTimeUtc().ToString();
 
-    EXPECT_SUCCESS(db.RecordUsage(99, "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "TestDeviceId",
-                                  "IXravQ3f71wUupkp+tLBK+vGmCc=", "qa2_devuser2@mailinator.com", "3Q746c3/YJfSzlDyMbrq6oMUbMQ=",
-                                  "7a265495-71a8-4557-bbaf-de57f31b26b8", "4d701223-37ca-4ffb-b91c-f650a937d6fd", 2545, "", 1000000000000,
-                                  "00000000-0000-0000-0000-000000000000", "c0d1ed44-3b6c-4316-9f3e-e856c85b4995", eventTime,
-                                  1.0, "RealTime", "US", "Production"));
+    EXPECT_SUCCESS(db.RecordUsage(99, "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", 2545, "US", "", "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "TestDeviceId",
+                                      "IXravQ3f71wUupkp+tLBK+vGmCc=", "qa2_devuser2@mailinator.com", "3Q746c3/YJfSzlDyMbrq6oMUbMQ=",
+                                      "7a265495-71a8-4557-bbaf-de57f31b26b8", 1000000000000, "00000000-0000-0000-0000-000000000000",
+                                      "c0d1ed44-3b6c-4316-9f3e-e856c85b4995", 1000000000000, "Offline", "Production", startTime, endTime,
+                                      eventTime, 1));
 
     EXPECT_SUCCESS(OpenOrCreateTestDb(db, BeFileName("new.db")));
 
@@ -98,23 +102,35 @@ TEST_F(LicensingDbTests, OpenOrCreate_OpenAndUpdateExistingDatabase_Success)
     fileName.Sprintf("Licensing-%s.db", BeSQLite::BeGuid(true).ToString().c_str());
     EXPECT_SUCCESS(OpenOrCreateTestDb(db, BeFileName(fileName)));
 
-    EXPECT_SUCCESS(db.RecordUsage(99, "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "TestDeviceId",
-                                  "IXravQ3f71wUupkp+tLBK+vGmCc=", "qa2_devuser2@mailinator.com", "3Q746c3/YJfSzlDyMbrq6oMUbMQ=",
-                                  "7a265495-71a8-4557-bbaf-de57f31b26b8", "4d701223-37ca-4ffb-b91c-f650a937d6fd", 2545, "", 1000000000000,
-                                  "00000000-0000-0000-0000-000000000000", "c0d1ed44-3b6c-4316-9f3e-e856c85b4995", DateTime::GetCurrentTimeUtc().ToString(),
-                                  1.0, "RealTime", "US", "Production"));
+    Utf8String startTime = DateTime::GetCurrentTimeUtc().ToString();
+    Utf8String endTime = DateTime::GetCurrentTimeUtc().ToString();
+    Utf8String eventTime = DateTime::GetCurrentTimeUtc().ToString();
 
-    EXPECT_SUCCESS(db.RecordUsage(99, "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "TestDeviceId",
-                                  "IXravQ3f71wUupkp+tLBK+vGmCc=", "qa2_devuser2@mailinator.com", "3Q746c3/YJfSzlDyMbrq6oMUbMQ=",
-                                  "7a265495-71a8-4557-bbaf-de57f31b26b8", "4d701223-37ca-4ffb-b91c-f650a937d6fd", 2545, "", 1000000000000,
-                                  "00000000-0000-0000-0000-000000000000", "c0d1ed44-3b6c-4316-9f3e-e856c85b4995", DateTime::GetCurrentTimeUtc().ToString(),
-                                  1.0, "RealTime", "US", "Production"));
+    EXPECT_SUCCESS(db.RecordUsage(99, "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", 2545, "US", "", "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "TestDeviceId",
+                                      "IXravQ3f71wUupkp+tLBK+vGmCc=", "qa2_devuser2@mailinator.com", "3Q746c3/YJfSzlDyMbrq6oMUbMQ=",
+                                      "7a265495-71a8-4557-bbaf-de57f31b26b8", 1000000000000, "00000000-0000-0000-0000-000000000000",
+                                      "c0d1ed44-3b6c-4316-9f3e-e856c85b4995", 1000000000000, "Offline", "Production", startTime, endTime,
+                                      eventTime, 1));
 
-    EXPECT_SUCCESS(db.RecordUsage(99, "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "TestDeviceId",
-                                  "IXravQ3f71wUupkp+tLBK+vGmCc=", "qa2_devuser2@mailinator.com", "3Q746c3/YJfSzlDyMbrq6oMUbMQ=",
-                                  "7a265495-71a8-4557-bbaf-de57f31b26b8", "4d701223-37ca-4ffb-b91c-f650a937d6fd", 2545, "", 1000000000000,
-                                  "00000000-0000-0000-0000-000000000000", "c0d1ed44-3b6c-4316-9f3e-e856c85b4995", DateTime::GetCurrentTimeUtc().ToString(),
-                                  1.0, "RealTime", "US", "Production"));
+    startTime = DateTime::GetCurrentTimeUtc().ToString();
+    endTime = DateTime::GetCurrentTimeUtc().ToString();
+    eventTime = DateTime::GetCurrentTimeUtc().ToString();
+
+    EXPECT_SUCCESS(db.RecordUsage(99, "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", 2545, "US", "", "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "TestDeviceId",
+                                      "IXravQ3f71wUupkp+tLBK+vGmCc=", "qa2_devuser2@mailinator.com", "3Q746c3/YJfSzlDyMbrq6oMUbMQ=",
+                                      "7a265495-71a8-4557-bbaf-de57f31b26b8", 1000000000000, "00000000-0000-0000-0000-000000000000",
+                                      "c0d1ed44-3b6c-4316-9f3e-e856c85b4995", 1000000000000, "Offline", "Production", startTime, endTime,
+                                      eventTime, 1));
+
+    startTime = DateTime::GetCurrentTimeUtc().ToString();
+    endTime = DateTime::GetCurrentTimeUtc().ToString();
+    eventTime = DateTime::GetCurrentTimeUtc().ToString();
+
+    EXPECT_SUCCESS(db.RecordUsage(99, "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", 2545, "US", "", "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "TestDeviceId",
+                                      "IXravQ3f71wUupkp+tLBK+vGmCc=", "qa2_devuser2@mailinator.com", "3Q746c3/YJfSzlDyMbrq6oMUbMQ=",
+                                      "7a265495-71a8-4557-bbaf-de57f31b26b8", 1000000000000, "00000000-0000-0000-0000-000000000000",
+                                      "c0d1ed44-3b6c-4316-9f3e-e856c85b4995", 1000000000000, "Offline", "Production", startTime, endTime,
+                                      eventTime, 1));
 
     db.Close();
 
@@ -146,29 +162,35 @@ TEST_F(LicensingDbTests, WriteUsageToCSVFile_MultipleRecords_CreatesCorrectFile)
     fileName.Sprintf("Licensing-%s.db", BeSQLite::BeGuid(true).ToString().c_str());
     EXPECT_SUCCESS(OpenOrCreateTestDb(db, BeFileName(fileName)));
 
-    Utf8String eventTime1 = DateTime::GetCurrentTimeUtc().ToString();
+    Utf8String startTime = DateTime::GetCurrentTimeUtc().ToString();
+    Utf8String endTime = DateTime::GetCurrentTimeUtc().ToString();
+    Utf8String eventTime = DateTime::GetCurrentTimeUtc().ToString();
 
-    EXPECT_SUCCESS(db.RecordUsage(99, "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "TestDeviceId",
-                                  "IXravQ3f71wUupkp+tLBK+vGmCc=", "qa2_devuser2@mailinator.com", "3Q746c3/YJfSzlDyMbrq6oMUbMQ=",
-                                  "7a265495-71a8-4557-bbaf-de57f31b26b8", "4d701223-37ca-4ffb-b91c-f650a937d6fd", 2545, "", 1000000000000,
-                                  "00000000-0000-0000-0000-000000000000", "c0d1ed44-3b6c-4316-9f3e-e856c85b4995", eventTime1,
-                                  1.0, "RealTime", "US", "Production"));
+    EXPECT_SUCCESS(db.RecordUsage(99, "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", 2545, "US", "", "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "TestDeviceId",
+                                      "IXravQ3f71wUupkp+tLBK+vGmCc=", "qa2_devuser2@mailinator.com", "3Q746c3/YJfSzlDyMbrq6oMUbMQ=",
+                                      "7a265495-71a8-4557-bbaf-de57f31b26b8", 1000000000000, "00000000-0000-0000-0000-000000000000",
+                                      "c0d1ed44-3b6c-4316-9f3e-e856c85b4995", 1000000000000, "Offline", "Production", startTime, endTime,
+                                      eventTime, 1));
 
+    startTime = DateTime::GetCurrentTimeUtc().ToString();
+    endTime = DateTime::GetCurrentTimeUtc().ToString();
     Utf8String eventTime2 = DateTime::GetCurrentTimeUtc().ToString();
 
-    EXPECT_SUCCESS(db.RecordUsage(99, "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "TestDeviceId",
-                                  "IXravQ3f71wUupkp+tLBK+vGmCc=", "qa2_devuser2@mailinator.com", "3Q746c3/YJfSzlDyMbrq6oMUbMQ=",
-                                  "7a265495-71a8-4557-bbaf-de57f31b26b8", "4d701223-37ca-4ffb-b91c-f650a937d6fd", 2545, "", 1000000000000,
-                                  "00000000-0000-0000-0000-000000000000", "c0d1ed44-3b6c-4316-9f3e-e856c85b4995", eventTime2,
-                                  1.0, "RealTime", "US", "Production"));
+    EXPECT_SUCCESS(db.RecordUsage(99, "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", 2545, "US", "", "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "TestDeviceId",
+                                      "IXravQ3f71wUupkp+tLBK+vGmCc=", "qa2_devuser2@mailinator.com", "3Q746c3/YJfSzlDyMbrq6oMUbMQ=",
+                                      "7a265495-71a8-4557-bbaf-de57f31b26b8", 1000000000000, "00000000-0000-0000-0000-000000000000",
+                                      "c0d1ed44-3b6c-4316-9f3e-e856c85b4995", 1000000000000, "Offline", "Production", startTime, endTime,
+                                      eventTime2, 1));
 
+    startTime = DateTime::GetCurrentTimeUtc().ToString();
+    endTime = DateTime::GetCurrentTimeUtc().ToString();
     Utf8String eventTime3 = DateTime::GetCurrentTimeUtc().ToString();
 
-    EXPECT_SUCCESS(db.RecordUsage(99, "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "TestDeviceId",
-                                  "IXravQ3f71wUupkp+tLBK+vGmCc=", "qa2_devuser2@mailinator.com", "3Q746c3/YJfSzlDyMbrq6oMUbMQ=",
-                                  "7a265495-71a8-4557-bbaf-de57f31b26b8", "4d701223-37ca-4ffb-b91c-f650a937d6fd", 2545, "", 1000000000000,
-                                  "00000000-0000-0000-0000-000000000000", "c0d1ed44-3b6c-4316-9f3e-e856c85b4995", eventTime3,
-                                  1.0, "RealTime", "US", "Production"));
+    EXPECT_SUCCESS(db.RecordUsage(99, "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", 2545, "US", "", "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "TestDeviceId",
+                                      "IXravQ3f71wUupkp+tLBK+vGmCc=", "qa2_devuser2@mailinator.com", "3Q746c3/YJfSzlDyMbrq6oMUbMQ=",
+                                      "7a265495-71a8-4557-bbaf-de57f31b26b8", 1000000000000, "00000000-0000-0000-0000-000000000000",
+                                      "c0d1ed44-3b6c-4316-9f3e-e856c85b4995", 1000000000000, "Offline", "Production", startTime, endTime,
+                                      eventTime3, 1));
 
     BeFileName tmpFile;
     Utf8String csvFile;
@@ -179,7 +201,7 @@ TEST_F(LicensingDbTests, WriteUsageToCSVFile_MultipleRecords_CreatesCorrectFile)
 
     auto fileContent = ReadAllFile(tmpFile);
 
-    EXPECT_TRUE(fileContent.Contains(eventTime1));
+    EXPECT_TRUE(fileContent.Contains(eventTime));
     EXPECT_TRUE(fileContent.Contains(eventTime2));
     EXPECT_TRUE(fileContent.Contains(eventTime3));
     }
@@ -198,27 +220,21 @@ TEST_F(LicensingDbTests, WriteFeatureToCSVFile_MultipleRecords_CreatesCorrectFil
 
     Utf8String eventTime1 = DateTime::GetCurrentTimeUtc().ToString();
 
-    EXPECT_SUCCESS(db.RecordFeature(99, "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "TestDeviceId",
-                                    "IXravQ3f71wUupkp+tLBK+vGmCc=", "qa2_devuser2@mailinator.com", "3Q746c3/YJfSzlDyMbrq6oMUbMQ=",
-                                    "7a265495-71a8-4557-bbaf-de57f31b26b8", "4d701223-37ca-4ffb-b91c-f650a937d6fd", 2545, "", 1000000000000,
-                                    "00000000-0000-0000-0000-000000000000", "c0d1ed44-3b6c-4316-9f3e-e856c85b4995", eventTime1,
-                                    1.0, "RealTime", "US", "Production", "be0761b2-896f-4ad6-a7c1-a08169340f54", eventTime1, eventTime1, userData));
+    EXPECT_SUCCESS(db.RecordFeature(99, "US", 2545, "", 1000000000000, "TestDeviceId", "IXravQ3f71wUupkp+tLBK+vGmCc=", "qa2_devuser2@mailinator.com", "3Q746c3/YJfSzlDyMbrq6oMUbMQ=",
+                                    "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "00000000-0000-0000-0000-000000000000", "dfdc08b5-2077-4b73-8fc1-c60cb47abc63",
+                                    "7a265495-71a8-4557-bbaf-de57f31b26b8", eventTime1, eventTime1, "false", userData));
 
     Utf8String eventTime2 = DateTime::GetCurrentTimeUtc().ToString();
 
-    EXPECT_SUCCESS(db.RecordFeature(99, "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "TestDeviceId",
-                                    "IXravQ3f71wUupkp+tLBK+vGmCc=", "qa2_devuser2@mailinator.com", "3Q746c3/YJfSzlDyMbrq6oMUbMQ=",
-                                    "7a265495-71a8-4557-bbaf-de57f31b26b8", "4d701223-37ca-4ffb-b91c-f650a937d6fd", 2545, "", 1000000000000,
-                                    "00000000-0000-0000-0000-000000000000", "c0d1ed44-3b6c-4316-9f3e-e856c85b4995", eventTime2,
-                                    1.0, "RealTime", "US", "Production", "be0761b2-896f-4ad6-a7c1-a08169340f54", eventTime2, eventTime2, userData));
+    EXPECT_SUCCESS(db.RecordFeature(99, "US", 2545, "", 1000000000000, "TestDeviceId", "IXravQ3f71wUupkp+tLBK+vGmCc=", "qa2_devuser2@mailinator.com", "3Q746c3/YJfSzlDyMbrq6oMUbMQ=",
+                                    "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "00000000-0000-0000-0000-000000000000", "dfdc08b5-2077-4b73-8fc1-c60cb47abc63",
+                                    "7a265495-71a8-4557-bbaf-de57f31b26b8", eventTime2, eventTime2, "false", userData));
 
     Utf8String eventTime3 = DateTime::GetCurrentTimeUtc().ToString();
 
-    EXPECT_SUCCESS(db.RecordFeature(99, "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "TestDeviceId",
-                                    "IXravQ3f71wUupkp+tLBK+vGmCc=", "qa2_devuser2@mailinator.com", "3Q746c3/YJfSzlDyMbrq6oMUbMQ=",
-                                    "7a265495-71a8-4557-bbaf-de57f31b26b8", "4d701223-37ca-4ffb-b91c-f650a937d6fd", 2545, "", 1000000000000,
-                                    "00000000-0000-0000-0000-000000000000", "c0d1ed44-3b6c-4316-9f3e-e856c85b4995", eventTime3,
-                                    1.0, "RealTime", "US", "Production", "be0761b2-896f-4ad6-a7c1-a08169340f54", eventTime3, eventTime3, userData));
+    EXPECT_SUCCESS(db.RecordFeature(99, "US", 2545, "", 1000000000000, "TestDeviceId", "IXravQ3f71wUupkp+tLBK+vGmCc=", "qa2_devuser2@mailinator.com", "3Q746c3/YJfSzlDyMbrq6oMUbMQ=",
+                                    "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "00000000-0000-0000-0000-000000000000", "dfdc08b5-2077-4b73-8fc1-c60cb47abc63",
+                                    "7a265495-71a8-4557-bbaf-de57f31b26b8", eventTime3, eventTime3, "false", userData));
 
     BeFileName tmpFile;
     Utf8String csvFile;
@@ -240,35 +256,55 @@ TEST_F(LicensingDbTests, CleanUpUsages_Success)
 
     EXPECT_SUCCESS(OpenOrCreateTestDb(db));
 
-    db.RecordUsage(99, "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "TestDeviceId",
-                   "IXravQ3f71wUupkp+tLBK+vGmCc=", "qa2_devuser2@mailinator.com", "3Q746c3/YJfSzlDyMbrq6oMUbMQ=",
-                   "7a265495-71a8-4557-bbaf-de57f31b26b8", "4d701223-37ca-4ffb-b91c-f650a937d6fd", 2545, "", 1000000000000,
-                   "00000000-0000-0000-0000-000000000000", "c0d1ed44-3b6c-4316-9f3e-e856c85b4995", DateTime::GetCurrentTimeUtc().ToString(),
-                   1.0, "RealTime", "US", "Production");
+    Utf8String startTime = DateTime::GetCurrentTimeUtc().ToString();
+    Utf8String endTime = DateTime::GetCurrentTimeUtc().ToString();
+    Utf8String eventTime = DateTime::GetCurrentTimeUtc().ToString();
 
-    db.RecordUsage(99, "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "TestDeviceId",
-                   "IXravQ3f71wUupkp+tLBK+vGmCc=", "qa2_devuser2@mailinator.com", "3Q746c3/YJfSzlDyMbrq6oMUbMQ=",
-                   "7a265495-71a8-4557-bbaf-de57f31b26b8", "4d701223-37ca-4ffb-b91c-f650a937d6fd", 2545, "", 1000000000000,
-                   "00000000-0000-0000-0000-000000000000", "c0d1ed44-3b6c-4316-9f3e-e856c85b4995", DateTime::GetCurrentTimeUtc().ToString(),
-                   1.0, "RealTime", "US", "Production");
+    EXPECT_SUCCESS(db.RecordUsage(99, "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", 2545, "US", "", "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "TestDeviceId",
+                                      "IXravQ3f71wUupkp+tLBK+vGmCc=", "qa2_devuser2@mailinator.com", "3Q746c3/YJfSzlDyMbrq6oMUbMQ=",
+                                      "7a265495-71a8-4557-bbaf-de57f31b26b8", 1000000000000, "00000000-0000-0000-0000-000000000000",
+                                      "c0d1ed44-3b6c-4316-9f3e-e856c85b4995", 1000000000000, "Offline", "Production", startTime, endTime,
+                                      eventTime, 1));
 
-    db.RecordUsage(99, "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "TestDeviceId",
-                   "IXravQ3f71wUupkp+tLBK+vGmCc=", "qa2_devuser2@mailinator.com", "3Q746c3/YJfSzlDyMbrq6oMUbMQ=",
-                   "7a265495-71a8-4557-bbaf-de57f31b26b8", "4d701223-37ca-4ffb-b91c-f650a937d6fd", 2545, "", 1000000000000,
-                   "00000000-0000-0000-0000-000000000000", "c0d1ed44-3b6c-4316-9f3e-e856c85b4995", DateTime::GetCurrentTimeUtc().ToString(),
-                   1.0, "RealTime", "US", "Production");
+    startTime = DateTime::GetCurrentTimeUtc().ToString();
+    endTime = DateTime::GetCurrentTimeUtc().ToString();
+    eventTime = DateTime::GetCurrentTimeUtc().ToString();
 
-    db.RecordUsage(99, "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "TestDeviceId",
-                   "IXravQ3f71wUupkp+tLBK+vGmCc=", "qa2_devuser2@mailinator.com", "3Q746c3/YJfSzlDyMbrq6oMUbMQ=",
-                   "7a265495-71a8-4557-bbaf-de57f31b26b8", "4d701223-37ca-4ffb-b91c-f650a937d6fd", 2545, "", 1000000000000,
-                   "00000000-0000-0000-0000-000000000000", "c0d1ed44-3b6c-4316-9f3e-e856c85b4995", DateTime::GetCurrentTimeUtc().ToString(),
-                   1.0, "RealTime", "US", "Production");
+    EXPECT_SUCCESS(db.RecordUsage(99, "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", 2545, "US", "", "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "TestDeviceId",
+                                      "IXravQ3f71wUupkp+tLBK+vGmCc=", "qa2_devuser2@mailinator.com", "3Q746c3/YJfSzlDyMbrq6oMUbMQ=",
+                                      "7a265495-71a8-4557-bbaf-de57f31b26b8", 1000000000000, "00000000-0000-0000-0000-000000000000",
+                                      "c0d1ed44-3b6c-4316-9f3e-e856c85b4995", 1000000000000, "Offline", "Production", startTime, endTime,
+                                      eventTime, 1));
 
-    db.RecordUsage(99, "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "TestDeviceId",
-                   "IXravQ3f71wUupkp+tLBK+vGmCc=", "qa2_devuser2@mailinator.com", "3Q746c3/YJfSzlDyMbrq6oMUbMQ=",
-                   "7a265495-71a8-4557-bbaf-de57f31b26b8", "4d701223-37ca-4ffb-b91c-f650a937d6fd", 2545, "", 1000000000000,
-                   "00000000-0000-0000-0000-000000000000", "c0d1ed44-3b6c-4316-9f3e-e856c85b4995", DateTime::GetCurrentTimeUtc().ToString(),
-                   1.0, "RealTime", "US", "Production");
+    startTime = DateTime::GetCurrentTimeUtc().ToString();
+    endTime = DateTime::GetCurrentTimeUtc().ToString();
+    eventTime = DateTime::GetCurrentTimeUtc().ToString();
+
+    EXPECT_SUCCESS(db.RecordUsage(99, "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", 2545, "US", "", "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "TestDeviceId",
+                                      "IXravQ3f71wUupkp+tLBK+vGmCc=", "qa2_devuser2@mailinator.com", "3Q746c3/YJfSzlDyMbrq6oMUbMQ=",
+                                      "7a265495-71a8-4557-bbaf-de57f31b26b8", 1000000000000, "00000000-0000-0000-0000-000000000000",
+                                      "c0d1ed44-3b6c-4316-9f3e-e856c85b4995", 1000000000000, "Offline", "Production", startTime, endTime,
+                                      eventTime, 1));
+
+    startTime = DateTime::GetCurrentTimeUtc().ToString();
+    endTime = DateTime::GetCurrentTimeUtc().ToString();
+    eventTime = DateTime::GetCurrentTimeUtc().ToString();
+
+    EXPECT_SUCCESS(db.RecordUsage(99, "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", 2545, "US", "", "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "TestDeviceId",
+                                      "IXravQ3f71wUupkp+tLBK+vGmCc=", "qa2_devuser2@mailinator.com", "3Q746c3/YJfSzlDyMbrq6oMUbMQ=",
+                                      "7a265495-71a8-4557-bbaf-de57f31b26b8", 1000000000000, "00000000-0000-0000-0000-000000000000",
+                                      "c0d1ed44-3b6c-4316-9f3e-e856c85b4995", 1000000000000, "Offline", "Production", startTime, endTime,
+                                      eventTime, 1));
+
+    startTime = DateTime::GetCurrentTimeUtc().ToString();
+    endTime = DateTime::GetCurrentTimeUtc().ToString();
+    eventTime = DateTime::GetCurrentTimeUtc().ToString();
+
+    EXPECT_SUCCESS(db.RecordUsage(99, "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", 2545, "US", "", "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "TestDeviceId",
+                                      "IXravQ3f71wUupkp+tLBK+vGmCc=", "qa2_devuser2@mailinator.com", "3Q746c3/YJfSzlDyMbrq6oMUbMQ=",
+                                      "7a265495-71a8-4557-bbaf-de57f31b26b8", 1000000000000, "00000000-0000-0000-0000-000000000000",
+                                      "c0d1ed44-3b6c-4316-9f3e-e856c85b4995", 1000000000000, "Offline", "Production", startTime, endTime,
+                                      eventTime, 1));
 
     EXPECT_SUCCESS(db.CleanUpUsages());
     EXPECT_EQ(0, db.GetUsageRecordCount());
