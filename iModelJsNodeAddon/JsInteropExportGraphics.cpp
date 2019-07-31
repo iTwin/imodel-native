@@ -102,6 +102,35 @@ void AddVertex(DPoint3dCR p, FPoint3dCR n, FPoint2dCR uv)
 };
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Matt.Gooding    07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static void removeDegenerateTriangles(bvector<int>& indices)
+    {
+    auto isDegenerate= [](int i0, int i1, int i2) { return i0 == i1 || i0 == i2 || i1 == i2; };
+
+    // Assume that 99% of meshes won't have degenerate triangles and simplify for that case.
+    bool hasDegenerateFace = false;
+    for (int i = 0; i < (int)indices.size(); i += 3)
+        {
+        if (isDegenerate (indices[i], indices[i+1], indices[i+2]))
+            {
+            hasDegenerateFace = true;
+            break;
+            }
+        }
+    if (!hasDegenerateFace) return;
+
+    bvector<int> newIndices;
+    newIndices.reserve(indices.size());
+    for (int i = 0; i < (int)indices.size(); i += 3)
+        {
+        if (!isDegenerate(indices[i], indices[i+1], indices[i+2]))
+            newIndices.insert(newIndices.end(), { indices[i], indices[i+1], indices[i+2]});
+        }
+    indices = std::move(newIndices);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Matt.Gooding    04/19
 * Linear speed unification of vertex indices. Each point has ENTRY_COUNT remappings
 * that can be saved. After that, just add additional vertices for each normal/param
@@ -513,6 +542,7 @@ bool _ProcessPolyface(PolyfaceQueryCR pfQuery, bool filled, SimplifyGraphic& sg)
         }
 
     unifyIndices(IntermediateMesh(pfQuery, localToWorld, std::move(computedParams)), *exportMesh);
+    removeDegenerateTriangles(exportMesh->indices); // simplest to clean up after unifying
     return true;
     }
 }; // ExportGraphicsProcessor
