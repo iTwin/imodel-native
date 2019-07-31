@@ -1,0 +1,12 @@
+#*--------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------*/
+%include common/inc/geomlibsdev.mki
+
+always:
+    $(_bmake) $(make_opt) $(SrcGeomLibs)geom\build\BentleyGeom\BentleyGeom.mke
+
+
+#    $(_bmake) $(make_opt) $(SrcGeomLibs)geom\build\bsibasegeom\bsibasegeom.mke

@@ -1,0 +1,24 @@
+#----------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#----------------------------------------------------------------------
+%ifndef GRAPHITE_VER
+    GRAPHITE_VER            = G0503
+%endif
+
+# -----------------------------------------------------------------------------------------------------------------------
+# Allow the developer to work from a live build of Dgndb, instead of LKGs
+# -----------------------------------------------------------------------------------------------------------------------
+%ifdef DGNCLIENTFX_SDK_PRODUCT
+    DgnClientFxBase = $(DGNCLIENTFX_SDK_PRODUCT)
+    %ifnofile ${DgnClientFxBase}
+        %error $(DgnClientFxBase) not found. Make sure DGNCLIENTFX_SDK_PRODUCT points to Product\DgnClientSdk-$(TARGET_PROCESSOR_DIRECTORY) in your DgnDb output tree.
+    %endif
+%else
+    DgnClientFxBase           = $(BuildContext)SdkSources/DgnClientSdk-$(TARGET_PROCESSOR_DIRECTORY)/
+%endif
+
+DgnClientFxLibDir             = $(DgnClientFxBase)lib/$(TARGET_PROCESSOR_DIRECTORY)/
+DgnClientFxBentleyDir         = $(DgnClientFxBase)include/Bentley/
+DgnClientFxVersionedApiDir    = $(DgnClientFxBase)/VersionedApi/$(GRAPHITE_VER)/
