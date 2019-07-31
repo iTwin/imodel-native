@@ -52,9 +52,10 @@ BeFileName GetWithKeyLicensingDbPath()
     return path;
     }
 
-AccessKeyClientImplPtr CreateWithKeyTestClient(IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider, ILicensingDbPtr licensingDb, Utf8StringCR productId = TEST_PRODUCT_ID)
+AccessKeyClientImplPtr CreateWithKeyTestClient(IPolicyProviderPtr policyProvider, IUlasProviderPtr ulasProvider, ILicensingDbPtr licensingDb, Utf8StringCR productId = TEST_PRODUCT_ID, ApplicationInfoPtr appInfo = nullptr)
     {
-    auto appInfo = std::make_shared<ApplicationInfo>(BeVersion(1, 0), "TestDeviceId", productId);
+    if(appInfo == nullptr)
+        appInfo = std::make_shared<ApplicationInfo>(BeVersion(1, 0), "TestDeviceId", productId);
 
     BeFileName dbPath = GetWithKeyLicensingDbPath();
 
@@ -433,10 +434,112 @@ TEST_F(AccessKeyClientTests, AgnosticKey_Validation)
 	EXPECT_EQ(static_cast<int>(failclient->StartApplication()), static_cast<int>(LicenseStatus::NotEntitled));
 	}
 
+// GetTrialDaysRemaining tests
 
+// AccessDenied "backup" ACL, valid Evaluation ACL
+TEST_F(AccessKeyClientTests, GetTrialDaysRemainingEvalValid_Test)
+    {
+    Utf8String userId = "be7b9f4f-5b1e-4af8-bb05-6e060a6a48db";
+    auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", userId, "orgId");
+    auto appInfo = std::make_shared<ApplicationInfo>(BeVersion(12, 0), "TestDeviceId", "1052");
 
+    auto client = CreateWithKeyTestClient(GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr(), "1052", appInfo);
 
+    BeFileName testJson;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(testJson);
+    testJson.AppendToPath(L"TestAssets/EvalPolicyWithKey.json");
 
+    Json::Value jsonPolicyEval = ReadJsonFile(testJson);
+    Json::Value jsonPolicyEvalObject = Json::Reader::DoParse(jsonPolicyEval.asString()); // need to convert to Json::Value object type to use as a policy json
+    std::list<Json::Value> validEvalPolicyList;
+    validEvalPolicyList.push_back(jsonPolicyEvalObject);
 
+    GetLicensingDbMock().MockKeyPolicyFiles(TEST_ACCESSKEY, validEvalPolicyList);
+    // NOTE: the date for this comes from Assets/EvalPolicy.json
+    auto daysLeft = DateHelper::diffdatedays("2022-04-26T00:00:00", DateHelper::GetCurrentTime());
 
+    EXPECT_EQ(client->GetTrialDaysRemaining(), daysLeft);
+    EXPECT_EQ(1, GetLicensingDbMock().GetPolicyFilesByKeyCount(TEST_ACCESSKEY));
+    }
 
+// AccessDenied "backup" ACL, expired Evaluation ACL
+TEST_F(AccessKeyClientTests, GetTrialDaysRemainingEvalExpired_Test)
+    {
+    Utf8String userId = "be7b9f4f-5b1e-4af8-bb05-6e060a6a48db";
+    auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", userId, "orgId");
+    auto appInfo = std::make_shared<ApplicationInfo>(BeVersion(12, 0), "TestDeviceId", "1052");
+
+    auto client = CreateWithKeyTestClient(GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr(), "1052", appInfo);
+
+    BeFileName testJson;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(testJson);
+    testJson.AppendToPath(L"TestAssets/EvalPolicyExpiredWithKey.json");
+
+    Json::Value jsonPolicyEval = ReadJsonFile(testJson);
+    Json::Value jsonPolicyEvalObject = Json::Reader::DoParse(jsonPolicyEval.asString()); // need to convert to Json::Value object type to use as a policy json
+    std::list<Json::Value> expiredEvalPolicyList;
+    expiredEvalPolicyList.push_back(jsonPolicyEvalObject);
+
+    GetLicensingDbMock().MockKeyPolicyFiles(TEST_ACCESSKEY, expiredEvalPolicyList);
+
+    EXPECT_EQ(client->GetTrialDaysRemaining(), 0);
+    EXPECT_EQ(1, GetLicensingDbMock().GetPolicyFilesByKeyCount(TEST_ACCESSKEY));
+    }
+
+// not trial or eval - valid "backup" ACL, wrong version Evaluation ACL
+TEST_F(AccessKeyClientTests, GetTrialDaysRemainingEvalBackupAcl_Test)
+    {
+    Utf8String userId = "be7b9f4f-5b1e-4af8-bb05-6e060a6a48db";
+    auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", userId, "orgId");
+    auto appInfo = std::make_shared<ApplicationInfo>(BeVersion(1, 0), "TestDeviceId", "1052");
+
+    auto client = CreateWithKeyTestClient(GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr(), "1052", appInfo);
+
+    BeFileName testJson;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(testJson);
+    testJson.AppendToPath(L"TestAssets/EvalPolicyWithBackup.json");
+
+    Json::Value jsonPolicyEval = ReadJsonFile(testJson);
+    Json::Value jsonPolicyEvalObject = Json::Reader::DoParse(jsonPolicyEval.asString()); // need to convert to Json::Value object type to use as a policy json
+    std::list<Json::Value> expiredEvalPolicyList;
+    expiredEvalPolicyList.push_back(jsonPolicyEvalObject);
+
+    GetLicensingDbMock().MockKeyPolicyFiles(TEST_ACCESSKEY, expiredEvalPolicyList);
+
+    EXPECT_EQ(client->GetTrialDaysRemaining(), -1);
+    EXPECT_EQ(1, GetLicensingDbMock().GetPolicyFilesByKeyCount(TEST_ACCESSKEY));
+    }
+
+// valid trial
+TEST_F(AccessKeyClientTests, GetTrialDaysRemainingValidTrial_Test)
+    {
+    Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
+    auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", userId, "orgId");
+    auto client = CreateWithKeyTestClient(GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr(), "1000");
+
+    auto jsonPolicyValidTrial = DummyPolicyHelper::CreatePolicyFullWithKey(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, std::atoi("1000"), "", 1, true, TEST_ACCESSKEY, "TestDeviceId");
+    std::list<Json::Value> validTrialPolicyList;
+    validTrialPolicyList.push_back(jsonPolicyValidTrial);
+
+    GetLicensingDbMock().MockKeyPolicyFiles(TEST_ACCESSKEY, validTrialPolicyList);
+
+    EXPECT_EQ(client->GetTrialDaysRemaining(), 6);
+    EXPECT_EQ(1, GetLicensingDbMock().GetPolicyFilesByKeyCount(TEST_ACCESSKEY));
+    }
+
+// expired trial
+TEST_F(AccessKeyClientTests, GetTrialDaysRemainingExpiredTrial_Test)
+    {
+    Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
+    auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", userId, "orgId");
+    auto client = CreateWithKeyTestClient(GetPolicyProviderMockPtr(), GetUlasProviderMockPtr(), GetLicensingDbMockPtr(), "1000");
+
+    auto jsonPolicyExpiredTrial = DummyPolicyHelper::CreatePolicyFullWithKey(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(-1), userId, std::atoi("1000"), "", 1, true, TEST_ACCESSKEY, "TestDeviceId");
+    std::list<Json::Value> expiredTrialPolicyList;
+    expiredTrialPolicyList.push_back(jsonPolicyExpiredTrial);
+
+    GetLicensingDbMock().MockKeyPolicyFiles(TEST_ACCESSKEY, expiredTrialPolicyList);
+
+    EXPECT_EQ(client->GetTrialDaysRemaining(), 0);
+    EXPECT_EQ(1, GetLicensingDbMock().GetPolicyFilesByKeyCount(TEST_ACCESSKEY));
+    }

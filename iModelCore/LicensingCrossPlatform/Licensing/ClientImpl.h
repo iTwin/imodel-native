@@ -137,6 +137,7 @@ public:
 
     // Product status
     virtual LICENSING_EXPORT LicenseStatus GetLicenseStatus();
+    LICENSING_EXPORT int64_t GetTrialDaysRemaining();
 
     // Used in tests
     LICENSING_EXPORT ILicensingDb& GetLicensingDb();

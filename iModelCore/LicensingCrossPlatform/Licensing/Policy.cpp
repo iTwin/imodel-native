@@ -468,7 +468,7 @@ bool Policy::IsTrial(Utf8StringCR productId, Utf8StringCR featureString)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Policy::EvaluationStatus Policy::GetEvalStatus(Utf8StringCR productId, Utf8StringCR featureString, BeVersionCR appVersion, std::shared_ptr<Policy::ACL>& nonEvalAcl)
+Policy::EvaluationStatus Policy::GetEvalStatus(Utf8StringCR productId, Utf8StringCR featureString, BeVersionCR appVersion, std::shared_ptr<Policy::ACL>& nonEvalAcl, int64_t& daysLeft)
     {
     nonEvalAcl = nullptr;
     // NB: if we want to check for check for a policy's expiration date, we may need to return the expiration date as well as the status
@@ -512,11 +512,13 @@ Policy::EvaluationStatus Policy::GetEvalStatus(Utf8StringCR productId, Utf8Strin
                     // only call it exipred if we haven't found a valid eval, and the version is good
                     if (IsTimeExpired(acl->GetExpiresOn()) && result != EvaluationStatus::Valid)
                         {
+                        daysLeft = 0;
                         result = EvaluationStatus::Expired;
                         }
                     else
                         {
                         // valid eval found
+                        daysLeft = DateHelper::GetDaysLeftUntilTime(acl->GetExpiresOn());
                         result = EvaluationStatus::Valid;
                         }
                     }
@@ -529,11 +531,13 @@ Policy::EvaluationStatus Policy::GetEvalStatus(Utf8StringCR productId, Utf8Strin
                     // only call it exipred if we haven't found a valid eval, and the version is good
                     if (IsTimeExpired(acl->GetExpiresOn()) && result != EvaluationStatus::Valid)
                         {
+                        daysLeft = 0;
                         result = EvaluationStatus::Expired;
                         }
                     else
                         {
                         // valid eval found
+                        daysLeft = DateHelper::GetDaysLeftUntilTime(acl->GetExpiresOn());
                         result = EvaluationStatus::Valid;
                         }
                     }
@@ -546,6 +550,43 @@ Policy::EvaluationStatus Policy::GetEvalStatus(Utf8StringCR productId, Utf8Strin
         }
 
     return result;
+    }
+
+int64_t Policy::GetTrialDaysRemaining(Utf8StringCR productId, Utf8StringCR featureString, BeVersionCR version)
+    {
+    // get the time remaining in the evaluation or trial entitlements
+
+    std::shared_ptr<Policy::ACL> nonEvalAcl;
+    int64_t evalDaysLeft = -1;
+    // get the eval status, and if it's not eval, use the second ACL (as of now we can assume only two ACLs max -> eval and regular, with matching securable and principal)
+    auto evalStatus = GetEvalStatus(productId, featureString, version, nonEvalAcl, evalDaysLeft);
+    if (evalStatus == Policy::EvaluationStatus::Valid)
+        {
+        if (evalDaysLeft == -1)
+            {
+            LOG.error("Product is evaluation, but no days left data was supplied.");
+            }
+
+        return evalDaysLeft;
+        }
+    else if (evalStatus == Policy::EvaluationStatus::Expired)
+        {
+        LOG.info("Product is evaluation, but is expired");
+
+        return 0;
+        }
+
+    if (IsTrial(productId, featureString))
+        {
+        // if trial is expired, return 0, otherwise return days left
+        if (IsTimeExpired(nonEvalAcl->GetExpiresOn()))
+            return 0;
+
+        return DateHelper::GetDaysLeftUntilTime(nonEvalAcl->GetExpiresOn());
+        }
+
+    LOG.info("Policy is not a trial or evaluation policy.");
+    return -1;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -656,8 +697,9 @@ Licensing::LicenseStatus Policy::GetProductStatus(Utf8StringCR productId, Utf8St
         }
 
     std::shared_ptr<Policy::ACL> nonEvalAcl;
+    int64_t evalDaysLeft = -1;
     // get the eval status, and if it's not eval, use the second ACL (as of now we can assume only two ACLs max -> eval and regular, with matching securable and principal)
-    auto evalStatus = GetEvalStatus(productId, featureString, version, nonEvalAcl);
+    auto evalStatus = GetEvalStatus(productId, featureString, version, nonEvalAcl, evalDaysLeft);
     if (evalStatus == Policy::EvaluationStatus::Valid)
         {
         // offline check?

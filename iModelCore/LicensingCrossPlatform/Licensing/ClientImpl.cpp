@@ -912,3 +912,28 @@ LicenseStatus ClientImpl::GetLicenseStatus()
 
     return productStatus;
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                     Jason.Wichert   7/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+int64_t ClientImpl::GetTrialDaysRemaining()
+    {
+    LOG.debug("ClientImpl::GetTrialDaysRemaining");
+
+    const auto productId = m_applicationInfo->GetProductId();
+
+    auto policy = SearchForPolicy(productId);
+    if (policy == nullptr)
+        {
+        LOG.error("Policy not found");
+        return -1;
+        }
+    if (policy->GetPolicyStatus() != Policy::PolicyStatus::Valid)
+        {
+        LOG.error("Policy not valid");
+        return -1;
+        }
+
+    int64_t daysLeft = policy->GetTrialDaysRemaining(productId, m_featureString, m_applicationInfo->GetVersion());
+    return daysLeft;
+    }
