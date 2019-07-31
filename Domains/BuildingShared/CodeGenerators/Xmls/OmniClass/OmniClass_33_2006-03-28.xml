@@ -1,0 +1,707 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<Table>
+    <Name>Table 33 - Disciplines</Name>
+    <Source>The Secretariat for the OCCS Development Committee</Source>
+    <Version>Major Version No=&apos; Edition:1.0&apos;  Major Date=&apos;2006-03-28 Release&apos;  Minor Version No=&apos; Edition:1.0&apos;  Minor Date=&apos;2006-03-28 Release&apos;  Major=&apos;&apos;  Minor=&apos;&apos; </Version>
+    <Section>
+        <Code>33-11 00 00</Code>
+        <Name>Planning</Name>
+        <Section>
+            <Code>33-11 11 00</Code>
+            <Name>Regional Planning</Name>
+        </Section>
+        <Section>
+            <Code>33-11 21 00</Code>
+            <Name>Development Planning</Name>
+        </Section>
+        <Section>
+            <Code>33-11 31 00</Code>
+            <Name>Rural Planning</Name>
+        </Section>
+        <Section>
+            <Code>33-11 41 00</Code>
+            <Name>Urban Planning</Name>
+        </Section>
+        <Section>
+            <Code>33-11 44 00</Code>
+            <Name>Transportation Planning</Name>
+        </Section>
+        <Section>
+            <Code>33-11 51 00</Code>
+            <Name>Environmental Planning</Name>
+        </Section>
+        <Section>
+            <Code>33-11 61 00</Code>
+            <Name>Facility Conservation Planning</Name>
+            <Section>
+                <Code>33-11 61 21</Code>
+                <Name>Historic Building Conservation Planning</Name>
+            </Section>
+            <Section>
+                <Code>33-11 61 31</Code>
+                <Name>Ancient Monument Conservation Planning</Name>
+            </Section>
+            <Section>
+                <Code>33-11 61 41</Code>
+                <Name>Archaeological Area Conservation Planning</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>33-11 99 00</Code>
+            <Name>Other Planning</Name>
+            <Section>
+                <Code>33-11 99 11</Code>
+                <Name>Master Planning</Name>
+            </Section>
+            <Section>
+                <Code>33-11 99 14</Code>
+                <Name>Permitting</Name>
+            </Section>
+            <Section>
+                <Code>33-11 99 17</Code>
+                <Name>Risk Assessment</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>33-21 00 00</Code>
+        <Name>Design</Name>
+        <Section>
+            <Code>33-21 11 00</Code>
+            <Name>Architecture</Name>
+            <Section>
+                <Code>33-21 11 11</Code>
+                <Name>Residential Architecture</Name>
+            </Section>
+            <Section>
+                <Code>33-21 11 21</Code>
+                <Name>Commercial Architecture</Name>
+            </Section>
+            <Section>
+                <Code>33-21 11 24</Code>
+                <Name>Institutional Architecture</Name>
+            </Section>
+            <Section>
+                <Code>33-21 11 27</Code>
+                <Name>Industrial Architecture</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>33-21 19 00</Code>
+            <Name>Drafting</Name>
+        </Section>
+        <Section>
+            <Code>33-21 21 00</Code>
+            <Name>Landscape Architecture</Name>
+        </Section>
+        <Section>
+            <Code>33-21 23 00</Code>
+            <Name>Interior Design</Name>
+        </Section>
+        <Section>
+            <Code>33-21 25 00</Code>
+            <Name>Specifying</Name>
+        </Section>
+        <Section>
+            <Code>33-21 27 00</Code>
+            <Name>Graphic Design</Name>
+            <Section>
+                <Code>33-21 27 11</Code>
+                <Name>Signage Graphic Design</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>33-21 31 00</Code>
+            <Name>Engineering</Name>
+            <Section>
+                <Code>33-21 31 11</Code>
+                <Name>Civil Engineering</Name>
+                <Section>
+                    <Code>33-21 31 11 11</Code>
+                    <Name>Geotechnical Engineering</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>33-21 31 14</Code>
+                <Name>Structural Engineering</Name>
+                <Section>
+                    <Code>33-21 31 14 11</Code>
+                    <Name>Foundation Engineering</Name>
+                </Section>
+                <Section>
+                    <Code>33-21 31 14 21</Code>
+                    <Name>High Rise Engineering</Name>
+                </Section>
+                <Section>
+                    <Code>33-21 31 14 31</Code>
+                    <Name>Long-span Structure Engineering</Name>
+                </Section>
+                <Section>
+                    <Code>33-21 31 14 41</Code>
+                    <Name>Tensile Structure Engineering</Name>
+                </Section>
+                <Section>
+                    <Code>33-21 31 14 51</Code>
+                    <Name>Pneumatic Structure Engineering</Name>
+                </Section>
+                <Section>
+                    <Code>33-21 31 14 54</Code>
+                    <Name>Hydraulic Structure Engineering</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>33-21 31 17</Code>
+                <Name>Mechanical Engineering</Name>
+                <Section>
+                    <Code>33-21 31 17 11</Code>
+                    <Name>Plumbing Engineering</Name>
+                </Section>
+                <Section>
+                    <Code>33-21 31 17 21</Code>
+                    <Name>Fire Protection Engineering</Name>
+                </Section>
+                <Section>
+                    <Code>33-21 31 17 31</Code>
+                    <Name>Heating Ventilation and Air Conditioning Engineering</Name>
+                </Section>
+                <Section>
+                    <Code>33-21 31 17 33</Code>
+                    <Name>Refrigeration Engineering</Name>
+                </Section>
+                <Section>
+                    <Code>33-21 31 17 34</Code>
+                    <Name>Energy Monitoring and Controls Engineering</Name>
+                </Section>
+                <Section>
+                    <Code>33-21 31 17 37</Code>
+                    <Name>Hydrological Engineering</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>33-21 31 21</Code>
+                <Name>Electrical Engineering</Name>
+                <Section>
+                    <Code>33-21 31 21 11</Code>
+                    <Name>High Voltage Electrical Engineering</Name>
+                </Section>
+                <Section>
+                    <Code>33-21 31 21 21</Code>
+                    <Name>Medium Voltage Electrical Engineering</Name>
+                </Section>
+                <Section>
+                    <Code>33-21 31 21 31</Code>
+                    <Name>Low Voltage Electrical Engineering</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>33-21 31 23</Code>
+                <Name>Communications Engineering</Name>
+                <Section>
+                    <Code>33-21 31 23 11</Code>
+                    <Name>Computer Network Engineering</Name>
+                </Section>
+                <Section>
+                    <Code>33-21 31 23 14</Code>
+                    <Name>Alarm and Detection Engineering</Name>
+                </Section>
+                <Section>
+                    <Code>33-21 31 23 21</Code>
+                    <Name>Audiovisual Engineering</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>33-21 31 24</Code>
+                <Name>Process Engineering</Name>
+                <Section>
+                    <Code>33-21 31 24 11</Code>
+                    <Name>Piping Engineering</Name>
+                </Section>
+                <Section>
+                    <Code>33-21 31 24 21</Code>
+                    <Name>Wind Engineering</Name>
+                </Section>
+                <Section>
+                    <Code>33-21 31 24 31</Code>
+                    <Name>Co-Generation Engineering</Name>
+                </Section>
+                <Section>
+                    <Code>33-21 31 24 41</Code>
+                    <Name>Nuclear Engineering</Name>
+                </Section>
+                <Section>
+                    <Code>33-21 31 24 51</Code>
+                    <Name>Sanitary Engineering</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>33-21 31 27</Code>
+                <Name>Military Engineering</Name>
+            </Section>
+            <Section>
+                <Code>33-21 31 99</Code>
+                <Name>Other Engineering</Name>
+                <Section>
+                    <Code>33-21 31 99 11</Code>
+                    <Name>Acoustical/Emanations Shielding Engineering</Name>
+                </Section>
+                <Section>
+                    <Code>33-21 31 99 14</Code>
+                    <Name>Antiterrorism/Physical Security Engineering</Name>
+                </Section>
+                <Section>
+                    <Code>33-21 31 99 17</Code>
+                    <Name>Value Engineering</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>33-21 99 00</Code>
+            <Name>Other Design</Name>
+            <Section>
+                <Code>33-21 99 11</Code>
+                <Name>Fountain Design</Name>
+            </Section>
+            <Section>
+                <Code>33-21 99 14</Code>
+                <Name>Finish Hardware Design</Name>
+            </Section>
+            <Section>
+                <Code>33-21 99 15</Code>
+                <Name>Extraterrestrial Design Specialist</Name>
+            </Section>
+            <Section>
+                <Code>33-21 99 22</Code>
+                <Name>Health Services Design Specialist</Name>
+                <Section>
+                    <Code>33-21 99 22 11</Code>
+                    <Name>Hospital Design Specialist</Name>
+                </Section>
+                <Section>
+                    <Code>33-21 99 22 21</Code>
+                    <Name>Nursing Home Design Specialist</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>33-21 99 24</Code>
+                <Name>Infrastructure Design Specialist</Name>
+            </Section>
+            <Section>
+                <Code>33-21 99 25</Code>
+                <Name>Irrigation Design Specialist</Name>
+            </Section>
+            <Section>
+                <Code>33-21 99 26</Code>
+                <Name>Laboratory Design Specialist</Name>
+            </Section>
+            <Section>
+                <Code>33-21 99 28</Code>
+                <Name>Lighting Design Specialist</Name>
+            </Section>
+            <Section>
+                <Code>33-21 99 29</Code>
+                <Name>Marina Design Specialist</Name>
+            </Section>
+            <Section>
+                <Code>33-21 99 31</Code>
+                <Name>Model Making Specialist</Name>
+            </Section>
+            <Section>
+                <Code>33-21 99 39</Code>
+                <Name>Solar Design Specialist</Name>
+            </Section>
+            <Section>
+                <Code>33-21 99 45</Code>
+                <Name>Transportation Design Specialist</Name>
+                <Section>
+                    <Code>33-21 99 45 11</Code>
+                    <Name>Air Transportation Design Specialist</Name>
+                </Section>
+                <Section>
+                    <Code>33-21 99 45 21</Code>
+                    <Name>Roadway Transportation Design Specialist</Name>
+                </Section>
+                <Section>
+                    <Code>33-21 99 45 31</Code>
+                    <Name>Marine Transportation Design Specialist</Name>
+                </Section>
+                <Section>
+                    <Code>33-21 99 45 41</Code>
+                    <Name>Vertical Transportation Design Specialist</Name>
+                </Section>
+                <Section>
+                    <Code>33-21 99 45 51</Code>
+                    <Name>Parking/Traffic Specialist Design Specialist</Name>
+                </Section>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>33-25 00 00</Code>
+        <Name>Project Management</Name>
+        <Section>
+            <Code>33-25 11 00</Code>
+            <Name>Cost Estimation</Name>
+        </Section>
+        <Section>
+            <Code>33-25 14 00</Code>
+            <Name>Proposal Preparation</Name>
+        </Section>
+        <Section>
+            <Code>33-25 17 00</Code>
+            <Name>Client Briefing</Name>
+        </Section>
+        <Section>
+            <Code>33-25 21 00</Code>
+            <Name>Scheduling</Name>
+        </Section>
+        <Section>
+            <Code>33-25 31 00</Code>
+            <Name>Contract Administration</Name>
+        </Section>
+        <Section>
+            <Code>33-25 41 00</Code>
+            <Name>Procurement</Name>
+            <Section>
+                <Code>33-25 41 11</Code>
+                <Name>Manufacturing</Name>
+                <Section>
+                    <Code>33-25 41 11 11</Code>
+                    <Name>Building Product Manufacturing</Name>
+                </Section>
+                <Section>
+                    <Code>33-25 41 11 14</Code>
+                    <Name>Process Manufacturing</Name>
+                </Section>
+                <Section>
+                    <Code>33-25 41 11 17</Code>
+                    <Name>Construction Equipment Manufacturing</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>33-25 41 14</Code>
+                <Name>Construction Product Sales</Name>
+            </Section>
+            <Section>
+                <Code>33-25 41 17</Code>
+                <Name>Construction Product Marketing</Name>
+            </Section>
+            <Section>
+                <Code>33-25 41 21</Code>
+                <Name>Construction Product Purchasing</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>33-25 51 00</Code>
+            <Name>Quality Assurance</Name>
+        </Section>
+        <Section>
+            <Code>33-25 54 00</Code>
+            <Name>Quality Control</Name>
+        </Section>
+    </Section>
+    <Section>
+        <Code>33-31 00 00</Code>
+        <Name>Surveying</Name>
+        <Section>
+            <Code>33-31 11 00</Code>
+            <Name>Building Surveying</Name>
+        </Section>
+        <Section>
+            <Code>33-31 21 00</Code>
+            <Name>Site Surveying</Name>
+        </Section>
+        <Section>
+            <Code>33-31 31 00</Code>
+            <Name>GIS (Geographical Information System) Engineering</Name>
+        </Section>
+    </Section>
+    <Section>
+        <Code>33-41 00 00</Code>
+        <Name>Construction</Name>
+        <Section>
+            <Code>33-41 11 00</Code>
+            <Name>Contracting</Name>
+            <Section>
+                <Code>33-41 11 11</Code>
+                <Name>General Contracting</Name>
+            </Section>
+            <Section>
+                <Code>33-41 11 14</Code>
+                <Name>Subcontracting</Name>
+                <Section>
+                    <Code>33-41 11 14 11</Code>
+                    <Name>Masonry</Name>
+                </Section>
+                <Section>
+                    <Code>33-41 11 14 14</Code>
+                    <Name>Carpentry</Name>
+                </Section>
+                <Section>
+                    <Code>33-41 11 14 17</Code>
+                    <Name>Iron Working</Name>
+                </Section>
+                <Section>
+                    <Code>33-41 11 14 21</Code>
+                    <Name>Plumbing Subcontracting</Name>
+                </Section>
+                <Section>
+                    <Code>33-41 11 14 24</Code>
+                    <Name>Fire Protection Subcontracting</Name>
+                </Section>
+                <Section>
+                    <Code>33-41 11 14 27</Code>
+                    <Name>Heating Ventilation and Air Conditioning Subcontracting</Name>
+                </Section>
+                <Section>
+                    <Code>33-41 11 14 28</Code>
+                    <Name>Refrigeration Subcontracting</Name>
+                </Section>
+                <Section>
+                    <Code>33-41 11 14 37</Code>
+                    <Name>Electrical Subcontracting</Name>
+                </Section>
+                <Section>
+                    <Code>33-41 11 14 51</Code>
+                    <Name>Energy Monitoring and Controls Subcontracting</Name>
+                </Section>
+                <Section>
+                    <Code>33-41 11 14 54</Code>
+                    <Name>Hydrological Subcontracting</Name>
+                </Section>
+                <Section>
+                    <Code>33-41 11 14 61</Code>
+                    <Name>Painting</Name>
+                </Section>
+                <Section>
+                    <Code>33-41 11 14 64</Code>
+                    <Name>Tiling</Name>
+                </Section>
+                <Section>
+                    <Code>33-41 11 14 66</Code>
+                    <Name>Plaster Subcontracting</Name>
+                </Section>
+                <Section>
+                    <Code>33-41 11 14 69</Code>
+                    <Name>Gypsum Board Subcontracting</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>33-41 14 00</Code>
+            <Name>Construction Management</Name>
+        </Section>
+    </Section>
+    <Section>
+        <Code>33-55 00 00</Code>
+        <Name>Facility Use Disciplines</Name>
+        <Section>
+            <Code>33-55 14 00</Code>
+            <Name>Real Estate</Name>
+            <Section>
+                <Code>33-55 14 11</Code>
+                <Name>Real Estate Sales</Name>
+            </Section>
+            <Section>
+                <Code>33-55 14 14</Code>
+                <Name>Property Appraising</Name>
+            </Section>
+            <Section>
+                <Code>33-55 14 17</Code>
+                <Name>Leasing</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>33-55 21 00</Code>
+            <Name>Owner</Name>
+        </Section>
+        <Section>
+            <Code>33-55 24 00</Code>
+            <Name>Facility Operations</Name>
+            <Section>
+                <Code>33-55 24 11</Code>
+                <Name>Facility Space Planning</Name>
+            </Section>
+            <Section>
+                <Code>33-55 24 14</Code>
+                <Name>Facility Management</Name>
+            </Section>
+            <Section>
+                <Code>33-55 24 17</Code>
+                <Name>Facility Maintenance</Name>
+            </Section>
+            <Section>
+                <Code>33-55 24 21</Code>
+                <Name>Facility Services</Name>
+                <Section>
+                    <Code>33-55 24 21 11</Code>
+                    <Name>Plumbing Operation and Maintenance</Name>
+                </Section>
+                <Section>
+                    <Code>33-55 24 21 14</Code>
+                    <Name>Fire Protection Operation and Maintenance</Name>
+                </Section>
+                <Section>
+                    <Code>33-55 24 21 17</Code>
+                    <Name>Heating Ventilation and Air Conditioning Operation and Maintenance</Name>
+                </Section>
+                <Section>
+                    <Code>33-55 24 21 21</Code>
+                    <Name>Refrigeration Operation and Maintenance</Name>
+                </Section>
+                <Section>
+                    <Code>33-55 24 21 24</Code>
+                    <Name>Energy Monitoring and Controls Operation and Maintenance</Name>
+                </Section>
+                <Section>
+                    <Code>33-55 24 21 27</Code>
+                    <Name>Hydrological Operation and Maintenance</Name>
+                </Section>
+                <Section>
+                    <Code>33-55 24 21 31</Code>
+                    <Name>Lightning Protection Operation and Maintenance</Name>
+                </Section>
+                <Section>
+                    <Code>33-55 24 21 34</Code>
+                    <Name>Life Safety Operation and Maintenance</Name>
+                </Section>
+                <Section>
+                    <Code>33-55 24 21 37</Code>
+                    <Name>Radiation Protection Operation and Maintenance</Name>
+                </Section>
+                <Section>
+                    <Code>33-55 24 21 41</Code>
+                    <Name>Moisture Protection Operation and Maintenance</Name>
+                </Section>
+                <Section>
+                    <Code>33-55 24 21 44</Code>
+                    <Name>Indoor Air Quality Evaluation</Name>
+                </Section>
+                <Section>
+                    <Code>33-55 24 21 47</Code>
+                    <Name>Communications Operation and Maintenance</Name>
+                    <Section>
+                        <Code>33-55 24 21 47 11</Code>
+                        <Name>Telecommunications Operation and Maintenance</Name>
+                    </Section>
+                    <Section>
+                        <Code>33-55 24 21 47 14</Code>
+                        <Name>Information Technology Operation and Maintenance</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>33-55 24 21 51</Code>
+                    <Name>Facility Shielding Operation and Maintenance</Name>
+                    <Section>
+                        <Code>33-55 24 21 51 11</Code>
+                        <Name>Acoustic Shielding Operation and Maintenance</Name>
+                    </Section>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>33-55 36 00</Code>
+            <Name>Facility Restoration</Name>
+            <Section>
+                <Code>33-55 36 11</Code>
+                <Name>Concrete Restoration</Name>
+            </Section>
+            <Section>
+                <Code>33-55 36 21</Code>
+                <Name>Masonry Restoration</Name>
+            </Section>
+            <Section>
+                <Code>33-55 36 31</Code>
+                <Name>Parking Restoration</Name>
+            </Section>
+            <Section>
+                <Code>33-55 36 41</Code>
+                <Name>Historic Restoration</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>33-81 00 00</Code>
+        <Name>Support Disciplines</Name>
+        <Section>
+            <Code>33-81 11 00</Code>
+            <Name>Legal</Name>
+            <Section>
+                <Code>33-81 11 11</Code>
+                <Name>Code Specialist</Name>
+            </Section>
+            <Section>
+                <Code>33-81 11 14</Code>
+                <Name>Forensic Specialist</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>33-81 13 00</Code>
+            <Name>Environment</Name>
+            <Section>
+                <Code>33-81 13 11</Code>
+                <Name>Environmental Impact</Name>
+            </Section>
+            <Section>
+                <Code>33-81 13 14</Code>
+                <Name>Hazardous Materials Abatement</Name>
+            </Section>
+            <Section>
+                <Code>33-81 13 44</Code>
+                <Name>Tree Preservation Specialist</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>33-81 31 00</Code>
+            <Name>Finance</Name>
+            <Section>
+                <Code>33-81 31 11</Code>
+                <Name>Banking</Name>
+            </Section>
+            <Section>
+                <Code>33-81 31 14</Code>
+                <Name>Accounting</Name>
+            </Section>
+            <Section>
+                <Code>33-81 31 17</Code>
+                <Name>Insurance</Name>
+            </Section>
+            <Section>
+                <Code>33-81 31 21</Code>
+                <Name>Bonding</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>33-81 34 00</Code>
+            <Name>Human Resources</Name>
+        </Section>
+    </Section>
+    <Section>
+        <Code>33-99 00 00</Code>
+        <Name>Other Disciplines</Name>
+        <Section>
+            <Code>33-99 11 00</Code>
+            <Name>Science</Name>
+        </Section>
+        <Section>
+            <Code>33-99 13 00</Code>
+            <Name>Art</Name>
+            <Section>
+                <Code>33-99 13 11</Code>
+                <Name>Photography</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>33-99 41 00</Code>
+            <Name>Security</Name>
+        </Section>
+        <Section>
+            <Code>33-99 45 00</Code>
+            <Name>Public Relations</Name>
+        </Section>
+        <Section>
+            <Code>33-99 61 00</Code>
+            <Name>Education</Name>
+        </Section>
+    </Section>
+</Table>

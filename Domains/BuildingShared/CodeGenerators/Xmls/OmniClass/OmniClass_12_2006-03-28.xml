@@ -1,0 +1,747 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<Table>
+    <Name>Table 12 - Construction Entities by Form</Name>
+    <Source>The Secretariat for the OCCS Development Committee</Source>
+    <Version>Major Version No=&apos; Edition:1.0&apos;  Major Date=&apos;2006-03-28 Release&apos;  Minor Version No=&apos; Edition:1.0&apos;  Minor Date=&apos;2006-03-28 Release&apos;  Major=&apos;&apos;  Minor=&apos;&apos; </Version>
+    <Section>
+        <Code>12-11 00 00</Code>
+        <Name>Buildings</Name>
+        <Section>
+            <Code>12-11 11 00</Code>
+            <Name>Low-Rise Buildings</Name>
+            <Section>
+                <Code>12-11 11 14</Code>
+                <Name>Low-Rise Centralized Buildings</Name>
+                <Section>
+                    <Code>12-11 11 14 11</Code>
+                    <Name>Pavilion</Name>
+                </Section>
+                <Section>
+                    <Code>12-11 11 14 14</Code>
+                    <Name>Megaron</Name>
+                </Section>
+                <Section>
+                    <Code>12-11 11 14 17</Code>
+                    <Name>Rotunda</Name>
+                </Section>
+                <Section>
+                    <Code>12-11 11 14 21</Code>
+                    <Name>High Bay</Name>
+                </Section>
+                <Section>
+                    <Code>12-11 11 14 24</Code>
+                    <Name>Bungalow</Name>
+                </Section>
+                <Section>
+                    <Code>12-11 11 14 27</Code>
+                    <Name>Shack</Name>
+                </Section>
+                <Section>
+                    <Code>12-11 11 14 51</Code>
+                    <Name>Arena</Name>
+                </Section>
+                <Section>
+                    <Code>12-11 11 14 54</Code>
+                    <Name>Auditorium</Name>
+                </Section>
+                <Section>
+                    <Code>12-11 11 14 99</Code>
+                    <Name>Other Low-Rise Centralized Buildings</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>12-11 11 17</Code>
+                <Name>Low-Rise Linear Buildings</Name>
+                <Section>
+                    <Code>12-11 11 17 11</Code>
+                    <Name>Arcade</Name>
+                </Section>
+                <Section>
+                    <Code>12-11 11 17 14</Code>
+                    <Name>Mall</Name>
+                </Section>
+                <Section>
+                    <Code>12-11 11 17 17</Code>
+                    <Name>Basilica</Name>
+                </Section>
+                <Section>
+                    <Code>12-11 11 17 99</Code>
+                    <Name>Other Low-Rise Linear Buildings</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>12-11 11 21</Code>
+                <Name>Low-Rise Attached Buildings</Name>
+                <Section>
+                    <Code>12-11 11 21 11</Code>
+                    <Name>Infill Building</Name>
+                </Section>
+                <Section>
+                    <Code>12-11 11 21 14</Code>
+                    <Name>Lean-to Building</Name>
+                </Section>
+                <Section>
+                    <Code>12-11 11 21 17</Code>
+                    <Name>Building Addition</Name>
+                </Section>
+                <Section>
+                    <Code>12-11 11 21 99</Code>
+                    <Name>Other Low-Rise Attached Buildings</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>12-11 14 00</Code>
+            <Name>Mid-Rise Buildings</Name>
+            <Section>
+                <Code>12-11 14 11</Code>
+                <Name>Mid-Rise Free-Standing Buildings</Name>
+                <Section>
+                    <Code>12-11 14 11 11</Code>
+                    <Name>Centralized Mid-Rise Free-Standing Building</Name>
+                </Section>
+                <Section>
+                    <Code>12-11 14 11 14</Code>
+                    <Name>Centralized Mid-Rise Free-Standing Building with Court</Name>
+                </Section>
+                <Section>
+                    <Code>12-11 14 11 17</Code>
+                    <Name>Linear Mid-Rise Free-Standing Building</Name>
+                </Section>
+                <Section>
+                    <Code>12-11 14 11 99</Code>
+                    <Name>Other Mid-Rise Free-Standing Buildings</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>12-11 14 14</Code>
+                <Name>Mid-Rise Attached Buildings</Name>
+                <Section>
+                    <Code>12-11 14 14 11</Code>
+                    <Name>Infill Mid-Rise Building</Name>
+                </Section>
+                <Section>
+                    <Code>12-11 14 14 14</Code>
+                    <Name>Building Wing</Name>
+                </Section>
+                <Section>
+                    <Code>12-11 14 14 99</Code>
+                    <Name>Other Mid-Rise Attached Buildings</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>12-11 17 00</Code>
+            <Name>High-Rise Buildings</Name>
+            <Section>
+                <Code>12-11 17 11</Code>
+                <Name>High-Rise Free-Standing Buildings</Name>
+                <Section>
+                    <Code>12-11 17 11 11</Code>
+                    <Name>High-Rise Point Tower</Name>
+                </Section>
+                <Section>
+                    <Code>12-11 17 11 14</Code>
+                    <Name>High-Rise Slab</Name>
+                </Section>
+                <Section>
+                    <Code>12-11 17 11 99</Code>
+                    <Name>Other High-Rise Free-Standing Buildings</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>12-11 17 14</Code>
+                <Name>High-Rise Attached Buildings</Name>
+                <Section>
+                    <Code>12-11 17 14 11</Code>
+                    <Name>Attached High-Rise Sliver</Name>
+                </Section>
+                <Section>
+                    <Code>12-11 17 14 99</Code>
+                    <Name>Other High-Rise Attached Buildings</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>12-11 21 00</Code>
+            <Name>Submerged Buildings</Name>
+            <Section>
+                <Code>12-11 21 11</Code>
+                <Name>Deeply Submerged Building</Name>
+            </Section>
+            <Section>
+                <Code>12-11 21 14</Code>
+                <Name>Partially Submerged Building</Name>
+            </Section>
+            <Section>
+                <Code>12-11 21 99</Code>
+                <Name>Other Submerged Buildings</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>12-11 24 00</Code>
+            <Name>Mixed-Form Buildings</Name>
+        </Section>
+        <Section>
+            <Code>12-11 99 00</Code>
+            <Name>Other Buildings</Name>
+        </Section>
+    </Section>
+    <Section>
+        <Code>12-14 00 00</Code>
+        <Name>Non-Building Structures</Name>
+        <Section>
+            <Code>12-14 11 00</Code>
+            <Name>Ornamental Structures</Name>
+            <Section>
+                <Code>12-14 11 11</Code>
+                <Name>Monument</Name>
+            </Section>
+            <Section>
+                <Code>12-14 11 14</Code>
+                <Name>Sculpture</Name>
+            </Section>
+            <Section>
+                <Code>12-14 11 17</Code>
+                <Name>Fountain</Name>
+            </Section>
+            <Section>
+                <Code>12-14 11 99</Code>
+                <Name>Other Ornamental Structures</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>12-14 14 00</Code>
+            <Name>Bridges</Name>
+            <Section>
+                <Code>12-14 14 11</Code>
+                <Name>Trabeated Bridge</Name>
+            </Section>
+            <Section>
+                <Code>12-14 14 14</Code>
+                <Name>Arch Bridge</Name>
+            </Section>
+            <Section>
+                <Code>12-14 14 17</Code>
+                <Name>Truss Bridge</Name>
+            </Section>
+            <Section>
+                <Code>12-14 14 21</Code>
+                <Name>Cable-Stayed Bridge</Name>
+            </Section>
+            <Section>
+                <Code>12-14 14 24</Code>
+                <Name>Suspension Bridge</Name>
+            </Section>
+            <Section>
+                <Code>12-14 14 99</Code>
+                <Name>Other Bridges</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>12-14 17 00</Code>
+            <Name>Platforms and Piers</Name>
+            <Section>
+                <Code>12-14 17 11</Code>
+                <Name>Platform</Name>
+            </Section>
+            <Section>
+                <Code>12-14 17 14</Code>
+                <Name>Pier</Name>
+            </Section>
+            <Section>
+                <Code>12-14 17 17</Code>
+                <Name>Viaduct</Name>
+            </Section>
+            <Section>
+                <Code>12-14 17 99</Code>
+                <Name>Other Platforms and Piers</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>12-14 21 00</Code>
+            <Name>Tanks</Name>
+            <Section>
+                <Code>12-14 21 11</Code>
+                <Name>Silo</Name>
+            </Section>
+            <Section>
+                <Code>12-14 21 14</Code>
+                <Name>Crib</Name>
+            </Section>
+            <Section>
+                <Code>12-14 21 17</Code>
+                <Name>Liquid Storage Tank</Name>
+            </Section>
+            <Section>
+                <Code>12-14 21 21</Code>
+                <Name>Gas Storage Tank</Name>
+            </Section>
+            <Section>
+                <Code>12-14 21 99</Code>
+                <Name>Other Tanks</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>12-14 24 00</Code>
+            <Name>Towers</Name>
+            <Section>
+                <Code>12-14 24 11</Code>
+                <Name>Mast</Name>
+            </Section>
+            <Section>
+                <Code>12-14 24 14</Code>
+                <Name>Derrick</Name>
+            </Section>
+            <Section>
+                <Code>12-14 24 17</Code>
+                <Name>Gantry</Name>
+            </Section>
+            <Section>
+                <Code>12-14 24 21</Code>
+                <Name>Chimney Stack</Name>
+            </Section>
+            <Section>
+                <Code>12-14 24 24</Code>
+                <Name>Tower</Name>
+            </Section>
+            <Section>
+                <Code>12-14 24 99</Code>
+                <Name>Other Towers</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>12-14 27 00</Code>
+            <Name>Buried and Submerged Structures</Name>
+            <Section>
+                <Code>12-14 27 11</Code>
+                <Name>Subterranean Vertical Shaft</Name>
+            </Section>
+            <Section>
+                <Code>12-14 27 14</Code>
+                <Name>Horizontal Tunnel</Name>
+            </Section>
+            <Section>
+                <Code>12-14 27 17</Code>
+                <Name>Subterranean Duct Bank</Name>
+            </Section>
+            <Section>
+                <Code>12-14 27 99</Code>
+                <Name>Other Buried and Submerged Structures</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>12-14 31 00</Code>
+            <Name>Elevated Linear Structures</Name>
+            <Section>
+                <Code>12-14 31 11</Code>
+                <Name>Elevated Line</Name>
+            </Section>
+            <Section>
+                <Code>12-14 31 14</Code>
+                <Name>Elevated Pipe Line</Name>
+            </Section>
+            <Section>
+                <Code>12-14 31 99</Code>
+                <Name>Other Elevated Linear Structures</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>12-14 99 00</Code>
+            <Name>Other Non-Building Structures</Name>
+        </Section>
+    </Section>
+    <Section>
+        <Code>12-17 00 00</Code>
+        <Name>Movable Structures</Name>
+        <Section>
+            <Code>12-17 11 00</Code>
+            <Name>Temporary Movable Structures</Name>
+            <Section>
+                <Code>12-17 11 11</Code>
+                <Name>Temporary Platform</Name>
+            </Section>
+            <Section>
+                <Code>12-17 11 12</Code>
+                <Name>Temporary Staging </Name>
+            </Section>
+            <Section>
+                <Code>12-17 11 14</Code>
+                <Name>Temporary Building </Name>
+            </Section>
+            <Section>
+                <Code>12-17 11 17</Code>
+                <Name>Tent</Name>
+            </Section>
+            <Section>
+                <Code>12-17 11 99</Code>
+                <Name>Other Temporary Movable Structures</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>12-17 14 00</Code>
+            <Name>Moving Structures</Name>
+            <Section>
+                <Code>12-17 14 11</Code>
+                <Name>Track-Based Moving Structure</Name>
+            </Section>
+            <Section>
+                <Code>12-17 14 14</Code>
+                <Name>Wheel-Based Moving Structure</Name>
+            </Section>
+            <Section>
+                <Code>12-17 14 17</Code>
+                <Name>Cable-Based Moving Structure</Name>
+            </Section>
+            <Section>
+                <Code>12-17 14 99</Code>
+                <Name>Other Moving Structures </Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>12-17 17 00</Code>
+            <Name>Floating Structures</Name>
+            <Section>
+                <Code>12-17 17 11</Code>
+                <Name>Ships</Name>
+            </Section>
+            <Section>
+                <Code>12-17 17 14</Code>
+                <Name>Barges</Name>
+            </Section>
+            <Section>
+                <Code>12-17 17 17</Code>
+                <Name>Fixed-Location Floating Structure</Name>
+            </Section>
+            <Section>
+                <Code>12-17 17 99</Code>
+                <Name>Other Floating Structures</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>12-17 21 00</Code>
+            <Name>Orbiting Structures</Name>
+            <Section>
+                <Code>12-17 21 11</Code>
+                <Name>Space Station</Name>
+            </Section>
+            <Section>
+                <Code>12-17 21 99</Code>
+                <Name>Other Orbiting Structures</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>12-17 99 00</Code>
+            <Name>Other Movable Structures</Name>
+        </Section>
+    </Section>
+    <Section>
+        <Code>12-21 00 00</Code>
+        <Name>Land Forms</Name>
+        <Section>
+            <Code>12-21 11 00</Code>
+            <Name>Pavements and Tracks</Name>
+            <Section>
+                <Code>12-21 11 11</Code>
+                <Name>Pavement</Name>
+            </Section>
+            <Section>
+                <Code>12-21 11 14</Code>
+                <Name>Tracks</Name>
+            </Section>
+            <Section>
+                <Code>12-21 11 99</Code>
+                <Name>Other Pavements and Tracks</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>12-21 14 00</Code>
+            <Name>Retaining Forms</Name>
+            <Section>
+                <Code>12-21 14 11</Code>
+                <Name>Retaining Wall</Name>
+            </Section>
+            <Section>
+                <Code>12-21 14 14</Code>
+                <Name>Embankment</Name>
+            </Section>
+            <Section>
+                <Code>12-21 14 17</Code>
+                <Name>Terrace</Name>
+            </Section>
+            <Section>
+                <Code>12-21 14 21</Code>
+                <Name>Dam</Name>
+            </Section>
+            <Section>
+                <Code>12-21 14 99</Code>
+                <Name>Other Retaining Forms</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>12-21 17 00</Code>
+            <Name>Cuttings and Excavations</Name>
+            <Section>
+                <Code>12-21 17 11</Code>
+                <Name>Pit</Name>
+            </Section>
+            <Section>
+                <Code>12-21 17 14</Code>
+                <Name>Trench</Name>
+            </Section>
+            <Section>
+                <Code>12-21 17 17</Code>
+                <Name>Channel</Name>
+            </Section>
+            <Section>
+                <Code>12-21 17 99</Code>
+                <Name>Other Cuttings/Excavations</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>12-21 21 00</Code>
+            <Name>Plantings</Name>
+            <Section>
+                <Code>12-21 21 11</Code>
+                <Name>Planting Bed</Name>
+            </Section>
+            <Section>
+                <Code>12-21 21 14</Code>
+                <Name>Garden</Name>
+            </Section>
+            <Section>
+                <Code>12-21 21 17</Code>
+                <Name>Planting Field</Name>
+            </Section>
+            <Section>
+                <Code>12-21 21 21</Code>
+                <Name>Orchard</Name>
+            </Section>
+            <Section>
+                <Code>12-21 21 24</Code>
+                <Name>Forest</Name>
+            </Section>
+            <Section>
+                <Code>12-21 21 99</Code>
+                <Name>Other Plantings</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>12-21 99 00</Code>
+            <Name>Other Land Forms</Name>
+        </Section>
+    </Section>
+    <Section>
+        <Code>12-24 00 00</Code>
+        <Name>Water Forms</Name>
+        <Section>
+            <Code>12-24 11 00</Code>
+            <Name>Centralized Water Forms</Name>
+            <Section>
+                <Code>12-24 11 11</Code>
+                <Name>Pond</Name>
+            </Section>
+            <Section>
+                <Code>12-24 11 14</Code>
+                <Name>Reservoir</Name>
+            </Section>
+            <Section>
+                <Code>12-24 11 17</Code>
+                <Name>Lake</Name>
+            </Section>
+            <Section>
+                <Code>12-24 11 21</Code>
+                <Name>Sea</Name>
+            </Section>
+            <Section>
+                <Code>12-24 11 24</Code>
+                <Name>Ocean</Name>
+            </Section>
+            <Section>
+                <Code>12-24 11 99</Code>
+                <Name>Other Centralized Water Forms</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>12-24 14 00</Code>
+            <Name>Linear Water Forms</Name>
+            <Section>
+                <Code>12-24 14 11</Code>
+                <Name>Creek</Name>
+            </Section>
+            <Section>
+                <Code>12-24 14 14</Code>
+                <Name>Aqueduct</Name>
+            </Section>
+            <Section>
+                <Code>12-24 14 17</Code>
+                <Name>Canal</Name>
+            </Section>
+            <Section>
+                <Code>12-24 14 21</Code>
+                <Name>Stream</Name>
+            </Section>
+            <Section>
+                <Code>12-24 14 24</Code>
+                <Name>River</Name>
+            </Section>
+            <Section>
+                <Code>12-24 14 99</Code>
+                <Name>Other Linear Water Forms</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>12-24 99 00</Code>
+            <Name>Other Water Forms</Name>
+            <Section>
+                <Code>12-24 17 11</Code>
+                <Name>Bay</Name>
+            </Section>
+            <Section>
+                <Code>12-24 17 14</Code>
+                <Name>Inlet</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>12-27 00 00</Code>
+        <Name>Construction Entity Groupings</Name>
+        <Section>
+            <Code>12-27 17 00</Code>
+            <Name>Campus</Name>
+            <Section>
+                <Code>12-27 17 11</Code>
+                <Name>Education Campus</Name>
+            </Section>
+            <Section>
+                <Code>12-27 17 14</Code>
+                <Name>Compound</Name>
+            </Section>
+            <Section>
+                <Code>12-27 17 17</Code>
+                <Name>Base</Name>
+            </Section>
+            <Section>
+                <Code>12-27 17 21</Code>
+                <Name>Complex</Name>
+            </Section>
+            <Section>
+                <Code>12-27 17 24</Code>
+                <Name>Airport</Name>
+            </Section>
+            <Section>
+                <Code>12-27 17 99</Code>
+                <Name>Other Campus</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>12-27 21 00</Code>
+            <Name>Districts</Name>
+            <Section>
+                <Code>12-27 21 11</Code>
+                <Name>City Block</Name>
+            </Section>
+            <Section>
+                <Code>12-27 21 14</Code>
+                <Name>District</Name>
+            </Section>
+            <Section>
+                <Code>12-27 21 17</Code>
+                <Name>Neighborhood</Name>
+            </Section>
+            <Section>
+                <Code>12-27 21 21</Code>
+                <Name>Quarter</Name>
+            </Section>
+            <Section>
+                <Code>12-27 21 24</Code>
+                <Name>Sector</Name>
+            </Section>
+            <Section>
+                <Code>12-27 21 27</Code>
+                <Name>Reservation</Name>
+            </Section>
+            <Section>
+                <Code>12-27 21 99</Code>
+                <Name>Other Districts</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>12-27 24 00</Code>
+            <Name>Municipalities</Name>
+            <Section>
+                <Code>12-27 24 11</Code>
+                <Name>Hamlet</Name>
+            </Section>
+            <Section>
+                <Code>12-27 24 14</Code>
+                <Name>Village</Name>
+            </Section>
+            <Section>
+                <Code>12-27 24 17</Code>
+                <Name>Town</Name>
+            </Section>
+            <Section>
+                <Code>12-27 24 21</Code>
+                <Name>Suburb</Name>
+            </Section>
+            <Section>
+                <Code>12-27 24 24</Code>
+                <Name>City</Name>
+            </Section>
+            <Section>
+                <Code>12-27 24 27</Code>
+                <Name>Metropolitan Area</Name>
+            </Section>
+            <Section>
+                <Code>12-27 24 99</Code>
+                <Name>Other Municipalities</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>12-27 27 00</Code>
+            <Name>Regions</Name>
+            <Section>
+                <Code>12-27 27 11</Code>
+                <Name>County</Name>
+            </Section>
+            <Section>
+                <Code>12-27 27 14</Code>
+                <Name>Region</Name>
+            </Section>
+            <Section>
+                <Code>12-27 27 99</Code>
+                <Name>Other Regions</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>12-27 31 00</Code>
+            <Name>Territories</Name>
+            <Section>
+                <Code>12-27 31 11</Code>
+                <Name>Territory</Name>
+            </Section>
+            <Section>
+                <Code>12-27 31 14</Code>
+                <Name>State</Name>
+            </Section>
+            <Section>
+                <Code>12-27 31 17</Code>
+                <Name>Province</Name>
+            </Section>
+            <Section>
+                <Code>12-27 31 21</Code>
+                <Name>Nation</Name>
+            </Section>
+            <Section>
+                <Code>12-27 31 24</Code>
+                <Name>Theater</Name>
+            </Section>
+            <Section>
+                <Code>12-27 31 99</Code>
+                <Name>Other Territories</Name>
+            </Section>
+        </Section>
+    </Section>
+</Table>
