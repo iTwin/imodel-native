@@ -511,6 +511,7 @@ TEST_F(AccessKeyClientTests, GetTrialDaysRemainingEvalBackupAcl_Test)
     }
 
 // valid trial
+// TODO: for some reason this is failing in bim0200
 TEST_F(AccessKeyClientTests, GetTrialDaysRemainingValidTrial_Test)
     {
     Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
