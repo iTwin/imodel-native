@@ -1,0 +1,92 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ShowAllFiles>true</ShowAllFiles>
+    <LocalDebuggerCommandArguments>--gtest_repeat=1 --gtest_filter=*Test*</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="amalgamate.py" />
+    <None Include="AUTHORS" />
+    <None Include="BeJsonCpp.mke" />
+    <None Include="doxybuild.py" />
+    <None Include="LICENSE" />
+    <None Include="makerelease.py" />
+    <None Include="Prewire.mke" />
+    <None Include="SConstruct" />
+    <None Include="Tests\BuildTests.mke" />
+    <None Include="Tests\Prewire.mke" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="README.txt" />
+    <Text Include="Tests\ignore_list.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="BeJsonUtilities.cpp" />
+    <ClCompile Include="Published\SecureStoreTests.cpp" />
+    <ClCompile Include="Tests\Published\BeJsonUtilitiesTests.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="BeJsonCpp.PartFile.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="PublicAPI\BeJsonCpp\BeJsonUtilities.h" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{32E7C461-A6E1-4908-A98C-4B481109925E}</ProjectGuid>
+    <Keyword>MakeFileProj</Keyword>
+    <ProjectName>BeJsonCppTests</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <NMakeOutput>$(OutRoot)Winx64\Product\BeJsonCpp-Gtest\BeJsonCppTest.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeBuildCommandLine>bb -v4 -ax64 -r Libsrc-JsonCpp -f BeJsonCpp -p RunGtest re BeJsonCpp:UnitTest* BeJsonCpp:GTest</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -v4 -ax64 -r Libsrc-JsonCpp -f BeJsonCpp -p RunGtest b</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -v4 -ax64 -r Libsrc-JsonCpp -f BeJsonCpp -p RunGtest re BeJsonCpp:UnitTest* BeJsonCpp:GTest -c</NMakeCleanCommandLine>
+    <IncludePath>$(SrcRoot)BeJsonCpp\Tests\UnitTests\Published\;$(OutRoot)Winx64\BuildContexts\BeJsonCpp\PublicAPI;$(OutRoot)Winx64\BuildContexts\BeJsonCpp\VendorAPI;$(IncludePath)</IncludePath>
+    <OutDir>$(OutRoot)\Winx64\build\VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(OutDir)</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <NMakeOutput>BeJsonCppUnitTests.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <BuildLog>
+      <Path>$(OutDir)$(MSBuildProjectName).log</Path>
+    </BuildLog>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>
