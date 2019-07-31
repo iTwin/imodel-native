@@ -1257,14 +1257,16 @@ TEST_F(IndexTests, UserDefinedIndexesOnLinkTableRelSystemProperties)
 
             EXPECT_STRCASEEQ(IndexInfo("uix_rel_classid", true, "ts_Rel", "ECClassId").ToDdl().c_str(), GetHelper().GetIndexDdl("uix_rel_classid").c_str());
 
+            EXPECT_TRUE(GetHelper().IndexExists("uix_ts_Rel_sourcetargetclassid"));
+            EXPECT_STRCASEEQ(IndexInfo("uix_ts_Rel_sourcetargetclassid", true, "ts_Rel", std::vector<Utf8String>{"SourceId", "TargetId", "ECClassId"}).ToDdl().c_str(), GetHelper().GetIndexDdl("uix_ts_Rel_sourcetargetclassid").c_str());
 
-            EXPECT_FALSE(GetHelper().IndexExists("ix_rel_sourceid")) << "Is duplicate to system index on sourceid col (because of cardinality)";
-            EXPECT_STRCASEEQ(IndexInfo("ix_ts_Rel_source", false, "ts_Rel", "SourceId").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_ts_Rel_source").c_str()) << "System index on SourceId col (because of cardinality)";
+            EXPECT_TRUE(GetHelper().IndexExists("ix_rel_sourceid")) << "Is not duplicate to system index on sourceid col (because of cardinality)";
+
             EXPECT_STRCASEEQ(IndexInfo("uix_rel_sourceid", true, "ts_Rel", "SourceId").ToDdl().c_str(), GetHelper().GetIndexDdl("uix_rel_sourceid").c_str());
 
-            EXPECT_STRCASEEQ(IndexInfo("ix_rel_targetid", false, "ts_Rel", "TargetId").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_rel_targetid").c_str());
-            EXPECT_FALSE(GetHelper().IndexExists("uix_rel_targetid")) << "Is duplicate to system index on targetid col (because of cardinality)";
-            EXPECT_STRCASEEQ(IndexInfo("uix_ts_Rel_target", true, "ts_Rel", "TargetId").ToDdl().c_str(), GetHelper().GetIndexDdl("uix_ts_Rel_target").c_str()) << "System index on TargetId col (because of cardinality)";
+            EXPECT_STRCASEEQ(IndexInfo("ix_ts_Rel_target", false, "ts_Rel", "TargetId").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_ts_Rel_target").c_str());
+            EXPECT_TRUE(GetHelper().IndexExists("uix_rel_targetid")) << "Is duplicate to system index on targetid col (because of cardinality)";
+            //EXPECT_STRCASEEQ(IndexInfo("uix_ts_Rel_target", true, "ts_Rel", "TargetId").ToDdl().c_str(), GetHelper().GetIndexDdl("uix_ts_Rel_target").c_str()) << "System index on TargetId col (because of cardinality)";
 
 
             EXPECT_STRCASEEQ(IndexInfo("ix_rel_sourceid_order", false, "ts_Rel", std::vector<Utf8String>{"SourceId", "Order"}).ToDdl().c_str(), GetHelper().GetIndexDdl("ix_rel_sourceid_order").c_str());
@@ -3628,7 +3630,7 @@ TEST_F(IndexTests, ImplicitIndexesForRelationships)
                 "  </ECRelationshipClass>"
                 "</ECSchema>")));
 
-            ASSERT_EQ(9, (int) GetHelper().GetIndexNamesForTable("ts7_RelBase").size());
+            ASSERT_EQ(3, (int) GetHelper().GetIndexNamesForTable("ts7_RelBase").size());
             }
 
             {
@@ -3760,8 +3762,8 @@ TEST_F(IndexTests, ImplicitIndexesForRelationships)
             std::vector<Utf8String> indexNames = GetHelper().GetIndexNamesForTable("ts9_ARelB");
             ASSERT_EQ(3, (int) indexNames.size()) << "Indexes on ts9_ARelB";
             ASSERT_STREQ("ix_ts9_ARelB_ecclassid", indexNames[0].c_str());
-            ASSERT_STREQ("ix_ts9_ARelB_source", indexNames[1].c_str());
-            ASSERT_STREQ("ix_ts9_ARelB_target", indexNames[2].c_str());
+            ASSERT_STREQ("ix_ts9_ARelB_target", indexNames[1].c_str());
+            ASSERT_STREQ("uix_ts9_ARelB_sourcetargetclassid", indexNames[2].c_str());
             }
     }
 
@@ -3861,4 +3863,215 @@ TEST_F(IndexTests, IndexSkippedForIdSpecificationCA)
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT * FROM sqlite_master WHERE name='ix_test_ClassWithSyncId_SyncIDSpecification_Name' AND type='index'"));
     ASSERT_NE(BE_SQLITE_ROW, stmt.Step()) << "Index for SyncIdCA should'nt be created";
     }
+
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                     07/17
+//+---------------+---------------+---------------+---------------+---------------+------
+//TEST_F(IndexTests, BisElementRefersToElements)
+//    {
+//    auto createSeedFile = [&] (int noOfRelationships, int noOfInstances, bool enableIndexes)
+//        {
+//        Utf8String schema = R"xml(<?xml version='1.0' encoding='utf-8'?>
+//         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+//        <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+//        <ECEntityClass typeName="Element" modifier="None">
+//            <ECCustomAttributes>
+//                <ClassMap xmlns="ECDbMap.02.00">
+//                    <MapStrategy>TablePerHierarchy</MapStrategy>
+//                </ClassMap>
+//            </ECCustomAttributes>
+//            <ECProperty propertyName="Code" typeName="string" />
+//        </ECEntityClass>
+//        <ECRelationshipClass typeName="ElementRefersToElements" modifier="None">
+//            <ECCustomAttributes>
+//                <LinkTableRelationshipMap xmlns="ECDbMap.02.00.00">
+//                    <CreateForeignKeyConstraints>False</CreateForeignKeyConstraints>
+//                </LinkTableRelationshipMap>
+//                <ClassMap xmlns="ECDbMap.02.00.00">
+//                    <MapStrategy>TablePerHierarchy</MapStrategy>
+//                </ClassMap>
+//                <ShareColumns xmlns="ECDbMap.02.00.00">
+//                    <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+//                    <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+//                </ShareColumns>
+//            </ECCustomAttributes>
+//            <Source multiplicity="(1..*)" polymorphic="True" roleLabel="owns">
+//                <Class class="Element"/>
+//            </Source>
+//            <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+//                <Class class="Element"/>
+//            </Target>
+//            <ECProperty propertyName="P" typeName="int" />
+//            <ECProperty propertyName="Q" typeName="int" />
+//        </ECRelationshipClass>   
+//
+//        {relations}
+// 
+//    </ECSchema>)xml";
+//        if (enableIndexes)
+//            {
+//            Utf8String templateXml = R"text(
+//        <ECRelationshipClass typeName="c%d" modifier="None">
+//            <BaseClass>ElementRefersToElements</BaseClass>
+//            <ECCustomAttributes>
+//                <DbIndexList xmlns="ECDbMap.02.00">
+//                    <Indexes>
+//                        <DbIndex>
+//                            <Name>user_c%d_p</Name>
+//                            <IsUnique>True</IsUnique>
+//                            <Properties>
+//                                <string>P</string>
+//                            </Properties>
+//                        </DbIndex>
+//                        <DbIndex>
+//                            <Name>user_c%d_q</Name>
+//                            <IsUnique>True</IsUnique>
+//                            <Properties>
+//                                <string>Q</string>
+//                            </Properties>
+//                        </DbIndex>
+//                </Indexes>
+//                </DbIndexList>
+//            </ECCustomAttributes>
+//            <Source multiplicity="(1..1)" polymorphic="True" roleLabel="owns">
+//                <Class class="Element"/>
+//            </Source>
+//            <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+//                <Class class="Element"/>
+//            </Target>
+//        </ECRelationshipClass>)text";
+//
+//            Utf8String rels;
+//            for (int i = 0; i < noOfRelationships; i++)
+//                {
+//                Utf8String tmp;
+//                tmp.Sprintf(templateXml.c_str(), i, i, i);
+//                rels.append(tmp);
+//                }
+//            schema.ReplaceAll("{relations}", rels.c_str());
+//            }
+//        else
+//            {
+//            schema.ReplaceAll("{relations}", "");
+//            }
+//
+//        Utf8String fl;
+//        fl.Sprintf("perf_seed_%d_%d_%s.bim", noOfRelationships, noOfInstances, enableIndexes? "indexes": "");
+//        EXPECT_EQ(SUCCESS, SetupECDb(fl.c_str(), SchemaItem(schema.c_str())));
+//
+//        ECSqlStatement s1, s2;
+//        EXPECT_EQ(ECSqlStatus::Success, s1.Prepare(m_ecdb, "insert into ts.Element(ecinstanceId) values (null)"));
+//        EXPECT_EQ(ECSqlStatus::Success, s2.Prepare(m_ecdb, "insert into ts.ElementRefersToElements(sourceECInstanceId, targetECInstanceId, P, Q) values (?, ?, ?, ?)"));
+//
+//        auto insertEl = [&] ()
+//            {
+//            ECInstanceKey id;
+//            s1.Reset();
+//            s1.ClearBindings();
+//            EXPECT_EQ(BE_SQLITE_DONE, s1.Step(id));
+//            return id.GetInstanceId();
+//            };
+//
+//        auto insertRel = [&] (ECInstanceId sourceId, ECInstanceId targetId)
+//            {
+//            s2.Reset();
+//            s2.ClearBindings();
+//            s2.BindId(1, sourceId);
+//            s2.BindId(2, targetId);
+//            return s2.Step();
+//            };
+//
+//        printf("Inserting elements\n");
+//        std::vector<ECInstanceId> idList;
+//        auto noOfElements = (int) round(sqrt(noOfInstances));
+//        idList.reserve(noOfElements);
+//        for (int i = 0; i < noOfElements; i++)
+//            idList.push_back(insertEl());
+//
+//
+//        printf("Inserting relationships\n");
+//        int i = 0;
+//        StopWatch t("", true);
+//        for (int s = 0; s < noOfElements; ++s)
+//            {
+//            auto srcId = idList[s];
+//            for (int t = 0; t < noOfElements; ++t)
+//                {
+//                insertRel(srcId, idList[t]);
+//                i++;
+//                }
+//            }
+//        t.Stop();
+//        printf("[Seed File] Time took [time=%.4f sec] to insert %d relations with table having %d user indexes \n", t.GetElapsedSeconds(), i, noOfRelationships * 2);
+//        auto fname = BeFileName(m_ecdb.GetDbFileName());
+//        m_ecdb.CloseDb();
+//        return fname;
+//        };
+//
+//
+//     
+//     auto runTest = [&] (BeFileName seedFile, int noOfInstances)
+//         {
+//         BeFileName testFile = seedFile.GetDirectoryName();
+//         testFile.AppendUtf8(Utf8PrintfString("%s_%d.bim", Utf8String(seedFile.GetFileNameWithoutExtension()).c_str(), noOfInstances).c_str());
+//         BeFileName::BeCopyFile(seedFile, testFile);
+//         ECDb testECDb;
+//         testECDb.OpenBeSQLiteDb(testFile, ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
+//
+//         ECSqlStatement s1, s2;
+//         EXPECT_EQ(ECSqlStatus::Success, s1.Prepare(testECDb, "insert into ts.Element(ecinstanceId) values (null)"));
+//         EXPECT_EQ(ECSqlStatus::Success, s2.Prepare(testECDb, "insert into ts.ElementRefersToElements(sourceECInstanceId, targetECInstanceId, P, Q) values (?, ?, ?, ?)"));
+//
+//         auto insertEl = [&] ()
+//             {
+//             ECInstanceKey id;
+//             s1.Reset();
+//             s1.ClearBindings();
+//             EXPECT_EQ(BE_SQLITE_DONE, s1.Step(id));
+//             return id.GetInstanceId();
+//             };
+//
+//         auto insertRel = [&] (ECInstanceId sourceId, ECInstanceId targetId)
+//             {
+//             s2.Reset();
+//             s2.ClearBindings();
+//             s2.BindId(1, sourceId);
+//             s2.BindId(2, targetId);
+//             return s2.Step();
+//             };
+//
+//         printf("Inserting elements\n");
+//         std::vector<ECInstanceId> idList;
+//         auto noOfElements = (int) round(sqrt(noOfInstances));
+//         idList.reserve(noOfElements);
+//         for (int i = 0; i < noOfElements; i++)
+//             idList.push_back(insertEl());
+//
+//
+//         printf("Inserting relationships\n");
+//         int i = 0;
+//         StopWatch t("", true);
+//         for (int s = 0; s < noOfElements; ++s)
+//             {
+//             auto srcId = idList[s];
+//             for (int t = 0; t < noOfElements; ++t)
+//                 {
+//                 insertRel(srcId, idList[t]);
+//                 i++;
+//                 }
+//             }
+//         t.Stop();
+//         printf("[%s] [time=%.4f sec] [Relationship=%d]\n", Utf8String(testFile.GetFileNameWithoutExtension()).c_str(), t.GetElapsedSeconds(), noOfInstances);
+//         auto fname = BeFileName(m_ecdb.GetDbFileName());
+//         m_ecdb.CloseDb();
+//
+//         };
+//
+//     createSeedFile(500, 20000, true);
+//     createSeedFile(500, 20000, false);
+//
+//    }
+
 END_ECDBUNITTESTS_NAMESPACE

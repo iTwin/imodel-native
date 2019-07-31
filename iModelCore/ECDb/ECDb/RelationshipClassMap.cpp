@@ -971,9 +971,19 @@ ClassMappingStatus RelationshipClassLinkTableMap::_Map(ClassMappingContext& ctx)
         {
         if (SUCCESS != ca.TryGetAllowDuplicateRelationships(allowDuplicateRelationships))
             return ClassMappingStatus::Error;
+       
+        if (!allowDuplicateRelationships.IsNull())
+            {
+            GetECDb().GetImpl().Issues().ReportV("Warning: ECRelationshipClass '%s': has set deprecated property 'AllowDuplicateRelationships' of mapping customattribute LinkTableRelationshipMap. The value of 'AllowDuplicateRelationships' will be ignored.",
+                                 GetClass().GetFullName());
+            }
         }
 
-    AddIndices(ctx.GetImportCtx(), GetAllowDuplicateRelationshipsFlag(allowDuplicateRelationships));
+    if (!GetMapStrategy().GetTphInfo().IsValid())
+        AddIndices(ctx.GetImportCtx(), GetAllowDuplicateRelationshipsFlag(allowDuplicateRelationships));
+    else
+        AddDefaultIndexes(ctx.GetImportCtx());
+
     return ClassMappingStatus::Success;
     }
 
@@ -1030,7 +1040,10 @@ ClassMappingStatus RelationshipClassLinkTableMap::MapSubClass(ClassMappingContex
     if (stat != ClassMappingStatus::Success)
         return stat;
 
-    AddIndices(ctx.GetImportCtx(), DetermineAllowDuplicateRelationshipsFlagFromRoot(*baseClass->GetRelationshipClassCP()));
+
+    if (!GetMapStrategy().GetTphInfo().IsValid())
+        AddIndices(ctx.GetImportCtx(), DetermineAllowDuplicateRelationshipsFlagFromRoot(*baseClass->GetRelationshipClassCP()));
+
     return ClassMappingStatus::Success;
     }
 
@@ -1169,7 +1182,19 @@ void RelationshipClassLinkTableMap::AddIndices(SchemaImportContext& ctx, bool al
         AddIndex(ctx, RelationshipClassLinkTableMap::RelationshipIndexSpec::SourceAndTarget, true);
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                   Affan.Khan                            07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void RelationshipClassLinkTableMap::AddDefaultIndexes(SchemaImportContext& ctx)
+    {
+    if (GetPrimaryTable().GetType() == DbTable::Type::Existing)
+        return;
+    
+    //1. Unique index on (source,target,classid)
+    AddIndex(ctx, RelationshipIndexSpec::SourceAndTargetAndClassId, true);
+    //2. None unique index on (target);
+    AddIndex(ctx, RelationshipIndexSpec::Target, false);
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1190,6 +1215,9 @@ void RelationshipClassLinkTableMap::AddIndex(SchemaImportContext& schemaImportCo
             case RelationshipIndexSpec::SourceAndTarget:
                 name.append("sourcetarget");
                 break;
+            case RelationshipIndexSpec::SourceAndTargetAndClassId:
+                name.append("sourcetargetclassid");
+                break;
             default:
                 BeAssert(false);
                 break;
@@ -1199,21 +1227,23 @@ void RelationshipClassLinkTableMap::AddIndex(SchemaImportContext& schemaImportCo
     auto sourceECClassIdColumn = GetSourceECClassIdPropMap()->FindDataPropertyMap(GetPrimaryTable()) != nullptr ? &GetSourceECClassIdPropMap()->FindDataPropertyMap(GetPrimaryTable())->GetColumn() : nullptr;
     auto targetECInstanceIdColumn = &GetTargetECInstanceIdPropMap()->FindDataPropertyMap(GetPrimaryTable())->GetColumn();
     auto targetECClassIdColumn = GetTargetECClassIdPropMap()->FindDataPropertyMap(GetPrimaryTable()) != nullptr ? &GetTargetECClassIdPropMap()->FindDataPropertyMap(GetPrimaryTable())->GetColumn() : nullptr;
+    auto classId = &GetECClassIdPropertyMap()->FindDataPropertyMap(GetPrimaryTable())->GetColumn();
 
     std::vector<DbColumn const*> columns;
     switch (spec)
         {
             case RelationshipIndexSpec::Source:
-                GenerateIndexColumnList(columns, sourceECInstanceIdColumn, sourceECClassIdColumn, nullptr, nullptr);
+                GenerateIndexColumnList(columns, sourceECInstanceIdColumn, sourceECClassIdColumn, nullptr, nullptr, nullptr);
                 break;
             case RelationshipIndexSpec::Target:
-                GenerateIndexColumnList(columns, targetECInstanceIdColumn, targetECClassIdColumn, nullptr, nullptr);
+                GenerateIndexColumnList(columns, targetECInstanceIdColumn, targetECClassIdColumn, nullptr, nullptr, nullptr);
                 break;
-
             case RelationshipIndexSpec::SourceAndTarget:
-                GenerateIndexColumnList(columns, sourceECInstanceIdColumn, sourceECClassIdColumn, targetECInstanceIdColumn, targetECClassIdColumn);
+                GenerateIndexColumnList(columns, sourceECInstanceIdColumn, sourceECClassIdColumn, targetECInstanceIdColumn, targetECClassIdColumn, nullptr);
                 break;
-
+            case RelationshipIndexSpec::SourceAndTargetAndClassId:
+                GenerateIndexColumnList(columns, sourceECInstanceIdColumn, sourceECClassIdColumn, targetECInstanceIdColumn, targetECClassIdColumn, classId);
+                break;
             default:
                 BeAssert(false);
                 break;
@@ -1231,7 +1261,7 @@ void RelationshipClassLinkTableMap::AddIndex(SchemaImportContext& schemaImportCo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RelationshipClassLinkTableMap::GenerateIndexColumnList(std::vector<DbColumn const*>& columns, DbColumn const* col1, DbColumn const* col2, DbColumn const* col3, DbColumn const* col4)
+void RelationshipClassLinkTableMap::GenerateIndexColumnList(std::vector<DbColumn const*>& columns, DbColumn const* col1, DbColumn const* col2, DbColumn const* col3, DbColumn const* col4, DbColumn const* col5)
     {
     if (nullptr != col1 && col1->GetPersistenceType() == PersistenceType::Physical)
         columns.push_back(col1);
@@ -1244,6 +1274,9 @@ void RelationshipClassLinkTableMap::GenerateIndexColumnList(std::vector<DbColumn
 
     if (nullptr != col4 && col4->GetPersistenceType() == PersistenceType::Physical)
         columns.push_back(col4);
+
+    if (nullptr != col5 && col5->GetPersistenceType() == PersistenceType::Physical)
+        columns.push_back(col5);
     }
 
 
