@@ -1,0 +1,438 @@
+(c)2009-2011 Pointools Ltd.
+Pointools Vortex / PointoolsIO PODFormats API Release Notes
+
+====================================================================================================
+Version: 1.5.3.0
+====================================================================================================
+
+Vortex API
+----------
+
+- Vortex Client-Server architecture support updates
+- Improved robustness / stability on loading corrupted or truncated pod files
+- Improved error reporting
+- Fixed bug re-opening structured storage files
+
+
+PodFormats
+----------
+- Updated Faro fls/fws support from v4.6 to v4.8 and added 64bit support for Faro importer
+  Note: additional dependencies for Faro iQOpen have been added to this release.
+- Updated Riegl support from 1.6 to 1.13
+- Added POD file as import format. Requires VortexAPI to be licensed and loaded
+- Fixed LAS colour failure causing import process to quit
+- LAS 8 bit colour (non-conforming) supported for LAS files produced by some systems
+
+====================================================================================================
+Version: 1.5.2.3
+====================================================================================================
+
+Vortex API
+----------
+
+- Vortex Client-Server architecture support (Ext)
+
+
+====================================================================================================
+Version: 1.5.2.2
+====================================================================================================
+
+Vortex API
+----------
+
+- Redesigned support for PODs in COM Structured Storage (see ptOpenPODStructuredStorageStream())
+- Support for increased number of viewports
+
+
+====================================================================================================
+Version: 1.5.2.1
+====================================================================================================
+
+Vortex API
+----------
+- Constants for ptSetEditWorkingMode added to PointoolsVortexApi_import.h 
+- Size of buffer for meta data strings increased to 1024 to handle WKT strings
+- MAX_META_STR_LEN renamed to PT_MAX_META_STR_LEN
+- 64bit binaries included
+
+====================================================================================================
+Version: 1.5.2.0
+====================================================================================================
+
+Pointools IO
+------------
+
+- Increased LAS string lengths handled for geo referencing
+
+
+Vortex API
+----------
+
+- Fixed bug in multiple ptGetDetailedQueryPoints() calls.
+- Implemented ptCreateOrientedBoundingBoxQuery()
+- Fixed massive memory allocation attempt when performing queries using ptGetDetailedQueryPoints()
+- Fixed ptGetChannelInfo() string length issue
+- Out of core channel temp files are now deleted on destruction
+- Channel file locking issue now resolved between creation and reading
+- Visibility determination improved for working with large files of certain types for improved performance.
+- Added support for PODs embedded in Microsoft Structured Storage files.
+
+====================================================================================================
+Version: 1.5.1.1b      	
+====================================================================================================
+
+Vortex API
+----------
+- Fixed: ptGGetChannelInfo was not exported from API and not included in import file
+
+====================================================================================================
+Version: 1.5.1.1      	
+====================================================================================================
+
+Vortex API
+----------
+- Improved: ptPtsLoadedSinceLastDraw and ptPtsToLoadInViewport reports more accurate results
+- Fixed: Crash when query visible points without viewport specification (no display initialisation)
+- Fixed crash when using crash when using ptGetDetailedQueryPointsd with selection buffer
+- Added method to retrieve user channel information
+
+Pointools IO
+--------------
+- Added: Georeference tag added to POD files when available in imported LAS
+- Fixed: Updated LibLAS to 1.2.1 (statically linked) to fix bugs in georeferencing present in 1.2.0
+
+====================================================================================================
+Version: 1.5.1.0b      	
+====================================================================================================
+
+Vortex API
+----------
+- Fixed: Crash when initialising library from some client applications. 
+- Fixed: Crash when query visible points without viewport specification (no display initialisation)
+
+====================================================================================================
+Version: 1.5.1.0      	
+====================================================================================================
+
+Vortex API
+----------
+- Georeference string in WKT format extracted from LAS files where available. 
+- Added classification import from Terrascan bin files
+- ptSetCloudTransform implemented 
+- Fixed: in Classifications example that caused rendering to flash
+- Fixed: Selection colour not working for computed RGB values in queries
+- Fixed: Metadata Compression tolerance value not correctly read from POD file
+- Fixed: Tiles observed in point cloud display
+- Fixed: POD file is locked after certain sequence of file operations
+- Fixed: Viewport shading inconsistent
+
+Pointools IO
+-----------
+- Faro libraries updated to current latest 4.6 builds. Although Faro recommends side-by-side installation, for now dll registration (regsvr32) must be used on deployment
+
+- TopconCodec.dll has been removed and replaced with SMLib.dll which is an older library for Topcon cl3 support. This was done due to manifest issues with TopconCodec.dll.
+
+- GDAL 1.6.1 is linked statically. Please include the appropriate license text in your deployments. Builds without GDAL can also be provided if required
+
+====================================================================================================
+Version: 1.5.0.9      	  
+====================================================================================================
+
+Vortex API
+----------
+- Improved rendering compatibility for lower end hardware
+- Fixed PT_QUERY_DENSITY_LIMIT not working for all query types 
+- Fixed bug causing crash when same file loaded multiple times
+- Fixed incorrect results when using certain combination of editing and layer operations 
+- MovePnts example fixed to correctly display per point channel
+- MakeBmp example fixed to correctly display shader settings 
+- Snapping results improved for large flat data (eg for ariel lidar data)
+
+Formats API
+------------------
+- Function added to enable independent specification of X, Y and Z columns for generic ascii data import
+
+====================================================================================================
+Version: 1.5.0.8b        Date: 05 Mar 2010
+====================================================================================================
+
+Vortex API
+----------
+
+- Fixed viewports not holding shading settings when API HW rendering is not used
+
+====================================================================================================
+Version: 1.5.0.8         Date: 05 Mar 2010
+====================================================================================================
+
+Vortex API
+----------
+
+- Fixed using visible query on data spread over large range resulted in memory exception being raised
+
+Pointools IO
+-------------
+- Topcon importer removed awaiting build with correct manifest from Topcon. This will be made 
+  available again in a following release. TopconCodec.dll is not required for this build.
+  
+
+====================================================================================================
+Version: 1.5.0.7
+====================================================================================================
+
+Vortex API
+----------
+
+- Removed some internal debug output to std::cout 
+- Fixed HW renderer (ptDrawGL) preloading data resulting in performance issue
+
+
+====================================================================================================
+Version: 1.5.0.6          Date: 26 Feb 2010
+====================================================================================================
+
+Vortex API
+----------
+
+
+- Fixed ptIntersectRay() inconsistency issues
+- Fixed cloud clipping problem
+- Fixed Crash issues
+- Fixed 'Compression Tolerance' meta data error
+- Fixed clip boundary bleeds
+- Fixed unit issues when importing (e.g. in feet)
+- Fixed Spatial Filtering metadata always having value of zero 
+- Improved tolerance of LAS files which are truncated (fewer points than they should have) or corrupt
+- Fixed CL3 import that was affecting aspect ratio when import was in units other than meters
+
+- API Changes
+
+  - ptIntersectRay takes additional densityType and densityValue parameters (see reference manual)
+  - ptAddViewport takes additional paramter, contextType (see reference manual)
+  - cl3 importer temporarily removed due to manifest issues with TopconCodec.dll. This will be resolved in 1.5.0.7, awaiting update     from Topcon.
+
+
+====================================================================================================
+Version: 1.5.0.5
+====================================================================================================
+
+- Interim testing version, no notes
+
+
+====================================================================================================
+Version: 1.5.0.4
+====================================================================================================
+
+Overview of Changes
+===================
+
+
+Vortex API
+----------
+
+- 64bit builds included in distribution. Some changes to folder
+- ptDrawGL compatibility fixes for lesser hardware. New implementation requires only OpenGL 1.4
+- Point selection and hiding functions updated for reliability and repeatability. 
+- Errors in internal file handle management sometimes caused in crash when closing files
+- Smaller pod files sometimes did not display using a ptDrawGL call immediately following a ptOpenPOD call
+- Import of small point clouds distributed over large area (10s of kilometers or more) sometimes failed to generate a file
+ 
+
+====================================================================================================
+Version: 1.5.0.3
+====================================================================================================
+
+Overview of Changes
+===================
+
+
+Vortex API
+----------
+
+- LAS Point type classification integrated support
+- Fix for some regions appearing to be low density when using hardware rendering
+- Spatial density setting of query more robust
+
+
+PointoolsIO API
+---------------
+
+- LAS import support for classifications
+- Spatial Filtering now working correctly for formats where it is supported
+- Changes made to format capabilities manager to ensure correct formats are reporting support for “generate normals” and “include normals”
+- Function prototype changed for ptioSpatialFiltering
+- rsp importer fixed for projects referencing 3dd files
+- 3dd importer registration matrix problem fixed for solo imports
+- Capabilities manager information fixes
+
+Examples
+--------
+
+- Added 'classifications' example that renders LAS types as colors. To visualize classifications, go to 'shader' section in controls and check 'classification'.
+
+
+
+====================================================================================================
+Version: 1.5.0.2
+====================================================================================================
+
+Overview of Changes
+===================
+
+
+Vortex API
+----------
+
+- ptCreateKNNQuery() function added for fast K-Nearest Neighbor analysis of multiple query points
+- ptGetQueryPointsMultif() and ptGetQueryPointsMultid() functions added to support multiple point query types e.g. ptCreateKNNQuery()
+- General stability fixes
+
+Vortex API Examples
+-------------------
+
+- Editing example includes example of how to use ptCreateKNNQuery() and ptGetQueryPointsMultif(). Select a compact set of points and press 'k'.
+
+
+====================================================================================================
+Version: 1.5.0.1
+====================================================================================================
+
+Overview of Changes
+===================
+
+
+Vortex API
+----------
+
+- Scope selections
+- Oriented bounding box point selection ( ptSelectPointsByOrientedBox() )
+- View Density Query include on disk data
+- Remove ramp + shader folder deps
+- Update documentation for PODFormats
+- Check correctness ptSetWorkingFolder
+- Better handling of flat, near planar data
+- More rubust for point clouds spread over large distances
+
+Vortex API Examples
+-------------------
+
+- Scope
+- Oriented box point selection
+
+
+PointoolsIO PodFormats API
+--------------------------
+
+- Improved Feedback
+- Cancellation (First stage when importing)
+- HTML based user guide
+- HTML based reference manual
+- Preliminary printed user guide
+- General Vortex API documentation improvements
+
+
+
+====================================================================================================
+Version: 1.4.2.091030
+====================================================================================================
+
+Overview of Changes
+===================
+
+General
+-------
+
+- PointoolsIO and Vortex DLLs built against Microsoft.VC80.CRT version 8.0.50727.762
+
+
+====================================================================================================
+Version: 1.4.2.091029
+====================================================================================================
+
+
+PointoolsIO
+-----------
+
+- Format capabilities
+	- Capability information is provided for each supported format
+	- Every supported format is now referred to by a permanently fixed enumeration value
+	- Every supported format parameter is now referred to by a permanently fixed enumeration value
+	- Each format's supported parameters can be obtained
+	- Min, Max and Default value hints are given for each parameter
+	- Logical user interface grouping information is given for supported parameters
+
+- Feedback
+	- FeedbackA and FeedbackW objects reduced to one single stringless struct named Feedback
+	- Text handling removed due to internationalization requirements
+	- Now supports total progress percentage and current file progress percentage
+
+- Batch conversion can now be cancelled (e.g. by separate thread OR in feedback callbacks)
+	
+- New error codes are now enumerated values given in the Result enumeration
+
+- Improved memory handling for binary file imports
+
+- Fixed 2GB size limit per scan for RSP/3DD format
+
+
+Vortex
+------
+
+- New stub function with prototype:
+
+	PThandle PTAPI ptCreateOrientedBoundingBoxQuery( PTdouble minx, PTdouble miny, PTdouble minz, PTdouble maxx, PTdouble maxy, PTdouble maxz, PTdouble posx, PTdouble posy, PTdouble posz, PTdouble ux, PTdouble uy, PTdouble uz, PTdouble vx, PTdouble vy, PTdouble vz);
+
+	where:
+	
+	minx, miny, minz	Define bounding box minimum vertex (in local coordinate system)
+	maxx, maxy, maxz	Define bounding box maximum vertex (in local coordinate system)
+	posx, posy, posz	Define position of local coordinate system
+	ux, uy, uz			Define first (X) axis of local coordinate system (orientation)
+	vx, vy, vz			Define second(Y) axis of local coordinate system (orientation)
+						(Note: The third axis is automatically calculated internally)	
+	
+- A number of general fixes
+
+
+
+PointoolsIO API Code Level Changes
+==================================
+
+- Note: These 
+
+- Deprecated Functions:
+
+	PTFAPI int					NumSupportedFormats				( void );
+	PTFAPI bool					FormatInfo						( int format, char* extension, char* desc );
+	PTFAPI bool					FormatInfo						( int format, wchar_t* extension, wchar_t* desc );
+
+- Deprecated classes:
+
+	- FeedbackA
+	- FeedbackW
+
+- New Functions:
+
+	PTFAPI int					GetNumSupportedFormats			( void );
+	PTFAPI FormatID				GetFormatID						( int format );
+	PTFAPI bool					GetFormatInfo					( FormatID formatID, char *name, char *extension, bool *projectFormat, bool *internalFormat );
+	PTFAPI int					GetNumSupportedFormatParameters	( FormatID formatID );
+	PTFAPI FormatParameterI *	GetSupportedFormatParameter		( FormatID formatID, int param );
+	PTFAPI ParamID				GetSupportedFormatParameterID	( FormatID formatID, int param );
+	PTFAPI FormatParameterI *	GetFormatParameter				( FormatID formatID, ParamID paramID );
+	PTFAPI ParamType			GetFormatParameterType			( ParamID paramID );
+	PTFAPI Result				CancelBatchToPOD				( ImportBatch *batch );
+
+- New classes:
+
+	- Feedback
+	- FormatParameterI
+
+	
+
+Pointools Vortex API Code Level Changes
+=======================================
+
+- New oriented bounding box query stub (not yet implemented):
+
+	PThandle PTAPI ptCreateOrientedBoundingBoxQuery( PTdouble minx, PTdouble miny, PTdouble minz, PTdouble maxx, PTdouble maxy, PTdouble maxz, PTdouble posx, PTdouble posy, PTdouble posz, PTdouble ux, PTdouble uy, PTdouble uz, PTdouble vx, PTdouble vy, PTdouble vz);
