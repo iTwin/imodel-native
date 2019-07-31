@@ -1,0 +1,42 @@
+#*--------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------*/
+%if !defined (ANDROID)
+    %error Android only
+%endif
+
+# ------------------------------------------------
+# Inputs:
+# ------------------------------------------------
+%if !defined (ANDROID_SDK_ROOT)
+    %error Must set ANDROID_SDK_ROOT
+%endif
+
+%if !defined(__mdlMKI__)
+    %include mdl.mki
+%endif
+
+%include $(SrcRoot)bsicommon/sharedmki/stdversion.mki
+
+APK_EXT=apk
+
+%if $(TARGET_PROCESSOR_ARCHITECTURE)=="AndroidARM7A"
+	TARGET_APK_ARCH=armv7a
+%message 
+%endif
+
+%if defined(DEBUG)
+    TARGET_APK_FLAVOR=debug
+%else
+    TARGET_APK_FLAVOR=release-unsigned
+%endif
+
+
+%if defined(DEBUG)
+    TARGET_APK_NAME = $(appName)-$(TARGET_APK_ARCH)-$(TARGET_APK_FLAVOR)-$(STDVER_fileversion).$(APK_EXT)
+%else
+    TARGET_APK_NAME = $(appName)-$(TARGET_APK_ARCH)-$(TARGET_APK_FLAVOR)-$(STDVER_fileversion).$(APK_EXT)
+%endif
+
