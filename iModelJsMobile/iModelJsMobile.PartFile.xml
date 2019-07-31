@@ -15,6 +15,7 @@
         <SubPart PartName="libuv" PartFile="libuv" Repository="Thirdparty-libuv" />
         <!-- SubPart PartName="VendorAPI"/ -->
         <SubPart PartName="iModelJsNative-Mobile" Repository="imodel02" PartFile="iModelJsNodeAddon/iModelJsNodeAddon" />
+        <SubPart PartName="iModelJsApiDeclarations" Repository="imodel02" PartFile="iModelJsNodeAddon/iModelJsNodeAddon" />
         <SubPart PartName="iModelJsWindows-Only-SubParts" />
 
         <Bindings>

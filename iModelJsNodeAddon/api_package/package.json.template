@@ -17,5 +17,6 @@
   },
    "scripts": {
     "postinstall": "node ./installNativePlatform.js"
-   }
+   },
+  "types": "./IModelJsNative.d.ts"
 }

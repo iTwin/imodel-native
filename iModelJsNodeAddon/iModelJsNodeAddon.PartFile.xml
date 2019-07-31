@@ -5,10 +5,21 @@
   <Part Name="iModelJsNodeAddon.Dev" PrgOutputDir="iModelJsNodeAddon">
     <SubPart PartName="iModelCorePRG" PartFile="iModelCore/iModelCore"/>
     <SubPart PartName="iModelJsMakePackages"/>
+    <SubPart PartName="RunUnitTests"/>
   </Part>
 
+
+  <Part Name="iModelJsApiDeclarations" BentleyBuildMakeFile="api_package/ts/makeTs.mke" PrgOutputDir="iModelJsNodeAddon">
+    <Bindings>
+      <Files>
+        Delivery/IModelJsNative.d.ts
+      </Files>
+    </Bindings>
+  </Part>
+  
   <Part Name="iModelJsMakePackages" BentleyBuildMakeFile="makePackages.mke" OnlyPlatforms="x64,LinuxX64,MacOSx64" PrgOutputDir="iModelJsNodeAddon">
     <SubProduct ProductName="iModelJsNodeAddon"/>
+    <SubPart PartName="iModelJsApiDeclarations"/>
   </Part>
 
   <Product Name="iModelJsNodeAddon">
@@ -105,6 +116,10 @@
     <SubPart PartName="BeRapidJson" PartFile="iModelCore/Bentley/Bentley"/>
     <SubPart PartName="Licensing" PartFile="iModelCore/LicensingCrossPlatform/LicensingCrossPlatform" />
     <SubPart PartName="WebServicesClient" PartFile="iModelCore/WSClient/WSClient"/>
+  </Part>
+
+  <Part Name="RunUnitTests" DeferType="RunUnitTests" BentleyBuildMakeFile="api_package/ts/runTests.mke">
+      <SubPart PartName="iModelJsMakePackages"/>
   </Part>
 
 </BuildContext>

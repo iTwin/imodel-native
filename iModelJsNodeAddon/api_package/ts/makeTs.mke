@@ -1,0 +1,19 @@
+#----------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#----------------------------------------------------------------------
+%include mdl.mki
+
+baseDir = $(_MakeFilePath)
+
+$(baseDir)package-lock.json : $(baseDir)package.json
+    ~chdir $(baseDir)
+    npm install
+
+$(baseDir)lib/IModelJsNative.d.ts : $(baseDir)src/IModelJsNative.ts
+    ~chdir $(baseDir)
+    npm run build
+
+$(BuildContext)Delivery/IModelJsNative.d.ts : $(baseDir)lib/IModelJsNative.d.ts
+    $(LinkFirstDepToFirstTarget)

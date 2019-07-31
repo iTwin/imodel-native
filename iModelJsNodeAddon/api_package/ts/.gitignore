@@ -1,0 +1,25 @@
+# dependencies
+node_modules
+package-lock.json
+
+# build output
+.nyc_output
+/**/lib
+/**/test/output
+/generated-docs
+/out
+**/DevBuild.txt
+coverage
+
+# rush-specific
+/common/temp
+package-deps.json
+*.build.log
+*.build.error.log
+
+# docs
+/public
+
+# trash
+*.bak
+*.orig
