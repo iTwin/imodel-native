@@ -264,9 +264,10 @@ public:
         {
         ColorDef            color;
         DgnSubCategoryId    subCategoryId;
-        bvector<DPoint3d>   points;
-        CachedLineString(ColorDef c, DgnSubCategoryId subCat, bvector<DPoint3d>&& p)
-            : color(c), subCategoryId(subCat), points(std::move(p)) { }
+        bvector<int>        indices;
+        bvector<double>     points; // XYZXYZ, ready to go out as Float64Array
+        CachedLineString(ColorDef c, DgnSubCategoryId subCat)
+            : color(c), subCategoryId(subCat) { }
         };
     bvector<CachedLineString>       m_cachedLineStrings;
     bool                            m_gotBadPolyface;
@@ -292,11 +293,48 @@ private:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Matt.Gooding    07/19
 +---------------+---------------+---------------+---------------+---------------+------*/
+void ConvertStrokePoints(bvector<DPoint3d> const& strokePoints, bvector<int>& outIndices, bvector<double>& outPoints)
+    {
+    // Convert to points to XYZXYZ for Float64Array output and use indices for segments instead of disconnects.
+    // See ExportGraphicsLines in iModel.js.
+
+    // Only attempts to compress indices for contiguous points in line string.
+    bool canReuseLastPoint = false;
+    for (int i = 1; i < (int)strokePoints.size(); ++i)
+        {
+        // Remove disconnects. If there are any individual points, this will skip them.
+        while (i < (int)strokePoints.size() && strokePoints[i].IsDisconnect())
+            {
+            i += 2;
+            canReuseLastPoint = false;
+            }
+        if (i >= (int)strokePoints.size()) break;
+
+        if (canReuseLastPoint)
+            outIndices.push_back(outIndices.back());
+        else
+            {
+            outIndices.push_back((int)outPoints.size() / 3);
+            DPoint3dCR p0 = strokePoints[i-1];
+            outPoints.insert(outPoints.end(), { p0.x, p0.y, p0.z });
+            }
+
+        outIndices.push_back((int)outPoints.size() / 3);
+        DPoint3dCR p1 = strokePoints[i];
+        outPoints.insert(outPoints.end(), { p1.x, p1.y, p1.z });
+        canReuseLastPoint = true;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Matt.Gooding    07/19
++---------------+---------------+---------------+---------------+---------------+------*/
 virtual bool _ProcessCurveVector(CurveVectorCR curve, bool filled, SimplifyGraphic& sg) override
     {
     if (curve.IsAnyRegionType()) return false; // throw back to polyface processing if can be closed shape
     if (!m_generateLines) return true;
 
+    // Prepare curve vector for output
     bvector<DPoint3d> strokePoints;
     curve.AddStrokePoints(strokePoints, m_facetOptions);
     if (strokePoints.empty()) return true;
@@ -304,20 +342,28 @@ virtual bool _ProcessCurveVector(CurveVectorCR curve, bool filled, SimplifyGraph
     TransformCR transform = sg.GetLocalToWorldTransform();
     if (!transform.IsIdentity()) transform.Multiply(&strokePoints[0], (int)strokePoints.size());
 
-    // Bucket together based on subcategory and color
+    // Bucket output together based on subcategory and color
+    bvector<int>* outIndices = nullptr;
+    bvector<double>* outPoints = nullptr;
     DgnSubCategoryId subCategoryId = sg.GetCurrentGeometryParams().GetSubCategoryId();
     ColorDef color = sg.GetCurrentGraphicParams().GetFillColor();
     for (auto& cached : m_cachedLineStrings)
         {
         if (cached.color == color && cached.subCategoryId == subCategoryId)
             {
-            cached.points.push_back(DPoint3d::From(DISCONNECT, DISCONNECT, DISCONNECT));
-            cached.points.insert(cached.points.end(), strokePoints.begin(), strokePoints.end());
-            return true;
+            outIndices = &cached.indices;
+            outPoints = &cached.points;
+            break;
             }
         }
-
-    m_cachedLineStrings.emplace_back(color, subCategoryId, std::move(strokePoints));
+    if (outIndices == nullptr)
+        {
+        m_cachedLineStrings.emplace_back(color, subCategoryId);
+        outIndices = &m_cachedLineStrings.back().indices;
+        outPoints = &m_cachedLineStrings.back().points;
+        }
+    
+    ConvertStrokePoints(strokePoints, *outIndices, *outPoints);
     return true;
     }
 
@@ -561,41 +607,8 @@ static IFacetOptionsPtr createFacetOptions(Napi::Object const& exportProps)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Matt.Gooding    07/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Napi::Value convertLines(Napi::Env& env, bvector<DPoint3d> const& points)
+static Napi::Value convertLines(Napi::Env& env, bvector<int>& exportIndices, bvector<double>& exportPoints)
     {
-    bvector<int> exportIndices; exportIndices.reserve(points.size());
-    bvector<double> exportPoints; exportPoints.reserve(points.size());
-
-    // Only attempts to compress to indices for contiguous points in line string. Full search for
-    // duplicate points seems like low ROI for runtime cost.
-
-    bool canReuseLastPoint = false;
-    for (int i = 1; i < (int)points.size(); ++i)
-        {
-        // Remove disconnects. Create index buffer set up for GL_LINES where every segment is two points.
-        // If there are any individual points, this will skip them.
-        while (i < (int)points.size() && points[i].IsDisconnect())
-            {
-            i += 2;
-            canReuseLastPoint = false;
-            }
-        if (i >= (int)points.size()) break;
-
-        if (canReuseLastPoint)
-            exportIndices.push_back(exportIndices.back());
-        else
-            {
-            exportIndices.push_back((int)exportPoints.size() / 3);
-            DPoint3dCR p0 = points[i-1];
-            exportPoints.insert(exportPoints.end(), { p0.x, p0.y, p0.z });
-            }
-
-        exportIndices.push_back((int)exportPoints.size() / 3);
-        DPoint3dCR p1 = points[i];
-        exportPoints.insert(exportPoints.end(), { p1.x, p1.y, p1.z });
-        canReuseLastPoint = true;
-        }
-
     Napi::Int32Array indexArray = Napi::Int32Array::New(env, exportIndices.size());
     memcpy (indexArray.Data(), &exportIndices[0], exportIndices.size() * sizeof(int));
 
@@ -781,11 +794,12 @@ DgnDbStatus JsInterop::ExportGraphics(DgnDbR db, Napi::Object const& exportProps
 
         for (auto& entry : job->m_processor.m_cachedLineStrings)
             {
+            if (entry.indices.empty()) continue;
             Napi::Object cbArgument = Napi::Object::New(Env());
             cbArgument.Set("elementId", elementIdString);
             cbArgument.Set("subCategory", createIdString(Env(), entry.subCategoryId));
             cbArgument.Set("color", Napi::Number::New(Env(), entry.color.GetValue()));
-            cbArgument.Set("lines", convertLines(Env(), entry.points));
+            cbArgument.Set("lines", convertLines(Env(), entry.indices, entry.points));
             onLineGraphicsCb.Call({ cbArgument });
             }
 
@@ -870,9 +884,10 @@ DgnDbStatus JsInterop::ExportPartGraphics(DgnDbR db, Napi::Object const& exportP
 
     for (auto& entry : processor.m_cachedLineStrings)
         {
+        if (entry.indices.empty()) continue;
         Napi::Object cbArgument = Napi::Object::New(Env());
         cbArgument.Set("color", Napi::Number::New(Env(), entry.color.GetValue()));
-        cbArgument.Set("lines", convertLines(Env(), entry.points));
+        cbArgument.Set("lines", convertLines(Env(), entry.indices, entry.points));
         onLineGraphicsCb.Call({ cbArgument });
         }
 
