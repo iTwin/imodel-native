@@ -6,8 +6,11 @@
 #include "IModelJsNative.h"
 #include <folly/BeFolly.h>
 #include <DgnPlatform/SimplifyGraphic.h>
+#include <BRepCore/PSolidUtil.h>
 
 using namespace IModelJsNative;
+
+#define LOG (*NativeLogging::LoggingManager::GetLogger(L"ExportGraphics"))
 
 //=======================================================================================
 // @bsistruct                                                   Matt.Gooding    04/19
@@ -504,17 +507,26 @@ struct ExportGraphicsJob
     ExportGraphicsContext           m_context;
     DgnElementId                    m_elementId;
     bvector<PartInstanceRecord>     m_instances;
+    bool                            m_caughtException;
 
 ExportGraphicsJob(DgnDbR db, IFacetOptionsR fo, DgnElementId elId, bool saveInstances, bool generateLines)
     : m_geom(db), m_db(db), m_processor(db, fo, generateLines), m_elementId(elId),
-    m_context(m_processor, saveInstances ? &m_instances : nullptr)
+    m_context(m_processor, saveInstances ? &m_instances : nullptr), m_caughtException(false)
     {
     }
 
 void Execute()
     {
-    m_context.SetDgnDb(m_db);
-    m_geom.Draw(m_context, 0);
+    try
+        {
+        PSolidThreadUtil::WorkerThreadOuterMark outerMark; // Needed to handle errors and clear thread exclusion.
+        m_context.SetDgnDb(m_db);
+        m_geom.Draw(m_context, 0);
+        }
+    catch (...)
+        { // Mimic TileContext::ProcessElement bomb-proofing. Necessary for Parasolid error handling at a minimum.
+        m_caughtException = true;
+        }
     }
 };
 
@@ -735,12 +747,21 @@ DgnDbStatus JsInterop::ExportGraphics(DgnDbR db, Napi::Object const& exportProps
     for (uint32_t i = 0; i < (uint32_t)jobHandles.size(); ++i)
         {
         jobHandles[i].wait(); // Should use folly chaining? Good enough for now, jobs are FIFO
-
         ExportGraphicsJob* job = jobs[i].get();
+
+        if (job->m_caughtException)
+            {
+            Utf8CP errorMsg = "Element 0x%llx caused uncaught exception, this may indicate problems with the source data.";
+            LOG.errorv(errorMsg, job->m_elementId.GetValueUnchecked());
+            jobs[i].reset();
+            continue; // State is invalid - clean up and ignore this element.
+            }
+
         if (job->m_processor.m_gotBadPolyface)
             {
             Utf8CP errorMsg = "Element 0x%llx generated invalid geometry, this may indicate problems with the source data.";
-            JsInterop::GetLogger().errorv(errorMsg, job->m_elementId.GetValueUnchecked());
+            LOG.errorv(errorMsg, job->m_elementId.GetValueUnchecked());
+            // Bad polyface is handled gracefully, OK to continue in case other valid geometry was generated
             }
 
         Napi::String elementIdString = createIdString(Env(), job->m_elementId);
@@ -818,11 +839,20 @@ DgnDbStatus JsInterop::ExportPartGraphics(DgnDbR db, Napi::Object const& exportP
     auto graphic = context.CreateSceneGraphic(Transform::FromIdentity());
     GeometryStreamCR geomStream = partElement->GetGeometryStream();
     GeometryStreamIO::Collection geomCollection(geomStream.GetData(), geomStream.GetSize());
-    geomCollection.Draw(*graphic, context, geomParams, true, partElement.get());
+
+    try
+        {
+        geomCollection.Draw(*graphic, context, geomParams, true, partElement.get());
+        }
+    catch (...)
+        { // Protect against Parasolid exceptions
+        Utf8CP errorMsg = "GeometryPart 0x%llx caused uncaught exception, this may indicate problems with the source data.";
+        LOG.errorv(errorMsg, elementId.GetValueUnchecked());
+        }
 
     Utf8CP errorMsg = "Element 0x%llx generated invalid geometry, this may indicate problems with the source data.";
     if (processor.m_gotBadPolyface)
-        JsInterop::GetLogger().errorv(errorMsg, elementId.GetValueUnchecked());
+        LOG.errorv(errorMsg, elementId.GetValueUnchecked());
 
     // TS API specifies that modifying the binding of this function in the callback will be ignored
     Napi::Function onGraphicsCb = exportProps.Get("onPartGraphics").As<Napi::Function>();
