@@ -34,7 +34,7 @@ def findBinaryFiles(dirToSearch, globPatterns):
 def runCommand(cmd):
     startTime = time.time()
     print('> ' + cmd)
-    status = 0#subprocess.call(cmd, shell=True)
+    status = subprocess.call(cmd, shell=True)
     endTime = time.time()
     
     if status != 0:
