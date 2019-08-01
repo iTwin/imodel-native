@@ -3714,8 +3714,11 @@ TEST_F(GridsTestFixture, IntersectGridSurface_ElevationSurfaceWithoutCurve_Singl
     surface->Update();
 
     // Create elevation grid and surface
-    ElevationGridCPtr floorGrid = ElevationGrid::CreateAndInsert(ElevationGrid::CreateParams(*m_model,db.Elements().GetRootSubject()->GetElementId(),"Floor-Grid"));
+    ElevationGridPtr floorGrid = ElevationGrid::CreateAndInsert(ElevationGrid::CreateParams(*m_model,db.Elements().GetRootSubject()->GetElementId(),"Floor-Grid"));
     ASSERT_TRUE(floorGrid.IsValid());
+
+    floorGrid->SetPlacement(Placement3d({100.0, 100.0, 0.0}, YawPitchRollAngles::FromDegrees(0.0, 0.0, 0.0)));
+    floorGrid->Update();
 
     ElevationGridSurface::CreateParams elevationSurfaceParams(*floorGrid->GetSurfacesModel(), *floorGrid->GetAxis(), nullptr, 5.0);
     ElevationGridSurfacePtr elevationSurface = ElevationGridSurface::Create(elevationSurfaceParams);
