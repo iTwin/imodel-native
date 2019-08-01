@@ -85,6 +85,7 @@ struct WSError : public AsyncError
         Status m_status = Status::None;
         Id m_id = Id::Unknown;
         JsonValueCPtr m_data;
+        Utf8String m_activityId;
 
     private:
         static bool DoesStringFieldExist(JsonValueCR json, Utf8CP name);
@@ -111,6 +112,7 @@ struct WSError : public AsyncError
             Utf8StringCR errorDescription,
             JsonValueCP errorData
             );
+        void SetActivityId(Utf8StringCR activityId);
 
     public:
         //! Create error with WSError::Status::None
@@ -130,14 +132,30 @@ struct WSError : public AsyncError
         WSCLIENT_EXPORT WSError(Id errorId);
 
         WSCLIENT_EXPORT static WSError CreateServerNotSupportedError();
+        //! Create server not supported error and set activityId
+        //! @param activityId can be used to log request activity id when error occurs
+        //! @returns WSError for server not supported error
+        WSCLIENT_EXPORT static WSError CreateServerNotSupportedErrorWithActivityId(Utf8StringCR activityId);
         WSCLIENT_EXPORT static WSError CreateFunctionalityNotSupportedError();
+        //! Create WSError from httpResponse with activityId which takes value from reponse headers
+        //! @param httpResponse is used to initialize WSError
+        //! @param activityHeaderName is used to extract activityId from httpResponse headers. If headers do not have a key-value pair whose key matches activityHeaderName, then activity id will be set to an empty string.
+        //! @returns WSError with set activity id
+        WSCLIENT_EXPORT static WSError CreateErrorUsingActivityHeaderName(Http::ResponseCR httpResponse, Utf8StringCR activityHeaderName);
+        //! Create WSError from azureError with specified activityId
+        //! @param azureError is used to initialize WSError
+        //! @param activityId is set to WSError
+        //! @returns WSError with set activity id
+        WSCLIENT_EXPORT static WSError CreateErrorUsingActivityId(AzureErrorCR azureError, Utf8StringCR activityId);
 
         //! Get error status describing origin of error
         WSCLIENT_EXPORT Status GetStatus() const;
         //! Get error id returned from server when GetStatus() returns WSError::Status::ReceivedError
         WSCLIENT_EXPORT Id GetId() const;
         //! Get server reported data
-        WSCLIENT_EXPORT JsonValueCR  GetData() const;
+        WSCLIENT_EXPORT JsonValueCR GetData() const;
+        //! Get request activityId
+        WSCLIENT_EXPORT Utf8StringCR GetActivityId() const;
         //! DEPRECATED! Use GetMessage()
         WSCLIENT_EXPORT Utf8StringCR GetDisplayMessage() const;
         //! DEPRECATED! Use GetDescription()
