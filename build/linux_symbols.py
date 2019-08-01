@@ -12,8 +12,8 @@ def logWarning(msg): print('##vso[task.logissue type=warning;]' + msg)
 def doubleToTimeString(start, end):
     d = (end - start)
     if d < 60.0: return "{:0.2f} second(s)".format(d)
-    if d < 60.0*60.0: return str(d / 60.0) + " minutes(s)"
-    return str(d / (60.0*60.0)) + " hour(s)"
+    if d < 60.0*60.0: return "{:0.2f} minutes(s)".format(d / 60.0)
+    return "{:0.2f} hour(s)".format(d / (60.0*60.0))
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 def findBinaryFiles(dirToSearch, globPatterns):
@@ -34,7 +34,7 @@ def findBinaryFiles(dirToSearch, globPatterns):
 def runCommand(cmd):
     startTime = time.time()
     print('> ' + cmd)
-    status = subprocess.call(cmd, shell=True)
+    status = 0#subprocess.call(cmd, shell=True)
     endTime = time.time()
     
     if status != 0:
@@ -95,7 +95,7 @@ def main():
     print('==================================================')
     print(os.path.basename(sys.argv[0]) + ' args:')
     print('    dirToSearch = ' + args.rawDirToSearch + ' (=> ' + args.dirToSearch + ')')
-    print('    authToken = ' + ('<Yes>' if args.authToken else 'No'))
+    print('    authToken = ' + ('<Yes>' if args.authToken else '<No>'))
     print('    action = ' + args.action)
     print('    globPatterns = ' + ' '.join(args.globPatterns))
     print('==================================================')
