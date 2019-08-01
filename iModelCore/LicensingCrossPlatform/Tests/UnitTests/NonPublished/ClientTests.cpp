@@ -712,7 +712,7 @@ TEST_F(ClientTests, GetTrialDaysRemainingEvalExpired_Test)
 
     GetLicensingDbMock().MockUserPolicyFiles(userId, expiredEvalPolicyList);
 
-    EXPECT_EQ(client->GetTrialDaysRemaining(), 0);
+    EXPECT_EQ(static_cast<int>(client->GetTrialDaysRemaining()), 0);
     EXPECT_EQ(1, GetLicensingDbMock().GetPolicyFilesByUserCount(userId));
     }
 
@@ -736,7 +736,7 @@ TEST_F(ClientTests, GetTrialDaysRemainingEvalBackupAcl_Test)
 
     GetLicensingDbMock().MockUserPolicyFiles(userId, expiredEvalPolicyList);
 
-    EXPECT_EQ(client->GetTrialDaysRemaining(), -1);
+    EXPECT_EQ(static_cast<int>(client->GetTrialDaysRemaining()), -1);
     EXPECT_EQ(1, GetLicensingDbMock().GetPolicyFilesByUserCount(userId));
     }
 
@@ -753,7 +753,7 @@ TEST_F(ClientTests, GetTrialDaysRemainingValidTrial_Test)
 
     GetLicensingDbMock().MockUserPolicyFiles(userId, validTrialPolicyList);
 
-    EXPECT_EQ(client->GetTrialDaysRemaining(), 6);
+    EXPECT_EQ(static_cast<int>(client->GetTrialDaysRemaining()), 6);
     EXPECT_EQ(1, GetLicensingDbMock().GetPolicyFilesByUserCount(userId));
     }
 
@@ -770,7 +770,7 @@ TEST_F(ClientTests, GetTrialDaysRemainingExpiredTrial_Test)
 
     GetLicensingDbMock().MockUserPolicyFiles(userId, expiredTrialPolicyList);
 
-    EXPECT_EQ(client->GetTrialDaysRemaining(), 0);
+    EXPECT_EQ(static_cast<int>(client->GetTrialDaysRemaining()), 0);
     EXPECT_EQ(1, GetLicensingDbMock().GetPolicyFilesByUserCount(userId));
     }
 

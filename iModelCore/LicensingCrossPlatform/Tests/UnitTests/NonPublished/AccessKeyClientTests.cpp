@@ -458,7 +458,7 @@ TEST_F(AccessKeyClientTests, GetTrialDaysRemainingEvalValid_Test)
     // NOTE: the date for this comes from Assets/EvalPolicy.json
     auto daysLeft = DateHelper::diffdatedays("2022-04-26T00:00:00", DateHelper::GetCurrentTime());
 
-    EXPECT_EQ(client->GetTrialDaysRemaining(), daysLeft);
+    EXPECT_EQ(static_cast<int>(client->GetTrialDaysRemaining()), daysLeft);
     EXPECT_EQ(1, GetLicensingDbMock().GetPolicyFilesByKeyCount(TEST_ACCESSKEY));
     }
 
@@ -482,7 +482,7 @@ TEST_F(AccessKeyClientTests, GetTrialDaysRemainingEvalExpired_Test)
 
     GetLicensingDbMock().MockKeyPolicyFiles(TEST_ACCESSKEY, expiredEvalPolicyList);
 
-    EXPECT_EQ(client->GetTrialDaysRemaining(), 0);
+    EXPECT_EQ(static_cast<int>(client->GetTrialDaysRemaining()), 0);
     EXPECT_EQ(1, GetLicensingDbMock().GetPolicyFilesByKeyCount(TEST_ACCESSKEY));
     }
 
@@ -506,7 +506,7 @@ TEST_F(AccessKeyClientTests, GetTrialDaysRemainingEvalBackupAcl_Test)
 
     GetLicensingDbMock().MockKeyPolicyFiles(TEST_ACCESSKEY, expiredEvalPolicyList);
 
-    EXPECT_EQ(client->GetTrialDaysRemaining(), -1);
+    EXPECT_EQ(static_cast<int>(client->GetTrialDaysRemaining()), -1);
     EXPECT_EQ(1, GetLicensingDbMock().GetPolicyFilesByKeyCount(TEST_ACCESSKEY));
     }
 
@@ -524,7 +524,7 @@ TEST_F(AccessKeyClientTests, GetTrialDaysRemainingValidTrial_Test)
 
     GetLicensingDbMock().MockKeyPolicyFiles(TEST_ACCESSKEY, validTrialPolicyList);
 
-    EXPECT_EQ(client->GetTrialDaysRemaining(), 6);
+    EXPECT_EQ(static_cast<int>(client->GetTrialDaysRemaining()), 6);
     EXPECT_EQ(1, GetLicensingDbMock().GetPolicyFilesByKeyCount(TEST_ACCESSKEY));
     }
 
@@ -541,6 +541,6 @@ TEST_F(AccessKeyClientTests, GetTrialDaysRemainingExpiredTrial_Test)
 
     GetLicensingDbMock().MockKeyPolicyFiles(TEST_ACCESSKEY, expiredTrialPolicyList);
 
-    EXPECT_EQ(client->GetTrialDaysRemaining(), 0);
+    EXPECT_EQ(static_cast<int>(client->GetTrialDaysRemaining()), 0);
     EXPECT_EQ(1, GetLicensingDbMock().GetPolicyFilesByKeyCount(TEST_ACCESSKEY));
     }
