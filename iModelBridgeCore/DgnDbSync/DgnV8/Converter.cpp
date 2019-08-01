@@ -2314,7 +2314,7 @@ BentleyStatus Converter::ConvertElement(ElementConversionResults& results, DgnV8
     if (!elementCode.IsValid())
         elementCode = _ComputeElementCode(v8eh, ecContent);
             
-    if (ecContent.m_v8ElementType == V8ElementType::Graphical)
+    if ((upx == nullptr || upx->_UseProxyGraphics(v8eh, *this, v8mm)) && ecContent.m_v8ElementType == V8ElementType::Graphical)
         {
         if (BentleyApi::SUCCESS != _CreateElementAndGeom(results, v8mm, elementClassId, hasPrimaryInstance, categoryId, elementCode, v8eh))
             {

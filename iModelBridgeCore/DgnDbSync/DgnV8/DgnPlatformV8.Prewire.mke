@@ -315,6 +315,7 @@ dvec2d_H_
 dvec3d_H_
 rotmatrix_H_
 transform_H_
+__bcDTMClassH__
 CSMapErrors
 <
 

@@ -4,8 +4,10 @@
 |
 +--------------------------------------------------------------------------------------*/
 //#include "ConverterInternal.h"
-//
 #include <DgnDbSync/DgnV8/DgnV8.h>
+#define VANCOUVER_API
+#include <VersionedDgnV8Api/ScalableMesh/ScalableMeshLib.h>
+
 #include <VersionedDgnV8Api/ScalableMeshElement/ScalableMeshAttachment.h>
 #include <VersionedDgnV8Api/ScalableMesh/ScalableMeshDefs.h>
 
@@ -143,4 +145,69 @@ void Convert(DgnV8EhCR v8el)
 
     return Result::SkipElement;
 */
+    }
+
+struct  SMHostv8 : Bentley::ScalableMesh::ScalableMeshLib::Host
+    {
+    SMHostv8()
+        {
+        }
+
+    Bentley::ScalableMesh::ScalableMeshAdmin& _SupplyScalableMeshAdmin()
+        {
+        struct CsScalableMeshAdmin : public Bentley::ScalableMesh::ScalableMeshAdmin
+            {
+            //virtual IScalableMeshTextureGeneratorPtr _GetTextureGenerator() override
+            //    {
+            //    IScalableMeshTextureGeneratorPtr generator;
+            //    return generator;
+            //    }
+
+            virtual bool _CanImportPODfile() const override
+                {
+                return false;
+                }
+
+            virtual Utf8String _GetProjectID() const override
+                {             
+                Utf8String projectGUID("95b8160c-8df9-437b-a9bf-22ad01fecc6b");
+
+                Bentley::WString projectGUIDw;
+
+                if (BSISUCCESS == DgnV8Api::ConfigurationManager::GetVariable(projectGUIDw, L"SM_PROJECT_GUID"))
+                    {
+                    projectGUID.Assign(projectGUIDw.c_str());
+                    }
+                return projectGUID;
+                }
+
+            virtual uint64_t _GetProductId() const override
+                {
+                return 1; //Default product Id for internal product
+                }            
+
+            virtual Bentley::ScalableMesh::ScalableMeshAdmin::ProductInfo _GetProductInfo() const override
+                {
+                Bentley::ScalableMesh::ScalableMeshAdmin::ProductInfo productInfo;
+                productInfo.m_productName = L"DgnV8Converter";
+                return productInfo;
+                }
+            };
+        return *new CsScalableMeshAdmin;
+        };
+
+    };
+
+BentleyStatus  ConvertDTMElementRefTo3SM(DgnV8EhCR v8el, WCharCP smFile)
+    {
+    StatusInt status;
+    Bentley::ScalableMesh::ScalableMeshLib::Initialize(*new SMHostv8());
+    auto scalableMeshCreatorPtr = Bentley::ScalableMesh::IScalableMeshSourceCreator::GetFor(smFile, status);
+
+    auto sourceP = Bentley::ScalableMesh::IDTMDgnTerrainModelSource::Create(v8el.GetElementRef());
+    scalableMeshCreatorPtr->EditSources().Add(sourceP);
+    scalableMeshCreatorPtr->Create();
+    scalableMeshCreatorPtr->SaveToFile();
+    scalableMeshCreatorPtr = nullptr;
+    return SUCCESS;
     }
