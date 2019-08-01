@@ -406,11 +406,27 @@ struct WorkerThreadOuterMark : RefCountedBase
     BREPCORE_EXPORT ~WorkerThreadOuterMark ();
     };
 
+/*=================================================================================**//**
+* @bsiclass                                                     Matt.Gooding     09/2017
+*
+*  This is alternative to WorkerThreadOuterMark that does not create a partition or
+*  perform any rollbacks when errors are encountered. It is intended for "read-only"
+*  multi-threaded processing of Parasolid bodies, and provides a significant performance
+*  boost for that case (~10x WorkerThreadOuterMark).
+*
++===============+===============+===============+===============+===============+======*/
+struct WorkerThreadErrorHandler : RefCountedBase
+    {
+    BREPCORE_EXPORT WorkerThreadErrorHandler();
+    BREPCORE_EXPORT ~WorkerThreadErrorHandler();
+    };
+
 BREPCORE_EXPORT static PK_PARTITION_t  GetThreadPartition();
 BREPCORE_EXPORT static void  SetThreadPartitionMark();
 
 typedef  RefCountedPtr<MainThreadMark>          MainThreadMarkPtr;
 typedef  RefCountedPtr<WorkerThreadOuterMark>   WorkerThreadOuterMarkPtr;
+typedef  RefCountedPtr<WorkerThreadErrorHandler> WorkerThreadErrorHandlerPtr;
 };
 
 END_BENTLEY_DGN_NAMESPACE

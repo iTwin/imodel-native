@@ -595,7 +595,7 @@ void Execute()
     {
     try
         {
-        PSolidThreadUtil::WorkerThreadOuterMark outerMark; // Needed to handle errors and clear thread exclusion.
+        PSolidThreadUtil::WorkerThreadErrorHandler errorHandler; // Needed to handle errors and clear thread exclusion.
         m_context.SetDgnDb(m_db);
         m_geom.Draw(m_context, 0);
         }

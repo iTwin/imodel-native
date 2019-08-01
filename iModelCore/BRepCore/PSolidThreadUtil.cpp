@@ -145,33 +145,48 @@ static void clearExclusions()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley      10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-static PK_ERROR_code_t threadedParasolidErrorHandler (PK_ERROR_sf_t* errorSf)
+static PK_ERROR_code_t threadedErrorHandler(PK_ERROR_sf_t* errorSf, bool hasMark)
     {
-    if (errorSf->severity > PK_ERROR_mild)
+    if (errorSf->severity <= PK_ERROR_mild)
+        return 0;
+
+    switch (errorSf->code)
         {
-        switch (errorSf->code)
-            {
-            case 942:         // Edge crossing (constructing face from curve vector to perform intersections)
-            case 547:         // Nonmanifold  (constructing face from curve vector to perform intersections)
-            case 1083:        // Degenerate trim loop.
-                break;
+        case 942:         // Edge crossing (constructing face from curve vector to perform intersections)
+        case 547:         // Nonmanifold  (constructing face from curve vector to perform intersections)
+        case 1083:        // Degenerate trim loop.
+            break;
 
-            default:
-                //printf ("Error %d caught in parasolid error handler\n", errorSf->code);
-                BeAssert (false && "Severe error during threaded processing");
-                break;
-            }
-
-        clearExclusions ();
-
-        PK_THREAD_tidy();
-
-        PSolidThreadLocalStorage::GoToPMark ();
-
-        throw PSolidThreadUtil::ParasolidException();
+        default:
+            //printf ("Error %d caught in parasolid error handler\n", errorSf->code);
+            BeAssert (false && "Severe error during threaded processing");
+            break;
         }
 
-    return 0;
+    clearExclusions ();
+
+    PK_THREAD_tidy();
+
+    if (hasMark)
+        PSolidThreadLocalStorage::GoToPMark ();
+
+    throw PSolidThreadUtil::ParasolidException();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Matt.Gooding    09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static PK_ERROR_code_t threadedParasolidErrorHandlerWithoutMark(PK_ERROR_sf_t* errorSf)
+    {
+    return threadedErrorHandler(errorSf, false);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley      10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+static PK_ERROR_code_t threadedParasolidErrorHandler (PK_ERROR_sf_t* errorSf)
+    {
+    return threadedErrorHandler(errorSf, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -219,6 +234,26 @@ PSolidThreadUtil::WorkerThreadOuterMark::~WorkerThreadOuterMark()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Matt.Gooding    09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+PSolidThreadUtil::WorkerThreadErrorHandler::WorkerThreadErrorHandler()
+    {
+    PK_ERROR_frustrum_t errorFrustum;
+    errorFrustum.handler_fn = threadedParasolidErrorHandlerWithoutMark;
+    PK_THREAD_register_error_cbs(errorFrustum);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Matt.Gooding    09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+PSolidThreadUtil::WorkerThreadErrorHandler::~WorkerThreadErrorHandler()
+    {
+    PK_ERROR_frustrum_t errorFrustum;
+    errorFrustum.handler_fn = nullptr;
+    PK_THREAD_register_error_cbs(errorFrustum);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 PK_PARTITION_t  PSolidThreadUtil::GetThreadPartition()
@@ -241,8 +276,3 @@ void PSolidThreadUtil::SetThreadPartitionMark()
     {
     PSolidThreadLocalStorage::PrepareToWork();
     }
-
-
-
-
-
