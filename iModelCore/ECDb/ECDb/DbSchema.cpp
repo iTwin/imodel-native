@@ -976,6 +976,21 @@ std::vector<DbConstraint const*> DbTable::GetConstraints() const
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                            Eimantas.Morkunas        07/2019
+//---------------------------------------------------------------------------------------
+bool DbTable::RemoveIndexDef(Utf8StringCR indexName)
+    {
+    auto&& indexIt = std::find_if(m_indexes.begin(), m_indexes.end(), [&](std::unique_ptr<DbIndex> const& index)
+        { return index->GetName().Equals(indexName); });
+
+    if (indexIt == m_indexes.end())
+        return false;
+
+    m_indexes.erase(std::remove(m_indexes.begin(), m_indexes.end(), *indexIt));
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                          muhammad.zaighum                           01/2015
 //---------------------------------------------------------------------------------------
 BentleyStatus DbTable::AddTrigger(Utf8StringCR triggerName, DbTrigger::Type type, Utf8StringCR condition, Utf8StringCR body)

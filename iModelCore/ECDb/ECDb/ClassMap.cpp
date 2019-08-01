@@ -522,6 +522,9 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
 //---------------------------------------------------------------------------------------
 BentleyStatus ClassMap::Update(SchemaImportContext& ctx)
     {
+    if (SUCCESS != DbMappingManager::Classes::UpdateUserDefinedIndexes(ctx, *this))
+        return ERROR;
+
     //Follow can change ECInstanceId, ECClassId by optionally adding 
     if (m_failedToLoadProperties.empty())
         return SUCCESS;
