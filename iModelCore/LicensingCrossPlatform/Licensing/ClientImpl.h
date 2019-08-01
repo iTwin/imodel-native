@@ -84,6 +84,7 @@ protected:
     void UsageHeartbeat();
     void StopUsageHeartbeat();
     BentleyStatus RecordUsage();
+    Utf8String m_usageStartTime;
 
     // Log Posting heartbeat
     std::atomic<int64_t> m_lastRunningLogPostingHeartbeatStartTime{ 0 };

@@ -61,6 +61,9 @@ LicenseStatus ClientImpl::StartApplication()
     {
     LOG.debug("ClientImpl::StartApplication");
 
+    // start time for offline usage logs
+    m_usageStartTime = DateTime::GetCurrentTimeUtc().ToString();
+
     if (Utf8String::IsNullOrEmpty(m_userInfo.username.c_str()))
         {
         LOG.error("ClientImpl::StartApplication ERROR - Username string is null or empty.");
@@ -427,7 +430,7 @@ BentleyStatus ClientImpl::MarkFeature(Utf8StringCR featureId, FeatureUserDataMap
     // Create feature record
     bool durationTracked = false; // TODO: where to get this?
 
-    Utf8String startTimeUtc = DateTime::GetCurrentTimeUtc().ToString(); // TODO: find start time
+    Utf8String startTimeUtc = m_usageStartTime; // gets usage time from start of StartApplication call, is this right?
     Utf8String endTimeUtc = DateTime::GetCurrentTimeUtc().ToString();
     Utf8String entryDate = endTimeUtc;
 
@@ -533,7 +536,7 @@ BentleyStatus ClientImpl::RecordUsage()
     GenerateSID gsid;
 
     // Create usage record
-    Utf8String startTimeUtc = DateTime::GetCurrentTimeUtc().ToString(); // TODO: find start time
+    Utf8String startTimeUtc = m_usageStartTime;
     Utf8String endTimeUtc = DateTime::GetCurrentTimeUtc().ToString();
     Utf8String entryDate = endTimeUtc;
 
