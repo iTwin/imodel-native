@@ -3864,7 +3864,359 @@ TEST_F(IndexTests, IndexSkippedForIdSpecificationCA)
     ASSERT_NE(BE_SQLITE_ROW, stmt.Step()) << "Index for SyncIdCA should'nt be created";
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Eimantas.Morkunas                     07/19
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(IndexTests, AddAdditionalIndex)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("AddIndex.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+            <ECEntityClass typeName="TestClass">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <DbIndexList xmlns="ECDbMap.02.00.00">
+                        <Indexes>
+                            <DbIndex>
+                                <Name>ix_test_TestsClass_Identifier</Name>
+                                <IsUnique>False</IsUnique>
+                                <Properties>
+                                    <string>Identifier</string>
+                                </Properties>
+                            </DbIndex>
+                        </Indexes>
+                    </DbIndexList>
+                </ECCustomAttributes>
 
+                <ECProperty propertyName="Identifier" typeName="string" />
+                <ECProperty propertyName="Name" typeName="string" />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    EXPECT_TRUE(GetHelper().IndexExists("ix_test_TestsClass_Identifier"));
+    EXPECT_FALSE(GetHelper().IndexExists("ix_test_TestsClass_Name"));
+
+    ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext();
+    ctx->AddSchemaLocater(m_ecdb.GetSchemaLocater());
+
+    ECSchemaPtr updatedSchema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(updatedSchema, R"xml(<?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+            <ECEntityClass typeName="TestClass">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <DbIndexList xmlns="ECDbMap.02.00.00">
+                        <Indexes>
+                            <DbIndex>
+                                <Name>ix_test_TestsClass_Identifier</Name>
+                                <IsUnique>False</IsUnique>
+                                <Properties>
+                                    <string>Identifier</string>
+                                </Properties>
+                            </DbIndex>
+                            <DbIndex>
+                                <Name>ix_test_TestsClass_Name</Name>
+                                <IsUnique>False</IsUnique>
+                                <Properties>
+                                    <string>Name</string>
+                                </Properties>
+                            </DbIndex>
+                        </Indexes>
+                    </DbIndexList>
+                </ECCustomAttributes>
+
+                <ECProperty propertyName="Identifier" typeName="string" />
+                <ECProperty propertyName="Name" typeName="string" />
+            </ECEntityClass>
+        </ECSchema>)xml", *ctx));
+
+    ASSERT_EQ(SUCCESS, m_ecdb.Schemas().ImportSchemas(ctx->GetCache().GetSchemas()));
+    EXPECT_TRUE(GetHelper().IndexExists("ix_test_TestsClass_Identifier"));
+    EXPECT_TRUE(GetHelper().IndexExists("ix_test_TestsClass_Name"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Eimantas.Morkunas                     07/19
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(IndexTests, ModifyIndexProperties)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("ModifyIndexProperties.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+            <ECEntityClass typeName="TestClass">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <DbIndexList xmlns="ECDbMap.02.00.00">
+                        <Indexes>
+                            <DbIndex>
+                                <Name>ix_test_TestsClass</Name>
+                                <IsUnique>False</IsUnique>
+                                <Properties>
+                                    <string>Identifier</string>
+                                    <string>Name</string>
+                                </Properties>
+                            </DbIndex>
+                        </Indexes>
+                    </DbIndexList>
+                </ECCustomAttributes>
+
+                <ECProperty propertyName="Identifier" typeName="string" />
+                <ECProperty propertyName="Name" typeName="string" />
+                <ECProperty propertyName="Type" typeName="string" />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    EXPECT_TRUE(GetHelper().IndexExists("ix_test_TestsClass"));
+
+    Statement stmt;
+    stmt.Prepare(m_ecdb, R"sql(
+        SELECT c.Name, ci.Ordinal
+        FROM ec_Index AS i
+        INNER JOIN ec_IndexColumn AS ci ON ci.IndexId = i.Id
+        INNER JOIN ec_Column AS c ON ci.ColumnId = c.Id
+        WHERE i.name='ix_test_TestsClass'
+        ORDER BY ci.Ordinal
+        )sql");
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, stmt.Step());
+
+    EXPECT_STREQ("Identifier", stmt.GetValueText(0));
+    EXPECT_EQ(0, stmt.GetValueInt(1));
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, stmt.Step());
+
+    EXPECT_STREQ("Name", stmt.GetValueText(0));
+    EXPECT_EQ(1, stmt.GetValueInt(1));
+    stmt.Finalize();
+
+    ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext();
+    ctx->AddSchemaLocater(m_ecdb.GetSchemaLocater());
+
+    ECSchemaPtr updatedSchema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(updatedSchema, R"xml(<?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+            <ECEntityClass typeName="TestClass">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <DbIndexList xmlns="ECDbMap.02.00.00">
+                        <Indexes>
+                            <DbIndex>
+                                <Name>ix_test_TestsClass</Name>
+                                <IsUnique>False</IsUnique>
+                                <Properties>
+                                    <string>Type</string>
+                                    <string>Identifier</string>
+                                    <string>Name</string>
+                                </Properties>
+                            </DbIndex>
+                        </Indexes>
+                    </DbIndexList>
+                </ECCustomAttributes>
+
+                <ECProperty propertyName="Identifier" typeName="string" />
+                <ECProperty propertyName="Name" typeName="string" />
+                <ECProperty propertyName="Type" typeName="string" />
+            </ECEntityClass>
+        </ECSchema>)xml", *ctx));
+
+    ASSERT_EQ(SUCCESS, m_ecdb.Schemas().ImportSchemas(ctx->GetCache().GetSchemas()));
+    EXPECT_TRUE(GetHelper().IndexExists("ix_test_TestsClass"));
+
+    stmt.Prepare(m_ecdb, R"sql(
+        SELECT c.Name, ci.Ordinal
+        FROM ec_Index AS i
+        INNER JOIN ec_IndexColumn AS ci ON ci.IndexId = i.Id
+        INNER JOIN ec_Column AS c ON ci.ColumnId = c.Id
+        WHERE i.name='ix_test_TestsClass'
+        ORDER BY ci.Ordinal
+        )sql");
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, stmt.Step());
+
+    EXPECT_STREQ("Type", stmt.GetValueText(0));
+    EXPECT_EQ(0, stmt.GetValueInt(1));
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, stmt.Step());
+
+    EXPECT_STREQ("Identifier", stmt.GetValueText(0));
+    EXPECT_EQ(1, stmt.GetValueInt(1));
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, stmt.Step());
+
+    EXPECT_STREQ("Name", stmt.GetValueText(0));
+    EXPECT_EQ(2, stmt.GetValueInt(1));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Eimantas.Morkunas                     07/19
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(IndexTests, RemovingIndexFails)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("AddIndex.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+            <ECEntityClass typeName="TestClass">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <DbIndexList xmlns="ECDbMap.02.00.00">
+                        <Indexes>
+                            <DbIndex>
+                                <Name>ix_test_TestsClass_Identifier</Name>
+                                <IsUnique>False</IsUnique>
+                                <Properties>
+                                    <string>Identifier</string>
+                                </Properties>
+                            </DbIndex>
+                            <DbIndex>
+                                <Name>ix_test_TestsClass_Name</Name>
+                                <IsUnique>False</IsUnique>
+                                <Properties>
+                                    <string>Name</string>
+                                </Properties>
+                            </DbIndex>
+                        </Indexes>
+                    </DbIndexList>
+                </ECCustomAttributes>
+
+                <ECProperty propertyName="Identifier" typeName="string" />
+                <ECProperty propertyName="Name" typeName="string" />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    EXPECT_TRUE(GetHelper().IndexExists("ix_test_TestsClass_Identifier"));
+    EXPECT_TRUE(GetHelper().IndexExists("ix_test_TestsClass_Name"));
+
+    ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext();
+    ctx->AddSchemaLocater(m_ecdb.GetSchemaLocater());
+
+    ECSchemaPtr updatedSchema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(updatedSchema, R"xml(<?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+            <ECEntityClass typeName="TestClass">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <DbIndexList xmlns="ECDbMap.02.00.00">
+                        <Indexes>
+                            <DbIndex>
+                                <Name>ix_test_TestsClass_Name</Name>
+                                <IsUnique>False</IsUnique>
+                                <Properties>
+                                    <string>Name</string>
+                                </Properties>
+                            </DbIndex>
+                        </Indexes>
+                    </DbIndexList>
+                </ECCustomAttributes>
+
+                <ECProperty propertyName="Identifier" typeName="string" />
+                <ECProperty propertyName="Name" typeName="string" />
+            </ECEntityClass>
+        </ECSchema>)xml", *ctx));
+
+    ASSERT_EQ(ERROR, m_ecdb.Schemas().ImportSchemas(ctx->GetCache().GetSchemas()));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Eimantas.Morkunas                     07/19
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(IndexTests, ModifyingIndexFails)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("AddIndex.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+            <ECEntityClass typeName="TestClass">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <DbIndexList xmlns="ECDbMap.02.00.00">
+                        <Indexes>
+                            <DbIndex>
+                                <Name>ix_test_TestsClass_Identifier</Name>
+                                <IsUnique>False</IsUnique>
+                                <Properties>
+                                    <string>Identifier</string>
+                                </Properties>
+                            </DbIndex>
+                        </Indexes>
+                    </DbIndexList>
+                </ECCustomAttributes>
+
+                <ECProperty propertyName="Identifier" typeName="string" />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    EXPECT_TRUE(GetHelper().IndexExists("ix_test_TestsClass_Identifier"));
+
+    ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext();
+    ctx->AddSchemaLocater(m_ecdb.GetSchemaLocater());
+
+    ECSchemaPtr renamedIndexSchema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(renamedIndexSchema, R"xml(<?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+            <ECEntityClass typeName="TestClass">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <DbIndexList xmlns="ECDbMap.02.00.00">
+                        <Indexes>
+                            <DbIndex>
+                                <Name>ix_test_TestsClass</Name>
+                                <IsUnique>False</IsUnique>
+                                <Properties>
+                                    <string>Identifier</string>
+                                </Properties>
+                            </DbIndex>
+                        </Indexes>
+                    </DbIndexList>
+                </ECCustomAttributes>
+
+                <ECProperty propertyName="Identifier" typeName="string" />
+            </ECEntityClass>
+        </ECSchema>)xml", *ctx));
+
+    ASSERT_EQ(ERROR, m_ecdb.Schemas().ImportSchemas(ctx->GetCache().GetSchemas()));
+
+    ECSchemaPtr indexUniquenessChangedSchema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(indexUniquenessChangedSchema, R"xml(<?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+            <ECEntityClass typeName="TestClass">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <DbIndexList xmlns="ECDbMap.02.00.00">
+                        <Indexes>
+                            <DbIndex>
+                                <Name>ix_test_TestsClass_Identifier</Name>
+                                <IsUnique>True</IsUnique>
+                                <Properties>
+                                    <string>Identifier</string>
+                                </Properties>
+                            </DbIndex>
+                        </Indexes>
+                    </DbIndexList>
+                </ECCustomAttributes>
+
+                <ECProperty propertyName="Identifier" typeName="string" />
+            </ECEntityClass>
+        </ECSchema>)xml", *ctx));
+
+    ASSERT_EQ(ERROR, m_ecdb.Schemas().ImportSchemas(ctx->GetCache().GetSchemas()));
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     07/17

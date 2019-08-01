@@ -1846,9 +1846,13 @@ BentleyStatus SchemaComparer::CompareCustomAttribute(CustomAttributeChange& chan
 
         if (existInOld && existInNew)
             {
-            opCode = ECChange::OpCode::Modified;
             oldValue = oldIt->second;
             newValue = newIt->second;
+
+            if (newValue.Equals(oldValue))
+                continue;
+
+            opCode = ECChange::OpCode::Modified;
             }
         else if (existInOld && !existInNew)
             {
@@ -2611,80 +2615,63 @@ BentleyStatus CompositeValueSpecChange::SetFrom(Formatting::CompositeValueSpecCP
 //======================================================================================>
 //CustomAttributeValidator
 //======================================================================================>
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-void CustomAttributeValidator::AddAcceptRule(Utf8StringCR accessString)
-    {
-    Utf8String schemaName = GetSchemaName(accessString);
-    if (schemaName.empty())
-        return;
-
-    m_rules[schemaName].push_back(std::unique_ptr<Rule>(new Rule(Policy::Accept, accessString)));
-    }
+Utf8String CustomAttributeValidator::WILDCARD = "*";
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
+// @bsimethod                                                    Affan.Khan  07/2019
 //+---------------+---------------+---------------+---------------+---------------+------
-void CustomAttributeValidator::AddRejectRule(Utf8StringCR accessString)
+CustomAttributeValidator::Policy CustomAttributeValidator::Validate(CustomAttributeChange const& change) const
     {
-    Utf8String schemaName = GetSchemaName(accessString);
-    if (schemaName.empty())
-        return;
+    bvector<Utf8String> tmp;
+    BeStringUtilities::Split(change.GetChangeName(), ":", tmp);
+    Utf8StringCR schemaName = tmp.front();
+    Utf8StringCR className = tmp.back();
 
-    m_rules[schemaName].push_back(std::unique_ptr<Rule>(new Rule(Policy::Reject, accessString)));
-    }
+    ChangeType classChangeType = change.GetOpCode() == ECChange::OpCode::New ? ChangeType::New :
+        (change.GetOpCode() == ECChange::OpCode::Modified ? ChangeType::Modified : ChangeType::Delete);
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-std::vector<std::unique_ptr<CustomAttributeValidator::Rule>> const& CustomAttributeValidator::GetRelevantRules(CustomAttributeChange& change) const
-    {
-    Utf8String schemaName = GetSchemaName(change.GetChangeName());
-    if (schemaName.empty())
-        return m_rules.find(m_wildcard)->second;
-
-    auto itor = m_rules.find(schemaName);
-    if (itor != m_rules.end())
-        return itor->second;
-
-    return m_rules.find(m_wildcard)->second;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-CustomAttributeValidator::Policy CustomAttributeValidator::Validate(CustomAttributeChange& change) const
-    {
-    std::vector<std::unique_ptr<Rule>> const& rules = GetRelevantRules(change);
-    if (rules.empty())
-        return Policy::Accept;
-
-    std::vector<Utf8String> caFullClassNameTokens = Split(change.GetChangeName());
-    for (std::unique_ptr<Rule> const& rule : rules)
+    bvector<ClassRule const*> applicableRules;
+    for (auto classRule : m_rules)
         {
-        if (rule->Match(caFullClassNameTokens))
+        if (!classRule->AppliesToChangeType(classChangeType))
+            continue;
+
+        if (classRule->GetSchemaName() == WILDCARD)
             {
-            if (rule->GetPolicy() != Policy::Accept)
-                return rule->GetPolicy();
+            applicableRules.push_back(classRule.get());
+            continue;
+            }
+
+        if (!classRule->GetSchemaName().EqualsIAscii(schemaName))
+            continue;
+
+        if (classRule->GetClassName() == WILDCARD || classRule->GetClassName().EqualsIAscii(className))
+            applicableRules.push_back(classRule.get());
+        }
+
+    if (change.PropValues().IsEmpty())
+        {
+        for (auto const* classRule : applicableRules)
+            {
+            if (classRule->GetRules().empty())
+                return classRule->GetPolicy();
             }
         }
 
-    const size_t propValueCount = change.PropValues().Count();
-    for (size_t i = 0; i < propValueCount; i++)
+    for (auto propValueChangePtr : change.PropValues())
         {
-        PropertyValueChange const& propValueChange = change.PropValues()[i];
+        auto const& accessStringTokens = AccessStringToTokens(propValueChangePtr->GetAccessString());
+        ChangeType propertyChangeType = propValueChangePtr->GetOpCode() == ECChange::OpCode::New ? ChangeType::New :
+            (change.GetOpCode() == ECChange::OpCode::Modified ? ChangeType::Modified : ChangeType::Delete);
 
-        std::vector<Utf8String> accessStringTokens = Split(propValueChange.GetAccessString(), true);
-
-        for (std::unique_ptr<Rule> const& rule : rules)
+        for (auto const* classRule : applicableRules)
             {
-            if (rule->Match(accessStringTokens))
+            if (classRule->AppliesToPropertyChange(propertyChangeType, accessStringTokens))
                 {
-                if (rule->GetPolicy() != Policy::Accept)
-                    return rule->GetPolicy();
+                if (Policy::Reject == classRule->GetPolicy())
+                    return classRule->GetPolicy();
 
-                break; //test next item
+                break;
                 }
             }
         }
@@ -2693,145 +2680,119 @@ CustomAttributeValidator::Policy CustomAttributeValidator::Validate(CustomAttrib
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
+// @bsimethod                                             Eimantas.Morkunas  07/2019
 //+---------------+---------------+---------------+---------------+---------------+------
-//static
-Utf8String CustomAttributeValidator::GetSchemaName(Utf8StringCR path)
+bvector<Utf8String> CustomAttributeValidator::AccessStringToTokens(Utf8CP accessString) const
     {
-    size_t i = path.find(':');
-    if (i == Utf8String::npos)
-        return Utf8String();
+    bvector<Utf8String> accessStringTokens;
+    BeStringUtilities::Split(accessString, ".", accessStringTokens);
 
-    return path.substr(0, i);
+    // Trim element's array position info ('[]')
+    for (auto& accessStringToken : accessStringTokens)
+        {
+        if (accessStringToken.EndsWith("]"))
+            accessStringToken.erase(accessStringToken.find_last_of('['));
+        }
+
+    return accessStringTokens;
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
+// @bsimethod                                                    Affan.Khan  07/2019
 //+---------------+---------------+---------------+---------------+---------------+------
-//static
-std::vector<Utf8String> CustomAttributeValidator::Split(Utf8StringCR path, bool stripArrayIndex)
+CustomAttributeValidator::ClassRule& CustomAttributeValidator::Append(Policy policy, Utf8CP schemaFullName, Utf8CP customAttributeClassName, ChangeType changeType)
     {
-    auto stripArrayIndexIfRequired = [&stripArrayIndex] (Utf8String str)
+    Utf8String schemaName(schemaFullName);
+    Utf8String className(customAttributeClassName);
+    BeAssert(!schemaName.empty());
+    BeAssert(!className.empty());
+    if (schemaName == WILDCARD)
         {
-        if (stripArrayIndex)
-            {
-            auto i = str.find("[");
-            if (i == Utf8String::npos)
-                {
-                return str;
-                }
-
-            str = str.substr(0, i);
-            }
-        return str;
-        };
-
-    std::vector<Utf8String> tokens;
-    size_t b = 0;
-    size_t i = 0;
-    for (; i < path.size(); i++)
-        {
-        if (path[i] == '.' || path[i] == ':')
-            {
-            tokens.push_back(stripArrayIndexIfRequired(path.substr(b, i - b)));
-            b = i + 1;
-            }
+        BeAssert(className == WILDCARD);
         }
-
-    if (b < i)
-        tokens.push_back(stripArrayIndexIfRequired(path.substr(b, i - b)));
-
-    return tokens;
+    auto newRule = ClassRule::Create(policy, schemaFullName, customAttributeClassName, changeType);
+    m_rules.push_back(newRule);
+    return *newRule;
     }
 
 //======================================================================================>
-//CustomAttributeValidator::Rule
+//CustomAttributeValidator::ClassRule
 //======================================================================================>
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
+// @bsimethod                                             Eimantas.Morkunas  07/2019
 //+---------------+---------------+---------------+---------------+---------------+------
-CustomAttributeValidator::Rule::Rule(Policy policy, Utf8StringCR accessString) : m_policy(policy), m_accessString(CustomAttributeValidator::Split(accessString)) {}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-bool CustomAttributeValidator::Rule::Match(std::vector<Utf8String> const& candidateAccessString) const
+bool CustomAttributeValidator::ClassRule::AppliesToPropertyChange(ChangeType propertyChangeType, bvector<Utf8String> const& accessStringTokens) const
     {
-    if (candidateAccessString.empty())
-        return false;
+    if (GetRules().size() == 0)
+        return true;
 
-    auto candidateIt = candidateAccessString.begin();
-    auto candidateEndIt = candidateAccessString.end();
-    auto accessStringIt = m_accessString.begin();
-    auto accessStringEndIt = m_accessString.end();
-    while (candidateIt != candidateEndIt && accessStringIt != accessStringEndIt)
+    for (auto const& propertyRule : GetRules())
         {
-        if (*candidateIt == *accessStringIt)
-            {
-            ++candidateIt;
-            ++accessStringIt;
-
-            if (candidateIt == candidateEndIt && accessStringIt == accessStringEndIt) //both stream ended its a match
-                return true;
-
-            if (candidateIt != candidateEndIt && accessStringIt == accessStringEndIt)
-                return false;
-
-            if (candidateIt == candidateEndIt && accessStringIt != accessStringEndIt)
-                {
-                while (accessStringIt != accessStringEndIt && *accessStringIt == "*")
-                    {
-                    ++accessStringIt;
-                    }
-
-                return accessStringIt == accessStringEndIt;
-                }
-
-            continue;
-            }
-
-        if (*accessStringIt == "*")
-            {
-            while (accessStringIt != accessStringEndIt && *accessStringIt == "*")
-                {
-                ++accessStringIt; //skip *.*.*
-                }
-
-            if (accessStringIt == accessStringEndIt) //last token seen was a * which mean success
-                return true;
-            else
-                {
-                while (*candidateIt != *accessStringIt) //last token is not a * which mean we need to find a token in source that matchs it
-                    {
-                    ++candidateIt;
-                    if (candidateIt == candidateEndIt)
-                        return false;
-                    }
-                //we found one
-                ++candidateIt; //next token
-                ++accessStringIt; //next token
-                if (candidateIt == candidateEndIt && accessStringIt == accessStringEndIt) //both stream ended its a match
-                    return true;
-
-                if (candidateIt != candidateEndIt && accessStringIt == accessStringEndIt)
-                    return false;
-
-                if (candidateIt == candidateEndIt && accessStringIt != accessStringEndIt)
-                    {
-                    while (accessStringIt != accessStringEndIt && *accessStringIt == "*")
-                        ++accessStringIt;
-
-                    return accessStringIt == accessStringEndIt;
-                    }
-                }
-
-            continue;
-            }
-
-        return false;
+        if (propertyRule->AppliesToChangeType(propertyChangeType) && propertyRule->Matches(accessStringTokens))
+            return true;
         }
 
-    return true;
+    return false;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  07/2019
+//+---------------+---------------+---------------+---------------+---------------+------
+CustomAttributeValidator::ClassRule& CustomAttributeValidator::ClassRule::Append(CustomAttributeValidator::Policy policy, Utf8CP accessString, CustomAttributeValidator::ChangeType changeType)
+    {
+    m_rules.push_back(PropertyRule::Create(policy, accessString, changeType));
+    return *this;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  07/2019
+//+---------------+---------------+---------------+---------------+---------------+------
+RefCountedPtr<CustomAttributeValidator::ClassRule> CustomAttributeValidator::ClassRule::Create(CustomAttributeValidator::Policy policy, Utf8CP schemaFullName, Utf8CP customAttributeClassName, CustomAttributeValidator::ChangeType changeType)
+    {
+    return new ClassRule(policy, schemaFullName, customAttributeClassName, changeType);
+    }
+
+//======================================================================================>
+//CustomAttributeValidator::PropertyRule
+//======================================================================================>
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                             Eimantas.Morkunas  07/2019
+//+---------------+---------------+---------------+---------------+---------------+------
+bool CustomAttributeValidator::PropertyRule::Matches(bvector<Utf8String> const& accessStringTokens) const
+    {
+    auto const& ruleTokens = GetPath();
+    for (size_t i = 0; i < ruleTokens.size(); i++)
+        {
+        if (accessStringTokens.size() == i)
+            return false;
+
+        if (ruleTokens[i] == CustomAttributeValidator::WILDCARD)
+            return true;
+
+        if (!accessStringTokens[i].EqualsIAscii(ruleTokens[i]))
+            return false;
+        }
+
+    return accessStringTokens.size() == ruleTokens.size();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  07/2019
+//+---------------+---------------+---------------+---------------+---------------+------
+RefCountedPtr<CustomAttributeValidator::PropertyRule> CustomAttributeValidator::PropertyRule::Create(CustomAttributeValidator::Policy policy, Utf8CP accessString, CustomAttributeValidator::ChangeType changeType)
+    {
+    return new PropertyRule(policy, accessString, changeType);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  07/2019
+//+---------------+---------------+---------------+---------------+---------------+------
+CustomAttributeValidator::PropertyRule::PropertyRule(CustomAttributeValidator::Policy policy, Utf8CP accessString, CustomAttributeValidator::ChangeType changeType)
+    : m_accessString(accessString), m_changeType(changeType), m_policy(policy)
+    {
+    BeStringUtilities::Split(accessString, ".", m_path);
+    }
+
 END_BENTLEY_ECOBJECT_NAMESPACE

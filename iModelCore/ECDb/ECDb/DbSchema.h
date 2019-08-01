@@ -512,6 +512,7 @@ public:
 
     std::vector<std::unique_ptr<DbIndex>> const& GetIndexes() const { return m_indexes; }
     void AddIndexDef(std::unique_ptr<DbIndex>&& indexDef) { m_indexes.push_back(std::move(indexDef)); }
+    bool RemoveIndexDef(Utf8StringCR indexName);
 
     BentleyStatus AddTrigger(Utf8StringCR triggerName, DbTrigger::Type, Utf8StringCR condition, Utf8StringCR body);
     std::vector<const DbTrigger*> GetTriggers() const;
