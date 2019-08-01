@@ -113,6 +113,7 @@ def generate_imodeljs_native_platform_api(outdirParent, parentSourceDir, package
         shutil.copyfile(os.path.join(apiSourceDir, fileToCopy), os.path.join(outputpackagedir, fileToCopy))
 
     shutil.copyfile(os.path.join(apiSourceDir, 'ts', 'lib', 'IModelJsNative.d.ts'), os.path.join(outputpackagedir, 'IModelJsNative.d.ts'))
+    shutil.copyfile(os.path.join(apiSourceDir, 'ts', 'lib', 'IModelJsNative.js'), os.path.join(outputpackagedir, 'IModelJsNative.js'))
 
     # Generate the package.json file
     dstpackagefile = os.path.join(outputpackagedir, 'package.json')
