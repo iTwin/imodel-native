@@ -39,13 +39,14 @@ public:
     DWG_EXPORT static StandardUnit     GetStandardUnitFromUnitName (Utf8StringCR stringIn);
     DWG_EXPORT static AnglePrecision   GetAngularUnits (AngleMode* angleMode, int16_t dwgAUPREC);
     DWG_EXPORT static DwgDbLineWeight  GetDwgLineWeightFromWeightName (Utf8StringCR stringIn);
-    DWG_EXPORT static double           GetTransparencyFromDwg (DwgTransparencyCR dwgTransparency, DwgDbObjectIdCP layerId = nullptr, DwgDbObjectIdCP blockId = nullptr);
+    DWG_EXPORT static double           GetTransparencyFromDwg (DwgTransparencyCR dwgTransparency, DwgDbObjectIdCP layerId = nullptr, DwgDbObjectIdCP insertId = nullptr);
     DWG_EXPORT static DPoint3d         DefaultPlacementPoint (DwgDbEntityCR entity);
     DWG_EXPORT static RenderMode       GetRenderModeFromVisualStyle (DwgDbVisualStyleCR visualStyle);
     DWG_EXPORT static BentleyStatus    UpdateViewFlagsFromVisualStyle (ViewFlags& viewFlags, DwgDbObjectIdCR id);
     DWG_EXPORT static BentleyStatus    GetLayoutOrBlockName (Utf8StringR nameOut, DwgDbBlockTableRecordCR blockIn);
     DWG_EXPORT static void             ComputeMatrixFromArbitraryAxis (RotMatrixR matrix, DVec3dCR normal);
     DWG_EXPORT static void             ComputeMatrixFromXZ (RotMatrixR matrix, DVec3dCR xDirection, DVec3dCR normal);
+    DWG_EXPORT static void             CreateArc2d (DEllipse3dR ellipse, DPoint2dCR start, DPoint2dCR end, double bulgeFactor);
     DWG_EXPORT static void             CreateArc2d (DEllipse3dR ellipse, DPoint3dCR start, DPoint3dCR end, double bulgeFactor);
     DWG_EXPORT static DPoint3d         ComputeBulgePoint (double bulgeFactor, DPoint3dCR start, DPoint3dCR end);
     DWG_EXPORT static void             SetViewFlags (ViewFlags& flags, bool grid, bool acs, bool background, bool transparent, bool clipFront, bool clipBack, DwgDbDatabaseCR dwg);
@@ -58,6 +59,9 @@ public:
     DWG_EXPORT static ColorDef         GetColorDefFromACI (int16_t acColorIndex);
     DWG_EXPORT static ColorDef         GetColorDefFromTrueColor (DwgCmEntityColorCR acColor);
     DWG_EXPORT static ColorDef         GetColorDefFromTrueColor (DwgCmColorCR acColor);
+    //! Gets color from an entity directly placed in the modelspace or a paperspace.  No deep drilling for ByBlock and ByLayer colors.
+    DWG_EXPORT static ColorDef         GetColorDefFromEntity (DwgDbEntityCR entity);
+    DWG_EXPORT static ColorDef         GetColorDefFromLayer (DwgDbObjectId layerId);
     DWG_EXPORT static void             GetDgnGradientColor (GradientSymbR gradientOut, DwgGiGradientFillCR gradientIn);
     DWG_EXPORT static void             SetGradientFrom (DwgGiGradientFillR gradientOut, DwgDbHatchCR hatchIn);
     DWG_EXPORT static void             AppendToSchemaName (Utf8StringR schemaName, DwgStringCR dwgName);
@@ -105,6 +109,8 @@ public:
     DWG_EXPORT static bool             IsNonPlanarAsmObject (DwgDbEntityCP entity);
     DWG_EXPORT static bool             IsAsmObject (DwgDbEntityCP entity);
     DWG_EXPORT static SubjectCPtr      FindModelSubject(SubjectCR parent, Utf8StringCR modelName, Json::Value const& modelProps, DgnDbCR db);
+    DWG_EXPORT static void             ComposeTransformByExtrusion (TransformR intOut, double elevation);
+    DWG_EXPORT static bool             IsBulgeFactorValid (double bulge);
     };  // DwgHelper
 
 END_DWG_NAMESPACE

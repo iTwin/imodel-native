@@ -94,6 +94,8 @@ $(o)ImportBlocks$(oext)     : $(baseDir)ImportBlocks.cpp $(DwgDepends) ${MultiCo
 
 $(o)ImportGroups$(oext)     : $(baseDir)ImportGroups.cpp $(DwgDepends) ${MultiCompileDepends}
 
+$(o)ImportHatch$(oext)      : $(baseDir)ImportHatch.cpp $(DwgDepends) ${MultiCompileDepends}
+
 $(o)RepositoryLinks$(oext)  : $(baseDir)RepositoryLinks.cpp $(DwgDepends) ${MultiCompileDepends}
 
 $(o)DwgHelper$(oext)        : $(baseDir)DwgHelper.cpp $(DwgDepends) ${MultiCompileDepends}

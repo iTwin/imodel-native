@@ -101,5 +101,6 @@
         <OptionBool name="SyncDependentObjects" value="false"/>     <!--Include objects that are found on the Extension Dictionary, maybe needed for vertical products -->
         <OptionBool name="ConvertAsmAsParasolid" value="true"/>     <!--"true" to convert SOLID3D, BODY, RESION & SURFACE entities as Parasolid elements as many as possible; "false" to create mesh only. -->
         <OptionBool name="ConvertBlockSharedParts" value="true"/>   <!--"true" to convert blocks using shared parts resulting in smaller file size; "false" to not use shared parts. -->
+        <OptionBool name="ConvertFilledHatch" value="true"/>        <!--"true" to convert filled and gradient hatches to filled elements which can be edited; false to draw them as seen in ACAD, often resulting in large meshes thus a slower process. -->
     </Options>
 </ConvertConfig>

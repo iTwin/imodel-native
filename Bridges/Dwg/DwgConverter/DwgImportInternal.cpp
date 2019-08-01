@@ -18,6 +18,16 @@
 
 USING_NAMESPACE_DWG
 
+// define entity protocol extension member
+DWG_PROTOCOLEXT_DEFINE_MEMBERS(DwgBlockReferenceExt)
+DWG_PROTOCOLEXT_DEFINE_MEMBERS(DwgBrepExt)
+DWG_PROTOCOLEXT_DEFINE_MEMBERS(DwgHatchExt)
+DWG_PROTOCOLEXT_DEFINE_MEMBERS(DwgLightExt)
+DWG_PROTOCOLEXT_DEFINE_MEMBERS(DwgPointCloudExExt)
+DWG_PROTOCOLEXT_DEFINE_MEMBERS(DwgRasterImageExt)
+DWG_PROTOCOLEXT_DEFINE_MEMBERS(DwgViewportExt)
+
+
 #ifdef DWGTOOLKIT_OpenDwg
 #define gpDesc      g_pDesc
 #endif
@@ -120,6 +130,7 @@ void        DwgImporter::RegisterProtocolExtensions ()
     DwgLightExt::RxInit ();
     DwgBrepExt::RxInit ();
     DwgBlockReferenceExt::RxInit ();
+    DwgHatchExt::RxInit ();
 
     DwgRxClass::BuildClassHierarchy ();
 
@@ -146,5 +157,6 @@ void        DwgImporter::RegisterProtocolExtensions ()
     DwgRxClass::AddProtocolExtension (DwgDbPlaneSurface::SuperDesc(), protocolClass, DwgBrepExt::CreateObject());
     DwgRxClass::AddProtocolExtension (DwgDbSweptSurface::SuperDesc(), protocolClass, DwgBrepExt::CreateObject());
     DwgRxClass::AddProtocolExtension (DwgDbBlockReference::SuperDesc(), protocolClass, DwgBlockReferenceExt::CreateObject());
+    DwgRxClass::AddProtocolExtension (DwgDbHatch::SuperDesc(), protocolClass, DwgHatchExt::CreateObject());
     }
 

@@ -1712,6 +1712,8 @@ size_t          DwgDbHatch::GetPatternDefinitions (DwgPatternArrayR patternsOut)
 
 DwgDbHatch::PatternType DwgDbHatch::GetPatternType () const { return DWGDB_UPWARDCAST(Hatch::PatternType)(T_Super::patternType()); }
 DwgDbHatch::HatchType   DwgDbHatch::GetHatchType () const { return DWGDB_UPWARDCAST(Hatch::HatchType)(T_Super::hatchObjectType()); }
+DwgDbHatch::Style       DwgDbHatch::GetHatchStyle () const { return DWGDB_UPWARDCAST(Hatch::Style)(T_Super::hatchStyle()); }
+DwgDbHatch::LoopType    DwgDbHatch::GetLoopType (size_t i) const { return DWGDB_UPWARDCAST(Hatch::LoopType)(T_Super::loopTypeAt((int)i)); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          05/16
@@ -1743,11 +1745,158 @@ DwgDbStatus     DwgDbHatch::SetHatchType (DwgDbHatch::HatchType type)
 #endif  // DWGTOOLKIT_
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus     DwgDbHatch::SetHatchStyle (DwgDbHatch::Style style)
+    {
+#ifdef DWGTOOLKIT_OpenDwg
+    T_Super::setHatchStyle (static_cast<OdDbHatch::HatchStyle>(style));
+    return  DwgDbStatus::Success;
+
+#elif DWGTOOLKIT_RealDwg
+    Acad::ErrorStatus   es = T_Super::setHatchStyle (static_cast<AcDbHatch::HatchStyle>(style));
+    return ToDwgDbStatus(es);
+#endif  // DWGTOOLKIT_
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus     DwgDbHatch::GetLoop (size_t loopIndex, CurveVectorPtr& edges) const
+    {
+#ifdef DWGTOOLKIT_OpenDwg
+    EdgeArray   geCurves;
+    T_Super::getLoopAt ((int)loopIndex, geCurves);
+
+#elif DWGTOOLKIT_RealDwg
+    AcGeVoidPointerArray    geCurves;
+    AcGeIntArray    geEdgeTypes;
+    Adesk::Int32    looptype;
+
+    auto es = T_Super::getLoopAt ((int)loopIndex, looptype, geCurves, geEdgeTypes);
+    if (Acad::eOk != es)
+        return ToDwgDbStatus(es);
+#endif
+
+    if (geCurves.isEmpty())
+        return DwgDbStatus::InvalidData;
+
+    edges = CurveVector::Create (CurveVector::BoundaryType::BOUNDARY_TYPE_None);
+    if (!edges.IsValid())
+        return  DwgDbStatus::MemoryError;
+
+    int nCurves = (int)geCurves.length ();
+
+#ifdef DWGTOOLKIT_OpenDwg
+    for (int i = 0; i < nCurves; i++)
+        {
+        auto geCurve = static_cast<OdGeCurve2d*>(geCurves[i]);
+        if (geCurve != nullptr)
+            {
+            ICurvePrimitivePtr  curve;
+            if (Util::GetCurvePrimitive(curve, geCurve) == DwgDbStatus::Success)
+                edges->Add (curve);
+            }
+        }
+
+#elif DWGTOOLKIT_RealDwg
+
+    for (int i = 0; i < nCurves; i++)
+        {
+        ICurvePrimitivePtr  primitive;
+        switch (geEdgeTypes[i])
+            {
+            case AcDbHatch::kLine:
+                {
+                auto line = static_cast<AcGeLineSeg2d*>(geCurves[i]);
+                if (line != nullptr)
+                    {
+                    auto start = line->startPoint ();
+                    auto end = line->endPoint ();
+                    primitive = ICurvePrimitive::CreateLine (DSegment3d::From(start.x, start.y, 0.0, end.x, end.y, 0.0));
+                    }
+                break;
+                }
+            case AcDbHatch::kCirArc:
+                {
+                auto arc = static_cast<AcGeCircArc2d*>(geCurves[i]);
+                if (arc != nullptr)
+                    primitive = ICurvePrimitive::CreateArc (Util::DEllipse3dFrom(*arc));
+                break;
+                }
+            case AcDbHatch::kEllArc:
+                {
+                auto ellipArc = static_cast<AcGeEllipArc2d*>(geCurves[i]);
+                if (ellipArc != nullptr)
+                    primitive = ICurvePrimitive::CreateArc (Util::DEllipse3dFrom(*ellipArc));
+                break;
+                }
+            case AcDbHatch::kSpline:
+                {
+                auto spline = static_cast<AcGeNurbCurve2d*>(geCurves[i]);
+                if (spline != nullptr)
+                    {
+                    MSBsplineCurve  curve;
+                    if (DwgDbStatus::Success == Util::GetMSBsplineCurve(curve, *spline))
+                        primitive = ICurvePrimitive::CreateBsplineCurve (curve);
+                    }
+                break;
+                }
+            default:
+                BeAssert (false && "Unknown hatch edge type!");
+            }
+        if (primitive.IsValid())
+            edges->Add (primitive);
+        }
+#endif
+    return  edges->empty() ? DwgDbStatus::UnknownError : DwgDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus     DwgDbHatch::GetLoop (size_t loopIndex, DPoint2dArrayR vertices, DwgDbDoubleArrayR bulges) const
+    {
+    DWGGE_Type(Point2dArray) gePoints;
+    DWGGE_Type(DoubleArray) geBulges;
+
+#ifdef DWGTOOLKIT_OpenDwg
+    T_Super::getLoopAt ((int)loopIndex, gePoints, geBulges);
+
+#elif DWGTOOLKIT_RealDwg
+    Adesk::Int32 looptype;
+
+    auto es = T_Super::getLoopAt ((int)loopIndex, looptype, gePoints, geBulges);
+    if (Acad::eOk != es)
+        return ToDwgDbStatus(es);
+#endif
+
+    if (Util::GetPointArray(vertices, gePoints) < 2)
+        return DwgDbStatus::InvalidData;
+
+    int nBulges = (int)geBulges.length ();
+    for (int i = 0; i < nBulges; i++)
+        bulges.push_back (geBulges[i]);
+
+    return  DwgDbStatus::Success;
+    }
+
+bool            DwgDbHatch::IsHatch () const { return T_Super::isHatch(); }
+bool            DwgDbHatch::IsSolidFill () const { return T_Super::isSolidFill(); }
 bool            DwgDbHatch::IsGradient () const { return T_Super::isGradient(); }
+bool            DwgDbHatch::IsAssociative () const { return T_Super::associative(); }
+DwgDbStatus     DwgDbHatch::SetAssociative (bool on) { RETURNVOIDORSTATUS(T_Super::setAssociative(on)); }
 double          DwgDbHatch::GetGradientAngle () const { return T_Super::gradientAngle(); }
 double          DwgDbHatch::GetGradientShift () const { return T_Super::gradientShift(); }
 double          DwgDbHatch::GetGradientTint () const { return T_Super::getShadeTintValue(); }
 DwgString       DwgDbHatch::GetGradientName () const { return T_Super::gradientName(); }
+DVec3d          DwgDbHatch::GetNormal () const { return Util::DVec3dFrom(T_Super::normal()); }
+size_t          DwgDbHatch::GetLoopCount () const { return T_Super::numLoops(); }
+DwgCmColor      DwgDbHatch::GetBackgroundColor () const { return T_Super::backgroundColor(); }
+DwgDbStatus     DwgDbHatch::SetBackgroundColor (DwgCmColorCR c) { RETURNVOIDORSTATUS(T_Super::setBackgroundColor(c)); }
+double          DwgDbHatch::GetElevation () const { return T_Super::elevation(); }
+DwgDbStatus     DwgDbHatch::SetElevation (double z) { RETURNVOIDORSTATUS(T_Super::setElevation(z)); }
 
 
 /*---------------------------------------------------------------------------------**//**

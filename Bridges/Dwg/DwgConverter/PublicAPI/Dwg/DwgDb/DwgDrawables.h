@@ -218,6 +218,7 @@ public:
 
     DWGDB_EXPORT double     GetDeviation () const;
     DWGDB_EXPORT void       SetDeviation (double deviation);
+    DWGDB_EXPORT RefCountedPtr<DwgGiFill> Clone () const;
     };  // DwgGiFill
 typedef RefCountedPtr<DwgGiFill>        DwgGiFillPtr;
 DEFINE_NO_NAMESPACE_TYPEDEFS (DwgGiFill)

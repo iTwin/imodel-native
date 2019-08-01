@@ -235,7 +235,7 @@ DwgDbLineWeight DwgHelper::GetDwgLineWeightFromWeightName (Utf8StringCR stringIn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-double          DwgHelper::GetTransparencyFromDwg (DwgTransparencyCR dwgTransparency, DwgDbObjectIdCP layerId, DwgDbObjectIdCP blockId)
+double          DwgHelper::GetTransparencyFromDwg (DwgTransparencyCR dwgTransparency, DwgDbObjectIdCP layerId, DwgDbObjectIdCP insertId)
     {
     double      dgnTransparency = 0.0;
 
@@ -275,48 +275,20 @@ double          DwgHelper::GetTransparencyFromDwg (DwgTransparencyCR dwgTranspar
         }
     else if (dwgTransparency.IsByLayer())
         {
-        /*-------------------------------------------------------------------------------
-        FUTUREWORK_TRANSPARENCY: MicroStation needs to support BYLAYER transparency!
-
-        Temporary workaround: set BYLAYER transparency to 0%, which gets round-tripped back
-        to BYLAYER.  Level transparency always affects element, as shown in above formula.
-        This can work because a DWG entity will only have either BYLAYER/BYBLOCK or an 
-        effective value.
-        -------------------------------------------------------------------------------*/
+        // the category transparency set from DWG layer will override element's transparency
         dgnTransparency = 0.0;
         }
-    else if (dwgTransparency.IsByBlock() && nullptr != blockId)
+    else if (dwgTransparency.IsByBlock() && nullptr != insertId)
         {
-        /*-------------------------------------------------------------------------------
-        FUTUREWORK_TRANSPARENCY: MicroStation needs to support BYCELL transparency!
-
-        Temporary workaround:
-        1) Set effective value on element based on block's first instance's transparency.
-        2) Set BYBLOCK transparency to 1% for round-trip purpose, if the block has no
-            instance.
-        This is rasther a kludge workaround, but it's better than losing BYBLOCK on a DWG 
-        save or not displaying transparency at all on DWG open.
-        -------------------------------------------------------------------------------*/
-        dgnTransparency = 0.0;
-
-/*
-        AcDbDatabase*   dwg = this->GetDatabase ();
-        AcDbObjectId    ownerId = *blockId;
-        if (!ownerId.isValid() && ownerId != acdbSymUtil()->blockModelSpaceId(dwg) && ownerId != acdbSymUtil()->blockPaperSpaceId(dwg))
+        // set element's transparency from block reference's transparency
+        DwgDbBlockReferencePtr insert(*insertId, DwgDbOpenMode::ForRead);
+        if (insert.OpenStatus() == DwgDbStatus::Success)
             {
-            AcDbBlockTableRecordPointer block(ownerId, AcDb::kForRead);
-            if (Acad::eOk == block.openStatus() && !RealDwgUtil::IsModelOrPaperSpace(block.object()))
-                {
-                AcDbObjectIdArray       insertIds;
-                if (Acad::eOk == block->getBlockReferenceIds(insertIds) && insertIds.length() > 0)
-                    {
-                    AcDbBlockReferencePointer insert(insertIds[0], AcDb::kForRead);
-                    if (Acad::eOk == insert.openStatus())
-                        return  this->GetDgnTransparency (insert->transparency(), insert);
-                    }
-                }
+            auto insertTransparency = insert->GetTransparency ();
+            if (insertTransparency.IsByAlpha())
+                return  DwgHelper::GetTransparencyFromDwg(insertTransparency, nullptr, nullptr);
             }
-*/
+        dgnTransparency = 0.0;
         }
 
     return  fabs(dgnTransparency);
@@ -630,9 +602,19 @@ void            DwgHelper::ComputeMatrixFromXZ (RotMatrixR matrix, DVec3dCR xDir
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                     EarlinLutz 03/99
+* @bsimethod                                                    Don.Fu          07/19
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            DwgHelper::CreateArc2d (DEllipse3dR ellipse, DPoint3dCR start, DPoint3dCR end, double bulgeFactor)
+    {
+    DPoint2d    start2d = DPoint2d::From (start);
+    DPoint2d    end2d = DPoint2d::From (end);
+    DwgHelper::CreateArc2d (ellipse, start2d, end2d, bulgeFactor);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     EarlinLutz 03/99
++---------------+---------------+---------------+---------------+---------------+------*/
+void            DwgHelper::CreateArc2d (DEllipse3dR ellipse, DPoint2dCR start, DPoint2dCR end, double bulgeFactor)
     {
     double      sweep = 4.0 * atan (bulgeFactor);
 
@@ -640,30 +622,28 @@ void            DwgHelper::CreateArc2d (DEllipse3dR ellipse, DPoint3dCR start, D
     double      tangentHalfAngle = tan(sweep * 0.5);
 
     // U = chord vector
-    DVec3d      u;
+    DVec2d      u;
 
     u.DifferenceOf (end, start);
     u.Scale (u, 0.5);
-    u.z = 0.0;
 
     // V = perpendicular to chord vector, same length.
-    DVec3d      v;
+    DVec2d      v;
     v.x = -u.y;
     v.y = u.x;
-    v.z = 0.0;
 
     // Center = p0 + U + -V/tangentHalfAngle
-    DPoint3d    center;
+    DPoint2d    center;
     center.SumOf (start, u, 1.0, v, 1.0/tangentHalfAngle);
 
     // Radius
-    DPoint3d    r;
+    DPoint2d    r;
     r.DifferenceOf (start, center);
     double radius = r.Magnitude();
 
     // Start angle
-    DPoint3d    x = {1.0, 0.0, 0.0};
-    double      theta0 = x.AngleToXY (r);
+    DPoint2d    x = {1.0, 0.0};
+    double      theta0 = x.AngleTo (r);
 
     // Setup for ellipse
     ellipse.Init (center.x, center.y, 0.0, radius, 0.0, 0.0, 0.0, radius, 0.0, theta0, sweep);
@@ -1023,6 +1003,55 @@ ColorDef        DwgHelper::GetColorDefFromTrueColor (DwgCmEntityColorCR acColor)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+ColorDef    DwgHelper::GetColorDefFromEntity (DwgDbEntityCR entity)
+    {
+    /*-----------------------------------------------------------------------------------
+    This is not a true resolver for entity color, which can float to a different block 
+    reference or a different viewport.  This method only resolves modelspace or papersspace
+    entities that are not in a block.
+    -----------------------------------------------------------------------------------*/
+    auto colorDef = ColorDef::White ();
+    auto entityColor = entity.GetEntityColor ();
+
+    switch (entityColor.GetColorMethod())
+        {
+        case DwgCmEntityColor::Method::ByLayer:
+            colorDef = DwgHelper::GetColorDefFromLayer (entity.GetLayerId());
+            break;
+        case DwgCmEntityColor::Method::ByBlock:
+            // in modelspace, layerByBlock floats to color White.
+            break;
+        case DwgCmEntityColor::Method::ByACI:
+            colorDef = DwgHelper::GetColorDefFromACI (entityColor.GetIndex());
+            break;
+        case DwgCmEntityColor::Method::ByColor:
+            colorDef = DwgHelper::GetColorDefFromTrueColor (entityColor);
+            break;
+        }
+
+    return colorDef;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+ColorDef DwgHelper::GetColorDefFromLayer (DwgDbObjectId layerId)
+    {
+    DwgDbLayerTableRecordPtr layer(layerId, DwgDbOpenMode::ForRead);
+    if (layer.OpenStatus() == DwgDbStatus::Success)
+        {
+        auto layerColor = layer->GetColor ();
+        if (layerColor.IsByACI())
+            return  DwgHelper::GetColorDefFromACI(layerColor.GetIndex());
+        else if (layerColor.IsByColor())
+            return  DwgHelper::GetColorDefFromTrueColor(layerColor);
+        }
+    return  ColorDef::White();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            DwgHelper::GetDgnGradientColor (GradientSymbR gradientOut, DwgGiGradientFillCR gradientIn)
@@ -1059,8 +1088,7 @@ void            DwgHelper::GetDgnGradientColor (GradientSymbR gradientOut, DwgGi
 
     gradientOut.SetAngle (gradientIn.GetAngle());
     gradientOut.SetShift (gradientIn.GetShift());
-
-    // WIP - gradientOut.SetTint (tint);
+    gradientOut.SetTint (gradientIn.GetTint());
 
     DwgColorArray   dwgColors;
     uint16_t        nColors = (uint16_t)gradientIn.GetColors (dwgColors);
@@ -2117,4 +2145,28 @@ SubjectCPtr DwgHelper::FindModelSubject(SubjectCR parent, Utf8StringCR modelName
             }
         }
     return  nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void DwgHelper::ComposeTransformByExtrusion (TransformR inOut, double elevation)
+    {
+    if (elevation == 0.0 || fabs(elevation) > 1.e50)
+        return;
+
+    Transform   transform;
+    transform.TranslateInLocalCoordinates (inOut, 0.0, 0.0, elevation);
+    inOut.InitProduct (inOut, transform);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DwgHelper::IsBulgeFactorValid (double bulge)
+    {
+    static constexpr double s_minBulge = 1.e-8;
+    static constexpr double s_maxBulge = 572.96; // tangent of 89.9 degrees as a 1/4 of maximum arc angle(i.e. nearly full circle)
+    
+    return fabs(bulge) > s_minBulge && fabs(bulge) < s_maxBulge;
     }

@@ -837,6 +837,13 @@ public:
     DWGDB_DECLARE_COMMON_MEMBERS(Hatch)
     DWGDB_DECLARE_ENTITY_MEMBERS()
 
+    enum class Style            // == Super::HatchStyle
+        {
+        Normal              = T_Super::kNormal,
+        Outer               = T_Super::kOuter,
+        Ignore              = T_Super::kIgnore,
+        };  // Style
+
     enum class HatchType        // == Super::HatchObjectType
         {
         Hatch               = 0,
@@ -850,7 +857,45 @@ public:
         CustomDefined       = 2,
         };  // PatternType
 
+    enum class GradientType     // == Super::GradientPatternType
+        {
+        PreDefinedGradient  = T_Super::kPreDefinedGradient,
+        UserDefinedGradient = T_Super::kUserDefinedGradient,
+        };  // GradientType
+
+    //! Bit-coded flags to be or'ed for details about a hatch loop
+    enum LoopType               // == Super::HatchLoopType
+        {
+        Default             = T_Super::kDefault,
+        External            = T_Super::kExternal,
+        Polyline            = T_Super::kPolyline,
+        Derived             = T_Super::kDerived,
+        Textbox             = T_Super::kTextbox,
+        Outermost           = T_Super::kOutermost,
+        NotClosed           = T_Super::kNotClosed,
+        SelfIntersecting    = T_Super::kSelfIntersecting,
+        TextIsland          = T_Super::kTextIsland,
+        Duplicate           = T_Super::kDuplicate,
+        IsAnnotative        = T_Super::kIsAnnotative,
+        DoesNotSupportScale = T_Super::kDoesNotSupportScale,
+        ForceAnnoAllVisible = T_Super::kForceAnnoAllVisible,
+        OrientToPaper       = T_Super::kOrientToPaper,
+        IsAnnotativeBlock   = T_Super::kIsAnnotativeBlock,
+        };  // LoopType
+
+    enum class EdgeType           // == Super::HatchEdgeType
+        {
+        Line                = T_Super::kLine,
+        CirArc              = T_Super::kCirArc,
+        EllArc              = T_Super::kEllArc,
+        Spline              = T_Super::kSpline,
+        };  // EdgeType
+
+    DWGDB_EXPORT bool           IsHatch () const;
+    DWGDB_EXPORT bool           IsSolidFill () const;
     DWGDB_EXPORT bool           IsGradient () const;
+    DWGDB_EXPORT bool           IsAssociative () const;
+    DWGDB_EXPORT DwgDbStatus    SetAssociative (bool isAssociative);
     DWGDB_EXPORT double         GetGradientAngle () const;
     DWGDB_EXPORT double         GetGradientShift () const;
     DWGDB_EXPORT double         GetGradientTint () const;
@@ -861,7 +906,19 @@ public:
     DWGDB_EXPORT DwgDbStatus    SetPattern (PatternType type, DwgStringCR name);
     DWGDB_EXPORT HatchType      GetHatchType () const;
     DWGDB_EXPORT DwgDbStatus    SetHatchType (HatchType type);
-    
+    DWGDB_EXPORT Style          GetHatchStyle () const;
+    DWGDB_EXPORT DwgDbStatus    SetHatchStyle (Style style);
+    DWGDB_EXPORT LoopType       GetLoopType (size_t loopIndex) const;
+    DWGDB_EXPORT size_t         GetLoopCount () const;
+    //! Extract edges which make the hatch loop at the input index
+    DWGDB_EXPORT DwgDbStatus    GetLoop (size_t loopIndex, CurveVectorPtr& edges) const;
+    //! Extract polyline data which makes the hatch loop at the input index
+    DWGDB_EXPORT DwgDbStatus    GetLoop (size_t loopIndex, DPoint2dArrayR vertices, DwgDbDoubleArray& bulges) const;
+    DWGDB_EXPORT DVec3d         GetNormal () const;
+    DWGDB_EXPORT DwgCmColor     GetBackgroundColor () const;
+    DWGDB_EXPORT DwgDbStatus    SetBackgroundColor (DwgCmColorCR color);
+    DWGDB_EXPORT double         GetElevation () const;
+    DWGDB_EXPORT DwgDbStatus    SetElevation (double elevation);
     };  // DwgDbHatch
 DWGDB_DEFINE_OBJECTPTR (Hatch)
 

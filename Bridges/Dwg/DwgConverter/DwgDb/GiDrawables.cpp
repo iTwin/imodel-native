@@ -1640,6 +1640,7 @@ DwgGiFill::~DwgGiFill ()
 #ifdef DWGTOOLKIT_RealDwg
     if (nullptr != m_acFill)
         delete m_acFill;
+    m_acFill = nullptr;
 #endif
     }
 
@@ -1689,6 +1690,26 @@ void            DwgGiFill::SetDeviation (double dev)
 #endif
     }
 double          DwgGiFill::GetDeviation () const { DWGDB_CALLSDKMETHOD(return m_deviation, return nullptr==m_acFill ? 0.0 : m_acFill->deviation()); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgGiFillPtr    DwgGiFill::Clone () const
+    {
+    DwgGiGradientFillCP gradient = static_cast<DwgGiGradientFillCP> (this);
+    if (gradient == nullptr)
+        {
+        DwgGiFillP fill = new DwgGiFill ();
+        fill->SetDeviation (this->GetDeviation());
+        return  fill;
+        }
+    else
+        {
+        DwgColorArray   colors;
+        gradient->GetColors (colors);
+        return new DwgGiGradientFill(gradient->GetAngle(), gradient->GetShift(), gradient->GetTint(), gradient->IsAdjustAspect(), colors, gradient->GetType());
+        }
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          05/16

@@ -49,7 +49,7 @@ private:
     DwgDbObjectId       m_linetypeId;
     std::ptrdiff_t      m_markerId;
     DwgGiFillType       m_filltype;
-    DwgGiFillCP         m_fill;
+    DwgGiFillPtr        m_fill;
     DwgDbLineWeight     m_weight;
     uint32_t            m_mappedDgnWeight;  // only a performance need
     double              m_linetypeScale;
@@ -59,7 +59,6 @@ private:
     DwgImporter&        m_dwgImporter;
     DwgDbEntityCP       m_sourceEntity;
     EffectiveByBlock    m_effectiveByBlock;
-    GradientSymbPtr     m_gradientFromHatch;
     DwgDbDatabasePtr    m_dwgdb;
     bool                m_isLayerByBlock;
     bool                m_isParentLayerFrozen;
@@ -76,14 +75,13 @@ void CopyFrom (DrawParameters const& params)
     m_transparency = params._GetTransparency ();
     m_weight = params._GetLineWeight ();
     m_filltype = params._GetFillType ();
-    m_fill = params._GetFill ();
+    m_fill = params._GetFill() == nullptr ? nullptr : params._GetFill()->Clone();
     m_linetypeScale = params._GetLineTypeScale ();
     m_thickness = params._GetThickness ();
     m_mappedDgnWeight = params.m_mappedDgnWeight;
     m_markerId = params.m_markerId;
     m_sourceEntity = params.m_sourceEntity;
     m_effectiveByBlock.CopyFrom (params.m_effectiveByBlock);
-    m_gradientFromHatch = params.m_gradientFromHatch;
     m_dwgdb = params.m_dwgdb;
     m_isLayerByBlock = params.m_isLayerByBlock;
     m_isParentLayerFrozen = params.m_isParentLayerFrozen;
@@ -138,7 +136,6 @@ void Initialize (DwgDbEntityCR ent, DrawParameters const* parentParams = nullptr
     else
         this->ResolveEffectiveByBlockSymbology (*parentParams);
 
-    this->SetGradientColorFromHatch (DwgDbHatch::Cast(m_sourceEntity));
     this->ResolveDisplayStatus (parentParams);
     }
 
@@ -189,7 +186,7 @@ virtual DwgCmEntityColorCR  _GetColor () const override { return m_color; }
 virtual DwgDbObjectIdCR     _GetLayer () const override { return m_layerId; }
 virtual DwgDbObjectIdCR     _GetLineType () const override { return m_linetypeId; }
 virtual DwgGiFillType       _GetFillType () const override { return m_filltype; }
-virtual DwgGiFillCP         _GetFill () const override { return m_fill; }
+virtual DwgGiFillCP         _GetFill () const override { return m_fill.get(); }
 virtual DwgDbLineWeight     _GetLineWeight () const override { return m_weight; }
 virtual double              _GetLineTypeScale () const override { return m_linetypeScale; }
 virtual double              _GetThickness () const override { return m_thickness; }
@@ -200,7 +197,7 @@ virtual void _SetLayer (DwgDbObjectIdCR layerId) override { m_layerId = layerId;
 virtual void _SetLineType (DwgDbObjectIdCR linetypeId) override { m_linetypeId = linetypeId; }
 virtual void _SetSelectionMarker (std::ptrdiff_t markerId) override { m_markerId = markerId; }
 virtual void _SetFillType (DwgGiFillType filltype) override { m_filltype = filltype; }
-virtual void _SetFill (DwgGiFillCP fill) override { m_fill = fill; }
+virtual void _SetFill (DwgGiFillCP fill) override { m_fill = fill == nullptr ? nullptr : fill->Clone(); }
 virtual void _SetLineWeight (DwgDbLineWeight weight) override { m_weight = weight; m_mappedDgnWeight = m_dwgImporter.GetOptions().GetDgnLineWeight(weight); }
 virtual void _SetLineTypeScale (double scale) override { m_linetypeScale = scale; }
 virtual void _SetThickness (double thickness) override { m_thickness = thickness; }
@@ -220,26 +217,23 @@ void            SetLinetypeContinuous () { m_linetypeId = m_dwgdb->GetLinetypeCo
 void            SetGradientColorFromHatch (DwgDbHatchCP hatch)
     {
     /*-----------------------------------------------------------------------------------
-    When we draw a hatch entity with gradient fill with, two things happen:
+    When we draw a hatch entity with gradient fill, two things happen:
 
     1) The world/viewportDraw does not call _SetFill for sub-entity, so we have explicitly 
         extract its gradient fill before drawing it.
     2) The world/viewportDraw creates mesh, which is a undesired geometry for a fill element.
-        The caller shall re-set the source hatch entity to a solid fill so we will get a
-        simple shape from the hatch.
 
-    To workaround both issues above, we extract gradient fill from the hatch, convert it
-    as DGN gradient color, and save the converted gradient in this DrawParameters, which
-    will be used later to set display parameters.  To prevent mesh created by a toolkit,
-    remove the gradient by setting it to a simple solids fill.  This step should done by
-    the caller.
+    To workaround issue 1 above, we extract gradient fill from the hatch, convert it
+    as DGN gradient color, and save the converted gradient in this DrawParameters.
+    For issue 2, prior to RealDWG 2019, the caller could re-set the source hatch entity to 
+    a solid fill so we could get a simple shape from the hatch.  That workaround no longer 
+    works since RealDWG 2019.  We now have an option to convert filled or gradient hatch to
+    filled element through the hatch protocol extension.  This is the default option.
+    User can turn the option off to draw filled hatch as mesh, in which case this setting 
+    is still necessary.
     -----------------------------------------------------------------------------------*/
     if (nullptr != hatch)
-        {
-        DwgGiGradientFillPtr    dwgGradient = DwgGiGradientFill::CreateFrom (hatch);
-        if (!dwgGradient.IsNull() && !(m_gradientFromHatch = GradientSymb::Create()).IsNull())
-            DwgHelper::GetDgnGradientColor (*m_gradientFromHatch.get(), *dwgGradient);
-        }
+        m_fill = DwgGiGradientFill::CreateFrom (hatch);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -559,17 +553,12 @@ void    GetDisplayParams (Render::GeometryParams& params)
     if (params.GetFillDisplay() != Render::FillDisplay::Never)
         {
         GradientSymbPtr     dgnGradient = GradientSymb::Create ();
-        DwgGiGradientFillCP dwgGradient = dynamic_cast<DwgGiGradientFillCP> (m_fill);
+        DwgGiGradientFillCP dwgGradient = static_cast<DwgGiGradientFillCP> (m_fill.get());
         if (nullptr != dwgGradient && dgnGradient.IsValid())
             {
             // apply gradient fill set by sub-entity's draw method:
             DwgHelper::GetDgnGradientColor (*dgnGradient.get(), *dwgGradient);
             params.SetGradient (dgnGradient.get());
-            }
-        else if (m_gradientFromHatch.IsValid())
-            {
-            // apply gradient fill from pre-saved gradient hatch entity:
-            params.SetGradient (m_gradientFromHatch.get());
             }
         else
             {
@@ -1883,14 +1872,6 @@ bool    PreprocessBlockChildGeometry (DwgDbEntityP entity, DrawParameters& saved
     if (DwgHelper::IsAsmObject(entity))
         m_geometryOptions->SetRegenType (DwgGiRegenType::RenderCommand);
 
-    // gradient fill causes world/viewportDraw to create mesh - remove gradient by setting the hatch as a solid fill:
-    DwgDbHatchP hatch = DwgDbHatch::Cast (entity);
-    if (nullptr != hatch && hatch->IsGradient() && DwgDbStatus::Success == hatch->UpgradeOpen())
-        {
-        hatch->SetPattern (DwgDbHatch::PatternType::PreDefined, DwgString(L"SOLID"));
-        hatch->DowngradeOpen ();
-        }
-
     return  true;
     }
 
@@ -1925,10 +1906,10 @@ BentleyStatus   CreateBlockChildGeometry (DwgDbEntityCP entity)
         return  BSIERROR;
 
     // trivial reject 3D elements in a 2D model
-    if (m_isTargetModel2d && DwgBrepExt::Cast(objExt) != nullptr && !DwgHelper::IsPlanarAsmObject(entity))
+    if (m_isTargetModel2d && DwgHelper::IsNonPlanarAsmObject(entity))
         return  BSIERROR;
 
-    auto geom = objExt->_ConvertToGeometry (entity, m_drawParams.GetDwgImporter());
+    auto geom = objExt->_ConvertToGeometry (entity, m_isTargetModel2d, m_drawParams.GetDwgImporter(), &m_drawParams);
     if (!geom.IsValid())
         return  BSIERROR;
 
@@ -2981,16 +2962,8 @@ EntityImportPreparer (DrawParameters& drawParams, GeometryFactory& factory, DwgD
     // resolve the root effective ByBlock symbology:
     drawParams.ResolveRootEffectiveByBlockSymbology ();
 
-    // remove gradient from hatch as otherwise we will get a mesh. We don't need the hatch anymore - GradientSymb has already been saved:
-    DwgDbHatchP         hatch = DwgDbHatch::Cast (entity);
-    if (nullptr != hatch && hatch->IsGradient() && DwgDbStatus::Success == hatch->UpgradeOpen())
-        {
-        hatch->SetHatchType (DwgDbHatch::HatchType::Hatch);
-        hatch->SetPattern (DwgDbHatch::PatternType::PreDefined, DwgString(L"SOLID"));
-        hatch->DowngradeOpen ();
-
-        m_modifiers |= static_cast<uint32_t>(Modifiers::RemovedGradient);
-        }
+    // prior to RealDWG 2019, gradient hatch causes the toolkit draw to create fine mesh, so we used to remove gradient.
+    // since 2019, both gradient and solid fill hatches are drawn as fine mesh, so we handle that in a protocol extension, no longer need to remove gradient.
 
     DwgDbBlockReferenceCP   insert = DwgDbBlockReference::Cast(entity);
     if (nullptr != insert)
@@ -3138,7 +3111,7 @@ BentleyStatus   DwgImporter::_ImportEntity (ElementImportResults& results, Eleme
     auto geometryMap = geomFactory.GetOutputGeometryMap ();
     if (geometryMap.empty() && this->_SkipEmptyElement(entity))
         {
-        this->ReportIssue (IssueSeverity::Warning, IssueCategory::MissingData(), Issue::EmptyGeometry(), Utf8PrintfString("%ls, ID=%llx", entity->GetDwgClassName().c_str(), entityId).c_str());
+        this->ReportIssue (IssueSeverity::Info, IssueCategory::MissingData(), Issue::EmptyGeometry(), Utf8PrintfString("%ls, ID=%llx", entity->GetDwgClassName().c_str(), entityId).c_str());
         return  BSIERROR;
         }
 
@@ -3210,7 +3183,7 @@ BentleyStatus   DwgImporter::ImportNewEntity (ElementImportResults& results, Ele
     auto geometryMap = geomFactory.GetOutputGeometryMap ();
     if (geometryMap.empty())
         {
-        this->ReportIssue (IssueSeverity::Warning, IssueCategory::MissingData(), Issue::EmptyGeometry(), Utf8PrintfString("%ls", entity->GetDwgClassName().c_str()).c_str());
+        this->ReportIssue (IssueSeverity::Info, IssueCategory::MissingData(), Issue::EmptyGeometry(), Utf8PrintfString("%ls", entity->GetDwgClassName().c_str()).c_str());
         return  BSIERROR;
         }
 
@@ -3351,6 +3324,10 @@ BentleyStatus   DwgImporter::ImportEntity (ElementImportResults& results, Elemen
     DwgDbEntityPtr&         entity = inputs.m_entity;
     if (entity.IsNull())
         return  BSIERROR;
+
+#ifdef DEBUG
+    uint64_t    entityId = entity->GetObjectId().ToUInt64 ();
+#endif
 
     DwgProtocolExtension*   objExt = DwgProtocolExtension::Cast (entity->QueryX(DwgProtocolExtension::Desc()));
     if (nullptr != objExt)

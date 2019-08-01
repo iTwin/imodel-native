@@ -9,9 +9,6 @@ USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_DWGDB
 USING_NAMESPACE_DWG
 
-DWG_PROTOCOLEXT_DEFINE_MEMBERS(DwgBrepExt)
-
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          07/18
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -93,7 +90,7 @@ BentleyStatus   DwgBrepExt::_ConvertToBim (ProtocolExtensionContext& context, Dw
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          07/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeometricPrimitivePtr DwgBrepExt::_ConvertToGeometry (DwgDbEntityCP entity, DwgImporter& importer)
+GeometricPrimitivePtr DwgBrepExt::_ConvertToGeometry (DwgDbEntityCP entity, bool is2D, DwgImporter& importer, IDwgDrawParametersP params)
     {
     // a sanity check:
     if (nullptr == entity || !UtilsLib::IsAsmEntity(entity))
@@ -112,7 +109,7 @@ GeometricPrimitivePtr DwgBrepExt::_ConvertToGeometry (DwgDbEntityCP entity, DwgI
         return  this->CreateGeometry (region);
 
     // if the user does not want Brep, let the caller draw the entity:
-    if (!importer.GetOptions().IsAsmAsParasolid())
+    if (!importer.GetOptions().IsAsmAsParasolid() || is2D)
         return  nullptr;
 
 #if defined (BENTLEYCONFIG_PARASOLID)
@@ -193,44 +190,6 @@ void    DwgBrepExt::FreeBrep (PK_BODY_create_topology_2_r_t& brep) const
     }
 #endif
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          07/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-ColorDef    DwgBrepExt::GetEffectiveColor () const
-    {
-    /*-----------------------------------------------------------------------------------
-    This is not a true resolver for entity color, which can float to a different block 
-    reference or a different viewport.  This method only resolves modelspace entities
-    that are not in a block.  Should we support Breps in blocks in the future we have
-    to figure out how to handle floating colors.
-    -----------------------------------------------------------------------------------*/
-    auto colorDef = ColorDef::White ();
-    auto entityColor = m_entity->GetEntityColor ();
-
-    switch (entityColor.GetColorMethod())
-        {
-        case DwgCmEntityColor::Method::ByLayer:
-            {
-            DwgDbLayerTableRecordPtr layer(m_entity->GetLayerId(), DwgDbOpenMode::ForRead);
-            if (layer.OpenStatus() == DwgDbStatus::Success)
-                {
-                // at least for now, ignore color overridden by viewport:
-                auto layerColor = layer->GetColor ();
-                if (layerColor.IsByACI())
-                    colorDef = DwgHelper::GetColorDefFromACI (layerColor.GetIndex());
-                }
-            break;
-            }
-        case DwgCmEntityColor::Method::ByBlock:
-            // in modelspace, layerByBlock floats to color White.
-            break;
-        case DwgCmEntityColor::Method::ByACI:
-            colorDef = DwgHelper::GetColorDefFromACI (entityColor.GetIndex());
-            break;
-        }
-
-    return colorDef;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          07/18
@@ -253,7 +212,9 @@ BentleyStatus   DwgBrepExt::CreateElement (GeometricPrimitiveR geometry, DwgImpo
     display.SetCategoryId (params.GetCategoryId());
     display.SetSubCategoryId (params.GetSubCategoryId());
     display.SetGeometryClass (Render::DgnGeometryClass::Primary);
-    display.SetLineColor (this->GetEffectiveColor());
+    display.SetLineColor (DwgHelper::GetColorDefFromEntity(*m_entity));
+
+    this->GetTransparency (display);
 
     builder->Append (display);
     builder->Append (geometry);
@@ -339,20 +300,15 @@ GeometricPrimitivePtr DwgBrepExt::PlaceGeometry (CurveVectorPtr& shapes)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          07/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DwgBrepExt::SetPlacementPoint (TransformR transform) const
+BentleyStatus   DwgBrepExt::SetPlacementPoint (TransformR transform)
     {
     // don't bother calculating the placement point when we only create geometry and no element
     if (nullptr == m_toBimContext)
         return  BSISUCCESS;
 
     // use the placement point from the first grip point, in model coordinates:
-    DPoint3dArray   gripPoints;
-    if (DwgDbStatus::Success != m_entity->GetGripPoints(gripPoints))
-        {
-        BeAssert (false && "Unexpected failue finding Brep's origin!");
-        return  BSIERROR;
-        }
-    m_toBimContext->GetTransform().Multiply (m_placementPoint, gripPoints.front());
+    DPoint3d    gripPoint = DwgHelper::DefaultPlacementPoint (*m_entity);
+    m_toBimContext->GetTransform().Multiply (m_placementPoint, gripPoint);
 
     // move the body in model to compensate the placement point:
     DPoint3d    translation;
@@ -362,4 +318,14 @@ BentleyStatus   DwgBrepExt::SetPlacementPoint (TransformR transform) const
     transform.SetTranslation (translation);
 
     return  BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void    DwgBrepExt::GetTransparency (Render::GeometryParams& display) const
+    {
+    auto layerId = m_entity->GetLayerId();
+    double  transparency = DwgHelper::GetTransparencyFromDwg (m_entity->GetTransparency(), &layerId, nullptr);
+    display.SetTransparency (transparency);
     }

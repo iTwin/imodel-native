@@ -282,6 +282,7 @@ struct DwgImporter
     friend class DwgLightExt;
     friend class DwgBrepExt;
     friend class DwgBlockReferenceExt;
+    friend class DwgHatchExt;
 
 //__PUBLISH_SECTION_START__
 public:
@@ -361,6 +362,7 @@ public:
         bool                m_includeDwgPathInMaterialSearchPaths;
         bool                m_runAsStandaloneApp;
         bool                m_blockAsSharedParts;
+        bool                m_filledHatchAsFilledElement;
 
     public:
         Options ()
@@ -383,6 +385,7 @@ public:
             m_includeDwgPathInMaterialSearchPaths = false;
             m_runAsStandaloneApp = false;
             m_blockAsSharedParts = true;
+            m_filledHatchAsFilledElement = true;
             }
 
         void SetInputRootDir (BentleyApi::BeFileNameCR fileName) {m_rootDir = fileName;}
@@ -407,6 +410,7 @@ public:
         void SetPreferRenderableGeometry (bool forRendering) { m_preferRenderableGeometry = forRendering; }
         void SetAsmAsParasolid (bool toBrep) { m_asmAsParasolid = toBrep; }
         void SetBlockAsSharedParts (bool v) { m_blockAsSharedParts = v; }
+        void SetFilledHatchAsFilledElement (bool v) { m_filledHatchAsFilledElement = v; }
         void SetNamePrefix (Utf8CP prefix) { m_namePrefix.assign(prefix); }
         void SetDwgPathInMaterialSearch (bool v) { m_includeDwgPathInMaterialSearchPaths = v; }
         void SetRunAsStandaloneApp (bool v) { m_runAsStandaloneApp = v; }
@@ -439,6 +443,7 @@ public:
         bool IsRenderableGeometryPrefered () const { return m_preferRenderableGeometry; }
         bool IsAsmAsParasolid () const { return m_asmAsParasolid; }
         bool IsBlockAsSharedParts () const { return m_blockAsSharedParts; }
+        bool IsFilledHatchAsFilledElement () const { return m_filledHatchAsFilledElement; }
         Utf8StringCR GetNamePrefix () const { return m_namePrefix; }
         bool IsDwgPathInMaterialSearch () const { return m_includeDwgPathInMaterialSearchPaths; }
         bool IsRunAsStandaloneApp () const { return m_runAsStandaloneApp; }

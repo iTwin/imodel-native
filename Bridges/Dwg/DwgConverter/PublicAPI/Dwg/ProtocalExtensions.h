@@ -96,10 +96,10 @@ public:
 
     //! Must implement this method to either create a new or update an existing element from the input entity.
     //! This method is called only when an entity is in the modelspace or a paperspace.
-    DWG_EXPORT virtual BentleyStatus  _ConvertToBim (ProtocolExtensionContext& context, DwgImporter& importer) = 0;
+    DWG_EXPORT virtual BentleyStatus  _ConvertToBim (ProtocolExtensionContext& context, DwgImporterR importer) = 0;
     //! Optional method to create a geometry from an entity in a block.
     //! This method is called only when an entity is in a block definition.
-    DWG_EXPORT virtual GeometricPrimitivePtr _ConvertToGeometry (DwgDbEntityCP entity, DwgImporter& importer) { return nullptr; }
+    DWG_EXPORT virtual GeometricPrimitivePtr _ConvertToGeometry (DwgDbEntityCP entity, bool is2D, DwgImporterR importer, IDwgDrawParametersP params = nullptr) { return nullptr; }
     };  // DwgProtocolExtension
 
 /*=================================================================================**//**
@@ -112,11 +112,11 @@ public:
     DWGRX_DECLARE_MEMBERS (DwgRasterImageExt)
     DWG_PROTOCOLEXT_DECLARE_MEMBERS (DwgRasterImageExt)
 
-    virtual BentleyStatus  _ConvertToBim (ProtocolExtensionContext& context, DwgImporter& importer) override;
+    virtual BentleyStatus  _ConvertToBim (ProtocolExtensionContext& context, DwgImporterR importer) override;
 
 private:
     mutable ProtocolExtensionContext*   m_toBimContext;
-    mutable DwgImporter*                m_importer;
+    mutable DwgImporterP                m_importer;
     mutable DwgDbRasterImageCP          m_dwgRaster;
 
     BentleyStatus   CreateRasterModel (BeFileNameCR rasterFilename, BeFileNameCR activePath);
@@ -141,7 +141,7 @@ public:
     DWGRX_DECLARE_MEMBERS (DwgPointCloudExExt)
     DWG_PROTOCOLEXT_DECLARE_MEMBERS (DwgPointCloudExExt)
 
-    virtual BentleyStatus  _ConvertToBim (ProtocolExtensionContext& context, DwgImporter& importer) override;
+    virtual BentleyStatus  _ConvertToBim (ProtocolExtensionContext& context, DwgImporterR importer) override;
 
 private:
     ColorDef    GetDgnColor (DwgDbEntityCR entity) const;
@@ -157,10 +157,10 @@ public:
     DWGRX_DECLARE_MEMBERS (DwgViewportExt)
     DWG_PROTOCOLEXT_DECLARE_MEMBERS (DwgViewportExt)
 
-    virtual BentleyStatus  _ConvertToBim (ProtocolExtensionContext& context, DwgImporter& importer) override;
+    virtual BentleyStatus  _ConvertToBim (ProtocolExtensionContext& context, DwgImporterR importer) override;
 
 private:
-    BentleyStatus   UpdateBim (ProtocolExtensionContext& context, DwgImporter& importer, DgnModelCR rootModel, DgnModelCR sheetModel, Utf8StringCR viewName);
+    BentleyStatus   UpdateBim (ProtocolExtensionContext& context, DwgImporterR importer, DgnModelCR rootModel, DgnModelCR sheetModel, Utf8StringCR viewName);
     };  // DwgViewportExt
 
 /*=================================================================================**//**
@@ -173,11 +173,11 @@ public:
     DWGRX_DECLARE_MEMBERS (DwgLightExt)
     DWG_PROTOCOLEXT_DECLARE_MEMBERS (DwgLightExt)
 
-    virtual BentleyStatus  _ConvertToBim (ProtocolExtensionContext& context, DwgImporter& importer) override;
+    virtual BentleyStatus  _ConvertToBim (ProtocolExtensionContext& context, DwgImporterR importer) override;
 
 private:
     mutable ProtocolExtensionContext*   m_toBimContext;
-    mutable DwgImporter*                m_importer;
+    mutable DwgImporterP                m_importer;
     mutable DwgDbLightP                 m_dwgLight;
 
     BentleyStatus  CreateOrUpdateLightGlyph (ElementResultsR results, ElementInputsR inputs) const;
@@ -204,17 +204,16 @@ public:
     DWGRX_DECLARE_MEMBERS (DwgBrepExt)
     DWG_PROTOCOLEXT_DECLARE_MEMBERS (DwgBrepExt)
 
-    virtual BentleyStatus  _ConvertToBim (ProtocolExtensionContext& context, DwgImporter& importer) override;
-    virtual GeometricPrimitivePtr _ConvertToGeometry (DwgDbEntityCP entity, DwgImporter& importer) override;
+    virtual BentleyStatus  _ConvertToBim (ProtocolExtensionContext& context, DwgImporterR importer) override;
+    virtual GeometricPrimitivePtr _ConvertToGeometry (DwgDbEntityCP entity, bool is2D, DwgImporterR importer, IDwgDrawParametersP params = nullptr) override;
 
 private:
     mutable ProtocolExtensionContext*   m_toBimContext;
-    mutable DwgImporter*                m_importer;
+    mutable DwgImporterP                m_importer;
     mutable DwgDbEntityCP               m_entity;
     mutable DPoint3d                    m_placementPoint;
 
     BentleyStatus   CreateElement (GeometricPrimitiveR geometry, DwgImporter::ElementCreateParams& params);
-    ColorDef    GetEffectiveColor () const;
 
 #if defined (BENTLEYCONFIG_PARASOLID)
     GeometricPrimitivePtr CreateGeometry (PK_BODY_create_topology_2_r_t& brep);
@@ -223,7 +222,8 @@ private:
     GeometricPrimitivePtr CreateGeometry (DwgDbPlaneSurfaceP planeSurface);
     GeometricPrimitivePtr CreateGeometry (DwgDbRegionP region);
     GeometricPrimitivePtr PlaceGeometry (CurveVectorPtr& shapes);
-    BentleyStatus   SetPlacementPoint (TransformR transform) const;
+    BentleyStatus   SetPlacementPoint (TransformR transform);
+    void GetTransparency (Render::GeometryParams& display) const;
     };  // DwgBrep
 
 /*=================================================================================**//**
@@ -236,8 +236,50 @@ public:
     DWGRX_DECLARE_MEMBERS (DwgBlockReferenceExt)
     DWG_PROTOCOLEXT_DECLARE_MEMBERS (DwgBlockReferenceExt)
 
-    virtual BentleyStatus  _ConvertToBim (ProtocolExtensionContext& context, DwgImporter& importer) override;
+    virtual BentleyStatus  _ConvertToBim (ProtocolExtensionContext& context, DwgImporterR importer) override;
     };  // DwgBlockReferenceExt
+
+/*=================================================================================**//**
+//! Hatch entity protocol extension
++===============+===============+===============+===============+===============+======*/
+class DwgHatchExt : public DwgProtocolExtension
+    {
+public:
+    DEFINE_T_SUPER (DwgProtocolExtension)
+    DWGRX_DECLARE_MEMBERS (DwgHatchExt)
+    DWG_PROTOCOLEXT_DECLARE_MEMBERS (DwgHatchExt)
+
+    virtual BentleyStatus  _ConvertToBim (ProtocolExtensionContext& context, DwgImporterR importer) override;
+    virtual GeometricPrimitivePtr _ConvertToGeometry (DwgDbEntityCP entity, bool is2D, DwgImporterR importer, IDwgDrawParametersP params = nullptr) override;
+
+private:
+    mutable ProtocolExtensionContext*   m_toBimContext;
+    mutable DwgDbHatchCP m_hatch;
+    mutable DVec3d      m_hatchNormal;
+    mutable Transform   m_transform;
+    mutable bool        m_isIdentityTransform;
+    mutable double      m_scaleToMeters;
+    mutable uint64_t    m_hatchHandle;
+
+    BentleyStatus ConvertLoop (CurveVectorR paths, size_t loopIndex);
+    CurveVectorPtr CreatePathFromLoop (size_t loopIndex);
+    CurveVectorPtr CreatePathFromPolyline (size_t loopIndex, CurveVector::BoundaryType boundaryType);
+    CurveVectorPtr CreatePathFromEdges (size_t loopIndex, CurveVector::BoundaryType boundaryType);
+    CurveVector::BoundaryType GetBoundaryType (DwgDbHatch::LoopType) const;
+    void ClosePath (CurveVectorPtr& path, double tolerance) const;
+    bool ValidatePathDirection (CurveVectorPtr& path, size_t loopIndex) const;
+    bool IsValidEdge (ICurvePrimitiveCR edge, double tolerance) const;
+    double GetLoopTolerance () const;
+    bool ShouldConvertLoop (size_t loopIndex) const;
+    bool IsDangling (DPoint3dCR prevEnd, DPoint3dCR start, DPoint3dCR end, CurveVectorCR edges, size_t edgeNo, double tol) const;
+    bool IsRepetitive (CurveVectorR path, ICurvePrimitiveCR newCurve, size_t edgeNo, double tol) const;
+    void GetFillOrGradientColor (Render::GeometryParams& display) const;
+    void GetTransparency (Render::GeometryParams& display) const;
+    void GetDrawParameters (IDwgDrawParametersR params) const;
+    BentleyStatus PlaceGeometry (GeometricPrimitiveR geom, DPoint3dR placementPoint);
+    BentleyStatus SetPlacementPoint (TransformR transform, DPoint3dR placementPoint);
+    BentleyStatus CreateElementInModel (GeometricPrimitiveR geometry, DwgImporterR importer);
+    };  // DwgHatchExt
 
 
 END_DWG_NAMESPACE

@@ -1827,6 +1827,8 @@ void            DwgImporter::ParseConfigurationFile (T_Utf8StringVectorR userObj
                 m_options.SetAsmAsParasolid (boolValue);
             else if (str.EqualsI("ConvertBlockSharedParts"))
                 m_options.SetBlockAsSharedParts(boolValue);
+            else if (str.EqualsI("ConvertFilledHatch"))
+                m_options.SetFilledHatchAsFilledElement(boolValue);
             else if (str.EqualsI("SyncDwgVersionGuid"))
                 m_options.SetSyncDwgVersionGuid (boolValue);
             else if (str.EqualsI("SyncAsmBodyInFull"))

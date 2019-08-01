@@ -9,8 +9,6 @@ USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_DWGDB
 USING_NAMESPACE_DWG
 
-DWG_PROTOCOLEXT_DEFINE_MEMBERS(DwgBlockReferenceExt)
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          05/18
 +---------------+---------------+---------------+---------------+---------------+------*/

@@ -207,8 +207,6 @@ public:
     // Called by CreateCurveVector for non-bulged polyline with variable widths
     CurveVectorPtr CreateShapeFromVariableWidths (bool useElevation);
     bool    HasAppliedWidths () const { return  m_hasAppliedWidths; }
-
-    static bool     IsValidBulgeFactor (double bulge);
     };  // PolylineFactory
 
 // ECClass requires unique property names

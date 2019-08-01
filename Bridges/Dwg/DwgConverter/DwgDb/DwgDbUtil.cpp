@@ -192,8 +192,11 @@ DEllipse3d  Util::DEllipse3dFrom (DWGGE_TypeCR(EllipArc3d) geEllipse)
 
     double      startAngle = geEllipse.startAng ();
     double      sweptAngle = geEllipse.endAng() - startAngle;
-    if (!Angle::IsFullCircle(sweptAngle))
-        sweptAngle = Angle::AdjustToSweep (sweptAngle, 0, msGeomConst_2pi);
+    // make a positive start angle
+    if (Angle::IsFullCircle(sweptAngle))
+        startAngle = 0.0;
+    else
+        startAngle = Angle::AdjustToSweep (startAngle, 0, msGeomConst_2pi);
     
     return  DEllipse3d::FromVectors (center, majorAxis, minorAxis, startAngle, sweptAngle);
     }
@@ -215,8 +218,11 @@ DEllipse3d  Util::DEllipse3dFrom (DWGGE_TypeCR(EllipArc2d) geEllipse)
 
     double      startAngle = geEllipse.startAng ();
     double      sweptAngle = geEllipse.endAng() - startAngle;
-    if (!Angle::IsFullCircle(sweptAngle))
-        sweptAngle = Angle::AdjustToSweep (sweptAngle, 0, msGeomConst_2pi);
+    // make a positive start angle
+    if (Angle::IsFullCircle(startAngle))
+        startAngle = 0.0;
+    else
+        startAngle = Angle::AdjustToSweep (startAngle, 0, msGeomConst_2pi);
     
     return  DEllipse3d::FromVectors (center, majorAxis, minorAxis, startAngle, sweptAngle);
     }
@@ -226,11 +232,43 @@ DEllipse3d  Util::DEllipse3dFrom (DWGGE_TypeCR(EllipArc2d) geEllipse)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DEllipse3d  Util::DEllipse3dFrom (DWGGE_TypeCR(CircArc2d) geArc)
     {
+#ifdef ARC_BY_3POINTS
+    // smaller side by 3 points
     DPoint3d    center = Util::DPoint3dFrom (geArc.center());
     DPoint3d    startPoint = Util::DPoint3dFrom (geArc.startPoint());
     DPoint3d    endPoint = Util::DPoint3dFrom (geArc.endPoint());
     
     return DEllipse3d::FromArcCenterStartEnd (center, startPoint, endPoint);
+#else
+    // smaller or bigger side of the arc depending on sweeping direction - required by hatch
+    auto    center = geArc.center ();
+    double  radius = geArc.radius ();
+    double  startAngle = geArc.startAng ();
+    double  endAngle = geArc.endAng ();
+    double  sweptAngle = 0.0;
+    
+    if (geArc.isClockWise())
+        {
+        sweptAngle = startAngle - endAngle;
+        if (sweptAngle > 0.0)
+            sweptAngle -= msGeomConst_2pi;
+        startAngle = -startAngle;
+        }
+    else
+        {
+        // CCW direction
+        sweptAngle = endAngle - startAngle;
+        if (sweptAngle < 0.0)
+            sweptAngle += msGeomConst_2pi;
+        }
+    // make a positive start angle
+    if (Angle::IsFullCircle(startAngle))
+        startAngle = 0.0;
+    else
+        startAngle = Angle::AdjustToSweep (startAngle, 0, msGeomConst_2pi);
+    
+    return DEllipse3d::FromXYMajorMinor (center.x, center.y, 0.0, radius,  radius, 0.0, startAngle, sweptAngle);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

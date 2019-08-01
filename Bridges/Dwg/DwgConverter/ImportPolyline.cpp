@@ -5,9 +5,6 @@
 +--------------------------------------------------------------------------------------*/
 #include    "DwgImportInternal.h"
 
-#define MinBulgeFactor      1.0E-8
-#define MaxBulgeFactor      572.96  // tangent of 89.9 degrees as a 1/4 of maximum arc angle(i.e. nearly full circle)
-
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_DWGDB
 USING_NAMESPACE_DWG
@@ -133,7 +130,7 @@ CurveVectorPtr  PolylineFactory::CreateCurveVector (bool useElevation)
         DPoint3d    endPoint = DPoint3d::From (m_points[next].x, m_points[next].y, useElevation ? m_elevation : m_points[next].z);
 
         // WIP - width & thickness
-        if (m_hasBulges && PolylineFactory::IsValidBulgeFactor(m_bulges[i]) && !startPoint.IsEqual(endPoint))
+        if (m_hasBulges && DwgHelper::IsBulgeFactorValid(m_bulges[i]) && !startPoint.IsEqual(endPoint))
             {
             // create a linestring from previous points and flush away the point buffer:
             if (!noBulgePoints.empty())
@@ -353,14 +350,6 @@ void PolylineFactory::IntersectLines (DPoint3dR intersectionPoint, DSegment3dCR 
         intersectionPoint = point1;
     else
         line1.GetEndPoint(intersectionPoint);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool            PolylineFactory::IsValidBulgeFactor (double bulge)
-    {
-    return  (fabs(bulge) > MinBulgeFactor) && (fabs(bulge) < MaxBulgeFactor);
     }
 
 /*---------------------------------------------------------------------------------**//**
