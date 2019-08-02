@@ -8,11 +8,326 @@
 #include <ORDBridgeInternal.h>
 #include <windows.h>
 #include <VersionedDgnV8Api/GeomSerialization/GeomLibsFlatBufferApi.h>
+#include "DynamicSchemaComparer.h"
 
 #define DefaultDesignAlignmentsName     "Road/Rail Design Alignments"
 #define DefaultCorridorSegmentName      "Corridor Overall Range"
+#define QuantityTakeoffsSchemaName      "QuantityTakeoffsAspects"
 
 BEGIN_ORDBRIDGE_NAMESPACE
+
+struct ORDDynamicSchemaGenerator
+{
+private:
+    Dgn::DgnDbPtr m_dgnDbPtr;
+    ECN::ECSchemaPtr m_dynamicSchema;
+    ECN::ECSchemaPtr m_qtoSchema;
+    ECN::ECClassCP m_graphicalElement3dClassCP;
+
+public:
+    static Utf8String FeatureNameToClassName(Utf8StringCR featureName);
+    static Utf8String GetTargetSchemaName() { return "DgnV8OpenRoadsDesignerDynamic"; }
+    static Utf8String GetQTOVolumeClassName() { return "QTO_VolumeAspect"; }
+    static Utf8String GetQTOSurfaceAreaClassName() { return "QTO_SurfaceAreaAspect"; }
+    static Utf8String GetQTOMaterialClassName() { return "QTO_MaterialAspect"; }
+
+private:
+    void Initialize();
+    BentleyStatus SetupSchema(BeFileNameCR assetsDir);
+    BentleyStatus AddQuantityTakeOffAspectClasses();
+    void AddClass(Utf8StringCR name);
+    void AddClasses(ConsensusConnectionR cifConn);
+    bool RequireSchemaUpdate();
+    BentleyStatus Finish();
+
+public:
+    BentleyStatus Generate(Dgn::DgnDbR dgnDb, BeFileNameCR assetsDir, ConsensusConnectionR cifConn);
+}; // ORDDynamicSchemaGenerator
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ORDDynamicSchemaGenerator::FeatureNameToClassName(Utf8StringCR featureName)
+    {
+    return ECN::ECNameValidation::EncodeToValidName(featureName);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void ORDDynamicSchemaGenerator::Initialize()
+    {
+    m_graphicalElement3dClassCP = m_dgnDbPtr->Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_GraphicalElement3d);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ORDDynamicSchemaGenerator::SetupSchema(BeFileNameCR assetsDir)
+    {
+    if (ECN::ECObjectsStatus::Success != ECN::ECSchema::CreateSchema(m_dynamicSchema, GetTargetSchemaName(), "orddgndyn", 1, 0, 0))
+        {
+        BeAssert(false);
+        return BentleyStatus::ERROR;
+        }
+
+    ECN::ECSchemaPtr coreSchema = ECN::CoreCustomAttributeHelper::GetSchema();
+    if (coreSchema.IsValid())
+        {
+        ECN::ECObjectsStatus stat = m_dynamicSchema->AddReferencedSchema(*coreSchema);
+        if (ECN::ECObjectsStatus::Success != stat && ECN::ECObjectsStatus::NamedItemAlreadyExists != stat)
+            ORDBRIDGE_LOG.warning("Error adding a reference to the core custom attributes schema.");
+        else
+            {
+            ECN::IECInstancePtr dynamicInstance = ECN::CoreCustomAttributeHelper::CreateCustomAttributeInstance("DynamicSchema");
+            if (dynamicInstance.IsValid())
+                m_dynamicSchema->SetCustomAttribute(*dynamicInstance);
+            }
+        }
+
+    ECN::ECSchemaCP graphicalElement3dBaseClass = m_dgnDbPtr->Schemas().GetSchema(BIS_ECSCHEMA_NAME);
+    ECN::ECSchemaP nonConstBase = const_cast<ECN::ECSchemaP>(graphicalElement3dBaseClass);
+    m_dynamicSchema->AddReferencedSchema(*nonConstBase);
+
+    auto schemaReadContextPtr = ECN::ECSchemaReadContext::CreateContext(false, true);
+
+    BeFileName ecdbDir = assetsDir;
+    ecdbDir.AppendToPath(L"ECSchemas");
+    ecdbDir.AppendToPath(L"ECDb");
+
+    BeFileName dgnDir = assetsDir;
+    dgnDir.AppendToPath(L"ECSchemas");
+    dgnDir.AppendToPath(L"Dgn");
+
+    BeFileName domainDir = assetsDir;
+    domainDir.AppendToPath(L"ECSchemas");
+    domainDir.AppendToPath(L"Domain");
+
+    schemaReadContextPtr->AddSchemaPath(ecdbDir);
+    schemaReadContextPtr->AddSchemaPath(dgnDir);
+    schemaReadContextPtr->AddSchemaPath(domainDir);
+    schemaReadContextPtr->SetSkipValidation(true);
+
+    ECN::SchemaKey qtoSchemaKey(QuantityTakeoffsSchemaName, 1, 0);
+    m_qtoSchema = schemaReadContextPtr->LocateSchema(qtoSchemaKey, ECN::SchemaMatchType::Latest);
+    if (m_qtoSchema.IsNull())
+        return BentleyStatus::ERROR;
+
+    m_dynamicSchema->AddReferencedSchema(*m_qtoSchema);
+
+    return BentleyStatus::SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ORDDynamicSchemaGenerator::AddQuantityTakeOffAspectClasses()
+    {
+    auto hiddenClassCACP = ECN::CoreCustomAttributeHelper::GetClass("HiddenClass");
+
+    ECN::IECInstancePtr hiddenClassInstance;
+    ECN::StandaloneECEnablerPtr hiddenClassEnabler;
+    if (hiddenClassCACP)
+        {
+        hiddenClassEnabler = hiddenClassCACP->GetDefaultStandaloneEnabler();
+
+        if (hiddenClassEnabler.IsValid())
+            {
+            hiddenClassInstance = hiddenClassEnabler->CreateInstance();
+            hiddenClassInstance->SetValue("Show", ECN::ECValue(false));
+            }
+        }
+
+    auto hiddenPropertyCACP = ECN::CoreCustomAttributeHelper::GetClass("HiddenProperty");
+
+    ECN::IECInstancePtr hiddenPropertyInstance;
+    ECN::StandaloneECEnablerPtr hiddenPropertyEnabler;
+    if (hiddenPropertyCACP)
+        {
+        hiddenPropertyEnabler = hiddenPropertyCACP->GetDefaultStandaloneEnabler();
+
+        if (hiddenPropertyEnabler.IsValid())
+            {
+            hiddenPropertyInstance = hiddenPropertyEnabler->CreateInstance();
+            hiddenPropertyInstance->SetValue("Show", ECN::ECValue(false));
+            }
+        }
+
+    // Create MaterialAspect subclass and hide it
+    ECN::ECEntityClassP materialAspectClassP;
+    if (ECN::ECObjectsStatus::Success != m_dynamicSchema->CreateEntityClass(materialAspectClassP, GetQTOMaterialClassName()))
+        return BentleyStatus::ERROR;
+
+    auto baseMaterialAspectClassCP = m_qtoSchema->GetClassCP("MaterialAspect");
+    materialAspectClassP->AddBaseClass(*baseMaterialAspectClassCP);
+
+    if (hiddenClassInstance.IsValid())
+        materialAspectClassP->SetCustomAttribute(*hiddenClassInstance);
+
+    ECN::PrimitiveECPropertyP ecPropertyP;
+    if (ECN::ECObjectsStatus::Success != materialAspectClassP->CreatePrimitiveProperty(ecPropertyP, "Material", ECN::PrimitiveType::PRIMITIVETYPE_String))
+        return BentleyStatus::ERROR;
+
+    if (hiddenPropertyInstance.IsValid())
+        ecPropertyP->SetCustomAttribute(*hiddenPropertyInstance);
+
+    if (ECN::ECObjectsStatus::Success != materialAspectClassP->CreatePrimitiveProperty(ecPropertyP, "MaterialDensity", ECN::PrimitiveType::PRIMITIVETYPE_Double))
+        return BentleyStatus::ERROR;
+
+    if (hiddenPropertyInstance.IsValid())
+        ecPropertyP->SetCustomAttribute(*hiddenPropertyInstance);
+
+    if (ECN::ECObjectsStatus::Success != materialAspectClassP->CreatePrimitiveProperty(ecPropertyP, "Weight", ECN::PrimitiveType::PRIMITIVETYPE_Double))
+        return BentleyStatus::ERROR;
+
+    if (hiddenPropertyInstance.IsValid())
+        ecPropertyP->SetCustomAttribute(*hiddenPropertyInstance);
+
+    // Create VolumeAspect subclass and hide it
+    ECN::ECEntityClassP volumeAspectClassP;
+    if (ECN::ECObjectsStatus::Success != m_dynamicSchema->CreateEntityClass(volumeAspectClassP, GetQTOVolumeClassName()))
+        return BentleyStatus::ERROR;
+
+    auto baseVolumeAspectClassCP = m_qtoSchema->GetClassCP("VolumeAspect");
+    volumeAspectClassP->AddBaseClass(*baseVolumeAspectClassCP);
+
+    if (hiddenClassInstance.IsValid())
+        volumeAspectClassP->SetCustomAttribute(*hiddenClassInstance);
+
+    if (ECN::ECObjectsStatus::Success != volumeAspectClassP->CreatePrimitiveProperty(ecPropertyP, "GrossVolume", ECN::PrimitiveType::PRIMITIVETYPE_Double))
+        return BentleyStatus::ERROR;
+
+    if (hiddenPropertyInstance.IsValid())
+        ecPropertyP->SetCustomAttribute(*hiddenPropertyInstance);
+
+    if (ECN::ECObjectsStatus::Success != volumeAspectClassP->CreatePrimitiveProperty(ecPropertyP, "NetVolume", ECN::PrimitiveType::PRIMITIVETYPE_Double))
+        return BentleyStatus::ERROR;
+
+    if (hiddenPropertyInstance.IsValid())
+        ecPropertyP->SetCustomAttribute(*hiddenPropertyInstance);
+
+    // Create SurfaceAreaAspect subclass and hide it
+    ECN::ECEntityClassP surfaceAreaAspectClassP;
+    if (ECN::ECObjectsStatus::Success != m_dynamicSchema->CreateEntityClass(surfaceAreaAspectClassP, GetQTOSurfaceAreaClassName()))
+        return BentleyStatus::ERROR;
+
+    auto baseSurfaceAreaAspectClassCP = m_qtoSchema->GetClassCP("SurfaceAreaAspect");
+    surfaceAreaAspectClassP->AddBaseClass(*baseSurfaceAreaAspectClassCP);
+
+    if (hiddenClassInstance.IsValid())
+        surfaceAreaAspectClassP->SetCustomAttribute(*hiddenClassInstance);
+
+    if (ECN::ECObjectsStatus::Success != surfaceAreaAspectClassP->CreatePrimitiveProperty(ecPropertyP, "GrossSurfaceArea", ECN::PrimitiveType::PRIMITIVETYPE_Double))
+        return BentleyStatus::ERROR;
+
+    if (hiddenPropertyInstance.IsValid())
+        ecPropertyP->SetCustomAttribute(*hiddenPropertyInstance);
+
+    if (ECN::ECObjectsStatus::Success != surfaceAreaAspectClassP->CreatePrimitiveProperty(ecPropertyP, "NetSurfaceArea", ECN::PrimitiveType::PRIMITIVETYPE_Double))
+        return BentleyStatus::ERROR;
+
+    if (hiddenPropertyInstance.IsValid())
+        ecPropertyP->SetCustomAttribute(*hiddenPropertyInstance);
+
+    return BentleyStatus::SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void ORDDynamicSchemaGenerator::AddClass(Utf8StringCR name)
+    {
+    Utf8String className = FeatureNameToClassName(name);
+
+    if (m_dynamicSchema->GetClassCP(className.c_str()))
+        return;
+
+    ECN::ECEntityClassP newClassP;
+    if (ECN::ECObjectsStatus::Success != m_dynamicSchema->CreateEntityClass(newClassP, className))
+        ORDBRIDGE_LOG.warning(Utf8PrintfString("Error creating dynamic class for FeatureDef '%s' as '%s'.", name.c_str(), className.c_str()).c_str());
+
+    newClassP->AddBaseClass(*m_graphicalElement3dClassCP);
+    newClassP->SetDisplayLabel(name);
+    newClassP->SetClassModifier(ECN::ECClassModifier::Sealed);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void ORDDynamicSchemaGenerator::AddClasses(ConsensusConnectionR cifConn)
+    {
+    auto cifModelPtr = ConsensusModel::Create(cifConn);
+    if (cifModelPtr.IsNull())
+        return;
+
+    auto geomModelsPtr = cifModelPtr->GetActiveGeometricModels();
+    while (geomModelsPtr.IsValid() && geomModelsPtr->MoveNext())
+        {
+        auto featureDefsPtr = geomModelsPtr->GetCurrent()->GetFeatureDefintions();
+        while (featureDefsPtr.IsValid() && featureDefsPtr->MoveNext())
+            {
+            auto featureDefPtr = featureDefsPtr->GetCurrent();
+            if (featureDefPtr.IsNull())
+                continue;
+
+            auto featureDefName = featureDefPtr->GetName();
+            if (WString::IsNullOrEmpty(featureDefName.c_str()))
+                continue;
+
+            AddClass(Utf8String(featureDefName.c_str()));
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ORDDynamicSchemaGenerator::RequireSchemaUpdate()
+    {
+    auto existingSchemaCP = m_dgnDbPtr->Schemas().GetSchema(GetTargetSchemaName());
+    if (!existingSchemaCP)
+        return true;
+
+    return DynamicSchemaComparer::RequireSchemaUpdate(*m_dynamicSchema, *existingSchemaCP, *m_graphicalElement3dClassCP);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ORDDynamicSchemaGenerator::Finish()
+    {
+    if (!RequireSchemaUpdate())
+        return BentleyStatus::SUCCESS;
+
+    bvector<ECN::ECSchemaCP> schemas;
+    schemas.push_back(m_dynamicSchema.get());
+
+    auto status = m_dgnDbPtr->ImportSchemas(schemas);
+    if (status != Dgn::SchemaStatus::Success)
+        return BentleyStatus::ERROR;
+
+    return BentleyStatus::SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ORDDynamicSchemaGenerator::Generate(DgnDbR dgnDb, BeFileNameCR assetsDir, ConsensusConnectionR cifConn)
+    {
+    m_dgnDbPtr = &dgnDb;
+
+    Initialize();
+    BentleyStatus status = SetupSchema(assetsDir);
+    if (status != BentleyStatus::SUCCESS)
+        return status;
+
+    if (BentleyStatus::SUCCESS != (status = AddQuantityTakeOffAspectClasses()))
+        return status;
+
+    AddClasses(cifConn);
+
+    return Finish();
+    }
 
 struct ConsensusSourceItem : iModelBridgeSyncInfoFile::ISourceItem
 {
@@ -1196,7 +1511,48 @@ void ConvertORDElementXDomain::_DetermineElementParams(DgnClassId& classId, DgnC
         return;
 
     if (!classId.IsValid())
+        {
+        auto featurizedPtr = FeaturizedConsensusItem::CreateFromElementHandle(*m_cifConsensusConnection, v8el);
+        if (featurizedPtr.IsValid())
+            {
+            auto featureDefPtr = featurizedPtr->GetFeatureDefinition();
+            if (featureDefPtr.IsValid())
+                {
+                auto featureDefName = featureDefPtr->GetName();
+                if (!WString::IsNullOrEmpty(featureDefName.c_str()))
+                    {
+                    auto className = ORDDynamicSchemaGenerator::FeatureNameToClassName(Utf8String(featureDefName.c_str()));
+                    auto dynamicClassId = converter.GetDgnDb().Schemas().GetClassId(ORDDynamicSchemaGenerator::GetTargetSchemaName(), className);
+                    if (dynamicClassId.IsValid())
+                        {
+                        classId = dynamicClassId;
+                        return;
+                        }
+                    }
+                }
+            }
+
         classId = m_graphic3dClassId;
+
+        /* TODO: Delete existing element if its classId needs to change
+        if (m_converter.IsUpdating())
+            {
+            iModelExternalSourceAspect::ElementAndAspectId elementAndAspectId =
+                iModelExternalSourceAspect::FindElementBySourceId(m_converter.GetDgnDb(), 
+                    DgnElementId(m_converter.m_ordParams->fileScopeId), "Element", 
+                    Utf8PrintfString("%d", v8el.GetElementId()).c_str());
+            if (elementAndAspectId.elementId.IsValid())
+                {
+                auto existingElementId = elementAndAspectId.elementId;
+                auto existingElmCPtr = m_converter.GetDgnDb().Elements().GetElement(existingElementId);
+                if (classId != existingElmCPtr->GetElementClassId())
+                    {
+                    existingElmCPtr->Delete();
+                    ORDBRIDGE_LOG.infov("Deleting elementId %lld because its classId changed.", existingElementId.GetValue());
+                    }
+                }
+            }*/
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1253,11 +1609,24 @@ void assignTemplateDropAspect(Dgn::DgnElementR element, Cif::TemplateDropCR temp
 void assignCorridorAspect(Dgn::DgnElementR element, CorridorCR corridor)
     {
     auto name = Utf8String(corridor.GetName().c_str());
+    auto corridorAlignmentPtr = corridor.GetCorridorAlignment();
+    
+    Utf8String activeProfileName;
+    if (corridorAlignmentPtr.IsValid())
+        {
+        auto profilePtr = corridorAlignmentPtr->GetActiveProfile();
+        if (profilePtr.IsValid())
+            activeProfileName = Utf8String(profilePtr->GetName().c_str());
+        }
+
     if (auto corridorAspectP = DgnV8ORDBim::CorridorAspect::GetP(element))
+        {
         corridorAspectP->SetName(name.c_str());
+        corridorAspectP->SetActiveProfileName(activeProfileName.c_str());
+        }
     else
         {
-        auto corridorAspectPtr = DgnV8ORDBim::CorridorAspect::Create(name.c_str());
+        auto corridorAspectPtr = DgnV8ORDBim::CorridorAspect::Create(name.c_str(), activeProfileName.c_str());
         DgnV8ORDBim::CorridorAspect::Set(element, *corridorAspectPtr);
         }
     }
@@ -1423,13 +1792,65 @@ void assignQuantityAspect(Dgn::DgnElementR element, Cif::CorridorSurfaceCR cifCo
     double surfaceAreaVal = surfaceArea.IsValid() ? surfaceArea.Value() / squaredUorsPerMeter : NAN;
     if (auto volumetricQuantityAspectP = DgnV8ORDBim::VolumetricQuantityAspect::GetP(element))
         {
-        volumetricQuantityAspectP->SetSurfaceArea(surfaceAreaVal);
+        volumetricQuantityAspectP->SetSlopedArea(surfaceAreaVal);
         volumetricQuantityAspectP->SetVolume(volumeVal);
         }
     else
         {
         auto volumetricQuantityAspectPtr = DgnV8ORDBim::VolumetricQuantityAspect::Create(volumeVal, surfaceAreaVal);
         DgnV8ORDBim::VolumetricQuantityAspect::Set(element, *volumetricQuantityAspectPtr);
+        }
+
+    auto qtoVolumeClassCP = element.GetDgnDb().Schemas().GetClass(ORDDynamicSchemaGenerator::GetTargetSchemaName(), ORDDynamicSchemaGenerator::GetQTOVolumeClassName());
+
+    if (auto qtoVolumeInstanceP = Dgn::DgnElement::GenericUniqueAspect::GetAspectP(element, *qtoVolumeClassCP))
+        {
+        qtoVolumeInstanceP->SetValue("NetVolume", ECN::ECValue(volumeVal));
+        qtoVolumeInstanceP->SetValue("GrossVolume", ECN::ECValue(volumeVal));
+        }
+    else
+        {
+        auto enablerP = qtoVolumeClassCP->GetDefaultStandaloneEnabler();
+        auto instancePtr = enablerP->CreateInstance();
+        instancePtr->SetValue("NetVolume", ECN::ECValue(volumeVal));
+        instancePtr->SetValue("GrossVolume", ECN::ECValue(volumeVal));
+        Dgn::DgnElement::GenericUniqueAspect::SetAspect(element, *instancePtr);
+        }
+
+    auto qtoSurfaceAreaClassCP = element.GetDgnDb().Schemas().GetClass(ORDDynamicSchemaGenerator::GetTargetSchemaName(), ORDDynamicSchemaGenerator::GetQTOSurfaceAreaClassName());
+
+    if (auto qtoSurfaceAreaInsgtanceP = Dgn::DgnElement::GenericUniqueAspect::GetAspectP(element, *qtoSurfaceAreaClassCP))
+        {
+        qtoSurfaceAreaInsgtanceP->SetValue("GrossSurfaceArea", ECN::ECValue(surfaceAreaVal));
+        qtoSurfaceAreaInsgtanceP->SetValue("NetSurfaceArea", ECN::ECValue(surfaceAreaVal));
+        }
+    else
+        {    
+        auto enablerP = qtoSurfaceAreaClassCP->GetDefaultStandaloneEnabler();
+        auto instancePtr = enablerP->CreateInstance();
+        instancePtr->SetValue("GrossSurfaceArea", ECN::ECValue(volumeVal));
+        instancePtr->SetValue("NetSurfaceArea", ECN::ECValue(volumeVal));
+        Dgn::DgnElement::GenericUniqueAspect::SetAspect(element, *instancePtr);
+        }
+
+    auto featureDefPtr = cifCorridorSurface.GetFeatureDefinition();
+    if (featureDefPtr.IsValid())
+        {
+        auto featureDefName = featureDefPtr->GetName();
+        if (!WString::IsNullOrEmpty(featureDefName.c_str()))
+            {
+            auto qtoMaterialClassCP = element.GetDgnDb().Schemas().GetClass(ORDDynamicSchemaGenerator::GetTargetSchemaName(), ORDDynamicSchemaGenerator::GetQTOMaterialClassName());
+
+            if (auto qtoMaterialInstanceP = Dgn::DgnElement::GenericUniqueAspect::GetAspectP(element, *qtoMaterialClassCP))
+                qtoMaterialInstanceP->SetValue("Material", ECN::ECValue(Utf8String(featureDefName.c_str()).c_str()));
+            else
+                {
+                auto enablerP = qtoMaterialClassCP->GetDefaultStandaloneEnabler();
+                auto instancePtr = enablerP->CreateInstance();
+                instancePtr->SetValue("Material", ECN::ECValue(Utf8String(featureDefName.c_str()).c_str()));
+                Dgn::DgnElement::GenericUniqueAspect::SetAspect(element, *instancePtr);
+                }
+            }
         }
     }
 
@@ -1996,6 +2417,17 @@ void ORDConverter::_OnSheetsConvertViewAttachment(Dgn::DgnDbSync::DgnV8::Resolve
                 }
             }
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ORDConverter::AddDynamicSchema()
+    {
+    auto cifConsensusConnectionPtr = ConsensusConnection::Create(*GetRootModelRefP());
+
+    ORDDynamicSchemaGenerator dynSchemaGen;
+    return dynSchemaGen.Generate(GetDgnDb(), GetParams().GetAssetsDir(), *cifConsensusConnectionPtr);
     }
 
 END_ORDBRIDGE_NAMESPACE

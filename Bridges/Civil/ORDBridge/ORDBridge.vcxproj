@@ -11,12 +11,14 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="DynamicSchemaComparer.h" />
     <ClInclude Include="ORDBridge.h" />
     <ClInclude Include="ORDBridgeInternal.h" />
     <ClInclude Include="ORDConverter.h" />
     <ClInclude Include="PublicAPI\ORDBridge\ORDBridgeApi.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="DynamicSchemaComparer.cpp" />
     <ClCompile Include="iModelBridgeAffinity.cpp" />
     <ClCompile Include="ORDBridge.cpp" />
     <ClCompile Include="ORDBridgeInternal.cpp" />

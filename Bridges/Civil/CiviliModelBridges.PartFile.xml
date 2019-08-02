@@ -61,6 +61,7 @@
         <SubPart PartName="RoadRailPhysical" PartFile="RoadRailPhysical" Repository="DgnDomains-RoadRailPhysical"/>
         <SubPart PartName="DgnV8OpenRoadsDesigner" PartFile="DgnV8OpenRoadsDesigner" Repository="DgnDomains-DgnV8OpenRoadsDesigner"/>
         <SubPart PartName="DgnV8ConverterSqlang" PartFile="DgnDbSync" Repository="DgnDbSync" />
+        <SubPart PartName="QuantityTakeoffsAspectsSchema" PartFile="BisSchemas" Repository="BisSchemas"/>
         <Bindings>
             <Libs Required="false">Delivery/$(libprefix)ORDBridge$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)ORDBridge$(shlibext)</Assemblies>

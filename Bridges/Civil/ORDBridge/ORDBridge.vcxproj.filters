@@ -30,6 +30,9 @@
     <ClInclude Include="ORDBridge.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DynamicSchemaComparer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ORDBridge.cpp">
@@ -42,6 +45,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="iModelBridgeAffinity.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DynamicSchemaComparer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

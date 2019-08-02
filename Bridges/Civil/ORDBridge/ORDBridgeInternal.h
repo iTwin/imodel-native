@@ -58,4 +58,22 @@ namespace AlignmentBim = BENTLEY_NAMESPACE_NAME::RoadRailAlignment;
 namespace RoadRailBim = BENTLEY_NAMESPACE_NAME::RoadRailPhysical;
 namespace DgnV8ORDBim = BENTLEY_NAMESPACE_NAME::DgnV8OpenRoadsDesigner;
 
+//-----------------------------------------------------------------------------------------
+// Logging macros
+//-----------------------------------------------------------------------------------------
+#define LOGGER_NAMESPACE_ORDBRIDGE    "ORDBridge"
+#if defined (ANDROID)
+#include <android/log.h>
+#define ORDBRIDGE_LOGI(...) __android_log_print(ANDROID_LOG_INFO,  LOGGER_NAMESPACE_ORDBRIDGE, __VA_ARGS__);
+#define ORDBRIDGE_LOGW(...) __android_log_print(ANDROID_LOG_WARN,  LOGGER_NAMESPACE_ORDBRIDGE, __VA_ARGS__);
+#define ORDBRIDGE_LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOGGER_NAMESPACE_ORDBRIDGE, __VA_ARGS__);
+#else
+#include <Logging/BentleyLogging.h>
+#define ORDBRIDGE_LOG                 (*NativeLogging::LoggingManager::GetLogger (LOGGER_NAMESPACE_ORDBRIDGE))
+#define ORDBRIDGE_LOGD(...)           ORDBRIDGE_LOG.debugv (__VA_ARGS__);
+#define ORDBRIDGE_LOGI(...)           ORDBRIDGE_LOG.infov (__VA_ARGS__);
+#define ORDBRIDGE_LOGW(...)           ORDBRIDGE_LOG.warningv (__VA_ARGS__);
+#define ORDBRIDGE_LOGE(...)           ORDBRIDGE_LOG.errorv (__VA_ARGS__);
+#endif
+
 #endif

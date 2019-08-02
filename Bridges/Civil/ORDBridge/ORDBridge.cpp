@@ -346,6 +346,8 @@ void ORDBridge::_OnDocumentDeleted(Utf8StringCR documentId, Dgn::iModelBridgeSyn
 BentleyStatus ORDBridge::_MakeSchemaChanges()
     {
     auto status = m_converter->MakeSchemaChanges();
+    if (status == BSISUCCESS) 
+        status = m_converter->AddDynamicSchema();
 
     GetDgnDbR().Schemas().CreateClassViewsInDb(); // For debugging purposes
 
