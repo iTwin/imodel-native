@@ -188,7 +188,12 @@
         <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
         <SubPart PartName="IntegrationTests"/>
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <Directories DirectoryListName="Licensing-IntegrationTestsDirs"/>
     </Product>
+
+    <ProductDirectoryList ListName="Licensing-IntegrationTestsDirs">
+        <ProductDirectory Name="Gtest-NativeAssemblies" Deliver="false"/>
+    </ProductDirectoryList>
 
     <Part Name="GtestIntegration" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=LicensingIntegrationTest -dTEST_COLLECTION_PRODUCT=Licensing-IntegrationTests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
         <SubProduct ProductName="Licensing-IntegrationTests"/>
