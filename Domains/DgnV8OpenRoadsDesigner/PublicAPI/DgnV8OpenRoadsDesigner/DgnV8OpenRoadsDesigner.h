@@ -64,6 +64,7 @@ END_BENTLEY_DGNV8OPENROADSDESIGNER_NAMESPACE
 
 // Properties
 #define V8ORD_PROP_CorridorAspect_Name                                           "Name"
+#define V8ORD_PROP_CorridorAspect_ActiveProfileName                              "ActiveProfileName"
 #define V8ORD_PROP_CorridorSurfaceAspect_Description                             "Description"
 #define V8ORD_PROP_CorridorSurfaceAspect_IsTopMesh                               "IsTopMesh"
 #define V8ORD_PROP_CorridorSurfaceAspect_IsBottomMesh                            "IsBottomMesh"
@@ -78,7 +79,7 @@ END_BENTLEY_DGNV8OPENROADSDESIGNER_NAMESPACE
 #define V8ORD_PROP_TemplateDropAspect_Interval                                   "Interval"
 #define V8ORD_PROP_TemplateDropAspect_TemplateName                               "TemplateName"
 #define V8ORD_PROP_TemplateDropAspect_Description                                "Description"
-#define V8ORD_PROP_VolumetricQuantityAspect_SurfaceArea                          "SurfaceArea"
+#define V8ORD_PROP_VolumetricQuantityAspect_SlopedArea                           "SlopedArea"
 #define V8ORD_PROP_VolumetricQuantityAspect_Volume                               "Volume"
 
 

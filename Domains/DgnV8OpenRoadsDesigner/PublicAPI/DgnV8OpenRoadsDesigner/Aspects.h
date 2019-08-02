@@ -306,11 +306,11 @@ struct CorridorAspect : Dgn::DgnElement::UniqueAspect
     friend struct CorridorAspectHandler;
 
 private:
-    Utf8String m_name;
+    Utf8String m_name, m_activeProfileName;
 
 protected:
     CorridorAspect() {}
-    CorridorAspect(Utf8CP name): m_name(name) {}
+    CorridorAspect(Utf8CP name, Utf8CP activeProfileName): m_name(name), m_activeProfileName(activeProfileName) {}
 
     //! @private
     virtual Utf8CP _GetECSchemaName() const { return V8ORD_SCHEMA_NAME; }
@@ -329,7 +329,7 @@ protected:
 
 public:
     DECLARE_DGNV8OPENROADSDESIGNER_QUERYCLASS_METHODS(CorridorAspect)
-    DGNV8OPENROADSDESIGNER_EXPORT static CorridorAspectPtr Create(Utf8CP name);
+    DGNV8OPENROADSDESIGNER_EXPORT static CorridorAspectPtr Create(Utf8CP name, Utf8CP activeProfileName);
 
     //! Retrieve the CorridorAspect instance related to an element, if any
     //! @return An instance of CorridorAspect, or nullptr
@@ -344,6 +344,10 @@ public:
     Utf8CP GetName() const { return m_name.c_str(); }
     //! @private
     void SetName(Utf8CP val) { m_name = val; }
+    // Get Active Profile Name
+    Utf8CP GetActiveProfileName() const { return m_activeProfileName.c_str(); }
+    //! @private
+    void SetActiveProfileName(Utf8CP val) { m_activeProfileName = val; }
 
 }; // CorridorAspect
 
@@ -357,11 +361,11 @@ struct VolumetricQuantityAspect : Dgn::DgnElement::UniqueAspect
     friend struct VolumetricQuantityAspectHandler;
 
 private:
-    double m_volume, m_surfaceArea;
+    double m_volume, m_slopedArea;
 
 protected:
     VolumetricQuantityAspect() {}
-    VolumetricQuantityAspect(double volume, double surfaceArea): m_volume(volume), m_surfaceArea(surfaceArea) {}
+    VolumetricQuantityAspect(double volume, double slopedArea): m_volume(volume), m_slopedArea(slopedArea) {}
 
     //! @private
     virtual Utf8CP _GetECSchemaName() const { return V8ORD_SCHEMA_NAME; }
@@ -396,9 +400,9 @@ public:
     //! @private
     void SetVolume(double val) { m_volume = val; }
     // Get SurfaceArea
-    double GetSurfaceArea() const { return m_surfaceArea; }
+    double GetSlopedArea() const { return m_slopedArea; }
     //! @private
-    void SetSurfaceArea(double val) { m_surfaceArea = val; }
+    void SetSlopedArea(double val) { m_slopedArea = val; }
 
 }; // VolumetricQuantityAspect
 

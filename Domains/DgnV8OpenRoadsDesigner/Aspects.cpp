@@ -105,11 +105,11 @@ DgnDbStatus CorridorSurfaceAspect::_GetPropertyValue(ECValueR value, Utf8CP prop
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus CorridorSurfaceAspect::_SetPropertyValue(Utf8CP propertyName, ECValueCR value, PropertyArrayIndex const& arrayIndex)
     {
-    if (0 == strcmp(V8ORD_PROP_CorridorSurfaceAspect_IsTopMesh, propertyName) || value.IsNull())
+    if (0 == strcmp(V8ORD_PROP_CorridorSurfaceAspect_IsTopMesh, propertyName))
         SetIsTopMesh(value.GetBoolean());
-    else if (0 == strcmp(V8ORD_PROP_CorridorSurfaceAspect_IsBottomMesh, propertyName) || value.IsNull())
+    else if (0 == strcmp(V8ORD_PROP_CorridorSurfaceAspect_IsBottomMesh, propertyName))
         SetIsBottomMesh(value.GetBoolean());
-    else if (0 == strcmp(V8ORD_PROP_CorridorSurfaceAspect_Description, propertyName) || value.IsNull())
+    else if (0 == strcmp(V8ORD_PROP_CorridorSurfaceAspect_Description, propertyName))
         SetDescription(value.GetUtf8CP());
     else
         return DgnDbStatus::BadRequest;
@@ -210,9 +210,9 @@ DgnDbStatus FeatureAspect::_GetPropertyValue(ECValueR value, Utf8CP propertyName
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus FeatureAspect::_SetPropertyValue(Utf8CP propertyName, ECValueCR value, PropertyArrayIndex const& arrayIndex)
     {
-    if (0 == strcmp(V8ORD_PROP_FeatureAspect_Name, propertyName) || value.IsNull())
+    if (0 == strcmp(V8ORD_PROP_FeatureAspect_Name, propertyName))
         SetName(value.GetUtf8CP());
-    else if (0 == strcmp(V8ORD_PROP_FeatureAspect_DefinitionName, propertyName) || value.IsNull())
+    else if (0 == strcmp(V8ORD_PROP_FeatureAspect_DefinitionName, propertyName))
         SetDefinitionName(value.GetUtf8CP());
     else
         return DgnDbStatus::BadRequest;
@@ -317,11 +317,11 @@ DgnDbStatus TemplateDropAspect::_GetPropertyValue(ECValueR value, Utf8CP propert
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus TemplateDropAspect::_SetPropertyValue(Utf8CP propertyName, ECValueCR value, PropertyArrayIndex const& arrayIndex)
     {
-    if (0 == strcmp(V8ORD_PROP_TemplateDropAspect_Interval, propertyName) || value.IsNull())
+    if (0 == strcmp(V8ORD_PROP_TemplateDropAspect_Interval, propertyName))
         SetInterval(value.GetDouble());
-    else if (0 == strcmp(V8ORD_PROP_TemplateDropAspect_TemplateName, propertyName) || value.IsNull())
+    else if (0 == strcmp(V8ORD_PROP_TemplateDropAspect_TemplateName, propertyName))
         SetTemplateName(value.GetUtf8CP());
-    else if (0 == strcmp(V8ORD_PROP_TemplateDropAspect_Description, propertyName) || value.IsNull())
+    else if (0 == strcmp(V8ORD_PROP_TemplateDropAspect_Description, propertyName))
         SetDescription(value.GetUtf8CP());
     else
         return DgnDbStatus::BadRequest;
@@ -422,9 +422,9 @@ DgnDbStatus StationRangeAspect::_GetPropertyValue(ECValueR value, Utf8CP propert
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus StationRangeAspect::_SetPropertyValue(Utf8CP propertyName, ECValueCR value, PropertyArrayIndex const& arrayIndex)
     {
-    if (0 == strcmp(V8ORD_PROP_StationRangeAspect_StartStation, propertyName) || value.IsNull())
+    if (0 == strcmp(V8ORD_PROP_StationRangeAspect_StartStation, propertyName))
         SetStartStation(value.GetDouble());
-    else if (0 == strcmp(V8ORD_PROP_StationRangeAspect_EndStation, propertyName) || value.IsNull())
+    else if (0 == strcmp(V8ORD_PROP_StationRangeAspect_EndStation, propertyName))
         SetEndStation(value.GetDouble());
     else
         return DgnDbStatus::BadRequest;
@@ -525,9 +525,9 @@ DgnDbStatus SuperelevationAspect::_GetPropertyValue(ECValueR value, Utf8CP prope
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus SuperelevationAspect::_SetPropertyValue(Utf8CP propertyName, ECValueCR value, PropertyArrayIndex const& arrayIndex)
     {
-    if (0 == strcmp(V8ORD_PROP_SuperelevationAspect_Name, propertyName) || value.IsNull())
+    if (0 == strcmp(V8ORD_PROP_SuperelevationAspect_Name, propertyName))
         SetName(value.GetUtf8CP());
-    else if (0 == strcmp(V8ORD_PROP_SuperelevationAspect_NormalCrossSlope, propertyName) || value.IsNull())
+    else if (0 == strcmp(V8ORD_PROP_SuperelevationAspect_NormalCrossSlope, propertyName))
         SetNormalCrossSlope(value.GetDouble());
     else
         return DgnDbStatus::BadRequest;
@@ -538,9 +538,9 @@ DgnDbStatus SuperelevationAspect::_SetPropertyValue(Utf8CP propertyName, ECValue
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      02/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-CorridorAspectPtr CorridorAspect::Create(Utf8CP name)
+CorridorAspectPtr CorridorAspect::Create(Utf8CP name, Utf8CP activeProfileName)
     {
-    return new CorridorAspect(name);
+    return new CorridorAspect(name, activeProfileName);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -613,6 +613,8 @@ DgnDbStatus CorridorAspect::_GetPropertyValue(ECValueR value, Utf8CP propertyNam
     {
     if (0 == strcmp(V8ORD_PROP_CorridorAspect_Name, propertyName))
         value.SetUtf8CP(m_name.c_str());
+    else if (0 == strcmp(V8ORD_PROP_CorridorAspect_ActiveProfileName, propertyName))
+        value.SetUtf8CP(m_activeProfileName.c_str());
     else
         return DgnDbStatus::BadRequest;
 
@@ -624,8 +626,10 @@ DgnDbStatus CorridorAspect::_GetPropertyValue(ECValueR value, Utf8CP propertyNam
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus CorridorAspect::_SetPropertyValue(Utf8CP propertyName, ECValueCR value, PropertyArrayIndex const& arrayIndex)
     {
-    if (0 == strcmp(V8ORD_PROP_CorridorAspect_Name, propertyName) || value.IsNull())
+    if (0 == strcmp(V8ORD_PROP_CorridorAspect_Name, propertyName))
         SetName(value.GetUtf8CP());
+    else if (0 == strcmp(V8ORD_PROP_CorridorAspect_ActiveProfileName, propertyName))
+        SetActiveProfileName(value.GetUtf8CP());
     else
         return DgnDbStatus::BadRequest;
 
@@ -670,7 +674,7 @@ void VolumetricQuantityAspect::Set(DgnElementR el, VolumetricQuantityAspectR asp
 DgnDbStatus VolumetricQuantityAspect::_LoadProperties(DgnElementCR el)
     {
     auto stmtPtr = el.GetDgnDb().GetPreparedECSqlStatement(
-        "SELECT " V8ORD_PROP_VolumetricQuantityAspect_Volume ", " V8ORD_PROP_VolumetricQuantityAspect_SurfaceArea
+        "SELECT " V8ORD_PROP_VolumetricQuantityAspect_Volume ", " V8ORD_PROP_VolumetricQuantityAspect_SlopedArea
         " FROM " V8ORD_SCHEMA(V8ORD_CLASS_VolumetricQuantityAspect) " WHERE Element.Id = ?;");
     BeAssert(stmtPtr.IsValid());
 
@@ -680,7 +684,7 @@ DgnDbStatus VolumetricQuantityAspect::_LoadProperties(DgnElementCR el)
         return DgnDbStatus::BadElement;
 
     m_volume = stmtPtr->GetValueDouble(0);
-    m_surfaceArea = stmtPtr->GetValueDouble(1);
+    m_slopedArea = stmtPtr->GetValueDouble(1);
 
     return DgnDbStatus::Success;
     }
@@ -692,11 +696,11 @@ DgnDbStatus VolumetricQuantityAspect::_UpdateProperties(DgnElementCR el, BeSQLit
     {
     auto stmtPtr = el.GetDgnDb().GetNonSelectPreparedECSqlStatement(
         "UPDATE " V8ORD_SCHEMA(V8ORD_CLASS_VolumetricQuantityAspect) " SET " V8ORD_PROP_VolumetricQuantityAspect_Volume " = ?, "
-        V8ORD_PROP_VolumetricQuantityAspect_SurfaceArea " = ? WHERE Element.Id = ?;", writeToken);
+        V8ORD_PROP_VolumetricQuantityAspect_SlopedArea " = ? WHERE Element.Id = ?;", writeToken);
     BeAssert(stmtPtr.IsValid());
 
     stmtPtr->BindDouble(1, m_volume);
-    stmtPtr->BindDouble(2, m_surfaceArea);
+    stmtPtr->BindDouble(2, m_slopedArea);
     stmtPtr->BindId(3, el.GetElementId());
 
     if (DbResult::BE_SQLITE_DONE != stmtPtr->Step())
@@ -712,8 +716,8 @@ DgnDbStatus VolumetricQuantityAspect::_GetPropertyValue(ECValueR value, Utf8CP p
     {
     if (0 == strcmp(V8ORD_PROP_VolumetricQuantityAspect_Volume, propertyName))
         value.SetDouble(m_volume);
-    else if (0 == strcmp(V8ORD_PROP_VolumetricQuantityAspect_SurfaceArea, propertyName))
-        value.SetDouble(m_surfaceArea);
+    else if (0 == strcmp(V8ORD_PROP_VolumetricQuantityAspect_SlopedArea, propertyName))
+        value.SetDouble(m_slopedArea);
     else
         return DgnDbStatus::BadRequest;
 
@@ -725,10 +729,10 @@ DgnDbStatus VolumetricQuantityAspect::_GetPropertyValue(ECValueR value, Utf8CP p
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus VolumetricQuantityAspect::_SetPropertyValue(Utf8CP propertyName, ECValueCR value, PropertyArrayIndex const& arrayIndex)
     {
-    if (0 == strcmp(V8ORD_PROP_VolumetricQuantityAspect_Volume, propertyName) || value.IsNull())
+    if (0 == strcmp(V8ORD_PROP_VolumetricQuantityAspect_Volume, propertyName))
         SetVolume(value.GetDouble());
-    else if (0 == strcmp(V8ORD_PROP_VolumetricQuantityAspect_SurfaceArea, propertyName) || value.IsNull())
-        SetSurfaceArea(value.GetDouble());
+    else if (0 == strcmp(V8ORD_PROP_VolumetricQuantityAspect_SlopedArea, propertyName))
+        SetSlopedArea(value.GetDouble());
     else
         return DgnDbStatus::BadRequest;
 
@@ -824,7 +828,7 @@ DgnDbStatus LinearQuantityAspect::_GetPropertyValue(ECValueR value, Utf8CP prope
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus LinearQuantityAspect::_SetPropertyValue(Utf8CP propertyName, ECValueCR value, PropertyArrayIndex const& arrayIndex)
     {
-    if (0 == strcmp(V8ORD_PROP_LinearQuantityAspect_Length, propertyName) || value.IsNull())
+    if (0 == strcmp(V8ORD_PROP_LinearQuantityAspect_Length, propertyName))
         SetLength(value.GetDouble());
     else
         return DgnDbStatus::BadRequest;
@@ -921,7 +925,7 @@ DgnDbStatus DiscreteQuantityAspect::_GetPropertyValue(ECValueR value, Utf8CP pro
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DiscreteQuantityAspect::_SetPropertyValue(Utf8CP propertyName, ECValueCR value, PropertyArrayIndex const& arrayIndex)
     {
-    if (0 == strcmp(V8ORD_PROP_DiscreteQuantityAspect_Count, propertyName) || value.IsNull())
+    if (0 == strcmp(V8ORD_PROP_DiscreteQuantityAspect_Count, propertyName))
         SetCount(value.GetInteger());
     else
         return DgnDbStatus::BadRequest;
