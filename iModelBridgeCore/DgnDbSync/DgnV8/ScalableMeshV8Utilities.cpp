@@ -146,6 +146,7 @@ void Convert(DgnV8EhCR v8el)
     return Result::SkipElement;
 */
     }
+#ifdef FROMELEMREF
 
 struct  SMHostv8 : Bentley::ScalableMesh::ScalableMeshLib::Host
     {
@@ -211,3 +212,4 @@ BentleyStatus  ConvertDTMElementRefTo3SM(DgnV8EhCR v8el, WCharCP smFile)
     scalableMeshCreatorPtr = nullptr;
     return SUCCESS;
     }
+#endif

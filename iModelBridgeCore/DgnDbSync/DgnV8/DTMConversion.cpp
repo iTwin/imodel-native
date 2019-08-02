@@ -208,9 +208,11 @@ ConvertToDgnDbElementExtension::Result ConvertDTMElement::_PreConvertElement(Dgn
     if (!fileExists)
         {
         converter.GetProgressMeter().SetCurrentStepName("Converting TM to STM");
+#ifdef FROMELEMREF
         if (!DgnV8Api::ConfigurationManager::IsVariableDefinedAndTrue(L"DGNDB_DTMFROMELEMREF"))
             ConvertDTMElementRefTo3SM(v8el, smFile.c_str());
         else
+#endif
             {
 
             StatusInt status;
@@ -303,7 +305,7 @@ void CreateMesh(Bentley::TerrainModel::BcDTMR dtm, ElementConversionResults& res
     {
     Bentley::DRange3d fullRange;
     const int s_tilePointSize = 10000;
-    const bool useOneBuilder = false;
+    const bool useOneBuilder = true;
     const int iterMaxTriangles = 100000;
     int m_numTilesX;
     int m_numTilesY;
@@ -312,6 +314,8 @@ void CreateMesh(Bentley::TerrainModel::BcDTMR dtm, ElementConversionResults& res
     DgnClassId childClassId = converter.ComputeElementClassIgnoringEcContent(v8eh, v8mm);
     DgnCode elementCode;
 
+    BentleyB0200::Transform trsf;
+    dtm.GetTransformation((Bentley::TransformR)trsf);
     dtm.GetRange(fullRange);
     if (numberOfPoints > s_tilePointSize)
         {
@@ -340,7 +344,7 @@ void CreateMesh(Bentley::TerrainModel::BcDTMR dtm, ElementConversionResults& res
 
     if (useOneBuilder)
         {
-        builder = GeometryBuilder::Create(model, categoryId, BentleyB0200::Transform::FromIdentity());
+        builder = GeometryBuilder::Create(model, categoryId, trsf);
         builder->SetAppendAsSubGraphics();
         SetSymbology(*builder, v8eh, v8mm, converter, displayParams, categoryId, subCategoryId);
         }
@@ -371,12 +375,12 @@ void CreateMesh(Bentley::TerrainModel::BcDTMR dtm, ElementConversionResults& res
             for (const auto& polyface : *en)
                 {
                 BentleyApi::PolyfaceHeaderPtr clone;
-
+                
                 Converter::ConvertPolyface(clone, *polyface);
                 auto geometry = GeometricPrimitive::Create(clone);
                 if (!useOneBuilder && builder.IsNull())
                     {
-                    builder = GeometryBuilder::Create(model, categoryId, BentleyB0200::Transform::FromIdentity());
+                    builder = GeometryBuilder::Create(model, categoryId, trsf);
                     builder->SetAppendAsSubGraphics();
                     SetSymbology(*builder, v8eh, v8mm, converter, displayParams, categoryId, subCategoryId);
                     }
@@ -386,7 +390,7 @@ void CreateMesh(Bentley::TerrainModel::BcDTMR dtm, ElementConversionResults& res
             // Use the polyface to create the 3d tiles.
             if (!useOneBuilder && builder.IsValid())
                 {
-                auto gel = Converter::CreateNewElement(model, childClassId, categoryId, elementCode);
+                auto gel = Converter::CreateNewElement(model, childClassId, categoryId, elementCode, "Mesh");
 
                 if (gel.IsValid() && SUCCESS == builder->Finish(*gel->ToGeometrySourceP()))
                     {
@@ -402,7 +406,7 @@ void CreateMesh(Bentley::TerrainModel::BcDTMR dtm, ElementConversionResults& res
         }
     if (useOneBuilder && builder.IsValid())
         {
-        auto gel = Converter::CreateNewElement(model, childClassId, categoryId, elementCode);
+        auto gel = Converter::CreateNewElement(model, childClassId, categoryId, elementCode, "Mesh");
 
         if (gel.IsValid() && SUCCESS == builder->Finish(*gel->ToGeometrySourceP()))
             {
@@ -455,7 +459,7 @@ void CreateFeatures(Bentley::DgnPlatform::DTMElementSubHandler::SymbologyParams&
         {
         DgnClassId childClassId = converter.ComputeElementClassIgnoringEcContent(v8eh, v8mm);
         DgnCode elementCode;
-        auto gel = Converter::CreateNewElement(model, childClassId, categoryId, elementCode);
+        auto gel = Converter::CreateNewElement(model, childClassId, categoryId, elementCode, subCategoryName);
 
         if (gel.IsValid() && SUCCESS == builder->Finish(*gel->ToGeometrySourceP()))
             {
@@ -490,6 +494,10 @@ void ConvertDTMElement::_ProcessResults(ElementConversionResults& results, DgnV8
 
     dataRef->GetDTMReference(dtm, trsf);
 
+    Bentley::WString name;
+    Bentley::TerrainModel::Element::DTMElementHandlerManager::GetName (v8eh, name);
+
+    results.m_element->SetUserLabel(Utf8String(name.c_str()).c_str());
     auto source = results.m_element->ToGeometrySourceP();
     if (nullptr == source)
         return;
@@ -531,7 +539,7 @@ void ConvertDTMElement::_ProcessResults(ElementConversionResults& results, DgnV8
     builder->Append(*CurveVector::CreateLinear((DPoint3dCP)boundaryPts.data(), boundaryPts.size(), CurveVector::BOUNDARY_TYPE_Open));
 
     DgnClassId      childClassId = converter.ComputeElementClassIgnoringEcContent(v8eh, v8mm);
-    gel = Converter::CreateNewElement(*model, childClassId, categoryId, elementCode);
+    gel = Converter::CreateNewElement(*model, childClassId, categoryId, elementCode, "Boundary");
 
     if (gel.IsValid() && SUCCESS == builder->Finish(*gel->ToGeometrySourceP()))
         {
