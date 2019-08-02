@@ -20,12 +20,16 @@ def findBinaryFiles(dirToSearch, globPatterns):
     matchingFiles = []
 
     for path in os.listdir(dirToSearch):
-        fullPath = os.path.join(dirToSearch, path)
+        fullPath = os.path.realpath(os.path.join(dirToSearch, path))
         if os.path.isdir(fullPath):
             matchingFiles.extend(findBinaryFiles(fullPath, globPatterns))
             continue
         
         if any(g for g in globPatterns if fnmatch.fnmatch(path, g)):
+            if 'thirdparty' in path.split(os.path.sep):
+                print('Skipping ' + path + ' because it is third-party.')
+                continue
+            
             matchingFiles.append(fullPath)
     
     return matchingFiles
