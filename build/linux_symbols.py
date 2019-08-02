@@ -53,7 +53,7 @@ def doCompress(files):
     return 0
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------
-def doUpload(files, authToken):
+def doUpload(files, authToken, orgSlug, projSlug):
     if not authToken:
         logError('No authToken provided to upload symbols.')
         return 1
@@ -64,7 +64,7 @@ def doUpload(files, authToken):
     if not runCommand('sentry-cli difutil check ' + allFiles):
         return 1
     
-    if not runCommand('sentry-cli --auth-token ' + authToken + ' upload-dif -t elf ' + allFiles):
+    if not runCommand('sentry-cli --auth-token ' + authToken + ' upload-dif -t elf -o ' + orgSlug + ' -p ' + projSlug + ' ' + allFiles):
         return 1
     
     return 0
@@ -85,9 +85,14 @@ def main():
     )
     argParser.add_argument('-d', dest='dirToSearch', default='.', help='Path to search')
     argParser.add_argument('-t', dest='authToken', help='Sentry API authentication token (required for upload)')
+    argParser.add_argument('-o', dest='orgSlug', help='Sentry API organization slug (required for upload)')
+    argParser.add_argument('-p', dest='projSlug', help='Sentry API project slug (required for upload)')
     argParser.add_argument('action', choices=['compress', 'upload', 'strip'], help='Action to perform')
     argParser.add_argument('globPatterns', nargs='*', default=['*.a', '*.so'], help='Filename glob pattern(s) to indicate binaries')
     args = argParser.parse_args()
+
+    if 'upload' == args.action and (not args.authToken or not args.orgSlug or not args.projSlug):
+        argParser.error('action "upload" requires -t, -o, and -p')
 
     args.rawDirToSearch = args.dirToSearch
     args.dirToSearch = os.path.realpath(args.rawDirToSearch)
@@ -96,6 +101,8 @@ def main():
     print(os.path.basename(sys.argv[0]) + ' args:')
     print('    dirToSearch = ' + args.rawDirToSearch + ' (=> ' + args.dirToSearch + ')')
     print('    authToken = ' + ('<Yes>' if args.authToken else '<No>'))
+    print('    orgSlug = ' + (args.orgSlug if args.orgSlug else '<None>'))
+    print('    projSlug = ' + (args.projSlug if args.projSlug else '<None>'))
     print('    action = ' + args.action)
     print('    globPatterns = ' + ' '.join(args.globPatterns))
     print('==================================================')
@@ -112,7 +119,7 @@ def main():
         return 0
 
     if args.action == 'compress': return doCompress(files)
-    if args.action == 'upload': return doUpload(files, args.authToken)
+    if args.action == 'upload': return doUpload(files, args.authToken, args.orgSlug, args.projSlug)
     if args.action == 'strip': return doStrip(files)
 
     logError('Unknown action.')
