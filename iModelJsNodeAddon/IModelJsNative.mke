@@ -53,9 +53,9 @@ cIncs + -I$(o)
 %if ($(USING_BREAKPAD) == 1)
     cDefs + -DUSING_GOOGLE_BREAKPAD
 
-    # breakpad's own .h files include each other relative to the "client" directory. 
+    # breakpad's own .h files include each other relative to the "client" directory.
     # For example, a file that is located in breakpad/client/windows/handler will
-    # include another header file like this: 
+    # include another header file like this:
     # #include "client/windows/crash_generation/crash_generation_client.h"
     # Now, "client" is a subdirectory of "breakpad".
     # So, we have to add the breakpad directory itself to the include path
@@ -104,7 +104,7 @@ $(o)CrashReportingCommon$(oext) : $(baseDir)CrashReportingCommon.cpp $(baseDir)I
     $(o)CrashReportingWindows$(oext) : $(baseDir)CrashReportingWindows.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends}
 
 %elif defined(BENTLEYCONFIG_CRASHPAD)
- 
+
     $(o)CrashReportingLinuxCrashpad$(oext) : $(baseDir)CrashReportingLinuxCrashpad.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends}
 
 %endif
@@ -114,7 +114,6 @@ $(o)CrashReportingCommon$(oext) : $(baseDir)CrashReportingCommon.cpp $(baseDir)I
 %if defined(BUILD_FOR_IMODELJS_MOBILE)
 always:
     ~linkdir "$(BuildContext)Delivery/$(appName)-objs=${o}"
-    ~linkdir "$(BuildContext)Delivery/PresentationRules=$(baseDir)/Assets/PresentationRules"
     ~linkfile "$(BuildContext)Delivery/IModelJsNative_input_libs.mki=$(_MakeFilePath)IModelJsNative_input_libs.mki"
 
     %return
