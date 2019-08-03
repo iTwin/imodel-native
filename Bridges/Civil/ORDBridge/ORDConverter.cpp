@@ -1611,9 +1611,11 @@ void assignCorridorAspect(Dgn::DgnElementR element, CorridorCR corridor)
     auto name = Utf8String(corridor.GetName().c_str());
     auto corridorAlignmentPtr = corridor.GetCorridorAlignment();
     
-    Utf8String activeProfileName;
+    Utf8String activeProfileName, horizontalName;
     if (corridorAlignmentPtr.IsValid())
         {
+        horizontalName = Utf8String(corridorAlignmentPtr->GetName().c_str());
+
         auto profilePtr = corridorAlignmentPtr->GetActiveProfile();
         if (profilePtr.IsValid())
             activeProfileName = Utf8String(profilePtr->GetName().c_str());
@@ -1622,11 +1624,12 @@ void assignCorridorAspect(Dgn::DgnElementR element, CorridorCR corridor)
     if (auto corridorAspectP = DgnV8ORDBim::CorridorAspect::GetP(element))
         {
         corridorAspectP->SetName(name.c_str());
+        corridorAspectP->SetHorizontalName(horizontalName.c_str());
         corridorAspectP->SetActiveProfileName(activeProfileName.c_str());
         }
     else
         {
-        auto corridorAspectPtr = DgnV8ORDBim::CorridorAspect::Create(name.c_str(), activeProfileName.c_str());
+        auto corridorAspectPtr = DgnV8ORDBim::CorridorAspect::Create(name.c_str(), horizontalName.c_str(), activeProfileName.c_str());
         DgnV8ORDBim::CorridorAspect::Set(element, *corridorAspectPtr);
         }
     }
