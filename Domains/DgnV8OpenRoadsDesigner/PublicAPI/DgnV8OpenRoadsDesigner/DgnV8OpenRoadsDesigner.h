@@ -65,6 +65,7 @@ END_BENTLEY_DGNV8OPENROADSDESIGNER_NAMESPACE
 // Properties
 #define V8ORD_PROP_CorridorAspect_Name                                           "Name"
 #define V8ORD_PROP_CorridorAspect_ActiveProfileName                              "ActiveProfileName"
+#define V8ORD_PROP_CorridorAspect_HorizontalName                                 "HorizontalName"
 #define V8ORD_PROP_CorridorSurfaceAspect_Description                             "Description"
 #define V8ORD_PROP_CorridorSurfaceAspect_IsTopMesh                               "IsTopMesh"
 #define V8ORD_PROP_CorridorSurfaceAspect_IsBottomMesh                            "IsBottomMesh"

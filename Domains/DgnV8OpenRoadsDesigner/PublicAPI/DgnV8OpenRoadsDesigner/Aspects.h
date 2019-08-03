@@ -306,11 +306,12 @@ struct CorridorAspect : Dgn::DgnElement::UniqueAspect
     friend struct CorridorAspectHandler;
 
 private:
-    Utf8String m_name, m_activeProfileName;
+    Utf8String m_name, m_activeProfileName, m_horizontalName;
 
 protected:
     CorridorAspect() {}
-    CorridorAspect(Utf8CP name, Utf8CP activeProfileName): m_name(name), m_activeProfileName(activeProfileName) {}
+    CorridorAspect(Utf8CP name, Utf8CP horizontalName, Utf8CP activeProfileName): 
+        m_name(name), m_horizontalName(horizontalName), m_activeProfileName(activeProfileName) {}
 
     //! @private
     virtual Utf8CP _GetECSchemaName() const { return V8ORD_SCHEMA_NAME; }
@@ -329,7 +330,7 @@ protected:
 
 public:
     DECLARE_DGNV8OPENROADSDESIGNER_QUERYCLASS_METHODS(CorridorAspect)
-    DGNV8OPENROADSDESIGNER_EXPORT static CorridorAspectPtr Create(Utf8CP name, Utf8CP activeProfileName);
+    DGNV8OPENROADSDESIGNER_EXPORT static CorridorAspectPtr Create(Utf8CP name, Utf8CP horizontalName, Utf8CP activeProfileName);
 
     //! Retrieve the CorridorAspect instance related to an element, if any
     //! @return An instance of CorridorAspect, or nullptr
@@ -348,6 +349,10 @@ public:
     Utf8CP GetActiveProfileName() const { return m_activeProfileName.c_str(); }
     //! @private
     void SetActiveProfileName(Utf8CP val) { m_activeProfileName = val; }
+    // Get Horizontal Name
+    Utf8CP GetHorizontalName() const { return m_horizontalName.c_str(); }
+    //! @private
+    void SetHorizontalName(Utf8CP val) { m_horizontalName = val; }
 
 }; // CorridorAspect
 

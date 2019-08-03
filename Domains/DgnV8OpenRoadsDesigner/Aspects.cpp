@@ -538,9 +538,9 @@ DgnDbStatus SuperelevationAspect::_SetPropertyValue(Utf8CP propertyName, ECValue
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      02/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-CorridorAspectPtr CorridorAspect::Create(Utf8CP name, Utf8CP activeProfileName)
+CorridorAspectPtr CorridorAspect::Create(Utf8CP name, Utf8CP horizontalName, Utf8CP activeProfileName)
     {
-    return new CorridorAspect(name, activeProfileName);
+    return new CorridorAspect(name, horizontalName, activeProfileName);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -573,7 +573,7 @@ void CorridorAspect::Set(DgnElementR el, CorridorAspectR aspect)
 DgnDbStatus CorridorAspect::_LoadProperties(DgnElementCR el)
     {
     auto stmtPtr = el.GetDgnDb().GetPreparedECSqlStatement(
-        "SELECT " V8ORD_PROP_CorridorAspect_Name
+        "SELECT " V8ORD_PROP_CorridorAspect_Name ", " V8ORD_PROP_CorridorAspect_HorizontalName ", " V8ORD_PROP_CorridorAspect_ActiveProfileName
         " FROM " V8ORD_SCHEMA(V8ORD_CLASS_CorridorAspect) " WHERE Element.Id = ?;");
     BeAssert(stmtPtr.IsValid());
 
@@ -583,6 +583,8 @@ DgnDbStatus CorridorAspect::_LoadProperties(DgnElementCR el)
         return DgnDbStatus::BadElement;
 
     m_name = stmtPtr->GetValueText(0);
+    m_horizontalName = stmtPtr->GetValueText(1);
+    m_activeProfileName = stmtPtr->GetValueText(2);
 
     return DgnDbStatus::Success;
     }
@@ -593,12 +595,15 @@ DgnDbStatus CorridorAspect::_LoadProperties(DgnElementCR el)
 DgnDbStatus CorridorAspect::_UpdateProperties(DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const* writeToken)
     {
     auto stmtPtr = el.GetDgnDb().GetNonSelectPreparedECSqlStatement(
-        "UPDATE " V8ORD_SCHEMA(V8ORD_CLASS_CorridorAspect) " SET " V8ORD_PROP_CorridorAspect_Name " = ? "
+        "UPDATE " V8ORD_SCHEMA(V8ORD_CLASS_CorridorAspect) " SET " V8ORD_PROP_CorridorAspect_Name " = ?, "
+        V8ORD_PROP_CorridorAspect_HorizontalName " = ?, " V8ORD_PROP_CorridorAspect_ActiveProfileName " = ?"
         "WHERE Element.Id = ?;", writeToken);
     BeAssert(stmtPtr.IsValid());
 
     stmtPtr->BindText(1, m_name.c_str(), IECSqlBinder::MakeCopy::No);
-    stmtPtr->BindId(2, el.GetElementId());
+    stmtPtr->BindText(2, m_horizontalName.c_str(), IECSqlBinder::MakeCopy::No);
+    stmtPtr->BindText(3, m_activeProfileName.c_str(), IECSqlBinder::MakeCopy::No);
+    stmtPtr->BindId(4, el.GetElementId());
 
     if (DbResult::BE_SQLITE_DONE != stmtPtr->Step())
         return DgnDbStatus::WriteError;
@@ -615,6 +620,8 @@ DgnDbStatus CorridorAspect::_GetPropertyValue(ECValueR value, Utf8CP propertyNam
         value.SetUtf8CP(m_name.c_str());
     else if (0 == strcmp(V8ORD_PROP_CorridorAspect_ActiveProfileName, propertyName))
         value.SetUtf8CP(m_activeProfileName.c_str());
+    else if (0 == strcmp(V8ORD_PROP_CorridorAspect_HorizontalName, propertyName))
+        value.SetUtf8CP(m_horizontalName.c_str());
     else
         return DgnDbStatus::BadRequest;
 
@@ -630,6 +637,8 @@ DgnDbStatus CorridorAspect::_SetPropertyValue(Utf8CP propertyName, ECValueCR val
         SetName(value.GetUtf8CP());
     else if (0 == strcmp(V8ORD_PROP_CorridorAspect_ActiveProfileName, propertyName))
         SetActiveProfileName(value.GetUtf8CP());
+    else if (0 == strcmp(V8ORD_PROP_CorridorAspect_HorizontalName, propertyName))
+        SetHorizontalName(value.GetUtf8CP());
     else
         return DgnDbStatus::BadRequest;
 
