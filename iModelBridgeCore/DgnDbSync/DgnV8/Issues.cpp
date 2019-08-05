@@ -580,7 +580,7 @@ void Converter::ReportFailedPresentationRules()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Converter::MustBeInChannel(IBriefcaseManager::ChannelType requiredChannelType, Utf8StringCR details)
     {
-    if (GetDgnDb().BriefcaseManager().IsNoChannel() || (GetDgnDb().BriefcaseManager().GetChannelProps().channelType == requiredChannelType))
+    if (GetDgnDb().BriefcaseManager().IsNoChannel() || !GetDgnDb().BriefcaseManager().StayInChannel() || (GetDgnDb().BriefcaseManager().GetChannelProps().channelType == requiredChannelType))
         return BentleyStatus::BSISUCCESS;
 
     BeAssert(false);
