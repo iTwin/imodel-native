@@ -285,6 +285,11 @@ struct ECChangeArray final : public ECChange
         bool IsEmpty() const { return m_changes.empty(); }
         TArrayElement& operator[](size_t index) { return static_cast<TArrayElement&>(*m_changes[index]); }
 
+        RefCountedPtr<TArrayElement> const* begin() const { return reinterpret_cast<RefCountedPtr<TArrayElement> const*>(m_changes.begin()); }
+        RefCountedPtr<TArrayElement>* begin() { return reinterpret_cast<RefCountedPtr<TArrayElement>*>(m_changes.begin()); }
+        RefCountedPtr<TArrayElement> const* end() const { return reinterpret_cast<RefCountedPtr<TArrayElement> const*>(m_changes.end()); }
+        RefCountedPtr<TArrayElement>* end() { return reinterpret_cast<RefCountedPtr<TArrayElement>*>(m_changes.end()); }
+
         RefCountedPtr<TArrayElement> CreateElement(OpCode opCode, Type elementType, Utf8CP name = nullptr) { return new TArrayElement(opCode, elementType, this, name); }
 
         //! Adds a change to the array.
@@ -586,6 +591,7 @@ struct CustomAttributeChange final : public ECChange
         ~CustomAttributeChange() {}
 
         ECChangeArray<PropertyValueChange>& PropValues() { return *m_propValueChanges; }
+        ECChangeArray<PropertyValueChange> const& PropValues() const { return *m_propValueChanges; }
     };
 
 typedef ECChangeArray<CustomAttributeChange> CustomAttributeChanges;
@@ -954,49 +960,78 @@ public:
     };
 
 //=======================================================================================
-// @bsiclass                                                Affan.Khan            03/2016
+// @bsiclass                                                Affan.Khan            07/2019
 //+===============+===============+===============+===============+===============+======
 struct CustomAttributeValidator final : NonCopyableClass
     {
+    static Utf8String WILDCARD;
     enum class Policy
         {
         Accept,
         Reject
         };
 
+    enum class ChangeType
+        {
+        New = 1,
+        Modified = 2,
+        Delete = 4,
+        All = New | Modified | Delete,
+        };
+
+    struct PropertyRule final : RefCountedBase
+        {
+        private:
+            Utf8String m_accessString;
+            ChangeType m_changeType;
+            bvector<Utf8String> m_path;
+            Policy m_policy;
+            ECOBJECTS_EXPORT PropertyRule(Policy policy, Utf8CP accessString, ChangeType changeType);
+
+        public:
+            ~PropertyRule(){}
+            Utf8StringCR GetAccessString() const { return m_accessString; }
+            ChangeType GetChangeType() const { return m_changeType; }
+            bool AppliesToChangeType(ChangeType type) const { return ((int) type & (int) m_changeType) == (int) type; }
+            bool Matches(bvector<Utf8String> const& accessStringTokens) const;
+            Policy GetPolicy() const { return m_policy; }
+            bvector<Utf8String> GetPath() const { return m_path; }
+            ECOBJECTS_EXPORT static RefCountedPtr<PropertyRule> Create(Policy policy,  Utf8CP accessString, ChangeType changeType);
+        };
+
+    struct ClassRule final : RefCountedBase
+        {
+        private:
+            Utf8String m_schemaFullName;
+            Utf8String m_customAttributeClassName;
+            ChangeType m_changeType;
+            Policy m_policy;
+            std::vector<RefCountedPtr<PropertyRule>> m_rules;
+            ClassRule(Policy policy, Utf8CP schemaFullName, Utf8CP customAttributeClassName, ChangeType changeType)
+                : m_schemaFullName(schemaFullName), m_customAttributeClassName (customAttributeClassName), m_changeType(changeType), m_policy(policy)
+                {}
+        public:
+            Utf8StringCR GetSchemaName() const { return m_schemaFullName; }
+            Utf8StringCR GetClassName() const { return m_customAttributeClassName; }
+            ChangeType GetChangeType() const { return m_changeType; }
+            Policy GetPolicy() const { return m_policy; }
+            bool AppliesToChangeType(ChangeType type) const { return ((int) type & (int) m_changeType) == (int) type; }
+            bool AppliesToPropertyChange(ChangeType propertyChangeType, bvector<Utf8String> const& accessStringTokens) const;
+            std::vector<RefCountedPtr<PropertyRule>> GetRules() const { return m_rules; }
+            ECOBJECTS_EXPORT ClassRule& Append(Policy policy, Utf8CP accessString, ChangeType changeType);
+            ECOBJECTS_EXPORT static RefCountedPtr<ClassRule> Create(Policy policy, Utf8CP schemaFullName, Utf8CP customAttributeClassName, ChangeType changeType);
+        };
     private:
-        struct Rule final : NonCopyableClass
-            {
-            private:
-                Policy m_policy = Policy::Accept;
-                std::vector<Utf8String> m_accessString;
-            public:
-                Rule(Policy policy, Utf8StringCR accessString);
-                bool Match(std::vector<Utf8String> const& accessString) const;
-                Policy GetPolicy() const { return m_policy; }
-            };
+        std::vector<RefCountedPtr<ClassRule>> m_rules;
 
-        std::map<Utf8String, std::vector<std::unique_ptr<Rule>>> m_rules;
-        Utf8String m_wildcard = Utf8String("*");
-
-        std::vector<std::unique_ptr<Rule>> const& GetRelevantRules(CustomAttributeChange&) const;
-
-        static Utf8String GetSchemaName(Utf8StringCR path);
-
-        static std::vector<Utf8String> Split(Utf8StringCR path, bool stripArrayIndex = false);
+        bvector<Utf8String> AccessStringToTokens(Utf8CP accessString) const;
 
     public:
-        CustomAttributeValidator() 
-            { 
-            // add entry for wildcard rules
-            m_rules[m_wildcard].clear();
-            }
-
+        CustomAttributeValidator() {}
         ~CustomAttributeValidator() {}
-
-        ECOBJECTS_EXPORT void AddAcceptRule(Utf8StringCR accessString);
-        ECOBJECTS_EXPORT void AddRejectRule(Utf8StringCR accessString);
-        ECOBJECTS_EXPORT Policy Validate(CustomAttributeChange&) const;
+        ECOBJECTS_EXPORT ClassRule& Append(Policy policy, Utf8CP schemaFullName, Utf8CP customAttributeClassName, ChangeType changeType = ChangeType::All);
+        ECOBJECTS_EXPORT Policy Validate(CustomAttributeChange const& change) const;
     };
+
 END_BENTLEY_ECOBJECT_NAMESPACE
 
