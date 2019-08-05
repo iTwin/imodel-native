@@ -1,0 +1,16 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+%include mdl.mki
+
+always:
+    !~@mkdir $(BuildContext)PublicAPI/WebServices/iModelHub
+    ~linkfile "$(BuildContext)PublicAPI/WebServices/iModelHub/Common.h =$(_MakeFilePath)/PublicAPI/WebServices/iModelHub/Common.h"
+    ~linkdir  "$(BuildContext)PublicAPI/WebServices/iModelHub/Client =$(_MakeFilePath)/PublicAPI/WebServices/iModelHub/Client"
+    ~linkdir  "$(BuildContext)PublicAPI/WebServices/iModelHub/Events =$(_MakeFilePath)/PublicAPI/WebServices/iModelHub/Events"
+    ~linkdir  "$(BuildContext)PublicAPI/WebServices/iModelHub/GlobalEvents =$(_MakeFilePath)/PublicAPI/WebServices/iModelHub/GlobalEvents"
+    ~linkdir  "$(BuildContext)PublicAPI/WebServices/iModelHub/EventsCommon =$(_MakeFilePath)/PublicAPI/WebServices/iModelHub/EventsCommon"
+    ~linkfile "$(BuildContext)PublicAPI/WebServices/iModelHub/Utils.h =$(_MakeFilePath)/iModelHubClient/Utils.h"
+    ~linkfile "$(BuildContext)PublicAPI/WebServices/iModelHub/Error.xliff.h =$(_MakeFilePath)/iModelHubClient/Error.xliff.h"

@@ -1,0 +1,17 @@
+#----------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#----------------------------------------------------------------------------------------
+%include mdl.mki
+
+baseDir = $(_MakeFilePath)
+
+$(BuildContext)Delivery/iModelHubNativeTests/ignore_list.txt : $(baseDir)ignore_list.txt
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/iModelHubNativeTests/whitelist.txt : $(baseDir)whitelist.txt
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/iModelHubNativeTests/iModelHubIntegrationTests.logging.config.xml : $(baseDir)iModelHubIntegrationTests.logging.config.xml
+    $(LinkFirstDepToFirstTarget)
