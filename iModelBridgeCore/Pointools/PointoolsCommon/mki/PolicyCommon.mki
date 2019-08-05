@@ -1,0 +1,30 @@
+#----------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#----------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------
+# Set Visual Studio Build Tools version based on current settings
+#----------------------------------------------------------------------------------------
+
+%include PointoolsBuildUsing.mki
+
+#----------------------------------------------------------------------------------------
+# Including DefaultToolSet.mki is a noop if a toolset is already selected but, if not, it provides a default.
+# This basically provides where to find the correct compiler etc.
+#----------------------------------------------------------------------------------------
+
+%include DefaultToolSet.mki
+
+#----------------------------------------------------------------------------------------
+# Set common environment variables for the build
+#----------------------------------------------------------------------------------------
+
+PointoolsIO=$(SrcRoot)Pointools/PointoolsIO/
+PointoolsVortexAPI=$(SrcRoot)Pointools/PointoolsVortexAPI/
+PointoolsVortexAPIInclude=$(PointoolsVortexAPI)/include/
+PointoolsVortexAPISrc=$(PointoolsVortexAPI)/src/
+
+# RB TODO: Is this necessary?
+#always:
+#    ~putenv PointoolsVortexBase=$(SrcRoot)/../
