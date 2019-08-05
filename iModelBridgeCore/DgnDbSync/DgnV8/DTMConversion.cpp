@@ -301,7 +301,7 @@ void SetSymbology(GeometryBuilderR builder, DgnV8EhCR v8eh, ResolvedModelMapping
 //----------------------------------------------------------------------------------------
 // @bsimethod                                    Daryl.Holmwood                      9/19
 //+---------------+---------------+---------------+---------------+---------------+-------
-void CreateMesh(Bentley::TerrainModel::BcDTMR dtm, ElementConversionResults& results, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, Converter& converter, BentleyB0200::Dgn::DgnModelR model, DgnCategoryId categoryId, DgnSubCategoryId subCategoryId)
+void CreateMesh(Bentley::TerrainModel::BcDTMR dtm, ElementConversionResults& results, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, Converter& converter, BentleyM0200::Dgn::DgnModelR model, DgnCategoryId categoryId, DgnSubCategoryId subCategoryId)
     {
     Bentley::DRange3d fullRange;
     const int s_tilePointSize = 10000;
@@ -314,7 +314,7 @@ void CreateMesh(Bentley::TerrainModel::BcDTMR dtm, ElementConversionResults& res
     DgnClassId childClassId = converter.ComputeElementClassIgnoringEcContent(v8eh, v8mm);
     DgnCode elementCode;
 
-    BentleyB0200::Transform trsf;
+    BentleyM0200::Transform trsf;
     dtm.GetTransformation((Bentley::TransformR)trsf);
     dtm.GetRange(fullRange);
     if (numberOfPoints > s_tilePointSize)
@@ -420,7 +420,7 @@ void CreateMesh(Bentley::TerrainModel::BcDTMR dtm, ElementConversionResults& res
 //----------------------------------------------------------------------------------------
 // @bsimethod                                    Daryl.Holmwood                      9/19
 //+---------------+---------------+---------------+---------------+---------------+-------
-void CreateFeatures(Bentley::DgnPlatform::DTMElementSubHandler::SymbologyParams& displayParams, DGNV8_DTMFeatureType featureType, Utf8CP subCategoryName, Bentley::TerrainModel::BcDTMR dtm, ElementConversionResults& results, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, Converter& converter, BentleyB0200::Dgn::DgnModelR model, DgnCategoryId categoryId)
+void CreateFeatures(Bentley::DgnPlatform::DTMElementSubHandler::SymbologyParams& displayParams, DGNV8_DTMFeatureType featureType, Utf8CP subCategoryName, Bentley::TerrainModel::BcDTMR dtm, ElementConversionResults& results, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, Converter& converter, BentleyM0200::Dgn::DgnModelR model, DgnCategoryId categoryId)
     {
     if (featureType == DGNV8_DTMFeatureType::Hull)
         return; // This is covered seperately.
@@ -437,7 +437,7 @@ void CreateFeatures(Bentley::DgnPlatform::DTMElementSubHandler::SymbologyParams&
             {
             auto subCategoryId = converter.GetOrCreateSubCategoryId(categoryId, subCategoryName);
             auto newCategoryId = DgnSubCategory::QueryCategoryId(converter.GetDgnDb(), subCategoryId);
-            builder = GeometryBuilder::Create(model, newCategoryId, BentleyB0200::Transform::FromIdentity());
+            builder = GeometryBuilder::Create(model, newCategoryId, BentleyM0200::Transform::FromIdentity());
             builder->SetAppendAsSubGraphics();
             SetSymbology(*builder, v8eh, v8mm, converter, displayParams, categoryId, subCategoryId);
             }
