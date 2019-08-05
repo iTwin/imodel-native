@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="JsonTests" alias="jt" version="01.00.00" description="Schema mostly used by Json Tests" displayLabel="Json Tests Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECStructClass typeName="AttributeStruct" modifier="None">
+        <ECProperty propertyName="Type" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="Value" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="Unit" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="Label" typeName="string" readOnly="false"/>
+    </ECStructClass>
+    <ECStructClass typeName="PointStruct" modifier="None">
+        <ECProperty propertyName="x" typeName="double" readOnly="false"/>
+        <ECProperty propertyName="y" typeName="double" readOnly="false"/>
+        <ECProperty propertyName="z" typeName="double" readOnly="false"/>
+    </ECStructClass>
+    <ECStructClass typeName="LocationStruct" modifier="None">
+        <ECProperty propertyName="Type" typeName="string" readOnly="false"/>
+        <ECStructProperty propertyName="Center" typeName="PointStruct" readOnly="false"/>
+        <ECStructArrayProperty propertyName="Coordinates" typeName="PointStruct" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+    </ECStructClass>
+    <ECEntityClass typeName="Document" modifier="None">
+        <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="Description" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="Code" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="Revision" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="ApprovalStatus" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="IsLatestRevision" typeName="boolean" readOnly="false"/>
+        <ECProperty propertyName="IsLatestApprovedRevision" typeName="boolean" readOnly="false"/>
+        <ECProperty propertyName="IsSuperseded" typeName="boolean" readOnly="false"/>
+        <ECProperty propertyName="State" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="DateEffective" typeName="dateTime" readOnly="false"/>
+        <ECProperty propertyName="DateObsolete" typeName="dateTime" readOnly="false"/>
+        <ECProperty propertyName="Class" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="DateModified" typeName="dateTime" readOnly="false"/>
+        <ECProperty propertyName="DateCreated" typeName="dateTime" readOnly="false"/>
+        <ECStructArrayProperty propertyName="Attributes" typeName="AttributeStruct" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+        <ECProperty propertyName="Llx" typeName="double" readOnly="false"/>
+        <ECProperty propertyName="Lly" typeName="double" readOnly="false"/>
+        <ECProperty propertyName="Urx" typeName="double" readOnly="false"/>
+        <ECProperty propertyName="Ury" typeName="double" readOnly="false"/>
+        <ECStructProperty propertyName="Location" typeName="LocationStruct" readOnly="false"/>
+    </ECEntityClass>
+</ECSchema>
