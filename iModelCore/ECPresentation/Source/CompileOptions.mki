@@ -1,0 +1,9 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+
+# Building the ECPresentation library
+nameToDefine = __ECPRESENTATION_DLL_BUILD__
+%include cdefapnd.mki

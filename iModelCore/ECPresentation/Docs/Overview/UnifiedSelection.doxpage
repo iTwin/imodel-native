@@ -1,0 +1,59 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
+// __PUBLISH_SECTION_START__
+
+/** @defgroup GROUP_UnifiedSelection Unified Selection
+@ingroup GROUP_Presentation
+@see @ref PAGE_UnifiedSelection "Unified Selection overview page"
+
+Unified selection module is responsible for handling selected DGN elements and ECInstances in a unified
+way which means that selecting an ECInstance in one control selects it (or its representation) in all
+other unified selection controls.
+*/
+
+/**
+@page PAGE_UnifiedSelection Unified Selection
+@see @ref GROUP_UnifiedSelection
+
+Unified selection module is responsible for handling selected DGN elements and ECInstances in a unified
+way which means that selecting an ECInstance in one control selects it (or its representation) in all
+other unified selection controls.
+
+@section SECTION_UnifiedSelection_HowItWorks How It Works
+
+The main part of unified selection is the @ref BentleyApi::ECPresentation::SelectionManager "SelectionManager". It's main responsibilities are
+storing the overall selection, changing the selection and notifying listeners about selection changes. An important note about selection is that it's 
+stored in @ref BentleyApi::ECPresentation::NavNodeKey "NavNodeKeys" instead of ECInstances or ECInstanceKeys. This allows selecting not only
+ECInstances, but also grouping nodes.
+
+The part that enables unified selection is the @ref BentleyApi::ECPresentation::SelectionSyncHandler "SelectionSyncHandler" abstract class.
+It's role is to synchronize selection between the selection manager and other parts of the application. An important note is that selection handlers use
+the @ref GROUP_Presentation_Content "Content Presentation API" to get the selection. This allows the presentation manager to modify what actually gets
+selected. For example, if user selects an assembly, the SelectionSyncHandler requests the presentation manager to get content for that assembly. The 
+presentation manager can then return all parts that belong to that assembly as its content and all of those ECInstances get selected.
+
+@section SECTION_UnifiedSelection_SettingUp Setting Up
+Every application that wants make use of unified selection should first make sure it's properly initialized. 
+
+Initializing the unified selection manager is just a matter of creating it's instance and registering selection listeners and synchronization
+handlers:
+$SAMPLECODE_BEGIN[SetUpUnifiedSelectionManager, Set Up Unified Selection Manager]
+__PUBLISH_INSERT_FILE__ UnifiedSelectionSample_SetUp.sampleCode
+$SAMPLECODE_END
+
+Another important requirement for unified selection to work is properly set up @ref BentleyApi::ECPresentation::IECPresentationManager 
+"IECPresentationManager". See @ref SECTION_RulesDrivenPresentationManager_SettingUp "this page" for an example of how to set up
+rules-driven presentation manager implementation.
+
+@subsection SECTION_UnifiedSelection_SettingUp_Cleanup Cleanup
+To clean up the selection manager the application only has to make sure it's instance is deleted:
+$SAMPLECODE_BEGIN[CleanUpUnifiedSelectionManager, Clean Up Unified Selection Manager]
+__PUBLISH_INSERT_FILE__ UnifiedSelectionSample_CleanUp.sampleCode
+$SAMPLECODE_END
+
+There's no need to unregister selection listeners or selection sync handlers as destroying the manager will automatically release
+any kept references.
+*/
