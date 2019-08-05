@@ -62,6 +62,19 @@ public:
         timeR.ToUnixMilliseconds(r_Millis);
         return l_Millis - r_Millis;
         }
+
+    // number of days between the two dates
+    static int64_t diffdatedays(Utf8StringCR timeStringL, Utf8String timeStringR)
+        {
+        DateTime timeL, timeR;
+        DateTime::FromString(timeL, timeStringL.c_str());
+        DateTime::FromString(timeR, timeStringR.c_str());
+        int64_t l_Millis, r_Millis;
+        timeL.ToUnixMilliseconds(l_Millis);
+        timeR.ToUnixMilliseconds(r_Millis);
+        int64_t millisDiff = l_Millis - r_Millis;
+        return millisDiff / dayMillis;
+        }
     };
 
 END_BENTLEY_LICENSING_NAMESPACE

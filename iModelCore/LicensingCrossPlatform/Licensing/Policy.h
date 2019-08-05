@@ -208,7 +208,7 @@ private:
     std::shared_ptr<Policy::Qualifier> GetFirstMatchingQualifier(std::list<std::shared_ptr<Policy::Qualifier>> qualifierList, Utf8StringCR qualifierName);
     std::list<std::shared_ptr<Policy::ACL>> GetMatchingACLs(std::list<std::shared_ptr<Policy::ACL>> aclList, Utf8StringCR securableId);
     std::shared_ptr<Policy::SecurableData> GetFirstMatchingSecurableData(std::list<std::shared_ptr<Policy::SecurableData>> securableList, Utf8StringCR productId, Utf8StringCR featureString);
-    Policy::EvaluationStatus GetEvalStatus(Utf8StringCR productId, Utf8StringCR featureString, BeVersionCR applicationVersion, std::shared_ptr<Policy::ACL>& nonEvalAcl);
+    Policy::EvaluationStatus GetEvalStatus(Utf8StringCR productId, Utf8StringCR featureString, BeVersionCR applicationVersion, std::shared_ptr<Policy::ACL>& nonEvalAcl, int64_t& daysLeft);
     std::list<Utf8String> CreateAppliesToSecurableIds(const Json::Value& json);
     std::list<std::shared_ptr<ACL>> CreateACLs(const Json::Value& json);
     std::list<std::shared_ptr<SecurableData>> CreateSecurableData(const Json::Value& json);
@@ -248,6 +248,7 @@ public:
     LICENSING_EXPORT int GetHeartbeatInterval(Utf8StringCR productId, Utf8StringCR featureString);
     LICENSING_EXPORT int GetPolicyInterval(Utf8StringCR productId, Utf8StringCR featureString);
     LICENSING_EXPORT int GetTimeToKeepUnSentLogs(Utf8StringCR productId, Utf8StringCR featureString);
+    LICENSING_EXPORT int64_t GetTrialDaysRemaining(Utf8StringCR productId, Utf8StringCR featureString, BeVersionCR version);
     };
 
 END_BENTLEY_LICENSING_NAMESPACE

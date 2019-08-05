@@ -68,10 +68,9 @@ void ClientIntegrationTests::TearDown() {}
 void ClientIntegrationTests::SetUpTestCase()
     {
     // This is only an example of how to set logging severity and see info logs. Usually should be set more globally than in TestCase SetUp
-    // NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_LICENSING, BentleyApi::NativeLogging::LOG_INFO);
-    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_LICENSING, BentleyApi::NativeLogging::LOG_INFO);
-    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_LICENSING, BentleyApi::NativeLogging::LOG_DEBUG);
-    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_LICENSING, BentleyApi::NativeLogging::LOG_TRACE);
+    //NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_LICENSING, BentleyApi::NativeLogging::LOG_INFO);
+    //NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_LICENSING, BentleyApi::NativeLogging::LOG_DEBUG);
+    //NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_LICENSING, BentleyApi::NativeLogging::LOG_TRACE);
 
     BeFileName asssetsDir;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(asssetsDir);
@@ -96,7 +95,7 @@ ClientPtr ClientIntegrationTests::CreateTestClient(bool signIn, Utf8StringCR pro
 
     auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
 
-    // NOTE: all of these tests fail because this policy is expired... see if we can renew this
+    // NOTE (7/30/19): all of these tests fail because this policy is expired... see if we can renew this
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
     auto manager = ConnectSignInManager::Create(clientInfo, proxy, localState);
     if (signIn)
@@ -312,6 +311,36 @@ TEST_F(ClientIntegrationTests, GetLicenseStatusOfflineNotAllowedPolicy_Test)
     client->GetLicensingDb().ResetOfflineGracePeriod();
     EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::Ok)); // Should be back to Ok
     EXPECT_SUCCESS(client->StopApplication());
+    }
+
+TEST_F(ClientIntegrationTests, GetTrialDaysRemainingValidTrialPolicy_Test)
+    {
+    auto client = CreateTestClientImpl(true, TEST_PRODUCT_ID);
+
+    // need to add valid policy to the DB for MarkFeature to succeed
+    Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
+    auto jsonPolicyValidTrial = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, std::atoi(TEST_PRODUCT_ID), "", 1, true);
+
+    // NOTE: we don't need to start application here since we are not testing the heartbeat, and are manually adding a policy
+
+    client->AddPolicyToDb(Policy::Create(jsonPolicyValidTrial));
+
+    EXPECT_EQ(client->GetTrialDaysRemaining(), 6);
+    }
+
+TEST_F(ClientIntegrationTests, GetTrialDaysRemainingValidExpiredTrialPolicy_Test)
+    {
+    auto client = CreateTestClientImpl(true, TEST_PRODUCT_ID);
+
+    // need to add valid policy to the DB for MarkFeature to succeed
+    Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
+    auto jsonPolicyValidTrialExpired = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(-1), userId, std::atoi(TEST_PRODUCT_ID), "", 1, true);
+
+    // NOTE: we don't need to start application here since we are not testing the heartbeat, and are manually adding a policy
+
+    client->AddPolicyToDb(Policy::Create(jsonPolicyValidTrialExpired));
+
+    EXPECT_EQ(client->GetTrialDaysRemaining(), 0);
     }
 
 // TODO: heartbeat tests, different LicenseStatus situations
