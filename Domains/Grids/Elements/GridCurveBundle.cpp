@@ -144,31 +144,28 @@ Dgn::DgnDbStatus GridCurveBundle::_OnDelete() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Dgn::IBRepEntityPtr getBRepFromElevationSurface(ElevationGridSurfaceCR surface, DRange3dCR range)
     {
-    CurveVectorPtr curve = surface.GetSurface2d();
+    constexpr double tolerance = 1.0f;
 
+    GridCPtr surfaceGrid = Grid::Get(surface.GetDgnDb(), surface.GetGridId());;
+
+    if (surfaceGrid.IsNull())
+        return nullptr;
+
+    CurveVectorPtr curve = surface.GetSurface2d();
     if (curve.IsNull())
         {
         // Limited by other surface range, because psolid only works in small box.
         // Added 1 for when rounded curves get split into two at the plane edges
-        curve = CurveVector::CreateRectangle(range.low.x - 1, range.low.y - 1, range.high.x + 1, range.high.y + 1, 0);
+        curve = CurveVector::CreateRectangle(
+            range.low.x - tolerance,
+            range.low.y - tolerance,
+            range.high.x + tolerance,
+            range.high.y + tolerance,
+            surface.GetElevation() + surfaceGrid->GetPlacementTransform().Translation().z);
         }
 
     Dgn::IBRepEntityPtr bRep;
     BRepUtil::Create::BodyFromCurveVector(bRep, *curve);
-
-    if(bRep.IsNull())
-        return nullptr;
-
-    GridCPtr surfaceGrid = Grid::Get(surface.GetDgnDb(), surface.GetGridId());;
-
-    if(surfaceGrid.IsNull())
-        return nullptr;
-
-    Transform gridTransform = surfaceGrid->GetPlacementTransform();
-    double surfaceElevation = surface.GetElevation();
-
-    bRep->ApplyTransform(Transform::From(0.0, 0.0, surfaceElevation));
-    bRep->ApplyTransform(gridTransform);
 
     return bRep;
     }
