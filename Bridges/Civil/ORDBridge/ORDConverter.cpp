@@ -1444,6 +1444,7 @@ ConvertORDElementXDomain::ConvertORDElementXDomain(ORDConverter& converter): m_c
     m_graphic3dClassId = converter.GetDgnDb().Schemas().GetClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_Graphic3d);    
 
     m_aspectAssignFuncs.push_back(&ConvertORDElementXDomain::AssignFeatureAspect);
+    m_aspectAssignFuncs.push_back(&ConvertORDElementXDomain::AssignAlignmentAspect);
     m_aspectAssignFuncs.push_back(&ConvertORDElementXDomain::AssignCorridorSurfaceAspect);
     m_aspectAssignFuncs.push_back(&ConvertORDElementXDomain::AssignLinearQuantityAspect);
     m_aspectAssignFuncs.push_back(&ConvertORDElementXDomain::AssignCorridorAspect);
@@ -1574,6 +1575,34 @@ void assignORDFeatureAspect(Dgn::DgnElementR element, Cif::FeaturizedConsensusIt
         {
         auto featureAspectPtr = DgnV8ORDBim::FeatureAspect::Create(name.c_str(), (featureDefPtr.IsValid()) ? Utf8String(featureDefPtr->GetName().c_str()).c_str() : nullptr);
         DgnV8ORDBim::FeatureAspect::Set(element, *featureAspectPtr);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void assignORDAlignmentAspect(Dgn::DgnElementR element, Cif::AlignmentCR alignment)
+    {
+    Utf8String activeProfileName, horizontalName;
+    auto profilePtr = alignment.GetActiveProfile();
+    if (profilePtr.IsValid())
+        activeProfileName = Utf8String(profilePtr->GetName().c_str());
+
+    auto geometryPtr = alignment.GetGeometry();
+
+    Bentley::DPoint3d startPoint, endPoint;
+    geometryPtr->GetStartEnd(startPoint, endPoint);
+
+    if (auto alignmentAspectP = DgnV8ORDBim::AlignmentAspect::GetP(element))
+        {
+        alignmentAspectP->SetActiveProfileName(activeProfileName.c_str());
+        alignmentAspectP->SetStartPoint({startPoint.x, startPoint.y});
+        alignmentAspectP->SetEndPoint({endPoint.x, endPoint.y});
+        }
+    else
+        {
+        auto alignmentAspectPtr = DgnV8ORDBim::AlignmentAspect::Create({startPoint.x, startPoint.y}, {endPoint.x, endPoint.y}, activeProfileName.c_str());
+        DgnV8ORDBim::AlignmentAspect::Set(element, *alignmentAspectPtr);
         }
     }
 
@@ -1946,6 +1975,21 @@ bool ConvertORDElementXDomain::AssignFeatureAspect(Dgn::DgnElementR element, Dgn
     if (featurizedPtr.IsValid())
         {
         assignORDFeatureAspect(element, *featurizedPtr);
+        return true;
+        }
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ConvertORDElementXDomain::AssignAlignmentAspect(Dgn::DgnElementR element, DgnV8EhCR v8el) const
+    {
+    auto alignmentPtr = Alignment::CreateFromElementHandle(v8el);
+    if (alignmentPtr.IsValid())
+        {
+        assignORDAlignmentAspect(element, *alignmentPtr);
         return true;
         }
 

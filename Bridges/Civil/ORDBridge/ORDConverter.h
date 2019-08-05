@@ -103,6 +103,7 @@ private:
     typedef bool (ConvertORDElementXDomain::*AspectAssignmentFunc)(Dgn::DgnElementR, DgnV8EhCR) const;
     bvector<AspectAssignmentFunc> m_aspectAssignFuncs;
 
+    bool AssignAlignmentAspect(Dgn::DgnElementR element, DgnV8EhCR v8el) const;
     bool AssignLinearQuantityAspect(Dgn::DgnElementR element, DgnV8EhCR v8el) const;
     bool AssignTemplateDropAspect(Dgn::DgnElementR element, DgnV8EhCR v8el) const;
     bool AssignSuperelevationAspect(Dgn::DgnElementR element, DgnV8EhCR v8el) const;
