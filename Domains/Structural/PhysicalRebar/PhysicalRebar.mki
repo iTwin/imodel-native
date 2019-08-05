@@ -1,0 +1,15 @@
+#--------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------+
+%include $(BuildContext)SubParts/PublicMki/BentleyApi.mki
+
+appName = PhysicalRebar
+o = $(OutputRootDir)build/$(appName)/
+CCompPDBName = $(appName)
+MultiCompileIntermediatePdbFile = $(o)$(CCompPDBName).pdb
+IntermediatePdbFile = $(MultiCompileIntermediatePdbFile)
+
+nameToDefine = __PHYSICALREBAR_BUILD__
+% include cdefapnd.mki
