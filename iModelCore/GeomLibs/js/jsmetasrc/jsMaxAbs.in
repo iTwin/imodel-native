@@ -1,0 +1,31 @@
+
+    
+/// <summary>Return the greatest absolute value of $(ThisType).</summary>
+INSTANCEMETHOD(public, double, MaxAbs) ()
+    {
+    double a = 0.0;
+    double b;
+    FOREACH field in $(FIELDS) expand
+    b = Math::Abs (field);
+    if (b > a)
+        a = b;
+END_FOREACH
+    return a;
+    }
+
+/// <summary>Return the greatest absolute value of the difference of the values of $(ThisType).</summary>
+INSTANCEMETHOD(public, double, MaxAbsDiff)
+(
+INPUT_STRUCT ($(ThisType), right, "second operand")
+)
+    {
+    double a = 0.0;
+    double b;
+    FOREACH field in $(FIELDS) expand
+    b = Math::Abs (field - right.field);
+    if (b > a)
+        a = b;
+END_FOREACH
+    return a;
+    }
+        

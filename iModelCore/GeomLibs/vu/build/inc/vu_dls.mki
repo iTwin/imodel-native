@@ -1,0 +1,38 @@
+#/*--------------------------------------------------------------------------------------+
+#|
+#|
+#|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#|
+#+--------------------------------------------------------------------------------------*/
+always:
+    if exist bsivu.dli del \/F bsivu.dli
+    gema -f $(GEMADIR)g\dls.g $(vuSrc)vu.c >> bsivu.dli
+    gema -f $(GEMADIR)g\dls.g $(vuSrc)vucoord.c >> bsivu.dli
+    gema -f $(GEMADIR)g\dls.g $(vuSrc)vumem.c >> bsivu.dli
+    gema -f $(GEMADIR)g\dls.g $(vuSrc)vusubset.c >> bsivu.dli
+    gema -f $(GEMADIR)g\dls.g $(vuSrc)vuarray.c >> bsivu.dli
+    gema -f $(GEMADIR)g\dls.g $(vuSrc)vumod.c >> bsivu.dli
+    gema -f $(GEMADIR)g\dls.g $(vuSrc)vumod2.c >> bsivu.dli
+    gema -f $(GEMADIR)g\dls.g $(vuSrc)vuconvex.c >> bsivu.dli
+    gema -f $(GEMADIR)g\dls.g $(vuSrc)vuaddedges.c >> bsivu.dli
+    gema -f $(GEMADIR)g\dls.g $(vuSrc)vuunion.c >> bsivu.dli
+    gema -f $(GEMADIR)g\dls.g $(vuSrc)vuprint.c >> bsivu.dli
+    gema -f $(GEMADIR)g\dls.g $(vuSrc)vumerge.c >> bsivu.dli
+    gema -f $(GEMADIR)g\dls.g $(vuSrc)vumerge2.cpp >> bsivu.dli
+    gema -f $(GEMADIR)g\dls.g $(vuSrc)vufilter.c >> bsivu.dli
+    gema -f $(GEMADIR)g\dls.g $(vuSrc)vutriang.c >> bsivu.dli
+    gema -f $(GEMADIR)g\dls.g $(vuSrc)vureg.c >> bsivu.dli
+    gema -f $(GEMADIR)g\dls.g $(vuSrc)vustack.c >> bsivu.dli
+    gema -f $(GEMADIR)g\dls.g $(vuSrc)vuexcise.c >> bsivu.dli
+    gema -f $(GEMADIR)g\dls.g $(vuSrc)vucluster.cpp >> bsivu.dli
+    gema -f $(GEMADIR)g\dls.g $(vuSrc)vuperiodicconnect.cpp >> bsivu.dli
+    gema -f $(GEMADIR)g\dls.g $(vuSrc)vugrid.cpp >> bsivu.dli
+    gema -f $(GEMADIR)g\dls.g $(vuSrc)pbfvu.cpp >> bsivu.dli
+    gema -f $(GEMADIR)g\dls.g $(vuSrc)vumemfuncs.c >> bsivu.dli
+    gema -f $(GEMADIR)g\dls.g $(vuSrc)vudangler.c >> bsivu.dli
+    gema -f $(GEMADIR)g\dls.g $(vuSrc)vumaskops.c >> bsivu.dli
+
+    #gema -f $(GEMADIR)g\dls.g $(vuSrc)vumeshsv.c >> bsivu.dli
+    #gema -f $(GEMADIR)g\dls.g $(vuSrc)vumod3.c >> bsivu.dli
+    #gema -f $(GEMADIR)g\dls.g $(vuSrc)vuoffset.c >> bsivu.dli
+    #gema -f $(GEMADIR)g\dls.g $(vuSrc)vupoly.c >> bsivu.dli
