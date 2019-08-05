@@ -1,0 +1,149 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Mke">
+      <UniqueIdentifier>{5cf19967-a699-4d7d-967e-c410f52c2c50}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src">
+      <UniqueIdentifier>{d6bf2911-23e3-4e18-bff2-ef2f6b581b4a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\Tests">
+      <UniqueIdentifier>{56615e67-0f53-4987-b755-bbb418fe47b0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\TestCases">
+      <UniqueIdentifier>{0d67030f-6532-44a7-addc-e4a373d918d1}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="CodeCoverage.mke">
+      <Filter>Mke</Filter>
+    </None>
+    <None Include="Tests.mke">
+      <Filter>Mke</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\TestHost.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Main.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\DomainTests.cpp">
+      <Filter>Src\Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\CShapeProfileTests.cpp">
+      <Filter>Src\Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\IShapeProfileTests.cpp">
+      <Filter>Src\Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ProfilesTestCase.cpp">
+      <Filter>Src\TestCases</Filter>
+    </ClCompile>
+    <ClCompile Include="src\GeometryTests.cpp">
+      <Filter>Src\Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ZShapeProfileTests.cpp">
+      <Filter>Src\Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\TShapeProfileTests.cpp">
+      <Filter>Src\Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\LShapeProfileTests.cpp">
+      <Filter>Src\Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\AsymmetricIShapeProfileTests.cpp">
+      <Filter>Src\Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\CircleProfileTests.cpp">
+      <Filter>Src\Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\HollowCircleProfileTests.cpp">
+      <Filter>Src\Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\CenterLineCShapeProfileTests.cpp">
+      <Filter>Src\Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\RectangleProfileTests.cpp">
+      <Filter>Src\Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\EllipseProfileTests.cpp">
+      <Filter>Src\Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\RoundedRectangleProfileTests.cpp">
+      <Filter>Src\Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\HollowRectangleProfileTests.cpp">
+      <Filter>Src\Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\MaterialProfileTests.cpp">
+      <Filter>Src\Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\DoubleLShapeProfileTests.cpp">
+      <Filter>Src\Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\DoubleCShapeProfileTests.cpp">
+      <Filter>Src\Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ArbitraryCompositeProfileTests.cpp">
+      <Filter>Src\Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\DerivedProfileTests.cpp">
+      <Filter>Src\Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\TTShapeProfileTests.cpp">
+      <Filter>Src\Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\RegularPolygonProfileTests.cpp">
+      <Filter>Src\Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\TrapeziumProfileTests.cpp">
+      <Filter>Src\Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\CapsuleProfileTests.cpp">
+      <Filter>Src\Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\CenterLineLShapeProfileTests.cpp">
+      <Filter>Src\Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ProfileTests.cpp">
+      <Filter>Src\Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ArbitraryCenterLineProfileTests.cpp">
+      <Filter>Src\Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\SchifflerizedLShapeProfileTests.cpp">
+      <Filter>Src\Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\CenterLineZShapeProfileTests.cpp">
+      <Filter>Src\Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\BentPlateProfileTests.cpp">
+      <Filter>Src\Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ArbitraryCenterLineProfileGeometryTests.cpp">
+      <Filter>Src\Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ArbitraryGeometryProfileTestCase.cpp">
+      <Filter>Src\Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ArbitraryShapeProfileGeometryTests.cpp">
+      <Filter>Src\Tests</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\TestHost.h">
+      <Filter>Src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ProfilesTestCase.h">
+      <Filter>Src\TestCases</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ProfileValidationTestCase.h">
+      <Filter>Src\TestCases</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ArbitraryGeometryProfileTestCase.h">
+      <Filter>Src\TestCases</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
