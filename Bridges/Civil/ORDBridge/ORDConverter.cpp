@@ -1480,16 +1480,6 @@ ConvertORDElementXDomain::Result ConvertORDElementXDomain::_PreConvertElement(Dg
             }
         }
 
-    if (cifAlignmentPtr.IsValid() && cifAlignmentPtr->IsFinalElement())
-        {
-        auto elmRefP = cifAlignmentPtr->GetElementHandle()->GetElementRef();
-        if (m_alignmentV8RefSet.end() == m_alignmentV8RefSet.find(elmRefP))
-            {
-            m_alignmentV8RefSet.insert(elmRefP);
-            m_converter.m_cifAlignments.push_back(cifAlignmentPtr);
-            }
-        }
-
     if (cifCorridorPtr.IsValid())
         {
         auto elmRefP = cifCorridorPtr->GetElementHandle()->GetElementRef();
@@ -1497,6 +1487,23 @@ ConvertORDElementXDomain::Result ConvertORDElementXDomain::_PreConvertElement(Dg
             {
             m_corridorV8RefSet.insert(elmRefP);
             m_converter.m_cifCorridors.push_back(cifCorridorPtr);
+            }
+        }
+
+    if (cifAlignmentPtr.IsValid())
+        {
+        if (cifAlignmentPtr->IsFinalElement())
+            {
+            auto elmRefP = cifAlignmentPtr->GetElementHandle()->GetElementRef();
+            if (m_alignmentV8RefSet.end() == m_alignmentV8RefSet.find(elmRefP))
+                {
+                m_alignmentV8RefSet.insert(elmRefP);
+                m_converter.m_cifAlignments.push_back(cifAlignmentPtr);
+                }
+            }
+        else
+            {
+            return Result::SkipElement;
             }
         }
 
