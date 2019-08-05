@@ -130,4 +130,17 @@ protected:
     RefCountedPtr<Dgn::DgnElement::Aspect> _CreateInstance() override { return new VolumetricQuantityAspect(); }
 }; // VolumetricQuantityAspectHandler
 
+//=======================================================================================
+//! Handler for AlignmentAspect class
+//! @ingroup GROUP_DgnV8OpenRoadsDesigner
+//! @private
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE AlignmentAspectHandler : Dgn::dgn_AspectHandler::Aspect
+{
+DOMAINHANDLER_DECLARE_MEMBERS(V8ORD_CLASS_AlignmentAspect, AlignmentAspectHandler, Dgn::dgn_AspectHandler::Aspect, DGNV8OPENROADSDESIGNER_EXPORT)
+
+protected:
+    RefCountedPtr<Dgn::DgnElement::Aspect> _CreateInstance() override { return new AlignmentAspect(); }
+}; // AlignmentAspectHandler
+
 END_BENTLEY_DGNV8OPENROADSDESIGNER_NAMESPACE

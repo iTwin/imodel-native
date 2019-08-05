@@ -17,6 +17,7 @@ DOMAIN_DEFINE_MEMBERS(DgnV8OpenRoadsDesignerDomain)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnV8OpenRoadsDesignerDomain::DgnV8OpenRoadsDesignerDomain() : DgnDomain(V8ORD_SCHEMA_NAME, "Bentley DgnV8OpenRoadsDesigner Domain", 2)
     {
+    RegisterHandler(AlignmentAspectHandler::GetHandler());
     RegisterHandler(CorridorAspectHandler::GetHandler());
     RegisterHandler(CorridorSurfaceAspectHandler::GetHandler());
     RegisterHandler(DiscreteQuantityAspectHandler::GetHandler());

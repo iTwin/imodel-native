@@ -8,6 +8,7 @@
 #include "DgnV8OpenRoadsDesignerInternal.h"
 #include <DgnV8OpenRoadsDesigner/Handlers.h>
 
+HANDLER_DEFINE_MEMBERS(AlignmentAspectHandler)
 HANDLER_DEFINE_MEMBERS(CorridorAspectHandler)
 HANDLER_DEFINE_MEMBERS(CorridorSurfaceAspectHandler)
 HANDLER_DEFINE_MEMBERS(DiscreteQuantityAspectHandler)

@@ -47,6 +47,7 @@ END_BENTLEY_DGNV8OPENROADSDESIGNER_NAMESPACE
 
 
 // Aspects
+#define V8ORD_CLASS_AlignmentAspect                                  "AlignmentAspect"
 #define V8ORD_CLASS_CorridorAspect                                   "CorridorAspect"
 #define V8ORD_CLASS_CorridorSurfaceAspect                            "CorridorSurfaceAspect"
 #define V8ORD_CLASS_DiscreteQuantityAspect                           "DiscreteQuantityAspect"
@@ -63,6 +64,9 @@ END_BENTLEY_DGNV8OPENROADSDESIGNER_NAMESPACE
 
 
 // Properties
+#define V8ORD_PROP_AlignmentAspect_ActiveProfileName                             "ActiveProfileName"
+#define V8ORD_PROP_AlignmentAspect_StartPoint                                    "StartPoint"
+#define V8ORD_PROP_AlignmentAspect_EndPoint                                      "EndPoint"
 #define V8ORD_PROP_CorridorAspect_Name                                           "Name"
 #define V8ORD_PROP_CorridorAspect_ActiveProfileName                              "ActiveProfileName"
 #define V8ORD_PROP_CorridorAspect_HorizontalName                                 "HorizontalName"
@@ -141,6 +145,7 @@ END_BENTLEY_DGNV8OPENROADSDESIGNER_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // Define typedefs and Ptrs in the DgnV8OpenRoadsDesigner namespace
 //-----------------------------------------------------------------------------------------
+DGNV8OPENROADSDESIGNER_REFCOUNTED_PTR_AND_TYPEDEFS(AlignmentAspect)
 DGNV8OPENROADSDESIGNER_REFCOUNTED_PTR_AND_TYPEDEFS(CorridorAspect)
 DGNV8OPENROADSDESIGNER_REFCOUNTED_PTR_AND_TYPEDEFS(CorridorSurfaceAspect)
 DGNV8OPENROADSDESIGNER_REFCOUNTED_PTR_AND_TYPEDEFS(DiscreteQuantityAspect)

@@ -941,3 +941,113 @@ DgnDbStatus DiscreteQuantityAspect::_SetPropertyValue(Utf8CP propertyName, ECVal
 
     return DgnDbStatus::Success;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+AlignmentAspectPtr AlignmentAspect::Create(DPoint2d const& startPoint, DPoint2d const& endPoint, Utf8CP activeProfileName)
+    {
+    return new AlignmentAspect(startPoint, endPoint, activeProfileName);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+AlignmentAspectCP AlignmentAspect::Get(DgnElementCR el)
+    {
+    return DgnElement::UniqueAspect::Get<AlignmentAspect>(el, *QueryClass(el.GetDgnDb()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+AlignmentAspectP AlignmentAspect::GetP(DgnElementR el)
+    {
+    return dynamic_cast<AlignmentAspectP>(GetAspectP(el, *QueryClass(el.GetDgnDb())));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void AlignmentAspect::Set(DgnElementR el, AlignmentAspectR aspect)
+    {
+    SetAspect(el, aspect);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus AlignmentAspect::_LoadProperties(DgnElementCR el)
+    {
+    auto stmtPtr = el.GetDgnDb().GetPreparedECSqlStatement(
+        "SELECT " V8ORD_PROP_AlignmentAspect_ActiveProfileName ", " V8ORD_PROP_AlignmentAspect_StartPoint ", " V8ORD_PROP_AlignmentAspect_EndPoint
+        " FROM " V8ORD_SCHEMA(V8ORD_CLASS_AlignmentAspect) " WHERE Element.Id = ?;");
+    BeAssert(stmtPtr.IsValid());
+
+    stmtPtr->BindId(1, el.GetElementId());
+
+    if (DbResult::BE_SQLITE_ROW != stmtPtr->Step())
+        return DgnDbStatus::BadElement;
+
+    m_activeProfileName = stmtPtr->GetValueText(0);
+    m_startPoint = stmtPtr->GetValuePoint2d(1);
+    m_endPoint = stmtPtr->GetValuePoint2d(2);
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus AlignmentAspect::_UpdateProperties(DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const* writeToken)
+    {
+    auto stmtPtr = el.GetDgnDb().GetNonSelectPreparedECSqlStatement(
+        "UPDATE " V8ORD_SCHEMA(V8ORD_CLASS_AlignmentAspect) " SET " V8ORD_PROP_AlignmentAspect_ActiveProfileName " = ?, "
+        V8ORD_PROP_AlignmentAspect_StartPoint " = ?, " V8ORD_PROP_AlignmentAspect_EndPoint " = ? "
+        "WHERE Element.Id = ?;", writeToken);
+    BeAssert(stmtPtr.IsValid());
+
+    stmtPtr->BindText(1, m_activeProfileName.c_str(), IECSqlBinder::MakeCopy::No);
+    stmtPtr->BindPoint2d(2, m_startPoint);
+    stmtPtr->BindPoint2d(3, m_endPoint);
+    stmtPtr->BindId(4, el.GetElementId());
+
+    if (DbResult::BE_SQLITE_DONE != stmtPtr->Step())
+        return DgnDbStatus::WriteError;
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus AlignmentAspect::_GetPropertyValue(ECValueR value, Utf8CP propertyName, PropertyArrayIndex const& arrayIndex) const
+    {
+    if (0 == strcmp(V8ORD_PROP_AlignmentAspect_ActiveProfileName, propertyName))
+        value.SetUtf8CP(m_activeProfileName.c_str());
+    else if (0 == strcmp(V8ORD_PROP_AlignmentAspect_StartPoint, propertyName))
+        value.SetPoint2d(m_startPoint);
+    else if (0 == strcmp(V8ORD_PROP_AlignmentAspect_EndPoint, propertyName))
+        value.SetPoint2d(m_endPoint);
+    else
+        return DgnDbStatus::BadRequest;
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      02/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus AlignmentAspect::_SetPropertyValue(Utf8CP propertyName, ECValueCR value, PropertyArrayIndex const& arrayIndex)
+    {
+    if (0 == strcmp(V8ORD_PROP_AlignmentAspect_ActiveProfileName, propertyName))
+        SetActiveProfileName(value.GetUtf8CP());
+    else if (0 == strcmp(V8ORD_PROP_AlignmentAspect_StartPoint, propertyName))
+        SetStartPoint(value.GetPoint2d());
+    else if (0 == strcmp(V8ORD_PROP_AlignmentAspect_EndPoint, propertyName))
+        SetEndPoint(value.GetPoint2d());
+    else
+        return DgnDbStatus::BadRequest;
+
+    return DgnDbStatus::Success;
+    }

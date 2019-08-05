@@ -513,4 +513,65 @@ public:
 
 }; // DiscreteQuantityAspect
 
+//=======================================================================================
+//! UniqueAspect to be applied to elements carrying Alignment data from ORD.
+//! @ingroup GROUP_DgnV8OpenRoadsDesigner
+//=======================================================================================
+struct AlignmentAspect : Dgn::DgnElement::UniqueAspect
+{
+    DEFINE_T_SUPER(Dgn::DgnElement::UniqueAspect);
+    friend struct AlignmentAspectHandler;
+
+private:
+    DPoint2d m_startPoint, m_endPoint;
+    Utf8String m_activeProfileName;
+
+protected:
+    AlignmentAspect() {}
+    AlignmentAspect(DPoint2d const& startPoint, DPoint2d const& endPoint, Utf8CP activeProfileName): 
+        m_startPoint(startPoint), m_endPoint(endPoint), m_activeProfileName(activeProfileName) {}
+
+    //! @private
+    virtual Utf8CP _GetECSchemaName() const { return V8ORD_SCHEMA_NAME; }
+    //! @private
+    virtual Utf8CP _GetECClassName() const { return V8ORD_CLASS_AlignmentAspect; }
+    //! @private
+    virtual Utf8CP _GetSuperECClassName() const override { return T_Super::_GetECClassName(); }
+    //! @private
+    virtual Dgn::DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;
+    //! @private
+    virtual Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const* writeToken) override;
+    //! @private
+    virtual Dgn::DgnDbStatus _GetPropertyValue(ECN::ECValueR value, Utf8CP propertyName, Dgn::PropertyArrayIndex const& arrayIndex) const override;
+    //! @private
+    virtual Dgn::DgnDbStatus _SetPropertyValue(Utf8CP propertyName, ECN::ECValueCR value, Dgn::PropertyArrayIndex const& arrayIndex) override;
+
+public:
+    DECLARE_DGNV8OPENROADSDESIGNER_QUERYCLASS_METHODS(AlignmentAspect)
+    DGNV8OPENROADSDESIGNER_EXPORT static AlignmentAspectPtr Create(DPoint2d const& startPoint, DPoint2d const& endPoint, Utf8CP activeProfileName);
+
+    //! Retrieve the AlignmentAspect instance related to an element, if any
+    //! @return An instance of AlignmentAspect, or nullptr
+    DGNV8OPENROADSDESIGNER_EXPORT static AlignmentAspectCP Get(Dgn::DgnElementCR el);
+
+    //! @private
+    DGNV8OPENROADSDESIGNER_EXPORT static AlignmentAspectP GetP(Dgn::DgnElementR el);
+    //! @private
+    DGNV8OPENROADSDESIGNER_EXPORT static void Set(Dgn::DgnElementR el, AlignmentAspectR aspect);
+
+    // Get ActiveProfileName
+    Utf8CP GetActiveProfileName() const { return m_activeProfileName.c_str(); }
+    //! @private
+    void SetActiveProfileName(Utf8CP activeProfileName) { m_activeProfileName = activeProfileName; }
+    // Get StartPoint
+    DPoint2d GetStartPoint() const { return m_startPoint; }
+    //! @private
+    void SetStartPoint(DPoint2d startPoint) { m_startPoint = startPoint; }
+    // Get EndPoint
+    DPoint2d GetEndPoint() const { return m_endPoint; }
+    //! @private
+    void SetEndPoint(DPoint2d endPoint) { m_endPoint = endPoint; }
+
+}; // AlignmentAspect
+
 END_BENTLEY_DGNV8OPENROADSDESIGNER_NAMESPACE
