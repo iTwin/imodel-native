@@ -1,0 +1,3883 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<Table>
+    <Name>Table 13 - Spaces by Function</Name>
+    <Source>The Secretariat for the OCCS Development Committee</Source>
+    <Version>Major Version No=&apos; Edition:1.0&apos;  Major Date=&apos;2006-03-28 Release&apos;  Minor Version No=&apos; Edition:1.0&apos;  Minor Date=&apos;2006-03-28 Release&apos;  Major=&apos;&apos;  Minor=&apos;&apos; </Version>
+    <Section>
+        <Code>13-11 00 00</Code>
+        <Name>Space Planning Types</Name>
+        <Section>
+            <Code>13-11 11 00</Code>
+            <Name>Planned Work Space</Name>
+        </Section>
+        <Section>
+            <Code>13-11 13 00</Code>
+            <Name>Planned Building Service Space</Name>
+        </Section>
+        <Section>
+            <Code>13-11 15 00</Code>
+            <Name>Planned Amenity/Support Space</Name>
+        </Section>
+        <Section>
+            <Code>13-11 17 00</Code>
+            <Name>Planned Circulation Space</Name>
+        </Section>
+        <Section>
+            <Code>13-11 19 00</Code>
+            <Name>Planned Parking Space</Name>
+        </Section>
+    </Section>
+    <Section>
+        <Code>13-13 00 00</Code>
+        <Name>Void Areas</Name>
+        <Section>
+            <Code>13-13 11 00</Code>
+            <Name>Light Well</Name>
+        </Section>
+        <Section>
+            <Code>13-13 13 00</Code>
+            <Name>Air Shaft</Name>
+        </Section>
+        <Section>
+            <Code>13-13 15 00</Code>
+            <Name>Occupant Void Area</Name>
+        </Section>
+    </Section>
+    <Section>
+        <Code>13-15 00 00</Code>
+        <Name>Wall Spaces</Name>
+        <Section>
+            <Code>13-15 11 00</Code>
+            <Name>Exterior Wall Space</Name>
+        </Section>
+        <Section>
+            <Code>13-15 13 00</Code>
+            <Name>Interior Wall Space</Name>
+        </Section>
+    </Section>
+    <Section>
+        <Code>13-17 00 00</Code>
+        <Name>Encroachment Spaces</Name>
+        <Section>
+            <Code>13-17 11 00</Code>
+            <Name>Interior Encroachment</Name>
+        </Section>
+        <Section>
+            <Code>13-17 13 00</Code>
+            <Name>Perimeter Encroachment</Name>
+        </Section>
+    </Section>
+    <Section>
+        <Code>13-21 00 00</Code>
+        <Name>Parking Spaces</Name>
+        <Section>
+            <Code>13-21 11 00</Code>
+            <Name>Exterior Parking Spaces</Name>
+            <Section>
+                <Code>13-21 11 11</Code>
+                <Name>Exterior Parking Circulation</Name>
+            </Section>
+            <Section>
+                <Code>13-21 11 13</Code>
+                <Name>Exterior Parking Access Control Point</Name>
+            </Section>
+            <Section>
+                <Code>13-21 11 15</Code>
+                <Name>Exterior Parking Stall</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-21 13 00</Code>
+            <Name>Interior Parking Spaces</Name>
+            <Section>
+                <Code>13-21 13 11</Code>
+                <Name>Interior Parking Ramp and Circulation</Name>
+            </Section>
+            <Section>
+                <Code>13-21 13 13</Code>
+                <Name>Interior Parking Access Control Point</Name>
+            </Section>
+            <Section>
+                <Code>13-21 13 15</Code>
+                <Name>Interior Parking Stall</Name>
+            </Section>
+            <Section>
+                <Code>13-21 13 17</Code>
+                <Name>Interior Vehicle Service Space</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>13-23 00 00</Code>
+        <Name>Facility Service Spaces</Name>
+        <Section>
+            <Code>13-23 11 00</Code>
+            <Name>Vertical Penetration</Name>
+            <Section>
+                <Code>13-23 11 11</Code>
+                <Name>Mechanical Circulation</Name>
+                <Section>
+                    <Code>13-23 11 11 11</Code>
+                    <Name>Elevator Shaft</Name>
+                </Section>
+                <Section>
+                    <Code>13-23 11 11 13</Code>
+                    <Name>Elevator Pit</Name>
+                </Section>
+                <Section>
+                    <Code>13-23 11 11 15</Code>
+                    <Name>Elevator Cab</Name>
+                </Section>
+                <Section>
+                    <Code>13-23 11 11 17</Code>
+                    <Name>Elevator Machine Room</Name>
+                </Section>
+                <Section>
+                    <Code>13-23 11 11 19</Code>
+                    <Name>Dumbwaiter</Name>
+                </Section>
+                <Section>
+                    <Code>13-23 11 11 21</Code>
+                    <Name>Escalator</Name>
+                </Section>
+                <Section>
+                    <Code>13-23 11 11 23</Code>
+                    <Name>Freight Elevator</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>13-23 11 13</Code>
+                <Name>Stairway</Name>
+                <Section>
+                    <Code>13-23 11 13 11</Code>
+                    <Name>Egress Stairway</Name>
+                </Section>
+                <Section>
+                    <Code>13-23 11 13 13</Code>
+                    <Name>Tenant Stairway</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>13-23 11 15</Code>
+                <Name>Monumental Stair</Name>
+            </Section>
+            <Section>
+                <Code>13-23 11 17</Code>
+                <Name>Ramp</Name>
+            </Section>
+            <Section>
+                <Code>13-23 11 19</Code>
+                <Name>Chimney</Name>
+            </Section>
+            <Section>
+                <Code>13-23 11 21</Code>
+                <Name>Chute</Name>
+            </Section>
+            <Section>
+                <Code>13-23 11 23</Code>
+                <Name>Service Riser Space</Name>
+                <Section>
+                    <Code>13-23 11 23 11</Code>
+                    <Name>Power Distribution Riser</Name>
+                </Section>
+                <Section>
+                    <Code>13-23 11 23 13</Code>
+                    <Name>Information Signal Distribution Riser</Name>
+                </Section>
+                <Section>
+                    <Code>13-23 11 23 15</Code>
+                    <Name>Gas Distribution Riser</Name>
+                </Section>
+                <Section>
+                    <Code>13-23 11 23 17</Code>
+                    <Name>Liquid Distribution Riser</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-23 12 00</Code>
+            <Name>Horizontal Infrastructure/Service Space, Non-Occupied </Name>
+            <Section>
+                <Code>13-23 12 11</Code>
+                <Name>Power Distribution Network</Name>
+            </Section>
+            <Section>
+                <Code>13-23 12 13</Code>
+                <Name>Information Signal Network</Name>
+            </Section>
+            <Section>
+                <Code>13-23 12 15</Code>
+                <Name>Gas Distribution Network</Name>
+            </Section>
+            <Section>
+                <Code>13-23 12 17</Code>
+                <Name>Liquid Distribution Spaces</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-23 13 00</Code>
+            <Name>Control Room</Name>
+            <Section>
+                <Code>13-23 13 11</Code>
+                <Name>Fire Command Center</Name>
+            </Section>
+            <Section>
+                <Code>13-23 13 13</Code>
+                <Name>Guard Stations</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-23 15 00</Code>
+            <Name>Loading Dock</Name>
+        </Section>
+        <Section>
+            <Code>13-23 17 00</Code>
+            <Name>Restroom</Name>
+            <Section>
+                <Code>13-23 17 11</Code>
+                <Name>Mens Restroom</Name>
+            </Section>
+            <Section>
+                <Code>13-23 17 13</Code>
+                <Name>Womens Restroom</Name>
+            </Section>
+            <Section>
+                <Code>13-23 17 15</Code>
+                <Name>Unisex Restroom</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-23 19 00</Code>
+            <Name>Utility Equipment Room</Name>
+            <Section>
+                <Code>13-23 19 11</Code>
+                <Name>Refrigerant Machinery Room</Name>
+            </Section>
+            <Section>
+                <Code>13-23 19 13</Code>
+                <Name>Furnace Room</Name>
+            </Section>
+            <Section>
+                <Code>13-23 19 15</Code>
+                <Name>Incinerator Room</Name>
+            </Section>
+            <Section>
+                <Code>13-23 19 17</Code>
+                <Name>Fuel Room</Name>
+            </Section>
+            <Section>
+                <Code>13-23 19 19</Code>
+                <Name>Gas Room</Name>
+            </Section>
+            <Section>
+                <Code>13-23 19 21</Code>
+                <Name>Liquid Storage Room</Name>
+            </Section>
+            <Section>
+                <Code>13-23 19 23</Code>
+                <Name>Liquid Use, Dispensing and Mixing Room</Name>
+            </Section>
+            <Section>
+                <Code>13-23 19 25</Code>
+                <Name>Hydrogen Cutoff Room</Name>
+            </Section>
+            <Section>
+                <Code>13-23 19 27</Code>
+                <Name>Electrical Room</Name>
+            </Section>
+            <Section>
+                <Code>13-23 19 29</Code>
+                <Name>Switch Room</Name>
+            </Section>
+            <Section>
+                <Code>13-23 19 31</Code>
+                <Name>Telecommunications Room</Name>
+            </Section>
+            <Section>
+                <Code>13-23 19 33</Code>
+                <Name>Transformer Vault</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-23 21 00</Code>
+            <Name>Waste and Recycling Spaces</Name>
+            <Section>
+                <Code>13-23 21 11</Code>
+                <Name>Hazardous Waste Storage</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-23 23 00</Code>
+            <Name>Building Service Support Spaces</Name>
+            <Section>
+                <Code>13-23 23 11</Code>
+                <Name>Building Manager Office</Name>
+            </Section>
+            <Section>
+                <Code>13-23 23 13</Code>
+                <Name>Custodial Space</Name>
+            </Section>
+            <Section>
+                <Code>13-23 23 15</Code>
+                <Name>Shop Area</Name>
+            </Section>
+            <Section>
+                <Code>13-23 23 17</Code>
+                <Name>Access Chamber</Name>
+            </Section>
+            <Section>
+                <Code>13-23 23 19</Code>
+                <Name>Areaway</Name>
+            </Section>
+            <Section>
+                <Code>13-23 23 21</Code>
+                <Name>Service Space</Name>
+            </Section>
+            <Section>
+                <Code>13-23 23 23</Code>
+                <Name>Furred Space</Name>
+            </Section>
+            <Section>
+                <Code>13-23 23 25</Code>
+                <Name>Crawl Space</Name>
+            </Section>
+            <Section>
+                <Code>13-23 23 27</Code>
+                <Name>Attic Space</Name>
+            </Section>
+            <Section>
+                <Code>13-23 23 29</Code>
+                <Name>Plenum</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-23 25 00</Code>
+            <Name>Equipment Platform</Name>
+        </Section>
+        <Section>
+            <Code>13-23 27 00</Code>
+            <Name>Interstitial Space</Name>
+        </Section>
+        <Section>
+            <Code>13-23 29 00</Code>
+            <Name>Unimproved Shell</Name>
+        </Section>
+        <Section>
+            <Code>13-23 31 00</Code>
+            <Name>Alteration or Conversion Space</Name>
+        </Section>
+    </Section>
+    <Section>
+        <Code>13-25 00 00</Code>
+        <Name>Circulation Spaces</Name>
+        <Section>
+            <Code>13-25 11 00</Code>
+            <Name>Primary Circulation Spaces</Name>
+            <Section>
+                <Code>13-25 11 11</Code>
+                <Name>Corridor</Name>
+            </Section>
+            <Section>
+                <Code>13-25 11 13</Code>
+                <Name>Aisle</Name>
+            </Section>
+            <Section>
+                <Code>13-25 11 15</Code>
+                <Name>Mall</Name>
+            </Section>
+            <Section>
+                <Code>13-25 11 17</Code>
+                <Name>Concourse</Name>
+            </Section>
+            <Section>
+                <Code>13-25 11 19</Code>
+                <Name>Breezeway</Name>
+            </Section>
+            <Section>
+                <Code>13-25 11 21</Code>
+                <Name>Moving Walkway</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-25 13 00</Code>
+            <Name>Transitional Circulation Spaces</Name>
+            <Section>
+                <Code>13-25 13 11</Code>
+                <Name>Entry Vestibule</Name>
+            </Section>
+            <Section>
+                <Code>13-25 13 13</Code>
+                <Name>Entry Lobby</Name>
+            </Section>
+            <Section>
+                <Code>13-25 13 15</Code>
+                <Name>Box Lobby</Name>
+            </Section>
+            <Section>
+                <Code>13-25 13 17</Code>
+                <Name>Vestibule</Name>
+            </Section>
+            <Section>
+                <Code>13-25 13 19</Code>
+                <Name>Elevator Lobby</Name>
+            </Section>
+            <Section>
+                <Code>13-25 13 21</Code>
+                <Name>Freight Elevator Vestibule</Name>
+            </Section>
+            <Section>
+                <Code>13-25 13 23</Code>
+                <Name>Landing</Name>
+            </Section>
+            <Section>
+                <Code>13-25 13 25</Code>
+                <Name>Anteroom</Name>
+            </Section>
+            <Section>
+                <Code>13-25 13 27</Code>
+                <Name>Air Lock</Name>
+            </Section>
+            <Section>
+                <Code>13-25 13 29</Code>
+                <Name>Sally Port</Name>
+            </Section>
+            <Section>
+                <Code>13-25 13 31</Code>
+                <Name>Jet Way</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-25 15 00</Code>
+            <Name>Connector</Name>
+        </Section>
+        <Section>
+            <Code>13-25 17 00</Code>
+            <Name>External Circulation Spaces</Name>
+        </Section>
+        <Section>
+            <Code>13-25 19 00</Code>
+            <Name>Secondary Circulation Spaces</Name>
+            <Section>
+                <Code>13-25 19 11</Code>
+                <Name>Door Set-Back</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-25 21 00</Code>
+            <Name>Restricted Spaces</Name>
+        </Section>
+        <Section>
+            <Code>13-25 23 00</Code>
+            <Name>Refuge Spaces</Name>
+        </Section>
+    </Section>
+    <Section>
+        <Code>13-31 00 00</Code>
+        <Name>Education and Training Spaces</Name>
+        <Section>
+            <Code>13-31 11 00</Code>
+            <Name>Breakout Space</Name>
+        </Section>
+        <Section>
+            <Code>13-31 13 00</Code>
+            <Name>Lecture and Classroom Spaces</Name>
+            <Section>
+                <Code>13-31 13 11</Code>
+                <Name>Lecture Classroom </Name>
+            </Section>
+            <Section>
+                <Code>13-31 13 13</Code>
+                <Name>Classrooms (age 9 plus) </Name>
+            </Section>
+            <Section>
+                <Code>13-31 13 15</Code>
+                <Name>Classrooms (ages 5–8) </Name>
+            </Section>
+            <Section>
+                <Code>13-31 13 17</Code>
+                <Name>Lecture Hall (Fixed Seats) </Name>
+            </Section>
+            <Section>
+                <Code>13-31 13 19</Code>
+                <Name>Assembly Hall</Name>
+            </Section>
+            <Section>
+                <Code>13-31 13 21</Code>
+                <Name>Seminar Room</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-31 15 00</Code>
+            <Name>Class Laboratories</Name>
+            <Section>
+                <Code>13-31 15 11</Code>
+                <Name>Open Class Laboratory</Name>
+                <Section>
+                    <Code>13-31 15 11 11</Code>
+                    <Name>Physics Teaching Laboratory</Name>
+                </Section>
+                <Section>
+                    <Code>13-31 15 11 13</Code>
+                    <Name>Astronomy Teaching Laboratory</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>13-31 15 13</Code>
+                <Name>Research/non-class Class Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-31 15 15</Code>
+                <Name>Laboratory Service Space</Name>
+            </Section>
+            <Section>
+                <Code>13-31 15 17</Code>
+                <Name>Open Laboratory Service Space</Name>
+            </Section>
+            <Section>
+                <Code>13-31 15 19</Code>
+                <Name>Research/non-class Laboratory Service Space</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-31 17 00</Code>
+            <Name>Training Spaces</Name>
+            <Section>
+                <Code>13-31 17 11</Code>
+                <Name>Computer Lab</Name>
+            </Section>
+            <Section>
+                <Code>13-31 17 13</Code>
+                <Name>Woodshop/Metalshop </Name>
+            </Section>
+            <Section>
+                <Code>13-31 17 15</Code>
+                <Name>Training Support Space</Name>
+            </Section>
+            <Section>
+                <Code>13-31 17 17</Code>
+                <Name>Religious Education Space</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-31 19 00</Code>
+            <Name>Study Spaces</Name>
+            <Section>
+                <Code>13-31 19 13</Code>
+                <Name>Study Room</Name>
+            </Section>
+            <Section>
+                <Code>13-31 19 15</Code>
+                <Name>Study Service</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>13-33 00 00</Code>
+        <Name>Recreation Spaces</Name>
+        <Section>
+            <Code>13-33 11 00</Code>
+            <Name>Athletic Recreation Spaces</Name>
+            <Section>
+                <Code>13-33 11 11</Code>
+                <Name>Athletic  Spectator Seating</Name>
+                <Section>
+                    <Code>13-33 11 11 11</Code>
+                    <Name>Bleacher</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>13-33 11 13</Code>
+                <Name>Team Athletic Recreation Spaces</Name>
+                <Section>
+                    <Code>13-33 11 13 11</Code>
+                    <Name>Baseball Field</Name>
+                </Section>
+                <Section>
+                    <Code>13-33 11 13 13</Code>
+                    <Name>Softball Fields</Name>
+                </Section>
+                <Section>
+                    <Code>13-33 11 13 15</Code>
+                    <Name>Dugouts</Name>
+                </Section>
+                <Section>
+                    <Code>13-33 11 13 17</Code>
+                    <Name>Grass Playing Fields</Name>
+                </Section>
+                <Section>
+                    <Code>13-33 11 13 19</Code>
+                    <Name>Synthetic Fields</Name>
+                </Section>
+                <Section>
+                    <Code>13-33 11 13 21</Code>
+                    <Name>Football Field</Name>
+                </Section>
+                <Section>
+                    <Code>13-33 11 13 23</Code>
+                    <Name>Soccer Field</Name>
+                </Section>
+                <Section>
+                    <Code>13-33 11 13 25</Code>
+                    <Name>Basketball Courts</Name>
+                </Section>
+                <Section>
+                    <Code>13-33 11 13 27</Code>
+                    <Name>Field Light Poles</Name>
+                </Section>
+                <Section>
+                    <Code>13-33 11 13 29</Code>
+                    <Name>Press Box</Name>
+                </Section>
+                <Section>
+                    <Code>13-33 11 13 31</Code>
+                    <Name>Scoreboards</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>13-33 11 15</Code>
+                <Name>Individual Athletic Recreation Spaces</Name>
+                <Section>
+                    <Code>13-33 11 15 11</Code>
+                    <Name>Hard Playing Surfaces</Name>
+                </Section>
+                <Section>
+                    <Code>13-33 11 15 13</Code>
+                    <Name>Tennis Courts</Name>
+                </Section>
+                <Section>
+                    <Code>13-33 11 15 15</Code>
+                    <Name>Volleyball Court</Name>
+                </Section>
+                <Section>
+                    <Code>13-33 11 15 17</Code>
+                    <Name>Golf Course</Name>
+                </Section>
+                <Section>
+                    <Code>13-33 11 15 19</Code>
+                    <Name>Driving Range</Name>
+                </Section>
+                <Section>
+                    <Code>13-33 11 15 21</Code>
+                    <Name>Golf Course Support Space</Name>
+                </Section>
+                <Section>
+                    <Code>13-33 11 15 23</Code>
+                    <Name>Skating Rink</Name>
+                </Section>
+                <Section>
+                    <Code>13-33 11 15 25</Code>
+                    <Name>Boxing Ring</Name>
+                </Section>
+                <Section>
+                    <Code>13-33 11 15 27</Code>
+                    <Name>Wrestling Mat</Name>
+                </Section>
+                <Section>
+                    <Code>13-33 11 15 29</Code>
+                    <Name>Diving Board</Name>
+                </Section>
+                <Section>
+                    <Code>13-33 11 15 31</Code>
+                    <Name>Bowling Lane</Name>
+                </Section>
+                <Section>
+                    <Code>13-33 11 15 33</Code>
+                    <Name>Dart Throwing Area</Name>
+                </Section>
+                <Section>
+                    <Code>13-33 11 15 35</Code>
+                    <Name>Circuit Training Course Area</Name>
+                </Section>
+                <Section>
+                    <Code>13-33 11 15 37</Code>
+                    <Name>Running Tracks</Name>
+                </Section>
+                <Section>
+                    <Code>13-33 11 15 39</Code>
+                    <Name>Ski Lift Space</Name>
+                </Section>
+                <Section>
+                    <Code>13-33 11 15 41</Code>
+                    <Name>Exercise Space</Name>
+                </Section>
+                <Section>
+                    <Code>13-33 11 15 43</Code>
+                    <Name>Workout Station</Name>
+                </Section>
+                <Section>
+                    <Code>13-33 11 15 45</Code>
+                    <Name>Aerobic Studio</Name>
+                </Section>
+                <Section>
+                    <Code>13-33 11 15 47</Code>
+                    <Name>Climbing Wall</Name>
+                </Section>
+                <Section>
+                    <Code>13-33 11 15 49</Code>
+                    <Name>Ropes Course Elements</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-33 13 00</Code>
+            <Name>Swimming Pools</Name>
+            <Section>
+                <Code>13-33 13 11</Code>
+                <Name>Outdoor Swimming Pool</Name>
+            </Section>
+            <Section>
+                <Code>13-33 13 13</Code>
+                <Name>Indoor Swimming Pool</Name>
+                <Section>
+                    <Code>13-33 13 13 11</Code>
+                    <Name>Diving Tank</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-33 15 00</Code>
+            <Name>Non-Athletic Recreation Spaces</Name>
+            <Section>
+                <Code>13-33 15 11</Code>
+                <Name>Park</Name>
+            </Section>
+            <Section>
+                <Code>13-33 15 13</Code>
+                <Name>Pleasure Garden</Name>
+            </Section>
+            <Section>
+                <Code>13-33 15 15</Code>
+                <Name>Indoor Firing Range</Name>
+            </Section>
+            <Section>
+                <Code>13-33 15 17</Code>
+                <Name>Outdoor Shooting Range</Name>
+            </Section>
+            <Section>
+                <Code>13-33 15 19</Code>
+                <Name>Recreational Deck</Name>
+            </Section>
+            <Section>
+                <Code>13-33 15 21</Code>
+                <Name>Playground</Name>
+            </Section>
+            <Section>
+                <Code>13-33 15 23</Code>
+                <Name>Game Room</Name>
+            </Section>
+            <Section>
+                <Code>13-33 15 25</Code>
+                <Name>Gambling Table</Name>
+            </Section>
+            <Section>
+                <Code>13-33 15 27</Code>
+                <Name>Amusement Ride</Name>
+            </Section>
+            <Section>
+                <Code>13-33 15 29</Code>
+                <Name>Parade Grounds</Name>
+            </Section>
+            <Section>
+                <Code>13-33 15 31</Code>
+                <Name>Computer-Aided Visual Environment</Name>
+            </Section>
+            <Section>
+                <Code>13-33 15 33</Code>
+                <Name>Hobby and Craft Center</Name>
+            </Section>
+            <Section>
+                <Code>13-33 15 35</Code>
+                <Name>Dance Floors </Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-33 17 00</Code>
+            <Name>Wellness Spaces</Name>
+            <Section>
+                <Code>13-33 17 11</Code>
+                <Name>Fitness Center</Name>
+                <Section>
+                    <Code>13-33 17 11 11</Code>
+                    <Name>Exercise Room</Name>
+                </Section>
+                <Section>
+                    <Code>13-33 17 11 13</Code>
+                    <Name>Weight Room</Name>
+                </Section>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>13-35 00 00</Code>
+        <Name>Government Spaces</Name>
+        <Section>
+            <Code>13-35 11 00</Code>
+            <Name>Judicial Spaces</Name>
+            <Section>
+                <Code>13-35 11 11</Code>
+                <Name>Courtroom</Name>
+                <Section>
+                    <Code>13-35 11 11 11</Code>
+                    <Name>Jury Box</Name>
+                </Section>
+                <Section>
+                    <Code>13-35 11 11 13</Code>
+                    <Name>Jury Room</Name>
+                </Section>
+                <Section>
+                    <Code>13-35 11 11 15</Code>
+                    <Name>Judge’s Bench</Name>
+                </Section>
+                <Section>
+                    <Code>13-35 11 11 17</Code>
+                    <Name>Evidence Room</Name>
+                </Section>
+                <Section>
+                    <Code>13-35 11 11 19</Code>
+                    <Name>Jury Assembly Space</Name>
+                </Section>
+                <Section>
+                    <Code>13-35 11 11 21</Code>
+                    <Name>Witness Stand</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>13-35 11 13</Code>
+                <Name>Judge’s Chambers</Name>
+                <Section>
+                    <Code>13-35 11 13 11</Code>
+                    <Name>JCC–Judicial Chambers</Name>
+                </Section>
+                <Section>
+                    <Code>13-35 11 13 13</Code>
+                    <Name>Law Clerk Space</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>13-35 11 15</Code>
+                <Name>Robing Area/Room</Name>
+            </Section>
+            <Section>
+                <Code>13-35 11 17</Code>
+                <Name>Council Chambers</Name>
+            </Section>
+            <Section>
+                <Code>13-35 11 19</Code>
+                <Name>Hearing Room</Name>
+                <Section>
+                    <Code>13-35 11 19 11</Code>
+                    <Name>JHR–Judicial Hearing Room</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-35 13 00</Code>
+            <Name>Legislative Spaces</Name>
+            <Section>
+                <Code>13-35 13 11</Code>
+                <Name>Council Chambers</Name>
+            </Section>
+            <Section>
+                <Code>13-35 13 13</Code>
+                <Name>Legislative Hearing Room</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-35 15 00</Code>
+            <Name>Military Spaces</Name>
+            <Section>
+                <Code>13-35 15 11</Code>
+                <Name>Armory</Name>
+            </Section>
+            <Section>
+                <Code>13-35 15 13</Code>
+                <Name>Armory Service Space</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>13-37 00 00</Code>
+        <Name>Artistic Spaces</Name>
+        <Section>
+            <Code>13-37 11 00</Code>
+            <Name>Performance Spaces</Name>
+            <Section>
+                <Code>13-37 11 11</Code>
+                <Name>Outdoor Theater</Name>
+            </Section>
+            <Section>
+                <Code>13-37 11 13</Code>
+                <Name>General Performace Spaces</Name>
+                <Section>
+                    <Code>13-37 11 13 11</Code>
+                    <Name>Acting Stage</Name>
+                </Section>
+                <Section>
+                    <Code>13-37 11 13 13</Code>
+                    <Name>Orchestra Pit</Name>
+                </Section>
+                <Section>
+                    <Code>13-37 11 13 15</Code>
+                    <Name>Performance Rehearsal Space</Name>
+                </Section>
+                <Section>
+                    <Code>13-37 11 13 17</Code>
+                    <Name>Soundstage</Name>
+                </Section>
+                <Section>
+                    <Code>13-37 11 13 19</Code>
+                    <Name>Performance Hall</Name>
+                </Section>
+                <Section>
+                    <Code>13-37 11 13 21</Code>
+                    <Name>Band Training Space</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>13-37 11 15</Code>
+                <Name>Audience Spaces</Name>
+                <Section>
+                    <Code>13-37 11 15 11</Code>
+                    <Name>Pre-Function Lobby</Name>
+                </Section>
+                <Section>
+                    <Code>13-37 11 15 13</Code>
+                    <Name>Audience Seating Space</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>13-37 11 17</Code>
+                <Name>Supporting Performance Spaces</Name>
+                <Section>
+                    <Code>13-37 11 17 11</Code>
+                    <Name>Projection Booth</Name>
+                </Section>
+                <Section>
+                    <Code>13-37 11 17 13</Code>
+                    <Name>Catwalk</Name>
+                </Section>
+                <Section>
+                    <Code>13-37 11 17 15</Code>
+                    <Name>Stage Wings</Name>
+                </Section>
+                <Section>
+                    <Code>13-37 11 17 17</Code>
+                    <Name>Motion Picture Screen Space</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-37 13 00</Code>
+            <Name>Display Spaces </Name>
+            <Section>
+                <Code>13-37 13 11</Code>
+                <Name>Art Gallery</Name>
+            </Section>
+            <Section>
+                <Code>13-37 13 13</Code>
+                <Name>Exhibit Gallery</Name>
+            </Section>
+            <Section>
+                <Code>13-37 13 15</Code>
+                <Name>Sculpture Garden</Name>
+            </Section>
+            <Section>
+                <Code>13-37 13 17</Code>
+                <Name>Ornamental Garden</Name>
+            </Section>
+            <Section>
+                <Code>13-37 13 19</Code>
+                <Name>Observation Deck</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-37 15 00</Code>
+            <Name>Creative Spaces</Name>
+            <Section>
+                <Code>13-37 15 11</Code>
+                <Name>Recording Studio</Name>
+            </Section>
+            <Section>
+                <Code>13-37 15 13</Code>
+                <Name>Artist’s Studio</Name>
+            </Section>
+            <Section>
+                <Code>13-37 15 15</Code>
+                <Name>Photo Lab</Name>
+                <Section>
+                    <Code>13-37 15 15 11</Code>
+                    <Name>Motion Picture Exchange</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>13-37 15 17</Code>
+                <Name>Media Production</Name>
+                <Section>
+                    <Code>13-37 15 17 11</Code>
+                    <Name>Media Production Support</Name>
+                </Section>
+                <Section>
+                    <Code>13-37 15 17 13</Code>
+                    <Name>Sound Lock</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>13-37 15 19</Code>
+                <Name>Zen Garden</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>13-41 00 00</Code>
+        <Name>Museum Spaces</Name>
+        <Section>
+            <Code>13-41 11 00</Code>
+            <Name>Museum Gallery</Name>
+        </Section>
+    </Section>
+    <Section>
+        <Code>13-45 00 00</Code>
+        <Name>Library Spaces</Name>
+        <Section>
+            <Code>13-45 11 00</Code>
+            <Name>Library</Name>
+            <Section>
+                <Code>13-45 11 11</Code>
+                <Name>Library Stack</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>13-47 00 00</Code>
+        <Name>Spiritual Spaces</Name>
+        <Section>
+            <Code>13-47 11 00</Code>
+            <Name>Worship spaces</Name>
+            <Section>
+                <Code>13-47 11 11</Code>
+                <Name>Meditation Chapel</Name>
+            </Section>
+            <Section>
+                <Code>13-47 11 13</Code>
+                <Name>Altar</Name>
+            </Section>
+            <Section>
+                <Code>13-47 11 15</Code>
+                <Name>Reflection Space</Name>
+            </Section>
+            <Section>
+                <Code>13-47 11 17</Code>
+                <Name>Blessing Space</Name>
+            </Section>
+            <Section>
+                <Code>13-47 11 19</Code>
+                <Name>Chapel</Name>
+            </Section>
+            <Section>
+                <Code>13-47 11 21</Code>
+                <Name>Mihrab</Name>
+            </Section>
+            <Section>
+                <Code>13-47 11 23</Code>
+                <Name>Shrine</Name>
+            </Section>
+            <Section>
+                <Code>13-47 11 25</Code>
+                <Name>Sanctuary</Name>
+            </Section>
+            <Section>
+                <Code>13-47 11 27</Code>
+                <Name>Confessional Space</Name>
+            </Section>
+            <Section>
+                <Code>13-47 11 29</Code>
+                <Name>Ark</Name>
+            </Section>
+            <Section>
+                <Code>13-47 11 31</Code>
+                <Name>Bimah</Name>
+            </Section>
+            <Section>
+                <Code>13-47 11 33</Code>
+                <Name>Tabernacle</Name>
+            </Section>
+            <Section>
+                <Code>13-47 11 35</Code>
+                <Name>Pulpit</Name>
+            </Section>
+            <Section>
+                <Code>13-47 11 37</Code>
+                <Name>Choir Loft</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-47 13 00</Code>
+            <Name>Ceremonial Spaces</Name>
+            <Section>
+                <Code>13-47 13 11</Code>
+                <Name>Marriage Sanctuary</Name>
+            </Section>
+            <Section>
+                <Code>13-47 13 13</Code>
+                <Name>Baptistery</Name>
+            </Section>
+            <Section>
+                <Code>13-47 13 15</Code>
+                <Name>Circumcision Space</Name>
+            </Section>
+            <Section>
+                <Code>13-47 13 17</Code>
+                <Name>Cathedra</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-47 15 00</Code>
+            <Name>Procession Spaces</Name>
+        </Section>
+        <Section>
+            <Code>13-47 17 00</Code>
+            <Name>Death Spaces</Name>
+            <Section>
+                <Code>13-47 17 11</Code>
+                <Name>Crypt</Name>
+            </Section>
+            <Section>
+                <Code>13-47 17 13</Code>
+                <Name>Morgue</Name>
+                <Section>
+                    <Code>13-47 17 13 11</Code>
+                    <Name>Morgue Compartment</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>13-47 17 17</Code>
+                <Name>Grave Space</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>13-49 00 00</Code>
+        <Name>Environmentally Controlled Spaces</Name>
+        <Section>
+            <Code>13-49 11 00</Code>
+            <Name>Anechoic Chamber</Name>
+        </Section>
+        <Section>
+            <Code>13-49 13 00</Code>
+            <Name>Hazard Containment</Name>
+        </Section>
+        <Section>
+            <Code>13-49 15 00</Code>
+            <Name>Clean Room</Name>
+            <Section>
+                <Code>13-49 15 11</Code>
+                <Name>Clean Room Class 1</Name>
+            </Section>
+            <Section>
+                <Code>13-49 15 13</Code>
+                <Name>Clean Room Class 2</Name>
+            </Section>
+            <Section>
+                <Code>13-49 15 15</Code>
+                <Name>Clean Room Class 3</Name>
+            </Section>
+            <Section>
+                <Code>13-49 15 17</Code>
+                <Name>Clean Room Class 4</Name>
+            </Section>
+            <Section>
+                <Code>13-49 15 19</Code>
+                <Name>Clean Room Class 5</Name>
+            </Section>
+            <Section>
+                <Code>13-49 15 21</Code>
+                <Name>Clean Room Class 6</Name>
+            </Section>
+            <Section>
+                <Code>13-49 15 23</Code>
+                <Name>Clean Room Class 7</Name>
+            </Section>
+            <Section>
+                <Code>13-49 15 25</Code>
+                <Name>Clean Room Class 8</Name>
+            </Section>
+            <Section>
+                <Code>13-49 15 27</Code>
+                <Name>Clean Room Class 9</Name>
+            </Section>
+            <Section>
+                <Code>13-49 15 29</Code>
+                <Name>Clean Room Support Space</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-49 17 00</Code>
+            <Name>Temperature and Pressure Chamber</Name>
+        </Section>
+        <Section>
+            <Code>13-49 19 00</Code>
+            <Name>Data Center</Name>
+            <Section>
+                <Code>13-49 19 11</Code>
+                <Name>Data Center Tier I</Name>
+            </Section>
+            <Section>
+                <Code>13-49 19 13</Code>
+                <Name>Data Center Tier II</Name>
+            </Section>
+            <Section>
+                <Code>13-49 19 15</Code>
+                <Name>Data Center Tier III</Name>
+            </Section>
+            <Section>
+                <Code>13-49 19 17</Code>
+                <Name>Data Center Tier IV</Name>
+            </Section>
+            <Section>
+                <Code>13-49 19 19</Code>
+                <Name>Data Center Support Space</Name>
+            </Section>
+            <Section>
+                <Code>13-49 19 21</Code>
+                <Name>Data Center, Other</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-49 21 00</Code>
+            <Name>Controlled Space Support</Name>
+        </Section>
+        <Section>
+            <Code>13-49 23 00</Code>
+            <Name>Miscellaneous Environmentally Controlled Spaces</Name>
+            <Section>
+                <Code>13-49 23 11</Code>
+                <Name>Film Storage Vault</Name>
+            </Section>
+            <Section>
+                <Code>13-49 23 13</Code>
+                <Name>Computer Server Room</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>13-51 00 00</Code>
+        <Name>Healthcare Spaces</Name>
+        <Section>
+            <Code>13-51 11 00</Code>
+            <Name>General Examination Spaces</Name>
+            <Section>
+                <Code>13-51 11 13</Code>
+                <Name>Exam Room, Airborne Infection Isolation</Name>
+            </Section>
+            <Section>
+                <Code>13-51 11 15</Code>
+                <Name>Exam Room, Isolation</Name>
+            </Section>
+            <Section>
+                <Code>13-51 11 17</Code>
+                <Name>Exam Room, OB/Gyn</Name>
+            </Section>
+            <Section>
+                <Code>13-51 11 19</Code>
+                <Name>Exam Room, Pediatric</Name>
+            </Section>
+            <Section>
+                <Code>13-51 11 21</Code>
+                <Name>Exam Room, Protective Environment Isolation</Name>
+            </Section>
+            <Section>
+                <Code>13-51 11 23</Code>
+                <Name>Exam Room, Podiatry</Name>
+            </Section>
+            <Section>
+                <Code>13-51 11 25</Code>
+                <Name>Exam Room, Security</Name>
+            </Section>
+            <Section>
+                <Code>13-51 11 27</Code>
+                <Name>Height/Weight Screening Space</Name>
+            </Section>
+            <Section>
+                <Code>13-51 11 29</Code>
+                <Name>Holding Room, Secured</Name>
+            </Section>
+            <Section>
+                <Code>15-51 11 11</Code>
+                <Name>Exam Room</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-51 14 00</Code>
+            <Name>Inpatient Care Spaces</Name>
+            <Section>
+                <Code>13-51 14 11</Code>
+                <Name>Anteroom, Inpatient Airborne Infection Isolation</Name>
+            </Section>
+            <Section>
+                <Code>13-51 14 13</Code>
+                <Name>Anteroom, Inpatient Protective Environment Isolation</Name>
+            </Section>
+            <Section>
+                <Code>13-51 14 17</Code>
+                <Name>Anteroom, Inpatient Isolation/Seclusion</Name>
+            </Section>
+            <Section>
+                <Code>13-51 14 19</Code>
+                <Name>Labor, Delivery, Recovery, Postpartum Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 14 21</Code>
+                <Name>Medical Information Computer System Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 14 23</Code>
+                <Name>Newborn Nursery</Name>
+            </Section>
+            <Section>
+                <Code>13-51 14 25</Code>
+                <Name>NICU Nursery</Name>
+            </Section>
+            <Section>
+                <Code>13-51 14 27</Code>
+                <Name>Nursery Transport Unit Alcove</Name>
+            </Section>
+            <Section>
+                <Code>13-51 14 29</Code>
+                <Name>Nursery, Airborne Infection Isolation</Name>
+            </Section>
+            <Section>
+                <Code>13-51 14 31</Code>
+                <Name>Nursery, Observation</Name>
+            </Section>
+            <Section>
+                <Code>13-51 14 33</Code>
+                <Name>Nursery, Special Care</Name>
+            </Section>
+            <Section>
+                <Code>13-51 14 35</Code>
+                <Name>Patient Room</Name>
+                <Section>
+                    <Code>13-51 14 35 11</Code>
+                    <Name>Patient Room, Airborne Infection Isolation</Name>
+                </Section>
+                <Section>
+                    <Code>13-51 14 35 13</Code>
+                    <Name>Patient Room, Bariatric</Name>
+                </Section>
+                <Section>
+                    <Code>13-51 14 35 15</Code>
+                    <Name>Patient Room, Intensive Care</Name>
+                </Section>
+                <Section>
+                    <Code>13-51 14 35 17</Code>
+                    <Name>Patient Room, Intensive Care, Airborne Infection Isolation</Name>
+                </Section>
+                <Section>
+                    <Code>13-51 14 35 19</Code>
+                    <Name>Patient Room, Intensive Care, Protective Environment Isolation</Name>
+                </Section>
+                <Section>
+                    <Code>13-51 14 35 21</Code>
+                    <Name>Patient Room, Isolation</Name>
+                </Section>
+                <Section>
+                    <Code>13-51 14 35 23</Code>
+                    <Name>Patient Room, Monitored</Name>
+                </Section>
+                <Section>
+                    <Code>13-51 14 35 25</Code>
+                    <Name>Patient Room, One-Bed</Name>
+                </Section>
+                <Section>
+                    <Code>13-51 14 35 27</Code>
+                    <Name>Patient Room, Protective Environment Isolation</Name>
+                </Section>
+                <Section>
+                    <Code>13-51 14 35 29</Code>
+                    <Name>Patient Room, Seclusion</Name>
+                </Section>
+                <Section>
+                    <Code>13-51 14 35 31</Code>
+                    <Name>Patient Room, Transitional, One-Bed</Name>
+                </Section>
+                <Section>
+                    <Code>13-51 14 35 33</Code>
+                    <Name>Patient Room, Two-Bed</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-51 17 00</Code>
+            <Name>Multi-Medical Service Support Spaces</Name>
+            <Section>
+                <Code>13-51 17 11</Code>
+                <Name>Clean Linen Storage Room, Healthcare</Name>
+            </Section>
+            <Section>
+                <Code>13-51 17 13</Code>
+                <Name>Clean Supply Room, Healthcare</Name>
+            </Section>
+            <Section>
+                <Code>13-51 17 15</Code>
+                <Name>Clean Utility Room, Healthcare</Name>
+            </Section>
+            <Section>
+                <Code>13-51 17 17</Code>
+                <Name>Consultation Room, Patient</Name>
+            </Section>
+            <Section>
+                <Code>13-51 17 19</Code>
+                <Name>Emergency Operations Center, Healthcare</Name>
+            </Section>
+            <Section>
+                <Code>13-51 17 21</Code>
+                <Name>Equipment Storage Room, Healthcare</Name>
+            </Section>
+            <Section>
+                <Code>13-51 17 22</Code>
+                <Name>Medical Records Storage Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 17 23</Code>
+                <Name>Nurse Workspaces</Name>
+                <Section>
+                    <Code>13-51 17 23 11</Code>
+                    <Name>Nurse Station</Name>
+                </Section>
+                <Section>
+                    <Code>13-51 17 23 13</Code>
+                    <Name>Nurse Station/Communication Center</Name>
+                </Section>
+                <Section>
+                    <Code>13-51 17 23 15</Code>
+                    <Name>Nurse Sub-Station</Name>
+                </Section>
+                <Section>
+                    <Code>13-51 17 23 17</Code>
+                    <Name>Nurse Triage Space</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>13-51 17 25</Code>
+                <Name>Soiled Utility Room, Healthcare</Name>
+            </Section>
+            <Section>
+                <Code>13-51 17 27</Code>
+                <Name>Soiled Utility/Supply Room, Healthcare</Name>
+            </Section>
+            <Section>
+                <Code>13-51 17 29</Code>
+                <Name>Vital Sign Station</Name>
+            </Section>
+            <Section>
+                <Code>13-51 17 31</Code>
+                <Name>Resuscitation Cart Alcove</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-51 21 00</Code>
+            <Name>Diagnostic Imaging Spaces</Name>
+            <Section>
+                <Code>13-51 21 11</Code>
+                <Name>Angiographic Procedure Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 21 13</Code>
+                <Name>Bone Densitometry Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 21 15</Code>
+                <Name>CT Scanning Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 21 17</Code>
+                <Name>CT Simulator Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 21 19</Code>
+                <Name>Cystoscopic Radiology Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 21 21</Code>
+                <Name>Head Radiographic Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 21 23</Code>
+                <Name>Mammography Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 21 25</Code>
+                <Name>Mobile Imaging System Alcove</Name>
+            </Section>
+            <Section>
+                <Code>13-51 21 27</Code>
+                <Name>MRI Scanning Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 21 29</Code>
+                <Name>MRI System Component Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 21 31</Code>
+                <Name>PET/CT Scanning Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 21 33</Code>
+                <Name>PET/CT Simulator Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 21 35</Code>
+                <Name>Radiographic Chest Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 21 37</Code>
+                <Name>Radiographic Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 21 39</Code>
+                <Name>Radiographic/Fluoroscopic Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 21 41</Code>
+                <Name>Radiographic/Tomographic Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 21 43</Code>
+                <Name>Radiology Computer Systems Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 21 45</Code>
+                <Name>Stereotactic Mammography Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 21 47</Code>
+                <Name>Ultrasound Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 21 49</Code>
+                <Name>Ultrasound/Optical Coherence Tomography Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 21 51</Code>
+                <Name>Whole Body Scanning Room</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-51 24 00</Code>
+            <Name>Diagnostic Imaging Support Spaces</Name>
+            <Section>
+                <Code>13-51 24 11</Code>
+                <Name>Angiographic Control Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 24 13</Code>
+                <Name>Angiographic Instrument Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 24 15</Code>
+                <Name>Angiographic Procedure Control Area</Name>
+            </Section>
+            <Section>
+                <Code>13-51 24 17</Code>
+                <Name>Angiographic System Component Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 24 19</Code>
+                <Name>Silver Collection Area, Diagnostic Imaging</Name>
+            </Section>
+            <Section>
+                <Code>13-51 24 21</Code>
+                <Name>Computed Radiology Reader Area</Name>
+            </Section>
+            <Section>
+                <Code>13-51 24 23</Code>
+                <Name>Computer Image Processing Area, Diagnostic Imaging</Name>
+            </Section>
+            <Section>
+                <Code>13-51 24 24</Code>
+                <Name>X-Ray, Digital Image Storage Space</Name>
+            </Section>
+            <Section>
+                <Code>13-51 24 25</Code>
+                <Name>CT Control Area</Name>
+            </Section>
+            <Section>
+                <Code>13-51 24 27</Code>
+                <Name>CT Power and Equipment Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 24 29</Code>
+                <Name>Image Quality Control Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 24 31</Code>
+                <Name>Image Reading Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 24 32</Code>
+                <Name>X-Ray, Plane Film Storage Space</Name>
+            </Section>
+            <Section>
+                <Code>13-51 24 33</Code>
+                <Name>Mammography Processing Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 24 34</Code>
+                <Name>X-Ray Film, Daylight Processing Space</Name>
+            </Section>
+            <Section>
+                <Code>13-51 24 35</Code>
+                <Name>MRI Control Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 24 37</Code>
+                <Name>MRI Equipment Storage Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 24 39</Code>
+                <Name>MRI Viewing Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 24 41</Code>
+                <Name>PET/CT Control Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 24 43</Code>
+                <Name>Radiographic Control Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 24 45</Code>
+                <Name>Radiographic Darkroom</Name>
+            </Section>
+            <Section>
+                <Code>13-51 24 47</Code>
+                <Name>Tele-Radiology/Tele-Medicine Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 24 49</Code>
+                <Name>Viewing/Consultation Room, Diagnostic Imaging</Name>
+            </Section>
+            <Section>
+                <Code>13-51 24 51</Code>
+                <Name>X-Ray, Mobile C-Arm Alcove</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-51 27 00</Code>
+            <Name>Radiation Diagnostic and Therapy Spaces</Name>
+            <Section>
+                <Code>13-51 27 11</Code>
+                <Name>Equipment Calibration Space, Radiation Diagnostic and Therapy</Name>
+            </Section>
+            <Section>
+                <Code>13-51 27 13</Code>
+                <Name>Health Physics Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-51 27 15</Code>
+                <Name>Linear Accelerator Component Room, Healthcare</Name>
+            </Section>
+            <Section>
+                <Code>13-51 27 17</Code>
+                <Name>Linear Accelerator Entrance Maze, Healthcare</Name>
+            </Section>
+            <Section>
+                <Code>13-51 27 19</Code>
+                <Name>Linear Accelerator Room, Healthcare</Name>
+            </Section>
+            <Section>
+                <Code>13-51 27 21</Code>
+                <Name>Linear Accelerator Control Room, Healthcare</Name>
+            </Section>
+            <Section>
+                <Code>13-51 27 23</Code>
+                <Name>Radioactive Waste Storage Room, Healthcare</Name>
+            </Section>
+            <Section>
+                <Code>13-51 27 25</Code>
+                <Name>Nuclear Medicine Dose Calibration Space</Name>
+            </Section>
+            <Section>
+                <Code>13-51 27 27</Code>
+                <Name>Nuclear Medicine Scanning Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 27 29</Code>
+                <Name>Nuclear Medicine Patient &quot;Hot&quot; Waiting Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 27 31</Code>
+                <Name>Patient Dose/Thyroid Uptake Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 27 33</Code>
+                <Name>Radiation Dosimetry Planning Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 27 35</Code>
+                <Name>Radiopharmacy</Name>
+            </Section>
+            <Section>
+                <Code>13-51 27 37</Code>
+                <Name>Radium Cart Holding Space</Name>
+            </Section>
+            <Section>
+                <Code>13-51 27 38</Code>
+                <Name>Radiation Therapy, Mold Fabrication Shop</Name>
+            </Section>
+            <Section>
+                <Code>13-51 27 39</Code>
+                <Name>Sealed Source Room</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-51 31 00</Code>
+            <Name>Heart and Lung Diagnostic and Treatment Spaces</Name>
+            <Section>
+                <Code>13-51 31 11</Code>
+                <Name>Brachytherapy Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 31 13</Code>
+                <Name>Cardiac Catheter Instrument Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 31 15</Code>
+                <Name>Cardiac Catheter System Component Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 31 17</Code>
+                <Name>Cardiac Catheterization Control Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 31 19</Code>
+                <Name>Cardiac Catheterization Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-51 31 21</Code>
+                <Name>Cardiac Electrophysiology Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 31 23</Code>
+                <Name>Cardiac Testing Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 31 25</Code>
+                <Name>Echocardiograph Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 31 27</Code>
+                <Name>EKG Testing Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 31 29</Code>
+                <Name>Extended Pulmonary Function Testing Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-51 31 31</Code>
+                <Name>Microvascular Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-51 31 33</Code>
+                <Name>Pacemaker ICD Interrogation Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 31 35</Code>
+                <Name>Pacemaker/Holter Monitor Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 31 37</Code>
+                <Name>Procedure Viewing Area</Name>
+            </Section>
+            <Section>
+                <Code>13-51 31 39</Code>
+                <Name>Pulmonary Function Testing Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-51 31 40</Code>
+                <Name>Pulmonary Function Treadmill Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 31 41</Code>
+                <Name>Pulmonary Screening Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 31 43</Code>
+                <Name>Respiratory Inhalation Cubicle</Name>
+            </Section>
+            <Section>
+                <Code>13-51 31 45</Code>
+                <Name>Respiratory Therapy Clean-up Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 31 47</Code>
+                <Name>Spirometry Test Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 31 49</Code>
+                <Name>Stress Echocardiograph Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 31 51</Code>
+                <Name>Stress Testing Treadmill Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 31 53</Code>
+                <Name>Transesophageal Echocardiography Room</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-51 34 00</Code>
+            <Name>General Diagnostic Procedure and Treatment Spaces</Name>
+            <Section>
+                <Code>13-51 34 11</Code>
+                <Name>Allergen Preparation Space</Name>
+            </Section>
+            <Section>
+                <Code>13-51 34 13</Code>
+                <Name>Allergy Injection Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 34 15</Code>
+                <Name>Allergy Skin Testing</Name>
+            </Section>
+            <Section>
+                <Code>13-51 34 17</Code>
+                <Name>Antepartum Testing (NST) Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 34 19</Code>
+                <Name>Biofeedback Treatment Control/Office</Name>
+            </Section>
+            <Section>
+                <Code>13-51 34 21</Code>
+                <Name>Biofeedback Treatment Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 34 23</Code>
+                <Name>Cast and Splint Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 34 25</Code>
+                <Name>Chemotherapy Treatment Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 34 27</Code>
+                <Name>Dermatology Cryotherapy Space</Name>
+            </Section>
+            <Section>
+                <Code>13-51 34 29</Code>
+                <Name>Dermatology Procedure Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 34 31</Code>
+                <Name>Dialysis Clean Equipment Preparation Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 34 33</Code>
+                <Name>Dialysis Soiled Equipment Processing</Name>
+            </Section>
+            <Section>
+                <Code>13-51 34 35</Code>
+                <Name>Dialysis Training Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 34 37</Code>
+                <Name>EEG Exam Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 34 39</Code>
+                <Name>EEG Instrument and Work Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 34 41</Code>
+                <Name>EEG/Sleep Study Monitoring Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 34 43</Code>
+                <Name>Electromyography Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 34 45</Code>
+                <Name>ENT Procedure Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 34 47</Code>
+                <Name>Evoked Potential Response Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 34 49</Code>
+                <Name>General Purpose Dirty Treatment Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 34 51</Code>
+                <Name>Immunization Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 34 53</Code>
+                <Name>Infectious Disease Decontamination Shower</Name>
+            </Section>
+            <Section>
+                <Code>13-51 34 55</Code>
+                <Name>Infectious Disease Decontamination Suite</Name>
+            </Section>
+            <Section>
+                <Code>13-51 34 57</Code>
+                <Name>Life Support Unit Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 34 61</Code>
+                <Name>OB/GYN Treatment Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 34 63</Code>
+                <Name>Patient Observation and Treatment Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 34 65</Code>
+                <Name>Pentamidine Treatment Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 34 67</Code>
+                <Name>Peritoneal Dialysis Exam Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 34 69</Code>
+                <Name>Peritoneal Dialysis Procedure Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 34 71</Code>
+                <Name>Phototherapy Treatment Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 34 73</Code>
+                <Name>Renal Dialysis Bed Station, Private</Name>
+            </Section>
+            <Section>
+                <Code>13-51 34 75</Code>
+                <Name>Renal Dialysis Room, Negative Pressure</Name>
+            </Section>
+            <Section>
+                <Code>13-51 34 77</Code>
+                <Name>Renal Dialysis, Chair Station, Cubicle</Name>
+            </Section>
+            <Section>
+                <Code>13-51 34 78</Code>
+                <Name>Renal Dialysis, Water Treatment Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 34 79</Code>
+                <Name>Sleep Study Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 34 81</Code>
+                <Name>Provider Trainee Observation Area, Healthcare</Name>
+            </Section>
+            <Section>
+                <Code>13-51 34 83</Code>
+                <Name>Treatment Cubicle, Healthcare</Name>
+            </Section>
+            <Section>
+                <Code>13-51 34 85</Code>
+                <Name>Treatment Room, Healthcare</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-51 37 00</Code>
+            <Name>Eye and Ear Healthcare Spaces</Name>
+            <Section>
+                <Code>13-51 37 11</Code>
+                <Name>Audiology Immittance Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 37 13</Code>
+                <Name>Audiometric Exam Booth</Name>
+            </Section>
+            <Section>
+                <Code>13-51 37 15</Code>
+                <Name>Audiometric Exam Suite</Name>
+            </Section>
+            <Section>
+                <Code>13-51 37 17</Code>
+                <Name>Audiometric Multi-Exam Suite</Name>
+            </Section>
+            <Section>
+                <Code>13-51 37 19</Code>
+                <Name>Audiology Electrophysiology Exam Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 37 20</Code>
+                <Name>Hearing Aid Testing Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-51 37 21</Code>
+                <Name>Electroretinography Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 37 23</Code>
+                <Name>ENT Exam Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 37 25</Code>
+                <Name>Exam/Training Room, Low Vision</Name>
+            </Section>
+            <Section>
+                <Code>13-51 37 27</Code>
+                <Name>Eye Lane</Name>
+            </Section>
+            <Section>
+                <Code>13-51 37 29</Code>
+                <Name>Laser Treatment Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 37 31</Code>
+                <Name>Ophthalmology Procedure Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 37 33</Code>
+                <Name>Ophthalmology/Optometry Exam Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 37 35</Code>
+                <Name>Photography Room, Ophthalmology/Optometry</Name>
+            </Section>
+            <Section>
+                <Code>13-51 37 37</Code>
+                <Name>PRK/LASIK Treatment Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 37 39</Code>
+                <Name>Sinusoidal Vertical Axis Rotational Rest Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 37 41</Code>
+                <Name>Tilt Table Testing Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 37 43</Code>
+                <Name>Training Room, Low Vision, Polytrauma</Name>
+            </Section>
+            <Section>
+                <Code>13-51 37 45</Code>
+                <Name>Ultrasound/Optical Coherence Tomography Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 37 47</Code>
+                <Name>Vestibulography Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 37 49</Code>
+                <Name>Vision/Hearing Screening Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 37 51</Code>
+                <Name>Vision Screening Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 37 53</Code>
+                <Name>Vision Testing Station</Name>
+            </Section>
+            <Section>
+                <Code>13-51 37 55</Code>
+                <Name>Visual Fields Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 37 57</Code>
+                <Name>Eye, Contact Lens Fitting/Dispensing Space</Name>
+            </Section>
+            <Section>
+                <Code>13-51 37 59</Code>
+                <Name>Eyeglass Fitting and Dispensing Space</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-51 41 00</Code>
+            <Name>Endoscopy/Gastroenterology Spaces</Name>
+            <Section>
+                <Code>13-51 41 11</Code>
+                <Name>Bronchoscopy Equipment Preparation Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 41 13</Code>
+                <Name>Bronchoscopy Procedure Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 41 15</Code>
+                <Name>Endoscope Clean-up, Sterilization, and Storage Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 41 17</Code>
+                <Name>Endoscopy Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 41 19</Code>
+                <Name>Gastroenterology Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-51 41 21</Code>
+                <Name>Proctoscopy/Sigmoidoscopy Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 41 23</Code>
+                <Name>Urodynamics Treatment Room</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-51 44 00</Code>
+            <Name>Surgical Spaces</Name>
+            <Section>
+                <Code>13-51 44 11</Code>
+                <Name>Anesthesia Workroom and Equipment Storage</Name>
+            </Section>
+            <Section>
+                <Code>13-51 44 13</Code>
+                <Name>Cardiac Operating Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 44 15</Code>
+                <Name>Cardiac Pump Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 44 17</Code>
+                <Name>Cesarean Birth Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 44 19</Code>
+                <Name>Cystoscopy Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 44 21</Code>
+                <Name>Equipment Storage Room, Surgical</Name>
+            </Section>
+            <Section>
+                <Code>13-51 44 23</Code>
+                <Name>Frozen Section Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-51 44 25</Code>
+                <Name>General Operating Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 44 27</Code>
+                <Name>Nerve Block Induction Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 44 29</Code>
+                <Name>Neurosurgery Operating Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 44 31</Code>
+                <Name>Orthopedic Operating Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 44 33</Code>
+                <Name>Patient Holding Area, Surgical</Name>
+            </Section>
+            <Section>
+                <Code>13-51 44 35</Code>
+                <Name>Postanesthesia Recovery Cubicle</Name>
+            </Section>
+            <Section>
+                <Code>13-51 44 37</Code>
+                <Name>Postanesthesia Recovery Isolation Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 44 39</Code>
+                <Name>Postoperative Recovery Lounge</Name>
+            </Section>
+            <Section>
+                <Code>13-51 44 41</Code>
+                <Name>Preparation/Recovery Spaces, Surgical</Name>
+                <Section>
+                    <Code>13-51 44 41 11</Code>
+                    <Name>Preparation/Recovery Cubicle, Surgical</Name>
+                </Section>
+                <Section>
+                    <Code>13-51 44 41 13</Code>
+                    <Name>Preparation/Recovery Room, Surgical</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>13-51 44 43</Code>
+                <Name>Procedure/Minor Operating Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 44 45</Code>
+                <Name>Scrub/Gowning Area</Name>
+            </Section>
+            <Section>
+                <Code>13-51 44 47</Code>
+                <Name>Sub-Sterile Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 44 50</Code>
+                <Name>Operating Room, Sterile Storage</Name>
+            </Section>
+            <Section>
+                <Code>13-51 44 51</Code>
+                <Name>Surgical Laser Treatment Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 44 53</Code>
+                <Name>Recovery Room, Surgical</Name>
+            </Section>
+            <Section>
+                <Code>13-51 44 55</Code>
+                <Name>Surgical Suite, Workroom and Supply Space</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-51 47 00</Code>
+            <Name>Clinical Laboratory Spaces</Name>
+            <Section>
+                <Code>13-51 47 11</Code>
+                <Name>Automated Clinical Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-51 47 13</Code>
+                <Name>Bioassay (Radioimmunoassay) Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 47 15</Code>
+                <Name>Blood Gas Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-51 47 17</Code>
+                <Name>Blood Hemotherapeutics Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 47 19</Code>
+                <Name>Bone Dissection Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-51 47 21</Code>
+                <Name>Clinical Chemistry Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-51 47 23</Code>
+                <Name>Clinical Microbiology Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-51 47 25</Code>
+                <Name>Cytology Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-51 47 27</Code>
+                <Name>Cytology Screening and Histology Space</Name>
+            </Section>
+            <Section>
+                <Code>13-51 47 29</Code>
+                <Name>Dermatology Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-51 47 31</Code>
+                <Name>Electron Microscope Suite</Name>
+            </Section>
+            <Section>
+                <Code>13-51 47 33</Code>
+                <Name>Electron Microscope System Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 47 35</Code>
+                <Name>Entomology Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-51 47 37</Code>
+                <Name>Flow Cytometer Space</Name>
+            </Section>
+            <Section>
+                <Code>13-51 47 39</Code>
+                <Name>Fluorescence Microscope Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 47 41</Code>
+                <Name>General Clinical Laboratory Area</Name>
+            </Section>
+            <Section>
+                <Code>13-51 47 43</Code>
+                <Name>Hematology Laboratory, Coagulation</Name>
+            </Section>
+            <Section>
+                <Code>13-51 47 45</Code>
+                <Name>Hematology Laboratory, Routine</Name>
+            </Section>
+            <Section>
+                <Code>13-51 47 47</Code>
+                <Name>Histology Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-51 47 49</Code>
+                <Name>Immunopathology Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-51 47 51</Code>
+                <Name>Microbiology Biosafety Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-51 47 53</Code>
+                <Name>Microbiology Mycology Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-51 47 55</Code>
+                <Name>Microbiology Mycobacteriology Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-51 47 57</Code>
+                <Name>Mohs Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-51 47 59</Code>
+                <Name>Mycology Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-51 47 61</Code>
+                <Name>Nephrology Renal Study Space</Name>
+            </Section>
+            <Section>
+                <Code>13-51 47 63</Code>
+                <Name>Renal Studies Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-51 47 65</Code>
+                <Name>Special Chemistry Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-51 47 67</Code>
+                <Name>Urine Testing Alcove</Name>
+            </Section>
+            <Section>
+                <Code>13-51 47 69</Code>
+                <Name>Urinalysis Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-51 47 71</Code>
+                <Name>Urology Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-51 47 73</Code>
+                <Name>Medical Autopsy Room </Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-51 51 00</Code>
+            <Name>Clinical Laboratory Support Spaces</Name>
+            <Section>
+                <Code>13-51 51 11</Code>
+                <Name>Blood Bank Donor Station</Name>
+            </Section>
+            <Section>
+                <Code>13-51 51 13</Code>
+                <Name>Blood Bank Preparation Rom</Name>
+            </Section>
+            <Section>
+                <Code>13-51 51 15</Code>
+                <Name>Blood Bank Blood Product Storage Space</Name>
+            </Section>
+            <Section>
+                <Code>13-51 51 17</Code>
+                <Name>Blood Bank Storage and Transfusion Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 51 19</Code>
+                <Name>Blood Specimen Collection Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 51 21</Code>
+                <Name>Cell Bank Freezer, Ultra Low</Name>
+            </Section>
+            <Section>
+                <Code>13-51 51 23</Code>
+                <Name>Electron Microscope Automated Data Processing Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 51 25</Code>
+                <Name>Electron Microscope Cutting Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 51 27</Code>
+                <Name>Electron Microscope Dark Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 51 29</Code>
+                <Name>Electron Microscope Developing, Printing and Enlarging Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 51 31</Code>
+                <Name>Electron Microscope Finishing Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 51 33</Code>
+                <Name>Electron Microscope Preparation Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 51 35</Code>
+                <Name>Glassware Washing and Decontamination Room, Clinical Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-51 51 37</Code>
+                <Name>Glassware Washing Room, Clinical Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-51 51 39</Code>
+                <Name>Slides and Blocks Storage Room, Clinical Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-51 51 41</Code>
+                <Name>Sterilization and Solution Preparation Room, Clinical Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-51 51 43</Code>
+                <Name>Tissue Storage Area, Clinical Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-51 51 45</Code>
+                <Name>Microbiology Media Preparation Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-51 51 47</Code>
+                <Name>Specimen Accessioning, Processing and Distribution Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 51 49</Code>
+                <Name>Laboratory, Water</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-51 54 00</Code>
+            <Name>Pharmacy Spaces</Name>
+            <Section>
+                <Code>13-51 54 11</Code>
+                <Name>Chemotherapy Agent Medication Preparation Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 54 13</Code>
+                <Name>Compound Sterile Preparation Space - High Risk</Name>
+            </Section>
+            <Section>
+                <Code>13-51 54 15</Code>
+                <Name>Compound Sterile Preparation Space - Low Risk</Name>
+            </Section>
+            <Section>
+                <Code>13-51 54 17</Code>
+                <Name>Compounding Area</Name>
+            </Section>
+            <Section>
+                <Code>13-51 54 19</Code>
+                <Name>Dialysate Preparation Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 54 21</Code>
+                <Name>IV Admixture Anteroom</Name>
+            </Section>
+            <Section>
+                <Code>13-51 54 23</Code>
+                <Name>IV Admixture Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 54 25</Code>
+                <Name>Medication Preparation Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 54 27</Code>
+                <Name>Methadone Dispensing Station</Name>
+            </Section>
+            <Section>
+                <Code>13-51 54 29</Code>
+                <Name>Oncology Drug Preparation Area</Name>
+            </Section>
+            <Section>
+                <Code>13-51 54 31</Code>
+                <Name>Pharmacy</Name>
+            </Section>
+            <Section>
+                <Code>13-51 54 32</Code>
+                <Name>Pharmacy, Dispensing Space</Name>
+            </Section>
+            <Section>
+                <Code>13-51 54 33</Code>
+                <Name>Pharmacy Manufacturing &amp; Prepack Space</Name>
+            </Section>
+            <Section>
+                <Code>13-51 54 35</Code>
+                <Name>Prescription Receiving Station</Name>
+            </Section>
+            <Section>
+                <Code>13-51 54 37</Code>
+                <Name>Pharmacy, Bulk, Breakdown and Verification Area</Name>
+            </Section>
+            <Section>
+                <Code>13-51 54 39</Code>
+                <Name>Pharmacy, Controlled Substances and Secured Dispensing</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-51 57 00</Code>
+            <Name>Medical Services Logistic Spaces</Name>
+            <Section>
+                <Code>13-51 57 11</Code>
+                <Name>Automatic Cart Wash Area, Healthcare</Name>
+            </Section>
+            <Section>
+                <Code>13-51 57 13</Code>
+                <Name>BSL3 Infectious Disease Suite, Autoclave Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 57 15</Code>
+                <Name>BSL3 Suite, Autoclave Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 57 17</Code>
+                <Name>Cart Assembly/Queue Area, Healthcare</Name>
+            </Section>
+            <Section>
+                <Code>13-51 57 19</Code>
+                <Name>Clean Cart Holding Area, Healthcare</Name>
+            </Section>
+            <Section>
+                <Code>13-51 57 20</Code>
+                <Name>Medical Material Cart Restocking Area</Name>
+            </Section>
+            <Section>
+                <Code>13-51 57 21</Code>
+                <Name>Clean Linen Preparation and Storage Area, Healthcare</Name>
+            </Section>
+            <Section>
+                <Code>13-51 57 23</Code>
+                <Name>Clean Supply Preparation and Assembly Area, Healthcare</Name>
+            </Section>
+            <Section>
+                <Code>13-51 57 25</Code>
+                <Name>Clean Supply Preparation Area, Healthcare</Name>
+            </Section>
+            <Section>
+                <Code>13-51 57 27</Code>
+                <Name>Equipment Processing and Clean Storage Room, Healthcare</Name>
+            </Section>
+            <Section>
+                <Code>13-51 57 29</Code>
+                <Name>Ethylene Oxide Gas Sterilizer Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 57 31</Code>
+                <Name>Instrument Sterilization Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 57 32</Code>
+                <Name>Central Sterile, Receiving and Decontamination</Name>
+            </Section>
+            <Section>
+                <Code>13-51 57 33</Code>
+                <Name>Manual Cart Wash Area, Healthcare</Name>
+            </Section>
+            <Section>
+                <Code>13-51 57 35</Code>
+                <Name>Soiled Cart Holding Area, Healthcare</Name>
+            </Section>
+            <Section>
+                <Code>13-51 57 37</Code>
+                <Name>Soiled Cart Receiving Area, Healthcare</Name>
+            </Section>
+            <Section>
+                <Code>13-51 57 39</Code>
+                <Name>Soiled Instrument and Equipment Receiving and Decontamination Room, Healthcare</Name>
+            </Section>
+            <Section>
+                <Code>13-51 57 41</Code>
+                <Name>Sterile Supply Preparation and Assembly Area, Healthcare</Name>
+            </Section>
+            <Section>
+                <Code>13-51 57 43</Code>
+                <Name>Biomedical Electronic Repair</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-51 61 00</Code>
+            <Name>Rehabilitation Spaces</Name>
+            <Section>
+                <Code>13-51 61 11</Code>
+                <Name>Amputee Training Area</Name>
+            </Section>
+            <Section>
+                <Code>13-51 61 13</Code>
+                <Name>Brace Shop Fitting Shop</Name>
+            </Section>
+            <Section>
+                <Code>13-51 61 15</Code>
+                <Name>Brace Shop , Adjustment/Modification Area</Name>
+            </Section>
+            <Section>
+                <Code>13-51 61 17</Code>
+                <Name>Brace Shop Welding Area</Name>
+            </Section>
+            <Section>
+                <Code>13-51 61 19</Code>
+                <Name>Computer Activities Room, Rehabilitation</Name>
+            </Section>
+            <Section>
+                <Code>13-51 61 21</Code>
+                <Name>Prosthesis Design and Manufacturing Room, Rehabilitation</Name>
+            </Section>
+            <Section>
+                <Code>13-51 61 23</Code>
+                <Name>Dynamic Alignment Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 61 25</Code>
+                <Name>Therapeutic Exercise Spaces</Name>
+                <Section>
+                    <Code>13-51 61 25 11</Code>
+                    <Name>Therapeutic Exercise Area</Name>
+                </Section>
+                <Section>
+                    <Code>13-51 61 25 13</Code>
+                    <Name>Exercise/Therapy Gymnasium</Name>
+                </Section>
+                <Section>
+                    <Code>13-51 61 25 15</Code>
+                    <Name>Individual Therapeutic Exercise Area</Name>
+                </Section>
+                <Section>
+                    <Code>13-51 61 25 17</Code>
+                    <Name>Treatment/Exercise Area</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>13-51 61 27</Code>
+                <Name>Eye Fitting Studio</Name>
+            </Section>
+            <Section>
+                <Code>13-51 61 29</Code>
+                <Name>Facial/Body Fitting Studio</Name>
+            </Section>
+            <Section>
+                <Code>13-51 61 31</Code>
+                <Name>Fitting Room, Custom Fabrication</Name>
+            </Section>
+            <Section>
+                <Code>13-51 61 33</Code>
+                <Name>Fitting Room, Soft Goods Fabrication</Name>
+            </Section>
+            <Section>
+                <Code>13-51 61 35</Code>
+                <Name>Gait Lane</Name>
+            </Section>
+            <Section>
+                <Code>13-51 61 37</Code>
+                <Name>Gait Study Track</Name>
+            </Section>
+            <Section>
+                <Code>13-51 61 39</Code>
+                <Name>Hearing Aid Fabrication and Modification Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 61 41</Code>
+                <Name>Hubbard Tank - Full Immersion</Name>
+            </Section>
+            <Section>
+                <Code>13-51 61 43</Code>
+                <Name>Hubbard Tank - Partial Immersion</Name>
+            </Section>
+            <Section>
+                <Code>13-51 61 45</Code>
+                <Name>Hydrotherapy Area</Name>
+            </Section>
+            <Section>
+                <Code>13-51 61 47</Code>
+                <Name>Neurophysiology Rehabilitation Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 61 49</Code>
+                <Name>Occupational Therapy Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 61 50</Code>
+                <Name>Occupational Therapy, Daily Living Skills Training and Evaluation Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 61 51</Code>
+                <Name>Pediatric Developmental Therapy Space</Name>
+            </Section>
+            <Section>
+                <Code>13-51 61 53</Code>
+                <Name>Physical Therapy/Kinesiology Therapy Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 61 55</Code>
+                <Name>Posturography Exam Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 61 57</Code>
+                <Name>Prosthetic and Orthotic Dust Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 61 59</Code>
+                <Name>Prosthetic and Orthotic Fume Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 61 61</Code>
+                <Name>Prosthetic and Orthotic Work Station</Name>
+            </Section>
+            <Section>
+                <Code>13-51 61 63</Code>
+                <Name>Prosthetic and Orthotic, Maintenance Support Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 61 65</Code>
+                <Name>Rehabilitation Therapy Gym</Name>
+            </Section>
+            <Section>
+                <Code>13-51 61 67</Code>
+                <Name>Speech Pathology Individual Therapy Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 61 68</Code>
+                <Name>Speech Therapist, Exam and Treatment Space</Name>
+            </Section>
+            <Section>
+                <Code>13-51 61 69</Code>
+                <Name>Therapeutic Pool</Name>
+            </Section>
+            <Section>
+                <Code>13-51 61 71</Code>
+                <Name>Wheelchair Repair Workspace</Name>
+            </Section>
+            <Section>
+                <Code>13-51 61 73</Code>
+                <Name>Whirlpool</Name>
+            </Section>
+            <Section>
+                <Code>13-51 61 75</Code>
+                <Name>Rehabilitation Living Skills Training Apartment</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-51 64 00</Code>
+            <Name>Dental Spaces</Name>
+            <Section>
+                <Code>13-51 64 11</Code>
+                <Name>Dental CS Suite</Name>
+            </Section>
+            <Section>
+                <Code>13-51 64 13</Code>
+                <Name>Dental Hygiene and Operatory Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 64 15</Code>
+                <Name>Dental Hygiene Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 64 17</Code>
+                <Name>Dental Porcelain Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 64 19</Code>
+                <Name>Dental Prosthetics Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-51 64 21</Code>
+                <Name>Dental Screening Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 64 23</Code>
+                <Name>Dental Self Preparation Area</Name>
+            </Section>
+            <Section>
+                <Code>13-51 64 25</Code>
+                <Name>Dental Treatment t Room, Mini Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-51 64 27</Code>
+                <Name>Dental Treatment Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 64 29</Code>
+                <Name>Dental Treatment Room, Conscious Sedation Support</Name>
+            </Section>
+            <Section>
+                <Code>13-51 64 31</Code>
+                <Name>Dental Treatment Room, Endodontics</Name>
+            </Section>
+            <Section>
+                <Code>13-51 64 33</Code>
+                <Name>Dental Treatment Room, Orthodontics</Name>
+            </Section>
+            <Section>
+                <Code>13-51 64 35</Code>
+                <Name>Dental Treatment Room, Pediatrics</Name>
+            </Section>
+            <Section>
+                <Code>13-51 64 37</Code>
+                <Name>Dental Treatment Room, Periodontics</Name>
+            </Section>
+            <Section>
+                <Code>13-51 64 39</Code>
+                <Name>Dental Treatment Room, Prosthodontics</Name>
+            </Section>
+            <Section>
+                <Code>13-51 64 41</Code>
+                <Name>Dental X-Ray Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 64 43</Code>
+                <Name>Instrument Preparation and Sterilization Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 64 45</Code>
+                <Name>Maxillo-Facial Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-51 64 47</Code>
+                <Name>Maxillo-Facial Treatment Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 64 49</Code>
+                <Name>Oral Pathology Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-51 64 51</Code>
+                <Name>Oral Surgery Residency Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 64 53</Code>
+                <Name>Oral Surgery Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 64 55</Code>
+                <Name>Panoramic Dental X-Ray Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 64 57</Code>
+                <Name>Dental X-Ray Support Room</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-51 67 00</Code>
+            <Name>Medical Research and Development Spaces</Name>
+            <Section>
+                <Code>13-51 67 11</Code>
+                <Name>Research Animal Recovery Area</Name>
+            </Section>
+            <Section>
+                <Code>13-51 67 13</Code>
+                <Name>Barrier Suite, Procedure Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-51 67 15</Code>
+                <Name>Biomedical Research BSL3 Suite Tissue Culture Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 67 17</Code>
+                <Name>Biomedical Research Tissue Culture Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 67 18</Code>
+                <Name>Laboratory, Research, Biochemistry</Name>
+            </Section>
+            <Section>
+                <Code>13-51 67 19</Code>
+                <Name>Biosafety Level 3 Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-51 67 21</Code>
+                <Name>BSL3 Infectious Disease Suite, Procedure Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-51 67 23</Code>
+                <Name>BSL3 Procedure Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 67 25</Code>
+                <Name>Environmental Suite Infectious Disease Procedure Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-51 67 27</Code>
+                <Name>Research Infectious Disease Animal Holding Area</Name>
+            </Section>
+            <Section>
+                <Code>13-51 67 29</Code>
+                <Name>Research Veterinary Radiography Control Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 67 31</Code>
+                <Name>Research and Development Machine Shop</Name>
+            </Section>
+            <Section>
+                <Code>13-51 67 33</Code>
+                <Name>Research Veterinary Radiography Procedure Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 67 35</Code>
+                <Name>Research Diagnostic Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-51 67 37</Code>
+                <Name>Research NMR Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 67 39</Code>
+                <Name>Research Procedure Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-51 67 41</Code>
+                <Name>Research Veterinary Surgical Suite, Animal Preparation Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 67 43</Code>
+                <Name>Research Veterinary BSL3 Infectious Disease Suite Holding Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 67 45</Code>
+                <Name>Research Veterinary Barrier Suite Holding Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 67 47</Code>
+                <Name>Research Veterinary Chemical/Radioisotope Suite Holding Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 67 49</Code>
+                <Name>Research Veterinary Environmental Suite Holding Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 67 51</Code>
+                <Name>Research Veterinary Quarantine Holding Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 67 53</Code>
+                <Name>Research Veterinary Surgery Room</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-51 71 00</Code>
+            <Name>Mental Health and Extended Care Spaces</Name>
+            <Section>
+                <Code>13-51 71 11</Code>
+                <Name>Mental Health and Extended Care Interview/Counseling Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 71 13</Code>
+                <Name>Mental Health and Extended Care Multipurpose Room w/Control Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 71 15</Code>
+                <Name>Neuropsychology Testing Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-51 71 17</Code>
+                <Name>Mental Health and Extended Care Quiet Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 71 19</Code>
+                <Name>Mental Health and Extended Care Resident Bedroom</Name>
+            </Section>
+            <Section>
+                <Code>13-51 71 21</Code>
+                <Name>Mental Health and Extended Care Resident Bedroom, Bariatric</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-51 91 00</Code>
+            <Name>Veterinary Spaces</Name>
+            <Section>
+                <Code>13-51 91 11</Code>
+                <Name>Hospitalization Kennel</Name>
+            </Section>
+            <Section>
+                <Code>13-51 91 14</Code>
+                <Name>Infectious Disease Animal Holding Area</Name>
+            </Section>
+            <Section>
+                <Code>13-51 91 17</Code>
+                <Name>Veterinary Radiography Control Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 91 20</Code>
+                <Name>Veterinary Radiography Procedure Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 91 23</Code>
+                <Name>Veterinary Surgical Suite, Animal Preparation Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 91 26</Code>
+                <Name>Veterinary BSL3 Infectious Disease Suite Holding Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 91 29</Code>
+                <Name>Veterinary Barrier Suite Holding Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 91 32</Code>
+                <Name>Veterinary Examination and Treatment Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 91 35</Code>
+                <Name>Veterinary Quarantine Holding Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 91 38</Code>
+                <Name>Veterinary Surgery Room</Name>
+            </Section>
+            <Section>
+                <Code>13-51 91 41</Code>
+                <Name>Cage Wash Area</Name>
+            </Section>
+            <Section>
+                <Code>13-51 91 44</Code>
+                <Name>Veterinary Food Preparation Room</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>13-53 00 00</Code>
+        <Name>Laboratory Spaces</Name>
+        <Section>
+            <Code>13-53 11 00</Code>
+            <Name>Chemistry Laboratories</Name>
+        </Section>
+        <Section>
+            <Code>13-53 13 00</Code>
+            <Name>Biosciences Laboratories</Name>
+        </Section>
+        <Section>
+            <Code>13-53 15 00</Code>
+            <Name>Physical Sciences Laboratories</Name>
+            <Section>
+                <Code>13-53 15 11</Code>
+                <Name>Optical Physics Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-53 15 13</Code>
+                <Name>Physics Research Laboratory</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-53 17 00</Code>
+            <Name>Astronomy Laboratories</Name>
+            <Section>
+                <Code>13-53 17 11</Code>
+                <Name>Astronomy Research Laboratory</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-53 19 00</Code>
+            <Name>Earth and Environmental Sciences Laboratories</Name>
+            <Section>
+                <Code>13-53 19 11</Code>
+                <Name>Geology Laboratory</Name>
+            </Section>
+            <Section>
+                <Code>13-53 19 13</Code>
+                <Name>Earth Sciences Research Laboratory</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-53 21 00</Code>
+            <Name>Forensics Laboratories</Name>
+        </Section>
+        <Section>
+            <Code>13-53 23 00</Code>
+            <Name>Psychology Laboratories</Name>
+        </Section>
+        <Section>
+            <Code>13-53 25 00</Code>
+            <Name>Bench Laboratories</Name>
+        </Section>
+        <Section>
+            <Code>13-53 27 00</Code>
+            <Name>Dry Laboratories</Name>
+        </Section>
+        <Section>
+            <Code>13-53 29 00</Code>
+            <Name>Integration Laboratories</Name>
+        </Section>
+        <Section>
+            <Code>13-53 31 00</Code>
+            <Name>Wet Laboratories</Name>
+        </Section>
+        <Section>
+            <Code>13-53 33 00</Code>
+            <Name>Laboratory Storage Spaces</Name>
+        </Section>
+        <Section>
+            <Code>13-53 35 00</Code>
+            <Name>Laboratory Support Spaces</Name>
+        </Section>
+    </Section>
+    <Section>
+        <Code>13-55 00 00</Code>
+        <Name>Commerce Activity Spaces</Name>
+        <Section>
+            <Code>13-55 11 00</Code>
+            <Name>Office Spaces</Name>
+            <Section>
+                <Code>13-55 11 11</Code>
+                <Name>Office Service</Name>
+            </Section>
+            <Section>
+                <Code>13-55 11 13</Code>
+                <Name>Dedicated Enclosed Workstation</Name>
+            </Section>
+            <Section>
+                <Code>13-55 11 15</Code>
+                <Name>Shared Enclosed Workstation</Name>
+            </Section>
+            <Section>
+                <Code>13-55 11 17</Code>
+                <Name>Dedicated Open Workstation</Name>
+            </Section>
+            <Section>
+                <Code>13-55 11 19</Code>
+                <Name>Shared Open Workstation</Name>
+            </Section>
+            <Section>
+                <Code>13-55 11 21</Code>
+                <Name>Open Team Setting</Name>
+            </Section>
+            <Section>
+                <Code>13-55 11 23</Code>
+                <Name>General File and Storage</Name>
+            </Section>
+            <Section>
+                <Code>13-55 11 25</Code>
+                <Name>Shared Workstation File and Storage</Name>
+            </Section>
+            <Section>
+                <Code>13-55 11 27</Code>
+                <Name>Shared Equipment Station</Name>
+            </Section>
+            <Section>
+                <Code>13-55 11 29</Code>
+                <Name>Lookout Gallery</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-55 13 00</Code>
+            <Name>Banking Spaces</Name>
+            <Section>
+                <Code>13-55 13 11</Code>
+                <Name>Bank Teller Space</Name>
+            </Section>
+            <Section>
+                <Code>13-55 13 13</Code>
+                <Name>Automatic Teller Machine Space</Name>
+            </Section>
+            <Section>
+                <Code>13-55 13 15</Code>
+                <Name>Vault</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-55 15 00</Code>
+            <Name>Trading Spaces</Name>
+            <Section>
+                <Code>13-55 15 11</Code>
+                <Name>Trading Floor</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-55 17 00</Code>
+            <Name>Demonstration Spaces</Name>
+        </Section>
+        <Section>
+            <Code>13-55 19 00</Code>
+            <Name>Sales Spaces</Name>
+            <Section>
+                <Code>13-55 19 11</Code>
+                <Name>Checkout Space</Name>
+            </Section>
+            <Section>
+                <Code>13-55 19 13</Code>
+                <Name>Display Space</Name>
+            </Section>
+            <Section>
+                <Code>13-55 19 15</Code>
+                <Name>Fitting Space</Name>
+            </Section>
+            <Section>
+                <Code>13-55 19 17</Code>
+                <Name>Vending Machine Area</Name>
+            </Section>
+            <Section>
+                <Code>13-55 19 19</Code>
+                <Name>Auction Room</Name>
+            </Section>
+            <Section>
+                <Code>13-55 19 21</Code>
+                <Name>Pet Shop Animal Space</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-55 21 00</Code>
+            <Name>Commercial Service and Repair Spaces</Name>
+        </Section>
+        <Section>
+            <Code>13-55 23 00</Code>
+            <Name>Commercial Support Spaces</Name>
+        </Section>
+        <Section>
+            <Code>13-55 25 00</Code>
+            <Name>Commercial Space, Other</Name>
+        </Section>
+        <Section>
+            <Code>13-55 27 00</Code>
+            <Name>Hotel, Motel, Hostel, and Dormitory Service Spaces</Name>
+            <Section>
+                <Code>13-55 27 11</Code>
+                <Name>Dormitory</Name>
+            </Section>
+            <Section>
+                <Code>13-55 27 13</Code>
+                <Name>Hotel Residence Room</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-55 29 00</Code>
+            <Name>Commerce Activity Support Areas</Name>
+            <Section>
+                <Code>13-55 29 11</Code>
+                <Name>Information Counter</Name>
+            </Section>
+            <Section>
+                <Code>13-55 29 13</Code>
+                <Name>Lobby Non-Circulation Space</Name>
+            </Section>
+            <Section>
+                <Code>13-55 29 15</Code>
+                <Name>Post Office Space</Name>
+            </Section>
+            <Section>
+                <Code>13-55 29 17</Code>
+                <Name>Mail Room Space</Name>
+            </Section>
+            <Section>
+                <Code>13-55 29 19</Code>
+                <Name>Box Lobby</Name>
+            </Section>
+            <Section>
+                <Code>13-55 29 21</Code>
+                <Name>Meeting Spaces</Name>
+                <Section>
+                    <Code>13-55 29 21 11</Code>
+                    <Name>Conference Room</Name>
+                </Section>
+                <Section>
+                    <Code>13-55 29 21 13</Code>
+                    <Name>Press Conference Room</Name>
+                </Section>
+                <Section>
+                    <Code>13-55 29 21 15</Code>
+                    <Name>Community Room</Name>
+                </Section>
+                <Section>
+                    <Code>13-55 29 21 17</Code>
+                    <Name>War Room</Name>
+                </Section>
+                <Section>
+                    <Code>13-55 29 21 19</Code>
+                    <Name>Meeting Equipment Room</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>13-55 29 23</Code>
+                <Name>Waiting Space</Name>
+                <Section>
+                    <Code>13-55 29 23 11</Code>
+                    <Name>Reception Space</Name>
+                </Section>
+                <Section>
+                    <Code>13-55 29 23 13</Code>
+                    <Name>Waiting Room</Name>
+                </Section>
+                <Section>
+                    <Code>13-55 29 23 15</Code>
+                    <Name>Queuing Space</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>13-55 29 25</Code>
+                <Name>Business Support Space, Other</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>13-57 00 00</Code>
+        <Name>Service Activity Spaces</Name>
+        <Section>
+            <Code>13-57 11 00</Code>
+            <Name>Grooming Activity Spaces</Name>
+            <Section>
+                <Code>13-57 11 11</Code>
+                <Name>Makeup Space</Name>
+            </Section>
+            <Section>
+                <Code>13-57 11 13</Code>
+                <Name>Haircutting Space</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-57 13 00</Code>
+            <Name>Food Service</Name>
+            <Section>
+                <Code>13-57 13 11</Code>
+                <Name>Cooking Spaces</Name>
+            </Section>
+            <Section>
+                <Code>13-57 13 13</Code>
+                <Name>Kitchen Space</Name>
+                <Section>
+                    <Code>13-57 13 13 11</Code>
+                    <Name>Food Preparation Space</Name>
+                </Section>
+                <Section>
+                    <Code>13-57 13 13 13</Code>
+                    <Name>Cooking Space</Name>
+                </Section>
+                <Section>
+                    <Code>13-57 13 13 15</Code>
+                    <Name>Diswashing Station</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>13-57 13 15</Code>
+                <Name>Dining and Drinking Spaces</Name>
+                <Section>
+                    <Code>13-57 13 15 11</Code>
+                    <Name>Dining Room</Name>
+                </Section>
+                <Section>
+                    <Code>13-57 13 15 13</Code>
+                    <Name>Banquet Hall</Name>
+                </Section>
+                <Section>
+                    <Code>13-57 13 15 15</Code>
+                    <Name>Food Court</Name>
+                </Section>
+                <Section>
+                    <Code>13-57 13 15 17</Code>
+                    <Name>Snack Bar</Name>
+                </Section>
+                <Section>
+                    <Code>13-57 13 15 19</Code>
+                    <Name>Salad Bar</Name>
+                </Section>
+                <Section>
+                    <Code>13-57 13 15 21</Code>
+                    <Name>Liquor Bar</Name>
+                </Section>
+                <Section>
+                    <Code>13-57 13 15 23</Code>
+                    <Name>Beverage Station</Name>
+                </Section>
+                <Section>
+                    <Code>13-57 13 15 25</Code>
+                    <Name>Table Bussing Station</Name>
+                </Section>
+                <Section>
+                    <Code>13-57 13 15 27</Code>
+                    <Name>Serving Station</Name>
+                </Section>
+                <Section>
+                    <Code>13-57 13 15 29</Code>
+                    <Name>Vending Perishable Product Space</Name>
+                </Section>
+                <Section>
+                    <Code>13-57 13 15 31</Code>
+                    <Name>Cafeteria Vending Space</Name>
+                </Section>
+                <Section>
+                    <Code>13-57 13 15 33</Code>
+                    <Name>Tray Return Space</Name>
+                </Section>
+                <Section>
+                    <Code>13-57 13 15 35</Code>
+                    <Name>Food Discard Station</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>13-57 13 17</Code>
+                <Name>Coffee stations </Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-57 15 00</Code>
+            <Name>Child Care Spaces</Name>
+            <Section>
+                <Code>13-57 15 11</Code>
+                <Name>Daycare sickroom </Name>
+            </Section>
+            <Section>
+                <Code>13-57 15 13</Code>
+                <Name>Child Day Care Space</Name>
+            </Section>
+            <Section>
+                <Code>13-57 15 15</Code>
+                <Name>Play Room</Name>
+            </Section>
+            <Section>
+                <Code>13-57 15 17</Code>
+                <Name>CLD–Child Care</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-57 17 00</Code>
+            <Name>Resting Spaces</Name>
+            <Section>
+                <Code>13-57 17 11</Code>
+                <Name>Rest Area</Name>
+            </Section>
+            <Section>
+                <Code>13-57 17 13</Code>
+                <Name>Break Room</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-57 21 00</Code>
+            <Name>Laundry/Dry Cleaning Space</Name>
+        </Section>
+        <Section>
+            <Code>13-57 23 00</Code>
+            <Name>Smoking Space</Name>
+        </Section>
+    </Section>
+    <Section>
+        <Code>13-59 00 00</Code>
+        <Name>Production, Fabrication, and Maintenance Spaces</Name>
+        <Section>
+            <Code>13-59 11 00</Code>
+            <Name>Material Handling Area</Name>
+        </Section>
+        <Section>
+            <Code>13-59 13 00</Code>
+            <Name>Batching Space</Name>
+        </Section>
+        <Section>
+            <Code>13-59 15 00</Code>
+            <Name>Production Process</Name>
+            <Section>
+                <Code>13-59 15 11</Code>
+                <Name>Workbench</Name>
+            </Section>
+            <Section>
+                <Code>13-59 15 13</Code>
+                <Name>Mock-up Space</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-59 17 00</Code>
+            <Name>Printing and Reproduction Spaces</Name>
+        </Section>
+        <Section>
+            <Code>13-59 19 00</Code>
+            <Name>Quality Control and Test Spaces</Name>
+            <Section>
+                <Code>13-59 19 11</Code>
+                <Name>Product Inspection Space</Name>
+            </Section>
+            <Section>
+                <Code>13-59 19 13</Code>
+                <Name>Production Observation Space</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-59 21 00</Code>
+            <Name>Production Service and Repair Spaces</Name>
+        </Section>
+        <Section>
+            <Code>13-59 23 00</Code>
+            <Name>Production and In-Process Storage Spaces</Name>
+        </Section>
+        <Section>
+            <Code>13-59 25 00</Code>
+            <Name>Production Support Spaces</Name>
+        </Section>
+        <Section>
+            <Code>13-59 27 00</Code>
+            <Name>Production, Other</Name>
+        </Section>
+        <Section>
+            <Code>13-59 29 00</Code>
+            <Name>Greenhouse Spaces</Name>
+            <Section>
+                <Code>13-59 29 11</Code>
+                <Name>Greenhouse Support Space</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>13-61 00 00</Code>
+        <Name>Protective Spaces</Name>
+        <Section>
+            <Code>13-61 11 00</Code>
+            <Name>Animal Securing Spaces</Name>
+            <Section>
+                <Code>13-61 11 11</Code>
+                <Name>Cage</Name>
+            </Section>
+            <Section>
+                <Code>13-61 11 13</Code>
+                <Name>Animal Stall</Name>
+            </Section>
+            <Section>
+                <Code>13-61 11 15</Code>
+                <Name>Kennel</Name>
+            </Section>
+            <Section>
+                <Code>13-61 11 17</Code>
+                <Name>Aquarium</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-61 13 00</Code>
+            <Name>Detention Spaces </Name>
+            <Section>
+                <Code>13-61 13 11</Code>
+                <Name>Detention Cell</Name>
+            </Section>
+            <Section>
+                <Code>13-61 13 13</Code>
+                <Name>Holding Cell</Name>
+            </Section>
+            <Section>
+                <Code>13-61 13 15</Code>
+                <Name>Impound Lot</Name>
+            </Section>
+            <Section>
+                <Code>13-61 13 17</Code>
+                <Name>Dayroom</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-61 15 00</Code>
+            <Name>Spaces for Protection from the Elements</Name>
+            <Section>
+                <Code>13-61 15 11</Code>
+                <Name>Park Shelter</Name>
+            </Section>
+            <Section>
+                <Code>13-61 15 13</Code>
+                <Name>Entry Porch</Name>
+            </Section>
+            <Section>
+                <Code>13-61 15 15</Code>
+                <Name>Covered Walkway</Name>
+            </Section>
+            <Section>
+                <Code>13-61 15 17</Code>
+                <Name>Canopy</Name>
+            </Section>
+            <Section>
+                <Code>13-61 15 19</Code>
+                <Name>Shielded Room</Name>
+            </Section>
+            <Section>
+                <Code>13-61 15 21</Code>
+                <Name>Containment Room</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-61 17 00</Code>
+            <Name>Spaces for Protection from Violence</Name>
+            <Section>
+                <Code>13-61 17 11</Code>
+                <Name>Safe Room</Name>
+            </Section>
+            <Section>
+                <Code>13-61 17 13</Code>
+                <Name>Bunker</Name>
+            </Section>
+            <Section>
+                <Code>13-61 17 15</Code>
+                <Name>Bomb Shelter</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>13-63 00 00</Code>
+        <Name>Storage Spaces</Name>
+        <Section>
+            <Code>13-63 11 00</Code>
+            <Name>Warehouse Spaces</Name>
+            <Section>
+                <Code>13-63 11 11</Code>
+                <Name>High Bay Warehouse Space</Name>
+            </Section>
+            <Section>
+                <Code>13-63 11 13</Code>
+                <Name>General Warehouse Space</Name>
+            </Section>
+            <Section>
+                <Code>13-63 11 15</Code>
+                <Name>Warehouse Support Space</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-63 13 00</Code>
+            <Name>Non-Warehouse Storage Spaces</Name>
+            <Section>
+                <Code>13-63 13 11</Code>
+                <Name>Storage Room</Name>
+                <Section>
+                    <Code>13-63 13 11 11</Code>
+                    <Name>GNS–General Storage</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>13-63 13 13</Code>
+                <Name>Closet</Name>
+            </Section>
+            <Section>
+                <Code>13-63 13 15</Code>
+                <Name>Coat Check</Name>
+            </Section>
+            <Section>
+                <Code>13-63 13 17</Code>
+                <Name>Locker Room</Name>
+            </Section>
+            <Section>
+                <Code>13-63 13 19</Code>
+                <Name>Filing Space</Name>
+            </Section>
+            <Section>
+                <Code>13-63 13 21</Code>
+                <Name>Supply Room</Name>
+            </Section>
+            <Section>
+                <Code>13-63 13 23</Code>
+                <Name>Unit Storage</Name>
+            </Section>
+            <Section>
+                <Code>13-63 13 25</Code>
+                <Name>Consolidation/Containerization Point</Name>
+            </Section>
+            <Section>
+                <Code>13-63 13 27</Code>
+                <Name>Self Storage Space</Name>
+            </Section>
+            <Section>
+                <Code>13-63 13 29</Code>
+                <Name>Operational Storage (Misc)</Name>
+            </Section>
+            <Section>
+                <Code>13-63 13 31</Code>
+                <Name>Operational Hazarous/Flammable Storage</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-63 15 00</Code>
+            <Name>Moveable Storage Spaces</Name>
+            <Section>
+                <Code>13-63 15 11</Code>
+                <Name>Vehicle Storage Compartment </Name>
+            </Section>
+            <Section>
+                <Code>13-63 15 13</Code>
+                <Name>Portable Bin</Name>
+            </Section>
+            <Section>
+                <Code>13-63 15 15</Code>
+                <Name>Vessel Hold</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-63 17 00</Code>
+            <Name>Environmentally Controlled Storage Spaces</Name>
+            <Section>
+                <Code>13-63 17 11</Code>
+                <Name>Refrigeration Compartment</Name>
+            </Section>
+            <Section>
+                <Code>13-63 17 13</Code>
+                <Name>Freezing Compartment</Name>
+            </Section>
+            <Section>
+                <Code>13-63 17 15</Code>
+                <Name>Humidity Controlled Storage Space</Name>
+            </Section>
+            <Section>
+                <Code>13-63 17 17</Code>
+                <Name>Vacuum Sealed Storage Compartment</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-63 19 00</Code>
+            <Name>Specialty Storage Spaces</Name>
+            <Section>
+                <Code>13-63 19 11</Code>
+                <Name>Sanitary Storage Room</Name>
+            </Section>
+            <Section>
+                <Code>13-63 19 13</Code>
+                <Name>Soiled Storage Room Space</Name>
+            </Section>
+            <Section>
+                <Code>13-63 19 15</Code>
+                <Name>Sacristy</Name>
+            </Section>
+            <Section>
+                <Code>13-63 19 17</Code>
+                <Name>Vestry</Name>
+            </Section>
+            <Section>
+                <Code>13-63 19 19</Code>
+                <Name>Hazardous Material Storage Space</Name>
+            </Section>
+            <Section>
+                <Code>13-63 19 21</Code>
+                <Name>Book Stacks</Name>
+            </Section>
+            <Section>
+                <Code>13-63 19 23</Code>
+                <Name>Baggage Claim</Name>
+            </Section>
+            <Section>
+                <Code>13-63 19 25</Code>
+                <Name>Evidence Room</Name>
+            </Section>
+            <Section>
+                <Code>13-63 19 27</Code>
+                <Name>Vehicle Impound Lot</Name>
+            </Section>
+            <Section>
+                <Code>13-63 19 29</Code>
+                <Name>Operating Fuel Storage</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>13-65 00 00</Code>
+        <Name>Private Residential Spaces</Name>
+        <Section>
+            <Code>13-65 11 00</Code>
+            <Name>On-call Room</Name>
+        </Section>
+        <Section>
+            <Code>13-65 13 00</Code>
+            <Name>Bathroom</Name>
+            <Section>
+                <Code>13-65 13 11</Code>
+                <Name>Shower Space</Name>
+            </Section>
+            <Section>
+                <Code>13-65 13 13</Code>
+                <Name>Toilet Space</Name>
+            </Section>
+            <Section>
+                <Code>13-65 13 15</Code>
+                <Name>Ablution Room</Name>
+            </Section>
+            <Section>
+                <Code>13-65 13 17</Code>
+                <Name>Combination Toilet and Bathing Space</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>13-65 15 00</Code>
+            <Name>Mud Room</Name>
+        </Section>
+        <Section>
+            <Code>13-65 17 00</Code>
+            <Name>Laundry Room</Name>
+        </Section>
+        <Section>
+            <Code>13-65 19 00</Code>
+            <Name>Bedroom</Name>
+        </Section>
+        <Section>
+            <Code>13-65 21 00</Code>
+            <Name>Nursery</Name>
+        </Section>
+        <Section>
+            <Code>13-65 23 00</Code>
+            <Name>Kitchen</Name>
+        </Section>
+    </Section>
+    <Section>
+        <Code>13-67 00 00</Code>
+        <Name>Alternate Workplace</Name>
+        <Section>
+            <Code>13-67 11 00</Code>
+            <Name>Customer Site</Name>
+        </Section>
+        <Section>
+            <Code>13-67 13 00</Code>
+            <Name>Home Office</Name>
+        </Section>
+        <Section>
+            <Code>13-67 15 00</Code>
+            <Name>Rent-An-Office</Name>
+        </Section>
+        <Section>
+            <Code>13-67 17 00</Code>
+            <Name>No Fixed Location</Name>
+        </Section>
+        <Section>
+            <Code>13-67 19 00</Code>
+            <Name>Supplier Site</Name>
+        </Section>
+        <Section>
+            <Code>13-67 21 00</Code>
+            <Name>Alternate Workplace, Other</Name>
+        </Section>
+    </Section>
+    <Section>
+        <Code>13-69 00 00</Code>
+        <Name>Building Associated Spaces </Name>
+        <Section>
+            <Code>13-69 11 00</Code>
+            <Name>Roof</Name>
+        </Section>
+        <Section>
+            <Code>13-69 13 00</Code>
+            <Name>Roof Terrace</Name>
+        </Section>
+        <Section>
+            <Code>13-69 15 00</Code>
+            <Name>Penthouse</Name>
+        </Section>
+        <Section>
+            <Code>13-69 17 00</Code>
+            <Name>Antenna Farm</Name>
+        </Section>
+        <Section>
+            <Code>13-69 19 00</Code>
+            <Name>Heliport</Name>
+        </Section>
+        <Section>
+            <Code>13-69 21 00</Code>
+            <Name>Balcony</Name>
+        </Section>
+        <Section>
+            <Code>13-69 23 00</Code>
+            <Name>Deck</Name>
+        </Section>
+        <Section>
+            <Code>13-69 25 00</Code>
+            <Name>Pedestrian Travel Spaces</Name>
+            <Section>
+                <Code>13-69 25 11</Code>
+                <Name>Sidewalk</Name>
+            </Section>
+            <Section>
+                <Code>13-69 25 13</Code>
+                <Name>Pedestrian Way</Name>
+            </Section>
+            <Section>
+                <Code>13-69 25 15</Code>
+                <Name>Pedestrian Bridge</Name>
+            </Section>
+            <Section>
+                <Code>13-69 25 17</Code>
+                <Name>Footpath</Name>
+            </Section>
+            <Section>
+                <Code>13-69 25 19</Code>
+                <Name>Trail</Name>
+            </Section>
+            <Section>
+                <Code>13-69 25 21</Code>
+                <Name>Gangway</Name>
+            </Section>
+        </Section>
+    </Section>
+</Table>
