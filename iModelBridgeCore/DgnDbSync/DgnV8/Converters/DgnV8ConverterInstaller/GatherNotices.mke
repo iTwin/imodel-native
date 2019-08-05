@@ -1,0 +1,10 @@
+#--------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#--------------------------------------------------------------------------------------
+
+%include mdl.mki
+
+ContextDeliveryDir = $(BuildContext)Delivery/DgnV8ConverterNotices/
+                
+always:
+    ~linkmultifiles "$(ContextDeliveryDir)=$(OutRoot)$(TARGET_PROCESSOR_DIRECTORY)/Product/__DgnV8ConverterNotices/*.*"

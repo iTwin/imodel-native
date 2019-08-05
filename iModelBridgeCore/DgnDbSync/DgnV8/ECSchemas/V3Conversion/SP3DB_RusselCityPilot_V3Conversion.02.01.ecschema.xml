@@ -1,0 +1,3042 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="SP3DB_RusselCityPilot_V3Conversion" nameSpacePrefix="sp3dbrcp" version="2.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="ECv3ConversionAttributes" version="01.00" prefix="V2ToV3" />
+    <ECClass typeName="IHFrame" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IHFrame</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IHFrameSystem" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IHFrameSystem</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJAllowableSpecs" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJAllowableSpecs</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJAnalysisChild" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJAnalysisChild</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJAnalysisParent" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJAnalysisParent</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJAppConnection" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJAppConnection</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJAppConnectionNotification" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJAppConnectionNotification</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJAppConnectionToSmartOccurrence" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJAppConnectionToSmartOccurrence</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJArc" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJArc</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJAreaSystem" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJAreaSystem</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJAssembly" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJAssembly</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJAssemblyChild" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJAssemblyChild</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJAssmblyHierarchy" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJAssmblyHierarchy</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJAssocRelation" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJAssocRelation</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJAttributes" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJAttributes</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJCableTrayNozzle" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJCableTrayNozzle</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJCableTrayPortOcc" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJCableTrayPortOcc</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJCMNSTRAssemblyConnection" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJCMNSTRAssemblyConnection</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJCoatingInfo" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJCoatingInfo</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJCommonObjects" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJCommonObjects</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJConduitNozzle" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJConduitNozzle</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJConduitPortOcc" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJConduitPortOcc</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJConduitSystem" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJConduitSystem</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJCone" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJCone</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJConfigProjectRoot" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJConfigProjectRoot</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJConnectable" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJConnectable</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJConstructionInfo" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJConstructionInfo</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJCurve" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJCurve</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJCurveProperties" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJCurveProperties</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJDArea" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJDArea</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJDAssocRelation" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJDAssocRelation</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJDAttributes" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJDAttributes</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJDCoordinateSystem" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJDCoordinateSystem</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJDeletableMember" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJDeletableMember</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJDesignChild" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJDesignChild</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJDesignEquipment" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJDesignEquipment</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJDesignEquipmentOcc" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJDesignEquipmentOcc</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJDesignParent" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJDesignParent</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJDesignSemanticEquipWCG" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJDesignSemanticEquipWCG</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJDGeometry" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJDGeometry</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJDHvacPort" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJDHvacPort</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJDInputsArg" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJDInputsArg</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJDistribConnection" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJDistribConnection</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJDistribPartOccur" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJDistribPartOccur</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJDistribPort" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJDistribPort</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJDMemberObjects" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJDMemberObjects</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJDModelBody" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJDModelBody</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJDNozzle" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJDNozzle</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJDObject" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJDObject</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJDOccurrence" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJDOccurrence</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJDOutfittingCrossSection" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJDOutfittingCrossSection</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJDPenSpool" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJDPenSpool</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJDPipePort" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJDPipePort</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJDrawingTarget" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJDrawingTarget</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJDReferencesArg" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJDReferencesArg</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJDSpaceAdjacency" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJDSpaceAdjacency</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJDSpaceReferences" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJDSpaceReferences</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJDSpool" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJDSpool</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJDStructCutoutTool" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJDStructCutoutTool</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJDSymbol" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJDSymbol</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJDuctingSystem" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJDuctingSystem</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJDValuesArg" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJDValuesArg</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJDZone" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJDZone</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJEFWCorrelatedObject" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJEFWCorrelatedObject</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJEFWCorrelation" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJEFWCorrelation</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJElectricalPort" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJElectricalPort</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJElectricalSystem" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJElectricalSystem</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJEmbeddedObject" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJEmbeddedObject</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJEmbeddingObject" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJEmbeddingObject</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJEnumerateGraphicChildren" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJEnumerateGraphicChildren</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJEqpCablePort" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJEqpCablePort</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJEqpFndPortGeomPlacementType" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJEqpFndPortGeomPlacementType</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJEqpFoundationPort" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJEqpFoundationPort</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJEqpFoundationPortID" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJEqpFoundationPortID</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJEqpFoundationPortOcc" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJEqpFoundationPortOcc</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJEquipment" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJEquipment</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJEquipmentComponent" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJEquipmentComponent</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJEquipmentComponentOcc" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJEquipmentComponentOcc</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJEquipmentFurnishings" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJEquipmentFurnishings</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJEquipmentOcc" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJEquipmentOcc</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJFabricationInfo" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJFabricationInfo</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJFoulCheck" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJFoulCheck</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJFrame" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJFrame</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJFrameSystem" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJFrameSystem</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJGCSDirection1" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJGCSDirection1</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJGCSDirection2" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJGCSDirection2</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJGeneralNote" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJGeneralNote</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJGenericDesignObject" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJGenericDesignObject</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJGenericSystem" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJGenericSystem</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJGenericVolume" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJGenericVolume</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJGeometry" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJGeometry</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJGraphicDataCache" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJGraphicDataCache</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJGraphicEntity" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJGraphicEntity</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJGSPlaneRotation" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJGSPlaneRotation</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJHeatTracingInfo" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJHeatTracingInfo</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJHgr3rdParty" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJHgr3rdParty</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJHgrBOM" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJHgrBOM</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJHgrCableTraySupport" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJHgrCableTraySupport</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJHgrChild" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJHgrChild</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJHgrCombinedSupport" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJHgrCombinedSupport</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJHgrCompEval" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJHgrCompEval</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJHgrComponentItem" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJHgrComponentItem</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJHgrConduitSupport" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJHgrConduitSupport</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJHgrConnComponent" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJHgrConnComponent</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJHgrDesignSupport" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJHgrDesignSupport</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJHgrDuctSupport" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJHgrDuctSupport</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJHgrLogicalComponent" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJHgrLogicalComponent</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJHgrMirrorReflectBits" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJHgrMirrorReflectBits</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJHgrPipeSupport" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJHgrPipeSupport</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJHgrStdComponent" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJHgrStdComponent</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJHgrSupport" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJHgrSupport</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJHgrSupportAssemblyItem" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJHgrSupportAssemblyItem</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJHgrSupportComponent" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJHgrSupportComponent</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJHgrSupportGenInfo" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJHgrSupportGenInfo</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJHgrSupportItem" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJHgrSupportItem</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJHgrSupportType" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJHgrSupportType</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJHgrSystem" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJHgrSystem</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJHvacNozzle" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJHvacNozzle</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJImpliedPartParent" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJImpliedPartParent</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJInsulationParent" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJInsulationParent</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJInterferenceVolume" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJInterferenceVolume</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJInteriorCoatingInfo" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJInteriorCoatingInfo</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJKeyPoint" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJKeyPoint</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJLine" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJLine</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJLocalCoordinateSystem" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJLocalCoordinateSystem</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJLogicalDistPort" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJLogicalDistPort</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJMachinerySystem" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJMachinerySystem</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJMemberControls" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJMemberControls</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJMfgChild" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJMfgChild</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJMfgParent" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJMfgParent</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJModelBody" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJModelBody</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJModelLocate" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJModelLocate</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJMTOInfo" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJMTOInfo</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJNamedItem" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJNamedItem</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJNozzleTypes" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJNozzleTypes</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJOccInsulation" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJOccInsulation</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJOccurrence" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJOccurrence</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJParametricObject" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJParametricObject</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJPartOcc" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJPartOcc</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJPartOccAssembly" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJPartOccAssembly</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJPartOccDefiningProperties" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJPartOccDefiningProperties</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJPartOccPostSymbolUpdate" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJPartOccPostSymbolUpdate</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJPipelineSystem" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJPipelineSystem</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJPipeNozzle" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJPipeNozzle</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJPipingSystem" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJPipingSystem</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJPlane" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJPlane</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJPlanningItem" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJPlanningItem</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJPoint" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJPoint</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJPort" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJPort</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJPrimitiveShape" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJPrimitiveShape</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJPrismaticShape" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJPrismaticShape</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJProcessDataInfo" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJProcessDataInfo</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJProxyPropagateStopper" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJProxyPropagateStopper</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRange" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRange</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJResponsibilityInfo" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJResponsibilityInfo</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRevision" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRevision</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRouteSplit" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRouteSplit</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRouteSplitFeature" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRouteSplitFeature</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteAlongLegPathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteAlongLegPathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteBolt" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteBolt</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteBoltSet" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteBoltSet</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteBranchPathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteBranchPathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteBranchReportingOwnership" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteBranchReportingOwnership</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteCable" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteCable</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteCableEndPathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteCableEndPathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteCableEnterExitPathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteCableEnterExitPathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteCableMarker" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteCableMarker</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteCableOccur" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteCableOccur</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteCablePathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteCablePathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteCablePathLeg" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteCablePathLeg</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteCableRun" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteCableRun</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteCableSegmentPathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteCableSegmentPathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteCableStraightPathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteCableStraightPathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteCableTrayDistribConnection" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteCableTrayDistribConnection</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteCableTrayOccur" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteCableTrayOccur</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteCableway" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteCableway</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteCablewayAlongLegPathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteCablewayAlongLegPathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteCablewayBranchPathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteCablewayBranchPathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteCablewayCommon" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteCablewayCommon</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteCablewayEndPathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteCablewayEndPathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteCablewayPathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteCablewayPathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteCablewaySlantTransPathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteCablewaySlantTransPathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteCablewayStraightPathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteCablewayStraightPathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteCablewayTransALPathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteCablewayTransALPathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteCablewayTurnPathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteCablewayTurnPathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteCablewayTurnTransPathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteCablewayTurnTransPathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteCompOccur" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteCompOccur</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteConduit" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteConduit</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteConduitAlongLegPathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteConduitAlongLegPathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteConduitBranchPathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteConduitBranchPathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteConduitEndPathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteConduitEndPathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteConduitOccur" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteConduitOccur</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteConduitPathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteConduitPathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteConduitRun" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteConduitRun</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteConduitStraightPathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteConduitStraightPathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteConduitTurnPathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteConduitTurnPathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteConnection" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteConnection</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteConnectionItem" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteConnectionItem</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteConnectionItemOwner" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteConnectionItemOwner</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteConnectionPart" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteConnectionPart</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteCrossSectOccur" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteCrossSectOccur</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteDistribConnection" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteDistribConnection</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteDistribPort" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteDistribPort</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteDuctAlongLegPathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteDuctAlongLegPathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteDuctBranchPathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteDuctBranchPathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteDuctEndPathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteDuctEndPathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteDucting" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteDucting</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteDuctOccur" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteDuctOccur</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteDuctPathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteDuctPathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteDuctRun" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteDuctRun</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteDuctSlantTransPathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteDuctSlantTransPathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteDuctSplitPathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteDuctSplitPathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteDuctSpool" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteDuctSpool</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteDuctStraightPathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteDuctStraightPathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteDuctSurfMountPathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteDuctSurfMountPathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteDuctTransAlongLegPathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteDuctTransAlongLegPathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteDuctTurnPathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteDuctTurnPathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteDuctTurnTransPathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteDuctTurnTransPathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteEnclosedFeature" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteEnclosedFeature</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteEnclosedRun" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteEnclosedRun</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteEnclosingFeature" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteEnclosingFeature</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteEnclosingRun" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteEnclosingRun</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteEndPathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteEndPathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteFabrication" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteFabrication</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteFeatureMaterial" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteFeatureMaterial</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteFillInfo" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteFillInfo</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteGasket" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteGasket</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteHeaderPathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteHeaderPathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteInstrumentOccur" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteInstrumentOccur</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteInsulation" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteInsulation</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteIntoolsData" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteIntoolsData</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteInTrunkRouteLeg" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteInTrunkRouteLeg</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteLayout" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteLayout</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteLayoutConnection" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteLayoutConnection</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteMarker" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteMarker</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteMaterial" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteMaterial</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteMaxCableFillInfo" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteMaxCableFillInfo</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteMechImpliedItem" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteMechImpliedItem</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteNut" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteNut</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteOffLinePathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteOffLinePathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRtePartData" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRtePartData</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRtePartInsulation" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRtePartInsulation</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRtePartOccurrence" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRtePartOccurrence</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRtePathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRtePathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRtePathFeatInTrunk" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRtePathFeatInTrunk</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRtePathGenPart" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRtePathGenPart</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRtePathLeg" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRtePathLeg</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRtePathRun" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRtePathRun</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRtePathRunEx" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRtePathRunEx</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRtePathTrans" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRtePathTrans</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRtePipeAlongLegPathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRtePipeAlongLegPathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRtePipeBendPartData" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRtePipeBendPartData</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRtePipeBranchPathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRtePipeBranchPathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRtePipeEndPathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRtePipeEndPathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRtePipeFeatBendTangentData" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRtePipeFeatBendTangentData</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRtePipeOccur" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRtePipeOccur</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRtePipePart" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRtePipePart</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRtePipePathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRtePipePathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRtePipePathFeatInsulation" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRtePipePathFeatInsulation</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRtePipeRun" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRtePipeRun</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRtePipeRunInsulation" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRtePipeRunInsulation</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRtePipeStraightPathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRtePipeStraightPathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRtePipeSurfaceMountFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRtePipeSurfaceMountFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRtePipeTapFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRtePipeTapFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRtePipeTapOccur" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRtePipeTapOccur</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRtePipeTurnPathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRtePipeTurnPathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRtePiping" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRtePiping</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRtePortFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRtePortFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteReinforcingWeld" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteReinforcingWeld</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteRouteExtendedCoating" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteRouteExtendedCoating</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteRunMaterial" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteRunMaterial</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteSemanticFillInfo" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteSemanticFillInfo</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteSpecialtyOccur" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteSpecialtyOccur</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteSpool" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteSpool</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteStockPartOccur" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteStockPartOccur</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteStraightPathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteStraightPathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteSurfMountPathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteSurfMountPathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteTap" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteTap</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteTapFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteTapFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteTapOccur" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteTapOccur</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteTesting" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteTesting</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteTurnPathFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteTurnPathFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteVanedFeat" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteVanedFeat</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteWasher" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteWasher</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteWeld" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteWeld</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJRteWeldTesting" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJRteWeldTesting</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJSASSCableFillDefaults" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJSASSCableFillDefaults</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJSASSInsulationAndTracingDefaults" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJSASSInsulationAndTracingDefaults</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJSASSResponsibilityDefaults" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJSASSResponsibilityDefaults</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJSASSStandardDefaults" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJSASSStandardDefaults</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJSASSSurfaceTreatmentAndCoatingDefaults" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJSASSSurfaceTreatmentAndCoatingDefaults</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJSASSTemperatureAndPressureDefaults" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJSASSTemperatureAndPressureDefaults</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJSASSTestingDefaults" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJSASSTestingDefaults</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJSequence" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJSequence</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJShape" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJShape</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJSmartDesignObject" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJSmartDesignObject</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJSmartEquipment" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJSmartEquipment</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJSmartEquipmentOcc" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJSmartEquipmentOcc</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJSmartOccurrence" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJSmartOccurrence</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJSOCompute" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJSOCompute</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJSolidBody" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJSolidBody</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJSolidProperties" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJSolidProperties</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJSortChildren" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJSortChildren</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJSpaceChild" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJSpaceChild</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJSpaceEntity" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJSpaceEntity</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJSpaceItem" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJSpaceItem</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJSpaceParent" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJSpaceParent</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJSpoolableObject" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJSpoolableObject</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJStandardEquipment" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJStandardEquipment</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJStructAggregateSelector" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJStructAggregateSelector</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJStructAssemblyConnection" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJStructAssemblyConnection</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJStructBOCItem" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJStructBOCItem</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJStructCommonHierarchyNamingAE" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJStructCommonHierarchyNamingAE</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJStructComposition" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJStructComposition</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJStructContinuity2" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJStructContinuity2</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJStructCustomPlatePart" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJStructCustomPlatePart</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJStructDetailingProps" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJStructDetailingProps</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJStructDisplayControl" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJStructDisplayControl</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJStructEntityConstraintByGeometry" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJStructEntityConstraintByGeometry</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJStructEntityPattern" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJStructEntityPattern</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJStructEntityToGeometry" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJStructEntityToGeometry</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJStructFeature2" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJStructFeature2</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJStructGeometryClassId" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJStructGeometryClassId</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJStructGeometryPattern" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJStructGeometryPattern</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJStructGraphConnectable" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJStructGraphConnectable</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJStructGraphicDataCache" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJStructGraphicDataCache</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJStructGraphNavigate" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJStructGraphNavigate</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJStructILCConnection" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJStructILCConnection</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJStructLogicalConnection2" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJStructLogicalConnection2</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJStructMaterial" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJStructMaterial</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJStructMfgProduction" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJStructMfgProduction</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJStructOperationAE" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJStructOperationAE</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJStructOperationPattern" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJStructOperationPattern</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJStructPlate" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJStructPlate</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJStructPortConstraintSelector" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJStructPortConstraintSelector</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJStructProfilePart" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJStructProfilePart</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJStructStableGeometryAE" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJStructStableGeometryAE</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJStructStatus" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJStructStatus</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJStructSymbolContour" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJStructSymbolContour</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJStructuralSystem" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJStructuralSystem</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJSurface" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJSurface</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJSurfaceArea" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJSurfaceArea</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJSystem" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJSystem</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJSystemChild" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJSystemChild</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJSystemDefaultProperties" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJSystemDefaultProperties</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJTopologyNotification" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJTopologyNotification</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJTransform" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJTransform</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJUASizedBoltData" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJUASizedBoltData</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJUnitSystem" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJUnitSystem</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJVariableManager" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJVariableManager</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJWBSItemChild" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJWBSItemChild</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJWBSParent" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJWBSParent</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJWBSProjectChild" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJWBSProjectChild</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJWCGValueOrigin" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJWCGValueOrigin</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJWeightCG" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJWeightCG</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IJWeightCGGrouping" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IJWeightCGGrouping</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPGAngularCoordinate" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPGAngularCoordinate</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPGCoordinateSystemProperties" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPGCoordinateSystemProperties</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPGElevationPlane" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPGElevationPlane</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPGFrameEntity" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPGFrameEntity</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPGGridArc" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPGGridArc</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPGGridData" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPGGridData</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPGGridLine" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPGGridLine</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPGGridPlane" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPGGridPlane</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPGGridsEntity" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPGGridsEntity</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPGRadialCylinder" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPGRadialCylinder</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPGRadialPlane" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPGRadialPlane</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPGWireEntity" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPGWireEntity</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSAxisRotation" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSAxisRotation</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSAxisRotationInput" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSAxisRotationInput</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSCrossSection" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSCrossSection</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSDesignedMember" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSDesignedMember</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSDesignedMemberDesignNotify" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSDesignedMemberDesignNotify</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSDesignedMemberDesignNotifyInput" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSDesignedMemberDesignNotifyInput</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSDetailedConnInfo" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSDetailedConnInfo</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSEquipFndClassification" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSEquipFndClassification</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSEquipFoundation" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSEquipFoundation</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSEquipFoundationDesignChild" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSEquipFoundationDesignChild</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSFooting" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSFooting</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSFootingClassification" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSFootingClassification</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSFootingComponent" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSFootingComponent</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSFootingDesignChild" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSFootingDesignChild</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSFoundationComponent" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSFoundationComponent</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSFrameConnection" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSFrameConnection</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSGraphicEntity2" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSGraphicEntity2</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSHandrail" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSHandrail</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSHorizVertOffset" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSHorizVertOffset</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSLadder" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSLadder</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSLogicalAxis" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSLogicalAxis</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSMaterial" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSMaterial</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSMemberAnalysisChild" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSMemberAnalysisChild</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSMemberDesignSplit" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSMemberDesignSplit</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSMemberPartAnalysis" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSMemberPartAnalysis</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSMemberPartCommon" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSMemberPartCommon</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSMemberPartCurve" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSMemberPartCurve</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSMemberPartGeometry" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSMemberPartGeometry</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSMemberPartLinear" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSMemberPartLinear</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSMemberPartPrismatic" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSMemberPartPrismatic</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSMemberSystem" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSMemberSystem</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSMemberSystemAlignment" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSMemberSystemAlignment</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSMemberSystemChild" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSMemberSystemChild</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSMemberSystemChildConnections" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSMemberSystemChildConnections</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSMemberSystemCurve" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSMemberSystemCurve</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSMemberSystemDesignedChild" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSMemberSystemDesignedChild</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSMemberSystemEndEndNotify" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSMemberSystemEndEndNotify</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSMemberSystemLinear" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSMemberSystemLinear</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSMemberSystemPhysicalAxis" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSMemberSystemPhysicalAxis</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSMemberSystemStartEndNotify" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSMemberSystemStartEndNotify</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSMemberSystemSuppingNotify1" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSMemberSystemSuppingNotify1</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSMemberSystemSuppingNotify2" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSMemberSystemSuppingNotify2</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSMemberSystemSuppingNotify3" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSMemberSystemSuppingNotify3</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSMemberSystemSystemChild" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSMemberSystemSystemChild</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSMemberSystemXSectionNotify" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSMemberSystemXSectionNotify</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSMemberType" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSMemberType</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSPartGenerator" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSPartGenerator</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSPartPrismaticDesign" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSPartPrismaticDesign</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSPartPrismaticDesignNotify" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSPartPrismaticDesignNotify</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSPartPrismaticGenerator" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSPartPrismaticGenerator</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSSlabClassification" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSSlabClassification</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSSlabEntity" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSSlabEntity</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSSlabGeomParam" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSSlabGeomParam</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSSlabLayer" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSSlabLayer</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSSlabProperties" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSSlabProperties</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSSlabsComposition" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSSlabsComposition</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSSlabsDefinition" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSSlabsDefinition</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSSplitMemberConnection" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSSplitMemberConnection</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSStair" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSStair</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSWallClassification" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSWallClassification</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSWallPart" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSWallPart</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSWallSystem" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSWallSystem</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ISPSWallType" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:ISPSWallType</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IStructHasInsulation" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IStructHasInsulation</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IStructInsulation" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IStructInsulation</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IStructInsulationStructChild" isDomainClass="False">
+        <ECCustomAttributes>
+            <IgnoreBaseClass xmlns="ECv3ConversionAttributes.01.00">
+                <Except>SP3DBase:IStructInsulationStructChild</Except>
+            </IgnoreBaseClass>
+        </ECCustomAttributes>
+    </ECClass>
+</ECSchema>
