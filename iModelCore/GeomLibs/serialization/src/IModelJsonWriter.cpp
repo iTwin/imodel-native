@@ -739,9 +739,11 @@ Json::Value SolidPrimitiveToJson (ISolidPrimitiveCR solid)
 Json::Value PolyfaceToJson (PolyfaceHeaderCR mesh)
         {
         auto style = mesh.GetMeshStyle ();
-        if (style == MESH_ELM_STYLE_INDEXED_FACE_LOOPS)
+        if (style == MESH_ELM_STYLE_INDEXED_FACE_LOOPS && mesh.GetNumPerFace () < 2)
             return IndexedPolyfaceToJson (mesh);
-        return Json::Value ();
+
+        auto indexedMesh = mesh.CloneAsVariableSizeIndexed(mesh);
+        return IndexedPolyfaceToJson(*indexedMesh);
         }
 
 

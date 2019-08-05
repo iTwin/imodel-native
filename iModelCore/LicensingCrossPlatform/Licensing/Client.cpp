@@ -90,3 +90,11 @@ BentleyStatus Client::StopApplication()
      {
      return m_impl->MarkFeature(featureId, featureUserData);
      }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+int64_t Client::GetTrialDaysRemaining()
+    {
+    return m_impl->GetTrialDaysRemaining();
+    }

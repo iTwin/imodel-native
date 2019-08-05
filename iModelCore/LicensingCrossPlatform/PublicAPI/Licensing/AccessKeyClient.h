@@ -126,6 +126,13 @@ public:
     * StartApplication should be called to fetch a policy and start the policy heartbeat.
     */
     LICENSING_EXPORT LicenseStatus GetLicenseStatus();
+
+    //! GetTrialDaysRemaining returns the days remaining in a trial or evaluation policy
+    /*!
+    * This method is used to get the number of days remaining in a trial or evaluation policy.
+    * Returns 0 for expired, a postitive integer for the remaining number of days, and -1 for no data, or if policy is not evaluation or trial.
+    */
+    LICENSING_EXPORT int64_t GetTrialDaysRemaining();
     };
 
 END_BENTLEY_LICENSING_NAMESPACE

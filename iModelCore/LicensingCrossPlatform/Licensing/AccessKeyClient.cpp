@@ -117,3 +117,11 @@ LicenseStatus AccessKeyClient::GetLicenseStatus()
     {
     return m_impl->GetLicenseStatus();
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+int64_t AccessKeyClient::GetTrialDaysRemaining()
+    {
+    return m_impl->GetTrialDaysRemaining();
+    }

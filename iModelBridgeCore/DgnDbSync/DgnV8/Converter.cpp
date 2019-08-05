@@ -1666,6 +1666,22 @@ void Converter::ValidateJob()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas               07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelPtr getElementPartitionSubModel(DgnDbCR db, DgnElementCR outlierElement)
+    {
+    auto aspectId = SyncInfo::GetSoleAspectIdByKind(outlierElement, SyncInfo::V8ElementExternalSourceAspect::Kind::Element);
+    SyncInfo::V8ElementExternalSourceAspect aspect = SyncInfo::V8ElementExternalSourceAspect::GetAspect(outlierElement, aspectId);
+
+    if (!aspect.IsValid())
+        return outlierElement.GetModel();
+
+    PhysicalPartitionCPtr physicalPartition = db.Elements().Get<PhysicalPartition>(aspect.GetScope());
+
+    return physicalPartition.IsValid() ? physicalPartition->GetSubModel() : outlierElement.GetModel();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mayuresh.Kanade                 04/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 void getOutlierElementInfo (const bvector<BeInt64Id>& elementOutliers, DgnDbCP db, Utf8String& message, Converter* converter)
@@ -1684,7 +1700,8 @@ void getOutlierElementInfo (const bvector<BeInt64Id>& elementOutliers, DgnDbCP d
             if (BentleyApi::BeSQLite::BE_SQLITE_ROW == estmt.Step ())
                 v8ElementId = estmt.GetValueInt64 (0);
 
-            auto v8ModelInfo = std::get <1> (SyncInfo::V8ModelExternalSourceAspect::GetAspect (*outlierElement->GetModel ()));
+            DgnModelPtr partitionsubModel = getElementPartitionSubModel(*db, *outlierElement);
+            auto v8ModelInfo = std::get <1> (SyncInfo::V8ModelExternalSourceAspect::GetAspect (*partitionsubModel));
             Utf8String sourceModelName;
             Utf8String sourceFileName;
             if (v8ModelInfo.IsValid())
@@ -2311,7 +2328,7 @@ BentleyStatus Converter::ConvertElement(ElementConversionResults& results, DgnV8
     if (!elementCode.IsValid())
         elementCode = _ComputeElementCode(v8eh, ecContent);
 
-    if (ecContent.m_v8ElementType == V8ElementType::Graphical)
+    if ((upx == nullptr || upx->_UseProxyGraphics(v8eh, *this, v8mm)) && ecContent.m_v8ElementType == V8ElementType::Graphical)
         {
         if (BentleyApi::SUCCESS != _CreateElementAndGeom(results, v8mm, elementClassId, hasPrimaryInstance, categoryId, elementCode, v8eh))
             {

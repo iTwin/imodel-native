@@ -238,17 +238,17 @@ TEST_F(AccessKeyClientIntegrationTests, GetLicenseStatusValidPolicy_SuccessAgnos
 	EXPECT_SUCCESS(client->StopApplication());
 }
 
-//TEST_F(AccessKeyClientIntegrationTests, GetDaysRemainingValidPolicy_Success)
-//    {
-//    auto client = CreateTestClientImpl(TEST_ACCESSKEY_PRODUCT_ID); // TEST_VALID_ACCESSKEY is entitled to microstation (1000)
-//
-//    auto startStatus = client->StartApplication();
-//    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::Error));
-//    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::NotEntitled));
-//
-//    EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::Ok));
-//    EXPECT_SUCCESS(client->StopApplication());
-//    }
+TEST_F(AccessKeyClientIntegrationTests, GetDaysRemainingHeartbeat_Success)
+    {
+    auto client = CreateTestClientImpl(TEST_ACCESSKEY_PRODUCT_ID); // TEST_VALID_ACCESSKEY is entitled to microstation (1000)
+
+    auto startStatus = client->StartApplication();
+    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::Error));
+    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::NotEntitled));
+
+    EXPECT_EQ(client->GetTrialDaysRemaining(), -1);
+    EXPECT_SUCCESS(client->StopApplication());
+    }
 
 // The following are tests we use to verify behavior, not meant to be run on a regular basis
 
@@ -272,20 +272,20 @@ TEST_F(AccessKeyClientIntegrationTests, GetLicenseStatusValidPolicy_SuccessAgnos
 //        }
 //    }
 
-TEST_F(AccessKeyClientIntegrationTests, HeartbeatWithUltimateId_Test)
-    {
-    // Note: this call goes through successfully, but the access key is invalid without the machine name (not an agnostic key)
-
-    // I am using this test to manually debug/test the heartbeat when using ultimate ID vs device ID
-    auto client = CreateTestClientWithUltimate("12345678"); // check for this ultimate in the network call to fiddler
-    auto startStatus = client->StartApplication();
-    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::Error));
-    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::NotEntitled));
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-    EXPECT_SUCCESS(client->StopApplication());
-    }
+//TEST_F(AccessKeyClientIntegrationTests, HeartbeatWithUltimateId_Test)
+//    {
+//    // Note: this call goes through successfully, but the access key is invalid without the machine name (not an agnostic key)
+//
+//    // I am using this test to manually debug/test the heartbeat when using ultimate ID vs device ID
+//    auto client = CreateTestClientWithUltimate("12345678"); // check for this ultimate in the network call to fiddler
+//    auto startStatus = client->StartApplication();
+//    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::Error));
+//    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::NotEntitled));
+//
+//    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+//
+//    EXPECT_SUCCESS(client->StopApplication());
+//    }
 
 //TEST_F(AccessKeyClientIntegrationTests, OfflinePolicyHeartbeat_Test)
 //    {
