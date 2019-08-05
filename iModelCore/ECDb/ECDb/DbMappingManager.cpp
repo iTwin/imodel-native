@@ -444,6 +444,57 @@ BentleyStatus DbMappingManager::Classes::MapUserDefinedIndexes(SchemaImportConte
     if (indexCAs.empty())
         return SUCCESS;
 
+    if (SUCCESS != ValidateUserDefinedIndexes(importCtx, classMap))
+        return ERROR;
+
+    for (DbIndexListCustomAttribute::DbIndex const& indexCA : indexCAs)
+        {
+        if (SUCCESS != MapUserDefinedIndex(importCtx, classMap, indexCA))
+            return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                            Eimantas.Morkunas        07/2019
+//---------------------------------------------------------------------------------------
+BentleyStatus DbMappingManager::Classes::UpdateUserDefinedIndexes(SchemaImportContext& importCtx, ClassMap const& classMap)
+    {
+    DbIndexListCustomAttribute dbIndexListCA;
+    if (!ECDbMapCustomAttributeHelper::TryGetDbIndexList(dbIndexListCA, classMap.GetClass()))
+        return SUCCESS;
+
+    bvector<DbIndexListCustomAttribute::DbIndex> indexCAs;
+    if (SUCCESS != dbIndexListCA.GetIndexes(indexCAs))
+        return ERROR;
+
+    if (indexCAs.empty())
+        return SUCCESS;
+
+    if (SUCCESS != ValidateUserDefinedIndexes(importCtx, classMap))
+        return ERROR;
+
+    if (SUCCESS != importCtx.GetSchemaManager().GetDbSchema().LoadIndexDefs())
+        return ERROR;
+
+    auto& table = classMap.GetJoinedOrPrimaryTable();
+    for (DbIndexListCustomAttribute::DbIndex const& indexCA : indexCAs)
+        {
+        table.RemoveIndexDef(indexCA.GetName());
+
+        if (SUCCESS != MapUserDefinedIndex(importCtx, classMap, indexCA))
+            return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                            Eimantas.Morkunas        07/2019
+//---------------------------------------------------------------------------------------
+BentleyStatus DbMappingManager::Classes::ValidateUserDefinedIndexes(SchemaImportContext& importCtx, ClassMap const& classMap)
+    {
     if (classMap.GetClass().IsEntityClass() && classMap.GetClass().GetEntityClassCP()->IsMixin())
         {
         importCtx.Issues().ReportV("Failed to map mixin ECClass %s. Mixins cannot have user-defined indexes.", classMap.GetClass().GetFullName());
@@ -460,12 +511,6 @@ BentleyStatus DbMappingManager::Classes::MapUserDefinedIndexes(SchemaImportConte
         {
         importCtx.Issues().ReportV("Failed to map ECClass %s. A user-defined index can only be defined on classes with MapStrategy 'TablePerHierarchy' or on sealed classes that don't have the MapStrategy 'ExistingTable'.", classMap.GetClass().GetFullName());
         return ERROR;
-        }
-
-    for (DbIndexListCustomAttribute::DbIndex const& indexCA : indexCAs)
-        {
-        if (SUCCESS != MapUserDefinedIndex(importCtx, classMap, indexCA))
-            return ERROR;
         }
 
     return SUCCESS;

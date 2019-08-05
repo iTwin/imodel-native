@@ -146,6 +146,7 @@ struct DbMappingManager final
             static RelationshipConstraintMap const& GetConstraintMap(ECN::NavigationECPropertyCR, RelationshipClassMapCR, NavigationPropertyMap::NavigationEnd);
             static BentleyStatus DetermineColumnInfoForPrimitiveProperty(DbColumn::CreateParams&, ClassMap const&, ECN::PrimitiveECPropertyCR, Utf8StringCR accessString);
 
+            static BentleyStatus ValidateUserDefinedIndexes(SchemaImportContext & importCtx, ClassMap const & classMap);
             static BentleyStatus MapUserDefinedIndex(SchemaImportContext&, ClassMap const&, DbIndexListCustomAttribute::DbIndex const&);
 
         public:
@@ -157,6 +158,7 @@ struct DbMappingManager final
             static ClassMappingStatus MapNavigationProperty(SchemaImportContext&, NavigationPropertyMap&);
 
             static BentleyStatus MapUserDefinedIndexes(SchemaImportContext&, ClassMap const&);
+            static BentleyStatus UpdateUserDefinedIndexes(SchemaImportContext&, ClassMap const&);
 
             static BentleyStatus TryDetermineRelationshipMappingType(RelationshipMappingType&, SchemaImportContext const&, ECN::ECRelationshipClassCR);
 
