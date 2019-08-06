@@ -67,6 +67,9 @@ LicenseStatus AccessKeyClientImpl::StartApplication()
     {
     LOG.trace("AccessKeyClientImpl::StartApplication");
 
+    // start time for offline usage logs
+    m_usageStartTime = DateTime::GetCurrentTimeUtc().ToString();
+
     if (m_applicationInfo == nullptr)
         {
         LOG.error("ClientImpl::StartApplication ERROR - Application Information object is null.");

@@ -640,7 +640,11 @@ void Converter::Initialize(BentleyApi::BeFileNameCR bridgeLibraryDir, BentleyApi
 
         Converter::RegisterForeignFileTypes (dllDirectory, realdwgDirectory);
         Bentley::TerrainModel::Element::DTMElementHandlerManager::InitializeDgnPlatform();
-        DgnV8Api::ElementHandlerManager::RegisterHandler(DgnV8Api::ElementHandlerId(CifTerrainElementHandler::XATTRIBUTEID_CifTerrainModel, CifTerrainElementHandler::ELEMENTHANDLER_SUBTYPE_DTMENTITY), CifTerrainElementHandler::GetInstance());
+
+        DgnV8Api::ElementHandlerId cifHandlerId(CifTerrainElementHandler::XATTRIBUTEID_CifTerrainModel, CifTerrainElementHandler::ELEMENTHANDLER_SUBTYPE_DTMENTITY );
+        DgnV8Api::Handler* cifElHandler = DgnV8Api::ElementHandlerManager::FindHandler(cifHandlerId);
+        if (cifElHandler == nullptr)
+            DgnV8Api::ElementHandlerManager::RegisterHandler(cifHandlerId, CifTerrainElementHandler::GetInstance());
         }
     // Directly register basic DgnV8 converter extensions here (that platform owns).
     // In the future, may need an extensibility point here to allow apps and/or arbitrary DLLs to participate in this process.

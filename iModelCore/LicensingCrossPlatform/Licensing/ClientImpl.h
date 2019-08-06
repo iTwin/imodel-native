@@ -84,6 +84,7 @@ protected:
     void UsageHeartbeat();
     void StopUsageHeartbeat();
     BentleyStatus RecordUsage();
+    Utf8String m_usageStartTime;
 
     // Log Posting heartbeat
     std::atomic<int64_t> m_lastRunningLogPostingHeartbeatStartTime{ 0 };
@@ -137,6 +138,7 @@ public:
 
     // Product status
     virtual LICENSING_EXPORT LicenseStatus GetLicenseStatus();
+    LICENSING_EXPORT int64_t GetTrialDaysRemaining();
 
     // Used in tests
     LICENSING_EXPORT ILicensingDb& GetLicensingDb();

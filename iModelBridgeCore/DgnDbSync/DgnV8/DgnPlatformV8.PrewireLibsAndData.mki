@@ -463,6 +463,9 @@ $(Delivery)DgnPlatformV8Sdk/Libs/qvision.lib : $(DgnV8Sdk)Libs/qvision.lib
 $(Delivery)DgnPlatformV8Sdk/Libs/VisEdgesLib.lib : $(DgnV8Sdk)Libs/VisEdgesLib.lib
     $(LinkFirstDepToFirstTarget)
 
+$(Delivery)DgnPlatformV8Sdk/Libs/ScalableMesh.lib : $(DgnV8Sdk)Libs/ScalableMesh.lib
+    $(LinkFirstDepToFirstTarget)
+
 $(Delivery)DgnPlatformV8Sdk/Libs/TerrainModelFormats.lib : $(DgnV8Sdk)Libs/TerrainModelFormats.lib
     $(LinkFirstDepToFirstTarget)
 

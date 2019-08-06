@@ -7,6 +7,8 @@
 #include <stdio.h>
 
 #include "SampleGeometry.h"
+#include <BeJsonCpp/BeJsonUtilities.h>
+
 #include "FileOps.h"
 #include <GeomSerialization/GeomSerializationApi.h>
 
@@ -93,4 +95,30 @@ TEST(IModelJson,LineSegmentInCurveCollection)
     cv->Add (ICurvePrimitive::CreateLine (DSegment3d::From (1,2,3, 4,5,6)));
     Check::SaveTransformed (*cv);
     Check::ClearGeometry ("IModelJson.LineSegmentInCurveCollection");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(IModelJson, BlockedPolyface)
+    {
+    auto fixedMesh3 = UnitGridPolyface (DPoint3dDVec3dDVec3d (
+        DPoint3d::From (0,0,0),
+        DVec3d::From (2,0,0),
+        DVec3d::From (1,2,0)), 4, 5, true, false);
+    auto fixedMesh4 = UnitGridPolyface(DPoint3dDVec3dDVec3d(
+        DPoint3d::From(0, 0, 0),
+        DVec3d::From(2, 0, 0),
+        DVec3d::From(1, 2, 0)), 4, 5, false, false);
+    auto json3 = Json::Value();
+    auto json4 = Json::Value();
+    Check::True (IModelJson::TryGeometryToIModelJsonValue(json3, *IGeometry::Create (fixedMesh3)));
+    Check::True (IModelJson::TryGeometryToIModelJsonValue(json4, *IGeometry::Create(fixedMesh4)));
+    fixedMesh3->ConvertToVariableSizeSignedOneBasedIndexedFaceLoops();
+    fixedMesh4->ConvertToVariableSizeSignedOneBasedIndexedFaceLoops();
+    bvector<IGeometryPtr> indexed3, indexed4;
+    Check::True (IModelJson::TryIModelJsonValueToGeometry (json3, indexed3));
+    Check::True(IModelJson::TryIModelJsonValueToGeometry(json4, indexed4));
+
+    Check::ClearGeometry("IModelJson.BlockedPolyface");
     }

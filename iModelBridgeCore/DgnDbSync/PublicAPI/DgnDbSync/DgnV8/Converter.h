@@ -2847,6 +2847,7 @@ struct ConvertToDgnDbElementExtension : DgnV8Api::Handler::Extension
     virtual BisConversionRule _DetermineBisConversionRule(DgnV8EhCR v8eh, DgnDbR dgndb, BisConversionTargetModelInfoCR) {return BisConversionRule::ToDefaultBisBaseClass;}
     virtual void _DetermineElementParams(DgnClassId&, DgnCode&, DgnCategoryId&, DgnV8EhCR, Converter&, ECObjectsV8::IECInstance const* primaryV8Instance, ResolvedModelMapping const&) {/* do nothing to let caller fallback */ }
     virtual void _ProcessResults(ElementConversionResults&, DgnV8EhCR, ResolvedModelMapping const&, Converter&) {/* do nothing to accept basic conversion */ }
+    virtual bool _UseProxyGraphics(DgnV8EhCR, Converter&, ResolvedModelMapping const&) { return true; }
     virtual bool _GetBasisTransform(Bentley::Transform&, DgnV8EhCR, Converter&) {return false; /* caller will derive placement transform from geometry */ }
     virtual void _InitDgnDomain() {}/*Callers can initialize their domain here and register with DgnDomains*/
     virtual void _ImportSchema(DgnDbR) {} /* extension may import schemas. NB: call db.BriefcaseManager().LockSchemas() before calling db.ImportSchemas */
@@ -3016,6 +3017,9 @@ struct ConvertDTMElement : ConvertScalableMeshAttachment
     Result DoConvert(DgnV8EhCR v8el, WCharCP url, Converter& converter, ResolvedModelMapping const& v8mm);
 
     Result _PreConvertElement(DgnV8EhCR, Converter&, ResolvedModelMapping const&) override;
+    bool _UseProxyGraphics(DgnV8EhCR, Converter&, ResolvedModelMapping const&) override;
+   
+    void _ProcessResults(ElementConversionResults&, DgnV8EhCR, ResolvedModelMapping const&, Converter&) override;
     };
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      09/2016
