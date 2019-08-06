@@ -289,12 +289,43 @@ void SetSymbology(GeometryBuilderR builder, DgnV8EhCR v8eh, ResolvedModelMapping
     context.PushModelRef (model, true);
     elParams.Resolve(context);
 
-    //context.SetPathRoot (hitPath.GetRoot());
-//    converter.InitGeometryParams(params, elParams, context, true, *model->AsDgnModelCP());
-//    params.ResetAppearance();
     params.SetCategoryId(categoryId);
     params.SetSubCategoryId(subCategoryId);
     params.SetLineColor(BentleyApi::Dgn::ColorDef(elParams.GetLineColorTBGR()));
+
+    params.SetWeight(elParams.GetWeight());
+
+    DgnModelRefP styleModelRef;
+
+    if (elParams.GetLineStyle() != 0 && nullptr != (styleModelRef = (nullptr == elParams.GetLineStyleModelRef()) ? context.GetCurrentModel() : elParams.GetLineStyleModelRef()))
+        {
+        DgnV8Api::LineStyleParams const* lsParamsV8 = elParams.GetLineStyleParams();
+
+        // Ugh...still need modifiers like start/end width for STYLE_BYLEVEL... :(
+        if (DgnV8Api::STYLE_BYLEVEL != displayParams.GetSymbology().style || (lsParamsV8 && 0 != lsParamsV8->modifiers))
+            converter.InitLineStyle(params, *styleModelRef, elParams.GetLineStyle(), lsParamsV8);
+        }
+
+    params.SetTransparency(elParams.GetTransparency());
+
+    if (elParams.IsRenderable())
+        {
+        if (nullptr != elParams.GetMaterial())
+            {
+            RenderMaterialId materialId = converter.GetRemappedMaterial(elParams.GetMaterial());
+            DgnSubCategoryCPtr          dgnDbSubCategory = DgnSubCategory::Get(converter.GetDgnDb(), subCategoryId);
+
+            if (!dgnDbSubCategory.IsValid() || dgnDbSubCategory->GetAppearance().GetRenderMaterial() != materialId)
+                params.SetMaterialId(materialId);
+
+            if (nullptr != elParams.GetMaterialUVDetailP())
+                {
+                // params.SetMaterialUVDetails();
+                }
+            }
+        }
+    params.Resolve(converter.GetDgnDb()); // Need to be able to check for a stroked linestyle...
+
     builder.Append(params);
     }
 
@@ -306,6 +337,7 @@ void CreateMesh(Bentley::TerrainModel::BcDTMR dtm, ElementConversionResults& res
     Bentley::DRange3d fullRange;
     const int s_tilePointSize = 10000;
     const bool useOneBuilder = true;
+    const bool asOneMesh = true;
     const int iterMaxTriangles = 100000;
     int m_numTilesX;
     int m_numTilesY;
@@ -317,7 +349,7 @@ void CreateMesh(Bentley::TerrainModel::BcDTMR dtm, ElementConversionResults& res
     BentleyB0200::Transform trsf;
     dtm.GetTransformation((Bentley::TransformR)trsf);
     dtm.GetRange(fullRange);
-    if (numberOfPoints > s_tilePointSize)
+    if (!asOneMesh && numberOfPoints > s_tilePointSize)
         {
         BeAssert(numberOfPoints <= INT_MAX);
         double numOfTiles = (int)numberOfPoints / s_tilePointSize;
@@ -369,7 +401,7 @@ void CreateMesh(Bentley::TerrainModel::BcDTMR dtm, ElementConversionResults& res
             Bentley::TerrainModel::DTMFenceParams fence(DGNV8_DTMFenceType::Block, DGNV8_DTMFenceOption::Overlap, (DPoint3d*)fencePts, 5);
             Bentley::TerrainModel::DTMMeshEnumeratorPtr en = Bentley::TerrainModel::DTMMeshEnumerator::Create(dtm);
             en->SetFence(fence);
-            en->SetMaxTriangles(iterMaxTriangles);
+            en->SetMaxTriangles(asOneMesh ?  dtm.GetTrianglesCount() : iterMaxTriangles);
             en->SetTilingMode(true);
 
             for (const auto& polyface : *en)
@@ -384,6 +416,8 @@ void CreateMesh(Bentley::TerrainModel::BcDTMR dtm, ElementConversionResults& res
                     builder->SetAppendAsSubGraphics();
                     SetSymbology(*builder, v8eh, v8mm, converter, displayParams, categoryId, subCategoryId);
                     }
+                if (!clone->IsVariableSizeIndexed())
+                    clone->ConvertToVariableSizeSignedOneBasedIndexedFaceLoops();
                 builder->Append(*geometry);
                 }
 
@@ -519,7 +553,6 @@ void ConvertDTMElement::_ProcessResults(ElementConversionResults& results, DgnV8
         categoryId = category.GetCategoryId();
         source->SetCategoryId(categoryId);
         }
-
     DgnSubCategoryId subCategoryId = converter.GetOrCreateSubCategoryId(categoryId, "Boundary");
     auto newCategoryId = DgnSubCategory::QueryCategoryId(converter.GetDgnDb(), subCategoryId);
 
