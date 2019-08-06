@@ -275,18 +275,26 @@ void iModelBridgeFwk::InitLogging()
 +---------------+---------------+---------------+---------------+---------------+------*/
 static BeFileName  GetDefaultAssetsDirectory()
     {
-    BeFileName fwkAssetsDirRaw = Desktop::FileSystem::GetExecutableDir(); // this will be:    blah/iModelBridgeFwk/lib/x64
+    BeFileName fwkAssetsDirRaw = Desktop::FileSystem::GetExecutableDir();
 
-    fwkAssetsDirRaw.AppendToPath(L"..");
-    fwkAssetsDirRaw.AppendToPath(L"..");
-    fwkAssetsDirRaw.AppendToPath(L"Assets");                        // we want:         blah/iModelBridgeFwk/assets
+    fwkAssetsDirRaw.AppendToPath(L"Assets");                       
     if (fwkAssetsDirRaw.DoesPathExist())
         return fwkAssetsDirRaw;
 
-    //Try default assets folder relative the program directory
     fwkAssetsDirRaw = Desktop::FileSystem::GetExecutableDir();
+    fwkAssetsDirRaw.AppendToPath(L"..");
     fwkAssetsDirRaw.AppendToPath(L"Assets");
-    return fwkAssetsDirRaw;
+    if (fwkAssetsDirRaw.DoesPathExist())
+        return fwkAssetsDirRaw;
+
+    fwkAssetsDirRaw = Desktop::FileSystem::GetExecutableDir();
+    fwkAssetsDirRaw.AppendToPath(L"..");
+    fwkAssetsDirRaw.AppendToPath(L"..");
+    fwkAssetsDirRaw.AppendToPath(L"Assets");
+    if (fwkAssetsDirRaw.DoesPathExist())
+        return fwkAssetsDirRaw;
+
+    return Desktop::FileSystem::GetExecutableDir();
     }
 
 /*---------------------------------------------------------------------------------**//**
