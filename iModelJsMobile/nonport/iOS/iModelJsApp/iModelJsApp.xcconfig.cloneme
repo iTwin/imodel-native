@@ -6,5 +6,4 @@
 
 SrcRoot = /Users/YourUsername/imodel02/src/
 OutRoot = /Users/YourUsername/imodel02/out/debug/
-AssetRoot = /Users/YourUsername/imodeljs-apps
-
+AssetRoot = /Users/YourUsername/imodel02/out/debug/iOSARM64/Product/iModelJsHost/Assets/
