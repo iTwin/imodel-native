@@ -37,7 +37,7 @@ struct LineStringPlacementStrategy : public CurvePrimitivePlacementStrategy
 
     public:
         static LineStringPlacementStrategyPtr Create(LineStringPlacementStrategyType strategyType);
-        static LineStringPlacementStrategyPtr Create(LineStringPlacementStrategyType strategyType, LineStringManipulationStrategyR manipulationStrategy);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static LineStringPlacementStrategyPtr Create(LineStringPlacementStrategyType strategyType, LineStringManipulationStrategyR manipulationStrategy);
     };
 
 END_BUILDING_SHARED_NAMESPACE
