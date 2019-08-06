@@ -371,7 +371,7 @@ double      Statement::GetValueDouble(int col)  {return sqlite3_column_double(m_
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Statement::BindGuid(int col, BeGuidCR guid) 
+DbResult Statement::BindGuid(int col, BeGuidCR guid)
     {
     if (guid.IsValid())
         return (DbResult)sqlite3_bind_blob(m_stmt, col, &guid, sizeof(guid), SQLITE_TRANSIENT);
@@ -382,16 +382,16 @@ DbResult Statement::BindGuid(int col, BeGuidCR guid)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeGuid Statement::GetValueGuid(int col)    
+BeGuid Statement::GetValueGuid(int col)
     {
-    if (IsColumnNull(col)) 
+    if (IsColumnNull(col))
         return BeGuid();
 
     int columnBytes = GetColumnBytes(col);
     if (columnBytes != sizeof(BeGuid))
         return BeGuid();
 
-    BeGuid guid; 
+    BeGuid guid;
     memcpy(&guid, GetValueBlob(col), sizeof(guid));
     return guid;
     }
@@ -420,28 +420,28 @@ double      DbValue::GetValueDouble() const           {return sqlite3_value_doub
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeGuid DbValue::GetValueGuid() const 
+BeGuid DbValue::GetValueGuid() const
     {
     int valueBytes = GetValueBytes();
     if (valueBytes != sizeof(BeGuid))
         return BeGuid();
 
-    BeGuid guid; 
-    memcpy(&guid, GetValueBlob(), sizeof(guid)); 
+    BeGuid guid;
+    memcpy(&guid, GetValueBlob(), sizeof(guid));
     return guid;
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Affan.Khan                       4/19
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Db::OpenParams::SetQueryParam(Utf8CP key, Utf8CP value) const
-    { 
+    {
     if (Utf8String::IsNullOrEmpty(key))
         return;
 
-    if (Utf8String::IsNullOrEmpty(value)) 
+    if (Utf8String::IsNullOrEmpty(value))
         m_queryParams.erase(key);
     else
-        m_queryParams[key] = value; 
+        m_queryParams[key] = value;
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                  Ramanujam.Raman                   10/15
@@ -535,7 +535,7 @@ DbResult Statement::DoPrepare(DbFileCR dbFile, Utf8CP sql)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle    04/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-bool Statement::IsReadonly() const 
+bool Statement::IsReadonly() const
     {
     if (!IsPrepared())
         {
@@ -543,7 +543,7 @@ bool Statement::IsReadonly() const
         return true; // pick true in error case, as an unprepared statement cannot change the DB either
         }
 
-    return sqlite3_stmt_readonly(m_stmt) != 0; 
+    return sqlite3_stmt_readonly(m_stmt) != 0;
     }
 
 /*---------------------------------------------------------------------------------------
@@ -601,7 +601,7 @@ SqlPrintfString::~SqlPrintfString() {sqlite3_free(m_str);}
 
 #ifdef _MSC_VER
     #pragma warning(disable:4355)
-#endif 
+#endif
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  07/14
@@ -791,7 +791,7 @@ DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit, Utf8CP operation)
         (*it)->_OnDeactivate(isCommit);
 
     m_txns.erase(thisPos, m_txns.end());
-    
+
     if (m_tracker.IsValid()) // notify trackers that commit/cancel operation finished successfully
         m_tracker->_OnCommitted(isCommit, operation);
 
@@ -815,8 +815,8 @@ Utf8String DbFile::ExplainQuery(Utf8CP sql, bool explainPlan, bool suppressDiagn
         if (!isFirstRow)
             plan.append(";");
 
-        plan.append(Utf8PrintfString(fmt, 
-                                     queryPlan.GetValueText(0), queryPlan.GetValueText(1), queryPlan.GetValueText(2), queryPlan.GetValueText(3), 
+        plan.append(Utf8PrintfString(fmt,
+                                     queryPlan.GetValueText(0), queryPlan.GetValueText(1), queryPlan.GetValueText(2), queryPlan.GetValueText(3),
                                      queryPlan.GetValueText(4), queryPlan.GetValueText(5), queryPlan.GetValueText(6), queryPlan.GetValueText(7)
                                     ));
         isFirstRow = false;
@@ -864,7 +864,7 @@ Savepoint* Db::GetSavepoint(int32_t depth) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Affan.Khan                       08/17
 This method is called by ECDb when ever it want to change table. Though this is temprory fix for YII
-In my view besqlite could us https://sqlite.org/c3ref/set_authorizer.html to capture ddl and filter on 
+In my view besqlite could us https://sqlite.org/c3ref/set_authorizer.html to capture ddl and filter on
 https://sqlite.org/c3ref/c_alter_table.html
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Db::ExecuteDdl(Utf8CP ddl) const
@@ -1432,7 +1432,7 @@ DbResult Db::SetAsMaster(BeGuid guid /*= BeGuid()*/)
         {
         BeBriefcaseId masterBriefcaseId(BeBriefcaseId::Master());
         result = AssignBriefcaseId(masterBriefcaseId);
-        
+
         if (result == BE_SQLITE_OK)
             result = _OnAfterSetAsMaster(guid);
 
@@ -1675,14 +1675,14 @@ DbResult Db::CreateNewDb(Utf8CP dbName, BeGuid dbGuid, CreateParams const& param
     DbResult rc = (DbResult) sqlite3_open_v2(dbName, &sqlDb, (int) openMode, vfs);
     if (BE_SQLITE_OK != rc)
         return  rc;
-        
+
      if (params.GetEncryptionParams().HasKey())
         {
         rc = (DbResult) sqlite3_key(sqlDb, params.GetEncryptionParams().GetKey(), params.GetEncryptionParams().GetKeySize());
         if (BE_SQLITE_OK != rc)
             return  rc;
         }
-        
+
     sqlite3_extended_result_codes(sqlDb, 1); // turn on extended error codes
     m_dbFile = new DbFile(sqlDb, params.m_busyRetry, (BeSQLiteTxnMode)params.m_startDefaultTxn);
 
@@ -1725,13 +1725,13 @@ DbResult Db::CreateNewDb(Utf8CP dbName, BeGuid dbGuid, CreateParams const& param
         rc = BeSQLiteProfileManager::AssignProfileVersion(*this);
         if (rc != BE_SQLITE_OK)
             return rc;
-       
+
         //we create sqlite_stat1 so it could be tracked later on.
         rc = ExecuteSql("analyze;");
         if (BE_SQLITE_OK != rc)
             return  rc;
 
-        //make sure its empty we just want sqlite to add the tables 
+        //make sure its empty we just want sqlite to add the tables
         rc = ExecuteSql("delete from sqlite_stat1;");
         if (BE_SQLITE_OK != rc)
             return  rc;
@@ -1741,7 +1741,7 @@ DbResult Db::CreateNewDb(Utf8CP dbName, BeGuid dbGuid, CreateParams const& param
     if (BE_SQLITE_OK != rc)
         return  rc;
 
-#ifdef SQLITE_ENABLE_STAT2  
+#ifdef SQLITE_ENABLE_STAT2
     BeAssert(false && "stat2 is not tracked by change tracking as of now by sqlite 3.22.0");
     return BE_SQLITE_ERROR;
 #endif
@@ -1944,7 +1944,7 @@ CachedBLV::CachedBLV(Utf8CP name) : m_name(name) {BeAssert(!Utf8String::IsNullOr
 //+---------------+---------------+---------------+---------------+---------------+------
 void CachedBLV::ChangeValue(uint64_t value, bool initializing)
     {
-    m_isUnset = false; m_dirty = !initializing; m_value = value; 
+    m_isUnset = false; m_dirty = !initializing; m_value = value;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1952,7 +1952,7 @@ void CachedBLV::ChangeValue(uint64_t value, bool initializing)
 //+---------------+---------------+---------------+---------------+---------------+------
 uint64_t CachedBLV::Increment()
     {
-    BeAssert(!m_isUnset); m_dirty = true; m_value++; return m_value; 
+    BeAssert(!m_isUnset); m_dirty = true; m_value++; return m_value;
     }
 
 //---------------------------------------------------------------------------------------
@@ -2078,7 +2078,7 @@ bool isMainTableOrIndex(Utf8CP tableName)
 DbResult Db::CreateTable(Utf8CP tableName, Utf8CP ddl) const
     {
     SqlPrintfString sql("CREATE TABLE %s (%s)", tableName, ddl);
-    
+
     DbResult result = ExecuteSql(sql);
     if (result != BE_SQLITE_OK)
         return result;
@@ -2134,7 +2134,7 @@ DbResult Db::AddColumnToTable(Utf8CP tableName, Utf8CP columnName, Utf8CP column
 DbResult Db::CreateIndex(Utf8CP indexName, Utf8CP tableName, bool isUnique, Utf8CP columnName1, Utf8CP columnName2 /*=nullptr*/)
     {
     BeAssert(!Utf8String::IsNullOrEmpty(indexName) && !Utf8String::IsNullOrEmpty(tableName) && !Utf8String::IsNullOrEmpty(columnName1));
-    
+
     // e.g.,  "CREATE UNIQUE INDEX ix_ec_Class_SchemaId_Name ON ec_Class(SchemaId, Name);"
     SqlPrintfString sql("CREATE %s INDEX %s ON %s(%s%s%s)", isUnique ? "UNIQUE" : "", indexName, tableName, columnName1, Utf8String::IsNullOrEmpty(columnName2) ? "" : ",", columnName2 ? columnName2 : "");
 
@@ -2313,7 +2313,18 @@ void Db::CloseDb()
 StatusInt Db::AppDataCollection::Drop(AppData::Key const& key)
     {
     BeMutexHolder lock(m_mutex);
-    return 0 == m_map.erase(&key) ? ERROR : SUCCESS;
+    auto iter = m_map.find(&key);
+    if (m_map.end() == iter)
+        return ERROR;
+
+    // Note: We don't want to appdata object to be destroyed while it's being
+    // removed from the map - in certain cases, where appdata's destructor is used
+    // for observing db close events, we had a situation where we could still find
+    // this object (with 0 ref count) in the map. To avoid it, we keep a ref while
+    // removing and the object gets destroyed when we return from this method.
+    AppDataPtr value = iter->second;
+    m_map.erase(iter);
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2459,7 +2470,7 @@ static void tracefunc(void*, char const* stmt)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void printLog(void *pArg, int iErrCode, Utf8CP zMsg)
     {
-    char const* sev = (iErrCode == SQLITE_NOTICE)? "trace": 
+    char const* sev = (iErrCode == SQLITE_NOTICE)? "trace":
                       (iErrCode == SQLITE_WARNING)? "warn": "error";
     printf("SQL %s %d %s\n", sev, iErrCode, zMsg);
     }
@@ -2539,7 +2550,7 @@ DbResult Db::DoOpenDb(Utf8CP dbName, OpenParams const& params)
 
         rc = _OnDbOpening();
         }
-        
+
     if (params.m_startDefaultTxn == DefaultTxn::No)
         m_dbFile->m_defaultTxn.Commit(nullptr);
 
@@ -2575,8 +2586,8 @@ DbResult Db::OpenBeSQLiteDb(Utf8CP dbName, OpenParams const& params)
     const ProfileState profileState = _CheckProfileVersion();
     const bool doUpgrade = profileState.IsUpgradable() && params.GetProfileUpgradeOptions() == ProfileUpgradeOptions::Upgrade;
 
-    if (profileState.IsError() || 
-        (!doUpgrade && (profileState.GetCanOpen() == ProfileState::CanOpen::No || 
+    if (profileState.IsError() ||
+        (!doUpgrade && (profileState.GetCanOpen() == ProfileState::CanOpen::No ||
                         (profileState.GetCanOpen() == ProfileState::CanOpen::Readonly && !params.IsReadonly()))))
         {
         CloseDb();
@@ -2947,7 +2958,7 @@ int DbFile::RemoveFunction(DbFunction& function) const
 // @bsimethod                                    Krischan.Eberle                 04/17
 //+---------------+---------------+---------------+---------------+---------------+------
 static void updateHookCallback(void* arg, int sqlTypeInt, Utf8CP dbName, Utf8CP tableName, sqlite3_int64 rowid)
-    { 
+    {
     DataUpdateCallback::SqlType sqlType = DataUpdateCallback::SqlType::Insert;
     switch (sqlTypeInt)
         {
@@ -2973,9 +2984,9 @@ static void updateHookCallback(void* arg, int sqlTypeInt, Utf8CP dbName, Utf8CP 
 //---------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 04/17
 //+---------------+---------------+---------------+---------------+---------------+------
-void DbFile::AddDataUpdateCallback(DataUpdateCallback& updateHook) const 
-    { 
-    void* previousHook = sqlite3_update_hook(m_sqlDb, updateHookCallback, &updateHook); 
+void DbFile::AddDataUpdateCallback(DataUpdateCallback& updateHook) const
+    {
+    void* previousHook = sqlite3_update_hook(m_sqlDb, updateHookCallback, &updateHook);
     if (previousHook != nullptr)
         {
         BeAssert(false && "Previous SQLite data change notification callback was overridden by call to Db::AddDataUpdateCallback");
@@ -3570,7 +3581,7 @@ CachedStatement::~CachedStatement() {sqlite3_free((void*)m_sql);}
 +---------------+---------------+---------------+---------------+---------------+------*/
 uint32_t CachedStatement::Release()
     {
-    // Since statements can be referenced from multiple threads, and since we want to reset the statement 
+    // Since statements can be referenced from multiple threads, and since we want to reset the statement
     // when it is only held by the StatementCache, we need to hold the cache's mutex for the entire scope of this
     // method. However, the reference count member must still be atomic since we don't acquire the mutex for AddRef.
     BeMutexHolder holder(*m_myCache.m_mutex);
@@ -3609,7 +3620,7 @@ StatementCache::StatementCache(uint32_t size, BeMutex* inheritedMutex )
 * @bsimethod                                    Afan.Khan                      01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatementCache::~StatementCache()
-    { 
+    {
     Empty();
     if (m_ownMutex)
         {
@@ -3709,7 +3720,7 @@ void StatementCache::FindStatement(CachedStatementPtr& stmt, Utf8CP sql) const
         return;
         }
 
-    m_entries.splice(m_entries.begin(), m_entries, entry); // move this most-recently-accessed statement to front 
+    m_entries.splice(m_entries.begin(), m_entries, entry); // move this most-recently-accessed statement to front
     stmt = *entry;
     }
 
@@ -4862,13 +4873,13 @@ static void caseCallback(sqlite3_context* context, int numArgs, sqlite3_value** 
     BeSQLiteLib::ILanguageSupport* languageSupport = BeSQLiteLib::GetLanguageSupport();
     if (nullptr == languageSupport)
         {
-        BeAssert(false); 
+        BeAssert(false);
         return;
         }
 
     if (1 != numArgs)
         {
-        BeAssert(false); 
+        BeAssert(false);
         return;
         }
 
@@ -4879,12 +4890,12 @@ static void caseCallback(sqlite3_context* context, int numArgs, sqlite3_value** 
     int sourceSize = sqlite3_value_bytes16(args[0]);
     if (sourceSize <= 0)
         return;
-    
+
     int resultSize = (2 * sourceSize) * sizeof(uint16_t);
     Utf16P result = (Utf16P)sqlite3_malloc(resultSize);
     if (nullptr == result)
         {
-        BeAssert(false); 
+        BeAssert(false);
         return;
         }
 
@@ -5040,14 +5051,14 @@ static void likeCallback(sqlite3_context* context, int numArgs, sqlite3_value** 
     auto languageSupport = BeSQLiteLib::GetLanguageSupport();
     if (nullptr == languageSupport)
         {
-        BeAssert(false); 
-        return; 
+        BeAssert(false);
+        return;
         }
 
     if ((numArgs < 2) || (numArgs > 3))
         {
-        BeAssert(false); 
-        return; 
+        BeAssert(false);
+        return;
         }
 
     auto patternString = sqlite3_value_text(args[0]);
@@ -5060,8 +5071,8 @@ static void likeCallback(sqlite3_context* context, int numArgs, sqlite3_value** 
     auto maxPatternLen = sqlite3_limit(sqlite3_context_db_handle(context), SQLITE_LIMIT_LIKE_PATTERN_LENGTH, -1);
     if (sqlite3_value_bytes(args[0]) > maxPatternLen)
         {
-        BeAssert(false); 
-        return; 
+        BeAssert(false);
+        return;
         }
 
     uint32_t escapeChar = 0;
@@ -5071,8 +5082,8 @@ static void likeCallback(sqlite3_context* context, int numArgs, sqlite3_value** 
         auto escapeCharStr = sqlite3_value_text(args[2]);
         if (nullptr == escapeCharStr)
             {
-            BeAssert(false); 
-            return; 
+            BeAssert(false);
+            return;
             }
 
         auto escapeCharNumBytes = sqlite3_value_bytes(args[2]);
@@ -5081,8 +5092,8 @@ static void likeCallback(sqlite3_context* context, int numArgs, sqlite3_value** 
 
         if (iNextChar != escapeCharNumBytes)
             {
-            BeAssert(false); 
-            return; 
+            BeAssert(false);
+            return;
             }
         }
 
@@ -5100,7 +5111,7 @@ static int collateCallback(void* userData, int lhsSize, void const* lhs, int rhs
     BeSQLiteLib::ILanguageSupport* languageSupport = BeSQLiteLib::GetLanguageSupport();
     if (nullptr == languageSupport)
         {
-        BeAssert(false); 
+        BeAssert(false);
         return 0;
         }
 
@@ -5254,7 +5265,7 @@ void BeIdSet::FromReadableString(Utf8StringCR str)
             endRange = startRange;
         else if (endRange < startRange)
             std::swap(startRange, endRange);
-        
+
         for (; startRange<=endRange; ++startRange)
             insert((BeInt64Id) startRange);
 
@@ -5673,17 +5684,17 @@ ZipErrors LzmaUtility::DecompressEmbeddedBlob(bvector<Byte>&out, uint32_t expect
 static int integrityCheckCallback(void* callbackArg, int numColumns, CharP* columnValues, CharP* columnNames)
     {
     bool& anyFailures = *(bool*)callbackArg;
-    
+
     // We only care if any failures were ever encountered.
     if (anyFailures)
         return 0;
-    
+
     // According to docs, if the checks pass, a single row will be returned with a single column with the text "ok".
     // Treat anything else as a failure.
-    
+
     if ((1 != numColumns) || (nullptr == columnValues[0]) || (0 != strcmp("ok", columnValues[0])))
         anyFailures = true;
-    
+
     return 0;
     }
 
@@ -5701,7 +5712,7 @@ DbResult Db::CheckDbIntegrity(BeFileNameCR dbFileName)
     // Pass '1' as the maximum number of failures to detect... we don't currently need to know details, just whether /anything/ is wrong.
     bool anyFailures = false;
     rc = (DbResult)sqlite3_exec(sqlDb, "PRAGMA integrity_check(1)", integrityCheckCallback, &anyFailures, nullptr);
-    
+
     DbResult closeRc = (DbResult)sqlite3_close(sqlDb);
     if (BE_SQLITE_OK != closeRc)
         {
