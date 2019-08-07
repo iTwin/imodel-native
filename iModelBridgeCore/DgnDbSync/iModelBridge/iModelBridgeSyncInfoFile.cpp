@@ -209,7 +209,7 @@ DgnDbStatus iModelExternalSourceAspect::AddAspect(DgnElementR el)
     {
     BeAssert(m_instance.IsValid());
     if (m_instance.IsNull())
-        LOG.fatal(L"iModelExternalSourceAspect::m_instance==nullptr");
+        LOG.fatal(L"iModelExternalSourceAspect::m_instance==nullptr in iModelExternalSourceAspect::AddAspect");
     return DgnElement::GenericMultiAspect::AddAspect(el, *m_instance);
     }
 
@@ -346,7 +346,7 @@ Utf8String iModelExternalSourceAspect::FormatForDump(DgnDbR db, bool includeProp
         ECN::ECValue props;
         BeAssert(m_instance.IsValid());
         if (m_instance.IsNull())
-            LOG.fatal(L"iModelExternalSourceAspect::m_instance==nullptr");
+            LOG.fatal(L"iModelExternalSourceAspect::m_instance==nullptr in iModelExternalSourceAspect::FormatForDump");
         if (ECN::ECObjectsStatus::Success == m_instance->GetValue(props, XTRN_SRC_ASPCT_JsonProperties) && !props.IsNull() && props.IsString())
             str.append("\t").append(props.GetUtf8CP());
         }
@@ -455,9 +455,9 @@ DgnElementId iModelExternalSourceAspect::GetScope() const
     {
     ECN::ECValue v;
     BeAssert(m_instance.IsValid());
-    m_instance->GetValue(v, XTRN_SRC_ASPCT_Scope);
     if (m_instance.IsNull())
-        LOG.fatal(L"iModelExternalSourceAspect::m_instance==nullptr");
+        LOG.fatal(L"iModelExternalSourceAspect::m_instance==nullptr in iModelExternalSourceAspect::GetScope");
+    m_instance->GetValue(v, XTRN_SRC_ASPCT_Scope);
     return v.GetNavigationInfo().GetId<DgnElementId>();
     }
 
@@ -469,7 +469,7 @@ DgnElementId iModelExternalSourceAspect::GetElementId() const
     ECN::ECValue v;
     BeAssert(m_instance.IsValid());
     if (m_instance.IsNull())
-        LOG.fatal(L"iModelExternalSourceAspect::m_instance==nullptr");
+        LOG.fatal(L"iModelExternalSourceAspect::m_instance==nullptr in iModelExternalSourceAspect::GetElementId");
     m_instance->GetValue(v, "Element");
     return v.GetNavigationInfo().GetId<DgnElementId>();
     }
@@ -482,7 +482,7 @@ Utf8String iModelExternalSourceAspect::GetIdentifier() const
     ECN::ECValue v;
     BeAssert(m_instance.IsValid());
     if (m_instance.IsNull())
-        LOG.fatal(L"iModelExternalSourceAspect::m_instance==nullptr");
+        LOG.fatal(L"iModelExternalSourceAspect::m_instance==nullptr in iModelExternalSourceAspect::GetIdentifier");
     m_instance->GetValue(v, XTRN_SRC_ASPCT_Identifier);
     return v.GetUtf8CP();
     }
@@ -495,7 +495,7 @@ Utf8String iModelExternalSourceAspect::GetKind() const
     ECN::ECValue v;
     BeAssert(m_instance.IsValid());
     if (m_instance.IsNull())
-        LOG.fatal(L"iModelExternalSourceAspect::m_instance==nullptr");
+        LOG.fatal(L"iModelExternalSourceAspect::m_instance==nullptr in iModelExternalSourceAspect::GetKind");
     m_instance->GetValue(v, XTRN_SRC_ASPCT_Kind);
     return v.GetUtf8CP();
     }
@@ -510,7 +510,7 @@ iModelExternalSourceAspect::SourceState iModelExternalSourceAspect::GetSourceSta
     ECN::ECValue v;
     BeAssert(m_instance.IsValid());
     if (m_instance.IsNull())
-        LOG.fatal(L"iModelExternalSourceAspect::m_instance==nullptr");
+        LOG.fatal(L"iModelExternalSourceAspect::m_instance==nullptr in iModelExternalSourceAspect::GetSourceState");
     if ((ECN::ECObjectsStatus::Success == m_instance->GetValue(v, XTRN_SRC_ASPCT_Checksum)) && !v.IsNull())
         {
         ss.m_checksum = v.GetUtf8CP();
@@ -536,7 +536,7 @@ void iModelExternalSourceAspect::SetProperties(rapidjson::Document const& json)
     ECN::ECValue props(buffer.GetString());
     BeAssert(m_instance.IsValid());
     if (m_instance.IsNull())
-        LOG.fatal(L"iModelExternalSourceAspect::m_instance==nullptr");
+        LOG.fatal(L"iModelExternalSourceAspect::m_instance==nullptr in iModelExternalSourceAspect::SetProperties");
     m_instance->SetValue(XTRN_SRC_ASPCT_JsonProperties, props);
     }
 
@@ -555,7 +555,7 @@ rapidjson::Document iModelExternalSourceAspect::GetProperties() const
     ECN::ECValue props;
     BeAssert(m_instance.IsValid());
     if (m_instance.IsNull())
-        LOG.fatal(L"iModelExternalSourceAspect::m_instance==nullptr");
+        LOG.fatal(L"iModelExternalSourceAspect::m_instance==nullptr in iModelExternalSourceAspect::GetProperties");
     if (ECN::ECObjectsStatus::Success != m_instance->GetValue(props, XTRN_SRC_ASPCT_JsonProperties) || !props.IsString() || props.IsNull())
         return json;
     json.Parse(props.GetUtf8CP());
