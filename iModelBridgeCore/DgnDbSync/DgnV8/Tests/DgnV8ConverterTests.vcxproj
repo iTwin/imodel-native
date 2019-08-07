@@ -44,6 +44,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeBuildCommandLine>bb -N0 re dgnv8converterTestsEXE</NMakeBuildCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
@@ -67,6 +68,7 @@
     <ClCompile Include="DgnMaterial_Tests.cpp" />
     <ClCompile Include="DimensionTests.cpp" />
     <ClCompile Include="DrawingTests.cpp" />
+    <ClCompile Include="DTMElementTests.cpp" />
     <ClCompile Include="ECSchemaTests.cpp" />
     <ClCompile Include="ECTests.cpp" />
     <ClCompile Include="GeomTestHelper.cpp" />
@@ -109,6 +111,7 @@
     <Xml Include="logging.config.xml" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="packages.config" />
     <None Include="Run.mke" />
     <None Include="Tests.mke" />
   </ItemGroup>

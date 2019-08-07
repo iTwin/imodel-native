@@ -8,6 +8,8 @@
 #undef __bcDTMClassH__
 #include <VersionedDgnV8Api/TerrainModel/terrainmodel.h>
 #define DGNV8_DTMStatusInt ::DTMStatusInt
+#define DGNV8_DTMFeatureType ::DTMFeatureType
+#define DGNV8_DTMFeatureCallback ::DTMFeatureCallback
 #include <VersionedDgnV8Api/TerrainModel/Core/idtm.h>
 #include <VersionedDgnV8Api/TerrainModel/Core/bcdtmClass.h>
 #include <VersionedDgnV8Api/TerrainModel/ElementHandler/DTMElementHandlerManager.h>
@@ -157,6 +159,7 @@ bool IsStaticTerrain(DgnV8EhCR v8el, Converter& converter, Bentley::TerrainModel
     {
     Bentley::WString cfgValue;
     long  staticTerrainPointLimit = 500000;
+
     if (BSISUCCESS == DgnV8Api::ConfigurationManager::GetVariable(cfgValue, L"DGNDB_STATICDTMSIZE"))
         {
         int intValue;
@@ -195,6 +198,9 @@ ConvertToDgnDbElementExtension::Result ConvertDTMElement::_PreConvertElement(Dgn
     if (!IsStaticTerrain(v8el, converter, *bcDTM))
         return Result::Proceed;
 
+    if (!DgnV8Api::ConfigurationManager::IsVariableDefinedAndTrue(L"DGNDB_REALITY_MODEL_UPLOAD"))
+        return Result::Proceed;
+        
     DgnPlatformLib::Host::IKnownLocationsAdmin& locationAdmin(DgnPlatformLib::QueryHost()->GetIKnownLocationsAdmin());
     BeFileName tempPath = locationAdmin.GetLocalTempDirectoryBaseName();
     WString file;
@@ -332,7 +338,7 @@ void SetSymbology(GeometryBuilderR builder, DgnV8EhCR v8eh, ResolvedModelMapping
 //----------------------------------------------------------------------------------------
 // @bsimethod                                    Daryl.Holmwood                      9/19
 //+---------------+---------------+---------------+---------------+---------------+-------
-void CreateMesh(Bentley::TerrainModel::BcDTMR dtm, ElementConversionResults& results, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, Converter& converter, BentleyB0200::Dgn::DgnModelR model, DgnCategoryId categoryId, DgnSubCategoryId subCategoryId)
+void CreateMesh(Bentley::TerrainModel::BcDTMR dtm, Bentley::DgnPlatform::DTMElementTrianglesHandler::DisplayParams& displayParams, ElementConversionResults& results, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, Converter& converter, BentleyB0200::Dgn::DgnModelR model, DgnCategoryId categoryId, DgnSubCategoryId subCategoryId)
     {
     Bentley::DRange3d fullRange;
     const int s_tilePointSize = 10000;
@@ -342,7 +348,6 @@ void CreateMesh(Bentley::TerrainModel::BcDTMR dtm, ElementConversionResults& res
     int m_numTilesX;
     int m_numTilesY;
     Int64 numberOfPoints = dtm.GetPointCount();
-    Bentley::DgnPlatform::DTMElementTrianglesHandler::DisplayParams displayParams(v8eh);
     DgnClassId childClassId = converter.ComputeElementClassIgnoringEcContent(v8eh, v8mm);
     DgnCode elementCode;
 
@@ -463,6 +468,7 @@ void CreateFeatures(Bentley::DgnPlatform::DTMElementSubHandler::SymbologyParams&
 
     features->ExcludeAllFeatures();
     features->IncludeFeature(featureType);
+
     GeometryBuilderPtr builder;
 
     for (const auto& feature : *features)
@@ -487,6 +493,24 @@ void CreateFeatures(Bentley::DgnPlatform::DTMElementSubHandler::SymbologyParams&
             auto curves = BentleyApi::CurveVector::CreateLinear((BentleyApi::DPoint3dCP)points.data(), points.size(), BentleyApi::CurveVector::BOUNDARY_TYPE_Open);
             builder->Append(*curves);
             }
+        }
+
+    if (featureType == DGNV8_DTMFeatureType::GroupSpots)
+        {
+        dtm.BrowseFeatures(DGNV8_DTMFeatureType::RandomSpots, Bentley::TerrainModel::DTMFenceParams(), 10000, nullptr, [&](DGNV8_DTMFeatureType dtmFeatureType, DTMUserTag userTag, DTMFeatureId featureId, DPoint3d* points, size_t numPoints, void* userArg)
+            {
+            if (builder == nullptr)
+                {
+                auto subCategoryId = converter.GetOrCreateSubCategoryId(categoryId, subCategoryName);
+                auto newCategoryId = DgnSubCategory::QueryCategoryId(converter.GetDgnDb(), subCategoryId);
+                builder = GeometryBuilder::Create(model, newCategoryId, BentleyB0200::Transform::FromIdentity());
+                builder->SetAppendAsSubGraphics();
+                SetSymbology(*builder, v8eh, v8mm, converter, displayParams, categoryId, subCategoryId);
+                }
+            auto primitive = BentleyApi::ICurvePrimitive::CreatePointString((BentleyApi::DPoint3dCP)points, numPoints);
+            builder->Append(*primitive);
+            return DTM_SUCCESS;
+            });
         }
 
     if (builder != nullptr)
@@ -590,15 +614,18 @@ void ConvertDTMElement::_ProcessResults(ElementConversionResults& results, DgnV8
     subCategoryId = converter.GetOrCreateSubCategoryId(categoryId, "Mesh");
     newCategoryId = DgnSubCategory::QueryCategoryId(converter.GetDgnDb(), subCategoryId);
 
-    CreateMesh(*bcDTM, results, v8eh, v8mm, converter, *model, newCategoryId, subCategoryId);
-
     Bentley::DgnPlatform::DTMSubElementIter iter(v8eh);
 
     for (; iter.IsValid(); iter.ToNext())
         {
         auto hand = Bentley::DgnPlatform::DTMElementSubHandler::FindHandler (iter);
 
-        if (Bentley::DgnPlatform::DTMElementFeaturesHandler::GetInstance()->GetSubHandlerId() == iter.GetCurrentId().GetHandlerId())
+        if (Bentley::DgnPlatform::DTMElementTrianglesHandler::GetInstance()->GetSubHandlerId() == iter.GetCurrentId().GetHandlerId())
+            {
+            Bentley::DgnPlatform::DTMElementTrianglesHandler::DisplayParams dp(iter);
+            CreateMesh(*bcDTM, dp, results, v8eh, v8mm, converter, *model, newCategoryId, subCategoryId);
+            }
+        else if (Bentley::DgnPlatform::DTMElementFeaturesHandler::GetInstance()->GetSubHandlerId() == iter.GetCurrentId().GetHandlerId())
             {
             Bentley::DgnPlatform::DTMElementFeaturesHandler::DisplayParams dp(iter);
             DGNV8_DTMFeatureType featureTypeMap[] = {

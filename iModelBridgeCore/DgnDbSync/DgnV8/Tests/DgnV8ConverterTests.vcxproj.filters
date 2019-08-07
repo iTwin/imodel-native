@@ -115,6 +115,9 @@
     <ClCompile Include="LightTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DTMElementTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Tests.h">
@@ -169,5 +172,6 @@
   <ItemGroup>
     <None Include="Run.mke" />
     <None Include="Tests.mke" />
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>
