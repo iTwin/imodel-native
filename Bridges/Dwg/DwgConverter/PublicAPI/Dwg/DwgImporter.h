@@ -1049,6 +1049,7 @@ private:
     bool                    UpdatePaperspaceView (ViewControllerP view, DwgDbObjectIdCR viewportId);
     DgnElementId            CreateOrUpdateRepositoryLink (DwgDbDatabaseP dwg = nullptr);
     BentleyStatus           InsertElementHasLinks (DgnModelR model, DwgDbDatabaseR dwg);
+    DgnSubCategoryId        GetSubcategoryForDrawingCategory (DefinitionModelR model, DgnCategoryId categoryId, DgnSubCategory::Appearance const& appear, Utf8StringCR name);
 
     static void             RegisterProtocolExtensions ();
 

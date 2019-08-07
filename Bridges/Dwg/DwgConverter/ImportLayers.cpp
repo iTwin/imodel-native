@@ -537,7 +537,8 @@ DgnCategoryId   DwgImporter::GetOrAddDrawingCategory (DgnSubCategoryId& subCateg
 
     // create a draw category code & retrieve the category from the db:
     auto& db = model.GetDgnDb ();
-    auto definitionModel = this->GetOptions().GetMergeDefinitions() ? &db.GetDictionaryModel() : this->GetOrCreateJobDefinitionModel().get();
+    auto mergeDefinitions = this->GetOptions().GetMergeDefinitions ();
+    auto definitionModel = mergeDefinitions ? &db.GetDictionaryModel() : this->GetOrCreateJobDefinitionModel().get();
     if (nullptr == definitionModel)
         {
         this->ReportError (IssueCategory::Unknown(), Issue::MissingJobDefinitionModel(), "DrawingCategory");
@@ -549,38 +550,29 @@ DgnCategoryId   DwgImporter::GetOrAddDrawingCategory (DgnSubCategoryId& subCateg
     if (categoryId.IsValid())
         {
         // a drawing category found - check sub-category:
-        DgnSubCategory::Appearance lastAppearance;
-        subCategoryId.Invalidate ();
-
-        for (auto entry : DgnSubCategory::MakeIterator(db, categoryId))
-            {
-            DgnSubCategoryCPtr  subcategory = DgnSubCategory::Get (db, entry.GetId<DgnSubCategoryId>());
-            if (subcategory.IsValid() && subcategory->GetAppearance().IsEqual(appear))
-                {
-                // a matching sub-category found - use it:
-                subCategoryId = subcategory->GetSubCategoryId ();
-                break;
-                }
-            lastAppearance = subcategory->GetAppearance ();
-            }
-
-        if (!subCategoryId.IsValid())
-            {
-            // no matching sub-category found - add a new one for the desired appearance:
-            Utf8String suffix = DwgHelper::CompareSubcatAppearance (lastAppearance, appear);
-            if (!suffix.empty())
-                name += suffix;
-            DgnSubCategory  newSubcat (DgnSubCategory::CreateParams(db, categoryId, name, appear));
-            if (newSubcat.Insert().IsValid())
-                subCategoryId = newSubcat.GetSubCategoryId ();
-            else
-                BeAssert (false && "failed inserting a new sub-category to db!");
-            }
-
-        return categoryId;
+        subCategoryId = this->GetSubcategoryForDrawingCategory(*definitionModel, categoryId, appear, name);
+        if (subCategoryId.IsValid())
+            return categoryId;
         }
 
-    // create a new drawing category:
+    // this method is called after MakeDefinitionChanges. We are no longer permitted to change DictionaryModel, but we can add a new element to the private definition model if it not already exists.
+    if (mergeDefinitions)
+        {
+        // we've checked DictionaryModel, now check our private def model before creating a new one
+        definitionModel = this->GetOrCreateJobDefinitionModel().get();
+        if (nullptr == definitionModel)
+            return DgnCategoryId();
+        code = DrawingCategory::CreateCode (*definitionModel, name.c_str());
+        categoryId = DrawingCategory::QueryCategoryId (*definitionModel, code.GetValueUtf8());
+        if (categoryId.IsValid())
+            {
+            subCategoryId = this->GetSubcategoryForDrawingCategory(*definitionModel, categoryId, appear, name);
+            if (subCategoryId.IsValid())
+                return categoryId;
+            }
+        }
+
+    // create a new drawing category in our private def model
     DgnDbStatus     status = DgnDbStatus::Success;
     DrawingCategory category(*definitionModel, name, DgnCategory::Rank::Application, description);
     if (category.Insert(appear, &status).IsValid() && DgnDbStatus::Success == status)
@@ -599,6 +591,52 @@ DgnCategoryId   DwgImporter::GetOrAddDrawingCategory (DgnSubCategoryId& subCateg
         }
 
     return  categoryId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnSubCategoryId DwgImporter::GetSubcategoryForDrawingCategory (DefinitionModelR model, DgnCategoryId categoryId, DgnSubCategory::Appearance const& desiredAppearance, Utf8StringCR desiredName)
+    {
+    // a drawing category found - check sub-category:
+    DgnSubCategory::Appearance lastAppearance;
+    DgnSubCategoryId    subCategoryId;
+    DgnDbR db = model.GetDgnDb ();
+
+    for (auto entry : DgnSubCategory::MakeIterator(db, categoryId))
+        {
+        DgnSubCategoryCPtr  subcategory = DgnSubCategory::Get (db, entry.GetId<DgnSubCategoryId>());
+        if (subcategory.IsValid())
+            {
+            lastAppearance = subcategory->GetAppearance ();
+            if (lastAppearance.IsEqual(desiredAppearance))
+                {
+                // a matching sub-category found - use it:
+                subCategoryId = subcategory->GetSubCategoryId ();
+                break;
+                }
+            }
+        }
+
+    if (!subCategoryId.IsValid())
+        {
+        // no matching sub-category found - add a new one for the desired appearance:
+        Utf8String name = desiredName;
+        Utf8String suffix = DwgHelper::CompareSubcatAppearance (lastAppearance, desiredAppearance);
+        if (!suffix.empty())
+            name += suffix;
+
+        auto createParams = DgnSubCategory::CreateParams(db, categoryId, name, desiredAppearance);
+        createParams.SetModelId (model.GetModelId());
+
+        DgnSubCategory  newSubcat (createParams);
+        if (newSubcat.Insert().IsValid())
+            subCategoryId = newSubcat.GetSubCategoryId ();
+        else
+            BeAssert (false && "failed inserting a new sub-category to db!");
+        }
+
+    return  subCategoryId;
     }
 
 /*---------------------------------------------------------------------------------**//**
