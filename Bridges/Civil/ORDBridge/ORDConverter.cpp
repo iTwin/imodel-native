@@ -1608,10 +1608,17 @@ void assignORDAlignmentAspect(Dgn::DgnElementR element, Cif::AlignmentCR alignme
     if (profilePtr.IsValid())
         activeProfileName = Utf8String(profilePtr->GetName().c_str());
 
-    auto geometryPtr = alignment.GetGeometry();
+    auto linearGeomPtr = alignment.GetLinearGeometry();
+
+    Bentley::CurveVectorPtr horizCurveVectorPtr;
+    if (linearGeomPtr.IsValid())
+        linearGeomPtr->GetCurveVector(horizCurveVectorPtr);
 
     Bentley::DPoint3d startPoint, endPoint;
-    geometryPtr->GetStartEnd(startPoint, endPoint);
+    startPoint.Zero(); endPoint.Zero();
+
+    if (horizCurveVectorPtr.IsValid())
+        horizCurveVectorPtr->GetStartEnd(startPoint, endPoint);
 
     if (auto alignmentAspectP = DgnV8ORDBim::AlignmentAspect::GetP(element))
         {
