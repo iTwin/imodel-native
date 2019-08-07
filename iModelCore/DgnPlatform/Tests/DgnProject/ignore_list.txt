@@ -301,3 +301,11 @@ MeshBuilderTest.RoundTripMeshBuilders
     # [2] wcstombs_s_l (0x7ffd03aa0490)
     # [1] BaseThreadInitThunk (0x7ffd040b2770)
     # [0] RtlUserThreadStart (0x7ffd06690d30)
+
+ChangeSummaryTestFixture.ElementChildRelationshipChanges
+    # Flakey on PRG builds.
+    # [ RUN      ] ChangeSummaryTestFixture.ElementChildRelationshipChanges
+    # d:\vsts_a\46\bbsrc\imodel02\iModelCore\DgnPlatform\Tests\DgnProject\NonPublished\ChangeSummary_Test.cpp(646): error:       Expected: 3
+    # To be equal to: instance.MakeValueIterator().QueryCount()
+    #       Which is: 2
+    # [  FAILED  ] ChangeSummaryTestFixture.ElementChildRelationshipChanges (67 ms)
