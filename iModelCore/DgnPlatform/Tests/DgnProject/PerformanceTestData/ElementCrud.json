@@ -1,15 +1,15 @@
 {
   "CrudTestRequirement": [
 	{
-      "InitialCount": 100000,
+      "InitialCount": 100,
       "InitialCountPercentage": [40]
     },
 	{
-      "InitialCount": 500000,
+      "InitialCount": 500,
       "InitialCountPercentage": [40]
     },
 	{
-      "InitialCount": 10000000,
+      "InitialCount": 1000,
       "InitialCountPercentage": [40]
     }
   ]
