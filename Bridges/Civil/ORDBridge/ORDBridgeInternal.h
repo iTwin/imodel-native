@@ -34,6 +34,7 @@
 #include <CifApi/Cif/SDK/GeometryModelDgnECDataBinder.h>
 #include <CifApi/Cif/SDK/ConsensusDgnECProvider.h>
 #include <CifApi/Cif/SDK/CIFGeometryModelECSchema.h>
+#include <CifApi/Cif/SDK/PersistentPathBackPointerBuilder.h>
 #include <ORDBridge/ORDBridgeApi.h>
 
 /** @namespace DgnDbSync Contains types defined by %Bentley Systems that are used to synchronize between DgnDb and foreign data formats. */

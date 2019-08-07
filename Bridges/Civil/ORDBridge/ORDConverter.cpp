@@ -613,7 +613,6 @@ SpatialModelP ORDAlignmentsConverter::Get3DLinearsAlignmentModel(AlignmentCR ali
         return corridorSegmentCPtr->GetCorridorSegmentModel().get();
         }
 
-    BeAssert(false);
     return m_bimDesignAlignmentModelPtr.get();
     }
 
@@ -1457,16 +1456,17 @@ ConvertORDElementXDomain::ConvertORDElementXDomain(ORDConverter& converter): m_c
 +---------------+---------------+---------------+---------------+---------------+------*/
 ConvertORDElementXDomain::Result ConvertORDElementXDomain::_PreConvertElement(DgnV8EhCR v8el, Dgn::DgnDbSync::DgnV8::Converter&, Dgn::DgnDbSync::DgnV8::ResolvedModelMapping const& v8mm)
     {
+
     if (m_elementsSeen.end() != m_elementsSeen.find(v8el.GetElementRef()))
         return Result::Proceed;
 
     m_elementsSeen.insert(v8el.GetElementRef());
 
-    auto cifAlignmentPtr = Alignment::CreateFromElementHandle(v8el);
+    auto cifAlignmentPtr = Alignment::CreateFromElementHandle(*m_cifConsensusConnection, v8el);
     Bentley::Cif::CorridorPtr cifCorridorPtr;
     if (!cifAlignmentPtr.IsValid())
         {
-        auto cifLinearEntity3dPtr = LinearEntity3d::CreateFromElementHandle(v8el);
+        auto cifLinearEntity3dPtr = LinearEntity3d::CreateFromElementHandle(*m_cifConsensusConnection, v8el);
         if (cifLinearEntity3dPtr.IsValid())
             {
             cifAlignmentPtr = cifLinearEntity3dPtr->GetAlignment();
@@ -1476,7 +1476,7 @@ ConvertORDElementXDomain::Result ConvertORDElementXDomain::_PreConvertElement(Dg
             }
         else
             {
-            cifCorridorPtr = Corridor::CreateFromElementHandle(v8el);
+            cifCorridorPtr = Corridor::CreateFromElementHandle(*m_cifConsensusConnection, v8el);
             }
         }
 
@@ -1515,21 +1515,39 @@ ConvertORDElementXDomain::Result ConvertORDElementXDomain::_PreConvertElement(Dg
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConvertORDElementXDomain::_DetermineElementParams(DgnClassId& classId, DgnCode& code, DgnCategoryId& categoryId, DgnV8EhCR v8el, DgnDbSync::DgnV8::Converter& converter, ECObjectsV8::IECInstance const* primaryV8Instance, DgnDbSync::DgnV8::ResolvedModelMapping const& v8mm)
     {
+    m_currentFeatureDefName.clear();
+    m_currentFeatureName.clear();
+
     if (v8mm.GetDgnModel().Is2dModel())
         return;
 
     if (!classId.IsValid())
-        {
+        {        
         auto featurizedPtr = FeaturizedConsensusItem::CreateFromElementHandle(*m_cifConsensusConnection, v8el);
         if (featurizedPtr.IsValid())
             {
+            auto featureName = featurizedPtr->GetName();
             auto featureDefPtr = featurizedPtr->GetFeatureDefinition();
+
+            if (featureDefPtr.IsNull())
+                {
+                Cif::FeaturizedConsensusItemPtr representationOf = featurizedPtr->GetRepresentationOf();
+                if (representationOf.IsNull())
+                    return;
+
+                featureName = representationOf->GetName();
+                featureDefPtr = representationOf->GetFeatureDefinition();
+                }
+
             if (featureDefPtr.IsValid())
                 {
+                m_currentFeatureName = Utf8String(featureName.c_str());
                 auto featureDefName = featureDefPtr->GetName();
+
                 if (!WString::IsNullOrEmpty(featureDefName.c_str()))
                     {
-                    auto className = ORDDynamicSchemaGenerator::FeatureNameToClassName(Utf8String(featureDefName.c_str()));
+                    m_currentFeatureDefName = Utf8String(featureDefName.c_str());
+                    auto className = ORDDynamicSchemaGenerator::FeatureNameToClassName(m_currentFeatureDefName.c_str());
                     auto dynamicClassId = converter.GetDgnDb().Schemas().GetClassId(ORDDynamicSchemaGenerator::GetTargetSchemaName(), className);
                     if (dynamicClassId.IsValid())
                         {
@@ -1566,21 +1584,16 @@ void ConvertORDElementXDomain::_DetermineElementParams(DgnClassId& classId, DgnC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void assignORDFeatureAspect(Dgn::DgnElementR element, Cif::FeaturizedConsensusItemCR featurizedItem)
+void assignORDFeatureAspect(Dgn::DgnElementR element, Utf8StringCR featureName, Utf8StringCR featureDefName)
     {
-    auto name = Utf8String(featurizedItem.GetName().c_str());
-    auto featureDefPtr = featurizedItem.GetFeatureDefinition();
-
     if (auto featureAspectP = DgnV8ORDBim::FeatureAspect::GetP(element))
         {
-        featureAspectP->SetName(name.c_str());
-
-        if (featureDefPtr.IsValid())
-            featureAspectP->SetDefinitionName(Utf8String(featureDefPtr->GetName().c_str()).c_str());
+        featureAspectP->SetName(featureName.c_str());
+        featureAspectP->SetDefinitionName(featureDefName.c_str());
         }
     else
         {
-        auto featureAspectPtr = DgnV8ORDBim::FeatureAspect::Create(name.c_str(), (featureDefPtr.IsValid()) ? Utf8String(featureDefPtr->GetName().c_str()).c_str() : nullptr);
+        auto featureAspectPtr = DgnV8ORDBim::FeatureAspect::Create(featureName.c_str(), featureDefName.c_str());
         DgnV8ORDBim::FeatureAspect::Set(element, *featureAspectPtr);
         }
     }
@@ -1620,9 +1633,10 @@ void assignTemplateDropAspect(Dgn::DgnElementR element, Cif::TemplateDropCR temp
     {
     auto templatePtr = templateDrop.GetTemplate();
     auto description = Utf8String(templateDrop.GetDescription().c_str());
+
     Utf8String templateName;
     if (templatePtr.IsValid())
-        templateName = Utf8String(templatePtr->GetName().c_str());
+        templateName = Utf8String(templatePtr->GetTemplatePath().c_str());
 
     if (auto templateDropAspectP = DgnV8ORDBim::TemplateDropAspect::GetP(element))
         {
@@ -1901,16 +1915,14 @@ bool ConvertORDElementXDomain::AssignLinearQuantityAspect(Dgn::DgnElementR eleme
     auto cifConsensusItemPtr = Linear3dConsensusItem::CreateFromElementHandle(*m_cifConsensusConnection, v8el);
     if (auto cifLinear3dCP = dynamic_cast<Linear3dConsensusItemCP>(cifConsensusItemPtr.get()))
         {
-        assignORDFeatureAspect(element, *cifConsensusItemPtr);
         assignQuantityAspect(element, *cifLinear3dCP);
         return true;
         }
     else
         {
-        auto cifAlignmentPtr = Alignment::CreateFromElementHandle(v8el);
+        auto cifAlignmentPtr = Alignment::CreateFromElementHandle(*m_cifConsensusConnection, v8el);
         if (cifAlignmentPtr.IsValid())
             {
-            assignORDFeatureAspect(element, *cifAlignmentPtr);
             assignQuantityAspect(element, *cifAlignmentPtr);
             return true;
             }
@@ -1927,9 +1939,6 @@ bool ConvertORDElementXDomain::AssignTemplateDropAspect(Dgn::DgnElementR element
     auto templateDropPtr = TemplateDrop::CreateFromElementHandle(*m_cifConsensusConnection, v8el);
     if (templateDropPtr.IsValid())
         {
-        // TemplateDrops no longer seem to have access to a feature definition in the CIF SDK.  Leaving 
-        // this line commented out until we get confirmation that this wasn't a mistake from the ORD team.
-        //assignORDFeatureAspect(element, *templateDropPtr);
         assignTemplateDropAspect(element, *templateDropPtr);
         return true;
         }
@@ -1963,7 +1972,7 @@ bool ConvertORDElementXDomain::AssignSuperelevationAspect(Dgn::DgnElementR eleme
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ConvertORDElementXDomain::AssignCorridorAspect(Dgn::DgnElementR element, DgnV8EhCR v8el) const
     {
-    auto cifCorridorPtr = Corridor::CreateFromElementHandle(v8el);
+    auto cifCorridorPtr = Corridor::CreateFromElementHandle(*m_cifConsensusConnection, v8el);
     if (cifCorridorPtr.IsValid())
         {
         assignCorridorAspect(element, *cifCorridorPtr);
@@ -1978,10 +1987,10 @@ bool ConvertORDElementXDomain::AssignCorridorAspect(Dgn::DgnElementR element, Dg
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ConvertORDElementXDomain::AssignFeatureAspect(Dgn::DgnElementR element, DgnV8EhCR v8el) const
     {
-    auto featurizedPtr = FeaturizedConsensusItem::CreateFromElementHandle(*m_cifConsensusConnection, v8el);
-    if (featurizedPtr.IsValid())
+    if (!Utf8String::IsNullOrEmpty(m_currentFeatureDefName.c_str()) || 
+        !Utf8String::IsNullOrEmpty(m_currentFeatureName.c_str()))
         {
-        assignORDFeatureAspect(element, *featurizedPtr);
+        assignORDFeatureAspect(element, m_currentFeatureName, m_currentFeatureDefName);
         return true;
         }
 
@@ -2223,9 +2232,10 @@ void ORDConverter::SetCorridorDesignAlignments()
         if (elementAndAspectId.aspectId.IsValid() && elementAndAspectId.elementId.IsValid())
             {
             corridorCPtr = RoadRailBim::Corridor::Get(GetDgnDb(), elementAndAspectId.elementId);
-            if (corridorCPtr.IsNull())
-                continue;
             }
+
+        if (corridorCPtr.IsNull() || !corridorCPtr.IsValid())
+            continue;
 
         AlignmentBim::AlignmentPtr bimMainAlignmentPtr;
         auto cifAlignmentPtr = cifCorridorPtr->GetCorridorAlignment();
@@ -2375,6 +2385,17 @@ void ORDConverter::_OnConversionComplete()
 
     T_Super::_OnConversionComplete();
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ORDConverter::_ConvertModels()
+    {
+    T_Super::_ConvertModels();
+    //load backpointers
+    Bentley::Cif::SDK::PersistentPathBackPointerBuilder::GetBuilder().BuildBackPointers();
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      01/2018

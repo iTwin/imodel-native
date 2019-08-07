@@ -25,6 +25,7 @@ protected:
     virtual void _OnConversionComplete() override;
     virtual bool _ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Model) override;
     virtual void _OnSheetsConvertViewAttachment(Dgn::DgnDbSync::DgnV8::ResolvedModelMapping const& v8SheetModelMapping, DgnAttachmentR v8DgnAttachment) override;    
+    virtual void _ConvertModels() override;
 
 public:
     struct Params
@@ -99,6 +100,7 @@ private:
     bset<Bentley::ElementRefP> m_alignmentV8RefSet;
     bset<Bentley::ElementRefP> m_corridorV8RefSet;
     Bentley::Cif::ConsensusConnectionPtr m_cifConsensusConnection;
+    Utf8String m_currentFeatureName, m_currentFeatureDefName;
 
     typedef bool (ConvertORDElementXDomain::*AspectAssignmentFunc)(Dgn::DgnElementR, DgnV8EhCR) const;
     bvector<AspectAssignmentFunc> m_aspectAssignFuncs;
