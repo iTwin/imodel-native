@@ -240,3 +240,10 @@ RevisionTestFixture.OptimisticConcurrencyConflict
     # VSTS#125059 (https://bentleycs.visualstudio.com/iModelTechnologies/_workitems/edit/125059)
     # BeAssert - \iModelCore\DgnPlatform\DgnCore\TxnManager.cpp(1123): ASSERTION FAILURE (0): result == BE_SQLITE_OK
 
+ChangeSummaryTestFixture.ElementChildRelationshipChanges
+    # Flakey on PRG builds.
+    # [ RUN      ] ChangeSummaryTestFixture.ElementChildRelationshipChanges
+    # d:\vsts_a\46\bbsrc\imodel02\iModelCore\DgnPlatform\Tests\DgnProject\NonPublished\ChangeSummary_Test.cpp(646): error:       Expected: 3
+    # To be equal to: instance.MakeValueIterator().QueryCount()
+    #       Which is: 2
+    # [  FAILED  ] ChangeSummaryTestFixture.ElementChildRelationshipChanges (67 ms)
