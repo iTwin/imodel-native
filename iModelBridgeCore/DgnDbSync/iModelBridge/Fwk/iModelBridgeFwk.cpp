@@ -1424,6 +1424,9 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     LOG.tracev(L"Setting up iModel Briefcase for processing");
     StopWatch briefcaseTime(true);
 
+    if (m_bridge->TestFeatureFlag("imodel-bridge-reality-model-upload"))
+        m_bridge->_GetParams().SetDoRealityDataUpload(true);
+
     bool createdNewRepo = false;
     if (BSISUCCESS != BootstrapBriefcase(createdNewRepo))
         {
