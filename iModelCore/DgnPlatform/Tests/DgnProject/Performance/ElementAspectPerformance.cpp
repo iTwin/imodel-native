@@ -48,11 +48,10 @@ void ElementAspectTests1::LogTiming (StopWatch& timer, Utf8CP description, Utf8C
     totalDescription.Sprintf ("%s %s '%s' [Initial count: %d]", description, noClassIdFilterStr, testClassName, initialInstanceCount);
     Utf8String desc;
     desc.Sprintf ("%s", description);
-    int pos = desc.find ("API");
+    size_t pos = desc.find ("API");
     Utf8String opType = desc.substr (pos + 4);
-    LOGTODB (TEST_DETAILS, timer.GetElapsedSeconds (), opCount, totalDescription.c_str (), totalDescription.c_str (), opType.ToUpper (), initialInstanceCount);
+    LOGTODB (TEST_DETAILS, timer.GetElapsedSeconds (), opCount, totalDescription.c_str (), true, opType.ToUpper (), initialInstanceCount);
 }
-
 
 /*=================================================================================**//**
 * @bsiclass                                                     Taslim.Murad      05/18
@@ -65,9 +64,9 @@ void ElementAspectTests1::LogTiming (double timer, Utf8CP description, Utf8CP te
     totalDescription.Sprintf ("%s %s '%s' [Initial count: %d]", description, noClassIdFilterStr, testClassName, initialInstanceCount);
     Utf8String desc;
     desc.Sprintf ("%s", description);
-    int pos = desc.find ("API");
+    size_t pos = desc.find ("API");
     Utf8String opType = desc.substr (pos + 4);
-    LOGTODB (TEST_DETAILS, timer, opCount, totalDescription.c_str (), totalDescription.c_str (), opType.ToUpper (), initialInstanceCount);
+    LOGTODB (TEST_DETAILS, timer, opCount, totalDescription.c_str (), true, opType.ToUpper (), initialInstanceCount);
 }
 
 
@@ -252,7 +251,6 @@ TEST_F (ElementAspectTests1, UniqueAspectPerformance_Delete)
 TEST_F (ElementAspectTests1, MultiAspectPerformance_Insert)
 {
     SetupSeedProject ();
-    ECN::ECClassCR aclass = *TestMultiAspect::GetECClass (*m_db);
     int const Aspectcount = 11;
     int const EleCount = 101;
     TestMultiAspectPtr a1[Aspectcount];
@@ -347,7 +345,6 @@ TEST_F (ElementAspectTests1, MultiAspectPerformance_Update)
 TEST_F (ElementAspectTests1, MultiAspectPerformance_Delete)
 {
     SetupSeedProject ();
-    ECN::ECClassCR aclass = *TestMultiAspect::GetECClass (*m_db);
     int const Aspectcount = 11;
     int const EleCount = 101;
     TestMultiAspectPtr a1[Aspectcount];
@@ -1108,7 +1105,6 @@ TEST_F (ElementAspectTests1, SimpleElementPerformanceProperties_Read)
     StopWatch timer1 (true);
     for (int i = 1; i < count; i++)
     {
-        DgnDbStatus status;
         TestElementPtr editE = m_db->Elements ().GetForEdit<TestElement> (id[i]);
         ASSERT_TRUE (editE != nullptr);
     }
@@ -1159,7 +1155,6 @@ TEST_F (ElementAspectTests1, UniqueAspectElementPerfProperties_Read1)
 
     StopWatch timer1 (true);
     for (int i = 1; i < count; i++) {
-        DgnDbStatus status;
         TestElementPtr editE = m_db->Elements ().GetForEdit<TestElement> (id[i]);
         ASSERT_TRUE (editE != nullptr);
 
@@ -1226,7 +1221,6 @@ TEST_F (ElementAspectTests1, UniqueAspectElementPerfProperties_Read2)
     StopWatch timer1 (true);
     for (int i = 1; i < count; i++)
     {
-        DgnDbStatus status;
         TestElementPtr editE = m_db->Elements ().GetForEdit<TestElement> (id[i]);
         ASSERT_TRUE (editE != nullptr);
 
@@ -1289,7 +1283,6 @@ TEST_F (ElementAspectTests1, UniqueAspectElementPerfProperties_Read3)
     StopWatch timer1 (true);
     for (int i = 1; i < count; i++)
     {
-        DgnDbStatus status;
         TestElementPtr editE = m_db->Elements ().GetForEdit<TestElement> (id[i]);
         ASSERT_TRUE (editE != nullptr);
 

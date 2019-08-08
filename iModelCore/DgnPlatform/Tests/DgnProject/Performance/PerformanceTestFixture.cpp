@@ -27,7 +27,7 @@ DgnDbR project
 )
     {
     StopWatch stopwatch ("PerformanceTestFixture::ImportSchema", true);
-    SchemaStatus status = project.ImportSchemas (schemaContext.GetCache ().GetSchemas());
+    SchemaStatus status = project.ImportSchemas (schemaContext.GetCache().GetSchemas());
     stopwatch.Stop();
     ASSERT_EQ(SchemaStatus::Success, status);
 
@@ -46,7 +46,17 @@ ECSchemaPtr& testSchema,
 DgnDbR project
 )
     {
-    ECSchemaReadContextPtr schemaReadContext = nullptr;
+    ECSchemaReadContextPtr schemaReadContext = ECN::ECSchemaReadContext::CreateContext();
+    schemaReadContext->AddSchemaLocater(project.GetSchemaLocater());
+
+    BeFileName searchDir;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(searchDir);
+    searchDir.AppendToPath(L"ECSchemas").AppendToPath(L"Dgn");
+    schemaReadContext->AddSchemaPath(searchDir.GetName());
+    BeFileName searchDir2;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(searchDir2);
+    searchDir2.AppendToPath(L"ECSchemas").AppendToPath(L"ECDb");
+    schemaReadContext->AddSchemaPath(searchDir2.GetName());
     testSchema = TestSchemaHelper::CreateComplexTestSchema (schemaReadContext);
     ASSERT_TRUE (schemaReadContext.IsValid ());
 
@@ -64,7 +74,18 @@ int numIntProperties,
 int numStringProperties
 )
     {
-    ECSchemaReadContextPtr schemaReadContext = nullptr;
+    ECSchemaReadContextPtr schemaReadContext = ECN::ECSchemaReadContext::CreateContext();
+    schemaReadContext->AddSchemaLocater(project.GetSchemaLocater());
+
+    BeFileName searchDir;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(searchDir);
+    searchDir.AppendToPath(L"ECSchemas").AppendToPath(L"Dgn");
+    schemaReadContext->AddSchemaPath(searchDir.GetName());
+    BeFileName searchDir2;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(searchDir2);
+    searchDir2.AppendToPath(L"ECSchemas").AppendToPath(L"ECDb");
+    schemaReadContext->AddSchemaPath(searchDir2.GetName());
+
     testSchema = TestSchemaHelper::CreateTestSchema (schemaReadContext, numIntProperties, numStringProperties);
     ASSERT_TRUE (schemaReadContext.IsValid ());
 

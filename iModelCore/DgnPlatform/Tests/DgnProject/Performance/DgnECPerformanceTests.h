@@ -5,6 +5,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "PerformanceTestFixture.h"
+#include <ECObjects/ECObjectsAPI.h>
 
 BEGIN_DGNDB_UNIT_TESTS_NAMESPACE
 
@@ -17,7 +18,7 @@ struct PerformanceDgnECTests : public PerformanceTestFixture
 
         static double s_increment;
 
-        StatusInt CreateArbitraryElement(DgnElementPtr& out, DgnModelR model, DgnCategoryId categoryId);
+        StatusInt CreateArbitraryElement(DgnElementPtr& out, DgnModelR model, DgnCategoryId categoryId, ECN::IECInstance* instance, DgnClassId classId);
 
     protected:
         PerformanceDgnECTests() : PerformanceTestFixture() {}
