@@ -1090,8 +1090,30 @@ StatusInt GetGeographicToCoordSys (WStringR wkt, WStringR geographicName, WStrin
         // Optional AXIS
         if ((wkt.length() >= 4) && (wkt.substr (0, 4) == (L"AXIS")))
             {
-            // The axis clause is not currently supported ... we fail
-            return ERROR;
+            // For a projcs clause two axises must be specified one after the other
+            // We cannot at this time process all the configuration of the AXIS clause ... the parser fails
+            // unless the order is exactly EAST then NORTH whatever the label used.
+            if (GetAxis(wkt) != AxisDirection::EAST)
+                return ERROR;
+
+            // Trim of whites
+            wkt.Trim();
+
+            // Trim commas
+            if ((wkt.length() >= 1) && (wkt.substr(0, 1) == (L",")))
+                {
+                wkt = wkt.substr(1);
+                }
+    
+            // Trim of whites
+            wkt.Trim();
+
+            // The second AXIS Clause is required according to specs.
+            if ((wkt.length() < 4) || (wkt.substr(0, 4) != (L"AXIS")))
+                return ERROR;
+
+            if (GetAxis(wkt) != AxisDirection::NORTH)
+                return ERROR;
             }
 
         if ((wkt.length() >= 1) && (wkt.substr (0, 1) == (L"]")))
