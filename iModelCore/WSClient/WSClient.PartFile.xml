@@ -896,7 +896,7 @@
         <RequiredRepository>Bsitools-JsonTinyValidator</RequiredRepository>
         <!-- Also make sure that the testing frameworks are current for syncpull workflows -->
         
-        <RequiredRepository>Bsitools-Jasmine</RequiredRepository>
+        <!-- not needed on imodel02 <RequiredRepository>Bsitools-Jasmine</RequiredRepository> -->
 
         <SubPart PartName="BentleyDll"                  PartFile="iModelCore/Bentley/Bentley"          Repository="imodel02" />
         <SubPart PartName="BeHttp"                      PartFile="iModelCore/BeHttp/BeHttp"           Repository="imodel02"/>
@@ -911,7 +911,7 @@
         <SubPart PartName="UnitsNative"                 PartFile="iModelCore/Units/Units"            Repository="imodel02" />
         <SubPart PartName="BeJsonCpp"                   PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp"        Repository="imodel02"/>
         <SubPart PartName="Curl"                        PartFile="Libsrc-Nugets"    Repository="bsicommon"/>
-        <SubPart PartName="BeJavaScript" PartFile="iModelCore/Bentley/BeJavaScript/BeJavaScript" Repository="imodel02"/>
+        <!-- not needed on imodel02 <SubPart PartName="BeJavaScript" PartFile="iModelCore/Bentley/BeJavaScript/BeJavaScript" Repository="imodel02"/> -->
         <SubPart PartName="LoggingManagedInteropShim"/>
     </Part>
 

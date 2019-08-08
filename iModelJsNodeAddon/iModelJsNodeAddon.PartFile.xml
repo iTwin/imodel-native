@@ -9,9 +9,11 @@
   </Part>
 
 
-  <Part Name="iModelJsApiDeclarations" BentleyBuildMakeFile="api_package/ts/makeTs.mke" PrgOutputDir="iModelJsNodeAddon">
+  <Part Name="iModelJsApiDeclarations" BentleyBuildMakeFile="api_package/ts/makeTs.mke">
+    <NpmDependency>${SrcRoot}imodel02/iModelJsNodeAddon/api_package/ts/</NpmDependency>
     <Bindings>
       <Files>
+        Delivery/IModelJsNative.js
         Delivery/IModelJsNative.d.ts
       </Files>
     </Bindings>

@@ -1,19 +1,29 @@
 #----------------------------------------------------------------------
-#
 #  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-#
 #----------------------------------------------------------------------
 %include mdl.mki
 
-baseDir = $(_MakeFilePath)
+# Use `bb pull` to do the `npm install`.
+# Continue to pull and run commands from SrcRoot, but direct `tsc` to build into OutRoot.
+# This is especially important for CI systems that rely on BB to clean output between builds;
+# if we built into SrcRoot, the artifacts would never be cleaned between PRs etc.
 
-$(baseDir)package-lock.json : $(baseDir)package.json
-    ~chdir $(baseDir)
-    npm install
+%if defined (BMAKE_DELETE_ALL_TARGETS)
+    always:
+        -$(rmdirRecursiveCmd) $(PartBuildDir)
 
-$(baseDir)lib/IModelJsNative.d.ts : $(baseDir)src/IModelJsNative.ts
-    ~chdir $(baseDir)
-    npm run build
+    %return
+%endif
 
-$(BuildContext)Delivery/IModelJsNative.d.ts : $(baseDir)lib/IModelJsNative.d.ts
+srcDir = $(_MakeFilePath)
+
+$(PartBuildDir)IModelJsNative.js $(PartBuildDir)IModelJsNative.d.ts : $(srcDir)src/IModelJsNative.ts
+    ~mkdir $(PartBuildDir)
+    ~chdir $(srcDir)
+    python $(SrcRoot)thirdparty/nodejs_10_16_1/bentley/npm.py run build -- --outDir ${PartBuildDir}
+
+$(BuildContext)Delivery/IModelJsNative.js : $(PartBuildDir)IModelJsNative.js
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/IModelJsNative.d.ts : $(PartBuildDir)IModelJsNative.d.ts
     $(LinkFirstDepToFirstTarget)
