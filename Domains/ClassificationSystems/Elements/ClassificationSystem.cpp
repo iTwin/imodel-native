@@ -192,4 +192,18 @@ void ClassificationSystem::SetLocation(Utf8StringCR location)
     SetPropertyValue(prop_Location(), location.c_str());
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Jonas.Valiunas                  08/2019
+//---------------+---------------+---------------+---------------+---------------+------
+Dgn::ElementIterator ClassificationSystem::MakeClassificationsIterator(Dgn::DgnElementCR el)
+    {
+    Utf8String sql("SELECT TargetECInstanceId FROM " CLASSIFICATIONSYSTEMS_SCHEMA(CLASSIFICATIONSYSTEMS_REL_ElementHasClassifications) " as clsrel join " CLASSIFICATIONSYSTEMS_SCHEMA(CLASSIFICATIONSYSTEMS_CLASS_Classification) " as cls on cls.ECInstanceId = clsrel.TargetECInstanceId join biscore.model as mdl on mdl.ECInstanceId = cls.Model.id join " CLASSIFICATIONSYSTEMS_SCHEMA(CLASSIFICATIONSYSTEMS_CLASS_ClassificationTable)" as clstbl on clstbl.ECInstanceId=mdl.ModeledElement.Id where clsrel.SourceECInstanceId=? and clstbl.Parent.Id=?");
+    Dgn::ElementIterator iterator;
+    iterator.Prepare(el.GetDgnDb(), sql.c_str(), 0 /* Index of ECInstanceId */);
+    iterator.GetStatement()->BindId(1, el.GetElementId());
+    iterator.GetStatement()->BindId(2, GetElementId());
+    return iterator;
+    }
+
+
 END_CLASSIFICATIONSYSTEMS_NAMESPACE

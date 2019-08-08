@@ -32,8 +32,6 @@ $(o)ClassificationSystem$(oext) : $(_MakeFilePath)ClassificationSystem.cpp ${Mul
 
 $(o)ClassificationTable$(oext) : $(_MakeFilePath)ClassificationTable.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\ClassificationTable.h
 
-$(o)IClassified$(oext) : $(_MakeFilePath)IClassified.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi\IClassified.h
-
 %include MultiCppCompileGo.mki
 objs +% $(MultiCompileObjectList)
 

@@ -10,8 +10,10 @@
 #include "PublicApi/ClassificationGroup.h"
 #include "PublicApi/ClassificationTable.h"
 #include "PublicApi/ClassificationSystem.h"
+#include <BuildingShared/BuildingSharedApi.h>
 
 BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
+USING_NAMESPACE_BUILDING_SHARED
 
 DEFINE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(Classification)
 
@@ -97,6 +99,83 @@ ClassificationPtr Classification::CreateAndInsert
     return classification;
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Jonas.Valiunas                  08/2019
+//---------------+---------------+---------------+---------------+---------------+------
+ECN::ECRelationshipClassCR Classification::GetRelClassElementHasClassifications
+(
+Dgn::DgnDbR db
+)
+    {
+    return static_cast<ECN::ECRelationshipClassCR>(*db.Schemas().GetClass(CLASSIFICATIONSYSTEMS_SCHEMA_NAME, CLASSIFICATIONSYSTEMS_REL_ElementHasClassifications));
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Jonas.Valiunas                  08/2019
+//---------------+---------------+---------------+---------------+---------------+------
+Dgn::ElementIterator Classification::MakeClassificationsIterator(Dgn::DgnElementCR el)
+    {
+    Utf8String sql("SELECT TargetECInstanceId FROM " CLASSIFICATIONSYSTEMS_SCHEMA(CLASSIFICATIONSYSTEMS_REL_ElementHasClassifications) " where SourceECInstanceId=?");
+    Dgn::ElementIterator iterator;
+    iterator.Prepare(el.GetDgnDb(), sql.c_str(), 0 /* Index of ECInstanceId */);
+    iterator.GetStatement()->BindId(1, el.GetElementId());
+    return iterator;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Jonas.Valiunas                  08/2019
+//---------------+---------------+---------------+---------------+---------------+------
+void Classification::RemoveFrom(Dgn::DgnElementCR el) const
+    {
+    Dgn::DgnDbR db = GetDgnDb();
+    Dgn::DgnElementId sourceId = el.GetElementId();
+    Dgn::DgnElementId targetId = GetElementId();
+    ECN::ECRelationshipClassCR relClass = GetRelClassElementHasClassifications(db);
+
+    BeAssert(sourceId.IsValid());
+
+    RelationshipUtils::DeleteRelationships(db, relClass, sourceId, targetId);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Jonas.Valiunas                  08/2019
+//---------------+---------------+---------------+---------------+---------------+------
+void Classification::AddTo(Dgn::DgnElementCR el) const
+    {
+    Dgn::DgnElementId sourceId = el.GetElementId();
+    BeAssert(sourceId.IsValid());
+
+    if (ClassifiesElement(el))
+        return;
+
+    ClassificationTableCPtr table = ClassificationTable::Get(GetDgnDb(), GetClassificationTableId());
+    BeAssert(table.IsValid());
+
+    ClassificationSystemCPtr system = ClassificationSystem::Get(GetDgnDb(), table->GetClassificationSystemId());
+    BeAssert(system.IsValid());
+
+    Dgn::DgnDbR db = el.GetDgnDb();
+    Dgn::DgnElementId targetId = GetElementId();
+    ECN::ECRelationshipClassCR relClass = GetRelClassElementHasClassifications(db);
+
+    RelationshipUtils::InsertRelationship(db, relClass, sourceId, targetId);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                06/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool Classification::ClassifiesElement(Dgn::DgnElementCR el) const
+    {
+    Dgn::DgnDbR db = el.GetDgnDb();
+    Dgn::DgnElementId sourceId = el.GetElementId();
+    Dgn::DgnElementId targetId = GetElementId();
+    ECN::ECRelationshipClassCR relClass = GetRelClassElementHasClassifications(db);
+
+    BeAssert(sourceId.IsValid());
+
+    return RelationshipUtils::RelationshipExists(db, relClass, sourceId, targetId);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Elonas.Seviakovas                04/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -178,7 +257,7 @@ void Classification::SetSpecializationId
     Dgn::DgnElementId specializationId
 )
     {
-    SetParentId(specializationId, GetDgnDb().Schemas().GetClassId(CLASSIFICATIONSYSTEMS_SCHEMA_NAME, CLASSIFICATIONSYSTEMS_REL_ClassificationSpecializesClassification));
+    SetParentId(specializationId, GetDgnDb().Schemas().GetClassId(CLASSIFICATIONSYSTEMS_SCHEMA_NAME, CLASSIFICATIONSYSTEMS_REL_ClassificationOwnsSubClassifications));
     }
 
 /*---------------------------------------------------------------------------------**//**

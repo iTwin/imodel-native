@@ -14,7 +14,6 @@
 #include <ClassificationSystems/Elements/ClassificationSystem.h>
 #include <ClassificationSystems/Elements/ClassificationTable.h>
 #include <ClassificationSystems/Elements/ForwardDeclarations.h>
-#include <ClassificationSystems/Elements/IClassified.h>
 #include <ClassificationSystems/Handlers/ClassificationSystemsHandlers.h>
 #include <ClassificationSystems/Handlers/ClassificationTableHandler.h>
 #include <ClassificationSystems/Domain/ClassificationSystemsDomain.h>

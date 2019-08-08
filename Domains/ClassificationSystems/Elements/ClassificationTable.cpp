@@ -111,7 +111,7 @@ void ClassificationTable::SetClassificationSystemId
     Dgn::DgnElementId systemId
 )
     {
-    SetParentId(systemId, GetDgnDb().Schemas().GetClassId(CLASSIFICATIONSYSTEMS_SCHEMA_NAME, CLASSIFICATIONSYSTEMS_REL_ClassificationSystemContainsClassificationTable));
+    SetParentId(systemId, GetDgnDb().Schemas().GetClassId(CLASSIFICATIONSYSTEMS_SCHEMA_NAME, CLASSIFICATIONSYSTEMS_REL_ClassificationSystemOwnsClassificationTable));
     }
 
 //--------------------------------------------------------------------------------------
