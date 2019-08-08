@@ -1,8 +1,6 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: Tests/RunTests.mke $
-#
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
@@ -59,7 +57,7 @@ always:
         $(exeName)
         <
         >$(LogDir)run.bat
-        $(exeName) | $(GTestDir)TeeGtest.py $(ResultsCapture)
+        $(exeName) | python $(GTestDir)TeeGtest.py $(ResultsCapture)
         exit
         <
         -$(RunPrefix) $(LogDir)run.bat
