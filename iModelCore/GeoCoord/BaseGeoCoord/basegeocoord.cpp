@@ -4755,7 +4755,7 @@ StatusInt       ProcessProjectionKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
     if ((geoValue == UserDefinedKeyValue) || (geoValue == 16001))
         return SUCCESS;
 
-    return GEOCOORDERR_ProjectionGeoKeyNotSupported;
+    return GEOCOORDERR_CoordParamNotNeededForTrans;
     }
 
 /*---------------------------------------------------------------------------------**//**
