@@ -42,8 +42,8 @@ always:
 
 #    Geodetic Data Catalog files, which are used in conjunction with .las, .los files:
 always:
-    ~linkfile "$(GeoCoordData)coordsys.dty.xml=$(csDictionarySourcesDir)coordsys.dty.xml"
-    ~linkfile "$(GeoCoordData)UserOverrideGeodeticTransformSeed.asc=$(csDictionarySourcesDir)UserOverrideGeodeticTransformSeed.asc"
+    CreateSymLinks.py   -f"$(GeoCoordData)coordsys.dty.xml=$(csDictionarySourcesDir)coordsys.dty.xml"
+    CreateSymLinks.py   -f"$(GeoCoordData)UserOverrideGeodeticTransformSeed.asc=$(csDictionarySourcesDir)UserOverrideGeodeticTransformSeed.asc"
 
 %endif
     
