@@ -23,6 +23,7 @@
 #include <DgnPlatform/DgnDb.h>
 #include <DgnDbSync/DgnDbSync.h>
 #include <DgnDbSync/DgnV8/Converter.h>
+#include <iModelBridge/iModelBridge.h>
 #include <iModelBridge/iModelBridgeSyncInfoFile.h>
 #include <LinearReferencing/LinearReferencingApi.h>
 #include <RoadRailAlignment/RoadRailAlignmentApi.h>
@@ -62,7 +63,8 @@ namespace DgnV8ORDBim = BENTLEY_NAMESPACE_NAME::DgnV8OpenRoadsDesigner;
 //-----------------------------------------------------------------------------------------
 // Logging macros
 //-----------------------------------------------------------------------------------------
-#define LOGGER_NAMESPACE_ORDBRIDGE    "ORDBridge"
+#define LOGGER_NAMESPACE_ORDBRIDGE        "ORDBridge"
+#define LOGGER_NAMESPACE_ORDBRIDGEPERF    "ORDBridge.Performance"
 #if defined (ANDROID)
 #include <android/log.h>
 #define ORDBRIDGE_LOGI(...) __android_log_print(ANDROID_LOG_INFO,  LOGGER_NAMESPACE_ORDBRIDGE, __VA_ARGS__);
@@ -75,6 +77,9 @@ namespace DgnV8ORDBim = BENTLEY_NAMESPACE_NAME::DgnV8OpenRoadsDesigner;
 #define ORDBRIDGE_LOGI(...)           ORDBRIDGE_LOG.infov (__VA_ARGS__);
 #define ORDBRIDGE_LOGW(...)           ORDBRIDGE_LOG.warningv (__VA_ARGS__);
 #define ORDBRIDGE_LOGE(...)           ORDBRIDGE_LOG.errorv (__VA_ARGS__);
+
+#define ORDBRIDGEPERF_LOG                 (*NativeLogging::LoggingManager::GetLogger (LOGGER_NAMESPACE_ORDBRIDGEPERF))
+#define ORDBRIDGEPERF_LOGI(...)           ORDBRIDGEPERF_LOG.infov (__VA_ARGS__);
 #endif
 
 #endif

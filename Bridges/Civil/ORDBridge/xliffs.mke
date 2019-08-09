@@ -1,0 +1,12 @@
+#---------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#---------------------------------------------------------------------------------------+
+%include mdl.mki
+
+ContextDeliveryDir  = $(OutputRootDir)BuildContexts/CiviliModelBridges/Delivery/
+
+SQLANG_CHeader = $(_MakeFilePath)ORDConverter.h
+SQLANG_Xliff   = $(OutputRootDir)build/ORDBridge/ORDBridge_en.xliff
+%include $(SrcRoot)bsicommon/sharedmki/CHeaderToXliff.mki

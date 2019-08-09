@@ -73,6 +73,9 @@
     <None Include="installer\ORDBridgeInstallerbeforecompile.mki">
       <Filter>Installer Files</Filter>
     </None>
+    <None Include="xliffs.mke">
+      <Filter>Build Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="..\CiviliModelBridges.PartFile.xml">

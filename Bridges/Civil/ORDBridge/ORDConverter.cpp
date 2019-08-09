@@ -16,6 +16,45 @@
 
 BEGIN_ORDBRIDGE_NAMESPACE
 
+struct StopWatchCummulative
+{
+private:
+    BentleyApi::StopWatch m_stopWatch;
+    BentleyApi::BeDuration m_cummulative;
+    size_t m_count;
+
+    void StopAndAddElapsed()
+        {
+        m_stopWatch.Stop();
+        m_cummulative += m_stopWatch.GetElapsed();
+        m_count++;
+        }
+
+public:
+    StopWatchCummulative(Utf8CP description) : m_stopWatch(description), m_count(0) {}
+
+    void Start() { m_stopWatch.Start(); }
+    void Stop() { StopAndAddElapsed(); }
+    Utf8CP GetDescription() { return m_stopWatch.GetDescription(); }
+    double GetTotalElapsedSeconds() { return m_cummulative.ToSeconds(); }
+    size_t GetHitCount() { return m_count; }
+}; // StopWatchCummulative
+
+struct StopWatchOnStack
+{
+private:
+    StopWatchCummulative* m_stopWatch;
+
+public:
+    StopWatchOnStack(StopWatchCummulative& stopWatch) : m_stopWatch(&stopWatch) { m_stopWatch->Start(); }
+    ~StopWatchOnStack() { m_stopWatch->Stop(); }
+}; // StopWatchOnStack
+
+StopWatchCummulative* s_preConvertStopWatch = new StopWatchCummulative("_PreConvertElement");
+StopWatchCummulative* s_determineElemParamsStopWatch = new StopWatchCummulative("_DetermineElementParams");
+StopWatchCummulative* s_processResultsStopWatch = new StopWatchCummulative("_ProcessResults");
+StopWatchCummulative* s_convertProfilesStopWatch = new StopWatchCummulative("ConvertProfiles");
+
 struct ORDDynamicSchemaGenerator
 {
 private:
@@ -993,6 +1032,7 @@ BentleyStatus ORDAlignmentsConverter::UpdateBimVerticalAlignment(ProfileCR cifPr
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ORDAlignmentsConverter::ConvertProfiles(AlignmentCR cifAlignment, AlignmentBim::AlignmentCR alignment, ORDConverter::Params& params)
     {
+    StopWatchOnStack stopWatch(*s_convertProfilesStopWatch);
     ModelRefPinner modelPinner;
 
     Bentley::WString activeProfileId;
@@ -1456,7 +1496,7 @@ ConvertORDElementXDomain::ConvertORDElementXDomain(ORDConverter& converter): m_c
 +---------------+---------------+---------------+---------------+---------------+------*/
 ConvertORDElementXDomain::Result ConvertORDElementXDomain::_PreConvertElement(DgnV8EhCR v8el, Dgn::DgnDbSync::DgnV8::Converter&, Dgn::DgnDbSync::DgnV8::ResolvedModelMapping const& v8mm)
     {
-
+    StopWatchOnStack stopWatch(*s_preConvertStopWatch);
     if (m_elementsSeen.end() != m_elementsSeen.find(v8el.GetElementRef()))
         return Result::Proceed;
 
@@ -1515,6 +1555,7 @@ ConvertORDElementXDomain::Result ConvertORDElementXDomain::_PreConvertElement(Dg
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConvertORDElementXDomain::_DetermineElementParams(DgnClassId& classId, DgnCode& code, DgnCategoryId& categoryId, DgnV8EhCR v8el, DgnDbSync::DgnV8::Converter& converter, ECObjectsV8::IECInstance const* primaryV8Instance, DgnDbSync::DgnV8::ResolvedModelMapping const& v8mm)
     {
+    StopWatchOnStack stopWatch(*s_determineElemParamsStopWatch);
     m_currentFeatureDefName.clear();
     m_currentFeatureName.clear();
 
@@ -2047,6 +2088,7 @@ bool ConvertORDElementXDomain::AssignCorridorSurfaceAspect(Dgn::DgnElementR elem
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConvertORDElementXDomain::_ProcessResults(DgnDbSync::DgnV8::ElementConversionResults& elRes, DgnV8EhCR v8el, DgnDbSync::DgnV8::ResolvedModelMapping const& v8mm, DgnDbSync::DgnV8::Converter&)
     {
+    StopWatchOnStack stopWatch(*s_processResultsStopWatch);
     if (m_converter.m_v8ToBimElmMap.end() != m_converter.m_v8ToBimElmMap.find(v8el.GetElementRef()))
         return;
 
@@ -2367,9 +2409,19 @@ void ORDConverter::AssociateGeneratedAlignments()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ORDConverter::CreateRoadRailElements()
     {
+    BentleyApi::StopWatch stopWatch("CreateRoadRailElements", true);
+    GetProgressMeter().SetCurrentStepName(ORDBridgeProgressMessage::GetString(ORDBridgeProgressMessage::STEP_ALIGN_DATA()).c_str());
+
+    GetProgressMeter().SetCurrentTaskName(ORDBridgeProgressMessage::GetString(ORDBridgeProgressMessage::TASK_CREATE_CORRIDORS()).c_str());
     CreatePathways();
+
+    GetProgressMeter().SetCurrentTaskName(ORDBridgeProgressMessage::GetString(ORDBridgeProgressMessage::TASK_CREATE_ALIGNMENTS()).c_str());
     CreateAlignments();
+
+    GetProgressMeter().SetCurrentTaskName(ORDBridgeProgressMessage::GetString(ORDBridgeProgressMessage::TASK_ASSOCIATE_CORRIDORS()).c_str());
     SetCorridorDesignAlignments();
+
+    GetProgressMeter().SetCurrentTaskName(ORDBridgeProgressMessage::GetString(ORDBridgeProgressMessage::TASK_ASSOCIATE_3DLINEARS()).c_str());
     AssociateGeneratedAlignments();
 
     auto roadRailNetworkModelPtr = GetRoadRailNetwork()->GetNetworkModel();
@@ -2380,6 +2432,13 @@ void ORDConverter::CreateRoadRailElements()
 
     updateProjectExtents(*designHorizAlignmentModelPtr, *m_ordParams, false);
     updateProjectExtents(*roadRailNetworkModelPtr, *m_ordParams, true);
+
+    stopWatch.Stop();
+    ORDBRIDGEPERF_LOGI("%s: %.2f - %d hits", s_preConvertStopWatch->GetDescription(), s_preConvertStopWatch->GetTotalElapsedSeconds(), s_preConvertStopWatch->GetHitCount());
+    ORDBRIDGEPERF_LOGI("%s: %.2f - %d hits", s_determineElemParamsStopWatch->GetDescription(), s_determineElemParamsStopWatch->GetTotalElapsedSeconds(), s_preConvertStopWatch->GetHitCount());
+    ORDBRIDGEPERF_LOGI("%s: %.2f - %d hits", s_processResultsStopWatch->GetDescription(), s_processResultsStopWatch->GetTotalElapsedSeconds(), s_preConvertStopWatch->GetHitCount());
+    ORDBRIDGEPERF_LOGI("%s: %.2f - %d hits", s_convertProfilesStopWatch->GetDescription(), s_convertProfilesStopWatch->GetTotalElapsedSeconds(), s_preConvertStopWatch->GetHitCount());
+    ORDBRIDGEPERF_LOGI("%s: %.2f", stopWatch.GetDescription(), stopWatch.GetElapsedSeconds());
     }
 
 /*---------------------------------------------------------------------------------**//**

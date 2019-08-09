@@ -9,7 +9,6 @@
 #include <windows.h>
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
 
-#define LOG (*NativeLogging::LoggingManager::GetLogger(L"ORDBridge"))
 #define DefaultPhysicalPartitionName    "Physical"
 #define DefaultDesignAlignmentsName     "Road/Rail Design Alignments"
 #define DefaultRoadRailNetworkName      "Road/Rail Network"
@@ -138,13 +137,13 @@ BentleyStatus ORDBridge::_OpenSource()
         switch (initStat)
             {
             case DgnV8Api::DGNOPEN_STATUS_FileNotFound:
-                LOG.fatalv(L"%ls - file not found", _GetParams().GetInputFileName().GetName());
+                ORDBRIDGE_LOG.fatalv(L"%ls - file not found", _GetParams().GetInputFileName().GetName());
                 fwprintf(stderr, L"%ls - file not found\n", _GetParams().GetInputFileName().GetName());
                 break;
 
             default:
                 m_converter->ReportDgnV8FileOpenError(initStat, _GetParams().GetInputFileName().c_str());
-                LOG.fatalv(L"%ls - cannot find or load root model. See %ls-issues for more information.", _GetParams().GetInputFileName().GetName(), _GetParams().GetBriefcaseName().GetName());
+                ORDBRIDGE_LOG.fatalv(L"%ls - cannot find or load root model. See %ls-issues for more information.", _GetParams().GetInputFileName().GetName(), _GetParams().GetBriefcaseName().GetName());
             }
 
         return BentleyStatus::ERROR;
@@ -179,7 +178,7 @@ SubjectCPtr ORDBridge::_InitializeJob()
             // This model was converted by some other job and not as its root.
             // This is probably a user error. If we were to use this as a root, we could end up creating duplicates of it and its references, possibly
             //  using different transforms. That would probably only cause confusion.
-            LOG.fatalv(L"%ls - error - the selected root model [%ls] was previously converted, not as a root but as a reference attachment.", _GetParams().GetBriefcaseName().GetName(), m_converter->GetRootModelP()->GetModelName());
+            ORDBRIDGE_LOG.fatalv(L"%ls - error - the selected root model [%ls] was previously converted, not as a root but as a reference attachment.", _GetParams().GetBriefcaseName().GetName(), m_converter->GetRootModelP()->GetModelName());
             return nullptr;
             }
 

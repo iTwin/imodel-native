@@ -64,6 +64,17 @@ private:
     void SetCorridorDesignAlignments();
     void AssociateGeneratedAlignments();
 
+    typedef Dgn::iModelBridge iModelBridge;
+
+    //! Progress messages for the conversion process
+    IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START(ORDBridgeProgressMessage, ordbridge_progress)
+        L10N_STRING(STEP_ALIGN_DATA)           // =="Aligning data"==
+        L10N_STRING(TASK_CREATE_CORRIDORS)     // =="Creating corridors"==
+        L10N_STRING(TASK_CREATE_ALIGNMENTS)    // =="Creating alignments"==
+        L10N_STRING(TASK_ASSOCIATE_CORRIDORS)  // =="Associating corridors"==
+        L10N_STRING(TASK_ASSOCIATE_3DLINEARS)  // =="Associating 3d linears"==
+    IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
+
 public:
     ORDConverter(Dgn::DgnDbSync::DgnV8::RootModelConverter::RootModelSpatialParams& params) : 
         Dgn::DgnDbSync::DgnV8::RootModelConverter(params), m_isProcessing(false)

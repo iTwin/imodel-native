@@ -56,6 +56,7 @@
         <SubPart PartName="ORDBridgePublicAPI"/>
         <SubPart PartName="VersionedV8_InternalSDK" Repository="DgnDbSync" PartFile="DgnDbSync"/>
         <SubPart PartName="Cif_InternalSDK" />
+        <SubPart PartName="ORDBridge-en"/>
         <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridge" Repository="DgnDbSync" />
         <SubPart PartName="DgnV8ConverterDLL" Repository="DgnDbSync" PartFile="DgnDbSync"/>
         <SubPart PartName="RoadRailPhysical" PartFile="RoadRailPhysical" Repository="DgnDomains-RoadRailPhysical"/>
@@ -473,5 +474,35 @@
     <SubPart PartName="CivilDataExchangeTested" Repository="Civil-DataExchange" PartFile="CivilDataExchange" />
     <SubPart PartName="RunGtest-CS06" />
   </Part>
+
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <!-- // L10N                                                                   // -->
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <Part Name="Platform-xliffs">
+        <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+        <!-- DgnPlatformDLL is responsible for creating DgnPlatform xliffs -->
+        <SubPart PartName="DgnView" Repository="DgnDisplay" PartFile="DgnDisplay"/>
+        <!-- DgnView is responsible for creating DgnView xliffs -->
+        <SubPart PartName="WSClient-Xliffs" PartFile="WSClient" Repository="WSClient"/>
+        <SubPart PartName="iModelHubClient-Xliffs" PartFile="WSClient" Repository="WSClient"/>
+        <SubPart PartName="BeHttp-Xliffs" PartFile="BeHttp" Repository="BeHttp"/>
+    </Part>
+    
+    <Part Name="ORDBridge-Xliffs" BentleyBuildMakeFile="ORDBridge/xliffs.mke">
+        <Bindings>
+            <Files Required="false" SubPartDirectory="xliffs">
+                Delivery/xliffs/ORDBridge_en.xliff
+            </Files>
+        </Bindings>
+    </Part>
+
+    <!-- The English Sqlang database that bundles up ORDBridge's xliff along with platform library xliffs. -->
+    <Part Name="ORDBridge-en" BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke" BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)build/ORDBridge/ORDBridge_en-US.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff">
+        <SubPart PartName="Platform-xliffs"/>
+        <SubPart PartName="ORDBridge-Xliffs"/>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/ORDBridge_en-US.sqlang.db3</Files>
+        </Bindings>
+    </Part>
 
 </BuildContext>
