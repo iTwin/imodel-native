@@ -1066,8 +1066,30 @@ StatusInt GetGeographicToCoordSys (WStringR wkt, WStringR geographicName, WStrin
         // Optional AXIS
         if ((wkt.length() >= 4) && (wkt.substr (0, 4) == (L"AXIS")))
             {
-            // The axis clause is not currently supported ... we fail
-            return ERROR;
+            // For a projcs clause two axises must be specified one after the other
+            // We cannot at this time process all the configuration of the AXIS clause ... the parser fails
+            // unless the order is exactly EAST then NORTH whatever the label used.
+            if (GetAxis(wkt) != AxisDirection::EAST)
+                return ERROR;
+
+            // Trim of whites
+            wkt.Trim();
+
+            // Trim commas
+            if ((wkt.length() >= 1) && (wkt.substr(0, 1) == (L",")))
+                {
+                wkt = wkt.substr(1);
+                }
+    
+            // Trim of whites
+            wkt.Trim();
+
+            // The second AXIS Clause is required according to specs.
+            if ((wkt.length() < 4) || (wkt.substr(0, 4) != (L"AXIS")))
+                return ERROR;
+
+            if (GetAxis(wkt) != AxisDirection::NORTH)
+                return ERROR;
             }
 
         if ((wkt.length() >= 1) && (wkt.substr (0, 1) == (L"]")))
@@ -1466,69 +1488,100 @@ StatusInt GetHorizontalDatumToCoordSys (WStringR wkt, BaseGCSR coordinateSystem)
                 }
             }
     #endif
-        }
 
-    if (finalDatumName.length() != 0)
-        {
-        // We have a datum name ... we simply need to set it now ... in order to do this we need the code
-        int foundIndex = FindDatumIndex (finalDatumName.c_str());
-    
-        if (foundIndex >= 0)
-            coordinateSystem.SetDatumCode (foundIndex);
-        else if (!transfoParamPresent)
-            return ERROR;
-        
-        if (transfoParamPresent)
+        if (finalDatumName.length() != 0)
             {
-            WString paramDatum;
-            if (FindDatumFromTransformationParams(paramDatum, coordinateSystem.GetEllipsoidName(), deltaX, deltaY, deltaZ, rotX, rotY, rotZ, scalePPM))
-                {
-                // We found a datum ... check if same or same definition
-                if (paramDatum != finalDatumName)
-                    {
-                    // Create both datums and compare 
-                    DatumCP namedDatum1 = Datum::CreateDatum(finalDatumName.c_str());
-                    DatumCP namedDatum2 = Datum::CreateDatum(paramDatum.c_str());
-
-                    if (!DatumEquivalent(*(namedDatum1->GetCSDatum()), *(namedDatum2->GetCSDatum()), false, true))
-                        {
-                        // This case can occur when a datum has a null transformation to WGS84 but has not the same shape for the ellipsoid (example: SphereWGS84)
-                        // In this case we simply check and go on
-                        if (!(distanceSame(deltaX, 0.0) && distanceSame(deltaY, 0.0) && distanceSame(deltaZ, 0.0) &&
-                            doubleSame(rotX, 0.0) && doubleSame(rotY, 0.0) && doubleSame(rotZ, 0.0) && doubleSame(scalePPM, 0.0)))
-                            {
-                            namedDatum1->Destroy();
-                            namedDatum2->Destroy();
-                            return ERROR;
-                            }
-                        }
-
-                    namedDatum1->Destroy();
-                    namedDatum2->Destroy();
-                    }
-                }
+            // We have a datum name ... we simply need to set it now ... in order to do this we need the code
+            int foundIndex = FindDatumIndex (finalDatumName.c_str());
+        
+            if (foundIndex >= 0)
+                coordinateSystem.SetDatumCode (foundIndex);
+            else if (!transfoParamPresent)
+                return ERROR;
             
+            if (transfoParamPresent)
+                {
+                WString paramDatum;
+                if (FindDatumFromTransformationParams(paramDatum, coordinateSystem.GetEllipsoidName(), deltaX, deltaY, deltaZ, rotX, rotY, rotZ, scalePPM))
+                    {
+                    // We found a datum ... check if same or same definition
+                    if (paramDatum != finalDatumName)
+                        {
+                        // Create both datums and compare 
+                        DatumCP namedDatum1 = Datum::CreateDatum(finalDatumName.c_str());
+                        DatumCP namedDatum2 = Datum::CreateDatum(paramDatum.c_str());
+    
+                        if (!DatumEquivalent(*(namedDatum1->GetCSDatum()), *(namedDatum2->GetCSDatum()), false, true))
+                            {
+                            // This case can occur when a datum has a null transformation to WGS84 but has not the same shape for the ellipsoid (example: SphereWGS84)
+                            // In this case we simply check and go on
+                            // It can also occur when the seleted datum is deprecated in which case we take the newly found one.
+                            if (finalNameDeprecated)
+                                {
+                                // If the previously selected datum was deprecated and the TOWGS84 are different then we keep the one we have found.
+                                finalDatumName = paramDatum;
+                                int foundIndex1 = FindDatumIndex(finalDatumName.c_str());
 
-            }   
-        }
-    else if (transfoParamPresent)
-        {
-        // No datum match yet transformation parameters were located
-        WString paramDatum;
-        if (!FindDatumFromTransformationParams(paramDatum, coordinateSystem.GetEllipsoidName(), deltaX, deltaY, deltaZ, rotX, rotY, rotZ, scalePPM))
-            return ERROR;
+                                if (foundIndex1 >= 0)
+                                    coordinateSystem.SetDatumCode(foundIndex1);
+                                }
 
-        int foundIndex = FindDatumIndex(paramDatum.c_str());
-
-        if (foundIndex >= 0)
-            coordinateSystem.SetDatumCode(foundIndex);
+                            else if (!(distanceSame(deltaX, 0.0) && distanceSame(deltaY, 0.0) && distanceSame(deltaZ, 0.0) &&
+                                doubleSame(rotX, 0.0) && doubleSame(rotY, 0.0) && doubleSame(rotZ, 0.0) && doubleSame(scalePPM, 0.0)))
+                                {
+                                // If they are still different then it may be because the found datum is based on an eveloved method
+                                // such as grid shift files or multiple regression. In this case we consider the transformation parameters provided as fallback
+                                // solution.
+                                WGS84ConvertCode datumConvert = namedDatum1->GetConvertToWGS84MethodCode();
+    
+                                if ((ConvertType_MREG != datumConvert) &&
+                                    (ConvertType_NAD27 != datumConvert) &&
+                                    (ConvertType_HPGN != datumConvert) &&
+                                    (ConvertType_AGD66 != datumConvert) &&
+                                    (ConvertType_AGD84 != datumConvert) &&
+                                    (ConvertType_NZGD4 != datumConvert) &&
+                                    (ConvertType_ATS77 != datumConvert) &&
+                                    (ConvertType_CSRS != datumConvert) &&
+                                    (ConvertType_TOKYO != datumConvert) &&
+                                    (ConvertType_RGF93 != datumConvert) &&
+                                    (ConvertType_ED50 != datumConvert) &&
+                                    (ConvertType_DHDN != datumConvert) &&
+                                    (ConvertType_GENGRID != datumConvert) &&
+                                    (ConvertType_CHENYX != datumConvert))
+                                    {                               
+                                    namedDatum1->Destroy();
+                                    namedDatum2->Destroy();
+                                    return ERROR;
+                                    }
+                                }
+                            }
+    
+                        namedDatum1->Destroy();
+                        namedDatum2->Destroy();
+                        }
+                    }
+                
+    
+                }   
+            }
+        else if (transfoParamPresent)
+            {
+            // No datum match yet transformation parameters were located
+            WString paramDatum;
+            if (!FindDatumFromTransformationParams(paramDatum, coordinateSystem.GetEllipsoidName(), deltaX, deltaY, deltaZ, rotX, rotY, rotZ, scalePPM))
+                return ERROR;
+    
+            int foundIndex2 = FindDatumIndex(paramDatum.c_str());
+    
+            if (foundIndex2 >= 0)
+                coordinateSystem.SetDatumCode(foundIndex2);
+            else
+                return ERROR;
+    
+            }
         else
             return ERROR;
-
         }
-    else
-        return ERROR;
-
 
     return status;
     }
@@ -4722,7 +4775,7 @@ StatusInt       ProcessProjectionKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
     if ((geoValue == UserDefinedKeyValue) || (geoValue == 16001))
         return SUCCESS;
 
-    return GEOCOORDERR_ProjectionGeoKeyNotSupported;
+    return GEOCOORDERR_CoordParamNotNeededForTrans;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -10481,21 +10534,24 @@ bool shallowCompare
     // NAD83 is considered coincident to WGS84 and so is NSRS11 (NAD83/2011) but there exists a complex geodetic transformation
     // path between NAD83 to NSRS11 that must be applied anyway for these source and target.
     if (datumsEquivalent)
-    {
+        {
         CSDatumConvert* theDatumConverterDirect = CSMap::CSdtcsu(&datum1, &datum2);
         // If datum converter can be created we cannot judge the equivalence.
         // We will consider the datums equal since in all likelyhood they effectively are.
         if (NULL == theDatumConverterDirect)
             return true;
 
-        // The datum transformation must contain a null transformation only (or no transformation)
+        // The datum transformation must contain null transformations only (or no transformation)
         if (theDatumConverterDirect->xfrmCount != 0)
-        {
-            if (theDatumConverterDirect->xfrmCount != 1 || (false == theDatumConverterDirect->xforms[0]->isNullXfrm))
-                datumsEquivalent = false;
-        }
+            {
+            for (int indexXForm = 0 ; indexXForm < theDatumConverterDirect->xfrmCount ; ++indexXForm)
+                {
+                if (false == theDatumConverterDirect->xforms[indexXForm]->isNullXfrm)
+                    datumsEquivalent = false;
+                }
+            }
         CSMap::CS_dtcls(theDatumConverterDirect);
-    }
+        }
 
     return datumsEquivalent;
     }
@@ -12870,6 +12926,32 @@ bool    noSearch
 
     return 0;
 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Alain.Robert                   03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+int             BaseGCS::GetStoredEPSGCode () const
+    {
+    if (NULL == m_csParameters)
+        return 0;
+
+    return m_csParameters->csdef.epsgNbr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Alain.Robert                   03/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt   BaseGCS::SetStoredEPSGCode (short value)
+    {
+    if (NULL == m_csParameters)
+        return GEOCOORDERR_InvalidCoordSys;
+
+    if (value < 0)
+        return GEOCOORDERR_BadArg;
+
+    m_csParameters->csdef.epsgNbr = value;
+    return SUCCESS;
     }
 
 // ----------------------------------------------------------------------------------
