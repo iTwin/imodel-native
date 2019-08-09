@@ -9,4 +9,4 @@ baseDir = $(_MakeFilePath)
 
 always:
     ~chdir $(baseDir)
-    npm test
+    python $(SrcRoot)thirdparty/nodejs_10_16_1/bentley/npm.py run test
