@@ -40,6 +40,8 @@ static void writeMiniDump(EXCEPTION_POINTERS const* exceptionInfoP)
         s_config.m_params => comment stream in .dmp file? Or part of JSON uploaded to service? 
     */
 
+    s_dmpFileName.BeDeleteFile(); // in case there's an old dump file hanging around
+    BeFileName::CreateNewDirectory(s_dmpFileName.GetDirectoryName().c_str()); // in case this is the first dump every generated
     win32Tools_generateMiniDump(nullptr, exceptionInfoP, s_dmpFileName.c_str(), &s_config.m_wantFullMemory);
 
     // TOOD:    send via HTTP to => s_config.m_uploadUrl
