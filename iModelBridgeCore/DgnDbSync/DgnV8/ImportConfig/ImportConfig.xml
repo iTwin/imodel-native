@@ -36,7 +36,7 @@
 
     <Thumbnails viewTypes="Root Drawing" pixelResolution="768" renderModeOverride="None"/>
 
-    <Views viewTypes="RootViewGroup"/>
+    <Views viewTypes=" RootViewGroup , RootSavedViews"/>
     
     <Fonts searchPaths="$(AppRoot)$(v8SdkDir)/Fonts/;$(V8WorkspaceFontPaths)">
         <!--
