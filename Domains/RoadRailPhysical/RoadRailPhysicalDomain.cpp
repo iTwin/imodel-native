@@ -323,6 +323,14 @@ RoadRailNetworkCPtr RoadRailNetwork::Insert(PhysicalModelR parentModel, Utf8Stri
             return nullptr;
         }
 
+    auto horizontalPartitionCPtr = HorizontalAlignments::Insert(*networkPhysicalModelPtr);
+    if (horizontalPartitionCPtr.IsNull())
+        return nullptr;
+
+    auto horizontalBreakDownModelPtr = SpatialLocationModel::Create(*horizontalPartitionCPtr);
+    if (DgnDbStatus::Success != horizontalBreakDownModelPtr->Insert())
+        return nullptr;
+
     return networkCPtr;
     }
 
