@@ -73,6 +73,7 @@ private:
         L10N_STRING(TASK_CREATE_ALIGNMENTS)    // =="Creating alignments"==
         L10N_STRING(TASK_ASSOCIATE_CORRIDORS)  // =="Associating corridors"==
         L10N_STRING(TASK_ASSOCIATE_3DLINEARS)  // =="Associating 3d linears"==
+        L10N_STRING(TASK_PROCESS_PROFILE)      // =="Processing profile"==
     IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
 public:

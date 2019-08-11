@@ -623,6 +623,25 @@ ORDAlignmentsConverter::ORDAlignmentsConverter(ORDConverter& converter): m_ordCo
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ORDAlignmentsConverter::IsDesignAlignment(AlignmentCR alignment) const
     {
+    auto featureDefPtr = alignment.GetFeatureDefinition();
+    if (featureDefPtr.IsNull())
+        {
+        Cif::FeaturizedConsensusItemPtr representationOf = alignment.GetRepresentationOf();
+        if (representationOf.IsValid())
+            featureDefPtr = representationOf->GetFeatureDefinition();
+        }
+
+    if (featureDefPtr.IsValid())
+        {
+        auto featureDefName = featureDefPtr->GetName();
+        auto iterSlash = featureDefName.find(L'\\');
+        if (iterSlash != featureDefName.npos)
+            {
+            auto featureDefType = featureDefName.substr(0, iterSlash);
+            return (0 == featureDefType.CompareTo(L"Alignment"));
+            }
+        }
+
     auto linear3dPtr = alignment.GetActiveLinearEntity3d();
     if (linear3dPtr.IsValid())
         {
@@ -639,20 +658,26 @@ bool ORDAlignmentsConverter::IsDesignAlignment(AlignmentCR alignment) const
 SpatialModelP ORDAlignmentsConverter::Get3DLinearsAlignmentModel(AlignmentCR alignment, ORDConverter::Params& params) const
     {
     auto linear3dPtr = alignment.GetActiveLinearEntity3d();
-    auto corridorPtr = linear3dPtr->GetCorridor();
 
-    ORDCorridorsConverter::CifCorridorSourceItem corridorItem(*corridorPtr);
-
-    iModelExternalSourceAspect::ElementAndAspectId elementAndAspectId =
-        iModelExternalSourceAspect::FindElementBySourceId(m_ordConverter.GetDgnDb(), DgnElementId(params.fileScopeId), corridorItem.Kind(), corridorItem._GetId());
-    if (elementAndAspectId.elementId.IsValid())
+    if (linear3dPtr.IsValid())
         {
-        auto bimCorridorCPtr = RoadRailBim::Corridor::Get(m_ordConverter.GetDgnDb(), elementAndAspectId.elementId);
-        auto corridorSegmentCPtr = RoadRailBim::CorridorSegment::Query(*bimCorridorCPtr, DefaultCorridorSegmentName);
-        return corridorSegmentCPtr->GetCorridorSegmentModel().get();
+        auto corridorPtr = linear3dPtr->GetCorridor();
+        if (corridorPtr.IsValid())
+            {
+            ORDCorridorsConverter::CifCorridorSourceItem corridorItem(*corridorPtr);
+
+            iModelExternalSourceAspect::ElementAndAspectId elementAndAspectId =
+                iModelExternalSourceAspect::FindElementBySourceId(m_ordConverter.GetDgnDb(), DgnElementId(params.fileScopeId), corridorItem.Kind(), corridorItem._GetId());
+            if (elementAndAspectId.elementId.IsValid())
+                {
+                auto bimCorridorCPtr = RoadRailBim::Corridor::Get(m_ordConverter.GetDgnDb(), elementAndAspectId.elementId);
+                auto corridorSegmentCPtr = RoadRailBim::CorridorSegment::Query(*bimCorridorCPtr, DefaultCorridorSegmentName);
+                return corridorSegmentCPtr->GetCorridorSegmentModel().get();
+                }
+            }
         }
 
-    return m_bimDesignAlignmentModelPtr.get();
+    return m_bimNetworkModelPtr.get();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1033,6 +1058,10 @@ BentleyStatus ORDAlignmentsConverter::UpdateBimVerticalAlignment(ProfileCR cifPr
 BentleyStatus ORDAlignmentsConverter::ConvertProfiles(AlignmentCR cifAlignment, AlignmentBim::AlignmentCR alignment, ORDConverter::Params& params)
     {
     StopWatchOnStack stopWatch(*s_convertProfilesStopWatch);
+    
+    m_ordConverter.GetProgressMeter().SetCurrentTaskName(
+        ORDConverter::ORDBridgeProgressMessage::GetString(ORDConverter::ORDBridgeProgressMessage::TASK_PROCESS_PROFILE()).c_str());
+
     ModelRefPinner modelPinner;
 
     Bentley::WString activeProfileId;
@@ -1116,7 +1145,9 @@ DgnElementId ORDAlignmentsConverter::ConvertAlignment(AlignmentCR cifAlignment, 
     if (alignmentCPtr.IsNull())
         alignmentCPtr = AlignmentBim::Alignment::Get(params.changeDetectorP->GetDgnDb(), change.GetSyncInfoRecord().GetDgnElementId());
 
-    ConvertProfiles(cifAlignment, *alignmentCPtr, params);
+    // Only process profiles for CIF design alignments - not 3dLinears. Bad performance issue in CIF.
+    if (alignmentCPtr->GetCategoryId() == AlignmentBim::AlignmentCategory::GetAlignment(alignmentCPtr->GetDgnDb()))
+        ConvertProfiles(cifAlignment, *alignmentCPtr, params);
 
     return alignmentCPtr->GetElementId();
     }
@@ -2435,9 +2466,9 @@ void ORDConverter::CreateRoadRailElements()
 
     stopWatch.Stop();
     ORDBRIDGEPERF_LOGI("%s: %.2f - %d hits", s_preConvertStopWatch->GetDescription(), s_preConvertStopWatch->GetTotalElapsedSeconds(), s_preConvertStopWatch->GetHitCount());
-    ORDBRIDGEPERF_LOGI("%s: %.2f - %d hits", s_determineElemParamsStopWatch->GetDescription(), s_determineElemParamsStopWatch->GetTotalElapsedSeconds(), s_preConvertStopWatch->GetHitCount());
-    ORDBRIDGEPERF_LOGI("%s: %.2f - %d hits", s_processResultsStopWatch->GetDescription(), s_processResultsStopWatch->GetTotalElapsedSeconds(), s_preConvertStopWatch->GetHitCount());
-    ORDBRIDGEPERF_LOGI("%s: %.2f - %d hits", s_convertProfilesStopWatch->GetDescription(), s_convertProfilesStopWatch->GetTotalElapsedSeconds(), s_preConvertStopWatch->GetHitCount());
+    ORDBRIDGEPERF_LOGI("%s: %.2f - %d hits", s_determineElemParamsStopWatch->GetDescription(), s_determineElemParamsStopWatch->GetTotalElapsedSeconds(), s_determineElemParamsStopWatch->GetHitCount());
+    ORDBRIDGEPERF_LOGI("%s: %.2f - %d hits", s_processResultsStopWatch->GetDescription(), s_processResultsStopWatch->GetTotalElapsedSeconds(), s_processResultsStopWatch->GetHitCount());
+    ORDBRIDGEPERF_LOGI("%s: %.2f - %d hits", s_convertProfilesStopWatch->GetDescription(), s_convertProfilesStopWatch->GetTotalElapsedSeconds(), s_convertProfilesStopWatch->GetHitCount());
     ORDBRIDGEPERF_LOGI("%s: %.2f", stopWatch.GetDescription(), stopWatch.GetElapsedSeconds());
     }
 
