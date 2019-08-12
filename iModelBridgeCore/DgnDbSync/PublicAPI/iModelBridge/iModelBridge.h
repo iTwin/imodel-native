@@ -734,6 +734,9 @@ struct iModelBridge
         IMODEL_BRIDGE_EXPORT WebServices::ClientInfoPtr GetClientInfo() const;
         void        SetClientInfo(WebServices::ClientInfoPtr info) { m_clientInfo = info;}
         
+        //! Returns the Bridge version, if set.
+        IMODEL_BRIDGE_EXPORT BeVersion GetBridgeVersion() const;
+
         IMODEL_BRIDGE_EXPORT Http::IHttpHeaderProviderPtr GetDefaultHeaderProvider() const;
 
         bvector<WString> const& GetAdditionalFilePattern() const { return m_additionalFiles; }
