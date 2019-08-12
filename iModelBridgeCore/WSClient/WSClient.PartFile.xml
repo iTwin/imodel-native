@@ -891,7 +891,7 @@
         <RequiredRepository>Bsitools-JsonTinyValidator</RequiredRepository>
         <!-- Also make sure that the testing frameworks are current for syncpull workflows -->
         <RequiredRepository>BeGTest</RequiredRepository>
-        <RequiredRepository>Bsitools-Jasmine</RequiredRepository>
+        <!-- <RequiredRepository>Bsitools-Jasmine</RequiredRepository> -->
 
         <SubPart PartName="BentleyDll"                  PartFile="Bentley"          Repository="Bentley" />
         <SubPart PartName="BeHttp"                      PartFile="BeHttp"           Repository="BeHttp"/>
@@ -906,7 +906,7 @@
         <SubPart PartName="UnitsNative"                 PartFile="Units"            Repository="Units" />
         <SubPart PartName="BeJsonCpp"                   PartFile="BeJsonCpp"        Repository="Libsrc-JsonCpp"/>
         <SubPart PartName="Curl" 						PartFile="Libsrc-Nugets" 	Repository="bsicommon"/>
-        <SubPart PartName="BeJavaScript" PartFile="BeJavaScript/BeJavaScript" Repository="Bentley"/>
+        <!-- <SubPart PartName="BeJavaScript" PartFile="BeJavaScript/BeJavaScript" Repository="Bentley"/> -->
         <SubPart PartName="LoggingManagedInteropShim"/>
     </Part>
 
