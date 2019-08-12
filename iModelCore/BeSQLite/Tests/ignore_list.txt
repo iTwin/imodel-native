@@ -1,0 +1,60 @@
+# Tests that should not be run
+
+InsertPerformanceTests.* # BeSQLite INSERT performance tests (run on demand)
+CompressionTests.CreateZipFile   # crashing when run seperately from test suite
+
+# Issue with void ScopedIssueReporter::Report(Utf8CP message, ...) const
+ECSqlSelectPrepareTests.LikeOperator
+
+
+BeSQliteTestFixture.SQLiteMemCheck_UseInMemoryJournal_NoNestedTransaction
+
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: iOSArm64, Device: iPadAir2, Date: 04/12/2018
+    # 2018-04-12 12:51:18.285579+0500 BeTestiOS[9573:2187410] TestRunner: BeSQliteTestFixture.SQLiteMemCheck_UseInMemoryJournal_NoNestedTransaction
+    # Apr 12 12:51:18  Be[9573] <Info>: TestRunner: BeSQliteTestFixture.SQLiteMemCheck_UseInMemoryJournal_NoNestedTransaction
+    # 2018-04-12 12:51:18.295812+0500 BeTestiOS[9573:2187410] BeSQLite: Created file '/private/var/mobile/Containers/Data/Application/85E52B37-4070-4BF2-A278-FBA2DD2AD202/Library/Application Support/Bentley.BeTestiOS/mem_check.db'.
+    # Apr 12 12:51:18  Be[9573] <Info>: BeSQLite: Created file '/private/var/mobile/Containers/Data/Application/85E52B37-4070-4BF2-A278-FBA2DD2AD202/Library/Application Support/Bentley.BeTestiOS/mem_check.db'.
+    # 2018-04-12 12:51:18.895348+0500 BeTestiOS[9573:2187410] TestRunner: BeFileStatus::Success **!!** file.Create(changesetFile.GetName()) @ /Users/naveed.khan/bsi-src/bim0200dev/src/BeSQLite/Tests/Published/BeSQLite_Test.cpp:379
+    # Apr 12 12:51:18  Be[9573] <Emergency>: TestRunner: BeFileStatus::Success **!!** file.Create(changesetFile.GetName()) @ /Users/naveed.khan/bsi-src/bim0200dev/src/BeSQLite/Tests/Published/BeSQLite_Test.cpp:379
+    # 2018-04-12 12:51:18.895613+0500 BeTestiOS[9573:2187410] TestRunner: BeSQliteTestFixture.SQLiteMemCheck_UseInMemoryJournal_NoNestedTransaction FAILED
+    # Apr 12 12:51:18  Be[9573] <Emergency>: TestRunner: BeSQliteTestFixture.SQLiteMemCheck_UseInMemoryJournal_NoNestedTransaction FAILED
+    # /Users/naveed.khan/bsi-src/bim0200dev/out/iOSARM64/static/build/BeSQLite/XCodeProject/BeTestiOSTests/UnitTests.mm:69: error: -[BeSQLitePublished_BeSQliteTestFixture testSQLiteMemCheck_UseInMemoryJournal_NoNestedTransaction] : ((0 == BETEST_TEST_RUNNER_FUNC(BeSQliteTestFixture,SQLiteMemCheck_UseInMemoryJournal_NoNestedTransaction) ()) is true) failed
+
+BeSQliteTestFixture.SQLiteMemCheck_UseInDiskJournal_UseNestedTransaction
+
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: iOSArm64, Device: iPadAir2, Date: 04/12/2018
+    # 2018-04-12 12:51:17.673399+0500 BeTestiOS[9573:2187410] TestRunner: BeSQliteTestFixture.SQLiteMemCheck_UseInDiskJournal_UseNestedTransaction
+    # Apr 12 12:51:17  Be[9573] <Info>: TestRunner: BeSQliteTestFixture.SQLiteMemCheck_UseInDiskJournal_UseNestedTransaction
+    # 2018-04-12 12:51:17.683777+0500 BeTestiOS[9573:2187410] BeSQLite: Created file '/private/var/mobile/Containers/Data/Application/85E52B37-4070-4BF2-A278-FBA2DD2AD202/Library/Application Support/Bentley.BeTestiOS/mem_check.db'.
+    # Apr 12 12:51:17  Be[9573] <Info>: BeSQLite: Created file '/private/var/mobile/Containers/Data/Application/85E52B37-4070-4BF2-A278-FBA2DD2AD202/Library/Application Support/Bentley.BeTestiOS/mem_check.db'.
+    # 2018-04-12 12:51:18.281245+0500 BeTestiOS[9573:2187410] TestRunner: BeFileStatus::Success **!!** file.Create(changesetFile.GetName()) @ /Users/naveed.khan/bsi-src/bim0200dev/src/BeSQLite/Tests/Published/BeSQLite_Test.cpp:379
+    # Apr 12 12:51:18  Be[9573] <Emergency>: TestRunner: BeFileStatus::Success **!!** file.Create(changesetFile.GetName()) @ /Users/naveed.khan/bsi-src/bim0200dev/src/BeSQLite/Tests/Published/BeSQLite_Test.cpp:379
+    # 2018-04-12 12:51:18.281557+0500 BeTestiOS[9573:2187410] TestRunner: BeSQliteTestFixture.SQLiteMemCheck_UseInDiskJournal_UseNestedTransaction FAILED
+    # Apr 12 12:51:18  Be[9573] <Emergency>: TestRunner: BeSQliteTestFixture.SQLiteMemCheck_UseInDiskJournal_UseNestedTransaction FAILED
+    # /Users/naveed.khan/bsi-src/bim0200dev/out/iOSARM64/static/build/BeSQLite/XCodeProject/BeTestiOSTests/UnitTests.mm:71: error: -[BeSQLitePublished_BeSQliteTestFixture testSQLiteMemCheck_UseInDiskJournal_UseNestedTransaction] : ((0 == BETEST_TEST_RUNNER_FUNC(BeSQliteTestFixture,SQLiteMemCheck_UseInDiskJournal_UseNestedTransaction) ()) is true) failed
+
+BeSQliteTestFixture.SQLiteMemCheck_UseInMemoryJournal_UseNestedTransaction
+
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: iOSArm64, Device: iPadAir2, Date: 04/12/2018
+    # 2018-04-12 12:51:18.899178+0500 BeTestiOS[9573:2187410] TestRunner: BeSQliteTestFixture.SQLiteMemCheck_UseInMemoryJournal_UseNestedTransaction
+    # Apr 12 12:51:18  Be[9573] <Info>: TestRunner: BeSQliteTestFixture.SQLiteMemCheck_UseInMemoryJournal_UseNestedTransaction
+    # 2018-04-12 12:51:18.909462+0500 BeTestiOS[9573:2187410] BeSQLite: Created file '/private/var/mobile/Containers/Data/Application/85E52B37-4070-4BF2-A278-FBA2DD2AD202/Library/Application Support/Bentley.BeTestiOS/mem_check.db'.
+    # Apr 12 12:51:18  Be[9573] <Info>: BeSQLite: Created file '/private/var/mobile/Containers/Data/Application/85E52B37-4070-4BF2-A278-FBA2DD2AD202/Library/Application Support/Bentley.BeTestiOS/mem_check.db'.
+    # 2018-04-12 12:51:19.511940+0500 BeTestiOS[9573:2187410] TestRunner: BeFileStatus::Success **!!** file.Create(changesetFile.GetName()) @ /Users/naveed.khan/bsi-src/bim0200dev/src/BeSQLite/Tests/Published/BeSQLite_Test.cpp:379
+    # Apr 12 12:51:19  Be[9573] <Emergency>: TestRunner: BeFileStatus::Success **!!** file.Create(changesetFile.GetName()) @ /Users/naveed.khan/bsi-src/bim0200dev/src/BeSQLite/Tests/Published/BeSQLite_Test.cpp:379
+    # 2018-04-12 12:51:19.512209+0500 BeTestiOS[9573:2187410] TestRunner: BeSQliteTestFixture.SQLiteMemCheck_UseInMemoryJournal_UseNestedTransaction FAILED
+    # Apr 12 12:51:19  Be[9573] <Emergency>: TestRunner: BeSQliteTestFixture.SQLiteMemCheck_UseInMemoryJournal_UseNestedTransaction FAILED
+    # /Users/naveed.khan/bsi-src/bim0200dev/out/iOSARM64/static/build/BeSQLite/XCodeProject/BeTestiOSTests/UnitTests.mm:70: error: -[BeSQLitePublished_BeSQliteTestFixture testSQLiteMemCheck_UseInMemoryJournal_UseNestedTransaction] : ((0 == BETEST_TEST_RUNNER_FUNC(BeSQliteTestFixture,SQLiteMemCheck_UseInMemoryJournal_UseNestedTransaction) ()) is true) failed
+
+BeSQliteTestFixture.SQLiteMemCheck_UseDiskJournal_NoNestedTransaction
+
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: iOSArm64, Device: iPadAir2, Date: 04/12/2018
+    # 2018-04-12 12:51:17.059560+0500 BeTestiOS[9573:2187410] TestRunner: BeSQliteTestFixture.SQLiteMemCheck_UseDiskJournal_NoNestedTransaction
+    # Apr 12 12:51:17  Be[9573] <Info>: TestRunner: BeSQliteTestFixture.SQLiteMemCheck_UseDiskJournal_NoNestedTransaction
+    # 2018-04-12 12:51:17.065395+0500 BeTestiOS[9573:2187410] BeSQLite: Created file '/private/var/mobile/Containers/Data/Application/85E52B37-4070-4BF2-A278-FBA2DD2AD202/Library/Application Support/Bentley.BeTestiOS/mem_check.db'.
+    # Apr 12 12:51:17  Be[9573] <Info>: BeSQLite: Created file '/private/var/mobile/Containers/Data/Application/85E52B37-4070-4BF2-A278-FBA2DD2AD202/Library/Application Support/Bentley.BeTestiOS/mem_check.db'.
+    # 2018-04-12 12:51:17.667774+0500 BeTestiOS[9573:2187410] TestRunner: BeFileStatus::Success **!!** file.Create(changesetFile.GetName()) @ /Users/naveed.khan/bsi-src/bim0200dev/src/BeSQLite/Tests/Published/BeSQLite_Test.cpp:379
+    # Apr 12 12:51:17  Be[9573] <Emergency>: TestRunner: BeFileStatus::Success **!!** file.Create(changesetFile.GetName()) @ /Users/naveed.khan/bsi-src/bim0200dev/src/BeSQLite/Tests/Published/BeSQLite_Test.cpp:379
+    # 2018-04-12 12:51:17.669038+0500 BeTestiOS[9573:2187410] TestRunner: BeSQliteTestFixture.SQLiteMemCheck_UseDiskJournal_NoNestedTransaction FAILED
+    # Apr 12 12:51:17  Be[9573] <Emergency>: TestRunner: BeSQliteTestFixture.SQLiteMemCheck_UseDiskJournal_NoNestedTransaction FAILED
+    # /Users/naveed.khan/bsi-src/bim0200dev/out/iOSARM64/static/build/BeSQLite/XCodeProject/BeTestiOSTests/UnitTests.mm:68: error: -[BeSQLitePublished_BeSQliteTestFixture testSQLiteMemCheck_UseDiskJournal_NoNestedTransaction] : ((0 == BETEST_TEST_RUNNER_FUNC(BeSQliteTestFixture,SQLiteMemCheck_UseDiskJournal_NoNestedTransaction) ()) is true) failed
