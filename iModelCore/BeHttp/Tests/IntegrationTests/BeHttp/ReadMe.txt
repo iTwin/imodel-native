@@ -1,0 +1,1 @@
+More information about httpbin server and BeHttp in general on http://bsw-wiki.bentley.com/bin/view.pl/Main/Behttp
