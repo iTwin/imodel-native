@@ -82,13 +82,35 @@ struct EXPORT_VTABLE_ATTRIBUTE Classification final : Dgn::DefinitionElement
         //!Returns this Classification Name property
         //! @return Name property of the Classification
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Utf8CP GetName() const { return GetUserLabel(); }
-        
+
+        //! returns ClassId of ElementHasClassifications relationship
+        //! @param[in] db   db the relationship is in
+        static ECN::ECRelationshipClassCR GetRelClassElementHasClassifications(Dgn::DgnDbR db);
+
         //! Gets Classification code generated from given parameters
         //! @param[in]  db       db that contains code specs
         //! @param[in]  name     name of the Classification that will be used for code generation
         //! @param[in]  id       id of ClassificationTable that contains this Classification
         //! @return     generated code
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static Dgn::DgnCode GetClassificationCode(Dgn::DgnDbR db, Utf8StringCR name, Dgn::DgnElementId id);
+
+        //! Gets Classifications associated with the element
+        //! @param[in]  el       element to find classifications for
+        //! @return     ElementIterator iterator over Classification elements
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static Dgn::ElementIterator MakeClassificationsIterator(Dgn::DgnElementCR el);
+
+        //! removes classification from the given element
+        //! @param[in]  el       element to remove classification from
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT void RemoveFrom(Dgn::DgnElementCR el) const;
+
+        //! adds classification to the given element
+        //! @param[in]  el       element to add classification to
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT void AddTo(Dgn::DgnElementCR el) const;
+
+        //! adds classification to the given element
+        //! @param[in]  el       element to check classification for
+        //! @return     true if element has this classification
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT bool ClassifiesElement(Dgn::DgnElementCR el) const;
 
         //!Returns this Classification Id property
         //! @return Id property of the Classification
