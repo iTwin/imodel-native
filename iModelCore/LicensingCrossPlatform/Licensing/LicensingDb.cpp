@@ -7,9 +7,12 @@
 
 #include "LicensingDb.h"
 #include "Logging.h"
+#include <mutex>
 
 USING_NAMESPACE_BENTLEY_LICENSING
 USING_NAMESPACE_BENTLEY_SQLITE
+
+std::mutex dbchangelocker;
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
@@ -577,6 +580,7 @@ BentleyStatus LicensingDb::AddOrUpdatePolicyFile(Utf8StringCR policyId, Utf8Stri
 
     if (m_db.IsDbOpen())
         {
+        dbchangelocker.lock();
         Utf8String stringToken = Json::FastWriter::ToString(policyToken);
         stmt.Prepare(m_db, "INSERT INTO Policy VALUES (?, ?, ?, ?, ?, ?)");
         stmt.BindText(1, policyId, Statement::MakeCopy::No);
@@ -586,6 +590,7 @@ BentleyStatus LicensingDb::AddOrUpdatePolicyFile(Utf8StringCR policyId, Utf8Stri
         stmt.BindText(5, lastUpdateTime, Statement::MakeCopy::No);
         stmt.BindText(6, stringToken, Statement::MakeCopy::No);
         DbResult result = stmt.Step();
+        dbchangelocker.unlock();
         if (result == DbResult::BE_SQLITE_DONE)
             return SUCCESS;
         }
@@ -603,9 +608,11 @@ BentleyStatus LicensingDb::DeletePolicyFile(Utf8StringCR policyId)
 
     if (m_db.IsDbOpen())
         {
+        dbchangelocker.lock();
         stmt.Prepare(m_db, "DELETE FROM Policy WHERE PolicyId = ?");
         stmt.BindText(1, policyId, Statement::MakeCopy::No);
         DbResult result = stmt.Step();
+        dbchangelocker.unlock();
         if (result == DbResult::BE_SQLITE_DONE)
             return SUCCESS;
         }
@@ -623,10 +630,12 @@ BentleyStatus LicensingDb::DeleteAllOtherPolicyFilesByUser(Utf8StringCR policyId
 
     if (m_db.IsDbOpen())
         {
+        dbchangelocker.lock();
         stmt.Prepare(m_db, "DELETE FROM Policy WHERE UserId = ? AND PolicyId != ?");
         stmt.BindText(1, userId, Statement::MakeCopy::No);
         stmt.BindText(2, policyId, Statement::MakeCopy::No);
         DbResult result = stmt.Step();
+        dbchangelocker.unlock();
         if (result == DbResult::BE_SQLITE_DONE)
             return SUCCESS;
         }
@@ -644,10 +653,12 @@ BentleyStatus LicensingDb::DeleteAllOtherPolicyFilesByKey(Utf8StringCR policyId,
 
     if (m_db.IsDbOpen())
         {
+        dbchangelocker.lock();
         stmt.Prepare(m_db, "DELETE FROM Policy WHERE AccessKey = ? AND PolicyId != ?");
         stmt.BindText(1, accessKey, Statement::MakeCopy::No);
         stmt.BindText(2, policyId, Statement::MakeCopy::No);
         DbResult result = stmt.Step();
+        dbchangelocker.unlock();
         if (result == DbResult::BE_SQLITE_DONE)
             return SUCCESS;
         }
@@ -712,10 +723,12 @@ BentleyStatus LicensingDb::SetOfflineGracePeriodStart(Utf8StringCR startTime)
     
     if (m_db.IsDbOpen())
         {
+        dbchangelocker.lock();
         stmt.Prepare(m_db, "INSERT OR REPLACE INTO OfflineGrace VALUES (?, ?)");
         stmt.BindText(1, GRACESTART, Statement::MakeCopy::No);
         stmt.BindText(2, startTime, Statement::MakeCopy::No);
         DbResult result = stmt.Step();
+        dbchangelocker.unlock();
         if (result == DbResult::BE_SQLITE_DONE)
             {
             return SUCCESS;
@@ -779,13 +792,13 @@ BentleyStatus LicensingDb::CleanUpUsages()
 
     Statement stmt;
     Utf8String sqlDeleteStatement;
-
+    dbchangelocker.lock();
     sqlDeleteStatement.Sprintf("DELETE FROM Usage WHERE rowid <= %lld", maxRowId);
 
     stmt.Prepare(m_db, sqlDeleteStatement.c_str());
 
     DbResult result = stmt.Step();
-
+    dbchangelocker.unlock();
     if (result != DbResult::BE_SQLITE_DONE)
         {
         LOG.errorv("CleanUpUsages - Failed to remove usages. BE_SQLITE error %d", result);
@@ -812,13 +825,13 @@ BentleyStatus LicensingDb::CleanUpFeatures()
 
     Statement stmt;
     Utf8String sqlDeleteStatement;
-
+    dbchangelocker.lock();
     sqlDeleteStatement.Sprintf("DELETE FROM Feature WHERE rowid <= %lld", maxRowId);
 
     stmt.Prepare(m_db, sqlDeleteStatement.c_str());
 
     DbResult result = stmt.Step();
-
+    dbchangelocker.unlock();
     if (result != DbResult::BE_SQLITE_DONE)
         {
         LOG.errorv("CleanUpFeatures - Failed to remove features. BE_SQLITE error %d", result);
@@ -865,6 +878,7 @@ BentleyStatus LicensingDb::RecordUsage
 
     if (m_db.IsDbOpen())
         {
+        dbchangelocker.lock();
         stmt.Prepare(m_db, "INSERT INTO Usage VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         stmt.BindInt64(1, ultimateId);
         stmt.BindText(2, principalId, Statement::MakeCopy::No);
@@ -889,7 +903,7 @@ BentleyStatus LicensingDb::RecordUsage
         stmt.BindInt(21, partitionId);
 
         DbResult result = stmt.Step();
-
+        dbchangelocker.unlock();
         if (result == DbResult::BE_SQLITE_DONE)
             return SUCCESS;
 
@@ -938,6 +952,7 @@ BentleyStatus LicensingDb::RecordFeature
 
     if (m_db.IsDbOpen())
         {
+        dbchangelocker.lock();
         stmt.Prepare(m_db, "INSERT INTO Feature VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         stmt.BindInt64(1, ultimateId);
         stmt.BindText(2, countryIso, Statement::MakeCopy::No);
@@ -958,7 +973,7 @@ BentleyStatus LicensingDb::RecordFeature
         stmt.BindText(17, userData, Statement::MakeCopy::No);
 
         DbResult result = stmt.Step();
-
+        dbchangelocker.unlock();
         if (result == DbResult::BE_SQLITE_DONE)
             return SUCCESS;
 
@@ -979,12 +994,13 @@ BentleyStatus LicensingDb::SetEimVersion()
 
     if (m_db.IsDbOpen())
         {
+        dbchangelocker.lock();
         stmt.Prepare(m_db, "INSERT INTO eimVersion VALUES (?, ?)");
         stmt.BindText(1, LICENSE_CLIENT_SCHEMA_NAME, Statement::MakeCopy::No);
         stmt.BindDouble(2, LICENSE_CLIENT_SCHEMA_VERSION);
 
         DbResult result = stmt.Step();
-
+        dbchangelocker.unlock();
         if (result == DbResult::BE_SQLITE_DONE)
             return SUCCESS;
 
@@ -1016,11 +1032,13 @@ BentleyStatus LicensingDb::UpdateDb()
                 {
                 LOG.infov("UpdateDb - Updating schema version %f to %f...", schemaVersion, LICENSE_CLIENT_SCHEMA_VERSION);
                 Utf8String updateStatement;
+                dbchangelocker.lock();
                 //Statement updateStmt;
                 stmt.Finalize();
                 updateStatement.Sprintf("UPDATE eimVersion SET SchemaVersion = %f WHERE rowid = 1", LICENSE_CLIENT_SCHEMA_VERSION);
                 stmt.Prepare(m_db, (Utf8CP) updateStatement.c_str());
                 result = stmt.Step();
+                dbchangelocker.unlock();
                 if (result == DbResult::BE_SQLITE_DONE)
                     {
                     return UpdateDbTables();
