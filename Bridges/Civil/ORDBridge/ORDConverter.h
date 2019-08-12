@@ -118,7 +118,7 @@ private:
     bvector<AspectAssignmentFunc> m_aspectAssignFuncs;
 
     bool AssignAlignmentAspect(Dgn::DgnElementR element, DgnV8EhCR v8el) const;
-    bool AssignLinearQuantityAspect(Dgn::DgnElementR element, DgnV8EhCR v8el) const;
+    bool AssignLinear3dAspect(Dgn::DgnElementR element, DgnV8EhCR v8el) const;
     bool AssignTemplateDropAspect(Dgn::DgnElementR element, DgnV8EhCR v8el) const;
     bool AssignSuperelevationAspect(Dgn::DgnElementR element, DgnV8EhCR v8el) const;
     bool AssignCorridorAspect(Dgn::DgnElementR element, DgnV8EhCR v8el) const;

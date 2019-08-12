@@ -1513,10 +1513,9 @@ ConvertORDElementXDomain::ConvertORDElementXDomain(ORDConverter& converter): m_c
     m_cifConsensusConnection = ConsensusConnection::Create(*m_converter.GetRootModelRefP());
     m_graphic3dClassId = converter.GetDgnDb().Schemas().GetClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_Graphic3d);    
 
-    m_aspectAssignFuncs.push_back(&ConvertORDElementXDomain::AssignFeatureAspect);
     m_aspectAssignFuncs.push_back(&ConvertORDElementXDomain::AssignAlignmentAspect);
-    m_aspectAssignFuncs.push_back(&ConvertORDElementXDomain::AssignCorridorSurfaceAspect);
-    m_aspectAssignFuncs.push_back(&ConvertORDElementXDomain::AssignLinearQuantityAspect);
+    m_aspectAssignFuncs.push_back(&ConvertORDElementXDomain::AssignLinear3dAspect);
+    m_aspectAssignFuncs.push_back(&ConvertORDElementXDomain::AssignCorridorSurfaceAspect);    
     m_aspectAssignFuncs.push_back(&ConvertORDElementXDomain::AssignCorridorAspect);
     m_aspectAssignFuncs.push_back(&ConvertORDElementXDomain::AssignTemplateDropAspect);
     m_aspectAssignFuncs.push_back(&ConvertORDElementXDomain::AssignSuperelevationAspect);
@@ -1989,20 +1988,14 @@ void assignQuantityAspect(Dgn::DgnElementR element, Cif::CorridorSurfaceCR cifCo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      03/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ConvertORDElementXDomain::AssignLinearQuantityAspect(Dgn::DgnElementR element, DgnV8EhCR v8el) const
+bool ConvertORDElementXDomain::AssignLinear3dAspect(Dgn::DgnElementR element, DgnV8EhCR v8el) const
     {
-    auto cifConsensusItemPtr = Linear3dConsensusItem::CreateFromElementHandle(*m_cifConsensusConnection, v8el);
-    if (auto cifLinear3dCP = dynamic_cast<Linear3dConsensusItemCP>(cifConsensusItemPtr.get()))
+    if (v8el.GetDgnModelP()->Is3d())
         {
-        assignQuantityAspect(element, *cifLinear3dCP);
-        return true;
-        }
-    else
-        {
-        auto cifAlignmentPtr = Alignment::CreateFromElementHandle(*m_cifConsensusConnection, v8el);
-        if (cifAlignmentPtr.IsValid())
+        auto cifConsensusItemPtr = Linear3dConsensusItem::CreateFromElementHandle(*m_cifConsensusConnection, v8el);
+        if (auto cifLinear3dCP = dynamic_cast<Linear3dConsensusItemCP>(cifConsensusItemPtr.get()))
             {
-            assignQuantityAspect(element, *cifAlignmentPtr);
+            assignQuantityAspect(element, *cifLinear3dCP);
             return true;
             }
         }
@@ -2015,11 +2008,14 @@ bool ConvertORDElementXDomain::AssignLinearQuantityAspect(Dgn::DgnElementR eleme
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ConvertORDElementXDomain::AssignTemplateDropAspect(Dgn::DgnElementR element, DgnV8EhCR v8el) const
     {
-    auto templateDropPtr = TemplateDrop::CreateFromElementHandle(*m_cifConsensusConnection, v8el);
-    if (templateDropPtr.IsValid())
+    if (!v8el.GetDgnModelP()->Is3d())
         {
-        assignTemplateDropAspect(element, *templateDropPtr);
-        return true;
+        auto templateDropPtr = TemplateDrop::CreateFromElementHandle(*m_cifConsensusConnection, v8el);
+        if (templateDropPtr.IsValid())
+            {
+            assignTemplateDropAspect(element, *templateDropPtr);
+            return true;
+            }
         }
 
     return false;
@@ -2030,16 +2026,19 @@ bool ConvertORDElementXDomain::AssignTemplateDropAspect(Dgn::DgnElementR element
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ConvertORDElementXDomain::AssignSuperelevationAspect(Dgn::DgnElementR element, DgnV8EhCR v8el) const
     {
-    auto superElevationPtr = SuperElevation::CreateFromElementHandle(v8el);
-    if (superElevationPtr.IsValid())
+    if (!v8el.GetDgnModelP()->Is3d())
         {
-        // The following check is due to an null pointer error in CIF when calling GetEndDistance().
-        // This check is a band-aid fix for now to avoid getting into trouble.
-        if (superElevationPtr->GetParentSection()->GetAlignment().IsValid())
+        auto superElevationPtr = SuperElevation::CreateFromElementHandle(v8el);
+        if (superElevationPtr.IsValid())
             {
-            assignStationRangeAspect(element, superElevationPtr->GetStartDistance(), superElevationPtr->GetEndDistance());
-            assignSuperelevationAspect(element, *superElevationPtr);
-            return true;
+            // The following check is due to an null pointer error in CIF when calling GetEndDistance().
+            // This check is a band-aid fix for now to avoid getting into trouble.
+            if (superElevationPtr->GetParentSection()->GetAlignment().IsValid())
+                {
+                assignStationRangeAspect(element, superElevationPtr->GetStartDistance(), superElevationPtr->GetEndDistance());
+                assignSuperelevationAspect(element, *superElevationPtr);
+                return true;
+                }
             }
         }
 
@@ -2051,11 +2050,14 @@ bool ConvertORDElementXDomain::AssignSuperelevationAspect(Dgn::DgnElementR eleme
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ConvertORDElementXDomain::AssignCorridorAspect(Dgn::DgnElementR element, DgnV8EhCR v8el) const
     {
-    auto cifCorridorPtr = Corridor::CreateFromElementHandle(*m_cifConsensusConnection, v8el);
-    if (cifCorridorPtr.IsValid())
+    if (!v8el.GetDgnModelP()->Is3d())
         {
-        assignCorridorAspect(element, *cifCorridorPtr);
-        return true;
+        auto cifCorridorPtr = Corridor::CreateFromElementHandle(*m_cifConsensusConnection, v8el);
+        if (cifCorridorPtr.IsValid())
+            {
+            assignCorridorAspect(element, *cifCorridorPtr);
+            return true;
+            }
         }
 
     return false;
@@ -2081,11 +2083,15 @@ bool ConvertORDElementXDomain::AssignFeatureAspect(Dgn::DgnElementR element, Dgn
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ConvertORDElementXDomain::AssignAlignmentAspect(Dgn::DgnElementR element, DgnV8EhCR v8el) const
     {
-    auto alignmentPtr = Alignment::CreateFromElementHandle(v8el);
-    if (alignmentPtr.IsValid())
+    if (!v8el.GetDgnModelP()->Is3d())
         {
-        assignORDAlignmentAspect(element, *alignmentPtr);
-        return true;
+        auto alignmentPtr = Alignment::CreateFromElementHandle(v8el);
+        if (alignmentPtr.IsValid())
+            {
+            assignORDAlignmentAspect(element, *alignmentPtr);
+            assignQuantityAspect(element, *alignmentPtr);
+            return true;
+            }
         }
 
     return false;
@@ -2096,7 +2102,7 @@ bool ConvertORDElementXDomain::AssignAlignmentAspect(Dgn::DgnElementR element, D
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ConvertORDElementXDomain::AssignCorridorSurfaceAspect(Dgn::DgnElementR element, DgnV8EhCR v8el) const
     {
-    if (element.GetModel()->Is3d())
+    if (v8el.GetDgnModelP()->Is3d())
         {
         auto featurizedPtr = FeaturizedConsensusItem::CreateFromElementHandle(*m_cifConsensusConnection, v8el);
         if (featurizedPtr.IsValid())
@@ -2123,8 +2129,13 @@ void ConvertORDElementXDomain::_ProcessResults(DgnDbSync::DgnV8::ElementConversi
     if (m_converter.m_v8ToBimElmMap.end() != m_converter.m_v8ToBimElmMap.find(v8el.GetElementRef()))
         return;
 
+    AssignFeatureAspect(*elRes.m_element, v8el);
+
     for (auto& func : m_aspectAssignFuncs)
-        (this->*func)(*elRes.m_element, v8el);
+        {
+        if ((this->*func)(*elRes.m_element, v8el))
+            break;
+        }
 
     m_converter.m_v8ToBimElmMap.insert({ v8el.GetElementRef(), elRes.m_element.get() });
     }
