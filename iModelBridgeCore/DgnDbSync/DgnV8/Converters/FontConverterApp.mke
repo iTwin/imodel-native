@@ -1,0 +1,55 @@
+#----------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#----------------------------------------------------------------------
+%include mdl.mki
+
+appName         = FontConverter
+baseDir         = $(_MakeFilePath)
+deliveryDir     = $(BuildContext)Delivery/
+o               = $(OutputRootDir)Build/DgnDbSync/$(appName)/
+
+always:
+    ~mkdir $(o)
+
+
+# Freetype2 header files require additional include paths... do this vs. modifying vendor APIs.
+dirToSearch     = $(BuildContext)VendorAPI/freetype2/
+%include cincapnd.mki
+
+
+# -- Compile --------------------------------------------------------------------------------------
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)FontConverterApp.obj: $(baseDir)FontConverterApp.cpp ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+# -- Link -----------------------------------------------------------------------------------------
+LINKER_LIBRARIES + $(ContextSubpartsLibs)Bentley.lib
+LINKER_LIBRARIES + $(ContextSubpartsLibs)BeSQLite.lib
+LINKER_LIBRARIES + $(ContextSubpartsLibs)BeXml.lib
+LINKER_LIBRARIES + $(ContextSubpartsLibs)DgnPlatform.lib
+LINKER_LIBRARIES + $(ContextSubpartsLibs)DgnV8Converter.lib
+LINKER_LIBRARIES + $(ContextSubpartsLibs)RmgrTools.lib
+LINKER_LIBRARIES + $(ContextSubpartsLibs)freetype2.lib
+LINKER_LIBRARIES + $(guiLibs)
+
+EXE_CONTEXT_LOCATION    = $(deliveryDir)
+EXE_DEST                = $(o)
+EXE_LOPT1               = -entry:wmainCRTStartup
+EXE_NAME                = $(appname)
+EXE_OBJS                = $(MultiCompileObjectList)
+
+%include $(sharedMki)linktool.mki
+
+# -- Extra Files ----------------------------------------------------------------------------------
+$(deliveryDir)$(EXE_NAME).logging.config.xml : $(baseDir)logging.config.xml
+    $(LinkFirstDepToFirstTarget)
+
+# -- Localize -------------------------------------------------------------------------------------
+SQLANG_OutputDb         = $(o)$(appName)_en-US.sqlang.db3
+SQLANG_DeliveryDir      = $(deliveryDir)
+SQLANG_XliffWildcard    = $(BuildContext)SubParts/xliffs/*.xliff
+
+%include $(SrcRoot)bsicommon/sqlang/mki/XliffsToDb.mke

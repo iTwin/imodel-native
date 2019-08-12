@@ -1,0 +1,162 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+#
+# Only the Release Teigha delivery is available from the CVS repository. If you want to debug Teigha,
+# you will either have the Debug delivery available, or have made a full build from Teigha source files.
+# Set one of these env vars to Debug with Teigha(teigha.prewire.mke should've symlink'ed the build for you):
+#
+#   DEBUG_TEIGHA_SOURCE=<output_path>   <= root folder containing the full build(Core, exe, lib, etc sub folders) from Teigha source
+# or
+#   DEBUG_TEIGHA_DLL=<delivery_path>    <= root folder where you have unzipped Teigha's Debug build.
+#
+%if !defined (__mdlMKI__)
+    %include mdl.mki
+%endif
+
+%if $(DWGTOOLKIT) == "RealDwg"
+    %if !defined (VendorVersion)
+        VendorVersion = 2019
+    %endif
+
+    ## RealDWG appends a version suffix to its core lib names:
+    %if $(VendorVersion) == 2016
+        ToolkitLibSuffix = 20
+    %elif $(VendorVersion) == 2017
+        ToolkitLibSuffix = 21
+    %elif $(VendorVersion) == 2018
+        ToolkitLibSuffix = 22
+    %elif $(VendorVersion) == 2019
+        ToolkitLibSuffix = 23
+    %else
+        %error Missing ToolkitLibSuffix for a newer version of RealDWG?
+    %endif
+
+    %if $(VendorVersion) <= 2016
+        OVERRIDE_DEFAULT_VC_TOOLSET = VS2012
+    %endif
+
+%else
+
+    %if !defined (VendorVersion)
+        VendorVersion = 190815
+    %endif
+
+    ## OpenDWG does not have a suffix in its core lib names:
+    ToolkitLibSuffix    =
+
+%endif  # DWGTOOLKIT_
+
+DgnDbSyncPubApi     = $(SrcRoot)DgnDbSync/PublicAPI/
+DwgDbPubApi         = $(DgnDbSyncPubApi)Dwg/DwgDb/
+
+%if $(DWGTOOLKIT) == "OpenDwg"
+
+%if defined(MSVC_VERSION)
+
+    %if exists($(DEBUG_TEIGHA_SOURCE)) || exists($(DEBUG_TEIGHA_DLL))
+        CCompOpts + -D_DEBUG -MDd
+    %endif
+
+    # Use shared libraries on Windows
+    CCompOpts + -D_TOOLKIT_IN_DLL_
+
+    #C4005: 'WIN32_LEAN_AND_MEAN' macro redefinition
+    CCompOpts + -wd4005
+
+    # C4189: local variable is initialized but not referenced
+    CCompOpts + -wd4189
+
+    # C4245: conversion from '...' to '...', signed/unsigned mismatch
+    CCompOpts + -wd4245
+
+    # C4505: unreferenced local function has been removed
+    CCompOpts + -wd4505
+
+    # C5043: 'operator new' exception specification does not match previous declaration
+    CCompOpts + -wd5043
+
+%if defined (DEBUG_TEIGHA_SOURCE)
+    # C4996: 'std::copy_backward::_Unchecked_iterators::_Deprecate' unsafe in ..\VC\INCLUDE\xutility
+    CCompOpts + -D_SCL_SECURE_NO_WARNINGS
+%endif
+
+%if defined (DLM_API_NUMBER)
+    CCompOpts + -DDLM_API_NUMBER=\"$(DLM_API_NUMBER)\"
+%endif
+
+    # LNK4099: PDB was not found with obj; linking object as if no debug info
+    BENTLEY_WIN32_LINK_CommonOptions + -Ignore:4099
+
+%endif  # MSVC_VERSION
+
+
+%if $(VendorVersion) < 40301
+    Kernel = Core
+    Drawing = Core
+%else
+    Kernel = Kernel
+    Drawing = Drawing
+%endif
+
+ToolkitRoot         = $(BuildContext)VendorAPI/Teigha/
+ToolkitCoreInc      = $(ToolkitRoot)$(Kernel)/Include/
+ToolkitCoreServices = $(ToolkitRoot)$(Kernel)/Extensions/ExServices/
+ToolkitAecInc       = $(ToolkitRoot)Architecture/
+ToolkitDrawingInc   = $(ToolkitRoot)$(Drawing)/Include/
+ToolkitHostServices = $(ToolkitRoot)$(Drawing)/Extensions/ExServices/
+ToolkitGripPoints   = $(ToolkitRoot)$(Drawing)/Examples/GripPoints/
+ToolkitLibs         = $(BuildContext)SubParts/Libs/Teigha/
+
+%if $(TARGET_PLATFORM)=="Windows"
+    %if $(VendorVersion) < 190815
+        ToolkitCryptInc = $(ToolkitRoot)$(Drawing)/Extensions/win/Crypt/
+    %else
+        ToolkitCryptInc = $(ToolkitRoot)$(Drawing)/Extensions/ExServices/
+    %endif
+%endif
+
+%elif $(DWGTOOLKIT) == "RealDwg"
+
+ToolkitRoot         = $(BuildContext)VendorAPI/Realdwg$(VendorVersion)/
+ToolkitCoreInc      = $(ToolkitRoot)
+ToolkitBaseInc      = $(ToolkitCoreInc)RealDwg/Base/
+ToolkitLibs         = $(BuildContext)SubParts/Libs/RealDwg$(VendorVersion)/
+
+%else
+
+    %error Must define DWGTOOLKIT to either OpenDwg or RealDwg!
+
+%endif  # DWGTOOLKIT
+
+CCompOpts + -DDWGTOOLKIT_$(DWGTOOLKIT) -DVendorVersion=$(VendorVersion)
+
+#----------------------------------------------------------------------------------------
+#   Include search path
+#----------------------------------------------------------------------------------------
+%if defined(ToolkitCoreInc)
+    cIncs + -I$(ToolkitCoreInc)
+%endif
+%if defined(ToolkitBaseInc)
+    # Needed for brep header files!
+    cIncs + -I$(ToolkitBaseInc)
+%endif
+%if defined(ToolkitDrawingInc)
+    cIncs + -I$(ToolkitDrawingInc)
+%endif
+%if defined(ToolkitCoreServices)
+    cIncs + -I$(ToolkitCoreServices)
+%endif
+
+#----------------------------------------------------------------------
+#       Inform user of compile options
+#----------------------------------------------------------------------
+%if defined(DEBUG) && !defined(NDEBUG)
+always:
+        |  -------- -------- --------- -------- -------- ---------
+        |  Compiler options: $(cDefs) $(CCompOpts) $(CCPchOpts) $(cIncs)
+        |  -------- -------- --------- -------- -------- ---------
+%endif
+

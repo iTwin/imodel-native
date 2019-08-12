@@ -1,0 +1,29 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
+// __PUBLISH_SECTION_START__
+/**
+@mainpage DwgImporter
+
+Welcome to the DwgImporter API from <a href="http://www.bentley.com/">Bentley Systems</a>. 
+
+<p>This SDK is used for reading DWG files and importing them into an iModel2.0 project, either via a DWG iModelBridge or as a standalone program.
+
+<p>The DwgImporter reads an input DWG/DXF/DXB file, converts the data to DgnDb format, adds results into an iModel2.0 briefcase.
+<p>This SDK uses either RealDWG(C) by Autodesk or Teigha(TM) by Open Design Alliance. You must define either DWGTOOLKIT_RealDwg or DWGTOOLKIT_OpenDwg to build your program using the SDK.
+
+<p>There is a layer that works between the main body of DwgImporter and one of the chosen toolkit.  It uses a prefix DwgDb as a name convention that is comparable to AcDb prefix in RealDWG or OdDb prefix in Teigha.
+<p>If you are familiar with either toolkit you may find it helpful in locating a desired API by keeping this convention in mind.  For example, class DwgDbLine extends from either AcDbLine or OdDbLine.
+<p>This API Documentation is built with DWGTOOLKIT_RealDwg, therefore you will see AcDb prefixes in places a super class is exposed in the DwgDb layer.  You can simply assume that replacing AcDb with OdDb will work when your product is built with Teigha.
+
+<p>To develop an iModelBridge with DwgImporter SDK, you may also need to consult iModelBridge SDK Documentation.
+
+These are the main classes and namespaces for the API references:
+- @ref BentleyApi::Dwg::DwgImporter
+- @ref BentleyApi::Dwg::DwgSyncInfo
+- @ref BentleyApi::Dwg::DwgBridge
+- @ref BentleyApi::Dwg::DwgHelper
+- @ref BentleyApi::DwgDb
+*/
