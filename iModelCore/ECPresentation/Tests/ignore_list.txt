@@ -1,0 +1,108 @@
+#----------------------------------------------------------------------------------------
+#   Tests that are ignored on purpose
+#----------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------
+#   Tests that need attention
+#----------------------------------------------------------------------------------------
+
+QueryBasedSpecificationNodesProviderTests.PropertyGrouping_GroupsSubclassNodesWhenSpecificationReturnsParentClassNodesPolymorphically
+
+    # VSTS#85941
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: iOSARM64, Device: iPadAir2, Date: 02/28/2019
+    # 2019-02-27 14:38:05.255255+0500 BeTestiOS[340:25608] TestRunner: QueryBasedSpecificationNodesProviderTests.PropertyGrouping_GroupsSubclassNodesWhenSpecificationReturnsParentClassNodesPolymorphically
+    # Feb 27 14:38:05  Be[340] <Info>: TestRunner: QueryBasedSpecificationNodesProviderTests.PropertyGrouping_GroupsSubclassNodesWhenSpecificationReturnsParentClassNodesPolymorphically
+    # 2019-02-27 14:38:05.276156+0500 BeTestiOS[340:25608] TestRunner: 5 **!!** provider->GetNodesCount() @ /Users/naveed.khan/bsi-src/bim0200dev/src/ECPresentation/Tests/NonPublished/RulesEngine/QueryBasedSpecificationNodesProviderTests.cpp:597
+    # Feb 27 14:38:05  Be[340] <Emergency>: TestRunner: 5 **!!** provider->GetNodesCount() @ /Users/naveed.khan/bsi-src/bim0200dev/src/ECPresentation/Tests/NonPublished/RulesEngine/QueryBasedSpecificationNodesProviderTests.cpp:597
+    # 2019-02-27 14:38:05.278164+0500 BeTestiOS[340:25608] TestRunner: QueryBasedSpecificationNodesProviderTests.PropertyGrouping_GroupsSubclassNodesWhenSpecificationReturnsParentClassNodesPolymorphically FAILED
+    # Feb 27 14:38:05  Be[340] <Emergency>: TestRunner: QueryBasedSpecificationNodesProviderTests.PropertyGrouping_GroupsSubclassNodesWhenSpecificationReturnsParentClassNodesPolymorphically FAILED
+    # /Users/naveed.khan/bsi-src/bim0200dev/out/iOSARM64/static/build/ECPresentation/XCodeProject/BeTestiOSTests/UnitTests.mm:2800: error: -[ECPNonPub_QueryBasedSpecificationNodesProviderTests testPropertyGrouping_GroupsSubclassNodesWhenSpecificationReturnsParentClassNodesPolymorphically] : ((0 == BETEST_TEST_RUNNER_FUNC(QueryBasedSpecificationNodesProviderTests,PropertyGrouping_GroupsSubclassNodesWhenSpecificationReturnsParentClassNodesPolymorphically) ()) is true) failed
+
+QueryBasedSpecificationNodesProviderTests.PropertyGrouping_DoesntGroupNullValuesIfSpecified
+
+    # VSTS#85941
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: iOSARM64, Device: iPadAir2, Date: 02/28/2019
+    # 2019-02-27 14:38:05.216171+0500 BeTestiOS[340:25608] TestRunner: QueryBasedSpecificationNodesProviderTests.PropertyGrouping_DoesntGroupNullValuesIfSpecified
+    # Feb 27 14:38:05  Be[340] <Info>: TestRunner: QueryBasedSpecificationNodesProviderTests.PropertyGrouping_DoesntGroupNullValuesIfSpecified
+    # 2019-02-27 14:38:05.230503+0500 BeTestiOS[340:25608] ECObjects.ECExpressions.Parse: Started parsing: ThisNode.ClassName="Widget"
+    # Feb 27 14:38:05  Be[340] <Info>: ECObjects.ECExpressions.Parse: Started parsing: ThisNode.ClassName="Widget"
+    # 2019-02-27 14:38:05.230672+0500 BeTestiOS[340:25608] ECObjects.ECExpressions.Parse: Parse complete: ThisNode.ClassName="Widget"
+    # Feb 27 14:38:05  Be[340] <Info>: ECObjects.ECExpressions.Parse: Parse complete: ThisNode.ClassName="Widget"
+    # 2019-02-27 14:38:05.230869+0500 BeTestiOS[340:25608] ECObjects.ECExpressions.Parse: Started parsing: this.MyID
+    # Feb 27 14:38:05  Be[340] <Info>: ECObjects.ECExpressions.Parse: Started parsing: this.MyID
+    # 2019-02-27 14:38:05.230956+0500 BeTestiOS[340:25608] ECObjects.ECExpressions.Parse: Parse complete: this.MyID
+    # Feb 27 14:38:05  Be[340] <Info>: ECObjects.ECExpressions.Parse: Parse complete: this.MyID
+    # 2019-02-27 14:38:05.231067+0500 BeTestiOS[340:25608] ECObjects.ECExpressions.Evaluate: ValueSymbol::_GetValue: StructRequired (this.MyID)
+    # Feb 27 14:38:05  Be[340] <Error>: ECObjects.ECExpressions.Evaluate: ValueSymbol::_GetValue: StructRequired (this.MyID)
+    # 2019-02-27 14:38:05.231165+0500 BeTestiOS[340:25608] ECObjects.ECExpressions.Evaluate: ECExpressionsHelper::EvaluateECExpression: Could not get node value
+    # Feb 27 14:38:05  Be[340] <Error>: ECObjects.ECExpressions.Evaluate: ECExpressionsHelper::EvaluateECExpression: Could not get node value
+    # 2019-02-27 14:38:05.231566+0500 BeTestiOS[340:25608] ECObjects.ECExpressions.Evaluate: ValueSymbol::_GetValue: StructRequired (this.MyID)
+    # Feb 27 14:38:05  Be[340] <Error>: ECObjects.ECExpressions.Evaluate: ValueSymbol::_GetValue: StructRequired (this.MyID)
+    # 2019-02-27 14:38:05.231640+0500 BeTestiOS[340:25608] ECObjects.ECExpressions.Evaluate: ECExpressionsHelper::EvaluateECExpression: Could not get node value
+    # Feb 27 14:38:05  Be[340] <Error>: ECObjects.ECExpressions.Evaluate: ECExpressionsHelper::EvaluateECExpression: Could not get node value
+    # 2019-02-27 14:38:05.241378+0500 BeTestiOS[340:25608] TestRunner: 4 **!!** provider->GetNodesCount() @ /Users/naveed.khan/bsi-src/bim0200dev/src/ECPresentation/Tests/NonPublished/RulesEngine/QueryBasedSpecificationNodesProviderTests.cpp:646
+    # Feb 27 14:38:05  Be[340] <Emergency>: TestRunner: 4 **!!** provider->GetNodesCount() @ /Users/naveed.khan/bsi-src/bim0200dev/src/ECPresentation/Tests/NonPublished/RulesEngine/QueryBasedSpecificationNodesProviderTests.cpp:646
+    # 2019-02-27 14:38:05.250336+0500 BeTestiOS[340:25608] TestRunner: QueryBasedSpecificationNodesProviderTests.PropertyGrouping_DoesntGroupNullValuesIfSpecified FAILED
+    # Feb 27 14:38:05  Be[340] <Emergency>: TestRunner: QueryBasedSpecificationNodesProviderTests.PropertyGrouping_DoesntGroupNullValuesIfSpecified FAILED
+    # /Users/naveed.khan/bsi-src/bim0200dev/out/iOSARM64/static/build/ECPresentation/XCodeProject/BeTestiOSTests/UnitTests.mm:2801: error: -[ECPNonPub_QueryBasedSpecificationNodesProviderTests testPropertyGrouping_DoesntGroupNullValuesIfSpecified] : ((0 == BETEST_TEST_RUNNER_FUNC(QueryBasedSpecificationNodesProviderTests,PropertyGrouping_DoesntGroupNullValuesIfSpecified) ()) is true) failed
+
+RulesDrivenECPresentationManagerMultithreadingRealConnectionTests.SetsUpCustomFunctionsInBothPrimaryAndProxyConnections
+
+    # VSTS#85942
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: iOSARM64, Device: iPadAir2, Date: 02/28/2019
+    # 2019-02-27 14:38:12.474943+0500 BeTestiOS[340:25608] TestRunner: RulesDrivenECPresentationManagerMultithreadingRealConnectionTests.SetsUpCustomFunctionsInBothPrimaryAndProxyConnections
+    # Feb 27 14:38:12  Be[340] <Info>: TestRunner: RulesDrivenECPresentationManagerMultithreadingRealConnectionTests.SetsUpCustomFunctionsInBothPrimaryAndProxyConnections
+    # 2019-02-27 14:38:12.477289+0500 BeTestiOS[340:25608] BeSQLite: Created file ''.
+    # Feb 27 14:38:12  Be[340] <Info>: BeSQLite: Created file ''.
+    # 2019-02-27 14:38:12.481816+0500 BeTestiOS[340:25608] ECPresentation.Connections: 0x1c4299b40 PrimaryConnection[7586614592:c3cbdb36-1c02-4a40-844d-d6a97ad9eb0c:/private/var/mobile/Containers/Data/Application/2DF6E8F6-A663-46D3-8A3C-9DCF1BA520A5/Library/Application Support/Bentley.BeTestiOS/RulesDrivenECPresentationManagerMultithreadingTestsBase] created
+    # Feb 27 14:38:12  Be[340] <Info>: ECPresentation.Connections: 0x1c4299b40 PrimaryConnection[7586614592:c3cbdb36-1c02-4a40-844d-d6a97ad9eb0c:/private/var/mobile/Containers/Data/Application/2DF6E8F6-A663-46D3-8A3C-9DCF1BA520A5/Library/Application Support/Bentley.BeTestiOS/RulesDrivenECPresentationManagerMultithreadingTestsBase] created
+    # 2019-02-27 14:38:12.486395+0500 BeTestiOS[340:25960] ECPresentation.Connections: 0x1c414faf0 ProxyConnection[7586614592:c3cbdb36-1c02-4a40-844d-d6a97ad9eb0c:/private/var/mobile/Containers/Data/Application/2DF6E8F6-A663-46D3-8A3C-9DCF1BA520A5/Library/Application Support/Bentley.BeTestiOS/RulesDrivenECPresentationManagerMultithreadingTestsBase] created on thread 1869475840.
+    # Feb 27 14:38:12  Be[340] <Info>: ECPresentation.Connections: 0x1c414faf0 ProxyConnection[7586614592:c3cbdb36-1c02-4a40-844d-d6a97ad9eb0c:/private/var/mobile/Containers/Data/Application/2DF6E8F6-A663-46D3-8A3C-9DCF1BA520A5/Library/Application Support/Bentley.BeTestiOS/RulesDrivenECPresentationManagerMultithreadingTestsBase] created on thread 1869475840.
+    # 2019-02-27 14:38:12.503477+0500 BeTestiOS[340:25960] ECObjects.ECExpressions.Parse: Started parsing: ThisNode.IsOfClass("Widget","RulesEngineTest")
+    # Feb 27 14:38:12  Be[340] <Info>: ECObjects.ECExpressions.Parse: Started parsing: ThisNode.IsOfClass("Widget","RulesEngineTest")
+    # 2019-02-27 14:38:12.503652+0500 BeTestiOS[340:25960] ECObjects.ECExpressions.Parse: Parse complete: ThisNode.IsOfClass("Widget","RulesEngineTest")
+    # Feb 27 14:38:12  Be[340] <Info>: ECObjects.ECExpressions.Parse: Parse complete: ThisNode.IsOfClass("Widget","RulesEngineTest")
+    # 2019-02-27 14:38:12.509291+0500 BeTestiOS[340:25608] TestRunner: 1 **!!** contentSet.GetSize() @ /Users/naveed.khan/bsi-src/bim0200dev/src/ECPresentation/Tests/NonPublished/RulesEngine/PresentationManagerMultithreadingTests.cpp:256
+    # Feb 27 14:38:12  Be[340] <Emergency>: TestRunner: 1 **!!** contentSet.GetSize() @ /Users/naveed.khan/bsi-src/bim0200dev/src/ECPresentation/Tests/NonPublished/RulesEngine/PresentationManagerMultithreadingTests.cpp:256
+    # 2019-02-27 14:38:12.509535+0500 BeTestiOS[340:25960] ECPresentation.RulesEngine.Threads: Thread 1869475840 is being terminated with 1 items in queue. Finishing...
+    # Feb 27 14:38:12  Be[340] <Info>: ECPresentation.RulesEngine.Threads: Thread 1869475840 is being terminated with 1 items in queue. Finishing...
+    # 2019-02-27 14:38:12.511060+0500 BeTestiOS[340:25608] ECPresentation.Connections: 0x1c414faf0 ProxyConnection[7586614592:c3cbdb36-1c02-4a40-844d-d6a97ad9eb0c:/private/var/mobile/Containers/Data/Application/2DF6E8F6-A663-46D3-8A3C-9DCF1BA520A5/Library/Application Support/Bentley.BeTestiOS/RulesDrivenECPresentationManagerMultithreadingTestsBase] closed on thread -1227015360
+    # Feb 27 14:38:12  Be[340] <Info>: ECPresentation.Connections: 0x1c414faf0 ProxyConnection[7586614592:c3cbdb36-1c02-4a40-844d-d6a97ad9eb0c:/private/var/mobile/Containers/Data/Application/2DF6E8F6-A663-46D3-8A3C-9DCF1BA520A5/Library/Application Support/Bentley.BeTestiOS/RulesDrivenECPresentationManagerMultithreadingTestsBase] closed on thread -1227015360
+    # 2019-02-27 14:38:12.511191+0500 BeTestiOS[340:25608] TestRunner: RulesDrivenECPresentationManagerMultithreadingRealConnectionTests.SetsUpCustomFunctionsInBothPrimaryAndProxyConnections FAILED
+    # Feb 27 14:38:12  Be[340] <Emergency>: TestRunner: RulesDrivenECPresentationManagerMultithreadingRealConnectionTests.SetsUpCustomFunctionsInBothPrimaryAndProxyConnections FAILED
+    # /Users/naveed.khan/bsi-src/bim0200dev/out/iOSARM64/static/build/ECPresentation/XCodeProject/BeTestiOSTests/UnitTests.mm:2910: error: -[ECPNonPub_RulesDrivenECPresentationManagerMultithreadingRealConnectionTests testSetsUpCustomFunctionsInBothPrimaryAndProxyConnections] : ((0 == BETEST_TEST_RUNNER_FUNC(RulesDrivenECPresentationManagerMultithreadingRealConnectionTests,SetsUpCustomFunctionsInBothPrimaryAndProxyConnections) ()) is true) failed
+
+QueryBasedSpecificationNodesProviderTests.UsesRelatedInstancePropertiesWhenOverridingLabel
+
+    # VSTS#85941
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: iOSARM64, Device: iPadAir2, Date: 02/28/2019
+    # 2019-02-27 14:38:05.397559+0500 BeTestiOS[340:25608] TestRunner: QueryBasedSpecificationNodesProviderTests.UsesRelatedInstancePropertiesWhenOverridingLabel
+    # Feb 27 14:38:05  Be[340] <Info>: TestRunner: QueryBasedSpecificationNodesProviderTests.UsesRelatedInstancePropertiesWhenOverridingLabel
+    # 2019-02-27 14:38:05.411959+0500 BeTestiOS[340:25608] ECObjects.ECExpressions.Parse: Started parsing: ThisNode.IsInstanceNode AND widget.BoolProperty
+    # Feb 27 14:38:05  Be[340] <Info>: ECObjects.ECExpressions.Parse: Started parsing: ThisNode.IsInstanceNode AND widget.BoolProperty
+    # 2019-02-27 14:38:05.412140+0500 BeTestiOS[340:25608] ECObjects.ECExpressions.Parse: Parse complete: ThisNode.IsInstanceNode And widget.BoolProperty
+    # Feb 27 14:38:05  Be[340] <Info>: ECObjects.ECExpressions.Parse: Parse complete: ThisNode.IsInstanceNode And widget.BoolProperty
+    # 2019-02-27 14:38:05.412954+0500 BeTestiOS[340:25608] ECObjects.ECExpressions.Parse: Started parsing: widget.MyID
+    # Feb 27 14:38:05  Be[340] <Info>: ECObjects.ECExpressions.Parse: Started parsing: widget.MyID
+    # 2019-02-27 14:38:05.413084+0500 BeTestiOS[340:25608] ECObjects.ECExpressions.Parse: Parse complete: widget.MyID
+    # Feb 27 14:38:05  Be[340] <Info>: ECObjects.ECExpressions.Parse: Parse complete: widget.MyID
+    # 2019-02-27 14:38:05.426644+0500 BeTestiOS[340:25608] TestRunner: 3 **!!** provider->GetNodesCount() @ /Users/naveed.khan/bsi-src/bim0200dev/src/ECPresentation/Tests/NonPublished/RulesEngine/QueryBasedSpecificationNodesProviderTests.cpp:127
+    # Feb 27 14:38:05  Be[340] <Emergency>: TestRunner: 3 **!!** provider->GetNodesCount() @ /Users/naveed.khan/bsi-src/bim0200dev/src/ECPresentation/Tests/NonPublished/RulesEngine/QueryBasedSpecificationNodesProviderTests.cpp:127
+    # 2019-02-27 14:38:05.431361+0500 BeTestiOS[340:25608] TestRunner: QueryBasedSpecificationNodesProviderTests.UsesRelatedInstancePropertiesWhenOverridingLabel FAILED
+    # Feb 27 14:38:05  Be[340] <Emergency>: TestRunner: QueryBasedSpecificationNodesProviderTests.UsesRelatedInstancePropertiesWhenOverridingLabel FAILED
+    # /Users/naveed.khan/bsi-src/bim0200dev/out/iOSARM64/static/build/ECPresentation/XCodeProject/BeTestiOSTests/UnitTests.mm:2786: error: -[ECPNonPub_QueryBasedSpecificationNodesProviderTests testUsesRelatedInstancePropertiesWhenOverridingLabel] : ((0 == BETEST_TEST_RUNNER_FUNC(QueryBasedSpecificationNodesProviderTests,UsesRelatedInstancePropertiesWhenOverridingLabel) ()) is true) failed
+
+# Randomly fail in PRG.
+DiskNodesCacheTests.ShareCachedHierarchiesBetweenSessions
+# For example:
+    # [ RUN      ] DiskNodesCacheTests.ShareCachedHierarchiesBetweenSessions
+    # e:\Builds\dcsdk020002204\Source\ECPresentation\Tests\NonPublished\RulesEngine\NavNodesCacheTests.cpp(2139): error: Value of: m_cache->GetCombinedHierarchyLevel(updatedInfo).IsValid()
+    #   Actual: false
+    # Expected: true
+    # e:\Builds\dcsdk020002204\Source\ECPresentation\Tests\NonPublished\RulesEngine\NavNodesCacheTests.cpp(2140): error: Value of: m_cache->IsHierarchyLevelCached(nodes[0]->GetNodeId())
+    #   Actual: false
+    # Expected: true
+    # e:\Builds\dcsdk020002204\Source\ECPresentation\Tests\NonPublished\RulesEngine\NavNodesCacheTests.cpp(2141): error: Value of: m_cache->IsHierarchyLevelCached(nodes[1]->GetNodeId())
+    #   Actual: false
+    # Expected: true
+    # [  FAILED  ] DiskNodesCacheTests.ShareCachedHierarchiesBetweenSessions (346 ms)
