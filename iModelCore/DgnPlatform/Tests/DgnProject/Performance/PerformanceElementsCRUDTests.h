@@ -20,8 +20,8 @@ struct PerformanceElementsCRUDTestFixture : public PerfTestFixture
 
     protected:
         bool m_waitForUserInput;
-        static const int s_initialInstanceCount = 1000000;
-        static const int s_opCount = 50000;
+        static const int s_initialInstanceCount = 1000;
+        static const int s_opCount = 500;
         static const uint64_t s_firstElementId = UINT64_C(1099511627785);
         std::vector<Utf8String> m_pragms;
         PerformanceElementsCRUDTestFixture():m_waitForUserInput (false){}

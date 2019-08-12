@@ -748,6 +748,12 @@ void PerformanceElementsCRUDTestFixture::LogTiming(StopWatch& timer, Utf8CP desc
     desc.Sprintf("%s", description);
     size_t pos = desc.find("API");
     Utf8String opType = desc.substr(pos + 4);
+    Utf8String tclass;
+    tclass.Sprintf("%s", testClassName);
+    Utf8String oCount;
+    oCount.Sprintf("%d", opCount);
+    Utf8String initCount;
+    initCount.Sprintf("%d", initialInstanceCount);
     LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), opCount, totalDescription.c_str(), true, opType.ToUpper(), initialInstanceCount);
 #ifdef PERF_ELEM_CRUD_LOG_TO_CONSOLE
     printf("%.8f %s\n", timer.GetElapsedSeconds(), totalDescription.c_str());

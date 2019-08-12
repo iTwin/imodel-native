@@ -6,7 +6,6 @@
 
 #include "DgnECPerformanceTests.h"
 #include "TestSchemaHelper.h"
-#include <ECObjects/ECObjectsAPI.h>
 #include <ECDb/ECDbApi.h>
 
 USING_NAMESPACE_BENTLEY_EC
@@ -22,13 +21,12 @@ double PerformanceDgnECTests::s_zCoord = 0.0;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Carole.MacDonald                 07/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt PerformanceDgnECTests::CreateArbitraryElement(DgnElementPtr& out, DgnModelR model, DgnCategoryId categoryId)
+StatusInt PerformanceDgnECTests::CreateArbitraryElement(DgnElementPtr& out, DgnModelR model, DgnCategoryId categoryId, IECInstance* instance, DgnClassId classId)
     {
     if (!model.Is3d())
         return ERROR; // What kind of model is this?!?
 
-    DgnClassId elementClassId = DgnClassId(model.GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalElement)); // Should be passed in from primary ECInstance...
-    ElementHandlerP elementHandler = dgn_ElementHandler::Element::FindHandler(model.GetDgnDb(), elementClassId);
+    ElementHandlerP elementHandler = dgn_ElementHandler::Element::FindHandler(model.GetDgnDb(), classId);
 
     if (nullptr == elementHandler)
         return ERROR;
@@ -52,6 +50,7 @@ StatusInt PerformanceDgnECTests::CreateArbitraryElement(DgnElementPtr& out, DgnM
     if (SUCCESS != builder->Finish(*geomElement))
         return ERROR;
 
+    element->SetPropertyValues(*instance);
     out = element;
 
     return SUCCESS;
@@ -86,41 +85,22 @@ void PerformanceDgnECTests::RunInsertTests(ECN::ECSchemaR schema, DgnDbR project
         instances.push_back(instance);
         }
 
-    Utf8PrintfString countName("Inserting %d instances (total) (%s schema)", TESTCLASS_INSTANCE_COUNT, Utf8String(schema.GetFullSchemaName()).c_str());
-
-    StopWatch totalInsertingStopwatch(countName.c_str(), false);
-    StopWatch instructionTimer("Single step", false);
-
-    Utf8String inserting;
-    inserting.Sprintf("Inserting %d instances (inserting) (%s schema)", TESTCLASS_INSTANCE_COUNT, Utf8String(schema.GetFullSchemaName().c_str()).c_str());
     Utf8String attaching;
     attaching.Sprintf("Creating and Inserting %d elements with primary instance attached", TESTCLASS_INSTANCE_COUNT);
 
-    StopWatch insertingTimer(inserting.c_str(), false);
     StopWatch attachingTimer(attaching.c_str(), false);
     //WIP All data modification must go through API. Must not use ECSQL or ECSQL adapters
-    ECInstanceInserter inserter(project, *testClass, nullptr);
-    ASSERT_TRUE(inserter.IsValid());
-
-    totalInsertingStopwatch.Start();
-    insertingTimer.Start();
-    for (int i = 0; i < TESTCLASS_INSTANCE_COUNT; i++)
-        {
-        ECInstanceKey ecInstanceKey;
-        auto insertStatus = inserter.Insert(ecInstanceKey, *instances[i]);
-        ASSERT_EQ(SUCCESS, insertStatus);
-        }
-    insertingTimer.Stop();
 
     DgnCategoryId categoryId = DgnDbTestUtils::InsertSpatialCategory(model->GetDgnDb(), "TestCategory");
     EXPECT_TRUE(categoryId.IsValid());
 
+    DgnClassId classId = model->GetDgnDb().Schemas().GetClassId(testClass->GetSchema().GetName(), testClass->GetName());
     DgnElementPtrVec elements;
     for (int i = 0; i < TESTCLASS_INSTANCE_COUNT; i++)
         {
         StatusInt status;
         DgnElementPtr element;
-        status = CreateArbitraryElement(element, *model, categoryId);
+        status = CreateArbitraryElement(element, *model, categoryId, instances[i].get(), classId);
         ASSERT_EQ(SUCCESS, status);
         elements.push_back(element);
         }
@@ -142,19 +122,12 @@ void PerformanceDgnECTests::RunInsertTests(ECN::ECSchemaR schema, DgnDbR project
         ASSERT_TRUE(DgnDbStatus::Success == modelStatus);
         }
     attachingTimer.Stop();
-    totalInsertingStopwatch.Stop();
 
-    PERFORMANCELOG.infov(L"Inserting %d instances (total): %.4lf", TESTCLASS_INSTANCE_COUNT, totalInsertingStopwatch.GetElapsedSeconds());
-    LOGTODB(testcaseName.c_str(), testName.c_str(), totalInsertingStopwatch.GetElapsedSeconds(), TESTCLASS_INSTANCE_COUNT, "Inserting instances (total)");
-    PERFORMANCELOG.infov(L"Inserting %d instances (inserting): %.4lf", TESTCLASS_INSTANCE_COUNT, insertingTimer.GetElapsedSeconds());
-    LOGTODB(testcaseName.c_str(), testName.c_str(), insertingTimer.GetElapsedSeconds(), TESTCLASS_INSTANCE_COUNT, "Inserting instances (inserting)");
     PERFORMANCELOG.infov(L"Creating and Inserting %d elements with primary instance attached: %.4lf", TESTCLASS_INSTANCE_COUNT, attachingTimer.GetElapsedSeconds());
     LOGTODB(testcaseName.c_str(), testName.c_str(), attachingTimer.GetElapsedSeconds(), TESTCLASS_INSTANCE_COUNT, "Creating and Inserting elements with primary instance attached");
 
 
     bmap<Utf8String, double> results;
-    results[totalInsertingStopwatch.GetDescription()] = totalInsertingStopwatch.GetElapsedSeconds();
-    results[inserting] = insertingTimer.GetElapsedSeconds();
     results[attaching] = attachingTimer.GetElapsedSeconds();
 
     LogResultsToFile(results);

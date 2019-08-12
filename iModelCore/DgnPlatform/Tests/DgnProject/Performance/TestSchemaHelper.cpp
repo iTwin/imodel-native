@@ -53,8 +53,6 @@ ECSchemaReadContextPtr& schemaReadContext,
 Utf8StringCR schemaXml
 )
     {
-    schemaReadContext = ECSchemaReadContext::CreateContext ();
-
     ECSchemaPtr schema;
     auto ecSchemaStatus = ECSchema::ReadFromXmlString (schema, schemaXml.c_str (), *schemaReadContext);
     EXPECT_EQ (SchemaReadStatus::Success, ecSchemaStatus);
@@ -73,8 +71,16 @@ int stringPropCount
 )
     {
     Utf8String schemaXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                    "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"p\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-                    "    <ECClass typeName=\"PIPE_Extra\" isDomainClass=\"True\">";
+                    "<ECSchema schemaName=\"TestSchema\" alias=\"ts\" nameSpacePrefix=\"p\" version=\"1.0.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\" >"
+                    "  <ECSchemaReference name = 'BisCore' version = '01.00.04' prefix = 'bis' alias='bis' />"
+                    "  <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap'/>"
+                    "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA'/>"
+                    "  <ECEntityClass typeName=\"PIPE_Extra\" >"
+                    "    <BaseClass>bis:PhysicalElement</BaseClass>" 
+                    "    <ECCustomAttributes>"
+                    "      <ClassHasHandler xmlns=\"BisCore.01.00\"/>"
+                    "    </ECCustomAttributes>"
+                    "    <ECProperty propertyName=\"IntegerProperty\" typeName=\"int\" />";
 
     for (int i = 0; i < integerPropCount; ++i)
         {
@@ -96,7 +102,7 @@ int stringPropCount
         schemaXml += propertyXml;
         }           
 
-    schemaXml +="    </ECClass>"
+    schemaXml +="    </ECEntityClass>"
                 "</ECSchema>";
 
     return schemaXml;
@@ -111,30 +117,36 @@ Utf8String TestSchemaHelper::GetComplexTestSchemaXml
 )
     {
     return Utf8String ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-"<ECSchema schemaName=\"ComplexTestSchema\" nameSpacePrefix=\"cp\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-"    <ECClass typeName=\"Struct1\" isStruct=\"True\" isDomainClass=\"True\">"
+"<ECSchema schemaName=\"ComplexTestSchema\" nameSpacePrefix=\"cp\" alias=\"cts\" version=\"1.0.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\" >"
+"  <ECSchemaReference name = 'BisCore' version = '01.00.04' prefix = 'bis' alias='bis' />"
+"  <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap'/>"
+"  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA'/>"
+"    <ECStructClass typeName=\"Struct1\" >"
 "        <ECProperty propertyName=\"Struct1BoolMember\" typeName=\"boolean\" />"
 "        <ECProperty propertyName=\"Struct1IntMember\" typeName=\"int\" />"
-"    </ECClass>"
-"    <ECClass typeName=\"Struct2\" isStruct=\"True\" isDomainClass=\"True\">"
+"    </ECStructClass>"
+"    <ECStructClass typeName=\"Struct2\" >"
 "        <ECProperty propertyName=\"Struct2StringMember\" typeName=\"string\" />"
 "        <ECProperty propertyName=\"Struct2DoubleMember\" typeName=\"double\" />"
 "        <ECArrayProperty propertyName=\"NestedArray\" typeName=\"Struct1\" minOccurs=\"0\" maxOccurs=\"unbounded\" isStruct=\"True\" />"
-"    </ECClass>"
-"    <ECClass typeName=\"Struct3\" isStruct=\"True\" isDomainClass=\"True\">"
+"    </ECStructClass>"
+"    <ECStructClass typeName=\"Struct3\" >"
 "        <ECProperty propertyName=\"Struct3DoubleMember\" typeName=\"double\" />"
 "        <ECProperty propertyName=\"Struct3IntMember\" typeName=\"int\" />"
 "        <ECProperty propertyName=\"Struct3BoolMember\" typeName=\"boolean\" />"
-"    </ECClass>"
-"    <ECClass typeName=\"TAGGED_ITEM\" description=\"An ECClass representing Tagged Item\" isDomainClass=\"True\">"
+"    </ECStructClass>"
+"    <ECEntityClass typeName=\"TAGGED_ITEM\" description=\"An ECClass representing Tagged Item\" >"
+"        <BaseClass>bis:PhysicalElement</BaseClass>" 
+"        <ECCustomAttributes>"
+"           <ClassHasHandler xmlns=\"BisCore.01.00\"/>"
+"        </ECCustomAttributes>"
 "        <ECProperty propertyName=\"TAG\" typeName=\"string\" description=\"TAG\"/>"
-"    </ECClass>"
-"    <ECClass typeName=\"BaseClass\" isDomainClass=\"True\">"
-"        <ECProperty propertyName=\"BaseClassMember\" typeName=\"int\" />"
-"    </ECClass>"
-"    <ECClass typeName=\"PIPE_Extra\" description=\"Pipe Class with extra properties\" displayLabel=\"Pipe extra\" isDomainClass=\"True\">"
+"    </ECEntityClass>"
+"    <ECEntityClass typeName=\"PIPE_Extra\" description=\"Pipe Class with extra properties\" displayLabel=\"Pipe extra\" >"
 "        <BaseClass>TAGGED_ITEM</BaseClass>"
-"        <BaseClass>BaseClass</BaseClass>"
+"        <ECCustomAttributes>"
+"           <ClassHasHandler xmlns=\"BisCore.01.00\"/>"
+"        </ECCustomAttributes>"
 "        <ECProperty propertyName=\"Diameter\" typeName=\"string\" description=\"Diameter of PIPE\" />"
 "        <ECProperty propertyName=\"GUID\" typeName=\"string\" />"
 "        <ECArrayProperty propertyName=\"EC_BlobData\" typeName=\"string\" minOccurs=\"0\" maxOccurs=\"unbounded\" />"
@@ -160,7 +172,7 @@ Utf8String TestSchemaHelper::GetComplexTestSchemaXml
 "        <ECStructProperty propertyName=\"FormattedStruct\" typeName=\"Struct3\"/>"
 "        <ECArrayProperty propertyName=\"FormattedArray\" typeName=\"int\" minOccurs=\"0\" maxOccurs=\"unbounded\"/>"
 "        <ECArrayProperty propertyName=\"PointArray\" typeName=\"point3d\" minOccurs=\"0\" maxOccurs=\"unbounded\"/>"
-"    </ECClass>"
+"    </ECEntityClass>"
 "</ECSchema>");
     }
 
