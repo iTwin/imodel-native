@@ -37,13 +37,20 @@ struct ChangedElementsManager final {
         bool        m_filterSpatial;
 
         DbResult AddMetadataToChangeCacheFile(ECDb& cacheFile, ECDbCR primaryECDb) const;
-        DbResult InsertEntries(ECDbR cacheDb, DgnRevisionPtr revision, bvector<DgnElementId> const& elementIds, bvector<ECClassId> const& classIds, bvector<BeSQLite::DbOpcode> const& opcodes);
+        DbResult InsertEntries(ECDbR cacheDb, DgnRevisionPtr revision, bvector<DgnElementId> const& elementIds, bvector<ECClassId> const& classIds, bvector<BeSQLite::DbOpcode> const& opcodes, bvector<DgnModelId> const& modelIds, bvector<AxisAlignedBox3d> const& bboxes);
         bool HasChangeset(ECDbR cacheDb, DgnRevisionPtr revision);
         DgnDbPtr CloneDb(DgnDbR db);
+
+        bmap<DgnModelId, AxisAlignedBox3d> static ComputeChangedModels(ChangedElementsMap const& changedElements);
+        bmap<DgnModelId, AxisAlignedBox3d> static ComputeChangedModels(bvector<DgnModelId> const& modelIds, bvector<AxisAlignedBox3d> const& bboxes);
     public:
         BE_JSON_NAME(elements);
         BE_JSON_NAME(classIds);
         BE_JSON_NAME(opcodes);
+        BE_JSON_NAME(modelIds);
+        BE_JSON_NAME(bboxes);
+        BE_JSON_NAME(changedModels);
+        BE_JSON_NAME(changedElements);
 
         DGNPLATFORM_EXPORT ChangedElementsManager(DgnDbPtr db) : m_db(db), m_filterSpatial(false) {}
         DGNPLATFORM_EXPORT ~ChangedElementsManager();
@@ -59,6 +66,8 @@ struct ChangedElementsManager final {
         DGNPLATFORM_EXPORT DbResult ProcessChangesets(ECDbR cacheDb, Utf8String rulesetId, bvector<DgnRevisionPtr> const& revisions);
         //! Gets the changed elements map based on a range of changesets
         DGNPLATFORM_EXPORT DbResult GetChangedElements(ECDbR cacheDb, ChangedElementsMap& changedElements, Utf8String startChangesetId, Utf8String endChangesetId);
+        //! Gets the changed models based on a range of changesets
+        DGNPLATFORM_EXPORT DbResult GetChangedModels(ECDbR cacheDb, bmap<DgnModelId, AxisAlignedBox3d>& changedModels, Utf8String startChangesetId, Utf8String endChangesetId);
         //! Parses the map into a JSON object to pass back to the addon
         DGNPLATFORM_EXPORT static void ChangedElementsToJSON(JsonValueR val, ChangedElementsMap const& changedElements);
 }; // ChangedElementsManager

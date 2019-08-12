@@ -125,7 +125,7 @@ bool ChangedElementsManager::IsProcessed(ECDbR cacheDb, Utf8String changesetId)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Diego.Pinate     12/2018
 //---------------------------------------------------------------------------------------
-DbResult ChangedElementsManager::InsertEntries(ECDbR cacheDb, DgnRevisionPtr revision, bvector<DgnElementId> const& elementIds, bvector<ECClassId> const& classIds, bvector<BeSQLite::DbOpcode> const& opcodes)
+DbResult ChangedElementsManager::InsertEntries(ECDbR cacheDb, DgnRevisionPtr revision, bvector<DgnElementId> const& elementIds, bvector<ECClassId> const& classIds, bvector<BeSQLite::DbOpcode> const& opcodes, bvector<DgnModelId> const& modelIds, bvector<AxisAlignedBox3d> const& bboxes)
     {
     // Check if we already have this changeset in cache, if so, return success
     if (HasChangeset(cacheDb, revision))
@@ -148,7 +148,7 @@ DbResult ChangedElementsManager::InsertEntries(ECDbR cacheDb, DgnRevisionPtr rev
 
     // Insert element changed in revision
     ECSqlStatement dataStmt;
-    dataStmt.Prepare(cacheDb, "INSERT INTO chems.InstanceChange (ChangedInstance.Id, ChangedInstance.ClassId, OpCode, Changeset.Id) VALUES (?, ?, ?, ?)");
+    dataStmt.Prepare(cacheDb, "INSERT INTO chems.InstanceChange (ChangedInstance.Id, ChangedInstance.ClassId, OpCode, ModelId, BBoxLow, BBoxHigh, Changeset.Id) VALUES (?, ?, ?, ?, ?, ?, ?)");
     for (int i = 0; i < elementIds.size(); ++i)
         {
         dataStmt.BindId(1, elementIds[i]);
@@ -165,9 +165,16 @@ DbResult ChangedElementsManager::InsertEntries(ECDbR cacheDb, DgnRevisionPtr rev
                 dataStmt.BindInt(3, OPC_UPDATE);
                 break;
             }
+        
+        // Bind model Id
+        dataStmt.BindId(4, modelIds[i]);
+
+        // Bind axis aligned box
+        dataStmt.BindPoint3d(5, bboxes[i].low);
+        dataStmt.BindPoint3d(6, bboxes[i].high);
 
         // Navigation property
-        dataStmt.BindId(4, key.GetInstanceId());
+        dataStmt.BindId(7, key.GetInstanceId());
 
         if (BE_SQLITE_DONE != dataStmt.Step())
             {
@@ -179,7 +186,33 @@ DbResult ChangedElementsManager::InsertEntries(ECDbR cacheDb, DgnRevisionPtr rev
         dataStmt.Reset();
         dataStmt.ClearBindings();
         }
+
+    dataStmt.Finalize();
     
+    // Insert changed models data
+    ECSqlStatement modelStmt;
+    modelStmt.Prepare(cacheDb, "INSERT INTO chems.ModelChange (ModelId, BBoxLow, BBoxHigh, Changeset.Id) VALUES (?, ?, ?, ?)");
+    bmap<DgnModelId, AxisAlignedBox3d> changedModels = ChangedElementsManager::ComputeChangedModels(modelIds, bboxes);
+    for (auto changedModel : changedModels)
+        {
+        modelStmt.BindId(1, changedModel.first);
+        modelStmt.BindPoint3d(2, changedModel.second.low);
+        modelStmt.BindPoint3d(3, changedModel.second.high);
+        modelStmt.BindId(4, key.GetInstanceId());
+
+        if (BE_SQLITE_DONE != modelStmt.Step())
+            {
+            LOG.errorv(L"Problem inserting model change into cache");
+            cacheDb.AbandonChanges();
+            return BE_SQLITE_ERROR;
+            }
+
+        modelStmt.Reset();
+        modelStmt.ClearBindings();
+        }
+    
+    modelStmt.Finalize();
+
     return cacheDb.SaveChanges();
     }
 
@@ -215,18 +248,96 @@ DgnDbPtr    ChangedElementsManager::CloneDb(DgnDbR db)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                              Diego.Pinate     8/2019
+//---------------------------------------------------------------------------------------
+bmap<DgnModelId, AxisAlignedBox3d> ChangedElementsManager::ComputeChangedModels(ChangedElementsMap const& changedElements)
+    {
+    // Compute union of ranges then generate entries in changedModels JSON object
+    bmap<DgnModelId, AxisAlignedBox3d> map;
+    for (auto pair : changedElements)
+        {
+        DgnModelId modelId = pair.second.m_modelId;
+        AxisAlignedBox3d bbox = pair.second.m_bbox;
+        if (map.find(modelId) == map.end())
+            {
+            map.Insert(modelId, bbox);
+            continue;
+            }
+
+        AxisAlignedBox3d foundBox = map[modelId];
+        AxisAlignedBox3d bboxUnion(DRange3d::FromUnion(foundBox, bbox));
+        map[modelId] = bboxUnion;
+        }
+
+    return map;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Diego.Pinate     8/2019
+//---------------------------------------------------------------------------------------
+bmap<DgnModelId, AxisAlignedBox3d> ChangedElementsManager::ComputeChangedModels(bvector<DgnModelId> const& modelIds, bvector<AxisAlignedBox3d> const& bboxes)
+    {
+    // Compute union of ranges then generate entries in changedModels JSON object
+    bmap<DgnModelId, AxisAlignedBox3d> map;
+    for (int i = 0; i < modelIds.size(); ++i)
+        {
+        DgnModelId modelId = modelIds[i];
+        AxisAlignedBox3d bbox = bboxes[i];
+        if (map.find(modelId) == map.end())
+            {
+            map.Insert(modelId, bbox);
+            continue;
+            }
+
+        AxisAlignedBox3d foundBox = map[modelId];
+        AxisAlignedBox3d bboxUnion(DRange3d::FromUnion(foundBox, bbox));
+        map[modelId] = bboxUnion;
+        }
+
+    return map;
+    }
+
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                              Diego.Pinate     12/2018
 //---------------------------------------------------------------------------------------
 void ChangedElementsManager::ChangedElementsToJSON(JsonValueR val, ChangedElementsMap const& changedElements)
     {
-    val[ChangedElementsManager::json_elements()] = Json::arrayValue;
-    val[ChangedElementsManager::json_classIds()] = Json::arrayValue;
-    val[ChangedElementsManager::json_opcodes()] = Json::arrayValue;
+    val[ChangedElementsManager::json_changedElements()] = Json::objectValue;
+    val[ChangedElementsManager::json_changedModels()] = Json::objectValue;
+    auto celems = val[ChangedElementsManager::json_changedElements()];
+    auto cmodels = val[ChangedElementsManager::json_changedModels()];
+
+    celems[ChangedElementsManager::json_elements()] = Json::arrayValue;
+    celems[ChangedElementsManager::json_classIds()] = Json::arrayValue;
+    celems[ChangedElementsManager::json_opcodes()] = Json::arrayValue;
+    celems[ChangedElementsManager::json_modelIds()] = Json::arrayValue;
+
+    cmodels[ChangedElementsManager::json_modelIds()] = Json::arrayValue;
+    cmodels[ChangedElementsManager::json_bboxes()] = Json::arrayValue;
+
+    bvector<DgnModelId> modelIds;
+    bvector<AxisAlignedBox3d> bboxes;
+    // Add all the changed elements entries
     for (auto pair : changedElements)
         {
-        val[ChangedElementsManager::json_elements()].append(pair.first.GetInstanceId().ToHexStr());
-        val[ChangedElementsManager::json_classIds()].append(pair.second.m_ecclassId.ToHexStr());
-        val[ChangedElementsManager::json_opcodes()].append((int)pair.second.m_opcode);
+        celems[ChangedElementsManager::json_elements()].append(pair.first.GetInstanceId().ToHexStr());
+        celems[ChangedElementsManager::json_classIds()].append(pair.second.m_ecclassId.ToHexStr());
+        celems[ChangedElementsManager::json_opcodes()].append((int)pair.second.m_opcode);
+        celems[ChangedElementsManager::json_modelIds()].append(pair.second.m_modelId.ToHexStr());
+        modelIds.push_back(pair.second.m_modelId);
+        bboxes.push_back(pair.second.m_bbox);
+        }
+    
+    // Compute union of ranges then generate entries in changedModels JSON object
+    bmap<DgnModelId, AxisAlignedBox3d> map = ChangedElementsManager::ComputeChangedModels(changedElements);
+    // Set it in the JSON object
+    for (auto pair : map)
+        {
+        cmodels[ChangedElementsManager::json_modelIds()].append(pair.first.ToHexStr());
+        Json::Value bboxJson;
+        pair.second.ToJson(bboxJson);
+        cmodels[ChangedElementsManager::json_bboxes()].append(bboxJson);
         }
     }
 
@@ -266,14 +377,16 @@ DbResult ChangedElementsManager::ProcessChangesets(ECDbR cacheDb, Utf8String rul
         bvector<DgnElementId> elementIds;
         bvector<ECClassId> classIds;
         bvector<BeSQLite::DbOpcode> opcodes;
-        if (SUCCESS != summary->GetChangedElements(elementIds, classIds, opcodes))
+        bvector<DgnModelId> modelIds;
+        bvector<AxisAlignedBox3d> bboxes;
+        if (SUCCESS != summary->GetChangedElements(elementIds, classIds, opcodes, modelIds, bboxes))
             {
             LOG.errorv(L"Problem getting changed elements");
             continue;
             }
 
         // Insert data into the cache
-        if (BE_SQLITE_OK != InsertEntries(cacheDb, revision, elementIds, classIds, opcodes))
+        if (BE_SQLITE_OK != InsertEntries(cacheDb, revision, elementIds, classIds, opcodes, modelIds, bboxes))
             {
             LOG.errorv(L"Could not insert entries into cache");
             return BE_SQLITE_ERROR;
@@ -350,7 +463,7 @@ DbResult ChangedElementsManager::GetChangedElements(ECDbR cacheDb, ChangedElemen
 
     // Select data for the elements
     ECSqlStatement elementStmt;
-    elementStmt.Prepare(cacheDb, "SELECT ChangedInstance.Id, ChangedInstance.ClassId, OpCode FROM chems.InstanceChange WHERE Changeset.Id=?");
+    elementStmt.Prepare(cacheDb, "SELECT ChangedInstance.Id, ChangedInstance.ClassId, OpCode, ModelId, BBoxLow, BBoxHigh FROM chems.InstanceChange WHERE Changeset.Id=?");
     // bvector<ECInstanceId> changesetIds;
     while(stmt.Step() == BE_SQLITE_ROW)
         {
@@ -364,6 +477,9 @@ DbResult ChangedElementsManager::GetChangedElements(ECDbR cacheDb, ChangedElemen
             ECInstanceId elementId  = elementStmt.GetValueId<ECInstanceId>(0);
             ECClassId classId       = elementStmt.GetValueId<ECClassId>(1);
             int opcode              = elementStmt.GetValueInt(2);
+            DgnModelId modelId      = elementStmt.GetValueId<DgnModelId>(3);
+            DPoint3d bboxLow        = elementStmt.GetValuePoint3d(4);
+            DPoint3d bboxHigh       = elementStmt.GetValuePoint3d(5);
 
             DbOpcode dbOpcode = DbOpcode::Insert;
             switch(opcode)
@@ -382,7 +498,7 @@ DbResult ChangedElementsManager::GetChangedElements(ECDbR cacheDb, ChangedElemen
                 }
 
             ECInstanceKey elemKey(classId, elementId);
-            VersionCompareChangeSummary::SummaryElementInfo info(dbOpcode, classId);
+            VersionCompareChangeSummary::SummaryElementInfo info(dbOpcode, classId, modelId, AxisAlignedBox3d(bboxLow, bboxHigh));
             if (changedElementsMap.find(elemKey) != changedElementsMap.end())
                 changedElementsMap[elemKey].AccumulateChange(info, true);
             else
@@ -391,6 +507,92 @@ DbResult ChangedElementsManager::GetChangedElements(ECDbR cacheDb, ChangedElemen
             // May have become invalid in case of wrong operations
             if (!changedElementsMap[elemKey].IsValid())
                 changedElementsMap.erase(elemKey);
+            }
+
+        elementStmt.Reset();
+        elementStmt.ClearBindings();
+        }
+
+    stmt.Finalize();
+    elementStmt.Finalize();
+
+    return BE_SQLITE_OK;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Diego.Pinate     8/2019
+//---------------------------------------------------------------------------------------
+DbResult ChangedElementsManager::GetChangedModels(ECDbR cacheDb, bmap<DgnModelId, AxisAlignedBox3d>& changedModels, Utf8String startChangesetId, Utf8String endChangesetId)
+    {
+    // Find changesets in range
+    ECSqlStatement stmt;
+    stmt.Prepare(cacheDb, "SELECT PushDate FROM chems.Changeset WHERE ChangesetId=?");
+    stmt.BindText(1, startChangesetId.c_str(), IECSqlBinder::MakeCopy::No);
+    if (BE_SQLITE_ROW != stmt.Step())
+        return BE_SQLITE_ERROR;
+    
+    // Check if null
+    if (stmt.IsValueNull(0))
+        {
+        LOG.errorv("PushDate is null on changeset entry");
+        return BE_SQLITE_ERROR;
+        }
+
+    DateTime startTime = stmt.GetValueDateTime(0);
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    stmt.BindText(1, endChangesetId.c_str(), IECSqlBinder::MakeCopy::No);
+    if (BE_SQLITE_ROW != stmt.Step())
+        return BE_SQLITE_ERROR;
+    
+    // Check if null
+    if (stmt.IsValueNull(0))
+        {
+        LOG.errorv("PushDate is null on changeset entry");
+        return BE_SQLITE_ERROR;
+        }
+
+    DateTime endTime = stmt.GetValueDateTime(0);
+    stmt.Reset();
+    stmt.Finalize();
+
+    // Find all changesets in range and order them
+    stmt.Prepare(cacheDb, "SELECT ECInstanceId FROM chems.Changeset WHERE PushDate >= ? AND PushDate <= ? ORDER BY PushDate DESC");
+    stmt.BindDateTime(1, startTime);
+    stmt.BindDateTime(2, endTime);
+
+    // Clear the map before populating it
+    changedModels.clear();
+
+    // Select data for the elements
+    ECSqlStatement elementStmt;
+    elementStmt.Prepare(cacheDb, "SELECT ModelId, BBoxLow, BBoxHigh FROM chems.ModelChange WHERE Changeset.Id=?");
+    // bvector<ECInstanceId> changesetIds;
+    while(stmt.Step() == BE_SQLITE_ROW)
+        {
+        ECInstanceId id = stmt.GetValueId<ECInstanceId>(0);
+        // changesetIds.push_back(stmt.GetValueId<ECInstanceId>(0));
+
+        elementStmt.BindId(1, id);
+        while(elementStmt.Step() == BE_SQLITE_ROW)
+            {
+            // Process elements and accumulate change
+            DgnModelId modelId      = elementStmt.GetValueId<DgnModelId>(0);
+            DPoint3d bboxLow        = elementStmt.GetValuePoint3d(1);
+            DPoint3d bboxHigh       = elementStmt.GetValuePoint3d(2);
+
+            // Insert the changed models into the map if not found
+            if (changedModels.find(modelId) == changedModels.end())
+                {
+                changedModels.Insert(modelId, AxisAlignedBox3d(bboxLow, bboxHigh));
+                continue;
+                }
+
+            // If found, accumulate change by doing union of ranges
+            AxisAlignedBox3d current = changedModels[modelId];
+            AxisAlignedBox3d bboxUnion = AxisAlignedBox3d(DRange3d::FromUnion(current, AxisAlignedBox3d(bboxLow, bboxHigh)));
+            changedModels[modelId] = bboxUnion;
             }
 
         elementStmt.Reset();

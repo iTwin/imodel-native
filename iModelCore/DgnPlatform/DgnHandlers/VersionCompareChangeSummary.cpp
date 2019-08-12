@@ -422,13 +422,34 @@ bvector<SelectClassInfo> VersionCompareChangeSummary::GetContentClasses(Utf8Stri
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Diego.Pinate    07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementCPtr  VersionCompareChangeSummary::GetElement(DgnElementId elementId, DbOpcode opcode)
+    {
+    if (m_backwardsComparison)
+        {
+        if (opcode == DbOpcode::Delete)
+            return m_targetDb->Elements().GetElement(elementId);
+
+        return m_db.Elements().GetElement(elementId);
+        }
+    
+    if (opcode == DbOpcode::Insert)
+        return m_targetDb->Elements().GetElement(elementId);
+
+    return m_db.Elements().GetElement(elementId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    09/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void   VersionCompareChangeSummary::ProcessChangedElements(ECInstanceKeySet const& changedInstancesKeys, DbOpcode opcode)
     {
     for (ECInstanceKey id : changedInstancesKeys)
         {
-        SummaryElementInfo info(opcode, id.GetClassId());
+        DgnElementCPtr element = GetElement(DgnElementId(id.GetInstanceId().GetValue()), opcode);
+        GeometrySource3dCP source = element.IsValid() ? element->ToGeometrySource3d() : nullptr;
+        SummaryElementInfo info(opcode, id.GetClassId(), element.IsValid() ? element->GetModelId() : DgnModelId(), nullptr != source ? source->CalculateRange3d() : AxisAlignedBox3d());
         if (m_changedElements.find(id) != m_changedElements.end())
             m_changedElements[id].AccumulateChange(info, m_backwardsComparison);
         else
@@ -688,13 +709,15 @@ void    VersionCompareChangeSummary::SummaryElementInfo::AccumulateChange(Versio
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    09/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt   VersionCompareChangeSummary::GetChangedElements(bvector<DgnElementId>& elementIds, bvector<ECClassId>& ecclassIds, bvector<DbOpcode>& opcodes)
+StatusInt   VersionCompareChangeSummary::GetChangedElements(bvector<DgnElementId>& elementIds, bvector<ECClassId>& ecclassIds, bvector<DbOpcode>& opcodes, bvector<DgnModelId>& modelIds, bvector<AxisAlignedBox3d>& bboxes)
     {
     for (bmap<ECInstanceKey,SummaryElementInfo>::iterator it = m_changedElements.begin(); it != m_changedElements.end(); ++it)
         {
         elementIds.push_back(DgnElementId(it->first.GetInstanceId().GetValue()));
         ecclassIds.push_back(it->first.GetClassId());
         opcodes.push_back(it->second.m_opcode);
+        modelIds.push_back(it->second.m_modelId);
+        bboxes.push_back(it->second.m_bbox);
         }
 
     return SUCCESS;
@@ -703,7 +726,7 @@ StatusInt   VersionCompareChangeSummary::GetChangedElements(bvector<DgnElementId
 //-------------------------------------------------------------------------------------------
 // @bsimethod                                                 Diego.Pinate     10/18
 //-------------------------------------------------------------------------------------------
-StatusInt   VersionCompareChangeSummary::GetChangedElementsOfClass(bvector<DgnElementId>& elementIds, bvector<DbOpcode>& opcodes, ECClassCP classp)
+StatusInt   VersionCompareChangeSummary::GetChangedElementsOfClass(bvector<DgnElementId>& elementIds, bvector<DbOpcode>& opcodes, bvector<DgnModelId>& modelIds, bvector<AxisAlignedBox3d>& bboxes, ECClassCP classp)
     {
     for (bmap<ECInstanceKey,SummaryElementInfo>::iterator it = m_changedElements.begin(); it != m_changedElements.end(); ++it)
         {
@@ -714,6 +737,8 @@ StatusInt   VersionCompareChangeSummary::GetChangedElementsOfClass(bvector<DgnEl
             {
             elementIds.push_back(DgnElementId(it->first.GetInstanceId().GetValue()));
             opcodes.push_back(it->second.m_opcode);
+            modelIds.push_back(it->second.m_modelId);
+            bboxes.push_back(it->second.m_bbox);
             }
         }
     
@@ -723,24 +748,18 @@ StatusInt   VersionCompareChangeSummary::GetChangedElementsOfClass(bvector<DgnEl
 //-------------------------------------------------------------------------------------------
 // @bsimethod                                                 Diego.Pinate     10/18
 //-------------------------------------------------------------------------------------------
-StatusInt   VersionCompareChangeSummary::GetChangedModels(bvector<DgnModelId>& modelIds, bvector<DbOpcode>& opcodes)
+StatusInt   VersionCompareChangeSummary::GetChangedModels(bset<DgnModelId>& modelIds, bvector<DbOpcode>& opcodes)
     {
     ECClassCP modelClass = m_db.Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_Model);
     bvector<DgnElementId> elementIds;
-    if (SUCCESS != GetChangedElementsOfClass(elementIds, opcodes, modelClass))
+    bvector<DgnModelId> modelIdArray;
+    bvector<AxisAlignedBox3d> bboxes;
+    if (SUCCESS != GetChangedElementsOfClass(elementIds, opcodes, modelIdArray, bboxes, modelClass))
         return ERROR;
-    
-    for (DgnElementId elementId : elementIds)
-        {
-        DgnModelId modelId = m_db.Elements().QueryModelId(elementId);
-        if (!modelId.IsValid())
-            m_targetDb->Elements().QueryModelId(elementId);
 
-        BeAssert(modelId.IsValid());
-        if (modelId.IsValid())
-            modelIds.push_back(modelId);
-        }
-    
+    for (int index = 0; index < modelIdArray.size(); ++index)
+        modelIds.insert(modelIdArray.at(index));
+
     return SUCCESS;
     }
 

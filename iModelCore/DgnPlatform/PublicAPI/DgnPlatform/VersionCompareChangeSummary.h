@@ -12,6 +12,7 @@
 #include <ECObjects/ECObjects.h>
 #include <ECObjects/ECSchema.h>
 #include <ECPresentation/Content.h>
+#include <Geom/GeomApi.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -34,14 +35,18 @@ struct VersionCompareChangeSummary : RefCountedBase
     //=======================================================================================
     struct SummaryElementInfo
         {
-        BentleyApi::BeSQLite::DbOpcode   m_opcode;
-        BentleyApi::ECN::ECClassId       m_ecclassId;
+        BentleyApi::BeSQLite::DbOpcode          m_opcode;
+        BentleyApi::ECN::ECClassId              m_ecclassId;
+        BentleyApi::Dgn::DgnModelId             m_modelId;
+        BentleyApi::AxisAlignedBox3d            m_bbox;
 
         DGNPLATFORM_EXPORT void AccumulateChange(SummaryElementInfo info, bool backwards);
         DGNPLATFORM_EXPORT bool IsValid();
         DGNPLATFORM_EXPORT void Invalidate();
 
-        SummaryElementInfo(BentleyApi::BeSQLite::DbOpcode opcode, BentleyApi::ECN::ECClassId classId) : m_opcode(opcode), m_ecclassId(classId) { }
+        SummaryElementInfo(BentleyApi::BeSQLite::DbOpcode opcode, BentleyApi::ECN::ECClassId classId, BentleyApi::Dgn::DgnModelId modelId, BentleyApi::AxisAlignedBox3d bbox) :
+            m_opcode(opcode), m_ecclassId(classId), m_modelId(modelId), m_bbox(bbox) { }
+
         SummaryElementInfo() { }
         }; // SummaryElementInfo
 
@@ -124,6 +129,9 @@ private:
     StatusInt       ParseClassFullName(Utf8StringR schemaName, Utf8StringR className, Utf8CP classFullName);
     StatusInt       GetInstancesWithAspectUpdates(BentleyApi::Dgn::DgnChangeSummary* changeSummary, ECInstanceKeySet& instances, Utf8CP elementClassFullName, Utf8CP aspectRelationshipClassFullName, Utf8CP aspectClassFullName);
     
+    //! Get an element pointer by searching the correct Db based on the opcode
+    DgnElementCPtr  GetElement(BentleyApi::Dgn::DgnElementId elementId, BentleyApi::BeSQLite::DbOpcode opcode);
+    
     //! Gets the content classes from Presentation Rules to know the paths relevant for change inspection
     bvector<BentleyApi::ECPresentation::SelectClassInfo> GetContentClasses(Utf8String schemaName, Utf8String className);
 
@@ -187,18 +195,18 @@ public:
     //! @param[out] elementIds Element IDs of elements affected by changesets
     //! @param[out] ecclassIds ECClass IDs for all elementIds
     //! @param[out] opcodes Types of changes of each of the elements
-    DGNPLATFORM_EXPORT StatusInt   GetChangedElements(bvector<BentleyApi::Dgn::DgnElementId>& elementIds, bvector<BentleyApi::ECN::ECClassId>& ecclassIds, bvector<BentleyApi::BeSQLite::DbOpcode>& opcodes);
+    DGNPLATFORM_EXPORT StatusInt   GetChangedElements(bvector<BentleyApi::Dgn::DgnElementId>& elementIds, bvector<BentleyApi::ECN::ECClassId>& ecclassIds, bvector<BentleyApi::BeSQLite::DbOpcode>& opcodes, bvector<BentleyApi::Dgn::DgnModelId>& modelIds, bvector<BentleyApi::AxisAlignedBox3d>& bboxes);
 
     //! Returns changed elements that are of a particular class
     //! @param[out] elementIds Elements that changed
     //! @param[out] opcodes types of changes
     //! @param[in] classp ECClassCP being looked for
-    DGNPLATFORM_EXPORT StatusInt     GetChangedElementsOfClass(bvector<BentleyApi::Dgn::DgnElementId>& elementIds, bvector<BentleyApi::BeSQLite::DbOpcode>& opcodes, BentleyApi::ECN::ECClassCP classp);
+    DGNPLATFORM_EXPORT StatusInt     GetChangedElementsOfClass(bvector<BentleyApi::Dgn::DgnElementId>& elementIds, bvector<BentleyApi::BeSQLite::DbOpcode>& opcodes, bvector<BentleyApi::Dgn::DgnModelId>& modelIds, bvector<BentleyApi::AxisAlignedBox3d>& bboxes, BentleyApi::ECN::ECClassCP classp);
 
     //! Get the models that changed
     //! @param[out] modelIds all DgnModelId that changed
     //! @param[out] opcodes types of changes
-    DGNPLATFORM_EXPORT StatusInt     GetChangedModels(bvector<BentleyApi::Dgn::DgnModelId>& modelIds, bvector<BentleyApi::BeSQLite::DbOpcode>& opcodes);
+    DGNPLATFORM_EXPORT StatusInt     GetChangedModels(bset<BentleyApi::Dgn::DgnModelId>& modelIds, bvector<BentleyApi::BeSQLite::DbOpcode>& opcodes);
 
 
     //! More performant version of GetElement call by providing the class Id no need to search for the instance key

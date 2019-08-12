@@ -7,7 +7,7 @@ import {
   BentleyStatus, ChangeSetApplyOption, ChangeSetStatus, DbOpcode, DbResult, GuidString, Id64String,
   IDisposable, IModelStatus, Logger, OpenMode, RepositoryStatus, StatusCodeWithMessage,
 } from "@bentley/bentleyjs-core";
-import { ElementProps, ChangedElements, QueryLimit, QueryQuota, QueryPriority } from "@bentley/imodeljs-common";
+import { ElementProps, QueryLimit, QueryQuota, QueryPriority } from "@bentley/imodeljs-common";
 // *** Add no dependencies on other packages! ***
 // *** Add no dependencies on other packages! ***
 // *** Add no dependencies on other packages! ***
@@ -338,7 +338,7 @@ export declare namespace IModelJsNative {
     public isOpen(): boolean;
     public closeDb(): void;
     public processChangesets(db: DgnDb, changesets: string, rulesetId: string, filterSpatial: boolean): DbResult;
-    public getChangedElements(startChangesetId: string, endChangesetId: string): ErrorStatusOrResult<IModelStatus, ChangedElements>;
+    public getChangedElements(startChangesetId: string, endChangesetId: string): ErrorStatusOrResult<IModelStatus, any>;
     public isProcessed(changesetId: string): boolean;
   }
 

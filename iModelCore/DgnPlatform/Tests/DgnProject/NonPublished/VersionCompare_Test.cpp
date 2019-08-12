@@ -45,6 +45,7 @@ public:
 
     bool ModifyElement(DgnElementId elementId);
     DgnElementPtr InsertPhysicalElement(Utf8String codeName);
+    DgnElementPtr InsertPhysicalElement(Utf8String codeName, DPoint3dCR center, DPoint3dCR size);
 
     static DgnDbPtr CloneTemporaryDb(DgnDbPtr db);
     static DgnRevisionPtr CreateRevision();
@@ -255,28 +256,36 @@ bool VersionCompareTestFixture::ModifyElement(DgnElementId elementId)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Diego.Pinate    09/17
+* @bsimethod                                                    Diego.Pinate    08/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementPtr   VersionCompareTestFixture::InsertPhysicalElement(Utf8String codeName)
+DgnElementPtr   VersionCompareTestFixture::InsertPhysicalElement(Utf8String codeName, DPoint3dCR center, DPoint3dCR size)
     {
     PhysicalModelR model = *m_defaultModel->ToPhysicalModelP();
     GenericPhysicalObjectPtr physicalElementPtr = GenericPhysicalObject::Create(model, m_defaultCategoryId);
     auto codeSpec = CodeSpec::Create(*m_db, "MyCodeSpec");
     physicalElementPtr->SetCode(codeSpec->CreateCode(codeName));
 
-    double blockSizeX = 2.0, blockSizeY = 2.0, blockSizeZ = 2.0;
-    DPoint3d blockSizeRange = DPoint3d::From(blockSizeX, blockSizeY, blockSizeZ);
-    DgnBoxDetail blockDetail = DgnBoxDetail::InitFromCenterAndSize(DPoint3d::FromZero(), blockSizeRange, true);
+    DgnBoxDetail blockDetail = DgnBoxDetail::InitFromCenterAndSize(DPoint3d::FromZero(), size, true);
     ISolidPrimitivePtr geomPtr = ISolidPrimitive::CreateDgnBox(blockDetail);
     BeAssert(geomPtr.IsValid());
 
-    GeometryBuilderPtr builder = GeometryBuilder::Create(*m_defaultModel, m_defaultCategoryId, DPoint3d::FromZero(), YawPitchRollAngles());
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*m_defaultModel, m_defaultCategoryId, center, YawPitchRollAngles());
     builder->Append(*geomPtr);
     BentleyStatus status = builder->Finish(*physicalElementPtr);
     BeAssert(status == SUCCESS);
 
     m_db->Elements().Insert(*physicalElementPtr);
     return physicalElementPtr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Diego.Pinate    08/19
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementPtr   VersionCompareTestFixture::InsertPhysicalElement(Utf8String codeName)
+    {
+    DPoint3d blockSizeRange = DPoint3d::From(2.0, 2.0, 2.0);
+    DPoint3d center = DPoint3d::FromZero();
+    return VersionCompareTestFixture::InsertPhysicalElement(codeName, center, blockSizeRange);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -362,13 +371,18 @@ struct ElementData
     {
     DbOpcode        m_opcode;
     ECClassId       m_classId;
+    DgnModelId      m_modelId;
+    AxisAlignedBox3d m_bbox;
 
     ElementData(DgnElementPtr element, DbOpcode opcode) : m_opcode(opcode)
         {
         m_classId = element->GetElementClass()->GetId();
+        m_modelId = element->GetModelId();
+        GeometrySource3dCP source = element->ToGeometrySource3d();
+        m_bbox = nullptr != source ? source->CalculateRange3d() : AxisAlignedBox3d();
         }
 
-    ElementData(ECClassId classId, DbOpcode opcode) : m_opcode(opcode), m_classId(classId) { }
+    ElementData(ECClassId classId, DbOpcode opcode, DgnModelId modelId, AxisAlignedBox3d bbox) : m_opcode(opcode), m_classId(classId), m_modelId(modelId), m_bbox(bbox) { }
     ElementData() : m_opcode((DbOpcode)0) { m_classId.Invalidate(); }
 
     bool IsValid()
@@ -409,7 +423,7 @@ void PrintFoundRecord(DgnDbR db, DgnElementId elementId, ECClassId ecclassId, Db
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    09/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CheckOutput(DgnDbR db, ElementMap & map, bvector<DgnElementId> const& elementIds, bvector<ECClassId> const& ecclassIds, bvector<DbOpcode> opcodes)
+void CheckOutput(DgnDbR db, ElementMap & map, bvector<DgnElementId> const& elementIds, bvector<ECClassId> const& ecclassIds, bvector<DbOpcode> const& opcodes, bvector<DgnModelId> const& modelIds, bvector<AxisAlignedBox3d> const& bboxes)
     {
     EXPECT_EQ(elementIds.size(), map.size());
 
@@ -419,6 +433,8 @@ void CheckOutput(DgnDbR db, ElementMap & map, bvector<DgnElementId> const& eleme
         DgnElementId currentId      = elementIds[i];
         ECClassId currentECClassId  = ecclassIds[i];
         DbOpcode currentOpcode      = opcodes[i];
+        DgnModelId modelId          = modelIds[i];
+        AxisAlignedBox3d boundBox   = bboxes[i];
 
         PrintFoundRecord(db, currentId, currentECClassId, currentOpcode);
 
@@ -444,6 +460,8 @@ void CreateSummaryAndCheckOutput(DgnDbPtr db, ElementMap& map, bvector<DgnRevisi
     bvector<DgnElementId> elementIds;
     bvector<ECClassId> ecclassIds;
     bvector<DbOpcode> opcodes;
+    bvector<DgnModelId> modelIds;
+    bvector<AxisAlignedBox3d> bboxes;
     StatusInt status = SUCCESS;
 
     clock_t t0 = clock();
@@ -453,11 +471,11 @@ void CreateSummaryAndCheckOutput(DgnDbPtr db, ElementMap& map, bvector<DgnRevisi
     if (!Utf8String::IsNullOrEmpty(debugLabel.c_str()))
         printf("%s - Generate: %lf seconds\n", debugLabel.c_str(), elapsed);
 
-    status = changeSummary->GetChangedElements(elementIds, ecclassIds, opcodes);
+    status = changeSummary->GetChangedElements(elementIds, ecclassIds, opcodes, modelIds, bboxes);
     EXPECT_EQ(SUCCESS, status);
 
     // Compare desired output with actual output
-    CheckOutput(*db, map, elementIds, ecclassIds, opcodes);
+    CheckOutput(*db, map, elementIds, ecclassIds, opcodes, modelIds, bboxes);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -969,10 +987,12 @@ void CreateSummaryAndCheckPropertyOutput(DgnDbPtr db, ElementInputPropertyMap& i
     bvector<DgnElementId> elementIds;
     bvector<ECClassId> ecclassIds;
     bvector<DbOpcode> opcodes;
+    bvector<DgnModelId> modelIds;
+    bvector<AxisAlignedBox3d> bboxes;
     StatusInt status = SUCCESS;
     VersionCompareChangeSummaryPtr changeSummary = VersionCompareChangeSummary::Generate (*db, changesets, "Items", backwards, filterSpatial, filterLastMod);
 
-    status = changeSummary->GetChangedElements(elementIds, ecclassIds, opcodes);
+    status = changeSummary->GetChangedElements(elementIds, ecclassIds, opcodes, modelIds, bboxes);
     EXPECT_EQ(SUCCESS, status);
 
     // Swap input map's new/old values
@@ -1260,6 +1280,16 @@ TEST_F(VersionCompareTestFixture, ChangedElementsManagerTest1)
     EXPECT_EQ(map[firstElement->GetECInstanceKey()].m_opcode, DbOpcode::Insert);
     EXPECT_EQ(map[secondElement->GetECInstanceKey()].m_opcode, DbOpcode::Insert);
     EXPECT_EQ(map[thirdElement->GetECInstanceKey()].m_opcode, DbOpcode::Insert);
+    // Test we have the correct model Ids
+    EXPECT_EQ(elementMap[firstElement->GetElementId()].m_modelId, map[firstElement->GetECInstanceKey()].m_modelId);
+    EXPECT_EQ(elementMap[secondElement->GetElementId()].m_modelId, map[secondElement->GetECInstanceKey()].m_modelId);
+    EXPECT_EQ(elementMap[thirdElement->GetElementId()].m_modelId, map[thirdElement->GetECInstanceKey()].m_modelId);
+
+    // Test we can get changed models
+    bmap<DgnModelId, AxisAlignedBox3d> changedModels;
+    EXPECT_EQ(BE_SQLITE_OK, ceMgr.GetChangedModels(cacheDb, changedModels, changesets[2]->GetId(), changesets[1]->GetId()));
+    // Should have the default model in the changed models
+    EXPECT_TRUE(changedModels.find(m_defaultModelId) != changedModels.end());
 
     // Now test getting changed elements for changeset 2 only
     EXPECT_EQ(BE_SQLITE_OK, ceMgr.GetChangedElements(cacheDb, map, changesets[1]->GetId(), changesets[1]->GetId()));
@@ -1271,6 +1301,12 @@ TEST_F(VersionCompareTestFixture, ChangedElementsManagerTest1)
     EXPECT_EQ(map[secondElement->GetECInstanceKey()].m_opcode, DbOpcode::Update);
     EXPECT_EQ(map[thirdElement->GetECInstanceKey()].m_opcode, DbOpcode::Insert);
 
+    // Test we can get changed models for only one changeset
+    changedModels.clear();
+    EXPECT_EQ(BE_SQLITE_OK, ceMgr.GetChangedModels(cacheDb, changedModels, changesets[1]->GetId(), changesets[1]->GetId()));
+    // Should have the default model in the changed models
+    EXPECT_TRUE(changedModels.find(m_defaultModelId) != changedModels.end());
+
     // Now test getting full range of changed elements, first element should never appear due to accumulation
     EXPECT_EQ(BE_SQLITE_OK, ceMgr.GetChangedElements(cacheDb, map, changesets[2]->GetId(), changesets[0]->GetId()));
     EXPECT_EQ(2, map.size());
@@ -1279,6 +1315,100 @@ TEST_F(VersionCompareTestFixture, ChangedElementsManagerTest1)
     EXPECT_FALSE(map.find(thirdElement->GetECInstanceKey()) == map.end());
     EXPECT_EQ(map[secondElement->GetECInstanceKey()].m_opcode, DbOpcode::Insert);
     EXPECT_EQ(map[thirdElement->GetECInstanceKey()].m_opcode, DbOpcode::Insert);
+
+    // Test we can get changed models for all changesets
+    changedModels.clear();
+    EXPECT_EQ(BE_SQLITE_OK, ceMgr.GetChangedModels(cacheDb, changedModels, changesets[2]->GetId(), changesets[0]->GetId()));
+    // Should have the default model in the changed models
+    EXPECT_TRUE(changedModels.find(m_defaultModelId) != changedModels.end());
+
+    // Close cache Db
+    cacheDb.CloseDb();
+    }
+
+//-------------------------------------------------------------------------------------------
+// @bsimethod                                                 Diego.Pinate     12/18
+//-------------------------------------------------------------------------------------------
+TEST_F(VersionCompareTestFixture, ChangedElementsManagerTest2_ChangedModels)
+    {
+    // Test generating the changed elements ECDb based on a change summary
+    bvector<DgnRevisionPtr> changesets;
+
+    // CHANGESET 1
+    // Insert elements
+    DgnElementPtr firstElement = InsertPhysicalElement("X1", DPoint3d::From(1.0, 1.0, 1.0), DPoint3d::From(1.0, 1.0, 1.0));
+    DgnElementPtr secondElement = InsertPhysicalElement("X2", DPoint3d::From(3.0, 3.0, 3.0), DPoint3d::From(1.0, 1.0, 1.0));
+    DgnRevisionPtr changeset1 = CreateRevision();
+    changesets.push_back(changeset1);
+
+    // CHANGESET 2
+    // Create another element and update one
+    DgnElementPtr thirdElement = InsertPhysicalElement("X3", DPoint3d::From(9.0, 9.0, 9.0), DPoint3d::From(1.0, 1.0, 1.0));
+    // Should still be mark as an insertion
+    ModifyElement(secondElement->GetElementId());
+    DgnRevisionPtr changeset2 = CreateRevision();
+    changesets.push_back(changeset2);
+
+    // Filename and cleanup if needed
+    BeFileName cacheFilename;
+    BeTest::GetHost().GetOutputRoot(cacheFilename);
+    cacheFilename.AppendToPath(L"ChangedElements.chems");
+    if (BeFileName::DoesPathExist(cacheFilename.GetName()))
+        BeFileName::BeDeleteFile(cacheFilename.GetName());
+
+    // Process backwards
+    std::reverse(changesets.begin(), changesets.end());
+
+    ChangedElementsManager ceMgr(m_db);
+    ECDb cacheDb;
+    // Create the Db file
+    // TODO: Good filename
+    EXPECT_EQ(BE_SQLITE_OK, ceMgr.CreateChangedElementsCache(cacheDb, cacheFilename));
+    // Process the changeset
+    EXPECT_EQ(BE_SQLITE_OK, ceMgr.ProcessChangesets(cacheDb, "Items", changesets));
+
+    // Test we can get changed models for first changeset
+    bmap<DgnModelId, AxisAlignedBox3d> changedModels;
+    EXPECT_EQ(BE_SQLITE_OK, ceMgr.GetChangedModels(cacheDb, changedModels, changeset1->GetId(), changeset1->GetId()));
+    // Should have the default model in the changed models
+    EXPECT_TRUE(changedModels.find(m_defaultModelId) != changedModels.end());
+    AxisAlignedBox3d bbox = changedModels[m_defaultModelId];
+    // The high of the bounding box should be the high center second element (3.0, 3.0, 3.0) plus the size of the box halved (1.0, 1.0, 1.0)
+    EXPECT_EQ(bbox.high.x, 3.5);
+    EXPECT_EQ(bbox.high.y, 3.5);
+    EXPECT_EQ(bbox.high.z, 3.5);
+    // Same for the low because of first element inserted in (.0, .0, .0)
+    EXPECT_EQ(bbox.low.x, 0.5);
+    EXPECT_EQ(bbox.low.y, 0.5);
+    EXPECT_EQ(bbox.low.z, 0.5);
+
+    // Test we can get changed models for both changesets
+    EXPECT_EQ(BE_SQLITE_OK, ceMgr.GetChangedModels(cacheDb, changedModels, changeset1->GetId(), changeset2->GetId()));
+    // Should have the default model in the changed models
+    EXPECT_TRUE(changedModels.find(m_defaultModelId) != changedModels.end());
+    bbox = changedModels[m_defaultModelId];
+    // The high of the bounding box should be the high center third element (9.0, 9.0, 9.0) plus the size of the box halved (1.0, 1.0, 1.0)
+    EXPECT_EQ(bbox.high.x, 9.5);
+    EXPECT_EQ(bbox.high.y, 9.5);
+    EXPECT_EQ(bbox.high.z, 9.5);
+    // Same for the low because of first element inserted in (.0, .0, .0)
+    EXPECT_EQ(bbox.low.x, 0.5);
+    EXPECT_EQ(bbox.low.y, 0.5);
+    EXPECT_EQ(bbox.low.z, 0.5);
+
+    // Test we can get changed models for last changeset only
+    EXPECT_EQ(BE_SQLITE_OK, ceMgr.GetChangedModels(cacheDb, changedModels, changeset2->GetId(), changeset2->GetId()));
+    // Should have the default model in the changed models
+    EXPECT_TRUE(changedModels.find(m_defaultModelId) != changedModels.end());
+    bbox = changedModels[m_defaultModelId];
+    // The high of the bounding box should be the high center third element (9.0, 9.0, 9.0) plus the size of the box halved (1.0, 1.0, 1.0)
+    EXPECT_EQ(bbox.high.x, 9.5);
+    EXPECT_EQ(bbox.high.y, 9.5);
+    EXPECT_EQ(bbox.high.z, 9.5);
+    // Account for the modification of the second element done, should have (3.0, 3.0, 3.0) center, then moved in X one unit, minus 1.0 halved (size)
+    EXPECT_EQ(bbox.low.x, 3.5);
+    EXPECT_EQ(bbox.low.y, 2.5);
+    EXPECT_EQ(bbox.low.z, 2.5);
 
     // Close cache Db
     cacheDb.CloseDb();
