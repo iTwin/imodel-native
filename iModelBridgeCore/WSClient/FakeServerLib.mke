@@ -1,0 +1,73 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+# This only affect WinRT build.
+#ENABLE_CPP_CX_EXTENSIONS = 1
+%include mdl.mki
+
+#--------------------------------------------------------------------------------------
+#   Building the WebServicesCache library
+#--------------------------------------------------------------------------------------
+nameToDefine = __FAKESERVER_DLL_BUILD__
+%include cdefapnd.mki
+
+#--------------------------------------------------------------------------------------
+#   iOS-specific
+#--------------------------------------------------------------------------------------
+AppleCppFileTypeControl = $(AppleCppFileTypeControl_ObjCpp)
+# Ignore unknown pragmas
+LLVMCommonCompOpts + -Wno-unknown-pragmas
+
+FakeServerSourceDirectory       = $(_MakeFilePath)
+FakeServerPublicApiDirectory    = $(_MakeFilePath)PublicAPI/
+BuildContextLibsDirectory       = $(BuildContext)SubParts/Libs/
+
+o = $(OutputRootDir)build/WSClient/FakeServer/
+always:
+    !~@mkdir $(o)
+
+#--------------------------------------------------------------------------------------
+#   Compile
+#--------------------------------------------------------------------------------------
+dirToSearch = $(_MakeFilePath)PublicAPI/
+%include cincapnd.mki
+
+MultiCompileDepends=$(_MakeFileSpec)
+%include $(SrcRoot)bsicommon/PublicSDK/MultiCppCompileRule.mki
+
+%include FakeServer/FakeServer.mki
+
+%include $(SrcRoot)bsicommon/PublicSDK/MultiCppCompileGo.mki
+FakeServerObjectList = $(MultiCompileObjectList)
+
+#--------------------------------------------------------------------------------------
+#   Link the library
+#--------------------------------------------------------------------------------------
+DLM_NAME                    = FakeServer
+DLM_OBJECT_FILES            = $(FakeServerObjectList)
+DLM_OBJECT_DEST             = $(o)
+DLM_DEST                    = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+# DgnClientFx library name
+
+_dgnclientfxLibraryName = $(libprefix)DgnClientFx$(stlibext)
+
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeJsonCpp$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeSQLite$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeSQLiteEC$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeXml$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)ECObjects$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeHttp$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)DgnPlatform$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)WebServicesClient$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)WebServicesClient$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BentleyGeom$(stlibext)
+
+%include $(sharedMki)LinkLibrary.mki
