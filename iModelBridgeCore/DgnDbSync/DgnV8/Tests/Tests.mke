@@ -84,6 +84,8 @@ $(o)DgnMaterial_Tests.obj       : $(BEGTEST_INPUT)DgnMaterial_Tests.cpp         
 
 $(o)BasicGeometryTests.obj      : $(BEGTEST_INPUT)BasicGeometryTests.cpp        $(TestsHeaders) ${MultiCompileDepends}
 
+$(o)DTMElementTests.obj         : $(BEGTEST_INPUT)DTMElementTests.cpp           $(TestsHeaders) ${MultiCompileDepends}
+
 $(o)LevelTests.obj              : $(BEGTEST_INPUT)LevelTests.cpp                $(TestsHeaders) ${MultiCompileDepends}
 
 $(o)LightTests.obj              : $(BEGTEST_INPUT)LightTests.cpp                $(TestsHeaders) ${MultiCompileDepends}
