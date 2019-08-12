@@ -1,0 +1,10 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+TESTAPP_NAME=test4
+
+dependencies = $(_MakeFilePath)ellipsefixup.fdf $(_MakeFilePath)ellipsefixup.cpp
+
+%include    $(_MakeFilePath)/../testapp.mki

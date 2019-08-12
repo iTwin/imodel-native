@@ -1,0 +1,5 @@
+message CurveChain
+{
+repeated IPrimitiveCurve Curve = 1;
+}
+

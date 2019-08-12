@@ -1,0 +1,9 @@
+#*--------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------*/
+
+geomObjects + $(geomObj)VirtualCurve$(oExt)
+geomObjects + $(geomObj)CurveCurve$(oExt)
+geomObjects + $(geomObj)templatizedVector$(oExt)

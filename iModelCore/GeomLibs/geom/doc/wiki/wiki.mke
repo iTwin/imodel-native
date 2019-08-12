@@ -1,0 +1,90 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+
+
+.h.wiki:
+        gema -f $(_MakefilePath)quickDoc.g $< >$@ 
+
+gensrc\RotMatrix.wiki: $(SrcRoot)geomlibs\PublicApi\geom\RotMatrix.h
+
+gensrc\DRange3d.wiki: $(SrcRoot)geomlibs\PublicApi\geom\DRange3d.h
+
+gensrc\DRange2d.wiki: $(SrcRoot)geomlibs\PublicApi\geom\DRange2d.h
+
+gensrc\Transform.wiki: $(SrcRoot)geomlibs\PublicApi\geom\Transform.h
+
+gensrc\DVec3d.wiki: $(SrcRoot)geomlibs\PublicApi\geom\DVec3d.h 
+
+gensrc\DVec2d.wiki: $(SrcRoot)geomlibs\PublicApi\geom\DVec2d.h 
+
+gensrc\DPoint2d.wiki: $(SrcRoot)geomlibs\PublicApi\geom\DPoint2d.h 
+
+gensrc\CurvePrimitive.wiki: $(SrcRoot)geomlibs\PublicApi\geom\CurvePrimitive.h 
+
+gensrc\CurveVector.wiki: $(SrcRoot)geomlibs\PublicApi\geom\CurveVector.h 
+
+gensrc\MSBsplineCurve.wiki: $(SrcRoot)geomlibs\PublicApi\geom\MSBsplineCurve.h 
+
+always:
+	gema -p "ManagedType=DPoint3d;NativeType=DPoint3d;NativeLink=BentleyGeomDPoint3d" ManagedStub.wiki > gensrc\DPoint3d.mwheader
+	gema -p "ManagedType=DVector3d;NativeType=DVec3d;NativeLink=BentleyGeomDVec3d" ManagedStub.wiki > gensrc\DVector3d.mwheader
+	gema -p "ManagedType=DPoint2d;NativeType=DPoint2d;NativeLink=BentleyGeomDPoint2d" ManagedStub.wiki > gensrc\DPoint2d.mwheader
+	gema -p "ManagedType=DVector2d;NativeType=DVec2d;NativeLink=BentleyGeomDVec2d" ManagedStub.wiki > gensrc\DVector2d.mwheader
+	gema -p "ManagedType=DTransform3d;NativeType=Transform;NativeLink=BentleyGeomTransform" ManagedStub.wiki > gensrc\DTransform3d.mwheader
+	gema -p "ManagedType=DMatrix3d;NativeType=RotMatrix;NativeLink=BentleyGeomRotMatrix" ManagedStub.wiki > gensrc\DMatrix3d.mwheader
+	gema -p "ManagedType=DRange3d;NativeType=DRange3d;NativeLink=BentleyGeomDRange3d" ManagedStub.wiki > gensrc\DRange3d.mwheader
+	gema -p "ManagedType=DRange2d;NativeType=DRange2d;NativeLink=BentleyGeomDRange2d" ManagedStub.wiki > gensrc\DRange2d.mwheader
+	gema -p "ManagedType=DEllipse3d;NativeType=DEllipse3d;NativeLink=BentleyGeomDEllipse3d" ManagedStub.wiki > gensrc\DEllipse3d.mwheader
+	gema -p "ManagedType=DRay3d;NativeType=DRay3d;NativeLink=BentleyGeomDRay3d" ManagedStub.wiki > gensrc\DRay3d.mwheader
+	gema -p "ManagedType=DSegment3d;NativeType=DSegment3d;NativeLink=BentleyGeomDSegment3d" ManagedStub.wiki > gensrc\DSegment3d.mwheader
+	gema -p "ManagedType=ICurvePrimitive;NativeType=BentleyGeomCurvePrimitive;NativeLink=BentleyGeomCurvePrimitive" ManagedStub.wiki > gensrc\ICurvePrimitive.mwheader
+	gema -p "ManagedType=CurveVector;NativeType=CurveVector;NativeLink=BentleyGeomCurveVectorPtr" ManagedStub.wiki > gensrc\CurveVector.mwheader
+	gema -p "ManagedType=ISolidPrimitive;NativeType=SolidPrimitive;NativeLink=BentleyGeomSolidPrimitivePtr" ManagedStub.wiki > gensrc\ISolidPrimitive.mwheader
+	gema -p "ManagedType=Polyface;NativeType=PolyfaceHeader;NativeLink=BentleyGeomPolyfaceHeaderPtr" ManagedStub.wiki > gensrc\Polyface.mwheader
+	gema -p "ManagedType=BsplineCurve;NativeType=MSBsplineCurve;NativeLink=BentleyGeomMSBsplineCurvePtr" ManagedStub.wiki > gensrc\BsplineCurve.mwheader
+	gema -p "ManagedType=BsplineSurface;NativeType=MSBsplineCurve;NativeLink=BentleyGeomMSBsplineSurfacePtr" ManagedStub.wiki > gensrc\BsplineSurface.mwheader
+
+
+	
+%ifndef METASRCPATH
+%error wiki.mke needs METASRCPATH pointing to gema (e.g. from BentleyStructsNET\metasrc)
+
+%else
+
+
+GENSRC_DIR      = $(_MakeFilePath)gensrc/
+SRC_DIR         = $(_MakeFilePath)src/
+METASRC_DIR     = $(_MakeFilePath)metasrc/
+
+GFILES=\
+    $(g_RESOLVE_INCLUDES)\
+    $(g_INLINEARRAYS)\
+    $(g_3DONLY)\
+    $(g_2DONLY)\
+    $(g_TRANSFORM)\
+    $(g_MATRIX)\
+    $(METASRC_DIR)EqualsOps.in \
+    $(METASRC_DIR)LinearOps.in \
+    $(g_PARAMTAGS)
+
+
+g_3DONLY=$(METASRC_DIR)3d.g
+g_2DONLY=$(METASRC_DIR)2d.g
+g_TRAILINGCOMMA=$(METASRC_DIR)trailingComma.g
+
+g_TRANSFORM=$(METASRC_DIR)transform.g
+g_MATRIX=$(METASRC_DIR)matrix.g
+g_RESOLVE_INCLUDES=$(METASRC_DIR)resolveIncludes.g
+g_INLINEARRAYS=$(METASRC_DIR)inLineArrays.g
+g_PARAMTAGS=$(METASRC_DIR)ParamTags.g
+
+InFiles=\
+    $(METASRCPATH)nativeLinearOps.in
+
+$(GENSRC_DIR)DPoint3d.h: $(METASRC_DIR)DPoint3d.h.master $(GFILES) $(InFiles)
+    gema -f $(G_INLINEARRAYS) -f $(g_RESOLVE_INCLUDES) $(METASRC_DIR)DPoint3d.h.master | gema -f $(g_3DONLY) | gema -f $(g_PARAMTAGS) > $@
+
+%endif
