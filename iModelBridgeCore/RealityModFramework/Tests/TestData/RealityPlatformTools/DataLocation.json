@@ -1,0 +1,14 @@
+{
+    "instances": [
+        {
+            "instanceId": "54494b32-149a-4177-a849-189877553854",
+            "schemaName": "S3MX",
+            "className": "DataLocations",
+            "properties": {
+                "Provider": "Microsoft",
+                "Location": "Japan East"
+            },
+            "eTag": "\"ZdAPThtMESrjosrQW6DxFXtBE70=\""
+        }
+	]
+}
