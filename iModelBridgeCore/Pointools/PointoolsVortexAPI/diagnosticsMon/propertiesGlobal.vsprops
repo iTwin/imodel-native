@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="propertiesGlobal"
+	>
+	<Tool
+		Name="VCCLCompilerTool"
+		AdditionalIncludeDirectories="&quot;$(pointoolsvortex)\include&quot;;&quot;$(pointoolslib)&quot;;&quot;$(pointoolslib)\fltk-2.0.x-r5940&quot;;&quot;$(pointoolslib)\ttl_1_3_2&quot;;&quot;$(pointoolslib)\boost_1_41_0&quot;"
+	/>
+	<Tool
+		Name="VCLinkerTool"
+		AdditionalLibraryDirectories="&quot;$(pointoolslib)\lmx\2.4\win32_x86&quot;;&quot;$(pointools)\BentleyPointools\lib\vc9\win32\release&quot;;&quot;$(pointools)\BentleyPointools\lib\vc9\win32\debug&quot;;&quot;$(PointoolsLib)\curl-7.19.2\bin&quot;;&quot;$(pointoolslib)\fltk-2.0.x-r5940\lib-vc9&quot;;&quot;$(PointoolsLib)\devIL1.6.8-rc2\lib&quot;;&quot;$(pointoolslib)\bmg\lib&quot;;&quot;$(pointoolslib)\boost_1_41_0\lib\vc90-x86&quot;"
+	/>
+</VisualStudioPropertySheet>
