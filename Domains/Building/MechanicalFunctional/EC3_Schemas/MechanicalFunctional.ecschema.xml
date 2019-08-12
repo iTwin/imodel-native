@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="MechanicalFunctional" alias="mfunc" version="01.00.00" description="This schema contains Classes the span the building schemas" displayLabel="Mechanical Functional" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+    <ECSchemaReference name="Functional" version="01.00.00" alias="func"/>
+</ECSchema>
