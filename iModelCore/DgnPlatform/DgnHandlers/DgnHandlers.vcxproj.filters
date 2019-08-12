@@ -1,0 +1,911 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="PublicAPI">
+      <UniqueIdentifier>{2a3889b1-63a6-4cf3-8061-1ef8cbd16a40}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DgnEC">
+      <UniqueIdentifier>{6478956c-5a43-406f-abfe-c96a1b00593c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DetailingSymbol">
+      <UniqueIdentifier>{75b37f00-f86a-4ae8-8b01-7919cc7ce8b4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Dimension">
+      <UniqueIdentifier>{b4b9a492-b464-47fb-b3eb-ef582b50481f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Markup">
+      <UniqueIdentifier>{bb968a0f-0cc0-4480-8dfe-8a7a0a72251a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="PointCloud">
+      <UniqueIdentifier>{34ad7d3b-f9f5-4b3d-b514-9507def85b90}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Raster">
+      <UniqueIdentifier>{aa493bad-1cd3-4484-ac84-4afe25b2feac}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="TextBlock">
+      <UniqueIdentifier>{01d0f5a1-0d51-42d6-8fc4-ed4fd4bb9b1c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="TextStyle">
+      <UniqueIdentifier>{142d2c16-31e4-4020-a3a1-4b42f831f5c1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="PublicAPI\Tcb">
+      <UniqueIdentifier>{009ff60e-f3e0-4f58-9a76-c219409e640f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="PublicAPI\TextBlock">
+      <UniqueIdentifier>{195fb144-65bf-4cb7-b096-f470bd4a1579}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ArcHandlers.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\AssocGeom.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\AssociativePoint.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\AssocRegionHandler.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\BitMaskLinkage.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\BRepCellHandler.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\BSplineCurveHandler.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\BSplineSurfaceHandler.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\CachedVisibleEdgeHandler.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\CellHeaderHandler.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ChainHeaderHandlers.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\CommonDelegates.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ComplexHeaderHandler.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ConeHandler.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ContentAreaHandler.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\CurveHandler.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DelegatedElementECEnabler.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DelegateMaps.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DetailingSymbol.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DetailingSymbolHandlers.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DgnComponentHandlers.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DgnComponentSchema.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DgnECInstance.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DgnECManager.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DgnECModelLinkageProvider.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DgnECProviderBase.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DgnECTypes.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DgnElementECInstanceGenerators.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DgnHandlers.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DgnHandlersAPI.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DgnLinkHandler.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DgnLinkManager.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DgnLinks.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DgnLinksXAttributeHandler.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DgnLinkTree.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\dgnole.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DgnStoreHandlers.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DgnTextStyle.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DgnTextStyleProperties.r.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\Dimension.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DimensionElem.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DimensionHandler.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DimensionStyle.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DimensionStyleProps.r.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\DropGraphics.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ECDbJsonAdapter.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ECInstanceHolderHandler.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ECLogger.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ECPerSchemaCache.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ECXACaches.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ECXAInstance.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ECXAProvider.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ECXARelationship.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ECXAttributes.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ECXAttributesReader.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ECXAttributesWriter.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ElementComparer.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ElementECProvider.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ElementUtil.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ExtendedElementHandler.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\FlatteningCollection.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\GroupedHoleHandler.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\IAreaFillProperties.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\IDgnOleDraw.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\IEcPropertyHandler.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\IECXDataTreeNodeType66Handler.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\IEditActionSource.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\IGeoCoordReproject.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\IIModelPublishExtension.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\image.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\IManipulator.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\IMaterialProperties.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\IModifyElement.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\IPointCloud.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\IRasterAttachment.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\IRasterSourceFileQuery.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\IRenderDependency.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ITextEdit.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\LightElementHandlers.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\LinearHandlers.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\Locate.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\MarkupHandlers.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\MdlTextInternal.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\MdlTextStyleInternal.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\MeshHeaderHandler.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\MultilineHandler.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\MultilineStyle.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\Note.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\NoteHandler.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\OleCellHeaderHandler.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\PersistentElementPathXAttributeHandler.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\PersistentSnapPath.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\PickContext.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\PlaneConstraints.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\PointCloudECTypeAdapters.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\PointCloudHandler.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ProviderPerFileCache.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\RasterECTypeAdapters.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\RasterHandlers.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\RasterResolutionSolver.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\RefAttachHandler.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\RegionUtil.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\SchemaElementHandler.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\SchemaLayoutElementHandler.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\ScopedDgnHost.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\SectionGeometryGenerator.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\SharedCellHandler.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\SpiralCurveHandler.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\SurfaceAndSolidHandlers.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TableHandlers.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TagElementData.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TagElementHandler.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextHandlers.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\thematicdisplay.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\Type5Handlers.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\Type9Handler.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\Type66Handlers.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\WhereCriterion.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\XMLFragment.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="DgnEC\dgnecfileprovider.h">
+      <Filter>DgnEC</Filter>
+    </ClInclude>
+    <ClInclude Include="DgnEC\DgnECIntrinsicRelationships.h">
+      <Filter>DgnEC</Filter>
+    </ClInclude>
+    <ClInclude Include="DgnEC\DgnECLog.h">
+      <Filter>DgnEC</Filter>
+    </ClInclude>
+    <ClInclude Include="DgnEC\DgnECMaterialProperties.h">
+      <Filter>DgnEC</Filter>
+    </ClInclude>
+    <ClInclude Include="DgnEC\DgnECMemoryBasedInstance.h">
+      <Filter>DgnEC</Filter>
+    </ClInclude>
+    <ClInclude Include="DgnEC\dgnecmodelprovider.h">
+      <Filter>DgnEC</Filter>
+    </ClInclude>
+    <ClInclude Include="DgnEC\DgnECTableExtensions.h">
+      <Filter>DgnEC</Filter>
+    </ClInclude>
+    <ClInclude Include="DgnEC\DgnECTypeAdapters.h">
+      <Filter>DgnEC</Filter>
+    </ClInclude>
+    <ClInclude Include="DgnEC\DgnLinkECProperties.h">
+      <Filter>DgnEC</Filter>
+    </ClInclude>
+    <ClInclude Include="DgnEC\ECXDInstanceXAttributeHandler.h">
+      <Filter>DgnEC</Filter>
+    </ClInclude>
+    <ClInclude Include="DgnEC\GenericHostTypeIteration.h">
+      <Filter>DgnEC</Filter>
+    </ClInclude>
+    <ClInclude Include="Dimension\DimensionInternal.h">
+      <Filter>Dimension</Filter>
+    </ClInclude>
+    <ClInclude Include="Dimension\DimStyleInternal.h">
+      <Filter>Dimension</Filter>
+    </ClInclude>
+    <ClInclude Include="Dimension\NoteInternal.h">
+      <Filter>Dimension</Filter>
+    </ClInclude>
+    <ClInclude Include="TextBlock\TextFieldHandlers.h">
+      <Filter>TextBlock</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\Tcb\3dtools.r.h">
+      <Filter>PublicAPI\Tcb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\Tcb\smartsolid.r.h">
+      <Filter>PublicAPI\Tcb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\Tcb\tcb.r.h">
+      <Filter>PublicAPI\Tcb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\Tcb\toolset.r.h">
+      <Filter>PublicAPI\Tcb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextBlock\AlongTextDependency.h">
+      <Filter>PublicAPI\TextBlock</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextBlock\Caret.h">
+      <Filter>PublicAPI\TextBlock</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextBlock\CharStream.h">
+      <Filter>PublicAPI\TextBlock</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextBlock\Fraction.h">
+      <Filter>PublicAPI\TextBlock</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextBlock\IDgnTextStyleApplyable.h">
+      <Filter>PublicAPI\TextBlock</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextBlock\IDwgContext.h">
+      <Filter>PublicAPI\TextBlock</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextBlock\Indentation.h">
+      <Filter>PublicAPI\TextBlock</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextBlock\ITextListener.h">
+      <Filter>PublicAPI\TextBlock</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextBlock\Line.h">
+      <Filter>PublicAPI\TextBlock</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextBlock\Paragraph.h">
+      <Filter>PublicAPI\TextBlock</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextBlock\Run.h">
+      <Filter>PublicAPI\TextBlock</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextBlock\RunProperties.h">
+      <Filter>PublicAPI\TextBlock</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextBlock\TextAPICommon.h">
+      <Filter>PublicAPI\TextBlock</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextBlock\TextBlock.h">
+      <Filter>PublicAPI\TextBlock</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextBlock\TextBlockAPI.h">
+      <Filter>PublicAPI\TextBlock</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextBlock\TextBlockIterators.h">
+      <Filter>PublicAPI\TextBlock</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextBlock\TextBlockNode.h">
+      <Filter>PublicAPI\TextBlock</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextBlock\TextBlockUtilities.h">
+      <Filter>PublicAPI\TextBlock</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextBlock\TextContext.h">
+      <Filter>PublicAPI\TextBlock</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextBlock\TextField.h">
+      <Filter>PublicAPI\TextBlock</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextBlock\TextParamWideAndScale.h">
+      <Filter>PublicAPI\TextBlock</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DgnPlatform\DgnHandlers\TextBlock\WhiteSpace.h">
+      <Filter>PublicAPI\TextBlock</Filter>
+    </ClInclude>
+    <ClInclude Include="DgnHandlersDLLInlines.h" />
+    <ClInclude Include="DgnHandlersInternal.h" />
+    <ClInclude Include="DgnHandlersLog.h" />
+    <ClInclude Include="Icons.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="DgnHandlers.mke" />
+    <None Include="DgnHandlers.mki" />
+    <None Include="WordBreakDataGenerator.py" />
+    <None Include="WordBreakProperty.txt" />
+    <None Include="Markup\MarkupPlacemark.ico">
+      <Filter>Markup</Filter>
+    </None>
+    <None Include="DigitalSignatureUntrustedSprite.ico" />
+    <None Include="DigitalSignatureUnverifiedSprite.ico" />
+    <None Include="DigitalSignatureVerifiedSprite.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="DgnEC\CommonDelegates.cpp">
+      <Filter>DgnEC</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnEC\DelegatedElementECEnabler.cpp">
+      <Filter>DgnEC</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnEC\dgnecfileprovider.cpp">
+      <Filter>DgnEC</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnEC\DgnECFinders.cpp">
+      <Filter>DgnEC</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnEC\DgnECInstance.cpp">
+      <Filter>DgnEC</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnEC\DgnECIntrinsicRelationships.cpp">
+      <Filter>DgnEC</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnEC\DgnECManager.cpp">
+      <Filter>DgnEC</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnEC\DgnECMaterialProperties.cpp">
+      <Filter>DgnEC</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnEC\DgnECModelLinkageProvider.cpp">
+      <Filter>DgnEC</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnEC\DgnECModelProvider.cpp">
+      <Filter>DgnEC</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnEC\DgnECProviderBase.cpp">
+      <Filter>DgnEC</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnEC\DgnECTableExtensions.cpp">
+      <Filter>DgnEC</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnEC\DgnECTypeAdapters.cpp">
+      <Filter>DgnEC</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnEC\DgnECTypes.cpp">
+      <Filter>DgnEC</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnEC\DgnElementECInstanceGenerators.cpp">
+      <Filter>DgnEC</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnEC\DgnLinkECProperties.cpp">
+      <Filter>DgnEC</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnEC\ECDbJsonAdapter.cpp">
+      <Filter>DgnEC</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnEC\ECInstanceHolderHandler.cpp">
+      <Filter>DgnEC</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnEC\ECPerSchemaCache.cpp">
+      <Filter>DgnEC</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnEC\ECXACaches.cpp">
+      <Filter>DgnEC</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnEC\ECXAInstance.cpp">
+      <Filter>DgnEC</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnEC\ECXAProvider.cpp">
+      <Filter>DgnEC</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnEC\ECXARelationship.cpp">
+      <Filter>DgnEC</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnEC\ECXAttributesReader.cpp">
+      <Filter>DgnEC</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnEC\ECXAttributesWriter.cpp">
+      <Filter>DgnEC</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnEC\ECXDataTreeSchemasLocater.cpp">
+      <Filter>DgnEC</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnEC\ECXDCaches.cpp">
+      <Filter>DgnEC</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnEC\ECXDInstance.cpp">
+      <Filter>DgnEC</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnEC\ECXDInstanceXAttributeHandler.cpp">
+      <Filter>DgnEC</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnEC\ECXDProvider.cpp">
+      <Filter>DgnEC</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnEC\ECXDRelationship.cpp">
+      <Filter>DgnEC</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnEC\ECXDRelationshipXAttributeHandler.cpp">
+      <Filter>DgnEC</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnEC\ElementECProvider.cpp">
+      <Filter>DgnEC</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnEC\ProviderPerFileCache.cpp">
+      <Filter>DgnEC</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnEC\SchemaElementHandler.cpp">
+      <Filter>DgnEC</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnEC\SchemaLayoutElementHandler.cpp">
+      <Filter>DgnEC</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnEC\WhereCriterion.cpp">
+      <Filter>DgnEC</Filter>
+    </ClCompile>
+    <ClCompile Include="DetailingSymbol\DetailCalloutHandler.cpp">
+      <Filter>DetailingSymbol</Filter>
+    </ClCompile>
+    <ClCompile Include="DetailingSymbol\DetailingSymbol.cpp">
+      <Filter>DetailingSymbol</Filter>
+    </ClCompile>
+    <ClCompile Include="DetailingSymbol\DetailingSymbolFileAccess.cpp">
+      <Filter>DetailingSymbol</Filter>
+    </ClCompile>
+    <ClCompile Include="DetailingSymbol\DetailingSymbolHandler.cpp">
+      <Filter>DetailingSymbol</Filter>
+    </ClCompile>
+    <ClCompile Include="DetailingSymbol\DrawingTitleBuilder.cpp">
+      <Filter>DetailingSymbol</Filter>
+    </ClCompile>
+    <ClCompile Include="DetailingSymbol\DrawingTitleHandler.cpp">
+      <Filter>DetailingSymbol</Filter>
+    </ClCompile>
+    <ClCompile Include="DetailingSymbol\ElevationCalloutHandler.cpp">
+      <Filter>DetailingSymbol</Filter>
+    </ClCompile>
+    <ClCompile Include="DetailingSymbol\PlanCalloutHandler.cpp">
+      <Filter>DetailingSymbol</Filter>
+    </ClCompile>
+    <ClCompile Include="DetailingSymbol\ProxyLinkTree.cpp">
+      <Filter>DetailingSymbol</Filter>
+    </ClCompile>
+    <ClCompile Include="DetailingSymbol\SectionCalloutHandler.cpp">
+      <Filter>DetailingSymbol</Filter>
+    </ClCompile>
+    <ClCompile Include="DetailingSymbol\TitleTextHandler.cpp">
+      <Filter>DetailingSymbol</Filter>
+    </ClCompile>
+    <ClCompile Include="Dimension\DimAngular.cpp">
+      <Filter>Dimension</Filter>
+    </ClCompile>
+    <ClCompile Include="Dimension\DimAPI.cpp">
+      <Filter>Dimension</Filter>
+    </ClCompile>
+    <ClCompile Include="Dimension\DimElement.cpp">
+      <Filter>Dimension</Filter>
+    </ClCompile>
+    <ClCompile Include="Dimension\DimensionHandler.cpp">
+      <Filter>Dimension</Filter>
+    </ClCompile>
+    <ClCompile Include="Dimension\DimGenerate.cpp">
+      <Filter>Dimension</Filter>
+    </ClCompile>
+    <ClCompile Include="Dimension\DimLinear.cpp">
+      <Filter>Dimension</Filter>
+    </ClCompile>
+    <ClCompile Include="Dimension\DimLinkage.cpp">
+      <Filter>Dimension</Filter>
+    </ClCompile>
+    <ClCompile Include="Dimension\DimMLText.cpp">
+      <Filter>Dimension</Filter>
+    </ClCompile>
+    <ClCompile Include="Dimension\DimRadial.cpp">
+      <Filter>Dimension</Filter>
+    </ClCompile>
+    <ClCompile Include="Dimension\DimStyle.cpp">
+      <Filter>Dimension</Filter>
+    </ClCompile>
+    <ClCompile Include="Dimension\DimStyleCompare.cpp">
+      <Filter>Dimension</Filter>
+    </ClCompile>
+    <ClCompile Include="Dimension\DimStyleHandler.cpp">
+      <Filter>Dimension</Filter>
+    </ClCompile>
+    <ClCompile Include="Dimension\DimStyleTable.cpp">
+      <Filter>Dimension</Filter>
+    </ClCompile>
+    <ClCompile Include="Dimension\DimTerminator.cpp">
+      <Filter>Dimension</Filter>
+    </ClCompile>
+    <ClCompile Include="Dimension\DimText.cpp">
+      <Filter>Dimension</Filter>
+    </ClCompile>
+    <ClCompile Include="Dimension\DimUtility.cpp">
+      <Filter>Dimension</Filter>
+    </ClCompile>
+    <ClCompile Include="Dimension\Note.cpp">
+      <Filter>Dimension</Filter>
+    </ClCompile>
+    <ClCompile Include="Markup\MarkupPlacemarkHandler.cpp">
+      <Filter>Markup</Filter>
+    </ClCompile>
+    <ClCompile Include="PointCloud\PointCloudClip.cpp">
+      <Filter>PointCloud</Filter>
+    </ClCompile>
+    <ClCompile Include="PointCloud\PointCloudECTypeAdapters.cpp">
+      <Filter>PointCloud</Filter>
+    </ClCompile>
+    <ClCompile Include="PointCloud\PointCloudHandler.cpp">
+      <Filter>PointCloud</Filter>
+    </ClCompile>
+    <ClCompile Include="Raster\RasterAttachment.cpp">
+      <Filter>Raster</Filter>
+    </ClCompile>
+    <ClCompile Include="Raster\RasterECTypeAdapters.cpp">
+      <Filter>Raster</Filter>
+    </ClCompile>
+    <ClCompile Include="Raster\RasterHandlers.cpp">
+      <Filter>Raster</Filter>
+    </ClCompile>
+    <ClCompile Include="Raster\RasterResolutionSolver.cpp">
+      <Filter>Raster</Filter>
+    </ClCompile>
+    <ClCompile Include="TextBlock\AlongTextDependency.cpp">
+      <Filter>TextBlock</Filter>
+    </ClCompile>
+    <ClCompile Include="TextBlock\Caret.cpp">
+      <Filter>TextBlock</Filter>
+    </ClCompile>
+    <ClCompile Include="TextBlock\CharStream.cpp">
+      <Filter>TextBlock</Filter>
+    </ClCompile>
+    <ClCompile Include="TextBlock\DgnTextElementProcessor.cpp">
+      <Filter>TextBlock</Filter>
+    </ClCompile>
+    <ClCompile Include="TextBlock\DwgTextElementProcessor.cpp">
+      <Filter>TextBlock</Filter>
+    </ClCompile>
+    <ClCompile Include="TextBlock\FindReplaceText.cpp">
+      <Filter>TextBlock</Filter>
+    </ClCompile>
+    <ClCompile Include="TextBlock\Fraction.cpp">
+      <Filter>TextBlock</Filter>
+    </ClCompile>
+    <ClCompile Include="TextBlock\Indentation.cpp">
+      <Filter>TextBlock</Filter>
+    </ClCompile>
+    <ClCompile Include="TextBlock\Line.cpp">
+      <Filter>TextBlock</Filter>
+    </ClCompile>
+    <ClCompile Include="TextBlock\Paragraph.cpp">
+      <Filter>TextBlock</Filter>
+    </ClCompile>
+    <ClCompile Include="TextBlock\Run.cpp">
+      <Filter>TextBlock</Filter>
+    </ClCompile>
+    <ClCompile Include="TextBlock\RunProperties.cpp">
+      <Filter>TextBlock</Filter>
+    </ClCompile>
+    <ClCompile Include="TextBlock\TextBlock.cpp">
+      <Filter>TextBlock</Filter>
+    </ClCompile>
+    <ClCompile Include="TextBlock\TextBlockIterators.cpp">
+      <Filter>TextBlock</Filter>
+    </ClCompile>
+    <ClCompile Include="TextBlock\TextBlockNode.cpp">
+      <Filter>TextBlock</Filter>
+    </ClCompile>
+    <ClCompile Include="TextBlock\TextBlockPlayer.cpp">
+      <Filter>TextBlock</Filter>
+    </ClCompile>
+    <ClCompile Include="TextBlock\TextBlockRecorder.cpp">
+      <Filter>TextBlock</Filter>
+    </ClCompile>
+    <ClCompile Include="TextBlock\TextBlockUtilities.cpp">
+      <Filter>TextBlock</Filter>
+    </ClCompile>
+    <ClCompile Include="TextBlock\TextField.cpp">
+      <Filter>TextBlock</Filter>
+    </ClCompile>
+    <ClCompile Include="TextBlock\TextFieldHandlers.cpp">
+      <Filter>TextBlock</Filter>
+    </ClCompile>
+    <ClCompile Include="TextBlock\TextParamAndScale.cpp">
+      <Filter>TextBlock</Filter>
+    </ClCompile>
+    <ClCompile Include="TextBlock\WhiteSpace.cpp">
+      <Filter>TextBlock</Filter>
+    </ClCompile>
+    <ClCompile Include="TextStyle\DgnTextStyle.cpp">
+      <Filter>TextStyle</Filter>
+    </ClCompile>
+    <ClCompile Include="TextStyle\DgnTextStyleAccessors.cpp">
+      <Filter>TextStyle</Filter>
+    </ClCompile>
+    <ClCompile Include="TextStyle\DgnTextStyleManager.cpp">
+      <Filter>TextStyle</Filter>
+    </ClCompile>
+    <ClCompile Include="TextStyle\MdlTextStyleInternal.cpp">
+      <Filter>TextStyle</Filter>
+    </ClCompile>
+    <ClCompile Include="TextStyle\TextStylePropertyMask.cpp">
+      <Filter>TextStyle</Filter>
+    </ClCompile>
+    <ClCompile Include="AnnotationCellHeaderHandler.cpp" />
+    <ClCompile Include="ArcHandlers.cpp" />
+    <ClCompile Include="AreaFillProperties.cpp" />
+    <ClCompile Include="AssocCreate.cpp" />
+    <ClCompile Include="AssocDependencyRoot.cpp" />
+    <ClCompile Include="AssocPoint.cpp" />
+    <ClCompile Include="AssocRegionHandler.cpp" />
+    <ClCompile Include="BitMaskLinkage.cpp" />
+    <ClCompile Include="BRepCellHandler.cpp" />
+    <ClCompile Include="BSplineCurveHandler.cpp" />
+    <ClCompile Include="BSplineSurfaceHandler.cpp" />
+    <ClCompile Include="CachedVisibleEdgeHandler.cpp" />
+    <ClCompile Include="CellHeaderHandler.cpp" />
+    <ClCompile Include="ChainHeaderHandlers.cpp" />
+    <ClCompile Include="CloneRemapper.cpp" />
+    <ClCompile Include="ConeHandler.cpp" />
+    <ClCompile Include="ContentAreaHandler.cpp" />
+    <ClCompile Include="CurveHandler.cpp" />
+    <ClCompile Include="DgnComponentHandlers.cpp" />
+    <ClCompile Include="DgnComponentSchema.cpp" />
+    <ClCompile Include="DgnHandlers.cpp" />
+    <ClCompile Include="DgnHandlersDLLInlines.cpp" />
+    <ClCompile Include="DgnHandlersInternal.cpp" />
+    <ClCompile Include="DgnLinkManager.cpp" />
+    <ClCompile Include="DgnLinks.cpp" />
+    <ClCompile Include="DgnLinksXAttributeHandler.cpp" />
+    <ClCompile Include="DgnLinkTree.cpp" />
+    <ClCompile Include="DgnStoreHandlers.cpp" />
+    <ClCompile Include="DisplayHandler.cpp" />
+    <ClCompile Include="DropContext.cpp" />
+    <ClCompile Include="ElementComparer.cpp" />
+    <ClCompile Include="ElementGeometry.cpp" />
+    <ClCompile Include="ElementUtil.cpp" />
+    <ClCompile Include="FenceParams.cpp" />
+    <ClCompile Include="GPArray.cpp" />
+    <ClCompile Include="GroupedHoleHandler.cpp" />
+    <ClCompile Include="Handler.cpp" />
+    <ClCompile Include="HitPath.cpp" />
+    <ClCompile Include="IEcPropertyHandler.cpp" />
+    <ClCompile Include="LightElement.cpp" />
+    <ClCompile Include="LinearHandlers.cpp" />
+    <ClCompile Include="LinuxGlobals.cpp" />
+    <ClCompile Include="MaterialProperties.cpp" />
+    <ClCompile Include="MatrixElements.cpp" />
+    <ClCompile Include="MdlTextInternal.cpp" />
+    <ClCompile Include="MeshHeaderHandler.cpp" />
+    <ClCompile Include="ModelHeaderElementHandler.cpp" />
+    <ClCompile Include="MultilineHandler.cpp" />
+    <ClCompile Include="MultilineStyle.cpp" />
+    <ClCompile Include="OleCellHeaderHandler.cpp" />
+    <ClCompile Include="PersistentElementPathXAttributeHandler.cpp" />
+    <ClCompile Include="PickContext.cpp" />
+    <ClCompile Include="PlaneConstraints.cpp" />
+    <ClCompile Include="RegionUtil.cpp" />
+    <ClCompile Include="RenderHandlers.cpp" />
+    <ClCompile Include="ScopedDgnHost.cpp" />
+    <ClCompile Include="SectionGeometryGenerator.cpp" />
+    <ClCompile Include="SharedCellHandler.cpp" />
+    <ClCompile Include="snapassoc.cpp" />
+    <ClCompile Include="SurfaceAndSolidHandlers.cpp" />
+    <ClCompile Include="TableHandlers.cpp" />
+    <ClCompile Include="TagElementHandler.cpp" />
+    <ClCompile Include="TextHandlers.cpp" />
+    <ClCompile Include="TextStyleHandlers.cpp" />
+    <ClCompile Include="ThematicDisplay.cpp" />
+    <ClCompile Include="ThematicDisplayHandlers.cpp" />
+    <ClCompile Include="Type5Handlers.cpp" />
+    <ClCompile Include="Type66Handlers.cpp" />
+    <ClCompile Include="UniscribeServices.cpp" />
+    <ClCompile Include="XMLFragment.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Icons.rc" />
+  </ItemGroup>
+</Project>

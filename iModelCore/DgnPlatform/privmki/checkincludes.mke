@@ -1,0 +1,53 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+appName = CheckIncludes
+
+%include mdl.mki
+
+baseDir = $(_MakeFilePath)
+
+o = $(PartBuildDir)
+
+always:
+    ~mkdir $(o)
+    
+publicApiDir = $(OutputRootDir)Product/DgnPlatform/Include/
+
+# Don't want to mix in Build Context - #pragma once works on full path name.
+%undef PublicApiIncludes
+
+testIncludeCppFile = $(o)includeTester.cpp
+
+# Some includes need to be first.
+$(testIncludeCppFile) : $(baseDir)CheckIncludes.mke
+    > $(testIncludeCppFile)
+    \#include <DgnPlatform/DgnPlatform.h>
+    <
+
+#### # Run checkincludes to verify #include statements and generated C file
+#### always:
+####     |----------------------------------------------------------------------
+####     | Checking includes in $(publicApiDir) for consistency
+####     |----------------------------------------------------------------------
+####     > $(o)inccheckincludes.opt
+####     -I $(publicApiDir)
+####     -r
+####     -c $(testIncludeCppFile)
+####     -e $(publicApiDir)Bentley/BeTest.h
+####     -e $(publicApiDir)Bentley/BeStringUtilitiesInlines.h
+####     $(publicApiDir)
+####     <
+####     $(SrcRoot)bsitools/winX86/CheckIncludes @$(o)inccheckincludes.opt
+%warn Not running CheckIncludes.exe - This program must be changed to support the conditional includes that we need to make our header files portable.
+
+# Compile the generated C file
+
+dirToSearch = $(publicApiDir)
+%include cincapnd.mki
+
+$(o)includeTester.obj   :   $(testIncludeCppFile)
+
+
