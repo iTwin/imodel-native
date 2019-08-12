@@ -1807,16 +1807,20 @@ void Converter::_OnElementConverted(DgnElementId elementId, DgnV8EhCP v8eh, Chan
     bool elementModified = false;
     DgnDbStatus status;
 
-    ConvertToDgnDbElementExtension* upx = ConvertToDgnDbElementExtension::Cast(v8eh->GetHandler());
-    if (nullptr != upx)
+    if (v8eh)
         {
-        elementModified |= upx->_OnElementPostInsertOrUpdate(*this, *v8eh, elementId, changeOperation);
+        ConvertToDgnDbElementExtension* upx = ConvertToDgnDbElementExtension::Cast(v8eh->GetHandler());
+        if (nullptr != upx)
+            {
+            elementModified |= upx->_OnElementPostInsertOrUpdate(*this, *v8eh, elementId, changeOperation);
+            }
+
+        for (auto xdomain : XDomainRegistry::s_xdomains)
+            {
+            elementModified |= xdomain->_OnElementPostInsertOrUpdate(*this, *v8eh, elementId, changeOperation);
+            }
         }
 
-    for (auto xdomain : XDomainRegistry::s_xdomains)
-        {
-        elementModified |= xdomain->_OnElementPostInsertOrUpdate(*this, *v8eh, elementId, changeOperation);
-        }
 
     if (!elementModified)
         return;
