@@ -1,0 +1,19 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+%include $(SharedMki)bsioutputdirs.mki
+
+build           =       $(OutTerrainModel)
+buildPublicAPI  =       $(build)PublicAPI/
+gensrc          =       $(build)gensrc/
+
+
+#----------------------------------------------------------
+#  Location for symbols
+#----------------------------------------------------------
+symbolsDir          = $(OutTerrainModel)symbols/
+    symbolsDllDir   = $(symbolsDir)dll/
+    symbolsExeDir   = $(symbolsDir)exe/
+
