@@ -503,7 +503,7 @@ void CreateFeatures(Bentley::DgnPlatform::DTMElementSubHandler::SymbologyParams&
                 {
                 auto subCategoryId = converter.GetOrCreateSubCategoryId(categoryId, subCategoryName);
                 auto newCategoryId = DgnSubCategory::QueryCategoryId(converter.GetDgnDb(), subCategoryId);
-                builder = GeometryBuilder::Create(model, newCategoryId, BentleyB0200::Transform::FromIdentity());
+                builder = GeometryBuilder::Create(model, newCategoryId, BentleyM0200::Transform::FromIdentity());
                 builder->SetAppendAsSubGraphics();
                 SetSymbology(*builder, v8eh, v8mm, converter, displayParams, categoryId, subCategoryId);
                 }
