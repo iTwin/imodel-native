@@ -41,7 +41,7 @@
     </Part>
     
     <Part Name="ClassificationSystemsElements" BentleyBuildMakeFile="Elements/ClassificationSystemsElements.mke" ApiNumber="B02">
-        <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+        <SubPart PartName="DgnView" Repository="DgnDisplay" PartFile="DgnDisplay"/>
         <SubPart PartName="ClassificationSystemsApi"/>
         <SubPart PartName="BuildingDgnUtils" Repository="BuildingShared" PartFile="BuildingShared" />
         <Bindings>
