@@ -229,10 +229,17 @@ SubjectCPtr ORDBridge::_InitializeJob()
             roadRailNetworkCPtr->GetNetworkModel()->SetIsPrivate(true);
             roadRailNetworkCPtr->GetNetworkModel()->Update();
 
+            auto horizontalAlignmentsCPtr = AlignmentBim::HorizontalAlignments::Query(*roadRailNetworkCPtr->GetNetworkModel());
+            if (horizontalAlignmentsCPtr.IsValid())
+                {
+                horizontalAlignmentsCPtr->GetHorizontalModel()->SetIsPrivate(true);
+                horizontalAlignmentsCPtr->GetHorizontalModel()->Update();
+                }
+
             designAlignmentModelPtr->SetIsPrivate(true);
             designAlignmentModelPtr->Update();
 
-            auto horizontalAlignmentsCPtr = AlignmentBim::HorizontalAlignments::Query(*designAlignmentModelPtr);
+            horizontalAlignmentsCPtr = AlignmentBim::HorizontalAlignments::Query(*designAlignmentModelPtr);
             horizontalAlignmentsCPtr->GetHorizontalModel()->SetIsPrivate(true);
             horizontalAlignmentsCPtr->GetHorizontalModel()->Update();
             }
