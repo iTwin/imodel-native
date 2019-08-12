@@ -38,6 +38,7 @@ public:
     Utf8CP GetDescription() { return m_stopWatch.GetDescription(); }
     double GetTotalElapsedSeconds() { return m_cummulative.ToSeconds(); }
     size_t GetHitCount() { return m_count; }
+    Utf8CP GetLogMessage() { return Utf8PrintfString("%s: %.2f - %d hits", GetDescription(), GetTotalElapsedSeconds(), GetHitCount()).c_str(); }
 }; // StopWatchCummulative
 
 struct StopWatchOnStack
@@ -54,6 +55,12 @@ StopWatchCummulative* s_preConvertStopWatch = new StopWatchCummulative("_PreConv
 StopWatchCummulative* s_determineElemParamsStopWatch = new StopWatchCummulative("_DetermineElementParams");
 StopWatchCummulative* s_processResultsStopWatch = new StopWatchCummulative("_ProcessResults");
 StopWatchCummulative* s_convertProfilesStopWatch = new StopWatchCummulative("ConvertProfiles");
+StopWatchCummulative* s_assignAlignmentAspectStopWatch = new StopWatchCummulative("AssignAlignmentAspect");
+StopWatchCummulative* s_assignCorridorSurfaceAspectStopWatch = new StopWatchCummulative("AssignCorridorSurfaceAspect");
+StopWatchCummulative* s_assignLinear3dAspectStopWatch = new StopWatchCummulative("AssignLinear3dAspect");
+StopWatchCummulative* s_assignTemplateDropAspectStopWatch = new StopWatchCummulative("AssignTemplateDropAspect");
+StopWatchCummulative* s_assignSuperelevationAspectStopWatch = new StopWatchCummulative("AssignSuperelevationAspect");
+StopWatchCummulative* s_assignCorridorAspectStopWatch = new StopWatchCummulative("AssignCorridorAspect");
 
 struct ORDDynamicSchemaGenerator
 {
@@ -501,7 +508,6 @@ private:
     Dgn::PhysicalModelPtr m_bimNetworkModelPtr;
     ORDConverter& m_ordConverter;
 
-    bool IsDesignAlignment(AlignmentCR alignment) const;
     SpatialModelP Get3DLinearsAlignmentModel(AlignmentCR alignment, ORDConverter::Params& params) const;
 
 private:
@@ -524,6 +530,9 @@ private:
     BentleyStatus ConvertProfiles(AlignmentCR cifAlignment, AlignmentBim::AlignmentCR alignment, ORDConverter::Params& params);
 
 public:
+    static bool IsDesignAlignment(Utf8StringCR featureDefName);
+    static bool IsDesignAlignment(AlignmentCR alignment);
+
     static ORDAlignmentsConverterPtr Create(ORDConverter& converter)
         {
         return new ORDAlignmentsConverter(converter);
@@ -619,10 +628,35 @@ ORDAlignmentsConverter::ORDAlignmentsConverter(ORDConverter& converter): m_ordCo
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ORDAlignmentsConverter::IsDesignAlignment(Utf8StringCR featureDefName)
+    {
+    auto iterSlash = featureDefName.find('\\');
+    if (iterSlash != featureDefName.npos)
+        {
+        auto featureDefType = featureDefName.substr(0, iterSlash);
+
+        // TODO: this technique won't work on localized versions of ORD.
+        // CIF SDK to expose an API for this check.
+        return (0 == strcmp(featureDefType.c_str(), "Alignment"));
+        }
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ORDAlignmentsConverter::IsDesignAlignment(AlignmentCR alignment) const
+bool ORDAlignmentsConverter::IsDesignAlignment(AlignmentCR alignment)
     {
+    auto linear3dPtr = alignment.GetActiveLinearEntity3d();
+    if (linear3dPtr.IsValid())
+        {
+        if (linear3dPtr->GetCorridor().IsValid())
+            return false;
+        }
+
     auto featureDefPtr = alignment.GetFeatureDefinition();
     if (featureDefPtr.IsNull())
         {
@@ -634,22 +668,10 @@ bool ORDAlignmentsConverter::IsDesignAlignment(AlignmentCR alignment) const
     if (featureDefPtr.IsValid())
         {
         auto featureDefName = featureDefPtr->GetName();
-        auto iterSlash = featureDefName.find(L'\\');
-        if (iterSlash != featureDefName.npos)
-            {
-            auto featureDefType = featureDefName.substr(0, iterSlash);
-            return (0 == featureDefType.CompareTo(L"Alignment"));
-            }
+        return IsDesignAlignment(Utf8String(featureDefName.c_str()));
         }
 
-    auto linear3dPtr = alignment.GetActiveLinearEntity3d();
-    if (linear3dPtr.IsValid())
-        {
-        if (linear3dPtr->GetCorridor().IsValid())
-            return false;
-        }
-
-    return true;
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -862,12 +884,24 @@ BentleyStatus ORDAlignmentsConverter::CreateNewBimAlignment(AlignmentCR cifAlign
     DgnCode bimCode;
     
     if (Utf8String::IsNullOrEmpty(cifAlignmentName.c_str()))
-        {        
-        if (!WString::IsNullOrEmpty(cifAlignment.GetFeatureName().c_str()))
-            cifAlignmentName = Utf8String(cifAlignment.GetFeatureName().c_str());
-        else if (cifAlignment.GetFeatureDefinition().IsValid() &&
-            !WString::IsNullOrEmpty(cifAlignment.GetFeatureDefinition()->GetName().c_str()))
-            cifAlignmentName = Utf8String(cifAlignment.GetFeatureDefinition()->GetName().c_str());
+        {
+        auto featureName = cifAlignment.GetFeatureName();
+        auto featureDefPtr = cifAlignment.GetFeatureDefinition();
+        if (featureDefPtr.IsNull())
+            {
+            auto representationOfPtr = cifAlignment.GetRepresentationOf();
+            if (representationOfPtr.IsValid())
+                {
+                featureDefPtr = representationOfPtr->GetFeatureDefinition();
+                featureName = representationOfPtr->GetFeatureName();
+                }
+            }
+
+        if (!WString::IsNullOrEmpty(featureName.c_str()))
+            cifAlignmentName = Utf8String(featureName.c_str());
+        else if (featureDefPtr.IsValid() &&
+            !WString::IsNullOrEmpty(featureDefPtr->GetName().c_str()))
+            cifAlignmentName = Utf8String(featureDefPtr->GetName().c_str());
         else
             cifAlignmentName = Utf8String(cifSyncId.c_str());
         }    
@@ -1672,12 +1706,18 @@ void assignORDFeatureAspect(Dgn::DgnElementR element, Utf8StringCR featureName, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-void assignORDAlignmentAspect(Dgn::DgnElementR element, Cif::AlignmentCR alignment)
+void assignORDAlignmentAspect(Dgn::DgnElementR element, Cif::AlignmentCR alignment, Utf8StringCR featureDefName)
     {
-    Utf8String activeProfileName, horizontalName;
-    auto profilePtr = alignment.GetActiveProfile();
-    if (profilePtr.IsValid())
-        activeProfileName = Utf8String(profilePtr->GetName().c_str());
+    Utf8String activeProfileName;
+
+    if (ORDAlignmentsConverter::IsDesignAlignment(featureDefName))
+        {
+        ModelRefPinner modelPinner;
+
+        auto profilePtr = alignment.GetActiveProfile();
+        if (profilePtr.IsValid())
+            activeProfileName = Utf8String(profilePtr->GetName().c_str());
+        }
 
     auto linearGeomPtr = alignment.GetLinearGeometry();
 
@@ -1743,6 +1783,8 @@ void assignCorridorAspect(Dgn::DgnElementR element, CorridorCR corridor)
     if (corridorAlignmentPtr.IsValid())
         {
         horizontalName = Utf8String(corridorAlignmentPtr->GetName().c_str());
+
+        ModelRefPinner modelPinner;
 
         auto profilePtr = corridorAlignmentPtr->GetActiveProfile();
         if (profilePtr.IsValid())
@@ -1990,6 +2032,8 @@ void assignQuantityAspect(Dgn::DgnElementR element, Cif::CorridorSurfaceCR cifCo
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ConvertORDElementXDomain::AssignLinear3dAspect(Dgn::DgnElementR element, DgnV8EhCR v8el) const
     {
+    StopWatchOnStack stopWatch(*s_assignLinear3dAspectStopWatch);
+
     if (v8el.GetDgnModelP()->Is3d())
         {
         auto cifConsensusItemPtr = Linear3dConsensusItem::CreateFromElementHandle(*m_cifConsensusConnection, v8el);
@@ -2008,14 +2052,13 @@ bool ConvertORDElementXDomain::AssignLinear3dAspect(Dgn::DgnElementR element, Dg
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ConvertORDElementXDomain::AssignTemplateDropAspect(Dgn::DgnElementR element, DgnV8EhCR v8el) const
     {
-    if (!v8el.GetDgnModelP()->Is3d())
+    StopWatchOnStack stopWatch(*s_assignTemplateDropAspectStopWatch);
+
+    auto templateDropPtr = TemplateDrop::CreateFromElementHandle(*m_cifConsensusConnection, v8el);
+    if (templateDropPtr.IsValid())
         {
-        auto templateDropPtr = TemplateDrop::CreateFromElementHandle(*m_cifConsensusConnection, v8el);
-        if (templateDropPtr.IsValid())
-            {
-            assignTemplateDropAspect(element, *templateDropPtr);
-            return true;
-            }
+        assignTemplateDropAspect(element, *templateDropPtr);
+        return true;
         }
 
     return false;
@@ -2026,19 +2069,18 @@ bool ConvertORDElementXDomain::AssignTemplateDropAspect(Dgn::DgnElementR element
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ConvertORDElementXDomain::AssignSuperelevationAspect(Dgn::DgnElementR element, DgnV8EhCR v8el) const
     {
-    if (!v8el.GetDgnModelP()->Is3d())
+    StopWatchOnStack stopWatch(*s_assignSuperelevationAspectStopWatch);
+
+    auto superElevationPtr = SuperElevation::CreateFromElementHandle(v8el);
+    if (superElevationPtr.IsValid())
         {
-        auto superElevationPtr = SuperElevation::CreateFromElementHandle(v8el);
-        if (superElevationPtr.IsValid())
+        // The following check is due to an null pointer error in CIF when calling GetEndDistance().
+        // This check is a band-aid fix for now to avoid getting into trouble.
+        if (superElevationPtr->GetParentSection()->GetAlignment().IsValid())
             {
-            // The following check is due to an null pointer error in CIF when calling GetEndDistance().
-            // This check is a band-aid fix for now to avoid getting into trouble.
-            if (superElevationPtr->GetParentSection()->GetAlignment().IsValid())
-                {
-                assignStationRangeAspect(element, superElevationPtr->GetStartDistance(), superElevationPtr->GetEndDistance());
-                assignSuperelevationAspect(element, *superElevationPtr);
-                return true;
-                }
+            assignStationRangeAspect(element, superElevationPtr->GetStartDistance(), superElevationPtr->GetEndDistance());
+            assignSuperelevationAspect(element, *superElevationPtr);
+            return true;
             }
         }
 
@@ -2050,14 +2092,13 @@ bool ConvertORDElementXDomain::AssignSuperelevationAspect(Dgn::DgnElementR eleme
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ConvertORDElementXDomain::AssignCorridorAspect(Dgn::DgnElementR element, DgnV8EhCR v8el) const
     {
-    if (!v8el.GetDgnModelP()->Is3d())
+    StopWatchOnStack stopWatch(*s_assignCorridorAspectStopWatch);
+
+    auto cifCorridorPtr = Corridor::CreateFromElementHandle(*m_cifConsensusConnection, v8el);
+    if (cifCorridorPtr.IsValid())
         {
-        auto cifCorridorPtr = Corridor::CreateFromElementHandle(*m_cifConsensusConnection, v8el);
-        if (cifCorridorPtr.IsValid())
-            {
-            assignCorridorAspect(element, *cifCorridorPtr);
-            return true;
-            }
+        assignCorridorAspect(element, *cifCorridorPtr);
+        return true;
         }
 
     return false;
@@ -2083,15 +2124,14 @@ bool ConvertORDElementXDomain::AssignFeatureAspect(Dgn::DgnElementR element, Dgn
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ConvertORDElementXDomain::AssignAlignmentAspect(Dgn::DgnElementR element, DgnV8EhCR v8el) const
     {
-    if (!v8el.GetDgnModelP()->Is3d())
+    StopWatchOnStack stopWatch(*s_assignAlignmentAspectStopWatch);
+
+    auto alignmentPtr = Alignment::CreateFromElementHandle(v8el);
+    if (alignmentPtr.IsValid())
         {
-        auto alignmentPtr = Alignment::CreateFromElementHandle(v8el);
-        if (alignmentPtr.IsValid())
-            {
-            assignORDAlignmentAspect(element, *alignmentPtr);
-            assignQuantityAspect(element, *alignmentPtr);
-            return true;
-            }
+        assignORDAlignmentAspect(element, *alignmentPtr, m_currentFeatureDefName);
+        assignQuantityAspect(element, *alignmentPtr);
+        return true;
         }
 
     return false;
@@ -2102,6 +2142,8 @@ bool ConvertORDElementXDomain::AssignAlignmentAspect(Dgn::DgnElementR element, D
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ConvertORDElementXDomain::AssignCorridorSurfaceAspect(Dgn::DgnElementR element, DgnV8EhCR v8el) const
     {
+    StopWatchOnStack stopWatch(*s_assignCorridorSurfaceAspectStopWatch);
+
     if (v8el.GetDgnModelP()->Is3d())
         {
         auto featurizedPtr = FeaturizedConsensusItem::CreateFromElementHandle(*m_cifConsensusConnection, v8el);
@@ -2425,9 +2467,9 @@ void ORDConverter::AssociateGeneratedAlignments()
             if (corridorSegmentCPtr.IsNull())
                 continue;
 
-                auto pathwayIds = corridorSegmentCPtr->QueryOrderedPathwayIds();
-                if (pathwayIds.empty())
-                    continue;
+            auto pathwayIds = corridorSegmentCPtr->QueryOrderedPathwayIds();
+            if (pathwayIds.empty())
+                continue;
 
             auto pathwayId = pathwayIds.front();
             if (!pathwayId.IsValid())
@@ -2437,8 +2479,8 @@ void ORDConverter::AssociateGeneratedAlignments()
             if (pathwayCPtr.IsValid())
                 {
                 auto bimAlignmentPtr = bimAlignmentCPtr->MakeCopy<AlignmentBim::Alignment>();
-                bimAlignmentPtr->SetParentId(pathwayCPtr->GetElementId(), 
-                    pathwayCPtr->GetDgnDb().Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_CorridorPortionOwnsAlignments));
+                bimAlignmentPtr->SetParentId(pathwayCPtr->GetElementId(),
+                                             pathwayCPtr->GetDgnDb().Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_CorridorPortionOwnsAlignments));
                 bimAlignmentPtr->SetSource(pathwayCPtr.get());
                 bimAlignmentPtr->Update();
                 }
@@ -2476,10 +2518,16 @@ void ORDConverter::CreateRoadRailElements()
     updateProjectExtents(*roadRailNetworkModelPtr, *m_ordParams, true);
 
     stopWatch.Stop();
-    ORDBRIDGEPERF_LOGI("%s: %.2f - %d hits", s_preConvertStopWatch->GetDescription(), s_preConvertStopWatch->GetTotalElapsedSeconds(), s_preConvertStopWatch->GetHitCount());
-    ORDBRIDGEPERF_LOGI("%s: %.2f - %d hits", s_determineElemParamsStopWatch->GetDescription(), s_determineElemParamsStopWatch->GetTotalElapsedSeconds(), s_determineElemParamsStopWatch->GetHitCount());
-    ORDBRIDGEPERF_LOGI("%s: %.2f - %d hits", s_processResultsStopWatch->GetDescription(), s_processResultsStopWatch->GetTotalElapsedSeconds(), s_processResultsStopWatch->GetHitCount());
-    ORDBRIDGEPERF_LOGI("%s: %.2f - %d hits", s_convertProfilesStopWatch->GetDescription(), s_convertProfilesStopWatch->GetTotalElapsedSeconds(), s_convertProfilesStopWatch->GetHitCount());
+    ORDBRIDGEPERF_LOGI("%s", s_preConvertStopWatch->GetLogMessage());
+    ORDBRIDGEPERF_LOGI("%s", s_determineElemParamsStopWatch->GetLogMessage());
+    ORDBRIDGEPERF_LOGI("%s", s_assignAlignmentAspectStopWatch->GetLogMessage());
+    ORDBRIDGEPERF_LOGI("%s", s_assignCorridorAspectStopWatch->GetLogMessage());
+    ORDBRIDGEPERF_LOGI("%s", s_assignCorridorSurfaceAspectStopWatch->GetLogMessage());
+    ORDBRIDGEPERF_LOGI("%s", s_assignLinear3dAspectStopWatch->GetLogMessage());
+    ORDBRIDGEPERF_LOGI("%s", s_assignSuperelevationAspectStopWatch->GetLogMessage());
+    ORDBRIDGEPERF_LOGI("%s", s_assignTemplateDropAspectStopWatch->GetLogMessage());
+    ORDBRIDGEPERF_LOGI("%s", s_processResultsStopWatch->GetLogMessage());
+    ORDBRIDGEPERF_LOGI("%s", s_convertProfilesStopWatch->GetLogMessage());
     ORDBRIDGEPERF_LOGI("%s: %.2f", stopWatch.GetDescription(), stopWatch.GetElapsedSeconds());
     }
 
