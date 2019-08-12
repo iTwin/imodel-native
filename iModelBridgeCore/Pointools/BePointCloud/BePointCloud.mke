@@ -1,0 +1,119 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+%include mdl.mki
+
+#-----------------------------------------------------------
+# Root directory
+#-----------------------------------------------------------
+SrcBePointCloud                 = $(_MakeFilePath)
+
+#------------------------------------------------------
+# Header file locations in source tree
+#------------------------------------------------------
+BePointCloudPublicApiSrc        = $(SrcBePointCloud)PublicAPI/BePointCloud/
+
+
+#----------------------------------------------------------
+# Set and then include the CompileOptionsMki file.
+# It is needed and also %included by PreCompileHeader.mki
+#----------------------------------------------------------
+CompileOptionsMki               = $(SrcBePointCloud)BePointCloud.mki
+%include $(CompileOptionsMki)
+
+always:
+    !~@mkdir $(o)
+
+# Create PublicApi directory
+$(OutBuildContexts)BePointCloud/PublicAPI/BePointCloud : $(SrcBePointCloud)PublicAPI/BePointCloud
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+#--------------------------------------------------------------------------------------
+#   Set up build dependencies
+#--------------------------------------------------------------------------------------
+bePointCloudDepends             = $(_MakeFileSpec)                                              \
+                                  $(SrcBePointCloud)BePointCloudInternal.h                      \
+                                  $(BePointCloudPublicApiSrc)PointCloudTypes.h                  \
+                                  $(SrcBePointCloud)PointCloudChannel.h                         \
+                                  $(BePointCloudPublicApiSrc)PointCloudChannelHandler.h         \
+                                  $(BePointCloudPublicApiSrc)PointCloudDataQuery.h              \
+                                  $(SrcBePointCloud)PointCloudOrientedBox.h                     \
+                                  $(BePointCloudPublicApiSrc)PointCloudHandle.h                 \
+                                  $(BePointCloudPublicApiSrc)PointCloudScene.h                  \
+                                  $(BePointCloudPublicApiSrc)PointCloudColorDef.h               \
+                                  $(BePointCloudPublicApiSrc)BePointCloudApi.h                  \
+                                  $(BePointCloudPublicApiSrc)IPointCloudFileQuery.h             \
+                                  $(BePointCloudPublicApiSrc)IPointCloudFileEdit.h              \
+                                  $(BePointCloudPublicApiSrc)BePointCloudCommon.h               \
+                                  $(BePointCloudPublicApiSrc)ExportMacros.h                     \
+                                  $(BePointCloudPublicApiSrc)PointCloudVortex.h                 \
+                                  $(BePointCloudPublicApiSrc)PointCloudQueryBuffer.h            \
+
+#----------------------------------------------------------------------
+#   Make sure that BePointCloudInternal.pch is up-to-date.
+#----------------------------------------------------------------------
+PchCompiland        = $(SrcBePointCloud)BePointCloudInternal.cpp
+PchOutputDir        = $(o)
+PchExtraOptions     = -Zm160
+PchExplicitDepends  = $(bePointCloudDepends)
+
+%include $(SharedMki)PreCompileHeader.mki
+
+CCPchOpts = $(UsePrecompiledHeaderOptions)
+CPchOpts  = $(UsePrecompiledHeaderOptions)
+
+MultiCompileDepends=$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+#--------------------------------------------------------------------------------------
+#   Compile portable source
+#--------------------------------------------------------------------------------------
+$(o)BePointCloudApi$(oext)              : $(SrcBePointCloud)BePointCloudApi.cpp $(bePointCloudDepends)  ${MultiCompileDepends} 
+
+$(o)PointCloudScene$(oext)              : $(SrcBePointCloud)PointCloudScene.cpp $(bePointCloudDepends)  ${MultiCompileDepends} 
+
+$(o)IPointCloudFileEdit$(oext)          : $(SrcBePointCloud)IPointCloudFileEdit.cpp $(bePointCloudDepends)  ${MultiCompileDepends} 
+
+$(o)IPointCloudFileQuery$(oext)         : $(SrcBePointCloud)IPointCloudFileQuery.cpp $(bePointCloudDepends)  ${MultiCompileDepends} 
+
+$(o)PointCloudChannel$(oext)            : $(SrcBePointCloud)PointCloudChannel.cpp $(bePointCloudDepends)  ${MultiCompileDepends} 
+
+# POINTCLOUD_WIP_GR06_ElementHandle
+# $(o)PointCloudDataQuery$(oext)          : $(SrcBePointCloud)PointCloudDataQuery.cpp $(bePointCloudDepends)  ${MultiCompileDepends} 
+
+$(o)PointCloudQueryBuffer$(oext)        : $(SrcBePointCloud)PointCloudQueryBuffer.cpp $(bePointCloudDepends)  ${MultiCompileDepends} 
+
+$(o)PointCloudOrientedBox$(oext)        : $(SrcBePointCloud)PointCloudOrientedBox.cpp $(bePointCloudDepends)  ${MultiCompileDepends} 
+
+$(o)PointCloudVortex$(oext)             : $(SrcBePointCloud)PointCloudVortex.cpp $(bePointCloudDepends)  ${MultiCompileDepends} 
+
+#
+# Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
+# After the below include of MultiCppCompileGo.mki $(MultiCompileObjectList) will represent the
+# list of uniform object files created. You may present $(MultiCompileObjectList) to the linker.
+#
+%include MultiCppCompileGo.mki
+objs =% $(MultiCompileObjectList)
+
+CCPchOpts =
+CPchOpts =
+
+#--------------------------------------------------------------------------------------
+#   Build the library
+#--------------------------------------------------------------------------------------
+DLM_NAME                    = $(appName)
+DLM_OBJECT_FILES            = $(objs)
+DLM_OBJECT_DEST             = $(o)
+DLM_OBJECT_PCH              = $(o)BePointCloudInternal$(oext) 
+DLM_DEST                    = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+
+LINKER_LIBRARIES            =   $(ContextSubpartsLibs)$(libprefix)PointoolsVortexAPI$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
+
+
+%include $(sharedMki)LinkLibrary.mki
+
