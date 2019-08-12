@@ -101,6 +101,11 @@ struct EXPORT_VTABLE_ATTRIBUTE ClassificationSystem final : Dgn::DefinitionEleme
         //! Sets location of this classification
         //! @param[in]  location   new location for this classification
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT void SetLocation(Utf8StringCR location);
+
+        //! Gets Classifications in this ClassificationSystem associated with the element
+        //! @param[in]  el       element to find classifications from this ClassificationSystem for
+        //! @return     ElementIterator iterator over Classification elements
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Dgn::ElementIterator MakeClassificationsIterator(Dgn::DgnElementCR el);
     };
     
 END_CLASSIFICATIONSYSTEMS_NAMESPACE

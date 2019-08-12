@@ -1087,7 +1087,11 @@ property String^ Source
         m_baseGCSPeer->SetSource (name.Uni());
         }
     }
-
+property int    EPSGCode
+    {
+    int get() {return m_baseGCSPeer->GetStoredEPSGCode();} 
+    void set (int value) { m_baseGCSPeer->SetStoredEPSGCode (static_cast<short>(value)); }
+    }
 property String^ Units
     {
     String^ get()
@@ -3104,6 +3108,7 @@ enum class Priority
     Location                = 8700000,
     Country                 = 8600000,
     Source                  = 8500000,
+    EPSGCode                = 8550000,
     Units                   = 8400000,
 
     OriginLongitude         = 7300000,
@@ -3214,6 +3219,8 @@ enum class PropIndex
     Hemisphere              = 33,
     LocalTransform          = 34,
     EllipsoidScaleFactor    = 35,
+
+    EPSGCode                = 36,
 
     DatumCode               = 40,
     DatumName               = 41,
@@ -3828,6 +3835,8 @@ ECI::IECPropertyValue^  propVal
                 return coordSys->Hemisphere;
             case PropIndex::Quadrant:
                 return coordSys->Quadrant;
+            case PropIndex::EPSGCode:
+                return coordSys->EPSGCode;
             case PropIndex::DanishSys34Region:
                 return coordSys->DanishSys34Region;
             case PropIndex::Projection:
@@ -3894,6 +3903,9 @@ int                     value
                 break;
             case PropIndex::Quadrant:
                 coordSys->Quadrant = value;
+                break;
+            case PropIndex::EPSGCode:
+                coordSys->EPSGCode = value;
                 break;
             case PropIndex::DanishSys34Region:
                 coordSys->DanishSys34Region = value;
@@ -4002,6 +4014,7 @@ property ECL::LightweightClass^     CSBaseClass
 //                          AddProperty (ecClass, "Location",         nullptr,          Priority::Location,            m_csCategory, PropIndex::Location,          true, stringType);
 //                          AddProperty (ecClass, "Country",          nullptr,          Priority::Country,             m_csCategory, PropIndex::Country,           true, stringType);
                             AddProperty (ecClass, "Source",           nullptr,          Priority::Source,              m_csCategory, PropIndex::Source,            false, stringType);
+                            AddProperty (ecClass, "EPSG",             nullptr,          Priority::EPSGCode,            m_csCategory, PropIndex::EPSGCode,          false, int32Type);
                             AddProperty (ecClass, "Units",            m_unitsET,        Priority::Units,               m_csCategory, PropIndex::UnitCode,          false, int32Type);
             projProperty =  AddProperty (ecClass, "Projection",       nullptr,          Priority::Projection,          m_csCategory, PropIndex::Projection,        false, int32Type);
                             AddProperty (ecClass, "MinimumLongitude", m_meridianET,     Priority::MinimumLongitude,    m_csCategory, PropIndex::MinimumLongitude,  false, doubleType);

@@ -236,6 +236,88 @@ ECInstancesCompatibility.ReadInstances
     # kernel32.dll!00007ffb238e1fe4() Unknown
     # ntdll.dll!00007ffb25d8ef91()    Unknown
 
+RevisionTestFixture.MoreWorkflow
+
+    # TFS#868775
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 03/28/2018
+    # unknown file: error: SEH exception with code 0xc0000005 thrown in the test body.
+    # *********************** STACK TRACE ************************
+    # [28] _C_specific_handler (0x7ffe3617bff0)
+    # [27] _chkstk (0x7ffe423f9f60)
+    # [26] RtlLookupFunctionEntry (0x7ffe423691a0)
+    # [25] KiUserExceptionDispatcher (0x7ffe423f90d0)
+    # [24] BentleyB0200::Dgn::DgnElements::LoadElement (0x7ffe2b374c00)
+    # [23] BentleyB0200::Dgn::DgnElements::LoadElement (0x7ffe2b374de0)
+    # [22] BentleyB0200::Dgn::DgnElements::GetElement (0x7ffe2b3741f0)
+    # [21] BentleyB0200::Dgn::dgn_TxnTable::Element::_OnAppliedAdd (0x7ffe2b376c10)
+    # [20] BentleyB0200::Dgn::TxnManager::OnChangesApplied (0x7ffe2b4d7a00)
+    # [19] BentleyB0200::Dgn::TxnManager::ApplyChanges (0x7ffe2b4d4fc0)
+    # [18] BentleyB0200::Dgn::TxnManager::MergeDataChangesInRevision (0x7ffe2b4d7320)
+    # [17] BentleyB0200::Dgn::TxnManager::MergeRevision (0x7ffe2b4d78a0)
+    # [16] BentleyB0200::Dgn::RevisionManager::DoMergeRevision (0x7ffe2b481930)
+    # [15] RevisionTestFixture_MoreWorkflow_Test::TestBody (0x7ff7c982d0c0)
+    # [14] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::TestCase,void> (0x7ff7c989ff00)
+    # [13] testing::internal::HandleExceptionsInMethodIfSupported<testing::Test,void> (0x7ff7c989fd90)
+    # [12] testing::Test::Run (0x7ff7c98b03d0)
+    # [11] testing::TestInfo::Run (0x7ff7c98b06e0)
+    # [10] testing::TestCase::Run (0x7ff7c98b04f0)
+    # [9] testing::internal::UnitTestImpl::RunAllTests (0x7ff7c98b09a0)
+    # [8] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff7c989ffa0)
+    # [7] testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff7c989fe80)
+    # [6] testing::UnitTest::Run (0x7ff7c98b0880)
+    # [5] <lambda_7a9a7085d3df21961d5208ec67fe5359>::operator() (0x7ff7c95989b0)
+    # [4] std::_LaunchPad<std::unique_ptr<std::tuple<<lambda_7a9a7085d3df21961d5208ec67fe5359> >,std::default_delete<std::tuple<<lambda_7a9a7085d3df21961d5208ec67fe5359> > > > >::_Run (0x7ff7c959a270)
+    # [3] std::_Pad::_Call_func (0x7ff7c9599ad0)
+    # [2] wcstombs_s_l (0x7ffe3ee90490)
+    # [1] BaseThreadInitThunk (0x7ffe41cd2760)
+    # [0] RtlUserThreadStart (0x7ffe423c0d30)
+    # 2018-03-27 23:54:22,765 ERROR [0x000029f0] BeSQLite - Statement not closed: 'SELECT ECClassId,ModelId,CodeSpecId,CodeScopeId,CodeValue,UserLabel,ParentId,ParentRelECClassId,FederationGuid,JsonProperties FROM bis_Element WHERE Id=?'
+    # 2018-03-27 23:54:22,765 ERROR [0x000029f0] BeSQLite - Cannot close database 'c:\build\outA\mds06t_2018-03-27_23-05-38\out\Winx64\Product\DgnPlatform-Gtest\run\Output\RevisionTestFixture\MoreWorkflow.bim'
+    # c:\build\src\mds06t\BeGTest\gtest\BeGTestExe.cpp(263): error: Failed
+    # This test called BeTest::SetFailOnAssert(false) and failed to call it again with true.
+
+MeshBuilderTest.RoundTripMeshBuilders
+
+    # TFS#895139
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 05/22/2018
+    # unknown file: error: SEH exception with code 0xc0000005 thrown in the test body.
+    # *********************** STACK TRACE ************************
+    # [26] _C_specific_handler (0x7ffcf9acbff0)
+    # [25] _chkstk (0x7ffd066c9f60)
+    # [24] RtlLookupFunctionEntry (0x7ffd066391a0)
+    # [23] KiUserExceptionDispatcher (0x7ffd066c90d0)
+    # [22] BentleyB0200::Dgn::TileTree::IO::DgnCacheTileRebuilder::AddPolylines (0x7ffcefe615a0)
+    # [21] BentleyB0200::Dgn::TileTree::IO::DgnCacheTileRebuilder::AddMeshPrimitive (0x7ffcefe60be0)
+    # [20] BentleyB0200::Dgn::TileTree::IO::DgnCacheTileRebuilder::ReadMeshPrimitive (0x7ffcefe65ab0)
+    # [19] BentleyB0200::Dgn::TileTree::IO::DgnCacheTileRebuilder::ReadGltf (0x7ffcefe650d0)
+    # [18] BentleyB0200::Dgn::TileTree::IO::DgnCacheTileRebuilder::ReadTile (0x7ffcefe672f0)
+    # [17] BentleyB0200::Dgn::TileTree::IO::ReadDgnTile (0x7ffcefe64990)
+    # [16] MeshBuilderTest::RoundTripMeshBuilders (0x7ff7b94d53c0)
+    # [15] MeshBuilderTest::RoundTripMeshBuilders<<lambda_71a829593e2e8b731e207c3c174f2fbf> > (0x7ff7b94cc280)
+    # [14] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::TestCase,void> (0x7ff7b957ab50)
+    # [13] testing::internal::HandleExceptionsInMethodIfSupported<testing::TestCase,void> (0x7ff7b957a9e0)
+    # [12] testing::Test::Run (0x7ff7b958afa0)
+    # [11] testing::TestInfo::Run (0x7ff7b958b2b0)
+    # [10] testing::TestCase::Run (0x7ff7b958b0c0)
+    # [9] testing::internal::UnitTestImpl::RunAllTests (0x7ff7b958b570)
+    # [8] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff7b957abf0)
+    # [7] testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff7b957aad0)
+    # [6] testing::UnitTest::Run (0x7ff7b958b450)
+    # [5] <lambda_7a9a7085d3df21961d5208ec67fe5359>::operator() (0x7ff7b9268ed0)
+    # [4] std::_LaunchPad<std::unique_ptr<std::tuple<<lambda_7a9a7085d3df21961d5208ec67fe5359> >,std::default_delete<std::tuple<<lambda_7a9a7085d3df21961d5208ec67fe5359> > > > >::_Run (0x7ff7b926a790)
+    # [3] std::_Pad::_Call_func (0x7ff7b9269ff0)
+    # [2] wcstombs_s_l (0x7ffd03aa0490)
+    # [1] BaseThreadInitThunk (0x7ffd040b2770)
+    # [0] RtlUserThreadStart (0x7ffd06690d30)
+
+ChangeSummaryTestFixture.ElementChildRelationshipChanges
+    # Flakey on PRG builds.
+    # [ RUN      ] ChangeSummaryTestFixture.ElementChildRelationshipChanges
+    # d:\vsts_a\46\bbsrc\imodel02\iModelCore\DgnPlatform\Tests\DgnProject\NonPublished\ChangeSummary_Test.cpp(646): error:       Expected: 3
+    # To be equal to: instance.MakeValueIterator().QueryCount()
+    #       Which is: 2
+    # [  FAILED  ] ChangeSummaryTestFixture.ElementChildRelationshipChanges (67 ms)
+
 RevisionTestFixture.OptimisticConcurrencyConflict
     # VSTS#125059 (https://bentleycs.visualstudio.com/iModelTechnologies/_workitems/edit/125059)
     # BeAssert - \iModelCore\DgnPlatform\DgnCore\TxnManager.cpp(1123): ASSERTION FAILURE (0): result == BE_SQLITE_OK

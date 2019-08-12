@@ -150,11 +150,10 @@ BentleyStatus Converter::ComputeRealityModelFootprint(bvector<GeoPoint2d>& footp
 BentleyStatus Converter::GenerateRealityModelTilesets()
     {
     bool doUpload = false, doLocal = false;
-    Bentley::WString uploadConfigVar;
     Bentley::WString serverConfigVar;
     Utf8String      localUrlPrefix("http://localhost:8080/");
 
-    if (SUCCESS == DgnV8Api::ConfigurationManager::GetVariable(uploadConfigVar, L"DGNDB_REALITY_MODEL_UPLOAD"))                          
+    if (_GetParamsR().DoRealityDataUpload() || GetConfig().GetOptionValueBool("DoRealityDataUpload", false))
         {
         doUpload = true;
         }

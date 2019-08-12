@@ -87,6 +87,6 @@
 
 
 #define CLASSIFICATIONSYSTEMS_REL_ClassificationGroupGroupsClassifications                         "ClassificationGroupGroupsClassifications"
-#define CLASSIFICATIONSYSTEMS_REL_ClassificationSystemContainsClassificationTable                  "ClassificationSystemContainsClassificationTable"
-#define CLASSIFICATIONSYSTEMS_REL_ClassificationSpecializesClassification                          "ClassificationSpecializesClassification"
-#define CLASSIFICATIONSYSTEMS_REL_IClassifiedIsClassifiedAs                                        "IClassifiedIsClassifiedAs"
+#define CLASSIFICATIONSYSTEMS_REL_ClassificationSystemOwnsClassificationTable                      "ClassificationSystemOwnsClassificationTable"
+#define CLASSIFICATIONSYSTEMS_REL_ClassificationOwnsSubClassifications                             "ClassificationOwnsSubClassifications"
+#define CLASSIFICATIONSYSTEMS_REL_ElementHasClassifications                                        "ElementHasClassifications"
