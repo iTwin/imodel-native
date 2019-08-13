@@ -721,9 +721,6 @@ BentleyStatus ORDAlignmentsConverter::MarshalVertical(CurveVectorPtr& bimCurveVe
     // v8CurveVector assumed to be already in meters - as returned by the CIF SDK
     DgnDbSync::DgnV8::Converter::ConvertCurveVector(bimCurveVectorXZPtr, v8CurveVector, nullptr);
 
-    Transform flipAxes = Transform::FromOriginAndVectors(DPoint3d::FromZero(), DVec3d::UnitX(), DVec3d::UnitZ(), DVec3d::UnitY());
-    bimCurveVectorXZPtr->TransformInPlace(flipAxes);
-
     return BentleyStatus::SUCCESS;
     }
 
