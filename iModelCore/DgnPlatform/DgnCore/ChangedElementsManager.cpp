@@ -305,8 +305,8 @@ void ChangedElementsManager::ChangedElementsToJSON(JsonValueR val, ChangedElemen
     {
     val[ChangedElementsManager::json_changedElements()] = Json::objectValue;
     val[ChangedElementsManager::json_changedModels()] = Json::objectValue;
-    auto celems = val[ChangedElementsManager::json_changedElements()];
-    auto cmodels = val[ChangedElementsManager::json_changedModels()];
+    auto& celems = val[ChangedElementsManager::json_changedElements()];
+    auto& cmodels = val[ChangedElementsManager::json_changedModels()];
 
     celems[ChangedElementsManager::json_elements()] = Json::arrayValue;
     celems[ChangedElementsManager::json_classIds()] = Json::arrayValue;
