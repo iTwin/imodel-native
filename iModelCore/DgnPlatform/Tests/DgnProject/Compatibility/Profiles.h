@@ -69,6 +69,7 @@ struct TestFile final
 
         //Indicates whether the test file in its un-upgraded state is older/newer/up-to-date compared to the version expected by the software.
         BeSQLite::ProfileState::Age GetAge() const;
+        BeSQLite::ProfileState::Age GetECDbAge() const;
         Utf8String ToString() const;
     };
 

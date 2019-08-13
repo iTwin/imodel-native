@@ -2131,7 +2131,7 @@ BentleyStatus SchemaWriter::UpdateCustomAttributes(Context& ctx, SchemaPersisten
             //only validate CA rules, if the container has not just been added with this schema import/update
             if (ctx.GetSchemaUpgradeCustomAttributeValidator().Validate(change) == CustomAttributeValidator::Policy::Reject)
                 {
-                ctx.Issues().ReportV("ECSchema Upgrade failed. Adding or modifying %s custom attributes is not supported.", schemaName.c_str());
+                ctx.Issues().ReportV("ECSchema Upgrade failed. Adding or modifying %s custom attributes is not supported. Container: %s.", schemaName.c_str(), oldContainer.GetContainerName());
                 return ERROR;
                 }
             }

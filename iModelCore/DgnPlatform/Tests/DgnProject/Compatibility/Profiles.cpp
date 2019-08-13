@@ -364,6 +364,23 @@ ProfileState::Age TestFile::GetAge() const
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                    Eimantas.Morkunas                 07/19
+//+---------------+---------------+---------------+---------------+---------------+------
+ProfileState::Age TestFile::GetECDbAge() const
+    {
+    BeAssert(!m_ecdbVersion.IsEmpty());
+    int comp = m_ecdbVersion.CompareTo(ECDbProfile::Get().GetExpectedVersion());
+
+    if (comp == 0)
+        comp = m_bedbVersion.CompareTo(BeDbProfile::Get().GetExpectedVersion());
+
+    if (comp == 0)
+        return ProfileState::Age::UpToDate;
+
+    return comp > 0 ? ProfileState::Age::Newer : ProfileState::Age::Older;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   05/18
 //+---------------+---------------+---------------+---------------+---------------+------
 Utf8String TestFile::ToString() const
