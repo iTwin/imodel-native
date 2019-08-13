@@ -17,15 +17,16 @@ bool TestDb::VersionSupportsFeature(ProfileVersion const& ecdbVersion, ECDbFeatu
     {
     switch (feature)
         {
-            case ECDbFeature::PersistedECVersions:
-            case ECDbFeature::NamedEnumerators:
-            case ECDbFeature::UnitsAndFormats:
-            case ECDbFeature::SystemPropertiesHaveIdExtendedType:
-                return ecdbVersion >= ProfileVersion(4, 0, 0, 2);
+        case ECDbFeature::EC32:
+        case ECDbFeature::PersistedECVersions:
+        case ECDbFeature::NamedEnumerators:
+        case ECDbFeature::UnitsAndFormats:
+        case ECDbFeature::SystemPropertiesHaveIdExtendedType:
+            return ecdbVersion >= ProfileVersion(4, 0, 0, 2);
 
-            default:
-                BeAssert(false && "Unhandled ECDbFeature enum value");
-                return false;
+        default:
+            BeAssert(false && "Unhandled ECDbFeature enum value");
+            return false;
         }
     }
 
@@ -846,6 +847,15 @@ DbResult TestDb::Open()
         return BE_SQLITE_ERROR;
 
     return _Open();
+    }
+
+BeSQLite::ProfileState::Age TestDb::GetECDbAge() const
+    {
+    const int comp = GetDb().GetECDbProfileVersion().CompareTo(ECDb::CurrentECDbProfileVersion());
+    if (comp == 0)
+        return ProfileState::Age::UpToDate;
+
+    return comp > 0 ? ProfileState::Age::Newer : ProfileState::Age::Older;
     }
 
 //---------------------------------------------------------------------------------------
