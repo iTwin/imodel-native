@@ -115,6 +115,15 @@ AxisAlignedBox3d ScalableMeshModel::_GetRange() const
     }
 
 //----------------------------------------------------------------------------------------
+// @bsimethod                                                 Mathieu.St-Pierre     8/2017
+//----------------------------------------------------------------------------------------
+AxisAlignedBox3d ScalableMeshModel::_QueryModelRange() const
+    {        
+    
+    return _GetRange();
+    }
+
+//----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
 //----------------------------------------------------------------------------------------
 BentleyStatus ScalableMeshModel::_QueryTexturesLod(bvector<ITerrainTexturePtr>& textures, size_t maxSizeBytes) const
@@ -288,6 +297,7 @@ void SMNode::CleanupUnusedChildren(bvector<Dgn::TileTree::TileCPtr>& selected) c
                     refCount = refCount;
                     }
                     */
+
                 for (auto const& child : m_children)
                     {
                     SMNode* node = static_cast<SMNode*>(child.get());
