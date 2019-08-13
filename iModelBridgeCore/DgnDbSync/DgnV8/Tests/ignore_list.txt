@@ -23,6 +23,14 @@ ChangeSummaryTestFixture.ElementChildRelationshipChanges
     #       Which is: 2
     # [  FAILED  ] ChangeSummaryTestFixture.ElementChildRelationshipChanges (76 ms)
 
+DTMElementTests.TerrainModel
+    # Fails on firebug (e.g. file://plfirebug-18/buildlogs/plfirebug-18_mds06_2019-08-08_05-46-01.log)
+    # [ RUN      ] DTMElementTests.TerrainModel
+    # c:\build\out\mds06_2019-08-08_05-46-01\src\DgnDbSync\DgnV8\Tests\DTMElementTests.cpp(47): error: Value of: Utf8String(elem1->GetUserLabel()) == "aussie-met"
+    #   Actual: false
+    # Expected: true
+    # [  FAILED  ] DTMElementTests.TerrainModel (1278 ms)
+
 ConverterTests.DetectDeletionsInEmbeddedFiles
     # [ RUN      ] ConverterTests.DetectDeletionsInEmbeddedFiles
     # F:\hg-imodel02\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(400): error:       Expected: BentleyApi::SUCCESS

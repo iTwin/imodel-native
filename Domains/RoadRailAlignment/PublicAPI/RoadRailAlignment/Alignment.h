@@ -156,7 +156,7 @@ struct DesignAlignments : Dgn::SpatialLocationElement
     friend struct DesignAlignmentsHandler;
 
 private:
-    static Dgn::DgnCode CreateCodeBasic(Dgn::DgnElementCR element, Utf8StringCR codeVal);
+    static Dgn::DgnCode CreateCodeBasic(Dgn::SpatialModelCR model, Utf8StringCR codeVal);
 
 protected:
     //! @private
@@ -178,7 +178,7 @@ public:
     //__PUBLISH_SECTION_END__
     //! @privatesection
     ROADRAILALIGNMENT_EXPORT static DesignAlignmentsCPtr Insert(Dgn::SpatialModelCR model, Utf8StringCR codeVal);
-    static Dgn::DgnCode CreateCode(Dgn::SpatialElementCR spatialElement, Utf8StringCR codeVal) { return CreateCodeBasic(spatialElement, codeVal); }
+    static Dgn::DgnCode CreateCode(Dgn::SpatialModelCR model, Utf8StringCR codeVal) { return CreateCodeBasic(model, codeVal); }
     //! @publicsection
     //__PUBLISH_SECTION_START__
     //! Gets the SpatialLocationModel that is modeling this element
@@ -213,7 +213,7 @@ public:
     //__PUBLISH_SECTION_END__
     //! @privatesection
     ROADRAILALIGNMENT_EXPORT static HorizontalAlignmentsCPtr Insert(Dgn::SpatialModelCR model);
-    ROADRAILALIGNMENT_EXPORT static Dgn::DgnCode CreateCode(Dgn::SpatialElementCR spatialElement);
+    ROADRAILALIGNMENT_EXPORT static Dgn::DgnCode CreateCode(Dgn::SpatialModelCR spatialModel);
     //! @publicsection
     //__PUBLISH_SECTION_START__
     //! Gets the SpatialLocationModel that is modeling this element

@@ -498,9 +498,9 @@ DgnDbStatus Alignment::GenerateAprox3dGeom(DgnSubCategoryId subCategoryId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode DesignAlignments::CreateCodeBasic(DgnElementCR spatialElement, Utf8StringCR codeVal)
+DgnCode DesignAlignments::CreateCodeBasic(SpatialModelCR model, Utf8StringCR codeVal)
     {
-    return CodeSpec::CreateCode(BRRA_CODESPEC_DesignAlignments, spatialElement, codeVal);
+    return CodeSpec::CreateCode(BRRA_CODESPEC_DesignAlignments, model, codeVal);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -535,7 +535,7 @@ DesignAlignmentsCPtr DesignAlignments::Insert(SpatialModelCR model, Utf8StringCR
 
     CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()),
         AlignmentCategory::GetAlignment(model.GetDgnDb()));
-    createParams.m_code = CreateCodeBasic(*model.GetModeledElement().get(), codeVal);
+    createParams.m_code = CreateCodeBasic(model, codeVal);
 
     DesignAlignmentsPtr newPtr(new DesignAlignments(createParams));
     auto retValCPtr = model.GetDgnDb().Elements().Insert<DesignAlignments>(*newPtr);
@@ -561,9 +561,9 @@ DesignAlignmentsCPtr DesignAlignments::Insert(SpatialModelCR model, Utf8StringCR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode HorizontalAlignments::CreateCode(SpatialElementCR spatialElement)
+DgnCode HorizontalAlignments::CreateCode(SpatialModelCR spatialModel)
     {
-    return CodeSpec::CreateCode(BRRA_CODESPEC_HorizontalAlignment, spatialElement, RoadRailAlignmentDomain::GetHorizontalAlignmentsCodeName());
+    return CodeSpec::CreateCode(BRRA_CODESPEC_HorizontalAlignment, spatialModel, RoadRailAlignmentDomain::GetHorizontalAlignmentsCodeName());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -602,7 +602,7 @@ HorizontalAlignmentsCPtr HorizontalAlignments::Insert(SpatialModelCR model)
         categoryId = AlignmentCategory::GetLinear(model.GetDgnDb());
 
     CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), categoryId);
-    createParams.m_code = CreateCode(*dynamic_cast<SpatialElementCP>(model.GetModeledElement().get()));
+    createParams.m_code = CreateCode(model);
 
     HorizontalAlignmentsPtr newPtr(new HorizontalAlignments(createParams));
     IBriefcaseManager::Request req;

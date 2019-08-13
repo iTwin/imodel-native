@@ -553,6 +553,7 @@ struct iModelBridge
         bool m_doDetectDeletedModelsAndElements =  true;
         bool m_mergeDefinitions = true;  // WIP make this default to false
         bool m_hasEmbeddedFileIdRecipe = false;
+        bool m_doRealityDataUpload = false;
         FileIdRecipe m_embeddedFileIdRecipe;
         PushIntermediateRevisions m_pushIntermediateRevisions = PushIntermediateRevisions::None;
         BeFileName m_inputFileName;
@@ -672,6 +673,8 @@ struct iModelBridge
         BeDuration GetThumbnailTimeout() const {return m_thumbnailTimeout;}
         void SetWantThumbnails(bool b) {m_wantThumbnails = b;}
         bool WantThumbnails() const {return m_wantThumbnails;}
+        void SetDoRealityDataUpload(bool b) { m_doRealityDataUpload = b; }
+        bool DoRealityDataUpload() { return m_doRealityDataUpload; }
         void SetMergeDefinitions(bool b) {m_mergeDefinitions = b;}
         bool GetMergeDefinitions() const {return m_mergeDefinitions;}
         void SetEmbeddedFileIdRecipe(FileIdRecipe const& v) {m_embeddedFileIdRecipe=v; m_hasEmbeddedFileIdRecipe=true;} //!< Optional. Set the rules for how to construct unique identifer for V8 embedded files.
