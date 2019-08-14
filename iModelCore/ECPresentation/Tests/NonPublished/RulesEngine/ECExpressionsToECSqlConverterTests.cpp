@@ -54,6 +54,24 @@ TEST_F(ECExpressionsToECSqlConverterTests, Parens)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECExpressionsToECSqlConverterTests, SingleQuotesInStringValues)
+    {
+    Utf8String ecsql = m_helper.ConvertToECSql("this.Test = \"aaa'\"");
+    ASSERT_STREQ("[this].[Test] = 'aaa'''", ecsql.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECExpressionsToECSqlConverterTests, DoubleQuotesInStringValues)
+    {
+    Utf8String ecsql = m_helper.ConvertToECSql("this.Test = \"aaa\"\"\"");
+    ASSERT_STREQ("[this].[Test] = 'aaa\"'", ecsql.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionsToECSqlConverterTests, LikeOperatorSpecialCase)

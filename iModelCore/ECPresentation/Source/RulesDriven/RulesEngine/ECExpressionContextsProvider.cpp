@@ -1537,15 +1537,17 @@ private:
     +---------------+---------------+---------------+---------------+---------------+--*/
     void HandleStringConstNode(LiteralNode const& node)
         {
-        Utf8CP value = node.GetInternalValue().GetUtf8CP();
-        if (0 == strcmp(value, ContentDescriptor::DisplayLabelField::NAME))
+        Utf8String value = node.GetInternalValue().GetUtf8CP();
+        if (value.Equals(ContentDescriptor::DisplayLabelField::NAME))
             {
             // note: name of display label field contains invalid characters, so we wrap it
             // with quotes to make it look like a string - see Preprocess method
             Append(QueryHelpers::Wrap(value));
             return;
             }
-        Append(Utf8PrintfString("'%s'", value));
+
+        value.ReplaceAll("'", "''");
+        Append(Utf8PrintfString("'%s'", value.c_str()));
 
         if (m_nodesStack.size() > 1 && std::string::npos != (m_nodesStack.end() - 2)->find("LIKE"))
             Append("ESCAPE \'\\\'");
