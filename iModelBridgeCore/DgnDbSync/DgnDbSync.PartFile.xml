@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="..\BentleyBuild\PartFile.xsd">
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="..\..\..\BentleyBuild\PartFile.xsd">
 
     <Part Name="VersionedV8_InternalSDK" BentleyBuildMakeFile="DgnV8/DgnPlatformV8.Prewire.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
       <NuGetPackage targetFramework="native">V8_InternalSDKNuget</NuGetPackage>
@@ -172,7 +172,11 @@
     </Product>
 
     <ProductDirectoryList ListName="DgnV8ConverterNugetDirsOverride">
-        <ProductDirectory Name="applicationroot" Path="DgnV8Converter"/>
+        <ProductDirectory Name="applicationroot" Path="native"/>
+        <ProductDirectory Name="PublicApi"      Path="include"  RelativeTo="applicationroot"/>
+        <ProductDirectory Name="PublicApi" LibType="Static" Path="include"  RelativeTo="applicationroot"/>
+        <ProductDirectory Name="DgnV8ConverterLibs" Path="lib"     RelativeTo="applicationroot"/>
+        <ProductDirectory Name="Libs" Path="lib"     RelativeTo="applicationroot"/>
     </ProductDirectoryList>
 
     <NuGetProduct Name="DgnV8ConverterNuget" OnlyPlatforms="x64" Description="DgnV8ConverterNuget">
