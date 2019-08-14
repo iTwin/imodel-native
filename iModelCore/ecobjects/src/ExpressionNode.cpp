@@ -1431,6 +1431,10 @@ EvaluationResult::EvaluationResult (EvaluationResultCR rhs)
         m_lambda = rhs.m_lambda;
         m_lambda->AddRef();
         }
+    else if (ValType_Context == rhs.m_valueType)
+        {
+        m_context = rhs.m_context;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1444,11 +1448,13 @@ EvaluationResultR EvaluationResult::operator=(EvaluationResultCR rhs)
     m_units = rhs.m_units;
     m_ecValue = rhs.m_ecValue;
     if (m_valueType == ValType_InstanceList)
-        SetInstanceList (*rhs.m_instanceList, rhs.m_ownsInstanceList);
+        SetInstanceList(*rhs.m_instanceList, rhs.m_ownsInstanceList);
     else if (m_valueType == ValType_ValueList)
-        SetValueList (*rhs.m_valueList);
+        SetValueList(*rhs.m_valueList);
     else if (m_valueType == ValType_Lambda)
-        SetLambda (*rhs.m_lambda);
+        SetLambda(*rhs.m_lambda);
+    else if (m_valueType == ValType_Context)
+        SetContext(*rhs.m_context);
 
     return *this;
     }
@@ -1478,6 +1484,7 @@ void            EvaluationResult::Clear()
     m_ownsInstanceList = false;
     m_instanceList = NULL;  // and m_valueList, and m_lambda...
     m_valueList = NULL;
+    m_context = nullptr;
     m_valueType = ValType_None;
     m_units = UnitSpec();
     }
@@ -1643,6 +1650,25 @@ void EvaluationResult::SetLambda (LambdaValueR value)
     m_lambda = &value;
     m_lambda->AddRef();
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/13
++---------------+---------------+---------------+---------------+---------------+------*/
+ExpressionContextP EvaluationResult::GetContext() const
+    {
+    return ValType_Context == m_valueType ? m_context.get() : nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void EvaluationResult::SetContext(ExpressionContextR context)
+    {
+    Clear();
+    m_context = &context;
+    m_valueType = ValType_Context;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Aidas.Vaiksnoras  04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1667,6 +1693,8 @@ Utf8String EvaluationResult::ToString() const
         return GetLambda()->GetNode().ToExpressionString();
     if (IsValueList())
         return GetValueList()->ToString();
+    if (IsContext())
+        return "<Context>";
     return "<None>";
     }
 
@@ -4602,8 +4630,8 @@ struct ArrayMemberSymbol : Symbol
     {
 private:
     uint32_t m_arrayIndex;
-    EvaluationResult                m_primitive;
-    InstanceExpressionContextPtr    m_struct;
+    EvaluationResult m_primitive;
+    ExpressionContextPtr m_struct;
 
     ArrayMemberSymbol (Utf8CP name) : Symbol (name)
         {
@@ -4634,7 +4662,7 @@ private:
         return ExpressionStatus::UnknownError;
         }
 
-    static bool     ConvertToStruct (EvaluationResultR result)
+    static bool ConvertToInstanceList(EvaluationResultR result)
         {
         if (result.IsInstanceList())
             return true;
@@ -4646,7 +4674,7 @@ private:
                 result.SetInstanceList (empty, true);
                 }
             else
-                result.SetInstance (*result.GetECValue()->GetStruct());
+                result.SetInstance(*result.GetECValue()->GetStruct());
 
             return true;
             }
@@ -4659,16 +4687,14 @@ public:
     void        Set (uint32_t arrayIndex, EvaluationResultR ev)
         {
         m_arrayIndex = arrayIndex;
-        if (ConvertToStruct (ev) && m_struct.IsNull())
-            m_struct = InstanceExpressionContext::Create();
-
-        // once this is initialized we know we're dealing with a struct array (possible we encounter null entries first)
-        if (m_struct.IsValid())
+        if (ConvertToInstanceList(ev))
             {
-            m_struct->Clear();
-            if (ev.IsInstanceList())
-                m_struct->SetInstances (*ev.GetInstanceList());
+            InstanceExpressionContextPtr instancesContext = InstanceExpressionContext::Create();
+            instancesContext->SetInstances(*ev.GetInstanceList());
+            m_struct = instancesContext;
             }
+        else if (ev.IsContext())
+            m_struct = ev.GetContext();
         else
             m_primitive = ev;
         }

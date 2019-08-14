@@ -62,6 +62,7 @@ struct CustomizationHelper
     {
     ECPRESENTATION_EXPORT static void Customize(NavNodesProviderContextCR, JsonNavNode&, bool customizeLabel);
     ECPRESENTATION_EXPORT static void Customize(ContentProviderContextCR, ContentDescriptorCR, ContentSetItemR);
+    ECPRESENTATION_EXPORT static NodeArtifacts EvaluateArtifacts(NavNodesProviderContextCR, JsonNavNodeCR);
     ECPRESENTATION_EXPORT static void NotifyCheckedStateChanged(IConnectionCR, JsonNavNodeCR node, bool isChecked);
     };
 

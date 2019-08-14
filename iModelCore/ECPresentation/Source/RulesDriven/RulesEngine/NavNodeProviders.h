@@ -233,6 +233,7 @@ protected:
     void FinalizeNode(JsonNavNodeR, bool customizeLabel) const;
     ECPRESENTATION_EXPORT void InitializeNodes() const;
     bool HasSimilarNodeInHierarchy(JsonNavNodeCR node, uint64_t parentNodeId) const;
+    bvector<NodeArtifacts> GetChildrenArtifacts(JsonNavNodeCR) const;
     
     virtual bool _IsCacheable() const = 0;
     virtual ProviderNodesInitializationStrategy _GetInitializationStrategy() const {return ProviderNodesInitializationStrategy::Automatic;}
@@ -245,6 +246,7 @@ protected:
     virtual bool _GetNode(JsonNavNodePtr& node, size_t index) const = 0;
     virtual bool _HasNodes() const = 0;
     virtual size_t _GetNodesCount() const = 0;
+    virtual bvector<NodeArtifacts> _GetArtifacts() const = 0;
 
 public:
     virtual ~NavNodesProvider() {}
@@ -258,6 +260,7 @@ public:
     ECPRESENTATION_EXPORT bool GetNode(JsonNavNodePtr& node, size_t index) const;
     ECPRESENTATION_EXPORT size_t GetNodesCount() const;
     ECPRESENTATION_EXPORT bool HasNodes() const;
+    ECPRESENTATION_EXPORT bvector<NodeArtifacts> GetArtifacts() const;
     void DetermineChildren(JsonNavNodeR) const;
     void NotifyNodeChanged(JsonNavNodeCR node) const;
     void SetNodesCount(size_t count) {m_cachedNodesCount = count; m_hasCachedNodesCount = true;}
@@ -325,6 +328,7 @@ protected:
     bool _GetNode(JsonNavNodePtr& node, size_t index) const override {return false;}
     bool _HasNodes() const override {return false;}
     size_t _GetNodesCount() const override {return 0;}
+    bvector<NodeArtifacts> _GetArtifacts() const override {return bvector<NodeArtifacts>();}
     EmptyNavNodesProviderCP _AsEmptyProvider() const override {return this;}
 public:
     static RefCountedPtr<EmptyNavNodesProvider> Create(NavNodesProviderContextR context)
@@ -355,6 +359,7 @@ protected:
         }
     bool _HasNodes() const override {return true;}
     size_t _GetNodesCount() const override {return 1;}
+    bvector<NodeArtifacts> _GetArtifacts() const override;
     SingleNavNodeProviderCP _AsSingleProvider() const override {return this;}
 public:
     static RefCountedPtr<SingleNavNodeProvider> Create(JsonNavNode& node, NavNodesProviderContextCR context)
@@ -378,9 +383,10 @@ protected:
     void ClearProviders() {m_providers.clear(); }
     bvector<NavNodesProviderPtr>& GetNodeProvidersR() {return m_providers;}
     MultiNavNodesProviderCP _AsMultiProvider() const override {return this;}
-    bool _GetNode(JsonNavNodePtr& node, size_t index) const override;
-    bool _HasNodes() const override;
-    size_t _GetNodesCount() const override;
+    virtual bool _GetNode(JsonNavNodePtr& node, size_t index) const override;
+    virtual bool _HasNodes() const override;
+    virtual size_t _GetNodesCount() const override;
+    virtual bvector<NodeArtifacts> _GetArtifacts() const override;
 public:
     bvector<NavNodesProviderPtr> const& GetNodeProviders() const {return m_providers;}
 };
@@ -437,6 +443,7 @@ protected:
     bool _GetNode(JsonNavNodePtr& node, size_t index) const override;
     bool _HasNodes() const override;
     size_t _GetNodesCount() const override;
+    bvector<NodeArtifacts> _GetArtifacts() const override;
 
 public:
     static RefCountedPtr<CustomNodesProvider> Create(NavNodesProviderContextCR context, CustomNodeSpecificationCR specification)
@@ -457,8 +464,8 @@ struct QueryBasedNodesProvider : MultiNavNodesProvider
 
 private:
     NavigationQueryCPtr m_query;
-    bmap<ECClassId, bool> m_usedClassIds;
-    NavigationQueryExecutor m_executor;
+    mutable bmap<ECClassId, bool> m_usedClassIds;
+    mutable NavigationQueryExecutor m_executor;
     size_t m_executorIndex;
     size_t m_offset;
 
@@ -470,6 +477,7 @@ private:
     bool InitializeProvidersFromCache();
     bool InitializeProvidersForAllNodes();
     bool InitializeProvidersForPagedQueries(size_t nodesCount, size_t pageSize);
+    void EnsureQueryRecordsRead() const;
     
 protected:
     bool _IsCacheable() const override {return true;}
@@ -478,6 +486,7 @@ protected:
     bool _GetNode(JsonNavNodePtr& node, size_t index) const override;
     bool _HasNodes() const override;
     size_t _GetNodesCount() const override;
+    bvector<NodeArtifacts> _GetArtifacts() const override;
 
 public:
     static RefCountedPtr<QueryBasedNodesProvider> Create(NavNodesProviderContextCR context, 
@@ -506,11 +515,11 @@ private:
 private:
     ECPRESENTATION_EXPORT QueryBasedSpecificationNodesProvider(NavNodesProviderContextCR context, ChildNodeSpecificationCR specification);
     bvector<NavigationQueryPtr> CreateQueries(ChildNodeSpecificationCR specification) const;
-    void SetupNestedProviders();
     
 protected:
     bool _IsCacheable() const override {return false;}
     bool _HasNodes() const override;
+    bvector<NodeArtifacts> _GetArtifacts() const override;
 
 public:
     static RefCountedPtr<QueryBasedSpecificationNodesProvider> Create(NavNodesProviderContextCR context, ChildNodeSpecificationCR specification)
@@ -543,6 +552,7 @@ protected:
     bool _GetNode(JsonNavNodePtr& node, size_t index) const override;
     bool _HasNodes() const override;
     size_t _GetNodesCount() const override;
+    bvector<NodeArtifacts> _GetArtifacts() const override;
 
     virtual BeSQLite::CachedStatementPtr _GetNodesStatement() const = 0;
     virtual BeSQLite::CachedStatementPtr _GetCountStatement() const = 0;
@@ -632,5 +642,52 @@ public:
         return WithInitialize(new NodesWithUndeterminedChildrenProvider(context, cache, statements));
         }
 };
+
+/*=================================================================================**//**
+* @bsiclass                                     Aidas.Vaiksnoras                10/2017
++===============+===============+===============+===============+===============+======*/
+struct FilteredNodesProvider : SQLiteCacheNodesProvider
+{
+private:
+    Utf8String m_filter;
+    FilteredNodesProvider(NavNodesProviderContextCR, BeSQLite::Db&, BeSQLite::StatementCache&, Utf8String filter);
+
+protected:
+    BeSQLite::CachedStatementPtr _GetNodesStatement() const override;
+    BeSQLite::CachedStatementPtr _GetCountStatement() const override;
+
+public:
+    static RefCountedPtr<FilteredNodesProvider> Create(NavNodesProviderContextCR context, BeSQLite::Db& cache, BeSQLite::StatementCache& statements, Utf8String filter)
+        {
+        return WithInitialize(new FilteredNodesProvider(context, cache, statements, filter));
+        }
+};
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                08/2019
++===============+===============+===============+===============+===============+======*/
+struct CachedNodeProvider : NavNodesProvider
+{
+private:
+    uint64_t m_nodeId;
+    RefCountedPtr<SingleNavNodeProvider> m_singleNodeProvider;
+private:
+    CachedNodeProvider(NavNodesProviderContextCR context, uint64_t id)
+        : NavNodesProvider(context), m_nodeId(id)
+        {}
+protected:
+    bool _InitializeNodes() override;
+    bool _IsCacheable() const override {return false;}
+    bool _GetNode(JsonNavNodePtr& node, size_t index) const override { return m_singleNodeProvider->GetNode(node, index); }
+    bool _HasNodes() const override { return m_singleNodeProvider->HasNodes(); }
+    size_t _GetNodesCount() const override { return m_singleNodeProvider->GetNodesCount(); }
+    bvector<NodeArtifacts> _GetArtifacts() const override { return m_singleNodeProvider->GetArtifacts(); }
+    SingleNavNodeProviderCP _AsSingleProvider() const override { return m_singleNodeProvider.get(); }
+public:
+    static RefCountedPtr<CachedNodeProvider> Create(NavNodesProviderContextCR context, uint64_t id)
+        {
+        return WithInitialize(new CachedNodeProvider(context, id));
+        }
+    };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

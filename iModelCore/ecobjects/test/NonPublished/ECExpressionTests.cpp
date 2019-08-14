@@ -10,6 +10,7 @@
 #include <ECObjects/StandaloneECInstance.h>
 #include <ECObjects/ECValue.h>
 #include <ECObjects/ECExpressions.h>
+#include <ECObjects/ECExpressionNode.h>
 
 #define EXPECT_SUCCESS(EXPR) EXPECT_TRUE(ExpressionStatus::Success == (EXPR))
 #define EXPECT_ERROR(EXPR) EXPECT_FALSE(ExpressionStatus::Success == (EXPR))
@@ -147,6 +148,51 @@ struct ExpressionTests : ECTestFixture
     void                TestExpressionNull (IECInstanceR instance, Utf8CP expr) { TestExpressionNullity (instance, expr, true); }
     void                TestExpressionNotNull (IECInstanceR instance, Utf8CP expr) { TestExpressionNullity (instance, expr, false); }
     };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                    Grigas.Petraitis                08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+struct LambdaInputsAggregator : LambdaValue::IProcessor
+    {
+    bvector<EvaluationResult> m_evaluatedValues;
+    bool ProcessResult(ExpressionStatus, EvaluationResultCR, EvaluationResultCR result) override
+        {
+        m_evaluatedValues.push_back(result);
+        return true;
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ExpressionTests, LambdaValue_EvaluatesValueListOfContexts)
+    {
+    ExpressionContextPtr outerContext = SymbolExpressionContext::Create(nullptr);
+    LambdaNodePtr node = LambdaNode::Create("x", *ECEvaluator::ParseValueExpressionAndCreateTree("x.property"));
+    LambdaValuePtr value = LambdaValue::Create(*node, *outerContext);
+
+    bvector<EvaluationResult> contexts;
+
+    SymbolExpressionContextPtr context1 = SymbolExpressionContext::Create(nullptr);
+    context1->AddSymbol(*ValueSymbol::Create("property", ECValue(123)));
+    EvaluationResult contextResult1;
+    contextResult1.SetContext(*context1);
+    contexts.push_back(contextResult1);
+
+    SymbolExpressionContextPtr context2 = SymbolExpressionContext::Create(nullptr);
+    context2->AddSymbol(*ValueSymbol::Create("property", ECValue(456)));
+    EvaluationResult contextResult2;
+    contextResult2.SetContext(*context2);
+    contexts.push_back(contextResult2);
+
+    IValueListResultPtr valueList = IValueListResult::Create(contexts);
+
+    LambdaInputsAggregator agg;
+    EXPECT_EQ(ExpressionStatus::Success, value->Evaluate(*valueList, agg));
+    EXPECT_EQ(2, agg.m_evaluatedValues.size());
+    EXPECT_EQ(ECValue(123), *agg.m_evaluatedValues[0].GetECValue());
+    EXPECT_EQ(ECValue(456), *agg.m_evaluatedValues[1].GetECValue());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/13

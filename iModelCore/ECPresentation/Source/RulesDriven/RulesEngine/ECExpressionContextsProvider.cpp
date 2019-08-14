@@ -219,6 +219,40 @@ public:
 };
 
 //=======================================================================================
+// @bsiclass                                                Grigas.Petraitis    08/2019
+//=======================================================================================
+struct ChildrenArtifactsExpressionContext : ExpressionContext
+{
+private:
+    IValueListResultPtr m_artifactsValueList;
+protected:
+    ExpressionStatus _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, bvector<ExpressionContextP> const& contextsStack, ::uint32_t startIndex) override
+        {
+        ExpressionToken nextOperation = primaryList.GetOperation(startIndex);
+        if (TOKEN_LParen != nextOperation)
+            return ExpressionStatus::MethodRequired;
+        CallNodeP callNode = static_cast<CallNodeP>(primaryList.GetOperatorNode(startIndex));
+        return callNode->InvokeValueListMethod(evalResult, *m_artifactsValueList, contextsStack);
+        }
+public:
+    ChildrenArtifactsExpressionContext(bvector<NodeArtifacts> artifacts)
+        : ExpressionContext(nullptr)
+        {
+        bvector<EvaluationResult> valuesResult;
+        std::transform(artifacts.begin(), artifacts.end(), std::back_inserter(valuesResult), [](NodeArtifacts const& nodeArtifacts)
+            {
+            EvaluationResult r;
+            SymbolExpressionContextPtr context = SymbolExpressionContext::Create(nullptr);
+            for (auto const& entry : nodeArtifacts)
+                context->AddSymbol(*ValueSymbol::Create(entry.first.c_str(), entry.second));
+            r.SetContext(*context);
+            return r;
+            });
+        m_artifactsValueList = IValueListResult::Create(valuesResult);
+        }
+};
+
+//=======================================================================================
 // @bsiclass                                                Grigas.Petraitis    03/2015
 //=======================================================================================
 struct NodeSymbolsProvider : IECSymbolProvider
@@ -316,6 +350,8 @@ protected:
             context.AddSymbol(*ValueSymbol::Create("IsPropertyGroupingNode", ECValue(false)));
             context.AddSymbol(*ValueSymbol::Create("GroupedInstancesCount", ECValue(0)));
             context.AddSymbol(*ValueSymbol::Create("ECInstance", ECValue()));
+            context.AddSymbol(*ValueSymbol::Create("HasChildren", ECValue(false)));
+            context.AddSymbol(*ValueSymbol::Create("ChildrenArtifacts", ECValue()));
             }
         else
             {
@@ -341,6 +377,8 @@ protected:
             context.AddSymbol(*ValueSymbol::Create("IsClassGroupingNode", ECValue(node.GetType().Equals(NAVNODE_TYPE_ECClassGroupingNode))));
             context.AddSymbol(*ValueSymbol::Create("IsPropertyGroupingNode", ECValue(node.GetType().Equals(NAVNODE_TYPE_ECPropertyGroupingNode) || node.GetType().Equals(NAVNODE_TYPE_DisplayLabelGroupingNode))));
             context.AddSymbol(*ValueSymbol::Create("GroupedInstancesCount", ECValue((uint64_t)nodeExtendedData.GetGroupedInstanceKeysCount())));
+            context.AddSymbol(*ValueSymbol::Create("HasChildren", ECValue(node.HasChildren())));
+            context.AddSymbol(*ContextSymbol::CreateContextSymbol("ChildrenArtifacts", *new ChildrenArtifactsExpressionContext(nodeExtendedData.GetChildrenArtifacts())));
 
             if (node.GetType().Equals(NAVNODE_TYPE_ECRelationshipGroupingNode))
                 {

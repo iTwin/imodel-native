@@ -59,8 +59,6 @@ public:
     ECPropertyGroupingNodeKey const* AsECPropertyGroupingNodeKey() const {return _AsECPropertyGroupingNodeKey();}
     LabelGroupingNodeKey const* AsLabelGroupingNodeKey() const {return _AsLabelGroupingNodeKey();}
 
-    //! Get the node hash.
-    ECPRESENTATION_EXPORT Utf8String GetNodeHash() const;
     //! Get the path from root to this node.
     bvector<Utf8String> const& GetPathFromRoot() const {return m_pathFromRoot;}
 
@@ -784,6 +782,8 @@ public:
         return _CreateCustomNode(connectionId, locale, label, description, imageId, type);
         }
 };
+
+typedef bmap<Utf8String, ECValue> NodeArtifacts;
 
 //! @}
 

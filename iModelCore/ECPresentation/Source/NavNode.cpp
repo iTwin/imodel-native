@@ -7,21 +7,6 @@
 #include <ECPresentation/NavNode.h>
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas                02/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String NavNodeKey::GetNodeHash() const
-    {
-    if (m_pathFromRoot.empty())
-        return "";
-    
-    MD5 h;
-    for (Utf8StringCR pathElement : m_pathFromRoot)
-        h.Add(pathElement.c_str(), pathElement.SizeInBytes());
-
-    return h.GetHashString();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 NavNodeKeyPtr NavNodeKey::FromJson(IConnectionCR connection, RapidJsonValueCR json)

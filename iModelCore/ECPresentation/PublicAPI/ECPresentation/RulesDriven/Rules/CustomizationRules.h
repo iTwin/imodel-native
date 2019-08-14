@@ -22,6 +22,7 @@ struct EXPORT_VTABLE_ATTRIBUTE CustomizationRuleVisitor
     friend struct SortingRule;
     friend struct InstanceLabelOverride;
     friend struct ExtendedDataRule;
+    friend struct NodeArtifactsRule;
 
 protected:
     virtual void _Visit(GroupingRuleCR rule) {}
@@ -32,6 +33,7 @@ protected:
     virtual void _Visit(SortingRuleCR rule) {}
     virtual void _Visit(InstanceLabelOverrideCR rule) {}
     virtual void _Visit(ExtendedDataRuleCR rule) {}
+    virtual void _Visit(NodeArtifactsRuleCR rule) {}
 };
 
 /*---------------------------------------------------------------------------------**//**

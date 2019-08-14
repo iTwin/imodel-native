@@ -24,9 +24,11 @@ public:
 
     static DPoint2d GetPoint2dFromSqlValue(BeSQLite::EC::IECSqlValue const&);
     static DPoint2d GetPoint2dFromJson(JsonValueCR);
+    static DPoint2d GetPoint2dFromJson(RapidJsonValueCR);
     static DPoint2d GetPoint2dFromJsonString(Utf8CP);
     static DPoint3d GetPoint3dFromSqlValue(BeSQLite::EC::IECSqlValue const&);
     static DPoint3d GetPoint3dFromJson(JsonValueCR);
+    static DPoint3d GetPoint3dFromJson(RapidJsonValueCR);
     static DPoint3d GetPoint3dFromJsonString(Utf8CP);
 
     static rapidjson::Document GetPoint2dJson(DPoint2dCR, rapidjson::MemoryPoolAllocator<>*);
@@ -42,6 +44,7 @@ public:
 
     static ECN::ECValue GetECValueFromSqlValue(ECN::PrimitiveType, BeSQLite::EC::IECSqlValue const&);
     static ECN::ECValue GetECValueFromString(ECN::PrimitiveType, Utf8StringCR);
+    static ECN::ECValue GetECValueFromJson(ECN::PrimitiveType, RapidJsonValueCR);
     static ECN::ECValue GetECValueFromJson(ECN::ECPropertyCR, JsonValueCR);
 
     static bvector<BeSQLite::EC::ECInstanceKey> GetECInstanceKeysFromSerializedJson(Utf8CP);

@@ -132,7 +132,7 @@ protected:
         for (auto pair : m_hierarchy)
             {
             NavNodeCP node = pair.first.get();
-            if (nullptr != node && node->GetKey()->GetNodeHash().Equals(nodeKey.GetNodeHash()))
+            if (nullptr != node && node->GetKey()->GetHash().Equals(nodeKey.GetHash()))
                 return node;
             }
         return NavNodeCPtr(nullptr);

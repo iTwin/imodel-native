@@ -370,6 +370,36 @@ void CustomizationHelper::Customize(ContentProviderContextCR context, ContentDes
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+NodeArtifacts CustomizationHelper::EvaluateArtifacts(NavNodesProviderContextCR context, JsonNavNodeCR node)
+    {
+    JsonNavNodeCPtr parentNode = context.GetVirtualParentNode();
+
+    RulesPreprocessor preprocessor(context.GetConnections(), context.GetConnection(), context.GetRuleset(), context.GetLocale(),
+        context.GetUserSettings(), &context.GetUsedSettingsListener(), context.GetECExpressionsCache(), context.GetStatementCache());
+    bvector<NodeArtifactsRuleCP> rules = preprocessor.GetNodeArtifactRules(RulesPreprocessor::CustomizationRuleParameters(node, parentNode.get()));
+    
+    ECExpressionContextsProvider::CustomizationRulesContextParameters evaluationParams(node, parentNode.get(),
+        context.GetConnection(), context.GetLocale(), context.GetUserSettings(), &context.GetUsedSettingsListener());
+    ExpressionContextPtr evaluationContext = ECExpressionContextsProvider::GetCustomizationRulesContext(evaluationParams);
+
+    NodeArtifacts artifacts;
+    for (NodeArtifactsRuleCP rule : rules)
+        {
+        for (auto entry : rule->GetItemsMap())
+            {
+            Utf8StringCR key = entry.first;
+            Utf8StringCR valueExpr = entry.second;
+            ECValue value;
+            if (ECExpressionsHelper(context.GetECExpressionsCache()).EvaluateECExpression(value, valueExpr, *evaluationContext))
+                artifacts.Insert(key, value);
+            }
+        }
+    return artifacts;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CustomizationHelper::NotifyCheckedStateChanged(IConnectionCR connection, JsonNavNodeCR node, bool isChecked)

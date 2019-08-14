@@ -25,6 +25,7 @@ TEST_F(AllInstanceNodesSpecificationTests, LoadsFromJson)
         "specType": "AllInstanceNodes",
         "groupByClass": false,
         "groupByLabel": false,
+        "hideExpression": "hide expr",
         "supportedSchemas": {"schemaNames": ["TestSchema"]}
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
@@ -35,6 +36,7 @@ TEST_F(AllInstanceNodesSpecificationTests, LoadsFromJson)
     EXPECT_FALSE(spec.GetGroupByClass());
     EXPECT_FALSE(spec.GetGroupByLabel());
     EXPECT_STREQ("TestSchema", spec.GetSupportedSchemas().c_str());
+    EXPECT_STREQ("hide expr", spec.GetHideExpression().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -53,6 +55,7 @@ TEST_F(AllInstanceNodesSpecificationTests, LoadsFromJsonWithDefaultValues)
     EXPECT_TRUE(spec.GetGroupByClass());
     EXPECT_TRUE(spec.GetGroupByLabel());
     EXPECT_STREQ("", spec.GetSupportedSchemas().c_str());
+    EXPECT_STREQ("", spec.GetHideExpression().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -61,12 +64,14 @@ TEST_F(AllInstanceNodesSpecificationTests, LoadsFromJsonWithDefaultValues)
 TEST_F(AllInstanceNodesSpecificationTests, WriteToJson)
     {
     AllInstanceNodesSpecification spec(1000, true, true, true, true, true, "SupportedSchema");
+    spec.SetHideExpression("hide expr");
     Json::Value json = spec.WriteJson();
     Json::Value expected = Json::Reader::DoParse(R"({
         "specType": "AllInstanceNodes",
         "hasChildren": "Always",
         "hideNodesInHierarchy": true,
         "hideIfNoChildren": true,
+        "hideExpression": "hide expr",
         "supportedSchemas": {"schemaNames": ["SupportedSchema"]}
     })");
     EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());

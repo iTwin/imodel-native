@@ -460,7 +460,7 @@ folly::Future<bvector<ECInstanceChangeResult>> IECPresentationManager::SaveValue
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bmap<uint64_t, bvector<NavNodeCPtr>>::iterator CreateHierarchy(IECPresentationManager& mgr, ECDbCR db, NavNodeCR node, bmap<uint64_t, bvector<NavNodeCPtr>>& hierarchy, bvector<NavNodeCPtr>& roots)
+static bmap<uint64_t, bvector<NavNodeCPtr>>::iterator CreateHierarchy(IECPresentationManager& mgr, ECDbCR db, NavNodeCR node, bmap<uint64_t, bvector<NavNodeCPtr>>& hierarchy, bvector<NavNodeCPtr>& roots, JsonValueCR jsonOptions)
     {
     auto parentIter = hierarchy.end();
     if (0 == node.GetParentNodeId())
@@ -475,9 +475,9 @@ static bmap<uint64_t, bvector<NavNodeCPtr>>::iterator CreateHierarchy(IECPresent
         if (parentIter == hierarchy.end())
             {
             // get the parent and put it into the hierarchy
-            NavNodeCPtr parent = mgr.GetParent(db, node).get();
+            NavNodeCPtr parent = mgr.GetParent(db, node, jsonOptions).get();
             if (parent.IsValid())
-                parentIter = CreateHierarchy(mgr, db, *parent, hierarchy, roots);
+                parentIter = CreateHierarchy(mgr, db, *parent, hierarchy, roots, jsonOptions);
             }
         }
     // see if this node is already in the hierarchy
@@ -556,14 +556,14 @@ folly::Future<bvector<NodesPathElement>> IECPresentationManager::GetFilteredNode
     escapedString.ReplaceAll("_", "\\_");
 
     return _GetFilteredNodes(*connection, escapedString.c_str(), options, notificationsContext)
-        .then([&, notificationsContext, filterText = Utf8String(filterText).ToLower()](bvector<NavNodeCPtr> filteredNodes)
+        .then([&, notificationsContext, filterText = Utf8String(filterText).ToLower(), options](bvector<NavNodeCPtr> filteredNodes)
         {
         notificationsContext.OnTaskStart();
 
         bvector<NavNodeCPtr> roots;
         bmap<uint64_t, bvector<NavNodeCPtr>> hierarchy;
         for (NavNodeCPtr node : filteredNodes)
-            CreateHierarchy(*this, db, *node, hierarchy, roots);
+            CreateHierarchy(*this, db, *node, hierarchy, roots, options);
 
         size_t index = 0;
         bvector<NodesPathElement> paths;

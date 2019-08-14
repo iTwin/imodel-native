@@ -34,6 +34,8 @@ CustomizationRuleP CustomizationRule::Create(JsonValueCR json)
         spec = new GroupingRule();
     else if (0 == strcmp(EXTENDED_DATA_RULE_JSON_TYPE, type))
         spec = new ExtendedDataRule();
+    else if (0 == strcmp(NODE_ARTIFACTS_RULE_JSON_TYPE, type))
+        spec = new NodeArtifactsRule();
     if (!spec || !spec->ReadJson(json))
         DELETE_AND_CLEAR(spec);
     return spec;

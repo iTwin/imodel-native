@@ -122,6 +122,7 @@ enum ValueType
     ValType_InstanceList    =  3,
     ValType_ValueList       =  4,
     ValType_Lambda          =  5,
+    ValType_Context         =  6,
     };
 
 typedef ExpressionStatus (*ExpressionStaticMethod_t)(EvaluationResult& evalResult, void* context, EvaluationResultVector& arguments);
@@ -753,6 +754,7 @@ private:
         IValueListResultP           m_valueList;
         ECInstanceListCP            m_instanceList;
         LambdaValueP                m_lambda;
+        ExpressionContextPtr        m_context;
         };
     bool                m_ownsInstanceList;
     ValueType           m_valueType;
@@ -764,6 +766,7 @@ public:
     bool                IsECValue() const       { return ValType_ECValue == m_valueType; }
     bool                IsValueList() const     { return ValType_ValueList == m_valueType; }
     bool                IsLambda() const        { return ValType_Lambda == m_valueType; }
+    bool                IsContext() const       { return ValType_Context == m_valueType; }
 
     ExpressionStatus    GetInteger(int32_t& result);
     ExpressionStatus    GetBoolean(bool& result, bool requireBoolean = true);
@@ -795,6 +798,10 @@ public:
 
     ECOBJECTS_EXPORT LambdaValueCP          GetLambda() const;
     ECOBJECTS_EXPORT void                   SetLambda (LambdaValueR value);
+
+    ECOBJECTS_EXPORT ExpressionContextP     GetContext() const;
+    ECOBJECTS_EXPORT void                   SetContext(ExpressionContextR context);
+
     ECOBJECTS_EXPORT Utf8String             ToString() const;
     };
 

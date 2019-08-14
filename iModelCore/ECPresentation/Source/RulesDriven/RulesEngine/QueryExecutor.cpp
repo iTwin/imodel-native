@@ -665,8 +665,8 @@ private:
     +---------------+---------------+---------------+---------------+---------------+------*/
     void ReadECInstanceKey(RapidJsonValueCR json, bvector<ContentDescriptor::ECPropertiesField const*> const& keyFields)
         {
-        ECClassId classId(json["ECClassId"].GetUint64());
-        ECInstanceId instanceId(json["ECInstanceId"].GetUint64());
+        ECClassId classId(json["c"].GetUint64());
+        ECInstanceId instanceId(json["i"].GetUint64());
         ECClassCP ecClass = m_db.Schemas().GetClass(classId);
         ECClassInstanceKey key(ecClass, instanceId);
         for (ContentDescriptor::ECPropertiesField const* field : keyFields)

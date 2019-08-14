@@ -58,6 +58,7 @@ PresentationRuleSet::~PresentationRuleSet ()
     CommonToolsInternal::FreePresentationRules(m_contentModifiers);
     CommonToolsInternal::FreePresentationRules(m_instanceLabelOverrides);
     CommonToolsInternal::FreePresentationRules(m_extendedDataRules);
+    CommonToolsInternal::FreePresentationRules(m_nodeArtifactRules);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -328,6 +329,7 @@ bool PresentationRuleSet::ReadJson(JsonValueCR json)
     CommonToolsInternal::LoadFromJsonByPriority(rulesJson, m_styleOverrides, CommonToolsInternal::LoadRuleFromJson<StyleOverride>, this);
     CommonToolsInternal::LoadFromJsonByPriority(rulesJson, m_instanceLabelOverrides, CommonToolsInternal::LoadRuleFromJson<InstanceLabelOverride>, this);
     CommonToolsInternal::LoadFromJsonByPriority(rulesJson, m_extendedDataRules, CommonToolsInternal::LoadRuleFromJson<ExtendedDataRule>, this);
+    CommonToolsInternal::LoadFromJsonByPriority(rulesJson, m_nodeArtifactRules, CommonToolsInternal::LoadRuleFromJson<NodeArtifactsRule>, this);
     CommonToolsInternal::LoadFromJsonByPriority(json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_USERSETTINGS], m_userSettings, CommonToolsInternal::LoadRuleFromJson<UserSettingsGroup>, this);
     return true;
     }
@@ -353,6 +355,7 @@ void PresentationRuleSet::WriteJson(JsonValueR json) const
     CommonToolsInternal::WriteRulesToJson<LabelOverride, LabelOverrideList>(rulesJson, m_labelOverrides);
     CommonToolsInternal::WriteRulesToJson<StyleOverride, StyleOverrideList>(rulesJson, m_styleOverrides);
     CommonToolsInternal::WriteRulesToJson<ExtendedDataRule, ExtendedDataRuleList>(rulesJson, m_extendedDataRules);
+    CommonToolsInternal::WriteRulesToJson<NodeArtifactsRule, NodeArtifactsRuleList>(rulesJson, m_nodeArtifactRules);
     CommonToolsInternal::WriteRulesToJson<GroupingRule, GroupingRuleList>(rulesJson, m_groupingRules);
     CommonToolsInternal::WriteRulesToJson<UserSettingsGroup, UserSettingsGroupList>(rulesJson, m_userSettings);
     CommonToolsInternal::WriteRulesToJson<CheckBoxRule, CheckBoxRuleList>(rulesJson, m_checkBoxRules);
@@ -599,6 +602,11 @@ InstanceLabelOverrideList const& PresentationRuleSet::GetInstanceLabelOverrides 
 ExtendedDataRuleList const& PresentationRuleSet::GetExtendedDataRules() const { return m_extendedDataRules; }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+NodeArtifactsRuleList const& PresentationRuleSet::GetNodeArtifactRules() const { return m_nodeArtifactRules; }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 MD5 PresentationRuleSet::_ComputeHash(Utf8CP) const
@@ -704,4 +712,5 @@ template<> UserSettingsGroupList* PresentationRuleSet::GetRules<UserSettingsGrou
 template<> InstanceLabelOverrideList* PresentationRuleSet::GetRules<InstanceLabelOverride>() {return &m_instanceLabelOverrides;}
 template<> LocalizationResourceKeyDefinitionList* PresentationRuleSet::GetRules<LocalizationResourceKeyDefinition>() {return &m_localizationResourceKeyDefinitions;}
 template<> ExtendedDataRuleList* PresentationRuleSet::GetRules<ExtendedDataRule>() { return &m_extendedDataRules; }
+template<> NodeArtifactsRuleList* PresentationRuleSet::GetRules<NodeArtifactsRule>() { return &m_nodeArtifactRules; }
 END_BENTLEY_ECPRESENTATION_NAMESPACE

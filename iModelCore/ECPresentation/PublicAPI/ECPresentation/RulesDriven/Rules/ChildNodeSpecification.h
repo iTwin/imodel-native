@@ -34,6 +34,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeSpecification : PresentationRuleSpecific
         int m_priority;
         bool m_hideNodesInHierarchy;
         bool m_hideIfNoChildren;
+        Utf8String m_hideExpression;
         bool m_doNotSort;
         ChildrenHint m_hasChildren;
         Utf8String m_extendedData;
@@ -104,6 +105,12 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeSpecification : PresentationRuleSpecific
 
          //! Sets the HideIfNoChildren value. Can be boolean.
         ECPRESENTATION_EXPORT void                         SetHideIfNoChildren (bool value);
+
+        //! Get an ECExpression whose result is used to determine whether node should be hidden
+        Utf8StringCR GetHideExpression() const {return m_hideExpression;}
+
+        //! Set an ECExpression whose result is used to determine whether node should be hidden
+        void SetHideExpression(Utf8String expr) {m_hideExpression = expr;}
 
         //! Returns a string that represents extended data that will be passed to ECQuery for this particular specification.
         //! @deprecated

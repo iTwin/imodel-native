@@ -289,6 +289,58 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_HideNod
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_HideExpression_ReturnsEmptyListIfExpressionEvalutesToTrue)
+    {
+    // insert widget instance
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rule = new RootNodeRule();
+    AllInstanceNodesSpecificationP spec = new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest");
+    spec->SetHideExpression("ThisNode.IsOfClass(\"Widget\", \"RulesEngineTest\")");
+    rule->AddSpecification(*spec);
+    rules->AddPresentationRule(*rule);
+
+    // request for nodes
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId(), TargetTree_MainTree).GetJson();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
+
+    // make sure we have 0 nodes
+    ASSERT_EQ(0, nodes.GetSize());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_HideExpression_ReturnsNodesIfExpressionEvaluatesToFalse)
+    {
+    // insert widget instance
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rule = new RootNodeRule();
+    AllInstanceNodesSpecificationP spec = new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest");
+    spec->SetHideExpression("ThisNode.IsOfClass(\"Gadget\", \"RulesEngineTest\")");
+    rule->AddSpecification(*spec);
+    rules->AddPresentationRule(*rule);
+
+    // request for nodes
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId(), TargetTree_MainTree).GetJson();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
+
+    // make sure we have 0 nodes
+    ASSERT_EQ(1, nodes.GetSize());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @betest                                       Pranciskus.Ambrazas                02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_GroupedByLabel_DoesntGroup1Instance)
@@ -943,9 +995,6 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_HideNodesInH
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_HideNodesInHierarchy_ReturnsEmptyListForRootNode)
     {
-    // insert widget instance
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
-
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
@@ -960,6 +1009,48 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_HideNodesInH
 
     // make sure we have 0 nodes
     ASSERT_EQ(0, nodes.GetSize());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_HideExpression_ReturnsEmptyListIfExpressionEvalutesToTrue)
+    {
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rule = new RootNodeRule();
+    rule->AddSpecification(*CreateCustomNodeSpecification("T_MyType", [](CustomNodeSpecificationR spec) {spec.SetHideExpression("ThisNode.Type = \"T_MyType\""); }));
+    rules->AddPresentationRule(*rule);
+
+    // request for nodes
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId(), TargetTree_MainTree).GetJson();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
+
+    // make sure we have 0 nodes
+    ASSERT_EQ(0, nodes.GetSize());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_HideExpression_ReturnsNodesIfExpressionEvaluatesToFalse)
+    {
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rule = new RootNodeRule();
+    rule->AddSpecification(*CreateCustomNodeSpecification("T_MyType", [](CustomNodeSpecificationR spec) {spec.SetHideExpression("ThisNode.Type = \"T_OtherType\""); }));
+    rules->AddPresentationRule(*rule);
+
+    // request for nodes
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId(), TargetTree_MainTree).GetJson();
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
+
+    // make sure we have 0 nodes
+    ASSERT_EQ(1, nodes.GetSize());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -6425,4 +6516,200 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AppliesNodeExtendedDataF
     RapidJsonAccessor extendedData2 = rootNodes[1]->GetUsersExtendedData();
     ASSERT_TRUE(extendedData2.GetJson().IsObject());
     ASSERT_EQ(0, extendedData2.GetJson().MemberCount());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Based on VSTS#150682
+* @bsitest                                      Grigas.Petraitis                08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(HideNodeWhenItHasNoChildrenOrArtifacts_ShowsWhenThereAreChildren, R"*(
+    <ECEntityClass typeName="Subject" />
+    <ECEntityClass typeName="Partition" />
+    <ECEntityClass typeName="Model" />
+    <ECRelationshipClass typeName="SubjectOwnsPartitionElements" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="false">
+            <Class class="Subject"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="Partition"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="ModelModelsElement" strength="embedding" strengthDirection="Backward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="models" polymorphic="true">
+            <Class class="Model"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is modeled by" polymorphic="true">
+            <Class class="Partition" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, HideNodeWhenItHasNoChildrenOrArtifacts_ShowsWhenThereAreChildren)
+    {
+    ECClassCP subjectClass = GetClass("Subject");
+    ECClassCP partitionClass = GetClass("Partition");
+    ECClassCP modelClass = GetClass("Model");
+    ECRelationshipClassCP relSubjectOwnsPartitionElements = GetClass("SubjectOwnsPartitionElements")->GetRelationshipClassCP();
+    ECRelationshipClassCP relModelModelsElement = GetClass("ModelModelsElement")->GetRelationshipClassCP();
+    IECInstancePtr subject = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *subjectClass);
+    IECInstancePtr partition = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *partitionClass);
+    IECInstancePtr model = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *modelClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relSubjectOwnsPartitionElements, *subject, *partition);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relModelModelsElement, *model, *partition);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* subjectsRule = new RootNodeRule();
+    rules->AddPresentationRule(*subjectsRule);
+    InstanceNodesOfSpecificClassesSpecification* subjectsSpec = new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, 
+        "", subjectClass->GetFullName(), true);
+    subjectsSpec->SetHideExpression("NOT ThisNode.HasChildren AND NOT ThisNode.ChildrenArtifacts.AnyMatches(x => x.IsContentModelPartition)");
+    subjectsRule->AddSpecification(*subjectsSpec);
+
+    ChildNodeRule* partitionsRule = new ChildNodeRule("ParentNode.ClassName = \"Subject\"", 1000, false, TargetTree_Both);
+    rules->AddPresentationRule(*partitionsRule);
+    RelatedInstanceNodesSpecification* partitionsSpec = new RelatedInstanceNodesSpecification(1000, ChildrenHint::Unknown, false, false, false, false, 0, "",
+        RequiredRelationDirection_Forward, "", relSubjectOwnsPartitionElements->GetFullName(), partitionClass->GetFullName());
+    partitionsRule->AddSpecification(*partitionsSpec);
+    
+    // request for nodes
+    RulesDrivenECPresentationManager::NavigationOptions options(BeTest::GetNameOfCurrentTest(), TargetTree_MainTree);
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get(); });
+    ASSERT_EQ(1, rootNodes.GetSize());
+    EXPECT_EQ(subjectClass, &rootNodes[0]->GetKey()->AsECInstanceNodeKey()->GetECClass());
+
+    DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options.GetJson()).get(); });
+    ASSERT_EQ(1, childNodes.GetSize());
+    EXPECT_EQ(partitionClass, &childNodes[0]->GetKey()->AsECInstanceNodeKey()->GetECClass());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Based on VSTS#150682
+* @bsitest                                      Grigas.Petraitis                08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(HideNodeWhenItHasNoChildrenOrArtifacts_HidesWhenThereAreNoChildren, R"*(
+    <ECEntityClass typeName="Subject" />
+    <ECEntityClass typeName="Partition" />
+    <ECEntityClass typeName="Model" />
+    <ECRelationshipClass typeName="SubjectOwnsPartitionElements" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="false">
+            <Class class="Subject"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="Partition"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="ModelModelsElement" strength="embedding" strengthDirection="Backward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="models" polymorphic="true">
+            <Class class="Model"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is modeled by" polymorphic="true">
+            <Class class="Partition" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, HideNodeWhenItHasNoChildrenOrArtifacts_HidesWhenThereAreNoChildren)
+    {
+    ECClassCP subjectClass = GetClass("Subject");
+    ECClassCP partitionClass = GetClass("Partition");
+    ECClassCP modelClass = GetClass("Model");
+    ECRelationshipClassCP relSubjectOwnsPartitionElements = GetClass("SubjectOwnsPartitionElements")->GetRelationshipClassCP();
+    ECRelationshipClassCP relModelModelsElement = GetClass("ModelModelsElement")->GetRelationshipClassCP();
+    IECInstancePtr subject = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *subjectClass);
+    IECInstancePtr partition = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *partitionClass);
+    IECInstancePtr model = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *modelClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relSubjectOwnsPartitionElements, *subject, *partition);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relModelModelsElement, *model, *partition);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* subjectsRule = new RootNodeRule();
+    rules->AddPresentationRule(*subjectsRule);
+    InstanceNodesOfSpecificClassesSpecification* subjectsSpec = new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
+        "", subjectClass->GetFullName(), true);
+    subjectsSpec->SetHideExpression("NOT ThisNode.HasChildren AND NOT ThisNode.ChildrenArtifacts.AnyMatches(x => x.IsContentModelPartition)");
+    subjectsRule->AddSpecification(*subjectsSpec);
+
+    ChildNodeRule* partitionsRule = new ChildNodeRule("ParentNode.ClassName = \"Subject\"", 1000, false, TargetTree_Both);
+    rules->AddPresentationRule(*partitionsRule);
+    RelatedInstanceNodesSpecification* partitionsSpec = new RelatedInstanceNodesSpecification(1000, ChildrenHint::Unknown, false, false, false, false, 0, "FALSE",
+        RequiredRelationDirection_Forward, "", relSubjectOwnsPartitionElements->GetFullName(), partitionClass->GetFullName());
+    partitionsRule->AddSpecification(*partitionsSpec);
+
+    // request for nodes
+    RulesDrivenECPresentationManager::NavigationOptions options(BeTest::GetNameOfCurrentTest(), TargetTree_MainTree);
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get(); });
+    ASSERT_EQ(0, rootNodes.GetSize());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Based on VSTS#150682
+* @bsitest                                      Grigas.Petraitis                08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(HideNodeWhenItHasNoChildrenOrArtifacts_ShowsWhenThereAreNoChildrenButThereAreArtifacts, R"*(
+    <ECEntityClass typeName="Subject" />
+    <ECEntityClass typeName="Partition" />
+    <ECEntityClass typeName="Model" />
+    <ECRelationshipClass typeName="SubjectOwnsPartitionElements" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="false">
+            <Class class="Subject"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="Partition"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="ModelModelsElement" strength="embedding" strengthDirection="Backward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="models" polymorphic="true">
+            <Class class="Model"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is modeled by" polymorphic="true">
+            <Class class="Partition" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, HideNodeWhenItHasNoChildrenOrArtifacts_ShowsWhenThereAreNoChildrenButThereAreArtifacts)
+    {
+    ECClassCP subjectClass = GetClass("Subject");
+    ECClassCP partitionClass = GetClass("Partition");
+    ECClassCP modelClass = GetClass("Model");
+    ECRelationshipClassCP relSubjectOwnsPartitionElements = GetClass("SubjectOwnsPartitionElements")->GetRelationshipClassCP();
+    ECRelationshipClassCP relModelModelsElement = GetClass("ModelModelsElement")->GetRelationshipClassCP();
+    IECInstancePtr subject = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *subjectClass);
+    IECInstancePtr partition = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *partitionClass);
+    IECInstancePtr model = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *modelClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relSubjectOwnsPartitionElements, *subject, *partition);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relModelModelsElement, *model, *partition);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* subjectsRule = new RootNodeRule();
+    rules->AddPresentationRule(*subjectsRule);
+    InstanceNodesOfSpecificClassesSpecification* subjectsSpec = new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
+        "", subjectClass->GetFullName(), true);
+    subjectsSpec->SetHideExpression("NOT ThisNode.HasChildren AND NOT ThisNode.ChildrenArtifacts.AnyMatches(x => x.IsContentModelPartition)");
+    subjectsRule->AddSpecification(*subjectsSpec);
+
+    ChildNodeRule* partitionsRule = new ChildNodeRule("ParentNode.ClassName = \"Subject\"", 1000, false, TargetTree_Both);
+    rules->AddPresentationRule(*partitionsRule);
+    RelatedInstanceNodesSpecification* partitionsSpec = new RelatedInstanceNodesSpecification(1000, ChildrenHint::Unknown, true, false, false, false, 0, "",
+        RequiredRelationDirection_Forward, "", relSubjectOwnsPartitionElements->GetFullName(), partitionClass->GetFullName());
+    partitionsRule->AddSpecification(*partitionsSpec);
+
+    bmap<Utf8String, Utf8String> artifactDefinitions;
+    artifactDefinitions.Insert("IsContentModelPartition", "TRUE");
+    partitionsRule->AddCustomizationRule(*new NodeArtifactsRule("", artifactDefinitions));
+
+    // request for nodes
+    RulesDrivenECPresentationManager::NavigationOptions options(BeTest::GetNameOfCurrentTest(), TargetTree_MainTree);
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get(); });
+    ASSERT_EQ(1, rootNodes.GetSize());
+    EXPECT_EQ(subjectClass, &rootNodes[0]->GetKey()->AsECInstanceNodeKey()->GetECClass());
+
+    DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options.GetJson()).get(); });
+    ASSERT_EQ(0, childNodes.GetSize());
     }

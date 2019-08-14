@@ -786,12 +786,21 @@ size_t RulesDrivenECPresentationManagerImpl::_GetChildrenCount(IConnectionCR con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeCPtr RulesDrivenECPresentationManagerImpl::_GetParent(IConnectionCR, NavNodeCR node, NavigationOptions const& options, ICancelationTokenCR)
+NavNodeCPtr RulesDrivenECPresentationManagerImpl::_GetParent(IConnectionCR connection, NavNodeCR node, NavigationOptions const& options, ICancelationTokenCR cancelationToken)
     {
     if (0 == node.GetParentNodeId())
         return nullptr;
 
-    return GetNodesCache().GetNode(node.GetParentNodeId());
+    NavNodesProviderContextPtr context = m_nodesProviderContextFactory->Create(connection, options.GetRulesetId(), options.GetLocale(),
+        nullptr, &cancelationToken, options.GetDisableUpdates());
+    if (context.IsNull())
+        return nullptr;
+
+    JsonNavNodePtr parentNode;
+    if (!CachedNodeProvider::Create(*context, node.GetParentNodeId())->GetNode(parentNode, 0))
+        return nullptr;
+
+    return parentNode;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -831,6 +840,7 @@ bvector<NavNodeCPtr> RulesDrivenECPresentationManagerImpl::_GetFilteredNodes(ICo
     if (!GetNodesCache().IsHierarchyLevelCached(connection.GetId(), options.GetRulesetId(), options.GetLocale()))
         GetRootNodes(connection, PageOptions(), options, cancelationToken);
 
+    // first we need to make sure the hierarchy is fully traversed so we can search in cache
     NavNodesProviderPtr provider = GetNodesCache().GetUndeterminedNodesProvider(connection, options.GetRulesetId(),
         options.GetLocale(), options.GetDisableUpdates());
     if (provider.IsNull())
@@ -843,7 +853,18 @@ bvector<NavNodeCPtr> RulesDrivenECPresentationManagerImpl::_GetFilteredNodes(ICo
         provider->GetNode(node, i);
         TraverseHierarchy(*this, connection, *node, options, cancelationToken);
         }
-    return GetNodesCache().GetFilteredNodes(connection, options.GetRulesetId(), options.GetLocale(), filterText);
+
+    // now we can filter nodes in cache
+    NavNodesProviderPtr filteredProvider = GetNodesCache().GetFilteredNodesProvider(filterText, connection, options.GetRulesetId(), options.GetLocale());
+    bvector<NavNodeCPtr> result;
+    nodesCount = filteredProvider->GetNodesCount();
+    for (size_t i = 0; i < nodesCount; i++)
+        {
+        JsonNavNodePtr node;
+        filteredProvider->GetNode(node, i);
+        result.push_back(node);
+        }
+    return result;
     }
 
 /*---------------------------------------------------------------------------------**//**

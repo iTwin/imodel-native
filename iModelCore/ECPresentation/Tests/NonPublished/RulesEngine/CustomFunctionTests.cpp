@@ -625,8 +625,8 @@ TEST_F(CustomFunctionTests, GetGroupedInstanceIds)
     json1.Parse(value1);
     ASSERT_TRUE(json1.IsArray());
     ASSERT_EQ(1, json1.Size());
-    ASSERT_EQ(s_widgetClass->GetId().GetValue(), json1[0]["ECClassId"].GetInt64());
-    ASSERT_EQ(m_widgetInstanceId.GetValue(), json1[0]["ECInstanceId"].GetInt64());
+    ASSERT_EQ(s_widgetClass->GetId().GetValue(), json1[0]["c"].GetInt64());
+    ASSERT_EQ(m_widgetInstanceId.GetValue(), json1[0]["i"].GetInt64());
 
     // verify it works with multiple input values
     IECInstancePtr newWidget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *s_widgetClass);
@@ -644,8 +644,8 @@ TEST_F(CustomFunctionTests, GetGroupedInstanceIds)
     json2.Parse(value2);
     ASSERT_TRUE(json2.IsArray());
     ASSERT_EQ(2, json2.Size());
-    ASSERT_EQ(s_widgetClass->GetId().GetValue(), json2[1]["ECClassId"].GetInt64());
-    ASSERT_EQ(newWidgetId.GetValue(), json2[1]["ECInstanceId"].GetInt64());
+    ASSERT_EQ(s_widgetClass->GetId().GetValue(), json2[1]["c"].GetInt64());
+    ASSERT_EQ(newWidgetId.GetValue(), json2[1]["i"].GetInt64());
 
     // verify it works with null input value
     stmt.Finalize();
@@ -1056,8 +1056,8 @@ TEST_F(CustomFunctionTests, ECInstanceKeyArray)
     expectedJson.SetArray();
     rapidjson::Value gadget1Json;
     gadget1Json.SetObject();
-    gadget1Json.AddMember("ECClassId", gadgetClass->GetId().GetValue(), expectedJson.GetAllocator());
-    gadget1Json.AddMember("ECInstanceId", gadgetId.GetValue(), expectedJson.GetAllocator());
+    gadget1Json.AddMember("c", gadgetClass->GetId().GetValue(), expectedJson.GetAllocator());
+    gadget1Json.AddMember("i", gadgetId.GetValue(), expectedJson.GetAllocator());
     expectedJson.PushBack(gadget1Json, expectedJson.GetAllocator());
 
     rapidjson::StringBuffer buf;

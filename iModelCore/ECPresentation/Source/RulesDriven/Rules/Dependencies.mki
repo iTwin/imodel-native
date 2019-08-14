@@ -30,6 +30,7 @@ PresentationRulesPublicHeaders    = $(PresentationRulesPublicApiDirectory)Presen
                                     $(PresentationRulesPublicApiDirectory)GroupingRule.h \
                                     $(PresentationRulesPublicApiDirectory)SortingRule.h \
                                     $(PresentationRulesPublicApiDirectory)ExtendedDataRule.h \
+                                    $(PresentationRulesPublicApiDirectory)NodeArtifactsRule.h \
                                     $(PresentationRulesPublicApiDirectory)AllInstanceNodesSpecification.h \
                                     $(PresentationRulesPublicApiDirectory)AllRelatedInstanceNodesSpecification.h \
                                     $(PresentationRulesPublicApiDirectory)CustomNodeSpecification.h \

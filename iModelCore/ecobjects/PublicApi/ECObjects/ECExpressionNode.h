@@ -888,10 +888,10 @@ public:
     static CallNodePtr      Create(ArgumentTreeNodeR arguments, Utf8CP methodName, bool dotted)
                                     { return new CallNode(arguments, methodName, dotted); }
 
-    ExpressionStatus    InvokeInstanceMethod(EvaluationResult& evalResult, ECInstanceListCR instanceData, bvector<ExpressionContextP> const& contextsStack);
-    ExpressionStatus    InvokeStaticMethod(EvaluationResult& evalResult, MethodReferenceR  methodReference, bvector<ExpressionContextP> const& contextsStack);
-    ExpressionStatus    InvokeStaticMethod(EvaluationResult& evalResult, bvector<ExpressionContextP> const& contextsStack);
-    ExpressionStatus    InvokeValueListMethod (EvaluationResultR evalResult, IValueListResultCR valueList, bvector<ExpressionContextP> const& contextsStack);
+    ECOBJECTS_EXPORT ExpressionStatus InvokeInstanceMethod(EvaluationResult& evalResult, ECInstanceListCR instanceData, bvector<ExpressionContextP> const& contextsStack);
+    ECOBJECTS_EXPORT ExpressionStatus InvokeStaticMethod(EvaluationResult& evalResult, MethodReferenceR  methodReference, bvector<ExpressionContextP> const& contextsStack);
+    ECOBJECTS_EXPORT ExpressionStatus InvokeStaticMethod(EvaluationResult& evalResult, bvector<ExpressionContextP> const& contextsStack);
+    ECOBJECTS_EXPORT ExpressionStatus InvokeValueListMethod (EvaluationResultR evalResult, IValueListResultCR valueList, bvector<ExpressionContextP> const& contextsStack);
 
 };  //  End of struct CallNode
 
@@ -923,7 +923,7 @@ protected:
         }
 
     ExpressionToken _GetOperation() const override {return TOKEN_Lambda;}
-    ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context) override;
+    ECOBJECTS_EXPORT ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context) override;
 public:
     Utf8CP GetSymbolName() const {return m_symbolName.c_str();}
     NodeR GetExpression() const {return *m_lambdaExpression;}

@@ -107,6 +107,7 @@ public:
     ECPRESENTATION_EXPORT void SetImageId(Utf8CP imageId);
     void AddUsersExtendedData(Utf8CP key, ECValueCR value);
     void SetParentNode(NavNodeCR node) {SetParentNodeId(node.GetNodeId());}
+    bool HasKey() const { return m_nodeKey.IsValid(); }
 };
 
 /*=================================================================================**//**
@@ -158,8 +159,9 @@ public:
     ECPRESENTATION_EXPORT static void SwapData(JsonNavNode& lhs, JsonNavNode& rhs);
     static bool IsGroupingNode(NavNodeCR);
     static bool IsCustomNode(NavNodeCR node);
-    ECPRESENTATION_EXPORT static NavNodeKeyPtr CreateNodeKey(IConnectionCR, JsonNavNodeCR, bvector<Utf8String> const& path);
-    ECPRESENTATION_EXPORT static NavNodeKeyPtr CreateNodeKey(IConnectionCR, JsonNavNodeCR, Utf8CP pathFromRootJsonString);
+    ECPRESENTATION_EXPORT static NavNodeKeyPtr CreateNodeKey(IConnectionCR, JsonNavNodeCR node, bvector<Utf8String> const& path);
+    ECPRESENTATION_EXPORT static NavNodeKeyPtr CreateNodeKey(IConnectionCR, JsonNavNodeCR node, Utf8CP pathFromRootJsonString);
+    ECPRESENTATION_EXPORT static NavNodeKeyPtr CreateNodeKey(IConnectionCR, JsonNavNodeCR node, NavNodeKeyCP parentNodeKey);
 };
 
 

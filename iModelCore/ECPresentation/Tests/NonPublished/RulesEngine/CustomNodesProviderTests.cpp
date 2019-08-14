@@ -220,3 +220,53 @@ TEST_F(CustomNodesProviderTests, HasNodesReturnsTrueWhenSpecificationIsValid)
     NavNodesProviderPtr provider = CustomNodesProvider::Create(*m_context, spec);
     EXPECT_TRUE(provider->HasNodes());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CustomNodesProviderTests, GetArtifacts)
+    {
+    RootNodeRule rule;
+    m_context->SetRootNodeContext(rule);
+
+    bmap<Utf8String, Utf8String> artifactDefinitions;
+    artifactDefinitions.Insert("TestArtifact", "2 + 3");
+    m_ruleset->AddPresentationRule(*new NodeArtifactsRule("", artifactDefinitions));
+
+    CustomNodeSpecification spec(1, false, "type", "label", "description", "imageId");
+    NavNodesProviderPtr provider = CustomNodesProvider::Create(*m_context, spec);
+    bvector<NodeArtifacts> artifacts = provider->GetArtifacts();
+    ASSERT_EQ(1, artifacts.size());
+    ASSERT_EQ(1, artifacts[0].size());
+    auto iter = artifacts[0].find("TestArtifact");
+    ASSERT_TRUE(artifacts[0].end() != iter);
+    EXPECT_EQ(ECValue(5), iter->second);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CustomNodesProviderTests, SetsChildNodeArtifactsExtendedData)
+    {
+    RootNodeRule rootRule;
+    m_context->SetRootNodeContext(rootRule);
+    CustomNodeSpecification rootSpec(1, false, "t_parent", "label", "description", "imageId");
+
+    auto childrenRule = new ChildNodeRule("ParentNode.Type = \"t_parent\"", 1, false, TargetTree_Both);
+    childrenRule->AddSpecification(*new CustomNodeSpecification(1, false, "t_child", "label", "description", "imageId"));
+    m_ruleset->AddPresentationRule(*childrenRule);
+
+    bmap<Utf8String, Utf8String> artifactDefinitions;
+    artifactDefinitions.Insert("TestArtifact", "\"test value\"");
+    m_ruleset->AddPresentationRule(*new NodeArtifactsRule("ThisNode.Type = \"t_child\"", artifactDefinitions));
+
+    NavNodesProviderPtr provider = CustomNodesProvider::Create(*m_context, rootSpec);
+    JsonNavNodePtr node;
+    ASSERT_TRUE(provider->GetNode(node, 0));
+    auto artifacts = NavNodeExtendedData(*node).GetChildrenArtifacts();
+    ASSERT_EQ(1, artifacts.size());
+    ASSERT_EQ(1, artifacts[0].size());
+    auto iter = artifacts[0].find("TestArtifact");
+    ASSERT_TRUE(artifacts[0].end() != iter);
+    EXPECT_EQ(ECValue("test value"), iter->second);
+    }

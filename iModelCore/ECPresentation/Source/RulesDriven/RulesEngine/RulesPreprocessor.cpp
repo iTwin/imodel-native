@@ -25,13 +25,13 @@ template<typename RuleType>
 struct CustomizationRuleOrder
 {
 private:
-    RuleType* m_rule;
+    RuleType const* m_rule;
     int m_depth;
 
 public:
     CustomizationRuleOrder() : m_rule(nullptr), m_depth(0) {}
-    CustomizationRuleOrder(RuleType* rule, int depth) : m_rule(rule), m_depth(depth) {}
-    RuleType* GetRule() const { return m_rule; }
+    CustomizationRuleOrder(RuleType const* rule, int depth) : m_rule(rule), m_depth(depth) {}
+    RuleType const* GetRule() const { return m_rule; }
     int GetDepth() const { return m_depth; }
     bool operator<(CustomizationRuleOrder const& rhs) const 
         {
@@ -87,6 +87,7 @@ static void AppendRules(PresentationRuleSetR target, PresentationRuleSetCR sourc
     CopyRules(target, source.GetSortingRules());
     CopyRules(target, source.GetContentModifierRules());
     CopyRules(target, source.GetExtendedDataRules());
+    CopyRules(target, source.GetNodeArtifactRules());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -478,6 +479,24 @@ static bvector<TRule const*> GetCustomizationRules(NavNodeCR node, PresentationR
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<CustomizationRuleCP> RulesPreprocessor::GetCustomizationRulesForSpecificationInternal(PresentationRuleSetCR ruleset, ChildNodeSpecificationCR spec, bvector<CustomizationRuleCP> const& rootRules)
+    {
+    bvector<CustomizationRuleCP> allCustomizationRules;
+    for (CustomizationRuleCP rule : rootRules)
+        allCustomizationRules.push_back(rule);
+
+    bset<CustomizationRuleOrder<CustomizationRule>> nestedCustomizationRules = GetNestedCustomizationRules(ruleset, spec.GetHash().c_str());
+    std::transform(nestedCustomizationRules.begin(), nestedCustomizationRules.end(), std::back_inserter(allCustomizationRules), [](CustomizationRuleOrder<CustomizationRule> const& co)
+        {
+        return co.GetRule();
+        });
+
+    return allCustomizationRules;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 LabelOverrideCP RulesPreprocessor::_GetLabelOverride(CustomizationRuleParametersCR params)
@@ -645,6 +664,29 @@ bvector<ExtendedDataRuleCP> RulesPreprocessor::_GetExtendedDataRules(Customizati
     bvector<ExtendedDataRuleCP> rules = GetCustomizationRules(params.GetNode(), m_ruleset, &PresentationRuleSet::GetExtendedDataRules);
     bvector<ExtendedDataRuleCP> matchingRules;
     for (ExtendedDataRuleCP rule : rules)
+        {
+        if (rule->GetCondition().empty() || VerifyCondition(rule->GetCondition().c_str(), m_ecexpressionsCache, &optParams, contextPreparer))
+            matchingRules.push_back(rule);
+        }
+    return matchingRules;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<NodeArtifactsRuleCP> RulesPreprocessor::_GetNodeArtifactRules(CustomizationRuleParametersCR params)
+    {
+    ECDbExpressionSymbolContext ecdbExpressionContext(m_connection.GetECDb(), &m_statementCache);
+    std::function<ExpressionContextPtr()> contextPreparer = [&]()
+        {
+        ECExpressionContextsProvider::CustomizationRulesContextParameters contextParams(params.GetNode(), params.GetParentNode(),
+            m_connection, m_locale, m_userSettings, m_usedSettingsListener);
+        return ECExpressionContextsProvider::GetCustomizationRulesContext(contextParams);
+        };
+    OptimizedExpressionsParameters optParams(m_connections, m_connection, params.GetNode().GetKey(), "");
+    bvector<NodeArtifactsRuleCP> rules = GetCustomizationRules(params.GetNode(), m_ruleset, &PresentationRuleSet::GetNodeArtifactRules);
+    bvector<NodeArtifactsRuleCP> matchingRules;
+    for (NodeArtifactsRuleCP rule : rules)
         {
         if (rule->GetCondition().empty() || VerifyCondition(rule->GetCondition().c_str(), m_ecexpressionsCache, &optParams, contextPreparer))
             matchingRules.push_back(rule);

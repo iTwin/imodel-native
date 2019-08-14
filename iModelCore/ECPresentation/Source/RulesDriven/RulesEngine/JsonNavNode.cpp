@@ -723,3 +723,60 @@ NavNodeKeyPtr NavNodesHelper::CreateNodeKey(IConnectionCR connection, JsonNavNod
         path.push_back(pathElement.GetString());
     return CreateNodeKey(connection, node, path);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+NavNodeKeyPtr NavNodesHelper::CreateNodeKey(IConnectionCR connection, JsonNavNodeCR node, NavNodeKeyCP parentNodeKey)
+    {
+    MD5 h;
+    NavNodeExtendedData extendedData(node);
+    Utf8String type = node.GetType();
+    Utf8String dbGuid = connection.GetDb().GetDbGuid().ToString();
+    Utf8CP specHash = extendedData.GetSpecificationHash();
+    Utf8CP rulesetId = extendedData.GetRulesetId();
+    h.Add(type.c_str(), type.SizeInBytes());
+    h.Add(rulesetId, strlen(rulesetId));
+    h.Add(specHash, strlen(specHash));
+    h.Add(dbGuid.c_str(), dbGuid.SizeInBytes());
+
+    if (0 == strcmp(NAVNODE_TYPE_ECInstanceNode, type.c_str()))
+        {
+        uint64_t instanceId = node.GetInstanceId();
+        uint64_t classId = extendedData.GetECClassId().GetValueUnchecked();
+        h.Add(&instanceId, sizeof(instanceId));
+        h.Add(&classId, sizeof(instanceId));
+        }
+    else if (0 == strcmp(NAVNODE_TYPE_ECClassGroupingNode, type.c_str()))
+        {
+        uint64_t classId = extendedData.GetECClassId().GetValueUnchecked();
+        h.Add(&classId, sizeof(classId));
+        }
+    else if (0 == strcmp(NAVNODE_TYPE_ECPropertyGroupingNode, type.c_str()))
+        {
+        uint64_t classId = extendedData.GetECClassId().GetValueUnchecked();
+        Utf8CP propertyName = extendedData.GetPropertyName();
+        int rangeIndex = extendedData.GetPropertyValueRangeIndex();
+        if (extendedData.HasPropertyValue())
+            {
+            rapidjson::Value const* propertyValue = extendedData.GetPropertyValue();
+            Utf8String valueString = BeRapidJsonUtilities::ToString(*propertyValue);
+            h.Add(valueString.c_str(), valueString.SizeInBytes());
+            }
+        h.Add(&classId, sizeof(classId));
+        h.Add(propertyName, strlen(propertyName));
+        h.Add(&rangeIndex, sizeof(rangeIndex));
+        }
+    else
+        {
+        // CustomNode and DisplayLabelGroupingNode
+        Utf8String nodeLabel = node.GetLabel();
+        h.Add(nodeLabel.c_str(), nodeLabel.SizeInBytes());
+        }
+
+    // create path from root to this node
+    bvector<Utf8String> parentPath = parentNodeKey ? parentNodeKey->GetPathFromRoot() : bvector<Utf8String>();
+    Utf8String nodeHash = h.GetHashString();
+    parentPath.push_back(nodeHash);
+    return NavNodesHelper::CreateNodeKey(connection, node, parentPath);
+    }

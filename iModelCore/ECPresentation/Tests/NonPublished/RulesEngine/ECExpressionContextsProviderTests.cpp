@@ -679,6 +679,36 @@ TEST_F(ECExpressionContextsProviderTests, GetNodeRulesContext_GetNavigationPrope
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECExpressionContextsProviderTests, GetNodeRulesContext_ChildrenArtifacts)
+    {
+    IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *GetSchema().GetClassCP("ClassA"));
+    TestNavNodePtr navNode = TestNodesHelper::CreateInstanceNode(*s_connection, *instance);
+
+    bvector<NodeArtifacts> childrenArtifacts;
+    NodeArtifacts childArtifacts;
+    childArtifacts.Insert("IsModel", ECValue(true));
+    childArtifacts.Insert("SomeId", ECValue("test"));
+    childrenArtifacts.push_back(childArtifacts);
+    NavNodeExtendedData(*navNode).SetChildrenArtifacts(childrenArtifacts);
+
+    ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(navNode.get(), *s_connection, m_locale, m_userSettings, nullptr));
+
+    ECValue value = EvaluateAndGetResult("ParentNode.ChildrenArtifacts.AnyMatches(x => x.IsModel)", *ctx);
+    EXPECT_TRUE(value.IsBoolean());
+    EXPECT_EQ(true, value.GetBoolean());
+
+    value = EvaluateAndGetResult("ParentNode.ChildrenArtifacts.AnyMatches(x => x.SomeId = \"test\")", *ctx);
+    EXPECT_TRUE(value.IsBoolean());
+    EXPECT_EQ(true, value.GetBoolean());
+
+    value = EvaluateAndGetResult("ParentNode.ChildrenArtifacts.AnyMatches(x => x.SomeId = \"fail\")", *ctx);
+    EXPECT_TRUE(value.IsBoolean());
+    EXPECT_EQ(false, value.GetBoolean());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ECExpressionContextsProviderTests, UserSettings_GetSettingValue)

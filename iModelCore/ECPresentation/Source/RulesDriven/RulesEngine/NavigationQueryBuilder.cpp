@@ -1848,11 +1848,19 @@ private:
 
         // handle HideNodesInHierarchy
         if (m_specification.GetHideNodesInHierarchy())
+            {
             query->GetResultParametersR().GetNavNodeExtendedDataR().SetHideNodesInHierarchy(true);
+            }
+        else
+            {
+            // handle HideIfNoChildren
+            if (m_specification.GetHideIfNoChildren())
+                query->GetResultParametersR().GetNavNodeExtendedDataR().SetHideIfNoChildren(true);
 
-        // handle HideIfNoChildren
-        if (!m_specification.GetHideNodesInHierarchy() && m_specification.GetHideIfNoChildren())
-            query->GetResultParametersR().GetNavNodeExtendedDataR().SetHideIfNoChildren(true);
+            // handle HideExpression
+            if (!m_specification.GetHideExpression().empty())
+                query->GetResultParametersR().GetNavNodeExtendedDataR().SetHideExpression(m_specification.GetHideExpression());
+            }
 
         // handle HasChildren hint
         if (ChildrenHint::Unknown != m_specification.GetHasChildren())

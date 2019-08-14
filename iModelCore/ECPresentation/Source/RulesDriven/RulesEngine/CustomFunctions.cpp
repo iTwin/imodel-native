@@ -990,8 +990,8 @@ struct GetInstanceKeyScalar : ECPresentation::ScalarFunction
         ECInstanceId instanceId = args[1].GetValueId<ECInstanceId>();
 
         Utf8String result;
-        result.append("{\"ECClassId\":").append(std::to_string(classId.GetValueUnchecked()).c_str());
-        result.append(",\"ECInstanceId\":").append(std::to_string(instanceId.GetValueUnchecked()).c_str());
+        result.append("{\"c\":").append(std::to_string(classId.GetValueUnchecked()).c_str());
+        result.append(",\"i\":").append(std::to_string(instanceId.GetValueUnchecked()).c_str());
         result.append("}");
 
         ctx.SetResultText(result.c_str(), (int)result.size(), Context::CopyData::Yes);
@@ -1040,8 +1040,8 @@ protected:
             ECClassId classId = args[0].GetValueId<ECClassId>();
             ECInstanceId instanceId = args[1].GetValueId<ECInstanceId>();
             rapidjson::Value key(rapidjson::kObjectType);
-            key.AddMember("ECClassId", rapidjson::Value(classId.GetValueUnchecked()), json.GetAllocator());
-            key.AddMember("ECInstanceId", rapidjson::Value(instanceId.GetValueUnchecked()), json.GetAllocator());
+            key.AddMember("c", rapidjson::Value(classId.GetValueUnchecked()), json.GetAllocator());
+            key.AddMember("i", rapidjson::Value(instanceId.GetValueUnchecked()), json.GetAllocator());
             json.PushBack(key, json.GetAllocator());
             }
         else
@@ -1478,22 +1478,22 @@ protected:
     void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
         BeAssert(nArgs % 2 == 0);
-        rapidjson::Document json;
-        json.SetArray();
+        Utf8String json;
+        // reserve the right amount of space to avoid re-allocations
+        json.reserve(2 + (nArgs / 2) * (12 + 2 * 20));
+        json.append("[");
         for (int i = 0; i < nArgs; i += 2)
             {
             ECClassId classId = args[i].GetValueId<ECClassId>();
             ECInstanceId instanceId = args[i + 1].GetValueId<ECInstanceId>();
-            rapidjson::Value keyJson;
-            keyJson.SetObject();
-            keyJson.AddMember("ECClassId", classId.GetValue(), json.GetAllocator());
-            keyJson.AddMember("ECInstanceId", instanceId.GetValue(), json.GetAllocator());
-            json.PushBack(keyJson, json.GetAllocator());
+            if (i != 0)
+                json.append(",");
+            json.append("{\"c\":").append(std::to_string(classId.GetValue()).c_str());
+            json.append(",\"i\":").append(std::to_string(instanceId.GetValue()).c_str());
+            json.append("}");
             }
-        rapidjson::StringBuffer buf;
-        rapidjson::Writer<rapidjson::StringBuffer> writer(buf);
-        json.Accept(writer);
-        ctx.SetResultText(buf.GetString(), (int)buf.GetSize(), DbFunction::Context::CopyData::Yes);
+        json.append("]");
+        ctx.SetResultText(json.c_str(), json.size(), Context::CopyData::Yes);
         }
 public:
     ECInstanceKeysArrayScalar(CustomFunctionsManager const& manager)

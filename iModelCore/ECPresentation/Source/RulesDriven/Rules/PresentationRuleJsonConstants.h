@@ -99,6 +99,9 @@
 #define EXTENDED_DATA_RULE_JSON_TYPE                                                    "ExtendedData"
 #define EXTENDED_DATA_RULE_JSON_ATTRIBUTE_ITEMS                                         "items"
 
+#define NODE_ARTIFACTS_RULE_JSON_TYPE                                                   "NodeArtifacts"
+#define NODE_ARTIFACTS_RULE_JSON_ATTRIBUTE_ITEMS                                        "items"
+
 #define CHECKBOX_RULE_JSON_TYPE                                                         "CheckBox"
 #define CHECKBOX_RULE_JSON_ATTRIBUTE_USEINVERSEDPROPERTYVALUE                           "useInversedPropertyValue"
 #define CHECKBOX_RULE_JSON_ATTRIBUTE_DEFAULTVALUE                                       "defaultValue"
@@ -161,6 +164,7 @@
 #define CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_HASCHILDREN                             "hasChildren"
 #define CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_HIDENODESINHIERARCHY                    "hideNodesInHierarchy"
 #define CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_HIDEIFNOCHILDREN                        "hideIfNoChildren"
+#define CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_HIDEEXPRESSION                          "hideExpression"
 #define CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_RELATEDINSTANCES                        "relatedInstances"
 #define CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_NESTEDRULES                             "nestedRules"
 

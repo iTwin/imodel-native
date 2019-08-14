@@ -47,6 +47,8 @@ $(o)SortingRule$(oext)                                     : $(PresentationRules
 
 $(o)ExtendedDataRule$(oext)                                : $(PresentationRulesSourceDirectory)ExtendedDataRule.cpp $(PresentationRulesDependencies)
 
+$(o)NodeArtifactsRule$(oext)                               : $(PresentationRulesSourceDirectory)NodeArtifactsRule.cpp $(PresentationRulesDependencies)
+
 $(o)AllInstanceNodesSpecification$(oext)                   : $(PresentationRulesSourceDirectory)AllInstanceNodesSpecification.cpp $(PresentationRulesDependencies)
 
 $(o)AllRelatedInstanceNodesSpecification$(oext)            : $(PresentationRulesSourceDirectory)AllRelatedInstanceNodesSpecification.cpp $(PresentationRulesDependencies)

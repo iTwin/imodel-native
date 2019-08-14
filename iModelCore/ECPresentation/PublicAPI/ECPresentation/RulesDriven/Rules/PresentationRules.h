@@ -23,6 +23,7 @@
 #include <ECPresentation/RulesDriven/Rules/SortingRule.h>
 #include <ECPresentation/RulesDriven/Rules/GroupingRule.h>
 #include <ECPresentation/RulesDriven/Rules/ExtendedDataRule.h>
+#include <ECPresentation/RulesDriven/Rules/NodeArtifactsRule.h>
 #include <ECPresentation/RulesDriven/Rules/AllInstanceNodesSpecification.h>
 #include <ECPresentation/RulesDriven/Rules/AllRelatedInstanceNodesSpecification.h>
 #include <ECPresentation/RulesDriven/Rules/CustomNodeSpecification.h>

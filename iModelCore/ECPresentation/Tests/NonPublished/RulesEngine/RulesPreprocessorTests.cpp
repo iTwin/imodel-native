@@ -147,6 +147,7 @@ static void AddRulesToRuleset(PresentationRuleSetR ruleset)
     ruleset.AddPresentationRule(*new SortingRule());
     ruleset.AddPresentationRule(*new ContentModifier());
     ruleset.AddPresentationRule(*new ExtendedDataRule());
+    ruleset.AddPresentationRule(*new NodeArtifactsRule());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -177,6 +178,7 @@ TEST_F (RulesPreprocessorTests, GetPresentationRuleSet_Supplementation_MergesRul
     EXPECT_EQ(2, rules->GetSortingRules().size());
     EXPECT_EQ(2, rules->GetContentModifierRules().size());
     EXPECT_EQ(2, rules->GetExtendedDataRules().size());
+    EXPECT_EQ(2, rules->GetNodeArtifactRules().size());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -211,6 +213,7 @@ TEST_F (RulesPreprocessorTests, GetPresentationRuleSet_Supplementation_MergesRul
     EXPECT_EQ(3, rules->GetSortingRules().size());
     EXPECT_EQ(3, rules->GetContentModifierRules().size());
     EXPECT_EQ(3, rules->GetExtendedDataRules().size());
+    EXPECT_EQ(3, rules->GetNodeArtifactRules().size());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -249,6 +252,7 @@ TEST_F (RulesPreprocessorTests, GetPresentationRuleSet_Supplementation_UsesOnlyS
     EXPECT_EQ(1, rules->GetSortingRules().size());
     EXPECT_EQ(1, rules->GetContentModifierRules().size());
     EXPECT_EQ(1, rules->GetExtendedDataRules().size());
+    EXPECT_EQ(1, rules->GetNodeArtifactRules().size());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -880,6 +884,39 @@ TEST_F(RulesPreprocessorTests, GetExtendedDataRules)
     // note: order is not important
     EXPECT_NE(extendedDataRules.end(), std::find(extendedDataRules.begin(), extendedDataRules.end(), rule1));
     EXPECT_NE(extendedDataRules.end(), std::find(extendedDataRules.begin(), extendedDataRules.end(), rule3));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesPreprocessorTests, GetNodeArtifactRules)
+    {
+    NodeArtifactsRuleP rule1 = new NodeArtifactsRule("1 = 1");
+    NodeArtifactsRuleP rule2 = new NodeArtifactsRule("2 = 3");
+    NodeArtifactsRuleP rule3 = new NodeArtifactsRule("4 = 4");
+    NodeArtifactsRuleP rule4 = new NodeArtifactsRule("5 = 6");
+
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("test", 1, 0, false, "", "", "", false);
+    rules->AddPresentationRule(*rule1);
+    rules->AddPresentationRule(*rule2);
+
+    RootNodeRuleP navigationRule = new RootNodeRule();
+    rules->AddPresentationRule(*navigationRule);
+
+    InstanceNodesOfSpecificClassesSpecificationP navigationSpec = new InstanceNodesOfSpecificClassesSpecification();
+    navigationRule->AddSpecification(*navigationSpec);
+    navigationRule->AddCustomizationRule(*rule3);
+    navigationRule->AddCustomizationRule(*rule4);
+
+    TestNavNodePtr node = TestNavNode::Create(*m_connection);
+    NavNodeExtendedData(*node).SetSpecificationHash(navigationSpec->GetHash());
+
+    RulesPreprocessor::CustomizationRuleParameters params(*node, nullptr);
+    bvector<NodeArtifactsRuleCP> artifactRules = GetTestRulesPreprocessor(*rules).GetNodeArtifactRules(params);
+    ASSERT_EQ(2, artifactRules.size());
+    // note: order is not important
+    EXPECT_NE(artifactRules.end(), std::find(artifactRules.begin(), artifactRules.end(), rule1));
+    EXPECT_NE(artifactRules.end(), std::find(artifactRules.begin(), artifactRules.end(), rule3));
     }
 
 /*---------------------------------------------------------------------------------**//**

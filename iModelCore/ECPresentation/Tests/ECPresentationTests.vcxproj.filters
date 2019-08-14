@@ -377,5 +377,11 @@
     <ClCompile Include="NonPublished\SelectionTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="NonPublished\PresentationRules\CheckBoxPresRuleTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\PresentationRules\NodeArtifactsRuleTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

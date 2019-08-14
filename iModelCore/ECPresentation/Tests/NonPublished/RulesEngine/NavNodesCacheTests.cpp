@@ -131,6 +131,9 @@ void NodesCacheTests::InitNode(JsonNavNodeR node, HierarchyLevelInfo const& info
     extendedData.SetRulesetId(info.GetRulesetId().c_str());
     if (nullptr != info.GetVirtualParentNodeId())
         extendedData.SetVirtualParentId(*info.GetVirtualParentNodeId());
+
+    JsonNavNodeCPtr parentNode = info.GetVirtualParentNodeId() ? m_cache->GetNode(*info.GetVirtualParentNodeId()) : nullptr;
+    node.SetNodeKey(*NavNodesHelper::CreateNodeKey(*m_connection, node, parentNode.IsValid() ? parentNode->GetKey().get() : nullptr));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -699,7 +702,7 @@ TEST_F(NodesCacheTests, RemapNodeIds_RemapsDataSourcesWhenParentIsVirtual)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(NodesCacheTests, GetFilteredNodes_FindsRootNode)
+TEST_F(NodesCacheTests, GetFilteredNodesProvider_FindsRootNode)
     {
     // create root data source
     auto info = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0);
@@ -712,11 +715,13 @@ TEST_F(NodesCacheTests, GetFilteredNodes_FindsRootNode)
     FillWithNodes(info, nodes);
 
     // filter
-    bvector<NavNodeCPtr> filteredNodes = m_cache->GetFilteredNodes(*m_connection, info.first.GetRulesetId().c_str(), "locale", "A");
+    NavNodesProviderPtr provider = m_cache->GetFilteredNodesProvider("A", *m_connection, info.first.GetRulesetId().c_str(), "locale");
 
     // verify filtered node
-    ASSERT_EQ(1, filteredNodes.size());
-    EXPECT_TRUE(nodes[0]->Equals(*filteredNodes[0]));
+    EXPECT_EQ(1, provider->GetNodesCount());
+    JsonNavNodePtr node;
+    ASSERT_TRUE(provider->GetNode(node, 0));
+    EXPECT_TRUE(node->Equals(*nodes[0]));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -734,8 +739,10 @@ TEST_F(NodesCacheTests, GetFilteredNodes_DoesntFindNodesFromDifferentLocales)
     FillWithNodes(info, nodes);
 
     // filter
-    bvector<NavNodeCPtr> filteredNodes = m_cache->GetFilteredNodes(*m_connection, info.first.GetRulesetId().c_str(), "locale2", "A");
-    ASSERT_EQ(0, filteredNodes.size());
+    NavNodesProviderPtr provider = m_cache->GetFilteredNodesProvider("A", *m_connection, info.first.GetRulesetId().c_str(), "locale");
+
+    // verify filtered node
+    EXPECT_EQ(0, provider->GetNodesCount());
     }
 
 /*---------------------------------------------------------------------------------**//**

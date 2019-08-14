@@ -219,6 +219,24 @@ TEST_F(CustomizationHelperTests, CustomizeNode_ApplyExtendedDataRules)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CustomizationHelperTests, CustomizeNode_EvaluateArtifacts)
+    {
+    NodeArtifactsRuleP rule = new NodeArtifactsRule("ThisNode.Type=\"customType\"");
+    rule->AddItem("string_value", "\"test string\"");
+    rule->AddItem("boolean_value", "(1 + 2) = 3");
+    rule->AddItem("int_value", "1 + 2");
+    m_ruleset->AddPresentationRule(*rule);
+    JsonNavNodePtr node = CreateNode("label", "description", "imageId", "customType");
+    auto result = CustomizationHelper::EvaluateArtifacts(*m_context, *node);
+    EXPECT_EQ(3, result.size());
+    EXPECT_EQ(ECValue("test string"), result["string_value"]);
+    EXPECT_EQ(ECValue(true), result["boolean_value"]);
+    EXPECT_EQ(ECValue(3), result["int_value"]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                07/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (CustomizationHelperTests, CustomizationExpressionContextHasParentNodeSymbols)

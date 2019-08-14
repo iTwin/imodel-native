@@ -212,6 +212,7 @@ private:
     void ResetDataSource(DataSourceInfo const&);
     bvector<DataSourceInfo> GetDataSourcesWithChangedUserSettings(CombinedHierarchyLevelInfo const&) const;
     bvector<DataSourceInfo> GetDataSourcesWithChangedUserSettings(HierarchyLevelInfo const&) const;
+    HierarchyLevelInfo GetParentHierarchyLevelInfo(uint64_t nodeId) const;
 
     void AddQuick(CombinedHierarchyLevelInfo, NavNodesProviderR);
     void RemoveQuick(CombinedHierarchyLevelInfo const&);
@@ -282,9 +283,9 @@ public:
     BeSQLite::Db const& GetDb() const {return m_db;}
     void SetCacheFileSizeLimit(uint64_t size) {m_sizeLimit = size;}
 
-    ECPRESENTATION_EXPORT bvector<NavNodeCPtr> GetFilteredNodes(IConnectionCR connection, Utf8CP rulesetId, Utf8CP locale, Utf8CP filtertext) const;
     ECPRESENTATION_EXPORT void ResetExpandedNodes(Utf8CP connectionId, Utf8CP rulesetId);
     ECPRESENTATION_EXPORT NavNodesProviderPtr GetUndeterminedNodesProvider(IConnectionCR connection, Utf8CP ruleSetId, Utf8CP locale, bool isUpdatesDisabled) const;
+    ECPRESENTATION_EXPORT NavNodesProviderPtr GetFilteredNodesProvider(Utf8CP filter, IConnectionCR connection, Utf8CP ruleSetId, Utf8CP locale) const;
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

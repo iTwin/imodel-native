@@ -32,6 +32,7 @@ private:
     template<typename RuleType> static void ProcessSubConditions(RuleType const& rule, SubConditionList const&, ECExpressionsCache&, bvector<NavigationRuleSpecification<RuleType>>& specs, OptimizedExpressionsParameters const*, std::function<ExpressionContextPtr()>);
     template<typename RuleType> static bool ProcessSpecificationsByHash(RuleType const& rule, ChildNodeSpecificationList const& searchIn, Utf8CP specificationHash, bool requested, RuleTargetTree, ECExpressionsCache&, unsigned depth, bvector<NavigationRuleSpecification<RuleType>>& specs, bool& handled, bool& stopProcessing, OptimizedExpressionsParameters const*, std::function<ExpressionContextPtr()>);
     template<typename RuleType> static bool ProcessSpecificationsByHash(RuleType const& rule, SubConditionList const&, Utf8CP specificationHash, bool requested, RuleTargetTree, ECExpressionsCache&, unsigned depth, bvector<NavigationRuleSpecification<RuleType>>& specs, bool& handled, bool& stopProcessing, OptimizedExpressionsParameters const*, std::function<ExpressionContextPtr()>);
+    ECPRESENTATION_EXPORT static bvector<CustomizationRuleCP> GetCustomizationRulesForSpecificationInternal(PresentationRuleSetCR, ChildNodeSpecificationCR, bvector<CustomizationRuleCP> const&);
 
 protected:
     // IRulesPreprocesssor: Navigation rules
@@ -44,6 +45,7 @@ protected:
     ECPRESENTATION_EXPORT StyleOverrideCP _GetStyleOverride(CustomizationRuleParametersCR params) override;
     ECPRESENTATION_EXPORT CheckBoxRuleCP _GetCheckboxRule(CustomizationRuleParametersCR params) override;
     ECPRESENTATION_EXPORT bvector<ExtendedDataRuleCP> _GetExtendedDataRules(CustomizationRuleParametersCR params) override;
+    ECPRESENTATION_EXPORT bvector<NodeArtifactsRuleCP> _GetNodeArtifactRules(CustomizationRuleParametersCR params) override;
     ECPRESENTATION_EXPORT bvector<GroupingRuleCP> _GetGroupingRules(AggregateCustomizationRuleParametersCR params) override;
     ECPRESENTATION_EXPORT bvector<SortingRuleCP> _GetSortingRules(AggregateCustomizationRuleParametersCR params) override;
 
@@ -74,6 +76,16 @@ public:
     //! @param[in] id Localization resource key definition ID.
     //! @param[in] ruleset The ruleset search in.
     ECPRESENTATION_EXPORT static LocalizationResourceKeyDefinitionCP GetLocalizationResourceKeyDefinition(Utf8StringCR id, PresentationRuleSetCR ruleset);
+
+    //! Get all customization rules that may apply to nodes created by the specified specification
+    template<typename TRule>
+    static bvector<CustomizationRuleCP> GetCustomizationRulesForSpecification(PresentationRuleSetCR ruleset, ChildNodeSpecificationCR spec, bvector<TRule*> const& (PresentationRuleSet::*rootRulesGetter)() const = nullptr)
+        {
+        bvector<CustomizationRuleCP> rootRules;
+        if (rootRulesGetter)
+            std::move((ruleset.*rootRulesGetter)().begin(), (ruleset.*rootRulesGetter)().end(), std::back_inserter(rootRules));
+        return GetCustomizationRulesForSpecificationInternal(ruleset, spec, rootRules);
+        }
 /** @} */
 };
 

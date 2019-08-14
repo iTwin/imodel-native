@@ -57,7 +57,7 @@ ChildNodeSpecification::ChildNodeSpecification (int priority, ChildrenHint hasCh
 ChildNodeSpecification::ChildNodeSpecification(ChildNodeSpecificationCR other)
     : m_priority(other.m_priority), m_hasChildren(other.m_hasChildren),
     m_hideNodesInHierarchy(other.m_hideNodesInHierarchy), m_hideIfNoChildren(other.m_hideIfNoChildren),
-    m_doNotSort(other.m_doNotSort), m_extendedData(other.m_extendedData)
+    m_doNotSort(other.m_doNotSort), m_extendedData(other.m_extendedData), m_hideExpression(other.m_hideExpression)
     {
     CommonToolsInternal::CopyRules(m_relatedInstances, other.m_relatedInstances, this);
     CommonToolsInternal::CopyRules(m_nestedRules, other.m_nestedRules, this);
@@ -166,6 +166,7 @@ bool ChildNodeSpecification::_ReadJson(JsonValueCR json)
         m_hasChildren = ChildrenHint::Always;
     m_hideNodesInHierarchy = json[CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_HIDENODESINHIERARCHY].asBool(false);
     m_hideIfNoChildren = json[CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_HIDEIFNOCHILDREN].asBool(false);
+    m_hideExpression = json[CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_HIDEEXPRESSION].asCString("");
     m_doNotSort = json[CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_DONOTSORT].asBool(false);
     CommonToolsInternal::LoadFromJson(json[CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_RELATEDINSTANCES], m_relatedInstances, CommonToolsInternal::LoadRuleFromJson<RelatedInstanceSpecification>, this);
     CommonToolsInternal::LoadFromJsonByPriority(json[CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_NESTEDRULES], m_nestedRules, CommonToolsInternal::LoadRuleFromJson<ChildNodeRule>, this);
@@ -188,6 +189,8 @@ void ChildNodeSpecification::_WriteJson(JsonValueR json) const
         json[CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_HIDEIFNOCHILDREN] = m_hideIfNoChildren;
     if (m_doNotSort)
         json[CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_DONOTSORT] = m_doNotSort;
+    if (!m_hideExpression.empty())
+        json[CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_HIDEEXPRESSION] = m_hideExpression;
     if (!m_relatedInstances.empty())
         CommonToolsInternal::WriteRulesToJson<RelatedInstanceSpecification, RelatedInstanceSpecificationList>(json, m_relatedInstances);
     if (!m_nestedRules.empty())

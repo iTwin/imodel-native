@@ -126,6 +126,16 @@ DPoint2d ValueHelpers::GetPoint2dFromJson(JsonValueCR json)
     }
 
 /*---------------------------------------------------------------------------------**//**
+// @bsimethod                                    Grigas.Petraitis                08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DPoint2d ValueHelpers::GetPoint2dFromJson(RapidJsonValueCR json)
+    {
+    if (json.IsNull() || !json.IsObject())
+        return DPoint2d();
+    return DPoint2d::From(json["x"].GetDouble(), json["y"].GetDouble());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 DPoint3d ValueHelpers::GetPoint3dFromJson(JsonValueCR json)
@@ -133,6 +143,16 @@ DPoint3d ValueHelpers::GetPoint3dFromJson(JsonValueCR json)
     if (json.isNull() || !json.isObject())
         return DPoint3d();
     return DPoint3d::From(json["x"].asDouble(), json["y"].asDouble(), json["z"].asDouble());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod                                    Grigas.Petraitis                08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DPoint3d ValueHelpers::GetPoint3dFromJson(RapidJsonValueCR json)
+    {
+    if (json.IsNull() || !json.IsObject())
+        return DPoint3d();
+    return DPoint3d::From(json["x"].GetDouble(), json["y"].GetDouble(), json["z"].GetDouble());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -531,6 +551,62 @@ ECValue ValueHelpers::GetECValueFromJson(ECPropertyCR ecProperty, JsonValueCR js
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+ECValue ValueHelpers::GetECValueFromJson(PrimitiveType type, RapidJsonValueCR json)
+    {
+    ECValue value;
+    if (json.IsNull())
+        {
+        value.SetIsNull(true);
+        return value;
+        }
+
+    switch (type)
+        {
+        case PRIMITIVETYPE_Boolean:
+            value.SetBoolean(json.GetBool());
+            break;
+        case PRIMITIVETYPE_Binary:
+            break;
+        case PRIMITIVETYPE_DateTime:
+        {
+        DateTime dt;
+        if (json.IsDouble())
+            DateTime::FromJulianDay(dt, json.GetDouble(), DateTime::Info::CreateForDateTime(DateTime::Kind::Utc));
+        else
+            DateTime::FromString(dt, json.GetString());
+        value.SetDateTime(dt);
+        break;
+        }
+        case PRIMITIVETYPE_Double:
+            value.SetDouble(json.GetDouble());
+            break;
+        case PRIMITIVETYPE_Integer:
+            value.SetInteger(json.GetInt());
+            break;
+        case PRIMITIVETYPE_Long:
+            if (json.IsString())
+                value.SetLong(BeInt64Id::FromString(json.GetString()).GetValueUnchecked());
+            else
+                value.SetLong(json.GetInt64());
+            break;
+        case PRIMITIVETYPE_String:
+            value.SetUtf8CP(json.GetString());
+            break;
+        case PRIMITIVETYPE_Point2d:
+            value.SetPoint2d(GetPoint2dFromJson(json));
+            break;
+        case PRIMITIVETYPE_Point3d:
+            value.SetPoint3d(GetPoint3dFromJson(json));
+            break;
+        default:
+            BeAssert(false);
+        }
+    return value;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 rapidjson::Document ValueHelpers::GetJsonFromECValue(ECValueCR ecValue, rapidjson::MemoryPoolAllocator<>* allocator)
@@ -628,11 +704,11 @@ bvector<ECInstanceKey> ValueHelpers::GetECInstanceKeysFromSerializedJson(Utf8CP 
     if (json.IsArray())
         {
         for (rapidjson::SizeType i = 0; i < json.Size(); ++i)
-            list.push_back(ECInstanceKey(ECClassId((uint64_t)json[i]["ECClassId"].GetInt64()), ECInstanceId((uint64_t)json[i]["ECInstanceId"].GetInt64())));
+            list.push_back(ECInstanceKey(ECClassId(json[i]["c"].GetUint64()), ECInstanceId(json[i]["i"].GetUint64())));
         }
     else if (json.IsObject())
         {
-        list.push_back(ECInstanceKey(ECClassId((uint64_t)json["ECClassId"].GetInt64()), ECInstanceId((uint64_t)json["ECInstanceId"].GetInt64())));
+        list.push_back(ECInstanceKey(ECClassId(json["c"].GetUint64()), ECInstanceId(json["i"].GetUint64())));
         }
     else
         {

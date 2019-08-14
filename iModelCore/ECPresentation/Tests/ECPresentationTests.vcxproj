@@ -136,6 +136,7 @@
     <ClCompile Include="NonPublished\PresentationRulesetTesterTests.cpp" />
     <ClCompile Include="NonPublished\PresentationRules\AllInstanceNodesSpecificationTests.cpp" />
     <ClCompile Include="NonPublished\PresentationRules\AllRelatedInstanceNodesSpecificationTests.cpp" />
+    <ClCompile Include="NonPublished\PresentationRules\CheckBoxPresRuleTests.cpp" />
     <ClCompile Include="NonPublished\PresentationRules\CheckBoxRuleTests.cpp" />
     <ClCompile Include="NonPublished\PresentationRules\ChildNodeRuleTests.cpp" />
     <ClCompile Include="NonPublished\PresentationRules\ContentInstancesOfSpecificClassesSpecificationTests.cpp" />
@@ -151,6 +152,7 @@
     <ClCompile Include="NonPublished\PresentationRules\InstanceNodesOfSpecificClassesSpecificationTests.cpp" />
     <ClCompile Include="NonPublished\PresentationRules\LabelOverrideTests.cpp" />
     <ClCompile Include="NonPublished\PresentationRules\LocalizationResourceKeyDefinitionTests.cpp" />
+    <ClCompile Include="NonPublished\PresentationRules\NodeArtifactsRuleTests.cpp" />
     <ClCompile Include="NonPublished\PresentationRules\PresentationRuleSetTests.cpp" />
     <ClCompile Include="NonPublished\PresentationRules\PresentationRulesHashingTests.cpp" />
     <ClCompile Include="NonPublished\PresentationRules\PropertiesDisplaySpecificationTests.cpp" />

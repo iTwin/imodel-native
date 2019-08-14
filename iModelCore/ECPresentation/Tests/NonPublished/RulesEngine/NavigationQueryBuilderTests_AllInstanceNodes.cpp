@@ -174,6 +174,35 @@ TEST_F (NavigationQueryBuilderTests, AllInstanceNodes_HideIfNoChildren_NotSetIfH
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(NavigationQueryBuilderTests, AllInstanceNodes_HideExpression)
+    {
+    AllInstanceNodesSpecification spec(1, false, false, false, false, false, "");
+    spec.SetHideExpression("test");
+    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    ASSERT_EQ(1, queries.size());
+    NavigationQueryPtr query = queries[0];
+    ASSERT_TRUE(query.IsValid());
+    EXPECT_TRUE(query->GetResultParameters().GetNavNodeExtendedData().HasHideExpression());
+    EXPECT_STREQ("test", query->GetResultParameters().GetNavNodeExtendedData().GetHideExpression());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(NavigationQueryBuilderTests, AllInstanceNodes_HideExpression_NotSetIfHiddenInHierarchy)
+    {
+    AllInstanceNodesSpecification spec(1, false, true, false, false, false, "");
+    spec.SetHideExpression("test");
+    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    ASSERT_EQ(1, queries.size());
+    NavigationQueryPtr query = queries[0];
+    ASSERT_TRUE(query.IsValid());
+    EXPECT_FALSE(query->GetResultParameters().GetNavNodeExtendedData().HasHideExpression());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (NavigationQueryBuilderTests, AllInstanceNodes_CheckNotPolymorphic)

@@ -1049,3 +1049,86 @@ TEST_F(QueryBasedSpecificationNodesProviderTests, DeterminesIfNodeHasChildrenByR
     EXPECT_TRUE(root->HasChildren());
     EXPECT_LT(NUM_CACHED_QUERIES_WHEN_CHILDREN_DETERMINED_WITHOUT_RUNNING_QUERY, m_providerContextFactory.GetStatementsCache().Size());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(QueryBasedSpecificationNodesProviderTests, GetArtifacts_DoesntRequestArtifactsFromChildProvidersWhenNoArtifactsRuleAppliesForSpecification)
+    {
+    RootNodeRule* rule1 = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    m_ruleset->AddPresentationRule(*rule1);
+    m_context->SetRootNodeContext(*rule1);
+
+    InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
+        "ECInstanceId = 1", "RulesEngineTest:Widget", false);
+    rule1->AddSpecification(*spec);
+
+    RootNodeRule* rule2 = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    m_ruleset->AddPresentationRule(*rule2);
+    rule2->AddCustomizationRule(*new NodeArtifactsRule());
+
+    RefCountedPtr<QueryBasedSpecificationNodesProvider> provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
+    auto result = provider->GetArtifacts();
+    EXPECT_TRUE(result.empty());
+    ASSERT_EQ(1, provider->GetNodeProviders().size());
+    ASSERT_TRUE(nullptr != dynamic_cast<QueryBasedNodesProvider const*>(provider->GetNodeProviders()[0].get()));
+    ASSERT_FALSE(dynamic_cast<QueryBasedNodesProvider const*>(provider->GetNodeProviders()[0].get())->GetExecutor().IsReadStarted());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(QueryBasedSpecificationNodesProviderTests, GetArtifacts_RequestsArtifactsFromChildProvidersWhenArtifactsDefinedAtRulesetRootLevel)
+    {
+    // create our own instances
+    ECInstanceInserter inserter(s_project->GetECDb(), *m_widgetClass, nullptr);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass);
+
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    m_ruleset->AddPresentationRule(*rule);
+    m_context->SetRootNodeContext(*rule);
+
+    InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
+        "ECInstanceId = 1", "RulesEngineTest:Widget", false);
+    rule->AddSpecification(*spec);
+
+    bmap<Utf8String, Utf8String> artifactDefinitions;
+    artifactDefinitions.Insert("test", "123");
+    m_ruleset->AddPresentationRule(*new NodeArtifactsRule("", artifactDefinitions));
+
+    RefCountedPtr<QueryBasedSpecificationNodesProvider> provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
+    auto result = provider->GetArtifacts();
+    EXPECT_EQ(1, result.size());
+    ASSERT_EQ(1, provider->GetNodeProviders().size());
+    ASSERT_TRUE(nullptr != dynamic_cast<QueryBasedNodesProvider const*>(provider->GetNodeProviders()[0].get()));
+    ASSERT_TRUE(dynamic_cast<QueryBasedNodesProvider const*>(provider->GetNodeProviders()[0].get())->GetExecutor().IsReadFinished());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(QueryBasedSpecificationNodesProviderTests, GetArtifacts_RequestsArtifactsFromChildProvidersWhenArtifactsDefinedAtNestedRuleLevel)
+    {
+    // create our own instances
+    ECInstanceInserter inserter(s_project->GetECDb(), *m_widgetClass, nullptr);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass);
+
+    RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
+    m_ruleset->AddPresentationRule(*rule);
+    m_context->SetRootNodeContext(*rule);
+
+    InstanceNodesOfSpecificClassesSpecification* spec = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
+        "ECInstanceId = 1", "RulesEngineTest:Widget", false);
+    rule->AddSpecification(*spec);
+
+    bmap<Utf8String, Utf8String> artifactDefinitions;
+    artifactDefinitions.Insert("test", "123");
+    rule->AddCustomizationRule(*new NodeArtifactsRule("", artifactDefinitions));
+
+    RefCountedPtr<QueryBasedSpecificationNodesProvider> provider = QueryBasedSpecificationNodesProvider::Create(*m_context, *spec);
+    auto result = provider->GetArtifacts();
+    EXPECT_EQ(1, result.size());
+    ASSERT_EQ(1, provider->GetNodeProviders().size());
+    ASSERT_TRUE(nullptr != dynamic_cast<QueryBasedNodesProvider const*>(provider->GetNodeProviders()[0].get()));
+    ASSERT_TRUE(dynamic_cast<QueryBasedNodesProvider const*>(provider->GetNodeProviders()[0].get())->GetExecutor().IsReadFinished());
+    }

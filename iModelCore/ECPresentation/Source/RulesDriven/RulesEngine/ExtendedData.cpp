@@ -6,6 +6,68 @@
 #include <ECPresentationPch.h>
 #include <ECPresentation/RulesDriven/PresentationManager.h>
 #include "ExtendedData.h"
+#include "../../ValueHelpers.h"
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool NavNodeExtendedData::SetChildrenArtifacts(bvector<NodeArtifacts> allArtifacts)
+    {
+    if (allArtifacts.empty() && !GetJson().HasMember(NAVNODE_EXTENDEDDATA_ChildrenArtifacts))
+        return false;
+
+    rapidjson::Value allArtifactsJson(rapidjson::kArrayType);
+    for (NodeArtifacts const& nodeArtifacts : allArtifacts)
+        {
+        rapidjson::Value nodeArtifactsJson(rapidjson::kObjectType);
+        for (auto const& entry : nodeArtifacts)
+            {
+            rapidjson::Value nodeArtifactJson(rapidjson::kObjectType);
+            nodeArtifactJson.AddMember("type", entry.second.GetPrimitiveType(), GetAllocator());
+            nodeArtifactJson.AddMember("value", ValueHelpers::GetJsonFromECValue(entry.second, &GetAllocator()), GetAllocator());
+            nodeArtifactsJson.AddMember(rapidjson::Value(entry.first.c_str(), GetAllocator()), std::move(nodeArtifactJson), GetAllocator());
+            }
+        allArtifactsJson.PushBack(std::move(nodeArtifactsJson), GetAllocator());
+        }
+    AddMember(NAVNODE_EXTENDEDDATA_ChildrenArtifacts, std::move(allArtifactsJson));
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<NodeArtifacts> NavNodeExtendedData::GetChildrenArtifacts() const
+    {
+    bvector<NodeArtifacts> allArtifacts;
+    if (!GetJson().HasMember(NAVNODE_EXTENDEDDATA_ChildrenArtifacts))
+        return allArtifacts;
+
+    RapidJsonValueCR allArtifactsJson = GetJson()[NAVNODE_EXTENDEDDATA_ChildrenArtifacts];
+    if (!allArtifactsJson.IsArray())
+        return allArtifacts;
+
+    for (rapidjson::SizeType i = 0; i < allArtifactsJson.Size(); ++i)
+        {
+        RapidJsonValueCR nodeArtifactsJson = allArtifactsJson[i];
+        if (!nodeArtifactsJson.IsObject())
+            continue;
+
+        NodeArtifacts nodeArtifacts;
+        for (auto iter = nodeArtifactsJson.MemberBegin(); iter != nodeArtifactsJson.MemberEnd(); ++iter)
+            {
+            RapidJsonValueCR nodeArtifactJson = iter->value;
+            if (!nodeArtifactJson.IsObject())
+                continue;
+
+            PrimitiveType type = (PrimitiveType)nodeArtifactJson["type"].GetInt();
+            ECValue value = ValueHelpers::GetECValueFromJson(type, nodeArtifactJson["value"]);
+            nodeArtifacts.Insert(iter->name.GetString(), value);
+            }
+
+        allArtifacts.push_back(nodeArtifacts);
+        }
+    return allArtifacts;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                11/2016
