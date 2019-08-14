@@ -134,7 +134,7 @@ bool PresentationRuleSet::ReadXml (BeXmlDomR xmlDom)
         ECPRENSETATION_RULES_LOG.errorv ("Invalid PresentationRuleSetXML: Missing a top-level %s node", PRESENTATION_RULE_SET_XML_NODE_NAME);
         return false;
         }
-    
+
     //Required:
     if (BEXML_Success != ruleSetNode->GetAttributeStringValue (m_ruleSetId, PRESENTATION_RULE_SET_XML_ATTRIBUTE_RULESETID))
         {
@@ -181,9 +181,9 @@ bool PresentationRuleSet::ReadXml (BeXmlDomR xmlDom)
     CommonToolsInternal::LoadRulesFromXmlNode <UserSettingsGroup> (ruleSetNode, m_userSettings,     USER_SETTINGS_XML_NODE_NAME, this);
     CommonToolsInternal::LoadRulesFromXmlNode <CheckBoxRule>      (ruleSetNode, m_checkBoxRules,    CHECKBOX_RULE_XML_NODE_NAME, this);
     CommonToolsInternal::LoadRulesFromXmlNode <SortingRule>       (ruleSetNode, m_sortingRules,     SORTING_RULE_XML_NODE_NAME, this);
-    CommonToolsInternal::LoadRulesFromXmlNode <ContentModifier>   (ruleSetNode, m_contentModifiers, CONTENTMODIEFIER_XML_NODE_NAME, this);
+    CommonToolsInternal::LoadRulesFromXmlNode <ContentModifier>   (ruleSetNode, m_contentModifiers, CONTENTMODIFIER_XML_NODE_NAME, this);
     CommonToolsInternal::LoadRulesFromXmlNode <InstanceLabelOverride> (ruleSetNode, m_instanceLabelOverrides, INSTANCE_LABEL_OVERRIDE_XML_NODE_NAME, this);
-    
+
     return true;
     }
 
@@ -230,13 +230,13 @@ PresentationRuleSetPtr PresentationRuleSet::ReadFromXmlString (Utf8CP xmlString)
     BeXmlStatus xmlStatus;
     size_t stringSize = strlen (xmlString) * sizeof(Utf8Char);
     BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString (xmlStatus, xmlString, stringSize / sizeof (Utf8Char));
-    
+
     if (BEXML_Success != xmlStatus)
         {
         ECPRENSETATION_RULES_LOG.errorv ("Failed to load PresentationRuleSet from xml string.");
         return NULL;
         }
-    
+
     PresentationRuleSetPtr ruleSet = new PresentationRuleSet ();
     if (ruleSet->ReadXml (*xmlDom.get ()))
         return ruleSet;
@@ -251,7 +251,7 @@ PresentationRuleSetPtr PresentationRuleSet::ReadFromXmlString (Utf8CP xmlString)
 PresentationRuleSetPtr PresentationRuleSet::ReadFromXmlFile (BeFileNameCR xmlFilePath)
     {
     ECPRENSETATION_RULES_LOG.debugv (L"About to read PrsentationRuleSet from file: fileName='%ls'", xmlFilePath.c_str());
-        
+
     BeXmlStatus xmlStatus;
     BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromFile (xmlStatus, xmlFilePath.c_str());
     if (xmlStatus != BEXML_Success || !xmlDom.IsValid ())
@@ -259,7 +259,7 @@ PresentationRuleSetPtr PresentationRuleSet::ReadFromXmlFile (BeFileNameCR xmlFil
         ECPRENSETATION_RULES_LOG.errorv (L"Failed to load PresentationRuleSet from file: fileName='%ls'", xmlFilePath.c_str());
         return NULL;
         }
-    
+
     PresentationRuleSetPtr ruleSet = new PresentationRuleSet ();
     if (ruleSet->ReadXml (*xmlDom.get ()))
         return ruleSet;
@@ -287,7 +287,7 @@ Utf8String PresentationRuleSet::WriteToXmlString () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PresentationRuleSet::WriteToXmlFile (BeFileNameCR xmlFilePath) const
     {
-    BeXmlDomPtr xmlDom = BeXmlDom::CreateEmpty();        
+    BeXmlDomPtr xmlDom = BeXmlDom::CreateEmpty();
     WriteXml (*xmlDom.get());
 
     return BEXML_Success == xmlDom->ToFile(xmlFilePath.c_str(), (BeXmlDom::ToStringOption)(BeXmlDom::TO_STRING_OPTION_Indent | BeXmlDom::TO_STRING_OPTION_Formatted), BeXmlDom::FILE_ENCODING_Utf8);

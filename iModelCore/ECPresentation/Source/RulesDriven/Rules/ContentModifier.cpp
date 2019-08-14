@@ -50,7 +50,7 @@ ContentModifier::~ContentModifier()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                 05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP ContentModifier::_GetXmlElementName() const {return CONTENTMODIEFIER_XML_NODE_NAME;}
+Utf8CP ContentModifier::_GetXmlElementName() const {return CONTENTMODIFIER_XML_NODE_NAME;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                 05/2017
@@ -60,10 +60,10 @@ bool ContentModifier::_ReadXml(BeXmlNodeP xmlNode)
     if (!PresentationKey::_ReadXml(xmlNode))
         return false;
 
-    if (BEXML_Success != xmlNode->GetAttributeStringValue(m_schemaName, CONTENTMODIEFIER_XML_ATTRIBUTE_SCHEMANAME))
+    if (BEXML_Success != xmlNode->GetAttributeStringValue(m_schemaName, CONTENTMODIFIER_XML_ATTRIBUTE_SCHEMANAME))
         m_schemaName = "";
 
-    if (BEXML_Success != xmlNode->GetAttributeStringValue(m_className, CONTENTMODIEFIER_XML_ATTRIBUTE_CLASSNAME))
+    if (BEXML_Success != xmlNode->GetAttributeStringValue(m_className, CONTENTMODIFIER_XML_ATTRIBUTE_CLASSNAME))
         m_className = "";
 
     CommonToolsInternal::LoadSpecificationsFromXmlNode<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList>(xmlNode, m_relatedProperties, RELATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME, this);
@@ -75,7 +75,7 @@ bool ContentModifier::_ReadXml(BeXmlNodeP xmlNode)
     xmlPropertyNode = xmlNode->SelectSingleNode(PROPERTY_EDITORS_SPECIFICATION_XML_NODE_NAME);
     if (xmlPropertyNode)
         CommonToolsInternal::LoadSpecificationsFromXmlNode<PropertyEditorsSpecification, PropertyEditorsSpecificationList>(xmlPropertyNode, m_propertyEditors, PROPERTY_EDITORS_SPECIFICATION_XML_CHILD_NAME, this);
-    
+
     return true;
     }
 
@@ -86,8 +86,8 @@ void ContentModifier::_WriteXml(BeXmlNodeP xmlNode) const
     {
     PresentationKey::_WriteXml(xmlNode);
 
-    xmlNode->AddAttributeStringValue(CONTENTMODIEFIER_XML_ATTRIBUTE_CLASSNAME, m_className.c_str());
-    xmlNode->AddAttributeStringValue(CONTENTMODIEFIER_XML_ATTRIBUTE_SCHEMANAME, m_schemaName.c_str());
+    xmlNode->AddAttributeStringValue(CONTENTMODIFIER_XML_ATTRIBUTE_CLASSNAME, m_className.c_str());
+    xmlNode->AddAttributeStringValue(CONTENTMODIFIER_XML_ATTRIBUTE_SCHEMANAME, m_schemaName.c_str());
 
     CommonToolsInternal::WriteRulesToXmlNode<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList>(xmlNode, m_relatedProperties);
     CommonToolsInternal::WriteRulesToXmlNode<PropertiesDisplaySpecification, PropertiesDisplaySpecificationList>(xmlNode, m_propertiesDisplaySpecification);
@@ -108,7 +108,7 @@ void ContentModifier::_WriteXml(BeXmlNodeP xmlNode) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8CP ContentModifier::_GetJsonElementType() const
     {
-    return CONTENTMODIEFIER_RULE_JSON_TYPE;
+    return CONTENTMODIFIER_RULE_JSON_TYPE;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -118,7 +118,7 @@ bool ContentModifier::_ReadJson(JsonValueCR json)
     {
     if (!PresentationKey::_ReadJson(json))
         return false;
-    
+
     if (!json.isMember(COMMON_JSON_ATTRIBUTE_RULETYPE) || !json[COMMON_JSON_ATTRIBUTE_RULETYPE].isString())
         {
         ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, "ContentModifier", COMMON_JSON_ATTRIBUTE_RULETYPE);
@@ -128,13 +128,13 @@ bool ContentModifier::_ReadJson(JsonValueCR json)
         return false;
 
     CommonToolsInternal::ParseSchemaAndClassName(m_schemaName, m_className, json[COMMON_JSON_ATTRIBUTE_CLASS]);
-    CommonToolsInternal::LoadFromJson(json[CONTENTMODIEFIER_JSON_ATTRIBUTE_RELATEDPROPERTIES], 
+    CommonToolsInternal::LoadFromJson(json[CONTENTMODIFIER_JSON_ATTRIBUTE_RELATEDPROPERTIES],
         m_relatedProperties, CommonToolsInternal::LoadRuleFromJson<RelatedPropertiesSpecification>, this);
-    CommonToolsInternal::LoadFromJson(json[CONTENTMODIEFIER_JSON_ATTRIBUTE_PROPERTYDISPLAYSPECIFICATIONS], 
+    CommonToolsInternal::LoadFromJson(json[CONTENTMODIFIER_JSON_ATTRIBUTE_PROPERTYDISPLAYSPECIFICATIONS],
         m_propertiesDisplaySpecification, CommonToolsInternal::LoadRuleFromJson<PropertiesDisplaySpecification>, this);
-    CommonToolsInternal::LoadFromJson(json[CONTENTMODIEFIER_JSON_ATTRIBUTE_CALCULATEDPROPERTIES], 
+    CommonToolsInternal::LoadFromJson(json[CONTENTMODIFIER_JSON_ATTRIBUTE_CALCULATEDPROPERTIES],
         m_calculatedProperties, CommonToolsInternal::LoadRuleFromJson<CalculatedPropertiesSpecification>, this);
-    CommonToolsInternal::LoadFromJson(json[CONTENTMODIEFIER_JSON_ATTRIBUTE_PROPERTYEDITORS], 
+    CommonToolsInternal::LoadFromJson(json[CONTENTMODIFIER_JSON_ATTRIBUTE_PROPERTYEDITORS],
         m_propertyEditors, CommonToolsInternal::LoadRuleFromJson<PropertyEditorsSpecification>, this);
     return true;
     }
@@ -151,22 +151,22 @@ void ContentModifier::_WriteJson(JsonValueR json) const
     if (!m_calculatedProperties.empty())
         {
         CommonToolsInternal::WriteRulesToJson<CalculatedPropertiesSpecification, CalculatedPropertiesSpecificationList>
-            (json[CONTENTMODIEFIER_JSON_ATTRIBUTE_CALCULATEDPROPERTIES], m_calculatedProperties);
+            (json[CONTENTMODIFIER_JSON_ATTRIBUTE_CALCULATEDPROPERTIES], m_calculatedProperties);
         }
     if (!m_relatedProperties.empty())
         {
         CommonToolsInternal::WriteRulesToJson<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList>
-            (json[CONTENTMODIEFIER_JSON_ATTRIBUTE_RELATEDPROPERTIES], m_relatedProperties);
+            (json[CONTENTMODIFIER_JSON_ATTRIBUTE_RELATEDPROPERTIES], m_relatedProperties);
         }
     if (!m_propertiesDisplaySpecification.empty())
         {
         CommonToolsInternal::WriteRulesToJson<PropertiesDisplaySpecification, PropertiesDisplaySpecificationList>
-            (json[CONTENTMODIEFIER_JSON_ATTRIBUTE_PROPERTYDISPLAYSPECIFICATIONS], m_propertiesDisplaySpecification);
+            (json[CONTENTMODIFIER_JSON_ATTRIBUTE_PROPERTYDISPLAYSPECIFICATIONS], m_propertiesDisplaySpecification);
         }
     if (!m_propertyEditors.empty())
         {
         CommonToolsInternal::WriteRulesToJson<PropertyEditorsSpecification, PropertyEditorsSpecificationList>
-            (json[CONTENTMODIEFIER_JSON_ATTRIBUTE_PROPERTYEDITORS], m_propertyEditors);
+            (json[CONTENTMODIFIER_JSON_ATTRIBUTE_PROPERTYEDITORS], m_propertyEditors);
         }
     }
 
@@ -248,7 +248,7 @@ MD5 ContentModifier::_ComputeHash(Utf8CP parentHash) const
     MD5 md5 = PresentationKey::_ComputeHash(parentHash);
     md5.Add(m_schemaName.c_str(), m_schemaName.size());
     md5.Add(m_className.c_str(), m_className.size());
-    
+
     Utf8String currentHash = md5.GetHashString();
     for (RelatedPropertiesSpecificationP spec : m_relatedProperties)
         {

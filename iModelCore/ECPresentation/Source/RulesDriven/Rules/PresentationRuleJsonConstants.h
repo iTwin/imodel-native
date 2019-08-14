@@ -110,11 +110,11 @@
 
 #define SAME_LABEL_INSTANCE_GROUP_JSON_TYPE                                             "SameLabelInstance"
 
-#define CONTENTMODIEFIER_RULE_JSON_TYPE                                                 "ContentModifier"
-#define CONTENTMODIEFIER_JSON_ATTRIBUTE_CALCULATEDPROPERTIES                            "calculatedProperties"
-#define CONTENTMODIEFIER_JSON_ATTRIBUTE_PROPERTYDISPLAYSPECIFICATIONS                   "propertyDisplaySpecifications"
-#define CONTENTMODIEFIER_JSON_ATTRIBUTE_PROPERTYEDITORS                                 "propertyEditors"
-#define CONTENTMODIEFIER_JSON_ATTRIBUTE_RELATEDPROPERTIES                               "relatedProperties"
+#define CONTENTMODIFIER_RULE_JSON_TYPE                                                  "ContentModifier"
+#define CONTENTMODIFIER_JSON_ATTRIBUTE_CALCULATEDPROPERTIES                             "calculatedProperties"
+#define CONTENTMODIFIER_JSON_ATTRIBUTE_PROPERTYDISPLAYSPECIFICATIONS                    "propertiesDisplay"
+#define CONTENTMODIFIER_JSON_ATTRIBUTE_PROPERTYEDITORS                                  "propertyEditors"
+#define CONTENTMODIFIER_JSON_ATTRIBUTE_RELATEDPROPERTIES                                "relatedProperties"
 
 #define CLASS_GROUP_JSON_TYPE                                                           "Class"
 #define CLASS_GROUP_JSON_ATTRIBUTE_BASECLASS                                            "baseClass"

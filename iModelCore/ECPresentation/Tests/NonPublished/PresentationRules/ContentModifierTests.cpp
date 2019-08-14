@@ -63,7 +63,7 @@ TEST_F(ContentModifierTests, LoadsFromJson)
         "relatedProperties": [
             {}
         ],
-        "propertyDisplaySpecifications": [
+        "propertiesDisplay": [
             {"propertyNames": ["property names"]}
         ],
         "calculatedProperties": [
@@ -139,7 +139,7 @@ TEST_F(ContentModifierTests, WriteToJson)
         }],
         "relatedProperties": [{
         }],
-        "propertyDisplaySpecifications": [{
+        "propertiesDisplay": [{
         }]
     })");
     EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());

@@ -83,9 +83,9 @@
 
 #define SAME_LABEL_INSTANCE_GROUP_XML_NODE_NAME                                       "SameLabelInstanceGroup"
 
-#define CONTENTMODIEFIER_XML_NODE_NAME                                                "ContentModifier"
-#define CONTENTMODIEFIER_XML_ATTRIBUTE_SCHEMANAME                                     "SchemaName"
-#define CONTENTMODIEFIER_XML_ATTRIBUTE_CLASSNAME                                      "ClassName"
+#define CONTENTMODIFIER_XML_NODE_NAME                                                 "ContentModifier"
+#define CONTENTMODIFIER_XML_ATTRIBUTE_SCHEMANAME                                      "SchemaName"
+#define CONTENTMODIFIER_XML_ATTRIBUTE_CLASSNAME                                       "ClassName"
 
 #define CLASS_GROUP_XML_NODE_NAME                                                     "ClassGroup"
 #define CLASS_GROUP_XML_ATTRIBUTE_SCHEMANAME                                          "SchemaName"
