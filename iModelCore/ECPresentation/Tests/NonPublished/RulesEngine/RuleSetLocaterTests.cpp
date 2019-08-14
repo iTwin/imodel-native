@@ -423,14 +423,14 @@ static BeFileName CreateFileWithContent(Utf8CP content, Utf8CP name, BeFileName 
         BeTest::GetHost().GetTempDir(path);
 
     if (!path.DoesPathExist())
-        path.CreateNewDirectory(path.c_str());
+        EXPECT_EQ(BeFileNameStatus::Success, path.CreateNewDirectory(path.c_str()));
 
     path.AppendToPath(WString(name, true).c_str());
     
     BeFile file;
-    file.Create(path, true);
-    file.Write(nullptr, content, (uint32_t)strlen(content));
-    file.Close();
+    EXPECT_EQ(BeFileStatus::Success, file.Create(path, true));
+    EXPECT_EQ(BeFileStatus::Success, file.Write(nullptr, content, (uint32_t)strlen(content)));
+    EXPECT_EQ(BeFileStatus::Success, file.Close());
 
     return path;
     }
