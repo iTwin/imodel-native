@@ -305,15 +305,16 @@ void WebApiV2::CheckResponseActivityId(Http::Response& httpResponse, ActivityLog
     Utf8StringCR actualActivityId = activityLogger.GetActivityId();
     Utf8CP responseActivityId = httpResponse.GetHeaders().GetValue(actualActivityHeaderName);
 
-    Utf8CP idsMismatchMessagePrefix = "Request and response activity IDs do not match:";
+    Utf8CP idsMismatchMessagePrefix = "Response activity IDs do not match";
+
     if (!responseActivityId)
         {
-        activityLogger.warningv("%s response ActivityId is empty", idsMismatchMessagePrefix);
+        activityLogger.warningv("%s: response ActivityId is empty.", idsMismatchMessagePrefix);
         return;
         }
 
     if (!actualActivityId.Equals(responseActivityId))
-        activityLogger.warningv("%s response ActivityId is %s", idsMismatchMessagePrefix, responseActivityId);
+        activityLogger.warningv("%s: response ActivityId is %s.", idsMismatchMessagePrefix, responseActivityId);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -357,6 +358,41 @@ Http::Request WebApiV2::CreateQueryRequest(WSQueryCR query) const
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Simonas.Mulevicius          08/2019
++--------------------------------------------------------------------------------------*/
+WSError WebApiV2::CreateError(Http::Response& response, Utf8StringCR activityHeaderName) const
+    {
+    if (Utf8String::IsNullOrEmpty(activityHeaderName.c_str()))
+        return WSError(response);
+
+    return WSError::CreateErrorUsingActivityHeaderName(response, activityHeaderName);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Simonas.Mulevicius          08/2019
++--------------------------------------------------------------------------------------*/
+WSError WebApiV2::CreateServerNotSupportedError(Http::Response& response, Utf8StringCR activityHeaderName) const
+    {
+    Utf8String activityId = response.GetHeaders().GetValue(activityHeaderName);
+
+    if (Utf8String::IsNullOrEmpty(activityId.c_str()))
+        return WSError::CreateServerNotSupportedError();
+
+    return WSError::CreateServerNotSupportedErrorWithActivityId(activityId);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Simonas.Mulevicius          08/2019
++--------------------------------------------------------------------------------------*/
+WSError WebApiV2::CreateErrorFromAzzureError(AzureErrorCR azureError, Utf8StringCR activityId) const
+    {
+    if (Utf8String::IsNullOrEmpty(activityId.c_str()))
+        return WSError::WSError(azureError);
+
+    return WSError::CreateErrorUsingActivityId(azureError, activityId);
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
 std::shared_ptr<WSObjectsReader> WebApiV2::CreateJsonInstancesReader() const
@@ -387,12 +423,10 @@ Utf8String WebApiV2::GetNullableString(RapidJsonValueCR object, Utf8CP member) c
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-WSRepositoriesResult WebApiV2::ResolveGetRepositoriesResponse(Http::Response& response) const
+WSRepositoriesResult WebApiV2::ResolveGetRepositoriesResponse(Http::Response& response, Utf8StringCR activityHeaderName) const
     {
     if (HttpStatus::OK != response.GetHttpStatus())
-        {
-        return WSRepositoriesResult::Error(response);
-        }
+        return WSRepositoriesResult::Error(CreateError(response, activityHeaderName));
 
     auto repositoriesJson = std::make_shared<rapidjson::Document>();
     repositoriesJson->Parse<0>(response.GetBody().AsString().c_str());
@@ -401,7 +435,7 @@ WSRepositoriesResult WebApiV2::ResolveGetRepositoriesResponse(Http::Response& re
     WSObjectsReader::Instances instances = reader->ReadInstances(repositoriesJson);
     if (!instances.IsValid())
         {
-        return WSRepositoriesResult::Error(WSError::CreateServerNotSupportedError());
+        return WSRepositoriesResult::Error(CreateServerNotSupportedError(response, activityHeaderName));
         }
 
     bvector<WSRepository> repositories;
@@ -411,7 +445,7 @@ WSRepositoriesResult WebApiV2::ResolveGetRepositoriesResponse(Http::Response& re
             !instance.GetObjectId().schemaName.Equals("Repositories") ||
             !instance.GetObjectId().className.Equals("RepositoryIdentifier"))
             {
-            return WSRepositoriesResult::Error(WSError::CreateServerNotSupportedError());
+            return WSRepositoriesResult::Error(CreateServerNotSupportedError(response, activityHeaderName));
             }
 
         WSRepository repository;
@@ -459,11 +493,11 @@ BeVersion WebApiV2::GetRepositoryPluginVersion(Http::Response& response, Utf8Str
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-WSUpdateObjectResult WebApiV2::ResolveUpdateObjectResponse(Http::Response& response) const
+WSUpdateObjectResult WebApiV2::ResolveUpdateObjectResponse(Http::Response& response, Utf8StringCR headerName) const
     {
     if (HttpStatus::OK == response.GetHttpStatus())
         return WSUpdateObjectResult::Success(ResolveUploadResponse(response));
-    return WSUpdateObjectResult::Error(response);
+    return WSUpdateObjectResult::Error(CreateError(response, headerName));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -493,12 +527,7 @@ WSObjectsResult WebApiV2::ResolveObjectsResponse(Http::Response& response, Utf8S
 
         return WSObjectsResult::Success(WSObjectsResponse(reader, body, status, eTag, skipToken));
         }
-
-    if (Utf8String::IsNullOrEmpty(activityHeaderName.c_str()))
-        return WSObjectsResult::Error(response);
-
-    auto error = WSError::CreateErrorUsingActivityHeaderName(response, activityHeaderName);
-    return WSObjectsResult::Error(error);
+    return WSObjectsResult::Error(CreateError(response, activityHeaderName));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -535,7 +564,7 @@ ICancellationTokenPtr ct
         CheckResponseActivityId(response, activityLogger);
 
         if (!response.IsSuccess() && HttpStatus::InternalServerError != response.GetHttpStatus())
-            return WSRepositoryResult::Error(response);
+            return WSRepositoryResult::Error(CreateError(response, activityLogger.GetHeaderName()));
 
         repository.SetMaxUploadSize(GetMaxUploadSize(response, activityLogger, defaultMaxUploadSize));
         repository.SetPluginVersion(GetRepositoryPluginVersion(response, m_configuration->GetPersistenceProviderId()));
@@ -565,7 +594,7 @@ ICancellationTokenPtr ct
     return request.PerformAsync()->Then<WSRepositoriesResult>([this, activityLogger] (Http::Response& httpResponse) mutable
         {
         CheckResponseActivityId(httpResponse, activityLogger);
-        return ResolveGetRepositoriesResponse(httpResponse);
+        return ResolveGetRepositoriesResponse(httpResponse, activityLogger.GetHeaderName());
         });
     }
 
@@ -673,7 +702,7 @@ ICancellationTokenPtr ct
 
         if (HttpStatus::TemporaryRedirect != response.GetHttpStatus())
             {
-            *finalResult = ResolveFileDownloadResponse(response);
+            *finalResult = ResolveFileDownloadResponse(response, activityLogger.GetHeaderName());
             return;
             }
 
@@ -682,7 +711,7 @@ ICancellationTokenPtr ct
         request.PerformAsync()->Then([=] (Http::Response& response) mutable
             {
             CheckResponseActivityId(response, activityLogger);
-            *finalResult = ResolveFileDownloadResponse(response);
+            *finalResult = ResolveFileDownloadResponse(response, activityLogger.GetHeaderName());
             });
         })->Then<WSResult>([=]
             {
@@ -718,7 +747,7 @@ ICancellationTokenPtr ct
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-WSResult WebApiV2::ResolveFileDownloadResponse(Http::Response& response) const
+WSResult WebApiV2::ResolveFileDownloadResponse(Http::Response& response, Utf8StringCR activityHeaderName) const
     {
     HttpStatus status = response.GetHttpStatus();
     if (HttpStatus::OK == status ||
@@ -726,7 +755,7 @@ WSResult WebApiV2::ResolveFileDownloadResponse(Http::Response& response) const
         {
         return WSResult::Success(WSResponse(status, response.GetHeaders().GetETag()));
         }
-    return WSResult::Error(response);
+    return WSResult::Error(CreateError(response, activityHeaderName));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -852,9 +881,8 @@ ICancellationTokenPtr ct
         CheckResponseActivityId(httpResponse, activityLogger);
 
         if (HttpStatus::OK != httpResponse.GetHttpStatus())
-            {
-            return WSChangesetResult::Error(httpResponse);
-            }
+            return WSChangesetResult::Error(CreateError(httpResponse, activityLogger.GetHeaderName()));
+
         return WSChangesetResult::Success(httpResponse.GetContent()->GetBody());
         });
     }
@@ -949,7 +977,8 @@ ICancellationTokenPtr ct
         CheckResponseActivityId(httpResponse, activityLogger);
 
         if (HttpStatus::Created != httpResponse.GetHttpStatus() && HttpStatus::OK != httpResponse.GetHttpStatus())
-            return WSCreateObjectResult::Error(httpResponse);
+            return WSCreateObjectResult::Error(CreateError(httpResponse, activityLogger.GetHeaderName()));
+
         return WSCreateObjectResult::Success(ResolveUploadResponse(httpResponse));
         });
     }
@@ -1015,7 +1044,7 @@ ICancellationTokenPtr ct
         if (!response.IsSuccess())
             return WSUpdateObjectResult::Error(response.GetError());
 
-        return ResolveUpdateObjectResponse(response.GetValue());
+        return ResolveUpdateObjectResponse(response.GetValue(), activityLogger.GetHeaderName());
         });
     }
 
@@ -1054,11 +1083,9 @@ ICancellationTokenPtr ct
         auto httpResponse = response.GetValue();
         CheckResponseActivityId(httpResponse, activityLogger);
         if (HttpStatus::OK == httpResponse.GetHttpStatus())
-            {
             return WSDeleteObjectResult::Success();
-            }
 
-        return WSDeleteObjectResult::Error(httpResponse);
+        return WSDeleteObjectResult::Error(CreateError(httpResponse, activityLogger.GetHeaderName()));
         });
     }
 
@@ -1147,14 +1174,10 @@ ICancellationTokenPtr ct
 ) const
     {
     if (HttpStatus::OK == httpResponse.GetHttpStatus())
-        {
         return CreateCompletedAsyncTask(WSCreateObjectResult::Success(ResolveUploadResponse(httpResponse)));
-        }
 
     if (HttpStatus::TemporaryRedirect != httpResponse.GetHttpStatus())
-        {
-        return CreateCompletedAsyncTask(WSCreateObjectResult::Error(httpResponse));
-        }
+        return CreateCompletedAsyncTask(WSCreateObjectResult::Error(CreateError(httpResponse, activityLogger.GetHeaderName())));
 
     Utf8String redirectUrl = httpResponse.GetHeaders().GetLocation();
     Utf8String redirectType = httpResponse.GetHeaders().GetValue(HEADER_MasFileAccessUrlType);
@@ -1163,7 +1186,7 @@ ICancellationTokenPtr ct
     if (redirectType != VALUE_FileAccessUrlType_Azure)
         {
         activityLogger.errorv("Header field '%s' contains not supported value: '%s'", HEADER_MasFileAccessUrlType, redirectType.c_str());
-        return CreateCompletedAsyncTask(WSCreateObjectResult::Error(WSError::CreateServerNotSupportedError()));
+        return CreateCompletedAsyncTask(WSCreateObjectResult::Error(CreateServerNotSupportedError(httpResponse, activityLogger.GetHeaderName())));
         }
 
     auto azureRequestOptions = std::make_shared<IAzureBlobStorageClient::RequestOptions>();
@@ -1174,7 +1197,8 @@ ICancellationTokenPtr ct
         {
         if (!azureResult.IsSuccess())
             {
-            finalResult->SetError(azureResult.GetError());
+            auto activityId = httpResponse.GetHeaders().GetValue(activityLogger.GetHeaderName());
+            finalResult->SetError(CreateErrorFromAzzureError(azureResult.GetError(), activityId));
             return;
             }
 
@@ -1189,7 +1213,7 @@ ICancellationTokenPtr ct
             {
             CheckResponseActivityId(httpResponse, activityLogger);
             if (HttpStatus::OK != response.GetHttpStatus())
-                finalResult->SetError(response);
+                finalResult->SetError(CreateError(response, activityLogger.GetHeaderName()));
             });
         })
             ->Then<WSUpdateFileResult>([=]

@@ -48,12 +48,15 @@ struct WebApiV2 : public WebApi
         Utf8String CreateSelectPropertiesQuery(const bset<Utf8String>& properties) const;
         Http::Request CreateGetRepositoryRequest() const;
         Http::Request CreateQueryRequest(WSQueryCR query) const;
+        WSError CreateError(Http::Response& response, Utf8StringCR activityHeaderName = "") const;
+        WSError CreateServerNotSupportedError(Http::Response& response, Utf8StringCR activityHeaderName = "") const;
+        WSError CreateErrorFromAzzureError(AzureErrorCR azureError, Utf8StringCR activityId = "") const;
 
         std::shared_ptr<WSObjectsReader> CreateJsonInstancesReader() const;
         Utf8String GetNullableString(RapidJsonValueCR object, Utf8CP member) const;
 
-        WSRepositoriesResult ResolveGetRepositoriesResponse(Http::Response& response) const;
-        WSUpdateObjectResult ResolveUpdateObjectResponse(Http::Response& response) const;
+        WSRepositoriesResult ResolveGetRepositoriesResponse(Http::Response& response, Utf8StringCR activityHeaderName) const;
+        WSUpdateObjectResult ResolveUpdateObjectResponse(Http::Response& response, Utf8StringCR activityHeaderName) const;
         WSUploadResponse ResolveUploadResponse(Http::Response& response) const;
         WSObjectsResult ResolveObjectsResponse(Http::Response& response, Utf8StringCR activityHeaderName) const;
 
@@ -68,7 +71,7 @@ struct WebApiV2 : public WebApi
             Http::Request::ProgressCallbackCR onProgress,
             ICancellationTokenPtr ct
             ) const;
-        WSResult ResolveFileDownloadResponse(Http::Response& response) const;
+        WSResult ResolveFileDownloadResponse(Http::Response& response, Utf8StringCR activityHeaderName) const;
 
         AsyncTaskPtr<WSUpdateFileResult> ResolveUpdateFileResponse
             (
