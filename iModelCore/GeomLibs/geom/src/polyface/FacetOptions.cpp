@@ -198,6 +198,8 @@ bool IFacetOptions::GetOmitBRepEdgeChainIds () const { return _GetOmitBRepEdgeCh
 void IFacetOptions::SetOmitBRepEdgeChainIds (bool omit) { _SetOmitBRepEdgeChainIds(omit); }
 bool IFacetOptions::GetBRepConcurrentFacetting() const { return _GetBRepConcurrentFacetting(); }
 void IFacetOptions::SetBRepConcurrentFacetting (bool doConcurrentFacet) { _SetBRepConcurrentFacetting(doConcurrentFacet); }
+double IFacetOptions::GetBRepIgnoredFeatureSize() const { return _GetBRepIgnoredFeatureSize(); }
+void IFacetOptions::SetBRepIgnoredFeatureSize(double size) { return _SetBRepIgnoredFeatureSize(size); }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
@@ -485,6 +487,8 @@ struct FacetOptions : public IFacetOptions
 
     bool m_bRepConcurrentFacetting = true;
 
+    double m_ignoredBRepFeatureSize = 0.0;
+
     // Get/Set pair for ChordTolerance.  Simple access to m_chordTolerance
    double _GetChordTolerance () const override
             {return m_chordTolerance; }
@@ -666,6 +670,9 @@ struct FacetOptions : public IFacetOptions
     bool _GetBRepConcurrentFacetting() const override { return m_bRepConcurrentFacetting; }
     void _SetBRepConcurrentFacetting(bool doConcurrentFacet) override { m_bRepConcurrentFacetting = doConcurrentFacet; }
 
+    double _GetBRepIgnoredFeatureSize() const override { return m_ignoredBRepFeatureSize; }
+    void _SetBRepIgnoredFeatureSize(double size) override { m_ignoredBRepFeatureSize = size; }
+
     IFacetOptionsPtr _Clone () const override { return new FacetOptions (*this); }
 
 void _SetDefaults () override
@@ -706,6 +713,7 @@ void _SetDefaults () override
     // false is always faster, see Parasolid IR 8415939, but default to true so that current
     // behavior is maintained and disabling concurrent facetting can be feature gated
     m_bRepConcurrentFacetting = true; 
+    m_ignoredBRepFeatureSize = 0.0;
     }
 
 void _SetCurveDefaults () override

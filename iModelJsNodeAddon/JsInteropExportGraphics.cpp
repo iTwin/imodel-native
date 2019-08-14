@@ -102,35 +102,6 @@ void AddVertex(DPoint3dCR p, FPoint3dCR n, FPoint2dCR uv)
 };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Matt.Gooding    07/19
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void removeDegenerateTriangles(bvector<int>& indices)
-    {
-    auto isDegenerate= [](int i0, int i1, int i2) { return i0 == i1 || i0 == i2 || i1 == i2; };
-
-    // Assume that 99% of meshes won't have degenerate triangles and simplify for that case.
-    bool hasDegenerateFace = false;
-    for (int i = 0; i < (int)indices.size(); i += 3)
-        {
-        if (isDegenerate (indices[i], indices[i+1], indices[i+2]))
-            {
-            hasDegenerateFace = true;
-            break;
-            }
-        }
-    if (!hasDegenerateFace) return;
-
-    bvector<int> newIndices;
-    newIndices.reserve(indices.size());
-    for (int i = 0; i < (int)indices.size(); i += 3)
-        {
-        if (!isDegenerate(indices[i], indices[i+1], indices[i+2]))
-            newIndices.insert(newIndices.end(), { indices[i], indices[i+1], indices[i+2]});
-        }
-    indices = std::move(newIndices);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Matt.Gooding    04/19
 * Linear speed unification of vertex indices. Each point has ENTRY_COUNT remappings
 * that can be saved. After that, just add additional vertices for each normal/param
@@ -155,7 +126,7 @@ static void unifyIndices(IntermediateMesh const& inMesh, ExportGraphicsMesh& out
 
     constexpr static float UV_TOLERANCE = 0.00025; // ~1 pixel at 4K
 
-    for (uint32_t i = 0; i < indexCount; ++i)
+    auto addIndex = [&](int i)
         {
         int32_t origPointIndex = inMesh.m_pointIndices[i];
         int32_t origNormalIndex = inMesh.m_normalIndices[i];
@@ -188,6 +159,17 @@ static void unifyIndices(IntermediateMesh const& inMesh, ExportGraphicsMesh& out
         // Node for this point is full, just add another vertex.
         if (!foundRemap)
             outMesh.AddVertex(inMesh.m_points[origPointIndex], inMesh.m_normals[origNormalIndex], origParam);
+        };
+    auto isDegenerate= [](int i0, int i1, int i2) { return i0 == i1 || i0 == i2 || i1 == i2; };
+
+    // Process as triangles so we can throw out degenerates along the way instead of needing to clean up later.
+    for (uint32_t index = 0; index < indexCount; index += 3)
+        {
+        if (isDegenerate(inMesh.m_pointIndices[index], inMesh.m_pointIndices[index+1], inMesh.m_pointIndices[index+2]))
+            continue;
+        addIndex(index);
+        addIndex(index+1);
+        addIndex(index+2);
         }
     }
 
@@ -542,7 +524,6 @@ bool _ProcessPolyface(PolyfaceQueryCR pfQuery, bool filled, SimplifyGraphic& sg)
         }
 
     unifyIndices(IntermediateMesh(pfQuery, localToWorld, std::move(computedParams)), *exportMesh);
-    removeDegenerateTriangles(exportMesh->indices); // simplest to clean up after unifying
     return true;
     }
 }; // ExportGraphicsProcessor
@@ -630,6 +611,10 @@ static IFacetOptionsPtr createFacetOptions(Napi::Object const& exportProps)
     auto result = IFacetOptions::CreateForSurfaces(chordTol, angleTol, maxEdgeLength, true, true, true);
     result->SetIgnoreHiddenBRepEntities(true); // act like tile generation, big perf improvement
     result->SetBRepConcurrentFacetting(false); // see Parasolid IR 8415939, always faster exclusive
+
+    Napi::Value minBRepFeatureSize = exportProps.Get("minBRepFeatureSize");
+    if (minBRepFeatureSize.IsNumber())
+        result->SetBRepIgnoredFeatureSize(minBRepFeatureSize.As<Napi::Number>().DoubleValue());
 
     return result;
     }

@@ -129,6 +129,9 @@ protected:
    GEOMAPI_VIRTUAL bool _GetBRepConcurrentFacetting() const = 0;
    GEOMAPI_VIRTUAL void _SetBRepConcurrentFacetting(bool doConcurrentFacet) = 0;
 
+   GEOMAPI_VIRTUAL double _GetBRepIgnoredFeatureSize() const = 0;
+   GEOMAPI_VIRTUAL void _SetBRepIgnoredFeatureSize(double size) = 0;
+
    GEOMAPI_VIRTUAL IFacetOptionsPtr  _Clone() const = 0;
 
 // Protected signatures of public/protected methods
@@ -304,6 +307,11 @@ GEOMDLLIMPEXP void SetOmitBRepEdgeChainIds (bool doOmit);
 GEOMDLLIMPEXP bool GetBRepConcurrentFacetting() const;
 //! Set whether PK_TOPOL_facet_2 runs in concurrent or exclusive mode.
 GEOMDLLIMPEXP void SetBRepConcurrentFacetting(bool doConcurrentFacet);
+
+//! Get the minimum feature size for facetting, 0.0 to include all features.
+GEOMDLLIMPEXP double GetBRepIgnoredFeatureSize() const;
+//! Set the minimum feature size for facetting, 0.0 to include all features.
+GEOMDLLIMPEXP void SetBRepIgnoredFeatureSize(double size);
 
 //! Set all parameters to default values
 GEOMDLLIMPEXP void SetDefaults ();

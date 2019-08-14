@@ -1310,6 +1310,15 @@ void            FacetEntity (IBRepEntityCR in, IFacetOptionsR facetOptions)
         options.control.max_facet_width     = maxWidthPoint.Magnitude ();
         }
 
+    if (0.0 != facetOptions.GetBRepIgnoredFeatureSize())
+        {
+        DPoint3d ignoredFeatureSizePoint;
+        ignoredFeatureSizePoint.Init(facetOptions.GetBRepIgnoredFeatureSize(), 0.0, 0.0);
+        outputToSolidTransform.MultiplyMatrixOnly(ignoredFeatureSizePoint);
+        options.control.ignore          = PK_facet_ignore_absolute_c;
+        options.control.ignore_value    = ignoredFeatureSizePoint.Magnitude();
+        }
+
     options.control.is_curve_chord_ang   = PK_LOGICAL_true;
     options.control.curve_chord_ang      = angleTol * s_facetAngleCurveFactor;
 
