@@ -3,7 +3,7 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include    "DwgImportInternal.h"
+#include "DwgImportInternal.h"
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_DWGDB
@@ -37,6 +37,9 @@ BentleyStatus DwgHatchExt::_ConvertToBim (ProtocolExtensionContext& context, Dwg
             if (status == BSISUCCESS)
                 return  status;
             }
+#ifdef DEBUG_BOUNDARY
+        return  BSIERROR;
+#endif
         }
 
     // for a patterned hatch, we still prefer to let toolkit draw it, which gives us better graphics
@@ -69,11 +72,21 @@ GeometricPrimitivePtr DwgHatchExt::_ConvertToGeometry (DwgDbEntityCP entity, boo
     m_isIdentityTransform = m_transform.IsIdentity ();
 
     auto paths = CurveVector::Create (CurveVector::BoundaryType::BOUNDARY_TYPE_ParityRegion);
-    if (!paths.IsValid())
+    auto textPaths = CurveVector::Create (CurveVector::BoundaryType::BOUNDARY_TYPE_UnionRegion);
+    if (!paths.IsValid() || !textPaths.IsValid())
         return  nullptr;
 
     for (size_t loopIndex=0; loopIndex < numLoops; loopIndex++)
-        this->ConvertLoop (*paths, loopIndex);
+        this->ConvertLoop (*paths, *textPaths, loopIndex);
+
+    // subtract text islands from all other paths to create the effect of text wipeouts as in ACAD
+    if (textPaths->size() > 0)
+        paths = CurveVector::AreaDifference (*paths, *textPaths);
+
+#ifdef DEBUG_BOUNDARY
+    if (this->DebugHatchBoundary(*paths, importer) == BSISUCCESS)
+        return  nullptr;
+#endif
 
     if (drawParams != nullptr)
         this->GetDrawParameters (*drawParams);
@@ -85,7 +98,7 @@ GeometricPrimitivePtr DwgHatchExt::_ConvertToGeometry (DwgDbEntityCP entity, boo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          07/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DwgHatchExt::ConvertLoop (CurveVectorR paths, size_t loopIndex)
+BentleyStatus DwgHatchExt::ConvertLoop (CurveVectorR basePaths, CurveVectorR textPaths, size_t loopIndex)
     {
     if (!this->ShouldConvertLoop(loopIndex))
         return  BSISUCCESS;
@@ -94,7 +107,11 @@ BentleyStatus DwgHatchExt::ConvertLoop (CurveVectorR paths, size_t loopIndex)
     if (!path.IsValid())
         return  BSIERROR;
 
-    paths.Add (path);
+    auto loopType = m_hatch->GetLoopType (loopIndex);
+    if (0 != (DwgDbHatch::LoopType::Textbox & loopType) || 0 != (DwgDbHatch::LoopType::TextIsland & loopType))
+        textPaths.Add (path);
+    else    
+        basePaths.Add (path);
     return  BSISUCCESS;
     }
 
@@ -739,4 +756,61 @@ BentleyStatus DwgHatchExt::CreateElementInModel (GeometricPrimitiveR geometry, D
     factory.SetGeometryBuilder (builder.get());
 
     return factory.CreateElement ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          07/19
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DwgHatchExt::DebugHatchBoundary(CurveVectorCR paths, DwgImporterR importer)
+    {
+    if (m_toBimContext == nullptr)
+        return  BSIERROR;
+
+    auto& inputs = m_toBimContext->GetElementInputsR ();
+    DwgImporter::ElementCreateParams  params(inputs.GetTargetModelR());
+    if (importer._GetElementCreateParams (params, inputs.GetTransform(), m_toBimContext->GetEntity()) != BSISUCCESS)
+        return  BSIERROR;
+
+    auto results = m_toBimContext->GetElementResults ();
+
+    for (auto path : paths)
+        {
+        auto child = path->GetChildCurveVectorCP ();
+        if (child != nullptr)
+            return  this->DebugHatchBoundary(*child, importer);
+
+        auto geometry = GeometricPrimitive::Create (path);
+        if (!geometry.IsValid())
+            continue;
+
+        DPoint3d    pointInModel;
+        if (this->PlaceGeometry(*geometry, pointInModel) != BSISUCCESS)
+            pointInModel.Zero ();
+
+        GeometryBuilderPtr  builder;
+        if (params.GetModel().Is3d())
+            builder = GeometryBuilder::Create (params.GetModelR(), params.GetCategoryId(), pointInModel);
+        else
+            builder = GeometryBuilder::Create (params.GetModelR(), params.GetCategoryId(), DPoint2d::From(pointInModel));
+        if (!builder.IsValid())
+            continue;
+
+        Render::GeometryParams  display;
+        display.SetCategoryId (params.GetCategoryId());
+        display.SetSubCategoryId (params.GetSubCategoryId());
+        display.SetGeometryClass (Render::DgnGeometryClass::Primary);
+        display.SetLineColor (DwgHelper::GetColorDefFromEntity(m_toBimContext->GetEntity()));
+
+        builder->Append (display);
+        builder->Append (*geometry);
+
+        results.SetImportedElement (nullptr);
+
+        ElementFactory  factory(results, inputs, params, importer);
+        factory.SetGeometryBuilder (builder.get());
+
+        if (factory.CreateElement() == BSISUCCESS)
+            importer.GetDgnDb().Elements().Insert (*results.GetImportedElement());
+        }
+    return  BSISUCCESS;
     }

@@ -272,6 +272,19 @@ DEllipse3d  Util::DEllipse3dFrom (DWGGE_TypeCR(CircArc2d) geArc)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool ValidateBSplineKnotCount (BsplineParam& params)
+    {
+    uint32_t    expectedKnots = bspknot_numberKnots(params.numPoles, params.order, params.closed);
+    if (params.numKnots == expectedKnots)
+        return  true;
+
+    params.numKnots = expectedKnots;
+    return  false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DwgDbStatus     Util::GetMSBsplineCurve (MSBsplineCurveR curve, DWGGE_TypeCR(SplineEnt3d) geSpline)
@@ -284,6 +297,8 @@ DwgDbStatus     Util::GetMSBsplineCurve (MSBsplineCurveR curve, DWGGE_TypeCR(Spl
     curve.params.numKnots = geSpline.numKnots ();
     curve.display.polygonDisplay = false;
     curve.display.curveDisplay = true;
+
+    bool isValid = ValidateBSplineKnotCount (curve.params);
     if (BSISUCCESS != curve.Allocate())
         return  DwgDbStatus::MemoryError;
 
@@ -300,8 +315,20 @@ DwgDbStatus     Util::GetMSBsplineCurve (MSBsplineCurveR curve, DWGGE_TypeCR(Spl
             curve.weights[i] = geNurbCurve->weightAt (i);
         }
 
-    for (int i = 0; i < curve.params.numKnots; i++)
-        curve.knots[i] = geSpline.knotAt (i);
+    if (curve.rational)
+        bsputil_weightPoles (curve.poles, curve.poles, curve.weights, curve.params.numPoles);
+
+    if (isValid)
+        {
+        for (int i = 0; i < curve.params.numKnots; i++)
+            curve.knots[i] = geSpline.knotAt (i);
+        bspknot_normalizeKnotVector (curve.knots, curve.params.numPoles, curve.params.order, curve.params.closed);
+        }
+    else
+        {
+        // create uniform knots as bspcurv_ code assumes knots exist
+        curve.ComputeUniformKnots ();
+        }
 
     return  DwgDbStatus::Success;
     }
@@ -319,6 +346,8 @@ DwgDbStatus     Util::GetMSBsplineCurve (MSBsplineCurveR curve, DWGGE_TypeCR(Spl
     curve.params.numKnots = geSpline.numKnots ();
     curve.display.polygonDisplay = false;
     curve.display.curveDisplay = true;
+
+    bool isValid = ValidateBSplineKnotCount (curve.params);
     if (BSISUCCESS != curve.Allocate())
         return  DwgDbStatus::MemoryError;
 
@@ -335,8 +364,20 @@ DwgDbStatus     Util::GetMSBsplineCurve (MSBsplineCurveR curve, DWGGE_TypeCR(Spl
             curve.weights[i] = geNurbCurve->weightAt (i);
         }
 
-    for (int i = 0; i < curve.params.numKnots; i++)
-        curve.knots[i] = geSpline.knotAt (i);
+    if (curve.rational)
+        bsputil_weightPoles (curve.poles, curve.poles, curve.weights, curve.params.numPoles);
+
+    if (isValid)
+        {
+        for (int i = 0; i < curve.params.numKnots; i++)
+            curve.knots[i] = geSpline.knotAt (i);
+        bspknot_normalizeKnotVector (curve.knots, curve.params.numPoles, curve.params.order, curve.params.closed);
+        }
+    else
+        {
+        // create uniform knots as bspcurv_ code assumes knots exist
+        curve.ComputeUniformKnots ();
+        }
 
     return  DwgDbStatus::Success;
     }

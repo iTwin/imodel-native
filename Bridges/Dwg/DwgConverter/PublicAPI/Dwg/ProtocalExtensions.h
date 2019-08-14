@@ -261,7 +261,7 @@ private:
     mutable double      m_scaleToMeters;
     mutable uint64_t    m_hatchHandle;
 
-    BentleyStatus ConvertLoop (CurveVectorR paths, size_t loopIndex);
+    BentleyStatus ConvertLoop (CurveVectorR basePaths, CurveVectorR textPaths, size_t loopIndex);
     CurveVectorPtr CreatePathFromLoop (size_t loopIndex);
     CurveVectorPtr CreatePathFromPolyline (size_t loopIndex, CurveVector::BoundaryType boundaryType);
     CurveVectorPtr CreatePathFromEdges (size_t loopIndex, CurveVector::BoundaryType boundaryType);
@@ -279,6 +279,7 @@ private:
     BentleyStatus PlaceGeometry (GeometricPrimitiveR geom, DPoint3dR placementPoint);
     BentleyStatus SetPlacementPoint (TransformR transform, DPoint3dR placementPoint);
     BentleyStatus CreateElementInModel (GeometricPrimitiveR geometry, DwgImporterR importer);
+    BentleyStatus DebugHatchBoundary (CurveVectorCR paths, DwgImporterR importer);
     };  // DwgHatchExt
 
 
