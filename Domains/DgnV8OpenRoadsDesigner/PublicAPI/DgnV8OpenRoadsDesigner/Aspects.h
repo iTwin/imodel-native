@@ -80,11 +80,11 @@ struct FeatureAspect : Dgn::DgnElement::UniqueAspect
     friend struct FeatureAspectHandler;
 
 private:
-    Utf8String m_name, m_definitionName;
+    Utf8String m_name, m_definitionName, m_description;
 
 protected:
     FeatureAspect() {}
-    FeatureAspect(Utf8CP name, Utf8CP definitionName): m_name(name), m_definitionName(definitionName) {}
+    FeatureAspect(Utf8CP name, Utf8CP definitionName, Utf8CP description): m_name(name), m_definitionName(definitionName), m_description(description) {}
 
     //! @private
     virtual Utf8CP _GetECSchemaName() const { return V8ORD_SCHEMA_NAME; }
@@ -103,7 +103,7 @@ protected:
 
 public:
     DECLARE_DGNV8OPENROADSDESIGNER_QUERYCLASS_METHODS(FeatureAspect)
-    DGNV8OPENROADSDESIGNER_EXPORT static FeatureAspectPtr Create(Utf8CP name, Utf8CP definitionName);
+    DGNV8OPENROADSDESIGNER_EXPORT static FeatureAspectPtr Create(Utf8CP name, Utf8CP definitionName, Utf8CP description);
 
     //! Retrieve the FeatureAspect instance related to an element, if any
     //! @return An instance of FeatureAspect, or nullptr
@@ -122,6 +122,10 @@ public:
     Utf8CP GetDefinitionName() const { return m_definitionName.c_str(); }
     //! @private
     void SetDefinitionName(Utf8CP val) { m_definitionName = val; }
+    // Get the feature description
+    Utf8CP GetDescription() const { return m_description.c_str(); }
+    //! @private
+    void SetDescription(Utf8CP val) { m_description = val; }
 
 }; // FeatureAspect
 

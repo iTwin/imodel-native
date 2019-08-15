@@ -120,9 +120,9 @@ DgnDbStatus CorridorSurfaceAspect::_SetPropertyValue(Utf8CP propertyName, ECValu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                              Diego.Diaz                              10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-FeatureAspectPtr FeatureAspect::Create(Utf8CP name, Utf8CP definitionName)
+FeatureAspectPtr FeatureAspect::Create(Utf8CP name, Utf8CP definitionName, Utf8CP description)
     {
-    return new FeatureAspect(name, definitionName);
+    return new FeatureAspect(name, definitionName, description);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -155,7 +155,7 @@ void FeatureAspect::Set(DgnElementR el, FeatureAspectR aspect)
 DgnDbStatus FeatureAspect::_LoadProperties(DgnElementCR el)
     {
     auto stmtPtr = el.GetDgnDb().GetPreparedECSqlStatement(
-        "SELECT " V8ORD_PROP_FeatureAspect_Name ", " V8ORD_PROP_FeatureAspect_DefinitionName
+        "SELECT " V8ORD_PROP_FeatureAspect_Name ", " V8ORD_PROP_FeatureAspect_DefinitionName ", " V8ORD_PROP_FeatureAspect_Description
         " FROM " V8ORD_SCHEMA(V8ORD_CLASS_FeatureAspect) " WHERE Element.Id = ?;");
     BeAssert(stmtPtr.IsValid());
 
@@ -166,6 +166,7 @@ DgnDbStatus FeatureAspect::_LoadProperties(DgnElementCR el)
 
     m_name = stmtPtr->GetValueText(0);
     m_definitionName = stmtPtr->GetValueText(1);
+    m_description = stmtPtr->GetValueText(2);
 
     return DgnDbStatus::Success;
     }
@@ -177,12 +178,13 @@ DgnDbStatus FeatureAspect::_UpdateProperties(DgnElementCR el, BeSQLite::EC::ECCr
     {
     auto stmtPtr = el.GetDgnDb().GetNonSelectPreparedECSqlStatement(
         "UPDATE " V8ORD_SCHEMA(V8ORD_CLASS_FeatureAspect) " SET " V8ORD_PROP_FeatureAspect_Name " = ?, "
-        V8ORD_PROP_FeatureAspect_DefinitionName " = ? WHERE Element.Id = ?;", writeToken);
+        V8ORD_PROP_FeatureAspect_DefinitionName " = ?, " V8ORD_PROP_FeatureAspect_Description " = ? WHERE Element.Id = ?;", writeToken);
     BeAssert(stmtPtr.IsValid());
 
     stmtPtr->BindText(1, m_name.c_str(), IECSqlBinder::MakeCopy::No);
     stmtPtr->BindText(2, m_definitionName.c_str(), IECSqlBinder::MakeCopy::No);
-    stmtPtr->BindId(3, el.GetElementId());
+    stmtPtr->BindText(3, m_description.c_str(), IECSqlBinder::MakeCopy::No);
+    stmtPtr->BindId(4, el.GetElementId());
 
     if (DbResult::BE_SQLITE_DONE != stmtPtr->Step())
         return DgnDbStatus::WriteError;

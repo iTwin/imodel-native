@@ -76,6 +76,7 @@ END_BENTLEY_DGNV8OPENROADSDESIGNER_NAMESPACE
 #define V8ORD_PROP_DiscreteQuantityAspect_Count                                  "Count"
 #define V8ORD_PROP_FeatureAspect_Name                                            "Name"
 #define V8ORD_PROP_FeatureAspect_DefinitionName                                  "DefinitionName"
+#define V8ORD_PROP_FeatureAspect_Description                                     "Description"
 #define V8ORD_PROP_LinearQuantityAspect_Length                                   "Length"
 #define V8ORD_PROP_StationRangeAspect_EndStation                                 "EndStation"
 #define V8ORD_PROP_StationRangeAspect_StartStation                               "StartStation"
