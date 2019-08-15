@@ -209,7 +209,12 @@
         <SubProduct ProductName="CiviliModelBridges-Gtest" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest" />
     </Part>
-    
+
+    <!-- Must Call UnitTestsPostBuild.mke last in build process in order to debug to remove ScalableMesh dlls-->
+    <Part Name="DebugGtest" BentleyBuildMakeFile="ORDBridge/Tests/UnitTestsPostBuild.mke">
+        <SubPart PartName="ORDBridgeUnitTests" />
+    </Part>
+
     <Part Name="Gtest" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="
         -dTEST_NAME=CiviliModelBridgesTests
         -dTEST_COLLECTION_PRODUCT=CiviliModelBridges-Tests
