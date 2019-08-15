@@ -303,19 +303,27 @@ DPoint3d        DwgHelper::DefaultPlacementPoint (DwgDbEntityCR entity)
     DRange3d        entRange;
     DPoint3dArray   gripPoints;
 
-    if (DwgDbStatus::Success == entity.GetGripPoints(gripPoints) && gripPoints.size() > 0)
+    try
         {
-        // set the first grip point as the placement point
-        placementPoint = gripPoints[0];
+        if (DwgDbStatus::Success == entity.GetGripPoints(gripPoints) && gripPoints.size() > 0)
+            {
+            // set the first grip point as the placement point
+            placementPoint = gripPoints[0];
+            }
+        else if (DwgDbStatus::Success == entity.GetRange(entRange) && !entRange.IsNull())
+            {
+            // set the center as the placement point
+            placementPoint = entRange.LocalToGlobal (0.5, 0.5, 0.5);
+            }
+        else
+            {
+            // any other better way?
+            placementPoint.Zero ();
+            }
         }
-    else if (DwgDbStatus::Success == entity.GetRange(entRange) && !entRange.IsNull())
+    catch (...)
         {
-        // set the center as the placement point
-        placementPoint = entRange.LocalToGlobal (0.5, 0.5, 0.5);
-        }
-    else
-        {
-        // any other better way?
+        // OpenDWG may throw exception writing TTF file
         placementPoint.Zero ();
         }
 

@@ -280,7 +280,14 @@ void AppendComplexEntityHash (HashFiler& filer)
             {
             for (auto child : proxy)
                 {
-                child->DxfOut (filer);
+                try
+                    {
+                    child->DxfOut (filer);
+                    }
+                catch (...)
+                    {
+                    // OpenDWG may throw exception on writing TTF file
+                    }
                 // operator delete is hidden by Teigha!
                 ::free (child);
                 }
@@ -345,7 +352,16 @@ BentleyStatus   AppendBlockHash (DwgDbObjectIdCR blockId)
         // hash current child entity itself and add to output hasher:
         HashFiler filer(m_hasher, *child);
         if (filer.IsValid())
-            child->DxfOut (filer);
+            {
+            try
+                {
+                child->DxfOut (filer);
+                }
+            catch (...)
+                {
+                // OpenDWG may throw exception on writing TTF file
+                }
+            }
 
         // if this is an INSERT entity, recurse into the block and hash all nested blocks as well:
         DwgDbBlockReferenceP    insert = DwgDbBlockReference::Cast (child);
@@ -486,7 +502,14 @@ BentleyStatus   CreateObjectHash (bool reset = true)
     if (!filer.IsValid())
         return  BSIERROR;
 
-    m_object.DxfOut (filer);
+    try
+        {
+        m_object.DxfOut (filer);
+        }
+    catch (...)
+        {
+        // OpenDWG may throw exception on writing TTF file
+        }
 
     // default dxfOut skips enssenstial data required for some standard complex objects, add these now:
     this->AppendComplexEntityHash (filer);

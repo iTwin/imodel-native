@@ -413,65 +413,105 @@ DwgDbStatus     Util::GetCurvePrimitive (ICurvePrimitivePtr& primitive, DWGGE_Ty
     if (nullptr == geCurve)
         return  DwgDbStatus::InvalidInput;
 
-    DWGGE_Type(Line2d)              line;
-    DWGGE_TypeCP(CircArc2d)         arc;
-    DWGGE_TypeCP(CompositeCurve2d)  compCurve;
-    DWGGE_TypeCP(EllipArc2d)        ellip;
-    DWGGE_TypeCP(ExternalCurve2d)   extCurve;
-    DWGGE_TypeCP(OffsetCurve2d)     offset;
-    DWGGE_TypeCP(SplineEnt2d)       spline;
-
-    if (geCurve->isLinear(line))
+    auto curveType = geCurve->type ();
+    switch (curveType)
         {
-        DWGGE_Type(Point2d)     start, end;
-        if (line.hasStartPoint(start) && line.hasEndPoint(end))
-            primitive = ICurvePrimitive::CreateLine (DSegment3d::From(start.x, start.y, 0.0, end.x, end.y, 0.0));
-        }
-    else if (nullptr != (arc = static_cast<DWGGE_TypeCP(CircArc2d)>(geCurve)))
-        {
-        primitive = ICurvePrimitive::CreateArc (Util::DEllipse3dFrom(*arc));
-        }
-    else if (nullptr != (ellip = static_cast<DWGGE_TypeCP(EllipArc2d)>(geCurve)))
-        {
-        primitive = ICurvePrimitive::CreateArc (Util::DEllipse3dFrom(*ellip));
-        }
-    else if (nullptr != (compCurve = static_cast<DWGGE_TypeCP(CompositeCurve2d)>(geCurve)))
-        {
-        DWGDB_SDKNAME(OdGeCurve2dPtrArray,AcGeVoidPointerArray) nestedCurves;
-
-        compCurve->getCurveList (nestedCurves);
-
-        for (size_t i = 0; i < nestedCurves.length(); i++)
+        case DWGGE_Type(::kLineSeg2d):
             {
-            DWGGE_TypeP(Curve2d)    nestedCurve = static_cast<DWGGE_TypeP(Curve2d)> (nestedCurves.at(static_cast<unsigned int>(i)));
-            if (nullptr != nestedCurve)
-                Util::GetCurvePrimitive (primitive, nestedCurve);
+            // OdGeCurve2d::isLinear crashes, so swicth to explicit LineSeg2d type
+            DWGGE_TypeCP(LineSeg2d) line = static_cast<DWGGE_TypeCP(LineSeg2d)>(geCurve);
+            if (nullptr != line)
+                {
+                auto start = line->startPoint ();
+                auto end = line->endPoint ();
+                primitive = ICurvePrimitive::CreateLine (DSegment3d::From(start.x, start.y, 0.0, end.x, end.y, 0.0));
+                }
+            break;
             }
-        }
-    else if (nullptr != (extCurve = static_cast<DWGGE_TypeCP(ExternalCurve2d)>(geCurve)))
-        {
-        DWGGE_Type(NurbCurve2d)     nurb;
-        if (extCurve->isDefined() && extCurve->isNurbCurve(nurb))
+        case DWGGE_Type(::kCircArc2d):
             {
-            MSBsplineCurve          curve;
-            if (DwgDbStatus::Success == Util::GetMSBsplineCurve(curve, nurb))
-                primitive = ICurvePrimitive::CreateBsplineCurve (curve);
+            DWGGE_TypeCP(CircArc2d) arc = static_cast<DWGGE_TypeCP(CircArc2d)>(geCurve);
+            if (nullptr != arc)
+                primitive = ICurvePrimitive::CreateArc (Util::DEllipse3dFrom(*arc));
+            break;
             }
-        }
-    else if (nullptr != (offset = static_cast<DWGGE_TypeCP(OffsetCurve2d)>(geCurve)))
-        {
-        // WIP - offset curve
-        }
-    else if (nullptr != (spline = static_cast<DWGGE_TypeCP(SplineEnt2d)>(geCurve)))
-        {
-        MSBsplineCurve  curve;
-        if (DwgDbStatus::Success == Util::GetMSBsplineCurve(curve, *spline))
-            primitive = ICurvePrimitive::CreateBsplineCurve (curve);
-        }
-    else
-        {
-        BeAssert (false && L"Unexpected DWG Curve2d type!");
-        return  DwgDbStatus::InvalidData;
+        case DWGGE_Type(::kEllipArc2d):
+            {
+            DWGGE_TypeCP(EllipArc2d) ellip = static_cast<DWGGE_TypeCP(EllipArc2d)>(geCurve);
+            if (nullptr != ellip)
+                primitive = ICurvePrimitive::CreateArc (Util::DEllipse3dFrom(*ellip));
+            break;
+            }
+        case DWGGE_Type(::kCompositeCrv2d):
+            {
+            DWGGE_TypeCP(CompositeCurve2d) compCurve = static_cast<DWGGE_TypeCP(CompositeCurve2d)>(geCurve);
+            if (nullptr != compCurve)
+                {
+                DWGDB_SDKNAME(OdGeCurve2dPtrArray,AcGeVoidPointerArray) nestedCurves;
+
+                compCurve->getCurveList (nestedCurves);
+
+                for (size_t i = 0; i < nestedCurves.length(); i++)
+                    {
+                    DWGGE_TypeP(Curve2d)    nestedCurve = static_cast<DWGGE_TypeP(Curve2d)> (nestedCurves.at(static_cast<unsigned int>(i)));
+                    if (nullptr != nestedCurve)
+                        Util::GetCurvePrimitive (primitive, nestedCurve);
+                    }
+                }
+            break;
+            }
+        case DWGGE_Type(::kExternalCurve2d):
+            {
+            DWGGE_TypeCP(ExternalCurve2d) extCurve = static_cast<DWGGE_TypeCP(ExternalCurve2d)>(geCurve);
+            if (nullptr != extCurve)
+                {
+                DWGGE_Type(NurbCurve2d) nurb;
+                if (extCurve->isDefined() && extCurve->isNurbCurve(nurb))
+                    {
+                    MSBsplineCurve  curve;
+                    if (DwgDbStatus::Success == Util::GetMSBsplineCurve(curve, nurb))
+                        primitive = ICurvePrimitive::CreateBsplineCurve (curve);
+                    }
+                }
+            break;
+            }
+        case DWGGE_Type(::kOffsetCurve2d):
+            {
+            DWGGE_TypeCP(OffsetCurve2d) offset = static_cast<DWGGE_TypeCP(OffsetCurve2d)>(geCurve);
+            if (nullptr != offset)
+                {
+                // WIP - offset curve
+                BeAssert (false && "Offset curve is currently unsupported");
+                }
+            break;
+            }
+        case DWGGE_Type(::kSplineEnt2d):
+            {
+            DWGGE_TypeCP(SplineEnt2d) spline = static_cast<DWGGE_TypeCP(SplineEnt2d)>(geCurve);
+            if (nullptr != spline)
+                {
+                MSBsplineCurve  curve;
+                if (DwgDbStatus::Success == Util::GetMSBsplineCurve(curve, *spline))
+                    primitive = ICurvePrimitive::CreateBsplineCurve (curve);
+                }
+            break;
+            }
+        case DWGGE_Type(::kNurbCurve2d):
+            {
+            DWGGE_TypeCP(NurbCurve2d) nurb = static_cast<DWGGE_TypeCP(NurbCurve2d)>(geCurve);
+            if (nullptr != nurb)
+                {
+                MSBsplineCurve  curve;
+                if (DwgDbStatus::Success == Util::GetMSBsplineCurve(curve, *nurb))
+                    primitive = ICurvePrimitive::CreateBsplineCurve (curve);
+                }
+            break;
+            }
+        default:
+            {
+            BeAssert (false && L"Unexpected DWG Curve2d type!");
+            return  DwgDbStatus::InvalidData;
+            }
         }
 
     return  primitive.IsValid() ? DwgDbStatus::Success : DwgDbStatus::InvalidData;

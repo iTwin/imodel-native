@@ -39,8 +39,8 @@
 #include    <Teigha/Kernel/Include/Ge/GeOffsetCurve3d.h>
 #include    <Teigha/Kernel/Include/Ge/GeExternalCurve2d.h>
 #include    <Teigha/Kernel/Include/Ge/GeExternalCurve3d.h>
-#include    <Teigha/Kernel/Include/Ge/GeLine2d.h>
-#include    <Teigha/Kernel/Include/Ge/GeLine3d.h>
+#include    <Teigha/Kernel/Include/Ge/GeLineSeg2d.h>
+#include    <Teigha/Kernel/Include/Ge/GeLineSeg3d.h>
 #include    <Teigha/Kernel/Include/Ge/GeCone.h>
 #include    <Teigha/Kernel/Include/Ge/GeCylinder.h>
 #include    <Teigha/Kernel/Include/Ge/GeSphere.h>
