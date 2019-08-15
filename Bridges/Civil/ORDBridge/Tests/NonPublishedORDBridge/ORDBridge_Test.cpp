@@ -43,12 +43,14 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDIntersectionWithEditsTest)
     {
     ASSERT_TRUE(CopyTestFile("Intersection\\NewIntersection-Original.dgn", "NewIntersection.dgn"));
     ASSERT_TRUE(RunTestApp(WCharCP(L"NewIntersection.dgn"), WCharCP(L"ORDIntersectionTest.bim"), false));
-    //VerifyConvertedElementCount("ORDIntersectionTest.bim", 1, 1); //JGATODO Ask Diego
+    // JGATODO Ask Diego ... ORDIntersectionWithEditsTest failed with his new changes .. had set 0 Alignments, not sure if still valid
+    //VerifyConvertedElementCount("ORDIntersectionTest.bim", 1, 1);
     VerifyConvertedElementCount("ORDIntersectionTest.bim", 0, 1);
 
     ASSERT_TRUE(CopyTestFile("Intersection\\NewIntersection-Edits.dgn", "NewIntersection.dgn"));
     ASSERT_TRUE(RunTestApp(WCharCP(L"NewIntersection.dgn"), WCharCP(L"ORDIntersectionTest.bim"), true));
-    //VerifyConvertedElementCount("ORDIntersectionTest.bim", 11, 4);  //JGATODO Ask Diego
+    // JGATODO Ask Diego ... ORDIntersectionWithEditsTest failed with his new changes .. had set 2 Alignments, not sure if still valid
+    //VerifyConvertedElementCount("ORDIntersectionTest.bim", 11, 4);
     VerifyConvertedElementCount("ORDIntersectionTest.bim", 2, 4);
     }
 
@@ -145,8 +147,6 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDGeometryComparisonElementCountAndEnd
     VerifyConvertedGeometryElementCountAndEnds(bim, "CPNP", 9, hBeg, hEnd, 0, vBeg, vEnd);
 
     hBeg = DPoint3d::From(123000, 123000, 0); hEnd = DPoint3d::FromSumOf(hBeg, diff);
-    // JGATODO Z vs Y
-    //vBeg = zero; vEnd = DPoint3d::From(2100, 0, 50); 
     vBeg = zero; vEnd = DPoint3d::From(2100, 50, 0); 
     VerifyConvertedGeometryElementCountAndEnds(bim, "CPWP", 9, hBeg, hEnd, 11, vBeg, vEnd);
     }
@@ -224,7 +224,7 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDGeometryGapLengthsTest)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CiviliModelBridgesORDBridgeTests, ORDGeometrySpiralTypesAndLengthsTest)
     {
-    // JGATODO Need later or newer Geomlib NOT bim02
+    // JGATODO Spiral Types ... Need later or newer Geomlib NOT bim02
 
     //--gtest_filter=*SpiralTypes*
     WCharCP wDgnFileName = WCharCP(L"GeometrySpiral.dgn");
@@ -243,7 +243,7 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDGeometrySpiralTypesAndLengthsTest)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CiviliModelBridgesORDBridgeTests, ORDGeometryRailTurnoutTest)
     {
-    // JGATODO Turnouts in imodel
+    // JGATODO Add Turnouts and branches to imodel
 
     //--gtest_filter=*RailTurnout*
     WCharCP wDgnFileName = WCharCP(L"GeometryRailTurnout.dgn");

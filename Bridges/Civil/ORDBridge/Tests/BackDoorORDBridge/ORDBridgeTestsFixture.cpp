@@ -371,7 +371,9 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometryUniqueA
         count++;
         }
 
-    BeAssert(1 == count && alignmentName);
+    if (count != 1)
+        BeAssert(false && alignmentName);
+
     stmt.Finalize();
 
     return dgnDbPtr;
@@ -382,7 +384,7 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometryUniqueA
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometryTurnoutBranchCount(Utf8CP bimFileName, Utf8CP branchName, size_t branchCount)
     {
-    // JGATODO Add Turnouts and branches to imodel ... just using Alignments for now
+    // JGATODO Add Turnouts and branches to imodel
 
     BeFileName outputPath = m_host->GetOutputDirectory();
     outputPath.AppendA(bimFileName);
@@ -410,7 +412,9 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometryTurnout
         count++;
         }
 
-    BeAssert(branchCount == count);
+    if (branchCount != count)
+        BeAssert(false && branchName);
+
     stmt.Finalize();
 
     return dgnDbPtr;
@@ -435,9 +439,6 @@ static bool checkCurveVectorElementCountAndEnds
     if (beg.DistanceXY(cBeg) > tolerance)
         return false;
 
-    // JGATODO Z vs Y ...  Use 3d distance for vertical until get Diego fix
-    //if (isVertical ? end.Distance(cEnd) > tolerance : end.DistanceXY(cEnd) > tolerance)
-    //    return false; 
     if (end.DistanceXY(cEnd) > tolerance)
         return false;
 
@@ -683,10 +684,6 @@ static bool checkCurveVectorElementLengths
                 bcurve->GetPoles(poles);
 
                 BentleyB0200::DPoint3d pvc, pvi, pvt;
-                // JGATODO Z vs Y
-                //pvc = BentleyB0200::DPoint3d::From(poles[0].x, 0.0, poles[0].z);
-                //pvi = BentleyB0200::DPoint3d::From(poles[1].x, 0.0, poles[1].z);
-                //pvt = BentleyB0200::DPoint3d::From(poles[2].x, 0.0, poles[2].z);
                 pvc = BentleyB0200::DPoint3d::From(poles[0].x, poles[0].y, 0.0);
                 pvi = BentleyB0200::DPoint3d::From(poles[1].x, poles[1].y, 0.0);
                 pvt = BentleyB0200::DPoint3d::From(poles[2].x, poles[2].y, 0.0);
@@ -838,7 +835,7 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometryElement
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool checkCurveVectorSpiralTypesAndLengths(BentleyB0200::CurveVectorCR curves, bool isVertical, double tolerance)
     {
-    //JGATODO Spirals
+    // JGATODO Spiral Types ... Need later or newer Geomlib NOT bim02
 
     if (curves.empty())
         return false;
@@ -892,7 +889,7 @@ static bool checkCurveVectorSpiralTypesAndLengths(BentleyB0200::CurveVectorCR cu
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometrySpiralTypesAndLengths(Utf8CP bimFileName)
     {
-    // JGATODO Spirals Need later or newer Geomlib NOT bim02
+    // JGATODO Spiral Types ... Need later or newer Geomlib NOT bim02
 
     const double tolerance = 1.0E-8;
 
