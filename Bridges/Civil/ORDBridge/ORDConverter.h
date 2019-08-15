@@ -112,7 +112,7 @@ private:
     bset<Bentley::ElementRefP> m_alignmentV8RefSet;
     bset<Bentley::ElementRefP> m_corridorV8RefSet;
     Bentley::Cif::ConsensusConnectionPtr m_cifConsensusConnection;
-    Utf8String m_currentFeatureName, m_currentFeatureDefName;
+    Utf8String m_currentFeatureName, m_currentFeatureDefName, m_currentFeatureDescription;
 
     typedef bool (ConvertORDElementXDomain::*AspectAssignmentFunc)(Dgn::DgnElementR, DgnV8EhCR) const;
     bvector<AspectAssignmentFunc> m_aspectAssignFuncs;

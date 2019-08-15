@@ -1619,6 +1619,7 @@ void ConvertORDElementXDomain::_DetermineElementParams(DgnClassId& classId, DgnC
     StopWatchOnStack stopWatch(*s_determineElemParamsStopWatch);
     m_currentFeatureDefName.clear();
     m_currentFeatureName.clear();
+    m_currentFeatureDescription.clear();
 
     if (v8mm.GetDgnModel().Is2dModel())
         return;
@@ -1630,6 +1631,7 @@ void ConvertORDElementXDomain::_DetermineElementParams(DgnClassId& classId, DgnC
             {
             auto featureName = featurizedPtr->GetName();
             auto featureDefPtr = featurizedPtr->GetFeatureDefinition();
+            auto featureDescription = featurizedPtr->GetFeatureDescription();
 
             if (featureDefPtr.IsNull())
                 {
@@ -1639,11 +1641,13 @@ void ConvertORDElementXDomain::_DetermineElementParams(DgnClassId& classId, DgnC
 
                 featureName = representationOf->GetName();
                 featureDefPtr = representationOf->GetFeatureDefinition();
+                featureDescription = representationOf->GetFeatureDescription();
                 }
 
             if (featureDefPtr.IsValid())
                 {
                 m_currentFeatureName = Utf8String(featureName.c_str());
+                m_currentFeatureDescription = Utf8String(featureDescription.c_str());
                 auto featureDefName = featureDefPtr->GetName();
 
                 if (!WString::IsNullOrEmpty(featureDefName.c_str()))
@@ -1686,16 +1690,17 @@ void ConvertORDElementXDomain::_DetermineElementParams(DgnClassId& classId, DgnC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void assignORDFeatureAspect(Dgn::DgnElementR element, Utf8StringCR featureName, Utf8StringCR featureDefName)
+void assignORDFeatureAspect(Dgn::DgnElementR element, Utf8StringCR featureName, Utf8StringCR featureDefName, Utf8StringCR featureDescription)
     {
     if (auto featureAspectP = DgnV8ORDBim::FeatureAspect::GetP(element))
         {
         featureAspectP->SetName(featureName.c_str());
         featureAspectP->SetDefinitionName(featureDefName.c_str());
+        featureAspectP->SetDescription(featureDescription.c_str());
         }
     else
         {
-        auto featureAspectPtr = DgnV8ORDBim::FeatureAspect::Create(featureName.c_str(), featureDefName.c_str());
+        auto featureAspectPtr = DgnV8ORDBim::FeatureAspect::Create(featureName.c_str(), featureDefName.c_str(), featureDescription.c_str());
         DgnV8ORDBim::FeatureAspect::Set(element, *featureAspectPtr);
         }
     }
@@ -2109,7 +2114,7 @@ bool ConvertORDElementXDomain::AssignFeatureAspect(Dgn::DgnElementR element, Dgn
     if (!Utf8String::IsNullOrEmpty(m_currentFeatureDefName.c_str()) || 
         !Utf8String::IsNullOrEmpty(m_currentFeatureName.c_str()))
         {
-        assignORDFeatureAspect(element, m_currentFeatureName, m_currentFeatureDefName);
+        assignORDFeatureAspect(element, m_currentFeatureName, m_currentFeatureDefName, m_currentFeatureDescription);
         return true;
         }
 
