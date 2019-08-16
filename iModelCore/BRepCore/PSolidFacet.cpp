@@ -1280,14 +1280,11 @@ void            FacetEntity (IBRepEntityCR in, IFacetOptionsR facetOptions)
 
     double      solidTolerance = tolerancePoint.Magnitude ();
     double      angleTol = RestrictAngleTol (facetOptions.GetAngleTolerance (), s_defaultFacetAngleTol, s_minFacetAngleTol, s_maxFacetAngleTol);
-    DRange3d    range;
-    PK_BOX_t    box;
 
-    if (PK_ERROR_no_errors == PK_TOPOL_find_box (entityTag, &box))
+    DRange3d range = in.GetLocalEntityRange();
+    if (!range.IsNull())
         {
-        range.InitFrom (box.coord[0], box.coord[1], box.coord[2], box.coord[3], box.coord[4], box.coord[5]);
-
-        double  rangeSize = range.low.Distance (range.high);
+        double rangeSize = range.low.Distance (range.high);
 
         if (0.0 != solidTolerance && rangeSize / solidTolerance > s_maxToleranceRatio)
             solidTolerance = rangeSize / s_maxToleranceRatio;
@@ -1326,7 +1323,7 @@ void            FacetEntity (IBRepEntityCR in, IFacetOptionsR facetOptions)
     options.control.surface_plane_ang    = angleTol;
 
     int maxPerFace = facetOptions.GetMaxPerFace();
-    if (facetOptions.GetCurvedSurfaceMaxPerFace() != maxPerFace && PSolidUtil::HasCurvedFaceOrEdge(entityTag))
+    if (facetOptions.GetCurvedSurfaceMaxPerFace() != maxPerFace && in.HasCurvedFaceOrEdge())
         maxPerFace = facetOptions.GetCurvedSurfaceMaxPerFace();
 
     options.control.match                = PK_facet_match_topol_c;

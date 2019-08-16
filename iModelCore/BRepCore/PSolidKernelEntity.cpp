@@ -36,6 +36,24 @@ T_FaceAttachmentsVec& _GetFaceAttachmentsVecR() override {return m_faceAttachmen
 
 }; // FaceMaterialAttachments
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/09
++---------------+---------------+---------------+---------------+---------------+------*/
+static IBRepEntity::EntityType entityTypeFromBodyType(PK_BODY_type_t bodyType)
+    {
+    switch (bodyType)
+        {
+        case PK_BODY_type_solid_c:
+            return IBRepEntity::EntityType::Solid;
+        case PK_BODY_type_sheet_c:
+            return IBRepEntity::EntityType::Sheet;
+        case PK_BODY_type_wire_c:
+            return IBRepEntity::EntityType::Wire;
+        default:
+            return IBRepEntity::EntityType::Invalid;
+        }
+    }
+
 /*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  04/09
 +===============+===============+===============+===============+===============+======*/
@@ -49,6 +67,13 @@ bool                        m_owned;
 mutable PK_MEMORY_block_t   m_block;
 IFaceMaterialAttachmentsPtr m_faceAttachments;
 
+mutable DRange3d            m_localRange;
+mutable bool                m_isLocalRangeCached;
+mutable EntityType          m_entityType;
+mutable bool                m_isEntityTypeCached;
+mutable bool                m_hasCurvedFaceOrEdge;
+mutable bool                m_isHasCurvedFaceOrEdgeCached;
+
 protected:
 
 Transform _GetEntityTransform() const override {return m_transform;}
@@ -59,41 +84,59 @@ bool _SetEntityTransform(TransformCR transform) override {m_transform = transfor
 +---------------+---------------+---------------+---------------+---------------+------*/
 EntityType _GetEntityType() const override
     {
-    PK_BODY_type_t  bodyType = PK_BODY_type_unspecified_c;
-
-    PK_BODY_ask_type(m_entityTag, &bodyType);
-
-    switch (bodyType)
+    if (!m_isEntityTypeCached)
         {
-        case PK_BODY_type_solid_c:
-            return IBRepEntity::EntityType::Solid;
-
-        case PK_BODY_type_sheet_c:
-            return IBRepEntity::EntityType::Sheet;
-
-        case PK_BODY_type_wire_c:
-            return IBRepEntity::EntityType::Wire;
-
-        default:
-            return IBRepEntity::EntityType::Invalid;
+        PK_BODY_type_t bodyType = PK_BODY_type_unspecified_c;
+        PK_BODY_ask_type(m_entityTag, &bodyType);
+        m_entityType = entityTypeFromBodyType(bodyType);
+        m_isEntityTypeCached = true;
         }
+
+    return m_entityType;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Matt.Gooding    08/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool _HasCurvedFaceOrEdge() const override
+    {
+    if (!m_isHasCurvedFaceOrEdgeCached)
+        {
+        m_hasCurvedFaceOrEdge = PSolidUtil::HasCurvedFaceOrEdge(m_entityTag);
+        m_isHasCurvedFaceOrEdgeCached = true;
+        }
+
+    return m_hasCurvedFaceOrEdge;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Matt.Gooding    08/19
++---------------+---------------+---------------+---------------+---------------+------*/
+DRange3d _GetLocalEntityRange() const override
+    {
+    if (!m_isLocalRangeCached)
+        {
+        PK_BOX_t box;
+        if (PK_ERROR_no_errors != PK_TOPOL_find_box(m_entityTag, &box))
+            m_localRange = DRange3d::NullRange();
+        else
+            m_localRange = DRange3d::From(box.coord[0], box.coord[1], box.coord[2], box.coord[3], box.coord[4], box.coord[5]);
+
+        m_isLocalRangeCached = true;
+        }
+
+    return m_localRange;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-DRange3d _GetEntityRange() const  override
+DRange3d _GetEntityRange() const override
     {
-    PK_BOX_t    box;
-
-    if (PK_ERROR_no_errors != PK_TOPOL_find_box(m_entityTag, &box))
-        return DRange3d::NullRange();
-
-    DRange3d    range = DRange3d::From(box.coord[0], box.coord[1], box.coord[2], box.coord[3], box.coord[4], box.coord[5]);
-
-    m_transform.Multiply(range, range);
-
-    return range;
+    DRange3d worldRange = _GetLocalEntityRange();
+    if (!worldRange.IsNull())
+        m_transform.Multiply(worldRange, worldRange);
+    return worldRange;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -153,11 +196,15 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-PSolidKernelEntity(PK_ENTITY_t entityTag, TransformCR transform, bool owned)
+PSolidKernelEntity(PK_ENTITY_t entityTag, PK_BODY_type_t bodyType, TransformCR transform, bool owned)
     {
     m_entityTag = entityTag;
     m_transform = transform;
     m_owned     = owned;
+
+    InvalidateCachedProperties();
+    m_entityType = entityTypeFromBodyType(bodyType);
+    m_isEntityTypeCached = true;
 
     memset (&m_block, 0, sizeof(m_block));
     }
@@ -220,6 +267,8 @@ PK_ENTITY_t ExtractEntityTag()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SetEntityTag(PK_ENTITY_t entityTag)
     {
+    InvalidateCachedProperties();
+
     PK_MEMORY_block_f(&m_block);
 
     if (m_owned)
@@ -235,6 +284,16 @@ void SetEntityTag(PK_ENTITY_t entityTag)
 void SetFaceMaterialAttachments(IFaceMaterialAttachmentsP attachments)
     {
     m_faceAttachments = attachments;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    MattGooding     08/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void InvalidateCachedProperties()
+    {
+    m_isEntityTypeCached = false;
+    m_isLocalRangeCached = false;
+    m_isHasCurvedFaceOrEdgeCached = false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -260,7 +319,7 @@ static PSolidKernelEntity* CreateNewEntity(PK_ENTITY_t entityTag, TransformCR tr
             return nullptr;
         }
 
-    return new PSolidKernelEntity(entityTag, transform, owned);
+    return new PSolidKernelEntity(entityTag, bodyType, transform, owned);
     }
 
 }; // PSolidKernelEntity
@@ -331,6 +390,7 @@ PK_ENTITY_t PSolidUtil::GetEntityTagForModify(IBRepEntityR entity)
     if (!psEntity->IsOwnedEntity())
         return PK_ENTITY_null;
 
+    psEntity->InvalidateCachedProperties();
     return psEntity->GetEntityTag();
     }
 

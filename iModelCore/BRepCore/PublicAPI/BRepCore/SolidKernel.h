@@ -123,6 +123,10 @@ virtual EntityType _GetEntityType() const = 0;
 //! @private
 virtual DRange3d _GetEntityRange() const = 0;
 //! @private
+virtual DRange3d _GetLocalEntityRange() const = 0;
+//! @private
+virtual bool _HasCurvedFaceOrEdge() const = 0;
+//! @private
 virtual Transform _GetEntityTransform() const = 0;
 //! @private
 virtual bool _SetEntityTransform(TransformCR) = 0;
@@ -144,6 +148,11 @@ EntityType GetEntityType() const {return _GetEntityType();}
 //! Get the axis aligned bounding box for this entity.
 //! @return The axis aligned bounding box for the entity.
 DRange3d GetEntityRange() const {return _GetEntityRange();}
+
+//! Get the axis aligned bounding box for this entity without the entity's world transform applied.
+DRange3d GetLocalEntityRange() const {return _GetLocalEntityRange();}
+
+bool HasCurvedFaceOrEdge() const {return _HasCurvedFaceOrEdge();}
 
 //! Get the body to world transform for this entity.
 //! The body to world translation allows for a body that will typically have a basis

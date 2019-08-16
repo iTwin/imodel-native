@@ -9,6 +9,22 @@
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_DGN
 
+/*=================================================================================**//**
+* @bsiclass                                                     Matt.Gooding    08/19
++===============+===============+===============+===============+===============+======*/
+struct ChainHolder
+{
+    bool m_wasChainStarted;
+    ChainHolder()
+        {
+        // One chain allowed per thread - protect against mismatched calls to start/stop.
+        PK_ERROR_code_t status = PK_THREAD_chain_start(PK_THREAD_chain_concurrent_c, nullptr);
+        m_wasChainStarted = status == PK_ERROR_no_errors;
+        BeAssert (m_wasChainStarted);
+        }
+    ~ChainHolder() { if (m_wasChainStarted) { PK_THREAD_chain_stop(nullptr); } }
+};
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -19,6 +35,7 @@ bool PSolidUtil::HasCurvedFaceOrEdge (PK_BODY_t entity)
 
     int         numFaces = 0;
     PK_FACE_t*  faces = NULL;
+    ChainHolder chainHolder;
 
     PK_BODY_ask_faces (entity, &numFaces, &faces);
 

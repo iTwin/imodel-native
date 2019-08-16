@@ -304,6 +304,11 @@ bool PSolidAttrib::PopulateFaceMaterialIndexMap(T_FaceToAttachmentIndexMap& face
     bool invalidIndexFound = false;
     bvector<PK_FACE_t> faces;
 
+    // One chain allowed per thread - protect against mismatched calls to start/stop.
+    PK_ERROR_code_t chainStatus = PK_THREAD_chain_start(PK_THREAD_chain_concurrent_c, nullptr);
+    bool wasChainStarted = chainStatus == PK_ERROR_no_errors;
+    BeAssert (wasChainStarted);
+
     PSolidTopo::GetBodyFaces(faces, entityTag);
     faceToIndexMap.clear();
 
@@ -323,6 +328,9 @@ bool PSolidAttrib::PopulateFaceMaterialIndexMap(T_FaceToAttachmentIndexMap& face
 
         faceToIndexMap[faces[i]] = (size_t) attachmentIndex;
         }
+
+    if (wasChainStarted)
+        PK_THREAD_chain_stop(nullptr);
 
     return !invalidIndexFound;
     }

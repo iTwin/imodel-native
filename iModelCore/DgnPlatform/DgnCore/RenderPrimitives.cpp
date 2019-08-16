@@ -2301,7 +2301,7 @@ StrokesList PrimitiveGeometry::_GetStrokes (IFacetOptionsR facetOptions, ViewCon
 * @bsimethod                                                    Ray.Bentley     12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 SolidKernelGeometry::SolidKernelGeometry(IBRepEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsCR params, DgnDbR db)
-        : SingularGeometry(tf, range, elemId, params, BRepUtil::HasCurvedFaceOrEdge(solid), db), m_entity(&solid)
+        : SingularGeometry(tf, range, elemId, params, solid.HasCurvedFaceOrEdge(), db), m_entity(&solid)
     {
 #if defined (BENTLEYCONFIG_PARASOLID)
     if (DgnDb::ThreadId::Client != DgnDb::GetThreadId())
