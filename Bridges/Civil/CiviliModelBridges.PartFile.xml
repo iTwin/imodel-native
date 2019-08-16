@@ -70,26 +70,26 @@
     </Part>
 
     <Part Name="DgnV8Converter" OnlyPlatforms="x64" ExcludeLibType="Static">
-      <NuGetPackage targetFramework="native">DgnV8ConverterNuget</NuGetPackage>
+      <NuGetPackage targetFramework="native">iModelFwkForPP</NuGetPackage>
       <Bindings>
-        <Libs>nuget/native/DgnV8ConverterNuget/native/lib/DgnV8Converter.lib</Libs>
-        <Files ProductDirectoryName="ApplicationRoot">nuget/native/DgnV8ConverterNuget/native/DgnV8ConverterM02.dll</Files>
-        <Files ProductDirectoryName="ApplicationRoot">nuget/native/DgnV8ConverterNuget/native/ImagePPM02.dll</Files>
-        <Files ProductDirectoryName="ApplicationRoot">nuget/native/DgnV8ConverterNuget/native/RasterM02.dll</Files>
-        <Files ProductDirectoryName="ApplicationRoot">nuget/native/DgnV8ConverterNuget/native/PointCloudM02.dll</Files>
-        <Files ProductDirectoryName="ApplicationRoot">nuget/native/DgnV8ConverterNuget/native/ThreeMXM02.dll</Files>
-        <Files ProductDirectoryName="ApplicationRoot">nuget/native/DgnV8ConverterNuget/native/ScalableMeshSchemaM02.dll</Files>
-        <Files ProductDirectoryName="ApplicationRoot">nuget/native/DgnV8ConverterNuget/native/ScalableMeshM02.dll</Files>
-        <Files ProductDirectoryName="ApplicationRoot">nuget/native/DgnV8ConverterNuget/native/RealityPlatformM02.dll</Files>
-        <Files ProductDirectoryName="ApplicationRoot">nuget/native/DgnV8ConverterNuget/native/RealityPlatformToolsM02.dll</Files>
-        <Files ProductDirectoryName="ApplicationRoot">nuget/native/DgnV8ConverterNuget/native/NCSEcw.dll</Files>
-        <Files ProductDirectoryName="ApplicationRoot">nuget/native/DgnV8ConverterNuget/native/BePointCloudM02.dll</Files>
-        <Files ProductDirectoryName="ApplicationRoot">nuget/native/DgnV8ConverterNuget/native/PointoolsVortexAPIM02.dll</Files>
-        <Files ProductDirectoryName="ApplicationRoot">nuget/native/DgnV8ConverterNuget/native/TerrainModelCoreM02.dll</Files>
-        <Files ProductDirectoryName="ApplicationRoot">nuget/native/DgnV8ConverterNuget/native/CloudDataSourceM02.dll</Files>
-        <Files ProductDirectoryName="ApplicationRoot">nuget/native/DgnV8ConverterNuget/native/AutomaticGroundDetectionM02.dll</Files>
-        <Files ProductDirectoryName="ApplicationRoot">nuget/native/DgnV8ConverterNuget/native/ThreeMxReaderLegacyM02.dll</Files>
-        <Files ProductDirectoryName="ApplicationRoot">nuget/native/DgnV8ConverterNuget/native/FreeImage.dll</Files>
+        <Libs>nuget/native/iModelFwkForPP/native/lib/DgnV8Converter.lib</Libs>
+        <Files ProductDirectoryName="ApplicationRoot">nuget/native/iModelFwkForPP/native/bin/DgnV8ConverterM02.dll</Files>
+        <Files ProductDirectoryName="ApplicationRoot">nuget/native/iModelFwkForPP/native/bin/ImagePPM02.dll</Files>
+        <Files ProductDirectoryName="ApplicationRoot">nuget/native/iModelFwkForPP/native/bin/RasterM02.dll</Files>
+        <Files ProductDirectoryName="ApplicationRoot">nuget/native/iModelFwkForPP/native/bin/PointCloudM02.dll</Files>
+        <Files ProductDirectoryName="ApplicationRoot">nuget/native/iModelFwkForPP/native/bin/ThreeMXM02.dll</Files>
+        <Files ProductDirectoryName="ApplicationRoot">nuget/native/iModelFwkForPP/native/bin/ScalableMeshSchemaM02.dll</Files>
+        <Files ProductDirectoryName="ApplicationRoot">nuget/native/iModelFwkForPP/native/bin/ScalableMeshM02.dll</Files>
+        <Files ProductDirectoryName="ApplicationRoot">nuget/native/iModelFwkForPP/native/bin/RealityPlatformM02.dll</Files>
+        <Files ProductDirectoryName="ApplicationRoot">nuget/native/iModelFwkForPP/native/bin/RealityPlatformToolsM02.dll</Files>
+        <Files ProductDirectoryName="ApplicationRoot">nuget/native/iModelFwkForPP/native/bin/NCSEcw.dll</Files>
+        <Files ProductDirectoryName="ApplicationRoot">nuget/native/iModelFwkForPP/native/bin/BePointCloudM02.dll</Files>
+        <Files ProductDirectoryName="ApplicationRoot">nuget/native/iModelFwkForPP/native/bin/PointoolsVortexAPIM02.dll</Files>
+        <Files ProductDirectoryName="ApplicationRoot">nuget/native/iModelFwkForPP/native/bin/TerrainModelCoreM02.dll</Files>
+        <Files ProductDirectoryName="ApplicationRoot">nuget/native/iModelFwkForPP/native/bin/CloudDataSourceM02.dll</Files>
+        <Files ProductDirectoryName="ApplicationRoot">nuget/native/iModelFwkForPP/native/bin/AutomaticGroundDetectionM02.dll</Files>
+        <Files ProductDirectoryName="ApplicationRoot">nuget/native/iModelFwkForPP/native/bin/ThreeMxReaderLegacyM02.dll</Files>
+        <Files ProductDirectoryName="ApplicationRoot">nuget/native/iModelFwkForPP/native/bin/FreeImage.dll</Files>
       </Bindings>
     </Part>
 
