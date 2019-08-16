@@ -743,9 +743,9 @@ HorizontalAlignmentCPtr HorizontalAlignment::Update(Dgn::DgnDbStatus* stat)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mindaugas.Butkus                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HorizontalAlignment::_CopyFrom(Dgn::DgnElementCR source)
+void HorizontalAlignment::_CopyFrom(Dgn::DgnElementCR source, CopyFromOptions const& options)
     {
-    T_Super::_CopyFrom(source);
+    T_Super::_CopyFrom(source, options);
 
     m_geometry = nullptr;
     }
