@@ -5491,7 +5491,13 @@ public:
         if (!sourceElement.IsValid())
             THROW_TYPE_EXCEPTION_AND_RETURN("Invalid source ElementId", Env().Undefined());
 
-        DgnModelId targetModelId = m_importContext->FindModelId(sourceElement->GetModelId());
+        // NOTE: Elements and Models share the same mapping table. However, the root Subject can be remapped but not the RepositoryModel
+        DgnModelId targetModelId;
+        if (sourceElement->GetModelId() == DgnModel::RepositoryModelId())
+            targetModelId = DgnModel::RepositoryModelId();
+        else
+            targetModelId = m_importContext->FindModelId(sourceElement->GetModelId());
+
         DgnModelPtr targetModel = m_importContext->GetDestinationDb().Models().GetModel(targetModelId);
         if (!targetModel.IsValid())
             THROW_TYPE_EXCEPTION_AND_RETURN("Invalid target model", Env().Undefined());
