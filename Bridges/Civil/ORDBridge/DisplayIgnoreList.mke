@@ -1,0 +1,31 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+%include mdl.mki
+
+BentleyTestDir=$(SrcRoot)util/gtest/BentleyTest/
+LogDir=$(OutputRootDir)build/BeGTest/run/logs/
+
+always:
+    $(_MakeFilePath)DisplayIgnoreList.py "$(OutputRootDir)Product/BeGTest/bin/Assets/Ignore" > $(LogDir)ignored.txt
+
+%if $[@readfile $(LogDir)ignored.txt] != " "
+    %warn ************************
+    %warn Ignoring Some Tests
+    %warn ************************
+    always:
+        @$(_MakeFilePath)DisplayIgnoreList.py "$(OutputRootDir)Product/BeGTest/bin/Assets/Ignore" -box
+%endif
+
+%if $[@readfile $(LogDir)ignored.txt] != " "
+    %warn ************************
+    %warn Ignoring Some Tests
+    %warn ************************
+%endif
+
+# Deliver the report to the output root. This is not really part of the begtest product. It's part of the build status report.
+$(OutputRootDir)DgnClientSdk-Testing-status.txt : $(LogDir)ignored.txt
+    $(LinkFirstDepToFirstTarget)
+

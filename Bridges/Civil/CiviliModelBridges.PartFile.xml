@@ -90,6 +90,10 @@
         <Files ProductDirectoryName="ApplicationRoot">nuget/native/iModelFwkForPP/native/bin/AutomaticGroundDetectionM02.dll</Files>
         <Files ProductDirectoryName="ApplicationRoot">nuget/native/iModelFwkForPP/native/bin/ThreeMxReaderLegacyM02.dll</Files>
         <Files ProductDirectoryName="ApplicationRoot">nuget/native/iModelFwkForPP/native/bin/FreeImage.dll</Files>
+        <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">nuget/native/iModelFwkForPP/native/assets/ECSchemas/Domain/Raster.ecschema.xml</Files>
+        <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">nuget/native/iModelFwkForPP/native/assets/ECSchemas/Domain/PointCloud.ecschema.xml</Files>
+        <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">nuget/native/iModelFwkForPP/native/assets/ECSchemas/Domain/ThreeMx.ecschema.xml</Files>
+        <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">nuget/native/iModelFwkForPP/native/assets/ECSchemas/Domain/ScalableMesh.ecschema.xml</Files>
       </Bindings>
     </Part>
 
@@ -128,7 +132,7 @@
         <SubPart PartName="StaticAppData" PartFile="MstnAppData" Repository="miscdev-mstnappdata"/>
         <!-- <SubPart PartName="RoadRailAlignment-Tested" Repository="DgnDomains-RoadRailAlignment" PartFile="RoadRailAlignment" /> -->
         <!-- <SubPart PartName="RoadRailPhysical-Tested" Repository="DgnDomains-RoadRailPhysical" PartFile="RoadRailPhysical" /> -->
-        <!-- <SubPart PartName="CiviliModelBridgesTested" /> -->
+        <SubPart PartName="CiviliModelBridgesTested" />
         
         <!-- <SubPart PartName="ORDBridgeGUI" /> -->
                 
@@ -225,20 +229,22 @@
     <Product Name="CiviliModelBridges-Tests">
         <!-- *** TRICKY: Must depend on a part in begtest repository, in order to use a productdirectorylist from there. -->
 
-        <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
         <SubPart PartName="iModelBridgeFwk" PartFile="NativeNugets/NativeNugets" Repository="BsiCommon"/>
+        <SubPart PartName="iModelCoreTesting" PartFile="NativeNugets/NativeNugets" Repository="BsiCommon"/>
+        <SubPart PartName="DgnV8Converter"/>
         <SubPart PartName="Tests"/>
         <!-- Lay out the Tests test product according to the standard BeGTest layout: -->
-        <Directories Repository="BeGTest" PartFile="BeGTest" DirectoryListName="CollectionProduct"/>
+        <Directories DirectoryListName="CollectionProduct"/>
     </Product>
 
     <!-- Build a gtest exe to run the tests -->
     <Product Name="CiviliModelBridges-Gtest">
         <SubPart PartName="Gtest" />
         <SubPart PartName="Cif_InternalSDK" />
-	<SubPart PartName="VersionedV8_InternalSDK" />
-        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest" />
-        <!-- <Directories DirectoryListName="GtestProduct" /> -->
+	      <SubPart PartName="VersionedV8_InternalSDK" />
+        <SubPart PartName="DgnV8Converter" />
+        <SubPart PartName="iModelBridgeFwk" PartFile="NativeNugets/NativeNugets" Repository="BsiCommon"/>
+        <Directories DirectoryListName="GtestProduct" />
         <Directories DirectoryListName="CiviliModelBridgeTestDirectoryList" />
     </Product>
 
@@ -269,10 +275,14 @@
   </ProductDirectoryList>
 
   <ProductDirectoryList ListName="GtestProduct">
+    <ProductDirectory Name="Gtest-NativeAssemblies" Path=""/>
+    <ProductDirectory Name="Gtest-NativeAssemblies" Path="" LibType="Static"/>
     <ProductDirectory Name="Assemblies" Path=""/>
     <ProductDirectory Name="Assemblies" Path="" LibType="Static"/>
-    <ProductDirectory Name="Assets" Path="Assets"/>
-    <ProductDirectory Name="Assets" Path="Assets" LibType="static"/>
+    <ProductDirectory Name="Assets" Path="Assets-g"/>
+    <ProductDirectory Name="Assets" Path="Assets-g" LibType="static"/>
+    <ProductDirectory Name="Gtest-Assets" Path="Assets"/>
+    <ProductDirectory Name="Gtest-Assets" Path="Assets" LibType="Static"/>
     <ProductDirectory Name="VendorNotices" Deliver="false" />
     <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
   </ProductDirectoryList>
@@ -285,8 +295,8 @@
 
     <Part Name="ORDBridgeUnitTests" BentleyBuildMakeFile="ORDBridge/Tests/UnitTestsPostBuild.mke" >
         <SubProduct ProductName="CiviliModelBridges-Gtest" />
-        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest" />
         <SubPart PartName="iModelBridgeFwk" PartFile="NativeNugets/NativeNugets" Repository="BsiCommon"/>
+      <SubPart PartName="iModelCoreTesting" PartFile="NativeNugets/NativeNugets" Repository="BsiCommon"/>
     </Part>
 
     <!-- Must Call UnitTestsPostBuild.mke last in build process in order to debug to remove ScalableMesh dlls-->
@@ -294,20 +304,20 @@
         <SubPart PartName="ORDBridgeUnitTests" />
     </Part>
 
-    <Part Name="Gtest" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="
+    <Part Name="Gtest" BentleyBuildMakeFile="ORDBridge/gtest/buildGTest.mke" BentleyBuildMakeOptions="
         -dTEST_NAME=CiviliModelBridgesTests
         -dTEST_COLLECTION_PRODUCT=CiviliModelBridges-Tests
         -dTEST_FRAMEWORK_SQLANG=DgnClientFx_en.sqlang.db3" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="CiviliModelBridges-Tests" />
-        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest" />
         <SubPart PartName="iModelBridgeFwk" PartFile="NativeNugets/NativeNugets" Repository="BsiCommon"/>
+        <SubPart PartName="iModelCoreTesting" PartFile="NativeNugets/NativeNugets" Repository="BsiCommon"/>
         <Bindings>
             <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/CiviliModelBridgesTests/Assemblies/*</Files>
             <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/CiviliModelBridgesTests/Assets" />
         </Bindings>
     </Part>
 
-    <Part Name="RunGtest" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=CiviliModelBridges-Gtest -dGTEST_NAME=CiviliModelBridgesTests -dGTEST_SHOW_PROGRESS -dGTEST_EXTRA_ARGS=--timeout=300" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtest" BentleyBuildMakeFile="ORDBridge/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=CiviliModelBridges-Gtest -dGTEST_NAME=CiviliModelBridgesTests -dGTEST_SHOW_PROGRESS -dGTEST_EXTRA_ARGS=--timeout=300" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubPart PartName="ORDBridgeUnitTests" />
     </Part>
 
@@ -319,9 +329,11 @@
         <SubProduct ProductName="CiviliModelBridges-Gtest" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest" />
         <SubPart PartName="iModelBridgeFwk" PartFile="NativeNugets/NativeNugets" Repository="BsiCommon"/>
+        <SubPart PartName="iModelCoreTesting" PartFile="NativeNugets/NativeNugets" Repository="BsiCommon"/>
     </Part>
 
     <Part Name="CiviliModelBridgesTested">
+        <SubPart PartName="iModelCoreTesting" PartFile="NativeNugets/NativeNugets" Repository="BsiCommon"/>
         <SubPart PartName="RunGtest" />
         <!-- <SubPart PartName="GTest-Run-CheckCoverage" /> -->
     </Part>

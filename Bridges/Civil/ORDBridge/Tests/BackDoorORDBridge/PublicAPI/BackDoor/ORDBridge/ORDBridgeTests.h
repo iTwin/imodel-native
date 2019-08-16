@@ -6,17 +6,16 @@
 #include <RoadRailAlignment/RoadRailAlignmentApi.h>
 #include <RoadRailPhysical/RoadRailPhysicalApi.h>
 #include <ORDBridge/PublishORDToBimDLL.h>
-#include <DgnView/DgnViewLib.h>
 
 struct ORDBridgeTestsHostImpl;
 
 //=======================================================================================
 //! A DgnPlatformLib host that can be used with "Published" tests
 //=======================================================================================
-struct ORDBridgeTestsHost : BentleyB0200::Dgn::DgnViewLib::Host
+struct ORDBridgeTestsHost : BentleyM0200::Dgn::DgnPlatformLib::Host
     {
     friend struct CiviliModelBridgesORDBridgeTestsFixture;
-    DEFINE_T_SUPER(BentleyB0200::Dgn::DgnViewLib::Host)
+    DEFINE_T_SUPER(BentleyM0200::Dgn::DgnPlatformLib::Host)
 
     private:
         ORDBridgeTestsHostImpl* m_pimpl;
@@ -36,7 +35,6 @@ struct ORDBridgeTestsHost : BentleyB0200::Dgn::DgnViewLib::Host
         virtual Dgn::DgnPlatformLib::Host::IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override;
         virtual void _SupplyProductName(Utf8StringR) override;
         virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override;
-        virtual Dgn::ViewManager& _SupplyViewManager() override;
     };
 
 //=======================================================================================
@@ -74,11 +72,11 @@ struct CiviliModelBridgesORDBridgeTestsFixture : ::testing::Test
             Utf8CP bimFileName,
             Utf8CP alignmentName,
             int hElementCount,
-            BentleyB0200::DPoint3dCR hBeg,
-            BentleyB0200::DPoint3dCR hEnd,
+            BentleyM0200::DPoint3dCR hBeg,
+            BentleyM0200::DPoint3dCR hEnd,
             int vElementCount,
-            BentleyB0200::DPoint3dCR vBeg,
-            BentleyB0200::DPoint3dCR vEnd
+            BentleyM0200::DPoint3dCR vBeg,
+            BentleyM0200::DPoint3dCR vEnd
         );
 
         static Dgn::DgnDbPtr VerifyConvertedGeometryElementLengths

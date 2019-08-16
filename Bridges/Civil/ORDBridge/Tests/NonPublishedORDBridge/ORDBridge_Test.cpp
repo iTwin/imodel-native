@@ -93,7 +93,7 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDGeometryComparisonElementCountAndEnd
     VerifyConvertedElementCount(bim, 19, 0);
 
     double x, y;
-    BentleyB0200::DPoint3d zero = DPoint3d::FromZero();
+    BentleyM0200::DPoint3d zero = DPoint3d::FromZero();
 
     /// Non-Ruled Alignments
     x = 101628.44940268152; y = 101184.39207795920;
@@ -126,17 +126,17 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDGeometryComparisonElementCountAndEnd
     VerifyConvertedGeometryElementCountAndEnds(bim, "RR3L", 4, DPoint3d::From(113000, 113000, 0), DPoint3d::From(y, x, 0), 0, zero, zero);
 
     /// Filleted Elements - Trimed Intervals
-    BentleyB0200::DPoint3d bl1 = DPoint3d::From(121000, 121000, 0);
-    BentleyB0200::DPoint3d tr1 = DPoint3d::From(121070.71067811869, 121070.71067811869, 0);
-    BentleyB0200::DPoint3d tr2 = DPoint3d::From(121530.74327629156, 121205.68791947514, 0);
-    BentleyB0200::DPoint3d bl2 = DPoint3d::From(121628.44940268152, 121184.39207795922, 0);
+    BentleyM0200::DPoint3d bl1 = DPoint3d::From(121000, 121000, 0);
+    BentleyM0200::DPoint3d tr1 = DPoint3d::From(121070.71067811869, 121070.71067811869, 0);
+    BentleyM0200::DPoint3d tr2 = DPoint3d::From(121530.74327629156, 121205.68791947514, 0);
+    BentleyM0200::DPoint3d bl2 = DPoint3d::From(121628.44940268152, 121184.39207795922, 0);
     VerifyConvertedGeometryElementCountAndEnds(bim, "TRM1", 1, bl1, tr1, 0, zero, zero);
     VerifyConvertedGeometryElementCountAndEnds(bim, "CPFT", 1, tr1, tr2, 0, zero, zero);
     VerifyConvertedGeometryElementCountAndEnds(bim, "TRM2", 1, bl2, tr2, 0, zero, zero);
 
     /// Alignment With and Without Profile
-    BentleyB0200::DPoint3d hBeg, hEnd, vBeg, vEnd;
-    BentleyB0200::DPoint3d diff = DPoint3d::From(1819.8237659554579, 220.44589914100652, 0);
+    BentleyM0200::DPoint3d hBeg, hEnd, vBeg, vEnd;
+    BentleyM0200::DPoint3d diff = DPoint3d::From(1819.8237659554579, 220.44589914100652, 0);
 
     hBeg = DPoint3d::From(122000, 122000, 0); hEnd = DPoint3d::FromSumOf(hBeg, diff);
     vBeg = zero; vEnd = zero;
@@ -209,9 +209,9 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDGeometryGapLengthsTest)
 
     VerifyConvertedGeometryElementLengths(bim, "LLGAP", true, 1000, 0, 0, 0, 0, 0, 0);
 
-    BentleyB0200::DPoint3d zero = DPoint3d::FromZero();
-    BentleyB0200::DPoint3d beg = DPoint3d::From(1000, 1000, 0);
-    BentleyB0200::DPoint3d end = DPoint3d::From(3000, 3000, 0);
+    BentleyM0200::DPoint3d zero = DPoint3d::FromZero();
+    BentleyM0200::DPoint3d beg = DPoint3d::From(1000, 1000, 0);
+    BentleyM0200::DPoint3d end = DPoint3d::From(3000, 3000, 0);
     VerifyConvertedGeometryElementCountAndEnds(bim, "LLGAP", 2, beg, end, 0, zero, zero);
     }
 
