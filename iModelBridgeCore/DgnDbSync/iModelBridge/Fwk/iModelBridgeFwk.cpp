@@ -2065,6 +2065,15 @@ int iModelBridgeFwk::UpdateExistingBim()
         if (BSISUCCESS != TryOpenBimWithBimProfileUpgrade())
             return BentleyStatus::ERROR;
         LOG.tracev(L"TryOpenBimWithBimProfileUpgrade  : Done");
+        DbResult dbres = m_briefcaseDgnDb->SaveChanges();
+        if (BeSQLite::BE_SQLITE_OK != dbres)
+            {
+            GetLogger().errorv("Db::SaveChanges failed with status %d", dbres);
+            return RETURN_STATUS_LOCAL_ERROR;
+            }
+
+        Briefcase_ReleaseAllPublicLocks();
+        m_briefcaseDgnDb = nullptr;             // This is safe, because we released all locks.
         }
 
     LOG.tracev(L"TryOpenBimWithBisSchemaUpgrade");
