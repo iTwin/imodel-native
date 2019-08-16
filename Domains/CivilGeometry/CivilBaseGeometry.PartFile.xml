@@ -26,9 +26,7 @@
   </Part>
 
   <Part Name="CivilBaseGeometryDll" BentleyBuildMakeFile="CivilBaseGeometry/CivilBaseGeometry.mke" Scope="Private">
-    <SubPart PartName="BentleyDll" PartFile="Bentley" Repository="Bentley" />
-    <SubPart PartName="GeomDlls" PartFile="geomlibs" Repository="GeomLibs" />
-    <SubPart PartName="GeomlibsSerialization" PartFile="geomlibs" Repository="GeomLibs"/>
+    <SubPart PartName="iModelBridgeFwk" PartFile="NativeNugets/NativeNugets" Repository="BsiCommon"/>
     <SubPart PartName="PublicAPI"/>
     <Bindings>
       <Libs>Delivery/$(libprefix)CivilBaseGeometry$(libext)</Libs>
@@ -66,17 +64,88 @@
   </Part>
 
   <Product Name="CivilBaseGeometry-Tests" Scope="Private">
-    <SubPart PartName="Base" Repository="BeGTest" PartFile="BeGTest"/>
+    <!-- <SubPart PartName="Base" Repository="BeGTest" PartFile="BeGTest"/> -->
     <SubPart PartName="Tests"/>
     <!-- Lay out the Tests test product according to the standard BeGTest layout: -->
-    <Directories DirectoryListName="CollectionProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    <!-- <Directories DirectoryListName="CollectionProduct" Repository="BeGTest" PartFile="BeGTest"/> -->
+    <Directories DirectoryListName="CollectionProduct"/>
   </Product>
+
+  <ProductDirectoryList ListName="CollectionProduct">
+    <ProductDirectory Name="Assemblies"            Path="Assemblies"/>
+    <ProductDirectory Name="Assemblies"            Deliver="false" LibType="static"/>
+    <ProductDirectory Name="DataCaptureAssemblies"              Path="Assemblies"/>
+    <ProductDirectory Name="DataCaptureAssemblies"              Deliver="false" LibType="static"/>
+    <ProductDirectory Name="Libs"                               Path="Libs"/>
+    <ProductDirectory Name="Libs"                               Path="Libs" LibType="static"/>
+    <ProductDirectory Name="BeStaticLibDir"                     Path="Libs"/>
+    <ProductDirectory Name="BeStaticLibDir"                     Path="Libs" LibType="static"/>
+    <ProductDirectory Name="BeJsonCppStaticLibDir"              Path="Libs"/>
+    <ProductDirectory Name="BeJsonCppStaticLibDir"              Path="Libs" LibType="static"/>
+    <ProductDirectory Name="UnitTests-Objects"                  Path="Objects"/>
+    <ProductDirectory Name="UnitTests-Objects"                  Path="Objects" LibType="static"/>
+    <ProductDirectory Name="Assets"                             Path="Assets"/>
+    <ProductDirectory Name="Assets"                             Path="Assets"  LibType="static"/>
+    <ProductDirectory Name="UnitTests-Assets"                   Path="Assets"/>
+    <ProductDirectory Name="UnitTests-Assets"                   Path="Assets" LibType="static"/>
+    <ProductDirectory Name="UnitTests-IgnoreList"               Path="Assets/Ignore"/>
+    <ProductDirectory Name="UnitTests-IgnoreList"               Path="Assets/Ignore" LibType="static"/>
+    <ProductDirectory Name="UnitTests-Documents-DgnDb"          Path="Assets/Documents/DgnDb"/>
+    <ProductDirectory Name="UnitTests-Documents-DgnDb"          Path="Assets/Documents/DgnDb" LibType="static"/>
+    <ProductDirectory Name="UnitTests-ECDbTestData"             Path="Assets/Documents/ECDb" />
+    <ProductDirectory Name="UnitTests-ECDbTestData"             Path="Assets/Documents/ECDb" LibType="static"/>
+    <ProductDirectory Name="UnitTests-GeomLibsTestData"         Path="Assets/Documents/GeomLibsTestData"/>
+    <ProductDirectory Name="UnitTests-GeomLibsTestData"         Path="Assets/Documents/GeomLibsTestData" LibType="static"/>
+
+    <ProductDirectory Name="UnitTests-BeSQLiteTestData"         Path="Assets/BeSQLiteTestData"/>
+    <ProductDirectory Name="UnitTests-BeSQLiteTestData"         Path="Assets/BeSQLiteTestData" LibType="static"/>
+    <ProductDirectory Name="ECObjectsTestSeedData"              Path="Assets/SeedData"/>
+    <ProductDirectory Name="ECObjectsTestSeedData"              Path="Assets/SeedData" LibType="static"/>
+    <ProductDirectory Name="ECObjectsTestSeedDataPK"            Path="Assets/SeedData/ur-PK"/>
+    <ProductDirectory Name="ECObjectsTestSeedDataPK"            Path="Assets/SeedData/ur-PK" LibType="static"/>
+    <ProductDirectory Name="ECObjectsTestSeedDataGB"            Path="Assets/SeedData/en-GB"/>
+    <ProductDirectory Name="ECObjectsTestSeedDataGB"            Path="Assets/SeedData/en-GB" LibType="static"/>
+    <ProductDirectory Name="ECObjectsTestSeedDataIT"            Path="Assets/SeedData/it"/>
+    <ProductDirectory Name="ECObjectsTestSeedDataIT"            Path="Assets/SeedData/it" LibType="static"/>
+    <ProductDirectory Name="ECObjectsTestSeedDataV3Conversion"  Path="Assets/SeedData/V3Conversion" />
+    <ProductDirectory Name="ECObjectsTestSeedDataV3Conversion"  Path="Assets/SeedData/V3Conversion" LibType="static"/>
+    <ProductDirectory Name="ECObjectsTestSeedDataECJson"        Path="Assets/SeedData/ECJson"/>
+    <ProductDirectory Name="ECObjectsTestSeedDataECJson"        Path="Assets/SeedData/ECJson" LibType="static"/>
+
+    <ProductDirectory Name="WSClientTestAssets"                 Path="Assets/WSClientTestAssets"/>
+    <ProductDirectory Name="WSClientTestAssets"                 Path="Assets/WSClientTestAssets" LibType="static"/>
+
+    <ProductDirectory Name="DgnDisplayTestData"                 Path="Assets/DgnDisplayTestData"/>
+    <ProductDirectory Name="DgnDisplayTestData"                 Path="Assets/DgnDisplayTestData" LibType="static"/>
+
+    <ProductDirectory Name="PlantDomainSchemasDir" Path="Assets/ECSchemas/Domain"/>
+
+    <ProductDirectory Name="VendorNotices" Deliver="false" />
+    <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
+    <ProductDirectory Name="DgnClientFxSampleCode" Deliver="false"/>
+    <ProductDirectory Name="DgnClientFxSampleCode" Deliver="false" LibType="static"/>
+    <ProductDirectory Name="MavenDependencies" Deliver="false" LibType="static" />
+    <ProductDirectory Name="cpprestsdkAssemblies" Deliver="false"/>
+    <ProductDirectory Name="wastorageAssemblies" Deliver="false"/>
+    <ProductDirectory Name="PlantDomainAssembliesDir" Deliver="false"/>
+    <ProductDirectory Name="sqlang" Path="Assets/sqlang"/>
+    <ProductDirectory Name="sqlang" LibType="static" Path="Assets/sqlang"/>
+    <ProductDirectory Name="AndroidSO" LibType="static" Deliver="false"/>
+    <ProductDirectory Name="PublisherLoggingConfigXml" Deliver="false"/>
+    <ProductDirectory Name="PublisherLoggingConfigXml" Deliver="false" LibType="static"/>
+
+    <ProductDirectory Name="TestingProjects-Documents-DgnDb" Path="Assets/Documents/DgnClientFxTestData"/>
+    <ProductDirectory Name="TestingProjects-Documents-DgnDb" Path="Assets/Documents/DgnClientFxTestData" LibType="static"/>
+    <ProductDirectory Name="TestingProjects_Documents_DgnDb" Deliver="false"/>
+    <ProductDirectory Name="TestingProjects_Documents_DgnDb" Deliver="false" LibType="static"/>
+
+  </ProductDirectoryList>
 
   <Part Name="CivilBaseGeometry-Gtest" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="
       -dTEST_NAME=CivilBaseGeometryTests
       -dTEST_COLLECTION_PRODUCT=CivilBaseGeometry-Tests" OnlyPlatforms="x64" Scope="Private">
     <SubProduct ProductName="CivilBaseGeometry-Tests"/>
-    <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+    <!-- <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/> -->
     <Bindings>
       <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/CivilBaseGeometryTests/Assemblies/*</Files>
       <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/CivilBaseGeometryTests/Assets" />
@@ -86,8 +155,22 @@
   <!-- Build a gtest exe to run the tests -->
   <Product Name="CivilBaseGeometry-Gtest" Scope="Private">
       <SubPart PartName="CivilBaseGeometry-Gtest"/>
-      <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+      <!-- <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/> -->
+      <Directories DirectoryListName="GtestProduct"/>
   </Product>
+
+  <ProductDirectoryList ListName="GtestProduct">
+    <ProductDirectory Name="Gtest-NativeAssemblies" Path=""/>
+    <ProductDirectory Name="Gtest-NativeAssemblies" Path="" LibType="Static"/>
+    <ProductDirectory Name="Assemblies" Path=""/>
+    <ProductDirectory Name="Assemblies" Path="" LibType="Static"/>
+    <ProductDirectory Name="Assets" Path="Assets-g"/>
+    <ProductDirectory Name="Assets" Path="Assets-g" LibType="static"/>
+    <ProductDirectory Name="Gtest-Assets" Path="Assets"/>
+    <ProductDirectory Name="Gtest-Assets" Path="Assets" LibType="Static"/>
+    <ProductDirectory Name="VendorNotices" Deliver="false" />
+    <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
+  </ProductDirectoryList>
 
   <!-- This part runs the test on x64 -->
   <Part Name="RunGTest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="
@@ -109,7 +192,8 @@
   <!-- iOS XCTest -->
   <Product Name="iOSXCTest-CivilBaseGeometry-Tests" Scope="Private">
     <SubPart PartName="iOSXCTest" LibType="Static" />
-    <Directories DirectoryListName="iOSXCTestProduct" Repository="BeGTest" PartFile="BeGTest" />
+    <!-- <Directories DirectoryListName="iOSXCTestProduct" Repository="BeGTest" PartFile="BeGTest" /> -->
+    <Directories DirectoryListName="iOSXCTestProduct"/>
   </Product>
     
   <Part Name="iOSXCTest-Run" OnlyPlatforms="iOSARM*" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/iOS//CheckLogfilesForFailures.mke" BentleyBuildMakeOptions="
@@ -133,11 +217,23 @@
       -dTEST_COLLECTION_PRODUCT=CivilBaseGeometry-Tests
       -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOSARM*" Scope="Private">
     <SubProduct ProductName="CivilBaseGeometry-Tests" />
-    <SubPart PartName="iOSXCTest-Tools" Repository="BeGTest" PartFile="BeGTest" />
+    <!-- <SubPart PartName="iOSXCTest-Tools" Repository="BeGTest" PartFile="BeGTest" /> -->
     <Bindings>
       <Directory ProductDirectoryName="iOSXCTestProject" SourceName="Delivery/iOSXCTest/CivilBaseGeometryTests/Project" />
     </Bindings>
   </Part>
+
+  <ProductDirectoryList ListName="iOSXCTestProduct">
+    <ProductDirectory Name="iOSXCTestProject" Path="" LibType="static"/>
+
+    <ProductDirectory Name="Libs" Deliver="false" LibType="static"/>
+    <ProductDirectory Name="PublicAPI" Deliver="false" LibType="static"/>
+    <ProductDirectory Name="VendorAPI" Deliver="false" LibType="static"/>
+    <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
+    <ProductDirectory Name="Assemblies" Deliver="false" LibType="static"/>
+    <ProductDirectory Name="Assets" Deliver="false"/>
+    <ProductDirectory Name="Assets" LibType="static" Deliver="false"/>
+  </ProductDirectoryList>
 
     <!-- This part runs CivilBaseGeometryTests on platforms that support it. -->
     <Part Name="CivilBaseGeometry-Tested" Scope="Private">
