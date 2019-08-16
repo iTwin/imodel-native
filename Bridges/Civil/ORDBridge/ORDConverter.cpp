@@ -1515,7 +1515,7 @@ void updateProjectExtents(SpatialModelCR spatialModel, ORDConverter::Params& par
     {
     DgnDbR db = spatialModel.GetDgnDb();
 
-    AxisAlignedBox3d modelExtents = spatialModel.QueryModelRange();
+    AxisAlignedBox3d modelExtents = spatialModel.QueryElementsRange();
     if (modelExtents.IsEmpty())
         return;
 
