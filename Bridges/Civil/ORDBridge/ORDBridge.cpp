@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ORDBridgeInternal.h"
 #include <windows.h>
-#include <DgnPlatform/DgnBRep/PSolidUtil.h>
+#include <BRepCore/PSolidUtil.h>
 
 #define DefaultPhysicalPartitionName    "Physical"
 #define DefaultDesignAlignmentsName     "Road/Rail Design Alignments"

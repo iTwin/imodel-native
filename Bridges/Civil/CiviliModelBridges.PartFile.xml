@@ -51,17 +51,57 @@
         <ProductDirectory Name="DgnV8DummyUstation"  Path="DgnV8"    RelativeTo="Assemblies"/>
         <ProductDirectory Name="WorkSpace"   Path=""   RelativeTo="DgnV8Dlls"/>
     </ProductDirectoryList>
+    
+    <Part Name="VersionedV8_InternalSDK" BentleyBuildMakeFile="ORDBridge/DgnPlatformV8.Prewire.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
+        <NuGetPackage targetFramework="native">V8_InternalSDKNuget</NuGetPackage>
+        <Bindings>
+            <PublicAPI ProductDirectoryName="VersionedDgnV8Api" Domain="VersionedDgnV8Api"/>
+            <Files ProductDirectoryName="DgnV8Dlls" SubPartDirectory="DgnPlatformV8Sdk/Dlls" Required="true">
+              Delivery/DgnPlatformV8Sdk/Dlls/*.dll
+            </Files>
+            <Directory SourceName="Delivery/DgnPlatformV8Sdk/Dlls/ECSchemas" ProductDirectoryName="DgnV8Dlls" ProductSubDirectory="ECSchemas" SubPartDirectory="DgnPlatformV8Sdk/Dlls/ECSchemas" Required="true"/>
+            <Directory SourceName="Delivery/DgnPlatformV8Sdk/Dlls/Fonts" ProductDirectoryName="DgnV8Dlls" ProductSubDirectory="Fonts" SubPartDirectory="DgnPlatformV8Sdk/Dlls/Fonts" Required="true"/>
+            <Directory SourceName="Delivery/DgnPlatformV8Sdk/Dlls/RealDwg" ProductDirectoryName="DgnV8Dlls" ProductSubDirectory="RealDwg" SubPartDirectory="DgnPlatformV8Sdk/Dlls/RealDwg" Required="true"/>
+            <Directory SourceName="Delivery/DgnPlatformV8Sdk/Dlls/schema" ProductDirectoryName="DgnV8Dlls" ProductSubDirectory="schema" SubPartDirectory="DgnPlatformV8Sdk/Dlls/schema" Required="true"/>
+            <Directory SourceName="Delivery/DgnPlatformV8Sdk/Dlls/Seed" ProductDirectoryName="DgnV8Dlls" ProductSubDirectory="Seed" SubPartDirectory="DgnPlatformV8Sdk/Dlls/Seed" Required="true"/>
+            <Directory SourceName="Delivery/DgnPlatformV8Sdk/Dlls/Symb" ProductDirectoryName="DgnV8Dlls" ProductSubDirectory="Symb" SubPartDirectory="DgnPlatformV8Sdk/Dlls/Symb" Required="true"/>
+            <Directory SourceName="Delivery/DgnPlatformV8Sdk/Libs" Required="false" SubPartDirectory="VersionedDgnV8Libs" />
+        </Bindings>
+    </Part>
 
-    <Part Name="ORDBridgeLibrary" BentleyBuildMakeFile="ORDBridge/ORDBridge.mke" >
+    <Part Name="DgnV8Converter" OnlyPlatforms="x64" ExcludeLibType="Static">
+      <NuGetPackage targetFramework="native">DgnV8ConverterNuget</NuGetPackage>
+      <Bindings>
+        <Libs>nuget/native/DgnV8ConverterNuget/native/lib/DgnV8Converter.lib</Libs>
+        <Files ProductDirectoryName="ApplicationRoot">nuget/native/DgnV8ConverterNuget/native/DgnV8ConverterM02.dll</Files>
+        <Files ProductDirectoryName="ApplicationRoot">nuget/native/DgnV8ConverterNuget/native/ImagePPM02.dll</Files>
+        <Files ProductDirectoryName="ApplicationRoot">nuget/native/DgnV8ConverterNuget/native/RasterM02.dll</Files>
+        <Files ProductDirectoryName="ApplicationRoot">nuget/native/DgnV8ConverterNuget/native/PointCloudM02.dll</Files>
+        <Files ProductDirectoryName="ApplicationRoot">nuget/native/DgnV8ConverterNuget/native/ThreeMXM02.dll</Files>
+        <Files ProductDirectoryName="ApplicationRoot">nuget/native/DgnV8ConverterNuget/native/ScalableMeshSchemaM02.dll</Files>
+        <Files ProductDirectoryName="ApplicationRoot">nuget/native/DgnV8ConverterNuget/native/ScalableMeshM02.dll</Files>
+        <Files ProductDirectoryName="ApplicationRoot">nuget/native/DgnV8ConverterNuget/native/RealityPlatformM02.dll</Files>
+        <Files ProductDirectoryName="ApplicationRoot">nuget/native/DgnV8ConverterNuget/native/RealityPlatformToolsM02.dll</Files>
+        <Files ProductDirectoryName="ApplicationRoot">nuget/native/DgnV8ConverterNuget/native/NCSEcw.dll</Files>
+        <Files ProductDirectoryName="ApplicationRoot">nuget/native/DgnV8ConverterNuget/native/BePointCloudM02.dll</Files>
+        <Files ProductDirectoryName="ApplicationRoot">nuget/native/DgnV8ConverterNuget/native/PointoolsVortexAPIM02.dll</Files>
+        <Files ProductDirectoryName="ApplicationRoot">nuget/native/DgnV8ConverterNuget/native/TerrainModelCoreM02.dll</Files>
+        <Files ProductDirectoryName="ApplicationRoot">nuget/native/DgnV8ConverterNuget/native/CloudDataSourceM02.dll</Files>
+        <Files ProductDirectoryName="ApplicationRoot">nuget/native/DgnV8ConverterNuget/native/AutomaticGroundDetectionM02.dll</Files>
+        <Files ProductDirectoryName="ApplicationRoot">nuget/native/DgnV8ConverterNuget/native/ThreeMxReaderLegacyM02.dll</Files>
+        <Files ProductDirectoryName="ApplicationRoot">nuget/native/DgnV8ConverterNuget/native/FreeImage.dll</Files>
+      </Bindings>
+    </Part>
+
+    <Part Name="ORDBridgeLibrary" BentleyBuildMakeFile="ORDBridge/ORDBridge.mke" ExcludeLibType="Static">
+        <SubPart PartName="DgnV8Converter"/>
+        <SubPart PartName="iModelBridgeFwk" PartFile="NativeNugets/NativeNugets" Repository="BsiCommon"/>
         <SubPart PartName="ORDBridgePublicAPI"/>
-        <SubPart PartName="VersionedV8_InternalSDK" Repository="DgnDbSync" PartFile="DgnDbSync"/>
+       <SubPart PartName="VersionedV8_InternalSDK"/>
         <SubPart PartName="Cif_InternalSDK" />
         <SubPart PartName="ORDBridge-en"/>
-        <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridge" Repository="DgnDbSync" />
-        <SubPart PartName="DgnV8ConverterDLL" Repository="DgnDbSync" PartFile="DgnDbSync"/>
         <SubPart PartName="RoadRailPhysical" PartFile="RoadRailPhysical" Repository="DgnDomains-RoadRailPhysical"/>
         <SubPart PartName="DgnV8OpenRoadsDesigner" PartFile="DgnV8OpenRoadsDesigner" Repository="DgnDomains-DgnV8OpenRoadsDesigner"/>
-        <SubPart PartName="DgnV8ConverterSqlang" PartFile="DgnDbSync" Repository="DgnDbSync" />
         <SubPart PartName="QuantityTakeoffsAspectsSchema" PartFile="BisSchemas" Repository="BisSchemas"/>
         <Bindings>
             <Libs Required="false">Delivery/$(libprefix)ORDBridge$(libext)</Libs>
@@ -80,16 +120,18 @@
     </Part>
 
     <Product Name="ORDBridge" PrgOutputDir="ORDBridge" BuildInstallSet="true" SaveProduct="true">
+        <SubPart PartName="iModelBridgeFwk" PartFile="NativeNugets/NativeNugets" Repository="BsiCommon"/>
         <SubPart PartName="PublishORDToBIMExe"/>
         <SubPart PartName="ORDBridgeInstallerFiles"/>
         <SubPart PartName="ORDBridgeLibrary" />
-        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridge" Repository="DgnDbSync" />
-        <SubPart PartName="RoadRailAlignment-Tested" Repository="DgnDomains-RoadRailAlignment" PartFile="RoadRailAlignment" />
-        <SubPart PartName="RoadRailPhysical-Tested" Repository="DgnDomains-RoadRailPhysical" PartFile="RoadRailPhysical" />
-        <SubPart PartName="CiviliModelBridgesTested" />
         <SubPart PartName="Resources" />
         <SubPart PartName="StaticAppData" PartFile="MstnAppData" Repository="miscdev-mstnappdata"/>
+        <!-- <SubPart PartName="RoadRailAlignment-Tested" Repository="DgnDomains-RoadRailAlignment" PartFile="RoadRailAlignment" /> -->
+        <!-- <SubPart PartName="RoadRailPhysical-Tested" Repository="DgnDomains-RoadRailPhysical" PartFile="RoadRailPhysical" /> -->
+        <!-- <SubPart PartName="CiviliModelBridgesTested" /> -->
+        
         <!-- <SubPart PartName="ORDBridgeGUI" /> -->
+                
         <InstallerWixFile SourceFile="ORDBridge\Installer\ORDBridgeInstaller"/>
         <Directories DirectoryListName="ORDBridgeDirectoryList" />
     </Product>
@@ -128,8 +170,7 @@
 
     <Part Name="ORDBridgeTestAppExe" BentleyBuildMakeFile="ORDBridge/TestApp/ORDBridgeTestApp.mke" >
         <SubPart PartName="ORDBridgeLibrary"/>
-        <SubPart PartName="DgnV8ConverterSqlang" PartFile="DgnDbSync" Repository="DgnDbSync" />
-        <SubPart PartName="iModelBridgeFwk-en" PartFile="iModelBridge"     Repository="DgnDbSync" />
+        <SubPart PartName="iModelBridgeFwk" PartFile="NativeNugets/NativeNugets" Repository="BsiCommon"/>
         <Bindings>
             <Files ProductDirectoryName="ApplicationRoot">Delivery/ORDBridgeTestApp$(exeext)</Files>
         </Bindings>
@@ -185,6 +226,7 @@
         <!-- *** TRICKY: Must depend on a part in begtest repository, in order to use a productdirectorylist from there. -->
 
         <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
+        <SubPart PartName="iModelBridgeFwk" PartFile="NativeNugets/NativeNugets" Repository="BsiCommon"/>
         <SubPart PartName="Tests"/>
         <!-- Lay out the Tests test product according to the standard BeGTest layout: -->
         <Directories Repository="BeGTest" PartFile="BeGTest" DirectoryListName="CollectionProduct"/>
@@ -194,10 +236,46 @@
     <Product Name="CiviliModelBridges-Gtest">
         <SubPart PartName="Gtest" />
         <SubPart PartName="Cif_InternalSDK" />
-        <SubPart PartName="VersionedV8_InternalSDK" Repository="DgnDbSync" PartFile="DgnDbSync"/>
+	<SubPart PartName="VersionedV8_InternalSDK" />
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest" />
+        <!-- <Directories DirectoryListName="GtestProduct" /> -->
         <Directories DirectoryListName="CiviliModelBridgeTestDirectoryList" />
     </Product>
+
+  <ProductDirectoryList ListName="CollectionProduct">
+    <ProductDirectory Name="Assemblies"            Path="Assemblies"/>
+    <ProductDirectory Name="Assemblies"            Deliver="false" LibType="static"/>
+    <ProductDirectory Name="DataCaptureAssemblies"              Path="Assemblies"/>
+    <ProductDirectory Name="DataCaptureAssemblies"              Deliver="false" LibType="static"/>
+    <ProductDirectory Name="Libs"                               Path="Libs"/>
+    <ProductDirectory Name="Libs"                               Path="Libs" LibType="static"/>
+
+    <ProductDirectory Name="BeStaticLibDir"                     Path="Libs"/>
+    <ProductDirectory Name="BeStaticLibDir"                     Path="Libs" LibType="static"/>
+    <ProductDirectory Name="UnitTests-Objects"                  Path="Objects"/>
+    <ProductDirectory Name="UnitTests-Objects"                  Path="Objects" LibType="static"/>
+    <ProductDirectory Name="Assets"                             Path="Assets"/>
+    <ProductDirectory Name="Assets"                             Path="Assets"  LibType="static"/>
+    <ProductDirectory Name="UnitTests-Assets"                   Path="Assets"/>
+    <ProductDirectory Name="UnitTests-Assets"                   Path="Assets" LibType="static"/>
+    <ProductDirectory Name="UnitTests-IgnoreList"               Path="Assets/Ignore"/>
+    <ProductDirectory Name="UnitTests-IgnoreList"               Path="Assets/Ignore" LibType="static"/>
+    <ProductDirectory Name="VendorNotices" Deliver="false" />
+    <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
+    <ProductDirectory Name="sqlang" Path="Assets/sqlang"/>
+    <ProductDirectory Name="sqlang" LibType="static" Path="Assets/sqlang"/>
+    <ProductDirectory Name="PublisherLoggingConfigXml" Deliver="false"/>
+    <ProductDirectory Name="PublisherLoggingConfigXml" Deliver="false" LibType="static"/>
+  </ProductDirectoryList>
+
+  <ProductDirectoryList ListName="GtestProduct">
+    <ProductDirectory Name="Assemblies" Path=""/>
+    <ProductDirectory Name="Assemblies" Path="" LibType="Static"/>
+    <ProductDirectory Name="Assets" Path="Assets"/>
+    <ProductDirectory Name="Assets" Path="Assets" LibType="static"/>
+    <ProductDirectory Name="VendorNotices" Deliver="false" />
+    <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
+  </ProductDirectoryList>
 
     <ProductDirectoryList ListName="CiviliModelBridgeTestDirectoryList">
         <ProductDirectory Name="ApplicationRoot"                Path=""/>
@@ -208,6 +286,7 @@
     <Part Name="ORDBridgeUnitTests" BentleyBuildMakeFile="ORDBridge/Tests/UnitTestsPostBuild.mke" >
         <SubProduct ProductName="CiviliModelBridges-Gtest" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest" />
+        <SubPart PartName="iModelBridgeFwk" PartFile="NativeNugets/NativeNugets" Repository="BsiCommon"/>
     </Part>
 
     <!-- Must Call UnitTestsPostBuild.mke last in build process in order to debug to remove ScalableMesh dlls-->
@@ -221,6 +300,7 @@
         -dTEST_FRAMEWORK_SQLANG=DgnClientFx_en.sqlang.db3" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="CiviliModelBridges-Tests" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest" />
+        <SubPart PartName="iModelBridgeFwk" PartFile="NativeNugets/NativeNugets" Repository="BsiCommon"/>
         <Bindings>
             <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/CiviliModelBridgesTests/Assemblies/*</Files>
             <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/CiviliModelBridgesTests/Assets" />
@@ -238,6 +318,7 @@
         <RequiredRepository>Bsitools-OpenCppCoverage</RequiredRepository>
         <SubProduct ProductName="CiviliModelBridges-Gtest" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest" />
+        <SubPart PartName="iModelBridgeFwk" PartFile="NativeNugets/NativeNugets" Repository="BsiCommon"/>
     </Part>
 
     <Part Name="CiviliModelBridgesTested">
@@ -275,8 +356,7 @@
 
   <Part Name="PublishORDToBIMExe" BentleyBuildMakeFile="ORDBridge/PublishORDToBIM/PublishORDToBIM.mke" >
     <SubPart PartName="ORDBridgeLibrary"/>
-    <SubPart PartName="DgnV8ConverterSqlang" PartFile="DgnDbSync" Repository="DgnDbSync" />
-    <SubPart PartName="iModelBridgeFwk-en" PartFile="iModelBridge"     Repository="DgnDbSync" />
+    <SubPart PartName="iModelBridgeFwk" PartFile="NativeNugets/NativeNugets" Repository="BsiCommon"/>
     <Bindings>
       <Files ProductDirectoryName="ApplicationRoot">Delivery/PublishORDToBIM$(exeext)</Files>
     </Bindings>
@@ -289,8 +369,7 @@
   
   <Part Name="PublishORDToBimDLL" BentleyBuildMakeFile="ORDBridge/PublishORDToBimDLL/PublishORDToBimDLL/PublishORDToBimDLL.mke" >
     <SubPart PartName="ORDBridgeLibrary"/>
-    <SubPart PartName="DgnV8ConverterSqlang" PartFile="DgnDbSync" Repository="DgnDbSync" />
-    <SubPart PartName="iModelBridgeFwk-en" PartFile="iModelBridge"     Repository="DgnDbSync" />
+    <SubPart PartName="iModelBridgeFwk" PartFile="NativeNugets/NativeNugets" Repository="BsiCommon"/>
     <Bindings>
         <Libs Required="false">Delivery/$(libprefix)PublishORDToBimDLL$(libext)</Libs>
         <Assemblies>Delivery/$(shlibprefix)PublishORDToBimDLL$(shlibext)</Assemblies>
@@ -482,17 +561,7 @@
 
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // L10N                                                                   // -->
-    <!-- //////////////////////////////////////////////////////////////////////////// -->
-    <Part Name="Platform-xliffs">
-        <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
-        <!-- DgnPlatformDLL is responsible for creating DgnPlatform xliffs -->
-        <SubPart PartName="DgnView" Repository="DgnDisplay" PartFile="DgnDisplay"/>
-        <!-- DgnView is responsible for creating DgnView xliffs -->
-        <SubPart PartName="WSClient-Xliffs" PartFile="WSClient" Repository="WSClient"/>
-        <SubPart PartName="iModelHubClient-Xliffs" PartFile="WSClient" Repository="WSClient"/>
-        <SubPart PartName="BeHttp-Xliffs" PartFile="BeHttp" Repository="BeHttp"/>
-    </Part>
-    
+    <!-- //////////////////////////////////////////////////////////////////////////// -->    
     <Part Name="ORDBridge-Xliffs" BentleyBuildMakeFile="ORDBridge/xliffs.mke">
         <Bindings>
             <Files Required="false" SubPartDirectory="xliffs">
@@ -503,7 +572,6 @@
 
     <!-- The English Sqlang database that bundles up ORDBridge's xliff along with platform library xliffs. -->
     <Part Name="ORDBridge-en" BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke" BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)build/ORDBridge/ORDBridge_en-US.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff">
-        <SubPart PartName="Platform-xliffs"/>
         <SubPart PartName="ORDBridge-Xliffs"/>
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/ORDBridge_en-US.sqlang.db3</Files>
