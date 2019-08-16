@@ -43,15 +43,11 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDIntersectionWithEditsTest)
     {
     ASSERT_TRUE(CopyTestFile("Intersection\\NewIntersection-Original.dgn", "NewIntersection.dgn"));
     ASSERT_TRUE(RunTestApp(WCharCP(L"NewIntersection.dgn"), WCharCP(L"ORDIntersectionTest.bim"), false));
-    // JGATODO Ask Diego ... ORDIntersectionWithEditsTest failed with his new changes .. had set 0 Alignments, not sure if still valid
-    //VerifyConvertedElementCount("ORDIntersectionTest.bim", 1, 1);
-    VerifyConvertedElementCount("ORDIntersectionTest.bim", 0, 1);
+    VerifyConvertedElementCount("ORDIntersectionTest.bim", 1, 1);
 
     ASSERT_TRUE(CopyTestFile("Intersection\\NewIntersection-Edits.dgn", "NewIntersection.dgn"));
     ASSERT_TRUE(RunTestApp(WCharCP(L"NewIntersection.dgn"), WCharCP(L"ORDIntersectionTest.bim"), true));
-    // JGATODO Ask Diego ... ORDIntersectionWithEditsTest failed with his new changes .. had set 2 Alignments, not sure if still valid
-    //VerifyConvertedElementCount("ORDIntersectionTest.bim", 11, 4);
-    VerifyConvertedElementCount("ORDIntersectionTest.bim", 2, 4);
+    VerifyConvertedElementCount("ORDIntersectionTest.bim", 3, 4);
     }
 
 /*---------------------------------------------------------------------------------**//**

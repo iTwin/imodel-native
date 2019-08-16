@@ -1604,6 +1604,8 @@ ConvertORDElementXDomain::Result ConvertORDElementXDomain::_PreConvertElement(Dg
             }
         else
             {
+            auto name = cifAlignmentPtr->GetName();
+            ORDBRIDGE_LOG.warning(Utf8PrintfString("Skipping Alignment Non-FinalElement '%s'.", Utf8String(name.c_str()).c_str()).c_str());
             return Result::SkipElement;
             }
         }
