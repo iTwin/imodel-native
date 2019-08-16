@@ -3,7 +3,7 @@
 #  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 #
 #---------------------------------------------------------------------------------------+
-%include $(BuildContext)SubParts/PublicMki/BentleyApi.mki
+#%include $(BuildContext)SubParts/PublicMki/BentleyApi.mki
 
 appName                         = RoadRailPhysical
 o                               = $(OutputRootDir)build/$(appName)/
