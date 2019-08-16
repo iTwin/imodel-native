@@ -2,10 +2,10 @@
 #
 #     $Source: DgnV8OpenRoadsDesigner.mki $
 #
-#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------+
-%include $(BuildContext)SubParts/PublicMki/BentleyApi.mki
+#%include $(BuildContext)SubParts/PublicMki/BentleyApi.mki
 
 appName = DgnV8OpenRoadsDesigner
 o = $(OutputRootDir)build/$(appName)/
