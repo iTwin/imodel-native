@@ -45,7 +45,8 @@
 
     <Part Name="BackdoorForUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Backdoor">
         <SubPart PartName="RoadRailAlignment"/>
-        <SubPart PartName="UnitsNative"                     PartFile="iModelCore/Units/Units"                     Repository="imodel02"/>
+        <!-- Not sure exactly what this needs on imodel02, but we cannot consume the iModelBridgeFwk nuget here; iModelBridgeFwkExe-Windows is the closest drop-in Part we can use. -->
+        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridge" Repository="DgnDbSync"/>
         <SubPart PartName="PrewireForUnitTests" />
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="RoadRailAlignment/Backdoor" SourceName="Delivery/UnitTests/Objects/Backdoor"/>
@@ -75,12 +76,95 @@
 
     <Product Name="RoadRailAlignment-Tests">
         <!-- *** TRICKY: Must depend on a part in begtest repository, in order to use a productdirectorylist from there. -->
-        <SubPart Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" PartName="Base" />
+        <!-- <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" /> -->
+        <!-- Not sure exactly what this needs on imodel02, but we cannot consume the iModelBridgeFwk nuget here; iModelBridgeFwkExe-Windows is the closest drop-in Part we can use. -->
+        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridge" Repository="DgnDbSync"/>
         <SubPart PartName="Tests"/>
         <!-- Lay out the Tests test product according to the standard BeGTest layout: -->
-        <Directories Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" DirectoryListName="CollectionProduct"/>
+        <!-- <Directories Repository="BeGTest" PartFile="BeGTest" DirectoryListName="CollectionProduct"/> -->
+        <Directories DirectoryListName="CollectionProduct"/>
+        <!-- <Directories DirectoryListName="GtestProduct"/> -->
         <Directories DirectoryListName="Tests"/>
     </Product>
+
+  <ProductDirectoryList ListName="CollectionProduct">
+    <ProductDirectory Name="Assemblies"            Path="Assemblies"/>
+    <ProductDirectory Name="Assemblies"            Deliver="false" LibType="static"/>
+    <ProductDirectory Name="DataCaptureAssemblies"              Path="Assemblies"/>
+    <ProductDirectory Name="DataCaptureAssemblies"              Deliver="false" LibType="static"/>
+    <ProductDirectory Name="Libs"                               Path="Libs"/>
+    <ProductDirectory Name="Libs"                               Path="Libs" LibType="static"/>
+    <ProductDirectory Name="BeStaticLibDir"                     Path="Libs"/>
+    <ProductDirectory Name="BeStaticLibDir"                     Path="Libs" LibType="static"/>
+    <ProductDirectory Name="BeJsonCppStaticLibDir"              Path="Libs"/>
+    <ProductDirectory Name="BeJsonCppStaticLibDir"              Path="Libs" LibType="static"/>
+    <ProductDirectory Name="UnitTests-Objects"                  Path="Objects"/>
+    <ProductDirectory Name="UnitTests-Objects"                  Path="Objects" LibType="static"/>
+    <ProductDirectory Name="Assets"                             Path="Assets"/>
+    <ProductDirectory Name="Assets"                             Path="Assets"  LibType="static"/>
+    <ProductDirectory Name="UnitTests-Assets"                   Path="Assets"/>
+    <ProductDirectory Name="UnitTests-Assets"                   Path="Assets" LibType="static"/>
+    <ProductDirectory Name="UnitTests-IgnoreList"               Path="Assets/Ignore"/>
+    <ProductDirectory Name="UnitTests-IgnoreList"               Path="Assets/Ignore" LibType="static"/>
+    <ProductDirectory Name="UnitTests-Documents-DgnDb"          Path="Assets/Documents/DgnDb"/>
+    <ProductDirectory Name="UnitTests-Documents-DgnDb"          Path="Assets/Documents/DgnDb" LibType="static"/>
+    <ProductDirectory Name="UnitTests-ECDbTestData"             Path="Assets/Documents/ECDb" />
+    <ProductDirectory Name="UnitTests-ECDbTestData"             Path="Assets/Documents/ECDb" LibType="static"/>
+    <ProductDirectory Name="UnitTests-GeomLibsTestData"         Path="Assets/Documents/GeomLibsTestData"/>
+    <ProductDirectory Name="UnitTests-GeomLibsTestData"         Path="Assets/Documents/GeomLibsTestData" LibType="static"/>
+
+    <ProductDirectory Name="UnitTests-BeSQLiteTestData"         Path="Assets/BeSQLiteTestData"/>
+    <ProductDirectory Name="UnitTests-BeSQLiteTestData"         Path="Assets/BeSQLiteTestData" LibType="static"/>
+    <ProductDirectory Name="ECObjectsTestSeedData"              Path="Assets/SeedData"/>
+    <ProductDirectory Name="ECObjectsTestSeedData"              Path="Assets/SeedData" LibType="static"/>
+    <ProductDirectory Name="ECObjectsTestSeedDataPK"            Path="Assets/SeedData/ur-PK"/>
+    <ProductDirectory Name="ECObjectsTestSeedDataPK"            Path="Assets/SeedData/ur-PK" LibType="static"/>
+    <ProductDirectory Name="ECObjectsTestSeedDataGB"            Path="Assets/SeedData/en-GB"/>
+    <ProductDirectory Name="ECObjectsTestSeedDataGB"            Path="Assets/SeedData/en-GB" LibType="static"/>
+    <ProductDirectory Name="ECObjectsTestSeedDataIT"            Path="Assets/SeedData/it"/>
+    <ProductDirectory Name="ECObjectsTestSeedDataIT"            Path="Assets/SeedData/it" LibType="static"/>
+    <ProductDirectory Name="ECObjectsTestSeedDataV3Conversion"  Path="Assets/SeedData/V3Conversion" />
+    <ProductDirectory Name="ECObjectsTestSeedDataV3Conversion"  Path="Assets/SeedData/V3Conversion" LibType="static"/>
+    <ProductDirectory Name="ECObjectsTestSeedDataECJson"        Path="Assets/SeedData/ECJson"/>
+    <ProductDirectory Name="ECObjectsTestSeedDataECJson"        Path="Assets/SeedData/ECJson" LibType="static"/>
+
+    <ProductDirectory Name="WSClientTestAssets"                 Path="Assets/WSClientTestAssets"/>
+    <ProductDirectory Name="WSClientTestAssets"                 Path="Assets/WSClientTestAssets" LibType="static"/>
+
+    <ProductDirectory Name="DgnDisplayTestData"                 Path="Assets/DgnDisplayTestData"/>
+    <ProductDirectory Name="DgnDisplayTestData"                 Path="Assets/DgnDisplayTestData" LibType="static"/>
+
+    <ProductDirectory Name="PlantDomainSchemasDir" Path="Assets/ECSchemas/Domain"/>
+
+    <ProductDirectory Name="VendorNotices" Deliver="false" />
+    <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
+    <ProductDirectory Name="DgnClientFxSampleCode" Deliver="false"/>
+    <ProductDirectory Name="DgnClientFxSampleCode" Deliver="false" LibType="static"/>
+    <ProductDirectory Name="MavenDependencies" Deliver="false" LibType="static" />
+    <ProductDirectory Name="cpprestsdkAssemblies" Deliver="false"/>
+    <ProductDirectory Name="wastorageAssemblies" Deliver="false"/>
+    <ProductDirectory Name="PlantDomainAssembliesDir" Deliver="false"/>
+    <ProductDirectory Name="sqlang" Path="Assets/sqlang"/>
+    <ProductDirectory Name="sqlang" LibType="static" Path="Assets/sqlang"/>
+    <ProductDirectory Name="AndroidSO" LibType="static" Deliver="false"/>
+    <ProductDirectory Name="PublisherLoggingConfigXml" Deliver="false"/>
+    <ProductDirectory Name="PublisherLoggingConfigXml" Deliver="false" LibType="static"/>
+
+    <ProductDirectory Name="TestingProjects-Documents-DgnDb" Path="Assets/Documents/DgnClientFxTestData"/>
+    <ProductDirectory Name="TestingProjects-Documents-DgnDb" Path="Assets/Documents/DgnClientFxTestData" LibType="static"/>
+    <ProductDirectory Name="TestingProjects_Documents_DgnDb" Deliver="false"/>
+    <ProductDirectory Name="TestingProjects_Documents_DgnDb" Deliver="false" LibType="static"/>
+
+  </ProductDirectoryList>
+  
+  <ProductDirectoryList ListName="GtestProduct">
+    <ProductDirectory Name="Assemblies" Path=""/>
+    <ProductDirectory Name="Assemblies" Path="" LibType="Static"/>
+    <ProductDirectory Name="Assets" Path="Assets"/>
+    <ProductDirectory Name="Assets" Path="Assets" LibType="static"/>
+    <ProductDirectory Name="VendorNotices" Deliver="false" />
+    <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
+  </ProductDirectoryList>
 
     <ProductDirectoryList ListName="Tests">
         <ProductDirectory Name="ApplicationRoot" Path=""/>
@@ -88,13 +172,16 @@
 
     <!-- Build a gtest exe to run the tests -->
     <Product Name="Gtest-RoadRailAlignment-Tests">
-        <Directories DirectoryListName="GtestProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
-        <SubPart PartName="Gtest"/>
+        <!-- <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/> -->
+        <Directories DirectoryListName="GtestProduct"/>
+        <!-- <SubPart PartName="Gtest"/> -->
     </Product>
 
     <Part Name="Gtest" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=RoadRailAlignmentTests -dTEST_COLLECTION_PRODUCT=RoadRailAlignment-Tests -dTEST_FRAMEWORK_SQLANG=RoadRailAlignment_en.sqlang.db3" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="RoadRailAlignment-Tests"/>
-        <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <!-- <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/> -->
+        <!-- Not sure exactly what this needs on imodel02, but we cannot consume the iModelBridgeFwk nuget here; iModelBridgeFwkExe-Windows is the closest drop-in Part we can use. -->
+        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridge" Repository="DgnDbSync"/>
         <Bindings>
             <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/RoadRailAlignmentTests/Assemblies/*</Files>
             <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/RoadRailAlignmentTests/Assets" />
@@ -103,39 +190,14 @@
 
     <Part Name="RunGtest" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGTest.mke" DeferType="RunUnitTests" BentleyBuildMakeOptions="-dGTEST_PRODUCT=Gtest-RoadRailAlignment-Tests -dGTEST_NAME=RoadRailAlignmentTests -dGTEST_SHOW_PROGRESS" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="Gtest-RoadRailAlignment-Tests" />
-        <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
-    </Part>
-    
-    <!-- iOS XCTest -->
-    
-    <Product Name="iOSXCTest-RoadRailAlignment-Tests">
-        <SubPart PartName="iOSXCTest" LibType="Static" />
-        <Directories DirectoryListName="iOSXCTestProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" />
-    </Product>
-    
-    <Part Name="iOSXCTest-Run" OnlyPlatforms="iOSARM*" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/iOS//CheckLogfilesForFailures.mke" BentleyBuildMakeOptions="-dLogFilesDir=$(BuildContext)SubParts/XCTest/Logs" >
-        <SubPart PartName="RuniOSXCTest" LibType="Static" />
-    </Part>
-    
-    <Part Name="RuniOSXCTest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/iOS//RunXCTestProject.mke" BentleyBuildMakeOptions="-dXCTEST_PRODUCT=iOSXCTest-RoadRailAlignment-Tests -dTEST_NAME=RoadRailAlignmentTests -dIOSXCTEST_SHOW_PROGRESS=1 -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOS*" >
-        <SubProduct ProductName="iOSXCTest-RoadRailAlignment-Tests" />
-        <Bindings>
-            <Files Required="false" SubPartDirectory="XCTest/Logs">Delivery/XCTest/Logs/iOSXCTest-RoadRailAlignment-Tests.log</Files>
-        </Bindings>
-    </Part>
-    
-    <Part Name="iOSXCTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/iOS//MakeXCTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=RoadRailAlignmentTests -dTEST_COLLECTION_PRODUCT=RoadRailAlignment-Tests -dTEST_FRAMEWORK_SQLANG=RoadRailAlignment_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOSARM*">
-        <SubProduct ProductName="RoadRailAlignment-Tests" />
-        <SubPart PartName="iOSXCTest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" />
-        <Bindings>
-            <Directory ProductDirectoryName="iOSXCTestProject" SourceName="Delivery/iOSXCTest/RoadRailAlignmentTests/Project" />
-        </Bindings>
+        <!-- <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/> -->
+        <!-- Not sure exactly what this needs on imodel02, but we cannot consume the iModelBridgeFwk nuget here; iModelBridgeFwkExe-Windows is the closest drop-in Part we can use. -->
+        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridge" Repository="DgnDbSync"/>
     </Part>
 
     <!-- This part runs RoadRailAlignmentTests on platforms that support it. -->
     <Part Name="RoadRailAlignment-Tested">
         <SubPart PartName="RunGtest" />
-        <SubPart PartName="RuniOSXCTest" LibType="Static" />
     </Part>
 
 </BuildContext>

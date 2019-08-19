@@ -198,7 +198,7 @@ RoadRailPhysicalProjectHostImpl::RoadRailPhysicalProjectHostImpl() : m_isInitial
     {
     BeAssert((DgnPlatformLib::QueryHost() == NULL) && L"This means an old host is still registered. You should have terminated it first before creating a new host.");
 
-    DgnPlatformLib::Initialize(*this, false);
+    DgnPlatformLib::Initialize(*this);
     DgnDomains::RegisterDomain(LinearReferencingDomain::GetDomain(), DgnDomain::Required::Yes);
     DgnDomains::RegisterDomain(RoadRailAlignmentDomain::GetDomain(), DgnDomain::Required::Yes);
     DgnDomains::RegisterDomain(RoadRailPhysicalDomain::GetDomain(), DgnDomain::Required::Yes);

@@ -618,7 +618,7 @@ SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(
 
         Json::Value v8JobProps(Json::objectValue);      // V8Bridge-specific job properties - information that is not recorded anywhere else.
         v8JobProps["BridgeType"] = "IModelBridgeForMstn";
-        v8JobProps["BridgeVersion"] = 1;//TODO: Move it to #define
+        v8JobProps["BridgeVersion"] = _GetParams().GetBridgeVersion().ToString().c_str();
         v8JobProps["ConverterType"] = (int)jtype;
         JobSubjectUtils::InitializeProperties(*ed, _GetParams().GetBridgeRegSubKeyUtf8(), comments, &v8JobProps);
         JobSubjectUtils::SetTransform(*ed, BentleyApi::Transform::FromIdentity());

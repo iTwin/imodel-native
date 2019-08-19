@@ -108,6 +108,8 @@
         <ProductDirectory Name="BuildingDomainIncludes" Deliver="false"/>
         <ProductDirectory Name="ClassificationSystemsIncludes" Deliver="false"/>
         <ProductDirectory Name="QuantityTakeoffsAspectsIncludes" Deliver="false"/>
+        <ProductDirectory Name="DgnV8Dlls" Deliver="false"/>
+        <ProductDirectory Name="PublisherLoggingConfigXml" Deliver="false"/>
     </ProductDirectoryList>
 
     <Product Name="BuildingDomainTests" OnlyPlatforms="x64">
@@ -185,7 +187,8 @@
         <ProductDirectory Name="BuildingSharedIncludes" Deliver="false"/>
         <ProductDirectory Name="ProfilesIncludes" Deliver="false"/>
         <ProductDirectory Name="ClassificationSystemsIncludes" Deliver="false"/>
-        
+        <ProductDirectory Name="DgnV8Dlls" Deliver="false"/>
+        <ProductDirectory Name="PublisherLoggingConfigXml" Deliver="false"/>
     </ProductDirectoryList>
 
     <NuGetProduct Name="DesignModelingSDKForABD" Description="DesignModelingSDKForABD"> 

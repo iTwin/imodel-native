@@ -1803,6 +1803,30 @@ void Converter::OnUpdateComplete()
 void Converter::_OnElementConverted(DgnElementId elementId, DgnV8EhCP v8eh, ChangeOperation changeOperation)
     {
     ++m_elementsConverted;
+    bool elementModified = false;
+    DgnDbStatus status;
+
+    if (v8eh)
+        {
+        ConvertToDgnDbElementExtension* upx = ConvertToDgnDbElementExtension::Cast(v8eh->GetHandler());
+        if (nullptr != upx)
+            {
+            elementModified |= upx->_OnElementPostInsertOrUpdate(*this, *v8eh, elementId, changeOperation);
+            }
+
+        for (auto xdomain : XDomainRegistry::s_xdomains)
+            {
+            elementModified |= xdomain->_OnElementPostInsertOrUpdate(*this, *v8eh, elementId, changeOperation);
+            }
+        }
+
+
+    if (!elementModified)
+        return;
+
+    GetDgnDb().Elements().GetForEdit<DgnElement>(elementId)->Update(&status);
+    if (DgnDbStatus::Success != status)
+        LOG.errorv("Failed to update element %d after Converter::_OnElementConverted", elementId.GetValueUnchecked());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1812,6 +1836,11 @@ void Converter::_OnElementBeforeDelete(DgnElementId elementId)
     {
     if (nullptr != m_linkConverter)
         m_linkConverter->RemoveLinksOnElement(elementId);
+
+    for (auto xdomain : XDomainRegistry::s_xdomains)
+        {
+        xdomain->_OnElementBeforeDelete(*this, elementId);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

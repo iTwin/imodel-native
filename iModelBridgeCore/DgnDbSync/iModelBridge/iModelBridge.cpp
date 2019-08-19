@@ -1294,6 +1294,18 @@ BentleyStatus	iModelBridge::TrackUsage()
     return SUCCESS;
 	}
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            08/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+BeVersion iModelBridge::Params::GetBridgeVersion() const
+    {
+    WebServices::ClientInfoPtr clientInfo = GetClientInfo();
+    if (nullptr == clientInfo)
+        return BeVersion();
+
+    return clientInfo->GetApplicationVersion();
+    }
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  07/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1381,3 +1393,4 @@ iModelBridge::JobMemberInfo iModelBridge::ComputeJobMemberInfo(DgnElementCR el)
         iModelBridge::FindParentJobSubject(info, el);
     return info;
     }
+    

@@ -4,7 +4,7 @@
 #
 #---------------------------------------------------------------------------------------+
 %include RoadRailAlignment.Analyzer.mki
-%include $(BuildContext)SubParts/PublicMki/BentleyApi.mki
+#%include $(BuildContext)SubParts/PublicMki/BentleyApi.mki
 
 appName                         = RoadRailAlignment
 o                               = $(OutputRootDir)build/$(appName)/

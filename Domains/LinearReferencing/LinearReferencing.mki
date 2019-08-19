@@ -4,7 +4,7 @@
 #
 #---------------------------------------------------------------------------------------+
 %include LinearReferencing.Analyzer.mki
-%include $(BuildContext)SubParts/PublicMki/BentleyApi.mki
+#%include $(BuildContext)SubParts/PublicMki/BentleyApi.mki
 
 appName                         = LinearReferencing
 o                               = $(OutputRootDir)build/$(appName)/
