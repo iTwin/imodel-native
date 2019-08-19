@@ -24,7 +24,7 @@ struct IModelCompatibilityTestFixture : CompatibilityTestFixture
         void SetUp() override 
             {
             CompatibilityTestFixture::SetUp();
-            ASSERT_EQ(SUCCESS, TestIModelCreation::Run()); 
+            ASSERT_EQ(SUCCESS, TestIModelCreation::Run());
             }
     };
 
@@ -73,6 +73,157 @@ TEST_F(IModelCompatibilityTestFixture, BasicTestsOnAllPulledFiles)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                  Affan.Khan                      07/19
+//+---------------+---------------+---------------+---------------+---------------+------
+void Assert_BuiltinSchemaVersions_2_0_0_0 (TestIModel& testDb)
+    {
+    EXPECT_EQ(8, testDb.GetSchemaCount()) << testDb.GetDescription();
+    //iModel built-in schema versions
+    if (testDb.GetSchemaUpgradeOptions().AreDomainUpgradesAllowed())
+        {
+        EXPECT_LE(SchemaVersion(1, 0, 4), testDb.GetSchemaVersion("BisCore")) << testDb.GetDescription();
+        EXPECT_LE(SchemaVersion(1, 0, 1), testDb.GetSchemaVersion("Generic")) << testDb.GetDescription();
+        }
+
+    EXPECT_LE(BeVersion(), testDb.GetOriginalECXmlVersion("BisCore")) << testDb.GetDescription();
+    EXPECT_LE(BeVersion(), testDb.GetOriginalECXmlVersion("Generic")) << testDb.GetDescription();
+
+    //ECDb built-in schema versions
+    EXPECT_EQ(SchemaVersion(2, 0, 0), testDb.GetSchemaVersion("ECDbFileInfo")) << testDb.GetDescription();
+    EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("ECDbFileInfo")) << testDb.GetDescription();
+    EXPECT_EQ(JsonValue(R"js({"classcount":4, "enumcount": 1})js"), testDb.GetSchemaItemCounts("ECDbFileInfo")) << testDb.GetDescription();
+
+    EXPECT_LE(SchemaVersion(2, 0, 0), testDb.GetSchemaVersion("ECDbMap")) << testDb.GetDescription();
+    EXPECT_GE(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("ECDbMap")) << testDb.GetDescription();
+    EXPECT_LE(9, testDb.GetSchemaItemCounts("ECDbMap").Value()["classcount"].asInt()) << testDb.GetDescription();
+
+    EXPECT_EQ(SchemaVersion(4, 0, 0), testDb.GetSchemaVersion("ECDbMeta")) << testDb.GetDescription();
+    EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("ECDbMeta")) << testDb.GetDescription();
+    EXPECT_EQ(JsonValue(R"js({"classcount":24, "enumcount": 8})js"), testDb.GetSchemaItemCounts("ECDbMeta")) << testDb.GetDescription();
+
+    EXPECT_EQ(SchemaVersion(5, 0, 0), testDb.GetSchemaVersion("ECDbSystem")) << testDb.GetDescription();
+    EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("ECDbSystem")) << testDb.GetDescription();
+    EXPECT_EQ(JsonValue(R"js({"classcount":4})js"), testDb.GetSchemaItemCounts("ECDbSystem")) << testDb.GetDescription();
+
+    EXPECT_EQ(SchemaVersion(1, 0, 0), testDb.GetSchemaVersion("ECDbSchemaPolicies")) << testDb.GetDescription();
+    EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("ECDbSchemaPolicies")) << testDb.GetDescription();
+    EXPECT_EQ(JsonValue(R"js({"classcount":3})js"), testDb.GetSchemaItemCounts("ECDbSchemaPolicies")) << testDb.GetDescription();
+
+    //Standard schema versions (can get upgraded through domain schema upgrades, so we cannot test for a specific version)
+    EXPECT_LE(SchemaVersion(1, 0, 0), testDb.GetSchemaVersion("CoreCustomAttributes")) << testDb.GetDescription();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Eimantas.Morkunas                    07/19
+//+---------------+---------------+---------------+---------------+---------------+------
+void Assert_BuiltinSchemaVersions_2_0_0_1(TestIModel& testDb)
+    {
+    EXPECT_EQ(8, testDb.GetSchemaCount()) << testDb.GetDescription();
+    //iModel built-in schema versions
+    // Note: don't assert on original ecxml version for schemas that don't get upgraded automatically. That is to error-prone to test
+    if (testDb.GetSchemaUpgradeOptions().AreDomainUpgradesAllowed())
+        {
+        EXPECT_LE(SchemaVersion(1, 0, 4), testDb.GetSchemaVersion("BisCore")) << testDb.GetDescription();
+        EXPECT_LE(SchemaVersion(1, 0, 1), testDb.GetSchemaVersion("Generic")) << testDb.GetDescription();
+        }
+
+    //ECDb built-in schema versions
+    EXPECT_EQ(SchemaVersion(2, 0, 1), testDb.GetSchemaVersion("ECDbFileInfo")) << testDb.GetDescription();
+    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbFileInfo")) << testDb.GetDescription();
+    EXPECT_EQ(JsonValue(R"js({"classcount":4, "enumcount": 1})js"), testDb.GetSchemaItemCounts("ECDbFileInfo")) << testDb.GetDescription();
+
+    EXPECT_LE(SchemaVersion(2, 0, 0), testDb.GetSchemaVersion("ECDbMap")) << testDb.GetDescription();
+    EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("ECDbMap")) << testDb.GetDescription();
+    EXPECT_LE(9, testDb.GetSchemaItemCounts("ECDbMap").Value()["classcount"].asInt()) << testDb.GetDescription();
+
+    EXPECT_EQ(SchemaVersion(4, 0, 1), testDb.GetSchemaVersion("ECDbMeta")) << testDb.GetDescription();
+    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMeta")) << testDb.GetDescription();
+    EXPECT_EQ(JsonValue(R"js({"classcount":38, "enumcount": 8})js"), testDb.GetSchemaItemCounts("ECDbMeta")) << testDb.GetDescription();
+
+    EXPECT_EQ(SchemaVersion(5, 0, 1), testDb.GetSchemaVersion("ECDbSystem")) << testDb.GetDescription();
+    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbSystem")) << testDb.GetDescription();
+    EXPECT_EQ(JsonValue(R"js({"classcount":4})js"), testDb.GetSchemaItemCounts("ECDbSystem")) << testDb.GetDescription();
+
+    EXPECT_EQ(SchemaVersion(1, 0, 0), testDb.GetSchemaVersion("ECDbSchemaPolicies")) << testDb.GetDescription();
+    EXPECT_EQ(JsonValue(R"js({"classcount":3})js"), testDb.GetSchemaItemCounts("ECDbSchemaPolicies")) << testDb.GetDescription();
+
+    //Standard schema versions (can get upgraded without a profile change)
+    EXPECT_LE(SchemaVersion(1, 0, 1), testDb.GetSchemaVersion("CoreCustomAttributes")) << testDb.GetDescription();
+    EXPECT_LE(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("CoreCustomAttributes")) << testDb.GetDescription();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Affan.Khan                      07/19
+//+---------------+---------------+---------------+---------------+---------------+------
+void Assert_BuiltinSchemaVersions_2_0_0_4(TestIModel& testDb)
+    {
+    EXPECT_EQ(8, testDb.GetSchemaCount()) << testDb.GetDescription();
+    //iModel built-in schema versions
+    // Note: don't assert on original ecxml version for schemas that don't get upgraded automatically. That is to error-prone to test
+    if (testDb.GetSchemaUpgradeOptions().AreDomainUpgradesAllowed())
+        {
+        EXPECT_LE(SchemaVersion(1, 0, 4), testDb.GetSchemaVersion("BisCore")) << testDb.GetDescription();
+        EXPECT_LE(SchemaVersion(1, 0, 1), testDb.GetSchemaVersion("Generic")) << testDb.GetDescription();
+        }
+
+    //ECDb built-in schema versions
+    EXPECT_EQ(SchemaVersion(2, 0, 1), testDb.GetSchemaVersion("ECDbFileInfo")) << testDb.GetDescription();
+    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbFileInfo")) << testDb.GetDescription();
+    EXPECT_EQ(JsonValue(R"js({"classcount":4, "enumcount": 1})js"), testDb.GetSchemaItemCounts("ECDbFileInfo")) << testDb.GetDescription();
+    
+    EXPECT_LE(SchemaVersion(2, 0, 0), testDb.GetSchemaVersion("ECDbMap")) << testDb.GetDescription();
+    EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("ECDbMap")) << testDb.GetDescription();
+    EXPECT_LE(9, testDb.GetSchemaItemCounts("ECDbMap").Value()["classcount"].asInt()) << testDb.GetDescription();
+    
+    EXPECT_EQ(SchemaVersion(4, 0, 1), testDb.GetSchemaVersion("ECDbMeta")) << testDb.GetDescription();
+    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMeta")) << testDb.GetDescription();
+    EXPECT_EQ(JsonValue(R"js({"classcount":38, "enumcount": 8})js"), testDb.GetSchemaItemCounts("ECDbMeta")) << testDb.GetDescription();
+    
+    EXPECT_EQ(SchemaVersion(5, 0, 1), testDb.GetSchemaVersion("ECDbSystem")) << testDb.GetDescription();
+    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbSystem")) << testDb.GetDescription();
+    EXPECT_EQ(JsonValue(R"js({"classcount":4})js"), testDb.GetSchemaItemCounts("ECDbSystem")) << testDb.GetDescription();
+    
+    EXPECT_EQ(SchemaVersion(1, 0, 0), testDb.GetSchemaVersion("ECDbSchemaPolicies")) << testDb.GetDescription();
+    EXPECT_EQ(JsonValue(R"js({"classcount":3})js"), testDb.GetSchemaItemCounts("ECDbSchemaPolicies")) << testDb.GetDescription();
+
+    //Standard schema versions (can get upgraded without a profile change)
+    EXPECT_LE(SchemaVersion(1, 0, 3), testDb.GetSchemaVersion("CoreCustomAttributes")) << testDb.GetDescription();
+    EXPECT_LE(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("CoreCustomAttributes")) << testDb.GetDescription();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Affan.Khan                      07/19
+//+---------------+---------------+---------------+---------------+---------------+------
+void Assert_BuiltinSchemaVersions_2_X_X_X(TestIModel& testDb)
+    {
+    EXPECT_LE(8, testDb.GetSchemaCount()) << testDb.GetDescription();
+
+    //iModel built-in schema versions
+    // Note: don't assert on original ecxml version for schemas that don't get upgraded automatically. That is to error-prone to test
+    EXPECT_LE(SchemaVersion(1, 0, 4), testDb.GetSchemaVersion("BisCore")) << testDb.GetDescription();
+    EXPECT_LE(SchemaVersion(1, 0, 1), testDb.GetSchemaVersion("Generic")) << testDb.GetDescription();
+
+    //ECDb built-in schema versions
+    EXPECT_LE(SchemaVersion(2, 0, 1), testDb.GetSchemaVersion("ECDbFileInfo")) << testDb.GetDescription();
+    EXPECT_LE(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbFileInfo")) << testDb.GetDescription();
+
+    EXPECT_LE(SchemaVersion(2, 0, 0), testDb.GetSchemaVersion("ECDbMap")) << testDb.GetDescription();
+    EXPECT_LE(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("ECDbMap")) << testDb.GetDescription();
+
+    EXPECT_LE(SchemaVersion(4, 0, 1), testDb.GetSchemaVersion("ECDbMeta")) << testDb.GetDescription();
+    EXPECT_LE(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMeta")) << testDb.GetDescription();
+
+    EXPECT_LE(SchemaVersion(5, 0, 1), testDb.GetSchemaVersion("ECDbSystem")) << testDb.GetDescription();
+    EXPECT_LE(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbSystem")) << testDb.GetDescription();
+
+    EXPECT_LE(SchemaVersion(1, 0, 0), testDb.GetSchemaVersion("ECDbSchemaPolicies")) << testDb.GetDescription();
+
+    //Standard schema versions
+    EXPECT_LE(SchemaVersion(1, 0, 3), testDb.GetSchemaVersion("CoreCustomAttributes")) << testDb.GetDescription();
+    EXPECT_LE(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("CoreCustomAttributes")) << testDb.GetDescription();
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                      06/18
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(IModelCompatibilityTestFixture, BuiltinSchemaVersions)
@@ -87,116 +238,36 @@ TEST_F(IModelCompatibilityTestFixture, BuiltinSchemaVersions)
             testDb.AssertLoadSchemas();
 
             switch (testDb.GetAge())
-                {
-                    case ProfileState::Age::Older:
+               {
+                case ProfileState::Age::Older:
                     {
-                    EXPECT_EQ(8, testDb.GetSchemaCount()) << testDb.GetDescription();
-
-                    //iModel built-in schema versions
-                    if (testDb.GetSchemaUpgradeOptions().AreDomainUpgradesAllowed())
-                        {
-                        EXPECT_LE(SchemaVersion(1, 0, 4), testDb.GetSchemaVersion("BisCore")) << testDb.GetDescription();
-                        EXPECT_LE(SchemaVersion(1, 0, 1), testDb.GetSchemaVersion("Generic")) << testDb.GetDescription();
-                        }
-
-                    EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("BisCore")) << testDb.GetDescription();
-                    EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("Generic")) << testDb.GetDescription();
-
-                    //ECDb built-in schema versions
-                    EXPECT_EQ(SchemaVersion(2, 0, 0), testDb.GetSchemaVersion("ECDbFileInfo")) << testDb.GetDescription();
-                    EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("ECDbFileInfo")) << testDb.GetDescription();
-                    EXPECT_EQ(JsonValue(R"js({"classcount":4, "enumcount": 1})js"), testDb.GetSchemaItemCounts("ECDbFileInfo")) << testDb.GetDescription();
-
-                    EXPECT_EQ(SchemaVersion(2, 0, 0), testDb.GetSchemaVersion("ECDbMap")) << testDb.GetDescription();
-                    EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("ECDbMap")) << testDb.GetDescription();
-                    EXPECT_EQ(JsonValue(R"js({"classcount":9})js"), testDb.GetSchemaItemCounts("ECDbMap")) << testDb.GetDescription();
-
-                    EXPECT_EQ(SchemaVersion(4, 0, 0), testDb.GetSchemaVersion("ECDbMeta")) << testDb.GetDescription();
-                    EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("ECDbMeta")) << testDb.GetDescription();
-                    EXPECT_EQ(JsonValue(R"js({"classcount":24, "enumcount": 8})js"), testDb.GetSchemaItemCounts("ECDbMeta")) << testDb.GetDescription();
-
-                    EXPECT_EQ(SchemaVersion(5, 0, 0), testDb.GetSchemaVersion("ECDbSystem")) << testDb.GetDescription();
-                    EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("ECDbSystem")) << testDb.GetDescription();
-                    EXPECT_EQ(JsonValue(R"js({"classcount":4})js"), testDb.GetSchemaItemCounts("ECDbSystem")) << testDb.GetDescription();
-
-                    EXPECT_EQ(SchemaVersion(1, 0, 0), testDb.GetSchemaVersion("ECDbSchemaPolicies")) << testDb.GetDescription();
-                    EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("ECDbSchemaPolicies")) << testDb.GetDescription();
-                    EXPECT_EQ(JsonValue(R"js({"classcount":3})js"), testDb.GetSchemaItemCounts("ECDbSchemaPolicies")) << testDb.GetDescription();
-
-                    //Standard schema versions (can get upgraded through domain schema upgrades, so we cannot test for a specific version)
-                    EXPECT_LE(SchemaVersion(1, 0, 0), testDb.GetSchemaVersion("CoreCustomAttributes")) << testDb.GetDescription();
+                    if (testDb.GetDgnDbProfileVersion() == ProfileVersion(2, 0, 0, 0))
+                        Assert_BuiltinSchemaVersions_2_0_0_0(testDb);
+                    else if (testDb.GetDgnDbProfileVersion() == ProfileVersion(2, 0, 0, 1) ||
+                            testDb.GetDgnDbProfileVersion() == ProfileVersion(2, 0, 0, 2) ||
+                            testDb.GetDgnDbProfileVersion() == ProfileVersion(2, 0, 0, 3))
+                        Assert_BuiltinSchemaVersions_2_0_0_1(testDb);
+                    else 
+                        FAIL() << "*ERROR* case not handled | " << testDb.GetDescription();
+                    break;
+                    }
+                case ProfileState::Age::UpToDate:
+                    {
+                    if (testDb.GetDgnDbProfileVersion() == ProfileVersion(2, 0, 0, 4))
+                        Assert_BuiltinSchemaVersions_2_0_0_4(testDb);
+                    else 
+                        FAIL() << "*ERROR* case not handled | " << testDb.GetDescription();
                     break;
                     }
 
-                    case ProfileState::Age::UpToDate:
+                case ProfileState::Age::Newer:
                     {
-                    EXPECT_EQ(8, testDb.GetSchemaCount()) << testDb.GetDescription();
-                    //iModel built-in schema versions
-                    // Note: don't assert on original ecxml version for schemas that don't get upgraded automatically. That is to error-prone to test
-                    if (testDb.GetSchemaUpgradeOptions().AreDomainUpgradesAllowed())
-                        {
-                        EXPECT_LE(SchemaVersion(1, 0, 4), testDb.GetSchemaVersion("BisCore")) << testDb.GetDescription();
-                        EXPECT_LE(SchemaVersion(1, 0, 1), testDb.GetSchemaVersion("Generic")) << testDb.GetDescription();
-                        }
-
-                    //ECDb built-in schema versions
-                    EXPECT_EQ(SchemaVersion(2, 0, 1), testDb.GetSchemaVersion("ECDbFileInfo")) << testDb.GetDescription();
-                    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbFileInfo")) << testDb.GetDescription();
-                    EXPECT_EQ(JsonValue(R"js({"classcount":4, "enumcount": 1})js"), testDb.GetSchemaItemCounts("ECDbFileInfo")) << testDb.GetDescription();
-                    
-                    EXPECT_EQ(SchemaVersion(2, 0, 0), testDb.GetSchemaVersion("ECDbMap")) << testDb.GetDescription();
-                    EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("ECDbMap")) << testDb.GetDescription();
-                    EXPECT_EQ(JsonValue(R"js({"classcount":9})js"), testDb.GetSchemaItemCounts("ECDbMap")) << testDb.GetDescription();
-                    
-                    EXPECT_EQ(SchemaVersion(4, 0, 1), testDb.GetSchemaVersion("ECDbMeta")) << testDb.GetDescription();
-                    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMeta")) << testDb.GetDescription();
-                    EXPECT_EQ(JsonValue(R"js({"classcount":38, "enumcount": 8})js"), testDb.GetSchemaItemCounts("ECDbMeta")) << testDb.GetDescription();
-                    
-                    EXPECT_EQ(SchemaVersion(5, 0, 1), testDb.GetSchemaVersion("ECDbSystem")) << testDb.GetDescription();
-                    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbSystem")) << testDb.GetDescription();
-                    EXPECT_EQ(JsonValue(R"js({"classcount":4})js"), testDb.GetSchemaItemCounts("ECDbSystem")) << testDb.GetDescription();
-                    
-                    EXPECT_EQ(SchemaVersion(1, 0, 0), testDb.GetSchemaVersion("ECDbSchemaPolicies")) << testDb.GetDescription();
-                    EXPECT_EQ(JsonValue(R"js({"classcount":3})js"), testDb.GetSchemaItemCounts("ECDbSchemaPolicies")) << testDb.GetDescription();
-
-                    //Standard schema versions (can get upgraded without a profile change)
-                    EXPECT_LE(SchemaVersion(1, 0, 0), testDb.GetSchemaVersion("CoreCustomAttributes")) << testDb.GetDescription();
-                    EXPECT_LE(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("CoreCustomAttributes")) << testDb.GetDescription();
+                    Assert_BuiltinSchemaVersions_2_X_X_X(testDb);
                     break;
                     }
-
-                    case ProfileState::Age::Newer:
-                    {
-                    EXPECT_LE(8, testDb.GetSchemaCount()) << testDb.GetDescription();
-
-                    //iModel built-in schema versions
-                    // Note: don't assert on original ecxml version for schemas that don't get upgraded automatically. That is to error-prone to test
-                    EXPECT_LE(SchemaVersion(1, 0, 4), testDb.GetSchemaVersion("BisCore")) << testDb.GetDescription();
-                    EXPECT_LE(SchemaVersion(1, 0, 0), testDb.GetSchemaVersion("Generic")) << testDb.GetDescription();
-
-                    //ECDb built-in schema versions
-                    EXPECT_LE(SchemaVersion(2, 0, 1), testDb.GetSchemaVersion("ECDbFileInfo")) << testDb.GetDescription();
-                    EXPECT_LE(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbFileInfo")) << testDb.GetDescription();
-
-                    EXPECT_LE(SchemaVersion(2, 0, 0), testDb.GetSchemaVersion("ECDbMap")) << testDb.GetDescription();
-                    EXPECT_LE(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("ECDbMap")) << testDb.GetDescription();
-
-                    EXPECT_LE(SchemaVersion(4, 0, 1), testDb.GetSchemaVersion("ECDbMeta")) << testDb.GetDescription();
-                    EXPECT_LE(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMeta")) << testDb.GetDescription();
-
-                    EXPECT_LE(SchemaVersion(5, 0, 1), testDb.GetSchemaVersion("ECDbSystem")) << testDb.GetDescription();
-                    EXPECT_LE(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbSystem")) << testDb.GetDescription();
-
-                    EXPECT_LE(SchemaVersion(1, 0, 0), testDb.GetSchemaVersion("ECDbSchemaPolicies")) << testDb.GetDescription();
-
-                    //Standard schema versions
-                    EXPECT_LE(SchemaVersion(1, 0, 0), testDb.GetSchemaVersion("CoreCustomAttributes")) << testDb.GetDescription();
-                    EXPECT_LE(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("CoreCustomAttributes")) << testDb.GetDescription();
+                default:
+                    FAIL() << "Unhandled ProfileState::Age enum value | " << testDb.GetDescription();
                     break;
-                    }
-                    default:
-                        FAIL() << "Unhandled ProfileState::Age enum value | " << testDb.GetDescription();
-                        break;
                 }
             }
         }
@@ -285,44 +356,44 @@ TEST_F(IModelCompatibilityTestFixture, EC31Enums)
             if (!testDb.SupportsFeature(ECDbFeature::NamedEnumerators))
                 {
                 testDb.AssertEnum("CoreCustomAttributes", "DateTimeKind", nullptr, nullptr, PRIMITIVETYPE_String, true,
-                {{"Unspecified", ECValue("Unspecified"), nullptr},
-                {"Utc", ECValue("Utc"), nullptr},
-                {"Local", ECValue("Local"), nullptr}});
+                    {{"Unspecified", ECValue("Unspecified"), nullptr},
+                    {"Utc", ECValue("Utc"), nullptr},
+                    {"Local", ECValue("Local"), nullptr} });
 
                 testDb.AssertEnum("ECDbMeta", "ECClassModifier", nullptr, nullptr, PRIMITIVETYPE_Integer, true,
-                {{"ECClassModifier0", ECValue(0), "None"},
-                {"ECClassModifier1", ECValue(1), "Abstract"},
-                {"ECClassModifier2", ECValue(2), "Sealed"}});
+                    {{"ECClassModifier0", ECValue(0), "None"},
+                    {"ECClassModifier1", ECValue(1), "Abstract"},
+                    {"ECClassModifier2", ECValue(2), "Sealed"}});
 
                 testDb.AssertEnum("TestSchema", "IntEnum_EnumeratorsWithoutDisplayLabel", "Int Enumeration with enumerators without display label", "Int Enumeration with enumerators without display label", PRIMITIVETYPE_Integer, true,
-                {{"IntEnum_EnumeratorsWithoutDisplayLabel0", ECValue(0), nullptr},
-                {"IntEnum_EnumeratorsWithoutDisplayLabel1", ECValue(1), nullptr},
-                {"IntEnum_EnumeratorsWithoutDisplayLabel2", ECValue(2), nullptr}});
+                    {{"IntEnum_EnumeratorsWithoutDisplayLabel0", ECValue(0), nullptr},
+                    {"IntEnum_EnumeratorsWithoutDisplayLabel1", ECValue(1), nullptr},
+                    {"IntEnum_EnumeratorsWithoutDisplayLabel2", ECValue(2), nullptr}});
 
                 testDb.AssertEnum("TestSchema", "StringEnum_EnumeratorsWithDisplayLabel", "String Enumeration with enumerators with display label", nullptr, PRIMITIVETYPE_String, false,
-                {{"On", ECValue("On"), "Turned On"},
-                {"Off", ECValue("Off"), "Turned Off"}});
+                    {{"On", ECValue("On"), "Turned On"},
+                    {"Off", ECValue("Off"), "Turned Off"}});
                 }
             else
                 {
                 testDb.AssertEnum("CoreCustomAttributes", "DateTimeKind", nullptr, nullptr, PRIMITIVETYPE_String, true,
-                {{"Unspecified", ECValue("Unspecified"), nullptr},
-                {"Utc", ECValue("Utc"), nullptr},
-                {"Local", ECValue("Local"), nullptr}});
+                    {{"Unspecified", ECValue("Unspecified"), nullptr},
+                    {"Utc", ECValue("Utc"), nullptr},
+                    {"Local", ECValue("Local"), nullptr}});
 
                 testDb.AssertEnum("ECDbMeta", "ECClassModifier", nullptr, nullptr, PRIMITIVETYPE_Integer, true,
-                {{"None", ECValue(0), "None"},
-                {"Abstract", ECValue(1), "Abstract"},
-                {"Sealed", ECValue(2), "Sealed"}});
+                    {{"None", ECValue(0), "None"},
+                    {"Abstract", ECValue(1), "Abstract"},
+                    {"Sealed", ECValue(2), "Sealed"}});
 
                 testDb.AssertEnum("TestSchema", "IntEnum_EnumeratorsWithoutDisplayLabel", "Int Enumeration with enumerators without display label", "Int Enumeration with enumerators without display label", PRIMITIVETYPE_Integer, true,
-                {{"IntEnum_EnumeratorsWithoutDisplayLabel0", ECValue(0), nullptr},
-                {"IntEnum_EnumeratorsWithoutDisplayLabel1", ECValue(1), nullptr},
-                {"IntEnum_EnumeratorsWithoutDisplayLabel2", ECValue(2), nullptr}});
+                    {{"IntEnum_EnumeratorsWithoutDisplayLabel0", ECValue(0), nullptr},
+                    {"IntEnum_EnumeratorsWithoutDisplayLabel1", ECValue(1), nullptr},
+                    {"IntEnum_EnumeratorsWithoutDisplayLabel2", ECValue(2), nullptr}});
 
                 testDb.AssertEnum("TestSchema", "StringEnum_EnumeratorsWithDisplayLabel", "String Enumeration with enumerators with display label", nullptr, PRIMITIVETYPE_String, false,
-                {{"On", ECValue("On"), "Turned On"},
-                {"Off", ECValue("Off"), "Turned Off"}});
+                    {{"On", ECValue("On"), "Turned On"},
+                    {"Off", ECValue("Off"), "Turned Off"}});
                 }
             }
         }
@@ -346,24 +417,24 @@ TEST_F(IModelCompatibilityTestFixture, UpgradingEC31EnumsToEC32AfterProfileUpgra
             if (testDb.GetOriginalECXmlVersion("TestSchema") <= BeVersion(3, 1))
                 {
                 testDb.AssertEnum("TestSchema", "IntEnum_EnumeratorsWithoutDisplayLabel", "Int Enumeration with enumerators without display label", "Int Enumeration with enumerators without display label", PRIMITIVETYPE_Integer, true,
-                {{"IntEnum_EnumeratorsWithoutDisplayLabel0", ECValue(0), nullptr},
-                {"IntEnum_EnumeratorsWithoutDisplayLabel1", ECValue(1), nullptr},
-                {"IntEnum_EnumeratorsWithoutDisplayLabel2", ECValue(2), nullptr}});
+                    {{"IntEnum_EnumeratorsWithoutDisplayLabel0", ECValue(0), nullptr},
+                    {"IntEnum_EnumeratorsWithoutDisplayLabel1", ECValue(1), nullptr},
+                    {"IntEnum_EnumeratorsWithoutDisplayLabel2", ECValue(2), nullptr}});
 
                 testDb.AssertEnum("TestSchema", "StringEnum_EnumeratorsWithDisplayLabel", "String Enumeration with enumerators with display label", nullptr, PRIMITIVETYPE_String, false,
-                {{"On", ECValue("On"), "Turned On"},
-                {"Off", ECValue("Off"), "Turned Off"}});
+                    {{"On", ECValue("On"), "Turned On"},
+                    {"Off", ECValue("Off"), "Turned Off"}});
                 }
             else
                 {
                 testDb.AssertEnum("TestSchema", "IntEnum_EnumeratorsWithoutDisplayLabel", "Int Enumeration with enumerators without display label", "Int Enumeration with enumerators without display label", PRIMITIVETYPE_Integer, true,
-                {{"Unknown", ECValue(0), nullptr},
-                {"On", ECValue(1), nullptr},
-                {"Off", ECValue(2), nullptr}});
+                    {{"Unknown", ECValue(0), nullptr},
+                    {"On", ECValue(1), nullptr},
+                    {"Off", ECValue(2), nullptr}});
 
                 testDb.AssertEnum("TestSchema", "StringEnum_EnumeratorsWithDisplayLabel", "String Enumeration with enumerators with display label", nullptr, PRIMITIVETYPE_String, false,
-                {{"An", ECValue("On"), "Turned On"},
-                {"Aus", ECValue("Off"), "Turned Off"}});
+                    {{"An", ECValue("On"), "Turned On"},
+                    {"Aus", ECValue("Off"), "Turned Off"}});
                 }
 
             }
@@ -389,23 +460,24 @@ TEST_F(IModelCompatibilityTestFixture, EC32Enums)
                 EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("TestSchema")) << testDb.GetDescription();
 
                 testDb.AssertEnum("CoreCustomAttributes", "DateTimeKind", nullptr, nullptr, PRIMITIVETYPE_String, true,
-                {{"Unspecified", ECValue("Unspecified"), nullptr},
-                {"Utc", ECValue("Utc"), nullptr},
-                {"Local", ECValue("Local"), nullptr}});
+                    {{"Unspecified", ECValue("Unspecified"), nullptr},
+                    {"Utc", ECValue("Utc"), nullptr},
+                    {"Local", ECValue("Local"), nullptr}});
 
                 testDb.AssertEnum("ECDbMeta", "ECClassModifier", nullptr, nullptr, PRIMITIVETYPE_Integer, true,
-                {{"None", ECValue(0), "None"},
-                {"Abstract", ECValue(1), "Abstract"},
-                {"Sealed", ECValue(2), "Sealed"}});
+                    {{"None", ECValue(0), "None"},
+                    {"Abstract", ECValue(1), "Abstract"},
+                    {"Sealed", ECValue(2), "Sealed"}});
 
                 testDb.AssertEnum("TestSchema", "IntEnum_EnumeratorsWithoutDisplayLabel", "Int Enumeration with enumerators without display label", "Int Enumeration with enumerators without display label", PRIMITIVETYPE_Integer, true,
-                {{"Unknown", ECValue(0), nullptr},
-                {"On", ECValue(1), nullptr},
-                {"Off", ECValue(2), nullptr}});
+                    {{"Unknown", ECValue(0), nullptr},
+                    {"On", ECValue(1), nullptr},
+                    {"Off", ECValue(2), nullptr}});
 
                 testDb.AssertEnum("TestSchema", "StringEnum_EnumeratorsWithDisplayLabel", "String Enumeration with enumerators with display label", nullptr, PRIMITIVETYPE_String, false,
-                {{"On", ECValue("On"), "Turned On"},
-                {"Off", ECValue("Off"), "Turned Off"}});
+                    {{"On", ECValue("On"), "Turned On"},
+                    {"Off", ECValue("Off"), "Turned Off"}});
+
                 continue;
                 }
 
@@ -415,48 +487,48 @@ TEST_F(IModelCompatibilityTestFixture, EC32Enums)
             if (!testDb.SupportsFeature(ECDbFeature::NamedEnumerators))
                 {
                 // file still is a 4.0.0.1 file -> wasn't upgraded
-
                 testDb.AssertEnum("CoreCustomAttributes", "DateTimeKind", nullptr, nullptr, PRIMITIVETYPE_String, true,
-                {{"Unspecified", ECValue("Unspecified"), nullptr},
-                {"Utc", ECValue("Utc"), nullptr},
-                {"Local", ECValue("Local"), nullptr}});
+                    {{"Unspecified", ECValue("Unspecified"), nullptr},
+                    {"Utc", ECValue("Utc"), nullptr},
+                    {"Local", ECValue("Local"), nullptr}});
 
                 testDb.AssertEnum("ECDbMeta", "ECClassModifier", nullptr, nullptr, PRIMITIVETYPE_Integer, true,
-                {{"ECClassModifier0", ECValue(0), "None"},
-                {"ECClassModifier1", ECValue(1), "Abstract"},
-                {"ECClassModifier2", ECValue(2), "Sealed"}});
+                    {{"ECClassModifier0", ECValue(0), "None"},
+                    {"ECClassModifier1", ECValue(1), "Abstract"},
+                    {"ECClassModifier2", ECValue(2), "Sealed"}});
 
                 testDb.AssertEnum("TestSchema", "IntEnum_EnumeratorsWithoutDisplayLabel", "Int Enumeration with enumerators without display label", "Int Enumeration with enumerators without display label", PRIMITIVETYPE_Integer, true,
-                {{"IntEnum_EnumeratorsWithoutDisplayLabel0", ECValue(0), nullptr},
-                {"IntEnum_EnumeratorsWithoutDisplayLabel1", ECValue(1), nullptr},
-                {"IntEnum_EnumeratorsWithoutDisplayLabel2", ECValue(2), nullptr}});
+                    {{"IntEnum_EnumeratorsWithoutDisplayLabel0", ECValue(0), nullptr},
+                    {"IntEnum_EnumeratorsWithoutDisplayLabel1", ECValue(1), nullptr},
+                    {"IntEnum_EnumeratorsWithoutDisplayLabel2", ECValue(2), nullptr}});
 
                 testDb.AssertEnum("TestSchema", "StringEnum_EnumeratorsWithDisplayLabel", "String Enumeration with enumerators with display label", nullptr, PRIMITIVETYPE_String, false,
-                {{"On", ECValue("On"), "Turned On"},
-                {"Off", ECValue("Off"), "Turned Off"}});
+                    {{"On", ECValue("On"), "Turned On"},
+                    {"Off", ECValue("Off"), "Turned Off"}});
+
                 continue;
                 }
 
             // file was upgraded to 4.0.0.2
             EXPECT_TRUE(testDb.GetTestFile().IsUpgraded() || testDb.IsUpgraded()) << testDb.GetDescription();
             testDb.AssertEnum("CoreCustomAttributes", "DateTimeKind", nullptr, nullptr, PRIMITIVETYPE_String, true,
-            {{"Unspecified", ECValue("Unspecified"), nullptr},
-            {"Utc", ECValue("Utc"), nullptr},
-            {"Local", ECValue("Local"), nullptr}});
+                {{"Unspecified", ECValue("Unspecified"), nullptr},
+                {"Utc", ECValue("Utc"), nullptr},
+                {"Local", ECValue("Local"), nullptr}});
 
             testDb.AssertEnum("ECDbMeta", "ECClassModifier", nullptr, nullptr, PRIMITIVETYPE_Integer, true,
-            {{"None", ECValue(0), "None"},
-            {"Abstract", ECValue(1), "Abstract"},
-            {"Sealed", ECValue(2), "Sealed"}});
+                {{"None", ECValue(0), "None"},
+                {"Abstract", ECValue(1), "Abstract"},
+                {"Sealed", ECValue(2), "Sealed"}});
 
             testDb.AssertEnum("TestSchema", "IntEnum_EnumeratorsWithoutDisplayLabel", "Int Enumeration with enumerators without display label", "Int Enumeration with enumerators without display label", PRIMITIVETYPE_Integer, true,
-            {{"IntEnum_EnumeratorsWithoutDisplayLabel0", ECValue(0), nullptr},
-            {"IntEnum_EnumeratorsWithoutDisplayLabel1", ECValue(1), nullptr},
-            {"IntEnum_EnumeratorsWithoutDisplayLabel2", ECValue(2), nullptr}});
+                {{"IntEnum_EnumeratorsWithoutDisplayLabel0", ECValue(0), nullptr},
+                {"IntEnum_EnumeratorsWithoutDisplayLabel1", ECValue(1), nullptr},
+                {"IntEnum_EnumeratorsWithoutDisplayLabel2", ECValue(2), nullptr}});
 
             testDb.AssertEnum("TestSchema", "StringEnum_EnumeratorsWithDisplayLabel", "String Enumeration with enumerators with display label", nullptr, PRIMITIVETYPE_String, false,
-            {{"On", ECValue("On"), "Turned On"},
-            {"Off", ECValue("Off"), "Turned Off"}});
+                {{"On", ECValue("On"), "Turned On"},
+                {"Off", ECValue("Off"), "Turned Off"}});
             }
         }
     }
@@ -910,70 +982,62 @@ TEST_F(IModelCompatibilityTestFixture, EC31SchemaImport)
                             <ECEnumerator value="2"/>
                         </ECEnumeration>
                      </ECSchema>)xml"));
+
             ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
             const SchemaStatus schemaImportStat = testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
-            switch (testDb.GetAge())
+
+            if (ProfileState::Age::Newer == testDb.GetECDbAge())
                 {
-                    case ProfileState::Age::Older:
-                    case ProfileState::Age::UpToDate:
-                    {
-                    EXPECT_EQ(SchemaStatus::Success, schemaImportStat) << testDb.GetDescription();
-
-                    if (testDb.GetAge() == ProfileState::Age::Older)
-                        {
-                        EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("TestSchema")) << testDb.GetDescription(); // not persisted yet in older files
-                        EXPECT_EQ(JsonValue("[{\"cnt\": 0}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef WHERE Name IN ('Units','Formats')")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
-                        EXPECT_EQ(JsonValue("[{\"cnt\": 1}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef s JOIN meta.SchemaHasSchemaReferences ref ON s.ECInstanceId=ref.SourceECInstanceId WHERE s.Name='TestSchema'")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
-                        }
-                    else
-                        {
-                        EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("TestSchema")) << testDb.GetDescription();
-                        EXPECT_EQ(JsonValue("[{\"cnt\": 2}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef WHERE Name IN ('Units','Formats')")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
-                        EXPECT_EQ(JsonValue("[{\"cnt\": 3}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef s JOIN meta.SchemaHasSchemaReferences ref ON s.ECInstanceId=ref.SourceECInstanceId WHERE s.Name='TestSchema'")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
-                        }
-
-                    EXPECT_EQ(JsonValue("[]"), testDb.ExecuteECSqlSelect("SELECT ECInstanceId, Size, Status FROM ts.MyDomainClass")) << testDb.GetDescription();
-
-                    ECClassCP cl = testDb.GetDb().Schemas().GetClass("TestSchema", "MyDomainClass");
-                    ASSERT_TRUE(cl != nullptr && cl->IsEntityClass()) << testDb.GetDescription();
-                    {
-                    ECPropertyCP sizeProp = cl->GetPropertyP("Size");
-                    ASSERT_TRUE(sizeProp != nullptr && sizeProp->GetIsPrimitive()) << testDb.GetDescription();
-                    KindOfQuantityCP koq = sizeProp->GetAsPrimitiveProperty()->GetKindOfQuantity();
-                    ASSERT_TRUE(koq != nullptr) << testDb.GetDescription();
-                    testDb.AssertKindOfQuantity(*koq, "TestSchema", "AREA", "Area", nullptr, "u:SQ_M", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_M]", "f:DefaultRealU(4)[u:SQ_FT]"])json"), 0.0001);
-                    }
-                    {
-                    ECPropertyCP statusProp = cl->GetPropertyP("Status");
-                    ASSERT_TRUE(statusProp != nullptr && statusProp->GetIsPrimitive()) << testDb.GetDescription();
-                    ECEnumerationCP ecenum = statusProp->GetAsPrimitiveProperty()->GetEnumeration();
-                    ASSERT_TRUE(ecenum != nullptr) << testDb.GetDescription();
-                    testDb.AssertEnum(*ecenum, "TestSchema", "StatusEnum", "Int Enumeration with enumerators without display label", "Int Enumeration with enumerators without display label", PRIMITIVETYPE_Integer, true,
-                    {{"StatusEnum0", ECValue(0), nullptr},
-                    {"StatusEnum1", ECValue(1), nullptr},
-                    {"StatusEnum2", ECValue(2), nullptr}});
-                    }
-
-                    testDb.AssertKindOfQuantity("TestSchema", "ANGLE", "Angle", nullptr, "u:RAD", JsonValue(R"json(["f:DefaultRealU(2)[u:ARC_DEG]", "f:AngleDMS"])json"), 0.0001);
-                    testDb.AssertKindOfQuantity("TestSchema", "AREA", "Area", nullptr, "u:SQ_M", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_M]", "f:DefaultRealU(4)[u:SQ_FT]"])json"), 0.0001);
-                    testDb.AssertKindOfQuantity("TestSchema", "TEMPERATURE", "Temperature", nullptr, "u:K", JsonValue(R"json(["f:DefaultRealU(4)[u:CELSIUS]","f:DefaultRealU(4)[u:FAHRENHEIT]","f:DefaultRealU(4)[u:K]"])json"), 0.01);
-
-                    testDb.AssertEnum("TestSchema", "StatusEnum", "Int Enumeration with enumerators without display label", "Int Enumeration with enumerators without display label", PRIMITIVETYPE_Integer, true,
-                    {{"StatusEnum0", ECValue(0), nullptr},
-                    {"StatusEnum1", ECValue(1), nullptr},
-                    {"StatusEnum2", ECValue(2), nullptr}});
-                    break;
-                    }
-
-                    case ProfileState::Age::Newer:
-                    {
-                    EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
-                    break;
-                    }
-                    default:
-                        FAIL() << "Unhandled ProfileState::Age enum value | " << testDb.GetDescription();
-                        break;
+                EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
+                continue;
                 }
+
+            EXPECT_EQ(SchemaStatus::Success, schemaImportStat) << testDb.GetDescription();
+
+            if (testDb.SupportsFeature(ECDbFeature::PersistedECVersions))
+                EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("TestSchema")) << testDb.GetDescription();
+            else
+                EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("TestSchema")) << testDb.GetDescription();
+
+            if (testDb.SupportsFeature(ECDbFeature::UnitsAndFormats))
+                {
+                EXPECT_EQ(JsonValue("[{\"cnt\": 2}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef WHERE Name IN ('Units','Formats')")) << "When importing into 4.0.0.2 or newer file, units and formats schema must be persisted. | " << testDb.GetDescription();
+                EXPECT_EQ(JsonValue("[{\"cnt\": 3}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef s JOIN meta.SchemaHasSchemaReferences ref ON s.ECInstanceId=ref.SourceECInstanceId WHERE s.Name='TestSchema'")) << "When importing into 4.0.0.2 or newer file, units and formats schema must be persisted. | " << testDb.GetDescription();
+                }
+            else
+                {
+                EXPECT_EQ(JsonValue("[{\"cnt\": 0}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef WHERE Name IN ('Units','Formats')")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
+                EXPECT_EQ(JsonValue("[{\"cnt\": 1}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef s JOIN meta.SchemaHasSchemaReferences ref ON s.ECInstanceId=ref.SourceECInstanceId WHERE s.Name='TestSchema'")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
+                }
+
+            EXPECT_EQ(JsonValue("[]"), testDb.ExecuteECSqlSelect("SELECT ECInstanceId, Size, Status FROM ts.MyDomainClass")) << testDb.GetDescription();
+
+            ECClassCP cl = testDb.GetDb().Schemas().GetClass("TestSchema", "MyDomainClass");
+            ASSERT_TRUE(cl != nullptr && cl->IsEntityClass()) << testDb.GetDescription();
+
+            ECPropertyCP sizeProp = cl->GetPropertyP("Size");
+            ASSERT_TRUE(sizeProp != nullptr && sizeProp->GetIsPrimitive()) << testDb.GetDescription();
+            KindOfQuantityCP koq = sizeProp->GetAsPrimitiveProperty()->GetKindOfQuantity();
+            ASSERT_TRUE(koq != nullptr) << testDb.GetDescription();
+            testDb.AssertKindOfQuantity(*koq, "TestSchema", "AREA", "Area", nullptr, "u:SQ_M", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_M]", "f:DefaultRealU(4)[u:SQ_FT]"])json"), 0.0001);
+
+            ECPropertyCP statusProp = cl->GetPropertyP("Status");
+            ASSERT_TRUE(statusProp != nullptr && statusProp->GetIsPrimitive()) << testDb.GetDescription();
+            ECEnumerationCP ecenum = statusProp->GetAsPrimitiveProperty()->GetEnumeration();
+            ASSERT_TRUE(ecenum != nullptr) << testDb.GetDescription();
+            testDb.AssertEnum(*ecenum, "TestSchema", "StatusEnum", "Int Enumeration with enumerators without display label", "Int Enumeration with enumerators without display label", PRIMITIVETYPE_Integer, true,
+                {{"StatusEnum0", ECValue(0), nullptr},
+                {"StatusEnum1", ECValue(1), nullptr},
+                {"StatusEnum2", ECValue(2), nullptr}});
+
+            testDb.AssertKindOfQuantity("TestSchema", "ANGLE", "Angle", nullptr, "u:RAD", JsonValue(R"json(["f:DefaultRealU(2)[u:ARC_DEG]", "f:AngleDMS"])json"), 0.0001);
+            testDb.AssertKindOfQuantity("TestSchema", "AREA", "Area", nullptr, "u:SQ_M", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_M]", "f:DefaultRealU(4)[u:SQ_FT]"])json"), 0.0001);
+            testDb.AssertKindOfQuantity("TestSchema", "TEMPERATURE", "Temperature", nullptr, "u:K", JsonValue(R"json(["f:DefaultRealU(4)[u:CELSIUS]","f:DefaultRealU(4)[u:FAHRENHEIT]","f:DefaultRealU(4)[u:K]"])json"), 0.01);
+
+            testDb.AssertEnum("TestSchema", "StatusEnum", "Int Enumeration with enumerators without display label", "Int Enumeration with enumerators without display label", PRIMITIVETYPE_Integer, true,
+                {{"StatusEnum0", ECValue(0), nullptr},
+                {"StatusEnum1", ECValue(1), nullptr},
+                {"StatusEnum2", ECValue(2), nullptr}});
             }
         }
     }
@@ -1009,44 +1073,34 @@ TEST_F(IModelCompatibilityTestFixture, EC32SchemaImport_Enums)
                             <ECEnumerator name="Unknown" value="2"/>
                         </ECEnumeration>
                      </ECSchema>)xml"));
+
             ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
             const SchemaStatus schemaImportStat = testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
-            switch (testDb.GetAge())
+
+            if (ProfileState::Age::Newer == testDb.GetECDbAge() || !testDb.SupportsFeature(ECDbFeature::NamedEnumerators))
                 {
-                    case ProfileState::Age::UpToDate:
-                    {
-                    EXPECT_EQ(JsonValue("[]"), testDb.ExecuteECSqlSelect("SELECT ECInstanceId, Status FROM ts.MyDomainClass")) << testDb.GetDescription();
-
-                    ECClassCP myDomainClass = testDb.GetDb().Schemas().GetClass("TestSchema", "MyDomainClass");
-                    ASSERT_TRUE(myDomainClass != nullptr && myDomainClass->IsEntityClass()) << testDb.GetDescription();
-                    {
-                    ECPropertyCP statusProp = myDomainClass->GetPropertyP("Status");
-                    ASSERT_TRUE(statusProp != nullptr && statusProp->GetIsPrimitive()) << testDb.GetDescription();
-                    ECEnumerationCP ecenum = statusProp->GetAsPrimitiveProperty()->GetEnumeration();
-                    ASSERT_TRUE(ecenum != nullptr) << testDb.GetDescription();
-                    testDb.AssertEnum(*ecenum, "TestSchema", "StatusEnum", "Int Enumeration with enumerators without display label", "Int Enumeration with enumerators without display label", PRIMITIVETYPE_Integer, true,
-                    {{"On", ECValue(0), nullptr},
-                    {"Off", ECValue(1), nullptr},
-                    {"Unknown", ECValue(2), nullptr}});
-                    }
-
-                    testDb.AssertEnum("TestSchema", "StatusEnum", "Int Enumeration with enumerators without display label", "Int Enumeration with enumerators without display label", PRIMITIVETYPE_Integer, true,
-                    {{"On", ECValue(0), nullptr},
-                    {"Off", ECValue(1), nullptr},
-                    {"Unknown", ECValue(2), nullptr}});
-                    break;
-                    }
-
-                    case ProfileState::Age::Older:
-                    case ProfileState::Age::Newer:
-                    {
-                    EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
-                    break;
-                    }
-                    default:
-                        FAIL() << "Unhandled ProfileState::Age enum value | " << testDb.GetDescription();
-                        break;
+                EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
+                continue;
                 }
+
+            EXPECT_EQ(JsonValue("[]"), testDb.ExecuteECSqlSelect("SELECT ECInstanceId, Status FROM ts.MyDomainClass")) << testDb.GetDescription();
+
+            ECClassCP myDomainClass = testDb.GetDb().Schemas().GetClass("TestSchema", "MyDomainClass");
+            ASSERT_TRUE(myDomainClass != nullptr && myDomainClass->IsEntityClass()) << testDb.GetDescription();
+
+            ECPropertyCP statusProp = myDomainClass->GetPropertyP("Status");
+            ASSERT_TRUE(statusProp != nullptr && statusProp->GetIsPrimitive()) << testDb.GetDescription();
+            ECEnumerationCP ecenum = statusProp->GetAsPrimitiveProperty()->GetEnumeration();
+            ASSERT_TRUE(ecenum != nullptr) << testDb.GetDescription();
+            testDb.AssertEnum(*ecenum, "TestSchema", "StatusEnum", "Int Enumeration with enumerators without display label", "Int Enumeration with enumerators without display label", PRIMITIVETYPE_Integer, true,
+                {{"On", ECValue(0), nullptr},
+                {"Off", ECValue(1), nullptr},
+                {"Unknown", ECValue(2), nullptr}});
+
+            testDb.AssertEnum("TestSchema", "StatusEnum", "Int Enumeration with enumerators without display label", "Int Enumeration with enumerators without display label", PRIMITIVETYPE_Integer, true,
+                {{"On", ECValue(0), nullptr},
+                {"Off", ECValue(1), nullptr},
+                {"Unknown", ECValue(2), nullptr}});
             }
         }
     }
@@ -1085,40 +1139,29 @@ TEST_F(IModelCompatibilityTestFixture, EC32SchemaImport_Koqs)
 
             ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
             const SchemaStatus schemaImportStat = testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
-            switch (testDb.GetAge())
+
+            if (ProfileState::Age::Newer == testDb.GetECDbAge() || !testDb.SupportsFeature(ECDbFeature::UnitsAndFormats))
                 {
-                    case ProfileState::Age::UpToDate:
-                    {
-                    EXPECT_EQ(SchemaStatus::Success, schemaImportStat) << testDb.GetDescription();
-
-                    EXPECT_EQ(JsonValue("[]"), testDb.ExecuteECSqlSelect("SELECT ECInstanceId, Size FROM ts.MyDomainClass")) << testDb.GetDescription();
-
-                    ECClassCP cl = testDb.GetDb().Schemas().GetClass("TestSchema", "MyDomainClass");
-                    ASSERT_TRUE(cl != nullptr && cl->IsEntityClass()) << testDb.GetDescription();
-                    {
-                    ECPropertyCP sizeProp = cl->GetPropertyP("Size");
-                    ASSERT_TRUE(sizeProp != nullptr && sizeProp->GetIsPrimitive()) << testDb.GetDescription();
-                    KindOfQuantityCP koq = sizeProp->GetAsPrimitiveProperty()->GetKindOfQuantity();
-                    ASSERT_TRUE(koq != nullptr) << testDb.GetDescription();
-                    testDb.AssertKindOfQuantity(*koq, "TestSchema", "AREA", "Area", nullptr, "u:SQ_M", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_M]", "f:DefaultRealU(4)[u:SQ_FT]"])json"), 0.0001);
-                    }
-
-                    testDb.AssertKindOfQuantity("TestSchema", "ANGLE", "Angle", nullptr, "u:RAD", JsonValue(R"json(["f:DefaultRealU(2)[u:ARC_DEG]"])json"), 0.0001);
-                    testDb.AssertKindOfQuantity("TestSchema", "AREA", "Area", nullptr, "u:SQ_M", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_M]", "f:DefaultRealU(4)[u:SQ_FT]"])json"), 0.0001);
-                    testDb.AssertKindOfQuantity("TestSchema", "TEMPERATURE", "Temperature", nullptr, "u:K", JsonValue(R"json(["f:DefaultRealU(4)[u:CELSIUS]","f:DefaultRealU(4)[u:FAHRENHEIT]","f:DefaultRealU(4)[u:K]"])json"), 0.01);
-                    break;
-                    }
-
-                    case ProfileState::Age::Older:
-                    case ProfileState::Age::Newer:
-                    {
-                    EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
-                    break;
-                    }
-                    default:
-                        FAIL() << "Unhandled ProfileState::Age enum value | " << testDb.GetDescription();
-                        break;
+                EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
+                continue;
                 }
+
+            EXPECT_EQ(SchemaStatus::Success, schemaImportStat) << testDb.GetDescription();
+
+            EXPECT_EQ(JsonValue("[]"), testDb.ExecuteECSqlSelect("SELECT ECInstanceId, Size FROM ts.MyDomainClass")) << testDb.GetDescription();
+
+            ECClassCP cl = testDb.GetDb().Schemas().GetClass("TestSchema", "MyDomainClass");
+            ASSERT_TRUE(cl != nullptr && cl->IsEntityClass()) << testDb.GetDescription();
+
+            ECPropertyCP sizeProp = cl->GetPropertyP("Size");
+            ASSERT_TRUE(sizeProp != nullptr && sizeProp->GetIsPrimitive()) << testDb.GetDescription();
+            KindOfQuantityCP koq = sizeProp->GetAsPrimitiveProperty()->GetKindOfQuantity();
+            ASSERT_TRUE(koq != nullptr) << testDb.GetDescription();
+            testDb.AssertKindOfQuantity(*koq, "TestSchema", "AREA", "Area", nullptr, "u:SQ_M", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_M]", "f:DefaultRealU(4)[u:SQ_FT]"])json"), 0.0001);
+
+            testDb.AssertKindOfQuantity("TestSchema", "ANGLE", "Angle", nullptr, "u:RAD", JsonValue(R"json(["f:DefaultRealU(2)[u:ARC_DEG]"])json"), 0.0001);
+            testDb.AssertKindOfQuantity("TestSchema", "AREA", "Area", nullptr, "u:SQ_M", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_M]", "f:DefaultRealU(4)[u:SQ_FT]"])json"), 0.0001);
+            testDb.AssertKindOfQuantity("TestSchema", "TEMPERATURE", "Temperature", nullptr, "u:K", JsonValue(R"json(["f:DefaultRealU(4)[u:CELSIUS]","f:DefaultRealU(4)[u:FAHRENHEIT]","f:DefaultRealU(4)[u:K]"])json"), 0.01);
             }
         }
     }
@@ -1143,11 +1186,13 @@ TEST_F(IModelCompatibilityTestFixture, EC31SchemaImport_Formats_API)
             ECSchemaPtr schema;
             ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0)) << testDb.GetDescription();
             schema->SetOriginalECXmlVersion(3, 1);
-            ECFormatP format = nullptr;
+
             Formatting::NumericFormatSpec spec;
             spec.SetPresentationType(Formatting::PresentationType::Decimal);
             spec.SetPrecision(Formatting::DecimalPrecision::Precision6);
             spec.SetFormatTraits((Formatting::FormatTraits) ((int) Formatting::FormatTraits::KeepSingleZero | (int) Formatting::FormatTraits::KeepDecimalPoint));
+
+            ECFormatP format = nullptr;
             ASSERT_EQ(ECObjectsStatus::Success, schema->CreateFormat(format, "DefaultReal", "real", nullptr, &spec)) << testDb.GetDescription();
 
             ASSERT_EQ(SchemaStatus::SchemaImportFailed, testDb.GetDgnDb().ImportSchemas({schema.get()}));
@@ -1182,7 +1227,7 @@ TEST_F(IModelCompatibilityTestFixture, EC31SchemaUpgrade_Formats_API)
 
             ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
             SchemaStatus schemaImportStat = testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
-            if (testDb.GetAge() == ProfileState::Age::Newer)
+            if (testDb.GetECDbAge() == ProfileState::Age::Newer)
                 {
                 EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
                 continue;
@@ -1198,15 +1243,18 @@ TEST_F(IModelCompatibilityTestFixture, EC31SchemaUpgrade_Formats_API)
             ECSchemaPtr schema;
             ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 1)) << testDb.GetDescription();
             schema->SetOriginalECXmlVersion(3, 1);
+
             ECStructClassP fooClass = nullptr;
             ASSERT_EQ(ECObjectsStatus::Success, schema->CreateStructClass(fooClass, "Foo")) << testDb.GetDescription();
             PrimitiveECPropertyP prop = nullptr;
             ASSERT_EQ(ECObjectsStatus::Success, fooClass->CreatePrimitiveProperty(prop, "Code", PRIMITIVETYPE_Integer)) << testDb.GetDescription();
-            ECFormatP format = nullptr;
+
             Formatting::NumericFormatSpec spec;
             spec.SetPresentationType(Formatting::PresentationType::Decimal);
             spec.SetPrecision(Formatting::DecimalPrecision::Precision6);
             spec.SetFormatTraits((Formatting::FormatTraits) ((int) Formatting::FormatTraits::KeepSingleZero | (int) Formatting::FormatTraits::KeepDecimalPoint));
+
+            ECFormatP format = nullptr;
             ASSERT_EQ(ECObjectsStatus::Success, schema->CreateFormat(format, "DefaultReal", "real", nullptr, &spec)) << testDb.GetDescription();
 
             ASSERT_EQ(SchemaStatus::SchemaImportFailed, testDb.GetDgnDb().ImportSchemas({schema.get()})) << testDb.GetDescription();
@@ -1238,83 +1286,71 @@ TEST_F(IModelCompatibilityTestFixture, EC31Enum_SchemaUpgrade)
             //    - Added enumerator 3
             // - Added subclass SubDomainClass
             ECSchemaReadContextPtr deserializationCtx = TestFileCreator::DeserializeSchema(testDb.GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-            <ECSchema schemaName="TestSchema" alias="ts" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-                <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
 
-             <ECEnumeration typeName="StatusEnum" displayLabel="Status" backingTypeName="int" isStrict="true">
-                <ECEnumerator value="0"/>
-                <ECEnumerator value="1"/>
-                <ECEnumerator value="2"/>
-                <ECEnumerator value="3"/>
-             </ECEnumeration>
-             <ECEntityClass typeName="MyDomainClass">
-                <BaseClass>bis:PhysicalElement</BaseClass>
-                <ECProperty propertyName="Status" typeName="StatusEnum" />
-             </ECEntityClass>
-             <ECEntityClass typeName="SubDomainClass">
-                <BaseClass>MyDomainClass</BaseClass>
-                <ECArrayProperty propertyName="Statuses" typeName="StatusEnum" />
-             </ECEntityClass>
-            </ECSchema>)xml"));
+                <ECEnumeration typeName="StatusEnum" displayLabel="Status" backingTypeName="int" isStrict="true">
+                    <ECEnumerator value="0"/>
+                    <ECEnumerator value="1"/>
+                    <ECEnumerator value="2"/>
+                    <ECEnumerator value="3"/>
+                </ECEnumeration>
+                <ECEntityClass typeName="MyDomainClass">
+                    <BaseClass>bis:PhysicalElement</BaseClass>
+                    <ECProperty propertyName="Status" typeName="StatusEnum" />
+                </ECEntityClass>
+                <ECEntityClass typeName="SubDomainClass">
+                    <BaseClass>MyDomainClass</BaseClass>
+                    <ECArrayProperty propertyName="Statuses" typeName="StatusEnum" />
+                </ECEntityClass>
+                </ECSchema>)xml"));
+
             ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
             const SchemaStatus schemaImportStat = testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
-            switch (testDb.GetAge())
+
+            if (ProfileState::Age::Newer == testDb.GetECDbAge())
                 {
-                    case ProfileState::Age::Older:
-                    case ProfileState::Age::UpToDate:
-                    {
-                    EXPECT_EQ(SchemaStatus::Success, schemaImportStat) << testDb.GetDescription();
-                    if (testDb.GetAge() == ProfileState::Age::Older)
-                        EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("TestSchema")) << testDb.GetDescription();
-                    else
-                        EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("TestSchema")) << testDb.GetDescription();
-
-                    EXPECT_EQ(JsonValue("[]"), testDb.ExecuteECSqlSelect("SELECT ECInstanceId,Status,Statuses FROM ts.SubDomainClass")) << testDb.GetDescription();
-
-                    ECClassCP cl = testDb.GetDb().Schemas().GetClass("TestSchema", "SubDomainClass");
-                    ASSERT_TRUE(cl != nullptr && cl->IsEntityClass()) << "SubDomainClass | " << testDb.GetDescription();
-
-                    {
-                    ECPropertyCP statusProp = cl->GetPropertyP("Status");
-                    ASSERT_TRUE(statusProp != nullptr && statusProp->GetIsPrimitive()) << "SubDomainClass | "  << testDb.GetDescription();
-                    ECEnumerationCP ecenum = statusProp->GetAsPrimitiveProperty()->GetEnumeration();
-                    ASSERT_TRUE(ecenum != nullptr) << "SubDomainClass | "  << testDb.GetDescription();
-                    testDb.AssertEnum(*ecenum, "TestSchema", "StatusEnum", "Status", nullptr, PRIMITIVETYPE_Integer, true,
-                        {{"StatusEnum0", ECValue(0), nullptr},
-                        {"StatusEnum1", ECValue(1), nullptr},
-                        {"StatusEnum2", ECValue(2), nullptr},
-                        {"StatusEnum3", ECValue(3), nullptr}});
-                    }
-
-                    {
-                    ECPropertyCP statusesProp = cl->GetPropertyP("Statuses");
-                    ASSERT_TRUE(statusesProp != nullptr && statusesProp->GetIsPrimitiveArray()) << "SubDomainClass | "  << testDb.GetDescription();
-                    ECEnumerationCP ecenum = statusesProp->GetAsPrimitiveArrayProperty()->GetEnumeration();
-                    ASSERT_TRUE(ecenum != nullptr) << "SubDomainClass | "  << testDb.GetDescription();
-                    testDb.AssertEnum(*ecenum, "TestSchema", "StatusEnum", "Status", nullptr, PRIMITIVETYPE_Integer, true,
-                        {{"StatusEnum0", ECValue(0), nullptr},
-                        {"StatusEnum1", ECValue(1), nullptr},
-                        {"StatusEnum2", ECValue(2), nullptr},
-                        {"StatusEnum3", ECValue(3), nullptr}});
-                    }
-
-                    testDb.AssertEnum("TestSchema", "StatusEnum", "Status", nullptr, PRIMITIVETYPE_Integer, true,
-                        {{"StatusEnum0", ECValue(0), nullptr},
-                        {"StatusEnum1", ECValue(1), nullptr},
-                        {"StatusEnum2", ECValue(2), nullptr},
-                        {"StatusEnum3", ECValue(3), nullptr}});
-                    break;
-                    }
-
-                    case ProfileState::Age::Newer:
-                    {
-                    EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
-                    break;
-                    }
-                    default:
-                        FAIL() << "Unhandled ProfileState::Age enum value | " << testDb.GetDescription();
-                        break;
+                EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
+                continue;
                 }
+
+            EXPECT_EQ(SchemaStatus::Success, schemaImportStat) << testDb.GetDescription();
+
+            if (testDb.SupportsFeature(ECDbFeature::PersistedECVersions))
+                EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("TestSchema")) << testDb.GetDescription();
+            else
+                EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("TestSchema")) << testDb.GetDescription();
+
+            EXPECT_EQ(JsonValue("[]"), testDb.ExecuteECSqlSelect("SELECT ECInstanceId,Status,Statuses FROM ts.SubDomainClass")) << testDb.GetDescription();
+
+            ECClassCP cl = testDb.GetDb().Schemas().GetClass("TestSchema", "SubDomainClass");
+            ASSERT_TRUE(cl != nullptr && cl->IsEntityClass()) << "SubDomainClass | " << testDb.GetDescription();
+
+            ECPropertyCP statusProp = cl->GetPropertyP("Status");
+            ASSERT_TRUE(statusProp != nullptr && statusProp->GetIsPrimitive()) << "SubDomainClass | " << testDb.GetDescription();
+            ECEnumerationCP ecenum = statusProp->GetAsPrimitiveProperty()->GetEnumeration();
+            ASSERT_TRUE(ecenum != nullptr) << "SubDomainClass | " << testDb.GetDescription();
+            testDb.AssertEnum(*ecenum, "TestSchema", "StatusEnum", "Status", nullptr, PRIMITIVETYPE_Integer, true,
+                {{"StatusEnum0", ECValue(0), nullptr},
+                {"StatusEnum1", ECValue(1), nullptr},
+                {"StatusEnum2", ECValue(2), nullptr},
+                {"StatusEnum3", ECValue(3), nullptr}});
+
+            ECPropertyCP statusesProp = cl->GetPropertyP("Statuses");
+            ASSERT_TRUE(statusesProp != nullptr && statusesProp->GetIsPrimitiveArray()) << "SubDomainClass | " << testDb.GetDescription();
+            ECEnumerationCP statusEnum = statusesProp->GetAsPrimitiveArrayProperty()->GetEnumeration();
+            ASSERT_TRUE(statusEnum != nullptr) << "SubDomainClass | " << testDb.GetDescription();
+            testDb.AssertEnum(*statusEnum, "TestSchema", "StatusEnum", "Status", nullptr, PRIMITIVETYPE_Integer, true,
+                {{"StatusEnum0", ECValue(0), nullptr},
+                {"StatusEnum1", ECValue(1), nullptr},
+                {"StatusEnum2", ECValue(2), nullptr},
+                {"StatusEnum3", ECValue(3), nullptr}});
+
+            testDb.AssertEnum("TestSchema", "StatusEnum", "Status", nullptr, PRIMITIVETYPE_Integer, true,
+                {{"StatusEnum0", ECValue(0), nullptr},
+                {"StatusEnum1", ECValue(1), nullptr},
+                {"StatusEnum2", ECValue(2), nullptr},
+                {"StatusEnum3", ECValue(3), nullptr}});
             }
         }
     }
@@ -1343,76 +1379,64 @@ TEST_F(IModelCompatibilityTestFixture, EC31Koqs_SchemaUpgrade)
             //    - Changed relativeError to 0.001
             // - Added subclass SubDomainClass
             ECSchemaReadContextPtr deserializationCtx = TestFileCreator::DeserializeSchema(testDb.GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-            <ECSchema schemaName="TestSchema" alias="ts" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-                <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
 
-             <KindOfQuantity typeName="AREA" displayLabel="Area" persistenceUnit="SQ.M(DefaultReal)" presentationUnits="SQ.M(real4u);SQ.FT(real4u);SQ.CM(real4u)" relativeError="0.001"/>
-             <ECEntityClass typeName="MyDomainClass">
-                <BaseClass>bis:PhysicalElement</BaseClass>
-                <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
-             </ECEntityClass>
-             <ECEntityClass typeName="SubDomainClass">
-                <BaseClass>MyDomainClass</BaseClass>
-                <ECArrayProperty propertyName="Sizes" typeName="double" kindOfQuantity="AREA" />
-             </ECEntityClass>
-            </ECSchema>)xml"));
+                    <KindOfQuantity typeName="AREA" displayLabel="Area" persistenceUnit="SQ.M(DefaultReal)" presentationUnits="SQ.M(real4u);SQ.FT(real4u);SQ.CM(real4u)" relativeError="0.001"/>
+                    <ECEntityClass typeName="MyDomainClass">
+                        <BaseClass>bis:PhysicalElement</BaseClass>
+                        <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="SubDomainClass">
+                        <BaseClass>MyDomainClass</BaseClass>
+                        <ECArrayProperty propertyName="Sizes" typeName="double" kindOfQuantity="AREA" />
+                    </ECEntityClass>
+                </ECSchema>)xml"));
+
             ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
             const SchemaStatus schemaImportStat = testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
-            switch (testDb.GetAge())
+
+            if (ProfileState::Age::Newer == testDb.GetECDbAge())
                 {
-                    case ProfileState::Age::Older:
-                    case ProfileState::Age::UpToDate:
-                    {
-                    EXPECT_EQ(SchemaStatus::Success, schemaImportStat) << testDb.GetDescription();
-                    if (testDb.GetAge() == ProfileState::Age::Older)
-                        {
-                        EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("TestSchema")) << testDb.GetDescription();
-                        EXPECT_EQ(JsonValue("[{\"cnt\": 0}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef WHERE Name IN ('Units','Formats')")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
-                        EXPECT_EQ(JsonValue("[{\"cnt\": 1}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef s JOIN meta.SchemaHasSchemaReferences ref ON s.ECInstanceId=ref.SourceECInstanceId WHERE s.Name='TestSchema'")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
-                        }
-                    else
-                        {
-                        EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("TestSchema")) << testDb.GetDescription();
-                        EXPECT_EQ(JsonValue("[{\"cnt\": 2}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef WHERE Name IN ('Units','Formats')")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
-                        EXPECT_EQ(JsonValue("[{\"cnt\": 3}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef s JOIN meta.SchemaHasSchemaReferences ref ON s.ECInstanceId=ref.SourceECInstanceId WHERE s.Name='TestSchema'")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
-                        }
-
-
-                    EXPECT_EQ(JsonValue("[]"), testDb.ExecuteECSqlSelect("SELECT ECInstanceId,Size,Sizes FROM ts.SubDomainClass")) << testDb.GetDescription();
-
-                    ECClassCP cl = testDb.GetDb().Schemas().GetClass("TestSchema", "SubDomainClass");
-                    ASSERT_TRUE(cl != nullptr && cl->IsEntityClass()) << "SubDomainClass | " << testDb.GetDescription();
-
-                    {
-                    ECPropertyCP sizeProp = cl->GetPropertyP("Size");
-                    ASSERT_TRUE(sizeProp != nullptr && sizeProp->GetIsPrimitive()) << testDb.GetDescription();
-                    KindOfQuantityCP koq = sizeProp->GetAsPrimitiveProperty()->GetKindOfQuantity();
-                    ASSERT_TRUE(koq != nullptr) << testDb.GetDescription();
-                    testDb.AssertKindOfQuantity(*koq, "TestSchema", "AREA", "Area", nullptr, "u:SQ_M", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_M]", "f:DefaultRealU(4)[u:SQ_FT]", "f:DefaultRealU(4)[u:SQ_CM]"])json"), 0.001);
-                    }
-
-                    {
-                    ECPropertyCP sizesProp = cl->GetPropertyP("Sizes");
-                    ASSERT_TRUE(sizesProp != nullptr && sizesProp->GetIsPrimitiveArray()) << testDb.GetDescription();
-                    KindOfQuantityCP koq = sizesProp->GetAsPrimitiveArrayProperty()->GetKindOfQuantity();
-                    ASSERT_TRUE(koq != nullptr) << testDb.GetDescription();
-                    testDb.AssertKindOfQuantity(*koq, "TestSchema", "AREA", "Area", nullptr, "u:SQ_M", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_M]", "f:DefaultRealU(4)[u:SQ_FT]", "f:DefaultRealU(4)[u:SQ_CM]"])json"), 0.001);
-                    }
-
-                    testDb.AssertKindOfQuantity("TestSchema", "AREA", "Area", nullptr, "u:SQ_M", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_M]", "f:DefaultRealU(4)[u:SQ_FT]", "f:DefaultRealU(4)[u:SQ_CM]"])json"), 0.001);
-                    break;
-                    }
-
-                    case ProfileState::Age::Newer:
-                    {
-                    EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
-                    break;
-                    }
-
-                    default:
-                        FAIL() << "Unhandled ProfileState::Age enum value | " << testDb.GetDescription();
-                        break;
+                EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
+                continue;
                 }
+
+            if (testDb.SupportsFeature(ECDbFeature::PersistedECVersions))
+                EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("TestSchema")) << testDb.GetDescription();
+            else
+                EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("TestSchema")) << testDb.GetDescription();
+
+
+            if (testDb.SupportsFeature(ECDbFeature::UnitsAndFormats))
+                {
+                EXPECT_EQ(JsonValue("[{\"cnt\": 2}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef WHERE Name IN ('Units','Formats')")) << "When importing into 4.0.0.2 or newer file, units and formats schema must be persisted. | " << testDb.GetDescription();
+                EXPECT_EQ(JsonValue("[{\"cnt\": 3}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef s JOIN meta.SchemaHasSchemaReferences ref ON s.ECInstanceId=ref.SourceECInstanceId WHERE s.Name='TestSchema'")) << "When importing into 4.0.0.2 or newer file, units and formats schema must be persisted. | " << testDb.GetDescription();
+                }
+            else
+                {
+                EXPECT_EQ(JsonValue("[{\"cnt\": 0}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef WHERE Name IN ('Units','Formats')")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
+                EXPECT_EQ(JsonValue("[{\"cnt\": 1}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef s JOIN meta.SchemaHasSchemaReferences ref ON s.ECInstanceId=ref.SourceECInstanceId WHERE s.Name='TestSchema'")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
+                }
+
+            EXPECT_EQ(JsonValue("[]"), testDb.ExecuteECSqlSelect("SELECT ECInstanceId,Size,Sizes FROM ts.SubDomainClass")) << testDb.GetDescription();
+
+            ECClassCP cl = testDb.GetDb().Schemas().GetClass("TestSchema", "SubDomainClass");
+            ASSERT_TRUE(cl != nullptr && cl->IsEntityClass()) << "SubDomainClass | " << testDb.GetDescription();
+
+            ECPropertyCP sizeProp = cl->GetPropertyP("Size");
+            ASSERT_TRUE(sizeProp != nullptr && sizeProp->GetIsPrimitive()) << testDb.GetDescription();
+            KindOfQuantityCP koq = sizeProp->GetAsPrimitiveProperty()->GetKindOfQuantity();
+            ASSERT_TRUE(koq != nullptr) << testDb.GetDescription();
+            testDb.AssertKindOfQuantity(*koq, "TestSchema", "AREA", "Area", nullptr, "u:SQ_M", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_M]", "f:DefaultRealU(4)[u:SQ_FT]", "f:DefaultRealU(4)[u:SQ_CM]"])json"), 0.001);
+
+            ECPropertyCP sizesProp = cl->GetPropertyP("Sizes");
+            ASSERT_TRUE(sizesProp != nullptr && sizesProp->GetIsPrimitiveArray()) << testDb.GetDescription();
+            KindOfQuantityCP sizesKoq = sizesProp->GetAsPrimitiveArrayProperty()->GetKindOfQuantity();
+            ASSERT_TRUE(sizesKoq != nullptr) << testDb.GetDescription();
+            testDb.AssertKindOfQuantity(*sizesKoq, "TestSchema", "AREA", "Area", nullptr, "u:SQ_M", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_M]", "f:DefaultRealU(4)[u:SQ_FT]", "f:DefaultRealU(4)[u:SQ_CM]"])json"), 0.001);
+
+            testDb.AssertKindOfQuantity("TestSchema", "AREA", "Area", nullptr, "u:SQ_M", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_M]", "f:DefaultRealU(4)[u:SQ_FT]", "f:DefaultRealU(4)[u:SQ_CM]"])json"), 0.001);
             }
         }
     }
@@ -1442,81 +1466,67 @@ TEST_F(IModelCompatibilityTestFixture, EC31ToEC32SchemaUpgrade_Enums)
             //    - Added enumerator 3
             // - Added subclass SubDomainClass
             ECSchemaReadContextPtr deserializationCtx = TestFileCreator::DeserializeSchema(testDb.GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-          <ECSchema schemaName="TestSchema" alias="ts" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECSchemaReference name="BisCore" version="01.00.00" alias="bis" />
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                    <ECSchemaReference name="BisCore" version="01.00.00" alias="bis" />
 
-            <ECEnumeration typeName="StatusEnum" displayLabel="Status" backingTypeName="int" isStrict="true">
-                <ECEnumerator name="On" value="0"/>
-                <ECEnumerator name="Off" value="1"/>
-                <ECEnumerator name="Unknown" value="2"/>
-                <ECEnumerator name="Halfhalf" value="3"/>
-            </ECEnumeration>
-            <ECEntityClass typeName="MyDomainClass">
-                <BaseClass>bis:PhysicalElement</BaseClass>
-                <ECProperty propertyName="Status" typeName="StatusEnum" />
-             </ECEntityClass>
-             <ECEntityClass typeName="SubDomainClass">
-                <BaseClass>MyDomainClass</BaseClass>
-                <ECArrayProperty propertyName="Statuses" typeName="StatusEnum" />
-             </ECEntityClass>
-           </ECSchema>)xml"));
-           ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
-           const SchemaStatus schemaImportStat = testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
+                    <ECEnumeration typeName="StatusEnum" displayLabel="Status" backingTypeName="int" isStrict="true">
+                        <ECEnumerator name="On" value="0"/>
+                        <ECEnumerator name="Off" value="1"/>
+                        <ECEnumerator name="Unknown" value="2"/>
+                        <ECEnumerator name="Halfhalf" value="3"/>
+                    </ECEnumeration>
+                    <ECEntityClass typeName="MyDomainClass">
+                        <BaseClass>bis:PhysicalElement</BaseClass>
+                        <ECProperty propertyName="Status" typeName="StatusEnum" />
+                        </ECEntityClass>
+                        <ECEntityClass typeName="SubDomainClass">
+                        <BaseClass>MyDomainClass</BaseClass>
+                        <ECArrayProperty propertyName="Statuses" typeName="StatusEnum" />
+                    </ECEntityClass>
+                </ECSchema>)xml"));
 
-           switch (testDb.GetAge())
-               {
-                   case ProfileState::Age::UpToDate:
-                   {
-                   EXPECT_EQ(SchemaStatus::Success, schemaImportStat) << testDb.GetDescription();
-                   EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("TestSchema")) << testDb.GetDescription();
+            ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
+            const SchemaStatus schemaImportStat = testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
 
-                   EXPECT_EQ(JsonValue("[]"), testDb.ExecuteECSqlSelect("SELECT ECInstanceId,Status,Statuses FROM ts.SubDomainClass")) << testDb.GetDescription();
+            if (ProfileState::Age::Newer == testDb.GetECDbAge() || !testDb.SupportsFeature(ECDbFeature::NamedEnumerators))
+                {
+                EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
+                continue;
+                }
 
-                   ECClassCP cl = testDb.GetDb().Schemas().GetClass("TestSchema", "SubDomainClass");
-                   ASSERT_TRUE(cl != nullptr && cl->IsEntityClass()) << "SubDomainClass | " << testDb.GetDescription();
+            EXPECT_EQ(SchemaStatus::Success, schemaImportStat) << testDb.GetDescription();
+            EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("TestSchema")) << testDb.GetDescription();
 
-                   {
-                   ECPropertyCP statusProp = cl->GetPropertyP("Status");
-                   ASSERT_TRUE(statusProp != nullptr && statusProp->GetIsPrimitive()) << "SubDomainClass | " << testDb.GetDescription();
-                   ECEnumerationCP ecenum = statusProp->GetAsPrimitiveProperty()->GetEnumeration();
-                   ASSERT_TRUE(ecenum != nullptr) << "SubDomainClass | " << testDb.GetDescription();
-                   testDb.AssertEnum(*ecenum, "TestSchema", "StatusEnum", "Status", nullptr, PRIMITIVETYPE_Integer, true,
-                       {{"On", ECValue(0), nullptr},
-                       {"Off", ECValue(1), nullptr},
-                       {"Unknown", ECValue(2), nullptr},
-                       {"Halfhalf", ECValue(3), nullptr}});
-                   }
+            EXPECT_EQ(JsonValue("[]"), testDb.ExecuteECSqlSelect("SELECT ECInstanceId,Status,Statuses FROM ts.SubDomainClass")) << testDb.GetDescription();
 
-                   {
-                   ECPropertyCP statusesProp = cl->GetPropertyP("Statuses");
-                   ASSERT_TRUE(statusesProp != nullptr && statusesProp->GetIsPrimitiveArray()) << "SubDomainClass | " << testDb.GetDescription();
-                   ECEnumerationCP ecenum = statusesProp->GetAsPrimitiveArrayProperty()->GetEnumeration();
-                   ASSERT_TRUE(ecenum != nullptr) << "SubDomainClass | " << testDb.GetDescription();
-                   testDb.AssertEnum(*ecenum, "TestSchema", "StatusEnum", "Status", nullptr, PRIMITIVETYPE_Integer, true,
-                       {{"On", ECValue(0), nullptr},
-                       {"Off", ECValue(1), nullptr},
-                       {"Unknown", ECValue(2), nullptr},
-                       {"Halfhalf", ECValue(3), nullptr}});
-                   }
+            ECClassCP cl = testDb.GetDb().Schemas().GetClass("TestSchema", "SubDomainClass");
+            ASSERT_TRUE(cl != nullptr && cl->IsEntityClass()) << "SubDomainClass | " << testDb.GetDescription();
 
-                   testDb.AssertEnum("TestSchema", "StatusEnum", "Status", nullptr, PRIMITIVETYPE_Integer, true,
-                       {{"On", ECValue(0), nullptr},
-                       {"Off", ECValue(1), nullptr},
-                       {"Unknown", ECValue(2), nullptr},
-                       {"Halfhalf", ECValue(3), nullptr}});
-                   break;
-                   }
+            ECPropertyCP statusProp = cl->GetPropertyP("Status");
+            ASSERT_TRUE(statusProp != nullptr && statusProp->GetIsPrimitive()) << "SubDomainClass | " << testDb.GetDescription();
+            ECEnumerationCP ecenum = statusProp->GetAsPrimitiveProperty()->GetEnumeration();
+            ASSERT_TRUE(ecenum != nullptr) << "SubDomainClass | " << testDb.GetDescription();
+            testDb.AssertEnum(*ecenum, "TestSchema", "StatusEnum", "Status", nullptr, PRIMITIVETYPE_Integer, true,
+                {{"On", ECValue(0), nullptr},
+                {"Off", ECValue(1), nullptr},
+                {"Unknown", ECValue(2), nullptr},
+                {"Halfhalf", ECValue(3), nullptr}});
 
-                   case ProfileState::Age::Older:
-                   case ProfileState::Age::Newer:
-                   {
-                   EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
-                   break;
-                   }
-                   default:
-                       FAIL() << "Unhandled ProfileState::Age enum value | " << testDb.GetDescription();
-                       break;
-               }
+            ECPropertyCP statusesProp = cl->GetPropertyP("Statuses");
+            ASSERT_TRUE(statusesProp != nullptr && statusesProp->GetIsPrimitiveArray()) << "SubDomainClass | " << testDb.GetDescription();
+            ECEnumerationCP statusesEnum = statusesProp->GetAsPrimitiveArrayProperty()->GetEnumeration();
+            ASSERT_TRUE(statusesEnum != nullptr) << "SubDomainClass | " << testDb.GetDescription();
+            testDb.AssertEnum(*statusesEnum, "TestSchema", "StatusEnum", "Status", nullptr, PRIMITIVETYPE_Integer, true,
+                {{"On", ECValue(0), nullptr},
+                {"Off", ECValue(1), nullptr},
+                {"Unknown", ECValue(2), nullptr},
+                {"Halfhalf", ECValue(3), nullptr}});
+
+            testDb.AssertEnum("TestSchema", "StatusEnum", "Status", nullptr, PRIMITIVETYPE_Integer, true,
+                {{"On", ECValue(0), nullptr},
+                {"Off", ECValue(1), nullptr},
+                {"Unknown", ECValue(2), nullptr},
+                {"Halfhalf", ECValue(3), nullptr}});
             }
         }
     }
@@ -1545,66 +1555,53 @@ TEST_F(IModelCompatibilityTestFixture, EC31ToEC32SchemaUpgrade_Koqs)
             //    - Changed relativeError to 0.001
             // - Added subclass SubDomainClass
             ECSchemaReadContextPtr deserializationCtx = TestFileCreator::DeserializeSchema(testDb.GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-          <ECSchema schemaName="TestSchema" alias="ts" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
-            <ECSchemaReference name="Units" version="01.00.00" alias="u" />
-            <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                    <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+                    <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+                    <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
 
-            <KindOfQuantity typeName="AREA" displayLabel="Area" persistenceUnit="u:SQ_M" presentationUnits="f:DefaultRealU(4)[u:SQ_M];f:DefaultRealU(4)[u:SQ_FT];f:DefaultRealU(4)[u:SQ_CM]" relativeError="0.001"/>
-            <ECEntityClass typeName="MyDomainClass">
-                <BaseClass>bis:PhysicalElement</BaseClass>
-                <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
-             </ECEntityClass>
-             <ECEntityClass typeName="SubDomainClass">
-                <BaseClass>MyDomainClass</BaseClass>
-                <ECArrayProperty propertyName="Sizes" typeName="double" kindOfQuantity="AREA" />
-             </ECEntityClass>
-           </ECSchema>)xml"));
+                    <KindOfQuantity typeName="AREA" displayLabel="Area" persistenceUnit="u:SQ_M" presentationUnits="f:DefaultRealU(4)[u:SQ_M];f:DefaultRealU(4)[u:SQ_FT];f:DefaultRealU(4)[u:SQ_CM]" relativeError="0.001"/>
+                    <ECEntityClass typeName="MyDomainClass">
+                        <BaseClass>bis:PhysicalElement</BaseClass>
+                        <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="SubDomainClass">
+                        <BaseClass>MyDomainClass</BaseClass>
+                        <ECArrayProperty propertyName="Sizes" typeName="double" kindOfQuantity="AREA" />
+                    </ECEntityClass>
+                </ECSchema>)xml"));
 
             ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
             const SchemaStatus schemaImportStat = testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
-            switch (testDb.GetAge())
+
+            // If the ECDb version is newer or 
+            if (ProfileState::Age::Newer == testDb.GetECDbAge() || !testDb.SupportsFeature(ECDbFeature::UnitsAndFormats))
                 {
-                    case ProfileState::Age::UpToDate:
-                    {
-                    EXPECT_EQ(SchemaStatus::Success, schemaImportStat) << testDb.GetDescription();
-                    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("TestSchema")) << testDb.GetDescription();
-
-                    EXPECT_EQ(JsonValue("[]"), testDb.ExecuteECSqlSelect("SELECT ECInstanceId,Size,Sizes FROM ts.SubDomainClass")) << testDb.GetDescription();
-
-                    ECClassCP cl = testDb.GetDb().Schemas().GetClass("TestSchema", "SubDomainClass");
-                    ASSERT_TRUE(cl != nullptr && cl->IsEntityClass()) << "SubDomainClass | " << testDb.GetDescription();
-
-                    {
-                    ECPropertyCP sizeProp = cl->GetPropertyP("Size");
-                    ASSERT_TRUE(sizeProp != nullptr && sizeProp->GetIsPrimitive()) << testDb.GetDescription();
-                    KindOfQuantityCP koq = sizeProp->GetAsPrimitiveProperty()->GetKindOfQuantity();
-                    ASSERT_TRUE(koq != nullptr) << testDb.GetDescription();
-                    testDb.AssertKindOfQuantity(*koq, "TestSchema", "AREA", "Area", nullptr, "u:SQ_M", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_M]", "f:DefaultRealU(4)[u:SQ_FT]", "f:DefaultRealU(4)[u:SQ_CM]"])json"), 0.001);
-                    }
-
-                    {
-                    ECPropertyCP sizesProp = cl->GetPropertyP("Sizes");
-                    ASSERT_TRUE(sizesProp != nullptr && sizesProp->GetIsPrimitiveArray()) << testDb.GetDescription();
-                    KindOfQuantityCP koq = sizesProp->GetAsPrimitiveArrayProperty()->GetKindOfQuantity();
-                    ASSERT_TRUE(koq != nullptr) << testDb.GetDescription();
-                    testDb.AssertKindOfQuantity(*koq, "TestSchema", "AREA", "Area", nullptr, "u:SQ_M", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_M]", "f:DefaultRealU(4)[u:SQ_FT]", "f:DefaultRealU(4)[u:SQ_CM]"])json"), 0.001);
-                    }
-
-                    testDb.AssertKindOfQuantity("TestSchema", "AREA", "Area", nullptr, "u:SQ_M", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_M]", "f:DefaultRealU(4)[u:SQ_FT]", "f:DefaultRealU(4)[u:SQ_CM]"])json"), 0.001);
-                    break;
-                    }
-                    case ProfileState::Age::Older:
-                    case ProfileState::Age::Newer:
-                    {
-                    EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
-                    break;
-                    }
-
-                    default:
-                        FAIL() << "Unhandled ProfileState::Age enum value | " << testDb.GetDescription();
-                        break;
+                EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
+                continue;
                 }
+
+            EXPECT_EQ(SchemaStatus::Success, schemaImportStat) << testDb.GetDescription();
+            EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("TestSchema")) << testDb.GetDescription();
+
+            EXPECT_EQ(JsonValue("[]"), testDb.ExecuteECSqlSelect("SELECT ECInstanceId,Size,Sizes FROM ts.SubDomainClass")) << testDb.GetDescription();
+
+            ECClassCP cl = testDb.GetDb().Schemas().GetClass("TestSchema", "SubDomainClass");
+            ASSERT_TRUE(cl != nullptr && cl->IsEntityClass()) << "SubDomainClass | " << testDb.GetDescription();
+
+            ECPropertyCP sizeProp = cl->GetPropertyP("Size");
+            ASSERT_TRUE(sizeProp != nullptr && sizeProp->GetIsPrimitive()) << testDb.GetDescription();
+            KindOfQuantityCP koq = sizeProp->GetAsPrimitiveProperty()->GetKindOfQuantity();
+            ASSERT_TRUE(koq != nullptr) << testDb.GetDescription();
+            testDb.AssertKindOfQuantity(*koq, "TestSchema", "AREA", "Area", nullptr, "u:SQ_M", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_M]", "f:DefaultRealU(4)[u:SQ_FT]", "f:DefaultRealU(4)[u:SQ_CM]"])json"), 0.001);
+
+            ECPropertyCP sizesProp = cl->GetPropertyP("Sizes");
+            ASSERT_TRUE(sizesProp != nullptr && sizesProp->GetIsPrimitiveArray()) << testDb.GetDescription();
+            KindOfQuantityCP sizesKoq = sizesProp->GetAsPrimitiveArrayProperty()->GetKindOfQuantity();
+            ASSERT_TRUE(sizesKoq != nullptr) << testDb.GetDescription();
+            testDb.AssertKindOfQuantity(*sizesKoq, "TestSchema", "AREA", "Area", nullptr, "u:SQ_M", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_M]", "f:DefaultRealU(4)[u:SQ_FT]", "f:DefaultRealU(4)[u:SQ_CM]"])json"), 0.001);
+
+            testDb.AssertKindOfQuantity("TestSchema", "AREA", "Area", nullptr, "u:SQ_M", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_M]", "f:DefaultRealU(4)[u:SQ_FT]", "f:DefaultRealU(4)[u:SQ_CM]"])json"), 0.001);
             }
         }
     }
@@ -1633,78 +1630,65 @@ TEST_F(IModelCompatibilityTestFixture, EC32SchemaUpgrade_Enums)
             //    - Added enumerator 3
             // - Added subclasses SubA, SubB, SubC
             ECSchemaReadContextPtr deserializationCtx = TestFileCreator::DeserializeSchema(testDb.GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-            <ECSchema schemaName="TestSchema" alias="ts" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
-                 <ECEnumeration typeName="StatusEnum" displayLabel="Status" backingTypeName="int" isStrict="true">
-                    <ECEnumerator name="On" value="0"/>
-                    <ECEnumerator name="Off" value="1"/>
-                    <ECEnumerator name="Unknown" value="2"/>
-                    <ECEnumerator name="Halfhalf" value="3"/>
-                 </ECEnumeration>
-                  <ECEntityClass typeName="MyDomainClass">
-                    <BaseClass>bis:PhysicalElement</BaseClass>
-                    <ECProperty propertyName="Status" typeName="StatusEnum" />
-                 </ECEntityClass>
-                 <ECEntityClass typeName="SubDomainClass">
-                    <BaseClass>MyDomainClass</BaseClass>
-                    <ECArrayProperty propertyName="Statuses" typeName="StatusEnum" />
-                 </ECEntityClass>
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                    <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+                    <ECEnumeration typeName="StatusEnum" displayLabel="Status" backingTypeName="int" isStrict="true">
+                        <ECEnumerator name="On" value="0"/>
+                        <ECEnumerator name="Off" value="1"/>
+                        <ECEnumerator name="Unknown" value="2"/>
+                        <ECEnumerator name="Halfhalf" value="3"/>
+                    </ECEnumeration>
+                    <ECEntityClass typeName="MyDomainClass">
+                        <BaseClass>bis:PhysicalElement</BaseClass>
+                        <ECProperty propertyName="Status" typeName="StatusEnum" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="SubDomainClass">
+                        <BaseClass>MyDomainClass</BaseClass>
+                        <ECArrayProperty propertyName="Statuses" typeName="StatusEnum" />
+                    </ECEntityClass>
                 </ECSchema>)xml"));
+
             ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
             const SchemaStatus schemaImportStat = testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
-            switch (testDb.GetAge())
+
+            if (ProfileState::Age::Newer == testDb.GetECDbAge() || !testDb.SupportsFeature(ECDbFeature::NamedEnumerators))
                 {
-                    case ProfileState::Age::UpToDate:
-                    {
-                    EXPECT_EQ(SchemaStatus::Success, schemaImportStat) << testDb.GetDescription();
-
-                    EXPECT_EQ(JsonValue("[]"), testDb.ExecuteECSqlSelect("SELECT ECInstanceId,Status,Statuses FROM ts.SubDomainClass")) << testDb.GetDescription();
-
-                    ECClassCP cl = testDb.GetDb().Schemas().GetClass("TestSchema", "SubDomainClass");
-                    ASSERT_TRUE(cl != nullptr && cl->IsEntityClass()) << "SubDomainClass | " << testDb.GetDescription();
-
-                    {
-                    ECPropertyCP statusProp = cl->GetPropertyP("Status");
-                    ASSERT_TRUE(statusProp != nullptr && statusProp->GetIsPrimitive()) << "SubDomainClass | " << testDb.GetDescription();
-                    ECEnumerationCP ecenum = statusProp->GetAsPrimitiveProperty()->GetEnumeration();
-                    ASSERT_TRUE(ecenum != nullptr) << "SubDomainClass | " << testDb.GetDescription();
-                    testDb.AssertEnum(*ecenum, "TestSchema", "StatusEnum", "Status", nullptr, PRIMITIVETYPE_Integer, true,
-                    {{"On", ECValue(0), nullptr},
-                    {"Off", ECValue(1), nullptr},
-                    {"Unknown", ECValue(2), nullptr},
-                    {"Halfhalf", ECValue(3), nullptr}});
-                    }
-
-                    {
-                    ECPropertyCP statusesProp = cl->GetPropertyP("Statuses");
-                    ASSERT_TRUE(statusesProp != nullptr && statusesProp->GetIsPrimitiveArray()) << "SubDomainClass | " << testDb.GetDescription();
-                    ECEnumerationCP ecenum = statusesProp->GetAsPrimitiveArrayProperty()->GetEnumeration();
-                    ASSERT_TRUE(ecenum != nullptr) << "SubDomainClass | " << testDb.GetDescription();
-                    testDb.AssertEnum(*ecenum, "TestSchema", "StatusEnum", "Status", nullptr, PRIMITIVETYPE_Integer, true,
-                    {{"On", ECValue(0), nullptr},
-                    {"Off", ECValue(1), nullptr},
-                    {"Unknown", ECValue(2), nullptr},
-                    {"Halfhalf", ECValue(3), nullptr}});
-                    }
-
-                    testDb.AssertEnum("TestSchema", "StatusEnum", "Status", nullptr, PRIMITIVETYPE_Integer, true,
-                    {{"On", ECValue(0), nullptr},
-                    {"Off", ECValue(1), nullptr},
-                    {"Unknown", ECValue(2), nullptr},
-                    {"Halfhalf", ECValue(3), nullptr}});
-                    break;
-                    }
-
-                    case ProfileState::Age::Older:
-                    case ProfileState::Age::Newer:
-                    {
-                    EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
-                    break;
-                    }
-                    default:
-                        FAIL() << "Unhandled ProfileState::Age enum value | " << testDb.GetDescription();
-                        break;
+                EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
+                continue;
                 }
+
+            EXPECT_EQ(SchemaStatus::Success, schemaImportStat) << testDb.GetDescription();
+
+            EXPECT_EQ(JsonValue("[]"), testDb.ExecuteECSqlSelect("SELECT ECInstanceId,Status,Statuses FROM ts.SubDomainClass")) << testDb.GetDescription();
+
+            ECClassCP cl = testDb.GetDb().Schemas().GetClass("TestSchema", "SubDomainClass");
+            ASSERT_TRUE(cl != nullptr && cl->IsEntityClass()) << "SubDomainClass | " << testDb.GetDescription();
+
+            ECPropertyCP statusProp = cl->GetPropertyP("Status");
+            ASSERT_TRUE(statusProp != nullptr && statusProp->GetIsPrimitive()) << "SubDomainClass | " << testDb.GetDescription();
+            ECEnumerationCP ecenum = statusProp->GetAsPrimitiveProperty()->GetEnumeration();
+            ASSERT_TRUE(ecenum != nullptr) << "SubDomainClass | " << testDb.GetDescription();
+            testDb.AssertEnum(*ecenum, "TestSchema", "StatusEnum", "Status", nullptr, PRIMITIVETYPE_Integer, true,
+                {{"On", ECValue(0), nullptr},
+                {"Off", ECValue(1), nullptr},
+                {"Unknown", ECValue(2), nullptr},
+                {"Halfhalf", ECValue(3), nullptr}});
+
+            ECPropertyCP statusesProp = cl->GetPropertyP("Statuses");
+            ASSERT_TRUE(statusesProp != nullptr && statusesProp->GetIsPrimitiveArray()) << "SubDomainClass | " << testDb.GetDescription();
+            ECEnumerationCP statusesEnum = statusesProp->GetAsPrimitiveArrayProperty()->GetEnumeration();
+            ASSERT_TRUE(statusesEnum != nullptr) << "SubDomainClass | " << testDb.GetDescription();
+            testDb.AssertEnum(*statusesEnum, "TestSchema", "StatusEnum", "Status", nullptr, PRIMITIVETYPE_Integer, true,
+                {{"On", ECValue(0), nullptr},
+                {"Off", ECValue(1), nullptr},
+                {"Unknown", ECValue(2), nullptr},
+                {"Halfhalf", ECValue(3), nullptr}});
+
+            testDb.AssertEnum("TestSchema", "StatusEnum", "Status", nullptr, PRIMITIVETYPE_Integer, true,
+                {{"On", ECValue(0), nullptr},
+                {"Off", ECValue(1), nullptr},
+                {"Unknown", ECValue(2), nullptr},
+                {"Halfhalf", ECValue(3), nullptr}});
             }
         }
     }
@@ -1748,53 +1732,40 @@ TEST_F(IModelCompatibilityTestFixture, EC32SchemaUpgrade_Koqs)
                 <ECArrayProperty propertyName="Sizes" typeName="double" kindOfQuantity="AREA" />
              </ECEntityClass>
             </ECSchema>)xml"));
+
             ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
             const SchemaStatus schemaImportStat = testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
-            switch (testDb.GetAge())
+
+            if (ProfileState::Age::Newer == testDb.GetECDbAge() || !testDb.SupportsFeature(ECDbFeature::UnitsAndFormats))
                 {
-                    case ProfileState::Age::UpToDate:
-                    {
-                    EXPECT_EQ(SchemaStatus::Success, schemaImportStat) << testDb.GetDescription();
-                    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("TestSchema")) << testDb.GetDescription();
-                    EXPECT_EQ(JsonValue("[]"), testDb.ExecuteECSqlSelect("SELECT ECInstanceId,Size,Sizes FROM ts.SubDomainClass")) << testDb.GetDescription();
-
-                    ECClassCP cl = testDb.GetDb().Schemas().GetClass("TestSchema", "SubDomainClass");
-                    ASSERT_TRUE(cl != nullptr && cl->IsEntityClass()) << "SubDomainClass | " << testDb.GetDescription();
-
-                    {
-                    ECPropertyCP sizeProp = cl->GetPropertyP("Size");
-                    ASSERT_TRUE(sizeProp != nullptr && sizeProp->GetIsPrimitive()) << testDb.GetDescription();
-                    KindOfQuantityCP koq = sizeProp->GetAsPrimitiveProperty()->GetKindOfQuantity();
-                    ASSERT_TRUE(koq != nullptr) << testDb.GetDescription();
-                    testDb.AssertKindOfQuantity(*koq, "TestSchema", "AREA", "Area", nullptr, "u:SQ_M", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_M]", "f:DefaultRealU(4)[u:SQ_FT]", "f:DefaultRealU(4)[u:SQ_CM]"])json"), 0.001);
-                    }
-
-                    {
-                    ECPropertyCP sizesProp = cl->GetPropertyP("Sizes");
-                    ASSERT_TRUE(sizesProp != nullptr && sizesProp->GetIsPrimitiveArray()) << testDb.GetDescription();
-                    KindOfQuantityCP koq = sizesProp->GetAsPrimitiveArrayProperty()->GetKindOfQuantity();
-                    ASSERT_TRUE(koq != nullptr) << testDb.GetDescription();
-                    testDb.AssertKindOfQuantity(*koq, "TestSchema", "AREA", "Area", nullptr, "u:SQ_M", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_M]", "f:DefaultRealU(4)[u:SQ_FT]", "f:DefaultRealU(4)[u:SQ_CM]"])json"), 0.001);
-                    }
-
-                    testDb.AssertKindOfQuantity("TestSchema", "AREA", "Area", nullptr, "u:SQ_M", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_M]", "f:DefaultRealU(4)[u:SQ_FT]", "f:DefaultRealU(4)[u:SQ_CM]"])json"), 0.001);
-                    break;
-                    }
-
-                    case ProfileState::Age::Older:
-                    case ProfileState::Age::Newer:
-                    {
-                    EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
-                    break;
-                    }
-                    default:
-                        FAIL() << "Unhandled ProfileState::Age enum value | " << testDb.GetDescription();
-                        break;
+                EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
+                continue;
                 }
+
+            EXPECT_EQ(SchemaStatus::Success, schemaImportStat) << testDb.GetDescription();
+            EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("TestSchema")) << testDb.GetDescription();
+            EXPECT_EQ(JsonValue("[]"), testDb.ExecuteECSqlSelect("SELECT ECInstanceId,Size,Sizes FROM ts.SubDomainClass")) << testDb.GetDescription();
+
+            ECClassCP cl = testDb.GetDb().Schemas().GetClass("TestSchema", "SubDomainClass");
+            ASSERT_TRUE(cl != nullptr && cl->IsEntityClass()) << "SubDomainClass | " << testDb.GetDescription();
+
+            ECPropertyCP sizeProp = cl->GetPropertyP("Size");
+            ASSERT_TRUE(sizeProp != nullptr && sizeProp->GetIsPrimitive()) << testDb.GetDescription();
+            KindOfQuantityCP koq = sizeProp->GetAsPrimitiveProperty()->GetKindOfQuantity();
+            ASSERT_TRUE(koq != nullptr) << testDb.GetDescription();
+            testDb.AssertKindOfQuantity(*koq, "TestSchema", "AREA", "Area", nullptr, "u:SQ_M", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_M]", "f:DefaultRealU(4)[u:SQ_FT]", "f:DefaultRealU(4)[u:SQ_CM]"])json"), 0.001);
+
+            ECPropertyCP sizesProp = cl->GetPropertyP("Sizes");
+            ASSERT_TRUE(sizesProp != nullptr && sizesProp->GetIsPrimitiveArray()) << testDb.GetDescription();
+            KindOfQuantityCP sizesKoq = sizesProp->GetAsPrimitiveArrayProperty()->GetKindOfQuantity();
+            ASSERT_TRUE(sizesKoq != nullptr) << testDb.GetDescription();
+            testDb.AssertKindOfQuantity(*sizesKoq, "TestSchema", "AREA", "Area", nullptr, "u:SQ_M", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_M]", "f:DefaultRealU(4)[u:SQ_FT]", "f:DefaultRealU(4)[u:SQ_CM]"])json"), 0.001);
+
+            testDb.AssertKindOfQuantity("TestSchema", "AREA", "Area", nullptr, "u:SQ_M", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_M]", "f:DefaultRealU(4)[u:SQ_FT]", "f:DefaultRealU(4)[u:SQ_CM]"])json"), 0.001);
             }
         }
     }
-    
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                      09/18
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1815,9 +1786,9 @@ TEST_F(IModelCompatibilityTestFixture, AddDomain)
                 continue;
                 }
 
-            if (testFile.GetAge() == ProfileState::Age::Newer)
+            if (testFile.GetECDbAge() == ProfileState::Age::Newer)
                 {
-                //schema import not possible in newer files
+                // schema import not possible to newer ECDb profile files
                 ASSERT_EQ(BE_SQLITE_ERROR_SchemaUpgradeFailed, openStat) << testDb.GetDescription();
                 continue;
                 }
@@ -1850,7 +1821,7 @@ TEST_F(IModelCompatibilityTestFixture, OpenDomainIModel)
             ECSqlStatement stmt;
             EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(testDb.GetDb(), "SELECT Name,Material FROM me.Toy")) << testDb.GetDescription();
             stmt.Finalize();
-            testDb.AssertEnum(TESTDOMAIN_NAME, "Material", nullptr, nullptr, PRIMITIVETYPE_Integer, true, 
+            testDb.AssertEnum(TESTDOMAIN_NAME, "Material", nullptr, nullptr, PRIMITIVETYPE_Integer, true,
                 {{"Material0", ECValue(0), "Wood"},
                  {"Material1", ECValue(1), "Plastic"},
                  {"Material2", ECValue(2), "Metal"}});
@@ -1887,34 +1858,38 @@ TEST_F(IModelCompatibilityTestFixture, UpgradeDomainIModel)
                 EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(testDb.GetDb(), "SELECT Name,Material FROM me.Toy")) << testDb.GetDescription();
                 stmt.Finalize();
                 testDb.AssertEnum(TESTDOMAIN_NAME, "Material", nullptr, nullptr, PRIMITIVETYPE_Integer, true,
-                {{"Material0", ECValue(0), "Wood"},
-                {"Material1", ECValue(1), "Plastic"},
-                {"Material2", ECValue(2), "Metal"}});
+                    {{"Material0", ECValue(0), "Wood"},
+                    {"Material1", ECValue(1), "Plastic"},
+                    {"Material2", ECValue(2), "Metal"}});
+
                 continue;
                 }
 
-            if (testFile.GetAge() == ProfileState::Age::Newer)
+            if (testFile.GetECDbAge() == ProfileState::Age::Newer)
                 {
-                //schema import not possible in newer files
+                // schema import not possible to newer ECDb profile files
                 ASSERT_EQ(BE_SQLITE_ERROR_SchemaUpgradeFailed, openStat) << testDb.GetDescription();
                 continue;
                 }
 
-            // opens and upgrades the schema
+            // opened and upgraded the schema
+            ASSERT_EQ(BE_SQLITE_OK, openStat) << testDb.GetDescription();
+            testDb.AssertProfileVersion();
+            testDb.AssertLoadSchemas();
+
             // As the schema was upgraded, it should have set the original ECXML version, even if it originally
             // was a 4.0.0.1 file.
-            if (testDb.GetAge() == BeSQLite::ProfileState::Age::UpToDate)
+            if (testDb.SupportsFeature(ECDbFeature::PersistedECVersions))
                 EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion(TESTDOMAIN_NAME)) << testDb.GetDescription();
 
             EXPECT_EQ(SchemaVersion(1, 0, 1), testDb.GetSchemaVersion(TESTDOMAIN_NAME)) << testDb.GetDescription();
             ECSqlStatement stmt;
             EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(testDb.GetDb(), "SELECT Name,NickName,Material FROM me.Toy")) << testDb.GetDescription();
-            stmt.Finalize();
             testDb.AssertEnum(TESTDOMAIN_NAME, "Material", nullptr, nullptr, PRIMITIVETYPE_Integer, true,
-            {{"Material0", ECValue(0), "Wood"},
-            {"Material1", ECValue(1), "Plastic"},
-            {"Material2", ECValue(2), "Metal"},
-            {"Material3", ECValue(3), "Mix"}});
+                {{"Material0", ECValue(0), "Wood"},
+                {"Material1", ECValue(1), "Plastic"},
+                {"Material2", ECValue(2), "Metal"},
+                {"Material3", ECValue(3), "Mix"}});
             }
         }
 
@@ -1939,7 +1914,6 @@ TEST_F(IModelCompatibilityTestFixture, UpgradeDomainIModelToEC32)
 
             if (params.GetSchemaUpgradeOptions().GetDomainUpgradeOptions() != SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade)
                 {
-                //opens but schema is not upgraded
                 ASSERT_EQ(BE_SQLITE_OK, openStat) << testDb.GetDescription();
                 testDb.AssertProfileVersion();
                 testDb.AssertLoadSchemas();
@@ -1947,23 +1921,22 @@ TEST_F(IModelCompatibilityTestFixture, UpgradeDomainIModelToEC32)
                 EXPECT_EQ(SchemaVersion(1, 0, 0), testDb.GetSchemaVersion(TESTDOMAIN_NAME)) << testDb.GetDescription();
                 ECSqlStatement stmt;
                 EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(testDb.GetDb(), "SELECT Name,Material FROM me.Toy")) << testDb.GetDescription();
-                stmt.Finalize();
                 testDb.AssertEnum(TESTDOMAIN_NAME, "Material", nullptr, nullptr, PRIMITIVETYPE_Integer, true,
-                {{"Material0", ECValue(0), "Wood"},
-                {"Material1", ECValue(1), "Plastic"},
-                {"Material2", ECValue(2), "Metal"}});
+                    {{"Material0", ECValue(0), "Wood"},
+                    {"Material1", ECValue(1), "Plastic"},
+                    {"Material2", ECValue(2), "Metal"}});
                 continue;
                 }
 
-            if (testFile.GetAge() != ProfileState::Age::UpToDate && params.GetProfileUpgradeOptions() != Db::ProfileUpgradeOptions::Upgrade)
+            if (ProfileState::Age::Newer == testFile.GetECDbAge()
+                || !testDb.VersionSupportsFeature(testFile.GetECDbVersion(), ECDbFeature::EC32)
+                && !testDb.IsUpgraded())
                 {
-                //schema import not possible in newer or older files
+                //schema import not possible to newer ECDb profile files or files that don't support EC3.2
                 ASSERT_EQ(BE_SQLITE_ERROR_SchemaUpgradeFailed, openStat) << testDb.GetDescription();
                 continue;
                 }
 
-            //opens and upgrades the schema
-            EXPECT_TRUE(testDb.GetAge() == ProfileState::Age::UpToDate) << testDb.GetDescription();
             ASSERT_EQ(BE_SQLITE_OK, openStat) << testDb.GetDescription();
             testDb.AssertProfileVersion();
             testDb.AssertLoadSchemas();
@@ -1971,14 +1944,15 @@ TEST_F(IModelCompatibilityTestFixture, UpgradeDomainIModelToEC32)
             EXPECT_TRUE(testDb.GetDb().Schemas().ContainsSchema(TESTDOMAIN_NAME)) << testDb.GetDescription();
             EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion(TESTDOMAIN_NAME)) << testDb.GetDescription();
             EXPECT_EQ(SchemaVersion(1, 0, 2), testDb.GetSchemaVersion(TESTDOMAIN_NAME)) << testDb.GetDescription();
+
             ECSqlStatement stmt;
             EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(testDb.GetDb(), "SELECT Name,NickName,Material FROM me.Toy")) << testDb.GetDescription();
-            stmt.Finalize();
+
             testDb.AssertEnum(TESTDOMAIN_NAME, "Material", nullptr, nullptr, PRIMITIVETYPE_Integer, true,
-            {{"Wood", ECValue(0), "Wood"},
-            {"Plastic", ECValue(1), "Plastic"},
-            {"Metal", ECValue(2), "Metal"},
-            {"Mix", ECValue(3), "Mix"}});
+                {{"Wood", ECValue(0), "Wood"},
+                {"Plastic", ECValue(1), "Plastic"},
+                {"Metal", ECValue(2), "Metal"},
+                {"Mix", ECValue(3), "Mix"}});
             }
         }
 

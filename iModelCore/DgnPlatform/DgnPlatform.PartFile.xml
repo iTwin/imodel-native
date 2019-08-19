@@ -249,7 +249,7 @@
             * files it creates itself (-> get saved as nuget afterwards)
             * all downloaded test files.
     -->
-    <Part Name="IModelEvolutionRunCurrentTestRunner" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/runGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=IModelEvolutionGTest -dGTEST_NAME=IModelEvolutionTests -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/IModelEvolutionTests" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="IModelEvolutionRunCurrentTestRunner" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/runGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=IModelEvolutionGTest -dGTEST_NAME=IModelEvolutionTests -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/IModelEvolutionTests -dGTEST_EXTRA_ARGS=--timeout=-1" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubPart PartName="IModelEvolutionPrepareCurrentTestRunner"/>
     </Part>
 
@@ -262,8 +262,7 @@
         <SubProduct ProductName="IModelEvolutionGTest"/>
     </Part>
 
-    <Part Name="IModelEvolutionPullNugets" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\PullNugets.mke">
-    </Part>
+    <Part Name="IModelEvolutionPullNugets" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\PullNugets.mke"/>
 
     <Product Name="IModelEvolutionGTest">
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
@@ -279,7 +278,6 @@
             <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/IModelEvolutionTests/Assets" />
         </Bindings>
     </Part>
-
 
     <Product Name="IModelEvolutionTests">
         <SubPart PartName="Base" Repository="BeGTest" PartFile="BeGTest"/>

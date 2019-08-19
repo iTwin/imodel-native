@@ -111,19 +111,19 @@ def main():
 
     # Relevant nugets (all others must be ignored until they are deleted from the server):
     # 2018.9.14.1: nuget before EC3.2 merge
-    bim02devMinimumNugetVersion = "2018.9.14.1"
+    bim02devMinimumNugetVersion = "2018.9.14.2"
     bim02devIgnoreNugetVersions = {"2018.9.19.1","2018.9.20.1", "2018.9.25.1", "2018.10.18.3", "2018.10.19.1", "2018.11.8.4", "2018.11.9.1", "2019.1.14.1"}
 
     # Relevant nugets (all other must be ignored until they are deleted from the server):
     # 2019.04.20.1: nuget after ECDbMap and ECDbFileInfo downgrade to EC3.1
-    bim02MinimumNugetVersion = "2019.04.20.1"
-    bim02IgnoreNugetVersions = {}
+    bim02MinimumNugetVersion = "2019.2.2.1"
+    bim02IgnoreNugetVersions = {"2019.4.20.1"}
 
     # Relevant nugets (all others must be ignored until they are deleted from the server):
     # 2019.4.20.1: nuget after ECDbMap and ECDbFileInfo downgrade to EC3.1
     # Nugets from 2018.9.21.1 to 2019.1.14.2 must be ignored as they contain EC3.2 version ECDb schemas that were downgraded to EC3.1 later on
-    imodel02MinimumNugetVersion = "2019.4.20.1"
-    imodel02IgnoreNugetVersions = {}
+    imodel02MinimumNugetVersion = "2019.2.2.1"
+    imodel02IgnoreNugetVersions = {"2019.4.20.1"}
 
     # The current EC3.3 tests won't work because they need to have the latest version of the CoreCA schema.
     # ec33MinimumNugetVersion = "2019.4.1.1"
