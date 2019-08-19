@@ -1,0 +1,51 @@
+RealityContextTest - Load testing tool
+======================================
+
+Usage: RealityContextTest.exe -s:[serverType] -u:[users]
+Options: -h, --help              Shows usage
+         -s, --serverType        {dev, qa, prod}
+         -u, --users             Number of users
+         -t, --trickle           optional, add this argument to avoid spawing all users at once
+         -p, --path              optional, specifiy a path to out the log file to
+                                 any text added after the last backslash will be added to the file name
+         if there are spaces in an argument, surround it with ""
+
++---------------------+
+Operation:
++---------------------+
+Main thread:
+Obtains a token from the CONNECTION Client, parses command line arguments and spawns the requested amount of users.
+If the trickle option is specified, spawned users are passed to the dispatch thread.
+Afterwards, this thread is responsible for handling a multicurl function which will execute requests.
+When a response is received, if curl says the request was successful, the thread will attempt to validate the response.
+If at any time, errors are detected, they are passed to the static Stats struct.
+When all pending requests have returned, the thread will either fully repopulate the list or exit the loop, if that has been queued.
+upon exiting, the other threads will be joined and the results will be written to a logfile
+the logfile's name is taken from the timestamp, when the program exited.
+
+Dispatch thread:
+Holds an array of innactive users. 
+Adds a single user to the multicurl pool then sleeps for a random amount of time before adding another user.
+Also responsible for printing to the console the current success/failure statistics.
+
+Interrupt thread:
+waits for user input to queue the program's exit
+
++---------------------+
+Components:
++---------------------+
+User:
+Choses a random region from a list of supported geographical locations and randomly picks extents within a given radius of that region.
+Constructs all requests for a given extent and calls them sequentially (spatial query -> package id -> package file).
+Randomly, will perform multiple spatial queries, before requesting a package id.
+Randomly, will wait between a spatial query and a package request.
+When constructing a package request, randomly selects a random number of instanceIds
+Responsible for validating the response received and providing the error message in case of failure.
+
+UserManager:
+Run by the main thread. Responsible for running the multicurl and repopulating an empty user pool.
+
+RPS:
+requests per second tracker. Keeps a record of how many request of a given type where executed at a given timestamp.
+When polled, returns the number of requests per second, normalized over ten seconds (t-12 -> t-2).
+
