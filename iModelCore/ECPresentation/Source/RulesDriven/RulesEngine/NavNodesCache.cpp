@@ -1996,6 +1996,8 @@ void NodesCache::ChangeVisibility(uint64_t nodeId, bool isVirtual, bool updateCh
     logMsg.append(isVirtual ? "virtual" : "physical");
     LoggingHelper::LogMessage(Log::NavigationCache, GetNodeDebugString(logMsg.c_str(), nodeId, -1).c_str());
 
+    std::function<bool(JsonNavNodeCR)> removeQuickHandler;
+
     // then, remap its child hierarchy levels
     if (updateChildHierarchyLevels)
         {
@@ -2017,6 +2019,11 @@ void NodesCache::ChangeVisibility(uint64_t nodeId, bool isVirtual, bool updateCh
                 }
             stmt->BindUInt64(1, nodeId);
             stmt->Step();
+            removeQuickHandler = [&](JsonNavNodeCR n)
+                {
+                return n.GetNodeId() == nodeId
+                    || n.GetParentNodeId() == nodeId;
+                };
             }
         else
             {
@@ -2038,11 +2045,16 @@ void NodesCache::ChangeVisibility(uint64_t nodeId, bool isVirtual, bool updateCh
             if (parentInfo.GetPhysicalParentNodeId())
                 stmt->BindUInt64(3, *parentInfo.GetPhysicalParentNodeId());
             stmt->Step();
+            removeQuickHandler = [&](JsonNavNodeCR n)
+                {
+                return n.GetNodeId() == nodeId
+                    || n.GetParentNodeId() == (parentInfo.GetPhysicalParentNodeId() ? *parentInfo.GetPhysicalParentNodeId() : 0);
+                };
             }
         LoggingHelper::LogMessage(Log::NavigationCache, Utf8PrintfString("    Affected child data sources: %d", m_db.GetModifiedRowCount()).c_str());
         }
 
-    m_quickNodesCache.clear();
+    RemoveQuick(removeQuickHandler);
 
 #ifdef NAVNODES_CACHE_DEBUG
     Persist();
@@ -2656,6 +2668,20 @@ void NodesCache::RemoveQuick(uint64_t id) const
             return;
             }
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void NodesCache::RemoveQuick(std::function<bool(JsonNavNodeCR)> const& pred) const
+    {
+    bvector<bpair<uint64_t, JsonNavNodePtr>> processed;
+    for (auto iter = m_quickNodesCache.begin(); iter != m_quickNodesCache.end(); ++iter)
+        {
+        if (!pred(*iter->second))
+            processed.push_back(*iter);
+        }
+    m_quickNodesCache.swap(processed);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -3,7 +3,7 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#pragma once 
+#pragma once
 #include <ECPresentation/ECPresentation.h>
 #include <ECPresentation/RulesDriven/PresentationManager.h>
 #include "RulesEngineTypes.h"
@@ -83,7 +83,7 @@ protected:
     virtual NavNodesProviderPtr _GetHierarchyLevel(HierarchyLevelInfo const&, bool, bool) const = 0;
     virtual NavNodesProviderPtr _GetDataSource(DataSourceInfo const&, bool, bool) const = 0;
     virtual NavNodesProviderPtr _GetDataSource(uint64_t nodeId, bool, bool) const = 0;
-    
+
     virtual void _Cache(HierarchyLevelInfo&) = 0;
     virtual void _Cache(DataSourceInfo&, DataSourceFilter const&, bmap<ECClassId, bool> const&, bvector<UserSettingEntry> const&, bool) = 0;
     virtual void _Cache(JsonNavNodeR, DataSourceInfo const&, uint64_t, bool) = 0;
@@ -93,7 +93,7 @@ protected:
 
     virtual void _MakePhysical(JsonNavNodeCR) = 0;
     virtual void _MakeVirtual(JsonNavNodeCR) = 0;
-    
+
     virtual bool _IsInitialized(CombinedHierarchyLevelInfo const&) const = 0;
     virtual bool _IsInitialized(HierarchyLevelInfo const&) const = 0;
     virtual bool _IsInitialized(DataSourceInfo const&) const = 0;
@@ -117,13 +117,13 @@ public:
     //! Get data source for the whole hierarchy level.
     //  Cached datasource can be deleted if user settings used by cached datasource have changed.
     NavNodesProviderPtr GetHierarchyLevel(HierarchyLevelInfo const& info, bool removeIfInvalid = true, bool onlyInitialized = true) const {return _GetHierarchyLevel(info, removeIfInvalid, onlyInitialized);}
-    //! Get partial data source (which is a subset of a hierarchy level). 
+    //! Get partial data source (which is a subset of a hierarchy level).
     //  Cached datasource can be deleted if user settings used by cached datasource have changed.
     NavNodesProviderPtr GetDataSource(DataSourceInfo const& info, bool removeIfInvalid = true, bool onlyInitialized = true) const {return _GetDataSource(info, removeIfInvalid, onlyInitialized);}
     //! Get partial data source the node with the supplied ID belongs to.
     //  Cached datasource can be deleted if user settings used by cached datasource have changed.
     NavNodesProviderPtr GetDataSource(uint64_t nodeId, bool removeIfInvalid = true, bool onlyInitialized = true) const {return _GetDataSource(nodeId, removeIfInvalid, onlyInitialized);}
-    
+
     void Cache(HierarchyLevelInfo& info) {_Cache(info);}
     void Cache(DataSourceInfo& info, DataSourceFilter const& filter, bmap<ECClassId, bool> const& relatedClassIds, bvector<UserSettingEntry> const& relatedSettings,
         bool disableUpdates = false)
@@ -137,10 +137,10 @@ public:
         {
         _Update(info, filter, relatedClassIds, relatedSettings);
         }
-    
+
     void MakePhysical(JsonNavNodeCR node) {_MakePhysical(node);}
     void MakeVirtual(JsonNavNodeCR node) {_MakeVirtual(node);}
-    
+
     bool IsInitialized(CombinedHierarchyLevelInfo const& info) const {return _IsInitialized(info);}
     bool IsInitialized(HierarchyLevelInfo const& info) const {return _IsInitialized(info);}
     bool IsInitialized(DataSourceInfo const& info) const {return _IsInitialized(info);}
@@ -193,7 +193,7 @@ private:
     mutable bvector<bpair<uint64_t, JsonNavNodePtr>> m_quickNodesCache;
     uint64_t m_sizeLimit;
     bvector<BeSQLite::ScalarFunction*> m_customFunctions;
-    
+
 private:
     void Initialize(BeFileNameCR tempDirectory);
 
@@ -220,6 +220,7 @@ private:
 
     void AddQuick(JsonNavNodeR) const;
     void RemoveQuick(uint64_t) const;
+    void RemoveQuick(std::function<bool(JsonNavNodeCR)> const&) const;
     JsonNavNodePtr GetQuick(uint64_t) const;
 
     void OnConnectionClosed(IConnectionCR);
@@ -248,7 +249,7 @@ protected:
     ECPRESENTATION_EXPORT bool _IsInitialized(DataSourceInfo const&) const override;
     ECPRESENTATION_EXPORT void _FinalizeInitialization(DataSourceInfo const&) override;
     ECPRESENTATION_EXPORT SavepointPtr _CreateSavepoint() override;
-    
+
     // INavNodeLocater
     ECPRESENTATION_EXPORT JsonNavNodeCPtr _LocateNode(IConnectionCR, Utf8StringCR, NavNodeKeyCR) const override;
 
@@ -260,7 +261,7 @@ public:
     ECPRESENTATION_EXPORT ~NodesCache();
 
     ECPRESENTATION_EXPORT void CacheHierarchyLevel(CombinedHierarchyLevelInfo const&, NavNodesProviderR);
-    
+
     ECPRESENTATION_EXPORT bool IsNodeCached(uint64_t nodeId) const;
     ECPRESENTATION_EXPORT bool IsHierarchyLevelCached(Utf8StringCR connectionId, Utf8CP rulesetId, Utf8CP locale) const;
     ECPRESENTATION_EXPORT bool IsHierarchyLevelCached(uint64_t parentNodeId) const;
