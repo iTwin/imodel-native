@@ -30,6 +30,7 @@ struct MstnBridgeTests : public MstnBridgeTestsFixture
     void VerifyElementHasCode(DgnElementCR, Utf8CP codeValuePrefix);
     void VerifyElementHasCode(BeFileNameCR bcName, DgnElementId eid, Utf8CP codeValuePrefix, bool codeShouldBeRecorded);
     void VerifyConvertedElementHasCode(int prevCount, BeFileNameCR bcName, int64_t srcId, Utf8CP codeValuePrefix, bool codeShouldBeRecorded);
+    void RunBridgeAsUser(BeFileNameR briefcaseName, BeFileNameCR testDir, Utf8CP userName, BeFileNameCR inputFile, WCharCP bridgeName = L"theBridge");
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -136,7 +137,7 @@ TEST_F(MstnBridgeTests, MultiBridgeSequencing)
                       "rules": [                   
                           {                        
                               "request": "Lock/Create",
-                              "rule": { "verb": "wait file", "object": "%s" }                        
+                              "rule": { "verb": "wait file", "object": "%s", "retryCount": 0 }                        
                           }                        
                       ]                            
                   },
@@ -145,7 +146,7 @@ TEST_F(MstnBridgeTests, MultiBridgeSequencing)
                       "rules": [                   
                           {                        
                               "request": "Lock/Create",
-                              "rule": { "verb": "wait file", "object": "%s" }                        
+                              "rule": { "verb": "wait file", "object": "%s", "retryCount": 0 }                        
                           }                        
                       ]                            
                   }                  
@@ -172,6 +173,22 @@ TEST_F(MstnBridgeTests, MultiBridgeSequencing)
     ASSERT_TRUE(m_client == nullptr);
     iModelBridgeFwk::ClearIModelClientForBridgesForTesting(); // nobody should have set the test client, but clear it just in case.
 
+    // Must do an initial conversion, just to get the domains schemas in (plus any profile and/or BIS core upgrades).
+    // That cannot be done safely by two users concurrently.
+    printf ("********************\n");
+    printf ("******************** Running Admin\n");
+    printf ("********************\n");
+
+    BentleyApi::BeFileName adminInputFile;
+    MakeCopyOfFile(adminInputFile, L"Test3d.dgn", L"_admin");
+
+    BeFileName adminBriefcaseName;
+    RunBridgeAsUser(adminBriefcaseName, testDir, "admin", adminInputFile, L"anyBridge");
+
+    printf ("********************\n");
+    printf ("******************** Running A and B\n");
+    printf ("********************\n");
+
     // -------------------------------------------------------
     // Bridge A
     // -------------------------------------------------------
@@ -191,7 +208,7 @@ TEST_F(MstnBridgeTests, MultiBridgeSequencing)
         argvMaker.SetInputFileArg(inputFile);
         argvMaker.SetSkipAssignmentCheck();
 
-        argvMaker.SetMaxRetries(INT_MAX);   // must allow lots of time for bridge B to run to completion. Unfortunately, there is no way to predict how many retries will be required.
+        argvMaker.SetMaxRetries(255, true);   // must allow lots of time for bridge B to run to completion. Unfortunately, there is no way to predict how many retries will be required.
     
         iModelBridgeFwk fwk;
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argvMaker.GetArgC(), argvMaker.GetArgV()));
@@ -211,7 +228,7 @@ TEST_F(MstnBridgeTests, MultiBridgeSequencing)
         bridge_a_briefcaseName = fwk.GetBriefcaseName();
         });
 
-    // (Note: bridge a should be blocked and not making progress, because we have not yet created the "let_a_run" file.)
+    // (Note: bridge a should be blocked and not making progress, because we have not yet created the "a_can_run" file.)
 
     // -------------------------------------------------------
     // Bridge B
@@ -246,7 +263,8 @@ TEST_F(MstnBridgeTests, MultiBridgeSequencing)
         bridge_b_briefcaseName.append(L".bim");
         }
     
-    createFile(a_can_run);      // now let a run
+    BeThreadUtilities::BeSleep(5000); // *** WIP flakey/depends on timings *** make sure thread A runs and has a chance to make its request for schema lock (so that it can be denied!)
+    createFile(a_can_run);      // now let A have the schema lock
 
     bridge_a.join();
 
@@ -257,6 +275,8 @@ TEST_F(MstnBridgeTests, MultiBridgeSequencing)
     // ASSERT_EQ(0, ProcessRunner::FindProcessId("node.exe"));
     // ASSERT_EQ(0, ProcessRunner::FindProcessId("iModelBridgeFwk.exe"));
     ASSERT_TRUE(bridge_a_sawRetryMsg);
+    ASSERT_TRUE(bridge_a_briefcaseName.DoesPathExist());
+    ASSERT_TRUE(bridge_b_briefcaseName.DoesPathExist());
 
     // Verify that B ran first and A ran second
     if (true)
@@ -281,6 +301,148 @@ TEST_F(MstnBridgeTests, MultiBridgeSequencing)
         }
 
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void MstnBridgeTests::RunBridgeAsUser(BeFileNameR briefcaseName, BeFileNameCR testDir, Utf8CP userName, BeFileNameCR inputFile, WCharCP bridgeName)
+    {
+    BeFileName userStagingDir(testDir);
+    userStagingDir.AppendToPath(WString(userName, true).c_str());
+    BeFileName::CreateNewDirectory(userStagingDir.c_str());
+
+    FwkArgvMaker argvMaker;
+    argvMaker.SetUpBridgeProcessingArgs(userStagingDir.c_str(), bridgeName, GetDgnv8BridgeDllName(), DEFAULT_IMODEL_NAME, true, L"imodel-bank.rsp");
+    argvMaker.ReplaceArgValue(L"--imodel-bank-access-token", ComputeAccessTokenW(userName).c_str());
+
+    argvMaker.SetInputFileArg(inputFile);
+    argvMaker.SetSkipAssignmentCheck();
+
+    argvMaker.SetMaxRetries(255, true);   // must allow lots of time for bridge bridge to run to completion. Unfortunately, there is no way to predict how many retries will be required.
+
+    iModelBridgeFwk fwk;
+    ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argvMaker.GetArgC(), argvMaker.GetArgV()));
+    ASSERT_EQ(0, fwk.Run(argvMaker.GetArgC(), argvMaker.GetArgV()));
+
+    briefcaseName = fwk.GetBriefcaseName();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MstnBridgeTests, MultiUsersSameBridgeSequential)
+    {
+    auto testDir = CreateTestDir();
+
+    BeFileName inputFile;
+    MakeCopyOfFile(inputFile, L"Test3d.dgn", L"");
+
+    CreateImodelBankRepository(GetSeedFile());
+
+    BentleyApi::BeFileName bridge_a_briefcaseName;
+    BentleyApi::BeFileName bridge_b_briefcaseName;
+        {
+        std::unique_ptr<BentleyApi::Dgn::IModelBankClient> bankClient(CreateIModelBankClient(""));
+            { // make sure server is stopped before releasing bankClient, as that is used by runningServer's Stop method.
+            auto runningServer = StartImodelBankServer(GetIModelDir(), *bankClient);
+            
+            ASSERT_TRUE(m_client == nullptr);
+            iModelBridgeFwk::ClearIModelClientForBridgesForTesting(); // nobody should have set the test client, but clear it just in case.
+
+            // A - converts input file for first time
+            RunBridgeAsUser(bridge_a_briefcaseName, testDir, "A", inputFile);
+    
+            int countAfterA;
+            int repositoryLinkCount;
+                {
+                DbFileInfo aInfo(bridge_a_briefcaseName);
+                ASSERT_EQ(1, aInfo.GetJobSubjectCount());
+                repositoryLinkCount = aInfo.GetRepositoryLinkCount();
+                countAfterA = aInfo.GetElementCount();
+                }
+
+            // A hands off to B.
+
+            // B - adds a line and pushes changes
+            AddLine(inputFile);
+
+            RunBridgeAsUser(bridge_b_briefcaseName, testDir, "B", inputFile);
+            
+            int countAfterB;
+                {
+                DbFileInfo bInfo(bridge_b_briefcaseName);
+                ASSERT_EQ(repositoryLinkCount, bInfo.GetRepositoryLinkCount()) << "RepositoryLink count should be unchanged, as both users used the same input file";
+                ASSERT_EQ(1, bInfo.GetJobSubjectCount()) << "Both users should have used the SAME Job Subject, since they use the same bridge and same input file.";
+                ASSERT_EQ(1, bInfo.GetRepositoryLinkCount());
+                countAfterB = bInfo.GetElementCount();
+                ASSERT_EQ(countAfterA + 1, countAfterB) << "User B added 1 line";
+                }
+
+            // B hands off to A
+
+            // A - adds another line and then synchronizes
+            AddLine(inputFile);
+
+            RunBridgeAsUser(bridge_a_briefcaseName, testDir, "A", inputFile);
+                {
+                DbFileInfo aInfo(bridge_a_briefcaseName);
+                ASSERT_EQ(repositoryLinkCount, aInfo.GetRepositoryLinkCount()) << "RepositoryLink count should be unchanged, as both users used the same input file";
+                ASSERT_EQ(1, aInfo.GetJobSubjectCount()) << "Both users should have used the SAME Job Subject, since they use the same bridge and same input file.";
+                auto countAfterA2 = aInfo.GetElementCount();
+                ASSERT_EQ(countAfterB + 1, countAfterA2) << "User A added another line, on top of what B did";
+                }
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/19
++---------------+---------------+---------------+---------------+---------------+------*/
+// Can't do this - you can't run DgnV8Convert in multiple threads in the same process. Each one will try to initialize DgnPlatform/DgnCore
+// and will contend over the same set of globals. That will cause errors.
+// TEST_F(MstnBridgeTests, MultiUsersSameBridgeParallel)
+//     {
+//     auto testDir = CreateTestDir();
+
+//     BeFileName inputFile;
+//     MakeCopyOfFile(inputFile, L"Test3d.dgn", L"");
+
+//     CreateImodelBankRepository(GetSeedFile());
+
+//     bool bridge_a_sawRetryMsg = false;
+//     BentleyApi::BeFileName bridge_a_briefcaseName;
+//     BentleyApi::BeFileName bridge_b_briefcaseName;
+//         {
+//         std::unique_ptr<BentleyApi::Dgn::IModelBankClient> bankClient(CreateIModelBankClient(""));
+//             { // make sure server is stopped before releasing bankClient, as that is used by runningServer's Stop method.
+//             auto runningServer = StartImodelBankServer(GetIModelDir(), *bankClient);
+            
+//             ASSERT_TRUE(m_client == nullptr);
+//             iModelBridgeFwk::ClearIModelClientForBridgesForTesting(); // nobody should have set the test client, but clear it just in case.
+
+//             std::thread user_a([&] 
+//                 {
+//                 RunBridgeAsUser(bridge_a_briefcaseName, testDir, "A", inputFile);
+//                 });
+
+//             std::thread user_b([&] 
+//                 {
+//                 RunBridgeAsUser(bridge_b_briefcaseName, testDir, "B", inputFile);
+//                 });
+            
+//             user_a.join();
+//             user_b.join();
+
+//             // Run once more, to make sure both have pulled.
+//             RunBridgeAsUser(bridge_a_briefcaseName, testDir, "A", inputFile);
+//             RunBridgeAsUser(bridge_b_briefcaseName, testDir, "B", inputFile);
+
+//             DbFileInfo aInfo(bridge_a_briefcaseName);
+//             DbFileInfo bInfo(bridge_b_briefcaseName);
+//             ASSERT_EQ(aInfo.GetElementCount(), bInfo.GetElementCount());
+//             }
+//         }
+//     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  10/2018
@@ -1012,6 +1174,7 @@ TEST_F(MstnBridgeTests, CodeReservation)
 
     BeFileName bcName;
     bool expectCodesInLockedModelsToBeReported = true;
+    BentleyApi::Dgn::LockLevel expectedRetainedChannelLockLevel = BentleyApi::Dgn::LockLevel::Exclusive;
     if (true)
         {
         // Must allow Code reservations during the initial conversion. That is where the bridge creates the Subject 
@@ -1025,6 +1188,7 @@ TEST_F(MstnBridgeTests, CodeReservation)
 
         // TRICKY! Must ask fwk for this information now!
         expectCodesInLockedModelsToBeReported = fwk.AreCodesInLockedModelsReported();
+        expectedRetainedChannelLockLevel = fwk.GetRetainedChannelLockLevel();
         }
 
     // Get information about the jobsubject and the spatial model that we will be using.
@@ -1045,10 +1209,12 @@ TEST_F(MstnBridgeTests, CodeReservation)
         // Verify that the root subject is NOT locked by this bridge
         ASSERT_EQ(BentleyApi::Dgn::LockLevel::None, bcInfo.QueryLockLevel(*bcInfo.m_db->Elements().GetRootSubject(), GetClient()));
 
-        // Verify that the jobSubject and this spatial model is exclusively locked by this bridge
+        // Verify that the jobSubject and this spatial model are exclusively locked by this bridge
+        // ... or that they are NOT locked, according to the briefcasemanager's policy.
         auto spatialModel = bcInfo.m_db->Models().GetModel(spatialModelId);
-        ASSERT_EQ(BentleyApi::Dgn::LockLevel::Exclusive, bcInfo.QueryLockLevel(*jSubj, GetClient()));
-        ASSERT_EQ(BentleyApi::Dgn::LockLevel::Exclusive, bcInfo.QueryLockLevel(*spatialModel, GetClient()));
+        ASSERT_EQ(expectedRetainedChannelLockLevel, bcInfo.QueryLockLevel(*jSubj, GetClient()));
+        ASSERT_EQ(expectedRetainedChannelLockLevel, bcInfo.QueryLockLevel(*spatialModel, GetClient()));
+        ASSERT_EQ(BentleyApi::Dgn::LockLevel::None, bcInfo.QueryLockLevel(bcInfo.m_db->Schemas(), GetClient())) << "Never hold onto schema lock";
 
         // Verify that the server has registered Subject elements that are in the RepositoryModel.
         auto repositoryLink = bcInfo.m_db->Elements().GetElement(repositoryLinkId);
@@ -1809,3 +1975,65 @@ TEST_F(Bridge, File)
     argvMaker.SetInputFileArg(inputFile);
     RunTheBridge(argvMaker.GetArgVector());
     }
+
+/*
+    If you run multiple bridges simultaneously, and if they both import the same schemas, then there is a race condition.
+    Scenario: User A and User B register the same domains, and the domains import the same schemas in both briefcases. 
+                A pushes.
+                B pulls.
+                B gets an error when applying A's schema change revision, because B already made the same changes.
+
+    You can produce this race condition in MstnBridgeTests.MultiBridgeSequencing if you remove the initial "admin" bridge run.
+
+    *** First, we import Functional ***
+
+    BeSQLiteECM02.dll!BentleyM0200::BeSQLite::EC::SchemaWriter::ImportSchemas(BentleyM0200::Bstdcxx::bvector<BentleyM0200::ECN::ECSchema const *,BentleyM0200::BentleyAllocator<BentleyM0200::ECN::ECSchema const *> > & schemasToMap, BentleyM0200::BeSQLite::EC::SchemaImportContext & schemaImportCtx, const BentleyM0200::Bstdcxx::bvector<BentleyM0200::ECN::ECSchema const *,BentleyM0200::BentleyAllocator<BentleyM0200::ECN::ECSchema const *> > & schemasRaw) Line 33 (d:\imodel02\source\imodel02\iModelCore\ECDb\ECDb\SchemaWriter.cpp:33)
+    BeSQLiteECM02.dll!BentleyM0200::BeSQLite::EC::MainSchemaManager::ImportSchemas(BentleyM0200::BeSQLite::EC::SchemaImportContext & ctx, const BentleyM0200::Bstdcxx::bvector<BentleyM0200::ECN::ECSchema const *,BentleyM0200::BentleyAllocator<BentleyM0200::ECN::ECSchema const *> > & schemas, const BentleyM0200::BeSQLite::EC::SchemaImportToken * schemaImportToken) Line 699 (d:\imodel02\source\imodel02\iModelCore\ECDb\ECDb\SchemaManagerDispatcher.cpp:699)
+    BeSQLiteECM02.dll!BentleyM0200::BeSQLite::EC::MainSchemaManager::ImportSchemas(const BentleyM0200::Bstdcxx::bvector<BentleyM0200::ECN::ECSchema const *,BentleyM0200::BentleyAllocator<BentleyM0200::ECN::ECSchema const *> > & schemas, BentleyM0200::BeSQLite::EC::SchemaManager::SchemaImportOptions options, const BentleyM0200::BeSQLite::EC::SchemaImportToken * token) Line 656 (d:\imodel02\source\imodel02\iModelCore\ECDb\ECDb\SchemaManagerDispatcher.cpp:656)
+    BeSQLiteECM02.dll!BentleyM0200::BeSQLite::EC::SchemaManager::ImportSchemas(const BentleyM0200::Bstdcxx::bvector<BentleyM0200::ECN::ECSchema const *,BentleyM0200::BentleyAllocator<BentleyM0200::ECN::ECSchema const *> > & schemas, BentleyM0200::BeSQLite::EC::SchemaManager::SchemaImportOptions options, const BentleyM0200::BeSQLite::EC::SchemaImportToken * token) Line 36 (d:\imodel02\source\imodel02\iModelCore\ECDb\ECDb\SchemaManager.cpp:36)
+    DgnPlatformM02.dll!BentleyM0200::Dgn::DgnDomains::DoImportSchemas(const BentleyM0200::Bstdcxx::bvector<BentleyM0200::ECN::ECSchema const *,BentleyM0200::BentleyAllocator<BentleyM0200::ECN::ECSchema const *> > & importSchemas, BentleyM0200::BeSQLite::EC::SchemaManager::SchemaImportOptions importOptions) Line 754 (d:\imodel02\source\imodel02\iModelCore\DgnPlatform\DgnCore\DgnDomain.cpp:754)
+    DgnPlatformM02.dll!BentleyM0200::Dgn::DgnDomains::UpgradeSchemas() Line 440 (d:\imodel02\source\imodel02\iModelCore\DgnPlatform\DgnCore\DgnDomain.cpp:440)
+            InitializeSchemas discovered that Functional needs to import its schema.
+    DgnPlatformM02.dll!BentleyM0200::Dgn::DgnDb::InitializeSchemas(const BentleyM0200::BeSQLite::Db::OpenParams & params) Line 194 (d:\imodel02\source\imodel02\iModelCore\DgnPlatform\DgnCore\DgnDb.cpp:194)
+    DgnPlatformM02.dll!BentleyM0200::Dgn::DgnDb::_OnDbOpened(const BentleyM0200::BeSQLite::Db::OpenParams & params) Line 160 (d:\imodel02\source\imodel02\iModelCore\DgnPlatform\DgnCore\DgnDb.cpp:160)
+    BeSQLiteM02.dll!BentleyM0200::BeSQLite::Db::OpenBeSQLiteDb(const char * dbName, const BentleyM0200::BeSQLite::Db::OpenParams & params) Line 2636 (d:\imodel02\source\imodel02\iModelCore\BeSQLite\BeSQLite.cpp:2636)
+    DgnPlatformM02.dll!BentleyM0200::BeSQLite::Db::OpenBeSQLiteDb(const BentleyM0200::BeFileName & dbName, const BentleyM0200::BeSQLite::Db::OpenParams & openParams) Line 2560 (d:\imodel02\out\Winx64\BuildContexts\DgnPlatform\PublicAPI\BeSQLite\BeSQLite.h:2560)
+    DgnPlatformM02.dll!BentleyM0200::Dgn::DgnDb::DoOpenDgnDb(const BentleyM0200::BeFileName & projectNameIn, const BentleyM0200::Dgn::DgnDb::OpenParams & params) Line 660 (d:\imodel02\source\imodel02\iModelCore\DgnPlatform\DgnCore\DgnDb.cpp:660)
+    DgnPlatformM02.dll!BentleyM0200::Dgn::DgnDb::OpenDgnDb(BentleyM0200::BeSQLite::DbResult * outResult, const BentleyM0200::BeFileName & fileName, const BentleyM0200::Dgn::DgnDb::OpenParams & openParams) Line 684 (d:\imodel02\source\imodel02\iModelCore\DgnPlatform\DgnCore\DgnDb.cpp:684)
+    iModelBridgeM02.dll!BentleyM0200::Dgn::iModelBridge::OpenBimAndMergeSchemaChanges(BentleyM0200::BeSQLite::DbResult & dbres, bool & madeSchemaChanges, const BentleyM0200::BeFileName & dbName, BentleyM0200::Dgn::DgnDb::OpenParams & oparams) Line 189 (d:\imodel02\source\imodel02\iModelBridgeCore\DgnDbSync\iModelBridge\iModelBridge.cpp:189)
+    iModelBridgeFwkLibM02.dll!BentleyM0200::Dgn::iModelBridgeFwk::TryOpenBimWithOptions(BentleyM0200::Dgn::DgnDb::OpenParams & oparams) Line 1642 (d:\imodel02\source\imodel02\iModelBridgeCore\DgnDbSync\iModelBridge\Fwk\iModelBridgeFwk.cpp:1642)
+    iModelBridgeFwkLibM02.dll!BentleyM0200::Dgn::iModelBridgeFwk::TryOpenBimWithBisSchemaUpgrade() Line 1698 (d:\imodel02\source\imodel02\iModelBridgeCore\DgnDbSync\iModelBridge\Fwk\iModelBridgeFwk.cpp:1698)
+            Just initialized the bridge. It registered its required Domains, including Functional.
+    iModelBridgeFwkLibM02.dll!BentleyM0200::Dgn::iModelBridgeFwk::UpdateExistingBim() Line 2163 (d:\imodel02\source\imodel02\iModelBridgeCore\DgnDbSync\iModelBridge\Fwk\iModelBridgeFwk.cpp:2163)
+    iModelBridgeFwkLibM02.dll!BentleyM0200::Dgn::iModelBridgeFwk::UpdateExistingBimWithExceptionHandling() Line 1808 (d:\imodel02\source\imodel02\iModelBridgeCore\DgnDbSync\iModelBridge\Fwk\iModelBridgeFwk.cpp:1808)
+    iModelBridgeFwkLibM02.dll!BentleyM0200::Dgn::iModelBridgeFwk::RunExclusive(int argc, const wchar_t * * argv) Line 1515 (d:\imodel02\source\imodel02\iModelBridgeCore\DgnDbSync\iModelBridge\Fwk\iModelBridgeFwk.cpp:1515)
+    iModelBridgeFwkLibM02.dll!BentleyM0200::Dgn::iModelBridgeFwk::Run(int argc, const wchar_t * * argv) Line 2392 (d:\imodel02\source\imodel02\iModelBridgeCore\DgnDbSync\iModelBridge\Fwk\iModelBridgeFwk.cpp:2392)
+    MstnBridgeTests.exe!MstnBridgeTests_MultiBridgeSequencing_Test::TestBody::__l7::<lambda>() Line 210 (d:\imodel02\source\imodel02\Bridges\Mstn\Tests\MstnBridgeTests.cpp:210)
+
+    *** Later, we pull a schema change revision that also imports Functional ***
+
+    BeSQLiteM02.dll!BentleyM0200::BeSQLite::Db::ExecuteSql(const char * sql, int(*)(void *, int, char * *, char * *) callback, void * arg, char * * errmsg) Line 918 (d:\imodel02\source\imodel02\iModelCore\BeSQLite\BeSQLite.cpp:918)
+    DgnPlatformM02.dll!BentleyM0200::Dgn::TxnManager::ApplyDbSchemaChangeSet(const BentleyM0200::BeSQLite::DbSchemaChangeSet & dbSchemaChanges) Line 1171 (d:\imodel02\source\imodel02\iModelCore\DgnPlatform\DgnCore\TxnManager.cpp:1171)
+    DgnPlatformM02.dll!BentleyM0200::Dgn::TxnManager::MergeDbSchemaChangesInRevision(const BentleyM0200::Dgn::DgnRevision & revision, BentleyM0200::Dgn::RevisionChangesFileReader & changeStream) Line 833 (d:\imodel02\source\imodel02\iModelCore\DgnPlatform\DgnCore\TxnManager.cpp:833)
+    DgnPlatformM02.dll!BentleyM0200::Dgn::TxnManager::MergeRevision(const BentleyM0200::Dgn::DgnRevision & revision) Line 1032 (d:\imodel02\source\imodel02\iModelCore\DgnPlatform\DgnCore\TxnManager.cpp:1032)
+    DgnPlatformM02.dll!BentleyM0200::Dgn::RevisionManager::DoMergeRevision(const BentleyM0200::Dgn::DgnRevision & revision) Line 987 (d:\imodel02\source\imodel02\iModelCore\DgnPlatform\DgnCore\RevisionManager.cpp:987)
+    DgnPlatformM02.dll!BentleyM0200::Dgn::RevisionManager::DoProcessRevisions(const BentleyM0200::Bstdcxx::bvector<BentleyM0200::Dgn::DgnRevision const *,BentleyM0200::BentleyAllocator<BentleyM0200::Dgn::DgnRevision const *> > & revisions, BentleyM0200::Dgn::RevisionProcessOption processOptions) Line 1654 (d:\imodel02\source\imodel02\iModelCore\DgnPlatform\DgnCore\RevisionManager.cpp:1654)
+    DgnPlatformM02.dll!BentleyM0200::Dgn::DgnDb::ProcessRevisions(const BentleyM0200::BeSQLite::Db::OpenParams & params) Line 239 (d:\imodel02\source\imodel02\iModelCore\DgnPlatform\DgnCore\DgnDb.cpp:239)
+    DgnPlatformM02.dll!BentleyM0200::Dgn::DgnDb::InitializeSchemas(const BentleyM0200::BeSQLite::Db::OpenParams & params) Line 190 (d:\imodel02\source\imodel02\iModelCore\DgnPlatform\DgnCore\DgnDb.cpp:190)
+    DgnPlatformM02.dll!BentleyM0200::Dgn::DgnDb::_OnDbOpened(const BentleyM0200::BeSQLite::Db::OpenParams & params) Line 160 (d:\imodel02\source\imodel02\iModelCore\DgnPlatform\DgnCore\DgnDb.cpp:160)
+    BeSQLiteM02.dll!BentleyM0200::BeSQLite::Db::OpenBeSQLiteDb(const char * dbName, const BentleyM0200::BeSQLite::Db::OpenParams & params) Line 2636 (d:\imodel02\source\imodel02\iModelCore\BeSQLite\BeSQLite.cpp:2636)
+    DgnPlatformM02.dll!BentleyM0200::BeSQLite::Db::OpenBeSQLiteDb(const BentleyM0200::BeFileName & dbName, const BentleyM0200::BeSQLite::Db::OpenParams & openParams) Line 2560 (d:\imodel02\out\Winx64\BuildContexts\DgnPlatform\PublicAPI\BeSQLite\BeSQLite.h:2560)
+    DgnPlatformM02.dll!BentleyM0200::Dgn::DgnDb::DoOpenDgnDb(const BentleyM0200::BeFileName & projectNameIn, const BentleyM0200::Dgn::DgnDb::OpenParams & params) Line 660 (d:\imodel02\source\imodel02\iModelCore\DgnPlatform\DgnCore\DgnDb.cpp:660)
+    DgnPlatformM02.dll!BentleyM0200::Dgn::DgnDb::OpenDgnDb(BentleyM0200::BeSQLite::DbResult * outResult, const BentleyM0200::BeFileName & fileName, const BentleyM0200::Dgn::DgnDb::OpenParams & openParams) Line 684 (d:\imodel02\source\imodel02\iModelCore\DgnPlatform\DgnCore\DgnDb.cpp:684)
+    iModelBridgeFwkLibM02.dll!tryPullAndMergeSchemaRevisions(BentleyM0200::RefCountedPtr<BentleyM0200::Dgn::DgnDb> & db, BentleyM0200::RefCountedPtr<BentleyM0200::iModel::Hub::Briefcase> briefcase) Line 369 (d:\imodel02\source\imodel02\iModelBridgeCore\DgnDbSync\iModelBridge\Fwk\IModelClientForBridges.cpp:369)
+    iModelBridgeFwkLibM02.dll!BentleyM0200::Dgn::IModelClientBase::PullAndMergeSchemaRevisions(BentleyM0200::RefCountedPtr<BentleyM0200::Dgn::DgnDb> & db) Line 386 (d:\imodel02\source\imodel02\iModelBridgeCore\DgnDbSync\iModelBridge\Fwk\IModelClientForBridges.cpp:386)
+    iModelBridgeFwkLibM02.dll!BentleyM0200::Dgn::iModelBridgeFwk::Briefcase_PullMergePush(const char * descIn, bool doPullAndMerge, bool doPush) Line 557 (d:\imodel02\source\imodel02\iModelBridgeCore\DgnDbSync\iModelBridge\Fwk\Briefcase.cpp:557)
+    iModelBridgeFwkLibM02.dll!BentleyM0200::Dgn::iModelBridgeFwk::PullMergeAndPushChange(const BentleyM0200::Utf8String & description, bool releaseLocks, bool reopenDb) Line 1562 (d:\imodel02\source\imodel02\iModelBridgeCore\DgnDbSync\iModelBridge\Fwk\iModelBridgeFwk.cpp:1562)
+    iModelBridgeFwkLibM02.dll!BentleyM0200::Dgn::iModelBridgeFwk::TryOpenBimWithOptions(BentleyM0200::Dgn::DgnDb::OpenParams & oparams) Line 1670 (d:\imodel02\source\imodel02\iModelBridgeCore\DgnDbSync\iModelBridge\Fwk\iModelBridgeFwk.cpp:1670)
+    iModelBridgeFwkLibM02.dll!BentleyM0200::Dgn::iModelBridgeFwk::TryOpenBimWithBisSchemaUpgrade() Line 1698 (d:\imodel02\source\imodel02\iModelBridgeCore\DgnDbSync\iModelBridge\Fwk\iModelBridgeFwk.cpp:1698)
+    iModelBridgeFwkLibM02.dll!BentleyM0200::Dgn::iModelBridgeFwk::UpdateExistingBim() Line 2163 (d:\imodel02\source\imodel02\iModelBridgeCore\DgnDbSync\iModelBridge\Fwk\iModelBridgeFwk.cpp:2163)
+    iModelBridgeFwkLibM02.dll!BentleyM0200::Dgn::iModelBridgeFwk::UpdateExistingBimWithExceptionHandling() Line 1808 (d:\imodel02\source\imodel02\iModelBridgeCore\DgnDbSync\iModelBridge\Fwk\iModelBridgeFwk.cpp:1808)
+    iModelBridgeFwkLibM02.dll!BentleyM0200::Dgn::iModelBridgeFwk::RunExclusive(int argc, const wchar_t * * argv) Line 1515 (d:\imodel02\source\imodel02\iModelBridgeCore\DgnDbSync\iModelBridge\Fwk\iModelBridgeFwk.cpp:1515)
+    iModelBridgeFwkLibM02.dll!BentleyM0200::Dgn::iModelBridgeFwk::Run(int argc, const wchar_t * * argv) Line 2392 (d:\imodel02\source\imodel02\iModelBridgeCore\DgnDbSync\iModelBridge\Fwk\iModelBridgeFwk.cpp:2392)
+    MstnBridgeTests.exe!MstnBridgeTests_MultiBridgeSequencing_Test::TestBody::__l7::<lambda>() Line 210 (d:\imodel02\source\imodel02\Bridges\Mstn\Tests\MstnBridgeTests.cpp:210)
+*/

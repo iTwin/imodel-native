@@ -221,6 +221,7 @@ DgnDbPtr iModelBridge::OpenBimAndMergeSchemaChanges(BeSQLite::DbResult& dbres, b
 BentleyStatus iModelBridge::DoMakeDefinitionChanges(SubjectCPtr& jobsubj, DgnDbR db)
     {
     BeAssert(db.BriefcaseManager().IsSharedChannel());
+    BeAssert(db.BriefcaseManager().GetChannelPropsR().channelParentId == db.Elements().GetRootSubjectId());
 
     if (_GetParams().GetInputFileName().empty())
         return BSISUCCESS;
@@ -249,7 +250,7 @@ BentleyStatus iModelBridge::DoMakeDefinitionChanges(SubjectCPtr& jobsubj, DgnDbR
         }
 
     _GetParams().SetJobSubjectId(jobsubj->GetElementId());
-    db.BriefcaseManager().GetChannelPropsR().channelParentId = jobsubj->GetElementId();
+    BeAssert(db.BriefcaseManager().GetChannelPropsR().channelParentId == db.Elements().GetRootSubjectId());
 
     //  Now make normal definition changes, such as converting levels into Categories.
     if (BSISUCCESS != _MakeDefinitionChanges(*jobsubj))
@@ -268,6 +269,8 @@ BentleyStatus iModelBridge::DoMakeDefinitionChanges(SubjectCPtr& jobsubj, DgnDbR
         return BSIERROR;
         }
 
+    BeAssert(db.BriefcaseManager().IsSharedChannel());
+    BeAssert(db.BriefcaseManager().GetChannelPropsR().channelParentId == db.Elements().GetRootSubjectId());
     return BSISUCCESS;
     }
 
@@ -1125,6 +1128,7 @@ iModelBridge::IBriefcaseManager::PushStatus iModelBridge::PushChanges(DgnDbR db,
         if (RepositoryStatus::Success != response.Result())
             {
             LOG.errorv("Failed to acquire locks and/or codes with error %x", response.Result());
+            db.BriefcaseManager().StartBulkOperation();
             return iModelBridge::IBriefcaseManager::PushStatus::UnknownError;
             }
         auto status = bcMgr->_Push(commitComment.c_str());
@@ -1161,6 +1165,15 @@ bool iModelBridge::HoldsSchemaLock(DgnDbR db)
     {
     LockableId schemasLock(db.Schemas());
     return db.BriefcaseManager().QueryLockLevel(schemasLock) == LockLevel::Exclusive;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool iModelBridge::HoldsElementLock(SubjectCR jobSubject, BentleyApi::Dgn::LockLevel level)
+    {
+    LockableId lock(jobSubject);
+    return jobSubject.GetDgnDb().BriefcaseManager().QueryLockLevel(lock) == level;
     }
 
 /*---------------------------------------------------------------------------------**//**

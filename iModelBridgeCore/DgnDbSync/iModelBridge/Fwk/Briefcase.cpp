@@ -17,6 +17,9 @@ USING_NAMESPACE_BENTLEY_TASKS
 USING_NAMESPACE_BENTLEY_LOGGING
 USING_NAMESPACE_BENTLEY_SQLITE
 
+#undef LOG
+#define LOG (*LoggingManager::GetLogger(L"iModelBridge"))
+
 static IModelClientForBridges* s_clientForTesting;
 
 /*---------------------------------------------------------------------------------**//**
@@ -462,6 +465,31 @@ BentleyStatus iModelBridgeFwk::Briefcase_IModelHub_CreateRepository()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/19
++---------------+---------------+---------------+---------------+---------------+------*/
+iModelBridge::IBriefcaseManager::PushStatus iModelBridgeFwkPush::_Push(Utf8CP comment)
+    {
+    if (m_fwk.m_isCreatingNewRepo || !iModelBridge::AnyChangesToPush(*m_fwk.m_briefcaseDgnDb))
+        return iModelBridge::IBriefcaseManager::PushStatus::Success;
+
+    if (!m_fwk.AllowIntermediatePushes())
+        {
+        m_fwk.m_briefcaseDgnDb->SaveChanges();
+        return iModelBridge::IBriefcaseManager::Success;
+        }
+
+    auto channelParentId = m_fwk.m_briefcaseDgnDb->BriefcaseManager().GetChannelPropsR().channelParentId;
+
+    if (BSISUCCESS != m_fwk.Briefcase_PullMergePush(comment, false/*doPullAndMerge*/, true/*doPush*/))
+        return m_fwk.m_lastBridgePushStatus;
+
+    if (BSISUCCESS != m_fwk.MustHoldJobSubjectLock())
+        return iModelBridge::IBriefcaseManager::UnknownError;
+
+    return iModelBridge::IBriefcaseManager::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridgeFwk::Briefcase_PullMergePush(Utf8CP descIn, bool doPullAndMerge, bool doPush)
@@ -469,6 +497,16 @@ BentleyStatus iModelBridgeFwk::Briefcase_PullMergePush(Utf8CP descIn, bool doPul
     BeAssert(doPullAndMerge || doPush);
     bool doPullMergeAndPush = doPullAndMerge && doPush;
     Utf8CP opName = doPullMergeAndPush? "PullMergePush": doPullAndMerge? "PullAndMerge": "Push";
+
+    if (!m_briefcaseDgnDb.IsValid() || !m_briefcaseDgnDb->IsDbOpen() || nullptr == m_client || !m_client->IsConnected())
+        {
+        GetLogger().errorv("%s failed in m_briefcaseDgnDb.IsValid() || !m_briefcaseDgnDb->IsDbOpen() || nullptr == m_client || !m_client->IsConnected()", opName);
+        BeAssert(false);
+        return BSIERROR;
+        }
+
+    auto& bcMgr = m_briefcaseDgnDb->BriefcaseManager();
+    BeAssert(!bcMgr.IsBulkOperation());
 
     StopWatch pullpushTimer(true);
     if (doPush)
@@ -483,13 +521,6 @@ BentleyStatus iModelBridgeFwk::Briefcase_PullMergePush(Utf8CP descIn, bool doPul
 
     GetProgressMeter().SetCurrentStepName(opName);
     GetLogger().infov("%s %s %s", opName, m_briefcaseBasename.c_str(), comment.c_str());
-
-    if (!m_briefcaseDgnDb.IsValid() || !m_briefcaseDgnDb->IsDbOpen() || nullptr == m_client || !m_client->IsConnected())
-        {
-        GetLogger().errorv("%s failed in m_briefcaseDgnDb.IsValid() || !m_briefcaseDgnDb->IsDbOpen() || nullptr == m_client || !m_client->IsConnected()", opName);
-        BeAssert(false);
-        return BSIERROR;
-        }
 
     if (BSISUCCESS != m_client->OpenBriefcase(*m_briefcaseDgnDb))
         {
@@ -626,6 +657,23 @@ BentleyStatus iModelBridgeFwk::Briefcase_ReleaseAllPublicLocks()
     {
     if (!m_briefcaseDgnDb.IsValid())
         return BSIERROR;
+
+    if (!m_briefcaseDgnDb->BriefcaseManager().GetChannelPropsR().oneBriefcaseOwnsChannel)
+        {
+        StopWatch releaseLockTimer(true);
+        GetProgressMeter().SetCurrentStepName("ReleaseSharedLocks");
+
+        auto rstatus = m_briefcaseDgnDb->BriefcaseManager().Relinquish();
+        if (RepositoryStatus::Success != rstatus)
+            {
+            GetLogger().errorv("Relinquish failed with error %x", (int)rstatus);
+            return BSIERROR;
+            }
+        SetSyncState(SyncState::Initial);
+
+        iModelBridge::LogPerformance(releaseLockTimer, "Briefcase_ReleaseAllPublicLocks to iModelHub");
+        return BSISUCCESS;
+        }
 
     StopWatch releaseLockTimer(true);
     GetProgressMeter().SetCurrentStepName("ReleaseSharedLocks");

@@ -56,7 +56,7 @@ static BeSQLite::PropertySpec s_briefcaseIdPropSpec("BriefcaseId", "be_iModelBri
 //static BeSQLite::PropertySpec s_parentRevisionIdPropSpec("ParentRevisionId", "be_iModelBridgeFwk", BeSQLite::PropertySpec::Mode::Normal, BeSQLite::PropertySpec::Compress::No);
 
 #undef LOG
-#define LOG (*LoggingManager::GetLogger(L"iModelBridgeFwk"))
+#define LOG (*LoggingManager::GetLogger(L"iModelBridge"))
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -65,14 +65,6 @@ static IModelBridgeRegistry* s_registryForTesting;
 
 static int s_maxWaitForMutex = 60000;
 static iModelBridgeErrorHandling::Config s_crashDumpConfig;
-
-struct IBriefcaseManagerForBridges : RefCounted<iModelBridge::IBriefcaseManager>
-{
-    iModelBridgeFwk& m_fwk;
-    IBriefcaseManagerForBridges(iModelBridgeFwk& f) : m_fwk(f) {}
-    BentleyStatus _PullAndMerge() override { return m_fwk.m_isCreatingNewRepo? BSISUCCESS: m_fwk.Briefcase_PullMergePush(nullptr, true, false); }
-    PushStatus _Push(Utf8CP comment) override { if (m_fwk.m_isCreatingNewRepo || !iModelBridge::AnyChangesToPush(*m_fwk.m_briefcaseDgnDb)) return PushStatus::Success; m_fwk.Briefcase_PullMergePush(comment, false, true); return m_fwk.m_lastBridgePushStatus; }
-};
 
 void iModelBridgeFwk::SetBridgeForTesting(iModelBridge& b)
     {
@@ -1748,7 +1740,102 @@ BentleyStatus   iModelBridgeFwk::GetSchemaLock()
         status = m_briefcaseDgnDb->BriefcaseManager().LockSchemas().Result();
         } while ((RepositoryStatus::Success != status) && (++retryAttempt < m_maxRetryCount) && IModelClientBase::SleepBeforeRetry());
 
+    if (RepositoryStatus::Success != status)
+        GetLogger().warningv(L"GetSchemaLock failed with status %x. briefcase=%ls", status, m_briefcaseName.c_str());
+
     return (status != RepositoryStatus::Success) ? BSIERROR : BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridgeFwk::LockChannelParent(SubjectCR jobSubj)
+    {
+    auto& db = jobSubj.GetDgnDb();
+
+    if (!db.BriefcaseManager().StayInChannel() || db.BriefcaseManager().IsNoChannel())
+        return BSISUCCESS;
+
+    if (jobSubj.GetElementId() != db.BriefcaseManager().GetChannelPropsR().channelParentId)
+        {
+        BeAssert(false);
+        LOG.fatalv("Specified Job Subject element %llx is not the channel parent", jobSubj.GetElementId().GetValue());
+        return BSIERROR;
+        }
+
+    GetLogger().infov("LockChannelParent.");
+
+    RepositoryStatus status = RepositoryStatus::Success;
+    int retryAttempt = 0;
+    do
+        {
+        if (retryAttempt > 0)
+            {
+            GetLogger().infov("LockChannelParent failed. Retrying.");
+            if (0 != PullMergeAndPushChange("LockChannelParent", false, true))  // pullmergepush + re-open
+                return BSIERROR;
+            }
+        status = db.BriefcaseManager().LockChannelParent();
+        } while ((RepositoryStatus::Success != status) && (RepositoryStatus::LockAlreadyHeld != status) && (++retryAttempt < m_maxRetryCount) && IModelClientBase::SleepBeforeRetry());
+
+    if ((RepositoryStatus::Success != status) && (RepositoryStatus::LockAlreadyHeld != status))
+        {
+        LOG.fatalv("Failed to acquire exclusive lock on the Job Subject element %llx. Status = %x", jobSubj.GetElementId().GetValue(), status);
+        return BSIERROR;
+        }
+
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridgeFwk::LockChannelParent(DgnElementId channelParentId)
+    {
+    auto jobSubj = m_briefcaseDgnDb->Elements().Get<Subject>(channelParentId);
+    if (!jobSubj.IsValid())
+        {
+        BeAssert(false);
+        return BSIERROR;
+        }
+    return LockChannelParent(*jobSubj);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool iModelBridgeFwk::HoldsJobSubjectLock()
+    {
+    auto jobsubj = m_briefcaseDgnDb->Elements().Get<Subject>(m_briefcaseDgnDb->BriefcaseManager().GetChannelPropsR().channelParentId);
+    if (!jobsubj.IsValid())
+        return false;
+
+    return iModelBridge::HoldsElementLock(*jobsubj);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridgeFwk::MustHoldJobSubjectLock()
+    {
+    if (!m_briefcaseDgnDb->BriefcaseManager().StayInChannel())
+        return BSISUCCESS;
+
+    if (!m_briefcaseDgnDb->BriefcaseManager().GetChannelPropsR().channelParentId.IsValid())
+        {
+        BeAssert(false);
+        LOG.fatalv("Expected to be in a normal channel with parent id set.");
+        return BSIERROR;
+        }
+
+    if (!HoldsJobSubjectLock())
+        {
+        BeAssert(false);
+        LOG.fatalv("Expected to hold exclusive lock on Job Subject element %llx", m_briefcaseDgnDb->BriefcaseManager().GetChannelPropsR().channelParentId.GetValue());
+        return BSIERROR;
+        }
+
+    return BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1892,6 +1979,8 @@ int iModelBridgeFwk::DoNormalUpdate()
     m_briefcaseDgnDb->BriefcaseManager().GetChannelPropsR().channelType = IBriefcaseManager::ChannelType::Shared;
     m_briefcaseDgnDb->BriefcaseManager().GetChannelPropsR().channelParentId = m_briefcaseDgnDb->Elements().GetRootSubjectId();
 
+    BeAssert(!m_briefcaseDgnDb->BriefcaseManager().StayInChannel() || !HoldsJobSubjectLock());
+
     if (BSISUCCESS != GetSchemaLock())  // must get schema lock preemptively. This ensures that only one bridge at a time can make schema and definition changes. That then allows me to pull/merge/push between the definition and data steps without closing and reopening
         {
         LOG.fatalv("Bridge cannot obtain schema lock.");
@@ -1943,27 +2032,35 @@ int iModelBridgeFwk::DoNormalUpdate()
     //  Normal data changes => bridge's private channel
     // ---------------------------------------------------
     m_briefcaseDgnDb->BriefcaseManager().GetChannelPropsR().channelType = IBriefcaseManager::ChannelType::Normal;
-    m_briefcaseDgnDb->BriefcaseManager().GetChannelPropsR().channelParentId = DgnElementId(); // don't yet know the Job Subject element
+    m_briefcaseDgnDb->BriefcaseManager().GetChannelPropsR().channelParentId = jobsubj->GetElementId();
 
     BeAssert(!iModelBridge::HoldsSchemaLock(*m_briefcaseDgnDb));
+    BeAssert(!m_briefcaseDgnDb->BriefcaseManager().StayInChannel() || !HoldsJobSubjectLock());
     BeAssert(!iModelBridge::AnyTxns(*m_briefcaseDgnDb));
     GetLogger().infov("bridge:%s iModel:%s - Convert Data.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
 
-    BentleyStatus bridgeCvtStatus = m_bridge->DoConvertToExistingBim(*m_briefcaseDgnDb, *jobsubj, true);
-    if (BSISUCCESS != bridgeCvtStatus)
-        {
-        GetLogger().errorv("Bridge::DoConvertToExistingBim failed with status %d", bridgeCvtStatus);
-        return RETURN_STATUS_CONVERTER_ERROR;
-        }
+    // Get exlusive access to the channel BEFORE going into bulk mode.
+    if (BSISUCCESS != LockChannelParent(*jobsubj))
+        return RETURN_STATUS_SERVER_ERROR;
 
-    //Call save changes before the bridge is closed.
-    dbres = m_briefcaseDgnDb->SaveChanges();
-    
-    callCloseOnReturn.m_status = BSISUCCESS;
-
-    BeAssert(!iModelBridge::HoldsSchemaLock(*m_briefcaseDgnDb));
-
-    return RETURN_STATUS_SUCCESS;
+    BeAssert(BSISUCCESS == MustHoldJobSubjectLock());                                                   // ==== CHANNEL LOCK
+                                                                                                        // ==== CHANNEL LOCK
+    BentleyStatus bridgeCvtStatus = m_bridge->DoConvertToExistingBim(*m_briefcaseDgnDb, *jobsubj, true);// ==== CHANNEL LOCK
+    if (BSISUCCESS != bridgeCvtStatus)                                                                  // ==== CHANNEL LOCK
+        {                                                                                               // ==== CHANNEL LOCK
+        GetLogger().errorv("Bridge::DoConvertToExistingBim failed with status %d", bridgeCvtStatus);    // ==== CHANNEL LOCK
+        return RETURN_STATUS_CONVERTER_ERROR;                                                           // ==== CHANNEL LOCK
+        }                                                                                               // ==== CHANNEL LOCK
+                                                                                                        // ==== CHANNEL LOCK
+    //Call save changes before the bridge is closed.                                                    // ==== CHANNEL LOCK
+    dbres = m_briefcaseDgnDb->SaveChanges();                                                            // ==== CHANNEL LOCK
+                                                                                                        // ==== CHANNEL LOCK
+    callCloseOnReturn.m_status = BSISUCCESS;                                                            // ==== CHANNEL LOCK
+                                                                                                        // ==== CHANNEL LOCK
+    BeAssert(!iModelBridge::HoldsSchemaLock(*m_briefcaseDgnDb));                                        // ==== CHANNEL LOCK
+    BeAssert(BSISUCCESS == MustHoldJobSubjectLock());                                                   // ==== CHANNEL LOCK
+                                                                                                        // ==== CHANNEL LOCK
+    return RETURN_STATUS_SUCCESS;                                                                       // ==== CHANNEL LOCK
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1972,7 +2069,7 @@ int iModelBridgeFwk::DoNormalUpdate()
 int iModelBridgeFwk::OnAllDocsProcessed()
     {
     m_briefcaseDgnDb->BriefcaseManager().GetChannelPropsR().channelType = IBriefcaseManager::ChannelType::Normal;
-    m_briefcaseDgnDb->BriefcaseManager().GetChannelPropsR().channelParentId = DgnElementId(); // don't yet know the Job Subject element
+    m_briefcaseDgnDb->BriefcaseManager().GetChannelPropsR().channelParentId = DgnElementId(); // This operation applies to multiple channels
 
     //  Tell the bridge that the briefcase is now open. (Do NOT ask it to open a source file.)
     iModelBridgeBriefcaseCallOpenCloseFunctions callCloseOnReturn(*m_bridge, *m_briefcaseDgnDb);
@@ -2114,6 +2211,8 @@ int iModelBridgeFwk::UpdateExistingBim()
         bool madeSchemaChanges = false;
         m_briefcaseDgnDb = nullptr; // close the current connection to the briefcase db before attempting to reopen it!
 
+        // *** NEEDS WORK: There is a race condition here. See the comment in MstnBridgeTests.MultiBridgeSequencing.
+
         if (BSISUCCESS != TryOpenBimWithBisSchemaUpgrade())
             {
             LOG.fatalv("Bridge cannot open and perform Bis Schema Upgrade (may be denied schema lock).");
@@ -2177,6 +2276,7 @@ int iModelBridgeFwk::UpdateExistingBim()
 
     // Set this value as a report of the Bridge/BriefcaseManager's policy, so that callers can find out afterwards.
     m_areCodesInLockedModelsReported = m_briefcaseDgnDb->BriefcaseManager().ShouldIncludeUsedLocksInChangeSet();
+    m_retainedChannedlLockLevel = m_briefcaseDgnDb->BriefcaseManager().GetChannelPropsR().oneBriefcaseOwnsChannel ? BentleyApi::Dgn::LockLevel::Exclusive : BentleyApi::Dgn::LockLevel::None;
 
     // POST-CONDITIONS
     BeAssert((!iModelBridge::AnyTxns(*m_briefcaseDgnDb) && (SyncState::Initial == GetSyncState())) && "Local changes should have been pushed");
@@ -2237,10 +2337,10 @@ iModelBridgeFwk::iModelBridgeFwk()
 :m_logProvider(nullptr), m_dmsSupport(nullptr), m_bridge(nullptr)
     {
     m_client = nullptr;
-    m_bcMgrForBridges = new IBriefcaseManagerForBridges(*this);
+    m_bcMgrForBridges = new iModelBridgeFwkPush(*this);
     m_lastBridgePushStatus = iModelBridge::IBriefcaseManager::PushStatus::Success;
 
-    m_useIModelHub = nullptr;
+    m_useIModelHub = false;
     m_iModelHubArgs = nullptr;
     }
 

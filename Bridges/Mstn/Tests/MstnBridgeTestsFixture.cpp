@@ -267,7 +267,6 @@ int32_t MstnBridgeTestsFixture::DbFileInfo::GetElementCount()
 +---------------+---------------+---------------+---------------+---------------+------*/
 MstnBridgeTestsFixture::DbFileInfo::DbFileInfo(BentleyApi::BeFileNameCR fileName)
     {
-    
     BentleyApi::BeSQLite::DbResult result;
     m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(BentleyApi::BeSQLite::Db::OpenMode::Readonly));
     BeAssert(BentleyApi::BeSQLite::DbResult::BE_SQLITE_OK ==  result);
@@ -942,8 +941,7 @@ ProcessRunner MstnBridgeTestsFixture::StartImodelBridgeFwkExe(FwkArgvMaker const
     BentleyApi::BeFileName fwkExeRel(BentleyApi::Desktop::FileSystem::GetExecutableDir());
     fwkExeRel.AppendToPath(L"..");
     fwkExeRel.AppendToPath(L"iModelBridgeFwk");
-    fwkExeRel.AppendToPath(L"lib");
-    fwkExeRel.AppendToPath(L"x64");
+    fwkExeRel.AppendToPath(L"bin");
     fwkExeRel.AppendToPath(L"iModelBridgeFwk.exe");
     BentleyApi::BeFileName fwkExe;
     BentleyApi::BeFileName::FixPathName(fwkExe, fwkExeRel.c_str());
@@ -1463,6 +1461,31 @@ BentleyApi::Dgn::SubjectCPtr MstnBridgeTestsFixture::DbFileInfo::GetFirstJobSubj
     return m_db->Elements().Get<Subject>(stmt.GetValueId<DgnElementId>(0));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+int MstnBridgeTestsFixture::DbFileInfo::GetJobSubjectCount()
+    {
+    EC::ECSqlStatement stmt;
+    stmt.Prepare(*m_db, "SELECT COUNT(*) FROM " BIS_SCHEMA(BIS_CLASS_Subject) " WHERE json_extract(JsonProperties, '$.Subject.Job') is not null");
+    if (BE_SQLITE_ROW != stmt.Step())
+        return 0;
+
+    return stmt.GetValueInt(0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+int MstnBridgeTestsFixture::DbFileInfo::GetRepositoryLinkCount()
+    {
+    EC::ECSqlStatement stmt;
+    stmt.Prepare(*m_db, "SELECT COUNT(*) FROM " BIS_SCHEMA(BIS_CLASS_RepositoryLink));
+    if (BE_SQLITE_ROW != stmt.Step())
+        return 0;
+
+    return stmt.GetValueInt(0);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2019

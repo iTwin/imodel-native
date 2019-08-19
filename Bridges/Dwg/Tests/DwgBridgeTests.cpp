@@ -180,7 +180,7 @@ TEST_F(DwgBridgeTests, MultiBridgeSequencing)
         argvMaker.SetInputFileArg(inputFile);
         argvMaker.SetSkipAssignmentCheck();
 
-        argvMaker.SetMaxRetries(INT_MAX);   // must allow lots of time for bridge B to run to completion. Unfortunately, there is no way to predict how many retries will be required.
+        argvMaker.SetMaxRetries(255, true);   // must allow lots of time for bridge B to run to completion. Unfortunately, there is no way to predict how many retries will be required.
     
         iModelBridgeFwk fwk;
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argvMaker.GetArgC(), argvMaker.GetArgV()));

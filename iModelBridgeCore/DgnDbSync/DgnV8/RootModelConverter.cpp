@@ -165,8 +165,6 @@ SpatialConverterBase::ImportJobLoadStatus SpatialConverterBase::FindJob()
     if (!m_importJob.IsValid())
         return ImportJobLoadStatus::FailedNotFound;
 
-    GetDgnDb().BriefcaseManager().GetChannelPropsR().channelParentId = m_importJob.GetSubject().GetElementId();
-
     // *** TRICKY: If this is called by the framework as a check *after* it calls _IntializeJob, then don't change the change detector!
     if (!_HaveChangeDetector() || IsUpdating())
         _SetChangeDetector(true);
@@ -627,8 +625,6 @@ SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(
         }
     if (!jobSubject.IsValid())
         return ImportJobCreateStatus::FailedInsertFailure;
-
-    GetDgnDb().BriefcaseManager().GetChannelPropsR().channelParentId = jobSubject->GetElementId();
 
     // Set up m_importJob with the subject. Do this before calling GetOrCreateJobPartitions.
     m_importJob = ResolvedImportJob(*jobSubject, jtype);

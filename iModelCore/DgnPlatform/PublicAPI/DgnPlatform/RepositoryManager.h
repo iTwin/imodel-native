@@ -167,6 +167,7 @@ public:
         bool reportCodesInLockedModels = true;
         bool includeUsedLocksInChangeSet = true;
         bool stayInChannel = false;
+        bool oneBriefcaseOwnsChannel = true;
         DgnElementId channelParentId;
         };
 
@@ -220,6 +221,11 @@ protected:
     virtual void _ExtractRequestFromBulkOperation(Request&, bool locks, bool codes) {;}
     virtual bset<CodeSpecId> _GetFilteredCodeSpecIds() { return bset<CodeSpecId>(); }
 
+    // Channel management
+    virtual DgnElementId _GetNormalChannelParentOf(DgnModelId mid, DgnElementCP el) {return DgnElementId();}
+    virtual bool _IsLockRequired(DgnElementCR element) {return true;}
+    DGNPLATFORM_EXPORT virtual RepositoryStatus _LockChannelParent();
+
     DGNPLATFORM_EXPORT virtual RepositoryStatus _PerformPrepareAction(Request& req, PrepareAction action);
 
     DGNPLATFORM_EXPORT IRepositoryManagerP GetRepositoryManager() const;
@@ -232,6 +238,20 @@ protected:
     static DgnDbStatus ToDgnDbStatus(RepositoryStatus repoStatus, Request const& request);
 public:
     DgnDbR GetDgnDb() const { return m_db; } //!< The DgnDb managed by this object
+
+    RepositoryStatus LockChannelParent() {return _LockChannelParent();}
+
+    //! Of this model is in a *normal channel* return its channel parent ID.
+    //! @param mid The ModelId of the model to check
+    //! @param el  If available, the element in the model that is being accessed.
+    //! @return the channel parent's DgnElementId if in a normal channel or an invalid ID if not.
+    DgnElementId GetNormalChannelParentOf(DgnModelId mid, DgnElementCP el) {return _GetNormalChannelParentOf(mid, el);}
+
+    //! Is the specified element in a model that is in a normal channel?
+    DGNPLATFORM_EXPORT DgnElementId GetNormalChannelParentOf(DgnElementCR el);
+
+    //! Is a lock required before writing to the specified element?
+    bool IsLockRequired(DgnElementCR element) {return _IsLockRequired(element);}
 
     bool IsNoChannel() const {return ChannelType::None == m_channelProps.channelType;}
     bool IsSharedChannel() const {return ChannelType::Shared == m_channelProps.channelType;}

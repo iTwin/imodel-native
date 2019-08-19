@@ -20,25 +20,27 @@ struct MstnBridgeTestsLogProvider : BentleyApi::NativeLogging::Provider::ILogPro
     std::function<T_IsSeverityEnabled> m_sev;
     std::function<T_LogMessage> m_proc;
 
+    static Utf8CP GetSeverityName(BentleyApi::NativeLogging::SEVERITY sev)
+        {
+        const Utf8CP names[] = {"FATAL", "ERROR", "WARNING", "INFO", "DEBUG", "TRACE"};
+        return names[std::abs(sev)];
+        }
+
     MstnBridgeTestsLogProvider()
         {
         m_sev = [](BentleyApi::Utf8StringCR ns, BentleyApi::NativeLogging::SEVERITY sev)
             {
             if (ns.Equals("MstnBridgeTests"))
                 return true;
-            if (ns.Equals("BeSQLite") || ns.Equals("Performance"))
+            if (ns.Equals("Performance"))
                 return false;
-            /*
             if (ns.Equals("Bentley.Tasks") || ns.Equals("ECObjectsNative") || ns.Equals("DgnCore"))
                 return sev >= BentleyApi::NativeLogging::LOG_WARNING;
             return sev >= BentleyApi::NativeLogging::LOG_INFO;
-            */
-            return sev >= BentleyApi::NativeLogging::LOG_ERROR;
             };
         m_proc = [](BentleyApi::Utf8StringCR ns, BentleyApi::NativeLogging::SEVERITY sev, BentleyApi::Utf8StringCR msg)
             {
-            auto strm = (sev >= BentleyApi::NativeLogging::LOG_ERROR)? stderr: stdout;
-            fprintf(strm, "[%d] %s - %s\n", (int)sev, ns.c_str(), msg.c_str());
+            printf("[%s] %s - %s\n", GetSeverityName(sev), ns.c_str(), msg.c_str());
             };
         }
 

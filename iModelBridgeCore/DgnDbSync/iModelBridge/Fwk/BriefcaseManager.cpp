@@ -48,7 +48,7 @@ struct OwnedLocksIterator : IOwnedLocksIterator
 //=======================================================================================
 struct BriefcaseManager : IBriefcaseManager, TxnMonitor
 {
-    DgnModelIdSet m_exclusivelyLockedModels;
+    bmap<DgnModelId, DgnElementId> m_normalChannelParents;
     DgnLockSet m_heldLocks;
     Request m_req; // locks and codes that we must acquire before we can say that update has succeeded
     int m_inBulkUpdate = 0;
@@ -58,10 +58,10 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
     BriefcaseManager(DgnDbR db) : IBriefcaseManager(db)
     {
         // Set default policies for bridges
-        m_channelProps.reportCodesInLockedModels = false; // I take care of obtaining locks when and as necessary before calling push
+        m_channelProps.reportCodesInLockedModels = false;   // I take care of obtaining locks when and as necessary before calling push
         m_channelProps.includeUsedLocksInChangeSet = false; // by default, don't clutter up a push with reporting codes that are private to the bridge. A bridge can override this.
-        m_channelProps.stayInChannel = true; // bridge code must be restricted to write to shared definition models *only* in the Shared channel and to bridge models *only* in the Normal channel
-    
+        m_channelProps.stayInChannel = true;                // bridge code must be restricted to write to shared definition models *only* in the Shared channel and to bridge models *only* in the Normal channel
+        m_channelProps.oneBriefcaseOwnsChannel = false;     // A given briefcase does *not* hold onto channel locks persistently
         T_HOST.GetTxnAdmin().AddTxnMonitor(*this);
     }
 
@@ -122,12 +122,6 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
         if (RepositoryStatus::Success != m_lockCacheInitializeStatus)
             return m_lockCacheInitializeStatus;
 
-        for (auto const &lock : m_heldLocks)
-        {
-            if ((lock.GetLockableId().GetType() == LockableType::Model) && (lock.GetLevel() == LockLevel::Exclusive))
-                m_exclusivelyLockedModels.insert(DgnModelId(lock.GetLockableId().GetId().GetValue()));
-        }
-
         return m_lockCacheInitializeStatus;
     }
 
@@ -135,34 +129,58 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
     {
         m_lockCacheInitialized = false;
         m_heldLocks.clear();
-        m_exclusivelyLockedModels.clear();
     }
 
-    bool IsExclusivelyLockedModelId(DgnModelId mid) const
+    DgnElementId ComputeNormalChannelParentOfElement(DgnElementCR el)
     {
-        BeAssert(m_lockCacheInitialized);
-        return m_exclusivelyLockedModels.find(mid) != m_exclusivelyLockedModels.end();
+        auto i = m_normalChannelParents.find(el.GetModelId());
+        if (i != m_normalChannelParents.end())
+            return i->second;
+
+        auto& channelParentId = m_normalChannelParents[el.GetModelId()];
+
+        iModelBridge::JobMemberInfo jobMemberInfo = iModelBridge::ComputeJobMemberInfo(el);
+        if (jobMemberInfo.m_jobSubject.IsValid())
+            channelParentId = jobMemberInfo.m_jobSubject->GetElementId();
+
+        return channelParentId;
     }
 
-    bool IsInExclusivelyLockedModel(DgnElementCR el) const
+    DgnElementId _GetNormalChannelParentOf(DgnModelId mid, DgnElementCP el) override
     {
-        return IsExclusivelyLockedModelId(el.GetModelId());
+        auto i = m_normalChannelParents.find(mid);
+        if (i != m_normalChannelParents.end())
+            return i->second;
+
+        if (el != nullptr)
+        {
+            return ComputeNormalChannelParentOfElement(*el);
+        }
+
+        auto model = GetDgnDb().Models().GetModel(mid);
+        if (!model.IsValid())
+        {
+            BeAssert(false);
+            return DgnElementId();
+        }
+        auto modeledElement = model->GetModeledElement();
+        if (!modeledElement.IsValid())
+        {
+            BeAssert(false);
+            return DgnElementId();
+        }
+        return ComputeNormalChannelParentOfElement(*modeledElement);
     }
 
-#define STMT_ModelIdFromElement "SELECT ModelId FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE Id=?"
-
-    bool IsLockRequired(DgnElementId elementId)
+    bool IsLockRequiredById(DgnElementId elementId)
     {
-        BeSQLite::CachedStatementPtr stmt = GetDgnDb().GetCachedStatement(STMT_ModelIdFromElement);
-        stmt->BindId(1, elementId);
-        stmt->Step();
-        DgnModelId modelId = stmt->GetValueId<DgnModelId>(0);
-        return modelId.IsValid() ? !IsExclusivelyLockedModelId(modelId) : false;
+        auto el = GetDgnDb().Elements().GetElement(elementId);
+        return el.IsValid() ? IsLockRequired(*el) : false;
     }
 
-    bool IsLockRequired(DgnElementCR element)
+    bool _IsLockRequired(DgnElementCR element) override
     {
-        return !IsInExclusivelyLockedModel(element);
+        return !GetNormalChannelParentOf(element).IsValid(); // only need locks on elements outside of bridge job's channel
     }
 
     RepositoryStatus AcquireLocks(LockRequest &req)
@@ -213,7 +231,7 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
         if (requestedLock.GetType() != LockableType::Element)
             return true;
 
-        return IsLockRequired(DgnElementId(requestedLock.GetId().GetValue()));
+        return IsLockRequiredById(DgnElementId(requestedLock.GetId().GetValue()));
     }
 
     // Remove each lock from `locks` if it matches an item in `alreadyHeld` with the same or higher level
@@ -310,9 +328,6 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
 
     RepositoryStatus _Relinquish(Resources which) override
     {
-        if (Resources::Locks == (which & Resources::Locks))
-            return ReportChannelError("Bridges must never relinquish all locks.");
-
         if (m_inBulkUpdate)
             return ReportChannelError("A bridge must not attempt to relinquish codes while in bulk update mode.");
 
@@ -323,6 +338,8 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
             return RepositoryStatus::ServerUnavailable;
 
         stat = server->Relinquish(which, GetDgnDb());
+
+        ClearLockCache();
 
         return stat;
     }
@@ -451,14 +468,25 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
         return RepositoryStatus::Success;
     }
 
+    bool IsAssignedToChannel(DgnElementCR el)
+    {
+        //  A RepositoryLink element is formally in the shared channel and is not owned by any one bridge.
+        //  However, there is one bridge that owns the content of the file identified by a given RepositoryLink element, and that bridge
+        //  needs to be able to update the properties of the RepositoryLink element when it finishes an update.
+        return (nullptr != dynamic_cast<RepositoryLink const *>(&el));
+    }
+
     RepositoryStatus CheckWriteToModelInNormalChannel(DgnElementCR el, bool exclusiveModel, iModelBridge::JobMemberInfo const &jobMemberInfo)
     {
         BeAssert(IsNormalChannel());
 
-        if (!exclusiveModel)
+        if (!exclusiveModel) // If bridge is *not* writing to one of its own models ...
         {
-            if (!jobMemberInfo.IsChildOfJob())
-                return ReportChannelError(el, "During the data phases, a bridge may only write to its Job-specific elements (not including the Job Subject element itself).");
+            if (!jobMemberInfo.IsChildOfJob()) // If bridge is writing to an element that is *not* a child of the bridge's Job Subject ...
+            {
+                if (!IsAssignedToChannel(el)) // and if that element is not "assigned" to the bridge's channel ...
+                    return ReportChannelError(el, "During the data phases, a bridge may only write to its Job-specific elements (not including the Job Subject element itself).");
+            }
 
             BeAssert(el.GetElementId() != DgnModel::RepositoryModelId());
         }
@@ -470,7 +498,7 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
     {
         BeAssert(!IsNoChannel());
 
-        bool exclusiveModel = IsExclusivelyLockedModelId(el.GetModelId());
+        bool exclusiveModel = GetNormalChannelParentOf(el).IsValid();
 
         if (IsSharedChannel())
             return CheckWriteToModelInSharedChannel(el, exclusiveModel, jobMemberInfo);
@@ -538,13 +566,13 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
         {
             if (scopeJobMemberInfo.IsJobOrChild())
                 return ReportChannelError(el, Utf8PrintfString("Element %s is an invalid scope. The Code of an element that is outside of the bridge's Job hierarchy must not be scoped to an element that is inside that hierarchy.",
-                                                                  FmtElement(*scopeElement).c_str()));
+                                                               FmtElement(*scopeElement).c_str()));
         }
         else // This is a Code for an element inside the bridge's private hierarchy.
         {
             if (!scopeJobMemberInfo.IsJobOrChild())
                 return ReportChannelError(el, Utf8PrintfString("Element %s is an invalid scope. The Code of an element that is inside the bridge's Job hierarchy must be scoped to an element that is also inside that hierarchy.",
-                                                                  FmtElement(*scopeElement).c_str()));
+                                                               FmtElement(*scopeElement).c_str()));
         }
         return RepositoryStatus::Success;
     }
@@ -559,24 +587,13 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
 
         iModelBridge::JobMemberInfo jobMemberInfo = iModelBridge::ComputeJobMemberInfo(el);
 
-        // Check that this operation is permitted
-        if (IsNormalChannel() && (BeSQLite::DbOpcode::Insert != op) && (nullptr != dynamic_cast<RepositoryLink const *>(&el)))
-        {
-            // *** Special Case *** bridges must be allowed to update RepositoryLink elements in the normal channel.
-            //  RepositoryLinks are formally in the shared channel and are not owned by any one bridge.
-            //  However, there is one bridge that owns the content of the file identified by a given RepositoryLink element, and that bridge
-            //  needs to be able to update the properties of the RepositoryLink element when it finishes an update.
-        }
-        else
-        {
-            if (RepositoryStatus::Success != (rstat = CheckWriteToModel(el, jobMemberInfo)))
-                return rstat;
+        if (RepositoryStatus::Success != (rstat = CheckWriteToModel(el, jobMemberInfo)))
+            return rstat;
 
-            for (auto const &code : req.Codes())
-            {
-                if (RepositoryStatus::Success != (rstat = CheckCodeScope(code, el, jobMemberInfo)))
-                    return rstat;
-            }
+        for (auto const &code : req.Codes())
+        {
+            if (RepositoryStatus::Success != (rstat = CheckCodeScope(code, el, jobMemberInfo)))
+                return rstat;
         }
 
         // Filter out resources that are not required
@@ -629,7 +646,6 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
             AccumulateRequests(req);
         }
 
-        // PrepareAction::Populate: there is no action to perform. _PrepareForElement/ModelOperation does the populating.
         return RepositoryStatus::Success;
     }
 
@@ -637,7 +653,7 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
     {
         MUST_INITIALIZE_LOCK_CACHE_RETURN(;)
 
-        if (!IsLockRequired(id))
+        if (!IsLockRequiredById(id))
             return;
 
         DgnLock lock(LockableId(id), LockLevel::Exclusive);
@@ -650,8 +666,6 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
     void _OnModelInserted(DgnModelId id) override
     {
         MUST_INITIALIZE_LOCK_CACHE_RETURN(;)
-
-        m_exclusivelyLockedModels.insert(id);
 
         DgnLock lock(LockableId(id), LockLevel::Exclusive);
 

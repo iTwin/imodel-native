@@ -23,13 +23,13 @@ namespace Provider //Forward declaration for logging provider;
     }
 END_BENTLEY_LOGGING_NAMESPACE
 
-DGNPLATFORM_REF_COUNTED_PTR(IBriefcaseManagerForBridges)
-
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct IModelClientForBridges;
 struct iModelBridgeCallOpenCloseFunctions;
 struct iModelBridgeSettings;
+struct iModelBridgeFwkPush;
+
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
@@ -45,8 +45,7 @@ BENTLEY_TRANSLATABLE_STRINGS_END
 //=======================================================================================
 struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
 {
-    friend struct IBriefcaseManagerForBridges;
-
+    friend struct iModelBridgeFwkPush;
 
     struct FwkContext
         {
@@ -129,6 +128,7 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         bool       m_createRepositoryIfNecessary = false;
         bool       m_mergeDefinitions = true;
         bool       m_allDocsProcessed = false;
+        bool       m_allowIntermdiatePushes = true;
         int m_maxWaitForMutex = 60000;
         Utf8String m_revisionComment;
         WString    m_bridgeRegSubKey;
@@ -278,11 +278,12 @@ protected:
     int m_maxRetryCount;
     bool m_isCreatingNewRepo {};
     bool m_areCodesInLockedModelsReported = true;    // This an OUTPUT variable, set to the result of calling a method on the BriefcaseManager
+    BentleyApi::Dgn::LockLevel m_retainedChannedlLockLevel = BentleyApi::Dgn::LockLevel::Exclusive;
     DmsServerArgs m_dmsServerArgs;
     FwkRepoAdmin* m_repoAdmin {};
     IDmsSupport*    m_dmsSupport;
     NativeLogging::Provider::Log4cxxProvider* m_logProvider;
-    IBriefcaseManagerForBridgesPtr m_bcMgrForBridges;
+    RefCountedPtr<iModelBridgeFwkPush> m_bcMgrForBridges;
 
     BeSQLite::DbResult OpenOrCreateStateDb(iModelBridgeError& errorContext);
     void PrintUsage(WCharCP programName);
@@ -364,11 +365,13 @@ public:
 
     BeFileName GetBriefcaseName() const {return m_briefcaseName;}
     bool AreCodesInLockedModelsReported() const {return m_areCodesInLockedModelsReported;}  //<! Query if the briefcase manager reports Codes in locked models to the Code service
+    BentleyApi::Dgn::LockLevel GetRetainedChannelLockLevel() const {return m_retainedChannedlLockLevel;}
 
     static NativeLogging::ILogger& GetLogger() { return *NativeLogging::LoggingManager::GetLogger("iModelBridge"); }
     bool GetCreateRepositoryIfNecessary() const {return m_jobEnvArgs.m_createRepositoryIfNecessary;}
     bool GetSkipAssignmentCheck() const {return m_jobEnvArgs.m_skipAssignmentCheck;}
     BeFileName GetLoggingConfigFileName() const {return m_jobEnvArgs.m_loggingConfigFileName;}
+    bool AllowIntermediatePushes() const {return m_jobEnvArgs.m_allowIntermdiatePushes;}
     void SetBriefcaseBim(DgnDbR db) { m_briefcaseDgnDb = &db; }
     DgnDbPtr GetBriefcaseBim() { return m_briefcaseDgnDb; }
 
@@ -401,6 +404,23 @@ public:
     
 
     IMODEL_BRIDGE_FWK_EXPORT BeSQLite::BeBriefcaseId GetBriefcaseId();
+
+    BentleyStatus LockChannelParent(SubjectCR jobSubj);
+    BentleyStatus LockChannelParent(DgnElementId channelParentId);
+
+    bool HoldsJobSubjectLock();
+    BentleyStatus MustHoldJobSubjectLock();
+};
+
+//! Agent that allows a bridge to push intermediate results
+struct iModelBridgeFwkPush : RefCounted<iModelBridge::IBriefcaseManager>
+{
+    private:
+    friend struct iModelBridgeFwk;
+    iModelBridgeFwk& m_fwk;
+    iModelBridgeFwkPush(iModelBridgeFwk& f) : m_fwk(f) {}
+    public:
+    IMODEL_BRIDGE_FWK_EXPORT PushStatus _Push(Utf8CP comment) override;
 };
 
 END_BENTLEY_DGN_NAMESPACE

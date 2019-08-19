@@ -524,8 +524,9 @@ void DgnRevision::ExtractCodes(DgnCodeSet& assignedCodes, DgnCodeSet& discardedC
     ECClassCP elemClass = dgndb.Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_Element);
     BeAssert(elemClass != nullptr);
 
+    auto bcMgr = dgndb.GetExistingBriefcaseManager();
     DgnModelIdSet exclusiveModelIds;
-    bool ignoreCodesInLockedModels = (dgndb.GetExistingBriefcaseManager() && !dgndb.GetExistingBriefcaseManager()->ShouldReportCodesInLockedModels());
+    bool ignoreCodesInLockedModels = ((bcMgr != nullptr) && !bcMgr->ShouldReportCodesInLockedModels());
     if (ignoreCodesInLockedModels)
         detectLockedModels(exclusiveModelIds, dgndb);
 
@@ -549,8 +550,14 @@ void DgnRevision::ExtractCodes(DgnCodeSet& assignedCodes, DgnCodeSet& discardedC
         DbOpcode dbOpcode = entry.GetDbOpcode();
         ChangeIterator::ColumnIterator columnIter = entry.MakeColumnIterator(*primaryClass); // Note: ColumnIterator needs to be in the stack to access column
 
-        if (ignoreCodesInLockedModels && (exclusiveModelIds.find(getCurrentModelIdFromIter(entry,columnIter)) != exclusiveModelIds.end()))
-            continue;
+        if (ignoreCodesInLockedModels)
+            {
+            auto modelId = getCurrentModelIdFromIter(entry, columnIter);
+            if (exclusiveModelIds.find(modelId) != exclusiveModelIds.end())
+                continue;
+            if (bcMgr->GetNormalChannelParentOf(modelId, nullptr).IsValid())    // Feature #160330: if element is in normal channel, then its model should be *regarded* as locked for Code-scoping purposes
+                continue;
+            } 
 
         DgnCode oldCode = (dbOpcode == DbOpcode::Insert) ? DgnCode() : GetCodeFromChangeOrDb(dgndb, columnIter, Changes::Change::Stage::Old);
         DgnCode newCode = (dbOpcode == DbOpcode::Delete) ? DgnCode() : GetCodeFromChangeOrDb(dgndb, columnIter, Changes::Change::Stage::New);

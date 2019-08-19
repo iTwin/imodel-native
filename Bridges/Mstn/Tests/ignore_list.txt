@@ -1,6 +1,8 @@
-MstnBridgeTests.MultiBridgeSequencing # SamW - temporary?
-
 MstnBridgeTests.ConvertCve # Causes crash
+
+MstnBridgeTests.MultiBridgeSequencing # need new imodel-bank version
+
+MstnBridgeTests.MultiUsersSameBridgeSequential # Must wait until new briefcase manager is turned on by default
 
 # This is permanently disabled. It is not a unit test. It is a developer tool.
 # A developer may using this "test" run a specified bridge on a specified file, using imodel-bank as the server.

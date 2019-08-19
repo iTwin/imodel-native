@@ -218,12 +218,15 @@ struct MstnBridgeTestsFixture : ::testing::Test
         void MustFindModelByV8ModelId(BentleyApi::Dgn::DgnModelId& fmid, BentleyApi::Dgn::RepositoryLinkId ffid, int32_t v8ModelId, int expectedCount);
         void MustFindElementByV8ElementId(BentleyApi::Dgn::DgnElementId& eid, BentleyApi::Dgn::DgnModelId fmid, uint64_t v8ElementId, int expectedCount);
         BentleyApi::Dgn::SubjectCPtr GetFirstJobSubject();
+        int GetJobSubjectCount();
+        int GetRepositoryLinkCount();
         void SetRepositoryAdminFromBriefcaseClient(BentleyApi::Dgn::IModelClientForBridges&);
         void ClearRepositoryAdmin();
         BentleyApi::Dgn::DgnCodeInfoSet GetCodeInfos(BentleyApi::Dgn::DgnCodeSet const&, BentleyApi::Dgn::IModelClientForBridges&);
         BentleyApi::BentleyStatus GetCodeInfo(BentleyApi::Dgn::DgnCodeInfo&, BentleyApi::Dgn::DgnCode const&, BentleyApi::Dgn::IModelClientForBridges&);
         BentleyApi::Dgn::LockLevel QueryLockLevel(BentleyApi::Dgn::LockableId, BentleyApi::Dgn::IModelClientForBridges&);
         BentleyApi::Dgn::LockLevel QueryLockLevel(BentleyApi::Dgn::DgnModelCR model, BentleyApi::Dgn::IModelClientForBridges& client) {return QueryLockLevel(BentleyApi::Dgn::LockableId(model), client);}
+        BentleyApi::Dgn::LockLevel QueryLockLevel(BentleyApi::BeSQLite::EC::SchemaManagerCR schemas, BentleyApi::Dgn::IModelClientForBridges& client) {return QueryLockLevel(BentleyApi::Dgn::LockableId(schemas), client);}
         BentleyApi::Dgn::LockLevel QueryLockLevel(BentleyApi::Dgn::DgnElementCR el, BentleyApi::Dgn::IModelClientForBridges& client) {return QueryLockLevel(BentleyApi::Dgn::LockableId(el), client);}
         };
 
@@ -298,7 +301,7 @@ struct FwkArgvMaker
 
     void SetInputFileArg(BentleyApi::BeFileNameCR fn) {PushArg(BentleyApi::WPrintfString(L"--fwk-input=\"%ls\"", fn.c_str()));}
     void SetSkipAssignmentCheck() {PushArg(L"--fwk-skip-assignment-check");}
-    void SetMaxRetries(int n) {PushArg(BentleyApi::WPrintfString(L"----server-retries=", n));}
+    void SetMaxRetries(int n, bool useIModelBank) {PushArg(BentleyApi::WPrintfString(useIModelBank? L"--imodel-bank-retries=%d": L"--server-retries=%d", std::max(255, n)));}
 
     BentleyApi::bvector<WCharCP> const& GetUnparsedArgs() {return m_bargptrs;}
     };

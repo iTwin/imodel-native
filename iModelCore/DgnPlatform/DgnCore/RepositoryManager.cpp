@@ -2786,3 +2786,33 @@ RepositoryStatus IRepositoryManager::_QueryHeldLocks(DgnLockSet& locks, DgnDbR d
     DgnCodeSet codes, unavailableCodes;
     return QueryHeldResources(locks, codes, unavailableLocks, unavailableCodes, db);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      08/19
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementId IBriefcaseManager::GetNormalChannelParentOf(DgnElementCR el)
+    {
+    return GetNormalChannelParentOf(el.GetModelId(), &el);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      08/19
++---------------+---------------+---------------+---------------+---------------+------*/
+RepositoryStatus IBriefcaseManager::_LockChannelParent()
+    {
+    auto channelParentInfo = GetChannelProps();
+    auto channelParent = GetDgnDb().Elements().GetElement(channelParentInfo.channelParentId);
+    if (!channelParent.IsValid())
+        {
+        BeAssert(false);
+        return RepositoryStatus::InvalidRequest;
+        }
+
+    Request req;
+    // _PrepareForElementOperation(req, *channelParent, BeSQLite::DbOpcode::Update); No. This will trigger a channel lock error
+    req.Locks().InsertLock(LockableId(channelParentInfo.channelParentId), LockLevel::Exclusive);
+    req.Locks().InsertLock(LockableId(channelParent->GetModelId()), LockLevel::Shared);
+    req.Locks().InsertLock(LockableId(channelParent->GetDgnDb()), LockLevel::Shared);
+ 
+    return Acquire(req).Result();
+    }

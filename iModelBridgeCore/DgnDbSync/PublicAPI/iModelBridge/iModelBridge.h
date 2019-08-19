@@ -494,9 +494,6 @@ struct iModelBridge
         {
         enum PushStatus {Success = 0, PullIsRequired, UnknownError};
 
-        //! Pull and merge recent changesets from the iModel server.
-        virtual BentleyStatus _PullAndMerge() = 0;
-
         //! Push all changes. 
         //! @param revisionComment the summary comment for the revision.
         //! @return non-zero status if the push failed.
@@ -1093,6 +1090,7 @@ public:
     IMODEL_BRIDGE_EXPORT static bool AnyChangesToPush(DgnDbR);
     IMODEL_BRIDGE_EXPORT static bool AnyTxns(DgnDbR);
     IMODEL_BRIDGE_EXPORT static bool HoldsSchemaLock(DgnDbR);
+    IMODEL_BRIDGE_EXPORT static bool HoldsElementLock(SubjectCR, BentleyApi::Dgn::LockLevel level = BentleyApi::Dgn::LockLevel::Exclusive);
 
     IMODEL_BRIDGE_EXPORT virtual Utf8String _FormatPushComment(DgnDbR db, Utf8CP commitComment);
 

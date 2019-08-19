@@ -282,7 +282,7 @@ struct FwkArgvMaker
 
     void SetInputFileArg(BentleyApi::BeFileNameCR fn) {PushArg(BentleyApi::WPrintfString(L"--fwk-input=\"%ls\"", fn.c_str()));}
     void SetSkipAssignmentCheck() {PushArg(L"--fwk-skip-assignment-check");}
-    void SetMaxRetries(int n) {PushArg(BentleyApi::WPrintfString(L"----server-retries=", n));}
+    void SetMaxRetries(int n, bool useIModelBank) {PushArg(BentleyApi::WPrintfString(useIModelBank? L"--imodel-bank-retries=%d": L"--server-retries=%d", std::max(255, n)));}
 
     BentleyApi::bvector<WCharCP> const& GetUnparsedArgs() {return m_bargptrs;}
     };
