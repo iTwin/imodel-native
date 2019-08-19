@@ -228,6 +228,8 @@ $(o)process_memory_linux$(oext) : $(VendorDir)util/process/process_memory_linux.
 
 $(o)process_memory_range$(oext) : $(VendorDir)util/process/process_memory_range.cc ${MultiCompileDepends}
 
+$(o)process_memory_sanitized$(oext) : $(VendorDir)util/process/process_memory_sanitized.cc ${MultiCompileDepends}
+
 $(o)aligned_allocator$(oext) : $(VendorDir)util/stdlib/aligned_allocator.cc ${MultiCompileDepends}
 
 $(o)string_number_conversion$(oext) : $(VendorDir)util/stdlib/string_number_conversion.cc ${MultiCompileDepends}

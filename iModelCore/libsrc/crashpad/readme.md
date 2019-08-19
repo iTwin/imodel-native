@@ -55,10 +55,10 @@ The ninja files for each component in out/Default (e.g. out/Default/obj/client/c
 ```
 cd ~/imodel02/src/imodel02
 
-# First time
+# FIRST TIME
 git checkout --orphan vendor/google_crashpad
 
-# Subsequent times
+# OTHER TIMES
 git checkout vendor/google_crashpad
 ```
 
@@ -66,7 +66,13 @@ git checkout vendor/google_crashpad
 
 ```
 cd ~/imodel02/src/imodel02
+
+# FIRST TIME
 git rm -rf .
+
+# OTHER TIMES
+rm -rf crashpad
+
 mkdir crashpad
 cp -R ~/crashpad/crashpad/* crashpad
 cd crashpad
@@ -83,13 +89,13 @@ cd ~/imodel02/src/imodel02
 git checkout master
 git checkout -b update_crashpad
 
-# First time
+# FIRST TIME
 git merge --no-commit --allow-unrelated-histories vendor/google_crashpad
 mkdir iModelCore/libsrc/crashpad/vendor
 git mv crashpad/* iModelCore/libsrc/crashpad/vendor
 rmdir crashpad
 
-# Subsequent times
+# OTHER TIMES
 git merge vendor/google_crashpad
 
 git commit ...

@@ -109,6 +109,8 @@ $(o)memory_snapshot_minidump$(oext) : $(VendorDir)snapshot/minidump/memory_snaps
 
 $(o)minidump_annotation_reader$(oext) : $(VendorDir)snapshot/minidump/minidump_annotation_reader.cc ${MultiCompileDepends}
 
+$(o)minidump_context_converter$(oext) : $(VendorDir)snapshot/minidump/minidump_context_converter.cc ${MultiCompileDepends}
+
 $(o)minidump_simple_string_dictionary_reader$(oext) : $(VendorDir)snapshot/minidump/minidump_simple_string_dictionary_reader.cc ${MultiCompileDepends}
 
 $(o)minidump_string_list_reader$(oext) : $(VendorDir)snapshot/minidump/minidump_string_list_reader.cc ${MultiCompileDepends}
