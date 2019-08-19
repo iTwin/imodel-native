@@ -1,0 +1,518 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd" >
+
+<!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+<!-- ///////////////////// Runtime Parts ///////////////////////////////////////////////// -->
+<!-- / This section contains parts that make the ECF Runtime ///////////////////////////// -->
+<!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+
+    <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
+    <Part Name="ECObjectsNative" BentleyBuildMakeFile="src/ecobjects.mke" ApiNumber="M02">
+        <SubPart PartName="PublicAPI" />
+        <SubPart PartName="BentleyDll"              PartFile="Bentley"          Repository="Bentley" />
+        <SubPart PartName="GeomDlls"                PartFile="geomlibs"         Repository="GeomLibs" />
+        <SubPart PartName="GeomlibsSerialization"   PartFile="geomlibs"         Repository="GeomLibs" />
+        <SubPart PartName="BeXml"                   PartFile="Bentley"          Repository="Bentley"/>
+        <SubPart PartName="StandardSchemasBim"      PartFile="ECStandards"      Repository="ECStandards"/>
+        <SubPart PartName="StandardSchemasV3"       PartFile="ECStandards"      Repository="ECStandards" />
+        <SubPart PartName="V3ConversionSchemas"     PartFile="ECStandards"      Repository="ECStandards"/>
+        <SubPart PartName="BeJsonCpp"               PartFile="BeJsonCpp"        Repository="Libsrc-JsonCpp"/>
+        <SubPart PartName="BeRapidJson" PartFile="Bentley" Repository="Bentley"/>
+        <SubPart PartName="UnitsNative"             PartFile="Units"            Repository="Units" />
+        <Bindings>
+            <Libs>Delivery/$(libprefix)ECObjects$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)ECObjects$(ApiNumber)$(shlibext)</Assemblies>
+            <Directory SourceName="Dox/Pages/ECObjects" SubPartDirectory="Dox/Pages/ECObjects"/>
+        </Bindings>
+    </Part>
+    
+    <Part Name="ECObjects">
+        <SubPart PartName="ECObjectsPrepareDocGeneration" />
+        <SubPart PartName="ECObjectsNative" />
+        <SubPart PartName="PublicAPI" />
+    </Part>
+
+    <Part Name="ECObjectsPrepareDocGeneration" DeferType="BuildDocs">
+        <SubPart PartName="ECObjectsExtractCodeSamples" />
+        <SubPart PartName="ECObjectsBuildCodeSamples" />
+    </Part>
+
+    <Part Name="ECObjectsExtractCodeSamples" DeferType="BuildDocs" BentleyBuildMakeFile="${SrcRoot}bsicommon/build/Extractions.mke" BentleyBuildMakeOptions="-dEXTRACTIONS_SOURCE_DIR=$(SrcRoot)ECObjects/docs/samplecode -dEXTRACTIONS_OUTPUT_BUILD_SUBDIR=ECObjects/docs/extractedsamplecode -dEXTRACTIONS_NO_PROVENANCE -dEXTRACTIONS_OUTPUT_BUILDCONTEXT_SUBDIR=Dox/Extractions/ECObjects">
+        <SubPart PartName="ECObjectsNative" />
+        <Bindings>
+            <Directory SourceName="Dox/Extractions/ECObjects" SubPartDirectory="Dox/Extractions/ECObjects"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="ECObjectsBuildCodeSamples" DeferType="BuildDocs" BentleyBuildMakeFile="${SrcRoot}bsicommon/build/BuildSampleCode.mke" BentleyBuildMakeOptions="-dBUILD_SAMPLE_CODE_SOURCE_DIR=$(SrcRoot)ECObjects/docs/samplecode -dBUILD_SAMPLE_CODE_SUB_DIR=ecobjectssamplecode">
+        <SubPart PartName="ECObjectsNative" />
+    </Part>
+
+    <Part Name="PublishedApi" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BentleyBuildMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI2=rapidjson">
+        <!-- While the published api does not depend on the library, this subpart is a quick and maintainable way to ensure that all needed public apis are in the buildcontext. -->
+        <SubPart PartName="ECObjectsNative" />
+        <Bindings>
+            <Directory SubPartDirectory="PublishedApi/ECObjects" SourceName="Delivery/PublishedApi" ProductDirectoryName="PublishedAPI" Required="false"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="PublishedApi_Doc" DeferType="BuildDocs" BentleyBuildMakeFile="PublicApi/BuildPublishedDoc.mke">
+        <RequiredRepository>bsitools-doxygen</RequiredRepository>
+        <SubPart PartName="PublishedApi" />
+        <Bindings>
+            <Files ProductDirectoryName="PublishedApi_Doc" IfNotPresent="Warn" Required="false">Delivery/ECObjectsAPI.chm</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Bind my own PublicAPI into BuildContext/PublicAPI. Note that this part does not cause any sub-part PublicAPIs to be bound. -->
+    <Part Name="PublicAPI" BentleyBuildMakeFile="ecobjects.prewire.mke">
+        <Bindings>
+            <PublicAPI Domain="ECObjects" />
+            <PublicAPI Domain="ECUnits" />
+        </Bindings>
+    </Part>
+
+    <!-- ********************** -->
+    <!-- ***** Unit Tests ***** -->
+    <!-- ********************** -->
+    <!-- The following parts build the stand-alone ECObjects unit tests (from the same unit test source). -->
+    <!-- ProductDirectoryNames below are listed in the BeGTest part file, in directory list: CollectionProduct -->
+    <Part Name="ECObjectsUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/BuildPlatformUnitTests.mke" BentleyBuildMakeOptions="-dBEGTEST_INPUT=$(SrcRoot)ECObjects/test/ -dBEGTEST_NAME=ECObjects -dBEGTEST_DEPENDENCIES=$(SrcRoot)ECObjects/test/SeedData.prewire.mke">
+        <SubPart PartName="TestDependencies"/>
+        <SubPart PartName="PublishedApi"/>
+    </Part>
+
+    <!-- This part enables the ECObjects unit tests to be built into the set of unit tests that run on multiple platforms. -->
+    <Part Name="ECObjectsTestsBasicDependencies" DeferType="BuildUnitTests">
+        <SubPart PartName="ECObjectsNative" />
+    </Part>
+
+    <Part Name="ECObjectsTestsSeedData" DeferType="BuildUnitTests" BentleyBuildMakeFile="test/SeedData.prewire.mke">
+        <Bindings>
+            <Files SubPartDirectory="SeedData"                  ProductDirectoryName="ECObjectsTestSeedData">Delivery/SeedData/*xml</Files>
+            <Files SubPartDirectory="SeedData"                  ProductDirectoryName="ECObjectsTestSeedData">Delivery/SeedData/*.json</Files>
+            <Files SubPartDirectory="SeedData/ur-PK"            ProductDirectoryName="ECObjectsTestSeedDataPK">Delivery/SeedData/ur-PK/*.xml</Files>
+            <Files SubPartDirectory="SeedData/en-GB"            ProductDirectoryName="ECObjectsTestSeedDataGB">Delivery/SeedData/en-GB/*.xml</Files>
+            <Files SubPartDirectory="SeedData/it"               ProductDirectoryName="ECObjectsTestSeedDataIT">Delivery/SeedData/it/*.xml</Files>
+            <Files SubPartDirectory="SeedData/V3Conversion"     ProductDirectoryName="ECObjectsTestSeedDataV3Conversion">Delivery/SeedData/V3Conversion/*.xml</Files>
+            <Files SubPartDirectory="SeedData/ECJson"           ProductDirectoryName="ECObjectsTestSeedDataECJson">Delivery/SeedData/ECJson/*.json</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="TestDependencies" DeferType="BuildUnitTests" BentleyBuildMakeFile="test/prewire.mke">
+        <SubPart PartName="ECObjectsTestsBasicDependencies"/>
+        <SubPart PartName="ECObjectsTestsSeedData"/>
+        <Bindings>
+            <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="ECObjects" SubPartDirectory="UnitTests/ECObjects">Delivery/UnitTests/ignore_list.txt</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="TestFixture" DeferType="BuildUnitTests" BentleyBuildMakeFile="test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=TestFixture">
+        <SubPart PartName="TestDependencies"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECObjects/TestFixture" SourceName="Delivery/UnitTests/Objects/TestFixture"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="PublishedTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dIsPublished=1">
+        <SubPart PartName="TestDependencies"/>
+        <SubPart PartName="TestFixture"/>
+        <SubPart PartName="PublishedApi"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECObjects/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="NonPublishedTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
+        <SubPart PartName="TestDependencies"/>
+        <SubPart PartName="TestFixture"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECObjects/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
+        </Bindings>
+    </Part>
+
+    <!-- This part is the default test collection. It is included in MobileDgn's aggregate test collection. -->
+    <Part Name="Tests" DeferType="BuildUnitTests">
+        <SubPart PartName="PublishedTests" />
+        <SubPart PartName="NonPublishedTests" />
+    </Part>
+
+    <!-- Define a gtest program to run the tests. The Gtest and RunGtest parts are included in MobileDgn's Gtest-Aggregator and RunGtest-MobileDgnTests parts -->
+    <Product Name="ECObjects-Tests">
+        <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
+        <SubPart PartName="Tests"/>
+        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECObjectsTest -dTEST_COLLECTION_PRODUCT=ECObjects-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+        <SubProduct ProductName="ECObjects-Tests"/>
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/ECObjectsTest/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/ECObjectsTest/Assets" />
+        </Bindings>
+    </Part>
+
+    <Product Name="ECObjects-Gtest" >
+        <SubPart PartName="Gtest"/>
+        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=ECObjects-Gtest -dGTEST_NAME=ECObjectsTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="ECObjects-Gtest" />
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/ECObjectsTest.log</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Memory leak testing of ECObjects tests. Only called on demand -->
+    <Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=ECObjects-Gtest -dGTEST_NAME=ECObjectsTest" OnlyPlatforms="x64">
+        <SubPart PartFile="DgnDbTestingScripts" Repository="DgnDbTestingScripts" PartName="MemLeakTests" />
+        <SubProduct ProductName="ECObjects-Gtest" />
+    </Part>
+
+    <!-- ********************** -->
+    <!-- **** AndroidJUnit **** -->
+    <!-- ********************** -->
+    <Part Name="AndroidJUnit" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_COLLECTION_PRODUCT=ECObjects-Tests -dTEST_SHORT_NAME=ECObjTst -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
+        <SubProduct ProductName="ECObjects-Tests"/>
+        <SubPart PartName="AndroidJUnitTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="AndroidJUnit-Project" SourceName="Delivery/ANJUP" />
+        </Bindings>
+    </Part>
+
+    <Product Name="ECObjects-AndroidJUnit" >
+        <SubPart PartName="AndroidJUnit" LibType="Static"/>
+        <Directories DirectoryListName="AndroidJUnitProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="RunAndroidJUnitTest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=ECObjects-AndroidJUnit" OnlyPlatforms="Android*">
+        <SubProduct ProductName="ECObjects-AndroidJUnit"/>
+        <Bindings>
+          <Files Required="false" SubPartDirectory="ANJU/Logs">Delivery/ANJU/Logs/ECObjects-AndroidJUnit.log</Files>
+        </Bindings>
+    </Part>
+
+    <!-- ********************** -->
+    <!-- ***** iOSXCTest ****** -->
+    <!-- ********************** -->
+    <Part Name="iOSXCTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/iOS//MakeXCTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECObjects -dTEST_COLLECTION_PRODUCT=ECObjects-Tests -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOS*">
+        <SubProduct ProductName="ECObjects-Tests"/>
+        <SubPart PartName="iOSXCTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="iOSXCTestProject" SourceName="Delivery/iOSXCTest/ECObjects/Project" />
+        </Bindings>
+    </Part>
+
+    <Product Name="ECObjects-iOSXCTest" >
+        <SubPart PartName="iOSXCTest" LibType="Static"/>
+        <Directories DirectoryListName="iOSXCTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="RuniOSXCTest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/iOS//RunXCTestProject.mke" BentleyBuildMakeOptions="-dXCTEST_PRODUCT=ECObjects-iOSXCTest" OnlyPlatforms="iOS*">
+        <SubProduct ProductName="ECObjects-iOSXCTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="XCTest/Logs">Delivery/XCTest/Logs/ECObjects-iOSXCTest.log</Files>
+        </Bindings>
+    </Part>
+
+    <!-- *********************************************************** -->
+    <!-- **** UWP Microsoft::VisualStudio::CppUnitTestFramework **** -->
+    <!-- *********************************************************** -->
+    <!-- N.B. ApiNumber is important here because we must manually reference some DLLs, and thus need an accruate suffix to find them. -->
+    <Part
+        Name="UwpTest" DeferType="BuildUnitTests"
+        BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/uwp//MakeUwpTestProject.mke"
+        BentleyBuildMakeOptions="-dTEST_NAME=ECObjects -dTEST_COLLECTION_PRODUCT=ECObjects-Tests"
+        OnlyPlatforms="WinRT*"
+        ApiNumber="M02"
+        >
+        <SubProduct ProductName="ECObjects-Tests"/>
+        <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UwpTestProject" SourceName="Delivery/ECObjectsUwpTest"/>
+        </Bindings>
+    </Part>
+
+    <Product Name="ECObjects-UwpTest">
+        <SubPart PartName="UwpTest"/>
+        <Directories DirectoryListName="UwpTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part
+        Name="RunUwpTest"
+        DeferType="RunUnitTests"
+        BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/uwp//RunUwpTestProject.mke"
+        BentleyBuildMakeOptions="-dUWPTEST_PRODUCT=ECObjects-UwpTest"
+        OnlyPlatforms="WinRT*"
+        >
+        <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubProduct ProductName="ECObjects-UwpTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="UwpTest/Logs">Delivery/UwpTest/Logs/ECObjects-UwpTest.log</Files>
+        </Bindings>
+    </Part>
+
+    <!-- *********************** -->
+    <!-- ** Performance Tests ** -->
+    <!-- *********************** -->
+    <Part Name="PerformanceTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Performance">
+        <SubPart PartName="TestDependencies"/>
+        <SubPart PartName="TestFixture"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECObjects/Performance" SourceName="Delivery/UnitTests/Objects/Performance"/>
+        </Bindings>
+    </Part>
+
+    <Product Name="ECObjects-PerformanceTests">
+        <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
+        <SubPart PartName="PerformanceTests"/>
+        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="PerformanceGtest" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECObjectsPerformanceTests -dTEST_COLLECTION_PRODUCT=ECObjects-PerformanceTests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+        <SubProduct ProductName="ECObjects-PerformanceTests"/>
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/ECObjectsPerformanceTests/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/ECObjectsPerformanceTests/Assets" />
+        </Bindings>
+    </Part>
+
+    <Product Name="ECObjects-PerformanceGtest" >
+        <SubPart PartName="PerformanceGtest"/>
+        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="RunPerformanceGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=ECObjects-PerformanceGtest -dGTEST_NAME=ECObjectsPerformanceTests -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/ECObjects" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="ECObjects-PerformanceGtest" />
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+    </Part>
+
+    <!-- ******************************* -->
+    <!-- ***** Compatibility Tests ***** -->
+    <!-- ******************************* -->
+
+    <Part Name="SchemaRoundtripDependencies">
+        <NuGetPackage>ECSchemaUtility</NuGetPackage>
+        <Bindings>
+            <Assemblies ProductDirectoryName="ManagedUtilities">nuget/netstandard2.0/*</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="SchemaRoundtripValidationScript" BentleyBuildMakeFile="mki/SchemaRoundtripValidation/SchemaRoundtripValidation.mke" OnlyPlatforms="x64">
+        <SubPart PartName="BisSchemas" PartFile="BisSchemas" Repository="BisSchemas"/>
+        <SubPart PartName="SchemaComparison"/>
+        <SubPart PartName="SchemaRoundtrip"/>
+        <SubPart PartName="SchemaRoundtripDependencies"/>
+    </Part>
+
+    <Product Name="SchemaRoundtripValidation" SaveProduct="true" PrgOutputDir="SchemaRoundtripValidation">
+        <Directories DirectoryListName="AllBisSchemas-Directories" PartFile="BisSchemas" Repository="BisSchemas"/>
+        <Directories DirectoryListName="SchemaComparison"/>
+        <Directories DirectoryListName="SchemaRoundtrip"/>
+        <Directories DirectoryListName="ECObjects"/>
+        <Directories DirectoryListName="SchemaRoundtripValidation-Directories"/>
+        <SubPart PartName="BisSchemas" PartFile="BisSchemas" Repository="BisSchemas"/>
+        <SubPart PartName="SchemaComparison"/>
+        <SubPart PartName="SchemaRoundtrip"/>
+        <SubPart PartName="SchemaRoundtripValidationScript"/>
+        <SubPart PartName="SchemaRoundtripDependencies"/>
+    </Product>
+
+    <ProductDirectoryList ListName="SchemaRoundtripValidation-Directories">
+        <ProductDirectory Name="ManagedUtilities" Path="ECSchemaUtility"/>
+    </ProductDirectoryList>
+
+    <!-- *********************************************************** -->
+    <!-- **** NuGet package creation                            **** -->
+    <!-- *********************************************************** -->
+    <Part Name="NuGetPackage" DeferType="BuildSamples" BMakeFile="install\ecobjects.NuGetPackage.mke"  OnlyPlatforms="x64">
+        <RequiredRepository>bsitools-nuget</RequiredRepository>
+        <SubProduct ProductName="ECObjects"/>
+        <SubPart PartName="ECObjectsNative" />
+        <Bindings>
+            <Files ProductDirectoryName="NuGetPackages">Install\ecobjects\ecobjects.*.nupkg</Files>
+        </Bindings>
+    </Part>
+
+    <NuGetProduct Name="ECObjectsToolsNuGet" OnlyPlatforms="x64" Description="ECObjects Tools for schema validation, comparison, etc">
+        <SubPart PartName="SchemaConverter" />
+        <SubPart PartName="SchemaResourceGenerator" />
+        <SubPart PartName="SchemaRoundtrip" />
+        <SubPart PartName="SchemaValidator"/>
+        <SubPart PartName="SchemaComparison" />
+        <SubPart PartName="SchemaJsonSerializer" />
+        <SubProduct ProductName="ECObjects"/>
+        <Directories DirectoryListName="ECObjectsToolsNuGet" />
+    </NuGetProduct>
+
+    <Part Name="ECObjectsToolsNuGet-TopLevel" PrgOutputDir="ECObjectsTools">
+        <SubNuGetProduct NuGetProductName="ECObjectsToolsNuGet" />
+    </Part>
+
+    <!-- *************** -->
+    <!-- **** Tools **** -->
+    <!-- *************** -->
+    <Part Name="SchemaConverter" BentleyBuildMakeFile="tools/SchemaConverter/SchemaConverter.mke" ExcludePlatforms="Android*,Linux*,iOS*">
+        <SubPart PartName="ECObjectsNative" />
+        <Bindings>
+            <Files ProductDirectoryName="SchemaConverterExe">
+                Delivery/SchemaConverter.exe
+                Delivery/SchemaConverter.logging.config.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="SchemaResourceGenerator" BentleyBuildMakeFile="tools/SchemaResourceGenerator/SchemaResourceGenerator.mke" ExcludePlatforms="Android*,Linux*,iOS*">
+        <SubPart PartName="ECObjectsNative" />
+        <Bindings>
+            <Files ProductDirectoryName="SchemaResourceGeneratorExe">
+                Delivery/SchemaResourceGenerator.exe
+                Delivery/SchemaResourceGenerator.logging.config.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="SchemaRoundtrip" BentleyBuildMakeFile="tools/SchemaRoundtrip/SchemaRoundtrip.mke" ExcludePlatforms="Android*,Linux*,iOS*">
+        <SubPart PartName="ECObjectsNative" />
+        <Bindings>
+            <Files ProductDirectoryName="SchemaRoundtripExe">
+                Delivery/SchemaRoundtrip.exe
+                Delivery/SchemaRoundtrip.logging.config.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="SchemaValidator" BentleyBuildMakeFile="tools/SchemaValidator/SchemaValidator.mke" ExcludePlatforms="Android*,Linux*,iOS*">
+        <SubPart PartName="ECObjectsNative" />
+        
+        <Bindings>
+            <Files ProductDirectoryName="SchemaValidatorExe">
+                Delivery/SchemaValidator.exe
+                Delivery/SchemaValidator.logging.config.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="SchemaComparison" BentleyBuildMakeFile="tools/SchemaComparison/SchemaComparison.mke" ExcludePlatforms="Android*,Linux*,iOS*">
+        <SubPart PartName="ECObjectsNative" />
+        
+        <Bindings>
+            <Files ProductDirectoryName="SchemaComparisonExe">
+                Delivery/SchemaComparison.exe
+                Delivery/SchemaComparison.logging.config.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="SchemaJsonSerializer" BentleyBuildMakeFile="tools/SchemaJsonSerializer/SchemaJsonSerializer.mke" ExcludePlatforms="Android*,Linux*,iOS*">
+        <SubPart PartName="ECObjectsNative" />
+        <Bindings>
+            <Files ProductDirectoryName="SchemaJsonSerializerExe">
+                Delivery/SchemaJsonSerializer.exe
+                Delivery/SchemaJsonSerializer.logging.config.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+<!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+<!-- ////////////////////////////////// Products ///////////////////////////////////////// -->
+<!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+
+    <ProductDirectoryList ListName="ECObjectsToolsNuGet">
+        <ProductDirectory Name="Assemblies"                                 Path="lib/native"/>
+        <ProductDirectory Name="Assemblies"                                 Path="lib/native" LibType="Static"/>
+        <ProductDirectory Name="Assets"        RelativeTo="Assemblies"      Path="Assets"/>
+        <ProductDirectory Name="Assets"        RelativeTo="Assemblies"      Path="Assets" LibType="static"/>
+        <ProductDirectory Name="Libs"                                       Path="lib/native"/>
+        <ProductDirectory Name="VendorNotices"                              Path="Notices"/>
+        <ProductDirectory Name="VendorNotices"                              Path="Notices" LibType="Static"/>
+        <ProductDirectory Name="SchemaConverterExe"                         Path="lib/native"/>
+        <ProductDirectory Name="SchemaResourceGeneratorExe"                 Path="lib/native"/>
+        <ProductDirectory Name="SchemaRoundtripExe"                         Path="lib/native"/>
+        <ProductDirectory Name="SchemaValidatorExe"                         Path="lib/native"/>
+        <ProductDirectory Name="SchemaComparisonExe"                        Path="lib/native"/>
+        <ProductDirectory Name="SchemaJsonSerializerExe"                    Path="lib/native"/>
+    </ProductDirectoryList>
+
+    <ProductDirectoryList ListName="ECObjects">
+        <ProductDirectory Name="Assemblies"                                 Path=""/>
+        <ProductDirectory Name="Assemblies" LibType="Static"                Path=""/>
+        <ProductDirectory Name="Assets"         RelativeTo="Assemblies"     Path="Assets"/>
+        <ProductDirectory Name="Assets"         RelativeTo="Assemblies"     Path="Assets" LibType="static"/>
+        <ProductDirectory Name="Libs"                                       Path="libs"/>
+        <ProductDirectory Name="VendorNotices"                              Path="Notices"/>
+        <ProductDirectory Name="VendorNotices"                              Path="Notices" LibType="Static"/>
+        <ProductDirectory Name="PublishedApi"                               Path="PublishedApi"/>
+    </ProductDirectoryList>
+
+    <Product Name="ECObjects">
+        <SubPart PartName="ECObjectsNative"/>
+        <SubPart PartName="PublishedApi_Doc" />
+        <SubPart PartName="ECObjectsPrepareDocGeneration" />
+        <Directories DirectoryListName="ECObjects"/>
+    </Product>
+
+    <Product Name="ECObjectsStatic">
+        <!-- Only here to avoid putting directory list on ECObjectsTested -->
+        <SubPart PartName="ECObjectsNative"  LibType="Static"/>
+        <Directories DirectoryListName="ECObjects" />
+    </Product>
+
+    <ProductDirectoryList ListName="SchemaConverter">
+        <ProductDirectory Name="SchemaConverterExe"     Path=""/>
+    </ProductDirectoryList>
+
+    <ProductDirectoryList ListName="SchemaResourceGenerator">
+        <ProductDirectory Name="SchemaResourceGeneratorExe"     Path=""/>
+    </ProductDirectoryList>
+
+    <ProductDirectoryList ListName="SchemaRoundtrip">
+        <ProductDirectory Name="SchemaRoundtripExe"     Path=""/>
+    </ProductDirectoryList>
+
+    <ProductDirectoryList ListName="SchemaValidator">
+        <ProductDirectory Name="SchemaValidatorExe" Path=""/>
+    </ProductDirectoryList>
+
+    <ProductDirectoryList ListName="SchemaComparison">
+        <ProductDirectory Name="SchemaComparisonExe"     Path=""/>
+    </ProductDirectoryList>
+
+    <ProductDirectoryList ListName="SchemaJsonSerializer">
+        <ProductDirectory Name="SchemaJsonSerializerExe"     Path=""/>
+    </ProductDirectoryList>
+
+    <Product Name="ECObjectsTools">
+        <SubPart PartName="SchemaConverter" />
+        <SubPart PartName="SchemaResourceGenerator" />
+        <SubPart PartName="SchemaRoundtrip" />
+        <SubPart PartName="SchemaValidator"/>
+        <SubPart PartName="SchemaComparison" />
+        <SubPart PartName="SchemaJsonSerializer" />
+        <SubProduct ProductName="ECObjects"/>
+        <Directories DirectoryListName="ECObjects" />
+        <Directories DirectoryListName="SchemaConverter" />
+        <Directories DirectoryListName="SchemaResourceGenerator" />
+        <Directories DirectoryListName="SchemaRoundtrip" />
+        <Directories DirectoryListName="SchemaValidator" />
+        <Directories DirectoryListName="SchemaComparison" />
+        <Directories DirectoryListName="SchemaJsonSerializer" />
+    </Product>
+
+    <ProductDirectoryList ListName="ECObjectsTested">
+    </ProductDirectoryList>
+
+    <Product Name="ECObjectsTested" PrgOutputDir="ECObjects" SaveProduct="true" AddIn="true">
+        <SubProduct ProductName="ECObjects" />
+        <!-- SubProduct ProductName="ECObjectsStatic" /-->
+        <SubProduct ProductName="ECObjects-Tests" />
+        <SubPart PartName="RunGtest" />
+        <Directories DirectoryListName="ECObjectsTested"/>
+    </Product>
+
+</BuildContext>
