@@ -4,7 +4,8 @@
 
     <Part Name="LinearReferencing" BentleyBuildMakeFile="LinearReferencing.mke">
         <SubPart PartName="PublicAPI"/>
-        <SubPart PartName="iModelBridgeFwk" PartFile="NativeNugets/NativeNugets" Repository="BsiCommon" />
+        <!-- Not sure exactly what this needs on imodel02, but we cannot consume the iModelBridgeFwk nuget here; iModelBridgeFwkExe-Windows is the closest drop-in Part we can use. -->
+        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridge" Repository="DgnDbSync"/>
         <Bindings>
             <Libs Required="false">Delivery/$(libprefix)LinearReferencing$(libext)</Libs>
             <Assemblies Required="false">Delivery/$(shlibprefix)LinearReferencing$(shlibext)</Assemblies>
