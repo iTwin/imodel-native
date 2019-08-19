@@ -952,13 +952,16 @@ BentleyStatus ORDAlignmentsConverter::CreateNewBimAlignment(AlignmentCR cifAlign
     // Create Horizontal Alignment
     auto bimHorizAlignmPtr = AlignmentBim::HorizontalAlignment::Create(*bimAlignmentPtr, *bimHorizGeometryPtr);
 
-    if (bimCode.IsValid())
-        bimHorizAlignmPtr->SetCode(AlignmentBim::RoadRailAlignmentDomain::CreateCode(*bimHorizAlignmPtr->GetModel(), bimCode.GetValueUtf8()));
+    if (bimHorizAlignmPtr.IsValid())
+        {
+        if (bimCode.IsValid())
+            bimHorizAlignmPtr->SetCode(AlignmentBim::RoadRailAlignmentDomain::CreateCode(*bimHorizAlignmPtr->GetModel(), bimCode.GetValueUtf8()));
 
-    AssignGeomStream(cifAlignment, *bimHorizAlignmPtr);
+        AssignGeomStream(cifAlignment, *bimHorizAlignmPtr);
 
-    if (bimHorizAlignmPtr->Insert().IsNull())
-        return BentleyStatus::ERROR;
+        if (bimHorizAlignmPtr->Insert().IsNull())
+            return BentleyStatus::ERROR;
+        }
 
     bimAlignment = AlignmentBim::Alignment::Get(m_ordConverter.GetDgnDb(), bimAlignmentPtr->GetElementId());
 
