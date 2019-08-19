@@ -1,0 +1,11 @@
+#*--------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------*/
+%include mdl.mki
+%include $(SrcRoot)bsicommon/sharedmki/BeTestSelectHarness.mki
+
+always:
+    @CreateSymLinks.py "$(BuildContext)Delivery/UnitTests/Documents=$(SrcRoot)DgnDbUnitTests/data"
+
