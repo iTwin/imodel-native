@@ -1,0 +1,141 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+
+#include <WebServices/Client/WSClient.h>
+#include <WebServices/Client/WSQuery.h>
+#include <WebServices/Client/WSRepositoryClient.h>
+
+#include "../ClientConfiguration.h"
+
+BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
+
+typedef std::shared_ptr<struct WebApi> WebApiPtr;
+
+/*--------------------------------------------------------------------------------------+
+* @bsiclass                                                     Vincas.Razma    06/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+struct WebApi : public std::enable_shared_from_this<WebApi>
+    {
+    protected:
+        const std::shared_ptr<const ClientConfiguration> m_configuration;
+
+    public:
+        WebApi(std::shared_ptr<const ClientConfiguration> configuration);
+        virtual ~WebApi();
+
+        virtual AsyncTaskPtr<WSRepositoryResult> SendGetRepositoryInfoRequest
+            (
+            IWSRepositoryClient::RequestOptionsPtr options = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const = 0;
+
+        virtual AsyncTaskPtr<WSRepositoriesResult> SendGetRepositoriesRequest
+            (
+            const bvector<Utf8String>& types,
+            const bvector<Utf8String>& providerIds,
+            ICancellationTokenPtr ct
+            ) const = 0;
+
+        virtual AsyncTaskPtr<WSObjectsResult> SendGetObjectRequest
+            (
+            ObjectIdCR objectId,
+            Utf8StringCR eTag = nullptr,
+            IWSRepositoryClient::RequestOptionsPtr options = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const = 0;
+
+        virtual AsyncTaskPtr<WSObjectsResult> SendGetChildrenRequest
+            (
+            ObjectIdCR parentObjectId,
+            const bset<Utf8String>& propertiesToSelect,
+            Utf8StringCR eTag = nullptr,
+            IWSRepositoryClient::RequestOptionsPtr options = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const = 0;
+
+        virtual AsyncTaskPtr<WSResult> SendGetFileRequest
+            (
+            ObjectIdCR objectId,
+            HttpBodyPtr bodyResponseOut,
+            Utf8StringCR eTag = nullptr,
+            Http::Request::ProgressCallbackCR downloadProgressCallback = nullptr,
+            IWSRepositoryClient::RequestOptionsPtr options = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const = 0;
+
+        virtual AsyncTaskPtr<WSObjectsResult> SendGetSchemasRequest
+            (
+            Utf8StringCR eTag = nullptr,
+            IWSRepositoryClient::RequestOptionsPtr options = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const = 0;
+
+        virtual AsyncTaskPtr<WSObjectsResult> SendQueryRequest
+            (
+            WSQueryCR query,
+            Utf8StringCR eTag = nullptr,
+            Utf8StringCR skipToken = nullptr,
+            IWSRepositoryClient::RequestOptionsPtr options = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const = 0;
+
+        virtual AsyncTaskPtr<WSChangesetResult> SendChangesetRequest
+            (
+            HttpBodyPtr changeset,
+            Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
+            IWSRepositoryClient::RequestOptionsPtr options = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const = 0;
+
+        virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
+            (
+            JsonValueCR objectCreationJson,
+            BeFileNameCR filePath = BeFileName(),
+            Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
+            IWSRepositoryClient::RequestOptionsPtr options = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const = 0;
+
+        virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
+            (
+            ObjectIdCR relatedObjectId,
+            JsonValueCR objectCreationJson,
+            BeFileNameCR filePath = BeFileName(),
+            Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
+            IWSRepositoryClient::RequestOptionsPtr options = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const = 0;
+
+        virtual AsyncTaskPtr<WSUpdateObjectResult> SendUpdateObjectRequest
+            (
+            ObjectIdCR objectId,
+            JsonValueCR propertiesJson,
+            Utf8StringCR eTag = nullptr,
+            BeFileNameCR filePath = BeFileName(),
+            Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
+            IWSRepositoryClient::RequestOptionsPtr options = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const = 0;
+
+        virtual AsyncTaskPtr<WSDeleteObjectResult> SendDeleteObjectRequest
+            (
+            ObjectIdCR objectId,
+            IWSRepositoryClient::RequestOptionsPtr options = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const = 0;
+
+        virtual AsyncTaskPtr<WSUpdateFileResult> SendUpdateFileRequest
+            (
+            ObjectIdCR objectId,
+            BeFileNameCR filePath,
+            Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
+            IWSRepositoryClient::RequestOptionsPtr options = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const = 0;
+    };
+
+END_BENTLEY_WEBSERVICES_NAMESPACE
