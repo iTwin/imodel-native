@@ -93,7 +93,7 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDGeometryComparisonElementCountAndEnd
     VerifyConvertedElementCount(bim, 19, 0);
 
     double x, y;
-    BentleyM0200::DPoint3d zero = DPoint3d::FromZero();
+    DPoint3d zero = DPoint3d::FromZero();
 
     /// Non-Ruled Alignments
     x = 101628.44940268152; y = 101184.39207795920;
@@ -126,24 +126,24 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDGeometryComparisonElementCountAndEnd
     VerifyConvertedGeometryElementCountAndEnds(bim, "RR3L", 4, DPoint3d::From(113000, 113000, 0), DPoint3d::From(y, x, 0), 0, zero, zero);
 
     /// Filleted Elements - Trimed Intervals
-    BentleyM0200::DPoint3d bl1 = DPoint3d::From(121000, 121000, 0);
-    BentleyM0200::DPoint3d tr1 = DPoint3d::From(121070.71067811869, 121070.71067811869, 0);
-    BentleyM0200::DPoint3d tr2 = DPoint3d::From(121530.74327629156, 121205.68791947514, 0);
-    BentleyM0200::DPoint3d bl2 = DPoint3d::From(121628.44940268152, 121184.39207795922, 0);
+    DPoint3d bl1 = DPoint3d::From(121000, 121000, 0);
+    DPoint3d tr1 = DPoint3d::From(121070.71067811869, 121070.71067811869, 0);
+    DPoint3d tr2 = DPoint3d::From(121530.74327629156, 121205.68791947514, 0);
+    DPoint3d bl2 = DPoint3d::From(121628.44940268152, 121184.39207795922, 0);
     VerifyConvertedGeometryElementCountAndEnds(bim, "TRM1", 1, bl1, tr1, 0, zero, zero);
     VerifyConvertedGeometryElementCountAndEnds(bim, "CPFT", 1, tr1, tr2, 0, zero, zero);
     VerifyConvertedGeometryElementCountAndEnds(bim, "TRM2", 1, bl2, tr2, 0, zero, zero);
 
     /// Alignment With and Without Profile
-    BentleyM0200::DPoint3d hBeg, hEnd, vBeg, vEnd;
-    BentleyM0200::DPoint3d diff = DPoint3d::From(1819.8237659554579, 220.44589914100652, 0);
+    DPoint3d hBeg, hEnd, vBeg, vEnd;
+    DPoint3d diff = DPoint3d::From(1819.8237659554579, 220.44589914100652, 0);
 
     hBeg = DPoint3d::From(122000, 122000, 0); hEnd = DPoint3d::FromSumOf(hBeg, diff);
     vBeg = zero; vEnd = zero;
     VerifyConvertedGeometryElementCountAndEnds(bim, "CPNP", 9, hBeg, hEnd, 0, vBeg, vEnd);
 
     hBeg = DPoint3d::From(123000, 123000, 0); hEnd = DPoint3d::FromSumOf(hBeg, diff);
-    vBeg = zero; vEnd = DPoint3d::From(2100, 50, 0); 
+    vBeg = zero; vEnd = DPoint3d::From(2100, 50, 0);
     VerifyConvertedGeometryElementCountAndEnds(bim, "CPWP", 9, hBeg, hEnd, 11, vBeg, vEnd);
     }
 
@@ -209,9 +209,9 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDGeometryGapLengthsTest)
 
     VerifyConvertedGeometryElementLengths(bim, "LLGAP", true, 1000, 0, 0, 0, 0, 0, 0);
 
-    BentleyM0200::DPoint3d zero = DPoint3d::FromZero();
-    BentleyM0200::DPoint3d beg = DPoint3d::From(1000, 1000, 0);
-    BentleyM0200::DPoint3d end = DPoint3d::From(3000, 3000, 0);
+    DPoint3d zero = DPoint3d::FromZero();
+    DPoint3d beg = DPoint3d::From(1000, 1000, 0);
+    DPoint3d end = DPoint3d::From(3000, 3000, 0);
     VerifyConvertedGeometryElementCountAndEnds(bim, "LLGAP", 2, beg, end, 0, zero, zero);
     }
 
@@ -220,18 +220,41 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDGeometryGapLengthsTest)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CiviliModelBridgesORDBridgeTests, ORDGeometrySpiralTypesAndLengthsTest)
     {
-    // JGATODO Spiral Types ... Need later or newer Geomlib NOT bim02
-
     //--gtest_filter=*SpiralTypes*
     WCharCP wDgnFileName = WCharCP(L"GeometrySpiral.dgn");
     WCharCP wFileName = WCharCP(L"ORDGeometrySpiral.bim");
-    //ASSERT_TRUE(RunTestApp(wDgnFileName, wFileName, false));
+    ASSERT_TRUE(RunTestApp(wDgnFileName, wFileName, false));
 
     Utf8String bimFile;
     BeStringUtilities::WCharToUtf8(bimFile, wFileName);
     Utf8CP bim = bimFile.c_str();
 
-    //VerifyConvertedGeometrySpiralTypesAndLengths(bim);
+    // JGATODO Add back tests if Earlin pushes spiral changes back to 13
+
+    /// true transition spirals
+    //VerifyConvertedGeometrySpiralTypesAndLengths(bim, "XXXX", DSpiral2dBase::TransitionType_Unknown, 200.0);
+    VerifyConvertedGeometrySpiralTypesAndLengths(bim, "LLClothoid", DSpiral2dBase::TransitionType_Clothoid, 200.0);
+    VerifyConvertedGeometrySpiralTypesAndLengths(bim, "LLBloss", DSpiral2dBase::TransitionType_Bloss, 200.0);
+    VerifyConvertedGeometrySpiralTypesAndLengths(bim, "LLBiquadratic", DSpiral2dBase::TransitionType_Biquadratic, 200.0);
+    VerifyConvertedGeometrySpiralTypesAndLengths(bim, "LLCosine", DSpiral2dBase::TransitionType_Cosine, 200.0);
+    VerifyConvertedGeometrySpiralTypesAndLengths(bim, "LLSinusoid", DSpiral2dBase::TransitionType_Sine, 200.0);
+    //VerifyConvertedGeometrySpiralTypesAndLengths(bim, "XXXX", DSpiral2dBase::TransitionType_Viennese, 200.0);             // Not implemented in CIF? 
+    //VerifyConvertedGeometrySpiralTypesAndLengths(bim, "XXXX", DSpiral2dBase::TransitionType_WeightedViennese, 200.0);     // Not implemented in CIF?
+ 
+    /// convention: spirals that really have direct evaluations start at 50.
+    //VerifyConvertedGeometrySpiralTypesAndLengths(bim, "XXXX", DSpiral2dBase::TransitionType_FirstDirectEvaluate, 200.0);  // Not implemented in CIF?
+    VerifyConvertedGeometrySpiralTypesAndLengths(bim, "LLWACubic", DSpiral2dBase::TransitionType_WesternAustralian, 200.0);
+    //VerifyConvertedGeometrySpiralTypesAndLengths(bim, "LLCzechCubic", DSpiral2dBase::TransitionType_Czech, 200.0);        // NOT IMPLEMENTED in GeomLib
+    VerifyConvertedGeometrySpiralTypesAndLengths(bim, "LLNSWCubic", DSpiral2dBase::TransitionType_AustralianRailCorp, 200.0);
+    //VerifyConvertedGeometrySpiralTypesAndLengths(bim, "LLItalianCubic", DSpiral2dBase::TransitionType_Italian, 200.0);    // NOT IMPLEMENTED in GeomLib
+    //VerifyConvertedGeometrySpiralTypesAndLengths(bim, "LLPolishCubic", DSpiral2dBase::TransitionType_PolishCubic, 200.0); // NOT IMPLEMENTED in GeomLib
+    //VerifyConvertedGeometrySpiralTypesAndLengths(bim, "LLArema", DSpiral2dBase::TransitionType_AremaCubic, 200.0);        // NOT IMPLEMENTED in GeomLib
+    VerifyConvertedGeometrySpiralTypesAndLengths(bim, "LLMXCubic", DSpiral2dBase::TransitionType_MXCubicAlongArc, 200.0);
+    //VerifyConvertedGeometrySpiralTypesAndLengths(bim, "XXXX", DSpiral2dBase::TransitionType_MXCubicAlongTangent, 200.0);  // Not implemented in CIF?
+    VerifyConvertedGeometrySpiralTypesAndLengths(bim, "LLChineseCubic", DSpiral2dBase::TransitionType_ChineseCubic, 200.0);
+ 
+    /// convention: spirals with nominal length parameter start at 60
+    VerifyConvertedGeometrySpiralTypesAndLengths(bim, "LLJapaneseSine", DSpiral2dBase::TransitionType_DirectHalfCosine, 200.0);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -239,8 +262,6 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDGeometrySpiralTypesAndLengthsTest)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CiviliModelBridgesORDBridgeTests, ORDGeometryRailTurnoutTest)
     {
-    // JGATODO Add Turnouts and branches to imodel
-
     //--gtest_filter=*RailTurnout*
     WCharCP wDgnFileName = WCharCP(L"GeometryRailTurnout.dgn");
     WCharCP wFileName = WCharCP(L"ORDGeometryRailTurnout.bim");
@@ -257,6 +278,7 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDGeometryRailTurnoutTest)
     VerifyConvertedGeometryUniqueAlignmentNameExists(bim, "LLL2");
     VerifyConvertedGeometryUniqueAlignmentNameExists(bim, "CONNECT1");
 
+    // JGATODO Add Turnouts and branches to imodel ??? 
     //VerifyConvertedGeometryTurnoutBranchCount(bim, "Branch1 Geometry", 4);
     //VerifyConvertedGeometryTurnoutBranchCount(bim, "Branch2 Geometry", 4);
     }

@@ -344,7 +344,7 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometryUniqueA
         }
 
     if (count != 1)
-        BeAssert(false && alignmentName);
+        BeAssert(false && "Alignment name not found OR duplicate.");
 
     stmt.Finalize();
 
@@ -356,8 +356,6 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometryUniqueA
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometryTurnoutBranchCount(Utf8CP bimFileName, Utf8CP branchName, size_t branchCount)
     {
-    // JGATODO Add Turnouts and branches to imodel
-
     BeFileName outputPath = m_host->GetOutputDirectory();
     outputPath.AppendA(bimFileName);
 
@@ -385,7 +383,7 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometryTurnout
         }
 
     if (branchCount != count)
-        BeAssert(false && branchName);
+        BeAssert(false && "Branch Count Failed.");
 
     stmt.Finalize();
 
@@ -396,16 +394,16 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometryTurnout
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool checkCurveVectorElementCountAndEnds
 (
-    BentleyM0200::CurveVectorCR curves, bool isVertical, size_t& elementCount,
-    BentleyM0200::DPoint3dCR beg,
-    BentleyM0200::DPoint3dCR end,
+    CurveVectorCR curves, bool isVertical, size_t& elementCount,
+    DPoint3dCR beg,
+    DPoint3dCR end,
     double tolerance
 )
     {
     if (curves.empty())
         return false;
 
-    BentleyM0200::DPoint3d cBeg, cEnd;
+    DPoint3d cBeg, cEnd;
     curves.GetStartEnd(cBeg, cEnd);
 
     if (beg.DistanceXY(cBeg) > tolerance)
@@ -414,50 +412,50 @@ static bool checkCurveVectorElementCountAndEnds
     if (end.DistanceXY(cEnd) > tolerance)
         return false;
 
-    for (BentleyM0200::ICurvePrimitivePtr curve : curves)
+    for (ICurvePrimitivePtr curve : curves)
         {
         if (!curve.IsValid())
             return false;
 
         switch (curve->GetCurvePrimitiveType())
             {
-            case BentleyM0200::ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
                 {
-                BentleyM0200::DSegment3dCP segment = (BentleyM0200::DSegment3dCP) curve->GetLineCP();
+                DSegment3dCP segment = (DSegment3dCP) curve->GetLineCP();
                 if (segment == nullptr)
                     return false;
                 elementCount++;
                 break;
                 }
 
-            case BentleyM0200::ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc:
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc:
                 {
-                BentleyM0200::DEllipse3dCP arc = (BentleyM0200::DEllipse3dCP) curve->GetArcCP();
+                DEllipse3dCP arc = (DEllipse3dCP) curve->GetArcCP();
                 if (arc == nullptr)
                     return false;
                 elementCount++;
                 break;
                 }
 
-            case BentleyM0200::ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Spiral:
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Spiral:
                 {
-                BentleyM0200::DSpiral2dPlacementCP spiralData = (BentleyM0200::DSpiral2dPlacementCP) curve->GetSpiralPlacementCP();
+                DSpiral2dPlacementCP spiralData = (DSpiral2dPlacementCP) curve->GetSpiralPlacementCP();
                 if (spiralData == nullptr)
                     return false;
                 elementCount++;
                 break;
                 }
 
-            case BentleyM0200::ICurvePrimitive::CURVE_PRIMITIVE_TYPE_BsplineCurve:
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_BsplineCurve:
                 {
-                BentleyM0200::MSBsplineCurveCP bcurve = (BentleyM0200::MSBsplineCurveCP) curve->GetProxyBsplineCurveCP();
+                MSBsplineCurveCP bcurve = (MSBsplineCurveCP) curve->GetProxyBsplineCurveCP();
                 if (bcurve == nullptr || !isVertical)
                     return false;
                 elementCount++;
                 break;
                 }
 
-            case BentleyM0200::ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector:
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector:
                 {
                 return checkCurveVectorElementCountAndEnds(*curve->GetChildCurveVectorCP(), isVertical, elementCount, beg, end, tolerance);
                 }
@@ -480,11 +478,11 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometryElement
     Utf8CP bimFileName,
     Utf8CP alignmentName,
     int hElementCount,
-    BentleyM0200::DPoint3dCR hBeg,
-    BentleyM0200::DPoint3dCR hEnd,
+    DPoint3dCR hBeg,
+    DPoint3dCR hEnd,
     int vElementCount,
-    BentleyM0200::DPoint3dCR vBeg,
-    BentleyM0200::DPoint3dCR vEnd
+    DPoint3dCR vBeg,
+    DPoint3dCR vEnd
 )
     {
     const double tolerance = 1.0E-8;
@@ -516,7 +514,7 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometryElement
 
         found = true;
 
-        auto roadRailAlignmentCPtr = BentleyM0200::RoadRailAlignment::Alignment::Get(*dgnDbPtr, alignmentId);
+        auto roadRailAlignmentCPtr = RoadRailAlignment::Alignment::Get(*dgnDbPtr, alignmentId);
         auto alignmentPairPtr = roadRailAlignmentCPtr->QueryMainPair();
 
         auto horizontalAlignmentCPtr = roadRailAlignmentCPtr->GetHorizontal();
@@ -551,7 +549,7 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometryElement
         }
 
     if (!found)
-        BeAssert(found && alignmentName);
+        BeAssert(false && "Alignment name not found.");
 
     stmt.Finalize();
 
@@ -562,7 +560,7 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometryElement
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool checkCurveVectorElementLengths
 (
-    BentleyM0200::CurveVectorCR curves, bool isVertical, double& lengthCheckSum,
+    CurveVectorCR curves, bool isVertical, double& lengthCheckSum,
     bool checkExactElementLengthValues,
     double hLineLength,
     double hArcLength,
@@ -577,16 +575,16 @@ static bool checkCurveVectorElementLengths
     if (curves.empty())
         return false;
 
-    for (BentleyM0200::ICurvePrimitivePtr curve : curves)
+    for (ICurvePrimitivePtr curve : curves)
         {
         if (!curve.IsValid())
             return false;
 
         switch (curve->GetCurvePrimitiveType())
             {
-            case BentleyM0200::ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
                 {
-                BentleyM0200::DSegment3dCP segment = (BentleyM0200::DSegment3dCP) curve->GetLineCP();
+                DSegment3dCP segment = (DSegment3dCP) curve->GetLineCP();
                 double length = segment->Length();
                 double lenCmp = isVertical ? vLineLength : hLineLength;
                 lengthCheckSum -= length;
@@ -595,7 +593,7 @@ static bool checkCurveVectorElementLengths
                     {
                     if (isVertical)
                         {
-                        BentleyM0200::DPoint3d beg, end;
+                        DPoint3d beg, end;
                         segment->GetEndPoints(beg, end);
                         length = end.x - beg.x;
                         }
@@ -606,9 +604,9 @@ static bool checkCurveVectorElementLengths
                 break;
                 }
 
-            case BentleyM0200::ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc:
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc:
                 {
-                BentleyM0200::DEllipse3dCP arc = (BentleyM0200::DEllipse3dCP) curve->GetArcCP();
+                DEllipse3dCP arc = (DEllipse3dCP) curve->GetArcCP();
                 double length = arc->ArcLength();
                 double lenCmp = isVertical ? vArcLength : hArcLength;
                 lengthCheckSum -= length;
@@ -617,8 +615,8 @@ static bool checkCurveVectorElementLengths
                     {
                     if (isVertical)
                         {
-                        BentleyM0200::DPoint3d beg, end;
-                        BentleyM0200::DVec3d begTangent, endTangent;
+                        DPoint3d beg, end;
+                        DVec3d begTangent, endTangent;
                         curve->GetStartEnd(beg, end, begTangent, endTangent);
                         length = end.x - beg.x;
                         }
@@ -629,9 +627,9 @@ static bool checkCurveVectorElementLengths
                 break;
                 }
 
-            case BentleyM0200::ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Spiral:
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Spiral:
                 {
-                BentleyM0200::DSpiral2dPlacementCP spiralData = (BentleyM0200::DSpiral2dPlacementCP) curve->GetSpiralPlacementCP();
+                DSpiral2dPlacementCP spiralData = (DSpiral2dPlacementCP) curve->GetSpiralPlacementCP();
                 double length = spiralData->SpiralLengthActiveInterval();
                 double lenCmp = hSpiralLength;
                 lengthCheckSum -= length;
@@ -644,9 +642,9 @@ static bool checkCurveVectorElementLengths
                 break;
                 }
 
-            case BentleyM0200::ICurvePrimitive::CURVE_PRIMITIVE_TYPE_BsplineCurve:
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_BsplineCurve:
                 {
-                BentleyM0200::MSBsplineCurveCP bcurve = (BentleyM0200::MSBsplineCurveCP) curve->GetProxyBsplineCurveCP();
+                MSBsplineCurveCP bcurve = (MSBsplineCurveCP) curve->GetProxyBsplineCurveCP();
 
                 size_t count = bcurve->GetNumPoles();
                 if (3 != count)
@@ -655,10 +653,10 @@ static bool checkCurveVectorElementLengths
                 bvector<DPoint3d> poles;
                 bcurve->GetPoles(poles);
 
-                BentleyM0200::DPoint3d pvc, pvi, pvt;
-                pvc = BentleyM0200::DPoint3d::From(poles[0].x, poles[0].y, 0.0);
-                pvi = BentleyM0200::DPoint3d::From(poles[1].x, poles[1].y, 0.0);
-                pvt = BentleyM0200::DPoint3d::From(poles[2].x, poles[2].y, 0.0);
+                DPoint3d pvc, pvi, pvt;
+                pvc = DPoint3d::From(poles[0].x, poles[0].y, 0.0);
+                pvi = DPoint3d::From(poles[1].x, poles[1].y, 0.0);
+                pvt = DPoint3d::From(poles[2].x, poles[2].y, 0.0);
 
                 double length = bcurve->Length();
                 double lenCmp = vParabolaLength;
@@ -673,7 +671,7 @@ static bool checkCurveVectorElementLengths
                 break;
                 }
 
-            case BentleyM0200::ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector:
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector:
                 {
                 /// Nested curve vector can occur with BOUNDARY_TYPE_None and not just union/parity regions...
                 return checkCurveVectorElementLengths(*curve->GetChildCurveVectorCP(), isVertical, lengthCheckSum,
@@ -744,7 +742,7 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometryElement
 
         found = true;
 
-        auto roadRailAlignmentCPtr = BentleyM0200::RoadRailAlignment::Alignment::Get(*dgnDbPtr, alignmentId);
+        auto roadRailAlignmentCPtr = RoadRailAlignment::Alignment::Get(*dgnDbPtr, alignmentId);
         auto alignmentPairPtr = roadRailAlignmentCPtr->QueryMainPair();
 
         auto horizontalAlignmentCPtr = roadRailAlignmentCPtr->GetHorizontal();
@@ -765,8 +763,10 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometryElement
                 tolerance);
 
             bool checkSum = fabs(length) < tolerance;
+
             if (!verified)
                 BeAssert(verified && "Horizontal Length Verification failed.");
+
             if (!checkSum)
                 BeAssert(checkSum && "Horizontal Length Checksum failed.");
             }
@@ -789,8 +789,10 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometryElement
                 tolerance);
 
             bool checkSum = fabs(length) < tolerance;
+
             if (!verified)
                 BeAssert(verified && "Vertical Length Verification failed.");
+
             if (!checkSum)
                 BeAssert(checkSum && "Vertical Length Checksum failed.");
             }
@@ -798,52 +800,50 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometryElement
     stmt.Finalize();
 
     if (!found)
-        BeAssert(found && alignmentName);
+        BeAssert(false && "Alignment name not found.");
 
     return dgnDbPtr;
     }
 
 /*---------------------------------------------------------------------------------**//**
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool checkCurveVectorSpiralTypesAndLengths(BentleyM0200::CurveVectorCR curves, bool isVertical, double tolerance)
+static bool checkCurveVectorSpiralTypesAndLengths(CurveVectorCR curves, bool& foundSpiral, int spiralTypeCode, double spiralLengths, double tolerance)
     {
-    // JGATODO Spiral Types ... Need later or newer Geomlib NOT bim02
-
     if (curves.empty())
         return false;
 
-    for (BentleyM0200::ICurvePrimitivePtr curve : curves)
+    for (ICurvePrimitivePtr curve : curves)
         {
         if (!curve.IsValid())
             return false;
 
         switch (curve->GetCurvePrimitiveType())
             {
-            case BentleyM0200::ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
                 break;
 
-            case BentleyM0200::ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc:
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc:
                 break;
 
-            case BentleyM0200::ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Spiral:
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Spiral:
                 {
-                BentleyM0200::DSpiral2dPlacementCP spiralData = (BentleyM0200::DSpiral2dPlacementCP) curve->GetSpiralPlacementCP();
+                DSpiral2dPlacementCP spiralData = (DSpiral2dPlacementCP) curve->GetSpiralPlacementCP();
                 double length = spiralData->SpiralLengthActiveInterval();
-
-                if (fabs(length) < tolerance)
+                if (fabs(spiralLengths - length) > tolerance)
                     return false;
+                
+                int typeCode = spiralData->spiral->GetTransitionTypeCode();
+                if (spiralTypeCode != typeCode)
+                    return false;
+
+                foundSpiral = true;
                 break;
                 }
-                //case BentleyM0200::ICurvePrimitive::CURVE_PRIMITIVE_TYPE_BsplineCurve:
-                //case BentleyM0200::ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PointString:
-                //case BentleyM0200::ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
-                //case BentleyM0200::ICurvePrimitive::CURVE_PRIMITIVE_TYPE_InterpolationCurve:
-                //case BentleyM0200::ICurvePrimitive::CURVE_PRIMITIVE_TYPE_AkimaCurve:
 
-            case BentleyM0200::ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector:
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector:
                 {
                 /// Nested curve vector can occur with BOUNDARY_TYPE_None and not just union/parity regions...
-                return checkCurveVectorSpiralTypesAndLengths(*curve->GetChildCurveVectorCP(), isVertical, tolerance);
+                return checkCurveVectorSpiralTypesAndLengths(*curve->GetChildCurveVectorCP(), foundSpiral, spiralTypeCode, spiralLengths, tolerance);
                 }
 
             default:
@@ -859,10 +859,8 @@ static bool checkCurveVectorSpiralTypesAndLengths(BentleyM0200::CurveVectorCR cu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Greg.Ashe       08/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometrySpiralTypesAndLengths(Utf8CP bimFileName)
+DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometrySpiralTypesAndLengths(Utf8CP bimFileName, Utf8CP alignmentName, int spiralTypeCode, double spiralLengths)
     {
-    // JGATODO Spiral Types ... Need later or newer Geomlib NOT bim02
-
     const double tolerance = 1.0E-8;
 
     BeFileName outputPath = m_host->GetOutputDirectory();
@@ -881,44 +879,39 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometrySpiralT
         "WHERE m.ModeledElement.Id = d.ECInstanceId AND a.Model.Id = m.ECInstanceId ");
     BeAssert(stmt.IsPrepared());
 
+    bool found = false;
     while (DbResult::BE_SQLITE_ROW == stmt.Step())
         {
         auto alignmentId = stmt.GetValueId<DgnElementId>(0);
         auto alignmentNameCP = stmt.GetValueText(1);
 
-        auto roadRailAlignmentCPtr = BentleyM0200::RoadRailAlignment::Alignment::Get(*dgnDbPtr, alignmentId);
+        if (alignmentName == nullptr || alignmentNameCP == nullptr || 0 != Utf8String(alignmentName).CompareTo(alignmentNameCP))
+            continue;
+
+        found = true;
+
+        auto roadRailAlignmentCPtr = RoadRailAlignment::Alignment::Get(*dgnDbPtr, alignmentId);
         auto alignmentPairPtr = roadRailAlignmentCPtr->QueryMainPair();
 
         auto horizontalAlignmentCPtr = roadRailAlignmentCPtr->GetHorizontal();
         if (horizontalAlignmentCPtr.IsValid())
             {
             auto curveVectorCR = horizontalAlignmentCPtr->GetGeometry();
-            double length = curveVectorCR.Length();
 
-            //Clothoid
-            //Biquadratic
-            //Bloss
-            //Sinusoid
-            //Cosine
-            //Chinese Cubic
-            //Czech Cubic
-            //Japanese Sine
-            //Italian Cubic
-            //Polish Cubic
-            //Arema
-            //NSW Cubic
-            //WA Cubic
-            //MX Cubic
-
-            // All Lengths are 200 ... verify type and length of each
-
-            bool verified = checkCurveVectorSpiralTypesAndLengths(curveVectorCR, false, tolerance);
+            bool foundSpiral = false;
+            bool verified = checkCurveVectorSpiralTypesAndLengths(curveVectorCR, foundSpiral, spiralTypeCode, spiralLengths, tolerance);
 
             if (!verified)
                 BeAssert(verified && "Horizontal Spiral Type and Length Verification failed.");
+
+            if (!foundSpiral)
+                BeAssert(foundSpiral && "Horizontal Spiral not found in curve vector.");
             }
         }
     stmt.Finalize();
+
+    if (!found)
+        BeAssert(found && "Alignment name not found.");
 
     return dgnDbPtr;
     }
