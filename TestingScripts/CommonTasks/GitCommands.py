@@ -12,13 +12,16 @@ import subprocess
 class GitCommand:
     def __init__(self):
         self.res = ""
+        self.last_error = ""
     def execute(self, cmd):
+        self.last_error = ""
         self.cmd = cmd        
         print '\nRunning git command: ' + self.cmd
         try:
             result = subprocess.check_output(self.cmd, stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as e:
             print 'Error for git command: ' + self.cmd + '. The error is: ' + e.output
+            self.last_error = e.output
             return False
         self.res = result
         return True

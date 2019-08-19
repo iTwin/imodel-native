@@ -31,7 +31,7 @@ def fixPath(path):
 #-------------------------------------------------------------------------------------------
 def getTests(sfName, dll):
     srcRoot = fixPath(os.path.join(os.getenv('SrcRoot'), 'imodel02'))
-    if not srcRoot or len(srcRoot) == 0:
+    if not srcRoot or len(srcRoot) == 0: 
         print ("\n %SrcRoot% must be defined. Error.")
         return None
 
@@ -45,7 +45,7 @@ def getTests(sfName, dll):
     sfPath = sfName[len(srcRoot)+1:]
     tiaMapDir = os.path.join(os.getenv('SrcRoot'), 'imodel02', 'TestingScripts', 'TestImpactAnalysis', 'TIAMaps')
     
-    comp = sfPath.split('\\')[0]
+    comp = cmp.CompForRepo(sfPath)
     if comp.lower() not in cmp.AllComps():
         print ("\n Source file path is not in the Components that are tracked. \n")
         
@@ -150,6 +150,27 @@ def getIgnoredTests(comp):
         print ignorelist
     return ignoreTests
         
+#-------------------------------------------------------------------------------------------
+# bsimethod                                     Majd.Uddin    08/2019
+#-------------------------------------------------------------------------------------------
+def getAllFiles(comp):
+    print 'Failed to get changed files from git. Fallback is to list all files for component: ' + comp
+    sfiles = []
+    tiaMapDir = os.path.join(os.getenv('SrcRoot'), 'imodel02', 'TestingScripts', 'TestImpactAnalysis', 'TIAMaps')
+    name_find = 'TIAMap_' + comp + '_' + comp
+    for f in os.listdir(tiaMapDir):
+        if f.lower().startswith(name_find.lower()):
+            fileName =  os.path.join(tiaMapDir,  f)
+            print "\n Map file: " + fileName + "\n"
+            if os.path.exists(fileName):
+                 mapFile = open(fileName,'r')
+                 lines = mapFile.readlines()
+                 for i in range(0, len(lines)):
+                     line = lines[i]
+                     if line.startswith('['):
+                         sfile = os.path.join(os.getenv('SrcRoot'), line.strip()[1:-1])
+                         sfiles.append(sfile)
+    return sfiles
 
 #-------------------------------------------------------------------------------------------
 # bsimethod                                     Majd.Uddin    09/2017
@@ -189,13 +210,20 @@ def main():
     sfLog = os.path.join(logsPath, comp + '_sfNames.txt')
     if os.path.exists(sfLog):
         os.remove(sfLog)
-    src_branch = 'origin/' + os.path.basename(os.getenv('SourceBranch'))
-    tgt_branch = 'origin/' + os.path.basename(os.getenv('TargetBranch'))
+    src_branch = os.getenv('SourceBranch')
+    if not src_branch.startswith('origin'):
+        src_branch = 'origin/' + src_branch        
+    tgt_branch = os.getenv('TargetBranch')
+    if not tgt_branch.startswith('origin'):
+        tgt_branch = 'origin/' + tgt_branch
+
     for repo in repos:
         print 'Checking files at path: ' + repo
         os.chdir(cmp.RepoPathForComp(repo))
         gc = GitCommand()
         sf = gc.files_branches(src_branch, tgt_branch)
+        if gc.last_error:
+            sf = getAllFiles(comp)
         if len(sf) > 0:
             with open(sfLog, 'a') as f:
                 for sfile in sf:

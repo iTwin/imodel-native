@@ -236,6 +236,14 @@ def RepoPathForComp(compToFind):
             repoPath = os.path.join(srcRoot ,compToFind)
     return repoPath
 
+def CompForRepo(path):
+    pathToFind = os.path.join(os.getenv('SrcRoot'), 'imodel02', path)
+    for comp in Components:
+        repoPath = RepoForComp(comp)
+        if repoPath.lower() in pathToFind.lower():
+            return comp
+    return ""
+
 def MapPathForComp(compToFind):
     for comp in Components:
         if compToFind.lower() in Components[comp]['product'].lower():
