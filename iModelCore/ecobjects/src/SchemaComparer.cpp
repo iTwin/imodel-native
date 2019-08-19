@@ -2612,190 +2612,187 @@ BentleyStatus CompositeValueSpecChange::SetFrom(Formatting::CompositeValueSpecCP
     }
 
 
-    //======================================================================================>
-    //CustomAttributeValidator
-    //======================================================================================>
-    Utf8String CustomAttributeValidator::WILDCARD = "*";
+//======================================================================================>
+//CustomAttributeValidator
+//======================================================================================>
+Utf8String CustomAttributeValidator::WILDCARD = "*";
 
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                                    Affan.Khan  07/2019
-    //+---------------+---------------+---------------+---------------+---------------+------
-    CustomAttributeValidator::Policy CustomAttributeValidator::Validate(CustomAttributeChange const& change) const
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  07/2019
+//+---------------+---------------+---------------+---------------+---------------+------
+CustomAttributeValidator::Policy CustomAttributeValidator::Validate(CustomAttributeChange const& change) const
+    {
+    bvector<Utf8String> tmp;
+    BeStringUtilities::Split(change.GetChangeName(), ":", tmp);
+    Utf8StringCR schemaName = tmp.front();
+    Utf8StringCR className = tmp.back();
+
+    ChangeType classChangeType = change.GetOpCode() == ECChange::OpCode::New ? ChangeType::New :
+        (change.GetOpCode() == ECChange::OpCode::Modified ? ChangeType::Modified : ChangeType::Delete);
+
+    bvector<ClassRule const*> applicableRules;
+    for (auto classRule : m_rules)
         {
-        bvector<Utf8String> tmp;
-        BeStringUtilities::Split(change.GetChangeName(), ":", tmp);
-        Utf8StringCR schemaName = tmp.front();
-        Utf8StringCR className = tmp.back();
+        if (!classRule->AppliesToChangeType(classChangeType))
+            continue;
 
-        ChangeType classChangeType = change.GetOpCode() == ECChange::OpCode::New ? ChangeType::New :
+        if (classRule->GetSchemaName() == WILDCARD)
+            {
+            applicableRules.push_back(classRule.get());
+            continue;
+            }
+
+        if (!classRule->GetSchemaName().EqualsIAscii(schemaName))
+            continue;
+
+        if (classRule->GetClassName() == WILDCARD || classRule->GetClassName().EqualsIAscii(className))
+            applicableRules.push_back(classRule.get());
+        }
+
+    if (change.PropValues().IsEmpty())
+        {
+        for (auto const* classRule : applicableRules)
+            {
+            if (classRule->GetRules().empty())
+                return classRule->GetPolicy();
+            }
+        }
+
+    for (auto propValueChangePtr : change.PropValues())
+        {
+        auto const& accessStringTokens = AccessStringToTokens(propValueChangePtr->GetAccessString());
+        ChangeType propertyChangeType = propValueChangePtr->GetOpCode() == ECChange::OpCode::New ? ChangeType::New :
             (change.GetOpCode() == ECChange::OpCode::Modified ? ChangeType::Modified : ChangeType::Delete);
 
-        bvector<ClassRule const*> applicableRules;
-        for (auto classRule : m_rules)
+        for (auto const* classRule : applicableRules)
             {
-            if (!classRule->AppliesToChangeType(classChangeType))
-                continue;
-
-            if (classRule->GetSchemaName() == WILDCARD)
+            if (classRule->AppliesToPropertyChange(propertyChangeType, accessStringTokens))
                 {
-                applicableRules.push_back(classRule.get());
-                continue;
-                }
-
-            if (!classRule->GetSchemaName().EqualsIAscii(schemaName))
-                continue;
-
-            if (classRule->GetClassName() == WILDCARD || classRule->GetClassName().EqualsIAscii(className))
-                {
-                applicableRules.push_back(classRule.get());
-                continue;
-                }
-            }
-
-        if (change.PropValues().IsEmpty())
-            {
-            for (auto const* classRule : applicableRules)
-                {
-                if (classRule->GetRules().empty())
+                if (Policy::Reject == classRule->GetPolicy())
                     return classRule->GetPolicy();
+
+                break;
                 }
             }
-
-        for (auto propValueChangePtr : change.PropValues())
-            {
-            auto const& accessStringTokens = AccessStringToTokens(propValueChangePtr->GetAccessString());
-            ChangeType propertyChangeType = propValueChangePtr->GetOpCode() == ECChange::OpCode::New ? ChangeType::New :
-                (change.GetOpCode() == ECChange::OpCode::Modified ? ChangeType::Modified : ChangeType::Delete);
-
-            for (auto const* classRule : applicableRules)
-                {
-                if (classRule->AppliesToPropertyChange(propertyChangeType, accessStringTokens))
-                    {
-                    if (Policy::Reject == classRule->GetPolicy())
-                        return classRule->GetPolicy();
-
-                    break;
-                    }
-                }
-            }
-
-        return Policy::Accept;
         }
 
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                             Eimantas.Morkunas  07/2019
-    //+---------------+---------------+---------------+---------------+---------------+------
-    bvector<Utf8String> CustomAttributeValidator::AccessStringToTokens(Utf8CP accessString) const
+    return Policy::Accept;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                             Eimantas.Morkunas  07/2019
+//+---------------+---------------+---------------+---------------+---------------+------
+bvector<Utf8String> CustomAttributeValidator::AccessStringToTokens(Utf8CP accessString) const
+    {
+    bvector<Utf8String> accessStringTokens;
+    BeStringUtilities::Split(accessString, ".", accessStringTokens);
+
+    // Trim element's array position info ('[]')
+    for (auto& accessStringToken : accessStringTokens)
         {
-        bvector<Utf8String> accessStringTokens;
-        BeStringUtilities::Split(accessString, ".", accessStringTokens);
-
-        // Trim element's array position info ('[]')
-        for (auto& accessStringToken : accessStringTokens)
-            {
-            if (accessStringToken.EndsWith("]"))
-                accessStringToken.erase(accessStringToken.find_last_of('['));
-            }
-
-        return accessStringTokens;
+        if (accessStringToken.EndsWith("]"))
+            accessStringToken.erase(accessStringToken.find_last_of('['));
         }
 
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                                    Affan.Khan  07/2019
-    //+---------------+---------------+---------------+---------------+---------------+------
-    CustomAttributeValidator::ClassRule& CustomAttributeValidator::Append(Policy policy, Utf8CP schemaFullName, Utf8CP customAttributeClassName, ChangeType changeType)
+    return accessStringTokens;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  07/2019
+//+---------------+---------------+---------------+---------------+---------------+------
+CustomAttributeValidator::ClassRule& CustomAttributeValidator::Append(Policy policy, Utf8CP schemaFullName, Utf8CP customAttributeClassName, ChangeType changeType)
+    {
+    Utf8String schemaName(schemaFullName);
+    Utf8String className(customAttributeClassName);
+    BeAssert(!schemaName.empty());
+    BeAssert(!className.empty());
+    if (schemaName == WILDCARD)
         {
-        Utf8String schemaName(schemaFullName);
-        Utf8String className(customAttributeClassName);
-        BeAssert(!schemaName.empty());
-        BeAssert(!className.empty());
-        if (schemaName == WILDCARD)
-            {
-            BeAssert(className == WILDCARD);
-            }
-        auto newRule = ClassRule::Create(policy, schemaFullName, customAttributeClassName, changeType);
-        m_rules.push_back(newRule);
-        return *newRule;
+        BeAssert(className == WILDCARD);
+        }
+    auto newRule = ClassRule::Create(policy, schemaFullName, customAttributeClassName, changeType);
+    m_rules.push_back(newRule);
+    return *newRule;
+    }
+
+//======================================================================================>
+//CustomAttributeValidator::ClassRule
+//======================================================================================>
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                             Eimantas.Morkunas  07/2019
+//+---------------+---------------+---------------+---------------+---------------+------
+bool CustomAttributeValidator::ClassRule::AppliesToPropertyChange(ChangeType propertyChangeType, bvector<Utf8String> const& accessStringTokens) const
+    {
+    if (GetRules().size() == 0)
+        return true;
+
+    for (auto const& propertyRule : GetRules())
+        {
+        if (propertyRule->AppliesToChangeType(propertyChangeType) && propertyRule->Matches(accessStringTokens))
+            return true;
         }
 
-    //======================================================================================>
-    //CustomAttributeValidator::ClassRule
-    //======================================================================================>
+    return false;
+    }
 
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                             Eimantas.Morkunas  07/2019
-    //+---------------+---------------+---------------+---------------+---------------+------
-    bool CustomAttributeValidator::ClassRule::AppliesToPropertyChange(ChangeType propertyChangeType, bvector<Utf8String> const& accessStringTokens) const
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  07/2019
+//+---------------+---------------+---------------+---------------+---------------+------
+CustomAttributeValidator::ClassRule& CustomAttributeValidator::ClassRule::Append(CustomAttributeValidator::Policy policy, Utf8CP accessString, CustomAttributeValidator::ChangeType changeType)
+    {
+    m_rules.push_back(PropertyRule::Create(policy, accessString, changeType));
+    return *this;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  07/2019
+//+---------------+---------------+---------------+---------------+---------------+------
+RefCountedPtr<CustomAttributeValidator::ClassRule> CustomAttributeValidator::ClassRule::Create(CustomAttributeValidator::Policy policy, Utf8CP schemaFullName, Utf8CP customAttributeClassName, CustomAttributeValidator::ChangeType changeType)
+    {
+    return new ClassRule(policy, schemaFullName, customAttributeClassName, changeType);
+    }
+
+//======================================================================================>
+//CustomAttributeValidator::PropertyRule
+//======================================================================================>
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                             Eimantas.Morkunas  07/2019
+//+---------------+---------------+---------------+---------------+---------------+------
+bool CustomAttributeValidator::PropertyRule::Matches(bvector<Utf8String> const& accessStringTokens) const
+    {
+    auto const& ruleTokens = GetPath();
+    for (size_t i = 0; i < ruleTokens.size(); i++)
         {
-        if (GetRules().size() == 0)
+        if (accessStringTokens.size() == i)
+            return false;
+
+        if (ruleTokens[i] == CustomAttributeValidator::WILDCARD)
             return true;
 
-        for (auto const& propertyRule : GetRules())
-            {
-            if (propertyRule->AppliesToChangeType(propertyChangeType) && propertyRule->Matches(accessStringTokens))
-                return true;
-            }
-
-        return false;
+        if (!accessStringTokens[i].EqualsIAscii(ruleTokens[i]))
+            return false;
         }
 
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                                    Affan.Khan  07/2019
-    //+---------------+---------------+---------------+---------------+---------------+------
-    CustomAttributeValidator::ClassRule& CustomAttributeValidator::ClassRule::Append(CustomAttributeValidator::Policy policy, Utf8CP accessString, CustomAttributeValidator::ChangeType changeType)
-        {
-        m_rules.push_back(PropertyRule::Create(policy, accessString, changeType));
-        return *this;
-        }
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                                    Affan.Khan  07/2019
-    //+---------------+---------------+---------------+---------------+---------------+------
-    RefCountedPtr<CustomAttributeValidator::ClassRule> CustomAttributeValidator::ClassRule::Create(CustomAttributeValidator::Policy policy, Utf8CP schemaFullName, Utf8CP customAttributeClassName, CustomAttributeValidator::ChangeType changeType)
-        {
-        return new ClassRule(policy, schemaFullName, customAttributeClassName, changeType);
-        }
+    return accessStringTokens.size() == ruleTokens.size();
+    }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  07/2019
+//+---------------+---------------+---------------+---------------+---------------+------
+RefCountedPtr<CustomAttributeValidator::PropertyRule> CustomAttributeValidator::PropertyRule::Create(CustomAttributeValidator::Policy policy, Utf8CP accessString, CustomAttributeValidator::ChangeType changeType)
+    {
+    return new PropertyRule(policy, accessString, changeType);
+    }
 
-    //======================================================================================>
-    //CustomAttributeValidator::PropertyRule
-    //======================================================================================>
-
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                             Eimantas.Morkunas  07/2019
-    //+---------------+---------------+---------------+---------------+---------------+------
-    bool CustomAttributeValidator::PropertyRule::Matches(bvector<Utf8String> const& accessStringTokens) const
-        {
-        auto const& ruleTokens = GetPath();
-        for (size_t i = 0; i < ruleTokens.size(); i++)
-            {
-            if (accessStringTokens.size() == i)
-                return false;
-
-            if (ruleTokens[i] == CustomAttributeValidator::WILDCARD)
-                return true;
-
-            if (!accessStringTokens[i].EqualsIAscii(ruleTokens[i]))
-                return false;
-            }
-
-        return accessStringTokens.size() == ruleTokens.size();
-        }
-
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                                    Affan.Khan  07/2019
-    //+---------------+---------------+---------------+---------------+---------------+------
-    RefCountedPtr<CustomAttributeValidator::PropertyRule> CustomAttributeValidator::PropertyRule::Create(CustomAttributeValidator::Policy policy, Utf8CP accessString, CustomAttributeValidator::ChangeType changeType)
-        {
-        return new PropertyRule(policy, accessString, changeType);
-        }
-
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                                    Affan.Khan  07/2019
-    //+---------------+---------------+---------------+---------------+---------------+------
-    CustomAttributeValidator::PropertyRule::PropertyRule(CustomAttributeValidator::Policy policy, Utf8CP accessString, CustomAttributeValidator::ChangeType changeType)
-        : m_accessString(accessString), m_changeType(changeType), m_policy(policy)
-        {
-        BeStringUtilities::Split(accessString, ".", m_path);
-        }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  07/2019
+//+---------------+---------------+---------------+---------------+---------------+------
+CustomAttributeValidator::PropertyRule::PropertyRule(CustomAttributeValidator::Policy policy, Utf8CP accessString, CustomAttributeValidator::ChangeType changeType)
+    : m_accessString(accessString), m_changeType(changeType), m_policy(policy)
+    {
+    BeStringUtilities::Split(accessString, ".", m_path);
+    }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
