@@ -1,0 +1,9 @@
+
+# ---- Example tests ----
+ClientTests.JsonExample
+AccessKeyClientTests.JsonExample
+SaasClientTests.JsonExample
+
+# ---- failing on bim0200 ----
+AccessKeyClientTests.GetTrialDaysRemainingValidTrial_Test
+ClientTests.GetTrialDaysRemainingValidTrial_Test
