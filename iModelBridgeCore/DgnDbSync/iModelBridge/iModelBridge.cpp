@@ -1234,3 +1234,15 @@ BentleyStatus	iModelBridge::TrackUsage()
     client->TrackUsage(tokenPtr->ToAuthorizationString(),clientInfo->GetApplicationVersion(),_GetParams().GetProjectGuid());
     return SUCCESS;
 	}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            08/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+BeVersion iModelBridge::Params::GetBridgeVersion() const
+    {
+    WebServices::ClientInfoPtr clientInfo = GetClientInfo();
+    if (nullptr == clientInfo)
+        return BeVersion();
+
+    return clientInfo->GetApplicationVersion();
+    }

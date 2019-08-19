@@ -2844,6 +2844,7 @@ struct ConvertToDgnDbElementExtension : DgnV8Api::Handler::Extension
     virtual bool _IgnorePublicChildren() {return false;} // When true, don't create an assembly for a V8 cell with public children unless there are category changes.
     virtual bool _DisablePostInstancing() {return false;} // When true, don't try to detect identical geometry and create GeometryParts from non-instanced V8 geometry.
     virtual void _UpdateResourceDefinitions (iModelBridge::IDocumentPropertiesAccessor& accessor) {}
+    virtual bool _OnElementPostInsertOrUpdate(Converter&, DgnV8EhCR, DgnElementId elementId, Converter::ChangeOperation changeOperation) { return false; /* element doesn't need updating */ }
 };
 
 //=======================================================================================
@@ -2907,6 +2908,12 @@ struct XDomain
     virtual void _OnFinishConversion(Converter&) = 0;
     //! This is invoked after _OnFinishConversion to get all the elements that have an external source aspect and were manually created during _OnFinishConversion.
     virtual DgnElementIdSet _GetManuallyCreatedElementIds(Converter&) const { return DgnElementIdSet(); };
+
+    //! This is invoked during _OnElementConverted to insert any missing relationships. returns true if element needs updating.
+    virtual bool _OnElementPostInsertOrUpdate(Converter&, DgnV8EhCR, DgnElementId elementId, Converter::ChangeOperation changeOperation) { return false; /* element doesn't need updating */}
+
+    //! This is invoked during _OnElementBeforeDelete to remove any relationships that would become invalid.
+    virtual void _OnElementBeforeDelete(Converter&, DgnElementId elementId) {}
 };
 
 //=======================================================================================
