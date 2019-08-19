@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+    <RunConfiguration>
+        <MaxCpuCount>1</MaxCpuCount>
+        <TargetPlatform>x64</TargetPlatform>
+    </RunConfiguration>
+
+    <!-- Configurations for data collectors -->
+    <DataCollectionRunSettings>
+        <DataCollectors>
+            <DataCollector friendlyName="Code Coverage" uri="datacollector://Microsoft/CodeCoverage/2.0" assemblyQualifiedName="Microsoft.VisualStudio.Coverage.DynamicCoverageDataCollector, Microsoft.VisualStudio.TraceCollector, Version=11.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+                <Configuration>
+                    <CodeCoverage>
+                        <!--
+                        <ModulePaths>
+                            <Include>
+                                <ModulePath>.*RevitBridge\.dll$</ModulePath>
+                                <ModulePath>.*RvtFileLoader\.dll$</ModulePath>
+                                <ModulePath>.*BrepConverter\.dll$</ModulePath>
+                            </Include>
+                            <Exclude>
+                                <Function>^std::.*</Function>
+                                <Function>^folly::.*</Function>
+                            </Exclude> 
+                        </ModulePaths>
+                        -->
+                        
+                        <Sources>
+                            <Include>
+                                <Source>.*\\src\\DgnDbSync\\.*</Source>
+                            </Include>
+                        </Sources>
+
+                        <!-- Match fully qualified names of functions: -->
+                        <!-- (Use "\." to delimit namespaces in C# or Visual Basic, "::" in C++) -->
+                        <Functions>
+                            <Exclude>
+                                <Function>^Od.*</Function>
+                                <Function>[Ii]mpl</Function>
+                                <Function>::Bstdcxx</Function>
+                                <Function>::bc__rw</Function>
+                            </Exclude>
+                        </Functions>
+
+                        <!-- We recommend you do not change the following values: -->
+                        <UseVerifiableInstrumentation>True</UseVerifiableInstrumentation>
+                        <AllowLowIntegrityProcesses>True</AllowLowIntegrityProcesses>
+                        <CollectFromChildProcesses>True</CollectFromChildProcesses>
+                        <CollectAspDotNet>False</CollectAspDotNet>
+
+                    </CodeCoverage>
+                </Configuration>
+            </DataCollector>
+
+        </DataCollectors>
+    </DataCollectionRunSettings>
+
+    <GoogleTestAdapterSettings>
+        <SolutionSettings>
+            <Settings>
+                <TestDiscoveryTimeoutInSeconds>300</TestDiscoveryTimeoutInSeconds>
+                <TimestampOutput>true</TimestampOutput>
+                <ParallelTestExecution>false</ParallelTestExecution>
+                <AdditionalTestExecutionParam>--timeout=14400 --gtest_output=xml:out\\gtestresults.xml</AdditionalTestExecutionParam>
+            </Settings>
+        </SolutionSettings>
+    </GoogleTestAdapterSettings>
+</RunSettings>
