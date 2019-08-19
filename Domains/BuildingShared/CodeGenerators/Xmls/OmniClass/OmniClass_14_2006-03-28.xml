@@ -1,0 +1,863 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<Table>
+    <Name>Table 14 - Spaces by Form</Name>
+    <Source>The Secretariat for the OCCS Development Committee</Source>
+    <Version>Major Version No=&apos; Edition:1.0&apos;  Major Date=&apos;2006-03-28 Release&apos;  Minor Version No=&apos; Edition:1.0&apos;  Minor Date=&apos;2006-03-28 Release&apos;  Major=&apos;&apos;  Minor=&apos;&apos; </Version>
+    <Section>
+        <Code>14-11 00 00</Code>
+        <Name>Fully Enclosed Spaces</Name>
+        <Section>
+            <Code>14-11 11 00</Code>
+            <Name>Rooms</Name>
+            <Section>
+                <Code>14-11 11 11</Code>
+                <Name>Room</Name>
+            </Section>
+            <Section>
+                <Code>14-11 11 14</Code>
+                <Name>Lobby</Name>
+            </Section>
+            <Section>
+                <Code>14-11 11 17</Code>
+                <Name>Hall</Name>
+            </Section>
+            <Section>
+                <Code>14-11 11 21</Code>
+                <Name>Auditorium</Name>
+            </Section>
+            <Section>
+                <Code>14-11 11 24</Code>
+                <Name>Anteroom</Name>
+            </Section>
+            <Section>
+                <Code>14-11 11 27</Code>
+                <Name>Office</Name>
+            </Section>
+            <Section>
+                <Code>14-11 11 99</Code>
+                <Name>Other Rooms</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>14-11 14 00</Code>
+            <Name>Levels</Name>
+            <Section>
+                <Code>14-11 14 11</Code>
+                <Name>Level</Name>
+            </Section>
+            <Section>
+                <Code>14-11 14 14</Code>
+                <Name>Floor</Name>
+            </Section>
+            <Section>
+                <Code>14-11 14 17</Code>
+                <Name>Story</Name>
+            </Section>
+            <Section>
+                <Code>14-11 14 21</Code>
+                <Name>Basement</Name>
+            </Section>
+            <Section>
+                <Code>14-11 14 24</Code>
+                <Name>Attic</Name>
+            </Section>
+            <Section>
+                <Code>14-11 14 99</Code>
+                <Name>Other Levels</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>14-11 17 00</Code>
+            <Name>Atria</Name>
+            <Section>
+                <Code>14-11 17 11</Code>
+                <Name>Gallery</Name>
+            </Section>
+            <Section>
+                <Code>14-11 17 14</Code>
+                <Name>Mall</Name>
+            </Section>
+            <Section>
+                <Code>14-11 17 17</Code>
+                <Name>Atrium</Name>
+            </Section>
+            <Section>
+                <Code>14-11 17 21</Code>
+                <Name>Enclosed Court</Name>
+            </Section>
+            <Section>
+                <Code>14-11 17 99</Code>
+                <Name>Other Atria</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>14-11 21 00</Code>
+            <Name>Shafts</Name>
+            <Section>
+                <Code>14-11 21 11</Code>
+                <Name>Stair Enclosure</Name>
+            </Section>
+            <Section>
+                <Code>14-11 21 14</Code>
+                <Name>Elevator Shaft</Name>
+            </Section>
+            <Section>
+                <Code>14-11 21 17</Code>
+                <Name>Mechanical Shaft</Name>
+            </Section>
+            <Section>
+                <Code>14-11 21 99</Code>
+                <Name>Other Shafts</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>14-11 24 00</Code>
+            <Name>Interstitial Spaces</Name>
+            <Section>
+                <Code>14-11 24 11</Code>
+                <Name>Plenum</Name>
+            </Section>
+            <Section>
+                <Code>14-11 24 14</Code>
+                <Name>Cavity</Name>
+            </Section>
+            <Section>
+                <Code>14-11 24 17</Code>
+                <Name>Interstitial Floor</Name>
+            </Section>
+            <Section>
+                <Code>14-11 24 99</Code>
+                <Name>Other Interstitial Spaces</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>14-11 27 00</Code>
+            <Name>Compartments</Name>
+            <Section>
+                <Code>14-11 27 11</Code>
+                <Name>Chamber</Name>
+            </Section>
+            <Section>
+                <Code>14-11 27 14</Code>
+                <Name>Compartment</Name>
+            </Section>
+            <Section>
+                <Code>14-11 27 99</Code>
+                <Name>Other Compartments</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>14-14 00 00</Code>
+        <Name>Partially-Enclosed Spaces</Name>
+        <Section>
+            <Code>14-14 11 00</Code>
+            <Name>Recessed Spaces</Name>
+            <Section>
+                <Code>14-14 11 11</Code>
+                <Name>Alcove</Name>
+            </Section>
+            <Section>
+                <Code>14-14 11 14</Code>
+                <Name>Niche</Name>
+            </Section>
+            <Section>
+                <Code>14-14 11 17</Code>
+                <Name>Exedra</Name>
+            </Section>
+            <Section>
+                <Code>14-14 11 99</Code>
+                <Name>Other Recessed Spaces</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>14-14 14 00</Code>
+            <Name>Transition Spaces</Name>
+            <Section>
+                <Code>14-14 14 11</Code>
+                <Name>Corridor</Name>
+            </Section>
+            <Section>
+                <Code>14-14 14 14</Code>
+                <Name>Vestibule</Name>
+            </Section>
+            <Section>
+                <Code>14-14 14 17</Code>
+                <Name>Nave</Name>
+            </Section>
+            <Section>
+                <Code>14-14 14 99</Code>
+                <Name>Other Transition Spaces</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>14-14 17 00</Code>
+            <Name>Raised Spaces</Name>
+            <Section>
+                <Code>14-14 17 11</Code>
+                <Name>Mezzanine</Name>
+            </Section>
+            <Section>
+                <Code>14-14 17 14</Code>
+                <Name>Balcony</Name>
+            </Section>
+            <Section>
+                <Code>14-14 17 17</Code>
+                <Name>Stage</Name>
+            </Section>
+            <Section>
+                <Code>14-14 17 21</Code>
+                <Name>Platform</Name>
+            </Section>
+            <Section>
+                <Code>14-14 17 99</Code>
+                <Name>Other Raised Spaces</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>14-14 21 00</Code>
+            <Name>Lowered and Sunken Spaces</Name>
+            <Section>
+                <Code>14-14 21 11</Code>
+                <Name>Pit</Name>
+            </Section>
+            <Section>
+                <Code>14-14 21 14</Code>
+                <Name>Pool</Name>
+            </Section>
+            <Section>
+                <Code>14-14 21 99</Code>
+                <Name>Other Lowered and Sunken Spaces</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>14-14 99 00</Code>
+            <Name>Other Partially-Enclosed Spaces</Name>
+        </Section>
+    </Section>
+    <Section>
+        <Code>14-17 00 00</Code>
+        <Name>Non-Enclosed Spaces</Name>
+        <Section>
+            <Code>14-17 11 00</Code>
+            <Name>Stations</Name>
+            <Section>
+                <Code>14-17 11 11</Code>
+                <Name>Work Station</Name>
+            </Section>
+            <Section>
+                <Code>14-17 11 14</Code>
+                <Name>Cubicle</Name>
+            </Section>
+            <Section>
+                <Code>14-17 11 17</Code>
+                <Name>Counter </Name>
+            </Section>
+            <Section>
+                <Code>14-17 11 99</Code>
+                <Name>Other Stations</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>14-17 14 00</Code>
+            <Name>Grouped Spaces</Name>
+            <Section>
+                <Code>14-17 14 11</Code>
+                <Name>Seating Group</Name>
+            </Section>
+            <Section>
+                <Code>14-17 14 14</Code>
+                <Name>Seating Row</Name>
+            </Section>
+            <Section>
+                <Code>14-17 14 17</Code>
+                <Name>Seating Section</Name>
+            </Section>
+            <Section>
+                <Code>14-17 14 21</Code>
+                <Name>Aisle</Name>
+            </Section>
+            <Section>
+                <Code>14-17 14 99</Code>
+                <Name>Other Groups</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>14-17 17 00</Code>
+            <Name>Zones</Name>
+            <Section>
+                <Code>14-17 17 11</Code>
+                <Name>Air Distribution Zone</Name>
+            </Section>
+            <Section>
+                <Code>14-17 17 14</Code>
+                <Name>Queuing Zone</Name>
+            </Section>
+            <Section>
+                <Code>14-17 17 99</Code>
+                <Name>Other Zones</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>14-17 21 00</Code>
+            <Name>Areas</Name>
+            <Section>
+                <Code>14-17 21 11</Code>
+                <Name>Rink</Name>
+            </Section>
+            <Section>
+                <Code>14-17 21 14</Code>
+                <Name>Ring</Name>
+            </Section>
+            <Section>
+                <Code>14-17 21 17</Code>
+                <Name>Mat</Name>
+            </Section>
+            <Section>
+                <Code>14-17 21 21</Code>
+                <Name>Court</Name>
+            </Section>
+            <Section>
+                <Code>14-17 21 99</Code>
+                <Name>Other Areas</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>14-17 99 00</Code>
+            <Name>Other Non-Enclosed Spaces</Name>
+        </Section>
+    </Section>
+    <Section>
+        <Code>14-21 00 00</Code>
+        <Name>Covered Spaces</Name>
+        <Section>
+            <Code>14-21 11 00</Code>
+            <Name>Attached Spaces</Name>
+            <Section>
+                <Code>14-21 11 11</Code>
+                <Name>Porch</Name>
+            </Section>
+            <Section>
+                <Code>14-21 11 14</Code>
+                <Name>Porte Cochere</Name>
+            </Section>
+            <Section>
+                <Code>14-21 11 17</Code>
+                <Name>Arcade</Name>
+            </Section>
+            <Section>
+                <Code>14-21 11 21</Code>
+                <Name>Cloisters</Name>
+            </Section>
+            <Section>
+                <Code>14-21 11 24</Code>
+                <Name>Breezeway</Name>
+            </Section>
+            <Section>
+                <Code>14-21 11 99</Code>
+                <Name>Other Attached Spaces</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>14-21 14 00</Code>
+            <Name>Free-Standing Spaces</Name>
+            <Section>
+                <Code>14-21 14 11</Code>
+                <Name>Gazebo</Name>
+            </Section>
+            <Section>
+                <Code>14-21 14 14</Code>
+                <Name>Trellis</Name>
+            </Section>
+            <Section>
+                <Code>14-21 14 99</Code>
+                <Name>Other Free-Standing Spaces</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>14-21 99 00</Code>
+            <Name>Other Covered Spaces</Name>
+        </Section>
+    </Section>
+    <Section>
+        <Code>14-24 00 00</Code>
+        <Name>Uncovered Spaces</Name>
+        <Section>
+            <Code>14-24 11 00</Code>
+            <Name>Routes</Name>
+            <Section>
+                <Code>14-24 11 11</Code>
+                <Name>Path</Name>
+            </Section>
+            <Section>
+                <Code>14-24 11 16</Code>
+                <Name>Trail</Name>
+            </Section>
+            <Section>
+                <Code>14-24 11 14</Code>
+                <Name>Trail Head</Name>
+            </Section>
+            <Section>
+                <Code>14-24 11 17</Code>
+                <Name>Street</Name>
+            </Section>
+            <Section>
+                <Code>14-24 11 24</Code>
+                <Name>Alley</Name>
+            </Section>
+            <Section>
+                <Code>14-24 11 27</Code>
+                <Name>Sidewalk</Name>
+            </Section>
+            <Section>
+                <Code>14-24 11 31</Code>
+                <Name>Walkway</Name>
+            </Section>
+            <Section>
+                <Code>14-24 11 34</Code>
+                <Name>Boardwalk</Name>
+            </Section>
+            <Section>
+                <Code>14-24 11 99</Code>
+                <Name>Other Routes</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>14-24 14 00</Code>
+            <Name>Outdoor Areas</Name>
+            <Section>
+                <Code>14-24 14 11</Code>
+                <Name>Terrace</Name>
+            </Section>
+            <Section>
+                <Code>14-24 14 14</Code>
+                <Name>Patio</Name>
+            </Section>
+            <Section>
+                <Code>14-24 14 17</Code>
+                <Name>Courtyard</Name>
+            </Section>
+            <Section>
+                <Code>14-24 14 21</Code>
+                <Name>Light Well</Name>
+            </Section>
+            <Section>
+                <Code>14-24 14 27</Code>
+                <Name>Farm Field</Name>
+            </Section>
+            <Section>
+                <Code>14-24 14 31</Code>
+                <Name>Planting Bed</Name>
+            </Section>
+            <Section>
+                <Code>14-24 14 34</Code>
+                <Name>Yard</Name>
+            </Section>
+            <Section>
+                <Code>14-24 14 37</Code>
+                <Name>Roof Area</Name>
+            </Section>
+            <Section>
+                <Code>14-24 14 99</Code>
+                <Name>Other Outdoor Areas</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>14-24 17 00</Code>
+            <Name>Intersections and Nodes</Name>
+            <Section>
+                <Code>14-24 17 11</Code>
+                <Name>Crossroad</Name>
+            </Section>
+            <Section>
+                <Code>14-24 17 14</Code>
+                <Name>Intersection</Name>
+            </Section>
+            <Section>
+                <Code>14-24 17 17</Code>
+                <Name>Plaza</Name>
+            </Section>
+            <Section>
+                <Code>14-24 17 99</Code>
+                <Name>Other Intersections and Nodes</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>14-24 99 00</Code>
+            <Name>Other Uncovered Spaces</Name>
+        </Section>
+    </Section>
+    <Section>
+        <Code>14-27 00 00</Code>
+        <Name>Combined Spaces</Name>
+        <Section>
+            <Code>14-27 11 00</Code>
+            <Name>Integral Combined Spaces</Name>
+            <Section>
+                <Code>14-27 11 11</Code>
+                <Name>Suite</Name>
+            </Section>
+            <Section>
+                <Code>14-27 11 14</Code>
+                <Name>Core</Name>
+            </Section>
+            <Section>
+                <Code>14-27 11 99</Code>
+                <Name>Other Integral Combined Spaces</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>14-27 14 00</Code>
+            <Name>Grouped Combined Spaces</Name>
+            <Section>
+                <Code>14-27 14 11</Code>
+                <Name>Wing</Name>
+            </Section>
+            <Section>
+                <Code>14-27 14 14</Code>
+                <Name>Bay</Name>
+            </Section>
+            <Section>
+                <Code>14-27 14 99</Code>
+                <Name>Other Grouped Combined Spaces</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>14-31 00 00</Code>
+        <Name>Space Designations to Facilitate Design and Construction</Name>
+        <Section>
+            <Code>14-31 11 00</Code>
+            <Name>Modules</Name>
+            <Section>
+                <Code>14-31 11 11</Code>
+                <Name>Planning Module</Name>
+            </Section>
+            <Section>
+                <Code>14-31 11 14</Code>
+                <Name>Structural Module</Name>
+            </Section>
+            <Section>
+                <Code>14-31 11 17</Code>
+                <Name>Proportional Module </Name>
+            </Section>
+            <Section>
+                <Code>14-31 11 99</Code>
+                <Name>Other Modules</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>14-31 14 00</Code>
+            <Name>Clear Spaces</Name>
+            <Section>
+                <Code>14-31 14 11</Code>
+                <Name>Operational Clear Space</Name>
+            </Section>
+            <Section>
+                <Code>14-31 14 14</Code>
+                <Name>Accessible Clear Space</Name>
+            </Section>
+            <Section>
+                <Code>14-31 14 17</Code>
+                <Name>Service Space</Name>
+            </Section>
+            <Section>
+                <Code>14-31 14 99</Code>
+                <Name>Other Clear Spaces</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>14-31 17 00</Code>
+            <Name>Tolerance Spaces</Name>
+            <Section>
+                <Code>14-31 17 11</Code>
+                <Name>Planning Tolerance Space</Name>
+            </Section>
+            <Section>
+                <Code>14-31 17 14</Code>
+                <Name>Construction Tolerance Space</Name>
+            </Section>
+            <Section>
+                <Code>14-31 17 99</Code>
+                <Name>Other Tolerance Spaces</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>14-31 99 00</Code>
+            <Name>Other Space Designations to Facilitate Design and Construction</Name>
+        </Section>
+    </Section>
+    <Section>
+        <Code>14-34 00 00</Code>
+        <Name>Topographical Spaces</Name>
+        <Section>
+            <Code>14-34 11 00</Code>
+            <Name>Sloped Topographical Spaces</Name>
+            <Section>
+                <Code>14-34 11 11</Code>
+                <Name>Valley</Name>
+            </Section>
+            <Section>
+                <Code>14-34 11 14</Code>
+                <Name>Channel</Name>
+            </Section>
+            <Section>
+                <Code>14-34 11 17</Code>
+                <Name>Plateau</Name>
+            </Section>
+            <Section>
+                <Code>14-34 11 21</Code>
+                <Name>Knoll</Name>
+            </Section>
+            <Section>
+                <Code>14-34 11 24</Code>
+                <Name>Ridge</Name>
+            </Section>
+            <Section>
+                <Code>14-34 11 27</Code>
+                <Name>Summit</Name>
+            </Section>
+            <Section>
+                <Code>14-34 11 31</Code>
+                <Name>Berm</Name>
+            </Section>
+            <Section>
+                <Code>14-34 11 34</Code>
+                <Name>Swale</Name>
+            </Section>
+            <Section>
+                <Code>14-34 11 99</Code>
+                <Name>Other Sloped Topographical Spaces</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>14-34 14 00</Code>
+            <Name>Flat Topographical Spaces</Name>
+            <Section>
+                <Code>14-34 14 11</Code>
+                <Name>Plain</Name>
+            </Section>
+            <Section>
+                <Code>14-34 14 14</Code>
+                <Name>Meadow</Name>
+            </Section>
+            <Section>
+                <Code>14-34 14 17</Code>
+                <Name>Basin</Name>
+            </Section>
+            <Section>
+                <Code>14-34 14 99</Code>
+                <Name>Other Flat Topographical Spaces</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>14-34 17 00</Code>
+            <Name>Land and Water Topographical Transitions</Name>
+            <Section>
+                <Code>14-34 17 11</Code>
+                <Name>Peninsula</Name>
+            </Section>
+            <Section>
+                <Code>14-34 17 14</Code>
+                <Name>Point</Name>
+            </Section>
+            <Section>
+                <Code>14-34 17 17</Code>
+                <Name>Inlet</Name>
+            </Section>
+            <Section>
+                <Code>14-34 17 21</Code>
+                <Name>Bay</Name>
+            </Section>
+            <Section>
+                <Code>14-34 17 24</Code>
+                <Name>Shoreline</Name>
+            </Section>
+            <Section>
+                <Code>14-34 17 27</Code>
+                <Name>Island</Name>
+            </Section>
+            <Section>
+                <Code>14-34 17 31</Code>
+                <Name>Lagoon</Name>
+            </Section>
+            <Section>
+                <Code>14-34 17 99</Code>
+                <Name>Other Land and Water Topographical Transitions</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>14-34 21 00</Code>
+            <Name>Topographical Water Spaces</Name>
+            <Section>
+                <Code>14-34 21 11</Code>
+                <Name>Ocean</Name>
+            </Section>
+            <Section>
+                <Code>14-34 21 14</Code>
+                <Name>Pond</Name>
+            </Section>
+            <Section>
+                <Code>14-34 21 17</Code>
+                <Name>Lake</Name>
+            </Section>
+            <Section>
+                <Code>14-34 21 21</Code>
+                <Name>Reservoir</Name>
+            </Section>
+            <Section>
+                <Code>14-34 21 24</Code>
+                <Name>Creek</Name>
+            </Section>
+            <Section>
+                <Code>14-34 21 27</Code>
+                <Name>River</Name>
+            </Section>
+            <Section>
+                <Code>14-34 21 99</Code>
+                <Name>Other Topographical Water Spaces</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>14-37 00 00</Code>
+        <Name>Legal and Geopolitical Space Designations</Name>
+        <Section>
+            <Code>14-37 11 00</Code>
+            <Name>Property Limits</Name>
+            <Section>
+                <Code>14-37 11 11</Code>
+                <Name>Parcel</Name>
+            </Section>
+            <Section>
+                <Code>14-37 11 14</Code>
+                <Name>Site</Name>
+            </Section>
+            <Section>
+                <Code>14-37 11 17</Code>
+                <Name>Tract</Name>
+            </Section>
+            <Section>
+                <Code>14-37 11 99</Code>
+                <Name>Other Property Limits</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>14-37 14 00</Code>
+            <Name>Rights of Way</Name>
+            <Section>
+                <Code>14-37 14 11</Code>
+                <Name>Right-of-way Space</Name>
+            </Section>
+            <Section>
+                <Code>14-37 14 14</Code>
+                <Name>Easement</Name>
+            </Section>
+            <Section>
+                <Code>14-37 14 17</Code>
+                <Name>Air Rights Space</Name>
+            </Section>
+            <Section>
+                <Code>14-37 14 21</Code>
+                <Name>Mineral Rights Space</Name>
+            </Section>
+            <Section>
+                <Code>14-37 14 99</Code>
+                <Name>Other Rights of Way</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>14-37 17 00</Code>
+            <Name>Blocks</Name>
+            <Section>
+                <Code>14-37 17 11</Code>
+                <Name>City Block</Name>
+            </Section>
+            <Section>
+                <Code>14-37 17 14</Code>
+                <Name>Cul-de-sac</Name>
+            </Section>
+            <Section>
+                <Code>14-37 17 17</Code>
+                <Name>Planned Unit Development</Name>
+            </Section>
+            <Section>
+                <Code>14-37 17 99</Code>
+                <Name>Other Blocks</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>14-37 21 00</Code>
+            <Name>Sub-City Limits</Name>
+            <Section>
+                <Code>14-37 21 11</Code>
+                <Name>District</Name>
+            </Section>
+            <Section>
+                <Code>14-37 21 14</Code>
+                <Name>Neighborhood</Name>
+            </Section>
+            <Section>
+                <Code>14-37 21 17</Code>
+                <Name>Campus</Name>
+            </Section>
+            <Section>
+                <Code>14-37 21 21</Code>
+                <Name>Compound</Name>
+            </Section>
+            <Section>
+                <Code>14-37 21 24</Code>
+                <Name>Base</Name>
+            </Section>
+            <Section>
+                <Code>14-37 21 99</Code>
+                <Name>Other Sub-City Limits</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>14-37 24 00</Code>
+            <Name>Municipal Limits</Name>
+            <Section>
+                <Code>14-37 24 11</Code>
+                <Name>Town</Name>
+            </Section>
+            <Section>
+                <Code>14-37 24 14</Code>
+                <Name>City</Name>
+            </Section>
+            <Section>
+                <Code>14-37 24 99</Code>
+                <Name>Other Municipal Limits</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>14-37 27 00</Code>
+            <Name>Extra-Municipal Limits</Name>
+            <Section>
+                <Code>14-37 27 11</Code>
+                <Name>County</Name>
+            </Section>
+            <Section>
+                <Code>14-37 27 14</Code>
+                <Name>Region</Name>
+            </Section>
+            <Section>
+                <Code>14-37 27 17</Code>
+                <Name>State</Name>
+            </Section>
+            <Section>
+                <Code>14-37 27 21</Code>
+                <Name>Province</Name>
+            </Section>
+            <Section>
+                <Code>14-37 27 24</Code>
+                <Name>Nation</Name>
+            </Section>
+            <Section>
+                <Code>14-37 27 99</Code>
+                <Name>Other Extra-Municipal Limits</Name>
+            </Section>
+        </Section>
+    </Section>
+</Table>
