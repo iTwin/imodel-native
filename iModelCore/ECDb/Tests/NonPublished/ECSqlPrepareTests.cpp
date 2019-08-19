@@ -204,7 +204,7 @@ TEST_F(ECSqlSelectPrepareTests, Alias)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT PStructProp.s FROM ecsql.PSA PStructProp"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT PStructProp.I FROM ecsql.PSA, (SELECT ECInstanceId, I, PStructProp FROM ecsql.PSA) PStructProp WHERE PSA.ECInstanceId=PStructProp.ECInstanceId"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT PStructProp.PStructProp FROM ecsql.PSA, (SELECT ECInstanceId, I, PStructProp FROM ecsql.PSA) PStructProp WHERE PSA.ECInstanceId=PStructProp.ECInstanceId"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT PStructProp.i FROM ecsql.PSA, (SELECT ECInstanceId, I, PStructProp FROM ecsql.PSA) PStructProp WHERE PSA.ECInstanceId=PStructProp.ECInstanceId"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT PStructProp.i FROM ecsql.PSA, (SELECT ECInstanceId, I, PStructProp FROM ecsql.PSA) PStructProp WHERE PSA.ECInstanceId=PStructProp.ECInstanceId"));
 
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT P, p.ECInstanceId FROM ecsql.PSA p, ecsql.P c"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.PSA p, ecsql.P")) << "Duplicate class name / alias";

@@ -224,7 +224,7 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
         RangeClassRefExp const& classRefExp = rangeClassInfo.GetExp();
 
         //assume first entry is property name
-        if (classRefExp.ContainsProperty(firstPropPathEntry.GetName()))
+        if (classRefExp.ContainsPropertyPath(m_propertyPath, 0))
             propNameClassRefExpMatches.push_back(&classRefExp);
 
         //assume first entry is schema name/alias or class name/alias
@@ -268,11 +268,10 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
             if (classIndex >= 0)
                 {
                 BeAssert(classIndex < (int) m_propertyPath.Size());
-                if (classRefExp.ContainsProperty(m_propertyPath[(size_t) (classIndex + 1)].GetName()))
+                if (classRefExp.ContainsPropertyPath(m_propertyPath.Skip((size_t) (classIndex + 1)), 0))
                     classMatches.push_back(std::make_pair<RangeClassRefExp const*, size_t>(&classRefExp, (size_t) classIndex));
                 }
             }
-
         }
 
     if (classMatches.empty() && propNameClassRefExpMatches.empty())

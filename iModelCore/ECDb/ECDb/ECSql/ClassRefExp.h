@@ -38,6 +38,8 @@ private:
 
     virtual Utf8StringCR _GetId() const = 0;
     virtual bool _ContainsProperty(Utf8StringCR propertyName) const = 0;
+    virtual bool _ContainsPropertyPath(PropertyPath const& propertyPath, int matchDepth) const = 0;
+
     virtual void _ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const&) const = 0;
 
 protected:
@@ -52,6 +54,7 @@ public:
 
     void ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const& ctx) const { _ExpandSelectAsterisk(expandedSelectClauseItemList, ctx); }
     bool ContainsProperty(Utf8StringCR propertyName) const { return _ContainsProperty(propertyName); }
+    bool ContainsPropertyPath(PropertyPath const& propertyPath, int matchDepth) const { return _ContainsPropertyPath(propertyPath, matchDepth); }
     void SetAlias (Utf8StringCR alias) { m_alias = alias;}
    };
 
@@ -113,6 +116,7 @@ private:
     FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
     Utf8StringCR _GetId() const override;
     bool _ContainsProperty(Utf8StringCR propertyName) const override;
+    bool _ContainsPropertyPath(PropertyPath const& propertyPath, int matchDepth) const override;
     void _ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const&) const override;
     void _ToECSql(ECSqlRenderContext&) const override;
     Utf8String _ToString () const override;

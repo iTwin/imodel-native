@@ -239,6 +239,18 @@ BentleyStatus PropertyPath::Resolve(ClassMap const& classMap, Utf8String* errorM
     }
 
 //-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       08/2019
+//+---------------+---------------+---------------+---------------+---------------+------
+PropertyPath PropertyPath::Skip(size_t k) const
+    {
+    PropertyPath path;
+    for (auto i = k; i < m_path.size(); i++)
+        path.Push(m_path[i].GetName(), m_path[i].GetArrayIndex());
+
+    return path;
+    }
+
+//-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 void PropertyPath::Clear()

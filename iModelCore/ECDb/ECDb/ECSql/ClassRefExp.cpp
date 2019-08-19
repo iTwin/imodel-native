@@ -67,6 +67,31 @@ bool ClassNameExp::_ContainsProperty(Utf8StringCR propertyName) const
     }
 
 //-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       08/2019
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ClassNameExp::_ContainsPropertyPath(PropertyPath const& propertyPath, int matchDepth) const
+    {
+    if (m_info == nullptr)
+        {
+        BeAssert(false);
+        return false;
+        }
+
+    Utf8String accessString;
+    if (matchDepth <= 0)
+        accessString = propertyPath.ToString();
+    else
+        {
+        accessString.append(propertyPath[0].ToString(true));
+        for (int i = 1; i < matchDepth; i++)
+            accessString.append(".").append(propertyPath[i].ToString(true));
+        }
+
+    PropertyMap const* propertyMap = m_info->GetMap().GetPropertyMaps().Find(accessString.c_str());
+    return propertyMap != nullptr;
+    }
+
+//-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 ClassNameExp::ClassNameExp(Utf8StringCR className, Utf8StringCR schemaAlias, Utf8CP tableSpace, std::shared_ptr<Info> info, bool isPolymorphic, std::unique_ptr<MemberFunctionCallExp> memberFuntionCall)

@@ -234,12 +234,14 @@ struct QueryExp : Exp
         explicit QueryExp(Type type) : Exp(type) {}
 
         virtual DerivedPropertyExp const* _FindProperty(Utf8CP propertyName) const = 0;
+        virtual DerivedPropertyExp const* _FindPropertyPath(PropertyPath const& propertyPath, int matchDepth) const = 0;
         virtual SelectClauseExp const* _GetSelection() const = 0;
 
     public:
         virtual ~QueryExp() {}
 
         DerivedPropertyExp const* FindProperty(Utf8CP propertyName) const { return _FindProperty(propertyName); }
+        DerivedPropertyExp const* FindPropertyPath(PropertyPath const &propertyPath, int matchDepth) const { return _FindPropertyPath(propertyPath, matchDepth); }
         SelectClauseExp const* GetSelection() const { return _GetSelection(); }
     };
 
@@ -268,6 +270,8 @@ struct SingleSelectStatementExp final : QueryExp
 
     protected:
         DerivedPropertyExp const* _FindProperty(Utf8CP propertyName) const override;
+        DerivedPropertyExp const* _FindPropertyPath(PropertyPath const &propertyPath, int matchDepth) const override;
+
         SelectClauseExp const* _GetSelection() const override { return GetChild<SelectClauseExp>(m_selectClauseIndex); }
 
     public:
@@ -351,6 +355,8 @@ struct SubqueryExp final : QueryExp
 
     protected:
         DerivedPropertyExp const* _FindProperty(Utf8CP propertyName) const override;
+        DerivedPropertyExp const* _FindPropertyPath(PropertyPath const& propertyPath, int matchDepth) const override;
+ 
         SelectClauseExp const* _GetSelection() const override;
     public:
         explicit SubqueryExp(std::unique_ptr<SelectStatementExp>);
@@ -380,6 +386,8 @@ struct SelectStatementExp final : QueryExp
         void _ToECSql(ECSqlRenderContext&) const override;
         Utf8String _ToString() const override { return "SelectStatementExp"; }
         DerivedPropertyExp const* _FindProperty(Utf8CP propertyName) const override { return GetFirstStatement().FindProperty(propertyName); }
+        DerivedPropertyExp const* _FindPropertyPath(PropertyPath const& propertyPath, int matchDepth) const override { return GetFirstStatement().FindPropertyPath(propertyPath, matchDepth); }
+ 
         SelectClauseExp const* _GetSelection() const override { return GetFirstStatement().GetSelection(); }
 
         static Utf8CP OperatorToString(CompoundOperator);
@@ -409,6 +417,8 @@ struct SubqueryRefExp final : RangeClassRefExp
     private:
         Utf8StringCR _GetId() const override { return GetAlias(); }
         bool _ContainsProperty(Utf8StringCR propertyName) const override { return GetSubquery()->GetQuery()->FindProperty(propertyName.c_str()) != nullptr; }
+        bool _ContainsPropertyPath(PropertyPath const& propertyPath, int matchDepth) const override { return GetSubquery()->GetQuery()->FindPropertyPath(propertyPath, matchDepth) != nullptr; }
+	
         void _ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const&) const override;
         void _ToECSql(ECSqlRenderContext&) const override;
         Utf8String _ToString() const override;

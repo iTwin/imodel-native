@@ -130,7 +130,7 @@ struct PropertyPath final
         void Remove(size_t index) { m_path.erase(m_path.begin() + index); }
         BentleyStatus Resolve(ClassMap const& classMap, Utf8String* errorMessage = nullptr);
         bool IsResolved() const;
-
+        PropertyPath Skip(size_t k) const;
         Utf8String ToString(bool escape = false, bool includeArrayIndexes = true) const;
     };
 

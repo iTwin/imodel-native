@@ -701,8 +701,38 @@ SingleSelectStatementExp::SingleSelectStatementExp(std::vector<std::unique_ptr<V
     }
 
 //-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       08/2019
+//+---------------+---------------+---------------+---------------+---------------+--------
+DerivedPropertyExp const* SingleSelectStatementExp::_FindPropertyPath(PropertyPath const& propertyPath, int matchDepth) const
+    {
+    Utf8String accessString = propertyPath.ToString();
+    for (Exp const* selectClauseExp : GetSelection()->GetChildren())
+        {
+        DerivedPropertyExp const& derivedPropertyExp = selectClauseExp->GetAs<DerivedPropertyExp>();
+        if (!derivedPropertyExp.GetColumnAlias().empty())
+            {
+            if (derivedPropertyExp.GetColumnAlias().Equals(accessString))
+                return &derivedPropertyExp;
+            }
+        else
+            {
+            ValueExp const* expr = derivedPropertyExp.GetExpression();
+            if (expr->GetType() == Type::PropertyName)
+                {
+                PropertyNameExp const& propertyNameExp = expr->GetAs<PropertyNameExp>();
+                if (propertyNameExp.GetPropertyName().EqualsIAscii(accessString))
+                    return &derivedPropertyExp;
+
+                }
+            }
+        }
+
+    return nullptr;
+    }
+
+//-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       04/2013
-//+---------------+---------------+---------------+---------------+---------------+------
+//+---------------+---------------+---------------+---------------+---------------+--------
 DerivedPropertyExp const* SingleSelectStatementExp::_FindProperty(Utf8CP propertyName) const
     {
     for (Exp const* selectClauseExp : GetSelection()->GetChildren())
@@ -719,7 +749,7 @@ DerivedPropertyExp const* SingleSelectStatementExp::_FindProperty(Utf8CP propert
             if (expr->GetType() == Type::PropertyName)
                 {
                 PropertyNameExp const& propertyNameExp = expr->GetAs<PropertyNameExp>();
-                if (propertyNameExp.GetPropertyName().Equals(propertyName))
+                if (propertyNameExp.GetPropertyName().EqualsIAscii(propertyName))
                     return &derivedPropertyExp;
                 }
             }
@@ -817,6 +847,11 @@ SubqueryExp::SubqueryExp(std::unique_ptr<SelectStatementExp> selectExp) : QueryE
 // @bsimethod                                    Affan.Khan                       04/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 DerivedPropertyExp const* SubqueryExp::_FindProperty(Utf8CP propertyName) const { return GetQuery()->FindProperty(propertyName); }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       04/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+DerivedPropertyExp const* SubqueryExp::_FindPropertyPath(PropertyPath const& propertyPath, int matchDepth) const { return GetQuery()->FindPropertyPath(propertyPath, matchDepth); }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       04/2015

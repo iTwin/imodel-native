@@ -24,6 +24,115 @@ struct ECSqlNavigationPropertyTestFixture : ECDbTestFixture
                 ASSERT_EQ(ECSqlStatus::InvalidECSql, stat) << assertMessage << " - ECSQL: " << ecsql;
             }
     };
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                 01/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlNavigationPropertyTestFixture, CorrelatedQuerySupport)
+    {
+    SetupECDb("CorrelatedQuerySupport.ecdb",
+              SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                         "    <ECEntityClass typeName='A'>"
+                         "        <ECProperty propertyName='PA' typeName='int' />"
+                         "    </ECEntityClass>"
+                         "    <ECEntityClass typeName='B'>"
+                         "        <ECProperty propertyName='PB' typeName='int' />"
+                         "        <ECNavigationProperty propertyName='A' relationshipName='AHasB' direction='Backward' />"
+                         "    </ECEntityClass>"
+                         "    <ECEntityClass typeName='C'>"
+                         "        <ECProperty propertyName='PC' typeName='int' />"
+                         "        <ECNavigationProperty propertyName='B' relationshipName='BHasC' direction='Backward' />"
+                         "    </ECEntityClass>"
+                         "   <ECRelationshipClass typeName='AHasB' strength='Embedding'  modifier='Sealed'>"
+                         "      <Source cardinality='(0,1)' polymorphic='False'>"
+                         "          <Class class ='A' />"
+                         "      </Source>"
+                         "      <Target cardinality='(0,N)' polymorphic='False'>"
+                         "          <Class class ='B' />"
+                         "      </Target>"
+                         "   </ECRelationshipClass>"
+                         "   <ECRelationshipClass typeName='BHasC' strength='Embedding'  modifier='Sealed'>"
+                         "      <Source cardinality='(0,1)' polymorphic='False'>"
+                         "          <Class class ='B' />"
+                         "      </Source>"
+                         "      <Target cardinality='(0,N)' polymorphic='False'>"
+                         "          <Class class ='C' />"
+                         "      </Target>"
+                         "   </ECRelationshipClass>"
+
+                         "</ECSchema>"));
+
+    ASSERT_TRUE(m_ecdb.IsDbOpen());
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT NULL FROM ts.B b JOIN ts.A a ON b.A.Id = a.ECInstanceId WHERE EXISTS (SELECT NULL FROM ts.A e WHERE e.ECInstanceId = a.ECInstanceId)"));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.A(ECInstanceId, PA) VALUES (1, 100)"));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.B(ECInstanceId, PB, A.Id) VALUES (2, 200, 1)"));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.C(ECInstanceId, PC, B.Id) VALUES (3, 300, 2)"));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+
+    m_ecdb.SaveChanges();
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT NULL FROM ts.C  JOIN ts.B USING ts.BHasC WHERE EXISTS (SELECT NULL FROM ts.A WHERE ECInstanceId = B.A.Id)"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        }
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.A JOIN ts.B USING ts.AHasB"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        }
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.B WHERE EXISTS (SELECT NULL FROM ts.A WHERE ECInstanceId = B.A.Id)"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        }
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.A JOIN ts.B USING ts.AHasB JOIN ts.C USING ts.BHasC"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        }
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.C  JOIN ts.B USING ts.BHasC WHERE EXISTS (SELECT NULL FROM ts.A WHERE ECInstanceId = B.A.Id)"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        }
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.C  JOIN ts.B USING ts.BHasC WHERE EXISTS (SELECT NULL FROM ts.A WHERE ECInstanceId = B.A.Id)"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        }
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 01/16
