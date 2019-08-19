@@ -1,0 +1,137 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup>
+    <ShowAllFiles>true</ShowAllFiles>
+    <LocalDebuggerCommandArguments>--gtest_repeat=1 --gtest_filter=*</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{D05994BB-9FAB-40DE-A8BB-8508EE8D8FBB}</ProjectGuid>
+    <Keyword>MakeFileProj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <NMakeOutput>
+    </NMakeOutput>
+    <NMakePreprocessorDefinitions>DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions);</NMakePreprocessorDefinitions>
+    <NMakeBuildCommandLine>bb -v4 -ax64 -r BeHttp -f BeHttp -p BeHttp re BeHttpLibrary</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -v4 -ax64 -r BeHttp -f BeHttp -p BeHttp re BeHttpLibrary -s</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -v4 -ax64 -r BeHttp -f BeHttp -p BeHttp re BeHttpLibrary -c</NMakeCleanCommandLine>
+    <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <IncludePath>$(SrcRoot)BeHttp\Tests\UnitTests\Published\Utils;$(OutRoot)Winx64\BuildContexts\BeHttp\VendorAPI;$(OutRoot)Winx64\BuildContexts\BeHttp\PublicAPI;$(OutRoot)Winx64\build\BeHttpIntegrationTests\gensrc\;$(IncludePath)</IncludePath>
+    <OutDir>$(OutRoot)\Winx64\build\VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(OutDir)</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <BuildLog>
+      <Path>$(OutDir)$(MSBuildProjectName).log</Path>
+    </BuildLog>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <None Include=".hgignore" />
+    <None Include="BeHttp.mke" />
+    <None Include="BeHttpCompileOptions.mki" />
+    <None Include="BeHttpXliffs.mke" />
+    <None Include="BeHttp\ApplicationEventsIos.mm" />
+    <None Include="BeHttp\Curl\cabundle.pem" />
+    <None Include="Http.mki" />
+    <None Include="l10n-BeHttp.mke" />
+    <None Include="prewire.mke" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="BeHttp\AuthenticationHandler.cpp" />
+    <ClCompile Include="BeHttp\Backdoor.cpp" />
+    <ClCompile Include="BeHttp\BeUri.cpp" />
+    <ClCompile Include="BeHttp\Credentials.cpp" />
+    <ClCompile Include="BeHttp\ApplicationEvents.cpp" />
+    <ClCompile Include="BeHttp\Curl\CurlHttpHandler.cpp" />
+    <ClCompile Include="BeHttp\Curl\CurlHttpRequest.cpp" />
+    <ClCompile Include="BeHttp\Curl\CurlPool.cpp" />
+    <ClCompile Include="BeHttp\Curl\CurlTaskRunner.cpp" />
+    <ClCompile Include="BeHttp\Curl\NotificationPipe.cpp" />
+    <ClCompile Include="BeHttp\Curl\ThreadCurlHttpHandler.cpp" />
+    <ClCompile Include="BeHttp\DefaultHttpHandler.cpp" />
+    <ClCompile Include="BeHttp\HttpBody.cpp" />
+    <ClCompile Include="BeHttp\HttpClient.cpp" />
+    <ClCompile Include="BeHttp\HttpError.cpp" />
+    <ClCompile Include="BeHttp\HttpHeaders.cpp" />
+    <ClCompile Include="BeHttp\HttpProxy.cpp" />
+    <ClCompile Include="BeHttp\HttpRequest.cpp" />
+    <ClCompile Include="BeHttp\HttpRequestTests.cpp" />
+    <ClCompile Include="BeHttp\HttpResponse.cpp" />
+    <ClCompile Include="BeHttp\HttpStatusHelper.cpp" />
+    <ClCompile Include="BeHttp\ProxyHttpHandler.cpp" />
+    <ClCompile Include="BeHttp\TrustManager.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="BeHttp\Backdoor.h" />
+    <ClInclude Include="BeHttp\ApplicationEvents.h" />
+    <ClInclude Include="BeHttp\Curl\CurlHttpHandler.h" />
+    <ClInclude Include="BeHttp\Curl\CurlHttpRequest.h" />
+    <ClInclude Include="BeHttp\Curl\CurlPool.h" />
+    <ClInclude Include="BeHttp\Curl\CurlTaskRunner.h" />
+    <ClInclude Include="BeHttp\Curl\NotificationPipe.h" />
+    <ClInclude Include="BeHttp\Curl\ThreadCurlHttpHandler.h" />
+    <ClInclude Include="BeHttp\HttpError.xliff.h" />
+    <ClInclude Include="BeHttp\HttpRequestTests.h" />
+    <ClInclude Include="BeHttp\SimplePackagedAsyncTask.h" />
+    <ClInclude Include="BeHttp\Tests.h" />
+    <ClInclude Include="BeHttp\TrustManager.h" />
+    <ClInclude Include="BeHttp\WebLogging.h" />
+    <ClInclude Include="PublicAPI\BeHttp\AuthenticationHandler.h" />
+    <ClInclude Include="PublicAPI\BeHttp\BeUri.h" />
+    <ClInclude Include="PublicAPI\BeHttp\CompressionOptions.h" />
+    <ClInclude Include="PublicAPI\BeHttp\Credentials.h" />
+    <ClInclude Include="PublicAPI\BeHttp\DefaultHttpHandler.h" />
+    <ClInclude Include="PublicAPI\BeHttp\Http.h" />
+    <ClInclude Include="PublicAPI\BeHttp\HttpBody.h" />
+    <ClInclude Include="PublicAPI\BeHttp\HttpClient.h" />
+    <ClInclude Include="PublicAPI\BeHttp\HttpConfigurationHandler.h" />
+    <ClInclude Include="PublicAPI\BeHttp\HttpError.h" />
+    <ClInclude Include="PublicAPI\BeHttp\HttpHeaderProvider.h" />
+    <ClInclude Include="PublicAPI\BeHttp\HttpHeaders.h" />
+    <ClInclude Include="PublicAPI\BeHttp\HttpProxy.h" />
+    <ClInclude Include="PublicAPI\BeHttp\HttpRequest.h" />
+    <ClInclude Include="PublicAPI\BeHttp\HttpResponse.h" />
+    <ClInclude Include="PublicAPI\BeHttp\HttpStatus.h" />
+    <ClInclude Include="PublicAPI\BeHttp\HttpStatusHelper.h" />
+    <ClInclude Include="PublicAPI\BeHttp\IHttpHandler.h" />
+    <ClInclude Include="PublicAPI\BeHttp\IHttpHeaderProvider.h" />
+    <ClInclude Include="PublicAPI\BeHttp\ProxyHttpHandler.h" />
+    <ClInclude Include="Tests\IntegrationTests\BeHttp\HttpRequestTests.h" />
+    <ClInclude Include="Tests\UnitTests\Published\AuthenticationHandlerTests.h" />
+    <ClInclude Include="Tests\UnitTests\Published\HttpBody\HttpBinaryBodyTests.h" />
+    <ClInclude Include="Tests\UnitTests\Published\HttpBody\HttpCompressedBodyTests.h" />
+    <ClInclude Include="Tests\UnitTests\Published\HttpBody\HttpFileBodyTests.h" />
+    <ClInclude Include="Tests\UnitTests\Published\HttpBody\HttpMultipartBodyTests.h" />
+    <ClInclude Include="Tests\UnitTests\Published\HttpBody\HttpRangeBodyTests.h" />
+    <ClInclude Include="Tests\UnitTests\Published\HttpBody\HttpStringBodyTests.h" />
+    <ClInclude Include="Tests\UnitTests\Published\HttpClientTests.h" />
+    <ClInclude Include="Tests\UnitTests\Published\HttpHeadersTests.h" />
+    <ClInclude Include="Tests\UnitTests\Published\ProxyHttpHandlerTests.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="BeHttp.PartFile.xml">
+      <SubType>Designer</SubType>
+    </Xml>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>
