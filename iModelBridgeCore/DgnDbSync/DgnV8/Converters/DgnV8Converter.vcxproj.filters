@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\Converter.cpp" />
+    <ClCompile Include="DgnV8Converter.cpp" />
+    <ClCompile Include="TiledConverterApp.cpp" />
+    <ClCompile Include="DgnV8Bridge.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="DgnV8Converter.mke" />
+    <None Include="TiledConverterApp.mke" />
+    <None Include="DgnV8Bridge.mke" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="logging.config.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\PublicAPI\DgnDbSync\DgnV8\DgnV8Bridge.h" />
+  </ItemGroup>
+</Project>
