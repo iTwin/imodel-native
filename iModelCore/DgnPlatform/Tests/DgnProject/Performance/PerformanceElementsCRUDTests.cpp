@@ -746,13 +746,20 @@ void PerformanceElementsCRUDTestFixture::LogTiming(StopWatch& timer, Utf8CP desc
     totalDescription.Sprintf("%s %s '%s' [Initial count: %d]", description, noClassIdFilterStr, testClassName, initialInstanceCount);
     Utf8String desc;
     desc.Sprintf("%s", description);
-    int pos = desc.find("API");
+    size_t pos = desc.find("API");
     Utf8String opType = desc.substr(pos + 4);
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), opCount, totalDescription.c_str(), totalDescription.c_str(), opType.ToUpper(), initialInstanceCount);
+    Utf8String tclass;
+    tclass.Sprintf("%s", testClassName);
+    Utf8String oCount;
+    oCount.Sprintf("%d", opCount);
+    Utf8String initCount;
+    initCount.Sprintf("%d", initialInstanceCount);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), opCount, totalDescription.c_str(), true, opType.ToUpper(), initialInstanceCount);
 #ifdef PERF_ELEM_CRUD_LOG_TO_CONSOLE
     printf("%.8f %s\n", timer.GetElapsedSeconds(), totalDescription.c_str());
 #endif
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Majd.Uddin                  06/17
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -777,9 +784,10 @@ int  PerformanceElementsCRUDTestFixture::GetfirstElementId(Utf8CP className)
         DgnElementCPtr element2 = m_db->Elements().GetElement(id2);
         EXPECT_TRUE(element2.IsValid());
     }
-    return firstElemId;
-}
 
+    // Psst...why are you returning a 64-bit unsigned integer as a 32-bit signed integer?
+    return static_cast<int>(firstElemId);
+}
 
 /*******************************************************Class Hierarchy For Performance Tests***********************************************************************************
 

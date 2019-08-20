@@ -42,6 +42,17 @@
     <Xml Include="ECSchemas\IModelEvolutionTests.1.0.2.ecschema.xml" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="CompatibilityRunner\common.mki" />
+    <None Include="CompatibilityRunner\PrepareCurrentTestRunner.mke" />
+    <None Include="CompatibilityRunner\PrepareCurrentTestRunner.py" />
+    <None Include="CompatibilityRunner\PreparePulledTestRunners.mke" />
+    <None Include="CompatibilityRunner\PreparePulledTestRunners.py" />
+    <None Include="CompatibilityRunner\PrepareTestFilesNugetPackaging.mke" />
+    <None Include="CompatibilityRunner\PullNugets.mke" />
+    <None Include="CompatibilityRunner\PullNugets.py" />
+    <None Include="CompatibilityRunner\RunPulledTestRunners.mke" />
+    <None Include="CompatibilityRunner\RunPulledTestRunners.py" />
+    <None Include="CompatibilityRunner\ShouldPublishPackage.py" />
     <None Include="prewire.mke" />
   </ItemGroup>
   <ItemGroup>
