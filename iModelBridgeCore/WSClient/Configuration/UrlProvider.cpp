@@ -210,6 +210,15 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ImsFederatedAuth(
     &s_urlRegistry
     );
 
+const UrlProvider::UrlDescriptor UrlProvider::Urls::OpenConstructionPortal(
+    "OpenConstructionPortal",
+    "https://dev-openconstruction.bentley.com/",
+    "https://qa-openconstruction.bentley.com/",
+    "https://openconstruction.bentley.com/",
+    "https://perf-openconstruction.bentley.com/",
+    &s_urlRegistry
+    );
+
 const UrlProvider::UrlDescriptor UrlProvider::Urls::Passport(
     "Mobile.Passport",
     "https://qa-ims.bentley.com/services/bentleyconnectservice/rest/json/HasUserPassport",
