@@ -46,7 +46,7 @@
     <Part Name="BackdoorForUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Backdoor">
         <SubPart PartName="RoadRailAlignment"/>
         <!-- Not sure exactly what this needs on imodel02, but we cannot consume the iModelBridgeFwk nuget here; iModelBridgeFwkExe-Windows is the closest drop-in Part we can use. -->
-        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridge" Repository="DgnDbSync"/>
+        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
         <SubPart PartName="PrewireForUnitTests" />
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="RoadRailAlignment/Backdoor" SourceName="Delivery/UnitTests/Objects/Backdoor"/>
@@ -76,12 +76,12 @@
 
     <Product Name="RoadRailAlignment-Tests">
         <!-- *** TRICKY: Must depend on a part in begtest repository, in order to use a productdirectorylist from there. -->
-        <!-- <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" /> -->
+        <!-- <SubPart Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" PartName="Base" /> -->
         <!-- Not sure exactly what this needs on imodel02, but we cannot consume the iModelBridgeFwk nuget here; iModelBridgeFwkExe-Windows is the closest drop-in Part we can use. -->
-        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridge" Repository="DgnDbSync"/>
+        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
         <SubPart PartName="Tests"/>
         <!-- Lay out the Tests test product according to the standard BeGTest layout: -->
-        <!-- <Directories Repository="BeGTest" PartFile="BeGTest" DirectoryListName="CollectionProduct"/> -->
+        <!-- <Directories Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" DirectoryListName="CollectionProduct"/> -->
         <Directories DirectoryListName="CollectionProduct"/>
         <!-- <Directories DirectoryListName="GtestProduct"/> -->
         <Directories DirectoryListName="Tests"/>
@@ -172,16 +172,16 @@
 
     <!-- Build a gtest exe to run the tests -->
     <Product Name="Gtest-RoadRailAlignment-Tests">
-        <!-- <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/> -->
+        <!-- <Directories DirectoryListName="GtestProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/> -->
         <Directories DirectoryListName="GtestProduct"/>
         <!-- <SubPart PartName="Gtest"/> -->
     </Product>
 
     <Part Name="Gtest" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=RoadRailAlignmentTests -dTEST_COLLECTION_PRODUCT=RoadRailAlignment-Tests -dTEST_FRAMEWORK_SQLANG=RoadRailAlignment_en.sqlang.db3" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="RoadRailAlignment-Tests"/>
-        <!-- <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/> -->
+        <!-- <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/> -->
         <!-- Not sure exactly what this needs on imodel02, but we cannot consume the iModelBridgeFwk nuget here; iModelBridgeFwkExe-Windows is the closest drop-in Part we can use. -->
-        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridge" Repository="DgnDbSync"/>
+        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
         <Bindings>
             <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/RoadRailAlignmentTests/Assemblies/*</Files>
             <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/RoadRailAlignmentTests/Assets" />
@@ -190,9 +190,9 @@
 
     <Part Name="RunGtest" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGTest.mke" DeferType="RunUnitTests" BentleyBuildMakeOptions="-dGTEST_PRODUCT=Gtest-RoadRailAlignment-Tests -dGTEST_NAME=RoadRailAlignmentTests -dGTEST_SHOW_PROGRESS" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="Gtest-RoadRailAlignment-Tests" />
-        <!-- <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/> -->
+        <!-- <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/> -->
         <!-- Not sure exactly what this needs on imodel02, but we cannot consume the iModelBridgeFwk nuget here; iModelBridgeFwkExe-Windows is the closest drop-in Part we can use. -->
-        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridge" Repository="DgnDbSync"/>
+        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
     </Part>
 
     <!-- This part runs RoadRailAlignmentTests on platforms that support it. -->

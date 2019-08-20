@@ -73,12 +73,12 @@
 
     <Product Name="RoadRailPhysical-Tests">
         <!-- *** TRICKY: Must depend on a part in begtest repository, in order to use a productdirectorylist from there. -->
-        <!-- <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" /> -->
+        <!-- <SubPart Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" PartName="Base" /> -->
         <!-- Not sure exactly what this needs on imodel02, but we cannot consume the iModelBridgeFwk nuget here; iModelBridgeFwkExe-Windows is the closest drop-in Part we can use. -->
-        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridge" Repository="DgnDbSync"/>
+        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
         <SubPart PartName="Tests"/>
         <!-- Lay out the Tests test product according to the standard BeGTest layout: -->
-        <!-- <Directories Repository="BeGTest" PartFile="BeGTest" DirectoryListName="CollectionProduct"/> -->
+        <!-- <Directories Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" DirectoryListName="CollectionProduct"/> -->
         <Directories DirectoryListName="CollectionProduct"/>
         <Directories DirectoryListName="Tests"/>
     </Product>
@@ -159,10 +159,10 @@
 
     <!-- Build a gtest exe to run the tests -->
     <Product Name="Gtest-RoadRailPhysical-Tests">
-        <!-- <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/> -->
+        <!-- <Directories DirectoryListName="GtestProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/> -->
         <Directories DirectoryListName="GtestProduct"/>
         <!-- Not sure exactly what this needs on imodel02, but we cannot consume the iModelBridgeFwk nuget here; iModelBridgeFwkExe-Windows is the closest drop-in Part we can use. -->
-        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridge" Repository="DgnDbSync"/>
+        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
         <SubPart PartName="Gtest"/>
     </Product>
 
@@ -177,9 +177,9 @@
 
     <Part Name="Gtest" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGTest.mke" DeferType="BuildUnitTests" BentleyBuildMakeOptions="-dTEST_NAME=RoadRailPhysicalTests -dTEST_COLLECTION_PRODUCT=RoadRailPhysical-Tests -dTEST_FRAMEWORK_SQLANG=RoadRailPhysical_en.sqlang.db3" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="RoadRailPhysical-Tests"/>
-        <!-- <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/> -->
+        <!-- <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/> -->
         <!-- Not sure exactly what this needs on imodel02, but we cannot consume the iModelBridgeFwk nuget here; iModelBridgeFwkExe-Windows is the closest drop-in Part we can use. -->
-        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridge" Repository="DgnDbSync"/>
+        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
         <Bindings>
             <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/RoadRailPhysicalTests/Assemblies/*</Files>
             <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/RoadRailPhysicalTests/Assets" />
@@ -188,9 +188,9 @@
 
     <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=Gtest-RoadRailPhysical-Tests -dGTEST_NAME=RoadRailPhysicalTests -dGTEST_SHOW_PROGRESS" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="Gtest-RoadRailPhysical-Tests" />
-        <!-- <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/> -->
+        <!-- <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/> -->
         <!-- Not sure exactly what this needs on imodel02, but we cannot consume the iModelBridgeFwk nuget here; iModelBridgeFwkExe-Windows is the closest drop-in Part we can use. -->
-        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridge" Repository="DgnDbSync"/>
+        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
     </Part>
 
     <!-- This part runs RoadRailPhysicalTests on platforms that support it. -->
