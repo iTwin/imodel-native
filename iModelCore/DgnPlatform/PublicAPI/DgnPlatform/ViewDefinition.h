@@ -1274,10 +1274,6 @@ public:
     void SetDelta2d(DVec2dCR v) {m_delta = v;}
 
     static constexpr double Get2dFrustumDepth() {return DgnUnits::OneMeter();}
-    static constexpr int32_t GetMaxDisplayPriority() {return (1<<23)-32;}
-    static constexpr int32_t GetMinDisplayPriority() {return -GetMaxDisplayPriority();}
-    static constexpr double GetDisplayPriorityFactor() {return Get2dFrustumDepth() / (double) (GetMaxDisplayPriority()+1);}
-    static double DepthFromDisplayPriority(int32_t priority) {return GetDisplayPriorityFactor() * (double) priority;}
 };
 
 //=======================================================================================

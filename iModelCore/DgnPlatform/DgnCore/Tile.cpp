@@ -757,6 +757,7 @@ protected:
     Render::SystemP _GetRenderSystem() const override { return &m_loader.GetRenderSystem(); }
     double _GetPixelSizeAtPoint(DPoint3dCP) const override { return m_tolerance; }
     bool _WantGlyphBoxes(double sizeInPixels) const override { return wantGlyphBoxes(sizeInPixels); }
+    double _DepthFromDisplayPriority(int32_t priority) const override { return GeometryListBuilder::DepthFromDisplayPriority(priority); }
     void _DrawStyledCurveVector(GraphicBuilderR builder, CurveVectorCR curve, GeometryParamsR params, bool doCook) override
         {
         bool wasCurved = setupForStyledCurveVector(builder, curve);
@@ -983,6 +984,7 @@ protected:
     GraphicPtr _CreateBranch(GraphicBranch&, DgnDbR, TransformCR, ClipVectorCP) final { BeAssert(false); return nullptr; }
     double _GetPixelSizeAtPoint(DPoint3dCP) const final { return GetTolerance(); }
     bool _WantGlyphBoxes(double sizeInPixels) const final { return wantGlyphBoxes(sizeInPixels); }
+    double _DepthFromDisplayPriority(int32_t priority) const override { return GeometryListBuilder::DepthFromDisplayPriority(priority); }
     void _DrawStyledCurveVector(GraphicBuilderR builder, CurveVectorCR curve, GeometryParamsR params, bool doCook) final
         {
         bool wasCurved = setupForStyledCurveVector(builder, curve);

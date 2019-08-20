@@ -1464,6 +1464,8 @@ public:
 
     //! Reset this builder for reuse.
     DGNPLATFORM_EXPORT void ReInitialize(TransformCR localToWorld, TransformCR accumulatorTransform=Transform::FromIdentity(), DgnElementId elemId=DgnElementId());
+
+    static double DepthFromDisplayPriority(int32_t priority);
 };
 
 //=======================================================================================

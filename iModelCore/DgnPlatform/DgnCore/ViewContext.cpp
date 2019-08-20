@@ -1161,3 +1161,13 @@ bool ViewContext::_IsSubCategoryVisible(DgnSubCategoryId subCategoryId)
     return true;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/19
++---------------+---------------+---------------+---------------+---------------+------*/
+double ViewContext::_DepthFromDisplayPriority(int32_t priority) const
+    {
+    static constexpr int32_t maxPriority = (1<<23)-32;
+    static constexpr double factor = ViewDefinition2d::Get2dFrustumDepth() / (double) (maxPriority+1);
+    return factor * (double) priority;
+    }
+

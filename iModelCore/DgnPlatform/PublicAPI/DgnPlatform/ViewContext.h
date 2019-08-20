@@ -155,6 +155,8 @@ protected:
     virtual Render::SystemP _GetRenderSystem() const { return nullptr; }
     DGNPLATFORM_EXPORT virtual double _GetPixelSizeAtPoint(DPoint3dCP origin) const;
     virtual bool _WantGlyphBoxes(double sizeInPixels) const { return false; }
+    DGNPLATFORM_EXPORT virtual double _DepthFromDisplayPriority(int32_t priority) const;
+
     DGNPLATFORM_EXPORT ViewContext();
 
 public:
@@ -327,6 +329,7 @@ public:
 
     bool CheckStop() {return _CheckStop();}
     bool WantGlyphBoxes(double sizeInPixels) const {return _WantGlyphBoxes(sizeInPixels);}
+    double DepthFromDisplayPriority(int32_t priority) const {return _DepthFromDisplayPriority(priority);}
 }; // ViewContext
 
 END_BENTLEY_DGN_NAMESPACE

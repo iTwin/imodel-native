@@ -3240,6 +3240,14 @@ void GeometryListBuilder::_AddShape(int numPoints, DPoint3dCP points, bool fille
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/19
++---------------+---------------+---------------+---------------+---------------+------*/
+double GeometryListBuilder::DepthFromDisplayPriority(int32_t priority)
+    {
+    return depthFromDisplayPriority(static_cast<double>(priority));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryListBuilder::_AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double priority)
