@@ -1228,7 +1228,7 @@ static void DrawStyled(CurveVectorCR curves, LineStyleContext& lsContext, ILineS
         bool              isClosed  = curves.IsClosedPath();
         bool              isComplex = (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Invalid == curves.HasSingleCurvePrimitive());
         bool              is3d = lsContext.GetViewContext().Is3dView();
-        double            zDepth = (is3d ? 0.0 : lsContext.GetGeometryParams().GetNetDisplayPriority());
+        double            zDepth = (is3d ? 0.0 : Render::Target::DepthFromDisplayPriority(lsContext.GetGeometryParams().GetNetDisplayPriority()));
         ChainTangentInfo  currEnd, prevEnd, nextEnd, currStart, nextStart, chainStart;
         LineStyleSymb     lsSymb = lsSymbIn;
         bool              treatAsSingleSegment = lsSymb.IsTreatAsSingleSegment(); // Save initial value as this gets changed by arc/bcurve strokers...
