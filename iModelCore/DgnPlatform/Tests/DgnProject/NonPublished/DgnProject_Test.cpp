@@ -1092,3 +1092,29 @@ TEST_F(ImportTests, SimpleSchemaImport)
     ASSERT_EQ(SchemaStatus::Success, m_db->ImportSchemas(schemaContext->GetCache().GetSchemas()));
     ASSERT_TRUE(m_db->IsDbOpen());
 }
+
+// Waiting for BisCore.01.00.06 to enable
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    08/2019
+//---------------------------------------------------------------------------------------
+//TEST_F(ImportTests, AssetSchemaImport)
+//    {
+//    Utf8CP schemaXml =
+//        "<ECSchema schemaName=\"Asset\" alias=\"asset\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">"
+//        "  <ECSchemaReference name='BisCore' version='01.00' alias='bis'/>"
+//        "  <ECEntityClass typeName='AssetElement' modifier='Abstract'>"
+//        "    <BaseClass>bis:RoleElement</BaseClass>"
+//        "  </ECEntityClass>"
+//        "  <ECEntityClass typeName='AssetModel'>"
+//        "    <BaseClass>bis:RoleModel</BaseClass>"
+//        "  </ECEntityClass>"
+//        "</ECSchema>";
+//
+//    SetupSeedProject();
+//    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+//    schemaContext->AddSchemaLocater(m_db->GetSchemaLocater());
+//
+//    ECSchemaPtr schema;
+//    SchemaReadStatus schemaStatus = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+//    ASSERT_EQ(SchemaReadStatus::Success, schemaStatus);
+//    }
