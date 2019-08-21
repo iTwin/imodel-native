@@ -202,6 +202,8 @@ folly::Future<Utf8String> PolicyProvider::PerformGetPolicyWithKeyRequest(Utf8Str
         if (!response.IsSuccess())
             {
             LOG.errorv("ClientImpl::PerformGetPolicyWithKeyRequest ERROR: Unable to perform policy request. Response body: %s", response.GetBody().AsString().c_str());
+            LOG.errorv("ClientImpl::PerformGetPolicyWithKeyRequest ERROR: Response connection status : ", response.GetConnectionStatus());
+            LOG.errorv("ClientImpl::PerformGetPolicyWithKeyRequest ERROR: Response Body (Should contain requestID) :", response.GetBody());
             throw HttpError(response);
             }
 
