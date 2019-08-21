@@ -1633,7 +1633,7 @@ void ConvertORDElementXDomain::_DetermineElementParams(DgnClassId& classId, DgnC
             {
             auto featureName = featurizedPtr->GetName();
             auto featureDefPtr = featurizedPtr->GetFeatureDefinition();
-            auto featureDescription = featurizedPtr->GetFeatureDescription();
+            auto featureDescription = featureDefPtr.IsValid() ? featureDefPtr->GetDescription() : featurizedPtr->GetFeatureDescription();
 
             if (featureDefPtr.IsNull())
                 {
@@ -1643,7 +1643,7 @@ void ConvertORDElementXDomain::_DetermineElementParams(DgnClassId& classId, DgnC
 
                 featureName = representationOf->GetName();
                 featureDefPtr = representationOf->GetFeatureDefinition();
-                featureDescription = representationOf->GetFeatureDescription();
+                featureDescription = featureDefPtr.IsValid() ? featureDefPtr->GetDescription() : representationOf->GetFeatureDescription();
                 }
 
             if (featureDefPtr.IsValid())
