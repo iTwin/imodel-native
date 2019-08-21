@@ -86,6 +86,8 @@ folly::Future<Utf8String> PolicyProvider::GetCertificate()
         if (!response.IsSuccess())
             {
             LOG.errorv("ClientImpl::GetCertificate ERROR: Unable to get certificate %s", HttpError(response).GetMessage().c_str());
+            LOG.errorv("ClientImpl::GetCertificate ERROR: Response connection status : ", response.GetConnectionStatus());
+            LOG.errorv("ClientImpl::GetCertificate Response Body (Should contain requestID) :", response.GetBody());
             throw HttpError(response);
             }
 
@@ -141,6 +143,8 @@ folly::Future<Utf8String> PolicyProvider::PerformGetPolicyRequest()
         if (!response.IsSuccess())
             {
             LOG.errorv("ClientImpl::PerformGetPolicyRequest ERROR: Unable to perform policy request %s", HttpError(response).GetMessage().c_str());
+            LOG.errorv("ClientImpl::PerformGetPolicyRequest ERROR: Response connection status : ", response.GetConnectionStatus());
+            LOG.errorv("ClientImpl::PerformGetPolicyRequest Response Body (Should contain requestID) :", response.GetBody());
             throw HttpError(response);
             }
 

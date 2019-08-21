@@ -205,6 +205,8 @@ folly::Future<folly::Unit> UlasProvider::SendFeatureLogs(ApplicationInfoPtr appl
         if (!response.IsSuccess())
             {
             LOG.errorv("UlasProvider::SendUsageLogs ERROR: Unable to obtain location url. Message: %s. %s", HttpError(response).GetMessage().c_str(), HttpError(response).GetDescription().c_str());
+            LOG.errorv("UlasProvider::SendUsageLogs ERROR: Response connection status : ", response.GetConnectionStatus());
+            LOG.errorv("UlasProvider::SendUsageLogs ERROR: Response Body (Should contain requestID) :", response.GetBody());
             throw HttpError(response);
             }
 
