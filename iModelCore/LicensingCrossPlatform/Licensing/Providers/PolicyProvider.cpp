@@ -87,7 +87,7 @@ folly::Future<Utf8String> PolicyProvider::GetCertificate()
             {
             LOG.errorv("ClientImpl::GetCertificate ERROR: Unable to get certificate %s", HttpError(response).GetMessage().c_str());
             LOG.errorv("ClientImpl::GetCertificate ERROR: Response connection status : ", response.GetConnectionStatus());
-            LOG.errorv("ClientImpl::GetCertificate Response Body (Should contain requestID) :", response.GetBody().AsString());
+            LOG.errorv("ClientImpl::GetCertificate Response Body (Should contain requestID) :", response.GetBody().AsString().c_str());
             throw HttpError(response);
             }
 
@@ -144,7 +144,7 @@ folly::Future<Utf8String> PolicyProvider::PerformGetPolicyRequest()
             {
             LOG.errorv("ClientImpl::PerformGetPolicyRequest ERROR: Unable to perform policy request %s", HttpError(response).GetMessage().c_str());
             LOG.errorv("ClientImpl::PerformGetPolicyRequest ERROR: Response connection status : ", response.GetConnectionStatus());
-            LOG.errorv("ClientImpl::PerformGetPolicyRequest Response Body (Should contain requestID) :", response.GetBody().AsString());
+            LOG.errorv("ClientImpl::PerformGetPolicyRequest Response Body (Should contain requestID) :", response.GetBody().AsString().c_str());
             throw HttpError(response);
             }
 
@@ -203,7 +203,7 @@ folly::Future<Utf8String> PolicyProvider::PerformGetPolicyWithKeyRequest(Utf8Str
             {
             LOG.errorv("ClientImpl::PerformGetPolicyWithKeyRequest ERROR: Unable to perform policy request. Response body: %s", response.GetBody().AsString().c_str());
             LOG.errorv("ClientImpl::PerformGetPolicyWithKeyRequest ERROR: Response connection status : ", response.GetConnectionStatus());
-            LOG.errorv("ClientImpl::PerformGetPolicyWithKeyRequest ERROR: Response Body (Should contain requestID) :", response.GetBody().AsString());
+            LOG.errorv("ClientImpl::PerformGetPolicyWithKeyRequest ERROR: Response Body (Should contain requestID) :", response.GetBody().AsString().c_str());
             throw HttpError(response);
             }
 

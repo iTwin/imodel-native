@@ -100,7 +100,7 @@ folly::Future<folly::Unit> UlasProvider::SendUsageLogs(ApplicationInfoPtr applic
             {
             LOG.errorv("UlasProvider::SendUsageLogs ERROR: Unable to obtain location url. Message: %s. %s", HttpError(response).GetMessage().c_str(), HttpError(response).GetDescription().c_str());
             LOG.errorv("UlasProvider::SendUsageLogs ERROR: Response connection status : ", response.GetConnectionStatus());
-            LOG.errorv("UlasProvider::SendUsageLogs ERROR: Response Body (Should contain requestID) :", response.GetBody().AsString());
+            LOG.errorv("UlasProvider::SendUsageLogs ERROR: Response Body (Should contain requestID) :", response.GetBody().AsString().c_str());
             throw HttpError(response);
             }
 
@@ -122,7 +122,7 @@ folly::Future<folly::Unit> UlasProvider::SendUsageLogs(ApplicationInfoPtr applic
                 {
                 LOG.errorv("UlasProvider::SendUsageLogs ERROR: Unable to post %s - %s", usageCSV.c_str(), HttpError(response).GetMessage().c_str());
                 LOG.errorv("UlasProvider::SendUsageLogs ERROR: Response connection status : ", response.GetConnectionStatus());
-                LOG.errorv("UlasProvider::SendUsageLogs ERROR: Response Body (Should contain requestID) :", response.GetBody().AsString());
+                LOG.errorv("UlasProvider::SendUsageLogs ERROR: Response Body (Should contain requestID) :", response.GetBody().AsString().c_str());
                 throw HttpError(response);
                 }
 
@@ -210,7 +210,7 @@ folly::Future<folly::Unit> UlasProvider::SendFeatureLogs(ApplicationInfoPtr appl
             {
             LOG.errorv("UlasProvider::SendFeatureLogs ERROR: Unable to obtain location url. Message: %s. %s", HttpError(response).GetMessage().c_str(), HttpError(response).GetDescription().c_str());
             LOG.errorv("UlasProvider::SendFeatureLogs ERROR: Response connection status : ", response.GetConnectionStatus());
-            LOG.errorv("UlasProvider::SendFeatureLogs ERROR: Response Body (Should contain requestID) :", response.GetBody().AsString());
+            LOG.errorv("UlasProvider::SendFeatureLogs ERROR: Response Body (Should contain requestID) :", response.GetBody().AsString().c_str());
             throw HttpError(response);
             }
 
@@ -232,7 +232,7 @@ folly::Future<folly::Unit> UlasProvider::SendFeatureLogs(ApplicationInfoPtr appl
                 {
                 LOG.errorv("UlasProvider::SendFeatureLogs ERROR: Unable to post %s - %s", featureCSV.c_str(), HttpError(response).GetMessage().c_str());
                 LOG.errorv("UlasProvider::SendFeatureLogs ERROR: Response connection status : ", response.GetConnectionStatus());
-                LOG.errorv("UlasProvider::SendFeatureLogs ERROR: Response Body (Should contain requestID) :", response.GetBody().AsString());
+                LOG.errorv("UlasProvider::SendFeatureLogs ERROR: Response Body (Should contain requestID) :", response.GetBody().AsString().c_str());
                 throw HttpError(response);
                 }
 
@@ -288,7 +288,7 @@ folly::Future<BentleyStatus> UlasProvider::RealtimeTrackUsage(Utf8StringCR acces
             {
             LOG.errorv("SaasClientImpl::TrackUsage ERROR: Unable to post %s - %s", jsonBody.c_str(), response.GetBody().AsString().c_str());
             LOG.errorv("SaasClientImpl::TrackUsage ERROR: Response connection status : ", response.GetConnectionStatus());
-            LOG.errorv("SaasClientImpl::TrackUsage ERROR: Response Body (Should contain requestID) :", response.GetBody().AsString());
+            LOG.errorv("SaasClientImpl::TrackUsage ERROR: Response Body (Should contain requestID) :", response.GetBody().AsString().c_str());
             return BentleyStatus::ERROR;
             }
         return BentleyStatus::SUCCESS;
@@ -337,7 +337,7 @@ folly::Future<BentleyStatus> UlasProvider::RealtimeMarkFeature(Utf8StringCR acce
             {
             LOG.errorv("UlasProvider::RealtimeMarkFeature ERROR: Unable to post %s - %s", jsonBody.c_str(), response.GetBody().AsString().c_str());
             LOG.errorv("UlasProvider::RealtimeMarkFeature ERROR: Response connection status : ", response.GetConnectionStatus());
-            LOG.errorv("UlasProvider::RealtimeMarkFeature ERROR: Response Body (Should contain requestID) :", response.GetBody().AsString());
+            LOG.errorv("UlasProvider::RealtimeMarkFeature ERROR: Response Body (Should contain requestID) :", response.GetBody().AsString().c_str());
             return BentleyStatus::ERROR;
             }
         //LOG.tracev("MarkFeature - Successfully marked featureId: %s, version: %s, projectId: %s", featureEvent.m_featureId.c_str(), featureEvent.m_version.ToString().c_str(), featureEvent.m_projectId.c_str());
@@ -379,7 +379,7 @@ folly::Future<Json::Value> UlasProvider::GetAccessKeyInfo(ApplicationInfoPtr app
             // call failed
             LOG.errorv("UlasProvider::GetAccessKeyInfo ERROR: - %s", HttpError(response).GetMessage().c_str());
             LOG.errorv("UlasProvider::GetAccessKeyInfo ERROR: Response connection status : ", response.GetConnectionStatus());
-            LOG.errorv("UlasProvider::GetAccessKeyInfo ERROR: Response Body (Should contain requestID) :", response.GetBody().AsString());
+            LOG.errorv("UlasProvider::GetAccessKeyInfo ERROR: Response Body (Should contain requestID) :", response.GetBody().AsString().c_str());
             return Json::Value::GetNull();
             }
 
