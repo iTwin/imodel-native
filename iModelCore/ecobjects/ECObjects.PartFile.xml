@@ -247,7 +247,7 @@
         <Directories DirectoryListName="CollectionProduct" Repository="imodel02"  PartFile="iModelCore/BeGTest/BeGTest"/>
     </Product>
 
-    <Part Name="PerformanceGtest" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECObjectsPerformanceTests -dTEST_COLLECTION_PRODUCT=ECObjects-PerformanceTests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+    <Part Name="PerformanceGtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECObjectsPerformanceTests -dTEST_COLLECTION_PRODUCT=ECObjects-PerformanceTests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
         <SubProduct ProductName="ECObjects-PerformanceTests"/>
         <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
         <Bindings>
