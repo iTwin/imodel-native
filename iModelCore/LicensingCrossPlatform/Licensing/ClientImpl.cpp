@@ -884,6 +884,10 @@ LicenseStatus ClientImpl::GetLicenseStatus()
         return LicenseStatus::NotEntitled;
         }
 
+	if (policy->GetPolicyStatus() == Policy::PolicyStatus::Expired)
+	{
+		return LicenseStatus::Expired;
+	}
     // if policy not valid, return LicenseStatus::DisabledByPolicy
     if (policy->GetPolicyStatus() != Policy::PolicyStatus::Valid)
         {

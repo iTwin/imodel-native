@@ -233,15 +233,15 @@ TEST_F(ClientIntegrationTests, GetLicenseStatusValidTrialPolicy_Test)
 
     // need to add valid policy to the DB for MarkFeature to succeed
     Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
-    auto jsonPolicyValidTrial = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, std::atoi(TEST_PRODUCT_ID), "", 1, true);
-
-    auto startStatus = client->StartApplication();
-    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::Error));
-    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::NotEntitled));
+    auto jsonPolicyValidTrial = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, std::atoi(TEST_PRODUCT_ID), "", 1, true);   
 
     client->AddPolicyToDb(Policy::Create(jsonPolicyValidTrial));
 
     EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::Trial));
+
+	auto startStatus = client->StartApplication();
+	ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::Error));
+	ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::NotEntitled));
     EXPECT_SUCCESS(client->StopApplication());
     }
 
@@ -251,15 +251,18 @@ TEST_F(ClientIntegrationTests, GetLicenseStatusValidExpiredTrialPolicy_Test)
 
     // need to add valid policy to the DB for MarkFeature to succeed
     Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
-    auto jsonPolicyValidTrialExpired = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(-1), userId, std::atoi(TEST_PRODUCT_ID), "", 1, true);
+    auto jsonPolicyValidTrialExpired = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(-1), DateHelper::AddDaysToCurrentTime(-1), userId, std::atoi(TEST_PRODUCT_ID), "", 1, true);
 
-    auto startStatus = client->StartApplication();
-    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::Error));
-    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::NotEntitled));
+   
 
     client->AddPolicyToDb(Policy::Create(jsonPolicyValidTrialExpired));
 
     EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::Expired));
+
+	auto startStatus = client->StartApplication();
+	ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::Error));
+	ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::NotEntitled));
+
     EXPECT_SUCCESS(client->StopApplication());
     }
 
@@ -298,11 +301,7 @@ TEST_F(ClientIntegrationTests, GetLicenseStatusOfflineNotAllowedPolicy_Test)
     Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
     auto jsonPolicyOfflineNotAllowed = DummyPolicyHelper::CreatePolicyOfflineNotAllowed(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, std::atoi(TEST_PRODUCT_ID), "", 1, false);
 
-    auto timestamp = DateHelper::GetCurrentTime();
-
-    auto startStatus = client->StartApplication();
-    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::Error));
-    ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::NotEntitled));
+    auto timestamp = DateHelper::GetCurrentTime();    
 
     client->AddPolicyToDb(Policy::Create(jsonPolicyOfflineNotAllowed));
 
@@ -310,7 +309,12 @@ TEST_F(ClientIntegrationTests, GetLicenseStatusOfflineNotAllowedPolicy_Test)
     EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::DisabledByPolicy)); // Grace Period started; should be disabled
     client->GetLicensingDb().ResetOfflineGracePeriod();
     EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::Ok)); // Should be back to Ok
-    EXPECT_SUCCESS(client->StopApplication());
+    
+	auto startStatus = client->StartApplication();
+	ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::Error));
+	ASSERT_NE(static_cast<int>(startStatus), static_cast<int>(LicenseStatus::NotEntitled));
+	
+	EXPECT_SUCCESS(client->StopApplication());
     }
 
 TEST_F(ClientIntegrationTests, GetTrialDaysRemainingValidTrialPolicy_Test)
