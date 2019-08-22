@@ -211,11 +211,11 @@ def main():
     if os.path.exists(sfLog):
         os.remove(sfLog)
     src_branch = os.getenv('SourceBranch')
-    if not src_branch.startswith('origin'):
-        src_branch = 'origin/' + src_branch        
+    if src_branch.startswith('refs/heads/'):
+        src_branch = src_branch.split('refs/heads/')[1]
     tgt_branch = os.getenv('TargetBranch')
-    if not tgt_branch.startswith('origin'):
-        tgt_branch = 'origin/' + tgt_branch
+    if tgt_branch.startswith('refs/heads/'):
+        tgt_branch = tgt_branch.split('refs/heads/')[1]
 
     for repo in repos:
         print 'Checking files at path: ' + repo
