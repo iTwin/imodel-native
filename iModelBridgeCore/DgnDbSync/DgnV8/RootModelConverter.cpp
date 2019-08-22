@@ -973,17 +973,6 @@ void RootModelConverter::_ConvertDrawingLevels()
     if (SUCCESS != MustBeInSharedChannel("_ConvertDrawingLevels must be called in the definitions phase"))
         return;
 
-    // Need to create these categories upfront since we don't know whether we'll need them until we're converting the data and that is too late to create categories
-    if (!m_nonSpatialModelsInModelIndexOrder.empty())
-        {
-        GetOrCreateDrawingCategoryId(GetDgnDb().GetDictionaryModel(), CATEGORY_NAME_Attachments);   // Doing this in the definitions phase, we must write to the DictionaryModel, not the Job def'n model.
-        GetExtractionCategoryId(Converter::V8NamedViewType::Other);
-        GetExtractionCategoryId(Converter::V8NamedViewType::Section);
-        GetExtractionCategoryId(Converter::V8NamedViewType::Plan);
-        GetExtractionCategoryId(Converter::V8NamedViewType::Elevation);
-        GetExtractionCategoryId(Converter::V8NamedViewType::Detail);
-        }
-
     for (auto v8Model : m_nonSpatialModelsInModelIndexOrder)
         {
         if (!IsFileAssignedToBridge(*v8Model->GetDgnFileP()))
