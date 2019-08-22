@@ -1716,7 +1716,47 @@ TEST_F(SchemaValidatorTests, EmbeddingRelationshipsShouldNotContainHasInClassNam
         "</ECSchema>";
     InitBisContextWithSchemaXml(goodSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(validator.Validate(*schema)) << "Should succeed validation as relationship is 'referncing', not 'embedding'";
+    ASSERT_TRUE(validator.Validate(*schema)) << "Should succeed validation as relationship is 'referencing', not 'embedding'";
+    }
+    { // Exception for schemas that start with 'SP3D'
+    Utf8String sp3dSchema = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='SP3D_Test' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECEntityClass typeName='TestClass'>"
+        "        <BaseClass>bis:Element</BaseClass>"
+        "    </ECEntityClass>"
+        "    <ECRelationshipClass typeName='RelationshipHasBadString' strength='embedding' modifier='Sealed'>"
+        "        <Source multiplicity='(0..1)' roleLabel='read from source to target' polymorphic='true'>"
+        "            <Class class='TestClass'/>"
+        "        </Source>"
+        "        <Target multiplicity='(0..*)' roleLabel='read from target to source' polymorphic='true'>"
+        "            <Class class='TestClass'/>"
+        "        </Target>"
+        "    </ECRelationshipClass>"
+        "</ECSchema>";
+    InitBisContextWithSchemaXml(sp3dSchema.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(validator.Validate(*schema)) << "Should succeed validation since the SP3D schemas have an exception for this rule.";
+    }
+    { // The exception for schemas that start with 'SP3D' should fail if SP3D is anywhere else in the name.
+     Utf8String badSP3dSchema = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='Test_SP3D' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECEntityClass typeName='TestClass'>"
+        "        <BaseClass>bis:Element</BaseClass>"
+        "    </ECEntityClass>"
+        "    <ECRelationshipClass typeName='RelationshipHasBadString' strength='embedding' modifier='Sealed'>"
+        "        <Source multiplicity='(0..1)' roleLabel='read from source to target' polymorphic='true'>"
+        "            <Class class='TestClass'/>"
+        "        </Source>"
+        "        <Target multiplicity='(0..*)' roleLabel='read from target to source' polymorphic='true'>"
+        "            <Class class='TestClass'/>"
+        "        </Target>"
+        "    </ECRelationshipClass>"
+        "</ECSchema>";
+    InitBisContextWithSchemaXml(badSP3dSchema.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_FALSE(validator.Validate(*schema)) << "Should fail validation because the SP3D is not at the beginning of the schema name, therefore the exception does not apply.";
     }
     }
 

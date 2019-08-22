@@ -727,36 +727,42 @@ ECObjectsStatus ECSchemaValidator::CustomAttributeClassValidator(ECClassCR caCla
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Dan.Perlman                  05/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-static ECObjectsStatus CheckStrength(ECRelationshipClassCP relClass)
+static ECObjectsStatus CheckStrength(ECRelationshipClassCR relClass)
     {
     ECObjectsStatus returnStatus = ECObjectsStatus::Success;
 
     // RULE: Relationship classes must not have strength set to 'holding'.
-    if (StrengthType::Holding == relClass->GetStrength())
+    if (StrengthType::Holding == relClass.GetStrength())
         {
         LOG.errorv("Relationship class strength must not be set to 'holding'.");
         returnStatus = ECObjectsStatus::Error;
         }
 
-    if (StrengthType::Embedding == relClass->GetStrength())
+    if (StrengthType::Embedding == relClass.GetStrength())
         {
         // RULE: Relationship classes must not have a source constraint multiplicity upper bound greater than 1 if the strength is embedding and the direction is forward.
-        if (ECRelatedInstanceDirection::Forward == relClass->GetStrengthDirection() && relClass->GetSource().GetMultiplicity().GetUpperLimit() > 1)
+        if (ECRelatedInstanceDirection::Forward == relClass.GetStrengthDirection() && relClass.GetSource().GetMultiplicity().GetUpperLimit() > 1)
             {
             LOG.errorv("Relationship class has an 'embedding' strength with a forward direction so the source constraint may not have a multiplicity upper bound greater than 1.");
             returnStatus = ECObjectsStatus::Error;
             }
         // RULE: Relationship classes must not have a target constraint multiplicity upper bound greater than 1 if the strength is embedding and the direction is backward.
-        else if (ECRelatedInstanceDirection::Backward == relClass->GetStrengthDirection() && relClass->GetTarget().GetMultiplicity().GetUpperLimit() > 1)
+        else if (ECRelatedInstanceDirection::Backward == relClass.GetStrengthDirection() && relClass.GetTarget().GetMultiplicity().GetUpperLimit() > 1)
             {
             LOG.errorv("Relationship class has an 'embedding' strength with a backward direction so the target constraint may not have a multiplicity upper bound greater than 1.");
             returnStatus = ECObjectsStatus::Error;
             }
 
         // RULE: Embedding relationships should not have 'Has' (case-sensitive) in the class name.
-        if (relClass->GetName().Contains("Has"))
+        //      Exception for all SP3D schemas.
+        if (relClass.GetName().Contains("Has"))
             {
-            LOG.errorv("Relationship class has an 'embedding' strength and contains 'Has' in its name. Consider renaming this class.");
+            if (relClass.GetSchema().GetName().StartsWith("SP3D"))
+                {
+                LOG.warningv("Relationship class '%s' should not have 'Has' in its name but the rule is being ignored for all SP3D schemas.", relClass.GetFullName());
+                return returnStatus;
+                }
+            LOG.errorv("Relationship class '%s' has an 'embedding' strength and contains 'Has' in its name. Consider renaming this class.", relClass.GetFullName());
             returnStatus = ECObjectsStatus::Error;
             }
         }
@@ -809,7 +815,7 @@ ECObjectsStatus ECSchemaValidator::RelationshipValidator(ECClassCR ecClass)
         return status;
 
     // Validate relationship strength
-    status = CheckStrength(relClass);
+    status = CheckStrength(*relClass);
 
     ECRelationshipConstraintCR targetConstraint = relClass->GetTarget();
     ECRelationshipConstraintCR sourceConstraint = relClass->GetSource();
