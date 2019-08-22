@@ -14,7 +14,7 @@ appName     = RealityModFramework.prewire
 
 # Wire in my own public header files.
 always:
-   @CreateSymLinks.py -d"$(BuildContextPublicApiDir)RealityPlatform=$(RealityPlatformPublicAPISrc)"
-   @CreateSymLinks.py -d"$(BuildContextPublicApiDir)RealityPlatformTools=$(RealityPlatformToolsPublicAPISrc)"
-   @CreateSymLinks.py -d"$(BuildContextPublicApiDir)RealityAdmin=$(RealityAdminPublicAPISrc)"
-   @CreateSymLinks.py -d"$(BuildContextPublicApiDir)SpatioTemporalSelector=$(SpatioTemporalSelectorPublicAPISrc)"
+   ~linkdir "$(BuildContextPublicApiDir)RealityPlatform=$(RealityPlatformPublicAPISrc)"
+   ~linkdir "$(BuildContextPublicApiDir)RealityPlatformTools=$(RealityPlatformToolsPublicAPISrc)"
+   ~linkdir "$(BuildContextPublicApiDir)RealityAdmin=$(RealityAdminPublicAPISrc)"
+   ~linkdir "$(BuildContextPublicApiDir)SpatioTemporalSelector=$(SpatioTemporalSelectorPublicAPISrc)"
