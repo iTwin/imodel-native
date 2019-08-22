@@ -35,13 +35,13 @@ TEST_F(UnitsPerformanceTest, LoadUnitsSchema)
     BeFileName assetsDir;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(assetsDir);
     assetsDir.append(L"ECSchemas\\Standard\\");
-    assetsDir.append(L"Units.01.00.00.ecschema.xml");
+    assetsDir.append(L"Units.01.00.01.ecschema.xml");
 
     timer.Start();
     ECSchema::ReadFromXmlFile(unitsSchema, assetsDir.c_str(), *context);
     timer.Stop();
 
-    EXPECT_EQ(454, unitsSchema->GetUnitCount());
+    EXPECT_EQ(456, unitsSchema->GetUnitCount());
     EXPECT_EQ(67, unitsSchema->GetPhenomenonCount());
     EXPECT_EQ(12, unitsSchema->GetUnitSystemCount());
 
