@@ -67,15 +67,15 @@ public:
     //! Options provided at initialization
     BEHTTP_EXPORT static const Options& GetOptions();
 
-    // Methods for grouping multiple network requests to one activity
+    //! Methods for grouping multiple network requests to one activity
     BEHTTP_EXPORT static void BeginNetworkActivity();
     BEHTTP_EXPORT static void EndNetworkActivity();
 
     BEHTTP_EXPORT static bool IsNetworkActive();
 
-    // DEPRECATED, use BeUri::EscapeString()! Use percent escape for URLs
+    //! DEPRECATED, use BeUri::EscapeString()! Use percent escape for URLs
     static Utf8String EscapeString(Utf8StringCR str) { return BeUri::EscapeString(str); } 
-    // DEPRECATED, use BeUri::UnescapeString()! Unsecape percent encoding
+    //! DEPRECATED, use BeUri::UnescapeString()! Unsecape percent encoding
     static Utf8String UnescapeString (Utf8StringCR str) { return BeUri::UnescapeString(str); }
 
     //! Handle date formats specified in RFC 822 (updated by RFC 1123), RFC 850 (obsoleted by RFC 1036) and ANSI C's asctime() format.
