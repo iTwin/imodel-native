@@ -83,7 +83,8 @@
     <Part Name="OpenDwgDb" BentleyBuildMakeFile="DwgDb/DwgDbExchange.mke" BentleyBuildMakeOptions="+dDWGTOOLKIT=OpenDwg +dVendorVersion=190815 +dBUILD_DWGDB" ApiNumber="198M02" OnlyPlatforms="x64" ExcludeLibType="Static" >
         <SubPart PartName="PublicAPI"/>
         <SubPart PartName="BentleyDll"      PartFile="iModelCore/Bentley/Bentley"                   Repository="imodel02"/>
-        <SubPart PartName="Teigha"          PartFile="${SrcRoot}bsicommon/CvsPartFiles/teigha"      Repository="bin-teigha"  />
+        <SubPart PartName="Teigha"          PartFile="${SrcRoot}bsicommon/CvsPartFiles/teigha"      Repository="bin-teigha"/>
+        <SubPart PartName="RapidJson"       PartFile="Libsrc-Nugets"                                Repository="bsicommon"/>
         <SubPart PartName="PsolidShim_x64"  PartFile="iModelCore/BRepCore/BRepCore"/> <!-- so we more easily match what DgnPlatform uses -->
         <SubPart PartName="GeomDlls"        PartFile="iModelCore/GeomLibs/GeomLibs"/>
         <Bindings>

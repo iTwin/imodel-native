@@ -285,6 +285,8 @@
     DWGDB_EXPORT DwgDbStatus        CreateExtensionDictionary ();                       \
     DWGDB_EXPORT DwgDbStatus        ReleaseExtensionDictionary ();                      \
     DWGDB_EXPORT DwgDbObjectId      GetExtensionDictionary () const;                    \
+    DWGDB_EXPORT bool               HasPersistentReactor (DwgDbObjectIdCR id) const;    \
+    DWGDB_EXPORT DwgDbObjectIdArray GetPersistentReactors () const;                     \
     DWGDB_EXPORT DwgDbStatus        SetBinaryData (DwgStringCR, size_t, const char*);   \
     DWGDB_EXPORT DwgDbStatus        GetBinaryData (DwgStringCR, size_t&, char*&) const;
 

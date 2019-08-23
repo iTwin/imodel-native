@@ -22,6 +22,7 @@
 #include    <Bentley/RefCounted.h>
 #include    <Bentley/bvector.h>
 #include    <Geom/GeomApi.h>
+#include    <Rapidjson/document.h>
 
 #if defined (BENTLEYCONFIG_PARASOLID)
 #include    <PSolid/parasolid_kernel.h>
@@ -317,6 +318,9 @@ struct UtilsLib
 #endif
     //! Check if an entity is an Autodesk ShapeManager object.
     DWGDB_EXPORT static bool IsAsmEntity (DwgDbEntityCP entity);
+    DWGDB_EXPORT static DwgDbStatus ParseAecDbPropertySet (rapidjson::Document& json, DwgDbObjectId entityId);
+    DWGDB_EXPORT static DwgDbStatus ParseAecDbPropertySetDef (rapidjson::Document& json, DwgDbObjectId propsetdefId);
+    DWGDB_EXPORT static DwgDbObjectId GetAecDbPropertySetDef (DwgDbObjectId propsetId);
     };  // UtilsLib
 
 

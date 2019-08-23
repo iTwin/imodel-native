@@ -130,6 +130,8 @@ $(o)ResBuf$(oext)               : $(baseDir)ResBuf.cpp $(DwgDbDepends) ${MultiCo
 
 $(o)BrepConverter$(oext)        : $(baseDir)BrepConverter.cpp $(DwgDbDepends) ${MultiCompileDepends}
 
+$(o)AecDbPropertySet$(oext)     : $(baseDir)AecDbPropertySet.cpp $(DwgDbDepends) ${MultiCompileDepends}
+
 %include MultiCppCompileGo.mki
 cppObjects          =% $(MultiCompileObjectList)
 
@@ -176,6 +178,9 @@ LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)TD_AcisBuilder$(libext)
 LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)TD_Br$(libext)
 LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)AcDbPointCloudObj$(libext)
 LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)AcModelDocObj$(libext)
+LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)AecBase$(libext)
+LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)AecExtensions$(libext)
+LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)AecScheduleData.lib
 
 %elif $(DWGTOOLKIT) == "RealDwg"
 

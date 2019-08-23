@@ -694,6 +694,8 @@ END_DWGDB_NAMESPACE
     DwgDbObjectId      DwgDb##_classSuffix_##::GetExtensionDictionary () const { return T_Super::extensionDictionary(); }                                                       \
     DwgDbStatus        DwgDb##_classSuffix_##::CreateExtensionDictionary () { DWGDB_CALLSDKMETHOD(T_Super::createExtensionDictionary(); return DwgDbStatus::Success;, return ToDwgDbStatus(T_Super::createExtensionDictionary());) }    \
     DwgDbStatus        DwgDb##_classSuffix_##::ReleaseExtensionDictionary () { DWGDB_CALLSDKMETHOD(T_Super::releaseExtensionDictionary(); return DwgDbStatus::Success;, return ToDwgDbStatus(T_Super::releaseExtensionDictionary());) } \
+    bool               DwgDb##_classSuffix_##::HasPersistentReactor (DwgDbObjectIdCR id) const { return T_Super::hasPersistentReactor(id); }                                    \
+    DwgDbObjectIdArray DwgDb##_classSuffix_##::GetPersistentReactors () const { return Util::GetPersistentReactors(DWGDB_Type(Object)::cast(this)); }                           \
     DWGDB_DEFINE_DXFOUTFIELDS_MEMBER(##_classSuffix_##)                                                                                                                         \
     DWGDB_DEFINE_DXFOUT_MEMBER(##_classSuffix_##)                                                                                                                               \
     DWGDB_DEFINE_GETXDATA_MEMBER(##_classSuffix_##)                                                                                                                             \

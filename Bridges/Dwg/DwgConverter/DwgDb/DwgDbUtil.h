@@ -63,8 +63,10 @@ public:
     static size_t       GetGePointArray (DWGGE_TypeR(Point3dArray) pointsOut, DPoint3dArrayCR pointsIn);
     static size_t       GetGePointArray (DWGGE_TypeR(Point2dArray) pointsOut, DPoint2dArrayCR pointsIn);
     static size_t       GetObjectIdArray (DWGDB_TypeR(ObjectIdArray) idsOut, DwgDbObjectIdArrayCR idsIn);
+    static size_t       GetObjectIdArray (DwgDbObjectIdArrayR idsOut, DWGDB_TypeCR(ObjectIdArray) idsIn);
     static DwgDbStatus  GetObjectArray (DwgDbObjectPArrayR out, TkObjectArray& in);
     static DwgDbStatus  GetEntityArray (DwgDbEntityPArrayR out, TkEntityArray& in);
+    static DwgDbObjectIdArray GetPersistentReactors (DWGDB_TypeCP(Object) object);
 
     static DwgFileVersion   GetDwgVersionFrom (TkDbVersion dwgVersion);
     static TkDbVersion      GetDwgVersionFrom (DwgFileVersion dwgVersion);

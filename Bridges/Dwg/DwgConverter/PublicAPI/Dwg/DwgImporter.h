@@ -1038,6 +1038,7 @@ private:
     BentleyStatus           ImportXrefModelsFrom (DwgXRefHolder& xref, SubjectCR parentSubject, bool& hasPushedReferencesSubject);
     ECN::ECObjectsStatus    AddAttrdefECClassFromBlock (ECN::ECSchemaPtr& schema, DwgDbBlockTableRecordCR block);
     void                    ImportAttributeDefinitionSchema (ECN::ECSchemaR attrdefSchema);
+    void                    ImportAecDbPropertySetDefs ();
     void                    ImportDomainSchema (WCharCP fileName, DgnDomain& domain);
     void                    SaveViewDefinition (ViewControllerR viewController);
     void                    CheckSameRootModelAndUnits ();

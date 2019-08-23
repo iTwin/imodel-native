@@ -61,6 +61,9 @@
     # Use shared libraries on Windows
     CCompOpts + -D_TOOLKIT_IN_DLL_
 
+    # AEC module requires an additional define
+    CCompOpts + -DADT_DYNAMIC_BUILD
+
     #C4005: 'WIN32_LEAN_AND_MEAN' macro redefinition
     CCompOpts + -wd4005
 
@@ -85,6 +88,11 @@
     CCompOpts + -DDLM_API_NUMBER=\"$(DLM_API_NUMBER)\"
 %endif
 
+    # C3861: 'm_pImpl': identifier not found in RxObjectImpl.h
+    %if $(VendorVersion) >= 200515
+        CCompOpts   + -DODA_NEED_TEMP_USING
+    %endif
+
     # LNK4099: PDB was not found with obj; linking object as if no debug info
     BENTLEY_WIN32_LINK_CommonOptions + -Ignore:4099
 
@@ -101,10 +109,11 @@
     ToolkitRoot         = $(BuildContext)VendorAPI/Teigha/
     ToolkitCoreInc      = $(ToolkitRoot)$(Kernel)/Include/
     ToolkitCoreServices = $(ToolkitRoot)$(Kernel)/Extensions/ExServices/
-    ToolkitAecInc       = $(ToolkitRoot)Architecture/
+    ToolkitArchInc      = $(ToolkitRoot)Architecture/
     ToolkitDrawingInc   = $(ToolkitRoot)$(Drawing)/Include/
     ToolkitHostServices = $(ToolkitRoot)$(Drawing)/Extensions/ExServices/
     ToolkitGripPoints   = $(ToolkitRoot)$(Drawing)/Examples/GripPoints/
+    ToolkitFModelerInc  = $(ToolkitRoot)FacetModeler/
     ToolkitLibs         = $(BuildContext)SubParts/Libs/Teigha/
 
 %if $(TARGET_PLATFORM)=="Windows"
@@ -136,6 +145,12 @@ CCompOpts + -DDWGTOOLKIT_$(DWGTOOLKIT) -DVendorVersion=$(VendorVersion)
 %endif
 %if defined(ToolkitDrawingInc)
     cIncs + -I$(ToolkitDrawingInc)
+%endif
+%if defined(ToolkitArchInc)
+    cIncs + -I$(ToolkitArchInc)
+%endif
+%if defined(ToolkitFModelerInc)
+    cIncs + -I$(ToolkitFModelerInc)
 %endif
 %if defined(ToolkitCoreServices)
     cIncs + -I$(ToolkitCoreServices)

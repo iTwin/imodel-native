@@ -40,8 +40,8 @@ cIncs + -I$(OpenDwgCore)Include/
 #----------------------------------------------------------------------
 #    OdGripPointsModule compile options
 #----------------------------------------------------------------------
-CCompOpts + -D_TOOLKIT_IN_DLL_ -DGRIPPOINTS_DLL_EXPORTS -DGripPoints_EXPORTS -DSKIP_COMPILER_ANALYZE
-CCompOpts + -wd4389 -wd4189 -wd4505 -wd5043
+CCompOpts + -D_TOOLKIT_IN_DLL_ -DGRIPPOINTS_DLL_EXPORTS -DGripPoints_EXPORTS -DODA_NEED_TEMP_USING -DSKIP_COMPILER_ANALYZE
+CCompOpts + -wd4389 -wd4189 -wd4505 -wd5043 -wd4244
 # CCompOpts + -DODA_LINT <= debugging stuff??
 
 always:
@@ -79,6 +79,10 @@ $(o)DbDimGripPoints$(oext)                  : $(OdGripPointsDir)DbDimGripPoints.
 $(o)DbEllipseGripPoints$(oext)              : $(OdGripPointsDir)DbEllipseGripPoints.cpp ${MultiCompileDepends}
 
 $(o)DbEntityGripPoints$(oext)               : $(OdGripPointsDir)DbEntityGripPoints.cpp ${MultiCompileDepends}
+
+%if exists ($(OdGripPointsDir)DbFaceGripPoints.cpp)
+$(o)DbFaceGripPoints$(oext)                 : $(OdGripPointsDir)DbFaceGripPoints.cpp ${MultiCompileDepends}
+%endif
 
 $(o)DbGeoPositionMarkerGripPoints$(oext)    : $(OdGripPointsDir)DbGeoPositionMarkerGripPoints.cpp ${MultiCompileDepends}
 

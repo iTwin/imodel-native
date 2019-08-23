@@ -26,6 +26,11 @@
     CCompOpts       + -D_TOOLKIT_IN_DLL_
     %endif
 
+    # C3861: 'm_pImpl': identifier not found in RxObjectImpl.h
+    %if $(VendorVersion) >= 200515
+        CCompOpts   + -DODA_NEED_TEMP_USING
+    %endif
+
     ## OpenDWG does not use suffix in its core lib names:
     ToolkitLibSuffix =
 
@@ -86,6 +91,9 @@ CCompOpts + -DDWGTOOLKIT_$(DWGTOOLKIT) -D__DWGIMPORTER_BUILD__
 %endif
 %if defined(ToolkitDrawInc)
     cIncs + -I$(ToolkitDrawInc)
+%endif
+%if defined(ToolkitSub1Inc)
+    cIncs + -I$(ToolkitSub1Inc)
 %endif
 %if defined(ToolkitSub2Inc)
     cIncs + -I$(ToolkitSub2Inc)

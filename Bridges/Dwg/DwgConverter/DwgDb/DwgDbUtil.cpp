@@ -124,6 +124,22 @@ size_t      Util::GetObjectIdArray (DWGDB_TypeR(ObjectIdArray) idsOut, DwgDbObje
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+size_t      Util::GetObjectIdArray (DwgDbObjectIdArrayR idsOut, DWGDB_TypeCR(ObjectIdArray) idsIn)
+    {
+    idsOut.clear ();
+#ifdef DWGTOOLKIT_OpenDwg
+    for (auto id : idsIn)
+        idsOut.push_back (id);
+#elif DWGTOOLKIT_RealDwg
+    for (int i = 0; i < idsIn.length(); i++)
+        idsOut.push_back (idsIn.at(i));
+#endif
+    return  idsOut.size();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
 void        Util::GetTransform (TransformR trans, DWGGE_TypeCR(Matrix3d) matrix)
     {
     trans.InitFromRowValues
@@ -688,3 +704,40 @@ DwgDbStatus Util::GetEntityArray (DwgDbEntityPArrayR out, TkEntityArray& in)
     return out.empty() ? DwgDbStatus::UnknownError : DwgDbStatus::Success;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/19
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbObjectIdArray  Util::GetPersistentReactors (DWGDB_TypeCP(Object) object)
+    {
+    DwgDbObjectIdArray  ids;
+    if (object == nullptr)
+        return  ids;
+
+#ifdef DWGTOOLKIT_OpenDwg
+
+    Util::GetObjectIdArray (ids, object->getPersistentReactors());
+
+#elif DWGTOOLKIT_RealDwg
+
+    const AcDbVoidPtrArray* reactors = object->reactors();
+    if (reactors == nullptr)
+        return  ids;
+
+    int numReactors = reactors->length();
+    if (numReactors < 1)
+        return  ids;
+
+    for (int iReactor=0; iReactor < numReactors; iReactor++)
+        {
+        void *pSomething = reactors->at (iReactor);
+        if (acdbIsPersistentReactor(pSomething))
+            {
+            AcDbObjectId persistentId = acdbPersistentReactorObjectId (pSomething);
+            if (persistentId.isValid())
+                ids.push_back (persistentId);
+            }
+        }
+#endif
+
+    return ids;
+    }
