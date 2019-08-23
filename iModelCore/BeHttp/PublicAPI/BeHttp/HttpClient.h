@@ -112,6 +112,7 @@ private:
     BeFileName m_assetsDirectoryPath;
     uint32_t m_maxConnectionsPerHost = 10;
     uint32_t m_maxTotalConnections = 0;
+    bool m_parallelizeAllRequests = false;
 
 public:
     Options() {};
@@ -129,6 +130,11 @@ public:
     //! Default - 0, unlimited.
     Options& SetMaxTotalConnections(uint32_t connections) { m_maxTotalConnections = connections; return *this; }
     uint32_t GetMaxTotalConnections() const { return m_maxTotalConnections; }
+
+    //! Configure workaround for Windows Server 2008 servers, issue discussed here: https://github.com/curl/curl/issues/1294
+    //! Default - false, workaround is enabled. Set to true to remove workaround.
+    Options& SetParallelizeAllRequests(bool parallelize) { m_parallelizeAllRequests = parallelize; return *this; }
+    bool GetParallelizeAllRequests() const { return m_parallelizeAllRequests; }
     };
 
 END_BENTLEY_HTTP_NAMESPACE
