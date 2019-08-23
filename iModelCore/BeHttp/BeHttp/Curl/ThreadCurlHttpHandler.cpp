@@ -20,7 +20,7 @@ ThreadCurlHttpHandler::ThreadCurlHttpHandler()
     auto parallelTransfers = 10;
     auto threadCount = parallelTransfers + 1; // +1 for tasks that are being canceled
 
-    m_threadPool = WorkerThreadPool::Create(threadCount, "WebThreadPool");
+    m_threadPool = WorkerThreadPool::Create(threadCount, "BeHttp");
     m_threadQueue = LimitingTaskQueue<Response>(m_threadPool);
     m_threadQueue.SetLimit(parallelTransfers);
     }
