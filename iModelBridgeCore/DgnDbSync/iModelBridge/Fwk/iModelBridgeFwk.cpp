@@ -209,6 +209,8 @@ void iModelBridgeFwk::JobDefArgs::PrintUsage()
         L"--fwk-jobrun-guid=          (optional)  A unique GUID that identifies this job run for activity tracking. This will be passed along to all dependant services and logs.\n"
         L"--fwk-jobrequest-guid=      (optional)  A unique GUID that identifies this job run for correlation. This will be limited to the native callstack.\n"
         L"--fwk-no-mergeDefinitions   (optional)  Do NOT merge definitions such as levels/layers and materials by name from different root models and bridges into the public dictionary model. Instead, keep definitions separate by job subject. The default is false (that is, merge definition)."
+        L"--fwk-status-message-sink-url= (optional) The URL of a WebServer that will process progress meter and status messages\n"
+        L"--fwk-status-message-interval= (optional) The number of milliseconds to wait before sending another status or progress meter message to the status message server. The default is 1000 milliseconds.\n"
         );
     }
 
@@ -387,6 +389,24 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
         if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-create-repository-if-necessary")) // undocumented
             {
             m_createRepositoryIfNecessary = true;
+            continue;
+            }
+
+        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-status-message-sink-url"))
+            {
+            m_statusMessageSinkUrl = getArgValue(argv[iArg]);
+            continue;
+            }
+
+        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-status-message-interval"))
+            {
+            int val;
+            if (0 == swscanf(getArgValueW(argv[iArg]).c_str(), L"%d", &val) || val < 0)
+                {
+                fwprintf(stderr, L"The -fwk-status-message-interval= option takes an integer as its argument. The number of milliseconds between status message pushes.\n");
+                return BSIERROR;
+                } 
+            m_statusMessageInterval = val;
             continue;
             }
 
@@ -1443,14 +1463,19 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
 
     iModelBridgeBimHost_SetBridge _registerBridgeOnHost(*m_bridge);
 
-    static PrintfProgressMeter s_meter;
-    T_HOST.SetProgressMeter(&s_meter);
+    SetupProgressMeter();
+
+    AddPhases(10); // TODO
+
+    SetCurrentPhaseName("Initializing");
+    GetProgressMeter().AddSteps(10); // TODO
 
     iModelBridge::LogPerformance(setUpTimer, "Initialized iModelBridge Fwk");
 
     iModelCrashProcessor::GetInstance().SetRunInfo(m_jobEnvArgs.m_jobRequestId, m_jobEnvArgs.m_jobRunCorrelationId);
 
     LOG.tracev(L"Logging into iModel Hub");
+    GetProgressMeter().SetCurrentStepName("Acquiring Access Token");
     {
     StopWatch iModelHubSignIn(true);
     //  Sign into the iModelHub
@@ -1479,6 +1504,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     FwkContext context(settings, errorContext);
     // Stage the workspace and input file if  necessary.
     LOG.tracev(L"Setting up workspace for standalone bridges");
+    GetProgressMeter().SetCurrentStepName("Setting up workspace for standalone bridges");
     if (BSISUCCESS != SetupDmsFiles(context))
         {
         errorContext.WriteErrorMessage(errorFile);
@@ -1490,6 +1516,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     Briefcase_MakeBriefcaseName(); // => defines m_briefcaseName
     {
     LOG.tracev(L"Setting up iModel Briefcase for processing");
+    GetProgressMeter().SetCurrentStepName("Setting up iModel briefcase");
     StopWatch briefcaseTime(true);
 
     if (m_bridge->TestFeatureFlag("imodel-bridge-reality-model-upload"))
@@ -1521,10 +1548,12 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
         status = RETURN_STATUS_LOCAL_ERROR;
         }
 
-    s_meter.Hide();
+    SetCurrentPhaseName("Cleaning up");
 
     if (m_briefcaseDgnDb.IsValid())     // must make sure briefcase dgndb is closed before tearing down host!
         {
+        GetProgressMeter().SetCurrentStepName("Releasing locks");
+
         Briefcase_ReleaseAllPublicLocks();  // regardless of the success or failure of the bridge, we must not hold onto any locks that are not the private property of the bridge
 
         if (BSISUCCESS != status)
@@ -1534,6 +1563,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
         }
 
     //We are done processing the dgn db file. Release the bridge
+    GetProgressMeter().SetCurrentStepName("Releasing bridge");
     if (SUCCESS != ReleaseBridge())
         LOG.errorv(L"%s - Memory leak. This bridge was not released properly.", m_jobEnvArgs.m_bridgeRegSubKey.c_str());
     
@@ -1545,6 +1575,9 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
         errorContext.WriteErrorMessage(errorFile);
         return errorContext.GetIntErrorId();
         }
+
+    T_HOST.GetProgressMeter()->Hide();
+
     return status;
     }
 
@@ -1979,7 +2012,12 @@ int iModelBridgeFwk::DoNormalUpdate()
     m_briefcaseDgnDb->BriefcaseManager().GetChannelPropsR().channelType = IBriefcaseManager::ChannelType::Shared;
     m_briefcaseDgnDb->BriefcaseManager().GetChannelPropsR().channelParentId = m_briefcaseDgnDb->Elements().GetRootSubjectId();
 
+    SetCurrentPhaseName("Schema Changes");
+    GetProgressMeter().AddSteps(3);
+
     BeAssert(!m_briefcaseDgnDb->BriefcaseManager().StayInChannel() || !HoldsJobSubjectLock());
+
+    GetProgressMeter().SetCurrentStepName("Lock Schema");
 
     if (BSISUCCESS != GetSchemaLock())  // must get schema lock preemptively. This ensures that only one bridge at a time can make schema and definition changes. That then allows me to pull/merge/push between the definition and data steps without closing and reopening
         {
@@ -2007,7 +2045,9 @@ int iModelBridgeFwk::DoNormalUpdate()
         if (BSISUCCESS != Briefcase_PullMergePush("initialization changes"))                 // === SCHEMA LOCK
             return RETURN_STATUS_SERVER_ERROR;                                               // === SCHEMA LOCK
         }                                                                                    // === SCHEMA LOCK
-                                                                                             // === SCHEMA LOCK
+                       
+    GetProgressMeter().SetCurrentStepName("Bridge Schema Changes");
+                                                                                            // === SCHEMA LOCK
     if (BSISUCCESS != MakeSchemaChanges(callCloseOnReturn))                                  // === SCHEMA LOCK
         {                                                                                    // === SCHEMA LOCK
         GetLogger().errorv("MakeSchemaChanges failed");                                      // === SCHEMA LOCK
@@ -2018,6 +2058,8 @@ int iModelBridgeFwk::DoNormalUpdate()
                                                                                              // === SCHEMA LOCK
     if (SUCCESS != StoreHeaderInformation())                                                 // === SCHEMA LOCK
         GetLogger().warningv("bridge:%s iModel:%s - Storing iModel Bridge Header Data Failed.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
+                          
+    GetProgressMeter().SetCurrentStepName("Bridge Definition Changes");
                                                                                              // === SCHEMA LOCK
     SubjectCPtr jobsubj;                                                                     // === SCHEMA LOCK
     if (SUCCESS != MakeDefinitionChanges(jobsubj, callCloseOnReturn))                        // === SCHEMA LOCK
@@ -2034,16 +2076,23 @@ int iModelBridgeFwk::DoNormalUpdate()
     m_briefcaseDgnDb->BriefcaseManager().GetChannelPropsR().channelType = IBriefcaseManager::ChannelType::Normal;
     m_briefcaseDgnDb->BriefcaseManager().GetChannelPropsR().channelParentId = jobsubj->GetElementId();
 
+    SetCurrentPhaseName("Data Changes");
+    GetProgressMeter().AddSteps(2);
+
     BeAssert(!iModelBridge::HoldsSchemaLock(*m_briefcaseDgnDb));
     BeAssert(!m_briefcaseDgnDb->BriefcaseManager().StayInChannel() || !HoldsJobSubjectLock());
     BeAssert(!iModelBridge::AnyTxns(*m_briefcaseDgnDb));
     GetLogger().infov("bridge:%s iModel:%s - Convert Data.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
+
+    GetProgressMeter().SetCurrentStepName("Lock Channel");
 
     // Get exlusive access to the channel BEFORE going into bulk mode.
     if (BSISUCCESS != LockChannelParent(*jobsubj))
         return RETURN_STATUS_SERVER_ERROR;
 
     BeAssert(BSISUCCESS == MustHoldJobSubjectLock());                                                   // ==== CHANNEL LOCK
+
+    GetProgressMeter().SetCurrentStepName("Bridge Data");
                                                                                                         // ==== CHANNEL LOCK
     BentleyStatus bridgeCvtStatus = m_bridge->DoConvertToExistingBim(*m_briefcaseDgnDb, *jobsubj, true);// ==== CHANNEL LOCK
     if (BSISUCCESS != bridgeCvtStatus)                                                                  // ==== CHANNEL LOCK
@@ -2147,6 +2196,9 @@ int iModelBridgeFwk::UpdateExistingBim()
     //                            *** Even in case of error, do not attempt to clean up m_briefcaseDgnDb. ***
     //                            *** The caller does all cleanup, including releasing all public locks. ***
 
+    SetCurrentPhaseName("Opening Briefcase");
+    GetProgressMeter().AddSteps(10); // TODO
+
     GetLogger().infov("bridge:%s iModel:%s - Opening briefcase I.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
 
     // ***
@@ -2158,6 +2210,7 @@ int iModelBridgeFwk::UpdateExistingBim()
     //  By getting the BIM to the tip, this initial pull also helps ensure that we will be able to get locks for the other changes that that bridge will make later.
     if (EnableECProfileUpgrade())
         {
+        GetProgressMeter().SetCurrentStepName("Checking for profile upgrade");
         LOG.tracev(L"TryOpenBimWithBimProfileUpgrade");
         if (BSISUCCESS != TryOpenBimWithBimProfileUpgrade())
             return BentleyStatus::ERROR;
@@ -2174,6 +2227,7 @@ int iModelBridgeFwk::UpdateExistingBim()
         }
 
     LOG.tracev(L"TryOpenBimWithBisSchemaUpgrade");
+    GetProgressMeter().SetCurrentStepName("Checking for BIS schema upgrade");
     if (BSISUCCESS != TryOpenBimWithBisSchemaUpgrade())
         return BentleyStatus::ERROR;
     LOG.tracev(L"TryOpenBimWithBisSchemaUpgrade  : Done");
@@ -2252,22 +2306,29 @@ int iModelBridgeFwk::UpdateExistingBim()
         }
 
     //  Done. Make sure that all changes are pushed and all shared locks are released.
+
+    SetCurrentPhaseName("Finalizing Changes");
+    GetProgressMeter().AddSteps(2);
+
     if (!iModelBridge::AnyTxns(*m_briefcaseDgnDb) && (SyncState::Initial == GetSyncState()))
         {
         Briefcase_ReleaseAllPublicLocks();
         GetLogger().info("No changes were detected and there are no Txns waiting to be pushed.");
+        PostStatusMessage("No changes were detected");
         }
     else
         {
         BeAssert(!m_briefcaseDgnDb->Txns().HasChanges());
 
         GetLogger().infov("bridge:%s iModel:%s - Pushing Data Changeset.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
+        GetProgressMeter().SetCurrentStepName("Pushing Changes");
 
         if (BSISUCCESS != Briefcase_PullMergePush(GetRevisionComment().c_str()))
             return RETURN_STATUS_SERVER_ERROR; // (Retain shared locks, so that we can re-try our push later.)
 
         BeAssert(!iModelBridge::AnyTxns(*m_briefcaseDgnDb));
 
+        GetProgressMeter().SetCurrentStepName("Releasing Locks");
         if (BSISUCCESS != Briefcase_ReleaseAllPublicLocks())
             return RETURN_STATUS_SERVER_ERROR;
         }

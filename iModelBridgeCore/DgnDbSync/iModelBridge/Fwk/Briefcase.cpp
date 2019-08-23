@@ -41,16 +41,6 @@ static BentleyStatus getEnvironmentFromString(UrlProvider::Environment& environm
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnProgressMeter& iModelBridgeFwk::GetProgressMeter() const
-    {
-    static NopProgressMeter s_nopMeter;
-    auto meter = T_HOST.GetProgressMeter();
-    return meter? *meter: s_nopMeter;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void iModelBridgeFwk::IModelHubArgs::PrintUsage()
@@ -661,7 +651,6 @@ BentleyStatus iModelBridgeFwk::Briefcase_ReleaseAllPublicLocks()
     if (!m_briefcaseDgnDb->BriefcaseManager().GetChannelPropsR().oneBriefcaseOwnsChannel)
         {
         StopWatch releaseLockTimer(true);
-        GetProgressMeter().SetCurrentStepName("ReleaseSharedLocks");
 
         auto rstatus = m_briefcaseDgnDb->BriefcaseManager().Relinquish();
         if (RepositoryStatus::Success != rstatus)
@@ -676,7 +665,6 @@ BentleyStatus iModelBridgeFwk::Briefcase_ReleaseAllPublicLocks()
         }
 
     StopWatch releaseLockTimer(true);
-    GetProgressMeter().SetCurrentStepName("ReleaseSharedLocks");
 
     DgnLockSet toRelease;
 
@@ -810,4 +798,3 @@ IRepositoryManagerP iModelBridgeFwk::GetRepositoryManager(DgnDbR db) const
     {
     return m_client->GetRepositoryManager(db);
     }
-

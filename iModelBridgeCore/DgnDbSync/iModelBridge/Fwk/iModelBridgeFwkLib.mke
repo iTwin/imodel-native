@@ -55,6 +55,8 @@ $(o)OidcToken$(oext): $(baseDir)OidcToken.cpp  $(baseDir)OidcToken.h ${MultiComp
 
 $(o)iModelBridgeErrorHandling$(oext) : $(_MakeFilePath)iModelBridgeErrorHandling.cpp $(baseDir)iModelBridgeErrorHandling.h ${MultiCompileDepends}
 
+$(o)ProgressMeter$(oext): $(baseDir)ProgressMeter.cpp $(iModelBridgeAPISrc)iModelBridgeFwk.h ${MultiCompileDepends}
+
 %if $(TARGET_PLATFORM)=="Windows"
 
 $(o)iModelCrashProcessor$(oext) : $(_MakeFilePath)iModelCrashProcessor.cpp $(_MakeFilePath)iModelCrashProcessor.h ${MultiCompileDepends}

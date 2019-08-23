@@ -45,6 +45,8 @@ BENTLEY_TRANSLATABLE_STRINGS_END
 //=======================================================================================
 struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
 {
+    friend struct IBriefcaseManagerForBridges;
+
     friend struct iModelBridgeFwkPush;
 
     struct FwkContext
@@ -130,6 +132,7 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         bool       m_allDocsProcessed = false;
         bool       m_allowIntermdiatePushes = true;
         int m_maxWaitForMutex = 60000;
+        int m_statusMessageInterval = 1000;
         Utf8String m_revisionComment;
         WString    m_bridgeRegSubKey;
         BeFileName m_bridgeLibraryName;
@@ -141,6 +144,7 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         Utf8String m_jobRunCorrelationId;
         Utf8String m_jobRequestId;
         Utf8String m_jobSubjectName;
+        Utf8String m_statusMessageSinkUrl;
         bvector<BeFileName> m_drawingAndSheetFiles;
         BeFileName m_fwkAssetsDir;
         Json::Value m_argsJson; // additional arguments, in JSON format. Some of these may be intended for the bridge.
@@ -278,6 +282,7 @@ protected:
     int m_maxRetryCount;
     bool m_isCreatingNewRepo {};
     bool m_areCodesInLockedModelsReported = true;    // This an OUTPUT variable, set to the result of calling a method on the BriefcaseManager
+    bool m_requestInFlight{};
     BentleyApi::Dgn::LockLevel m_retainedChannedlLockLevel = BentleyApi::Dgn::LockLevel::Exclusive;
     DmsServerArgs m_dmsServerArgs;
     FwkRepoAdmin* m_repoAdmin {};
@@ -300,6 +305,10 @@ protected:
     IModelBridgeRegistry& GetRegistry();
 
     DgnProgressMeter& GetProgressMeter() const;
+    void SetupProgressMeter();
+    void AddPhases(uint32_t count);
+    void SetCurrentPhaseName(Utf8StringCR);
+    void PostStatusMessage(Utf8StringCR msg, Utf8StringCR details = Utf8String(), bool isError = false);
 
     //! @name sync with server
     //! @{
@@ -401,8 +410,6 @@ public:
     IRepositoryManagerP GetRepositoryManager(DgnDbR db) const;
 
     //!Internal function.
-    
-
     IMODEL_BRIDGE_FWK_EXPORT BeSQLite::BeBriefcaseId GetBriefcaseId();
 
     BentleyStatus LockChannelParent(SubjectCR jobSubj);
