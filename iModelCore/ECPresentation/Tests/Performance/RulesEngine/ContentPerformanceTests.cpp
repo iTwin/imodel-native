@@ -85,7 +85,7 @@ void ContentPerformanceTests::GetContent(SelectionInfo const& selection, KeySetC
 
     // get the descriptor
     RulesDrivenECPresentationManager::ContentOptions options = CreateContentOptions();
-    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(m_project, type, inputKeys, &selection, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(m_project, type, 0, inputKeys, &selection, options.GetJson()).get();
 
     if (descriptor->GetContentFlags() != (flags | descriptor->GetContentFlags()))
         {
@@ -154,7 +154,7 @@ TEST_F(ContentPerformanceTests, GetDescriptorForAllElementSubclasses)
     // get the descriptor
     Utf8PrintfString timerName1("%s: First pass", BeTest::GetNameOfCurrentTest());
     Timer _timer1(timerName1.c_str());
-    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(m_project, ContentDisplayType::PropertyPane, *input, nullptr, CreateContentOptions().GetJson()).get();
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(m_project, ContentDisplayType::PropertyPane, 0, *input, nullptr, CreateContentOptions().GetJson()).get();
     EXPECT_TRUE(descriptor.IsValid());
     _timer1.Finish();
 
@@ -163,7 +163,7 @@ TEST_F(ContentPerformanceTests, GetDescriptorForAllElementSubclasses)
 
     Utf8PrintfString timerName2("%s: Second pass", BeTest::GetNameOfCurrentTest());
     Timer _timer2(timerName2.c_str());
-    descriptor = m_manager->GetContentDescriptor(m_project, ContentDisplayType::PropertyPane, *input, nullptr, CreateContentOptions().GetJson()).get();
+    descriptor = m_manager->GetContentDescriptor(m_project, ContentDisplayType::PropertyPane, 0, *input, nullptr, CreateContentOptions().GetJson()).get();
     EXPECT_TRUE(descriptor.IsValid());
     }
 
@@ -179,13 +179,13 @@ TEST_F(ContentPerformanceTests, GetContentClassesForBisElements)
     
     Utf8PrintfString timerName1("%s: First pass", BeTest::GetNameOfCurrentTest());
     Timer _timer1(timerName1.c_str());
-    bvector<SelectClassInfo> classes = m_manager->GetContentClasses(m_project, ContentDisplayType::PropertyPane, {elementClass}, CreateContentOptions().GetJson()).get();
+    bvector<SelectClassInfo> classes = m_manager->GetContentClasses(m_project, ContentDisplayType::PropertyPane, 0, {elementClass}, CreateContentOptions().GetJson()).get();
     EXPECT_TRUE(!classes.empty());
     _timer1.Finish();
     
     Utf8PrintfString timerName2("%s: Second pass", BeTest::GetNameOfCurrentTest());
     Timer _timer2(timerName2.c_str());
-    classes = m_manager->GetContentClasses(m_project, ContentDisplayType::PropertyPane, {elementClass}, CreateContentOptions().GetJson()).get();
+    classes = m_manager->GetContentClasses(m_project, ContentDisplayType::PropertyPane, 0, {elementClass}, CreateContentOptions().GetJson()).get();
     EXPECT_TRUE(!classes.empty());
     }
 
@@ -226,6 +226,7 @@ TEST_F(ContentPerformanceTests, GetPropertyPaneContentWithLabelsForAllGeometricE
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ContentPerformanceTests, GetGridContentForAllGeometricElements)
     {
+    m_manager->SetLocalizationProvider(new SQLangLocalizationProvider());
     GetContentForAllGeometricElements(ContentDisplayType::Grid, 7414);
     }
 
@@ -461,7 +462,7 @@ TEST_F(TilesPublisherPerformanceTests, GetPropertiesOfAllElementsInImodel)
         Utf8PrintfString _timerClassMsg("Getting content for '%s' with %" PRIu64 " elements", className.c_str(), (uint64_t)keys.size());
         Timer _timerClass(_timerClassMsg.c_str());
 
-        ContentDescriptorCPtr descriptorPtr = m_manager->GetContentDescriptor(m_project, ContentDisplayType::PropertyPane, *set, nullptr, options).get();
+        ContentDescriptorCPtr descriptorPtr = m_manager->GetContentDescriptor(m_project, ContentDisplayType::PropertyPane, 0, *set, nullptr, options).get();
         const auto descriptor = ContentDescriptor::Create(*descriptorPtr);
         descriptor->RemoveContentFlag(ContentFlags::MergeResults);
         ExtractElementsPaged(*descriptor, 50000);

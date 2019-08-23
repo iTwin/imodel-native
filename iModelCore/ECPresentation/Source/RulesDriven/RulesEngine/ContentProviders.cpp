@@ -215,12 +215,15 @@ static void MergePrimaryKeys(bvector<ContentSetItemPtr> const& targetSetItems, b
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String GetLocalizedVariesString(ILocalizationProvider const& localizationProvider, Utf8StringCR locale)
+static Utf8String GetLocalizedVariesString(ILocalizationProvider const* localizationProvider, Utf8StringCR locale)
     {
+    if (!localizationProvider)
+        return RulesEngineL10N::LABEL_General_Varies().m_str;
+
     Utf8String localizationId = PRESENTATION_LOCALIZEDSTRING(RulesEngineL10N::GetNameSpace().m_namespace, RulesEngineL10N::LABEL_General_Varies().m_str);
     Utf8String prelocalizedLabel = Utf8PrintfString(CONTENTRECORD_MERGED_VALUE_FORMAT, localizationId.c_str());
     Utf8String localizedLabel = prelocalizedLabel;
-    LocalizationHelper(localizationProvider, locale).LocalizeString(localizedLabel);
+    LocalizationHelper(*localizationProvider, locale).LocalizeString(localizedLabel);
     return localizedLabel;
     }
 
@@ -229,7 +232,7 @@ static Utf8String GetLocalizedVariesString(ILocalizationProvider const& localiza
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void MergeField (RapidJsonValueR targetValue, RapidJsonValueR targetDisplayValue,
     rapidjson::Document::AllocatorType& targetDisplayValueAllocator, 
-    ILocalizationProvider const& localizationProvider, Utf8StringCR locale)
+    ILocalizationProvider const* localizationProvider, Utf8StringCR locale)
     {
     targetValue.SetNull();
     targetDisplayValue.SetString(GetLocalizedVariesString(localizationProvider, locale).c_str(), targetDisplayValueAllocator);
@@ -240,7 +243,7 @@ static void MergeField (RapidJsonValueR targetValue, RapidJsonValueR targetDispl
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool MergeContent(RapidJsonValueR targetValues, RapidJsonValueR targetDisplayValues,
     rapidjson::Document::AllocatorType& targetDisplayValuesAllocator, RapidJsonValueCR source,
-    ILocalizationProvider const& localizationProvider, Utf8StringCR locale)
+    ILocalizationProvider const* localizationProvider, Utf8StringCR locale)
     {
     if (targetValues != source)
         {
@@ -256,7 +259,7 @@ static bool MergeContent(RapidJsonValueR targetValues, RapidJsonValueR targetDis
 * @bsimethod                                    Grigas.Petraitis                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool MergeContent(rapidjson::Document& targetValues, rapidjson::Document& targetDisplayValues, RapidJsonValueCR source,
-    ILocalizationProvider const& localizationProvider, Utf8StringCR locale)
+    ILocalizationProvider const* localizationProvider, Utf8StringCR locale)
     {
     return MergeContent(targetValues, targetDisplayValues, targetDisplayValues.GetAllocator(), source, localizationProvider, locale);
     }
@@ -265,7 +268,7 @@ static bool MergeContent(rapidjson::Document& targetValues, rapidjson::Document&
 * @bsimethod                                    Grigas.Petraitis                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool MergeContentSetItems(bvector<ContentSetItemPtr> const& targetSetItems, bvector<ContentSetItemPtr> const& sourceSetItems, 
-    ILocalizationProvider const& localizationProvider, Utf8StringCR locale)
+    ILocalizationProvider const* localizationProvider, Utf8StringCR locale)
     {
     if (targetSetItems.size() != sourceSetItems.size())
         {
@@ -329,6 +332,7 @@ NestedContentProviderPtr ContentProvider::GetNestedContentProvider(ContentDescri
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ContentProvider::LoadNestedContentFieldValue(ContentSetItemR item, ContentDescriptor::NestedContentField const& field, bool cacheable) const
     {
+    ILocalizationProvider const* localizationProvider = GetContext().IsLocalizationContext() ? &GetContext().GetLocalizationProvider() : nullptr;
     ContentDescriptorCR descriptor = *GetContentDescriptor();
     Utf8CP fieldName = field.GetName().c_str();
     bool isRelatedContent = !field.GetRelationshipPath().empty();
@@ -359,7 +363,7 @@ void ContentProvider::LoadNestedContentFieldValue(ContentSetItemR item, ContentD
                     contentDisplayValues = std::move(instanceDisplayValues);
                     firstPass = false;
                     }
-                else if (MergeContent(contentValues, contentDisplayValues, instanceValues, GetContext().GetLocalizationProvider(), GetContext().GetLocale()))
+                else if (MergeContent(contentValues, contentDisplayValues, instanceValues, localizationProvider, GetContext().GetLocale()))
                     {
                     // if detected different values during merge, stop
                     if (item.GetValues().HasMember(fieldName))
@@ -379,7 +383,7 @@ void ContentProvider::LoadNestedContentFieldValue(ContentSetItemR item, ContentD
                     targetSetitems = sourceSetItems;
                     firstPass = false;
                     }
-                else if (MergeContentSetItems(targetSetitems, sourceSetItems, GetContext().GetLocalizationProvider(), GetContext().GetLocale()))
+                else if (MergeContentSetItems(targetSetitems, sourceSetItems, localizationProvider, GetContext().GetLocale()))
                     {
                     // if detected different values during merge, stop
                     mergeAllField = true;
@@ -394,7 +398,7 @@ void ContentProvider::LoadNestedContentFieldValue(ContentSetItemR item, ContentD
             if (mergeAllField)
                 {
                 MergeField(contentValues, contentDisplayValues, contentDisplayValues.GetAllocator(), 
-                    GetContext().GetLocalizationProvider(), GetContext().GetLocale());
+                    localizationProvider, GetContext().GetLocale());
                 }
             else
                 {
@@ -416,7 +420,7 @@ void ContentProvider::LoadNestedContentFieldValue(ContentSetItemR item, ContentD
                 RapidJsonValueR values = item.GetValues()[fieldName];
                 RapidJsonValueR displayValues = item.GetDisplayValues()[fieldName];
                 bool areValuesDifferent = MergeContent(values, displayValues, item.GetDisplayValues().GetAllocator(), contentValues,
-                    GetContext().GetLocalizationProvider(), GetContext().GetLocale());
+                    localizationProvider, GetContext().GetLocale());
                 if (areValuesDifferent)
                     item.GetMergedFieldNames().push_back(fieldName);
                 }

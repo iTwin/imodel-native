@@ -30,8 +30,9 @@ void RulesEnginePerformanceTests::SetUp()
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(assetsDirectory);
     BeTest::GetHost().GetTempDir(temporaryDirectory);
     ECSchemaReadContext::Initialize(assetsDirectory);
+
     m_manager = new RulesDrivenECPresentationManager(m_connections, RulesDrivenECPresentationManager::Paths(assetsDirectory, temporaryDirectory));
-    ECSchemaReadContext::Initialize(assetsDirectory);
+    
     // set up presentation manager
     PresentationRuleSetPtr ruleset = _SupplyRuleset();
     if (!ruleset.IsValid())
@@ -42,6 +43,8 @@ void RulesEnginePerformanceTests::SetUp()
     m_locater = TestRuleSetLocater::Create();
     m_manager->GetLocaters().RegisterLocater(*m_locater);
     m_locater->AddRuleSet(*ruleset);
+
+    m_manager->SetLocalizationProvider(new SQLangLocalizationProvider());
 
     // open the project
     BeFileName projectPath = _SupplyProjectPath();
