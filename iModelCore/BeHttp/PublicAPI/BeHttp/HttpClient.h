@@ -118,8 +118,16 @@ public:
     Options(BeFileName assetsDir, uint32_t maxConnectionsPerHost = 10, uint32_t maxTotalConnections = 0) :
         m_assetsDirectoryPath(assetsDir), m_maxConnectionsPerHost(maxConnectionsPerHost), m_maxTotalConnections(maxTotalConnections) {}
 
+    //! Set path where assets are delivered to.
+    Options& SetAssetsDirectoryPath(BeFileName path) { m_assetsDirectoryPath = path; return *this; }
     BeFileNameCR GetAssetsDirectoryPath() const { return m_assetsDirectoryPath; }
+
+    //! Default - 10. Similar as most browsers.
+    Options& SetMaxConnectionsPerHost(uint32_t connections) { m_maxConnectionsPerHost = connections; return *this; }
     uint32_t GetMaxConnectionsPerHost() const { return m_maxConnectionsPerHost; }
+
+    //! Default - 0, unlimited.
+    Options& SetMaxTotalConnections(uint32_t connections) { m_maxTotalConnections = connections; return *this; }
     uint32_t GetMaxTotalConnections() const { return m_maxTotalConnections; }
     };
 
