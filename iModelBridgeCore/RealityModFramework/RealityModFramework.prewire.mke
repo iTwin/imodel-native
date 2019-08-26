@@ -1,0 +1,20 @@
+#--------------------------------------------------------------------------------------
+#    $RCSfile: imagepp.mke,v $
+#   $Revision: 1.50 $
+#       $Date: 2007/03/07 13:34:13 $
+#     $Author: Bern.McCarty $
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+%include mdl.mki
+
+appName     = RealityModFramework.prewire
+%include $(SrcRoot)RealityModFramework/mki/RealityModFrameworkCommon.mki
+
+# Wire in my own public header files.
+always:
+   ~linkdir "$(BuildContextPublicApiDir)RealityPlatform=$(RealityPlatformPublicAPISrc)"
+   ~linkdir "$(BuildContextPublicApiDir)RealityPlatformTools=$(RealityPlatformToolsPublicAPISrc)"
+   ~linkdir "$(BuildContextPublicApiDir)RealityAdmin=$(RealityAdminPublicAPISrc)"
+   ~linkdir "$(BuildContextPublicApiDir)SpatioTemporalSelector=$(SpatioTemporalSelectorPublicAPISrc)"
