@@ -84,6 +84,15 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectProjectUrl(
     &s_urlRegistry
     );
 
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectProjectSettingsUrl(
+    "Mobile.ConnectProjectSettingsUrl",
+    "https://dev-webportal-eus.cloudapp.net/Admin/ProjectRegister?id=",
+    "https://qa-connect-webportal.bentley.com/Admin/ProjectRegister?id=",
+    "https://connect.bentley.com/project/Admin/ProjectRegister?id=",
+    nullptr,
+    &s_urlRegistry
+    );    
+
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgGlobal(
     "Mobile.ConnectWsgGlobal",
     "https://dev-wsg20-eus.cloudapp.net",

@@ -145,6 +145,7 @@ struct UrlProvider
             WSCLIENT_EXPORT static const UrlDescriptor ConnectEula;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectTermsOfServiceUrl;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectProjectUrl;
+            WSCLIENT_EXPORT static const UrlDescriptor ConnectProjectSettingsUrl;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgGlobal;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgPersonalPublishing;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgProjectContent;
