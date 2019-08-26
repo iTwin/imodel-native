@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+-->
+
+<!-- Create shortcuts. -->
+
+<Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
+    <?include $(var.BBInstallSetDefinitionWxi)?>
+
+    <Fragment Id="RealDwgMergeModules">
+
+        <DirectoryRef Id="TARGETDIR">
+            <Directory Id="$(var.DIRECTORY_COMMFILES)">
+                <Directory Id="AutodeskShared" Name="Autodesk Shared"/>
+            </Directory>
+        </DirectoryRef>
+
+        <!--<DirectoryRef Id="installdir">
+            <Merge Id="UpdateClientRegistrationMsm" DiskId="1" Language="0" FileCompression="yes" SourceFile="UpdateClientRegistration.msm">
+                <ConfigurationData Name="REG_RETARGET_UPDATE_CLIENT_KEY" Value="SOFTWARE\Bentley\Installed_Products\UpdateClient\!(wix.wixUpgradeCode)"/>
+                <ConfigurationData Name="REG_SERVICE_PACK_LEVEL" Value="#1"/>
+            </Merge>
+        </DirectoryRef>-->
+
+        <!--
+        wixShortManufacturerName    = Bentley           ==> Separating Bentley products from other company products.
+        wixProductShortName         = MicroStation      ==> Separating Product from other products.
+        wixProductCode              = {PRODUCT-CODE}    ==> Separating different verison of product and safegaurding registry, unless major upgrade is done.
+        OBJDBXVERSION               = R20.0             ==. Obtained from objdbx.msm.
+        -->
+
+        <SetProperty Id="ODBXHOSTAPPREGROOT" Value="SOFTWARE\!(wix.wixShortManufacturerName)\ObjectDBX\!(wix.wixProductShortName)\!(wix.wixProductCode)\[OBJDBXVERSION]" After="LaunchConditions"/>
+        <SetProperty Id="ODBXHOSTAPPGLOROOT" Value="SOFTWARE\!(wix.wixShortManufacturerName)\ObjectDBX\!(wix.wixProductShortName)\!(wix.wixProductCode)\[OBJDBXVERSION]" After="LaunchConditions"/>
+
+        <DirectoryRef Id="realdwgassemblies">
+            <Component Id="RealDwgExtraRegistry" Guid="{49803F29-3FDB-480A-8309-3495748A5209}" Win64="$(var.COMPONENT_WIN64)">
+                <RegistryKey Root="HKLM" Key="[ODBXHOSTAPPREGROOT]\Variables\WIPEOUTFRAME" ForceDeleteOnUninstall="yes" ForceCreateOnInstall="yes">
+                    <RegistryValue Value="1" Type="string"/>
+                    <RegistryValue Name="PrimaryType"   Value="5003" Type="integer"/>
+                    <RegistryValue Name="StorageType"   Value="00000003" Type="integer"/>
+                    <RegistryValue Name="LowerBound"    Value="00000000" Type="integer"/>
+                    <RegistryValue Name="UpperBound"    Value="00000002" Type="integer"/>
+                </RegistryKey>
+            </Component>
+            <Merge Id="acatil_glob.msm" SourceFile="AcAtil_Glob.msm" Language="0" DiskId="1" >
+                <ConfigurationData Name="DIR_RETARGET_AutodeskShared" Value="AutodeskShared"/>
+                <ConfigurationData Name="DIR_RETARGET_INSTALLDIR" Value="realdwgassemblies"/>
+            </Merge>
+            <!-- NO [ODBXHOSTAPPREGROOT]: AcAtil_Loc.msm-->
+            <!-- NO [ODBXHOSTAPPREGROOT]: acdbmgd.msm-->
+            <!-- NO [ODBXHOSTAPPREGROOT]: AcHapiGlob.msm-->
+            <Merge Id="acidviewobj.msm" SourceFile="AcIdViewObj.msm" Language="0" DiskId="1" >
+                <ConfigurationData Name="DIR_RETARGET_AutodeskShared" Value="AutodeskShared"/>
+                <ConfigurationData Name="DIR_RETARGET_INSTALLDIR" Value="realdwgassemblies"/>
+            </Merge>
+            <Merge Id="acmodeldoc_glob.msm" SourceFile="AcModelDoc_glob.msm" Language="0" DiskId="1" >
+                <ConfigurationData Name="DIR_RETARGET_AutodeskShared" Value="AutodeskShared"/>
+                <ConfigurationData Name="DIR_RETARGET_INSTALLDIR" Value="realdwgassemblies"/>
+            </Merge>
+            <!-- NO [ODBXHOSTAPPREGROOT]: AcModelDoc_loc.msm-->
+            <Merge Id="acmpolygonobj23.msm" SourceFile="AcMPolygonObj23.msm" Language="0" DiskId="1" >
+                <ConfigurationData Name="DIR_RETARGET_AutodeskShared" Value="AutodeskShared"/>
+                <ConfigurationData Name="DIR_RETARGET_INSTALLDIR" Value="realdwgassemblies"/>
+            </Merge>
+            <Merge Id="acsmcomponents.msm" SourceFile="AcSmComponents.msm" Language="0" DiskId="1" >
+                <ConfigurationData Name="DIR_RETARGET_AutodeskShared" Value="AutodeskShared"/>
+                <ConfigurationData Name="DIR_RETARGET_INSTALLDIR" Value="realdwgassemblies"/>
+            </Merge>
+            <!-- NO [ODBXHOSTAPPREGROOT]: ad20asm.msm-->
+            <!-- NO [ODBXHOSTAPPREGROOT]: AdSpatialReference.msm-->
+            <?if $(var.COMPONENT_WIN64)="yes"?>
+            <Merge Id="aecappsvr.msm" SourceFile="AecAppSvr.msm" Language="0" DiskId="1" >
+                <ConfigurationData Name="DIR_RETARGET_TARGETDIR1" Value="AutodeskShared"/>
+                <ConfigurationData Name="LANG_DIR_RETARGET_TARGETDIR1" Value="AutodeskShared"/>
+                <ConfigurationData Name="DIR_RETARGET_TARGETDIR2" Value="realdwgassemblies"/>
+                <ConfigurationData Name="LANG_DIR_RETARGET_TARGETDIR2" Value="realdwgassemblies"/>
+                <ConfigurationData Name="DIR_RETARGET_TARGETDIR3" Value="realdwgassemblies"/>
+                <ConfigurationData Name="LANG_DIR_RETARGET_TARGETDIR3" Value="realdwgassemblies"/>
+                <ConfigurationData Name="DIR_RETARGET_TARGETDIR4" Value="realdwgassemblies"/>
+                <ConfigurationData Name="LANG_DIR_RETARGET_TARGETDIR4" Value="realdwgassemblies"/>
+            </Merge>
+            <?endif?>
+            <Merge Id="aecbdbx.msm" SourceFile="aecbdbx.msm" Language="0" DiskId="1" >
+                <ConfigurationData Name="DIR_RETARGET_TARGETDIR1" Value="AutodeskShared"/>
+                <ConfigurationData Name="LANG_DIR_RETARGET_TARGETDIR1" Value="AutodeskShared"/>
+                <ConfigurationData Name="DIR_RETARGET_TARGETDIR2" Value="realdwgassemblies"/>
+                <ConfigurationData Name="LANG_DIR_RETARGET_TARGETDIR2" Value="realdwgassemblies"/>
+                <ConfigurationData Name="DIR_RETARGET_TARGETDIR3" Value="realdwgassemblies"/>
+                <ConfigurationData Name="LANG_DIR_RETARGET_TARGETDIR3" Value="realdwgassemblies"/>
+                <ConfigurationData Name="DIR_RETARGET_TARGETDIR4" Value="realdwgassemblies"/>
+                <ConfigurationData Name="LANG_DIR_RETARGET_TARGETDIR4" Value="realdwgassemblies"/>
+            </Merge>
+            <Merge Id="aecbdbx_ps.msm" SourceFile="aecbdbx_PS.msm" Language="0" DiskId="1" >
+                <ConfigurationData Name="DIR_RETARGET_TARGETDIR1" Value="AutodeskShared"/>
+                <ConfigurationData Name="LANG_DIR_RETARGET_TARGETDIR1" Value="AutodeskShared"/>
+                <ConfigurationData Name="DIR_RETARGET_TARGETDIR2" Value="realdwgassemblies"/>
+                <ConfigurationData Name="LANG_DIR_RETARGET_TARGETDIR2" Value="realdwgassemblies"/>
+                <ConfigurationData Name="DIR_RETARGET_TARGETDIR3" Value="realdwgassemblies"/>
+                <ConfigurationData Name="LANG_DIR_RETARGET_TARGETDIR3" Value="realdwgassemblies"/>
+                <ConfigurationData Name="DIR_RETARGET_TARGETDIR4" Value="realdwgassemblies"/>
+                <ConfigurationData Name="LANG_DIR_RETARGET_TARGETDIR4" Value="realdwgassemblies"/>
+                <ConfigurationData Name="DIR_INSTALLDIRLANG_RES" Value="realdwgassemblies"/>
+            </Merge>
+            <!-- NO [ODBXHOSTAPPREGROOT]: aecbdbx_res.msm-->
+            <Merge Id="aecmodeler.msm" SourceFile="aecmodeler.msm" Language="0" DiskId="1" >
+                <ConfigurationData Name="DIR_RETARGET_TARGETDIR1" Value="AutodeskShared"/>
+                <ConfigurationData Name="LANG_DIR_RETARGET_TARGETDIR1" Value="AutodeskShared"/>
+                <ConfigurationData Name="DIR_RETARGET_TARGETDIR2" Value="realdwgassemblies"/>
+                <ConfigurationData Name="LANG_DIR_RETARGET_TARGETDIR2" Value="realdwgassemblies"/>
+                <ConfigurationData Name="DIR_RETARGET_TARGETDIR3" Value="realdwgassemblies"/>
+                <ConfigurationData Name="LANG_DIR_RETARGET_TARGETDIR3" Value="realdwgassemblies"/>
+                <ConfigurationData Name="DIR_RETARGET_TARGETDIR4" Value="realdwgassemblies"/>
+                <ConfigurationData Name="LANG_DIR_RETARGET_TARGETDIR4" Value="realdwgassemblies"/>
+            </Merge>
+            <Merge Id="aecres.msm" SourceFile="aecres.msm" Language="0" DiskId="1" >
+                <ConfigurationData Name="DIR_RETARGET_TARGETDIR1" Value="AutodeskShared"/>
+                <ConfigurationData Name="LANG_DIR_RETARGET_TARGETDIR1" Value="AutodeskShared"/>
+                <ConfigurationData Name="DIR_RETARGET_TARGETDIR2" Value="realdwgassemblies"/>
+                <ConfigurationData Name="LANG_DIR_RETARGET_TARGETDIR2" Value="realdwgassemblies"/>
+                <ConfigurationData Name="DIR_RETARGET_TARGETDIR3" Value="realdwgassemblies"/>
+                <ConfigurationData Name="LANG_DIR_RETARGET_TARGETDIR3" Value="realdwgassemblies"/>
+                <ConfigurationData Name="DIR_RETARGET_TARGETDIR4" Value="realdwgassemblies"/>
+                <ConfigurationData Name="LANG_DIR_RETARGET_TARGETDIR4" Value="realdwgassemblies"/>
+            </Merge>
+            <!-- NO [ODBXHOSTAPPREGROOT]: aecres_res.msm-->
+            <Merge Id="aecsoa.msm" SourceFile="aecsoa.msm" Language="0" DiskId="1" >
+                <ConfigurationData Name="DIR_RETARGET_TARGETDIR1" Value="AutodeskShared"/>
+                <ConfigurationData Name="LANG_DIR_RETARGET_TARGETDIR1" Value="AutodeskShared"/>
+                <ConfigurationData Name="DIR_RETARGET_TARGETDIR2" Value="realdwgassemblies"/>
+                <ConfigurationData Name="LANG_DIR_RETARGET_TARGETDIR2" Value="realdwgassemblies"/>
+                <ConfigurationData Name="DIR_RETARGET_TARGETDIR3" Value="realdwgassemblies"/>
+                <ConfigurationData Name="LANG_DIR_RETARGET_TARGETDIR3" Value="realdwgassemblies"/>
+                <ConfigurationData Name="DIR_RETARGET_TARGETDIR4" Value="realdwgassemblies"/>
+                <ConfigurationData Name="LANG_DIR_RETARGET_TARGETDIR4" Value="realdwgassemblies"/>
+            </Merge>
+            <Merge Id="aecsoa_ps.msm" SourceFile="aecsoa_PS.msm" Language="0" DiskId="1" >
+                <ConfigurationData Name="DIR_RETARGET_TARGETDIR1" Value="AutodeskShared"/>
+                <ConfigurationData Name="LANG_DIR_RETARGET_TARGETDIR1" Value="AutodeskShared"/>
+                <ConfigurationData Name="DIR_RETARGET_TARGETDIR2" Value="realdwgassemblies"/>
+                <ConfigurationData Name="LANG_DIR_RETARGET_TARGETDIR2" Value="realdwgassemblies"/>
+                <ConfigurationData Name="DIR_RETARGET_TARGETDIR3" Value="realdwgassemblies"/>
+                <ConfigurationData Name="LANG_DIR_RETARGET_TARGETDIR3" Value="realdwgassemblies"/>
+                <ConfigurationData Name="DIR_RETARGET_TARGETDIR4" Value="realdwgassemblies"/>
+                <ConfigurationData Name="LANG_DIR_RETARGET_TARGETDIR4" Value="realdwgassemblies"/>
+            </Merge>
+            <!-- NO [ODBXHOSTAPPREGROOT]: aecsoa_res.msm-->
+            <Merge Id="aecsola.msm" SourceFile="aecsola.msm" Language="0" DiskId="1" >
+                <ConfigurationData Name="DIR_RETARGET_TARGETDIR1" Value="AutodeskShared"/>
+                <ConfigurationData Name="LANG_DIR_RETARGET_TARGETDIR1" Value="AutodeskShared"/>
+                <ConfigurationData Name="DIR_RETARGET_TARGETDIR2" Value="realdwgassemblies"/>
+                <ConfigurationData Name="LANG_DIR_RETARGET_TARGETDIR2" Value="realdwgassemblies"/>
+                <ConfigurationData Name="DIR_RETARGET_TARGETDIR3" Value="realdwgassemblies"/>
+                <ConfigurationData Name="LANG_DIR_RETARGET_TARGETDIR3" Value="realdwgassemblies"/>
+                <ConfigurationData Name="DIR_RETARGET_TARGETDIR4" Value="realdwgassemblies"/>
+                <ConfigurationData Name="LANG_DIR_RETARGET_TARGETDIR4" Value="realdwgassemblies"/>
+            </Merge>
+            <Merge Id="aecsola_ps.msm" SourceFile="aecsola_PS.msm" Language="0" DiskId="1" >
+                <ConfigurationData Name="DIR_RETARGET_TARGETDIR1" Value="AutodeskShared"/>
+                <ConfigurationData Name="LANG_DIR_RETARGET_TARGETDIR1" Value="AutodeskShared"/>
+                <ConfigurationData Name="DIR_RETARGET_TARGETDIR2" Value="realdwgassemblies"/>
+                <ConfigurationData Name="LANG_DIR_RETARGET_TARGETDIR2" Value="realdwgassemblies"/>
+                <ConfigurationData Name="DIR_RETARGET_TARGETDIR3" Value="realdwgassemblies"/>
+                <ConfigurationData Name="LANG_DIR_RETARGET_TARGETDIR3" Value="realdwgassemblies"/>
+                <ConfigurationData Name="DIR_RETARGET_TARGETDIR4" Value="realdwgassemblies"/>
+                <ConfigurationData Name="LANG_DIR_RETARGET_TARGETDIR4" Value="realdwgassemblies"/>
+            </Merge>
+            <!-- NO [ODBXHOSTAPPREGROOT]: aecsola_res.msm-->
+            <!-- NO [ODBXHOSTAPPREGROOT]: asm220_acad.msm-->
+            <!-- NO [ODBXHOSTAPPREGROOT]: asm220_acmessages.msm-->
+            <!-- NO [ODBXHOSTAPPREGROOT]: asm220_acmodlr.msm-->
+            <Merge Id="bimunderlayglob.msm" SourceFile="BIMUnderlayGlob.msm" Language="0" DiskId="1" >
+                <ConfigurationData Name="DIR_RETARGET_INSTALLDIR" Value="realdwgassemblies"/>
+            </Merge>
+            <!--<Merge Id="dgnio_glob.msm" SourceFile="DGNIO_GLOB.msm" Language="0" DiskId="1" >
+                <ConfigurationData Name="DIR_RETARGET_TARGETDIR1" Value="AutodeskShared"/>
+                <ConfigurationData Name="LANG_DIR_RETARGET_TARGETDIR1" Value="AutodeskShared"/>
+                <ConfigurationData Name="DIR_RETARGET_TARGETDIR2" Value="realdwgassemblies"/>
+                <ConfigurationData Name="LANG_DIR_RETARGET_TARGETDIR2" Value="realdwgassemblies"/>
+                <ConfigurationData Name="DIR_RETARGET_TARGETDIR3" Value="realdwgassemblies"/>
+                <ConfigurationData Name="LANG_DIR_RETARGET_TARGETDIR3" Value="realdwgassemblies"/>
+                <ConfigurationData Name="DIR_RETARGET_TARGETDIR4" Value="realdwgassemblies"/>
+                <ConfigurationData Name="LANG_DIR_RETARGET_TARGETDIR4" Value="realdwgassemblies"/>
+            </Merge>-->
+            <!--<Merge Id="etransmitglob.msm" SourceFile="ETransmitGlob.msm" Language="0" DiskId="1" >
+                <ConfigurationData Name="DIR_RETARGET_INSTALLDIR" Value="realdwgassemblies"/>
+            </Merge>-->
+            <!-- NO [ODBXHOSTAPPREGROOT]: ETransmitLoc.msm-->
+            <!-- NO [ODBXHOSTAPPREGROOT]: ETransmitUtility.msm-->
+            <!-- NO [ODBXHOSTAPPREGROOT]: LDTFonts.msm-->
+            <!-- NO [ODBXHOSTAPPREGROOT]: MDTSHX.msm-->
+            <!-- NO [ODBXHOSTAPPREGROOT]: MentorGridFiles64.msm-->
+            <!-- NO [ODBXHOSTAPPREGROOT]: mpolygoncom20enu.msm-->
+            <Merge Id="mpolygoncom23_glob.msm" SourceFile="mpolygoncom23_glob.msm" Language="0" DiskId="1" >
+                <ConfigurationData Name="DIR_RETARGET_INSTALLDIR" Value="realdwgassemblies"/>
+            </Merge>
+            <!-- NO [ODBXHOSTAPPREGROOT]: MPolygonObj20enu.msm-->
+            <Merge Id="objdbx.msm" SourceFile="Objdbx.msm" Language="0" DiskId="1" >
+                <ConfigurationData Name="DIR_RETARGET_INSTALLDIR" Value="realdwgassemblies"/>
+            </Merge>
+            <Merge Id="odbx23extra.msm" SourceFile="Odbx23Extra.msm" Language="0" DiskId="1" >
+                <ConfigurationData Name="DIR_RETARGET_AutodeskShared" Value="AutodeskShared"/>
+                <ConfigurationData Name="DIR_RETARGET_INSTALLDIR" Value="realdwgassemblies"/>
+            </Merge>
+            <!-- NO [ODBXHOSTAPPREGROOT]: OdbxAsm_full20glob.msm-->
+            <!-- NO [ODBXHOSTAPPREGROOT]: OdbxAsm_obj20glob.msm-->
+            <!-- NO [ODBXHOSTAPPREGROOT]: odbxauto20enu.msm-->
+            <Merge Id="odbxauto23glob.msm" SourceFile="odbxauto23glob.msm" Language="0" DiskId="1" >
+                <ConfigurationData Name="DIR_RETARGET_INSTALLDIR" Value="realdwgassemblies"/>
+            </Merge>
+            <!-- NO [ODBXHOSTAPPREGROOT]: odbxbrep20.msm-->
+            <Merge Id="odbxcore23glob.msm" SourceFile="OdbxCore23glob.msm" Language="0" DiskId="1" >
+                <ConfigurationData Name="DIR_RETARGET_INSTALLDIR" Value="realdwgassemblies"/>
+            </Merge>
+            <Merge Id="odbxcore23glob_ps.msm" SourceFile="OdbxCore23glob_PS.msm" Language="0" DiskId="1" >
+                <ConfigurationData Name="DIR_RETARGET_INSTALLDIR" Value="realdwgassemblies"/>
+            </Merge>
+            <!-- NO [ODBXHOSTAPPREGROOT]: OdbxCore20loc.msm-->
+            <Merge Id="pointcloudglob.msm" SourceFile="PointCloudGlob.msm" Language="0" DiskId="1" >
+                <ConfigurationData Name="DIR_RETARGET_INSTALLDIR" Value="realdwgassemblies"/>
+            </Merge>
+            <!-- NO [ODBXHOSTAPPREGROOT]: PointCloudLoc.msm-->
+            <!-- NO [ODBXHOSTAPPREGROOT]: PointCloudReCapGlob.msm-->
+            <!-- NO [ODBXHOSTAPPREGROOT]: tbb.msm-->
+        </DirectoryRef>
+    </Fragment>
+
+
+</Wix>
+
+
+
