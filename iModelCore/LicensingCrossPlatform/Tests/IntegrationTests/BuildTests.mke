@@ -1,0 +1,46 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: Tests/IntegrationTests/BuildTests.mke $
+#
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+# ***
+# *** Need to clean up the test code -- then we can remove this 'NOSTRICT' setting
+# ***
+NO_DEFAULT_CLANG_WARNINGS=1
+%include mdl.mki
+
+%ifndef TestDir
+    %error must define TestDir
+%endif
+
+baseDir = $(_MakeFilePath)
+
+# Compile and Link the unit tests
+BEGTEST_NAME  = $(TestDir)Licensing
+BEGTEST_INPUT = $(baseDir)$(TestDir)/
+BEGTEST_IGNORE= $(baseDir)$ignore_list.txt
+BEGTEST_OUTPUT=$(OutputRootDir)build/Licensing/IntegrationTests/
+o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/
+
+%ifdef UsePublishedApi
+    BEGTEST_API = $(BuildContext)SubParts/PublishedApi/Licensing
+%endif
+
+%include $(SrcRoot)bsicommon/sharedmki/DetectAndCompileUnitTests.mki
+
+# Deliver 
+$(BuildContext)Delivery/IntegrationTests/Objects/$(TestDir) : ${o}
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+%if $(TARGET_PROCESSOR_ARCHITECTURE)=="x64"
+    arch=Winx64
+%elif $(TARGET_PROCESSOR_ARCHITECTURE)=="x86"
+    arch=Winx86
+%else
+    arch=$(TARGET_PROCESSOR_ARCHITECTURE)
+%endif
+
+always:
+    CreateSymLinks.py -d $(OutRoot)$(arch)/Product/Licensing-IntegrationTests/Assets/TestAssets=$(SrcRoot)licensingcrossplatform/Tests/IntegrationTests/Assets
