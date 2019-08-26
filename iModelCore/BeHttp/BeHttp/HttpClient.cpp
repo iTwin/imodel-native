@@ -18,6 +18,8 @@
 #include "ApplicationEvents.h"
 #include "TrustManager.h"
 
+#include "Curl/ThreadCurlHttpHandler.h"
+
 USING_NAMESPACE_BENTLEY_HTTP
 
 static BeAtomic<int> s_tasksInProgressCount;
@@ -43,6 +45,7 @@ void HttpClient::InitializePlatform(void* arg)
 void HttpClient::Initialize(const HttpClient::Options& options)
     {
     s_options = options;
+    ThreadCurlHttpHandler::SetParallelizeAllRequests(options.GetParallelizeAllRequests());
     }
 
 /*--------------------------------------------------------------------------------------+

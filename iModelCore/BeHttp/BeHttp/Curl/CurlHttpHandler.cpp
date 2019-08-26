@@ -52,7 +52,7 @@ CurlHttpHandler::CurlHttpHandler()
 
     m_curlPool.Resize(10);
     m_webRunnerFactory = std::make_shared<CurlTaskRunner::Factory>();
-    m_webThreadPool = WorkerThreadPool::Create(1, "Curl Web", m_webRunnerFactory);
+    m_webThreadPool = WorkerThreadPool::Create(1, "BeHttp", m_webRunnerFactory);
 
     InitStartBackgroundTask(nullptr);
 

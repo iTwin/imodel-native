@@ -12,6 +12,8 @@
 USING_NAMESPACE_BENTLEY_HTTP
 USING_NAMESPACE_BENTLEY_TASKS
 
+bool ThreadCurlHttpHandler::s_parallelizeAllRequests = false;
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -20,15 +22,23 @@ ThreadCurlHttpHandler::ThreadCurlHttpHandler()
     auto parallelTransfers = 10;
     auto threadCount = parallelTransfers + 1; // +1 for tasks that are being canceled
 
-    m_threadPool = WorkerThreadPool::Create(threadCount, "WebThreadPool");
+    m_threadPool = WorkerThreadPool::Create(threadCount, "BeHttp");
     m_threadQueue = LimitingTaskQueue<Response>(m_threadPool);
     m_threadQueue.SetLimit(parallelTransfers);
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void ThreadCurlHttpHandler::SetParallelizeAllRequests(bool parallelize)
+    {
+    s_parallelizeAllRequests = parallelize;
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ThreadCurlHttpHandler::~ThreadCurlHttpHandler ()
+ThreadCurlHttpHandler::~ThreadCurlHttpHandler()
     {
     m_threadPool->OnEmpty()->Wait();
     }
@@ -38,10 +48,8 @@ ThreadCurlHttpHandler::~ThreadCurlHttpHandler ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<Response> ThreadCurlHttpHandler::_PerformRequest(RequestCR request)
     {
-    if (request.GetMethod().EqualsI("GET"))
-        {
+    if (s_parallelizeAllRequests || request.GetMethod().EqualsI("GET"))
         return CurlHttpHandler::_PerformRequest(request);
-        }
 
     return PerformThreadedRequest(request);
     }

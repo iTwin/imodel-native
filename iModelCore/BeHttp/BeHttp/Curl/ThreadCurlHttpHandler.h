@@ -22,6 +22,9 @@ BEGIN_BENTLEY_HTTP_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ThreadCurlHttpHandler : public CurlHttpHandler
     {
+    private:
+        static bool s_parallelizeAllRequests;
+
     protected:
         std::shared_ptr<Tasks::WorkerThreadPool> m_threadPool;
         Tasks::LimitingTaskQueue<Response> m_threadQueue;
@@ -33,6 +36,8 @@ struct ThreadCurlHttpHandler : public CurlHttpHandler
         virtual Tasks::AsyncTaskPtr<Response> _PerformRequest(RequestCR request) override;
 
         virtual Tasks::AsyncTaskPtr<Response> PerformThreadedRequest(RequestCR request);
+
+        static void SetParallelizeAllRequests(bool parallelize);
     };
 
 END_BENTLEY_HTTP_NAMESPACE
