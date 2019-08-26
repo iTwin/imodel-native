@@ -1,0 +1,94 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="CompatibilityTestFixture.cpp" />
+    <ClCompile Include="BeDbCompatibilityTests.cpp" />
+    <ClCompile Include="ECDbCompatibilityTests.cpp" />
+    <ClCompile Include="TestECDbCreators.cpp" />
+    <ClCompile Include="TestIModelCreators.cpp" />
+    <ClCompile Include="IModelCompatibilityTests.cpp" />
+    <ClCompile Include="Profiles.cpp" />
+    <ClCompile Include="TestDb.cpp" />
+    <ClCompile Include="TestDomain.cpp" />
+    <ClCompile Include="iModelHubMock\iModelHubMock.cpp">
+      <Filter>iModelHubMock</Filter>
+    </ClCompile>
+    <ClCompile Include="iModelHubMock\iModelHubMockTests.cpp">
+      <Filter>iModelHubMock</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="..\..\..\DgnPlatform.PartFile.xml" />
+    <Xml Include="ECSchemas\IModelEvolutionTests.1.0.0.ecschema.xml">
+      <Filter>ECSchemas</Filter>
+    </Xml>
+    <Xml Include="ECSchemas\IModelEvolutionTests.1.0.1.ecschema.xml">
+      <Filter>ECSchemas</Filter>
+    </Xml>
+    <Xml Include="ECSchemas\IModelEvolutionTests.1.0.2.ecschema.xml">
+      <Filter>ECSchemas</Filter>
+    </Xml>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="CompatibilityTestFixture.h" />
+    <ClInclude Include="TestECDbCreators.h" />
+    <ClInclude Include="TestIModelCreators.h" />
+    <ClInclude Include="CompatibilityTests.h" />
+    <ClInclude Include="Profiles.h" />
+    <ClInclude Include="TestDb.h" />
+    <ClInclude Include="TestDomain.h" />
+    <ClInclude Include="iModelHubMock\iModelHubMock.h">
+      <Filter>iModelHubMock</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="prewire.mke" />
+    <None Include="CompatibilityRunner\common.mki">
+      <Filter>CompatabilityRunner</Filter>
+    </None>
+    <None Include="CompatibilityRunner\PrepareCurrentTestRunner.mke">
+      <Filter>CompatabilityRunner</Filter>
+    </None>
+    <None Include="CompatibilityRunner\PrepareCurrentTestRunner.py">
+      <Filter>CompatabilityRunner</Filter>
+    </None>
+    <None Include="CompatibilityRunner\PreparePulledTestRunners.mke">
+      <Filter>CompatabilityRunner</Filter>
+    </None>
+    <None Include="CompatibilityRunner\PreparePulledTestRunners.py">
+      <Filter>CompatabilityRunner</Filter>
+    </None>
+    <None Include="CompatibilityRunner\PrepareTestFilesNugetPackaging.mke">
+      <Filter>CompatabilityRunner</Filter>
+    </None>
+    <None Include="CompatibilityRunner\PullNugets.mke">
+      <Filter>CompatabilityRunner</Filter>
+    </None>
+    <None Include="CompatibilityRunner\PullNugets.py">
+      <Filter>CompatabilityRunner</Filter>
+    </None>
+    <None Include="CompatibilityRunner\RunPulledTestRunners.mke">
+      <Filter>CompatabilityRunner</Filter>
+    </None>
+    <None Include="CompatibilityRunner\RunPulledTestRunners.py">
+      <Filter>CompatabilityRunner</Filter>
+    </None>
+    <None Include="CompatibilityRunner\ShouldPublishPackage.py">
+      <Filter>CompatabilityRunner</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ignore_list.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="ECSchemas">
+      <UniqueIdentifier>{8de4363d-60f9-4ee9-8cfd-09cb7080ea6d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="CompatabilityRunner">
+      <UniqueIdentifier>{ed8f34ad-5741-4e11-993a-a20cc9aaa595}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="iModelHubMock">
+      <UniqueIdentifier>{b4cf3f13-81c4-452d-b20e-0c9eac516466}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
