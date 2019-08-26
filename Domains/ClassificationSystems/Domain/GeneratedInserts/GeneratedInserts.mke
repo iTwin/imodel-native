@@ -1,0 +1,93 @@
+#----------------------------------------------------------------------
+#
+#     $Source: Domain/GeneratedInserts/GeneratedInserts.mke $
+#
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+
+%include mdl.mki
+
+# The same value must be used across several variables; set AppName and reference it.
+AppName = ClassificationSystemsGeneratedInserts
+CCompPDBName = $(AppName)
+
+o = $(OutputRootDir)build/ClassificationSystems/Domain/GeneratedInserts/
+
+nameToDefine = __CLASSIFICATIONSYSTEMSGENERATEDINSERTS_BUILD__
+%include cdefapnd.mki
+
+
+%if !defined (BMAKE_DELETE_ALL_TARGETS)
+    $(o):
+        ~@mkdir $@
+%else
+    always:
+        -$(rmdirRecursiveCmd) $(o)
+%endif
+
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)GeneratedInsertsApi$(oext) : $(_MakeFilePath)GeneratedInsertsApi.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GeneratedInsertsApi.h 
+
+$(o)GeneratedClassificationStandardInserts$(oext) : $(_MakeFilePath)GeneratedClassificationStandardInserts.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GeneratedInsertsApi.h 
+
+$(o)GeneratedUniFormatInserts$(oext) : $(_MakeFilePath)GeneratedUniFormatInserts.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GeneratedInsertsApi.h 
+
+$(o)GeneratedMasterFormatInserts$(oext) : $(_MakeFilePath)GeneratedMasterFormatInserts.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GeneratedInsertsApi.h 
+
+$(o)GeneratedOmniClass11Inserts$(oext) : $(_MakeFilePath)GeneratedOmniClass11Inserts.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GeneratedInsertsApi.h 
+
+$(o)GeneratedOmniClass12Inserts$(oext) : $(_MakeFilePath)GeneratedOmniClass12Inserts.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GeneratedInsertsApi.h 
+
+$(o)GeneratedOmniClass13_2006Inserts$(oext) : $(_MakeFilePath)GeneratedOmniClass13_2006Inserts.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GeneratedInsertsApi.h 
+
+$(o)GeneratedOmniClass13_2010Inserts$(oext) : $(_MakeFilePath)GeneratedOmniClass13_2010Inserts.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GeneratedInsertsApi.h 
+
+$(o)GeneratedOmniClass14Inserts$(oext) : $(_MakeFilePath)GeneratedOmniClass14Inserts.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GeneratedInsertsApi.h 
+
+$(o)GeneratedOmniClass21Inserts$(oext) : $(_MakeFilePath)GeneratedOmniClass21Inserts.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GeneratedInsertsApi.h 
+
+$(o)GeneratedOmniClass22_2006Inserts$(oext) : $(_MakeFilePath)GeneratedOmniClass22_2006Inserts.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GeneratedInsertsApi.h 
+
+$(o)GeneratedOmniClass22_2010Inserts$(oext) : $(_MakeFilePath)GeneratedOmniClass22_2010Inserts.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GeneratedInsertsApi.h 
+
+$(o)GeneratedOmniClass23Inserts$(oext) : $(_MakeFilePath)GeneratedOmniClass23Inserts.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GeneratedInsertsApi.h 
+
+$(o)GeneratedOmniClass32Inserts$(oext) : $(_MakeFilePath)GeneratedOmniClass32Inserts.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GeneratedInsertsApi.h 
+
+$(o)GeneratedOmniClass33Inserts$(oext) : $(_MakeFilePath)GeneratedOmniClass33Inserts.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GeneratedInsertsApi.h 
+
+$(o)GeneratedOmniClass34Inserts$(oext) : $(_MakeFilePath)GeneratedOmniClass34Inserts.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GeneratedInsertsApi.h 
+
+$(o)GeneratedOmniClass36_04Inserts$(oext) : $(_MakeFilePath)GeneratedOmniClass36_04Inserts.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GeneratedInsertsApi.h 
+
+$(o)GeneratedOmniClass36_24Inserts$(oext) : $(_MakeFilePath)GeneratedOmniClass36_24Inserts.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GeneratedInsertsApi.h 
+
+$(o)GeneratedOmniClass41Inserts$(oext) : $(_MakeFilePath)GeneratedOmniClass41Inserts.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GeneratedInsertsApi.h 
+
+$(o)GeneratedOmniClass49Inserts$(oext) : $(_MakeFilePath)GeneratedOmniClass49Inserts.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GeneratedInsertsApi.h 
+
+%include MultiCppCompileGo.mki
+objs +% $(MultiCompileObjectList)
+
+DLM_CONTEXT_LOCATION = $(ContextDeliveryDir)
+DLM_CREATE_LIB_CONTEXT_LINK = 1 
+DLM_DEST = $(o)
+DLM_EXPORT_DEST = $(o)
+DLM_EXPORT_OBJS = $(objs)
+DLM_LIB_CONTEXT_LOCATION = $(ContextDeliveryDir)
+DLM_NAME = $(AppName)
+DLM_NOENTRY = 1
+DLM_OBJECT_DEST = $(o)
+DLM_OBJECT_FILES = $(objs)
+
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BuildingDgnUtils$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)ClassificationSystemsElements$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)ClassificationSystemsDomain$(libext)
+
+%include $(sharedMki)linkLibrary.mki
+
