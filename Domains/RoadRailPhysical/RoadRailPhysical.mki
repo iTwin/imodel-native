@@ -1,0 +1,15 @@
+#---------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#---------------------------------------------------------------------------------------+
+#%include $(BuildContext)SubParts/PublicMki/BentleyApi.mki
+
+appName                         = RoadRailPhysical
+o                               = $(OutputRootDir)build/$(appName)/
+CCompPDBName                    = $(appName)
+MultiCompileIntermediatePdbFile = $(o)$(CCompPDBName).pdb
+IntermediatePdbFile             = $(MultiCompileIntermediatePdbFile)
+
+nameToDefine = __ROADRAILPHYSICAL_BUILD__
+%include cdefapnd.mki
