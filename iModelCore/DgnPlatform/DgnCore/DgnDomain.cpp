@@ -62,7 +62,7 @@ bool DgnDomain::ValidateSchemaPathname() const
     if (!schemaPathname.DoesPathExist())
         {
         LOG.errorv(L"Schema '%s' does not exist", schemaPathname.GetName());
-        BeAssert(false && "Schema does not exist");
+        // BeAssert(false && "Schema does not exist");
         return false;
         }
 
