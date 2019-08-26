@@ -1,0 +1,59 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
+#include "PublicApi/QuantityTakeoffsAspectsDomain.h"
+#include <DgnPlatform/DgnPlatformApi.h>
+#include <QuantityTakeoffsAspects/Handlers/DimensionsAspectHandler.h>
+#include <QuantityTakeoffsAspects/Handlers/DoorAspectHandler.h>
+#include <QuantityTakeoffsAspects/Handlers/EnergyPerformanceAspectHandler.h>
+#include <QuantityTakeoffsAspects/Handlers/FoundationAspectHandler.h>
+#include <QuantityTakeoffsAspects/Handlers/MaterialAspectHandler.h>
+#include <QuantityTakeoffsAspects/Handlers/PerimeterAspectHandler.h>
+#include <QuantityTakeoffsAspects/Handlers/PileAspectHandler.h>
+#include <QuantityTakeoffsAspects/Handlers/PipeAspectHandler.h>
+#include <QuantityTakeoffsAspects/Handlers/SideAreasAspectHandler.h>
+#include <QuantityTakeoffsAspects/Handlers/SlabAspectHandler.h>
+#include <QuantityTakeoffsAspects/Handlers/SlopeAspectHandler.h>
+#include <QuantityTakeoffsAspects/Handlers/StairsAspectHandler.h>
+#include <QuantityTakeoffsAspects/Handlers/StructuralLinearMemberAspectHandler.h>
+#include <QuantityTakeoffsAspects/Handlers/SurfaceAreaAspectHandler.h>
+#include <QuantityTakeoffsAspects/Handlers/ThicknessAspectHandler.h>
+#include <QuantityTakeoffsAspects/Handlers/VolumeAspectHandler.h>
+#include <QuantityTakeoffsAspects/Handlers/WallAspectHandler.h>
+#include <QuantityTakeoffsAspects/Handlers/WindowAspectHandler.h>
+
+BEGIN_QUANTITYTAKEOFFSASPECTS_NAMESPACE
+
+//=======================================================================================
+//  Handler definitions
+//=======================================================================================
+DOMAIN_DEFINE_MEMBERS(QuantityTakeoffsAspectsDomain)
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas               05/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+QuantityTakeoffsAspectsDomain::QuantityTakeoffsAspectsDomain() : DgnDomain(QUANTITYTAKEOFFSASPECTS_SCHEMA_NAME, "QuantityTakeoffsAspects Domain", 1)
+    {
+    RegisterHandler(DimensionsAspectHandler::GetHandler());
+    RegisterHandler(DoorAspectHandler::GetHandler());
+    RegisterHandler(EnergyPerformanceAspectHandler::GetHandler());
+    RegisterHandler(FoundationAspectHandler::GetHandler());
+    RegisterHandler(MaterialAspectHandler::GetHandler());
+    RegisterHandler(PerimeterAspectHandler::GetHandler());
+    RegisterHandler(PileAspectHandler::GetHandler());
+    RegisterHandler(PipeAspectHandler::GetHandler());
+    RegisterHandler(SideAreasAspectHandler::GetHandler());
+    RegisterHandler(SlabAspectHandler::GetHandler());
+    RegisterHandler(SlopeAspectHandler::GetHandler());
+    RegisterHandler(StairsAspectHandler::GetHandler());
+    RegisterHandler(StructuralLinearMemberAspectHandler::GetHandler());
+    RegisterHandler(SurfaceAreaAspectHandler::GetHandler());
+    RegisterHandler(ThicknessAspectHandler::GetHandler());
+    RegisterHandler(VolumeAspectHandler::GetHandler());
+    RegisterHandler(WallAspectHandler::GetHandler());
+    RegisterHandler(WindowAspectHandler::GetHandler());
+    }
+    
+END_QUANTITYTAKEOFFSASPECTS_NAMESPACE
