@@ -15,7 +15,6 @@ runpat = re.compile (r"RUN\s*]\s*(\w+\.\w+)", re.I)
 filedir=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(filedir)
 sys.dont_write_bytecode = True
-import IgnoreFilters as filters
 
 #-------------------------------------------------------------------------------------------
 # bsimethod                                     Jeff.Marker
@@ -153,7 +152,7 @@ if __name__ == '__main__':
     for root,dirs,files in os.walk (dir, topdown=True, onerror=None, followlinks=True):
         for file in files:
             if not file.endswith('.log'):
-                continue;
+                continue
 
             checkedCount = checkedCount + 1
             path = os.path.join(root, file)
@@ -180,11 +179,6 @@ if __name__ == '__main__':
         exit (0)
 
     failedTestsList=temp.split(":")
-
-    if not breakonfailure and len(failedTestsList)!=0:
-        preventautoignore=filters.PreventAutoIgnoreTests(failedTestsList)
-        if preventautoignore==1:
-            breakonfailure=len(failedTestsList)
      
     print advicestr
     exit(breakonfailure)

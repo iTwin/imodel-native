@@ -13,5 +13,3 @@ always:
     ~linkdir "$(BuildContext)Delivery/BeGTest/gtest=$(srcDir)gtest"
     ~linkdir "$(BuildContext)Delivery/BeGTest/iOS=$(srcDir)iOS"
     ~linkdir "$(BuildContext)Delivery/BeGTest/uwp=$(srcDir)uwp"
-    python $(SrcRoot)bsicommon/build/CreateSymLinks.py "$(BuildContext)Delivery/BeGTest/IgnoreFilters.py=$(SrcRoot)BeGTest/IgnoreFilters.py"
-    python $(SrcRoot)bsicommon/build/CreateSymLinks.py "$(BuildContext)Delivery/BeGTest/IgnoreFilters.txt=$(SrcRoot)BeGTest/IgnoreFilters.txt"

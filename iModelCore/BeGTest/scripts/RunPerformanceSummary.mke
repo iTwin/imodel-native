@@ -19,7 +19,7 @@ analysisFile=$(perDir)Analysis.xlsx
 
 always:
     python  $(_MakeFilePath)PerformanceTestSummary.py --current=$(perDir)PerformanceResults.csv --benchmark=$(PERFORMANCE_BENCHMARK_FILE) --output=$(analysisFile)
-	
+
 %message .
 %message The report is at $(analysisFile) .
 %message .
