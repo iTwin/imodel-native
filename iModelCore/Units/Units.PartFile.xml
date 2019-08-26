@@ -112,7 +112,6 @@
     <!-- This part is the default test collection. It is included in DgnDb's aggregate test collection. -->
     <Part Name="Tests" DeferType="BuildUnitTests">
         <SubPart PartName="NonPublishedTests" />
-        <SubPart PartName="PerformanceTests" />
     </Part>
 
     <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=UnitsTest -dTEST_COLLECTION_PRODUCT=Units-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
@@ -143,6 +142,24 @@
         <SubPart PartFile="DgnDbTestingScripts" Repository="DgnDbTestingScripts" PartName="MemLeakTests" />
         <SubProduct ProductName="Units-Gtest" />
     </Part>
+    <!-- Performance -->
+    <Product Name="Units-Tests-Performance">
+        <SubPart Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" PartName="Base" />
+        <SubPart PartName="PerformanceTests" />
+        <Directories DirectoryListName="CollectionProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" />
+    </Product>
+    <Part Name="Gtest-Performance" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=UnitsTest-Performance -dTEST_COLLECTION_PRODUCT=Units-Tests-Performance" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+        <SubProduct ProductName="Units-Tests-Performance"/>
+        <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/UnitsTest-Performance/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/UnitsTest-Performance/Assets" />
+        </Bindings>
+    </Part>
+    <Product Name="Units-Gtest-Performance">
+        <SubPart PartName="Gtest-Performance"/>
+        <Directories DirectoryListName="GtestProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
+    </Product>
 
     <!-- *** AndroidJUnit *** -->
     <Part Name="AndroidJUnit" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_COLLECTION_PRODUCT=Units-Tests -dTEST_SHORT_NAME=UnitsTst -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
