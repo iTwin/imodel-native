@@ -1,0 +1,18 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------
+#   These are required to be set before including mdl.mki.
+#----------------------------------------------------------------------------
+
+PointoolsCommonSrcDir=$(SrcRoot)Pointools/PointoolsCommon/
+PointoolsVortexAPISrcDir=$(SrcRoot)Pointools/PointoolsVortexAPI/
+
+SystemPolicyMki=$(SrcRoot)bsicommon/sharedmki/InternalSystemPolicy.mki
+FoundationPolicyMki=$(PointoolsCommonSrcDir)mki/PolicyCommon.mki
+#DerivativePolicyMki=$(PointoolsCommonSrcDir)mki/PolicyCommon.mki
+
+
