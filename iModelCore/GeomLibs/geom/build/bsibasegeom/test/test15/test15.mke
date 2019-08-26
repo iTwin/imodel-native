@@ -1,0 +1,9 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+TESTAPP_NAME=test15
+
+dependencies = $(_MakeFilePath)/TriDiagonalSolver.cpp $(_MakeFilePath)/TriDiagonalSolver.h
+%include    $(_MakeFilePath)/../testapp.mki

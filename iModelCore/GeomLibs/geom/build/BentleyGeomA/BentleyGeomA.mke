@@ -1,0 +1,112 @@
+#--------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------*/
+%include mdl.mki
+%include $(SrcRoot)GeomLibs/common/inc/geomlibsdev.mki
+
+# Precompile header options
+CompileOptionsMki   = $(_MakeFilePath)BentleyGeomA.mki
+%include $(CompileOptionsMki)
+
+buildSubDir     = geom_dllA
+
+Wp64            = 1
+o               = $(PartBuildDir)A/
+
+%message geomobj is $(geomObj)
+#-------------------------------------------------
+# Make Directories
+#-------------------------------------------------
+$(geomObj)$(tstdir)     :   $(geomObj)$(tstdir)
+
+%message o is $(o)
+$(o)$(tstdir)     :   $(o)$(tstdir)
+
+
+dirToSearch = $(geomSrcRegions)
+%include cincapnd.mki
+
+%ifdef GEOMLIBS_ENABLE_ITERATOR_WARNINGS
+CCompOpts + -we4238 
+%endif
+
+#--------------------------------------------------------------------------------
+#  Bring our precompiled header up-to-date.  After including PreCompileHeader.mki
+#  $(UsePrecompiledHeaderOptions) will contain the /Yu and /Fp options that we
+#  need to consume the .pch.
+#----------------------------------------------------------------------
+PchCompiland = $(_MakeFilePath)bsibasegeomPCH.cpp
+PchOutputDir = $(o)
+%include $(SharedMki)PreCompileHeader.mki
+
+CCPchOpts = $(UsePrecompiledHeaderOptions)
+%include MultiCppCompileRule.mki
+CPchOpts = $(CCPchOpts)
+
+#-----------------------------------------------------------------------
+# Common dependency lists
+#-----------------------------------------------------------------------
+OUT_DIR = $(o)
+OUT_EXT = $(oExt)
+OTHER_DEPENDENCIES = \
+    $(geomSrcPubGeom)msgeomstructs.hpp  \
+    $(geomSrcPubGeom)msgeomstructs.h    \
+    $(geomSrcPubGeom)../Vu/VuApi.h      \
+    $(geomSrcPubGeom)../Mtg/GpaApi.h
+
+FileTypeControl = $(FileTypeControlCPP)
+
+# list of files to build
+%include $(_MakeFilePath)target_refmethods.mki
+
+%include $(_MakeFilePath)target_vu.mki
+
+$(o)BentleyGeom_init$(oExt)   : $(_MakeFilePath)BentleyGeom_init.cpp ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+#-----------------------------------------------------------------------
+# Set up to indicate that we are rights-compliant.
+#-----------------------------------------------------------------------
+rightsCompliantAppsFile     = $(_MakeFilePath)rightscompliant.txt
+nonRightsCompliantAppsFile  = $(_MakeFilePath)nonrightscompliant.txt
+rightsNeutralFile           = $(_MakeFilePath)rightsNeutralLibraries.txt
+
+#-----------------------------------------------------------------------
+# link
+#-----------------------------------------------------------------------
+DLM_NAME            = BentleyGeomA$(libSuffix)
+DLM_LIBDEF_SRC      = $(_MakeFilePath)
+DLM_OBJECT_DEST     = $(o)
+DLM_DEST            = $(baseGeom_bin)
+DLM_EXPORT_DEST     = $(baseGeom_lib)
+DLM_OBJECT_FILES    = $(MultiCompileObjectList)
+DLM_OBJECT_PCH      = $(o)bsibasegeompch.obj
+
+DLM_EXPORT_OBJS     = $(DLM_OBJECT_FILES)
+
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+DLM_NOENTRY         = 1
+dlmspecCmd          + -i$(_MakeFilePath)
+DLM_SYMB_DEST       = $(baseGeom_symbols)
+
+# Temporary while working on static; it probably shouldn't be needed.
+LIB_PDB_SOURCE_DIR = $(DLM_OBJECT_DEST)
+
+%include $(sharedMki)linkLibrary.mki
+
+%if defined (PRG) || defined (BUILD_DOC)
+# build all geomlibs documentation (always start from scratch, since html help sometimes gets confused)
+%message Documentation build turned off for Beijing until someone can work on it.
+#    always:
+#        bmake +a $(GEOMLIBS_ROOT)geom/doc/build/bsibasegeomdoc/bsibasegeomdoc.mke
+    always:
+        > $(OutGeomLibs)delivery/basegeom/doc/bsibasegeomdoc.chm
+        Documentation build turned off for Beijing until someone can work on it.
+        <
+
+%endif
+
+
+

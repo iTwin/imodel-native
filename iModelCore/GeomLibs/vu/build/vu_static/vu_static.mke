@@ -1,0 +1,51 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+%include    $(srcGeomLibs)common/inc/geomlibsdev.mki
+
+baseDir     = $(_MakeFilePath)
+libName     = vu_static
+
+#-------------------------------------------------
+# Make Directories
+#-------------------------------------------------
+always:
+    ~mkdir $(vuStaticObj)
+
+#----------------------------------------------------------------------
+# During compilation, look in the output tree for include files.
+#----------------------------------------------------------------------
+nameToDefine = GEOMDLLIMPEXP=
+%include cdefapnd.mki
+
+nameToDefine = BSIVUDLLIMPEXP=
+%include cdefapnd.mki
+
+#-----------------------------------------------------------------------
+# Common dependency lists
+#-----------------------------------------------------------------------
+vuObjects =
+vuPublicApi = $(GeomPublicAPISrc)Vu/
+
+OUT_DIR = $(vuStaticObj)
+OUT_EXT = $(oExt)
+OTHER_DEPENDENCIES = $(vuPublicApi)VuApi.h
+
+%include $(vuBuildInc)vuSources.mki
+
+OBJ_DIR = $(vuStaticObj)
+%include $(vuBuildInc)vuObjects.mki
+
+LIB_DEST     = $(vuStatic_lib)
+LIB_NAME     = vu_static
+LIB_OBJS     = $(vuObjects)
+LIB_TMP_DIR  = $(vuObj)
+
+%include creatlib.mki
+
+# We don't think we need the .lst file, so for now delete it
+always:
+    -$(deleteCmd) $(LIB_DEST)$(LIB_NAME).lst
+

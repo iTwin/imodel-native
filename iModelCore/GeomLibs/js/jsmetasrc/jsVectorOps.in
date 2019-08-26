@@ -1,0 +1,704 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $source: geometry/metasrc/vector.template $
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
+
+[Description("Return the dot product with the other vector.")]
+INSTANCEMETHOD(public, double, DotProduct)
+(
+INPUT_STRUCT($(ThisType), other, "second vector"),
+)
+    {
+    return  
+           this.x * other.x 
+         + this.y * other.y 3DONLY(
+         + this.z * other.z);
+    }
+ENDMETHOD
+
+[Description("Return the dot product with the other vector.")]
+CLASSMETHOD(public, $(ThisType), From)
+(
+INPUT_BYVALUE($(ThisType), x, "x component"),
+INPUT_BYVALUE($(ThisType), x, "y component")(3DONLY ,
+INPUT_BYVALUE($(ThisType), z, "z component")
+)
+    {
+    var result = new $(ThisType) ();
+    result.x = x;
+    result.y = y;(3DONLY
+    result.z = z;)
+    return result;
+    }
+ENDMETHOD
+
+JS_OFF
+
+[Description("Construct a vector from origin to target")]
+CONSTRUCTOR($(ThisType))
+(
+INPUT_STRUCT(DPoint2d,origin, "origin point"),
+INPUT_STRUCT(DPoint2d,target, "target point")
+)
+
+    {
+    x = target.x - origin.x;
+    y = target.y - origin.y;
+    3DONLY(z = 0.0;)
+    }
+
+
+[Description("Construct a vector from origin to target")]
+CONSTRUCTOR($(ThisType))
+(
+INPUT_STRUCT(DVector2d,origin, "origin point"),
+INPUT_STRUCT(DVector2d,target, "target point")
+)
+
+    {
+    x = target.x - origin.x;
+    y = target.y - origin.y;
+    3DONLY(z = 0.0;)
+    }
+
+
+
+[Description("Construct a vector from origin to target")]
+CONSTRUCTOR($(ThisType))
+(
+INPUT_STRUCT(DPoint3d,origin, "origin point"),
+INPUT_STRUCT(DPoint3d,target, "target point")
+)
+
+    {
+    x = target.x - origin.x;
+    y = target.y - origin.y;
+    3DONLY(z = target.z - origin.z);
+    }
+
+
+
+[Description("Construct a vector from origin to target")]
+CONSTRUCTOR($(ThisType))
+(
+INPUT_STRUCT(DVector3d,origin, "origin vector"),
+INPUT_STRUCT(DVector3d,target, "target vector")
+)
+
+    {
+        x = target.x - origin.x;
+        y = target.y - origin.y;
+        3DONLY(z = target.z - origin.z);
+        }
+
+
+
+
+
+#ifdef METASRC
+   Not allowed to make a copy constructor from my own type.
+   Make one for the "other" dimension!!!
+#endif
+
+[Description("Copy from SELECT_2D3D(DVector3d)(DVector2d).")]
+CONSTRUCTOR($(ThisType))
+(
+2DONLY(INPUT_STRUCT(DVector3d,source, "source vector"))3DONLY(INPUT_STRUCT(DVector2d,source, "source vector"))
+)
+
+    {
+        x = source.x;
+        y = source.y;
+        3DONLY(z = 0.0;)
+        }
+
+
+
+[Description("Copy from a point.")]
+CONSTRUCTOR($(ThisType)) (INPUT_STRUCT(DPoint2d,source, "source point"))
+
+    {
+        x = source.x;
+        y = source.y;
+        3DONLY(z = 0.0;)
+        }
+
+
+
+[Description("Copy from a point.")]
+CONSTRUCTOR($(ThisType)) (INPUT_STRUCT(DPoint3d,source, "source Point"))
+
+    {
+        x = source.x;
+        y = source.y;
+        3DONLY(z = source.z;)
+        }
+
+JS_ON
+
+[Description("Negate instance vector in place")]
+INSTANCEMETHOD(public, void, NegateInPlace) ()
+    {
+    this.x = - this.x;
+    this.y = - this.y;
+3DONLY(    this.z = - this.z;)
+    }
+ENDMETHOD
+
+
+
+[Description("Try to divide by magnitude to get a unit vector.")]
+INSTANCEMETHOD(public, $(ThisType), UnitVector) ()
+    {
+    double magnitude = Geometry.MakeSmallMetricDistanceZero (this.Magnitude ());
+    if (magnitude > 0.0)
+        {
+        double f = 1.0 / magnitude;
+        return NEW_BY_ALL_FIELDS
+            (
+            this.x * f,
+            this.y * f3DONLY(,
+            this.z * f)
+            );
+        }
+    return nil;
+    }
+ENDMETHOD
+
+/// <summary>Magnitude of vector.</summary>
+INSTANCEMETHOD(public, double, Magnitude) ()
+    {
+    return Math::Sqrt (x * x + y * y 3DONLY(+ z * z));
+    }
+ENDMETHOD
+
+/// <summary>Magnitude of xy parts of vector.</summary>
+INSTANCEMETHOD(public, double, MagnitudeXY) ()
+    {
+    return Math::Sqrt (x * x + y * y);
+    }
+ENDMETHOD
+
+/// <summary>Squared magnitude of vector.</summary>
+INSTANCEMETHOD(public, double, MagnitudeSquared) ()
+    {
+    return x * x + y * y 3DONLY(+ z * z);
+    }
+ENDMETHOD
+/// <summary>Squared magnitude of xy parts of vector.</summary>
+INSTANCEMETHOD(public, double, MagnitudeSquaredXY) ()
+    {
+    return x * x + y * y;
+    }
+ENDMETHOD
+
+JS_OFF
+[Description("Try to divide by magnitude to get a unit vector.")]
+bool METHODNAME(TryNormalize)
+(
+OUTPUT_VALUE($(ThisType),result, "normalized vector, but zeros if zero magnitude input")
+)
+
+    {
+    double a;
+    return TryNormalize (OUTP(result), OUTP(a));
+    }
+
+
+
+[Description("Try to scale to specified length.")]
+bool METHODNAME(TryScaleToLength)
+(
+INPUT_BYVALUE(double, length, "desired length"),
+OUTPUT_VALUE($(ThisType),vector, "scaled vector, but zeros if zero magnitude input"),
+OUTPUT_VALUE(double, magnitude, "magnitude of instance vector")
+)
+{
+    magnitude = Geometry.MakeSmallMetricDistanceZero (this.Magnitude ());
+    if (magnitude > 0.0)
+        {
+        double f = length / magnitude;
+        this.ScaleInPlace (f);
+        return true;
+        }
+    else
+        {
+        vector = Zero;
+        return false;
+        }
+    }
+
+JS_ON
+
+[Description("Try to scale to specified length.")]
+INSTANCEMETHOD (public, bool, TryScaleToLengthInPlace)
+(
+INPUT_BYVALUE(double, length, "desired length")
+)
+    {
+    if (this.TryNormalizeInPlace ())
+        {
+        this.ScaleInPlace (length);
+        return true;
+        }
+    return false;
+    }
+
+
+
+[Description("Apply a scale factor to each component of this vector")]
+INSTANCEMETHOD (public, void, ScaleInPlace)
+(
+INPUT_BYVALUE (double, scale, "Scale factor")
+)
+    {
+    this.x *= scale;
+    this.y *= scale;3DONLY(
+    this.z * = scale;)
+    }
+ENDMETHOD
+
+[Description("Divide by a scale in place.  Return false (and leave unchanged) if zero.")]
+INSTANCEMETHOD (public, bool, TryDivideInPlace)
+(
+INPUT_BYVALUE (double, denominator, "Scale factor")
+)
+    {
+    if (scale != 0.0)
+        {
+        this.ScaleInPlace (1.0/denominator);
+        return true;
+        }
+    return false;
+    }
+
+[Description("Replace instance vector by unit vector in direction of vector.)]
+INSTANCEMETHOD (public, bool, TryNormalizeInPlace ) ()
+    {
+    return TryDivideInPlace (Geometry.MakeSmallMetricDistanceZero (this.Magnitude ()));
+    }
+ENDMETHOD
+
+[Description("Compute a unit vector from pointA towards pointB.")]
+CLASSMETHOD(public, $(ThisType), FromStartEndNormalized)
+(
+INPUT_STRUCT($(PointType), pointA, "Start point"),
+INPUT_STRUCT($(PointType), pointB, "End point")
+)
+
+    {
+    var vector = $(ThisType).FromStartEnd ();
+    if (vector.TryNormalizeInPlace ())
+        return vector;
+    return null;
+    }
+ENDMETHOD
+
+
+
+[Description("Compute average of unit vectors in direction of instance, first parameter.  Return false if antiparallel.")]
+INSTANCEMETHOD(bool, $(ThisType), NormalizedBisector)
+(
+INPUT_STRUCT($(ThisType),vector, "first vector"),
+INPUT_STRUCT($(ThisType),vector, "second vector")
+)
+
+    {
+    var unitA = this.UnitVector ();
+    var unitB = this.UnitVector ();
+    if (ISVALID (unitA) && ISVALID (unitB))
+        {
+        bisector = $(ThisType).Add (unitA, unitB);
+        if (bisector.TryNormalizeInPlace ())
+            return bisector;
+        }
+    return false;
+    }
+ENDMETHOD
+
+
+[Description("Compute dot product with vector formed from orign and target params.")]
+INSTANCEMETHOD(public, double, DotVectorToTarget)
+(
+INPUT_STRUCT($(PointType),origin, "origin for second vector"),
+INPUT_STRUCT($(PointType),target, "target for second vector")
+)
+
+    {
+    return    this.x * (target.x - origin.x)
+            + this.y * (target.y - origin.y)3DONLY(
+            + this.z * (target.z - origin.z));
+    }
+ENDMETHOD
+
+
+[Description("Return the square root of the sum of squares of inputs")]
+CLASSMETHOD(public, $(ThisType), Hypotenuse)
+(
+INPUT_BYVALUE (double, x, "x length"),
+INPUT_BYVALUE (double, y, "y length")3DONLY(,
+INPUT_BYVALUE (double, z, "z length"))
+)
+    {
+    return Math::Sqrt (x * x + y * y 3DONLY (+ z * z));
+    }
+
+[Description("Return the sum of squares of inputs")]
+CLASSMETHOD(public, $(ThisType), HypotenuseSquared)
+(
+INPUT_BYVALUE (double, x, "x length"),
+INPUT_BYVALUE (double, y, "y length")3DONLY(,
+INPUT_BYVALUE (double, z, "z length"))
+)
+    {
+    return x * x + y * y 3DONLY (+ z * z);
+    }
+ENDMETHOD
+
+[Description("Test if instance vector is parallel to parameter vector in strictly forward direction.  (Note: Use IsParallelOrOpposite to treat both directions as parallel.")]
+INSTANCEMETHOD (public, bool, IsParallelTo)
+(
+INPUT_STRUCT($(ThisType),other, "Candidate parallel vector")
+)
+    {
+    double a2 = this.MagnitudeSquared ();
+    double b2 = other.MagnitudeSquared ();
+    // we know both are 0 or positive -- no need for 
+    if (a2 < Geometry.smallMetricDistanceSquared || b2 < Geometry.smallMetricDistanceSquared)
+        return false;
+
+    double      dot = this.DotProduct (other);
+    if (dot < 0.0)
+        return false;
+
+    double cross2 = this.CrossProductMagnitudeSqaured (other);
+
+    /* a2,b2,cross2 are squared lengths of respective vectors */
+    /* cross2 = sin^2(theta) * a2 * b2 */
+    /* For small theta, sin^2(theta)~~theta^2 */
+    return  cross2 <= Geometry.SmallAngleRadiansSquared * a2 * b2;
+    }
+ENDMETHOD
+
+
+
+[Description("Test if instance vector is parallel or opposite to the other vector.  (Note: Use IsParallel treat only forward as parallel.")]
+INSTANCEMETHOD (public, bool, IsParallelOrOppositeTo)
+(
+INPUT_STRUCT($(ThisType),other, "Candidate parallel vector")
+)
+    {
+    double a2 = this.MagnitudeSquared ();
+    double b2 = other.MagnitudeSquared ();
+    // we know both are 0 or positive -- no need for 
+    if (a2 < Geometry.smallMetricDistanceSquared || b2 < Geometry.smallMetricDistanceSquared)
+        return false;
+
+    double      dot = this.DotProduct (other);
+
+    double cross2 = this.CrossProductMagnitudeSqaured (other);
+
+    /* a2,b2,cross2 are squared lengths of respective vectors */
+    /* cross2 = sin^2(theta) * a2 * b2 */
+    /* For small theta, sin^2(theta)~~theta^2 */
+    return  cross2 <= Geometry.SmallAngleRadiansSquared * a2 * b2;
+    }
+ENDMETHOD
+
+
+
+[Description("Test if instance is perpendicular to parameter vector.")]
+INSTANCEMETHOD(public, bool, IsPerpendicularTo)
+(
+INPUT_STRUCT($(ThisType),other, "Candidate perpendicular vector.")
+)
+
+    {
+    double      aa = this.MagnitudeSquared ();
+    if (aa < Geoemtry.SmallMetricDistanceSquared)
+        return false;
+    double      bb = other.MagnitudeSquared ();
+    if (bb < Geoemtry.SmallMetricDistanceSquared)
+        return false;
+    double      ab = this.DotProduct (other);
+    double      eps = Geometry.SmallAngleRadians;
+
+    return  ab * ab <= Geometry.SmallAngleRadiansSquared * aa * bb;
+    }
+ENDMETHOD
+
+
+
+[Description("Return a vector perpendicular to the (3DONLY xy projection of this) instance.")]
+INSTANCEMETHOD(public, $(ThisType), UnitPerpendicular(3DONLY XY))
+()
+    {
+    result = NEW_BY_ALL_FIELDS (-this.y, this.x, 0.0);
+    if (result.TryNormalizeInPlace ())
+        return result;
+    return null;
+    }
+ENDMETHOD
+
+
+
+3DONLY(
+[Description("Test if the instance vector projects to the smaller sector between the lines of two parameter vectors.")]
+INSTANCEMETHOD(public, bool, IsVectorInSmallerSector)
+(
+INPUT_STRUCT($(ThisType),vector0, "Vector along first line."),
+INPUT_STRUCT($(ThisType),vector1, "Vector along second line.")
+)
+
+    {
+    var cross01 = vector0.CrossProduct (vector1);
+    return      vector0.TripleProduct (this, cross01) > 0.0
+            &&  this.TripleProduct (vector1, cross01) > 0.0;
+    }
+ENDMETHOD
+)
+
+3DONLY(
+[Description("Test if the instance vector is in the CCW sector from vector0 to vector1 as viewed in plane perpendicular to upVector.")]
+INSTANCEMETHOD(public, bool, IsVectorInCCWSector)
+(
+INPUT_STRUCT($(ThisType), vector0, "Start vector"),
+INPUT_STRUCT($(ThisType), vector1, "End vector"),
+INPUT_STRUCT($(ThisType), upVector, "Vector normal to plane in which CCW is defined")
+)
+    {
+    $(ThisType) cross01 = vector0.CrossProduct (vector1);
+    double dot = cross01.DotProduct (upVector);
+
+    if (dot > 0.0)
+        return  vector0.TripleProduct (this, cross01) > 0.0
+            &&  this.TripleProduct (vector1, cross01) > 0.0;
+    else
+        return  vector0.TripleProduct (this, cross01) <= 0.0
+            ||  this.TripleProduct (vector1, cross01) <=0.0;
+
+    }
+ENDMETHOD
+)
+
+
+[Description("Angle from instance vector to end vector, using only xy parts. Range is -PI to PI.")]
+INSTANCEMETHOD(public, Angle, AngleTo(3DONLY XY))
+(
+INPUT_STRUCT($(ThisType),other, "End Vector")
+)
+    {
+    double cross, dot;
+    cross = this.CrossProduct(3DONLY XY) (other);
+    dot     = this.DotProduct(3DONLY XY) (other);
+    return  Angle::FromRadians (System::Math::Atan2 (cross, dot));
+    }
+ENDMETHOD
+
+
+
+
+[Description("Replace the instance vector by vector rotated by angle theta around the z axis.")]
+INSTANCEMETHOD(public, $(ThisType), Rotate(3DONLY XY))
+(
+INPUT_BYVALUE(Angle, theta, "Angle to rotate")
+)
+    {
+    double c, s;
+    s = theta.Sin;
+    c = theta.Cos;
+
+    return $(ThisType).From(x * c - y * s, x * s + y * c(3DONLY , z));
+    }
+ENDMETHOD
+
+
+[Description("Replace the instance vector by vector rotated by 90 degrees (i.e. couterclockwise) around the z axis.")]
+INSTANCEMETHOD(public, $(ThisType), Rotate90CCW(3DONLY XY))
+(
+)
+    {
+    return $(ThisType).From(-y, x(3DONLY , z));
+    }
+ENDMETHOD
+
+
+
+[Description("Replace the instance vector by vector rotated by negative 90 degrees (i.e. clockwise) around the z axis.")]
+INSTANCEMETHOD(public, $(ThisType), Rotate90CW(3DONLY XY))
+(
+)
+    {
+    return $(ThisType).From(y, -x(3DONLY , z));
+    }
+ENDMETHOD
+
+
+[Description("Rotate the instance vector in place around the z axis.")]
+INSTANCEMETHOD(public, void, Rotate(3DONLY XY)InPlace)
+(
+INPUT_BYVALUE(Angle, theta, "Angle to rotate.")
+)
+    {
+    double c, s, xx, yy;
+    s = theta.Sin;
+    c = theta.Cos;
+
+    xx = this.x;
+    yy = this.y;
+
+    this.x = xx * c - yy * s;
+    this.y = xx * s + yy * c;
+    }
+ENDMETHOD
+
+
+2DONLY(
+
+[Description("Test if the line containing the instance vector is in the smaller sector between the lines containing undirected vector0 and vector1.")]
+bool METHODNAME(IsVectorInSmallerSector)
+(
+INPUT_STRUCT(DVector2d,vector0, "First vector for bounding sectors."),
+INPUT_STRUCT(DVector2d,vector1, "Second vector for bounding sectors.")
+)
+
+    {
+    if (vector0.CrossProduct (REFP(vector1)) >= 0.0)
+        {
+                return vector0.CrossProduct(REFP(this)) >= 0.0
+                && this.CrossProduct (REFP(vector1)) >= 0.0;
+                }
+        else
+        {
+                return vector1.CrossProduct(REFP(this)) >= 0.0
+                && this.CrossProduct (REFP(vector0)) >= 0.0;
+                }
+    }
+
+)
+2DONLY(
+
+[Description("Test if the instance vector is in the CCW sector from (directed) vector0 to vector1, when viewed with the cross product of the two vectors towards eye.")]
+bool METHODNAME(IsVectorInCCWSector)
+(
+INPUT_STRUCT(DVector2d,vector0, "Vector at start of sector."),
+INPUT_STRUCT(DVector2d,vector1, "Vector at end of sector.")
+)
+
+    {
+    double cross01 = vector0.CrossProduct (REFP(vector1));
+
+    if (cross01 >= 0.0)
+        // vector0....vector1 is a "small" angle.
+        return     vector0.CrossProduct (REFP(this)) >= 0.0
+                && this.CrossProduct (REFP(vector1)) >= 0.0;
+    else
+        // vector0....vector1 is a "large" angle.
+        return  vector0.CrossProduct (REFP(this)) >= 0.0
+            ||  this.CrossProduct (REFP(vector1)) >= 0.0;
+    }
+
+)
+
+JS_OFF
+[Description("Simultaneously replace vectorU by (c*vectorU+s*vectorV), and vectorV by (-s*vectorU + c*vectorV)")]
+STATIC void METHODNAME(GivensRotationInPlace)
+(
+PARAM_BYREF($(ThisType),vectorU, "U vector to rotate (read/write)"),
+PARAM_BYREF($(ThisType),vectorV, "V vector to rotate (read/write)"),
+INPUT_BYVALUE(double, c, "Cosine of rotation"),
+INPUT_BYVALUE(double, s, "Sine of rotation")
+)
+
+    {
+    $(ThisType) U, V;
+    FOR_XYz(i){U.i =  c * vectorU.i + s * vectorV.i;}
+    FOR_XYz(i){V.i = -s * vectorU.i + c * vectorV.i;}
+    vectorU = U;
+    vectorV = V;
+    }
+
+
+
+[Description("Simultaneously replace vectorU by (c*vectorU+s*vectorV), and vectorV by (-s*vectorU + c*vectorV), with both vector specified by components.")]
+STATIC void METHODNAME(GivensRotationInPlace)
+(
+PARAM_BYREF(double,ux, "x component of U vector (read/write)"),
+PARAM_BYREF(double,uy, "y component of U vector (read/write)"),
+3DONLY(PARAM_BYREF(double,uz, "z component of U vector (read/write)"),)
+PARAM_BYREF(double,vx, "x component of V vector (read/write)"),
+PARAM_BYREF(double,vy, "y component of V vector (read/write)"),
+3DONLY(PARAM_BYREF(double,vz, "z component of V vector (read/write)"),)
+
+INPUT_BYVALUE(double, c, "Cosine of rotation"),
+INPUT_BYVALUE(double, s, "Sine of rotation")
+)
+
+    {
+    $(ThisType) U, V;
+    FOR_XYz(i){U.i =  c * u[i] + s * v[i];}
+    FOR_XYz(i){V.i = -s * u[i] + c * v[i];}
+    FOR_XYz(i){u[i] = U.i;}
+    FOR_XYz(i){v[i] = V.i;}
+    }
+
+
+
+[Description("Replace (possibly skewed) vectorU and vectorV by perpendicular major/minor axis vectors for the ellipse they span.  Apply the same Givens rotation to vectorR and vectorS.")]
+STATIC void METHODNAME(ImplicitJacobiStep)
+(
+PARAM_BYREF($(ThisType),vectorU, "First vector to orthogonalize."),
+PARAM_BYREF($(ThisType),vectorV, "Second vector to orthogonalize."),
+OUTPUT_VALUE(double,c, "Computed cosine of rotation angle."),
+OUTPUT_VALUE(double,s, "Computed sine of rotation angle."),
+PARAM_BYREF($(ThisType),vectorR, "Vector to rotate (to indicate evolving composite rotation)"),
+PARAM_BYREF($(ThisType),vectorS, "Vector to rotate (to indciated evolving composite rotation)")
+)
+
+    {
+    double UdotU = vectorU.DotProduct (vectorU);
+    double UdotV = vectorU.DotProduct (vectorV);
+    double VdotV = vectorV.DotProduct (vectorV);
+    double cc = UdotU - VdotV;
+    double ss = 2.0 * UdotV;
+    Angle::HalfAngleFunctions(OUT c, OUT s, cc, ss);
+    GivensRotationInPlace (REF vectorU, REF vectorV, c, s);
+    GivensRotationInPlace (REF vectorR, REF vectorS, c, s);
+    }
+
+
+3DONLY(
+
+[Description("Apply a two sided jacobi step to the xy rows and columns of a (presumably symmetric) 3x3 matrix.\
+Also apply rotation to two row vectors, which are usually the rows of an evolving composite rotation matrix.")]
+STATIC void METHODNAME(JacobiStep)
+(
+PARAM_BYREF(double,axx, "xx matrix entry (read/write)"),
+PARAM_BYREF(double,axy, "xy matrix entry (read/write)"),
+PARAM_BYREF(double,axz, "xz matrix entry (read/write)"),
+PARAM_BYREF(double,ayx, "yx matrix entry (read/write)"),
+PARAM_BYREF(double,ayy, "yy matrix entry (read/write)"),
+PARAM_BYREF(double,ayz, "yz matrix entry (read/write)"),
+PARAM_BYREF(double,azx, "zx matrix entry (read/write)"),
+PARAM_BYREF(double,azy, "zy matrix entry (read/write)"),
+OUTPUT_VALUE(double,c, " returned cosine of rotation angle."),
+OUTPUT_VALUE(double,s, " returned sine of rotation angle."),
+PARAM_BYREF($(ThisType),vectorR, "First vector of Givens rotation.  Usually a row of an evolving rotation matrix." ),
+PARAM_BYREF($(ThisType),vectorS, "Second vector of Givens rotation. Usually a row of an evolving rotation matrix.")
+)
+
+    {
+    double cc = axx - ayy;
+    double ss = 2.0 * axy;
+    Angle::HalfAngleFunctions(OUT c, OUT s, cc, ss);
+    GivensRotationInPlace (REF axx, REF ayx, REF azx, REF axy, REF ayy, REF azy, c, s);
+    GivensRotationInPlace (REF axx, REF axy, REF axz, REF ayx, REF ayy, REF ayz, c, s);
+    GivensRotationInPlace (REF vectorR, REF vectorS, c, s);
+    }
+
+)
+// end of vector.template
+JS_ON

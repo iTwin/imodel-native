@@ -1,0 +1,10 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+TESTAPP_NAME=dpoint3darray
+
+dependencies = embeddeddpoint3darray.c embeddedintarray.cpp jmdl_iarray.cpp
+
+%include    $(_MakeFilePath)/../testapp.mki

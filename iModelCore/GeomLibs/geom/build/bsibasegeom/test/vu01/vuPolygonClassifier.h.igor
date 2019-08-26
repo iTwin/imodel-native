@@ -1,0 +1,707 @@
+/*--------------------------------------------------------------------------------------+
+|    $RCSfile: vuPolygonClassifier.h,v $
+|   $Revision: 1.16.4.1 $
+|       $Date: 2009/06/12 15:34:40 $
+|     $Author: Igor.Sokolov $
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+//#include <STDVectorDPoint3d.h>
+#include <vu/vuApi.h>
+
+typedef std::vector<DPoint3d> vuVectorDPoint3d;
+typedef vuVectorDPoint3d& vuVectorDPoint3dR;
+
+
+#ifndef FaceModeDefined
+    typedef enum
+        {
+        FaceMode_Unconnected,
+        FaceMode_Monotone,
+        FaceMode_Triangulate,
+        FaceMode_BridgeEdges,
+        FaceMode_Convex
+        } VuFaceMode;
+#endif
+static double VU_REL_TOL = 1.0e-10;
+
+Private void printFaceLabels
+(
+VuSetP pGraph,
+char *  pTitle
+)
+    {
+#ifdef MSVUPRINT_AVAILABLE
+    msvu_printFaceLabels (pGraph, pTitle);
+#endif
+    }
+
+//Igor.Sokolov 01.09.2008: (unused) static double sRelTol = VU_REL_TOL;
+//Igor.Sokolov 08.09.2008: (changed to class ctor parameters) static double s_graphAbsTol  = 0.0;
+//                                                            static double s_graphRelTol = VU_REL_TOL;
+//
+// Make sure that each face that has any (at least one) mask is
+// marked with that mask all around.
+Private void vu_spreadMaskAroundFaces
+(
+VuSetP pGraph,
+VuMask mask
+)
+    {
+    VuMask visitMask = vu_grabMask (pGraph);
+    vu_clearMaskInSet (pGraph, visitMask);
+    VU_SET_LOOP (pSeedNode, pGraph)
+        {
+        if (!vu_getMask (pSeedNode, visitMask))
+            {
+            if (vu_countMaskAroundFace (pSeedNode, mask) > 0)
+                vu_setMaskAroundFace (pSeedNode, mask);
+            vu_setMaskAroundFace (pSeedNode, visitMask);
+            }
+        }
+    END_VU_SET_LOOP (pSeedNode, pGraph)
+    vu_returnMask (pGraph, visitMask);
+    }
+
+
+// Clear all exterior masks.
+// For each negative area face
+//      mark exterior
+//      recurse through non-boundary edges to find other exterior faces.
+Private void MarkNonParityExterior
+(
+VuSetP pGraph
+)
+    {
+    VuArrayP pStack = vu_grabArray (pGraph);
+    VuMask visitMask = vu_grabMask (pGraph);
+    vu_clearMaskInSet (pGraph, VU_EXTERIOR_EDGE | visitMask);
+    // Collect negative area faces ...
+    VU_SET_LOOP (pSeedNode, pGraph)
+        {
+        if (!vu_getMask (pSeedNode, visitMask))
+            {
+            vu_setMaskAroundFace (pSeedNode, visitMask);
+            if (vu_area (pSeedNode) < 0.0)
+                {
+                vu_arrayAdd (pStack, pSeedNode);
+                vu_setMaskAroundFace (pSeedNode, VU_EXTERIOR_EDGE);
+                }
+            }
+        }
+    END_VU_SET_LOOP (pSeedNode, pGraph)
+
+    // Recurseively search across non-boundary edges ...
+    VuP pExteriorSeed;
+    while (NULL != (pExteriorSeed = vu_arrayRemoveLast (pStack)))
+        {
+        // Look for neighbors separated by boundaries ...
+        VU_FACE_LOOP (pCurr, pExteriorSeed)
+            {
+            VuP pMate = vu_edgeMate (pCurr);
+            if (!vu_getMask (pCurr, VU_BOUNDARY_EDGE)
+                && !vu_getMask (pMate, VU_EXTERIOR_EDGE))
+                {
+                vu_setMaskAroundFace (pMate, VU_EXTERIOR_EDGE);
+                vu_arrayAdd (pStack, pMate);
+                }
+            }
+        END_VU_FACE_LOOP (pCurr, pExteriorSeed)
+        }
+    vu_returnMask (pGraph, visitMask);
+    vu_returnArray (pGraph, pStack);
+    }
+
+
+
+// For each interior face
+//    recursively search to neightbors, but never cross a boundary.
+//    delete all interior edges EXCEPT those that rejoin to visited faces.
+Private void ExpandInteriorFaces
+(
+VuSetP pGraph,
+int noisy
+)
+    {
+    if (noisy > 10)
+        printFaceLabels (pGraph, "PreFlood");
+    VuArrayP pStack = vu_grabArray (pGraph);
+    VuMask visitMask = vu_grabMask (pGraph);
+    VuMask deleteMask = vu_grabMask (pGraph);
+    vu_clearMaskInSet (pGraph, visitMask | deleteMask);
+    VuMask barrierMask = visitMask | VU_BOUNDARY_EDGE;
+    // Collect negative area faces ...
+    VU_SET_LOOP (pSeedNode, pGraph)
+        {
+        if (!vu_getMask (pSeedNode, visitMask))
+            {
+            vu_setMaskAroundFace (pSeedNode, visitMask);
+            vu_arrayClear (pStack);
+            vu_arrayAdd (pStack, pSeedNode);
+            VuP pPopNode;
+            if (noisy > 20)
+                printf ("Flood seed %d\n", pSeedNode->id);
+            while (NULL != (pPopNode = vu_arrayRemoveLast (pStack)))
+                {
+                vu_setMaskAroundFace (pPopNode, visitMask);
+                if (noisy > 20)
+                    printf ("   pop %d\n", pPopNode->id);
+                VU_FACE_LOOP (pFaceNode, pPopNode)
+                    {
+                    VuP pEdgeMate = vu_edgeMate (pFaceNode);
+                    if (noisy > 20)
+                        printf ("       step %d\n", pFaceNode->id);
+
+                    if (!vu_getMask (pEdgeMate, barrierMask))
+                        {
+                        vu_setMask (pFaceNode, deleteMask);
+                        vu_setMask (pEdgeMate, deleteMask);
+                        // Mate will be visited from stack, not by edge cross.
+                        vu_setMaskAroundFace (pEdgeMate, visitMask);
+                        vu_arrayAdd (pStack, pEdgeMate);
+                        if (noisy > 20)
+                            printf ("             push %d\n",
+                                pEdgeMate->id);
+                        }
+                    }
+                END_VU_FACE_LOOP (pFaceNode, pPopNode)
+                }
+            }
+        }
+    END_VU_SET_LOOP (pSeedNode, pGraph)
+
+    vu_freeMarkedEdges (pGraph, deleteMask);    
+    vu_returnMask (pGraph, deleteMask);
+    vu_returnMask (pGraph, visitMask);
+    vu_returnArray (pGraph, pStack);
+    if (noisy > 10)
+        printFaceLabels (pGraph, "After Bridge removal");   
+    vu_deleteDanglingEdges (pGraph);
+    if (noisy > 10)
+        printFaceLabels (pGraph, "After Dangler removal");
+    }
+
+Private void ExciseNullFaces
+(
+VuSetP pGraph
+)
+    {
+    VuMask deleteMask = vu_grabMask (pGraph);
+    vu_clearMaskInSet (pGraph, deleteMask);
+    VU_SET_LOOP (nodeAP, pGraph)
+        {
+        if (!vu_getMask (nodeAP, deleteMask))
+            {
+            VuP nodeBP = vu_fsucc (nodeAP);
+            VuP nodeCP = vu_fsucc (nodeBP);
+            VuP nodeA1P = vu_vsucc (nodeAP);
+            VuP nodeB1P = vu_vsucc (nodeBP);
+            VuP nodeB2P = vu_vpred (nodeBP);
+            if (nodeCP == nodeAP && !vu_getMask (nodeA1P, VU_EXTERIOR_EDGE)
+                && (vu_getMask (nodeAP, VU_EXTERIOR_EDGE) == vu_getMask (nodeBP, VU_EXTERIOR_EDGE)))
+                {
+                vu_clrMask (nodeAP, VU_EXTERIOR_EDGE);
+                vu_vertexTwist (pGraph, nodeAP, nodeA1P);
+                vu_vertexTwist (pGraph, nodeBP, nodeB2P);
+                vu_setMask (nodeA1P, deleteMask);
+                vu_setMask (nodeBP, deleteMask);
+                }
+            }
+        }
+    END_VU_SET_LOOP (nodeAP, pGraph)
+    vu_freeMarkedEdges (pGraph, deleteMask);
+    vu_returnMask (pGraph, deleteMask);
+
+    VU_SET_LOOP (nodeAP, pGraph)
+        {
+        VuP nodeBP = vu_edgeMate (nodeAP);
+        if (!vu_getMask (nodeAP, VU_EXTERIOR_EDGE)
+            && !vu_getMask (nodeBP, VU_EXTERIOR_EDGE))
+            {
+            vu_clrMask (nodeAP, VU_BOUNDARY_EDGE);
+            vu_clrMask (nodeBP, VU_BOUNDARY_EDGE);
+            }
+        }
+    END_VU_SET_LOOP (nodeAP, pGraph)
+    }
+
+ /*
+    typedef enum
+        {
+        FaceMode_Unconnected,
+        FaceMode_Monotone,
+        FaceMode_Triangulate,
+        FaceMode_BridgeEdges,
+        FaceMode_Convex
+        } FaceMode;
+*/        
+/*Private FaceMode FaceModeOf (int value)
+    {
+    if (value == 1)
+        return FaceMode_Monotone;
+    if (value == 2)
+        return FaceMode_Triangulate;
+    if (value == 3)
+        return FaceMode_BridgeEdges;
+    if (value == 4)
+        return FaceMode_Convex;
+    return FaceMode_Unconnected;
+    }
+*/
+// Context manager to hold a vu graph and do polygon booleans on request.
+//
+// The following example code demonstrates
+//      (1) Allocate a classifier context (on stack, so destructor is called on scope exit to free the graph)
+//      (2) Referencing polygons stored as two arrays mXYZ[0] and mXYZ[1] with counts mCount[0] and mCount[1],
+//          the classifier context is used to form (A intersect B), (A-B), (B-A), and (A union B).
+//      (3) After each computation, there is a loop to retrieve the computed polygons.  Note that HOLES
+//          appear as polygons with negative area.
+//   --------------------------------------------------------------------------------------------
+//            VuPolygonClassifier vu  = VuPolygonClassifier ();
+//            DPoint3d xyz[MAX_VERTICES];
+//            int n;
+//            double areaA = 0.0;
+//            double areaB = 0.0;
+//            double areaAB = 0.0;
+//            double areaUnion = 0.0;
+//            double ai = 0.0;
+//            vu.ClassifyAIntersectB (mXYZ[0], mCount[0], mXYZ[1], mCount[1]);
+//            for (;vu.GetFace (xyz, n, MAX_VERTICES);)
+//                {
+//                drawPolygon (xyz, n, 4, 0);
+//                areaAB += (ai = bsiGeom_getXYPolygonArea (xyz, n));
+//                printf ("                      tile %15.7lf %s\n", ai, ai < 0.0 ? "HOLE" : "    ");
+//                }
+//            printf ("   areaAB    %15.7lf\n", areaAB);
+//            vu.ClassifyAMinusB (mXYZ[0], mCount[0], mXYZ[1], mCount[1]);
+//            for (;vu.GetFace (xyz, n, MAX_VERTICES);)
+//                {
+//                drawPolygon (xyz, n, 3, 0);
+//                areaA += (ai = bsiGeom_getXYPolygonArea (xyz, n));
+//                printf ("                      tile %15.7lf %s\n", ai, ai < 0.0 ? "HOLE" : "    ");
+//                }
+//            printf ("   areaA     %15.7lf\n", areaA);
+//            vu.ClassifyAMinusB (mXYZ[1], mCount[1], mXYZ[0], mCount[0]);
+//            for (;vu.GetFace (xyz, n, MAX_VERTICES);)
+//                {
+//                drawPolygon (xyz, n, 2, 0);
+//                areaB += (ai = bsiGeom_getXYPolygonArea (xyz, n));
+//                printf ("                      tile %15.7lf %s\n", ai, ai < 0.0 ? "HOLE" : "    ");
+//                }
+//            printf ("   areaB     %15.7lf\n", areaB);
+//            vu.ClassifyAUnionB (mXYZ[1], mCount[1], mXYZ[0], mCount[0]);
+//            for (;vu.GetFace (xyz, n, MAX_VERTICES);)
+//                {
+//                areaUnion += (ai = bsiGeom_getXYPolygonArea (xyz, n));
+//                printf ("                      tile %15.7lf %s\n", ai, ai < 0.0 ? "HOLE" : "    ");
+//                }
+//            printf ("   areaUnion %15.7lf\n", areaUnion);
+//            printf ("   error     %15.7lf\n", areaA + areaB + areaAB - areaUnion);
+//            mNumPolygon = 0;
+//            }
+//    -----------------------------------------------------------------------------------
+// Usage notes:
+//    Polygons with holes may be entered by "disconnect" points
+//   (Use bsiDPoint3d_initDisconnect(&xyz) or xyz.initDisconnect to initialize).
+//
+//    A polygon with n edges is passed as n+1 point array, with first point duplicated at end.
+//
+//    Holes appear as negative area faces.
+//
+class VuPolygonClassifier
+{
+private:
+VuSetP mpGraph;
+VuArrayP mpFaceArray;
+
+public:
+
+    VuFaceMode mFaceMode;
+    int      mNoisy;
+protected:
+
+// Optionally push an empty frame on the graph stack.
+// Install and cleanup a polygon.
+void SetupPolygon(bool bPushStack, vuVectorDPoint3dR xyzArray)
+    {
+    static int sExciseNulls = 1;
+    if (bPushStack)
+        vu_stackPush (mpGraph);
+    InsertLoopsWithDisconnects (xyzArray);
+    vu_mergeOrUnionLoops (mpGraph, VUUNION_UNION);
+    vu_regularizeGraph (mpGraph);
+    vu_markAlternatingExteriorBoundaries (mpGraph, TRUE);
+    if (sExciseNulls)
+        ExciseNullFaces (mpGraph);  
+    }
+
+
+// Clear the graph.
+// Load each of two polygons as a stack frame on the graph stack.
+// On exit the two stack frames are "sitting there waiting" for further manipulation.
+void SetupForPolygonBinaryOp (vuVectorDPoint3dR xyzA, vuVectorDPoint3dR xyzB)//Igor.Sokolov 28.08.2008: use references - avoid copy data (vuVectorDPoint3d xyzA, vuVectorDPoint3d xyzB)
+    {
+    vu_reinitializeVuSet (mpGraph);
+    SetupPolygon (false, xyzA);
+    if (mNoisy > 10)
+        printFaceLabels (mpGraph, "BinaryOp A");
+    SetupPolygon (true, xyzB);
+    if (mNoisy > 10)
+        printFaceLabels (mpGraph, "BinaryOp B");
+
+    }
+
+// Add a single loop starting at iStart.  return false if out of range.
+bool InsertOneLoop (vuVectorDPoint3dR xyzIn, int iStart, int &iNext)
+    {
+    int i0 = iStart;
+    int i1 = i0;
+    int numXYZ = xyzIn.size ();
+    while (i1 < numXYZ && !bsiDPoint3d_isDisconnect (&xyzIn[i1]))
+        i1++;
+
+    iNext = i1 + 1;
+    if (i1 == i0)
+        return false;
+
+    int numThisLoop = i1 - i0;
+
+    VuP pFirstA = NULL;
+    VuP pPreviousB = NULL;
+    for (int i = i0 + 1; i < i1; i++)
+        {
+        VuP pNodeA, pNodeB;
+        vu_makePair (mpGraph, &pNodeA, &pNodeB);
+        vu_setDPoint3d (pNodeA, &xyzIn[i-1]);
+        vu_setDPoint3d (pNodeB, &xyzIn[i]);
+        vu_setMask (pNodeA, VU_BOUNDARY_EDGE);
+        vu_setMask (pNodeB, VU_BOUNDARY_EDGE);
+        if (pPreviousB == NULL)
+            {
+            pFirstA = pNodeA;
+            }
+        else
+            {
+            vu_vertexTwist (mpGraph, pPreviousB, pNodeA);
+            }
+        pPreviousB = pNodeB;
+        }
+    if (pFirstA != NULL && pPreviousB != NULL)
+        {
+        DPoint3d xyzEnd, xyzStart;
+        vu_getDPoint3d (&xyzStart, pFirstA);
+        vu_getDPoint3d (&xyzEnd, pPreviousB);            
+        if (bsiDPoint3d_pointEqual (&xyzEnd, &xyzStart))
+            {
+            // First, last points match.  Just twist the dangling edges together..
+            vu_vertexTwist (mpGraph, pPreviousB, pFirstA);
+            }
+        else
+            {
+            // Make a new edge to close the last-to-first gap ..
+            VuP pNodeA, pNodeB;
+            vu_makePair (mpGraph, &pNodeA, &pNodeB);
+            vu_setDPoint3d (pNodeA, &xyzEnd);
+            vu_setDPoint3d (pNodeB, &xyzStart);
+            vu_setMask (pNodeA, VU_BOUNDARY_EDGE);
+            vu_setMask (pNodeB, VU_BOUNDARY_EDGE);
+            vu_vertexTwist (mpGraph, pPreviousB, pNodeA);
+            vu_vertexTwist (mpGraph, pFirstA, pNodeB);
+            }
+        }
+    return true;
+    }
+
+
+// Search an array for "disconnect" points separating multiple loops of a polygon with holes.
+// Add each loop section to the vu graph.
+void InsertLoopsWithDisconnects (vuVectorDPoint3dR xyzIn)
+    {
+    int iNext = 0;
+    while (InsertOneLoop (xyzIn, iNext, iNext))
+        {
+        }
+    }
+
+// Search an array for "disconnect" points separating multiple loops of a polygon with holes.
+// Add each loop section to the vu graph.
+void InsertEdgesWithDisconnects (DPoint3d *pXYZArray, void **pEdgeData, int numXYZ)
+    {
+    for (int i0 = 0; i0 < numXYZ - 1; i0++)
+        {
+        int i1 = i0 + 1;
+        DPoint3d xyz0 = pXYZArray[i0];
+        DPoint3d xyz1 = pXYZArray[i1];
+        if (!bsiDPoint3d_isDisconnect (&xyz0)
+            && !bsiDPoint3d_isDisconnect (&xyz1))
+            {
+            VuP pStart, pEnd;
+            vu_makePair (mpGraph, &pStart, &pEnd);
+            vu_setMask (pStart, VU_BOUNDARY_EDGE);
+            vu_setMask (pEnd,   VU_BOUNDARY_EDGE);
+            vu_setDPoint3d (pStart, &xyz0);
+            vu_setDPoint3d (pEnd,   &xyz1);
+            if (NULL != pEdgeData)
+                {
+                vu_setUserDataP (pStart, pEdgeData[i0]);
+                vu_setUserDataP (pEnd,   pEdgeData[i1]);
+                }
+            }
+        }
+    }
+
+int HandleVuCMessage (VuMessageType type, VuSetP pGraph, VuP pNodeA, VuP pNodeB, void *pArg)
+    {
+    if (type == VU_MESSAGE_ANNOUNCE_POST_SPLIT_EDGE)
+        {
+        VuP pPredA = vu_fpred (pNodeA);
+        VuP pPredB = vu_fpred (pNodeB);
+        void *pDataA = vu_getUserDataP (pPredA);
+        void *pDataB = vu_getUserDataP (pPredB);
+        vu_setUserDataP (pNodeA, pDataA);
+        vu_setUserDataP (pNodeB, pDataB);
+        }
+    return SUCCESS;
+    }
+
+static int DispatchVuCMessage (VuMessageType type, VuSetP pGraph, VuP pNodeA, VuP pNodeB, void *pArg, VuPolygonClassifier *pClassifier)
+    {
+    return pClassifier->HandleVuCMessage (type, pGraph, pNodeA, pNodeB, pArg);
+    }
+
+private:
+// ASSUME graph is triangulated.
+// We want to expand to convex.
+// The expander looks at EXTERIOR bits, it should look at BOUNDARY.
+// Do save/restore sequence on the exteriors around the call ...
+void CullTriangulatedToConvex ()
+    {
+    // SAVE ....
+    VuMask savedExterior = vu_grabMask (mpGraph);
+    VU_SET_LOOP (pCurr, mpGraph)
+        {
+        vu_writeMask (pCurr, savedExterior, vu_getMask (pCurr, VU_EXTERIOR_EDGE));
+        vu_writeMask (pCurr, VU_EXTERIOR_EDGE, vu_getMask (pCurr, VU_BOUNDARY_EDGE));
+        }
+    END_VU_SET_LOOP (pCurr, mpGraph)
+    // Remove edges ...
+    vu_removeEdgesToExpandConvexInteriorFaces (mpGraph);
+    // RESTORE ...
+    VU_SET_LOOP (pCurr, mpGraph)
+        {
+        vu_writeMask (pCurr, VU_EXTERIOR_EDGE, vu_getMask (pCurr, savedExterior));
+        }
+    END_VU_SET_LOOP (pCurr, mpGraph)
+    vu_returnMask (mpGraph, savedExterior);
+    }
+
+public:
+// Reset the face array for visits by the GetFace() function
+// (union/difference/intersect methods call this just before return, so application code normally does not need to 
+//   use SetupForLoopOverInteriorfaces)
+void SetupForLoopOverInteriorFaces ()
+    {
+    if (mNoisy > 8)
+        printFaceLabels (mpGraph, "Before connect & process");
+    if (mFaceMode == FaceMode_Monotone)
+        {
+        // make sure we're connected ... 
+        vureg_regularizeGraph (mpGraph);
+        // uhoh -- connection edges aren't marked exterior.
+        vu_spreadMaskAroundFaces (mpGraph, VU_EXTERIOR_EDGE);
+        }
+    else if (mFaceMode == FaceMode_Triangulate
+            || mFaceMode == FaceMode_Convex)
+        {
+        vureg_regularizeGraph (mpGraph);
+        vu_spreadMaskAroundFaces (mpGraph, VU_EXTERIOR_EDGE);
+        vu_triangulateMonotoneInteriorFaces (mpGraph, FALSE);
+        vu_flipTrianglesToImproveQuadraticAspectRatio (mpGraph);
+        if (mFaceMode == FaceMode_Convex)
+            {
+            CullTriangulatedToConvex ();
+            }
+        }
+    else if (mFaceMode == FaceMode_BridgeEdges)
+        {
+        vu_regularizeGraph (mpGraph);
+        vu_spreadMaskAroundFaces (mpGraph, VU_EXTERIOR_EDGE);
+        ExpandInteriorFaces (mpGraph, mNoisy);
+        }
+
+    if (mNoisy > 8)
+        printFaceLabels (mpGraph, "After connect & process");
+
+    vu_arrayClear (mpFaceArray);
+    vu_collectInteriorFaceLoops (mpFaceArray, mpGraph);
+    vu_arrayOpen (mpFaceArray);
+    }
+
+// Constructor.  Create vu graph and face array to be reused ...
+VuPolygonClassifier (double graphAbsTol = 0, double graphRelTol = VU_REL_TOL)
+    {
+    mpGraph = vu_newVuSet (0);
+    mpFaceArray = vu_grabArray (mpGraph);
+    vu_setTol (mpGraph, graphAbsTol, graphRelTol); //Igor.Sokolov 08.09.2008: (changed to class ctor parameters) s_graphAbsTol, s_graphRelTol);
+    vu_setCMessageFunction (mpGraph, (VuMessageFunction)DispatchVuCMessage, this);
+    vu_setUserDataPIsVertexProperty (mpGraph, FALSE);
+    mNoisy = 0;
+    mFaceMode = FaceMode_BridgeEdges;     //Igor.Sokolov 08.09.2008 
+    }
+
+// Set default value of user data in nodes.
+// If not called, the default is a null pointer.
+// If your user data is integer indices, you probably need to call this function
+// and change the default to ((void*)-1) so that 0 can be distinguished as a valid user data 
+void SetDefaultEdgeData (void *pDefaultEdgeData)
+    {
+    vu_setDefaultUserDataPAsInt (mpGraph, (int)pDefaultEdgeData);
+    }
+// Destructor.  Dispose of array and graph ...
+~VuPolygonClassifier ()
+    {
+    vu_returnArray (mpGraph, mpFaceArray);
+    vu_freeVuSet (mpGraph);
+    }
+
+// Perform a planar merge of all edges in the array. (Disconnects as separators)
+// On exit, the face array is prepped for looping over all faces with GetFace ()
+void ClassifyPlane (DPoint3d *pXYZArrayA, void **pEdgeData, int numXYZA)
+    {
+    vu_reinitializeVuSet (mpGraph);
+    InsertEdgesWithDisconnects (pXYZArrayA, pEdgeData, numXYZA);
+    vu_mergeOrUnionLoops (mpGraph, VUUNION_UNION);
+    vu_regularizeGraph (mpGraph);
+    MarkNonParityExterior (mpGraph);
+    SetupForLoopOverInteriorFaces ();
+
+    }
+
+
+// Perform a planar merge of all edges in the array. (Disconnects as separators)
+// On exit, the face array is prepped for looping over "outside" of each connected component.
+void ClassifyOuterBoundaries (DPoint3d *pXYZArrayA, void **pEdgeData, int numXYZA)
+    {
+    vu_reinitializeVuSet (mpGraph);
+    InsertEdgesWithDisconnects (pXYZArrayA, pEdgeData, numXYZA);
+    vu_mergeOrUnionLoops (mpGraph, VUUNION_UNION);
+    MarkNonParityExterior (mpGraph);
+    
+    vu_arrayClear (mpFaceArray);
+    vu_collectExteriorFaceLoops (mpFaceArray, mpGraph);
+    vu_arrayOpen (mpFaceArray);
+    }
+
+
+// Perform a boolean intersection of two polygons.
+// On exit, the face array is prepped for looping over all faces with GetFace ()
+void ClassifyAIntersectB (vuVectorDPoint3dR xyzA, vuVectorDPoint3dR xyzB)
+    {
+    SetupForPolygonBinaryOp (xyzA, xyzB);
+    vu_stackPopWithOperation (mpGraph, vu_andLoops, NULL);
+    SetupForLoopOverInteriorFaces ();
+    }
+
+// Perform a boolean intersection of multiple polygons, each containing only one loop.
+// On exit, the face array is prepped for looping over all faces with GetFace ()
+void ClassifyMultiUnion (vuVectorDPoint3dR xyzA)
+    {
+    int iNext = 0;
+    vu_reinitializeVuSet (mpGraph);
+    while (InsertOneLoop (xyzA, iNext, iNext))
+        {
+        vu_mergeOrUnionLoops (mpGraph, VUUNION_UNION);
+        vu_regularizeGraph (mpGraph);
+        vu_markAlternatingExteriorBoundaries (mpGraph, TRUE);
+        vu_stackPush (mpGraph);        
+        }
+    vu_stackPopAll (mpGraph);
+    vu_orLoops (mpGraph);
+    ExciseNullFaces (mpGraph);
+    SetupForLoopOverInteriorFaces ();
+    }
+
+
+// Perform a subtraction of two polygons.
+// On exit, the face array is prepped for looping over all faces with GetFace ()
+void ClassifyAMinusB (vuVectorDPoint3dR xyzA, vuVectorDPoint3dR xyzB)
+    {
+    SetupForPolygonBinaryOp (xyzA, xyzB);
+    vu_stackPopWithOperation (mpGraph, vu_xorLoops, NULL);
+    SetupPolygon (true, xyzA);
+    vu_stackPopWithOperation (mpGraph, vu_andLoops, NULL);
+    SetupForLoopOverInteriorFaces ();
+    }
+
+// Perform a union of two polygons.
+// On exit, the face array is prepped for looping over all faces with GetFace ()
+void ClassifyAUnionB (vuVectorDPoint3dR xyzA, vuVectorDPoint3dR xyzB)
+    {
+    SetupForPolygonBinaryOp (xyzA, xyzB);
+    vu_stackPopWithOperation (mpGraph, vu_orLoops, NULL);
+    SetupForLoopOverInteriorFaces ();
+    }
+
+// Retrieve the "next" face of the graph.
+// This is to be called in a loop
+//     for (;GetFace (xyz, edgeData, num, max);)
+//          {
+//          for (int i = 0; i < num; i++)
+//              {
+//              .. vertex coordinates xyz[i]
+//              .. with edgeData[i]
+//          }
+//  Once the faces are visited, use SetupForLoopOverInteriorFaces to reset for additional visits.
+bool GetFace (vuVectorDPoint3dR xyzOut, std::vector <void *> * pEdgeDataArray)
+    {
+    xyzOut.clear ();
+    if (pEdgeDataArray)
+        pEdgeDataArray->clear ();
+    VuP pFaceSeed;
+    // We're going to ignore faces with just 2 edges or zero area ..
+    //   have to be in a loop even though we expect to "usually" read
+    //   only once.
+    for (;vu_arrayRead (mpFaceArray, &pFaceSeed);)
+        {
+        VU_FACE_LOOP (pCurr, pFaceSeed)
+            {
+            DPoint3d xyz;
+            vu_getDPoint3d (&xyz, pCurr);
+            xyzOut.push_back (xyz);
+            if (NULL != pEdgeDataArray)
+                pEdgeDataArray->push_back (vu_getUserDataP (pCurr));
+            }
+        END_VU_FACE_LOOP (pCurr, pFaceSeed)
+
+        if (xyzOut.size () > 2 && vu_area (pFaceSeed) != 0.0)
+            {                        
+            //Igor.Sokolov 09.09.2008: can be reallocated during a call xyzOut.push_back (xyzOut[0]);
+            DPoint3d xyz = xyzOut[0];
+            xyzOut.push_back (xyz);
+            if (pEdgeDataArray != NULL)
+                pEdgeDataArray->push_back (NULL);
+            return true;
+            }
+        if (pEdgeDataArray)
+            pEdgeDataArray->clear ();
+        xyzOut.clear ();
+        }
+    return false;
+    }
+
+// Retrieve the "next" face of the graph.
+// This is to be called in a loop
+//     for (;GetFace (xyz, num, max);)
+//          {
+//          }
+//  Once the faces are visited, use SetupForLoopOverInteriorFaces to reset for additional visits.
+bool GetFace (vuVectorDPoint3dR xyz)
+    {
+    return GetFace (xyz, NULL);
+   }
+
+
+};
+
