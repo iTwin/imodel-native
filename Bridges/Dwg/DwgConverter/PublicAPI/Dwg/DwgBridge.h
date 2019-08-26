@@ -67,6 +67,7 @@ protected:
     DWG_EXPORT void           _Terminate (BentleyStatus convertStatus) override;
 
 public:
+    DWG_EXPORT DwgBridge ();
     DWG_EXPORT BentleyStatus  RunAsStandaloneExe (int argc, WCharCP argv[]);
     DWG_EXPORT DwgImporter::Options&  GetImportOptions () { return m_options; }
 
