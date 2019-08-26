@@ -1797,7 +1797,11 @@ TEST_F(IModelCompatibilityTestFixture, AddDomain)
             testDb.AssertProfileVersion();
             testDb.AssertLoadSchemas();
             EXPECT_TRUE(testDb.GetDb().Schemas().ContainsSchema("Functional")) << testDb.GetDescription();
-            EXPECT_EQ(SchemaVersion(1, 0, 1), testDb.GetSchemaVersion("Functional")) << testDb.GetDescription();
+            SchemaVersion expectedSchemaVersion(1, 0, 0);
+            SchemaVersion testDbSchemaVersion = testDb.GetSchemaVersion("Functional");
+            EXPECT_EQ(expectedSchemaVersion.GetMajor(), testDbSchemaVersion.GetMajor()) << testDb.GetDescription();
+            EXPECT_EQ(expectedSchemaVersion.GetMinor(), testDbSchemaVersion.GetMinor()) << testDb.GetDescription();
+            // The Functional schema may have updates, so only Major and Minor are checked
             }
         }
     }
