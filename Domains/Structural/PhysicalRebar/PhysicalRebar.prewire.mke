@@ -1,0 +1,12 @@
+#--------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------+
+%include mdl.mki
+
+$(BuildContext)PublicAPI/PhysicalRebar : $(_MakeFilePath)PublicAPI/PhysicalRebar
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)ECSchemas/Domain/PhysicalRebar.ecschema.xml : $(_MakeFilePath)PhysicalRebar.ecschema.xml
+    $(LinkFirstDepToFirstTarget)
