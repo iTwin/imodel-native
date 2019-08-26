@@ -1,0 +1,48 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+CompileOptionsMki = $(_MakeFilePath)BeHttpCompileOptions.mki
+%include $(CompileOptionsMki)
+
+# included by BeHttpCompileOptions.mki? -- %include mdl.mki
+
+#--------------------------------------------------------------------------------------
+#   Building the BeHttp library
+#--------------------------------------------------------------------------------------
+baseDir                     = $(_MakeFilePath)
+BeHttpSourceDir             = $(baseDir)BeHttp/
+BeHttpPublicApiDir          = $(baseDir)PublicAPI/BeHttp/
+BuildContext                = $(OutputRootDir)BuildContexts/BeHttp/
+BuildContextLibsDirectory   = $(BuildContext)SubParts/Libs/
+
+o = $(PartBuildDir)
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------------------
+# Use multi-compile
+#----------------------------------------------------------------------
+%include $(baseDir)Http.mki
+objs =% $(MultiCompileObjectList)
+
+#----------------------------------------------------------------------
+#   Create the BeHttp DLL
+#----------------------------------------------------------------------
+DLM_NAME                    = BeHttp
+DLM_OBJECT_FILES            = $(objs)
+DLM_EXPORT_OBJS             = $(objs)
+DLM_OBJECT_DEST             = $(o)
+DLM_DEST                    = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeSQLite$(libext)
+LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(libprefix)BeZlib$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeFolly$(libext)
+
+%include $(sharedMki)linkLibrary.mki
