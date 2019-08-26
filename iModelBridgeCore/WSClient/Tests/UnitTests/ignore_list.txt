@@ -1,0 +1,74 @@
+#--------------------------------------------------------------------------------
+# PLEASE keep this file structurized and add new issues to specific sections:
+# KNOWN, BREAKAGES, RANDOM, NEW
+#--------------------------------------------------------------------------------
+
+#--------------------------------------------------------------------------------
+# KNOWN issues
+#--------------------------------------------------------------------------------
+# Tests that fail for know reasons and require larger fixes
+*_KnownIssue*
+
+#--------------------------------------------------------------------------------
+# RANDOM reproduceable crashes/hangs that break DEV builds
+#--------------------------------------------------------------------------------
+
+#--------------------------------------------------------------------------------
+# RANDOM crashes/hangs on PRG/FIREBUG (usually can be ran on DEV x64 builds with no problems)
+#--------------------------------------------------------------------------------
+
+UrlProviderTests.GetUrl_ValidateAllGetters
+    # TFS#862962
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 03/14/2018
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Configuration\UrlProviderTests.cpp(103): error: Actual function call count doesn't match EXPECT_CALL(*client, GetUrl(_, _))...
+    # Expected: to be called once
+    # Actual: never called - unsatisfied and active
+    # Can not reproduce. Also, test is expecting 17 calls count and it was never expecting called once.
+
+UrlProviderTests.GetPunchlistWsgUrl_LocalStateHasOldUrlStoredAsString_IgnoresOldUrlAndCallsBuddi
+    # bim0200, x64, NDEBUG
+    # Also dgndb61-16q4, x64, NDEBUG, PRG
+    # [ RUN      ] UrlProviderTests.GetPunchlistWsgUrl_LocalStateHasOldUrlStoredAsString_IgnoresOldUrlAndCallsBuddi
+    # F:\Bim0200\src\WSClient\Tests\UnitTests\Published\WebServices\Configuration\UrlProviderTests.cpp(87): error: Actual function call count doesn't match EXPECT_CALL(*client, GetUrl(_, _))...
+    #          Expected: to be called once
+    #            Actual: never called - unsatisfied and active
+    #
+    # GMOCK WARNING:
+    # Uninteresting mock function call - taking default action specified at:
+    # F:\Bim0200\src\WSClient\Tests\UnitTests\Published\WebServices\Configuration\UrlProviderTests.cpp(130):
+    #     Function call: _GetValue(00007FFCFB8A20D8 pointing to "UrlCache", 00007FFCFB8A20C8 pointing to "Environment")
+    #           Returns: "null"
+    # NOTE: You can safely ignore the above warning unless this call should not happen.  Do not suppress it by blindly adding an EXPECT_CALL() if you don't mean to enforce the call.  See https://github.com/google/googletest/blob/master/googlemock/docs/CookBook.md#knowing-when-to-expect for details.
+    #
+    # GMOCK WARNING:
+    # Uninteresting mock function call - taking default action specified at:
+    # F:\Bim0200\src\WSClient\Tests\UnitTests\Published\WebServices\Configuration\UrlProviderTests.cpp(131):
+    #     Function call: _SaveValue(00007FFCFB8A20D8 pointing to "UrlCache", 00007FFCFB8A20C8 pointing to "Environment", @000000A33FF3EE40 "0
+    # ")
+    # NOTE: You can safely ignore the above warning unless this call should not happen.  Do not suppress it by blindly adding an EXPECT_CALL() if you don't mean to enforce the call.  See https://github.com/google/googletest/blob/master/googlemock/docs/CookBook.md#knowing-when-to-expect for details.
+    # F:\Bim0200\src\WSClient\Tests\UnitTests\Published\WebServices\Configuration\UrlProviderTests.cpp(141): error: Mock function called more times than expected - taking default action specified at:
+    # F:\Bim0200\src\WSClient\Tests\UnitTests\Published\WebServices\Configuration\UrlProviderTests.cpp(132):
+    #     Function call: GetUrl(@0000022B5DDBFD98 "Mobile.PunchListWsg", 103)
+    #           Returns: 0000022B5DFF1260
+    #          Expected: to be called once
+    #            Actual: called twice - over-saturated and active
+    # [  FAILED  ] UrlProviderTests.GetPunchlistWsgUrl_LocalStateHasOldUrlStoredAsString_IgnoresOldUrlAndCallsBuddi (35 ms)
+    # Can not reproduce the test failure, but it logs GMOCK warnings. This test never had code in line 87.
+
+ECInstanceKeyFilterTests.FilterByClass_OneClassEmptyInput_EmptyResults
+    # bim0200dev, x86, DEBUG
+    # End of tests reports:
+    # f:\bim0200dev\src-staging\wsclient\tests\unittests\published\webservices\client\MockWSClient.h(31): ERROR: this mock object (used in test ECInstanceKeyFilterTests.FilterByClass_OneClassEmptyInput_EmptyResults) should be deleted but never is. Its address is @080BFB7C.
+    # ERROR: 1 leaked mock object found at program exit.
+    # Can not reproduce, because fails to pull nuget packages with x86 architecture. I tried with WSClient build strategy. No memory leak with x64 architecture
+
+#--------------------------------------------------------------------------------
+# NEW not reviewed issues
+#--------------------------------------------------------------------------------
+
+WSRepositoryClientTests.SendCreateObjectRequest_WebApiV2AndRootInstanceContainsId_IdAddedToUrlToAllowRelatedInstanceModificationsc
+
+    # VSTS#58325
+    # Stream:Bim0200Dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 01/09/2019
+    # Crash
+

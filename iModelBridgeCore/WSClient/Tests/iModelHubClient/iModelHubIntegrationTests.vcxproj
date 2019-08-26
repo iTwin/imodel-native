@@ -1,0 +1,156 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Helpers\BaseMockHttpHandlerTest.cpp" />
+    <ClCompile Include="Helpers\CodesHelpers.cpp" />
+    <ClCompile Include="Helpers\DgnPlatformHelpers.cpp" />
+    <ClCompile Include="Helpers\iModelHubHelpers.cpp" />
+    <ClCompile Include="Helpers\iModelHubHost.cpp" />
+    <ClCompile Include="Helpers\IntegrationTestsSettings.cpp" />
+    <ClCompile Include="Helpers\LocksHelpers.cpp" />
+    <ClCompile Include="Helpers\MockHttpHandler.cpp" />
+    <ClCompile Include="Helpers\OIDC\OidcSignInManager.cpp" />
+    <ClCompile Include="Helpers\OIDC\OidcToken.cpp" />
+    <ClCompile Include="Helpers\OIDC\OidcTokenProvider.cpp" />
+    <ClCompile Include="Helpers\PerformanceTestsSettings.cpp" />
+    <ClCompile Include="Helpers\SchemaVersionTestDomain.cpp" />
+    <ClCompile Include="Helpers\StubLocalState.cpp" />
+    <ClCompile Include="Helpers\StubResponses.cpp" />
+    <ClCompile Include="Helpers\TestsProgressCallback.cpp" />
+    <ClCompile Include="Helpers\WSClientBaseTest.cpp" />
+    <ClCompile Include="Integration\BriefcasePullTests.cpp" />
+    <ClCompile Include="Integration\BriefcaseSchemaChangesTests.cpp" />
+    <ClCompile Include="Integration\BriefcaseTests.cpp" />
+    <ClCompile Include="Integration\ChangeSetsTests.cpp" />
+    <ClCompile Include="Integration\CodesLocksTests.cpp" />
+    <ClCompile Include="Integration\CodeSpecLockTests.cpp" />
+    <ClCompile Include="Integration\CodesTests.cpp" />
+    <ClCompile Include="Integration\EventParserTests.cpp" />
+    <ClCompile Include="Integration\EventsTests.cpp" />
+    <ClCompile Include="Integration\FailureTests.cpp" />
+    <ClCompile Include="Integration\FakeServerTests.cpp" />
+    <ClCompile Include="Integration\GlobalEventsTests.cpp" />
+    <ClCompile Include="Integration\iModelTests.cpp" />
+    <ClCompile Include="Integration\iModelTestsBase.cpp" />
+    <ClCompile Include="Integration\IntegrationTestsBase.cpp" />
+    <ClCompile Include="Integration\LocksTests.cpp" />
+    <ClCompile Include="Integration\LRPJobBackdoorAPI.cpp" />
+    <ClCompile Include="Integration\LRPTests.cpp" />
+    <ClCompile Include="Integration\MultiProgressCallbackHandlerTests.cpp" />
+    <ClCompile Include="Integration\PerformanceTests.cpp" />
+    <ClCompile Include="Integration\PushRetryTests.cpp" />
+    <ClCompile Include="Integration\RetryTests.cpp" />
+    <ClCompile Include="Integration\SchemaLockTests.cpp" />
+    <ClCompile Include="Integration\SchemaVersionTests.cpp" />
+    <ClCompile Include="Integration\SeedFileTests.cpp" />
+    <ClCompile Include="Integration\StatisticsTests.cpp" />
+    <ClCompile Include="Integration\ThumbnailsTests.cpp" />
+    <ClCompile Include="Integration\UrlValidatorTests.cpp" />
+    <ClCompile Include="Integration\UserInfoTests.cpp" />
+    <ClCompile Include="Integration\VersionsTests.cpp" />
+    <ClCompile Include="Integration\WebsiteSeedFileTests.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Helpers\BaseMockHttpHandlerTest.h" />
+    <ClInclude Include="Helpers\CodesHelpers.h" />
+    <ClInclude Include="Helpers\DgnPlatformHelpers.h" />
+    <ClInclude Include="Helpers\iModelHubHelpers.h" />
+    <ClInclude Include="Helpers\iModelHubHost.h" />
+    <ClInclude Include="Helpers\IntegrationTestsSettings.h" />
+    <ClInclude Include="Helpers\LocksHelpers.h" />
+    <ClInclude Include="Helpers\MockHttpHandler.h" />
+    <ClInclude Include="Helpers\OIDC\OidcSignInManager.h" />
+    <ClInclude Include="Helpers\OIDC\OidcToken.h" />
+    <ClInclude Include="Helpers\OIDC\OidcTokenProvider.h" />
+    <ClInclude Include="Helpers\PerformanceTestsSettings.h" />
+    <ClInclude Include="Helpers\SchemaVersionTestDomain.h" />
+    <ClInclude Include="Helpers\StubLocalState.h" />
+    <ClInclude Include="Helpers\StubResponses.h" />
+    <ClInclude Include="Helpers\TestAppPathProvider.h" />
+    <ClInclude Include="Helpers\TestsProgressCallback.h" />
+    <ClInclude Include="Helpers\WSClientBaseTest.h" />
+    <ClInclude Include="Integration\EventParserTests.h" />
+    <ClInclude Include="Integration\Helpers.h" />
+    <ClInclude Include="Integration\iModelTestsBase.h" />
+    <ClInclude Include="Integration\IntegrationTestsBase.h" />
+    <ClInclude Include="Integration\LRPJobBackdoorAPI.h" />
+    <ClInclude Include="Integration\RequestVerifyHttpHandler.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Integration\IntegrationTests.json" />
+    <None Include="Integration\IntegrationTestsIms.json" />
+    <None Include="Integration\PerformanceTests.json" />
+    <None Include="Integration\performanceTestsMaximums.json" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{25BD2CDA-5D17-4106-AB63-C9D41E469DD9}</ProjectGuid>
+    <RootNamespace>iModelHubIntegrationTests</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <LocalDebuggerCommand>$(OutRoot)\Winx64\Product\iModelHubNativeTests\iModelHubNativeTests.exe</LocalDebuggerCommand>
+    <LocalDebuggerCommandArguments>--gtest_filter=*</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <NMakeIncludeSearchPath>$(SrcRoot)\libsrc\facebook\VendorApi\;$(SrcRoot)\DgnDbSync\PublicAPI\;$(SrcRoot)\libsrc\rapidxml2json\include;$(SrcRoot)\libsrc\libxml2\include\;$(SrcRoot)\libsrc\libxml2\BeXml\PublicApi\;$(SrcRoot)\DgnDbSync\DgnV8\;$(SrcRoot)\libsrc\rapidxml\include;$(SrcRoot)\libsrc\rapidjson\include;$(SrcRoot)\libsrc\jsoncpp\include;$(SrcRoot)\libsrc\jsoncpp\PublicAPI;$(SrcRoot)\DgnDbSync\;$(SrcRoot)\BePortableUI\PublicAPI;$(SrcRoot)\ECDb\PublicAPI;$(SrcRoot)\BeSQLite\PublicAPI;$(SrcRoot)\DgnClientFx\PublicAPI;$(SrcRoot)\DgnPlatform\PublicAPI;$(SrcRoot)\DgnPlatform;$(SrcRoot)\WSClient\PublicAPI;$(SrcRoot)\BeHttp\PublicAPI;$(SrcRoot)\Bentley\PublicAPI</NMakeIncludeSearchPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
