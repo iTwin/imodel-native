@@ -104,7 +104,7 @@ void CurlTaskRunner::WaitWhileSuspendedAndRunning()
         {
         virtual bool _TestCondition(BeConditionVariable &cv) override
             {
-            LOG.errorv("CURL WaitWhileSuspendedAndRunning _TestCondition suspended: %i, requests: %d", s_doSuspendNewRequests, CurlHttpRequest::GetActiveRequestCount());
+            LOG.debugv("CURL WaitWhileSuspendedAndRunning _TestCondition suspended: %i, requests: %d", s_doSuspendNewRequests, CurlHttpRequest::GetActiveRequestCount());
 
             if (!s_doSuspendNewRequests)
                 return true;
