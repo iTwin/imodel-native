@@ -1,0 +1,47 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
+//__PUBLISH_SECTION_START__
+
+//=======================================================================================
+// Add link from the GROUP_Collection module to the overview page
+//=======================================================================================
+/**
+@addtogroup GROUP_Collection Collection Module
+Cross-platform templated collection classes.
+@see @ref PAGE_CollectionOverview
+*/
+
+//=======================================================================================
+// Define collections overview page
+//=======================================================================================
+/** @page PAGE_CollectionOverview Working with collections
+
+The DgnDb technology stack includes a set of portable/templated CPP collection classes.
+
+@tableofcontents
+
+@see @ref BentleyApi::bmap             "bmap"
+@see @ref BentleyApi::bset             "bset"
+@see @ref BentleyApi::Bstdcxx::bvector "bvector"
+
+<hr>
+
+<!-- ---------------------------------------------------------------------------------- -->
+@section RequiredIncludes Required include files
+
+__PUBLISH_INSERT_FILE__ Overview_Collections_Include.sampleCode
+
+<!-- ---------------------------------------------------------------------------------- -->
+@section bvector bvector
+
+__PUBLISH_INSERT_FILE__ Overview_Collections_bvector.sampleCode
+
+<!-- ---------------------------------------------------------------------------------- -->
+@section bmap bmap
+
+__PUBLISH_INSERT_FILE__ Overview_Collections_bmap.sampleCode
+
+*/

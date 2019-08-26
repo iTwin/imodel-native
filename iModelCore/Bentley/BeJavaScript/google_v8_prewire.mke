@@ -1,0 +1,46 @@
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+%include mdl.mki
+
+%ifdef GOOGLE_V8_SDK
+    %ifnofile ${GOOGLE_V8_SDK}
+        %error GOOGLE_V8_SDK was defined ($(GOOGLE_V8_SDK)) but does not exist. Make sure it points to .../Product/google_v8/ directory in your Google V8 output tree.
+    %endif
+
+    GoogleV8Sdk = $(GOOGLE_V8_SDK)/
+%else
+    GoogleV8Sdk = $(BuildContext)SdkSources/google_v8_winx64/
+%endif
+
+VendorApiPath = $(BuildContext)VendorApi/
+DeliveryPath = $(BuildContext)Delivery/
+
+%if defined (BMAKE_DELETE_ALL_TARGETS)
+    always:
+        -$(rmdirRecursiveCmd) $(DeliveryPath)
+        -$(rmdirRecursiveCmd) $(VendorApiPath)
+
+    %return
+%endif
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+always:
+    ~linkdir "$(VendorApiPath)google_v8=$(GoogleV8Sdk)VendorApi/google_v8"
+    ~linkfile "$(DeliveryPath)google_v8-license.txt=$(GoogleV8Sdk)google_v8-license.txt"
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+%if ("x64" == $(TARGET_PROCESSOR_ARCHITECTURE))
+    libSubDir = x64
+%elif ("AndroidARM64" == $(TARGET_PROCESSOR_ARCHITECTURE))
+    libSubDir = arm64-v8a
+%elif ("AndroidARM7A" == $(TARGET_PROCESSOR_ARCHITECTURE))
+    libSubDir = armeabi-v7a
+%else
+    %error Unexpected TARGET_PROCESSOR_ARCHITECTURE '$(TARGET_PROCESSOR_ARCHITECTURE)'.
+%endif
+
+always:
+    ~linkmultifiles "$(DeliveryPath)=$(GoogleV8Sdk)lib/$(libSubDir)/*.*"
