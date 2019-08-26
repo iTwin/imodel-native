@@ -661,6 +661,9 @@ BentleyStatus AdapterHelper::PrimitiveToJson(JsonRef& jsonValue, IECSqlValue con
         case PRIMITIVETYPE_Binary:
             {
             int size = 0;
+            Utf8CP base64Hdr = formatOptions.GetBlobMode() == JsonECSqlSelectAdapter::BlobMode::Base64String &&
+                formatOptions.GetRowFormat() == JsonECSqlSelectAdapter::RowFormat::IModelJs ? formatOptions.GetBase64Header().c_str() : nullptr;
+
             Byte const* data = (Byte const*) ecsqlValue.GetBlob(&size);
             if (formatOptions.GetRowFormat() == JsonECSqlSelectAdapter::RowFormat::IModelJs && ecsqlValue.GetColumnInfo().GetProperty())
                 {
@@ -686,7 +689,7 @@ BentleyStatus AdapterHelper::PrimitiveToJson(JsonRef& jsonValue, IECSqlValue con
             if (jsonValue.IsRapidJson())
                 {
                 if (formatOptions.GetBlobMode() == JsonECSqlSelectAdapter::BlobMode::Base64String)
-                    return ECJsonUtilities::BinaryToJson(jsonValue.RapidJson(), data, (size_t) size, jsonValue.Allocator(), formatOptions.GetBase64Header().c_str());
+                    return ECJsonUtilities::BinaryToJson(jsonValue.RapidJson(), data, (size_t) size, jsonValue.Allocator(), base64Hdr);
                 
                 
                 // render as int[]
@@ -698,7 +701,7 @@ BentleyStatus AdapterHelper::PrimitiveToJson(JsonRef& jsonValue, IECSqlValue con
 
 
             if (formatOptions.GetBlobMode() == JsonECSqlSelectAdapter::BlobMode::Base64String)
-                return ECJsonUtilities::BinaryToJson(jsonValue.JsonCpp(), data, (size_t) size, formatOptions.GetBase64Header().c_str());
+                return ECJsonUtilities::BinaryToJson(jsonValue.JsonCpp(), data, (size_t) size, base64Hdr);
 
             // render as int[]
             jsonValue.SetArray();
