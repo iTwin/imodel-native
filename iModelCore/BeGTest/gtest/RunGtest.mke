@@ -6,30 +6,29 @@
 %include mdl.mki
 
 %ifndef GTEST_PRODUCT
-	%error Define GTEST_PRODUCT to identify the test executable as a path relative to the Product directory, e.g., -dGTEST_PRODUCT=BeSQLite-Gtest/BeSQLiteTest
+    %error Define GTEST_PRODUCT to identify the test executable as a path relative to the Product directory, e.g., -dGTEST_PRODUCT=BeSQLite-Gtest/BeSQLiteTest
 %endif
 
+# If GTEST_NAME is not defined use GTEST_PRODUCT.
 %ifndef GTEST_NAME
-	GTEST_NAME = $(GTEST_PROJECT)
+    GTEST_NAME = $(GTEST_PRODUCT)
 %endif
 
 %ifndef GTEST_OUTPUT_DIR
-	GTEST_OUTPUT_DIR=$(OutputRootDir)build/RunGtest/${GTEST_PRODUCT}/$(GTEST_NAME)
+    GTEST_OUTPUT_DIR=$(OutputRootDir)build/RunGtest/${GTEST_PRODUCT}/$(GTEST_NAME)
 %endif
 
 %ifndef GTEST_LOGFILE_NAME
-	GTEST_LOGFILE_NAME=$(GTEST_NAME).log
-	#GTEST_LOGFILE_NAME=${GTEST_PRODUCT}/$(GTEST_NAME).log
+    GTEST_LOGFILE_NAME=$(GTEST_NAME).log
 %endif
 
-BentleyTestDir=$(SrcRoot)imodel02/iModelCore/util/gtest/BentleyTest/
 runDir=$[@realpath ${GTEST_OUTPUT_DIR}]/run/
 
 %if defined (BMAKE_DELETE_ALL_TARGETS)
-	always:
-		-$(rmdirRecursiveCmd) $(runDir)
+    always:
+        -$(rmdirRecursiveCmd) $(runDir)
 
-	%return
+    %return
 %endif
 
 LogDir=$(runDir)logs/
@@ -42,120 +41,118 @@ MAKE_PRODUCT_COPY_PRODUCT_NAME = $(GTEST_PRODUCT)
 exeName = ${MAKE_PRODUCT_COPY_DIR}/$(GTEST_NAME)
 
 always:
-	!~@mkdir ${GTEST_OUTPUT_DIR}
-	!~@mkdir ${runDir}
-	!~@mkdir ${runDir}/Output
-	!~@mkdir ${runDir}/Temp
-	!~@mkdir ${LogDir}
+    !~@mkdir ${GTEST_OUTPUT_DIR}
+    !~@mkdir ${runDir}
+    !~@mkdir ${runDir}/Output
+    !~@mkdir ${runDir}/Temp
+    !~@mkdir ${LogDir}
 
 %ifdef BENTLEY_NO_RUN_GTEST
-	always:
-		>$(LogDir)test.log
-		tests were not run
-		<
-		~linkfile "$(BuildContext)Delivery/Gtest/Logs/$(GTEST_LOGFILE_NAME)=$(ResultsCapture)"
+    always:
+        >$(LogDir)test.log
+        tests were not run
+        <
+        ~linkfile "$(BuildContext)Delivery/Gtest/Logs/$(GTEST_LOGFILE_NAME)=$(ResultsCapture)"
 
 	%return
 %endif
 
-%if defined (winNT) && !defined(ENABLE_GTEST_COVERAGE)
-	%ifdef ONLY_TEST_CHANGES
-		%message Run only required tests
-		always:
-			python $(SrcRoot)imodel02/TestingScripts/TestImpactAnalysis/FindRequiredTests.py --gtestName=$(GTEST_NAME)
+%if defined (winNT)
+    %if !defined(ENABLE_GTEST_COVERAGE)
+        %ifdef ONLY_TEST_CHANGES
+            %message Run only required tests
+            always:
+                python $(SrcRoot)imodel02/TestingScripts/TestImpactAnalysis/FindRequiredTests.py --gtestName=$(GTEST_NAME)
 
-		REQ_TESTS_DIR=$(OutputRootDir)LogFiles/RunRequiredTests/
-		NOTNEEDED_FILE=$(REQ_TESTS_DIR)$(GTEST_NAME)_NotNeeded.txt
-		%iffile $(NOTNEEDED_FILE)
-			%message Tests are outside scope of ONLY_TEST_CHANGES
-		%else
-			GTEST_FILTER_FILE=$(REQ_TESTS_DIR)$(GTEST_NAME)_command.txt
-			%iffile $(GTEST_FILTER_FILE) 
-				%if $[@readfile $(GTEST_FILTER_FILE)] !=" " 
-					GTEST_FILTER=$[@readfile $(GTEST_FILTER_FILE)]
-				%endif
-			%endif
-			%ifndef GTEST_FILTER 
-				#No need to run tests.
-				%message Skipping test execution
-				always:
-					>$(LogDir)test.log
-					[==========] No tests are affected by current change.
-					[==========] 0 tests from 0 test cases ran. (0 ms total)
-					<
-					~linkfile "$(BuildContext)Delivery/Gtest/Logs/$(GTEST_LOGFILE_NAME)=$(ResultsCapture)"
-			%endif
-		%endif
-	%endif
-	
-	testName = $[@basename $(exeName)]
+            REQ_TESTS_DIR=$(OutputRootDir)LogFiles/RunRequiredTests/
+            NOTNEEDED_FILE=$(REQ_TESTS_DIR)$(GTEST_NAME)_NotNeeded.txt
+            %iffile $(NOTNEEDED_FILE)
+                %message Tests are outside scope of ONLY_TEST_CHANGES
+            %else
+                GTEST_FILTER_FILE=$(REQ_TESTS_DIR)$(GTEST_NAME)_command.txt
+                %iffile $(GTEST_FILTER_FILE) 
+                    %if $[@readfile $(GTEST_FILTER_FILE)] !=" " 
+                        GTEST_FILTER=$[@readfile $(GTEST_FILTER_FILE)]
+                    %endif
+                %endif
+                %ifndef GTEST_FILTER 
+                    #No need to run tests.
+                    %message Skipping test execution
+                    always:
+                        >$(LogDir)test.log
+                        [==========] No tests are affected by current change.
+                        [==========] 0 tests from 0 test cases ran. (0 ms total)
+                        <
+                        ~linkfile "$(BuildContext)Delivery/Gtest/Logs/$(GTEST_LOGFILE_NAME)=$(ResultsCapture)"
+                %endif
+            %endif
+        %endif
 
-	%if defined(RUN_GTEST_MINIMIZED) || defined(BEGTEST_RUN_MINIMIZED)
-		RunPrefix=start "$(testName)" \/WAIT \/MIN
-	%else
-		RunPrefix=start "$(testName)" \/WAIT
-	%endif
+        testName = $[@basename $(exeName)]
 
-	$(ResultsCapture) : $(exeName).exe
-		>$(ResultsCapture)
-		$(exeName)
-		<
-		%ifdef GTEST_FILTER
-			>$(LogDir)run.bat
-			$(exeName) $(GTEST_EXTRA_ARGS) --gtest_flagfile=$(GTEST_FILTER_FILE) | $(_makeFilePath)TeeGtest.py $(ResultsCapture)		
-			exit
-			<
-		%else			
-			>$(LogDir)run.bat
-			$(exeName) $(GTEST_EXTRA_ARGS) | python $(_makeFilePath)TeeGtest.py $(ResultsCapture)		
-			exit
-			<
-		%endif			
-		-$(RunPrefix) $(LogDir)run.bat
-	
+        %if defined(RUN_GTEST_MINIMIZED) || defined(BEGTEST_RUN_MINIMIZED)
+            RunPrefix=start "$(testName)" \/WAIT \/MIN
+        %else
+            RunPrefix=start "$(testName)" \/WAIT
+        %endif
+    
+        $(ResultsCapture) : $(exeName).exe
+            >$(ResultsCapture)
+            $(exeName)
+            <
+            %ifdef GTEST_FILTER
+                >$(LogDir)run.bat
+                $(exeName) $(GTEST_EXTRA_ARGS) --gtest_flagfile=$(GTEST_FILTER_FILE) | $(_makeFilePath)TeeGtest.py $(ResultsCapture)
+                exit
+                <
+            %else
+                >$(LogDir)run.bat
+                $(exeName) $(GTEST_EXTRA_ARGS) | python $(_makeFilePath)TeeGtest.py $(ResultsCapture)
+                exit
+                <
+            %endif
+            -$(RunPrefix) $(LogDir)run.bat
+    %else
+        xml_comp = Bentley-Gtest
+        LOG_DIR=$(OutputRootDir)LogFiles\CodeCoverage
+        RunPrefix=start "CodeCoverage $(GTEST_PRODUCT)" \/WAIT 
+        always:
+            !~@mkdir $(LOG_DIR)
+
+        always:
+            %if defined (GTEST_PRODUCT)
+                >$(LogDir)run.bat
+                python $(SrcRoot)imodel02\TestingScripts\Coverage\CoverageOpenCPP.py --component=$(GTEST_PRODUCT) --localReport | $(_makeFilePath)TeeGtest.py $(ResultsCapture)
+                exit
+                <
+                -$(RunPrefix) $(LogDir)run.bat
+                %message --------------------------------------------------------------------------------------
+                %message *** Special Case for Bentley is just to create an XML report as needed by summary argument of vsts task to publish coverage results ***
+                %message -------------------------------------------------------------------------------------- 
+                %if $(GTEST_PRODUCT) == $(xml_comp)
+                    start "CodeCoverage $(GTEST_PRODUCT)" \/WAIT python $(SrcRoot)imodel02\TestingScripts\Coverage\CoverageOpenCPP.py --component=$(GTEST_PRODUCT)
+                %endif
+            %else
+                %if !defined (Win10SdkDir)
+                    %error Define Win10SdkDir in your shared shell. e.g. set Win10SdkDir=C:\Program Files (x86)\Windows Kits\10\.
+                %endif
+            %endif
+
+        %message ..
+        %message The Coverage reports are at $(LOG_DIR)
+        %message ..
+    %endif
+
 %else
-	%if defined (winNT) && defined (ENABLE_GTEST_COVERAGE)
-			xml_comp = Bentley-Gtest
-			LOG_DIR=$(OutputRootDir)LogFiles\CodeCoverage
-			RunPrefix=start "CodeCoverage $(GTEST_PRODUCT)" \/WAIT 
-			always:
-				!~@mkdir $(LOG_DIR)
-			
-			always:
-				%if defined (GTEST_PRODUCT)
-					>$(LogDir)run.bat
-					python $(SrcRoot)imodel02\TestingScripts\Coverage\CoverageOpenCPP.py --component=$(GTEST_PRODUCT) --localReport | $(_makeFilePath)TeeGtest.py $(ResultsCapture)
-					exit
-					<
-					-$(RunPrefix) $(LogDir)run.bat
-					%message --------------------------------------------------------------------------------------
-					%message *** Special Case for Bentley is just to create an XML report as needed by summary argument of vsts task to publish coverage results ***
-					%message -------------------------------------------------------------------------------------- 
-					%if $(GTEST_PRODUCT) == $(xml_comp)
-						start "CodeCoverage $(GTEST_PRODUCT)" \/WAIT python $(SrcRoot)imodel02\TestingScripts\Coverage\CoverageOpenCPP.py --component=$(GTEST_PRODUCT)
-					%endif
-				%else
-					%if !defined (Win10SdkDir)
-						%error Define Win10SdkDir in your shared shell. e.g. set Win10SdkDir=C:\Program Files (x86)\Windows Kits\10\.
-					%endif
-				%endif
-				
-			%message ..
-			%message The Coverage reports are at $(LOG_DIR)
-			%message ..
-	%else
-		$(ResultsCapture) : $(exeName)
-			>$(ResultsCapture)
-			$(exeName)
-			<
-			-$(exeName) >> $(ResultsCapture) 2>&1
-	%endif
-
+    $(ResultsCapture) : $(exeName)
+        >$(ResultsCapture)
+        $(exeName)
+        <
+        -$(exeName) >> $(ResultsCapture) 2>&1
 %endif
 
 %message See $(ResultsCapture)
 
 always:
-	python $(_makeFilePath)CheckLogfilesForFailures.py $[@dir $(ResultsCapture)] 1
-	~linkfile "$(BuildContext)Delivery/Gtest/Logs/$(GTEST_LOGFILE_NAME)=$(ResultsCapture)"
-
+    python $(_makeFilePath)CheckLogfilesForFailures.py $[@dir $(ResultsCapture)] 1
+    ~linkfile "$(BuildContext)Delivery/Gtest/Logs/$(GTEST_LOGFILE_NAME)=$(ResultsCapture)"
