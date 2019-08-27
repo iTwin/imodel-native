@@ -624,7 +624,7 @@ namespace iModelHubHelpers
         ASSERT_SUCCESS(changeSetsResult);
         auto changeSets = changeSetsResult.GetValue();
 
-        VersionInfoPtr version = new VersionInfo(name, "Description", changeSets.at(index - 1)->GetId());
+        VersionInfoPtr version = new VersionInfo(name, "Description", index > 0 ? changeSets.at(index - 1)->GetId() : "");
         VersionInfoResult versionResult = connection.GetVersionsManager().CreateVersion(*version)->GetResult();
         ASSERT_SUCCESS(versionResult);
         result = versionResult.GetValue();

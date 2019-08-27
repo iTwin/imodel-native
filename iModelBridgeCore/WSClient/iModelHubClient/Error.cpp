@@ -55,6 +55,7 @@ Error::Id Error::ErrorIdFromString(Utf8StringCR errorIdString)
         map["iModelHub.FailedToGetAssetPermissions"]                = Id::FailedToGetAssetPermissions;
         map["iModelHub.FailedToGetAssetMembers"]                    = Id::FailedToGetAssetMembers;
         map["iModelHub.ChangeSetAlreadyHasVersion"]                 = Id::ChangeSetAlreadyHasVersion;
+        map["iModelHub.BaselineiModelAlreadyHasVersion"]            = Id::BaselineiModelAlreadyHasVersion;
         map["iModelHub.VersionAlreadyExists"]                       = Id::VersionAlreadyExists;
         map["iModelHub.JobSchedulingFailed"]                        = Id::JobSchedulingFailed;
         map["iModelHub.ConflictsAggregate"]                         = Id::ConflictsAggregate;

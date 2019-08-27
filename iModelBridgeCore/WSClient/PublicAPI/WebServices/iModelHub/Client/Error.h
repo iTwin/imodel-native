@@ -57,6 +57,7 @@ public:
         FailedToGetAssetPermissions,
         FailedToGetAssetMembers,
         ChangeSetAlreadyHasVersion,
+        BaselineiModelAlreadyHasVersion,
         VersionAlreadyExists,
         JobSchedulingFailed,
         ConflictsAggregate,

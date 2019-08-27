@@ -136,6 +136,21 @@ TEST_F(VersionsTests, CreateChangeSetAlreadyHasVersion)
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Andrius.Zonys                   08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(VersionsTests, CreateBaselineiModelAlreadyHasVersion)
+    {
+    VersionInfoPtr version1;
+    iModelHubHelpers::CreateNamedVersion(version1, s_connection, TestCodeName(), 0);
+
+    VersionsManagerCR versionManager = s_connection->GetVersionsManager();
+    VersionInfo version2 = VersionInfo(TestCodeName(1), nullptr, "");
+    VersionInfoResult result = versionManager.CreateVersion(version2)->GetResult();
+    ASSERT_FAILURE(result);
+    EXPECT_EQ(Error::Id::BaselineiModelAlreadyHasVersion, result.GetError().GetId());
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Karolis.Dziedzelis              01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(VersionsTests, CreateVersionAlreadyExists)
@@ -333,6 +348,40 @@ TEST_F(VersionsTests, GetChangeSetsAfterVersionInvalidVersion)
     ASSERT_FAILURE(result);
     EXPECT_EQ(Error::Id::InvalidVersion, result.GetError().GetId());
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Andrius.Zonys                   08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(VersionsTests, GetChangeSetsAfterBaselineVersionSucceeds)
+    {
+    VersionInfoPtr version0;
+    iModelHubHelpers::CreateNamedVersion(version0, s_connection, TestCodeName(), 0);
+
+    VersionsManagerCR versionManager = s_connection->GetVersionsManager();
+    ChangeSetsInfoResult result = versionManager.GetChangeSetsAfterVersion(version0->GetId())->GetResult();
+    ASSERT_SUCCESS(result);
+    EXPECT_EQ(15, result.GetValue().size());
+    EXPECT_EQ(s_version15->GetChangeSetId(), result.GetValue().at(14)->GetId());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Andrius.Zonys                   08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(VersionsTests, GetChangeSetsBetweenBaselineVersionAndChangeSetSucceeds)
+{
+    ChangeSetInfoPtr changeset1 = iModelHubHelpers::GetChangeSetByIndex(s_connection, 1);
+    ChangeSetInfoPtr changeset2 = iModelHubHelpers::GetChangeSetByIndex(s_connection, 2);
+
+    VersionInfoPtr version0;
+    iModelHubHelpers::CreateNamedVersion(version0, s_connection, TestCodeName(), 0);
+
+    VersionsManagerCR versionManager = s_connection->GetVersionsManager();
+    ChangeSetsInfoResult result = versionManager.GetChangeSetsBetweenVersionAndChangeSet(version0->GetId(), changeset2->GetId())->GetResult();
+    ASSERT_SUCCESS(result);
+    EXPECT_EQ(2, result.GetValue().size());
+    EXPECT_EQ(changeset1->GetId(), result.GetValue().at(0)->GetId());
+    EXPECT_EQ(changeset2->GetId(), result.GetValue().at(1)->GetId());
+}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Karolis.Dziedzelis              01/2018
