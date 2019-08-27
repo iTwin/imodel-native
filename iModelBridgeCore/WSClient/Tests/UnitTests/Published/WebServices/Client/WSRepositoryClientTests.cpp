@@ -1128,6 +1128,185 @@ TEST_F(WSRepositoryClientTests, WebApi26SendGetChildrenRequest_WhenErrorOccursAn
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                               Simonas.Mulevicius  08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, WebApi20SendGetChildrenRequest_WhenResponseIsSuccessful_ShouldReturnSuccessWithEmptyActivityId)
+    {
+    //Arrange
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+    Http::Response response = StubHttpResponse(HttpStatus::OK, "");
+
+    EXPECT_REQUEST_COUNT(GetHandler(), 2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+    GetHandler().ForRequest(2, response);
+
+    //Act
+    auto result = client->SendGetChildrenRequest(ObjectId())->GetResult();
+
+    //Assert
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_STREQ("", result.GetValue().GetActivityId().c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                               Simonas.Mulevicius  08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, WebApi27SendGetChildrenRequest_WhenResponseIsSuccessful_ShouldReturnSuccessWithEmptyActivityId)
+    {
+    //Arrange
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+    Http::Response response = StubHttpResponse(HttpStatus::OK, "");
+
+    EXPECT_REQUEST_COUNT(GetHandler(), 2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi27());
+    GetHandler().ForRequest(2, response);
+
+    //Act
+    auto result = client->SendGetChildrenRequest(ObjectId())->GetResult();
+
+    //Assert
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_STREQ("", result.GetValue().GetActivityId().c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                Simonas.Mulevcius    08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, WebApi27SendGetChildrenRequest_WhenResponseIsSuccessfulAndResponseActivityIdIsEmpty_ShouldReturnSuccessWithEmptyActivityId)
+    {
+    //Arrange
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+    IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
+    options->GetActivityOptions()->SetActivityId("specifiedActivityId");
+    options->GetActivityOptions()->SetHeaderName(IWSRepositoryClient::ActivityOptions::HeaderName::XCorrelationId);
+
+    EXPECT_REQUEST_COUNT(GetHandler(), 2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi27());
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        StringStringMap headers {{HEADER_XCorrelationId, ""}};
+        return StubHttpResponse(HttpStatus::OK, "", headers);
+        });
+
+    //Act
+    auto result = client->SendGetChildrenRequestWithOptions(ObjectId(), nullptr, options)->GetResult();
+
+    //Assert
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_STREQ("", result.GetValue().GetActivityId().c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                               Simonas.Mulevicius  08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, WebApi27SendGetChildrenRequest_WhenResponseIsSuccessfulAndActivityIdIsSpecified_ShouldReturnSuccessWithSpecifiedActivityId)
+    {
+    //Arrange
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+    Utf8String activityId = "specifiedActivityId";
+    IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
+    options->GetActivityOptions()->SetActivityId(activityId);
+    options->GetActivityOptions()->SetHeaderName(IWSRepositoryClient::ActivityOptions::HeaderName::XCorrelationId);
+
+    EXPECT_REQUEST_COUNT(GetHandler(), 2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi27());
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        StringStringMap headers {{HEADER_XCorrelationId, activityId}};
+        return StubHttpResponse(HttpStatus::OK, "", headers);
+        });
+
+    //Act
+    auto result = client->SendGetChildrenRequestWithOptions(ObjectId(), nullptr, options)->GetResult();
+
+    //Assert
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_STREQ(activityId.c_str(), result.GetValue().GetActivityId().c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                               Simonas.Mulevicius  08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, WebApi27SendGetChildrenRequest_WhenResponseIsSuccessfulButActivityHeadersDontMatch_ShouldReturnSuccessWithEmptyActivityId)
+    {
+    //Arrange
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+    Utf8String requestActivityId = "requestActivityId";
+    IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
+    options->GetActivityOptions()->SetActivityId(requestActivityId);
+    options->GetActivityOptions()->SetHeaderName(IWSRepositoryClient::ActivityOptions::HeaderName::XCorrelationId);
+    Utf8String responseActivityId = "responseActivityId";
+
+    EXPECT_REQUEST_COUNT(GetHandler(), 2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi27());
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        StringStringMap headers {{HEADER_MasRequestId, responseActivityId}};
+        return StubHttpResponse(HttpStatus::OK, "", headers);
+        });
+
+    //Act
+    auto result = client->SendGetChildrenRequestWithOptions(ObjectId(), nullptr, options)->GetResult();
+
+    //Assert
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_STREQ("", result.GetValue().GetActivityId().c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                               Simonas.Mulevicius  08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, WebApi27SendGetChildrenRequest_WhenResponseIsSuccessfulButResponseHeadersAreEmpty_ShouldReturnSuccessWithEmptyActivityId)
+    {
+    //Arrange
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+    Utf8String requestActivityId = "requestActivityId";
+    IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
+    options->GetActivityOptions()->SetActivityId(requestActivityId);
+    options->GetActivityOptions()->SetHeaderName(IWSRepositoryClient::ActivityOptions::HeaderName::XCorrelationId);
+
+    EXPECT_REQUEST_COUNT(GetHandler(), 2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi27());
+    GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::OK));
+
+    //Act
+    auto result = client->SendGetChildrenRequestWithOptions(ObjectId(), nullptr, options)->GetResult();
+
+    //Assert
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_STREQ("", result.GetValue().GetActivityId().c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                               Simonas.Mulevicius  08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, WebApi27SendGetChildrenRequest_WhenResponseIsSuccessfulAndResponseHasDifferentActivityId_ShouldReturnSuccessWithResponseActivityId)
+    {
+    //Arrange
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+    Utf8String requestActivityId = "requestActivityId";
+    IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
+    options->GetActivityOptions()->SetActivityId(requestActivityId);
+    options->GetActivityOptions()->SetHeaderName(IWSRepositoryClient::ActivityOptions::HeaderName::XCorrelationId);
+    Utf8String responseActivityId = "responseActivityId";
+
+    EXPECT_REQUEST_COUNT(GetHandler(), 2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi27());
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        StringStringMap headers {{HEADER_XCorrelationId, responseActivityId}};
+        return StubHttpResponse(HttpStatus::OK, "", headers);
+        });
+
+    //Act
+    auto result = client->SendGetChildrenRequestWithOptions(ObjectId(), nullptr, options)->GetResult();
+    
+    //Assert
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_STREQ(responseActivityId.c_str(), result.GetValue().GetActivityId().c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV2AndEmptyObjectId_ErrorNotSupported)
@@ -1455,6 +1634,74 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV2ETagSet_SendsAndRecei
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                 Simonas.Mulevicius  08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, WebApi27SendGetFileRequest_WhenResponseIsSuccessfulAndResponseHasDifferentActivityId_ShouldReturnSuccessWithResponseActivityId)
+    {
+    //Arrange
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+    IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
+    options->GetActivityOptions()->SetHeaderName(IWSRepositoryClient::ActivityOptions::HeaderName::XCorrelationId);
+    options->GetActivityOptions()->SetActivityId("requestActivityId");
+    Utf8String responseActivityId = "responseActivityId";
+
+    EXPECT_REQUEST_COUNT(GetHandler(), 2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi27());
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        WriteStringToHttpBody("TestResponseBody", request.GetResponseBody());
+        StringStringMap headers {{HEADER_XCorrelationId, responseActivityId}};
+        return StubHttpResponse(HttpStatus::OK, "", headers);
+        });
+
+    //Act
+    auto result = client->SendGetFileRequestWithOptions({"TestSchema", "TestClass", "TestId"}, HttpFileBody::Create(StubFilePath()), nullptr, nullptr, options)->GetResult();
+
+    //Assert
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_STREQ(responseActivityId.c_str(), result.GetValue().GetActivityId().c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                 Simonas.Mulevicius  08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, WebApi27SendGetFileRequest_WhenRequestIsRedirectedAndThenResponseIsSuccessfulAndResponseHasDifferentActivityId_ShouldReturnSuccessWithResponseActivityId)
+    {
+    //Arrange
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+    IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
+    options->GetActivityOptions()->SetHeaderName(IWSRepositoryClient::ActivityOptions::HeaderName::XCorrelationId);
+    options->GetActivityOptions()->SetActivityId("requestActivityId");
+    Utf8String responseActivityId = "responseActivityId";
+
+    EXPECT_REQUEST_COUNT(GetHandler(), 3);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi27());
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        WriteStringToHttpBody("TestResponseBody", request.GetResponseBody());
+        StringStringMap headers 
+            {
+            {HEADER_XCorrelationId, responseActivityId},
+            {HEADER_Location, "https://foo.com/boo"}
+            };
+        return StubHttpResponse(HttpStatus::TemporaryRedirect, "", headers);
+        });
+    GetHandler().ForRequest(3, [=] (Http::RequestCR request)
+        {
+        WriteStringToHttpBody("TestResponseBody", request.GetResponseBody());
+        StringStringMap headers {{HEADER_XCorrelationId, responseActivityId}};
+        return StubHttpResponse(HttpStatus::OK, "", headers);
+        });
+
+    //Act
+    auto result = client->SendGetFileRequestWithOptions({"TestSchema", "TestClass", "TestId"}, HttpFileBody::Create(StubFilePath()), nullptr, nullptr, options)->GetResult();
+
+    //Assert
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_STREQ(responseActivityId.c_str(), result.GetValue().GetActivityId().c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV24ETagSetAndReceivedAzureRedirect_SendsAndReceivesETag)
@@ -1619,6 +1866,34 @@ TEST_F(WSRepositoryClientTests, SendGetObjectRequest_WebApiV2_SendsCorrectUrl)
         });
 
     client->SendGetObjectRequest({"testSchema", "testClass", "testId"})->Wait();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              Simonas.Mulevicius    08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, WebApi27SendGetObjectRequest_WhenResponseIsSuccessfulAndResponseHasDifferentActivityId_ShouldReturnSuccessWithResponseActivityId)
+    {
+    //Arrange
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+    IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
+    options->GetActivityOptions()->SetHeaderName(IWSRepositoryClient::ActivityOptions::HeaderName::XCorrelationId);
+    options->GetActivityOptions()->SetActivityId("requestActivityId");
+    Utf8String responseActivityId = "responseActivityId";
+
+    EXPECT_REQUEST_COUNT(GetHandler(), 2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi27());
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        StringStringMap headers {{HEADER_XCorrelationId, responseActivityId}};
+        return StubHttpResponse(HttpStatus::OK, "", headers);
+        });
+
+    //Act
+    auto result = client->SendGetObjectRequestWithOptions({"testSchema", "testClass", "testId"}, nullptr, options)->GetResult();
+
+    //Assert
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_STREQ(responseActivityId.c_str(), result.GetValue().GetActivityId().c_str());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -2100,6 +2375,37 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV24MaxUrlLenghtExceeded_C
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                            Simonas.Mulevicius    08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, WebApi27WSSendQueryRequest_WhenResponseIsSuccessfulAndResponseHasDifferentActivityId_ShouldReturnSuccessWithResponseActivityId)
+    {
+    //Arrange
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+    IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
+    options->GetActivityOptions()->SetHeaderName(IWSRepositoryClient::ActivityOptions::HeaderName::XCorrelationId);
+    options->GetActivityOptions()->SetActivityId("requestActivityId");
+    Utf8String responseActivityId = "responseActivityId";
+
+    EXPECT_REQUEST_COUNT(GetHandler(), 2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi27());
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        StringStringMap headers {{HEADER_XCorrelationId, responseActivityId}};
+        return StubHttpResponse(HttpStatus::OK, "", headers);
+        });
+
+    WSQuery query("testSchema", set<Utf8String> {"class1", "class2"});
+    query.SetSelect("testSelect");
+
+    //Act
+    auto result = client->SendQueryRequestWithOptions(query, nullptr, nullptr, options)->GetResult();
+
+    //Assert
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_STREQ(responseActivityId.c_str(), result.GetValue().GetActivityId().c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithInvalidRelatedObjectIdAndCorrectJson_ErrorNotSupported)
@@ -2548,6 +2854,45 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_EnableJobsWebApiV2JobSuc
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                             Simonas.Mulevicius     08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, WebApi27SendCreateObjectRequest_WhenResponseIsSuccessfulAndResponseHasDifferentActivityId_ShouldReturnSuccessWithResponseActivityId)
+    {
+    //Arrange
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+    IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
+    options->GetActivityOptions()->SetHeaderName(IWSRepositoryClient::ActivityOptions::HeaderName::XCorrelationId);
+    options->GetActivityOptions()->SetActivityId("requestActivityId");
+    Utf8String responseActivityId = "responseActivityId";
+
+    EXPECT_REQUEST_COUNT(GetHandler(), 2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi27());
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        StringStringMap headers {{HEADER_XCorrelationId, responseActivityId}};
+        return StubHttpResponse(HttpStatus::OK, "", headers);
+        });
+
+    Json::Value creationJson = ToJson(
+        R"( {
+            "instance" :
+                {
+                "schemaName": "TestSchema",
+                "className": "TestClass",
+                "instanceId": "TestId",
+                "properties": {}
+                }
+            })");
+
+    //Act
+    auto response = client->SendCreateObjectRequestWithOptions(creationJson, BeFileName(), nullptr, options)->GetResult();
+
+    //Assert
+    ASSERT_TRUE(response.IsSuccess());
+    EXPECT_STREQ(responseActivityId.c_str(), response.GetValue().GetActivityId().c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendChangesetRequest_WebApiV20_ErrorNotSupported)
@@ -2972,6 +3317,42 @@ TEST_F(WSRepositoryClientTests, SendUpdateObjectRequest_EnableJobsWebApiV2JobSuc
     options->GetJobOptions()->EnableJobsIfPossible();
     auto result = client->SendUpdateObjectRequestWithOptions(StubObjectId(), Json::objectValue, nullptr, BeFileName(), nullptr, options)->GetResult();
     EXPECT_TRUE(result.IsSuccess());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, WebApi27SendUpdateObjectRequest_WhenResponseIsSuccessfulAndResponseHasDifferentActivityId_ShouldReturnSuccessWithResponseActivityId)
+    {
+    //Arrange
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+    IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
+    options->GetActivityOptions()->SetHeaderName(IWSRepositoryClient::ActivityOptions::HeaderName::XCorrelationId);
+    options->GetActivityOptions()->SetActivityId("requestActivityId");
+    Utf8String responseActivityId = "responseActivityId";
+
+    EXPECT_REQUEST_COUNT(GetHandler(), 3);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi27());
+    GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::ResumeIncomplete));
+    GetHandler().ForRequest(3, [=] (Http::RequestCR request)
+        {
+        StringStringMap headers 
+            {
+            {HEADER_MasFileETag, "NewTag"},
+            {HEADER_XCorrelationId, responseActivityId}
+            };
+        return StubHttpResponse(HttpStatus::OK, "", headers);
+        });
+
+    WSQuery query("testSchema", set<Utf8String> {"class1", "class2"});
+    query.SetSelect("testSelect");
+
+    //Act
+    auto result = client->SendUpdateObjectRequestWithOptions(StubObjectId(), Json::objectValue, nullptr, StubFile(), nullptr, options)->GetResult();
+
+    //Assert
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_STREQ(responseActivityId.c_str(), result.GetValue().GetActivityId().c_str());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -3931,6 +4312,73 @@ TEST_F(WSRepositoryClientTests, WebApi27SendUpdateFileRequest_WhenAzureRedirectA
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                Simonas.Mulevicus 08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, WebApi27SendUpdateFileRequest_WhenResponseIsSuccessfulAndResponseHasDifferentActivityId_ShouldReturnSuccessWithResponseActivityId)
+    {
+    //Arrange
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+    IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
+    options->GetActivityOptions()->SetHeaderName(IWSRepositoryClient::ActivityOptions::HeaderName::XCorrelationId);
+    options->GetActivityOptions()->SetActivityId("requestActivityId");
+    Utf8String responseActivityId = "responseActivityId";
+
+    EXPECT_REQUEST_COUNT(GetHandler(), 3);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi27());
+    GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::ResumeIncomplete));
+    GetHandler().ForRequest(3, [=] (Http::RequestCR request)
+        {
+        StringStringMap headers 
+            {
+            {HEADER_MasFileETag, "NewTag"},
+            {HEADER_XCorrelationId, responseActivityId}
+            };
+        return StubHttpResponse(HttpStatus::OK, "", headers);
+        });
+
+    //Act
+    auto result = client->SendUpdateFileRequestWithOptions(StubObjectId(), StubFile(), nullptr, options)->GetResult();
+
+    //Assert
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_STREQ(responseActivityId.c_str(), result.GetValue().GetActivityId().c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                Simonas.Mulevicus 08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, WebApi27SendUpdateFileRequest_WhenRedirectOccursAndResponseIsSuccessfulAndResponseHasDifferentActivityId_ShouldReturnSuccessWithResponseActivityId)
+    {
+    //Arrange
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+    IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
+    options->GetActivityOptions()->SetHeaderName(IWSRepositoryClient::ActivityOptions::HeaderName::XCorrelationId);
+    options->GetActivityOptions()->SetActivityId("requestActivityId");
+    Utf8String responseActivityId = "responseActivityId";
+    StringStringMap headers 
+        {
+        {HEADER_MasFileETag, "NewTag"},
+        {HEADER_XCorrelationId, responseActivityId},
+        {HEADER_MasFileAccessUrlType, "AzureBlobSasUrl"},
+        {HEADER_MasUploadConfirmationId,"Mas-Upload-Confirmation-Id"},
+        {HEADER_Location, "https://foozure.com/boo"}
+        };
+
+    EXPECT_REQUEST_COUNT(GetHandler(), 4);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi27());
+    GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::TemporaryRedirect, "", headers));
+    GetHandler().ForRequest(3, StubHttpResponse(HttpStatus::OK, "", headers));
+    GetHandler().ForRequest(4, StubHttpResponse(HttpStatus::OK, "", headers));
+
+    //Act
+    auto result = client->SendUpdateFileRequestWithOptions(StubObjectId(), StubFile(), nullptr, options)->GetResult();
+
+    //Assert
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_STREQ(responseActivityId.c_str(), result.GetValue().GetActivityId().c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetSchemasRequest_WebApiV20AndNoDefaultSchema_Fails)
@@ -4035,6 +4483,34 @@ TEST_F(WSRepositoryClientTests, WebApi27SendGetSchemasRequest_WhenResponseHasSpe
     //Assert
     ASSERT_FALSE(result.IsSuccess());
     EXPECT_STREQ(responseActivityId.c_str(), result.GetError().GetActivityId().c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                  Simonas.Mulevicius 08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, WebApi27SendGetSchemasRequest_WhenResponseIsSuccessfulAndResponseHasDifferentActivityId_ShouldReturnSuccessWithResponseActivityId)
+    {
+    //Arrange
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+    IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
+    options->GetActivityOptions()->SetHeaderName(IWSRepositoryClient::ActivityOptions::HeaderName::XCorrelationId);
+    options->GetActivityOptions()->SetActivityId("requestActivityId");
+    Utf8String responseActivityId = "responseActivityId";
+
+    EXPECT_REQUEST_COUNT(GetHandler(), 2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi27());
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        StringStringMap headers {{HEADER_XCorrelationId, responseActivityId}};
+        return StubHttpResponse(HttpStatus::OK, "", headers);
+        });
+
+    //Act
+    auto result = client->SendGetSchemasRequestWithOptions("", options)->GetResult();
+
+    //Assert
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_STREQ(responseActivityId.c_str(), result.GetValue().GetActivityId().c_str());
     }
 
 /*--------------------------------------------------------------------------------------+

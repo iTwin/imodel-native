@@ -596,11 +596,10 @@ WSError WSError::CreateFunctionalityNotSupportedError()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Simonas.Mulevicius  07/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSCLIENT_EXPORT WSError WSError::CreateErrorUsingActivityHeaderName(Http::ResponseCR httpResponse, Utf8StringCR activityHeaderName)
+WSCLIENT_EXPORT WSError WSError::CreateErrorUsingActivityId(Http::ResponseCR httpResponse, Utf8StringCR activityId)
     {
     WSError error(httpResponse);
-    auto errorActivityId =  httpResponse.GetHeaders().GetValue(activityHeaderName);
-    error.SetActivityId(errorActivityId);
+    error.SetActivityId(activityId);
     return error;
     }
 

@@ -21,6 +21,7 @@ struct WSResponse
     private:
         bool        m_isModified;
         Utf8String  m_eTag;
+        Utf8String  m_activityId;
 
     public:
         WSResponse(bool isModified = false) : m_isModified(isModified), m_eTag() {};
@@ -29,6 +30,8 @@ struct WSResponse
 
         bool IsModified() const { return m_isModified; };
         Utf8StringCR GetETag() const { return m_eTag; };
+        Utf8StringCR GetActivityId() const { return m_activityId; }
+        void SetActivityId(Utf8StringCR activityId) { m_activityId = activityId; }
     };
 
 typedef const WSResponse& WSResponseCR;
