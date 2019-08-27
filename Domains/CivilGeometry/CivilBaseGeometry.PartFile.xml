@@ -26,7 +26,7 @@
   </Part>
 
   <Part Name="CivilBaseGeometryDll" BentleyBuildMakeFile="CivilBaseGeometry/CivilBaseGeometry.mke" Scope="Private">
-    <SubPart PartName="iModelBridgeFwkLib" PartFile="iModelBridge" Repository="DgnDbSync"/>
+    <SubPart PartName="iModelBridgeFwkLib" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
     <SubPart PartName="PublicAPI"/>
     <Bindings>
       <Libs>Delivery/$(libprefix)CivilBaseGeometry$(libext)</Libs>
