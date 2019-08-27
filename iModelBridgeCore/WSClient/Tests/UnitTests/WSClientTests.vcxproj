@@ -53,6 +53,7 @@
     <ClInclude Include="Published\WebServices\Cache\Util\MockExtendedDataAdapter.h" />
     <ClInclude Include="Published\WebServices\Cache\Util\MockExtendedDataAdapterDelegate.h" />
     <ClInclude Include="Published\WebServices\Cache\Util\MockSelectProvider.h" />
+    <ClInclude Include="Published\WebServices\Client\Response\WSResponseTests.h" />
     <ClInclude Include="Published\WebServices\Configuration\MockBuddiClient.h" />
     <ClInclude Include="Published\WebServices\Configuration\StubBuddiClient.h" />
     <ClInclude Include="Published\WebServices\Connect\ConnectTestsHelper.h" />
@@ -128,6 +129,7 @@
     <ClCompile Include="Published\WebServices\Azure\EventServiceClientTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\ActivityIdGeneratorTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\ActivityLoggerTests.cpp" />
+    <ClCompile Include="Published\WebServices\Client\Response\WSResponseTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\WSRepositoryTests.cpp" />
     <ClCompile Include="NonPublished\CordovaPluginTests.cpp" />
     <ClCompile Include="NonPublished\ConfigurableUiTests.cpp" />
