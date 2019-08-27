@@ -26,8 +26,7 @@
   </Part>
 
   <Part Name="CivilBaseGeometryDll" BentleyBuildMakeFile="CivilBaseGeometry/CivilBaseGeometry.mke" Scope="Private">
-    <!-- Not sure exactly what this needs on imodel02, but we cannot consume the iModelBridgeFwk nuget here; iModelBridgeFwkExe-Windows is the closest drop-in Part we can use. -->
-    <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
+    <SubPart PartName="iModelBridgeFwkLib" PartFile="iModelBridge" Repository="DgnDbSync"/>
     <SubPart PartName="PublicAPI"/>
     <Bindings>
       <Libs>Delivery/$(libprefix)CivilBaseGeometry$(libext)</Libs>

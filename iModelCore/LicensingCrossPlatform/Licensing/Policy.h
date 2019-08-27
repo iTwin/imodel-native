@@ -205,6 +205,7 @@ private:
     std::list<std::shared_ptr<Qualifier>> m_DefaultQualifiers;
     // helper functions
     bool IsTimeExpired(Utf8StringCR expirationTime);
+    bool IsPastThreeWeeksExpired(Utf8StringCR expirationTime);
     std::shared_ptr<Policy::Qualifier> GetFirstMatchingQualifier(std::list<std::shared_ptr<Policy::Qualifier>> qualifierList, Utf8StringCR qualifierName);
     std::list<std::shared_ptr<Policy::ACL>> GetMatchingACLs(std::list<std::shared_ptr<Policy::ACL>> aclList, Utf8StringCR securableId);
     std::shared_ptr<Policy::SecurableData> GetFirstMatchingSecurableData(std::list<std::shared_ptr<Policy::SecurableData>> securableList, Utf8StringCR productId, Utf8StringCR featureString);
@@ -237,6 +238,7 @@ public:
     LICENSING_EXPORT int64_t GetUltimateSAPId() { return GetUserData()->GetUltimateSAPId(); };
     // helper functions
     LICENSING_EXPORT bool IsValid();
+    LICENSING_EXPORT bool IsThreeWeeksPastExpired() { return IsPastThreeWeeksExpired(GetPolicyExpiresOn()); }
     LICENSING_EXPORT bool IsExpired() { return IsTimeExpired(GetPolicyExpiresOn()); };
     LICENSING_EXPORT std::shared_ptr<Policy::Qualifier> GetQualifier(Utf8StringCR qualifierName, Utf8StringCR productId, Utf8StringCR featureString);
     LICENSING_EXPORT bool IsTrial(Utf8StringCR productId, Utf8StringCR featureString);

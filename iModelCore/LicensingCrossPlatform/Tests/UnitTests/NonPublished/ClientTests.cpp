@@ -494,7 +494,7 @@ TEST_F(ClientTests, GetLicenseStatusExpired_Test)
     GetLicensingDbMock().MockUserPolicyFiles(userId, expiredPolicyList);
 
     // NOTE: statuses are cast to int so that if test fails, logs will show human-readable values (rather than byte representation of enumeration value)
-    EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::NotEntitled)); // not valid, so SearchForPolicy returns nullptr
+    EXPECT_EQ(static_cast<int>(client->GetLicenseStatus()), static_cast<int>(LicenseStatus::Expired)); 
     EXPECT_EQ(1, GetLicensingDbMock().GetPolicyFilesByUserCount(userId));
     }
 
@@ -781,7 +781,7 @@ TEST_F(ClientTests, CleanUpPolicies_Success)
     auto userInfo = DummyUserInfoHelper::CreateUserInfo("username", "firstName", "lastName", userId, "orgId");
     auto client = CreateTestClient(userInfo);
 
-    auto jsonPolicyExpired = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(-1), DateHelper::AddDaysToCurrentTime(7), userId, 9903, "", 1, false);
+    auto jsonPolicyExpired = DummyPolicyHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(-22), DateHelper::AddDaysToCurrentTime(7), userId, 9903, "", 1, false);
     std::list<Json::Value> expiredPolicyList;
     expiredPolicyList.push_back(jsonPolicyExpired);
 

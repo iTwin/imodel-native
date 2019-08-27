@@ -90,7 +90,6 @@ LOCAL_GUNITTEST_OBJS + $(o)BeGTestExe$(oext) $[@wildcard $(collectionProduct)Obj
 
     LOCAL_GUNITTEST_OBJS + $(THIN_ARCHIVE_PATH)
 
-
 %else
 
     #   Link the unit tests themselves

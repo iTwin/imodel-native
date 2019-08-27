@@ -243,7 +243,7 @@ protected:
     //! @private
     explicit HorizontalAlignment(CreateParams const& params, AlignmentCR alignment, CurveVectorCR geometry);
 
-    ROADRAILALIGNMENT_EXPORT virtual void _CopyFrom(Dgn::DgnElementCR source, CopyFromOptions const& opts) override;
+    ROADRAILALIGNMENT_EXPORT virtual void _CopyFrom(Dgn::DgnElementCR source) override;
 
 public:
     DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(HorizontalAlignment)
