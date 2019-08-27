@@ -67,15 +67,15 @@ public:
     //! Options provided at initialization
     BEHTTP_EXPORT static const Options& GetOptions();
 
-    // Methods for grouping multiple network requests to one activity
+    //! Methods for grouping multiple network requests to one activity
     BEHTTP_EXPORT static void BeginNetworkActivity();
     BEHTTP_EXPORT static void EndNetworkActivity();
 
     BEHTTP_EXPORT static bool IsNetworkActive();
 
-    // DEPRECATED, use BeUri::EscapeString()! Use percent escape for URLs
+    //! DEPRECATED, use BeUri::EscapeString()! Use percent escape for URLs
     static Utf8String EscapeString(Utf8StringCR str) { return BeUri::EscapeString(str); } 
-    // DEPRECATED, use BeUri::UnescapeString()! Unsecape percent encoding
+    //! DEPRECATED, use BeUri::UnescapeString()! Unsecape percent encoding
     static Utf8String UnescapeString (Utf8StringCR str) { return BeUri::UnescapeString(str); }
 
     //! Handle date formats specified in RFC 822 (updated by RFC 1123), RFC 850 (obsoleted by RFC 1036) and ANSI C's asctime() format.
@@ -112,15 +112,29 @@ private:
     BeFileName m_assetsDirectoryPath;
     uint32_t m_maxConnectionsPerHost = 10;
     uint32_t m_maxTotalConnections = 0;
+    bool m_parallelizeAllRequests = false;
 
 public:
     Options() {};
     Options(BeFileName assetsDir, uint32_t maxConnectionsPerHost = 10, uint32_t maxTotalConnections = 0) :
         m_assetsDirectoryPath(assetsDir), m_maxConnectionsPerHost(maxConnectionsPerHost), m_maxTotalConnections(maxTotalConnections) {}
 
+    //! Set path where assets are delivered to.
+    Options& SetAssetsDirectoryPath(BeFileName path) { m_assetsDirectoryPath = path; return *this; }
     BeFileNameCR GetAssetsDirectoryPath() const { return m_assetsDirectoryPath; }
+
+    //! Default - 10. Similar as most browsers.
+    Options& SetMaxConnectionsPerHost(uint32_t connections) { m_maxConnectionsPerHost = connections; return *this; }
     uint32_t GetMaxConnectionsPerHost() const { return m_maxConnectionsPerHost; }
+
+    //! Default - 0, unlimited.
+    Options& SetMaxTotalConnections(uint32_t connections) { m_maxTotalConnections = connections; return *this; }
     uint32_t GetMaxTotalConnections() const { return m_maxTotalConnections; }
+
+    //! Configure workaround for Windows Server 2008 servers, issue discussed here: https://github.com/curl/curl/issues/1294
+    //! Default - false, workaround is enabled. Set to true to remove workaround.
+    Options& SetParallelizeAllRequests(bool parallelize) { m_parallelizeAllRequests = parallelize; return *this; }
+    bool GetParallelizeAllRequests() const { return m_parallelizeAllRequests; }
     };
 
 END_BENTLEY_HTTP_NAMESPACE

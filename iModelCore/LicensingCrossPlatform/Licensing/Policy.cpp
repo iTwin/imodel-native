@@ -322,6 +322,12 @@ bool Policy::IsTimeExpired(Utf8StringCR expirationTime)
     return timeLeft <= 0;
     }
 
+bool Policy::IsPastThreeWeeksExpired(Utf8StringCR expirationTime)
+{
+	int64_t timeLeft = DateHelper::diffdatedays(expirationTime, DateHelper::GetCurrentTime());
+	return timeLeft <= -21;
+}
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -382,7 +388,7 @@ bool Policy::IsValid()
     if (GetJson().isNull())
         return false;
     // check if policy is expired
-    if (IsExpired())
+    if (IsExpired() && IsThreeWeeksPastExpired()) //Wait to delete expired policies 
         return false;
     // check if RequestData is present
     if (GetRequestData()->GetUserId().Equals(""))

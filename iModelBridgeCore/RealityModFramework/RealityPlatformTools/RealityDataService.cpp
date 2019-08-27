@@ -191,6 +191,13 @@ struct RealityDataUploadFileManager
             
         chunkNumber = m_chunkNumber++;
 
+        //  once we have read all that was left in the file, close it otherwise it will stay open (and locked) and prevent from being deleted after processing (AzureDevops#120494)
+        if (bytesRead < size)
+            {
+            m_fileStream.Close();
+            m_ready = false;
+            }
+
         return bytesRead;
         }
 
@@ -200,7 +207,10 @@ struct RealityDataUploadFileManager
         if(m_uploadCount == m_completedUploads)
             {
             if (m_fileStream.IsOpen())
+                {
                 m_fileStream.Close();
+                m_ready = false;
+                }
             return m_blockList;
             }
         

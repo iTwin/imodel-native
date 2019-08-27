@@ -84,6 +84,15 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectProjectUrl(
     &s_urlRegistry
     );
 
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectProjectSettingsUrl(
+    "Mobile.ConnectProjectSettingsUrl",
+    "https://dev-webportal-eus.cloudapp.net/Admin/ProjectRegister?id=",
+    "https://qa-connect-webportal.bentley.com/Admin/ProjectRegister?id=",
+    "https://connect.bentley.com/project/Admin/ProjectRegister?id=",
+    nullptr,
+    &s_urlRegistry
+    );    
+
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgGlobal(
     "Mobile.ConnectWsgGlobal",
     "https://dev-wsg20-eus.cloudapp.net",
@@ -207,6 +216,15 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ImsFederatedAuth(
     "https://qa-ims.bentley.com/",
     "https://ims.bentley.com/",
     "https://qa-ims.bentley.com/",
+    &s_urlRegistry
+    );
+
+const UrlProvider::UrlDescriptor UrlProvider::Urls::OpenConstructionPortal(
+    "OpenConstructionPortal",
+    "https://dev-openconstruction.bentley.com/",
+    "https://qa-openconstruction.bentley.com/",
+    "https://openconstruction.bentley.com/",
+    "https://perf-openconstruction.bentley.com/",
     &s_urlRegistry
     );
 

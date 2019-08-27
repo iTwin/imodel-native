@@ -558,9 +558,10 @@ BentleyStatus Converter::ConvertMaterialTextureMap(Json::Value& dbMapsMap, Json:
         };
 
     if (!mapType.isInt() ||
-        mapType.asInt() > sizeof (s_mapNames) / sizeof (s_mapNames[0]))
+        mapType.asInt() >= sizeof (s_mapNames) / sizeof (s_mapNames[0]))
         {
-        BeAssert(false);
+        // ###TODO: PBR Materials
+        BeAssert(false && "PBR materials not supported.");
         return ERROR;
         }
 
