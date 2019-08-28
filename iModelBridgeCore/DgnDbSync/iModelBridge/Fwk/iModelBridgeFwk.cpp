@@ -1700,11 +1700,12 @@ int iModelBridgeFwk::MakeSchemaChanges(iModelBridgeCallOpenCloseFunctions& callC
     
     BeAssert(!m_briefcaseDgnDb->BriefcaseManager().IsBulkOperation());
 
-    m_briefcaseDgnDb->BriefcaseManager().StartBulkOperation();
-    bool runningInBulkMode = m_briefcaseDgnDb->BriefcaseManager().IsBulkOperation();
-
+    
     bool hasMoreSchemaChanges = false;
     do {
+        m_briefcaseDgnDb->BriefcaseManager().StartBulkOperation();
+        bool runningInBulkMode = m_briefcaseDgnDb->BriefcaseManager().IsBulkOperation();
+
         int bridgeSchemaChangeStatus = m_bridge->_MakeSchemaChanges(hasMoreSchemaChanges);
         if (BSISUCCESS != bridgeSchemaChangeStatus)
             {
