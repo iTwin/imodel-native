@@ -460,8 +460,7 @@ typedef std::shared_ptr<struct IWSSchemaProvider> IWSSchemaProviderPtr;
 struct IWSSchemaProvider
     {
     public:
-        virtual ~IWSSchemaProvider()
-            {};
+        virtual ~IWSSchemaProvider() {};
         virtual BeFileName GetSchema(WSInfoCR info) = 0;
     };
 
@@ -472,12 +471,12 @@ struct IWSSchemaProvider
 struct IWSRepositoryClient::RequestOptions
     {
     private:
-        uint64_t m_transferTimeOut;
-        ActivityOptionsPtr m_activityOptions;
-        JobOptionsPtr m_jobOptions;
+        uint64_t m_transferTimeOut = IWSRepositoryClient::Timeout::Transfer::Default;
+        ActivityOptionsPtr m_activityOptions = std::make_shared<ActivityOptions>();
+        JobOptionsPtr m_jobOptions = std::make_shared<JobOptions>();
 
     public:
-        WSCLIENT_EXPORT RequestOptions();
+        RequestOptions() {};
         virtual ~RequestOptions() {};
 
         void SetTransferTimeOut(uint64_t timeOut) {m_transferTimeOut = timeOut;}
@@ -505,14 +504,10 @@ struct IWSRepositoryClient::ActivityOptions
             };
 
     private:
-        HeaderName m_headerName;
+        HeaderName m_headerName = HeaderName::Default;
         Utf8String m_activityId;
 
     public:
-        ActivityOptions() :
-        m_headerName(HeaderName::Default)
-            {}
-
         //! Set header name for Activity id in each Http request to WSG
         void SetHeaderName(HeaderName headerName) { m_headerName = headerName; }
 
@@ -544,11 +539,11 @@ struct IWSRepositoryClient::JobOptions
         bool        m_enableJobsIfPossible      = false;
         double      m_waitTimeIncreaseCoef      = 1.2;
         uint32_t    m_initialWaitTimeMs         = 100;
-        uint32_t    m_maxWaitTimeMs             = 4000; //4seconds
+        uint32_t    m_maxWaitTimeMs             = 4000; // 4 Seconds
         uint32_t    m_maxJobDuratationTimeMs    = 3600000; //1 Hour
 
     public:
-        WSCLIENT_EXPORT JobOptions() {};
+        JobOptions() {};
         virtual ~JobOptions() {};
 
         //! Enable/Disable request to be executed via Job Api if Possible

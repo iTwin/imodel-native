@@ -25,16 +25,6 @@ const uint32_t IWSRepositoryClient::Timeout::Transfer::LongUpload = 120;
 const uint32_t IWSRepositoryClient::Timeout::Transfer::UploadProcessing = 300; // Longer timeout for server file processing to finish
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    julius.cepukenas 12/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-IWSRepositoryClient::RequestOptions::RequestOptions() :
-m_transferTimeOut(IWSRepositoryClient::Timeout::Transfer::Default),
-m_activityOptions(std::make_shared<ActivityOptions>()),
-m_jobOptions(std::make_shared<JobOptions>())
-    {
-    }
-
-/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Mantas.Smicius    11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String IWSRepositoryClient::ActivityOptions::HeaderNameToString(HeaderName headerName)

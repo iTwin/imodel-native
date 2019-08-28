@@ -3529,3 +3529,14 @@ TEST_F(WSRepositoryClientTests, ParseRepositoryUrl_RepositoryUrlWithServiceVersi
     }
 
 #endif
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, RequestOptionsCtor_Default_InitializesValues)
+    {
+    IWSRepositoryClient::RequestOptions options;
+    EXPECT_NE(options.GetActivityOptions(), nullptr);
+    EXPECT_NE(options.GetJobOptions(), nullptr);
+    EXPECT_EQ(options.GetTransferTimeOut(), IWSRepositoryClient::Timeout::Transfer::Default);
+    }
