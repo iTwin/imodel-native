@@ -5,8 +5,6 @@
     >
 
     <Part Name="SpatialComposition">
-        <SubPart PartName="SpatialCompositionSchema"/>
-        <SubPart PartName="SpatialCompositionApi"/>
         <SubPart PartName="SpatialCompositionDomain"/>
         <SubPart PartName="SpatialCompositionElements"/>
     </Part>
@@ -33,7 +31,8 @@
     
     <Part Name="SpatialCompositionDomain" BentleyBuildMakeFile="Domain/SpatialCompositionDomain.mke" ApiNumber="M02">
         <SubPart PartName="DgnPlatformDLL" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
-        <SubPart PartName="SpatialCompositionSchema" />
+        <SubPart PartName="SpatialCompositionSchema"/>
+        <SubPart PartName="SpatialCompositionApi"/>
         <Bindings>
             <Libs>Delivery/$(libprefix)SpatialCompositionDomain$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)SpatialCompositionDomain$(ApiNumber)$(shlibext)</Assemblies>
