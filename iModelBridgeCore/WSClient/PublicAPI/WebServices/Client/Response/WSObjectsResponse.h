@@ -20,6 +20,11 @@ USING_NAMESPACE_BENTLEY_HTTP
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct WSObjectsResponse : public WSResponse
     {
+    private:
+        std::shared_ptr<std::once_flag> m_instancesOnceFlag = std::make_shared<std::once_flag>();
+        std::shared_ptr<std::once_flag> m_jsonDocumentOnceFlag = std::make_shared<std::once_flag>();
+        std::shared_ptr<std::once_flag> m_jsonValueOnceFlag = std::make_shared<std::once_flag>();
+
     protected:
         HttpBodyPtr m_httpBody;
         Utf8String  m_skipToken;

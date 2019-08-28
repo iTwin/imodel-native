@@ -56,14 +56,14 @@ bool WSObjectsResponse::IsFinal() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 JsonValueR WSObjectsResponse::GetJsonValuePrivate() const
     {
-    if (!m_jsonValue)
+    std::call_once(*m_jsonValueOnceFlag, [&] ()
         {
         Json::Value infoJson;
         if (!Json::Reader::Parse(m_httpBody->AsString(), infoJson))
             infoJson = Json::Value::GetNull();
 
         m_jsonValue = std::make_shared<Json::Value>(infoJson);
-        }
+        });
     return *m_jsonValue;
     }
 
@@ -72,11 +72,11 @@ JsonValueR WSObjectsResponse::GetJsonValuePrivate() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::shared_ptr<rapidjson::Document> WSObjectsResponse::GetRapidJsonDocumentPrivate() const
     {
-    if (!m_rapidJsonDocument)
+    std::call_once(*m_jsonDocumentOnceFlag, [&] ()
         {
         m_rapidJsonDocument = std::make_shared<rapidjson::Document>();
         m_rapidJsonDocument->Parse<0>(m_httpBody->AsString().c_str());
-        }
+        });
     return m_rapidJsonDocument;
     }
 
@@ -85,11 +85,11 @@ std::shared_ptr<rapidjson::Document> WSObjectsResponse::GetRapidJsonDocumentPriv
 +---------------+---------------+---------------+---------------+---------------+------*/
 const WSObjectsReader::Instances& WSObjectsResponse::GetInstances() const
     {
-    if (!m_readerInstances)
+    std::call_once(*m_instancesOnceFlag, [&] ()
         {
         std::shared_ptr<rapidjson::Document> json = GetRapidJsonDocumentPrivate();
         m_readerInstances = std::make_shared<WSObjectsReader::Instances>(m_reader->ReadInstances(json));
-        }
+        });
     return *m_readerInstances;
     }
 
