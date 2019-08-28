@@ -24,6 +24,9 @@ private:
     ORDConverter* m_converter;
     bool m_isUnitTesting;
 
+    enum class SchemaImportPhase : int16_t { Base = 1, Dynamic = 2, Done = 3 };
+    SchemaImportPhase m_schemaImportPhase;
+
 protected:
     Dgn::CategorySelectorPtr CreateSpatialCategorySelector(Dgn::DefinitionModelR);
     Dgn::CategorySelectorPtr CreateDrawingCategorySelector(Dgn::DefinitionModelR);
@@ -48,7 +51,7 @@ public:
     virtual Dgn::SubjectCPtr _FindJob() override;
     virtual void _OnDocumentDeleted(Utf8StringCR documentId, Dgn::iModelBridgeSyncInfoFile::ROWID documentSyncId) override;
 
-    virtual BentleyStatus _MakeSchemaChanges() override;
+    virtual BentleyStatus _MakeSchemaChanges(bool& hasMoreChanges) override;
     virtual BentleyStatus _OnOpenBim(Dgn::DgnDbR db) override;
     void _OnCloseBim(BentleyStatus, ClosePurpose) override;
     virtual BentleyStatus _DetectDeletedDocuments() override;
@@ -59,7 +62,7 @@ public:
     void SetIsUnitTesting(bool isUnitTesting) { m_isUnitTesting = isUnitTesting; }
     bool CheckIfUnitTesting(int argc, WCharCP argv[]);
 
-    ORDBridge() : m_converter(nullptr), m_isUnitTesting(false) {}
+    ORDBridge() : m_converter(nullptr), m_isUnitTesting(false), m_schemaImportPhase(SchemaImportPhase::Base) {}
     virtual ~ORDBridge()
         {
         if (m_converter != nullptr)
