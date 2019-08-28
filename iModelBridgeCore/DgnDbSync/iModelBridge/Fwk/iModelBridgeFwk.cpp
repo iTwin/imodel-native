@@ -1427,6 +1427,9 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     if (m_bridge->TestFeatureFlag("imodel-bridge-reality-model-upload"))
         m_bridge->_GetParams().SetDoRealityDataUpload(true);
 
+    if (m_bridge->TestFeatureFlag("imodel-bridge-terrain-conversion"))
+        m_bridge->_GetParams().SetDoTerrainModelConversion(true);
+
     bool createdNewRepo = false;
     if (BSISUCCESS != BootstrapBriefcase(createdNewRepo))
         {
