@@ -1706,46 +1706,49 @@ int iModelBridgeFwk::MakeSchemaChanges(iModelBridgeCallOpenCloseFunctions& callC
     m_briefcaseDgnDb->BriefcaseManager().StartBulkOperation();
     bool runningInBulkMode = m_briefcaseDgnDb->BriefcaseManager().IsBulkOperation();
 
-    int bridgeSchemaChangeStatus = m_bridge->_MakeSchemaChanges();
-    if (BSISUCCESS != bridgeSchemaChangeStatus)
-        {
-        uint8_t retryAttempt = 0;
-        while ((BSISUCCESS != bridgeSchemaChangeStatus) && (++retryAttempt < m_maxRetryCount) && IModelClientBase::SleepBeforeRetry())
+    bool hasMoreSchemaChanges = false;
+    do {
+        int bridgeSchemaChangeStatus = m_bridge->_MakeSchemaChanges(hasMoreSchemaChanges);
+        if (BSISUCCESS != bridgeSchemaChangeStatus)
             {
-            GetLogger().infov("_MakeSchemaChanges failed. Retrying.");
-            callCloseOnReturn.CallCloseFunctions(iModelBridge::ClosePurpose::SchemaUpgrade); // re-initialize the bridge, to clear out the side-effects of the previous failed attempt
-            m_briefcaseDgnDb->AbandonChanges();
-            if (BSISUCCESS != PullMergeAndPushChange("dynamic schemas", false, true))    // make sure that we are at the tip and that we have absorbed any schema changes from the server
-                return RETURN_STATUS_SERVER_ERROR;
-            callCloseOnReturn.CallOpenFunctions(*m_briefcaseDgnDb);
-            bridgeSchemaChangeStatus = m_bridge->_MakeSchemaChanges();
+            uint8_t retryAttempt = 0;
+            while ((BSISUCCESS != bridgeSchemaChangeStatus) && (++retryAttempt < m_maxRetryCount) && IModelClientBase::SleepBeforeRetry())
+                {
+                GetLogger().infov("_MakeSchemaChanges failed. Retrying.");
+                callCloseOnReturn.CallCloseFunctions(iModelBridge::ClosePurpose::SchemaUpgrade); // re-initialize the bridge, to clear out the side-effects of the previous failed attempt
+                m_briefcaseDgnDb->AbandonChanges();
+                if (BSISUCCESS != PullMergeAndPushChange("dynamic schemas", false, true))    // make sure that we are at the tip and that we have absorbed any schema changes from the server
+                    return RETURN_STATUS_SERVER_ERROR;
+                callCloseOnReturn.CallOpenFunctions(*m_briefcaseDgnDb);
+                bridgeSchemaChangeStatus = m_bridge->_MakeSchemaChanges(hasMoreSchemaChanges);
+                }
             }
-        }
-    if (BSISUCCESS != bridgeSchemaChangeStatus)
-        {
-        LOG.fatalv("Bridge _MakeSchemaChanges failed");
-        return BentleyStatus::ERROR;
-        }
+        if (BSISUCCESS != bridgeSchemaChangeStatus)
+            {
+            LOG.fatalv("Bridge _MakeSchemaChanges failed");
+            return BentleyStatus::ERROR;
+            }
 
-    BeAssert(!runningInBulkMode || m_briefcaseDgnDb->BriefcaseManager().IsBulkOperation());
+        BeAssert(!runningInBulkMode || m_briefcaseDgnDb->BriefcaseManager().IsBulkOperation());
 
-    bool madeSchemaChanges = importedAspectSchema || iModelBridge::AnyChangesToPush(*m_briefcaseDgnDb);
-    if (madeSchemaChanges)
-        {
-        BeAssert(iModelBridge::HoldsSchemaLock(*m_briefcaseDgnDb));
+        bool madeSchemaChanges = importedAspectSchema || iModelBridge::AnyChangesToPush(*m_briefcaseDgnDb);
+        if (madeSchemaChanges)
+            {
+            BeAssert(iModelBridge::HoldsSchemaLock(*m_briefcaseDgnDb));
 
-        callCloseOnReturn.CallCloseFunctions(iModelBridge::ClosePurpose::SchemaUpgrade);
-        if (0 != PullMergeAndPushChange("dynamic schemas", false, true))  // pullmergepush + re-open
-            return BSIERROR;
-        callCloseOnReturn.CallOpenFunctions(*m_briefcaseDgnDb);
+            callCloseOnReturn.CallCloseFunctions(iModelBridge::ClosePurpose::SchemaUpgrade);
+            if (0 != PullMergeAndPushChange("dynamic schemas", false, true))  // pullmergepush + re-open
+                return BSIERROR;
+            callCloseOnReturn.CallOpenFunctions(*m_briefcaseDgnDb);
 
-        BeAssert(iModelBridge::HoldsSchemaLock(*m_briefcaseDgnDb));
-        }
-    else
-        {
-        if (runningInBulkMode)
-            m_briefcaseDgnDb->BriefcaseManager().EndBulkOperation();
-        }
+            BeAssert(iModelBridge::HoldsSchemaLock(*m_briefcaseDgnDb));
+            }
+        else
+            {
+            if (runningInBulkMode)
+                m_briefcaseDgnDb->BriefcaseManager().EndBulkOperation();
+            }
+        }while (hasMoreSchemaChanges);
 
     BeAssert(iModelBridge::HoldsSchemaLock(*m_briefcaseDgnDb));
     BeAssert(!iModelBridge::AnyTxns(*m_briefcaseDgnDb)); // (Note that _OnOpenBim might have made IN-MEMORY changes to be_prop table.)

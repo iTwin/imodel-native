@@ -908,7 +908,7 @@ public:
     //! @return non-zero error status if the bridge cannot make the schema changes that it requires. See @ref ANCHOR_BridgeIssuesAndLogging "reporting issues"
     //! @note The bridge should *not* convert elements or models in this function.
     //! @note The schema lock is held (by the framework) when this function is called.
-    virtual BentleyStatus _MakeSchemaChanges() {return BSISUCCESS;}
+    virtual BentleyStatus _MakeSchemaChanges(bool &hasMoreChanges) {return BSISUCCESS;}
 
     //! By overriding this function, the bridge may insert and update definition elements such as Categories in public models such as the dictionary model.
     //! This function is called after _OnOpenBim, _OpenSource, and _MakeSchemaChanges but before _ConvertToBim.
