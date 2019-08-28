@@ -209,7 +209,7 @@ ConvertToDgnDbElementExtension::Result ConvertDTMElement::_PreConvertElement(Dgn
     if (!IsStaticTerrain(v8el, converter, *bcDTM))
         return Result::Proceed;
 
-    if (converter.GetParams().DoRealityDataUpload() || converter.GetConfig().GetOptionValueBool("DoRealityDataUpload", false))
+    if (!converter.GetParams().DoRealityDataUpload() && !converter.GetConfig().GetOptionValueBool("DoRealityDataUpload", false))
         return Result::Proceed;
 
     DgnPlatformLib::Host::IKnownLocationsAdmin& locationAdmin(DgnPlatformLib::QueryHost()->GetIKnownLocationsAdmin());
