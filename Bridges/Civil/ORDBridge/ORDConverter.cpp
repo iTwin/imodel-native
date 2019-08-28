@@ -2235,6 +2235,37 @@ DgnCategoryId getSpatialCategoryToUse(SubjectCR subject, GeometrySourceCP bimGeo
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+Bentley::DgnPlatform::ModelId ORDConverter::_GetRootModelId()
+    {
+    auto rootModelId = T_Super::_GetRootModelId();
+    auto rootDgnFileP = GetRootV8File();
+    ModelRefPinner modelPinner;
+
+    DgnV8Api::DgnFileStatus openStatus;
+    if (auto rootModelRefP = rootDgnFileP->LoadRootModelById((Bentley::StatusInt*)&openStatus, rootModelId, /*fillCache*/true, /*loadRefs*/true, GetParams().GetProcessAffected()))
+        {
+        if (auto planModelRefP = GeometryModelDgnECDataBinder::GetInstance().GetPlanModelFromModel(rootModelRefP))
+            {
+            BeAssert(!planModelRefP->Is3d());
+            ORDBRIDGE_LOGW("CIF found a Plan Model '%s' that is 3D.", Utf8String(planModelRefP->GetModelNameCP()).c_str());
+            }
+        else
+            {
+            rootModelId = planModelRefP->GetModelId();
+            ORDBRIDGE_LOGI("CIF found Plan Model '%s' - using it as root-model.", Utf8String(planModelRefP->GetModelNameCP()).c_str());
+            }
+        }
+    else
+        {
+        ORDBRIDGE_LOGW("Specified root-model could not be loaded.");
+        }
+
+    return rootModelId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ORDConverter::CreateAlignments()

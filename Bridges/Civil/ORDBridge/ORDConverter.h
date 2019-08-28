@@ -26,6 +26,7 @@ protected:
     virtual bool _ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Model) override;
     virtual void _OnSheetsConvertViewAttachment(Dgn::DgnDbSync::DgnV8::ResolvedModelMapping const& v8SheetModelMapping, DgnAttachmentR v8DgnAttachment) override;    
     virtual void _ConvertModels() override;
+    virtual Bentley::DgnPlatform::ModelId _GetRootModelId() override;
 
 public:
     struct Params
