@@ -301,8 +301,8 @@ Http::Request::ProgressCallbackCR downloadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
-	if (filePath.empty())
-		return CreateCompletedAsyncTask(WSFileResult::Error(WSError::CreateFunctionalityNotSupportedError()));
+    if (filePath.empty())
+        return CreateCompletedAsyncTask(WSFileResult::Error(WSError::CreateFunctionalityNotSupportedError()));
 
     return m_fileDownloadQueue.Push([=]
         {
@@ -311,12 +311,12 @@ ICancellationTokenPtr ct
             return webApi->SendGetFileRequest(objectId, HttpFileBody::Create(filePath), eTag, downloadProgressCallback, nullptr, ct);
             }, ct);
         }, ct)
-	->Then<WSFileResult>([=] (WSResult response)
+    ->Then<WSFileResult>([=] (WSResult response)
         {
         if (!response.IsSuccess())
             return WSFileResult::Error(response.GetError());
 
-		auto status = response.GetValue().IsModified() ? Http::HttpStatus::OK : Http::HttpStatus::BadRequest;
+        auto status = response.GetValue().IsModified() ? Http::HttpStatus::OK : Http::HttpStatus::BadRequest;
         return WSFileResult::Success(WSFileResponse(filePath, status, response.GetValue().GetETag()));
         });
     }
