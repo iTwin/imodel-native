@@ -8,7 +8,6 @@
 
     <Part Name="Cif_InternalSDK" BentleyBuildMakeFile="ORDBridge/Cif.Prewire.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SdkSource>Cif_InternalSDK</SdkSource>
-        <RequiredRepository>Cif</RequiredRepository>
         <Bindings>
             <PublicAPI Domain="CifApi" />
             <Files ProductDirectoryName="CifDlls" SubPartDirectory="CifSdk/Dlls" Required="true">
