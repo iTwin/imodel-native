@@ -366,22 +366,6 @@ bool GetLocation(DPoint3dR point) const
 }; // ISubEntity
 
 //=======================================================================================
-// @bsiclass
-//=======================================================================================
-struct IsSubEntityPtrEqual : std::binary_function <ISubEntityPtr, ISubEntityCP, bool>
-    {
-    bool operator() (ISubEntityPtr const& subEntityPtr, ISubEntityCP subEntity) const {return subEntityPtr->IsEqual(*subEntity);}
-    };
-
-//=======================================================================================
-// @bsiclass
-//=======================================================================================
-struct IsParentGeometryPtrEqual : std::binary_function <ISubEntityPtr, TopologyPrimitiveCP, bool>
-    {
-     bool operator() (ISubEntityPtr const& subEntity, TopologyPrimitiveCP geom) const {return subEntity->IsParentEqual(*geom);}
-    };
-
-//=======================================================================================
 //! BRepUtil provides support for the creation, querying, and modification of BReps.
 //! Coordinates and distances are always supplied and returned in uors. Operations between
 //! entities such as BRepUtil::Modify::BooleanUnion will automatically take the

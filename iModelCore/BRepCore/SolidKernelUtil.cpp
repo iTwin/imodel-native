@@ -3970,7 +3970,7 @@ BentleyStatus BRepUtil::Modify::TransformEdges(IBRepEntityR targetEntity, bvecto
 
         for (ISubEntityPtr facePtr : edgeFaces)
             {
-            bvector<ISubEntityPtr>::iterator it = std::find_if(faces.begin(), faces.end(), std::bind2nd(IsSubEntityPtrEqual(), facePtr.get()));
+            bvector<ISubEntityPtr>::iterator it = std::find_if(faces.begin(), faces.end(), [&](ISubEntityPtr const& face) { return facePtr->IsEqual(*face); });
 
             if (it != faces.end())
                 {
@@ -4050,16 +4050,6 @@ BentleyStatus BRepUtil::Modify::TransformEdges(IBRepEntityR targetEntity, bvecto
 struct ImprintIndices {size_t m_indices[2];};
 struct SurfaceIndices {size_t m_indices[3];};
 
-struct IsImprintIndex1Equal : std::binary_function <ImprintIndices, size_t const*, bool>
-    {
-    bool operator() (ImprintIndices const& imprint, size_t const* index) const {return imprint.m_indices[1] == *index;}
-    };
-
-struct IsImprintReversed : std::binary_function <ImprintIndices, ImprintIndices const*, bool>
-    {
-    bool operator() (ImprintIndices const& imprint, ImprintIndices const* check) const {return imprint.m_indices[0] == check->m_indices[1] && imprint.m_indices[1] == check->m_indices[0];}
-    };
-
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
@@ -4120,7 +4110,7 @@ void GetLoopVertices(bvector<ISubEntityPtr>& loopVertices, ISubEntityCR vertex)
         if (SUCCESS != BRepUtil::GetEdgeFaces(edgeFaces, *edgePtr))
             continue;
 
-        bvector<ISubEntityPtr>::iterator it2 = std::find_if(edgeFaces.begin(), edgeFaces.end(), std::bind2nd(IsSubEntityPtrEqual(), m_facePtr.get()));
+        bvector<ISubEntityPtr>::iterator it2 = std::find_if(edgeFaces.begin(), edgeFaces.end(), [&](ISubEntityPtr const& face) { return m_facePtr->IsEqual(*face); });
 
         if (it2 == edgeFaces.end())
             continue;
@@ -4289,7 +4279,7 @@ BentleyStatus transformVertices(IBRepEntityR targetEntity, bvector<ISubEntityPtr
 
         for (ISubEntityPtr facePtr : vertexFaces)
             {
-            bvector<ISubEntityPtr>::iterator it = std::find_if(facesChecked.begin(), facesChecked.end(), std::bind2nd(IsSubEntityPtrEqual(), facePtr.get()));
+            bvector<ISubEntityPtr>::iterator it = std::find_if(facesChecked.begin(), facesChecked.end(), [&](ISubEntityPtr const& face) { return facePtr->IsEqual(*face); });
 
             if (it != facesChecked.end())
                 continue;
@@ -4317,7 +4307,7 @@ BentleyStatus transformVertices(IBRepEntityR targetEntity, bvector<ISubEntityPtr
 
                 data.m_rawPts.push_back(vertexPoint);
 
-                bvector<ISubEntityPtr>::iterator it2 = std::find_if(vertices.begin(), vertices.end(), std::bind2nd(IsSubEntityPtrEqual(), vertexPtr.get()));
+                bvector<ISubEntityPtr>::iterator it2 = std::find_if(vertices.begin(), vertices.end(), [&](ISubEntityPtr const& vertex) { return vertexPtr->IsEqual(*vertex); });
 
                 if (it2 != vertices.end())
                     transforms[it2 - vertices.begin()].Multiply(vertexPoint);
@@ -4346,7 +4336,7 @@ BentleyStatus transformVertices(IBRepEntityR targetEntity, bvector<ISubEntityPtr
 
                     if (iNext == iPrevLimit && !data.m_imprint.empty())
                         {
-                        bvector<ImprintIndices>::iterator it2 = std::find_if(data.m_imprint.begin(), data.m_imprint.end(), std::bind2nd(IsImprintIndex1Equal(), &iNext));
+                        bvector<ImprintIndices>::iterator it2 = std::find_if(data.m_imprint.begin(), data.m_imprint.end(), [&](ImprintIndices const& imprint) { return imprint.m_indices[1] == iNext; });
 
                         if (it2 != data.m_imprint.end())
                             it2->m_indices[1] = iPt; // Crossing segment, may not require split but still needs replace surface!
@@ -4364,7 +4354,7 @@ BentleyStatus transformVertices(IBRepEntityR targetEntity, bvector<ISubEntityPtr
                     imprint.m_indices[0] = iPt;
                     imprint.m_indices[1] = iNextNext;
 
-                    bvector<ImprintIndices>::iterator it2 = std::find_if(data.m_imprint.begin(), data.m_imprint.end(), std::bind2nd(IsImprintReversed(), &imprint));
+                    bvector<ImprintIndices>::iterator it2 = std::find_if(data.m_imprint.begin(), data.m_imprint.end(), [&](ImprintIndices const& imprint2) { return imprint.m_indices[0] == imprint2.m_indices[1] && imprint.m_indices[1] == imprint2.m_indices[0]; });
 
                     if (it2 == data.m_imprint.end()) // NOTE: Parasolid seems ok with duplicate imprint...but it's easy enough to filter out...
                         data.m_imprint.push_back(imprint);
@@ -4386,7 +4376,7 @@ BentleyStatus transformVertices(IBRepEntityR targetEntity, bvector<ISubEntityPtr
 
                     if (iPrev == iNextLimit && !data.m_imprint.empty())
                         {
-                        bvector<ImprintIndices>::iterator it2 = std::find_if(data.m_imprint.begin(), data.m_imprint.end(), std::bind2nd(IsImprintIndex1Equal(), &iPrev));
+                        bvector<ImprintIndices>::iterator it2 = std::find_if(data.m_imprint.begin(), data.m_imprint.end(), [&](ImprintIndices const& imprint) { return imprint.m_indices[1] == iPrev; });
 
                         if (it2 != data.m_imprint.end())
                             it2->m_indices[1] = iPt; // Crossing segment, may not require split but still needs replace surface!
@@ -4404,7 +4394,7 @@ BentleyStatus transformVertices(IBRepEntityR targetEntity, bvector<ISubEntityPtr
                     imprint.m_indices[0] = iPt;
                     imprint.m_indices[1] = iPrevPrev;
 
-                    bvector<ImprintIndices>::iterator it2 = std::find_if(data.m_imprint.begin(), data.m_imprint.end(), std::bind2nd(IsImprintReversed(), &imprint));
+                    bvector<ImprintIndices>::iterator it2 = std::find_if(data.m_imprint.begin(), data.m_imprint.end(), [&](ImprintIndices const& imprint2) { return imprint.m_indices[0] == imprint2.m_indices[1] && imprint.m_indices[1] == imprint2.m_indices[0]; });
 
                     if (it2 == data.m_imprint.end()) // NOTE: Parasolid seems ok with duplicate imprint...but it's easy enough to filter out...
                         data.m_imprint.push_back(imprint);

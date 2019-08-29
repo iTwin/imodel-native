@@ -83,7 +83,7 @@ struct SCCGraph
             else
                 {
                 refNode = childIter->second;
-                if (context.m_stack.end() != std::find_if (context.m_stack.begin(), context.m_stack.end(), std::bind1st (std::equal_to<SCCGraphNode*>(), refNode)))
+                if (context.m_stack.end() != std::find_if (context.m_stack.begin(), context.m_stack.end(), [&](auto const& n) { return n == refNode; }))
                     node->m_lowIndex = std::min (node->m_lowIndex, refNode->m_index);
                 }
             }
