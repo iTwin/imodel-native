@@ -6,7 +6,15 @@
         {
             "name": "iModelCore",
             "archs": "x64+winrtx64+androidarm64+iosarm64+macosx64+linuxx64",
-            "version_seed": "2.1.0"
+            "version_seed": "2.1.0",
+            "linux_symbol_config": [
+                {
+                    "dir": "Product/iModelCoreNuget"
+                },
+                {
+                    "dir": "Product/iModelCoreTestingNuget"
+                }
+            ]
         },
         {
             "name": "iModelJsNodeAddon",
@@ -15,6 +23,13 @@
             "version_file": "$SRCROOT/iModel02/iModelJsNodeAddon/package_version.txt",
             "depends" : [
                 "iModelCore"
+            ],
+            "linux_symbol_config": [
+                {
+                    "dir": "imodeljsnodeaddon_pkgs/imodeljs-linux-x64",
+                    "upload": true,
+                    "glob": "*.node"
+                }
             ]
         },
         {
@@ -24,6 +39,12 @@
             "version_file": "$SRCROOT/iModel02/iModelBankAddon/package_version.txt",
             "depends" : [
                 "iModelCore"
+            ],
+            "linux_symbol_config": [
+                {
+                    "dir": "imodelbankaddon_pkgs/imodel-bank-linux-x64",
+                    "glob": "*.node"
+                }
             ]
         },
         {
