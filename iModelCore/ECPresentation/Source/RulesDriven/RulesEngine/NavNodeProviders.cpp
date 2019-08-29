@@ -841,7 +841,7 @@ bool CustomNodesProvider::_InitializeNodes()
     Utf8String description(m_specification.GetDescription().c_str());
     JsonNavNodeCPtr parent = GetContext().GetVirtualParentNode();
     m_node = GetContext().GetNodesFactory().CreateCustomNode(connectionId, GetLocale(GetContext()), label.c_str(), description.c_str(), imageId.c_str(), type.c_str());
-    
+
     NavNodeExtendedData extendedData(*m_node);
     extendedData.SetRulesetId(GetContext().GetRuleset().GetRuleSetId().c_str());
     extendedData.SetSpecificationHash(m_specification.GetHash());
@@ -857,12 +857,13 @@ bool CustomNodesProvider::_InitializeNodes()
 
     m_node->SetNodeKey(*NavNodesHelper::CreateNodeKey(GetContext().GetConnection(), *m_node, parent.IsValid() ? parent->GetKey().get() : nullptr));
 
-    GetContext().GetNodesCache().Cache(*m_node, GetContext().GetDataSourceInfo(), 0, true);
+    GetContext().GetNodesCache().Cache(*m_node, GetContext().GetDataSourceInfo(), 0, false);
 
     if (GetContext().IsChildNodeContext() && HasSimilarNodeInHierarchy(*m_node, extendedData.HasVirtualParentId() ? extendedData.GetVirtualParentId() : 0))
         {
-        m_node = nullptr;
+        GetContext().GetNodesCache().MakeVirtual(*m_node);
         GetContext().GetNodesCache().FinalizeInitialization(GetContext().GetDataSourceInfo());
+        m_node = nullptr;
         return true;
         }
 
@@ -874,8 +875,9 @@ bool CustomNodesProvider::_InitializeNodes()
 
     if (m_specification.GetHideNodesInHierarchy() || ShouldHideNodeBasedOnHideExpression(GetContext(), *m_node, m_specification.GetHideExpression()))
         {
-        m_childNodesProvider = GetContext().CreateHierarchyLevelProvider(*CreateContextForChildHierarchyLevel(GetContext(), *m_node), m_node.get());
+        GetContext().GetNodesCache().MakeVirtual(*m_node);
         GetContext().GetNodesCache().FinalizeInitialization(GetContext().GetDataSourceInfo());
+        m_childNodesProvider = GetContext().CreateHierarchyLevelProvider(*CreateContextForChildHierarchyLevel(GetContext(), *m_node), m_node.get());
         return true;
         }
 
@@ -894,15 +896,14 @@ bool CustomNodesProvider::_InitializeNodes()
         if (HASCHILDREN_False == hasChildren)
             {
             // if the node has "hide if no children" flag and none of the child specs return nodes, return false
-            m_node = nullptr;
+            GetContext().GetNodesCache().MakeVirtual(*m_node);
             GetContext().GetNodesCache().FinalizeInitialization(GetContext().GetDataSourceInfo());
+            m_node = nullptr;
             return true;
             }
          }
 
-    GetContext().GetNodesCache().MakePhysical(*m_node);
     GetContext().GetNodesCache().FinalizeInitialization(GetContext().GetDataSourceInfo());
-
     return true;
     }
 
@@ -1022,7 +1023,10 @@ NavNodesProviderPtr QueryBasedNodesProvider::CreateProvider(JsonNavNodeR node) c
     // avoid returning a node if we already have a similar ancestor (prevent infinite hierarchies)
     NavNodesProviderContextPtr nestedContext = NavNodesProviderContext::Create(GetContext());
     if (GetContext().IsChildNodeContext() && HasSimilarNodeInHierarchy(node, extendedData.HasVirtualParentId() ? extendedData.GetVirtualParentId() : 0))
+        {
+        GetContext().GetNodesCache().MakeVirtual(node);
         return EmptyNavNodesProvider::Create(*nestedContext);
+        }
 
     HasChildrenFlag hasChildren = HASCHILDREN_Unknown;
     NodeHasChildrenFlagUpdater hasChildrenUpdater(GetContext().GetNodesCache(), &node, hasChildren);
@@ -1039,14 +1043,19 @@ NavNodesProviderPtr QueryBasedNodesProvider::CreateProvider(JsonNavNodeR node) c
 
     // the specification may want to return node's children instead of the node itself
     if (ShouldReturnChildNodes(node, hasChildren))
+        {
+        GetContext().GetNodesCache().MakeVirtual(node);
         return GetContext().CreateHierarchyLevelProvider(*CreateContextForChildHierarchyLevel(GetContext(), node), &node);
-    
+        }
+
     // if the node has "hide if no children" flag and none of the child specs return nodes, skip this node
     if (extendedData.HideIfNoChildren() && HASCHILDREN_False == hasChildren)
+        {
+        GetContext().GetNodesCache().MakeVirtual(node);
         return EmptyNavNodesProvider::Create(*nestedContext);
+        }
 
     // otherwise, make node physical
-    GetContext().GetNodesCache().MakePhysical(node);
     return SingleNavNodeProvider::Create(node, *nestedContext);
     }
 
@@ -1244,7 +1253,7 @@ bool QueryBasedNodesProvider::InitializeProvidersForAllNodes()
     GetNodeProvidersR().reserve(m_executor.GetNodesCount());
     while ((node = m_executor.GetNode(m_executorIndex)).IsValid())
         {
-        GetContext().GetNodesCache().Cache(*node, GetContext().GetDataSourceInfo(), m_executorIndex + m_offset, true);
+        GetContext().GetNodesCache().Cache(*node, GetContext().GetDataSourceInfo(), m_executorIndex + m_offset, false);
         if (GetContext().GetCancelationToken().IsCanceled())
             {
             savepoint.Cancel();
@@ -1357,7 +1366,7 @@ void QueryBasedNodesProvider::EnsureQueryRecordsRead() const
             extendedData.SetVirtualParentId(*GetContext().GetVirtualParentNodeId());
         if (GetContext().IsRootNodeContext() && GetContext().GetRootNodeRule().GetAutoExpand())
             node->SetIsExpanded(true);
-            
+
         node->SetNodeKey(*NavNodesHelper::CreateNodeKey(GetContext().GetConnection(), *node, virtualParent.IsValid() ? virtualParent->GetKey().get() : nullptr));
         }
     }
@@ -1908,7 +1917,7 @@ void SQLiteCacheNodesProvider::InitializeNodes()
         JsonNavNodePtr node = GetContext().GetNodesFactory().CreateFromJson(GetContext().GetConnection(), std::move(json));
         if (node.IsNull())
             continue;
-        
+
         if (!statement->IsColumnNull(1))
             node->SetParentNodeId(statement->GetValueUInt64(1));
 
@@ -2178,7 +2187,7 @@ CachedStatementPtr NodesWithUndeterminedChildrenProvider::_GetCountStatement() c
                        "     JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[DataSourceId] = [dsn].[Id] "
                        "LEFT JOIN [" NODESCACHE_TABLENAME_HierarchyLevels "] hl ON [hl].[VirtualParentNodeId] = [n].[Id] "
                        "LEFT JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[HierarchyLevelId] = [hl].[Id] "
-                       "    WHERE     [hln].[ConnectionId] = ? AND [hln].[RulesetId] = ? "
+                       "    WHERE     [hln].[ConnectionId] = ? AND [hln].[RulesetId] = ? AND [hln].[Locale] = ? "
                        "          AND ([hl].[Id] IS NULL OR [ds].[Id] IS NULL OR NOT [ds].[IsInitialized]) ";
 
     CachedStatementPtr stmt;
@@ -2190,6 +2199,7 @@ CachedStatementPtr NodesWithUndeterminedChildrenProvider::_GetCountStatement() c
 
     stmt->BindText(1, GetContext().GetConnection().GetId(), Statement::MakeCopy::No);
     stmt->BindText(2, GetContext().GetRuleset().GetRuleSetId().c_str(), Statement::MakeCopy::No);
+    stmt->BindText(3, GetContext().GetLocale(), Statement::MakeCopy::No);
     return stmt;
     }
 
@@ -2206,7 +2216,7 @@ CachedStatementPtr NodesWithUndeterminedChildrenProvider::_GetNodesStatement() c
                        "LEFT JOIN [" NODESCACHE_TABLENAME_ExpandedNodes "] ex ON [n].[Id] = [ex].[NodeId] "
                        "LEFT JOIN [" NODESCACHE_TABLENAME_HierarchyLevels "] hl ON [hl].[VirtualParentNodeId] = [n].[Id] "
                        "LEFT JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[HierarchyLevelId] = [hl].[Id] "
-                       "    WHERE     [hln].[ConnectionId] = ? AND [hln].[RulesetId] = ? "
+                       "    WHERE     [hln].[ConnectionId] = ? AND [hln].[RulesetId] = ? AND [hln].[Locale] = ? "
                        "          AND ([hl].[Id] IS NULL OR [ds].[Id] IS NULL OR NOT [ds].[IsInitialized]) ";
 
     CachedStatementPtr stmt;
@@ -2218,6 +2228,7 @@ CachedStatementPtr NodesWithUndeterminedChildrenProvider::_GetNodesStatement() c
 
     stmt->BindText(1, GetContext().GetConnection().GetId(), Statement::MakeCopy::No);
     stmt->BindText(2, GetContext().GetRuleset().GetRuleSetId().c_str(), Statement::MakeCopy::No);
+    stmt->BindText(3, GetContext().GetLocale(), Statement::MakeCopy::No);
     return stmt;
     }
 
