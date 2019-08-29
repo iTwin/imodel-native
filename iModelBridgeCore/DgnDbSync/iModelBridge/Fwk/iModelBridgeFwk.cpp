@@ -2641,7 +2641,8 @@ BentleyStatus iModelBridgeFwk::TestFeatureFlag(CharCP ff, bool& flag) const
     if (m_bridge != nullptr) 
         {
         flag = m_bridge->TestFeatureFlag(ff); 
-        return BSISUCCESS; 
+        LOG.debugv("iModelBridgeFwk::TestFeatureFlag: bridge returned %d for feature '%s'.", flag ? 1 : 0, ff);
+        return BSISUCCESS;
         } 
 
     if (m_useIModelHub && m_iModelHubArgs)
@@ -2651,8 +2652,10 @@ BentleyStatus iModelBridgeFwk::TestFeatureFlag(CharCP ff, bool& flag) const
             LOG.errorv("Testing feature flag %s failed for environment %d", ff, m_iModelHubArgs->m_environment);
             return ERROR;
             }
+        LOG.debugv("iModelBridgeFwk::TestFeatureFlag: bridge returned %d for feature '%s'.", flag ? 1 : 0, ff);
         return BSISUCCESS;
         }
+    LOG.error("iModelBridgeFwk::TestFeatureFlag: unable to determine how to test feature flag.");
     return BSIERROR; 
     }
 

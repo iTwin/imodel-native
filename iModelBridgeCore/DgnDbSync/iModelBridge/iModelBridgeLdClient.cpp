@@ -9,6 +9,9 @@
 #include <rapidjson/document.h>
 #include <Logging/bentleylogging.h>
 
+#undef LOG
+#define LOG (*NativeLogging::LoggingManager::GetLogger(L"iModelBridge"))
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -43,7 +46,10 @@ BentleyStatus   iModelBridgeLdClient::InitClient()
 
     m_client = LDClientInit(m_config, m_user, 0);
     if (NULL == m_client)
+        {
+        LOG.error("Failed to initialize client in iModelBridgeLdClient::InitClient");
         return ERROR;
+        }
 
     return SUCCESS;
     }
@@ -103,7 +109,10 @@ BentleyStatus   iModelBridgeLdClient::IsFeatureOn(bool& flag, CharCP featureName
         }
 
     if (!isInitialized)
+        {
+        LOG.error("iModelBridgeLdClient::IsFeatureOn: LDClient is not initialized");
         return ERROR;
+        }
 
     flag = LDBoolVariation (m_client,featureName, flag);
     return SUCCESS;
