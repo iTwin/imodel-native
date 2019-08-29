@@ -720,8 +720,8 @@ TEST_F(DefaultECPresentationSerializerTests, DisplayLabelFieldSerialization)
     rapidjson::Document expected;
     expected.Parse(R"({
         "Category": {
-            "Name": "Miscellaneous",
-            "DisplayLabel": "Miscellaneous",
+            "Name": "General",
+            "DisplayLabel": "General",
             "Description": "",
             "Expand": false,
             "Priority": 1000
@@ -735,7 +735,7 @@ TEST_F(DefaultECPresentationSerializerTests, DisplayLabelFieldSerialization)
         "IsReadOnly": true,
         "Priority": 10
         })");
-    expected["Category"]["DisplayLabel"].SetString(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace().m_namespace, ECPresentationL10N::LABEL_Category_Miscellaneous().m_str).c_str(), expected.GetAllocator());
+    expected["Category"]["DisplayLabel"].SetString(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace().m_namespace, ECPresentationL10N::LABEL_Category_General().m_str).c_str(), expected.GetAllocator());
 
     EXPECT_EQ(expected, actual)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
@@ -754,8 +754,8 @@ TEST_F(DefaultECPresentationSerializerTests, CalculatedPropertyFieldSerializatio
     rapidjson::Document expected;
     expected.Parse(R"({
         "Category": {
-            "Name": "Miscellaneous",
-            "DisplayLabel": "Miscellaneous",
+            "Name": "General",
+            "DisplayLabel": "General",
             "Description": "",
             "Expand": false,
             "Priority": 1000
@@ -769,7 +769,7 @@ TEST_F(DefaultECPresentationSerializerTests, CalculatedPropertyFieldSerializatio
         "IsReadOnly": true,
         "Priority": 10
         })");
-    expected["Category"]["DisplayLabel"].SetString(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace().m_namespace, ECPresentationL10N::LABEL_Category_Miscellaneous().m_str).c_str(), expected.GetAllocator());
+    expected["Category"]["DisplayLabel"].SetString(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace().m_namespace, ECPresentationL10N::LABEL_Category_General().m_str).c_str(), expected.GetAllocator());
 
     EXPECT_EQ(expected, actual)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
@@ -1051,8 +1051,8 @@ TEST_F(DefaultECPresentationSerializerTests, NestedContentFieldSerialization)
         "NestedFields": [
             {
             "Category": {
-                "Name": "Miscellaneous",
-                "DisplayLabel": "Miscellaneous",
+                "Name": "General",
+                "DisplayLabel": "General",
                 "Description": "",
                 "Expand": false,
                 "Priority": 1000
@@ -1108,7 +1108,7 @@ TEST_F(DefaultECPresentationSerializerTests, NestedContentFieldSerialization)
     expected["PathToPrimary"][0]["SourceClassInfo"]["Id"].SetString(testClassA->GetId().ToString().c_str(), expected.GetAllocator());
     expected["PathToPrimary"][0]["TargetClassInfo"]["Id"].SetString(testClassB->GetId().ToString().c_str(), expected.GetAllocator());
     expected["PathToPrimary"][0]["RelationshipInfo"]["Id"].SetString(relClassAClassB->GetId().ToString().c_str(), expected.GetAllocator());
-    expected["NestedFields"][0]["Category"]["DisplayLabel"].SetString(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace().m_namespace, ECPresentationL10N::LABEL_Category_Miscellaneous().m_str).c_str(), expected.GetAllocator());
+    expected["NestedFields"][0]["Category"]["DisplayLabel"].SetString(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace().m_namespace, ECPresentationL10N::LABEL_Category_General().m_str).c_str(), expected.GetAllocator());
     expected["NestedFields"][1]["Properties"][0]["Property"]["BaseClassInfo"]["Id"].SetString(testClassA->GetId().ToString().c_str(), expected.GetAllocator());
     expected["NestedFields"][1]["Properties"][0]["Property"]["ActualClassInfo"]["Id"].SetString(testClassA->GetId().ToString().c_str(), expected.GetAllocator());
 
@@ -1131,8 +1131,8 @@ TEST_F(DefaultECPresentationSerializerTests, DisplayLabelFieldSerializationHasCo
     rapidjson::Document expected;
     expected.Parse(R"({
         "Category": {
-            "Name": "Miscellaneous",
-            "DisplayLabel": "Miscellaneous",
+            "Name": "General",
+            "DisplayLabel": "General",
             "Description": "",
             "Expand": false,
             "Priority": 1000
@@ -1150,7 +1150,7 @@ TEST_F(DefaultECPresentationSerializerTests, DisplayLabelFieldSerializationHasCo
             "Params": {}
             }
         })");
-    expected["Category"]["DisplayLabel"].SetString(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace().m_namespace, ECPresentationL10N::LABEL_Category_Miscellaneous().m_str).c_str(), expected.GetAllocator());
+    expected["Category"]["DisplayLabel"].SetString(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace().m_namespace, ECPresentationL10N::LABEL_Category_General().m_str).c_str(), expected.GetAllocator());
 
     EXPECT_EQ(expected, actual)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
@@ -2111,8 +2111,8 @@ TEST_F(DefaultECPresentationSerializerTests, ContentDescriptorSerializationNoSel
         "Fields": [
             {
             "Category": {
-                "Name": "Miscellaneous",
-                "DisplayLabel": "Miscellaneous",
+                "Name": "General",
+                "DisplayLabel": "General",
                 "Description": "",
                 "Expand": false,
                 "Priority": 1000
@@ -2141,7 +2141,7 @@ TEST_F(DefaultECPresentationSerializerTests, ContentDescriptorSerializationNoSel
 
     expected["ConnectionId"].SetString(m_connection->GetId().c_str(), expected.GetAllocator());
     expected["InputKeysHash"].SetString(container->GetHash().c_str(), expected.GetAllocator());
-    expected["Fields"][0]["Category"]["DisplayLabel"].SetString(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace().m_namespace, ECPresentationL10N::LABEL_Category_Miscellaneous().m_str).c_str(), expected.GetAllocator());
+    expected["Fields"][0]["Category"]["DisplayLabel"].SetString(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace().m_namespace, ECPresentationL10N::LABEL_Category_General().m_str).c_str(), expected.GetAllocator());
     expected["SelectClasses"][0]["SelectClassInfo"]["Id"].SetString(testClassA->GetId().ToString().c_str(), expected.GetAllocator());
     expected["SelectClasses"][0]["PathToPrimaryClass"][0]["SourceClassInfo"]["Id"].SetString(testClassA->GetId().ToString().c_str(), expected.GetAllocator());
     expected["SelectClasses"][0]["PathToPrimaryClass"][0]["TargetClassInfo"]["Id"].SetString(testClassB->GetId().ToString().c_str(), expected.GetAllocator());

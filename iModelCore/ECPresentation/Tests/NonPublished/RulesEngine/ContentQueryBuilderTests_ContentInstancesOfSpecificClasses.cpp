@@ -228,7 +228,7 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_CategorizesF
     ASSERT_EQ(2, fields.size());
 
     EXPECT_STREQ("Class2_Name", fields[0]->GetName().c_str());
-    EXPECT_STREQ("Miscellaneous", fields[0]->GetCategory().GetName().c_str());
+    EXPECT_STREQ("General", fields[0]->GetCategory().GetName().c_str());
 
     EXPECT_STREQ("Class2_CategorizedProperty", fields[1]->GetName().c_str());
     EXPECT_STREQ("CategoryName", fields[1]->GetCategory().GetName().c_str());

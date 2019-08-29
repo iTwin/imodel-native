@@ -461,8 +461,8 @@ rapidjson::Document ContentDescriptor::Category::AsJson(rapidjson::Document::All
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentDescriptor::Category ContentDescriptor::Category::GetDefaultCategory()
     {
-    Utf8String label = PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_Category_Miscellaneous());
-    return ContentDescriptor::Category("Miscellaneous", label, "", 1000);
+    Utf8String label = PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_Category_General());
+    return ContentDescriptor::Category("General", label, "", 1000);
     }
 
 /*---------------------------------------------------------------------------------**//**
