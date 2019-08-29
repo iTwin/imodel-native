@@ -15,7 +15,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 uint32_t CachedECSqlStatement::Release()
     {
-    // Since statements can be referenced from multiple threads, and since we want to reset the statement 
+    // Since statements can be referenced from multiple threads, and since we want to reset the statement
     // when it is only held by the StatementCache, we need to hold the cache's mutex for the entire scope of this
     // method. However, the reference count member must still be atomic since we don't acquire the mutex for AddRef.
     BeMutexHolder lock(m_cache.m_mutex);
@@ -24,6 +24,7 @@ uint32_t CachedECSqlStatement::Release()
     const uint32_t countWas = m_refCount.DecrementAtomicPost();
     if (1 == countWas)
         {
+        lock.unlock();
         delete this;
         return 0;
         }
@@ -117,7 +118,7 @@ void ECSqlStatementCache::GetPreparedStatement(CachedECSqlStatementPtr& stmt, EC
     if (stmt.IsValid())
         return;
 
-    AddStatement(stmt, ecdb, datasource, token, ecsql);
+    CachedECSqlStatementPtr droppedStatement = AddStatement(stmt, ecdb, datasource, token, ecsql);
 
     if (datasource == nullptr)
         {
@@ -130,6 +131,9 @@ void ECSqlStatementCache::GetPreparedStatement(CachedECSqlStatementPtr& stmt, EC
         if (ECSqlStatus::Success != stmt->Prepare(ecdb.Schemas(), *datasource, ecsql))
             stmt = nullptr;
         }
+
+    _v_v.unlock();
+    droppedStatement = nullptr;
     }
 
 
@@ -160,20 +164,20 @@ CachedECSqlStatement* ECSqlStatementCache::FindEntry(ECDbCR ecdb, Db const* data
     if (foundIt == m_entries.end())
         return nullptr;
 
-    m_entries.splice(m_entries.begin(), m_entries, foundIt); // move this most-recently-accessed statement to front 
+    m_entries.splice(m_entries.begin(), m_entries, foundIt); // move this most-recently-accessed statement to front
     return foundIt->get();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      02/2015
 //---------------------------------------------------------------------------------------
-void ECSqlStatementCache::AddStatement(CachedECSqlStatementPtr& newEntry, ECDbCR ecdb, DbCP datasource, ECCrudWriteToken const* token, Utf8CP ecsql) const
+CachedECSqlStatementPtr ECSqlStatementCache::AddStatement(CachedECSqlStatementPtr& newEntry, ECDbCR ecdb, DbCP datasource, ECCrudWriteToken const* token, Utf8CP ecsql) const
     {
-    BeMutexHolder _v_v(m_mutex);
+    CachedECSqlStatementPtr last;
     if (((uint32_t) m_entries.size()) >= m_maxSize) // if cache is full, remove oldest entry
         {
-        CachedECSqlStatementPtr& last = m_entries.back();
-#ifndef NDEBUG        
+        last = m_entries.back();
+#ifndef NDEBUG
         ECSqlStatementCacheDiagnostics::Log(GetName(), m_maxSize,  ECSqlStatementCacheDiagnostics::EventType::RemovedFromCache, last->GetECSql());
 #endif //NDEBUG
         last->m_isInCache = false; // this statement is no longer managed by this cache, don't let Release method call Reset/ClearBindings anymore
@@ -185,6 +189,8 @@ void ECSqlStatementCache::AddStatement(CachedECSqlStatementPtr& newEntry, ECDbCR
 #ifndef NDEBUG
     ECSqlStatementCacheDiagnostics::Log(GetName(), m_maxSize, ECSqlStatementCacheDiagnostics::EventType::AddedToCache, ecsql);
 #endif //NDEBUG
+
+    return last;
     }
 
 //---------------------------------------------------------------------------------------

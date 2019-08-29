@@ -16,14 +16,14 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
-//! ECSqlStatement is used to perform Create, Read, Update, Delete operations (@b CRUD) 
+//! ECSqlStatement is used to perform Create, Read, Update, Delete operations (@b CRUD)
 //! against @b ECInstances in an @ref ECDbFile "ECDb file".
 //!
 //! See @ref ECSqlStatementOverview for details on how to use ECSqlStatement.
 //!
 //! It is safe to use multiple ECSqlStatements in multiple threads. A given ECSqlStatement
 //! can only be used in a single thread.
-//! 
+//!
 //! @see @ref ECSqlStatementOverview, @ref ECDbOverview, @ref ECDbCodeSamples
 //! @ingroup ECDbGroup
 //! @nosubgrouping
@@ -74,7 +74,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         //! Prepares the statement with the specified ECSQL
         //! @param[in] ecdb ECDb context
         //! @param[in] ecsql ECSQL
-        //! @param [in] token Token required to execute ECSQL INSERT, UPDATE, DELETE statements if 
+        //! @param [in] token Token required to execute ECSQL INSERT, UPDATE, DELETE statements if
         //! the ECDb file was set-up with the option "ECSQL write token validation".
         //! If the option is not set, nullptr can be passed for @p token.
         //! @return ECSqlStatus::Success or error codes
@@ -83,7 +83,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         //! Prepares the statement with the specified ECSQL
         //! @param[in] ecdb ECDb context
         //! @param[in] ecsql ECSQL
-        //! @param [in] token Token required to execute ECSQL INSERT, UPDATE, DELETE statements if 
+        //! @param [in] token Token required to execute ECSQL INSERT, UPDATE, DELETE statements if
         //! the ECDb file was set-up with the option "ECSQL write token validation".
         //! If the option is not set, nullptr can be passed for @p token.
         //! @param[in] logErrors true: Prepare errors will be logged. false: Prepare errors will not be logged
@@ -117,7 +117,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
 
         //! Binds an ECSQL @c %NULL to the parameter
         //! @param[in] parameterIndex Parameter index
-        //! 
+        //!
         //! Example:
         //! The code
         //!     ECSqlStatement statement;
@@ -139,16 +139,16 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         //! @param[in] parameterIndex Parameter index
         //! @param[in] value Value to bind
         //! @param[in] blobSize Size of the BLOB in bytes
-        //! @param[in] makeCopy Flag that indicates whether a private copy of the blob is done or not. Only pass 
+        //! @param[in] makeCopy Flag that indicates whether a private copy of the blob is done or not. Only pass
         //! IECSqlBinder::MakeCopy::No if @p value remains valid until
         //!            the statement's bindings are cleared.
         //! @return ECSqlStatus::Success or error codes
         ECSqlStatus BindBlob(int parameterIndex, const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy) { return GetBinder(parameterIndex).BindBlob(value, blobSize, makeCopy); }
 
         //! Binds a zeroblob of the specified size to a parameter.
-        //! @remarks A zeroblob is a BLOB consisting of @p blobSize bytes of 0x00. 
-        //! SQLite manages these zeroblobs very efficiently. Zeroblobs can be used to reserve space for a BLOB that 
-        //! is later written using incremental BLOB I/O. 
+        //! @remarks A zeroblob is a BLOB consisting of @p blobSize bytes of 0x00.
+        //! SQLite manages these zeroblobs very efficiently. Zeroblobs can be used to reserve space for a BLOB that
+        //! is later written using incremental BLOB I/O.
         //! @param[in] parameterIndex Parameter index
         //! @param[in] blobSize The number of bytes for the zeroblob.
         //! @return ECSqlStatus::Success or error codes
@@ -207,7 +207,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         //! @param[in] value Value to bind
         //! @param[in] makeCopy indicates whether ECSqlStatement should make a private copy of @p value or not.
         //!             Only pass IECSqlBinder::MakeCopy::No if @p value will remain valid until the statement's bindings are cleared.
-        //! @param[in] byteCount Number of bytes (not characters) in @p value. If negative, it will be calculated from value. Passing this value is only an optimization. 
+        //! @param[in] byteCount Number of bytes (not characters) in @p value. If negative, it will be calculated from value. Passing this value is only an optimization.
         //! @return ECSqlStatus::Success or error codes
         ECSqlStatus BindText(int parameterIndex, Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount = -1) { return GetBinder(parameterIndex).BindText(value, makeCopy, byteCount); }
 
@@ -251,7 +251,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         ECDB_EXPORT IECSqlBinder& GetBinder(int parameterIndex);
 
         //! Gets the parameter index for a named parameter
-        //! 
+        //!
         //! @e Example
         //!  ECSqlStatement statement;
         //!  statement.Prepare (ecdb, "SELECT Prop1, Prop2 FROM myschema.Foo Where ECInstanceId = :id");
@@ -268,12 +268,12 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         //! @}
 
         //! Perform a single step on this statement
-        //! @remarks For select statements, BentleyApi::BeSQLite::DbResult::BE_SQLITE_ROW indicates that data (a row) is returned which is ready to be 
+        //! @remarks For select statements, BentleyApi::BeSQLite::DbResult::BE_SQLITE_ROW indicates that data (a row) is returned which is ready to be
         //!          processed by the caller, and BentleyApi::BeSQLite::DbResult::BE_SQLITE_DONE is returned after a
-        //!          successful execution of the step. For non-select statements (Insert, Update, Delete) BentleyApi::BeSQLite::DbResult::BE_SQLITE_DONE is always 
+        //!          successful execution of the step. For non-select statements (Insert, Update, Delete) BentleyApi::BeSQLite::DbResult::BE_SQLITE_DONE is always
         //!          returned in case of success and error codes in case of error.
         //!          When BentleyApi::BeSQLite::DbResult::BE_SQLITE_DONE was returned, Step should not be called again.
-        //! @return BentleyApi::BeSQLite::DbResult::BE_SQLITE_ROW if Step returned data which is ready to be processed by the caller. 
+        //! @return BentleyApi::BeSQLite::DbResult::BE_SQLITE_ROW if Step returned data which is ready to be processed by the caller.
         //!         BentleyApi::BeSQLite::DbResult::BE_SQLITE_DONE if the reader has finished executing successfully.
         //!         Error codes in case of errors.
         ECDB_EXPORT DbResult Step();
@@ -281,7 +281,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         //! Perform a single step on this (previously prepared) @b insert statement
         //! @remarks This overload is intended for insert statements only as it returns the ECInstanceKey of the inserted row.
         //! @param[out] ecInstanceKey The ECInstanceKey of the inserted row.
-        //! @return BentleyApi::BeSQLite::DbResultBE_SQLITE_ROWROW if Step returned data which is ready to be processed by the caller. 
+        //! @return BentleyApi::BeSQLite::DbResultBE_SQLITE_ROWROW if Step returned data which is ready to be processed by the caller.
         //!         BentleyApi::BeSQLite::DbResult::BE_SQLITE_DONE if the reader has finished executing successfully.
         //!         Error codes in case of errors.
         ECDB_EXPORT DbResult Step(ECInstanceKey& ecInstanceKey) const;
@@ -329,7 +329,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
         //! @return Column value as boolean
         //! @note Possible errors:
-        //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
+        //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only
         //!   those types can implicitly be converted into each other.
         //! - @p columnIndex is out of bounds
         bool GetValueBoolean(int columnIndex) const { return GetValue(columnIndex).GetBoolean(); }
@@ -347,7 +347,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
         //! @return Column value as double
         //! @note Possible errors:
-        //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
+        //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only
         //!   those types can implicitly be converted into each other.
         //! - @p columnIndex is out of bounds
         double GetValueDouble(int columnIndex) const { return GetValue(columnIndex).GetDouble(); }
@@ -364,7 +364,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
         //! @return Column value as integer
         //! @note Possible errors:
-        //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
+        //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only
         //!   those types can implicitly be converted into each other.
         //! - @p columnIndex is out of bounds
         int GetValueInt(int columnIndex) const { return GetValue(columnIndex).GetInt(); }
@@ -373,7 +373,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         //! @note as ECEnumerations cannot be OR'ed, so if the value does not match any of the ECEnumerators defined
         //! in the underlying ECEnumeration, nullptr will be returned.
         //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
-        //! @return ECEnumerator or nullptr, if the underlying value does not represent a defined ECEnumerator of the ECEnumeration. 
+        //! @return ECEnumerator or nullptr, if the underlying value does not represent a defined ECEnumerator of the ECEnumeration.
         //! (OR'ed ECEnumerators are not supported)
         ECN::ECEnumeratorCP GetValueEnum(int columnIndex) const { return GetValue(columnIndex).GetEnum(); }
 
@@ -381,7 +381,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
         //! @return Column value as Int64
         //! @note Possible errors:
-        //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
+        //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only
         //!   those types can implicitly be converted into each other.
         //! - @p columnIndex is out of bounds
         int64_t GetValueInt64(int columnIndex) const { return GetValue(columnIndex).GetInt64(); }
@@ -390,7 +390,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
         //! @return Column value as uint64_t
         //! @note Possible errors:
-        //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
+        //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only
         //!   those types can implicitly be converted into each other.
         //! - @p columnIndex is out of bounds
         uint64_t GetValueUInt64(int columnIndex) const { return GetValue(columnIndex).GetUInt64(); }
@@ -415,7 +415,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
         //! @return Column value as string
         //! @note Possible errors:
-        //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
+        //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only
         //!   those types can implicitly be converted into each other.
         //! - @p columnIndex is out of bounds
         Utf8CP GetValueText(int columnIndex) const { return GetValue(columnIndex).GetText(); }
@@ -427,7 +427,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         //! @return BeInt64Id value
         //! @note Possible errors:
         //! - column data does not hold a BeInt64Id
-        template <class TBeInt64Id> 
+        template <class TBeInt64Id>
         TBeInt64Id GetValueId(int columnIndex) const { return TBeInt64Id(GetValueUInt64(columnIndex)); }
 
         //! Gets the value of the specific column as a BeGuid
@@ -448,7 +448,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         TBeInt64Id GetValueNavigation(int columnIndex, ECN::ECClassId* relationshipECClassId = nullptr) const { return GetValue(columnIndex).GetNavigation<TBeInt64Id>(relationshipECClassId); }
 
         //! Gets the value of the specified column.
-        //! @remarks This is the generic way of getting the value of a specified column in the result set. 
+        //! @remarks This is the generic way of getting the value of a specified column in the result set.
         //! All other GetValueXXX methods are convenience methods around GetValue.
         //! @return Value for the column
         //! @note Possible errors:
@@ -530,18 +530,18 @@ struct EXPORT_VTABLE_ATTRIBUTE CachedECSqlStatement final : ECSqlStatement
 typedef RefCountedPtr<CachedECSqlStatement> CachedECSqlStatementPtr;
 
 //=======================================================================================
-//! A cache of shared ECSqlStatements that can be reused without re-preparing. 
+//! A cache of shared ECSqlStatements that can be reused without re-preparing.
 //! It can be very expensive to prepare an ECSQL statement,
 //! so this class provides a way to save previously prepared statements for reuse (note, a prepared ECSqlStatement is specific to a
 //! particular ECDb file)
-//! The size of the cache is determined by the caller. The cache releases the 
+//! The size of the cache is determined by the caller. The cache releases the
 //! oldest statement when a new entry is added to a full cache.
 //! @note Clients must make sure to release any cached statement and the cache itself
 //! before the corresponding ECDb file is closed.
 //!
 //! ### Cache usage diagnostics
 //! As clients can only indirectly control the lifetime of statements in the cache, diagnostics can help
-//! applications analyze how often statements get popped out of the cache and later readded again.This only run in a debug build. To enable 
+//! applications analyze how often statements get popped out of the cache and later readded again.This only run in a debug build. To enable
 //! ECSqlStatement cache diagnostics:
 //! - turn on the log4cxx based @ref BentleyApi::NativeLogging "Bentley logging"
 //! - in the <b>log4cxx configuration</b> define a @b logger or a <b>logging category</b> with the
@@ -564,7 +564,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatementCache final
         ECSqlStatementCache& operator=(ECSqlStatementCache const&) = delete;
 
         CachedECSqlStatement* FindEntry(ECDbCR ecdb, DbCP datasource, ECCrudWriteToken const* crudWriteToken, Utf8CP ecsql) const; // Requires m_mutex locked
-        void AddStatement(CachedECSqlStatementPtr&, ECDbCR, DbCP datasource, ECCrudWriteToken const* token, Utf8CP ecsql) const; // Requires m_mutex locked
+        CachedECSqlStatementPtr AddStatement(CachedECSqlStatementPtr&, ECDbCR, DbCP datasource, ECCrudWriteToken const* token, Utf8CP ecsql) const; // Requires m_mutex locked
         void GetPreparedStatement(CachedECSqlStatementPtr&, ECDbCR ,DbCP, ECCrudWriteToken const*, Utf8CP ) const;
     public:
         //! Initializes a new ECSqlStatementCache of the specified size.
@@ -576,7 +576,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatementCache final
 
         //! Gets a cached and prepared statement for the specified ECSQL.
         //! If there was no statement in the cache for the ECSQL, a new one will be prepared and cached.
-        //! Otherwise an existing ready-to-use statement will be returned, i.e. clients neither need to call 
+        //! Otherwise an existing ready-to-use statement will be returned, i.e. clients neither need to call
         //! ECSqlStatement::Reset nor ECSqlStatement::ClearBindings on it.
         //! @param [in] ecdb ECDb file
         //! @param [in] ecsql ECSQL string for which to return a prepared statement
@@ -585,11 +585,11 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatementCache final
 
         //! Gets a cached and prepared statement for the specified ECSQL.
         //! If there was no statement in the cache for the ECSQL, a new one will be prepared and cached.
-        //! Otherwise an existing ready-to-use statement will be returned, i.e. clients neither need to call 
+        //! Otherwise an existing ready-to-use statement will be returned, i.e. clients neither need to call
         //! ECSqlStatement::Reset nor ECSqlStatement::ClearBindings on it.
         //! @param [in] ecdb ECDb file
         //! @param [in] ecsql ECSQL string for which to return a prepared statement
-        //! @param [in] token Token required to execute ECSQL INSERT, UPDATE, DELETE statements if 
+        //! @param [in] token Token required to execute ECSQL INSERT, UPDATE, DELETE statements if
         //! the ECDb file was set-up with the "require ECSQL write token" option.
         //! If the option is not set, nullptr can be passed for @p token.
         //! @return Prepared and ready-to-use statement or nullptr in case of preparation or other errors
@@ -597,12 +597,12 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatementCache final
 
         //! Gets a cached and prepared statement for the specified SELECT ECSQL.
         //! @remarks
-        //! This overload is for multi-threading scenarios. See 
+        //! This overload is for multi-threading scenarios. See
         //! @ref BentleyApi::BeSQLite::EC::ECSqlStatement::Prepare(SchemaManager const&, Db const&, Utf8CP) "ECSqlStatement::Prepare(SchemaManager const&, Db const&, Utf8CP)"
         //! for details.
-        //! 
+        //!
         //! If there was no statement in the cache for the ECSQL, a new one will be prepared and cached.
-        //! Otherwise an existing ready-to-use statement will be returned, i.e. clients neither need to call 
+        //! Otherwise an existing ready-to-use statement will be returned, i.e. clients neither need to call
         //! ECSqlStatement::Reset nor ECSqlStatement::ClearBindings on it.
         //! @see BentleyApi::BeSQLite::EC::ECSqlStatement::Prepare(SchemaManager const&, Db const&, Utf8CP)
         //! @param[in] schemaManager SchemaManager that is to be used to parse the ECSQL. e.g. as returned from  @ref BentleyApi::BeSQLite::EC::ECDb::Schemas() "ECDb::Schemas()"
