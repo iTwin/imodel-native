@@ -2249,12 +2249,12 @@ Bentley::DgnPlatform::ModelId ORDConverter::_GetRootModelId()
         if (auto planModelRefP = GeometryModelDgnECDataBinder::GetInstance().GetPlanModelFromModel(rootModelRefP))
             {
             BeAssert(!planModelRefP->Is3d());
-            ORDBRIDGE_LOGW("CIF found a Plan Model '%s' that is 3D.", Utf8String(planModelRefP->GetModelNameCP()).c_str());
+            rootModelId = planModelRefP->GetModelId();
+            ORDBRIDGE_LOGI("CIF found Plan Model '%s' - using it as root-model.", Utf8String(planModelRefP->GetModelNameCP()).c_str());
             }
         else
             {
-            rootModelId = planModelRefP->GetModelId();
-            ORDBRIDGE_LOGI("CIF found Plan Model '%s' - using it as root-model.", Utf8String(planModelRefP->GetModelNameCP()).c_str());
+            ORDBRIDGE_LOGW("CIF couldn't find any Plan Model. Continuing with specified root-model.");
             }
         }
     else
