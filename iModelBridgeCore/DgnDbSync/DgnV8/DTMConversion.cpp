@@ -279,7 +279,10 @@ bool ConvertDTMElement::_UseProxyGraphics(DgnV8EhCR, Converter& converter, Resol
 void SetSymbology(GeometryBuilderR builder, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, Converter& converter, Bentley::DgnPlatform::DTMElementSubHandler::SymbologyParams& displayParams, DgnCategoryId categoryId, DgnSubCategoryId subCategoryId)
     {
     Bentley::DgnPlatform::ElemDisplayParams elParams;
-    
+    GeometryParams params = builder.GetGeometryParams();
+    Bentley::DgnPlatform::NullOutput          output;
+    Bentley::DgnPlatform::NullContext         context (&output);
+
     auto dHandler = v8eh.GetDisplayHandler ();
 
     if (nullptr == dHandler)
@@ -294,13 +297,20 @@ void SetSymbology(GeometryBuilderR builder, DgnV8EhCR v8eh, ResolvedModelMapping
     elParams.SetWeight ((displayParams.GetSymbology().weight != DgnV8Api::WEIGHT_BYCELL) ? displayParams.GetSymbology().weight : elm.hdr.dhdr.symb.weight);
     elParams.SetLineStyle ((displayParams.GetSymbology().style != DgnV8Api::STYLE_BYCELL) ? displayParams.GetSymbology().style : elm.hdr.dhdr.symb.style);
     elParams.SetTransparency (1 - ((1 - displayParams.GetTransparency ()) * (1 - displayParams.GetTransparency())));
-    elParams.SetMaterial (nullptr);
+    elParams.SetIsRenderable(true);
 
+    auto materialParams = dynamic_cast<Bentley::DgnPlatform::DTMElementSubHandler::SymbologyAndMaterialParams*>(&displayParams);
     auto model = v8eh/*drawingInfo.GetSymbologyElement()*/.GetModelRef();
 
-    GeometryParams params = builder.GetGeometryParams();
-    Bentley::DgnPlatform::NullOutput          output;
-    Bentley::DgnPlatform::NullContext         context (&output);
+    if (nullptr != materialParams && 0 != materialParams->GetMaterialElementID())
+        {
+        Bentley::MaterialCP material = DgnPlatform::MaterialManager::GetManagerR().FindMaterial(nullptr, Bentley::DgnPlatform::MaterialId(materialParams->GetMaterialElementID()), *v8eh.GetDgnFileP(), *v8eh.GetDgnModelP(), false);
+        elParams.SetMaterial(material);
+        }
+
+    if (context.GetWantMaterials() && nullptr == elParams.GetMaterial ())
+        elParams.SetMaterial (DgnPlatform::MaterialManager::GetManagerR ().FindMaterialBySymbology (nullptr, elParams.GetLevel (), elParams.GetLineColor (), *model, false, false, &context), true);
+
     auto vi = Bentley::DgnPlatform::ViewInfo::Create(false);
     vi->SetRootModel(model->AsDgnModelP());
     Bentley::DgnPlatform::NonVisibleViewport viewport(*vi);
