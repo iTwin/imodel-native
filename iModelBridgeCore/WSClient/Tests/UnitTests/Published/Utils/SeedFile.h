@@ -8,7 +8,7 @@
 
 #include "WebServicesTestsHelper.h"
 
-//class ReusableFileBaseTest : public WSClientBaseTest
+//struct ReusableFileBaseTest : WSClientBaseTest
 //    {
 //    private:
 //        static std::shared_ptr<ObservableECDb> s_reusableECDb;

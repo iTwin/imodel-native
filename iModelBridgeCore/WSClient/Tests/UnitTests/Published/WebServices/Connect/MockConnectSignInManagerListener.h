@@ -14,7 +14,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct MockConnectSignInManagerListener : public ConnectSignInManager::IListener
+struct MockConnectSignInManagerListener : ConnectSignInManager::IListener
     {
     MOCK_METHOD0(_OnUserTokenExpired, void());
     MOCK_METHOD0(_OnUserChanged, void());

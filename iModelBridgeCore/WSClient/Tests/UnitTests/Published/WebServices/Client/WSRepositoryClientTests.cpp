@@ -4,7 +4,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "WSRepositoryClientTests.h"
+#include "../../Utils/WebServicesTestsHelper.h"
 
 #include <fstream>
 #include <iostream>
@@ -40,17 +40,19 @@ enum class VersionType
     Service
     };
 
-void WSRepositoryClientTests::SetUp()
+struct WSRepositoryClientTests : BaseMockHttpHandlerTest
     {
-    BaseMockHttpHandlerTest::SetUp();
-    ServerInfoProvider::InvalidateAllInfo();
-    }
-
-void WSRepositoryClientTests::TearDown()
-    {
-    ServerInfoProvider::InvalidateAllInfo();
-    BaseMockHttpHandlerTest::TearDown();
-    }
+    void SetUp() override
+        {
+        BaseMockHttpHandlerTest::SetUp();
+        ServerInfoProvider::InvalidateAllInfo();
+        };
+    void TearDown() override
+        {
+        ServerInfoProvider::InvalidateAllInfo();
+        BaseMockHttpHandlerTest::TearDown();
+        };
+    };
 
 Utf8String StubGetMaxUploadSizeResponseBody(uint64_t maxUploadSize, Utf8String instanceId = INSTANCE_PersistenceFileBackable)
     {

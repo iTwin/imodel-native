@@ -4,8 +4,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "DataReadOptionsTests.h"
 
+#include "../../../Utils/WebServicesTestsHelper.h"
 #include <WebServices/Cache/Persistence/DataReadOptions.h>
 #include <WebServices/Cache/Persistence/DataSourceCacheCommon.h>
 
@@ -13,6 +13,8 @@
 
 using namespace ::testing;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
+
+struct DataReadOptionsTests : WSClientBaseTest {};
 
 #ifdef USE_GTEST
 

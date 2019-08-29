@@ -3,7 +3,8 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include "ImsClientTests.h"
+
+#include "ConnectTestsHelper.h"
 #include <WebServices/Connect/ImsClient.h>
 #include <Bentley/Base64Utilities.h>
 #include <WebServices/Configuration/UrlProvider.h>
@@ -11,12 +12,20 @@
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 using namespace ::testing;
 
-void ImsClientTests::SetUp()
+struct ImsClientTests : BaseMockHttpHandlerTest
     {
-    BaseMockHttpHandlerTest::SetUp();
-    m_buddiClient = std::make_shared<StubBuddiClient>();
-    UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &m_localState, m_buddiClient);
-    }
+public:
+    std::shared_ptr<StubBuddiClient> m_buddiClient;
+    RuntimeJsonLocalState m_localState;
+
+public:
+    virtual void SetUp() override
+        {
+        BaseMockHttpHandlerTest::SetUp();
+        m_buddiClient = std::make_shared<StubBuddiClient>();
+        UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &m_localState, m_buddiClient);
+        };
+    };
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2016

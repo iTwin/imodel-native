@@ -3,12 +3,15 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include "SecurityTokenTests.h"
+
+#include "ConnectTestsHelper.h"
 #include <WebServices/Connect/SecurityToken.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 using namespace ::testing;
+
+struct SecurityTokenTests : WSClientBaseTest {};
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2016

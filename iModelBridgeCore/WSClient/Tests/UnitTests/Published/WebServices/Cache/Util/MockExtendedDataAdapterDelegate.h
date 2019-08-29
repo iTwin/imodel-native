@@ -15,19 +15,18 @@ using namespace ::testing;
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct MockExtendedDataAdapterDelegate : public ExtendedDataAdapter::IDelegate
+struct MockExtendedDataAdapterDelegate : ExtendedDataAdapter::IDelegate
     {
-    public:
-        MockExtendedDataAdapterDelegate()
+    MockExtendedDataAdapterDelegate()
+        {
+        ON_CALL(*this, GetHolderKey(_)).WillByDefault(Invoke([] (ECInstanceKeyCR key)
             {
-            ON_CALL(*this, GetHolderKey(_)).WillByDefault(Invoke([] (ECInstanceKeyCR key)
-                {
-                return key;
-                }));
-            }
-        MOCK_METHOD1(GetExtendedDataClass, ECClassCP(ECInstanceKeyCR ownerKey));
-        MOCK_METHOD1(GetExtendedDataRelationshipClass, ECRelationshipClassCP(ECInstanceKeyCR ownerKey));
-        MOCK_METHOD1(GetHolderKey, ECInstanceKey(ECInstanceKeyCR ownerKey));
+            return key;
+            }));
+        }
+    MOCK_METHOD1(GetExtendedDataClass, ECClassCP(ECInstanceKeyCR ownerKey));
+    MOCK_METHOD1(GetExtendedDataRelationshipClass, ECRelationshipClassCP(ECInstanceKeyCR ownerKey));
+    MOCK_METHOD1(GetHolderKey, ECInstanceKey(ECInstanceKeyCR ownerKey));
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

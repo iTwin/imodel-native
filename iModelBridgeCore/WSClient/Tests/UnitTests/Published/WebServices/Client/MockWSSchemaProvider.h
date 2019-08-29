@@ -15,7 +15,7 @@ using namespace ::testing;
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct MockWSSchemaProvider : public IWSSchemaProvider
+struct MockWSSchemaProvider : IWSSchemaProvider
     {
     MOCK_METHOD1(GetSchema, BeFileName(WSInfoCR info));
     };

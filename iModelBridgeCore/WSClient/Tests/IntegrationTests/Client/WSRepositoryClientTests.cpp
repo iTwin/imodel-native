@@ -4,8 +4,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "WSRepositoryClientTests.h"
-
+#include <WebServicesTestsHelper.h>
 #include <Bentley/BeDebugLog.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <WebServices/Connect/ConnectAuthenticationHandler.h>
@@ -17,6 +16,12 @@
 #include <BeHttp/ProxyHttpHandler.h>
 #include <WebServices/Client/WSRepositoryClient.h>
 #include <curl/curl.h>
+
+struct WSRepositoryClientTests : WSClientBaseTest
+    {
+    RuntimeJsonLocalState m_localState;
+    void SetUp();
+    };
 
 void WSRepositoryClientTests::SetUp()
     {

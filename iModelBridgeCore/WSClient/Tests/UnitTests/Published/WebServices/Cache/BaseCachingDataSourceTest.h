@@ -18,7 +18,7 @@
 #include "Transactions/StubCacheTransactionManager.h"
 
 #ifdef USE_GTEST
-class BaseCachingDataSourceTest : public BaseCacheTest
+struct BaseCachingDataSourceTest : BaseCacheTest
     {
     private:
         static std::shared_ptr<MockWSRepositoryClient> s_mockClient;

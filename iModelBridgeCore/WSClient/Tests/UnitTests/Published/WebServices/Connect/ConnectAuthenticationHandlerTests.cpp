@@ -3,13 +3,16 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include "ConnectAuthenticationHandlerTests.h"
+
+#include "ConnectTestsHelper.h"
 #include <WebServices/Connect/ConnectAuthenticationHandler.h>
 #include <Bentley/Base64Utilities.h>
 #include "MockConnectTokenProvider.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 using namespace ::testing;
+
+struct ConnectAuthenticationHandlerTests : BaseMockHttpHandlerTest {};
 
 #ifdef USE_GTEST
 AuthenticationHandler::Attempt StubAttempt(Utf8StringCR url)

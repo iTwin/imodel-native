@@ -4,13 +4,14 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "ChangeManagerTests.h"
-
+#include "BaseCacheTest.h"
 #include "../Util/MockECDbSchemaChangeListener.h"
 
 using namespace ::testing;
 using std::shared_ptr;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
+
+struct ChangeManagerTests : BaseCacheTest {};
 
 #ifdef USE_GTEST
 

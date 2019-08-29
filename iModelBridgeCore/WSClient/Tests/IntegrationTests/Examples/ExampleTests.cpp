@@ -11,8 +11,7 @@
 
 +--------------------------------------------------------------------------------------*/
 
-#include "ExampleTests.h"
-
+#include <WebServicesTestsHelper.h>
 #include <WebServices/Cache/CachingDataSource.h>
 #include <WebServices/Cache/Transactions/CacheTransactionManager.h>
 #include <WebServices/Connect/ConnectAuthenticationHandler.h>
@@ -24,6 +23,12 @@
 #include <WebServices/Configuration/UrlProvider.h>
 
 #include "../../UnitTests/Published/WebServices/Cache/CachingTestsHelper.h"
+
+struct ExampleTests : WSClientBaseTest
+    {
+    RuntimeJsonLocalState m_localState;
+    void SetUp();
+    };
 
 void ExampleTests::SetUp()
     {

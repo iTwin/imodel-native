@@ -4,14 +4,15 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "ISelectProviderTests.h"
-
+#include "../../../Utils/WebServicesTestsHelper.h"
 #include <WebServices/Cache/Util/ISelectProvider.h>
 #include "../CachingTestsHelper.h"
 
 #ifdef USE_GTEST
 using namespace ::testing;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
+
+struct ISelectProviderTests : WSClientBaseTest {};
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15

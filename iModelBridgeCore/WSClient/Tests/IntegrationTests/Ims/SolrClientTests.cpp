@@ -4,15 +4,23 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-
-#include "SolrClientTests.h"
-
+#include <WebServicesTestsHelper.h>
+#include <BeHttp/ProxyHttpHandler.h>
 #include <WebServices/Connect/ConnectAuthenticationHandler.h>
 #include <WebServices/Connect/ConnectSignInManager.h>
 #include <WebServices/Connect/ImsClient.h>
 #include <WebServices/Configuration/UrlProvider.h>
 #include <WebServices/Ims/SolrClient.h>
 #include <WebServices/Ims/SolrQuery.h>
+
+struct SolrClientTests : WSClientBaseTest
+    {
+    RuntimeJsonLocalState m_localState;
+    IHttpHandlerPtr m_proxy;
+    Utf8String m_serverUrl;
+    Credentials m_credentials;
+    void SetUp();
+    };
 
 void SolrClientTests::SetUp()
     {

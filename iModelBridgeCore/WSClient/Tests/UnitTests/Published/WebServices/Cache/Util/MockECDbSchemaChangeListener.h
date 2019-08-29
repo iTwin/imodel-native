@@ -15,10 +15,9 @@ using namespace ::testing;
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct MockECDbSchemaChangeListener : public IECDbSchemaChangeListener
+struct MockECDbSchemaChangeListener : IECDbSchemaChangeListener
     {
-    public:
-        MOCK_METHOD0 (OnSchemaChanged, void ());
+    MOCK_METHOD0(OnSchemaChanged, void ());
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

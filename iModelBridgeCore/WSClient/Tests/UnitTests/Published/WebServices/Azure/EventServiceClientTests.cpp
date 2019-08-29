@@ -3,12 +3,14 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include "EventServiceClientTests.h"
 
+#include "../../Utils/WebServicesTestsHelper.h"
 #include <WebServices/Azure/EventServiceClient.h>
 #include <Bentley/BeThread.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
+
+struct EventServiceClientTests : BaseMockHttpHandlerTest {};
 
 unsigned STDCALL_ATTRIBUTE workThreadHandler(void* arg)
     {

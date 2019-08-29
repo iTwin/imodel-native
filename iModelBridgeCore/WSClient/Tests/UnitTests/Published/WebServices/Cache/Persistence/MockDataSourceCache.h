@@ -18,7 +18,7 @@ using namespace ::testing;
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct MockDataSourceCache : public IDataSourceCache
+struct MockDataSourceCache : IDataSourceCache
     {
     private:
         NiceMock<MockChangeManager> m_changeManager;

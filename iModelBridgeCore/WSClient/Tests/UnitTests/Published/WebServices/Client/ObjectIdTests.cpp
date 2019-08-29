@@ -4,11 +4,12 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "ObjectIdTests.h"
-
+#include "../../Utils/WebServicesTestsHelper.h"
 #include <WebServices/Client/ObjectId.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
+
+struct ObjectIdTests : WSClientBaseTest {};
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015

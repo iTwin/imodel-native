@@ -15,7 +15,7 @@ using namespace ::testing;
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct MockRepositoryInfoStore : public IRepositoryInfoStore
+struct MockRepositoryInfoStore : IRepositoryInfoStore
     {
     MOCK_METHOD1(SetCacheInitialized, BentleyStatus(IDataSourceCache&));
     MOCK_METHOD1(IsCacheInitialized, bool(IDataSourceCache&));

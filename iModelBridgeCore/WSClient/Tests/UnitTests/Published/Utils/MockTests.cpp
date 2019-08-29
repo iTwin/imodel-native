@@ -4,7 +4,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "MockTests.h"
+#include "WebServicesTestsHelper.h"
 
 #ifdef USE_GTEST
 
@@ -33,6 +33,9 @@
 #include <WebServices/iModelHub/Client/FileInfo.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
+
+struct MockTests : WSClientBaseTest {};
+
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     11/15
 +---------------+---------------+---------------+---------------+---------------+------*/

@@ -3,24 +3,28 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
+
+#include "../../Utils/WebServicesTestsHelper.h"
 #include <WebServices/Client/WSClient.h>
-#include "WSClientTests.h"
 #include "MockServerInfoListener.h"
 #include "../../../../../Client/ServerInfoProvider.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
-void WSClientTests::SetUp() 
+struct WSClientTests : BaseMockHttpHandlerTest
     {
-    BaseMockHttpHandlerTest::SetUp();
-    BackDoor::DgnClientFx_Device::Initialize();
-    ServerInfoProvider::InvalidateAllInfo();
-    }
+    void SetUp() override
+        {
+        BaseMockHttpHandlerTest::SetUp();
+        BackDoor::DgnClientFx_Device::Initialize();
+        ServerInfoProvider::InvalidateAllInfo();
+        };
 
-void WSClientTests::TearDown()
-    {
-    BaseMockHttpHandlerTest::TearDown();
-    }
+    void TearDown() override
+        {
+        BaseMockHttpHandlerTest::TearDown();
+        };
+    };
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015

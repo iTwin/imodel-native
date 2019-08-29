@@ -4,11 +4,12 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "DataSourceCacheTests.h"
-
+#include "BaseCacheTest.h"
 #include "../Util/MockECDbSchemaChangeListener.h"
 #include "StubFileManager.h"
 #include <Bentley/BeDebugLog.h>
+
+struct DataSourceCacheTests : BaseCacheTest {};
 
 #ifdef USE_GTEST
 using namespace ::testing;

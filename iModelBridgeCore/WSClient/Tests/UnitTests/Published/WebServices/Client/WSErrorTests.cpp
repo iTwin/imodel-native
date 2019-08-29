@@ -4,10 +4,12 @@
 |
 +--------------------------------------------------------------------------------------*/
 
+#include "../../Utils/WebServicesTestsHelper.h"
 #include <WebServices/Client/WSError.h>
-#include "WSErrorTests.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
+
+struct WSErrorTests : WSClientBaseTest {};
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015

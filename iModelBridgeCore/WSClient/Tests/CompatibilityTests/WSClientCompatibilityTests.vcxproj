@@ -24,9 +24,9 @@
     <ClInclude Include="Disk\DiskRepositoryClient.h" />
     <ClInclude Include="Logging\GenericLogProvider.h" />
     <ClInclude Include="Logging\Logging.h" />
-    <ClInclude Include="RepositoryCompatibilityTests.h" />
     <ClInclude Include="Parser\TestData.h" />
     <ClInclude Include="Logging\GenericLogProviderActivator.h" />
+    <ClInclude Include="RepositoryCompatibilityTests.h" />
     <ClInclude Include="TestsHelper.h" />
     <ClInclude Include="TestsHost.h" />
   </ItemGroup>

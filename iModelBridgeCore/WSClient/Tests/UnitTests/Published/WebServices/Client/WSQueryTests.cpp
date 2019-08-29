@@ -3,12 +3,15 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include "WSQueryTests.h"
+
+#include "../../Utils/WebServicesTestsHelper.h"
 #include <WebServices/Client/WSQuery.h>
 
 using namespace ::testing;
 using namespace ::std;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
+
+struct WSQueryTests : WSClientBaseTest {};
 
 #ifdef USE_GTEST
 /*--------------------------------------------------------------------------------------+

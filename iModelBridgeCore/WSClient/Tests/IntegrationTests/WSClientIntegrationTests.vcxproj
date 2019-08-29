@@ -92,16 +92,10 @@
     <ClCompile Include="TestUtils\TestMain.cpp" />
     <ClCompile Include="Repository\ConnectWorkspaceManagerTests.cpp" />
     <ClCompile Include="Connect\ImsClientTests.cpp" />
-    <ClCompile Include="Client\WSClientTests.cpp" />
     <ClCompile Include="Client\WSRepositoryClientTests.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Cache\CachingDataSourceTests.h" />
-    <ClInclude Include="Cache\ECDbAdapterTests.h" />
     <ClInclude Include="Cache\RepositorySchemaUpgradeTests.h" />
-    <ClInclude Include="Configuration\BuddiClientTests.h" />
-    <ClInclude Include="Configuration\UrlProviderTests.h" />
-    <ClInclude Include="Examples\ExampleTests.h" />
     <ClInclude Include="Repository\Extensions\HierarchicalSearchTests.h" />
     <ClInclude Include="Repository\Extensions\NavigationTests.h" />
     <ClInclude Include="Repository\Extensions\WorkflowStateManagerTests.h" />
@@ -110,9 +104,6 @@
     <ClInclude Include="Repository\WorkspaceTests.h" />
     <ClInclude Include="Repository\WorkspaceUpgradeTests.h" />
     <ClInclude Include="Repository\ConnectWorkspaceManagerTests.h" />
-    <ClInclude Include="Client\WSClientTests.h" />
-    <ClInclude Include="Client\WSRepositoryClientTests.h" />
-    <ClInclude Include="Ims\SolrClientTests.h" />
     <ClInclude Include="TestUtils\WSClientIntegrationTestsHost.h" />
   </ItemGroup>
   <ItemGroup>
