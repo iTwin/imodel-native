@@ -16,7 +16,7 @@
 USING_NAMESPACE_BENTLEY_LOGGING
 
 #define NAVNODES_CACHE_DB_NAME              L"HierarchyCache.db"
-#define NAVNODES_CACHE_DB_VERSION_MAJOR     13
+#define NAVNODES_CACHE_DB_VERSION_MAJOR     14
 #define NAVNODES_CACHE_DB_VERSION_MINOR     0
 #define NAVNODES_CACHE_BINARY_INDEX
 //#define NAVNODES_CACHE_DEBUG
@@ -463,6 +463,7 @@ void NodesCache::Initialize(BeFileNameCR tempDirectory)
                      "[Label] TEXT, "
                      "[UniqueHash] TEXT NOT NULL";
         m_db.CreateTable(NODESCACHE_TABLENAME_Nodes, ddl);
+        m_db.ExecuteSql("CREATE INDEX [IX_Nodes_DataSourceId] ON [" NODESCACHE_TABLENAME_Nodes "]([DataSourceId])");
         m_db.ExecuteSql("CREATE INDEX [IX_Nodes_Hash] ON [" NODESCACHE_TABLENAME_Nodes "]([UniqueHash])");
         }
     if (!m_db.TableExists(NODESCACHE_TABLENAME_NodeKeys))
