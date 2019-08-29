@@ -1749,6 +1749,22 @@ int iModelBridgeFwk::MakeSchemaChanges(iModelBridgeCallOpenCloseFunctions& callC
             if (runningInBulkMode)
                 m_briefcaseDgnDb->BriefcaseManager().EndBulkOperation();
             }
+        //!While opening a briefcase, the bridge could have made some changes. These may not be real changes
+        // like GetDgnDb().GeoLocation().Save(); Dgnv8GeoCord.cpp. So save the file . This will clear the session and txns. Usually empty.
+        //! Push the txns if there are any.
+        DbResult dbres = m_briefcaseDgnDb->SaveChanges(); 
+        if (BeSQLite::BE_SQLITE_OK != dbres)
+            {
+            GetLogger().errorv("Db::SaveChanges failed with status %d", dbres); 
+            return RETURN_STATUS_LOCAL_ERROR;
+            }
+        if (iModelBridge::AnyChangesToPush(*m_briefcaseDgnDb)) // if bridge made any changes, they must be pushed and cleared out before we can make schema changes
+            {                                                                                  
+            if (BSISUCCESS != Briefcase_PullMergePush(" File initialization changes"))
+                return RETURN_STATUS_SERVER_ERROR;
+            }
+  
+        BeAssert(!m_briefcaseDgnDb->Txns().HasLocalChanges());//Put a breakpoint in filtertable to catch any changes.
         }while (hasMoreSchemaChanges);
 
     BeAssert(iModelBridge::HoldsSchemaLock(*m_briefcaseDgnDb));
