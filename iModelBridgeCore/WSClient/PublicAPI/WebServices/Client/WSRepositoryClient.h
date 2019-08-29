@@ -476,9 +476,6 @@ struct IWSRepositoryClient::RequestOptions
         JobOptionsPtr m_jobOptions = std::make_shared<JobOptions>();
 
     public:
-        RequestOptions() {};
-        virtual ~RequestOptions() {};
-
         void SetTransferTimeOut(uint64_t timeOut) {m_transferTimeOut = timeOut;}
         uint64_t GetTransferTimeOut() const {return m_transferTimeOut;}
 
@@ -543,9 +540,6 @@ struct IWSRepositoryClient::JobOptions
         uint32_t    m_maxJobDuratationTimeMs    = 3600000; //1 Hour
 
     public:
-        JobOptions() {};
-        virtual ~JobOptions() {};
-
         //! Enable/Disable request to be executed via Job Api if Possible
         void EnableJobsIfPossible() { m_enableJobsIfPossible = true; }
         void DisableJobs() { m_enableJobsIfPossible = false; }
