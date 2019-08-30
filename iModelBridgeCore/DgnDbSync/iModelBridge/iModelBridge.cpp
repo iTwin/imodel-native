@@ -119,11 +119,14 @@ DgnDbPtr iModelBridge::DoCreateDgnDb(bvector<DgnModelId>& jobModels, Utf8CP root
                        // This also prevents a call to AbandonChanges in _MakeSchemaChanges from undoing what the open calls did.
 
     // Tell the bridge to generate schemas
-    if (BSISUCCESS != _MakeSchemaChanges())
+    bool hasMoreChanges = false;
+    do {
+        if (BSISUCCESS != _MakeSchemaChanges(hasMoreChanges))
         {
-        LOG.fatalv("_MakeSchemaChanges failed");
-        return nullptr; // caller must call abandon changes
+            LOG.fatalv("_MakeSchemaChanges failed");
+            return nullptr; // caller must call abandon changes
         }
+    } while (hasMoreChanges);
     //We will need import the provenance schema
     bool madeChanges;
     

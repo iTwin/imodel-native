@@ -32,6 +32,14 @@ USING_NAMESPACE_BENTLEY_SCALABLEMESH_SCHEMA
 Bentley::BentleyStatus ConvertDTMElementRefTo3SM(DgnV8EhCR v8el, WCharCP smFile);
 
 //----------------------------------------------------------------------------------------
+// @bsimethod                                    Daryl.Holmwood                      8/19
+//+---------------+---------------+---------------+---------------+---------------+-------
+static bool DoTerrainModelConversion(Converter& converter)
+    {
+    return converter.GetParams().DoTerrainModelConversion() || converter.GetConfig().GetOptionValueBool("DoTerrainModelConversion", false);
+    }
+
+//----------------------------------------------------------------------------------------
 // @bsimethod                                    Daryl.Holmwood                      9/19
 //+---------------+---------------+---------------+---------------+---------------+-------
 ConvertToDgnDbElementExtension::Result ConvertDTMElement::DoConvert(DgnV8EhCR v8el, WCharCP url, Converter& converter, ResolvedModelMapping const& v8mm)
@@ -174,6 +182,9 @@ bool IsStaticTerrain(DgnV8EhCR v8el, Converter& converter, Bentley::TerrainModel
 //+---------------+---------------+---------------+---------------+---------------+-------
 ConvertToDgnDbElementExtension::Result ConvertDTMElement::_PreConvertElement(DgnV8EhCR v8el, Converter& converter, ResolvedModelMapping const& v8mm)
     {
+    if (!DoTerrainModelConversion(converter))
+        return Result::Proceed;
+
     Bentley::RefCountedPtr<Bentley::TerrainModel::Element::DTMDataRef> dataRef;
     if (SUCCESS != Bentley::TerrainModel::Element::DTMElementHandlerManager::GetDTMDataRef(dataRef, v8el))
         return Result::SkipElement;
@@ -198,9 +209,9 @@ ConvertToDgnDbElementExtension::Result ConvertDTMElement::_PreConvertElement(Dgn
     if (!IsStaticTerrain(v8el, converter, *bcDTM))
         return Result::Proceed;
 
-    if (!DgnV8Api::ConfigurationManager::IsVariableDefinedAndTrue(L"DGNDB_REALITY_MODEL_UPLOAD"))
+    if (!converter.GetParams().DoRealityDataUpload() && !converter.GetConfig().GetOptionValueBool("DoRealityDataUpload", false))
         return Result::Proceed;
-        
+
     DgnPlatformLib::Host::IKnownLocationsAdmin& locationAdmin(DgnPlatformLib::QueryHost()->GetIKnownLocationsAdmin());
     BeFileName tempPath = locationAdmin.GetLocalTempDirectoryBaseName();
     WString file;
@@ -255,8 +266,10 @@ ConvertToDgnDbElementExtension::Result ConvertDTMElement::_PreConvertElement(Dgn
 //----------------------------------------------------------------------------------------
 // @bsimethod                                    Daryl.Holmwood                      9/19
 //+---------------+---------------+---------------+---------------+---------------+-------
-bool ConvertDTMElement::_UseProxyGraphics(DgnV8EhCR, Converter&, ResolvedModelMapping const&)
+bool ConvertDTMElement::_UseProxyGraphics(DgnV8EhCR, Converter& converter, ResolvedModelMapping const&)
     {
+    if (!DoTerrainModelConversion(converter))
+        return true;
     return false;
     }
 
@@ -266,7 +279,10 @@ bool ConvertDTMElement::_UseProxyGraphics(DgnV8EhCR, Converter&, ResolvedModelMa
 void SetSymbology(GeometryBuilderR builder, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, Converter& converter, Bentley::DgnPlatform::DTMElementSubHandler::SymbologyParams& displayParams, DgnCategoryId categoryId, DgnSubCategoryId subCategoryId)
     {
     Bentley::DgnPlatform::ElemDisplayParams elParams;
-    
+    GeometryParams params = builder.GetGeometryParams();
+    Bentley::DgnPlatform::NullOutput          output;
+    Bentley::DgnPlatform::NullContext         context (&output);
+
     auto dHandler = v8eh.GetDisplayHandler ();
 
     if (nullptr == dHandler)
@@ -281,13 +297,20 @@ void SetSymbology(GeometryBuilderR builder, DgnV8EhCR v8eh, ResolvedModelMapping
     elParams.SetWeight ((displayParams.GetSymbology().weight != DgnV8Api::WEIGHT_BYCELL) ? displayParams.GetSymbology().weight : elm.hdr.dhdr.symb.weight);
     elParams.SetLineStyle ((displayParams.GetSymbology().style != DgnV8Api::STYLE_BYCELL) ? displayParams.GetSymbology().style : elm.hdr.dhdr.symb.style);
     elParams.SetTransparency (1 - ((1 - displayParams.GetTransparency ()) * (1 - displayParams.GetTransparency())));
-    elParams.SetMaterial (nullptr);
+    elParams.SetIsRenderable(true);
 
+    auto materialParams = dynamic_cast<Bentley::DgnPlatform::DTMElementSubHandler::SymbologyAndMaterialParams*>(&displayParams);
     auto model = v8eh/*drawingInfo.GetSymbologyElement()*/.GetModelRef();
 
-    GeometryParams params = builder.GetGeometryParams();
-    Bentley::DgnPlatform::NullOutput          output;
-    Bentley::DgnPlatform::NullContext         context (&output);
+    if (nullptr != materialParams && 0 != materialParams->GetMaterialElementID())
+        {
+        Bentley::MaterialCP material = DgnPlatform::MaterialManager::GetManagerR().FindMaterial(nullptr, Bentley::DgnPlatform::MaterialId(materialParams->GetMaterialElementID()), *v8eh.GetDgnFileP(), *v8eh.GetDgnModelP(), false);
+        elParams.SetMaterial(material);
+        }
+
+    if (context.GetWantMaterials() && nullptr == elParams.GetMaterial ())
+        elParams.SetMaterial (DgnPlatform::MaterialManager::GetManagerR ().FindMaterialBySymbology (nullptr, elParams.GetLevel (), elParams.GetLineColor (), *model, false, false, &context), true);
+
     auto vi = Bentley::DgnPlatform::ViewInfo::Create(false);
     vi->SetRootModel(model->AsDgnModelP());
     Bentley::DgnPlatform::NonVisibleViewport viewport(*vi);
@@ -331,7 +354,6 @@ void SetSymbology(GeometryBuilderR builder, DgnV8EhCR v8eh, ResolvedModelMapping
             }
         }
     params.Resolve(converter.GetDgnDb()); // Need to be able to check for a stroked linestyle...
-
     builder.Append(params);
     }
 
@@ -446,7 +468,6 @@ void CreateMesh(Bentley::TerrainModel::BcDTMR dtm, Bentley::DgnPlatform::DTMElem
     if (useOneBuilder && builder.IsValid())
         {
         auto gel = Converter::CreateNewElement(model, childClassId, categoryId, elementCode, "Mesh");
-
         if (gel.IsValid() && SUCCESS == builder->Finish(*gel->ToGeometrySourceP()))
             {
             ElementConversionResults resultsForChild;
@@ -534,6 +555,8 @@ void CreateFeatures(Bentley::DgnPlatform::DTMElementSubHandler::SymbologyParams&
 //+---------------+---------------+---------------+---------------+---------------+-------
 void ConvertDTMElement::_ProcessResults(ElementConversionResults& results, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, Converter& converter)
     {
+    if (!DoTerrainModelConversion(converter))
+        return;
     bool hasPrimaryInstance = false; // ecContent.m_primaryV8Instance != nullptr;
     DgnCategoryId categoryId;
     DgnClassId elementClassId;
@@ -614,7 +637,7 @@ void ConvertDTMElement::_ProcessResults(ElementConversionResults& results, DgnV8
     subCategoryId = converter.GetOrCreateSubCategoryId(categoryId, "Mesh");
     newCategoryId = DgnSubCategory::QueryCategoryId(converter.GetDgnDb(), subCategoryId);
 
-    Bentley::DgnPlatform::DTMSubElementIter iter(v8eh);
+    Bentley::DgnPlatform::DTMSubElementIter iter(v8eh, true);
 
     for (; iter.IsValid(); iter.ToNext())
         {
@@ -664,9 +687,6 @@ void ConvertDTMElement::_ProcessResults(ElementConversionResults& results, DgnV8
 //+---------------+---------------+---------------+---------------+---------------+-------
 void ConvertDTMElement::Register()
     {
-    if (!DgnV8Api::ConfigurationManager::IsVariableDefinedAndTrue(L"DGNDB_DTMTOTILES"))
-        return;
-
     ConvertDTMElement* instance = new ConvertDTMElement();
     const int TMElementMajorId = 22764;
     const int ELEMENTHANDLER_DTMELEMENT = 11;

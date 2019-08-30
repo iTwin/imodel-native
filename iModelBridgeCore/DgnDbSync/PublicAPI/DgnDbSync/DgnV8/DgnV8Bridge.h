@@ -103,7 +103,7 @@ protected:
     DGNV8_BRIDGE_EXPORT BentleyStatus _OpenSource() override;
     DGNV8_BRIDGE_EXPORT void _CloseSource(BentleyStatus , iModelBridge::ClosePurpose) override;
     DGNV8_BRIDGE_EXPORT BentleyStatus _DetectDeletedDocuments() override;
-    DGNV8_BRIDGE_EXPORT BentleyStatus _MakeSchemaChanges() override;
+    DGNV8_BRIDGE_EXPORT BentleyStatus _MakeSchemaChanges(bool& hasMoreChanges) override;
 
     DgnFontCP _TryResolveFont(DgnFontCP font) override {return m_converter->TryResolveFont(font);}
 
