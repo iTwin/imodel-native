@@ -539,6 +539,8 @@ public:
     DGNDBSYNC_EXPORT bool IsElementInNamedGroup(DgnElementId sourceId, DgnElementId targetId);
     //! @}
 
+    BentleyStatus AddElementToNamedGroup(DgnElementId sourceId, DgnElementId targetId);
+
     //! Checks to see if the given V8File has any associated image files and if so, checks each one to see if it has changed
     //! @param[in] fileId - SyncInfo id of the V8File
     DGNDBSYNC_EXPORT bool FileHasChangedUriContent(RepositoryLinkId fileId);

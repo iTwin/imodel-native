@@ -1443,7 +1443,8 @@ BentleyApi::BentleyStatus Converter::ConvertNamedGroupsRelationshipsInModel(DgnV
                     }
 
                 GroupInformationElementPtr group = elementTable.GetForEdit<GroupInformationElement>(m_parentId);
-                if (group.IsValid() && ! m_converter.GetSyncInfo().IsElementInNamedGroup(m_parentId, childElementId))
+                bool isInGroup = m_converter.GetSyncInfo().IsElementInNamedGroup(m_parentId, childElementId);
+                if (group.IsValid() && !isInGroup)
                     {
                     if (Utf8String::IsNullOrEmpty(group->GetUserLabel()))
                         group->SetUserLabel(Utf8String(ng->GetName().c_str()).c_str());
@@ -1453,6 +1454,12 @@ BentleyApi::BentleyStatus Converter::ConvertNamedGroupsRelationshipsInModel(DgnV
                         Utf8String error;
                         error.Sprintf("Failed to add child element %s to group %" PRIu64 "", Converter::IssueReporter::FmtElement(memberEh).c_str(), m_parentId.GetValue());
                         m_converter.ReportIssue(IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
+                        }
+                    if (BentleyApi::SUCCESS != m_converter.GetSyncInfo().AddElementToNamedGroup(m_parentId, childElementId))
+                        {
+                        Utf8String info;
+                        info.Sprintf("Failed to add %" PRIu64 "(%s) to group %" PRIu64, childElementId.GetValue(), Converter::IssueReporter::FmtElement(memberEh).c_str(), m_parentId.GetValue());
+                        LOG.warning(info.c_str());
                         }
                     }
 
