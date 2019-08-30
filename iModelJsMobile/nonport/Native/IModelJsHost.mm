@@ -5,7 +5,15 @@
 //  Created by Affan Khan on 11/6/18.
 //  Copyright © 2018 Affan Khan. All rights reserved.
 //
+
+// Note: the following MUST be above any iOS includes, since there is a B0 macro
+// buried in the bowels of the iOS includes that causes a compile error in some file
+// included in DgnPlatformLib with a function definition that uses B0 as a parameter.
+#include <DgnPlatform/DgnPlatformLib.h>
+#include <BeSQLite/L10N.h>
+
 #import "PublicAPI/IModelJsHost/IModelJsHost.h"
+#import <UIKit/UIKit.h>
 
 #import <Foundation/Foundation.h>
 #import <JavaScriptCore/JavaScriptCore.h>
@@ -18,6 +26,10 @@
 #import "Bindings/VM.h"
 #import "Bindings/NativeModule.h"
 #import "Bindings/WindowTimers.h"
+
+USING_NAMESPACE_BENTLEY_DGN
+USING_NAMESPACE_BENTLEY_SQLITE
+
 @implementation IModelJsHost {
     JSContext* _jsContext;
     BentleyApi::iModelJs::ServicesTier::UvHostPtr _host;
@@ -34,6 +46,26 @@ extern "C" {
      });
 
     return sharedInstance;
+}
+- (id)init {
+    if ((self = [super init]) != nil) {
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(applicationWillResignActive) name:UIApplicationWillResignActiveNotification object:nil];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(applicationDidBecomeActive) name:UIApplicationDidBecomeActiveNotification object:nil];
+    }
+    return self;
+}
+- (void)dealloc {
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+}
+- (void)applicationWillResignActive {
+    DgnPlatformLib::GetHost().GetFontAdmin().Suspend();
+    L10N::Suspend();
+}
+- (void)applicationDidBecomeActive {
+    // Note: the order probably doesn't matter, but these calls are in the reverse order
+    // of the calls in applicationWillResignActive, just to be safe.
+    L10N::Resume();
+    DgnPlatformLib::GetHost().GetFontAdmin().Resume();
 }
 - (BOOL)isReady {
     if (_host.IsValid() && _host->IsReady())
