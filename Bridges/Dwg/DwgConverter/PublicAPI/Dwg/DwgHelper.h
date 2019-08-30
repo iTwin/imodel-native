@@ -15,6 +15,12 @@
 #define SCHEMAName_AttributeDefinitions     "DwgAttributeDefinitions"
 #define SCHEMALabel_AttributeDefinitions    "DWG Attribute Definitions"
 #define SCHEMAAlias_AttributeDefinitions    "DwgAttdefs"
+
+#define SCHEMAName_AecPropertySets          "AdskAecPropertySets"
+#define SCHEMALabel_AecPropertySets         "Autodesk AEC Property Set Definitions"
+#define SCHEMAAlias_AecPropertySets         "AdskPset"
+#define SCHEMADescription_AecPSets          "A schema created from Autodesk AEC Property Set definitions"
+
 #define REALDWG_REGISTRY_ROOTKEY            L"REALDWG_REGISTRY_ROOTKEY"
 #define ISVALID_Thickness(t)                (fabs(t) > 1.0e-8)
 #define ISVALID_Distance(d)                 (fabs(d) > 1.0e-8)
@@ -68,6 +74,8 @@ public:
     DWG_EXPORT static Utf8String       GetAttrdefECSchemaName (DwgDbDatabaseCP dwg);
     DWG_EXPORT static Utf8String       GetAttrdefECSchemaAlias (DwgDbDatabaseCP dwg);
     DWG_EXPORT static Utf8String       GetAttrdefECClassNameFromBlockName (WCharCP blockName);
+    DWG_EXPORT static Utf8String       ValidateECNameFrom (DwgStringCR name);
+    DWG_EXPORT static Utf8String       ValidateECNameFrom (char const* name);
     DWG_EXPORT static DRange2d         GetRangeFrom (DPoint2dCR center, double width, double height);
     DWG_EXPORT static double           GetAbsolutePDSIZE (double pdsize, double vportHeight);
     DWG_EXPORT static ICurvePrimitivePtr CreateCurvePrimitive (DwgDbLineCR arc, TransformCP transform = nullptr);

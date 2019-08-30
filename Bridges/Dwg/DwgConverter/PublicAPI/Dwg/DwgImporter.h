@@ -807,17 +807,17 @@ public:
     struct PresentationRuleContent
         {
     private:
-        Utf8String  m_attrdefClassName;
+        Utf8String  m_relationship;
         Utf8String  m_hostElementClass;
         Utf8String  m_hostElementSchema;
     public:
-        explicit PresentationRuleContent (Utf8StringCR a, Utf8StringCR c, Utf8StringCR s) : m_attrdefClassName(a), m_hostElementClass(c), m_hostElementSchema(s) {}
-        Utf8StringCR    GetAttrdefClass () const { return m_attrdefClassName; }
+        explicit PresentationRuleContent (Utf8StringCR r, Utf8StringCR c, Utf8StringCR s) : m_relationship(r), m_hostElementClass(c), m_hostElementSchema(s) {}
+        Utf8StringCR    GetRelationship () const { return m_relationship; }
         Utf8StringCR    GetHostElementClass () const { return m_hostElementClass; }
         Utf8StringCR    GetHostElementSchema () const { return m_hostElementSchema; }
         bool operator==(PresentationRuleContent const& c) const
             {
-            return m_attrdefClassName.Equals(c.GetAttrdefClass()) && m_hostElementClass.Equals(c.GetHostElementClass()) && m_hostElementSchema.Equals(c.GetHostElementSchema());
+            return m_relationship.Equals(c.GetRelationship()) && m_hostElementClass.Equals(c.GetHostElementClass()) && m_hostElementSchema.Equals(c.GetHostElementSchema());
             }
         };  // PresentationRuleContent
     typedef bvector<PresentationRuleContent>    T_PresentationRuleContents;
@@ -1008,6 +1008,7 @@ protected:
     uint32_t                    m_layersImported;
     MessageCenter               m_messageCenter;
     ECN::ECSchemaCP             m_attributeDefinitionSchema;
+    ECN::ECSchemaCP             m_aecPropertySetSchema;
     T_ConstantBlockAttrdefList  m_constantBlockAttrdefList;
     DgnModelId                  m_sheetListModelId;
     DgnModelId                  m_drawingListModelId;
@@ -1037,9 +1038,8 @@ private:
     Utf8String              ComputeModelName (Utf8StringR proposedName, BeFileNameCR baseFileName, BeFileNameCR refPath, Utf8CP inSuffix, DgnClassId modelType);
     BentleyStatus           ImportXrefModelsFrom (DwgXRefHolder& xref, SubjectCR parentSubject, bool& hasPushedReferencesSubject);
     ECN::ECObjectsStatus    AddAttrdefECClassFromBlock (ECN::ECSchemaPtr& schema, DwgDbBlockTableRecordCR block);
-    void                    ImportAttributeDefinitionSchema (ECN::ECSchemaR attrdefSchema);
-    void                    ImportAecDbPropertySetDefs ();
-    void                    ImportDomainSchema (WCharCP fileName, DgnDomain& domain);
+    ECN::ECSchemaPtr        CreateAecPropertySetSchema ();
+    SchemaStatus            ImportDwgSchemas (bvector<ECN::ECSchemaPtr>& dwgSchemas);
     void                    SaveViewDefinition (ViewControllerR viewController);
     void                    CheckSameRootModelAndUnits ();
     void                    ComputeDefaultImportJobName (Utf8StringCR rootModelName) const;
@@ -1104,13 +1104,13 @@ protected:
     //! @see public method MakeSchemaChanges
     //! @{
     //! Cache a PresentationRule content of a host element which must be seperated from the modelspace as a PhysicalObject and a paperspace as a DrawingGraphic.
-    DWG_EXPORT BentleyStatus  AddPresentationRuleContent (DgnElementCR hostElement, Utf8StringCR attrdefName);
+    DWG_EXPORT virtual BentleyStatus  _AddPresentationRuleContent (DgnElementCR hostElement, ECN::ECClassCR sourceClass);
     //! Create and embed PresentationRules for DwgAttributeDefinitions schema:
     DWG_EXPORT virtual BentleyStatus  _EmbedPresentationRules ();
     //! This method is called while the framework holds the schema locks for the bridge. Override this method to update your schemas. The default implementation updates DwgAttributeDefinitions schema.
-    DWG_EXPORT virtual BentleyStatus   _MakeSchemaChanges ();
+    DWG_EXPORT virtual BentleyStatus  _MakeSchemaChanges ();
     //! This method is called while the framework holds the dictionary locks for the bridge. The default implementation updates shared DefinitionElements from DWG symbol tables.
-    DWG_EXPORT virtual BentleyStatus   _MakeDefinitionChanges (SubjectCR);
+    DWG_EXPORT virtual BentleyStatus  _MakeDefinitionChanges (SubjectCR);
 
     //! @name  Creating DgnModels for DWG
     //! @{
@@ -1224,6 +1224,10 @@ protected:
     DWG_EXPORT virtual BentleyStatus  _ImportXReference (ElementImportResults& results, ElementImportInputs& inputs);
     //! Import a normal block reference entity
     DWG_EXPORT virtual BentleyStatus  _ImportBlockReference (ElementImportResults& results, ElementImportInputs& inputs);
+    //! Called at the end of _ImportEntity or _ImportEntityByProtocolExtension.  Default implementation is to import AecDbPropertySets as extended dictionaries.
+    //! @see _ImportEntity
+    //! @see _ImportEntityByProtocolExtension
+    DWG_EXPORT virtual BentleyStatus  _PostImportEntity (ElementImportResults& results, ElementImportInputs& inputs);
     //! This method is called to setup ElementCreatParams for each entity to be imported by default:
     DWG_EXPORT virtual BentleyStatus  _GetElementCreateParams (ElementCreateParams& params, TransformCR toDgn, DwgDbEntityCR entity, Utf8CP desiredCode = nullptr);
     //! Determine DgnClassId for an entity by its owner block
@@ -1353,6 +1357,7 @@ public:
     T_MaterialIdMap&            GetImportedDgnMaterials () { return m_importedMaterials; }
     void                        AddDgnMaterialTexture (Utf8StringCR fileName, DgnTextureId texture);
     ECN::ECSchemaCP             GetAttributeDefinitionSchema () { return m_attributeDefinitionSchema; }
+    ECN::ECSchemaCP             GetAecPropertySetSchema () { return m_aecPropertySetSchema; }
     bool                        GetConstantAttrdefIdsFor (DwgDbObjectIdArray& ids, DwgDbObjectIdCR blockId);
     //! Get a spatial category and/or a sub-category for a modelspace entity layer. The syncInfo is read in and cached for fast retrieval.
     DgnCategoryId               GetSpatialCategory (DgnSubCategoryId& subCategoryId, DwgDbObjectIdCR layerId, DwgDbDatabaseP xrefDwg = nullptr);

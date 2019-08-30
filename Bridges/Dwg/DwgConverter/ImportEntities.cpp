@@ -400,10 +400,11 @@ BentleyStatus   DwgImporter::_ImportEntityByProtocolExtension (ElementImportResu
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   DwgImporter::ImportEntity (ElementImportResults& results, ElementImportInputs& inputs)
     {
+    BentleyStatus   status = BSIERROR;
     // if the entity is extended to support ToDgnDb method, let it take over the importing:
-    DwgDbEntityPtr&         entity = inputs.m_entity;
+    DwgDbEntityPtr& entity = inputs.m_entity;
     if (entity.IsNull())
-        return  BSIERROR;
+        return  status;
 
 #ifdef DEBUG
     uint64_t    entityId = entity->GetObjectId().ToUInt64 ();
@@ -411,9 +412,14 @@ BentleyStatus   DwgImporter::ImportEntity (ElementImportResults& results, Elemen
 
     DwgProtocolExtension*   objExt = DwgProtocolExtension::Cast (entity->QueryX(DwgProtocolExtension::Desc()));
     if (nullptr != objExt)
-        return  this->_ImportEntityByProtocolExtension (results, inputs, *objExt);
+        status = this->_ImportEntityByProtocolExtension (results, inputs, *objExt);
+    else
+        status = this->_ImportEntity (results, inputs);
 
-    return  this->_ImportEntity (results, inputs);
+    if (status == BSISUCCESS)
+        this->_PostImportEntity (results, inputs);
+
+    return  status;
     }
 
 /*---------------------------------------------------------------------------------**//**

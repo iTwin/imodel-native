@@ -1203,6 +1203,26 @@ Utf8String      DwgHelper::GetAttrdefECClassNameFromBlockName (WCharCP blockName
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/19
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String      DwgHelper::ValidateECNameFrom (DwgStringCR name)
+    {
+    Utf8String  validName;
+    ECNameValidation::EncodeToValidName (validName, name.IsEmpty() ? "??" : Utf8String(name.c_str()));
+    return  validName;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/19
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String      DwgHelper::ValidateECNameFrom (char const* name)
+    {
+    Utf8String  validName;
+    ECNameValidation::EncodeToValidName (validName, (name == nullptr || name[0] == 0) ? "??" : name);
+    return  validName;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 DRange2d        DwgHelper::GetRangeFrom (DPoint2dCR center, double width, double height)

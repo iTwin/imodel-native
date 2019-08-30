@@ -49,6 +49,10 @@ LINKER_LIBRARIES    + $(ContextSubpartsLibs)WebServicesClient$(libext)
 LINKER_LIBRARIES_DELAYLOADED = $(ContextSubpartsLibs)Bentley$(libext)
 LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)DgnPlatform$(libext)
 
+%if $(DWGTOOLKIT) == "OpenDwg"
+LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)OpenDwgDbExchange$(libext)
+%endif
+
 DLM_NAME            = $(appName)
 DLM_DEST            = $(o)
 DLM_OBJECT_DEST     = $(o)

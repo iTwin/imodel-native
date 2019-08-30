@@ -326,7 +326,7 @@ BentleyStatus   AttributeFactory::CreateElements (DwgDbBlockReferenceCR blockRef
         {
         if (DgnElement::GenericMultiAspect::AddAspect(m_hostElement, *m_ecInstance.get()) == DgnDbStatus::Success)
             {
-            m_importer.AddPresentationRuleContent (m_hostElement, m_ecInstance->GetClass().GetName());
+            m_importer._AddPresentationRuleContent (m_hostElement, m_ecInstance->GetClass());
             status = BSISUCCESS;
             }
         }
@@ -489,7 +489,7 @@ bool            DwgImporter::GetConstantAttrdefIdsFor (DwgDbObjectIdArray& ids, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DwgImporter::AddPresentationRuleContent (DgnElementCR hostElement, Utf8StringCR attrdefName)
+BentleyStatus   DwgImporter::_AddPresentationRuleContent (DgnElementCR hostElement, ECClassCR sourceClass)
     {
     /*-----------------------------------------------------------------------------------
     Cache PresentationRules applied in the modelspace and/or paperspaces.
@@ -501,7 +501,10 @@ BentleyStatus   DwgImporter::AddPresentationRuleContent (DgnElementCR hostElemen
     if (nullptr == elementClass)
         return  BentleyStatus::BSIERROR;
 
-    PresentationRuleContent content(attrdefName, elementClass->GetName(),  elementClass->GetSchema().GetName());
+    // relating property ECSchema:ECClass name from the source EClass
+    Utf8PrintfString related("%s:%s", sourceClass.GetSchema().GetName().c_str(), sourceClass.GetName().c_str());
+
+    PresentationRuleContent content(related, elementClass->GetName(),  elementClass->GetSchema().GetName());
 
     auto found = std::find_if (m_presentationRuleContents.begin(), m_presentationRuleContents.end(), [&](PresentationRuleContent const& c){return c == content;});
     if (found == m_presentationRuleContents.end())
@@ -522,11 +525,11 @@ BentleyStatus   DwgImporter::_EmbedPresentationRules ()
     // db file name
     Utf8String fileName(this->GetDgnDb().GetFileName().GetFileNameWithoutExtension().c_str());
     // supported schemas
-    Utf8PrintfString supported("%s,Generic", SCHEMAName_AttributeDefinitions);
-    // DwgAttributeDefinition schema specific
-    Utf8PrintfString purpose("%s specific", SCHEMAName_AttributeDefinitions);
+    Utf8PrintfString supported("%s,%s,Generic", SCHEMAName_AttributeDefinitions, SCHEMAName_AecPropertySets);
+    // DwgAttributeDefinition & AdskAecPropertySets schema specific
+    Utf8PrintfString purpose("%s and %ls specific", SCHEMAName_AttributeDefinitions, SCHEMAName_AecPropertySets);
     
-    PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance (fileName, 1, 0, true, purpose, supported, "", false);
+    PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance (fileName, 2, 0, true, purpose, supported, "", false);
     if (!ruleset.IsValid())
         return  BSIERROR;
 
@@ -542,8 +545,7 @@ BentleyStatus   DwgImporter::_EmbedPresentationRules ()
 
         ruleset->AddPresentationRule (*modifier);
 
-        // relating property DwgAttributeDefinition:ECClass name from the attrdef tag:
-        Utf8PrintfString    related("%s:%s", SCHEMAName_AttributeDefinitions, content.GetAttrdefClass().c_str());
+        auto related = content.GetRelationship ();
         RelatedPropertiesSpecificationP prop = new RelatedPropertiesSpecification (RequiredRelationDirection_Forward, multiAspect, related, "", RelationshipMeaning::SameInstance);
         if (nullptr == prop)
             return  BSIERROR;

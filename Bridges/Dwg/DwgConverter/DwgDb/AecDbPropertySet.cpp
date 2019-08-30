@@ -19,44 +19,123 @@ USING_NAMESPACE_DWGDB
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          08/19
 +---------------+---------------+---------------+---------------+---------------+------*/
+static bool AddArrayToJson (rapidjson::Document& json, rapidjson::Value& jsKey, AECVariant const& variant)
+    {
+    auto odArray = variant.GetArray ();
+    if (odArray.empty())
+        return  false;
+
+    auto& allocator = json.GetAllocator ();
+    rapidjson::Value jsArray(rapidjson::kArrayType);
+
+    for (auto iter = odArray.begin(); iter != odArray.end(); ++iter)
+        {
+        switch (iter->GetType())
+            {
+            case AECVariant::eInt32:
+            case AECVariant::eUInt32:
+                jsArray.PushBack (iter->GetInt32(), allocator);
+                break;
+            case AECVariant::eReal:
+                jsArray.PushBack (iter->GetDouble(), allocator);
+                break;
+            case AECVariant::eBool:
+                jsArray.PushBack (iter->GetBool(), allocator);
+                break;
+            case AECVariant::eString:
+                {
+                Utf8String utf8str(reinterpret_cast<WCharCP>(iter->GetString().c_str()));
+                jsArray.PushBack (rapidjson::Value(utf8str.c_str(), allocator), allocator);
+                break;
+                }
+            case AECVariant::eVariantArray:
+                // WIP - need test case to support nested array
+                BeAssert (false && "Nested array not supported yet!");
+                break;
+            }
+        }
+    if (jsArray.Empty())
+        return  false;
+
+    json.AddMember (jsKey, jsArray, allocator);
+    return  true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/19
++---------------+---------------+---------------+---------------+---------------+------*/
 static bool AddVariantToJson (rapidjson::Document& json, OdString const& name, AECVariant const& variant)
     {
     auto& allocator = json.GetAllocator ();
-    Utf8String  utf8name(reinterpret_cast<WCharCP>(name.c_str()));
-    rapidjson::Value jsonkey(utf8name.c_str(), allocator);
+    Utf8String  utf8Name(reinterpret_cast<WCharCP>(name.c_str()));
+    rapidjson::Value jsKey(utf8Name.c_str(), allocator);
 
     switch (variant.GetType())
         {
         case AECVariant::eInt32:
         case AECVariant::eUInt32:
-            json.AddMember (jsonkey, (int)variant.GetInt32(), allocator);
+            json.AddMember (jsKey, (int)variant.GetInt32(), allocator);
             break;
         case AECVariant::eReal:
-            json.AddMember (jsonkey, variant.GetDouble(), allocator);
+            json.AddMember (jsKey, variant.GetDouble(), allocator);
             break;
         case AECVariant::eBool:
-            json.AddMember (jsonkey, variant.GetBool(), allocator);
+            json.AddMember (jsKey, variant.GetBool(), allocator);
             break;
         case AECVariant::eString:
             {
             Utf8String utf8str(reinterpret_cast<WCharCP>(variant.GetString().c_str()));
-            json.AddMember (jsonkey, rapidjson::Value(utf8str.c_str(), allocator), allocator);
+            json.AddMember (jsKey, rapidjson::Value(utf8str.c_str(), allocator), allocator);
             break;
             }
         case AECVariant::eVariantArray:
-            // WIP
+            AddArrayToJson (json, jsKey, variant);
             break;
         default:
             return  false;
         }
     return  true;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static DwgDbStatus ParsePSetById (rapidjson::Document& json, AECPropertyExtensionBase& propExtractor, OdDbObject* entity, OdDbObjectId const& aecpsetId)
+    {
+    AECDbPropertySetPtr propertySet = aecpsetId.openObject();
+    if (propertySet.isNull())
+        return  DwgDbStatus::InvalidInput;
+
+    AECDbPropertySetDefPtr propsetDef = propertySet->GetPropertySetDef().openObject();
+    if (propsetDef.isNull())
+        return  DwgDbStatus::UnknownError;
+
+    auto count = propsetDef->GetPropertyDefCount();
+    for (OdUInt32 i = 0; i < count; i++)
+        {
+        const AECPropertyDefSubPtr def = propsetDef->GetPropertyDefByPosition(i);
+        if (def.isNull())
+            continue;
+
+        auto name = def->GetName();
+
+        AECVariant  var;
+        if (def->IsAutomatic())
+            var = propExtractor.GetAutomaticProperty(entity, def->GetName(), def->GetDataFormat());
+        else
+            var = propExtractor.GetProperty(entity, propsetDef->objectId(), def->GetIndex(), def->GetDataFormat());
+
+        AddVariantToJson (json, name, var);
+        }
+
+    return json.ObjectEmpty() ? DwgDbStatus::InvalidInput : DwgDbStatus::Success;
+    }
 #endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          08/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-DwgDbStatus UtilsLib::ParseAecDbPropertySet (rapidjson::Document& json, DwgDbObjectId entityId)
+DwgDbStatus UtilsLib::ParseAecDbPropertySet (rapidjson::Document& json, DwgDbObjectId entityId, DwgDbObjectIdCP aecpsetId)
     {
     DwgDbStatus status = DwgDbStatus::NotSupported;
     if (json.GetType() != rapidjson::kObjectType)
@@ -75,37 +154,16 @@ DwgDbStatus UtilsLib::ParseAecDbPropertySet (rapidjson::Document& json, DwgDbObj
     if (propExtractor.isNull())
         return  DwgDbStatus::MemoryError;
 
+    // if query for a specific pset, extract properties from that object only
+    if (aecpsetId != nullptr)
+        return ParsePSetById (json, *propExtractor, entity, *aecpsetId);
+
     auto iter = extensionDict->newIterator ();
     if (iter.isNull())
         return  DwgDbStatus::MemoryError;
 
     for (; !iter->done(); iter->next())
-        {
-        AECDbPropertySetPtr propertySet = iter->objectId().openObject();
-        if (propertySet.isNull())
-            continue;
-        AECDbPropertySetDefPtr propsetDef = propertySet->GetPropertySetDef().openObject();
-        if (propsetDef.isNull())
-            continue;
-
-        auto count = propsetDef->GetPropertyDefCount();
-        for (OdUInt32 i = 0; i < count; i++)
-            {
-            const AECPropertyDefSubPtr def = propsetDef->GetPropertyDefByPosition(i);
-            if (def.isNull())
-                continue;
-
-            auto name = def->GetName();
-
-            AECVariant  var;
-            if (def->IsAutomatic())
-                var = propExtractor->GetAutomaticProperty(entity, def->GetName(), def->GetDataFormat());
-            else
-                var = propExtractor->GetProperty(entity, propsetDef->objectId(), def->GetIndex(), def->GetDataFormat());
-
-            AddVariantToJson (json, name, var);
-            }
-        }
+        ParsePSetById (json, *propExtractor, entity, iter->objectId());
 
     status = json.ObjectEmpty() ? DwgDbStatus::InvalidInput : DwgDbStatus::Success;
 
@@ -121,8 +179,7 @@ DwgDbStatus UtilsLib::ParseAecDbPropertySet (rapidjson::Document& json, DwgDbObj
 DwgDbStatus UtilsLib::ParseAecDbPropertySetDef (rapidjson::Document& json, DwgDbObjectId propsetdefId)
     {
     DwgDbStatus status = DwgDbStatus::NotSupported;
-    if (json.GetType() != rapidjson::kObjectType)
-        return  status;
+    json.SetObject ();
 
 #ifdef DWGTOOLKIT_OpenDwg
     AECDbPropertySetDefPtr propsetdef = propsetdefId.openObject();

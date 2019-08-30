@@ -50,24 +50,52 @@ void            DwgImporter::TerminateDwgHost ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            DwgImporter::ImportAttributeDefinitionSchema (ECSchemaR attrdefSchema)
+SchemaStatus    DwgImporter::ImportDwgSchemas (bvector<ECSchemaPtr>& dwgSchemas)
     {
     ECSchemaCachePtr        schemaCache = ECSchemaCache::Create ();
     ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext ();
     if (!schemaCache.IsValid() || !schemaContext.IsValid())
-        return;
+        return  SchemaStatus::SchemaImportFailed;
 
-    this->SetStepName (ProgressMessage::STEP_IMPORTING_ATTRDEFSCHEMA(), attrdefSchema.GetClassCount());
+    auto nSchemas = dwgSchemas.size ();
+    auto nClasses = 0;
 
-    // import attrdef schema
+    // import schemas
     schemaContext->AddSchemaLocater (m_dgndb->GetSchemaLocater());
-    schemaContext->AddSchema (attrdefSchema);
+    for (auto dwgSchema : dwgSchemas)
+        {
+        schemaContext->AddSchema (*dwgSchema);
+        nClasses += dwgSchema->GetClassCount();
+        }
     schemaContext->RemoveSchemaLocater (m_dgndb->GetSchemaLocater());
 
-    m_dgndb->ImportSchemas(schemaContext->GetCache().GetSchemas());
+    this->SetStepName (ProgressMessage::STEP_IMPORTING_SCHEMAS(), nSchemas, nClasses);
 
-    // get back newly added schema:
-    m_attributeDefinitionSchema = m_dgndb->Schemas().GetSchema (attrdefSchema.GetName().c_str(), true);
+    // workaround m_dgndb->HasChanges() which causes DgnDomains::DoImportSchemas to fail
+    iModelBridge::SaveChanges (*m_dgndb);
+
+    auto status = m_dgndb->ImportSchemas (schemaContext->GetCache().GetSchemas());
+    if (status != SchemaStatus::Success)
+        {
+        this->ReportError (IssueCategory::Unknown(), Issue::SchemaImportError(), Utf8PrintfString("%s and/or %s, SchemaStatus=%d", SCHEMAName_AttributeDefinitions, SCHEMAName_AecPropertySets, (int)status).c_str());
+        return  status;
+        }
+
+    // get back newly imported schemas:
+    m_attributeDefinitionSchema = nullptr;
+    m_aecPropertySetSchema = nullptr;
+    for (auto dwgSchema : dwgSchemas)
+        {
+        auto schemaName = dwgSchema->GetName();
+        auto importedSchema = m_dgndb->Schemas().GetSchema (schemaName.c_str(), true);
+
+        if (schemaName.StartsWith(SCHEMAName_AttributeDefinitions))
+            m_attributeDefinitionSchema = importedSchema;
+        else if (schemaName.Equals(SCHEMAName_AecPropertySets))
+            m_aecPropertySetSchema = importedSchema;
+        }
+
+    return (m_attributeDefinitionSchema == nullptr && m_aecPropertySetSchema == nullptr) ? SchemaStatus::SchemaNotFound : SchemaStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -82,6 +110,8 @@ BentleyStatus   DwgImporter::_MakeSchemaChanges ()
     m_loadedXrefFiles.clear ();
     m_unresolvedXrefFiles.clear ();
 
+    bvector<ECSchemaPtr>    dwgSchemas;
+
     /*-----------------------------------------------------------------------------------
     Iterate the block table once for multiple tasks in an import job:
         1) Load xRef files from xRef block table records
@@ -91,16 +121,32 @@ BentleyStatus   DwgImporter::_MakeSchemaChanges ()
     XRefLoader  xrefLoader(*this);
     xrefLoader.LoadXrefsInMasterFile ();
     xrefLoader.CacheUnresolvedXrefs ();
-    auto attrdefSchema = xrefLoader.GetAttrdefSchema ();
 
+    // create attribute definitions schema
+    auto attrdefSchema = xrefLoader.GetAttrdefSchema ();
     if (attrdefSchema.IsValid() && attrdefSchema->GetClassCount() > 0)
         {
         if (m_dgndb->BriefcaseManager().LockSchemas().Result() != RepositoryStatus::Success)
             return  static_cast<BentleyStatus>(DgnDbStatus::LockNotHeld);
-
-        this->ImportAttributeDefinitionSchema (*attrdefSchema);
+        dwgSchemas.push_back (attrdefSchema);
         }
 
+    // create AEC property set definitions schema
+    auto aecpsetSchema = this->CreateAecPropertySetSchema ();
+    if (aecpsetSchema.IsValid() && aecpsetSchema->GetClassCount() > 0)
+        {
+        if (m_dgndb->BriefcaseManager().LockSchemas().Result() != RepositoryStatus::Success)
+            return  static_cast<BentleyStatus>(DgnDbStatus::LockNotHeld);
+        dwgSchemas.push_back (aecpsetSchema);
+        }
+
+    // import schemas into db
+    if (!dwgSchemas.empty())
+        {
+        auto status = this->ImportDwgSchemas (dwgSchemas);
+        if (status != SchemaStatus::Success)
+            return  static_cast<BentleyStatus>(status);
+        }
     return  BentleyStatus::SUCCESS;
     }
 
@@ -1407,6 +1453,7 @@ void            DwgImporter::_BeginImport ()
     // get imported DWG schemas
     auto schemaName = DwgHelper::GetAttrdefECSchemaName (m_dwgdb.get());
     m_attributeDefinitionSchema = m_dgndb->Schemas().GetSchema (schemaName.c_str(), true);
+    m_aecPropertySetSchema = m_dgndb->Schemas().GetSchema (SCHEMAName_AecPropertySets, true);
 
     m_hasBegunProcessing = true;
     }
@@ -1687,6 +1734,7 @@ DwgImporter::DwgImporter (DwgImporter::Options& options) : m_options(options), m
     m_layersImported = 0;
     m_errorCount = 0;
     m_attributeDefinitionSchema = 0;
+    m_aecPropertySetSchema = 0;
     m_constantBlockAttrdefList.clear ();
     m_modelspaceUnits = StandardUnit::None;
     m_modelspaceId.SetNull ();

@@ -575,9 +575,12 @@ void            IDwgDbHost::TerminateToolkit ()
         }
     catch (OdError& error)
         {
-        std::wcout << L"OpenDWG exception: " << reinterpret_cast<wchar_t const*>(error.description().c_str()) << std::endl;
         if (OdResult::eExtendedError != error.code())
+            {
+            // don't bother showing exceptions for unloading locked modules!
+            std::wcout << L"OpenDWG exception: " << reinterpret_cast<wchar_t const*>(error.description().c_str()) << std::endl;
             BeAssert (false && L"OpenDWG exception thrown from uninitialization!");
+            }
         }
 
 #elif DWGTOOLKIT_RealDwg

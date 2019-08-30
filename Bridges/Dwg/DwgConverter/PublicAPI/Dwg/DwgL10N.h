@@ -95,6 +95,7 @@ IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START (Issue, dwg_issue)
     L10N_STRING(MissingJobDefinitionModel)   // =="Missing JobDefinitionModel for %s"==
     L10N_STRING(CircularXrefIgnored)         // =="Circular xRef %s is ignored"==
     L10N_STRING(CannotUpdateName)            // =="Unable to change name from %s to %s"==
+    L10N_STRING(SchemaImportError)           // =="Error importing schema"==
 IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
 //! Progress messages for the conversion process
@@ -116,7 +117,7 @@ IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START (ProgressMessage, dwg_progress)
     L10N_STRING(STEP_IMPORTING_LINETYPES)          // =="Importing Line Types"==
     L10N_STRING(STEP_UPDATING)                     // =="Updating DgnDb"==
     L10N_STRING(STEP_IMPORTING_MATERIALS)          // =="Importing Materials"==
-    L10N_STRING(STEP_IMPORTING_ATTRDEFSCHEMA)      // =="Importing Attribute Definition Schema [%d classes]"==
+    L10N_STRING(STEP_IMPORTING_SCHEMAS)            // =="Importing %d DWG Schemas, total %d classes"==
     L10N_STRING(TASK_LOADING_FONTS)                // =="Loading %s Fonts"==
     L10N_STRING(TASK_IMPORTING_MODEL)              // =="Model: %s"==
     L10N_STRING(TASK_IMPORTING_RASTERDATA)         // =="Importing raster data file: %s"==

@@ -96,6 +96,8 @@ $(o)ImportGroups$(oext)     : $(baseDir)ImportGroups.cpp $(DwgDepends) ${MultiCo
 
 $(o)ImportHatch$(oext)      : $(baseDir)ImportHatch.cpp $(DwgDepends) ${MultiCompileDepends}
 
+$(o)ImportPropertySets$(oext) : $(baseDir)ImportPropertySets.cpp $(DwgDepends) ${MultiCompileDepends}
+
 $(o)GeometryFactory$(oext)  : $(baseDir)GeometryFactory.cpp $(DwgDepends) ${MultiCompileDepends}
 
 $(o)ElementFactory$(oext)   : $(baseDir)ElementFactory.cpp $(DwgDepends) ${MultiCompileDepends}

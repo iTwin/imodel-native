@@ -747,4 +747,22 @@ public:
     BentleyStatus   DeleteFromDb (BeFileNameCR dwgFileName);
     };  // RepositoryFactory
 
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          08/19
++===============+===============+===============+===============+===============+======*/
+struct AecPsetSchemaFactory
+{
+private:
+    DgnDbR  m_dgndb;
+    ECSchemaPtr& m_targetSchema;
+
+    ECObjectsStatus CreateTargetSchema ();
+    ECPropertyP CreateECProperty (ECEntityClassP aecpsetClass, rapidjson::Value::ConstMemberIterator const& iter);
+    BentleyStatus ImportFromDictionaries (DwgDbDictionaryIteratorR iter);
+
+public:
+    AecPsetSchemaFactory (ECSchemaPtr& s, DgnDbR db) : m_targetSchema(s), m_dgndb(db) {}
+    BentleyStatus ImportFromDwg (DwgDbDatabaseR dwg);
+};  // AecPsetSchemaFactory
+
 END_DWG_NAMESPACE

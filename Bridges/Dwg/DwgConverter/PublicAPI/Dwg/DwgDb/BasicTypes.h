@@ -318,7 +318,7 @@ struct UtilsLib
 #endif
     //! Check if an entity is an Autodesk ShapeManager object.
     DWGDB_EXPORT static bool IsAsmEntity (DwgDbEntityCP entity);
-    DWGDB_EXPORT static DwgDbStatus ParseAecDbPropertySet (rapidjson::Document& json, DwgDbObjectId entityId);
+    DWGDB_EXPORT static DwgDbStatus ParseAecDbPropertySet (rapidjson::Document& json, DwgDbObjectId entityId, DwgDbObjectIdCP psetId = nullptr);
     DWGDB_EXPORT static DwgDbStatus ParseAecDbPropertySetDef (rapidjson::Document& json, DwgDbObjectId propsetdefId);
     DWGDB_EXPORT static DwgDbObjectId GetAecDbPropertySetDef (DwgDbObjectId propsetId);
     };  // UtilsLib
