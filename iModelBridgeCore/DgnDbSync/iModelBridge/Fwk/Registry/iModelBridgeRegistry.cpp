@@ -364,7 +364,11 @@ BentleyStatus iModelBridgeRegistryBase::SearchForBridgeToAssignToDocument(WStrin
 
     uint64_t bestBridgeRowid = 0;
     QueryBridgeLibraryPathByName(&bestBridgeRowid, bestBridge.m_bridgeRegSubKey);
-    BeAssert(0 != bestBridgeRowid);
+    if (0 == bestBridgeRowid)
+        {
+        LOG.warningv(L"%ls - no installed bridge can convert this document", sourceFilePath.c_str());
+        return BSIERROR;
+        }
 
     // *** NEEDS WORK: SourceFile should be a relative path, relative to m_fwkAssetsDir
 
@@ -452,6 +456,8 @@ void iModelBridgeRegistryBase::_QueryAllFilesAssignedToBridge(bvector<BeFileName
 +---------------+---------------+---------------+---------------+---------------+------*/
 void iModelBridgeRegistryBase::SearchForBridgesToAssignToDocumentsInDir(BeFileNameCR topDirIn)
     {
+    LOG.tracev(L"SearchForBridgesToAssignToDocumentsInDir %ls", topDirIn.c_str());
+
     BeFileName topDir(topDirIn);
     topDir.AppendSeparator();
 
@@ -512,10 +518,15 @@ BentleyStatus   iModelBridgeRegistryBase::SearchForBridgesToAssignToFile(BeFileN
 +---------------+---------------+---------------+---------------+---------------+------*/
 void iModelBridgeRegistryBase::SearchForBridgesToAssignToDocuments()
     {
+    LOG.tracev("SearchForBridgesToAssignToDocuments - m_searchForFilesInStagingDir = %d", m_searchForFilesInStagingDir);
     if (!m_masterFilePath.empty())
         {
         bset<BeFileName> currentContext;
         SearchForBridgesToAssignToFile(m_masterFilePath, L"", currentContext);
+        }
+    else if (m_searchForFilesInStagingDir)
+        {
+        SearchForBridgesToAssignToDocumentsInDir(m_stagingDir);
         }
     else
         {
@@ -534,28 +545,108 @@ void iModelBridgeRegistryBase::SearchForBridgesToAssignToDocuments()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static void getVersionInfoAsString(WString& version, BeFileNameCR dllFileName)
+    {
+    DWORD  verHandle = NULL;
+    UINT   size      = 0;
+    LPBYTE lpBuffer  = NULL;
+    DWORD  verSize   = GetFileVersionInfoSizeW(dllFileName.c_str(), &verHandle);
+
+    if (verSize != NULL)
+        {
+        LPSTR verData = new char[verSize];
+
+        if (GetFileVersionInfoW(dllFileName.c_str(), verHandle, verSize, verData))
+            {
+            if (VerQueryValueW(verData, L"\\", (VOID FAR* FAR*)&lpBuffer, &size))
+                {
+                if (size)
+                    {
+                    VS_FIXEDFILEINFO *verInfo = (VS_FIXEDFILEINFO *)lpBuffer;
+                    if (verInfo->dwSignature == 0xfeef04bd)
+                        {
+
+                        // Doesn't matter if you are on 32 bit or 64 bit,
+                        // DWORD is always 32 bits, so first two revision numbers
+                        // come from dwFileVersionMS, last two come from dwFileVersionLS
+                        version.Sprintf(L"%d.%d.%d.%d",
+                            ( verInfo->dwFileVersionMS >> 16 ) & 0xffff,
+                            ( verInfo->dwFileVersionMS >>  0 ) & 0xffff,
+                            ( verInfo->dwFileVersionLS >> 16 ) & 0xffff,
+                            ( verInfo->dwFileVersionLS >>  0 ) & 0xffff
+                            );
+                        }
+                    }
+                }
+            }
+        delete[] verData;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridgeRegistryBase::WriteBridgesFile()
     {
-    BeFileName bridgesFileName(m_stateFileName.GetDirectoryName());
-    bridgesFileName.AppendToPath(L"bridges.txt");
-    BeFileStatus status;
-    BeTextFilePtr bridgesFile = BeTextFile::Open(status, bridgesFileName.c_str(), TextFileOpenType::Write, TextFileOptions::KeepNewLine, TextFileEncoding::Utf8);
-    if (!bridgesFile.IsValid())
+    bset<WString> bridgeNames;
         {
-        LOG.fatalv(L"%ls - error writing bridges file", bridgesFileName.c_str());
-        return BSIERROR;
+        BeFileName bridgesFileName(m_stateFileName.GetDirectoryName());
+        bridgesFileName.AppendToPath(L"bridges.txt");
+        BeFileStatus status;
+        BeTextFilePtr bridgesFile = BeTextFile::Open(status, bridgesFileName.c_str(), TextFileOpenType::Write, TextFileOptions::KeepNewLine, TextFileEncoding::Utf8);
+        if (!bridgesFile.IsValid())
+            {
+            LOG.fatalv(L"%ls - error writing bridges file", bridgesFileName.c_str());
+            return BSIERROR;
+            }
+
+        // *** NEEDS WORK: SourceFile should be a relative path, relative to m_fwkAssetsDir - turn it back into an abs dir for .txt file?
+
+        auto stmt = m_stateDb.GetCachedStatement("SELECT DISTINCT b.Name, b.IsPowerPlatformBased, a.SourceFile FROM fwk_BridgeAssignments a, fwk_InstalledBridges b WHERE (b.ROWID = a.Bridge)");
+        while (BE_SQLITE_ROW == stmt->Step())
+            {
+            WString bridgeName(stmt->GetValueText(0), true);
+            bool isPowerPlatformBased = stmt->GetValueBoolean(1);
+            BeFileName sourceFile(stmt->GetValueText(2), true);
+
+            bridgeNames.insert(bridgeName);
+            
+            bridgesFile->PrintfTo(false, L"%ls;%ls;%d\n", bridgeName.c_str(), sourceFile.c_str(), isPowerPlatformBased);
+            }
+
+        bridgesFile->Close();
+        bridgesFile = nullptr;
         }
 
-    // *** NEEDS WORK: SourceFile should be a relative path, relative to m_fwkAssetsDir - turn it back into an abs dir for .txt file?
+    if (true)
+        {
+        BeFileName fileName = BeFileName(m_stateFileName.GetDirectoryName());
+        fileName.AppendToPath(L"bridgeDetails.txt");
+        BeFileStatus status;
+        BeTextFilePtr file = BeTextFile::Open(status, fileName.c_str(), TextFileOpenType::Write, TextFileOptions::KeepNewLine, TextFileEncoding::Utf8);
+        if (!file.IsValid())
+            {
+            LOG.fatalv(L"%ls - error writing bridge details file", fileName.c_str());
+            return BSIERROR;
+            }
 
-    auto stmt = m_stateDb.GetCachedStatement("SELECT DISTINCT b.Name, b.IsPowerPlatformBased, a.SourceFile FROM fwk_BridgeAssignments a, fwk_InstalledBridges b WHERE (b.ROWID = a.Bridge)");
-    while (BE_SQLITE_ROW == stmt->Step())
-        bridgesFile->PrintfTo(false, L"%ls;%ls;%d\n", WString(stmt->GetValueText(0), true).c_str(), WString(stmt->GetValueText(2), true).c_str(), stmt->GetValueBoolean(1));
+        for (auto const& bridgeName: bridgeNames)
+            {
+            BeFileName bridgeDllFilename = QueryBridgeLibraryPathByName(nullptr, bridgeName);
 
-    bridgesFile->Close();
-    bridgesFile = nullptr;
+            WString version;
+            getVersionInfoAsString(version, bridgeDllFilename);
+
+            file->PrintfTo(false, L"%ls;%ls;%ls\n", bridgeName.c_str(), bridgeDllFilename.c_str(), version.c_str());
+            }
+
+        file->Close();
+        file = nullptr;
+        }
+
+
     return BSISUCCESS;
     }
 
@@ -741,6 +832,11 @@ static void  ParseCxxOptsResult(cxxopts::ParseResult& result, iModelBridgeRegist
     AssignCxxOptsResult(result, "registry-dir", args.m_registryDir);
     AssignCxxOptsResult(result, "fwk-logging-config-file", args.m_loggingConfigFileName);
 
+    if (result.count("fwk-search-in-staging-dir") > 0)
+        {
+        args.m_searchForFilesInStagingDir = result["fwk-search-in-staging-dir"].as<bool>();
+        }
+
     if (result.count("server-repository") > 0)
         {
         args.m_repositoryName = result["server-repository"].as<std::string>().c_str();
@@ -761,6 +857,7 @@ static cxxopts::Options GetCmdLineOptions()
         ("s,server-repository", "The iModel for the conversion job.", cxxopts::value<std::string>(),"<Required>")
         ("r,registry-dir", "The directory to store assignments.", cxxopts::value<std::string>(),"<Optional>")
         ("l,fwk-logging-config-file", "The configuration file to be used for logging.", cxxopts::value<std::string>(), "<Optional>")
+        ("x,fwk-search-in-staging-dir", "Search for files in fwk-staging-dir.", cxxopts::value<bool>(), "<Optional>")
         ("h,help", "Print help")
         ;
     return options;
@@ -882,6 +979,7 @@ int iModelBridgeRegistryBase::AssignMain(int argc, WCharCP argv[])
     BeFileName dbDir = !args.m_registryDir.empty() ? args.m_registryDir : args.m_stagingDir;
     auto dbname = MakeDbName(dbDir, args.m_repositoryName);
     Dgn::iModelBridgeRegistry app(args.m_stagingDir, dbname);
+    app.m_searchForFilesInStagingDir = args.m_searchForFilesInStagingDir;
 
     auto dbres = app.OpenOrCreateStateDb();
     if (BE_SQLITE_OK != dbres)

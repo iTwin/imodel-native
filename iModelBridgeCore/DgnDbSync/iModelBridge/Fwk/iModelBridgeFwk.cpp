@@ -1272,6 +1272,23 @@ static RepositoryStatus acquireSharedLocks(DgnDbR db)
 #endif
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static void writeBriefcaseIdTxtFile(BeFileNameCR briefcaseName, BeSQLite::BeBriefcaseId const& bcId)
+    {
+    BeFileName fileName(briefcaseName);
+    fileName.append(L"-briefcaseId");
+    BeFileStatus status;
+    BeTextFilePtr txtFile = BeTextFile::Open(status, fileName.c_str(), TextFileOpenType::Write, TextFileOptions::KeepNewLine, TextFileEncoding::Utf8);
+    if (!txtFile.IsValid())
+        return;
+
+    txtFile->PrintfTo(false, L"%lu\n", bcId.GetValue());
+
+    txtFile->Close();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult iModelBridgeFwk::SaveBriefcaseId(BeSQLite::BeBriefcaseId& briefcaseId)
@@ -1286,6 +1303,9 @@ DbResult iModelBridgeFwk::SaveBriefcaseId(BeSQLite::BeBriefcaseId& briefcaseId)
     uint32_t bcid = briefcaseId.GetValue();
     m_stateDb.SaveProperty(s_briefcaseIdPropSpec, &bcid, sizeof(bcid));
     m_stateDb.SaveChanges();
+
+    writeBriefcaseIdTxtFile(m_briefcaseName, briefcaseId);
+
     return BE_SQLITE_OK;
     }
 
@@ -1475,7 +1495,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     iModelCrashProcessor::GetInstance().SetRunInfo(m_jobEnvArgs.m_jobRequestId, m_jobEnvArgs.m_jobRunCorrelationId);
 
     LOG.tracev(L"Logging into iModel Hub");
-    GetProgressMeter().SetCurrentStepName("Acquiring Access Token");
+    GetProgressMeter().SetCurrentStepName("Contacting the iModel Server");
     {
     StopWatch iModelHubSignIn(true);
     //  Sign into the iModelHub
@@ -1767,6 +1787,7 @@ BentleyStatus   iModelBridgeFwk::GetSchemaLock()
         if (retryAttempt > 0)
             {
             GetLogger().infov("GetSchemaLock failed. Retrying.");
+            PostStatusMessage("GetSchemaLock failed. Retrying.");
             if (0 != PullMergeAndPushChange("GetSchemaLock", false, true))  // pullmergepush + re-open
                 return BSIERROR;
             }
@@ -1805,6 +1826,7 @@ BentleyStatus iModelBridgeFwk::LockChannelParent(SubjectCR jobSubj)
         if (retryAttempt > 0)
             {
             GetLogger().infov("LockChannelParent failed. Retrying.");
+            PostStatusMessage("LockChannelParent failed. Retrying.");
             if (0 != PullMergeAndPushChange("LockChannelParent", false, true))  // pullmergepush + re-open
                 return BSIERROR;
             }
@@ -1916,6 +1938,7 @@ int iModelBridgeFwk::MakeSchemaChanges(iModelBridgeCallOpenCloseFunctions& callC
         while ((BSISUCCESS != bridgeSchemaChangeStatus) && (++retryAttempt < m_maxRetryCount) && IModelClientBase::SleepBeforeRetry())
             {
             GetLogger().infov("_MakeSchemaChanges failed. Retrying.");
+            PostStatusMessage("_MakeSchemaChanges failed. Retrying.");
             callCloseOnReturn.CallCloseFunctions(iModelBridge::ClosePurpose::SchemaUpgrade); // re-initialize the bridge, to clear out the side-effects of the previous failed attempt
             m_briefcaseDgnDb->AbandonChanges();
             if (BSISUCCESS != PullMergeAndPushChange("dynamic schemas", false, true))    // make sure that we are at the tip and that we have absorbed any schema changes from the server

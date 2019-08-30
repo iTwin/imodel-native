@@ -59,7 +59,7 @@ EXE_OBJS + $(THIN_ARCHIVE_PATH)
 EXE_LOPT1    = -entry:wmainCRTStartup
 
 EXE_OBJS  + $[@realpath $[@wildcard $(BuildContext)SubParts/Libs/*$(stlibext)]]
-LINKER_LIBRARIES = $(BENTLEY_WIN32_LINK_CLibraries)
+LINKER_LIBRARIES = $(BENTLEY_WIN32_LINK_CLibraries) Version.lib
 %endif
 
 %include $(sharedMki)linktool.mki

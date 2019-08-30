@@ -45,6 +45,7 @@ struct iModelBridgeRegistryBase : RefCounted<IModelBridgeRegistry>
         BeFileName m_loggingConfigFileName;
         Utf8String m_repositoryName;
         BeFileName m_inputFileName;
+        bool m_searchForFilesInStagingDir{};
         int ParseCommandLine(int argc, WCharCP argv[]);
         };
 
@@ -56,6 +57,7 @@ private:
     BeFileName m_stagingDir;
     BeFileName m_registryDir;
     BeFileName m_masterFilePath;
+    bool m_searchForFilesInStagingDir{};
     
     bool QueryAnyInstalledBridges();
   
