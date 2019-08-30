@@ -379,6 +379,12 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
             selectClassJson.AddMember("relatedPropertyPaths", rapidjson::Value(rapidjson::kArrayType), json.GetAllocator());
             for (RelatedClassPathCR propertyPath : selectClass.GetRelatedPropertyPaths())
                 selectClassJson["relatedPropertyPaths"].PushBack(_AsJson(propertyPath, json.GetAllocator()), json.GetAllocator());
+            selectClassJson.AddMember("navigationPropertyClasses", rapidjson::Value(rapidjson::kArrayType), json.GetAllocator());
+            for (RelatedClassCR navPropertyClass : selectClass.GetNavigationPropertyClasses())
+                selectClassJson["navigationPropertyClasses"].PushBack(_AsJson(navPropertyClass, json.GetAllocator()), json.GetAllocator());
+            selectClassJson.AddMember("relatedInstanceClasses", rapidjson::Value(rapidjson::kArrayType), json.GetAllocator());
+            for (RelatedClassCR relatedInstanceClass : selectClass.GetRelatedInstanceClasses())
+                selectClassJson["relatedInstanceClasses"].PushBack(_AsJson(relatedInstanceClass, json.GetAllocator()), json.GetAllocator());
             json["selectClasses"].PushBack(selectClassJson, json.GetAllocator());
             }
 
@@ -956,6 +962,20 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                04/2018
     +---------------+---------------+---------------+---------------+---------------+------*/
+    rapidjson::Value _AsJson(RelatedClassCR relatedClass, rapidjson::Document::AllocatorType& allocator) const override
+        {
+        rapidjson::Value json(rapidjson::kObjectType);
+        json.AddMember("sourceClassInfo", _AsJson(*relatedClass.GetSourceClass(), &allocator), allocator);
+        json.AddMember("targetClassInfo", _AsJson(*relatedClass.GetTargetClass(), &allocator), allocator);
+        json.AddMember("relationshipInfo", _AsJson(*relatedClass.GetRelationship(), &allocator), allocator);
+        json.AddMember("isForwardRelationship", relatedClass.IsForwardRelationship(), allocator);
+        json.AddMember("isPolymorphicRelationship", relatedClass.IsPolymorphic(), allocator);
+        return json;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis                04/2018
+    +---------------+---------------+---------------+---------------+---------------+------*/
     rapidjson::Value _AsJson(RelatedClassPathCR path, rapidjson::Document::AllocatorType& allocator) const override
         {
         rapidjson::Value json(rapidjson::kArrayType);
@@ -966,13 +986,7 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
                 BeAssert(false);
                 continue;
                 }
-            rapidjson::Value relatedClassJson(rapidjson::kObjectType);
-            relatedClassJson.AddMember("sourceClassInfo", _AsJson(*relatedClass.GetSourceClass(), &allocator), allocator);
-            relatedClassJson.AddMember("targetClassInfo", _AsJson(*relatedClass.GetTargetClass(), &allocator), allocator);
-            relatedClassJson.AddMember("relationshipInfo", _AsJson(*relatedClass.GetRelationship(), &allocator), allocator);
-            relatedClassJson.AddMember("isForwardRelationship", relatedClass.IsForwardRelationship(), allocator);
-            relatedClassJson.AddMember("isPolymorphicRelationship", relatedClass.IsPolymorphic(), allocator);
-            json.PushBack(relatedClassJson, allocator);
+            json.PushBack(_AsJson(relatedClass, allocator), allocator);
             }
         return json;
         }

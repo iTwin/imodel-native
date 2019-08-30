@@ -107,11 +107,26 @@ struct ContentDisplayType
 //=======================================================================================
 //! Data structure that describes an ECClass in ContentDescriptor. In addition to the class
 //! itself the structure holds its relationship path to the primary ECClass, paths to related 
-//! property classes and related classes of related instances. Dependencies are related as follows:
-//! 
-//!                                  /---- Related Properties Path 1
-//! Primary Class ----- Select Class
-//!                                  \---- Related Properties Path 2
+//! and navigation property classes and classes of related instances. 
+//!
+//! Dependencies are related as follows:
+//!                                     
+//!                                          +----------------------------+
+//!                                          | Related Properties Path 1  |
+//!                                          | Related Properties Path 2  |
+//!                                    +---> | ...                        |
+//!                                    |     | Related Properties Path n  |
+//!                                    |     +----------------------------+
+//!                                    |     | Related Instance Class 1   |
+//!                                    |     | Related Instance Class 2   |
+//! Primary Class <------ Select Class +---> | ...                        |
+//!                                    |     | Related Instance Class n   |
+//!                                    |     +----------------------------+
+//!                                    |     | Navigation Property Path 1 |
+//!                                    |     | Navigation Property Path 2 |
+//!                                    +---> | ...                        |
+//!                                          | Navigation Property Path n |
+//!                                          +----------------------------+
 //!
 //! @ingroup GROUP_Presentation_Content
 // @bsiclass                                    Grigas.Petraitis                05/2016
@@ -121,8 +136,9 @@ struct SelectClassInfo
 private:
     ECClassCP m_selectClass;
     bool m_isPolymorphic;
-    bvector<RelatedClassPath> m_relatedPropertyPaths;
     RelatedClassPath m_pathToPrimaryClass;
+    bvector<RelatedClassPath> m_relatedPropertyPaths;
+    bvector<RelatedClass> m_navigationPropertyClasses;
     bvector<RelatedClass> m_relatedInstanceClasses;
 
 public:
@@ -138,6 +154,7 @@ public:
             && m_isPolymorphic == other.m_isPolymorphic
             && m_pathToPrimaryClass == other.m_pathToPrimaryClass
             && m_relatedPropertyPaths == other.m_relatedPropertyPaths
+            && m_navigationPropertyClasses == other.m_navigationPropertyClasses
             && m_relatedInstanceClasses == other.m_relatedInstanceClasses;
         }
     //! Equals operator override.
@@ -156,20 +173,25 @@ public:
     //! Get the primary ECClass. 
     ECClassCP GetPrimaryClass() const {return m_pathToPrimaryClass.empty() ? nullptr : m_pathToPrimaryClass.back().GetTargetClass();}
 
+    //! Get path to the primary ECClass. 
+    RelatedClassPath const& GetPathToPrimaryClass() const { return m_pathToPrimaryClass; }
+    //! Set path to the primary ECClass.
+    void SetPathToPrimaryClass(RelatedClassPath path) { m_pathToPrimaryClass = path; }
+
     //! Get paths to related property ECClasses.
     bvector<RelatedClassPath> const& GetRelatedPropertyPaths() const {return m_relatedPropertyPaths;}
     //! Set paths to related property ECClasses.
     void SetRelatedPropertyPaths(bvector<RelatedClassPath> propertyPaths) {m_relatedPropertyPaths = propertyPaths;}
-    
-    //! Get path to the primary ECClass. 
-    RelatedClassPath const& GetPathToPrimaryClass() const {return m_pathToPrimaryClass;}
-    //! Set path to the primary ECClass.
-    void SetPathToPrimaryClass(RelatedClassPath path) {m_pathToPrimaryClass = path;}
+
+    //! Get navigation property ECClasses.
+    bvector<RelatedClass> const& GetNavigationPropertyClasses() const {return m_navigationPropertyClasses;}
+    //! Set navigation property ECClasses.
+    void SetNavigationPropertyClasses(bvector<RelatedClass> classes) {m_navigationPropertyClasses = classes;}
 
     //! Get related classes of related instances.
     bvector<RelatedClass> const& GetRelatedInstanceClasses() const {return m_relatedInstanceClasses;}
     //! Set related classes of related instances.
-    void SetRelatedInstanceClasses(bvector<RelatedClass> relatedInstanceClasses) {m_relatedInstanceClasses = relatedInstanceClasses;}
+    void SetRelatedInstanceClasses(bvector<RelatedClass> classes) {m_relatedInstanceClasses = classes;}
 };
 
 //=======================================================================================

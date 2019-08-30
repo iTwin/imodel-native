@@ -95,6 +95,7 @@ protected:
 
     virtual rapidjson::Value _AsJson(KindOfQuantityCR, rapidjson::Document::AllocatorType&) const = 0;
 
+    virtual rapidjson::Value _AsJson(RelatedClassCR, rapidjson::Document::AllocatorType&) const = 0;
     virtual rapidjson::Value _AsJson(RelatedClassPathCR, rapidjson::Document::AllocatorType&) const = 0;
 
     virtual rapidjson::Value _AsJson(SelectionInfo const&, rapidjson::Document::AllocatorType&) const = 0;

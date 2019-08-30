@@ -85,6 +85,24 @@ static ComplexContentQueryPtr WrapQueryIntoGroupingClause(ComplexContentQueryR q
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
+static void JoinRelatedClasses(ComplexContentQueryR query, SelectClassInfo const& selectInfo)
+    {
+    // join navigation properties
+    for (RelatedClass const& navPropertyClass : selectInfo.GetNavigationPropertyClasses())
+        query.Join(navPropertyClass, true);
+
+    // join related properties
+    for (RelatedClassPath const& path : selectInfo.GetRelatedPropertyPaths())
+        query.Join(path, true);
+
+    // join related instances
+    for (RelatedClass const& relatedInstanceClass : selectInfo.GetRelatedInstanceClasses())
+        query.Join(relatedInstanceClass, true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 ContentQueryPtr ContentQueryBuilder::CreateQuery(SelectedNodeInstancesSpecificationCR specification, ContentDescriptorCR descriptor, IParsedInput const& input)
     {
     ContentDescriptorBuilder::Context descriptorContext(m_params.GetSchemaHelper(), m_params.GetConnections(), m_params.GetConnection(), m_params.GetRuleset(), 
@@ -102,13 +120,8 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(SelectedNodeInstancesSpecificat
         classQuery->SelectContract(*contract, "this");
         classQuery->From(selectClassInfo.GetSelectClass(), selectClassInfo.IsSelectPolymorphic(), "this");
 
-        // handle related properties
-        for (RelatedClassPath const& path : selectClassInfo.GetRelatedPropertyPaths())
-            classQuery->Join(path, true);
-
-        // handle related instances
-        for (RelatedClass const& relatedInstanceClass : selectClassInfo.GetRelatedInstanceClasses())
-            classQuery->Join(relatedInstanceClass);
+        // handle related classes
+        JoinRelatedClasses(*classQuery, selectClassInfo);
         
         // handle filtering 
         InstanceFilteringParams filteringParams(m_params.GetConnection(), m_params.GetECExpressionsCache(), &input, selectClassInfo, nullptr, nullptr);
@@ -182,13 +195,8 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentRelatedInstancesSpecific
         classQuery->SelectContract(*contract, "this");
         classQuery->From(selectClassInfo.GetSelectClass(), selectClassInfo.IsSelectPolymorphic(), "this");
 
-        // handle related properties
-        for (RelatedClassPath const& path : selectClassInfo.GetRelatedPropertyPaths())
-            classQuery->Join(path, true);
-
-        // handle related instances
-        for (RelatedClass const& relatedInstanceClass : selectClassInfo.GetRelatedInstanceClasses())
-            classQuery->Join(relatedInstanceClass);
+        // handle related classes
+        JoinRelatedClasses(*classQuery, selectClassInfo);
         
         // handle filtering 
         InstanceFilteringParams filteringParams(m_params.GetConnection(), m_params.GetECExpressionsCache(), &input, 
@@ -228,13 +236,8 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentInstancesOfSpecificClass
         classQuery->SelectContract(*contract, "this");
         classQuery->From(selectClassInfo.GetSelectClass(), selectClassInfo.IsSelectPolymorphic(), "this");
 
-        // handle related properties
-        for (RelatedClassPath const& path : selectClassInfo.GetRelatedPropertyPaths())
-            classQuery->Join(path, true);
-
-        // handle related instances
-        for (RelatedClass const& relatedInstanceClass : selectClassInfo.GetRelatedInstanceClasses())
-            classQuery->Join(relatedInstanceClass);
+        // handle related classes
+        JoinRelatedClasses(*classQuery, selectClassInfo);
         
         // handle filtering 
         InstanceFilteringParams filteringParams(m_params.GetConnection(), m_params.GetECExpressionsCache(), nullptr, 

@@ -346,7 +346,12 @@ rapidjson::Document DefaultECPresentationSerializer::_AsJson(ContentDescriptor c
         selectClassJson.AddMember("RelatedPropertyPaths", rapidjson::Value(rapidjson::kArrayType), json.GetAllocator());
         for (RelatedClassPathCR propertyPath : selectClass.GetRelatedPropertyPaths())
             selectClassJson["RelatedPropertyPaths"].PushBack(_AsJson(propertyPath, json.GetAllocator()), json.GetAllocator());
-
+        selectClassJson.AddMember("NavigationPropertyClasses", rapidjson::Value(rapidjson::kArrayType), json.GetAllocator());
+        for (RelatedClassCR navPropertyClass : selectClass.GetNavigationPropertyClasses())
+            selectClassJson["NavigationPropertyClasses"].PushBack(_AsJson(navPropertyClass, json.GetAllocator()), json.GetAllocator());
+        selectClassJson.AddMember("RelatedInstanceClasses", rapidjson::Value(rapidjson::kArrayType), json.GetAllocator());
+        for (RelatedClassCR relatedInstanceClass : selectClass.GetRelatedInstanceClasses())
+            selectClassJson["RelatedInstanceClasses"].PushBack(_AsJson(relatedInstanceClass, json.GetAllocator()), json.GetAllocator());
         json["SelectClasses"].PushBack(selectClassJson, json.GetAllocator());
         }
 
@@ -977,6 +982,21 @@ rapidjson::Value DefaultECPresentationSerializer::_AsJson(KindOfQuantityCR koq,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Value DefaultECPresentationSerializer::_AsJson(RelatedClassCR relatedClass,
+    rapidjson::Document::AllocatorType& allocator) const
+    {
+    rapidjson::Value json(rapidjson::kObjectType);
+    json.AddMember("SourceClassInfo", _AsJson(*relatedClass.GetSourceClass(), &allocator), allocator);
+    json.AddMember("TargetClassInfo", _AsJson(*relatedClass.GetTargetClass(), &allocator), allocator);
+    json.AddMember("RelationshipInfo", _AsJson(*relatedClass.GetRelationship(), &allocator), allocator);
+    json.AddMember("IsForwardRelationship", relatedClass.IsForwardRelationship(), allocator);
+    json.AddMember("IsPolymorphicRelationship", relatedClass.IsPolymorphic(), allocator);
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mantas.Kontrimas                03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 rapidjson::Value DefaultECPresentationSerializer::_AsJson(RelatedClassPathCR path,
     rapidjson::Document::AllocatorType& allocator) const
     {
@@ -988,13 +1008,7 @@ rapidjson::Value DefaultECPresentationSerializer::_AsJson(RelatedClassPathCR pat
             BeAssert(false);
             continue;
             }
-        rapidjson::Value relatedClassJson(rapidjson::kObjectType);
-        relatedClassJson.AddMember("SourceClassInfo", _AsJson(*relatedClass.GetSourceClass(), &allocator), allocator);
-        relatedClassJson.AddMember("TargetClassInfo", _AsJson(*relatedClass.GetTargetClass(), &allocator), allocator);
-        relatedClassJson.AddMember("RelationshipInfo", _AsJson(*relatedClass.GetRelationship(), &allocator), allocator);
-        relatedClassJson.AddMember("IsForwardRelationship", relatedClass.IsForwardRelationship(), allocator);
-        relatedClassJson.AddMember("IsPolymorphicRelationship", relatedClass.IsPolymorphic(), allocator);
-        json.PushBack(relatedClassJson, allocator);
+        json.PushBack(_AsJson(relatedClass, allocator), allocator);
         }
     return json;
     }

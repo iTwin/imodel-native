@@ -3516,8 +3516,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b4_ClassB, false));
         descriptor->GetSelectClasses().push_back(SelectClassInfo(b4_ClassC, false));
-        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
-            {RelatedClass(b4_ClassC, b4_ClassB, b4_ClassBHasClassC, false, "nav_b4_ClassB_0", "nav_b4_ClassBHasClassC_0")}
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(b4_ClassC, b4_ClassB, b4_ClassBHasClassC, false, "nav_b4_ClassB_0", "nav_b4_ClassBHasClassC_0")
             });
         
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
@@ -3555,8 +3555,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         {
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(sc_Class3, false));
-        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
-            {RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "nav_sc_Class1_0", "nav_sc_Class1HasClass2And3_0")}
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "nav_sc_Class1_0", "nav_sc_Class1HasClass2And3_0")
             });
         
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
@@ -3638,8 +3638,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         {
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(sc_Class3, false));
-        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
-            {RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "nav_sc_Class1_0", "nav_sc_Class1HasClass2And3_0")}
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "nav_sc_Class1_0", "nav_sc_Class1HasClass2And3_0")
             });
         
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
@@ -3661,12 +3661,12 @@ void ExpectedQueries::RegisterExpectedQueries()
         {
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(sc_Class2, false));
-        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
-            {RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "nav_sc_Class1_0", "nav_sc_Class1HasClass2And3_0")}
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "nav_sc_Class1_0", "nav_sc_Class1HasClass2And3_0")
             });
         descriptor->GetSelectClasses().push_back(SelectClassInfo(sc_Class3, false));
-        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
-            {RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "nav_sc_Class1_1", "nav_sc_Class1HasClass2And3_1")}
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "nav_sc_Class1_1", "nav_sc_Class1HasClass2And3_1")
             });
         
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
@@ -3701,9 +3701,11 @@ void ExpectedQueries::RegisterExpectedQueries()
         {
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Gadget, false));
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")
+            });
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
-            {RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "rel_RET_Widget_1", "rel_RET_WidgetHasGadgets_0")},
-            {RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")}
+            {RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "rel_RET_Widget_1", "rel_RET_WidgetHasGadgets_0")}
             });
         
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
@@ -3739,9 +3741,11 @@ void ExpectedQueries::RegisterExpectedQueries()
         {
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Gadget, false));
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")
+            });
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
-            {RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "rel_RET_Widget_1", "rel_RET_WidgetHasGadgets_0")},
-            {RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")}
+            {RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "rel_RET_Widget_1", "rel_RET_WidgetHasGadgets_0")}
             });
         
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
@@ -3783,10 +3787,12 @@ void ExpectedQueries::RegisterExpectedQueries()
         {
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, false));
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")
+            });
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
             {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "rel_RET_Gadget_1", "rel_RET_GadgetHasSprockets_0")},
             {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "rel_RET_Gadget_1", "rel_RET_GadgetHasSprockets_0"),RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")},
-            {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
             });
         
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
@@ -3840,9 +3846,11 @@ void ExpectedQueries::RegisterExpectedQueries()
         {
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(sc_Class2, false));
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "nav_sc_Class1_0", "nav_sc_Class1HasClass2And3_0")
+            });
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
-            {RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "rel_sc_Class1_1", "rel_sc_Class1HasClass2And3_0")},
-            {RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "nav_sc_Class1_0", "nav_sc_Class1HasClass2And3_0")}
+            {RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "rel_sc_Class1_1", "rel_sc_Class1HasClass2And3_0")}
             });
         
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
@@ -3876,12 +3884,16 @@ void ExpectedQueries::RegisterExpectedQueries()
         {
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Gadget, false));
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")
+            });
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
             {RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadget, false, "rel_RET_Widget_1", "rel_RET_WidgetHasGadget_0")},
             {RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprocket, true, "rel_RET_Sprocket_0", "rel_RET_GadgetHasSprocket_0")},
-            {RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprocket, true, "rel_RET_Sprocket_0", "rel_RET_GadgetHasSprocket_0"),
-            RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_2", "nav_RET_GadgetHasSprockets_0")},
-            {RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")}
+            {
+                RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprocket, true, "rel_RET_Sprocket_0", "rel_RET_GadgetHasSprocket_0"),
+                RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_2", "nav_RET_GadgetHasSprockets_0")
+            }
             });
         
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
@@ -3936,10 +3948,12 @@ void ExpectedQueries::RegisterExpectedQueries()
         {
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Gadget, false));
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")
+            });
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
             {RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "rel_RET_Widget_1", "rel_RET_WidgetHasGadgets_0")},
-            {RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadget, false, "rel_RET_Widget_2", "rel_RET_WidgetHasGadget_0")},
-            {RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")}
+            {RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadget, false, "rel_RET_Widget_2", "rel_RET_WidgetHasGadget_0")}
             });
         
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
@@ -3995,11 +4009,10 @@ void ExpectedQueries::RegisterExpectedQueries()
         
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, false));
-        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
-            path1, 
-            path2,
-            {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")
             });
+        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({ path1, path2 });
         
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("Description")));
@@ -4047,10 +4060,10 @@ void ExpectedQueries::RegisterExpectedQueries()
 
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, false));
-        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
-            relationshipPath,
-            {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")
             });
+        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({ relationshipPath });
         
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("Description")));
@@ -4098,11 +4111,10 @@ void ExpectedQueries::RegisterExpectedQueries()
 
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, false));
-        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
-            widgetRelationshipPath, 
-            gadgetRelationshipPath,
-            {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")
             });
+        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({ widgetRelationshipPath, gadgetRelationshipPath });
         
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
         field = &AddField(*descriptor, ret_Sprocket, ContentDescriptor::Property("this", ret_Sprocket, *ret_Sprocket.GetPropertyP("Description")));
@@ -4226,7 +4238,9 @@ void ExpectedQueries::RegisterExpectedQueries()
         {
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::Grid);
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Gadget, false));
-        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({{RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")}});
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")
+            });
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Widget, false));
 
         ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0);
@@ -4264,7 +4278,9 @@ void ExpectedQueries::RegisterExpectedQueries()
 
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Gadget, false));
-        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({{RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")}});
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")
+            });
         descriptor->GetSelectClasses().back().SetRelatedInstanceClasses({relatedInstanceClass});
 
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
@@ -4373,7 +4389,9 @@ void ExpectedQueries::RegisterExpectedQueries()
 
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Gadget, false));
-        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({{RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")}});
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")
+            });
         descriptor->GetSelectClasses().back().SetRelatedInstanceClasses({relatedInstanceClass1, relatedInstanceClass2});
 
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
@@ -4544,7 +4562,9 @@ void ExpectedQueries::RegisterExpectedQueries()
 
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Gadget, false));
-        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({{RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")}});
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")
+            });
         descriptor->GetSelectClasses().back().SetRelatedInstanceClasses({relatedInstanceClass});
 
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
@@ -4691,7 +4711,9 @@ void ExpectedQueries::RegisterExpectedQueries()
         {
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Gadget, false));
-        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({{RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")}});
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")
+            });
 
         ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0);
         bmap<ECClassCP, bvector<InstanceLabelOverrideValueSpecification const*>> labelOverrideMap;
@@ -4719,15 +4741,15 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
             RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0", false)
             });
-        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
-                { RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0") }
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")
             });
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, true));
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
             RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", false)
             });
-        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
-            {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")
             });
 
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
@@ -4842,15 +4864,15 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
             RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0", false)
             });
-        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
-                { RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0") }
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")
             });
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, true));
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
             RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", false)
             });
-        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
-            {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")
             });
 
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
@@ -4923,15 +4945,15 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
             RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0", false)
             });
-        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
-                {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")
             });
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, true));
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
             RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", false)
             });
-        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
-            {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")
             });
 
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
@@ -4969,15 +4991,15 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
             RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "related", "rel_RET_WidgetHasGadgets_0", false)
             });
-        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
-            {RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")}
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")
             });
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Gadget, true));
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
             RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true , "related", "rel_RET_GadgetHasSprockets_0", false)
             });
-        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
-            {RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")}
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")
             });
 
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
@@ -5015,15 +5037,15 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
             RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0", false)
             });
-        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
-                { RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0") }
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")
             });
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, true));
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
             RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", false)
             });
-        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
-            {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")
             });
 
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
@@ -5065,8 +5087,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
             RelatedClass(ret_Gadget, ret_Widget, ret_WidgetsHaveGadgets, false, "related", "rel_RET_WidgetsHaveGadgets_0", false)
             });
-        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
-                { RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0") }
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")
             });
         descriptor->GetSelectClasses().back().SetRelatedInstanceClasses({relatedInstanceClass});
 
@@ -5129,43 +5151,43 @@ void ExpectedQueries::RegisterExpectedQueries()
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, true));
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass(relationshipPath11);
-        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
-            {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")
             });
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, true));
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass(relationshipPath12);
-        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
-            {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")
             });
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, true));
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass(relationshipPath13);
-        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
-            {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")
             });
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, true));
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass(relationshipPath14);
-        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
-            {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")
             });
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, true));
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass(relationshipPath21);
-        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
-            {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")
             });
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, true));
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass(relationshipPath22);
-        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
-            {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")
             });
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, true));
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass(relationshipPath23);
-        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
-            {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")
             });
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, true));
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass(relationshipPath24);
-        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
-            {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")
             });
 
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
@@ -5293,8 +5315,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
             RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, "related", TABLE_ALIAS("rel", class_ElementOwnsChildElements, 0), false)
             });
-        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
-            {RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, TABLE_ALIAS("nav", class_Element, 0), TABLE_ALIAS("nav", class_ElementOwnsChildElements, 0))}
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, TABLE_ALIAS("nav", class_Element, 0), TABLE_ALIAS("nav", class_ElementOwnsChildElements, 0))
             });
 
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
@@ -5334,16 +5356,16 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
             RelatedClass(class_Element, class_Sheet, class_ElementOwnsChildElements, false, "related", TABLE_ALIAS("rel", class_ElementOwnsChildElements, 0), false)
             });
-        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
-            {RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, TABLE_ALIAS("nav", class_Element, 0), TABLE_ALIAS("nav", class_ElementOwnsChildElements, 0))}
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, TABLE_ALIAS("nav", class_Element, 0), TABLE_ALIAS("nav", class_ElementOwnsChildElements, 0))
             });
         descriptor->GetSelectClasses().push_back(SelectClassInfo(class_Element, true));
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
             RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, "element", TABLE_ALIAS("rel", class_ElementOwnsChildElements, 2), true),
             RelatedClass(class_Element, class_Sheet, class_ElementOwnsChildElements, false, "related", TABLE_ALIAS("rel", class_ElementOwnsChildElements, 0), false)
             });
-        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
-            {RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, TABLE_ALIAS("nav", class_Element, 0), TABLE_ALIAS("nav", class_ElementOwnsChildElements, 0))}
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, TABLE_ALIAS("nav", class_Element, 0), TABLE_ALIAS("nav", class_ElementOwnsChildElements, 0))
             });
 
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
@@ -5381,16 +5403,16 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
             RelatedClass(class_Element, class_Sheet, class_ElementOwnsChildElements, false, "related", TABLE_ALIAS("rel", class_ElementOwnsChildElements, 0), false)
             });
-        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
-            {RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, TABLE_ALIAS("nav", class_Element, 0), TABLE_ALIAS("nav", class_ElementOwnsChildElements, 0))}
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, TABLE_ALIAS("nav", class_Element, 0), TABLE_ALIAS("nav", class_ElementOwnsChildElements, 0))
             });
         descriptor->GetSelectClasses().push_back(SelectClassInfo(class_Element, true));
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
             RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, "element", TABLE_ALIAS("rel", class_ElementOwnsChildElements, 2), true),
             RelatedClass(class_Element, class_Sheet, class_ElementOwnsChildElements, false, "related", TABLE_ALIAS("rel", class_ElementOwnsChildElements, 0), false)
             });
-        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
-            {RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, TABLE_ALIAS("nav", class_Element, 0), TABLE_ALIAS("nav", class_ElementOwnsChildElements, 0))}
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, TABLE_ALIAS("nav", class_Element, 0), TABLE_ALIAS("nav", class_ElementOwnsChildElements, 0))
             });
         
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));
@@ -5518,15 +5540,15 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
             RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0", false)
             });
-        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
-            {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")
             });
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, true));
         descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
             RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", false)
             });
-        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
-            {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")
             });
 
         ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0);
@@ -5668,9 +5690,11 @@ void ExpectedQueries::RegisterExpectedQueries()
             {RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "rel_RET_Gadget_0", "rel_RET_WidgetHasGadget_0")}
             });
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, false));
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_1", "nav_RET_GadgetHasSprockets_0")
+            });
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
-            {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "rel_RET_Gadget_2", "rel_RET_GadgetHasSprockets_0")},
-            {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_1", "nav_RET_GadgetHasSprockets_0")}
+            {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "rel_RET_Gadget_2", "rel_RET_GadgetHasSprockets_0")}
             });
 
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0));        
@@ -5727,9 +5751,11 @@ void ExpectedQueries::RegisterExpectedQueries()
         {
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, false));
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")
+            });
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
-            {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "rel_RET_Gadget_1", "rel_RET_GadgetHasSprockets_0")},
-            {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
+            {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "rel_RET_Gadget_1", "rel_RET_GadgetHasSprockets_0")}
             });
         
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0)); 
@@ -5764,9 +5790,11 @@ void ExpectedQueries::RegisterExpectedQueries()
         {
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, false));
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")
+            });
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
-            {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "rel_RET_Gadget_1", "rel_RET_GadgetHasSprockets_0")},
-            {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
+            {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "rel_RET_Gadget_1", "rel_RET_GadgetHasSprockets_0")}
             });
         
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0)); 
@@ -5801,9 +5829,11 @@ void ExpectedQueries::RegisterExpectedQueries()
         {
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Sprocket, false));
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")
+            });
         descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
-            {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "rel_RET_Gadget_1", "rel_RET_GadgetHasSprockets_0")},
-            {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0")}
+            {RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "rel_RET_Gadget_1", "rel_RET_GadgetHasSprockets_0")}
             });
         
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0)); 
@@ -5839,8 +5869,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         ContentDescriptor::Category sprocketCategory(ret_Sprocket.GetName(), ret_Sprocket.GetDisplayLabel(), "", DefaultCategorySupplier::NESTED_CONTENT_CATEGORY_PRIORITY);
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
         descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Gadget, false));
-        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
-            {RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")}
+        descriptor->GetSelectClasses().back().SetNavigationPropertyClasses({
+            RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")
             });
         
         descriptor->AddField(new ContentDescriptor::DisplayLabelField(PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()), 0)); 

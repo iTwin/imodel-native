@@ -2084,8 +2084,7 @@ TEST_F(DefaultECPresentationSerializerTests, ContentDescriptorSerializationNoSel
                 }
                 ],
             "RelatedPropertyPaths": [
-                    [
-                    {
+                    [{
                     "SourceClassInfo": {
                         "Id": "",
                         "Name": "TestSchema:PropertyTestClassA",
@@ -2103,9 +2102,10 @@ TEST_F(DefaultECPresentationSerializerTests, ContentDescriptorSerializationNoSel
                         },
                     "IsForwardRelationship": false,
                     "IsPolymorphicRelationship": true
-                    }
-                    ]
-                ]
+                    }]
+                ],
+            "NavigationPropertyClasses": [],
+            "RelatedInstanceClasses": []
             }
             ],
         "Fields": [

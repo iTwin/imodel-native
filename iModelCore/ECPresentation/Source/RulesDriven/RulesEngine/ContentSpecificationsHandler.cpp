@@ -321,14 +321,14 @@ void ContentSpecificationsHandler::AppendClass(ECClassCR ecClass, ContentSpecifi
     for (ECPropertyCP prop : properties)
         AppendProperty(*appender, navigationPropertiesPaths, *prop, "this");
     
+    info.SetNavigationPropertyClasses(navigationPropertiesPaths);
+
     if (_ShouldIncludeRelatedProperties())
         {
         InstanceFilteringParams filteringParams(GetContext().GetConnection(), GetContext().GetSchemaHelper().GetECExpressionsCache(),
             input, info, nullptr, instanceFilter.c_str());
         AppendRelatedPropertiesParams params(s_emptyRelationshipPath, ecClass, "this", spec.GetRelatedProperties(), filteringParams);
         bvector<RelatedClassPath> relatedPropertyPaths = AppendRelatedProperties(params, false);
-        for (RelatedClassCR navigationPropertyPath : navigationPropertiesPaths)
-            relatedPropertyPaths.push_back({navigationPropertyPath});
         info.SetRelatedPropertyPaths(relatedPropertyPaths);
         }
 
@@ -370,6 +370,7 @@ void ContentSpecificationsHandler::AppendClassPaths(bvector<RelatedClassPath> co
         appendInfo.SetPathToPrimaryClass(path);
         appendInfo.SetRelatedInstanceClasses(QueryBuilderHelpers::GetRelatedInstanceClasses(GetContext().GetSchemaHelper(), appendInfo.GetSelectClass(),
             spec.GetRelatedInstances(), GetContext().GetRelationshipUseCounts()));
+        appendInfo.SetNavigationPropertyClasses(navigationPropertiesPaths);
         
         if (_ShouldIncludeRelatedProperties())
             {
@@ -377,8 +378,6 @@ void ContentSpecificationsHandler::AppendClassPaths(bvector<RelatedClassPath> co
                 &input, appendInfo, recursiveInfo, spec.GetInstanceFilter().c_str());
             AppendRelatedPropertiesParams params(s_emptyRelationshipPath, selectClass, "this", spec.GetRelatedProperties(), filteringParams);
             bvector<RelatedClassPath> relatedPropertyPaths = AppendRelatedProperties(params, false);
-            for (RelatedClassCR navigationPropertyPath : navigationPropertiesPaths)
-                relatedPropertyPaths.push_back({navigationPropertyPath});
             appendInfo.SetRelatedPropertyPaths(relatedPropertyPaths);
             }
 

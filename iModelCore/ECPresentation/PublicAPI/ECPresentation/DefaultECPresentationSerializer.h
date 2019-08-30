@@ -90,6 +90,7 @@ protected:
 
     ECPRESENTATION_EXPORT virtual rapidjson::Value _AsJson(KindOfQuantityCR koq, rapidjson::Document::AllocatorType&) const override;
 
+    ECPRESENTATION_EXPORT virtual rapidjson::Value _AsJson(RelatedClassCR path, rapidjson::Document::AllocatorType&) const override;
     ECPRESENTATION_EXPORT virtual rapidjson::Value _AsJson(RelatedClassPathCR path, rapidjson::Document::AllocatorType&) const override;
 
     ECPRESENTATION_EXPORT virtual rapidjson::Value _AsJson(SelectionInfo const& selectionInfo, rapidjson::Document::AllocatorType&) const override;
