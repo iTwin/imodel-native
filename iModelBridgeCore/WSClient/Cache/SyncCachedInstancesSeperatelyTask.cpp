@@ -16,9 +16,10 @@ SyncCachedInstancesSeperatelyTask::SyncCachedInstancesSeperatelyTask
 CachingDataSourcePtr ds,
 const bset<ObjectId>& objects,
 SyncCachedInstancesTask::ProgressCallback onProgress,
-ICancellationTokenPtr ct
+ICancellationTokenPtr userCt,
+SimpleCancellationTokenPtr abortCt
 ) :
-CachingTaskBase(ds, ct),
+CachingTaskBase(ds, userCt, abortCt),
 m_objectsLeftToCache(objects.begin(), objects.end()),
 m_onProgress(onProgress ? onProgress : [] (size_t, CacheTransactionCR, const bset<ECInstanceKey>&) {}),
 m_totalToCache(m_objectsLeftToCache.size())

@@ -32,7 +32,8 @@ struct SyncCachedInstancesTask : public CachingTaskBase
             CachingDataSourcePtr ds,
             const bset<ObjectId>& objects,
             ProgressCallback onProgress,
-            ICancellationTokenPtr ct
+            ICancellationTokenPtr userCt,
+            SimpleCancellationTokenPtr abortCt
             );
 
         virtual void _OnExecute();
@@ -47,7 +48,8 @@ struct SyncCachedInstancesTask : public CachingTaskBase
             CachingDataSourcePtr ds,
             const bset<ObjectId>& instanceIds,
             ProgressCallback onProgress,
-            ICancellationTokenPtr ct
+            ICancellationTokenPtr userCt,
+            SimpleCancellationTokenPtr abortCt
             );
     };
 

@@ -28,7 +28,7 @@ bvector<IQueryProviderPtr> queryProviders,
 ICachingDataSource::ProgressHandler progressHandler,
 ICancellationTokenPtr ct
 ) :
-CachingTaskBase(ds, ct),
+CachingTaskBase(ds, ct, SimpleCancellationToken::Create()),
 m_queryProviders(queryProviders),
 m_progressHandler(progressHandler)
     {
@@ -125,7 +125,7 @@ void SyncCachedDataTask::CacheInitialInstances(CacheTransactionCR txn, const bse
             ReportProgress();
         };
 
-    SyncCachedInstancesTask::Run(m_ds, objectIds, onProgress, GetCancellationToken())
+    SyncCachedInstancesTask::Run(m_ds, objectIds, onProgress, GetUserCancellationToken(), GetAbortCancellationToken())
         ->Then(m_ds->GetCacheAccessThread(), [=] (ICachingDataSource::BatchResult result)
         {
         AddResult(result);

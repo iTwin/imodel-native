@@ -1011,7 +1011,7 @@ ICancellationTokenPtr ct
 
                 if (!rejected.empty())
                     {
-                    SyncCachedInstancesTask::Run(this->shared_from_this(), rejected, nullptr, ct)
+                    SyncCachedInstancesTask::Run(this->shared_from_this(), rejected, nullptr, ct, SimpleCancellationToken::Create())
                         ->Then(m_cacheAccessThread, [=] (BatchResult instancesResult)
                         {
                         if (instancesResult.IsSuccess())
