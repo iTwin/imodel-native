@@ -1258,8 +1258,9 @@ public:
         {
         REQUIRE_ARGUMENT_STRING(0, dbname, Env().Undefined());
         REQUIRE_ARGUMENT_INTEGER(1, mode, Env().Undefined());
+        OPTIONAL_ARGUMENT_INTEGER(2, upgrade, (int) SchemaUpgradeOptions::DomainUpgradeOptions::CheckRequiredUpgrades, Env().Undefined());
 
-        SchemaUpgradeOptions schemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::CheckRequiredUpgrades);
+        SchemaUpgradeOptions schemaUpgradeOptions((SchemaUpgradeOptions::DomainUpgradeOptions) upgrade);
         DgnDb::OpenParams openParams((Db::OpenMode)mode, BeSQLite::DefaultTxn::Yes, schemaUpgradeOptions);
 
         DbResult result = OpenDgnDb(BeFileName(dbname.c_str(), true), openParams);
@@ -4667,11 +4668,11 @@ struct NativeUlasClient : BeObjectWrap<NativeUlasClient>
             if (!featureEventObj.Has("versionStr"))
                 return Napi::Number::New(info.Env(), (int) BentleyStatus::ERROR);
             BeVersion appVersion = BeVersion(featureEventObj.Get("versionStr").ToString().Utf8Value().c_str());
-            
+
             Licensing::FeatureEvent featureEvent = !featureEventObj.Has("projectId")
                 ? Licensing::FeatureEvent(featureId, appVersion)
                 : Licensing::FeatureEvent(featureId, appVersion, featureEventObj.Get("projectId").ToString().Utf8Value().c_str());
-            
+
             OPTIONAL_ARGUMENT_INTEGER(2, authType, (int) Licensing::AuthType::OIDC, Napi::Number::New(info.Env(), (int) BentleyStatus::ERROR));
             OPTIONAL_ARGUMENT_INTEGER(3, productId, -1, Napi::Number::New(info.Env(), (int) BentleyStatus::ERROR));
             OPTIONAL_ARGUMENT_STRING(4, deviceId, Napi::Number::New(info.Env(), (int) BentleyStatus::ERROR));
@@ -4680,7 +4681,7 @@ struct NativeUlasClient : BeObjectWrap<NativeUlasClient>
 
             BentleyStatus status = UlasClient::Get().MarkFeature(accessToken, featureEvent, (Licensing::AuthType) authType, productId, deviceId, (Licensing::UsageType) usageType, correlationId);
 
-            return Napi::Number::New(info.Env(), (int) status);  
+            return Napi::Number::New(info.Env(), (int) status);
             }
     public:
         NativeUlasClient(Napi::CallbackInfo const &info) : BeObjectWrap<NativeUlasClient>(info) {}

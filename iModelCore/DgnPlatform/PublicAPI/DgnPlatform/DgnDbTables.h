@@ -256,7 +256,7 @@ public:
     DgnCode(CodeSpecId specId, BeSQLite::BeGuidCR scopeFederationGuid, Utf8StringCR value) : m_specId(specId), m_scope(scopeFederationGuid.ToString()), m_value(value) {}
 
     //! Invalidate this DgnCode
-    void Invalidate() 
+    void Invalidate()
         {
         m_specId.Invalidate();
         m_scope.clear();
@@ -336,7 +336,7 @@ public:
     //! @private
     //! @note Not a general purpose method, only to be used by RepositoryManager to initialize from a JSON representation
     DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value);
-    
+
     BE_JSON_NAME(spec)
     BE_JSON_NAME(scope)
     BE_JSON_NAME(value)
@@ -349,8 +349,7 @@ typedef bset<DgnCode> DgnCodeSet;
 //=======================================================================================
 //! A base class for api's that access a table in a DgnDb
 //=======================================================================================
-struct DgnDbTable : NonCopyableClass
-{
+struct DgnDbTable : NonCopyableClass {
 protected:
     friend struct DgnDb;
     DgnDbR m_dgndb;
@@ -377,17 +376,16 @@ public:
 //! @see DgnDb::Models
 //! @ingroup GROUP_DgnModel
 //=======================================================================================
-struct DgnModels : DgnDbTable
-{
+struct DgnModels : DgnDbTable {
 private:
     friend struct DgnDb;
     friend struct DgnModel;
     friend struct dgn_TxnTable::Model;
-    typedef bmap<DgnModelId,DgnModelPtr> T_DgnModelMap;
+    typedef bmap<DgnModelId, DgnModelPtr> T_DgnModelMap;
     typedef bmap<DgnClassId, ECSqlClassInfo> T_ClassInfoMap;
 
     mutable BeMutex m_mutex;
-    T_DgnModelMap  m_models;
+    T_DgnModelMap m_models;
     T_ClassInfoMap m_classInfos;
 
     DgnModelPtr LoadDgnModel(DgnModelId modelId);
@@ -396,7 +394,7 @@ private:
     void DropLoadedModel(DgnModelR);
 
     ECSqlClassInfo const& FindClassInfo(DgnModelR model);
-    DGNPLATFORM_EXPORT BeSQLite::EC::CachedECSqlStatementPtr GetSelectStmt(DgnModelR model);     // used by imodeljs node addon
+    DGNPLATFORM_EXPORT BeSQLite::EC::CachedECSqlStatementPtr GetSelectStmt(DgnModelR model); // used by imodeljs node addon
     BeSQLite::EC::CachedECSqlStatementPtr GetInsertStmt(DgnModelR model);
     BeSQLite::EC::CachedECSqlStatementPtr GetUpdateStmt(DgnModelR model);
 
@@ -405,6 +403,10 @@ private:
 
 public:
     void ClearCache() { m_models.clear(); }
+    void ClearECCaches() {
+        BeMutexHolder _v_v(m_mutex);
+        m_classInfos.clear();
+    }
 
     //! Create a new, non-persistent model from the supplied ECInstance.
     //! The supplied instance must contain the model's Code.
@@ -420,7 +422,8 @@ public:
     //! @return Invalid if the model does not exist.
     DGNPLATFORM_EXPORT DgnModelPtr GetModel(DgnModelId modelId);
 
-    template<class T> RefCountedPtr<T> Get(DgnModelId id) {return dynamic_cast<T*>(GetModel(id).get());}
+    template <class T>
+    RefCountedPtr<T> Get(DgnModelId id) { return dynamic_cast<T*>(GetModel(id).get()); }
 
     //! Query if the specified model has already been loaded.
     //! @return a pointer to the model if found, or nullptr if the model has not been loaded.
@@ -429,7 +432,7 @@ public:
     DGNPLATFORM_EXPORT DgnModelPtr FindModel(DgnModelId modelId);
 
     //! Get the currently loaded DgnModels for this DgnDb
-    T_DgnModelMap const& GetLoadedModels() const {return m_models;}
+    T_DgnModelMap const& GetLoadedModels() const { return m_models; }
 
     //! Query for a DgnModelId by the DgnCode of the element that is being modeled
     DGNPLATFORM_EXPORT DgnModelId QuerySubModelId(DgnCodeCR modeledElementCode) const;
@@ -438,29 +441,28 @@ public:
     //! @param[in] className The <i>full</i> ECClass name.  For example: BIS_SCHEMA(BIS_CLASS_PhysicalModel)
     //! @param[in] whereClause The optional where clause starting with WHERE
     //! @param[in] orderByClause The optional order by clause starting with ORDER BY
-    DGNPLATFORM_EXPORT ModelIterator MakeIterator(Utf8CP className, Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr) const;
+    DGNPLATFORM_EXPORT ModelIterator MakeIterator(Utf8CP className, Utf8CP whereClause = nullptr, Utf8CP orderByClause = nullptr) const;
 
     //! Get a string containing the list of characters that may NOT appear in model names.
-    static Utf8CP GetIllegalCharacters() {return "\\/:*?<>|\"\t\n,=&";}
+    constexpr static Utf8CP GetIllegalCharacters() { return "\\/:*?<>|\"\t\n,=&"; }
 
     //! Determine whether the supplied name is a valid model name.
     //! @param[in] name The candidate model name to check
     //! @return true if the model name is valid, false otherwise.
     //! @note Model names may also not start or end with a space.
-    static bool IsValidName(Utf8StringCR name) {return DgnDbTable::IsValidName(name, GetIllegalCharacters());}
+    static bool IsValidName(Utf8StringCR name) { return DgnDbTable::IsValidName(name, GetIllegalCharacters()); }
 };
 
 //=======================================================================================
 //! @see DgnDb::Fonts
 // @bsiclass                                                    Jeff.Marker     03/2015
 //=======================================================================================
-struct DgnFonts : NonCopyableClass
-{
+struct DgnFonts : NonCopyableClass {
     BE_JSON_NAME(fonts);
     BE_JSON_NAME(name);
     BE_JSON_NAME(type);
     BE_JSON_NAME(id);
-    
+
     typedef bmap<DgnFontId,DgnFontPtr> T_FontMap;
 
     //=======================================================================================
@@ -785,7 +787,7 @@ public:
     //! Get the EcefLocation for this iModel. May not be valid if iModel is not geolocated.
     DGNPLATFORM_EXPORT EcefLocation GetEcefLocation() const;
 
-    //! Get the intial center of the project.  This is set only when the project is created and is not 
+    //! Get the intial center of the project.  This is set only when the project is created and is not
     //! updated when the project extents are altered.
     DPoint3dCR GetInitialProjectCenter() const { return m_initialProjectCenter; }
 

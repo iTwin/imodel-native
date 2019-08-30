@@ -61,9 +61,12 @@ DgnPlatformSeedManager::SeedDbInfo DgnPlatformSeedManager::GetOneSpatialModelSee
 
     //  First request for this seed file. Create it.
     DgnDbPtr db = DgnDbTestUtils::CreateDgnDb(info.fileName, true);
+    if (!db.IsValid())
+        return info;
+
     PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*db, info.physicalPartitionName.c_str());
     DgnDbTestUtils::InsertSpatialCategory(*db, info.categoryName.c_str());
-    
+
     if (info.options.cameraView)
         DgnDbTestUtils::InsertCameraView(*model, info.viewName.c_str());
 

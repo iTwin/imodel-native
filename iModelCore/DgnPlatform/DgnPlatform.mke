@@ -66,7 +66,7 @@ DLM_OBJECT_DEST                 = $(DgnPlatformObj)
 
 contextDepends                  = $(DgnPlatformAPISrc)ViewContext.h $(DgnPlatformAPISrc)Render.h $(DgnPlatformAPISrc)DgnViewport.h
 
-ViewControllerDepends           = $(DgnPlatformAPISrc)ViewController.h $(DgnPlatformAPISrc)ViewContext.h $(DgnPlatformAPISrc)RevisionComparisonViewController.h $(DgnPlatformAPISrc)SubjectViewController.h
+ViewControllerDepends           = $(DgnPlatformAPISrc)ViewController.h $(DgnPlatformAPISrc)ViewContext.h
 
 HandlerDepends                  = $(DgnPlatformAPISrc)ElementHandler.h $(contextDepends)
 
@@ -131,8 +131,6 @@ CPchOpts            = $(UsePrecompiledHeaderOptions)
 
 MultiCompileDepends =$(_MakeFileSpec)
 %include MultiCppCompileRule.mki
-
-$(CoreObjs)GraphiteResourceUri$(oext) :             $(DgnCoreDir)GraphiteResourceUri.cpp ${MultiCompileDepends}
 
 $(CoreObjs)DgnElement$(oext) :                      $(DgnCoreDir)DgnElement.cpp ${MultiCompileDepends} $(PropertyDepends) $(toolsHeaders)
 
@@ -256,13 +254,7 @@ $(CoreObjs)DgnShxFont$(oext) :                      $(DgnCoreDir)DgnShxFont.cpp 
 
 $(CoreObjs)DgnShxFontData$(oext) :                  $(DgnCoreDir)DgnShxFontData.cpp $(DgnPlatformAPISrc)DgnFont.h ${MultiCompileDepends}
 
-$(CoreObjs)Sprites$(oext) :                         $(DgnCoreDir)Sprites.cpp ${MultiCompileDepends}
-
-$(CoreObjs)HDRImage$(oext) :                        $(DgnCoreDir)HDRImage.cpp ${MultiCompileDepends}
-
 $(CoreObjs)ImageSource$(oext) :                     $(DgnCoreDir)ImageSource.cpp ${MultiCompileDepends}
-
-$(CoreObjs)ImageResize$(oext) :                     $(DgnCoreDir)ImageResize.cpp ${MultiCompileDepends}
 
 $(CoreObjs)GeomPart$(oext) :                        $(DgnCoreDir)GeomPart.cpp $(DgnPlatformAPISrc)GeomPart.h ${MultiCompileDepends}
 
@@ -336,25 +328,11 @@ $(CoreObjs)ScopedDgnHost$(oext) :                   $(DgnHandlersDir)ScopedDgnHo
 
 $(CoreObjs)ExternalReference$(oext) :               $(DgnCoreDir)ExternalReference.cpp $(HandlerDepends) ${MultiCompileDepends}
 
-$(CoreObjs)RevisionComparisonViewController$(oext): $(DgnCoreDir)RevisionComparisonViewController.cpp $(ViewControllerDepends) ${MultiCompileDepends}
-
-$(CoreObjs)SubjectViewController$(oext) :           $(DgnCoreDir)SubjectViewController.cpp $(ViewControllerDepends) ${MultiCompileDepends}
-
-$(CoreObjs)ModelSpatialClassifier$(oext) :                 $(DgnCoreDir)ModelSpatialClassifier.cpp $(DgnPlatformAPISrc)ModelSpatialClassifier.h  ${MultiCompileDepends}
-
-# NEEDSWORK: disabling this until we can settle schema issues
-#
-#$(CoreObjs)DimensionStyle$(oext) :                  $(DgnCoreDir)Dimension/DimensionStyle.cpp $(DgnPlatformAPISrc)Dimension/Dimension.h ${MultiCompileDepends}
-#
-#$(CoreObjs)LinearDimension$(oext) :                 $(DgnCoreDir)Dimension/LinearDimension.cpp $(DgnPlatformAPISrc)Dimension/Dimension.h ${MultiCompileDepends}
-#
-#$(CoreObjs)LinearDimensionStroker$(oext) :          $(DgnCoreDir)Dimension/LinearDimensionStroker.cpp $(DgnPlatformAPISrc)Dimension/Dimension.h ${MultiCompileDepends}
-
 $(o)ECUtils$(oext) :                                $(DgnCoreDir)ECUtils.cpp $(DgnPlatformAPISrc)ECUtils.h ${MultiCompileDepends}
 
 $(o)RenderMaterial$(oext) :                         $(DgnCoreDir)RenderMaterial.cpp $(DgnPlatformAPISrc)RenderMaterial.h ${MultiCompileDepends}
 
-$(o)SmartIBL$(oext) :                               $(DgnCoreDir)SmartIBL.cpp ${MultiCompileDepends}
+$(CoreObjs)ModelSpatialClassifier$(oext) :          $(DgnCoreDir)ModelSpatialClassifier.cpp $(DgnPlatformAPISrc)ModelSpatialClassifier.h  ${MultiCompileDepends}
 
 #----------------------------------------------------------------------
 #   DgnGeoCoord

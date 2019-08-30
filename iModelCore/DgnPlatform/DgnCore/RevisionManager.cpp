@@ -72,7 +72,7 @@ ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, Ch
             BeAssert(result == BE_SQLITE_OK);
             LOG.infov("Detected %d foreign key conflicts in ChangeSet", nConflicts);
             }
-        else 
+        else
             {
             iter.Dump(dgndb, false, 1);
             }
@@ -91,15 +91,15 @@ ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, Ch
         */
         if (opcode == DbOpcode::Delete)
             {
-            // Caused by CASCADE DELETE on a foreign key, and is usually not a problem. 
+            // Caused by CASCADE DELETE on a foreign key, and is usually not a problem.
             LOG.infov("Conflict resolved by keeping the existing entry and skipping the change");
             return ChangeSet::ConflictResolution::Skip;
             }
 
-        
+
         if (opcode == DbOpcode::Update && 0 == ::strncmp(tableName, "ec_", 3))
             {
-            // Caused by a ON DELETE SET NULL constraint on a foreign key - this is known to happen with "ec_" tables, but needs investigation if it happens otherwise        
+            // Caused by a ON DELETE SET NULL constraint on a foreign key - this is known to happen with "ec_" tables, but needs investigation if it happens otherwise
             LOG.infov("Conflict resolved by keeping the existing entry and skipping the change");
             return ChangeSet::ConflictResolution::Skip;
             }
@@ -107,11 +107,11 @@ ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, Ch
         if (!letControlHandleThis)
             {
             // Refer to comment below
-            return opcode == DbOpcode::Update ? ChangeSet::ConflictResolution::Skip : ChangeSet::ConflictResolution::Replace; 
+            return opcode == DbOpcode::Update ? ChangeSet::ConflictResolution::Skip : ChangeSet::ConflictResolution::Replace;
             }
         }
 
-    if (letControlHandleThis) 
+    if (letControlHandleThis)
         {
         // if we have a concurrency control, then we allow it to decide how to handle conflicts with local changes.
         // (We don't call the control in the case where there are no local changes. As explained below, we always want the incoming changes in that case.)
@@ -128,20 +128,20 @@ ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, Ch
     /*
      * If we don't have a control, we always accept the incoming revision in cases of conflicts:
      *
-     * + In a briefcase with no local changes, the state of a row in the Db (i.e., the final state of a previous revision) 
+     * + In a briefcase with no local changes, the state of a row in the Db (i.e., the final state of a previous revision)
      *   may not exactly match the initial state of the incoming revision. This will cause a conflict.
-     *      - The final state of the incoming (later) revision will always be setup exactly right to accommodate 
-     *        cases where dependency handlers won't be available (for instance on the server), and we have to rely on 
-     *        the revision to correctly set the final state of the row in the Db. Therefore it's best to resolve the 
-     *        conflict in favor of the incoming change. 
+     *      - The final state of the incoming (later) revision will always be setup exactly right to accommodate
+     *        cases where dependency handlers won't be available (for instance on the server), and we have to rely on
+     *        the revision to correctly set the final state of the row in the Db. Therefore it's best to resolve the
+     *        conflict in favor of the incoming change.
      *
-     * + In a briefcase with local changes, the state of relevant dependent properties (due to propagated indirect changes) 
+     * + In a briefcase with local changes, the state of relevant dependent properties (due to propagated indirect changes)
      *   may not correspond with the initial state of these properties in an incoming revision. This will cause a conflict.
-     *      - Resolving the conflict in favor of the incoming revision may cause some dependent properties to be set 
-     *        incorrectly, but the dependency handlers will run anyway and set this right. The new changes will be part of 
+     *      - Resolving the conflict in favor of the incoming revision may cause some dependent properties to be set
+     *        incorrectly, but the dependency handlers will run anyway and set this right. The new changes will be part of
      *        a subsequent revision generated from that briefcase.
      *
-     * + Note that conflicts can NEVER happen between direct changes made locally and direct changes in the incoming revision. 
+     * + Note that conflicts can NEVER happen between direct changes made locally and direct changes in the incoming revision.
      *      - Only one user can make a direct change at one time, and the next user has to pull those changes before getting a
      *        lock to the same element
      *
@@ -181,7 +181,7 @@ private:
     //---------------------------------------------------------------------------------------
     void AddStringToHash(Utf8StringCR hashString)
         {
-        Byte hashValue[SHA1::HashBytes];            
+        Byte hashValue[SHA1::HashBytes];
         if (hashString.empty())
             {
             memset(hashValue, 0, SHA1::HashBytes);
@@ -196,7 +196,7 @@ private:
                 hashValue[ii] = (Byte) (16 * HexCharToInt(hexChar1) + HexCharToInt(hexChar2));
                 }
             }
-            
+
         m_hash.Add(hashValue, SHA1::HashBytes);
         }
 
@@ -269,7 +269,7 @@ public:
 DgnRevisionPtr DgnRevision::Create(RevisionStatus* outStatus, Utf8StringCR revisionId, Utf8StringCR parentRevisionId, Utf8StringCR dbGuid)
     {
     RevisionStatus ALLOW_NULL_OUTPUT(status, outStatus);
-    
+
     if (revisionId.empty() || revisionId.length() != SHA1::HashBytes * 2)
         {
         status = RevisionStatus::InvalidId;
@@ -278,7 +278,7 @@ DgnRevisionPtr DgnRevision::Create(RevisionStatus* outStatus, Utf8StringCR revis
         }
 
     BeFileName changeStreamPathname = BuildRevisionChangesPathname(revisionId);
-    
+
     DgnRevisionPtr revision = new DgnRevision(revisionId, parentRevisionId, dbGuid);
     revision->m_revChangesFile = changeStreamPathname;
     revision->m_ownsRevChangesFile = true;
@@ -616,14 +616,14 @@ void DgnRevision::ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb, bool extrac
 
     for (ChangeIterator::RowEntry const& entry : changeIter)
         {
-        if (!entry.IsMapped())
+        if (!entry.IsMapped()|| entry.GetIndirect() || !entry.IsPrimaryTable())
             continue;
 
         ECClassCP primaryClass = entry.GetPrimaryClass();
         BeAssert(primaryClass != nullptr);
 
         // Check for indirect changes cause by a ElementDrivesElement relationship
-        if (entry.GetIndirect() || !entry.IsPrimaryTable() || !primaryClass->Is(elemClass))
+        if (!primaryClass->Is(elemClass))
             continue;
 
         ChangeIterator::ColumnIterator columnIter = entry.MakeColumnIterator(*primaryClass); // Note: ColumnIterator needs to be in the stack to access column
@@ -633,7 +633,7 @@ void DgnRevision::ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb, bool extrac
 
         if ((entry.GetDbOpcode() == DbOpcode::Update) && (oldModelId != modelId))
             lockRequest.InsertLock(LockableId(oldModelId), LockLevel::Shared);
-        
+
         // TFS#788401: Avoid inserting locks if exclusively locked models
         if (exclusiveModelIds.Contains(modelId))
             continue;
@@ -648,14 +648,11 @@ void DgnRevision::ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb, bool extrac
     // Any models or CodeSpecs directly changed?
     for (ChangeIterator::RowEntry const& entry : changeIter)
         {
-        if (!entry.IsMapped())
+        if (!entry.IsMapped() || entry.GetIndirect() || !entry.IsPrimaryTable())
             continue;
 
         ECClassCP primaryClass = entry.GetPrimaryClass();
         BeAssert(primaryClass != nullptr);
-
-        if (!entry.IsPrimaryTable())
-            continue;
 
         // TFS#788401: We don't want to extract locks for inserted models unless we set extractInserted to true
         if (primaryClass->Is(modelClass) && (extractInserted || entry.GetDbOpcode() != DbOpcode::Insert))
@@ -932,7 +929,7 @@ DgnRevisionPtr RevisionManager::GetCreatingRevision()
         return m_currentRevision;
 
     /* Recreate the revision from scratch starting with the saved end transaction id
-     * This is to account for the possibility that the client crashed before 
+     * This is to account for the possibility that the client crashed before
      * FinishCreateRevision() is called. */
 
     TxnManager::TxnId endTxnId = QueryCurrentRevisionEndTxnId();
@@ -940,7 +937,7 @@ DgnRevisionPtr RevisionManager::GetCreatingRevision()
         return nullptr;
 
     m_currentRevision = CreateRevision(nullptr, endTxnId, QueryLastRebaseId());
-    
+
     return m_currentRevision;
     }
 
@@ -965,7 +962,7 @@ RevisionStatus RevisionManager::DoMergeRevision(DgnRevisionCR revision)
     {
     PRECONDITION(!m_dgndb.IsReadonly() && "Cannot merge changes into a Readonly database", RevisionStatus::CannotMergeIntoReadonly);
     PRECONDITION(!m_dgndb.IsMasterCopy() && "Cannot merge changes into the Master copy of a database", RevisionStatus::CannotMergeIntoMaster);
-    
+
     TxnManagerR txnMgr = m_dgndb.Txns();
 
     PRECONDITION(!txnMgr.HasChanges() && "There are unsaved changes in the current transaction. Call db.SaveChanges() or db.AbandonChanges() first", RevisionStatus::HasUncommittedChanges);
@@ -1083,7 +1080,7 @@ struct ChangeStreamQueueConsumer : ChangeStream
     bvector<uint8_t> m_remaining;
 
     ChangeStreamQueueConsumer(folly::ProducerConsumerQueue<bvector<uint8_t>>& q) : m_q(q) {}
-    
+
     DbResult _InputPage(void *pData, int *pnData) override
         {
         if (!m_remaining.empty())
@@ -1130,13 +1127,13 @@ struct ChangeStreamQueueConsumer : ChangeStream
 //---------------------------------------------------------------------------------------
 RevisionStatus RevisionManager::WriteChangesToFile(BeFileNameCR pathname, DbSchemaChangeSetCR dbSchemaChangeSet, ChangeGroupCR dataChangeGroup, Rebaser* rebaser)
     {
-    bool containsSchemaChanges = QueryContainsSchemaChanges() || (dbSchemaChangeSet.GetSize() > 0); // Note: Our workflows really disallow DbSchemaChanges without corresponding ECSchema changes, but we allow this here to for testing cases. 
+    bool containsSchemaChanges = QueryContainsSchemaChanges() || (dbSchemaChangeSet.GetSize() > 0); // Note: Our workflows really disallow DbSchemaChanges without corresponding ECSchema changes, but we allow this here to for testing cases.
     RevisionChangesFileWriter writer(pathname, containsSchemaChanges, dbSchemaChangeSet, m_dgndb);
 
     DbResult result = writer.Initialize();
     if (BE_SQLITE_OK != result)
         return RevisionStatus::FileWriteError;
-	
+
     if (nullptr == rebaser)
         {
         result = writer.FromChangeGroup(dataChangeGroup);
@@ -1149,7 +1146,7 @@ RevisionStatus RevisionManager::WriteChangesToFile(BeFileNameCR pathname, DbSche
 
         ChangeStreamQueueConsumer readFromQueue(pageQueue);
         std::thread writerThread([&] {rebaseResult = rebaser->DoRebase(readFromQueue, writer);});
-    
+
         ChangeStreamQueueProducer writeToQueue(pageQueue);
         result = writeToQueue.FromChangeGroup(dataChangeGroup);
 
@@ -1449,7 +1446,7 @@ void OptimisticConcurrencyControlBase::_OnProcessedRequest(IBriefcaseManager::Re
         m_locks.insert(m_locksTemp.begin(), m_locksTemp.end()); // take ownership of the locks, so that we can report them to the caller (just for information purposes)
         m_locksTemp.clear();
         }
-    
+
     BeAssert(m_locksTemp.empty());
     }
 
@@ -1459,7 +1456,7 @@ void OptimisticConcurrencyControlBase::_OnProcessedRequest(IBriefcaseManager::Re
 void OptimisticConcurrencyControlBase::_OnExtractRequest(IBriefcaseManager::Request& req, IBriefcaseManager&)
     {
     BeAssert(m_locksTemp.empty());
-    
+
     // In optimistic concurrency, we don't acquire locks. Instead, we report them.
     auto& rlocks = req.Locks().GetLockSet();
     m_locks.insert(rlocks.begin(), rlocks.end());   // steal the locks
@@ -1522,7 +1519,7 @@ static DgnElementId getElementId(DgnDbCR db, Utf8CP tableName, BeSQLite::Changes
 // @bsimethod                                Sam.Wilson                         01/2018
 //---------------------------------------------------------------------------------------
 BeSQLite::ChangeSet::ConflictResolution OptimisticConcurrencyControl::HandleConflict(OnConflict onConflict, DgnDbCR db,
-                                                                                     Utf8CP tableName, BeSQLite::Changes::Change change, 
+                                                                                     Utf8CP tableName, BeSQLite::Changes::Change change,
                                                                                      BeSQLite::DbOpcode opcode, bool indirect)
     {
     if (indirect)
@@ -1614,10 +1611,10 @@ BeSQLite::ChangeSet::ConflictResolution OptimisticConcurrencyControl::_OnConflic
 
             // *** TBD: SQLITE_CHANGESET_FOREIGN_KEY
             // If foreign key handling is enabled, and applying a changeset leaves the database in a state containing foreign key violations, the conflict handler is invoked with CHANGESET_FOREIGN_KEY as the second argument exactly once before the changeset is committed. If the conflict handler returns CHANGESET_OMIT, the changes, including those that caused the foreign key constraint violation, are committed. Or, if it returns CHANGESET_ABORT, the changeset is rolled back.
-            // This is a special status that is passed to the callback just before the changeset is committed. It applies to the changeset as a whole. 
+            // This is a special status that is passed to the callback just before the changeset is committed. It applies to the changeset as a whole.
             // If the conflict handler returns CHANGESET_OMIT, the changes, including those that caused the foreign key constraint violation, are committed. Or, if it returns CHANGESET_ABORT, the changeset is rolled back.
             //    ==> This should never happen, since we will reject incoming changes that would cause constraint violations, as described above.
-    
+
             BeAssert(false && "Conflict cause Conflict and ForeignKey should never happen");
             LOG.warning("NotFound Conflict should never happen");
             onConflict = OptimisticConcurrencyControl::OnConflict::AcceptIncomingChange;
@@ -1628,7 +1625,7 @@ BeSQLite::ChangeSet::ConflictResolution OptimisticConcurrencyControl::_OnConflic
             onConflict = OptimisticConcurrencyControl::OnConflict::AcceptIncomingChange;
             break;
         }
-        
+
     return HandleConflict(onConflict, db, tableName, change, opcode, indirect != 0);
     }
 
@@ -1689,7 +1686,7 @@ RevisionStatus RevisionManager::ProcessRevisions(bvector<DgnRevisionCP> const& r
         if (!EXPECTED_CONDITION(!revision->ContainsSchemaChanges(m_dgndb)) && "Cannot process a revision containing schema changes when the DgnDb is already open. Close the DgnDb and reopen with the upgrade schema options set to the revision.")
             return RevisionStatus::ProcessSchemaChangesOnOpen;
         }
-        
+
     return DoProcessRevisions(revisions, processOptions);
     }
 

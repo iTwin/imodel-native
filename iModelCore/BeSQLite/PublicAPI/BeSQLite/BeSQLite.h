@@ -253,15 +253,15 @@ protected:
     uint32_t m_id;
 
 public:
-    static uint32_t const MaxRepo() {return 1L<<24;} 
-    static uint32_t const Master()  {return 0;} 
+    static uint32_t const MaxRepo() {return 1L<<24;}
+    static uint32_t const Master()  {return 0;}
     static uint32_t const Standalone() {return 1;}
     static uint32_t const Illegal() {return (uint32_t)0xffffffff;}
 
     BeBriefcaseId GetNextBriefcaseId() const {return BeBriefcaseId(m_id+1);}
     BeBriefcaseId() {Invalidate();}             //!< Construct an invalid BeBriefcaseId.
     explicit BeBriefcaseId(uint32_t u) {m_id=u;} //!< Construct a BeBriefcaseId from a 32 bit value.
-    void Invalidate() {m_id = Illegal();}  //!< Set this BeBriefcaseId to the invalid id value 
+    void Invalidate() {m_id = Illegal();}  //!< Set this BeBriefcaseId to the invalid id value
     bool IsValid() const {return Illegal() != m_id;}  //!< Test to see whether this BriefcaseId is valid.
     bool IsMasterId() const {return Master()==m_id;}  //!< Determine whether this is the id of the master briefcase (special id==0).
     bool IsStandaloneId() const {return Standalone()==m_id;} //!< Determine whether this is the id of a standalone briefcase not associated with any master briefcase (special id==1)
@@ -441,9 +441,9 @@ enum DbResult
     BE_SQLITE_ERROR_ProfileTooNew     = (BE_SQLITE_IOERR | (12<<24)),  //!< Profile of file is too new. Therefore file cannot be opened.
     BE_SQLITE_ERROR_ChangeTrackError  = (BE_SQLITE_IOERR | (13<<24)),  //!< attempt to commit with active changetrack
     BE_SQLITE_ERROR_InvalidRevisionVersion = (BE_SQLITE_IOERR | (14 << 24)), //!< invalid version of the revision file is being imported
-    
+
     BE_SQLITE_ERROR_SchemaUpgradeRequired   = (BE_SQLITE_IOERR | 15 << 24), //!< The schemas found in the database need to be upgraded.
-    BE_SQLITE_ERROR_SchemaTooNew            = (BE_SQLITE_IOERR | 16 << 24), //!< The schemas found in the database are too new, and the application needs to be upgraded. 
+    BE_SQLITE_ERROR_SchemaTooNew            = (BE_SQLITE_IOERR | 16 << 24), //!< The schemas found in the database are too new, and the application needs to be upgraded.
     BE_SQLITE_ERROR_SchemaTooOld            = (BE_SQLITE_IOERR | 17 << 24), //!< The schemas found in the database are too old, and the DgnDb needs to be recreated after extensive data transformations ("teleported").
     BE_SQLITE_ERROR_SchemaLockFailed        = (BE_SQLITE_IOERR | 18 << 24), //!< Error acquiring a lock on the schemas before upgrade.
     BE_SQLITE_ERROR_SchemaUpgradeFailed     = (BE_SQLITE_IOERR | 19 << 24), //!< Error upgrading the schemas in the database.
@@ -595,7 +595,7 @@ public:
 
     //! Gets the current ILanguageSupport. Can return nullptr.
     BE_SQLITE_EXPORT static ILanguageSupport* GetLanguageSupport();
-    
+
     //! Get memory used by SQLite for current process
     BE_SQLITE_EXPORT static DbResult GetMemoryUsed(int64_t& current, int64_t& high, bool reset = false);
 
@@ -627,6 +627,7 @@ public:
 
     SqlStatementP& GetStmtR() {return m_stmt;} //! @private internal use only
     DbResult Prepare(DbFileCR, Utf8CP sql, bool suppressDiagnostics = false); //! @private internal use only
+    DbResult TryPrepare(DbFileCR, Utf8CP sql);
 
     //! Determine whether this Statement has already been prepared.
     bool IsPrepared() const {return nullptr != m_stmt;}
@@ -647,7 +648,7 @@ public:
     BE_SQLITE_EXPORT DbResult TryPrepare(DbCR db, Utf8CP sql);
 
     //! Indicates whether the prepared statement makes no @b direct changes to the content of the db or not.
-    //! @remarks 
+    //! @remarks
     //! @return true if the prepared statement makes no direct changes to the content of the db, false otherwise
     //! @see sqlite3_stmt_readonly, https://www.sqlite.org/c3ref/stmt_readonly.html
     BE_SQLITE_EXPORT bool IsReadonly() const;
@@ -844,7 +845,7 @@ public:
 
     //! Get the number of parameters in the statement
     //! @note This method actually returns the index of the largest (rightmost) parameter.
-    //! For all forms except ?NNN, this will correspond to the number of unique parameters. 
+    //! For all forms except ?NNN, this will correspond to the number of unique parameters.
     //! If parameters of the ?NNN form are used, there may be gaps in the list
     //! @see sqlite3_bind_parameter_count
     BE_SQLITE_EXPORT int GetParameterCount();
@@ -898,11 +899,11 @@ public:
 //!
 //! Further notes:
 //!  - BentleyApi::BeSQLite::StatementDiagnostics::SetIsEnabled
-//!    As the diagnostics log every SQL being prepared, you can use this method to programmatically enable/disable diagnostics, 
+//!    As the diagnostics log every SQL being prepared, you can use this method to programmatically enable/disable diagnostics,
 //!    so that only the code is diagnosed that you are interested in.
 //!  - BentleyApi::BeSQLite::StatementDiagnostics::LogComment
 //!    This will add the specified comment to the diagnostics output. This allows you to define sections
-//!    in the diagnostics output 
+//!    in the diagnostics output
 // @bsiclass                                                    11/2015
 //=======================================================================================
 struct StatementDiagnostics
@@ -1076,7 +1077,7 @@ protected:
 public:
     virtual bool _IsAggregate() {return false;}
     virtual ~DbFunction() {}
-    
+
     Utf8CP GetName() const {return m_name.c_str();} //!< Get the name of this function
     int GetNumArgs() const {return m_nArgs;}    //!< Get the number of arguments to this function
     DbValueType GetReturnType() const {return m_returnType;}//!< Gets the return type of the function.
@@ -1252,7 +1253,7 @@ public:
 };
 
 //=======================================================================================
-//! A user-defined callback which is invoked whenever a row is updated, inserted or 
+//! A user-defined callback which is invoked whenever a row is updated, inserted or
 //! deleted in a rowid table.
 //! Call Db::AddDataUpdateCallback to register a callback with the db connection
 //! @see https://sqlite.org/c3ref/update_hook.html for details
@@ -1375,11 +1376,11 @@ private:
 public:
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
-    uint32_t AddRef() const {return m_refCount.IncrementAtomicPre();} 
+    uint32_t AddRef() const {return m_refCount.IncrementAtomicPre();}
     uint32_t GetRefCount() const {return m_refCount.load();}
     BE_SQLITE_EXPORT uint32_t Release();
     Utf8CP GetSQL() const {return m_sql;}
-    
+
     //! CachedStatements can never be Finalized externally. That will corrupt the cache.
     void Finalize() = delete;
 };
@@ -1411,7 +1412,7 @@ public:
     BE_SQLITE_EXPORT explicit StatementCache(uint32_t size, BeMutex* inheritedMutex = nullptr);
     BE_SQLITE_EXPORT ~StatementCache();
 
-    BE_SQLITE_EXPORT DbResult GetPreparedStatement(CachedStatementPtr&, DbFile const& dbFile, Utf8CP sqlString) const;
+    BE_SQLITE_EXPORT DbResult GetPreparedStatement(CachedStatementPtr&, DbFile const& dbFile, Utf8CP sqlString, bool logError = true) const;
     BE_SQLITE_EXPORT void Dump() const;
     BE_SQLITE_EXPORT void Empty();
     bool IsEmpty() const {return m_entries.empty();}
@@ -2096,7 +2097,7 @@ struct ProfileState final
 // @bsiclass                                                    Keith.Bentley   03/12
 //=======================================================================================
 struct DbFile : NonCopyableClass
-{ 
+{
     friend struct Db;
     friend struct Statement;
     friend struct Savepoint;
@@ -2167,7 +2168,7 @@ public:
 // @bsiclass                                                    Keith.Bentley   11/10
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE Db : NonCopyableClass
-{                                           
+{
     friend struct DbFile;
 public:
     enum class Encoding {Utf8=0, Utf16=1};
@@ -2312,7 +2313,7 @@ public:
         enum ApplicationId : uint64_t {APPLICATION_ID_BeSQLiteDb='BeDb',} m_applicationId;
         bool m_failIfDbExists;
         DateTime m_expirationDate;
-        
+
         //! @param[in] pagesize The pagesize for the database. Default is 4K.
         //! @param[in] encoding The text encoding mode for the database. The default is UTF-8 and is almost always the best choice.
         //! @param[in] failIfDbExists If true, return an error if a the specified file already exists, otherwise delete existing file.
@@ -2497,9 +2498,9 @@ public:
     //! Further, the implicit transaction is necessary even for SELECT statements, which can be counterintuitive. To help avoid accidentally using
     //! implicit transactions, a BeSQLite::Db normally flags them as errors by forcing all Prepare and Step methods to assert in a debug
     //! build if no transaction is active. If you really want to allow implicit transactions, turn this flag on.
-    BE_SQLITE_EXPORT void SetAllowImplictTransactions(bool val);
+    void SetAllowImplicitTransactions(bool val) { m_dbFile->m_allowImplicitTxns = val; }
 
-    //! Get the StatementCache for this Db. 
+    //! Get the StatementCache for this Db.
     StatementCache& GetStatementCache() const {return const_cast<StatementCache&>(m_statements);}
 
     //! Get a CachedStatement for this Db. If the SQL string has already been prepared and a CachedStatement exists for it in the cache, it will
@@ -2509,9 +2510,12 @@ public:
     //! @param[in] sql The SQL string from which to Prepare the CachedStatement.
     //! @return The result of either Statement::Reset (in the case where we reuse an existing CachedStatement) or Statement::Prepare (in the case
     //! where the SQL string has not yet been prepared).
-    BE_SQLITE_EXPORT DbResult GetCachedStatement(CachedStatementPtr& statement, Utf8CP sql) const;
+    BE_SQLITE_EXPORT DbResult GetCachedStatement(CachedStatementPtr& statement, Utf8CP sql, bool logError = true) const;
 
-    CachedStatementPtr GetCachedStatement(Utf8CP sql) const {CachedStatementPtr stmt; GetCachedStatement(stmt, sql); return stmt;}
+    CachedStatementPtr GetCachedStatement(Utf8CP sql, bool logError = true) const {
+        CachedStatementPtr stmt;
+        return BE_SQLITE_OK == GetCachedStatement(stmt, sql, logError) ? stmt : nullptr;
+    }
 
     //! Get an entry in the Db's Savepoint stack.
     //! @param[in] depth The depth of the Savepoint of interest. Must be 0 <= depth < GetCurrentSavepointDepth()
@@ -2587,8 +2591,7 @@ public:
     //! @note If the database file exists before this call, its page size and encoding are not changed.
     BE_SQLITE_EXPORT DbResult CreateNewDb(Utf8CP dbName, BeGuid dbGuid=BeGuid(), CreateParams const& params=CreateParams());
 
-    DbResult CreateNewDb(BeFileNameCR dbName, BeGuid dbGuid=BeGuid(), CreateParams const& params=CreateParams())
-                        {return CreateNewDb(dbName.GetNameUtf8().c_str(), dbGuid, params);}
+    DbResult CreateNewDb(BeFileNameCR dbName, BeGuid dbGuid = BeGuid(), CreateParams const& params = CreateParams()) { return CreateNewDb(dbName.GetNameUtf8().c_str(), dbGuid, params); }
 
     //! Determine whether this Db refers to a currently opened file.
     BE_SQLITE_EXPORT bool IsDbOpen() const;
@@ -2641,7 +2644,7 @@ public:
     //! return a string that describes the query plan for the specified SQL, or an error message if the SQL is invalid
     BE_SQLITE_EXPORT Utf8String ExplainQuery(Utf8CP sql, bool plan=true) const;
 
-    //! Execute tracked DDL which is captured by changetracker. 
+    //! Execute tracked DDL which is captured by changetracker.
     BE_SQLITE_EXPORT DbResult ExecuteDdl(Utf8CP ddl) const;
 
     //! Create a new table in this Db.
@@ -2666,7 +2669,7 @@ public:
     //! @param[in] tableName Name of the table. e.g., "test_Employee"
     //! @param[in] columnName Name of the new column. e.g., "TitleId"
     //! @param[in] columnDetails Details of the new column, e.g., "INTEGER REFERENCES test_Title(Id)"
-    //! @remarks Internally executes a DDL and records the schema change if necessary. 
+    //! @remarks Internally executes a DDL and records the schema change if necessary.
     //! e.g., "ALTER TABLE test_employee ADD COLUMN columnName INTEGER REFERENCES test_Title(Id)"
     BE_SQLITE_EXPORT DbResult AddColumnToTable(Utf8CP tableName, Utf8CP columnName, Utf8CP columnDetails);
 
@@ -2839,7 +2842,7 @@ public:
     BE_SQLITE_EXPORT BeGuid GetDbGuid() const;
 
     //! Get the (local) BeBriefcaseId of this Db. Every copy of the Db must have a unique BeBriefcaseId.
-    BE_SQLITE_EXPORT BeBriefcaseId GetBriefcaseId() const;
+    BeBriefcaseId GetBriefcaseId() const {return m_dbFile->m_briefcaseId;}
 
     //! Get a new value for a BeServerIssuedId from the server
     //! @param [in,out] value the new value of the BeServerIssuedId
@@ -2849,7 +2852,7 @@ public:
     BE_SQLITE_EXPORT DbResult GetServerIssuedId(BeServerIssuedId& value, Utf8CP tableName, Utf8CP columnName, Utf8CP json=nullptr);
 
     //! Determine whether this Db was opened readonly.
-    BE_SQLITE_EXPORT bool IsReadonly() const;
+    bool IsReadonly() const { return m_dbFile->m_readonly; }
 
     //! Get the DbEmbeddedFileTable for this Db.
     BE_SQLITE_EXPORT DbEmbeddedFileTable& EmbeddedFiles();
@@ -2921,7 +2924,7 @@ public:
 
     BE_SQLITE_EXPORT int AddRTreeMatchFunction(RTreeMatchFunction& func) const;
 
-    //! Add a callback to this Db that is invoked whenever a row is updated, inserted or deleted in a 
+    //! Add a callback to this Db that is invoked whenever a row is updated, inserted or deleted in a
     //! <a href="https://sqlite.org/rowidtable.html">rowid</a> table.
     //! @see DataUpdateHook
     //! @see https://sqlite.org/c3ref/update_hook.html
@@ -2936,7 +2939,7 @@ public:
     //! Sets up this Db as a new master copy
     //! @param[in] guid The guid for the new database. The guid will be saved persistently in the new database.
     //! If the guid is invalid (e.g. by passing "BeGuid()" for dbGuid), a new guid is created by this method.
-    //! @remarks Errors out if the Db is already a master copy. 
+    //! @remarks Errors out if the Db is already a master copy.
     BE_SQLITE_EXPORT DbResult SetAsMaster(BeGuid guid = BeGuid());
 
     // Sets up this Db as a briefcase with the supplied Id.
@@ -2984,7 +2987,7 @@ public:
 
     //! Vacuum a file and optionally change page_size.
     //! @param dbFileName path to db.
-    //! @param newPageSizeInBytes Must be size in bytes for a page as described by sqlite.  
+    //! @param newPageSizeInBytes Must be size in bytes for a page as described by sqlite.
     //! @return BE_SQLITE_OK if successful
     BE_SQLITE_EXPORT static DbResult Vacuum(Utf8CP dbFileName, int newPageSizeInBytes = 0);
 };

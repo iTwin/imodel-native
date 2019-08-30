@@ -659,31 +659,13 @@
     <Part Name="DgnPlatformNoViewTested" PrgOutputDir="DgnClientSdk">
        <!-- <RequiredRepository>DgnDbTestingScripts</RequiredRepository> --><!--To Automate Unit Testing on Linux -->
 
-      <!-- Cannot include because they depend on DgnView
-      <SubProduct ProductName="iModelBridgeFwk" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
-      <SubProduct ProductName="ToyTileBridge" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" />
-      <SubProduct ProductName="ToyTileCreator" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" />
-      -->
-
       <SubProduct ProductName="iModelBridgeAssign" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
       <SubProduct ProductName="Briefcase" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" />
       <SubProduct ProductName="iModelConsole" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02" />
 
-      <!-- This can't be active because Sam doesn't want iModelJsNodeAddon merged between bim0200 and bim0200dev. -->
-      <!-- <SubProduct ProductName="iModelJsNodeAddon" PartFile="iModelJsNodeAddon/iModelJsNodeAddon" Repository="imodel02" /> -->
-
-      <!-- Won't build on Linux because of capitalization problems in ImagePP.PartFile.xml:
-      <SubProduct ProductName="TilePublisher" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
-      -->
       <SubPart PartName="NoView-Gtest-RunAggregator-Linux" LibType="Static" />
       <SubPart PartName="NoView-Gtest-RunAggregator-MacOS" LibType="Static" />
       <SubPart PartName="NoView-Gtest-RunAggregator-Windows" LibType="Dynamic" />
-
-      <!-- Cannot include because they depend on DgnView
-      <SubPart PartName="RunToyTileCreator-Linux" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" LibType="Static"/>
-      <SubPart PartName="RunToyTileCreator-MacOS" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" LibType="Static"/>
-      <SubPart PartName="RunToyTileCreator-Windows" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" LibType="Dynamic"/>
-      -->
 
       <!-- Required by imodeljsnodeaddon, the primary consumer of this part. -->
       <SubPart PartName="ECPresentation" PartFile="iModelCore/ECPresentation/ECPresentation" Repository="imodel02" LibType="Static"/>
@@ -706,20 +688,13 @@
         <SubPart Repository="imodel02"                  PartFile="iModelCore/ECDb/ECDb"             PartName="RunGtest" />
         <SubPart Repository="imodel02"             PartFile="iModelCore/ecobjects/ECObjects"        PartName="RunGtest" />
         <SubPart Repository="imodel02"                 PartFile="iModelCore/Units/Units"            PartName="RunGtest" />
-        <!-- <SubPart Repository="DgnClientFx"           PartFile="DgnClientFx"      PartName="RunGtest" /> -->
         <SubPart Repository="imodel02"              PartFile="iModelCore/WSClient/WSClient"         PartName="RunGtest" />
         <SubPart Repository="imodel02"           PartFile="iModelCore/DgnPlatform/DgnPlatform"      PartName="RunGtest" />
-        <!-- Cannot include because they depend on DgnView
-        <SubPart Repository="imodel02"             PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"     PartName="RunGtest" />
-        <SubPart Repository="DgnDomains-Planning"   PartFile="Planning"         PartName="RunGtest" />
-        -->
-        <!-- <SubPart Repository="DgnDisplay"            PartFile="DgnDisplay"       PartName="RunGtest" /> -->
         <SubPart Repository="imodel02"              PartFile="iModelCore/BeSQLite/BeSQLite"         PartName="RunGtest" />
         <SubPart Repository="imodel02"               PartFile="iModelCore/Bentley/Bentley"          PartName="RunGtest" />
         <SubPart Repository="imodel02"            PartFile="iModelCore/BeSecurity/BeSecurity"       PartName="RunGtest" />
         <SubPart Repository="imodel02" PartFile="Domains/RealityModeling/RealityModeling" PartName="RunGtest" />
         <SubPart Repository="ConstructionSchema"  PartFile="ConstructionSchema" PartName="RunGtest" />
-        <!-- <SubPart Repository="imodel02"             PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync"        PartName="RunDgnV8ConverterTests" /> -->
         <!-- Test that are too time-consuming to run every time:
         <SubPart Repository="imodel02"              PartFile="iModelCore/GeoCoord/GeoCoord"         PartName="RunGtest"/>
       -->

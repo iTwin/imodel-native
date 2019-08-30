@@ -22,7 +22,7 @@ bool DgnDbTable::IsValidName(Utf8StringCR name, Utf8CP invalidChars)
     // empty names, names that start or end with space, or contain an invalid character are illegal.
     // NOTE: don't use isspace for test below - it is locale specific and finds the non-breaking-space (0xA0) when using Latin-8 locale.
     return !name.empty() && ' ' != *name.begin() && ' ' != *name.rbegin() &&(Utf8String::npos == name.find_first_of(invalidChars));
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * replace invalid characters in a string with a substitute character
@@ -98,6 +98,16 @@ void DgnDb::RaiseJsEvent(Napi::Object obj, Utf8CP eventName, std::vector<napi_va
     CallJsFunction(event.As<Napi::Object>(), "raiseEvent", args);
 }
 
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                    Keith.Bentley                    08/19
++---------------+---------------+---------------+---------------+---------------+------*/
+CachedECSqlStatementPtr DgnDb::GetGeometricModelUpdateStatement() {
+    return GetNonSelectPreparedECSqlStatement("UPDATE " BIS_SCHEMA(BIS_CLASS_GeometricModel) " SET GeometryGuid=?,LastMod=julianday('now') WHERE ECInstanceId=?", GetECCrudWriteToken());
+}
+CachedStatementPtr DgnDb::GetModelLastModUpdateStatement() {
+    return GetCachedStatement("UPDATE " BIS_TABLE(BIS_CLASS_Model) " SET LastMod=julianday('now') WHERE Id=?", false);
+}
+
 //--------------------------------------------------------------------------------------
 //not inlined as it must not be called externally
 // @bsimethod                                Krischan.Eberle                11/2016
@@ -140,7 +150,7 @@ DgnDb::~DgnDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnDb::_OnDbClose() 
+void DgnDb::_OnDbClose()
     {
     Domains().OnDbClose();
     Destroy();
@@ -175,7 +185,7 @@ DbResult DgnDb::_OnDbOpened(Db::OpenParams const& params)
 DbResult DgnDb::InitializeSchemas(Db::OpenParams const& params)
     {
     SchemaUpgradeOptions const& schemaUpgradeOptions = ((DgnDb::OpenParams const&) params).GetSchemaUpgradeOptions();
-    
+
     SchemaStatus status = Domains().InitializeSchemas(schemaUpgradeOptions);
     if (status == SchemaStatus::SchemaTooNew || status == SchemaStatus::SchemaTooOld)
         return SchemaStatusToDbResult(status, true /*=isUpgrade*/);
@@ -185,7 +195,7 @@ DbResult DgnDb::InitializeSchemas(Db::OpenParams const& params)
         domainUpgradeOptions == SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade;
     if (!upgrade && status != SchemaStatus::Success)
         return SchemaStatusToDbResult(status, true /*=isUpgrade*/);
-        
+
     DbResult result;
     if (BE_SQLITE_OK != (result = ProcessRevisions(params)))
         return result;
@@ -235,7 +245,7 @@ DbResult DgnDb::ProcessRevisions(Db::OpenParams const& params)
     IConcurrencyControl* concurrencyControl = schemaUpgradeOptions.GetConcurrencyControl();
     if (concurrencyControl)
         SetConcurrencyControl(concurrencyControl);
-        
+
     RevisionStatus status = Revisions().DoProcessRevisions(revisions, schemaUpgradeOptions.GetRevisionProcessOption());
     return status == RevisionStatus::Success ? BE_SQLITE_OK : BE_SQLITE_ERROR_SchemaUpgradeFailed;
     }
@@ -283,8 +293,8 @@ DbResult DgnDb::_OnBeforeSetAsMaster(BeSQLite::BeGuid guid)
     if (result != BE_SQLITE_OK)
         return result;
 
-    // Save and restore the parentChangeSetId and initialParentChangeSetId if a checkpoint was 
-    // created with the briefcase. Otherwise, these Ids are lost when the entire local table 
+    // Save and restore the parentChangeSetId and initialParentChangeSetId if a checkpoint was
+    // created with the briefcase. Otherwise, these Ids are lost when the entire local table
     // are cleared.
     if (GetDbGuid() == guid)
         BackupParentChangeSetIds();
@@ -313,7 +323,7 @@ DbResult DgnDb::_OnAfterSetAsMaster(BeSQLite::BeGuid guid)
     if (result != BE_SQLITE_OK)
         return result;
 
-    // Save and restore the parentChangeSetId and initialParentChangeSetId if a checkpoint was 
+    // Save and restore the parentChangeSetId and initialParentChangeSetId if a checkpoint was
     // created with the briefcase. Otherwise, these Ids are lost when the entire local table hg comm
     // are cleared.
     return RestoreParentChangeSetIds();
@@ -394,6 +404,7 @@ void DgnDb::_OnBeforeClearECDbCache() const
     m_cacheECInstanceInserter.clear();
     ClearECSqlCache();
     Elements().ClearECCaches();
+    Models().ClearECCaches();
     }
 
 //--------------------------------------------------------------------------------------
@@ -461,7 +472,7 @@ IBriefcaseManager*  DgnDb::GetExistingBriefcaseManager() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnDb::DestroyBriefcaseManager() 
+void DgnDb::DestroyBriefcaseManager()
     {
     if (m_briefcaseManager.IsValid())
         {
@@ -539,7 +550,7 @@ bool isNavigationPropertyOf(ECN::ECRelationshipClassCR relClass, DgnDbR db, BeSQ
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult DgnDb::InsertLinkTableRelationship(BeSQLite::EC::ECInstanceKey& relKey, ECN::ECRelationshipClassCR relClass, BeSQLite::EC::ECInstanceId sourceId, 
+DbResult DgnDb::InsertLinkTableRelationship(BeSQLite::EC::ECInstanceKey& relKey, ECN::ECRelationshipClassCR relClass, BeSQLite::EC::ECInstanceId sourceId,
                                      BeSQLite::EC::ECInstanceId targetId, ECN::IECRelationshipInstanceCP relInstanceProperties)
     {
 #ifdef CHECK_NON_NAVIGATION_PROPERTY_API
@@ -839,7 +850,7 @@ void DgnImportContext::ComputeGcsAdjustment()
         {
         m_areCompatibleDbs = false;
         return;
-        }        
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -931,12 +942,12 @@ bool ECSqlStatementIteratorBase::IsEqual(ECSqlStatementIteratorBase const& rhs) 
 
     BeAssert(m_statement.IsValid() && rhs.m_statement.IsValid());
     ECInstanceId thisId = m_statement->GetValueId<ECInstanceId>(m_idSelectColumnIndex);
-    
+
     // Do NOT delete the next line and simply use rhs.m_statement on the subsequent.
     // Android GCC 4.9 and clang 6.1.0 cannot deduce the templates when you try to combine it all up.
     CachedECSqlStatementPtr rhsStatement = rhs.m_statement;
     ECInstanceId rhsId = rhsStatement->GetValueId<ECInstanceId>(rhs.m_idSelectColumnIndex);
-    
+
     return thisId == rhsId;
     }
 
@@ -980,7 +991,7 @@ struct RangeWithoutOutlierCalculator
     struct Stat
         {
         DRange3d                m_range;
-        BeInt64Id               m_id;                         
+        BeInt64Id               m_id;
         double                  m_diagonal;
 
         Stat() {}
@@ -996,15 +1007,15 @@ struct RangeWithoutOutlierCalculator
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Add(DRange3dCR range, BeInt64Id id) 
-    { 
+void Add(DRange3dCR range, BeInt64Id id)
+    {
     if (range.DiagonalDistance() > m_maxDiagonal)
         {
         m_maxDiagonal = range.DiagonalDistance();
         m_maxId = id;
         }
 
-    if (!range.IsNull()) m_stats.push_back(Stat(range, id)); 
+    if (!range.IsNull()) m_stats.push_back(Stat(range, id));
     }
 
     static void DumpRange(const char* label, DRange3dCR range) { DEBUG_PRINTF ("%s Range: %lf, %lf, %lf) \t (%lf, %lf, %lf) Diagonal: %lf (KM)\n", label, range.low.x, range.low.y, range.low.z, range.high.x, range.high.y, range.high.z, range.DiagonalDistance()/1000.0); }
@@ -1013,7 +1024,7 @@ void Add(DRange3dCR range, BeInt64Id id)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-DRange3d ComputeRange(bvector<BeInt64Id>& outliers, DRange3dR fullRange, double sigmaMultiplier = 5.0, double minLimit = 100.0)       
+DRange3d ComputeRange(bvector<BeInt64Id>& outliers, DRange3dR fullRange, double sigmaMultiplier = 5.0, double minLimit = 100.0)
     {
     double      variance = 0.0, sum = 0.0;
     DPoint3d    centroid = DPoint3d::FromZero();
@@ -1023,7 +1034,7 @@ DRange3d ComputeRange(bvector<BeInt64Id>& outliers, DRange3dR fullRange, double 
         centroid.SumOf(centroid, stat.GetCenter(), stat.m_diagonal);        // Arbitrarily weight by range diagaonal.
         sum += stat.m_diagonal;
         }
-        
+
     centroid.Scale(1.0 / sum);
 
     for (auto const& stat : m_stats)
@@ -1084,11 +1095,11 @@ DRange3d DgnDb::ComputeGeometryExtentsWithoutOutliers(DRange3dP rangeWithOutlier
 
         elementRangeCalculator.Add(placement.CalculateRange(), stmt->GetValueId<DgnElementId>(0));
         }
-    
+
     bvector<BeInt64Id>  outliers;
 
     DRange3d            fullRange, elementRange = elementRangeCalculator.ComputeRange(outliers, fullRange);
-    
+
     if (nullptr != elementOutliers)
         {
         std::for_each (outliers.begin (), outliers.end (), [elementOutliers](BeInt64Id id) {elementOutliers->push_back (id);});
@@ -1099,17 +1110,17 @@ DRange3d DgnDb::ComputeGeometryExtentsWithoutOutliers(DRange3dP rangeWithOutlier
 
     if (!outliers.empty())
         {
-        double      fullDiagonal = fullRange.DiagonalDistance(), reducedDiagonal = elementRange.DiagonalDistance(); 
+        double      fullDiagonal = fullRange.DiagonalDistance(), reducedDiagonal = elementRange.DiagonalDistance();
         auto logMessage1 = Utf8PrintfString("%d Outlying elements of %d Total were ignored when calculating project extents\n", (int)outliers.size(), (int) elementRangeCalculator.m_stats.size());
         auto logMessage2 = Utf8PrintfString("Range reduced from %lf to %lf (%lf %%)\n", fullDiagonal, reducedDiagonal, 100.0 * (fullDiagonal - reducedDiagonal) / fullDiagonal);
         DEBUG_PRINTF (">>>>>>>>>>>>>>>>>>%s %s<<<<<<<<<<<<<<<<<<<", logMessage1.c_str(), logMessage2.c_str());
         }
-    else 
+    else
         {
         DEBUG_PRINTF("No Element Outliers of %d Total, Range Diagonal: %lf\n", (int) elementRangeCalculator.m_stats.size(), fullRange.IsNull() ? 0.0 : fullRange.DiagonalDistance());
         }
 
-    if (elementRange.DiagonalDistance() > 5.0E5)        
+    if (elementRange.DiagonalDistance() > 5.0E5)
         {
         DEBUG_PRINTF("*********************************************** Range still invalid (%f KM) ******************************************\n\n\n", elementRange.DiagonalDistance() / 1000.0);
         }
@@ -1139,13 +1150,13 @@ DRange3d DgnDb::ComputeExtentsWithoutOutlyingModels(DRange3dCR elementRange, DRa
             modelRange.IntersectionOf(elementRange, model->QueryModelRange());
             modelRangeCalculator.Add(modelRange, entry.GetModelId());
             }
-        }   
+        }
 
-    DRange3d    fullModelRange, modelRange = modelRangeCalculator.ComputeRange(modelOutliers, fullModelRange); 
+    DRange3d    fullModelRange, modelRange = modelRangeCalculator.ComputeRange(modelOutliers, fullModelRange);
 
     if (!modelOutliers.empty())
         {
-        double      fullDiagonal = fullModelRange.DiagonalDistance(), reducedDiagonal = modelRange.DiagonalDistance(); 
+        double      fullDiagonal = fullModelRange.DiagonalDistance(), reducedDiagonal = modelRange.DiagonalDistance();
         auto logMessage1 = Utf8PrintfString("%d Outlying models of %d Total were ignored when calculating project extents\n",  (int) modelOutliers.size(), (int) modelRangeCalculator.m_stats.size());
         auto logMessage2 = Utf8PrintfString("Range reduced from %lf to %lf (%lf %%)\n", fullDiagonal, reducedDiagonal, 100.0 * (fullDiagonal - reducedDiagonal) / fullDiagonal);
         DEBUG_PRINTF ("%s %s", logMessage1.c_str(), logMessage2.c_str());

@@ -20,27 +20,20 @@ DGNPLATFORM_REF_COUNTED_PTR(DictionaryModel)
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 namespace RangeIndex {struct Tree;}
-namespace dgn_ModelHandler {struct Definition; struct DocumentList; struct Drawing; struct Geometric2d; struct GroupInformation; struct Information; struct InformationRecord; struct Physical; struct Repository; struct Role; struct Spatial; struct SpatialLocation;}
-
-//=======================================================================================
-//! A map whose key is DgnElementId and whose data is DgnElementCPtr
-// @bsiclass                                                    Keith.Bentley   04/15
-//=======================================================================================
-struct DgnElementMap : bmap<DgnElementId, DgnElementCPtr>
-{
-    void Add(DgnElementCR el)
-        {
-        DgnElementId  id = el.GetElementId();
-        if (!id.IsValid())
-            {
-            BeAssert(false);
-            return;
-            }
-        Insert(id, &el);
-        }
-    bool Contains(DgnElementId id) const {return end() != find(id);}
-    uint32_t GetCount() const {return (uint32_t) size();}
-};
+namespace dgn_ModelHandler {
+struct Definition;
+struct DocumentList;
+struct Drawing;
+struct Geometric2d;
+struct GroupInformation;
+struct Information;
+struct InformationRecord;
+struct Physical;
+struct Repository;
+struct Role;
+struct Spatial;
+struct SpatialLocation;
+} // namespace dgn_ModelHandler
 
 #define DGNMODEL_DECLARE_MEMBERS(__ECClassName__,__superclass__)\
     private: typedef __superclass__ T_Super;\
@@ -109,7 +102,7 @@ struct ModelIterator : ECSqlStatementIterator<ModelIteratorEntry>
 };
 
 //=======================================================================================
-//! A DgnModel represents a model in memory and may hold references to elements that belong to it.
+//! A DgnModel represents a model in memory.
 //! @ingroup GROUP_DgnModel
 // @bsiclass                                                     KeithBentley    10/00
 //=======================================================================================
@@ -120,6 +113,10 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
     friend struct DgnElements;
     friend struct dgn_TxnTable::Model;
     friend struct dgn_ModelHandler::Model;
+
+    enum class ColumnNumbers : int32_t {
+        ECClassId = 1
+    };
 
     struct CreateParams;
 
@@ -211,12 +208,12 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
         static const uint64_t UpdateElement = InsertElement << 1; //!< Modify an element in this model. "UpdateElement"
         static const uint64_t DeleteElement = UpdateElement << 1; //!< Delete an element in this model. "DeleteElement"
         static const uint64_t Clone = DeleteElement << 1; //!< Create a copy of this model. "Clone"
-        static const uint64_t Reserved_1 = Clone << 1;      //!< Reserved for future use 
-        static const uint64_t Reserved_2 = Reserved_1 << 1; //!< Reserved for future use 
-        static const uint64_t Reserved_3 = Reserved_2 << 1; //!< Reserved for future use 
-        static const uint64_t Reserved_4 = Reserved_3 << 1; //!< Reserved for future use 
-        static const uint64_t Reserved_5 = Reserved_4 << 1; //!< Reserved for future use 
-        static const uint64_t Reserved_6 = Reserved_5 << 1; //!< Reserved for future use 
+        static const uint64_t Reserved_1 = Clone << 1;      //!< Reserved for future use
+        static const uint64_t Reserved_2 = Reserved_1 << 1; //!< Reserved for future use
+        static const uint64_t Reserved_3 = Reserved_2 << 1; //!< Reserved for future use
+        static const uint64_t Reserved_4 = Reserved_3 << 1; //!< Reserved for future use
+        static const uint64_t Reserved_5 = Reserved_4 << 1; //!< Reserved for future use
+        static const uint64_t Reserved_6 = Reserved_5 << 1; //!< Reserved for future use
 
         static const uint64_t NextAvailable = Reserved_6 << 1; //!< Subclasses can add new actions beginning with this value
 
@@ -239,6 +236,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
     BE_PROP_NAME(IsPrivate)
     BE_PROP_NAME(JsonProperties)
     BE_PROP_NAME(IsTemplate)
+    BE_PROP_NAME(LastMod)
 
 private:
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
@@ -304,11 +302,11 @@ protected:
 
     //! Invoked on saving the JsonProperties field into the Db as part of an Insert or Update operation.
     //! @note If you override this method, you @em must call T_Super::_WriteJsonProperties.
-    //! Put your properties into a sub node of m_jsonProperties to avoid collisions with the 
+    //! Put your properties into a sub node of m_jsonProperties to avoid collisions with the
     //! super class properties.
     virtual void _OnSaveJsonProperties() {}
 
-    //! Invoked after the DgnModel is loaded so that subclasses can read from the m_jsonProperties field, if necessary. 
+    //! Invoked after the DgnModel is loaded so that subclasses can read from the m_jsonProperties field, if necessary.
     //! The properties will already have been loaded into the m_jsonProperties member.
     //! @note If you override this method, you @em must call T_Super::_OnLoadedJsonProperties.
     virtual void _OnLoadedJsonProperties() {}
@@ -420,16 +418,6 @@ protected:
     DGNPLATFORM_EXPORT virtual void _OnDeleted();
     /** @} */
 
-    //! Return the copyright message to display if this model is drawn in a viewport
-    //! @param viewController   The view for which the copyright message is requested.
-    //! @return a copyright message or nullptr
-    virtual Utf8String _GetCopyrightMessage(ViewController& viewController) const {return "";}
-
-    //! Return the copyright image to display if this model is drawn to a viewport,
-    //! @param viewController   The view for which the copyright message is requested.
-    //! @return a copyright message or nullptr
-    virtual Render::RgbaSpriteP _GetCopyrightSprite (ViewController& viewController) const { return nullptr;}
-
     /** @name Dynamic cast shortcuts for a DgnModel */
     /** @{ */
     virtual GeometricModelCP _ToGeometricModel() const {return nullptr;}
@@ -447,34 +435,34 @@ protected:
     virtual Sheet::ModelCP _ToSheetModel() const {return nullptr;}
     /** @} */
 
-    //! The sublcass should import elements from the source model into this model. 
+    //! The sublcass should import elements from the source model into this model.
     //! Import is done in phases. The import framework will call _ImportElementAspectsFrom and then _ImportLinkTableECRelationshipsFrom after calling this method.
     //! @note It should be rare for a subclass to override _ImportElementsFrom. The base class implementation copies all elements in the model,
     //! and it fixes up all parent-child pointers. A subclass can override _ShouldImportElementFrom in order to exclude individual elements.
     //! @see _ShouldImportElementFrom
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ImportElementsFrom(DgnModelCR sourceModel, DgnImportContext& importer);
-    
+
     virtual bool _ShouldImportElement(DgnElementCR sourceElement) {return true;}
 
-    //! The sublcass should import ECRelationships from the source model into this model. 
+    //! The sublcass should import ECRelationships from the source model into this model.
     //! Import is done in phases. This method will be called by the import framework after all elements have been imported and before ECRelationships are imported.
-    //! A subclass implementation of _ImportElementAspectsFrom should copy only the ElementAspect subclasses that are defined by the 
+    //! A subclass implementation of _ImportElementAspectsFrom should copy only the ElementAspect subclasses that are defined by the
     //! the ECSchema/DgnDomain of the subclass. For example, the base DgnModel implementation will handle the ElementAspects defined in the base Dgn schema, including
     //! ElementItem.
     //! @note The implementation should start by calling the superclass implementation.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ImportElementAspectsFrom(DgnModelCR sourceModel, DgnImportContext& importer);
 
-    //! The sublcass should import ECRelationships from the source model into this model. 
+    //! The sublcass should import ECRelationships from the source model into this model.
     //! Import is done in phases. This method will be called by the import framework after all elements and aspects have been imported.
     //! This method will be called after all elements (and aspects) have been imported.
     //! <p>
-    //! A subclass implementation of _ImportLinkTableECRelationshipsFrom should copy only the non-navigation relationship subclasses that are defined by the 
-    //! the ECSchema/DgnDomain of the subclass. For example, the base DgnModel implementation will handle the relationships defined in the 
+    //! A subclass implementation of _ImportLinkTableECRelationshipsFrom should copy only the non-navigation relationship subclasses that are defined by the
+    //! the ECSchema/DgnDomain of the subclass. For example, the base DgnModel implementation will handle the relationships defined in the
     //! base bis schema, including ElementDrivesElement and ElementGroupsMembers.
     //! <p>
     //! Both endpoints of an ECRelationship must be in the same DgnDb. Since the import operation can copy elements between DgnDbs, a subclass implementation
-    //! must be careful about which ECRelationships to import. Normally, only ECRelationships between elements in the model should be copied. 
-    //! ECRelationships that start/end outside the model can only be copied if the foreign endpoint is also copied. 
+    //! must be careful about which ECRelationships to import. Normally, only ECRelationships between elements in the model should be copied.
+    //! ECRelationships that start/end outside the model can only be copied if the foreign endpoint is also copied.
     //! If endpoint elements must be deep-copied, however, that must be done in _ImportElementsFrom, not in this function. That is because
     //! deep-copying an element in the general case requires all of the support for copying and remapping of parents and aspects that is implemented by the framework,
     //! prior to the phase where ECRelationships are copied.
@@ -482,15 +470,15 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ImportLinkTableECRelationshipsFrom(DgnModelCR sourceModel, DgnImportContext& importer);
 
     //! Utility function to import non-Navigation ECRelationships from one DgnDb to another, selecting only the relationship instances whose source and target elements are
-    //! in the specified source model and only if both source and target have already been imported and are registered in the importContext's remap tables. The source and 
+    //! in the specified source model and only if both source and target have already been imported and are registered in the importContext's remap tables. The source and
     //! target DgnElementIds of each imported relationship instance are remapped to the destination DgnDb using the importContext's remap tables.
     //! @param destDb   The destination DgnDb
     //! @param sourceModel  The model that is being imported. Only ECRelationship instances with both source and target elements from this model are imported. This parameter
     //!                     also identifies the source DgnDb
-    //! @param importContext The context that contains remapping tables. 
+    //! @param importContext The context that contains remapping tables.
     //! @param relschema    The schema of the relationship class
     //! @param relname      The name of the relationship class
-    //! @return non-zero error status if the relationship class does not exist in the source or target DgnDb. Note that this function will return success even if no 
+    //! @return non-zero error status if the relationship class does not exist in the source or target DgnDb. Note that this function will return success even if no
     //! relationship instances are imported.
     DGNPLATFORM_EXPORT static DgnDbStatus ImportLinkTableECRelationshipsFrom(DgnDbR destDb, DgnModelCR sourceModel, DgnImportContext& importContext, Utf8CP relschema, Utf8CP relname);
 
@@ -512,14 +500,11 @@ protected:
     virtual void _OnValidate() {}
 
 public:
-    Utf8String GetCopyrightMessage(ViewController& viewController) const {return _GetCopyrightMessage(viewController);}
-
-    Render::RgbaSpriteP GetCopyrightSprite (ViewController& viewController) const { return _GetCopyrightSprite(viewController);}
-
     virtual Utf8CP _GetHandlerECClassName() const {return BIS_CLASS_Model;} //!< @private
     virtual Utf8CP _GetSuperHandlerECClassName() const {return nullptr;}    //!< @private
 
     DGNPLATFORM_EXPORT ModelHandlerR GetModelHandler() const;
+    DGNPLATFORM_EXPORT DateTime QueryLastModifyTime() const;
 
     //! Returns true if this is a 3d model.
     bool Is3d() const {return nullptr != ToGeometricModel3d();}
@@ -531,7 +516,7 @@ public:
 
     //! Get the name of this model
     DGNPLATFORM_EXPORT Utf8String GetName() const;
-    
+
     //! Get the DgnClassId of this DgnModel
     DgnClassId GetClassId() const {return m_classId;}
 
@@ -683,9 +668,9 @@ public:
     DGNPLATFORM_EXPORT static DgnModelPtr CopyModel(DgnModelCR model, DgnElementId newModeledElementId);
 
     //! Make a duplicate of this DgnModel object in memory. Do not copy its elements. @see ImportModel
-    //! It's not normally necessary for a DgnModel subclass to override _Clone. The base class implementation will 
+    //! It's not normally necessary for a DgnModel subclass to override _Clone. The base class implementation will
     //! invoke the subclass handler to create an instance of the subclass. The base class implementation will also
-    //! cause the new model object to read its properties from this (source) model's properties. That will 
+    //! cause the new model object to read its properties from this (source) model's properties. That will
     //! take of populating most if not all subclass members.
     //! @return the copy of the model
     //! @param[out] stat Optional. If not null, then an error code is stored here in case the clone fails.
@@ -730,7 +715,7 @@ public:
 
 //__PUBLISH_SECTION_END__
     //-------------------------------------------------------------------------------------
-    // NOTE: Setting DictionaryId to 16 effectively reserves the IDs below it. 
+    // NOTE: Setting DictionaryId to 16 effectively reserves the IDs below it.
     // NOTE: New auto-created BisCore models must be below 16 to prevent ID remapping issues during file format upgrades.
     // NOTE: Applications/domains should look up models by code and not hard-code IDs
     //-------------------------------------------------------------------------------------
@@ -759,7 +744,7 @@ public:
     //! @param[in] orderByClause The optional order by clause starting with ORDER BY
     DGNPLATFORM_EXPORT ElementIterator MakeIterator(Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr) const;
 
-    //! @name JsonProperties 
+    //! @name JsonProperties
     //! @{
     //! Get the current value of a set of Json Properties on this element
     ECN::AdHocJsonValueCR GetJsonProperties(Utf8CP nameSpace) const {return m_jsonProperties.GetMember(nameSpace);}
@@ -932,33 +917,33 @@ public:
 protected:
     mutable std::unique_ptr<RangeIndex::Tree> m_rangeIndex;
     Formatter m_displayInfo;
-    BeAtomic<uint64_t> m_lastModifiedTime;
 
     DGNPLATFORM_EXPORT void AddToRangeIndex(DgnElementCR);
     DGNPLATFORM_EXPORT void RemoveFromRangeIndex(DgnElementCR);
     DGNPLATFORM_EXPORT void UpdateRangeIndex(DgnElementCR modified, DgnElementCR original);
 
-    DGNPLATFORM_EXPORT void UpdateLastElementModifiedTime();
-
     virtual DgnDbStatus _FillRangeIndex() = 0;//!< @private
     DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _QueryElementsRange() const;//!< @private
     virtual AxisAlignedBox3d _QueryNonElementModelRange() const { return AxisAlignedBox3d(DRange3d::NullRange()); }
 
-    void _OnInsertedElement(DgnElementCR element) override {T_Super::_OnInsertedElement(element); AddToRangeIndex(element); UpdateLastElementModifiedTime();}
-    void _OnAppliedAddElement(DgnElementCR element) override {T_Super::_OnAppliedAddElement(element); AddToRangeIndex(element); UpdateLastElementModifiedTime();}
-    void _OnDeletedElement(DgnElementCR element) override {RemoveFromRangeIndex(element); T_Super::_OnDeletedElement(element); UpdateLastElementModifiedTime();}
-    void _OnAppliedDeleteElement(DgnElementCR element) override {RemoveFromRangeIndex(element); T_Super::_OnAppliedDeleteElement(element); UpdateLastElementModifiedTime();}
-    void _OnUpdatedElement(DgnElementCR modified, DgnElementCR original) override {UpdateRangeIndex(modified, original); T_Super::_OnUpdatedElement(modified, original); UpdateLastElementModifiedTime();}
-    void _OnAppliedUpdateElement(DgnElementCR modified, DgnElementCR original) override {UpdateRangeIndex(modified, original); T_Super::_OnAppliedUpdateElement(modified, original); UpdateLastElementModifiedTime();}
+    void _OnInsertedElement(DgnElementCR element) override {T_Super::_OnInsertedElement(element); AddToRangeIndex(element);}
+    void _OnAppliedAddElement(DgnElementCR element) override {T_Super::_OnAppliedAddElement(element); AddToRangeIndex(element);}
+    void _OnDeletedElement(DgnElementCR element) override {RemoveFromRangeIndex(element); T_Super::_OnDeletedElement(element);}
+    void _OnAppliedDeleteElement(DgnElementCR element) override {RemoveFromRangeIndex(element); T_Super::_OnAppliedDeleteElement(element);}
+    void _OnUpdatedElement(DgnElementCR modified, DgnElementCR original) override {UpdateRangeIndex(modified, original); T_Super::_OnUpdatedElement(modified, original);}
+    void _OnAppliedUpdateElement(DgnElementCR modified, DgnElementCR original) override {UpdateRangeIndex(modified, original); T_Super::_OnAppliedUpdateElement(modified, original);}
     DGNPLATFORM_EXPORT void _OnSaveJsonProperties() override;
     DGNPLATFORM_EXPORT void _OnLoadedJsonProperties() override;
     GeometricModelCP _ToGeometricModel() const override final {return this;}
-    
+    DGNPLATFORM_EXPORT virtual void _ToJson(JsonValueR out, JsonValueCR opts) const override;
+
     explicit GeometricModel(CreateParams const& params) : T_Super(params), m_rangeIndex(nullptr), m_displayInfo(params.m_displayInfo) {}
 
-    
 public:
+    BE_JSON_NAME(geometryGuid)
     BE_JSON_NAME(formatter)
+
+    DGNPLATFORM_EXPORT BeSQLite::BeGuid QueryGeometryGuid() const;
 
     DgnDbStatus FillRangeIndex() {return _FillRangeIndex();}
     void RemoveRangeIndex() {BeMutexHolder lock(m_mutex); m_rangeIndex.reset();}
@@ -976,10 +961,6 @@ public:
 
     //! Get the Formatter for this model.
     Formatter const& GetFormatter() const {return m_displayInfo;}
-
-    //! Returns the time of the most recent modification to any element in this model, in unix milliseconds.
-    DGNPLATFORM_EXPORT uint64_t GetLastElementModifiedTime() const;
-    void InitLastElementModifiedTime(); //!< @private
 
     //! If this model supports producing Cesium 3D tiles, return a root of such a tile tree. The default implementation returns nullptr.
     //! The rootTileOutput is supplied for loading the root tile. It should not be stored and reused.

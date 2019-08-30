@@ -4,6 +4,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
+#include    <DgnPlatform/ModelSpatialClassifier.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/2017
@@ -37,7 +38,7 @@ Json::Value ModelSpatialClassifier::ToJson() const
 
     value["flags"] = m_flags.ToJson();
     value["expand"] = m_expandDistance;
-    value["modelId"] = m_modelId.ToHexStr(); 
+    value["modelId"] = m_modelId.ToHexStr();
     value["name"] = m_name;
     value["isActive"] = m_isActive;
     value["isVolumeClassifier"] = m_isVolumeClassifier;                // Added by PMC 6/2019 to denote planar vs. volume classifiers.
@@ -69,7 +70,7 @@ Json::Value ModelSpatialClassifier::Flags::ToJson() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ModelSpatialClassifier::Flags::FromJson(Json::Value const& value) 
+BentleyStatus ModelSpatialClassifier::Flags::FromJson(Json::Value const& value)
     {
     if (value.isNull() || !value.isMember("type"))
         return ERROR;
@@ -91,7 +92,7 @@ BentleyStatus   ModelSpatialClassifiers::FromJson(Json::Value const& value)
     {
     if (!value.isArray())
         return ERROR;
-    
+
     for (auto& arrayMember : value)
         {
         ModelSpatialClassifier  classifier;

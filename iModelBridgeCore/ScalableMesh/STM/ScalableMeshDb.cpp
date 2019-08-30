@@ -28,7 +28,7 @@ BESQL_VERSION_STRUCT ScalableMeshDb::GetCurrentVersion() const
         case SQLDatabaseType::SM_DIFFSETS_FILE:
             return  SMSQLiteDiffsetFile::CURRENT_VERSION;
             break;
-        case SQLDatabaseType::SM_GENERATION_FILE: 
+        case SQLDatabaseType::SM_GENERATION_FILE:
         default:
             return ScalableMeshDb::CURRENT_VERSION;
             break;
@@ -47,11 +47,11 @@ DbResult ScalableMeshDb::_VerifySchemaVersion(OpenParams const& params)
     DbResult status = stmtTest->Step();
 
     assert(status == BE_SQLITE_ROW);
-       
+
     Utf8String schemaVs(stmtTest->GetValueText(0));
 
     SchemaVersion databaseSchema(schemaVs.c_str());
-   
+
     SchemaVersion currentVersion = GetCurrentVersion();
     if (s_checkShemaVersion && (databaseSchema.CompareTo(currentVersion, SchemaVersion::VERSION_All) < 0 || databaseSchema.CompareTo(currentVersion, SchemaVersion::VERSION_MajorMinor) != 0))
         return BE_SQLITE_SCHEMA;
@@ -121,7 +121,7 @@ DbResult ScalableMeshDb::IsProfileVersionUpToDate(OpenParams const& params)
 
 
 DbResult ScalableMeshDb::_OnDbCreated(CreateParams const& params)
-    {        
+    {
     Savepoint sp(*this, "CreateVersion");
     CreateTable("SMFileMetadata", "Version TEXT, Properties TEXT");
     //m_database->GetCachedStatement(stmt, "INSERT INTO SMMasterHeader (MasterHeaderId, Balanced, RootNodeId, SplitTreshold, Depth, TerrainDepth, IsTextured, IsTerrain) VALUES(?,?,?,?,?,?,?,?)");
@@ -133,7 +133,7 @@ DbResult ScalableMeshDb::_OnDbCreated(CreateParams const& params)
     stmt->BindText(1, versonJson.c_str(), Statement::MakeCopy::Yes);
     stmt->BindText(2, "", Statement::MakeCopy::Yes);
     stmt->Step();
-        
+
     return BeSQLite::Db::_OnDbCreated(params);
     }
 
@@ -148,7 +148,7 @@ int InfiniteRetries::_OnBusy(int count) const
     return 1;
 }
 
-#ifndef VANCOUVER_API   
+#ifndef VANCOUVER_API
 DbResult ScalableMeshDb::OpenShared(BENTLEY_NAMESPACE_NAME::Utf8CP path, bool readonly,bool allowBusyRetry)
 {
     m_path = path;
@@ -157,7 +157,7 @@ DbResult ScalableMeshDb::OpenShared(BENTLEY_NAMESPACE_NAME::Utf8CP path, bool re
     if (result == BE_SQLITE_ERROR_FileNotFound)
         {
         result = this->OpenBeSQLiteDb(path, BeSQLite::Db::OpenParams(readonly ? BeSQLite::Db::OpenMode::Readonly : BeSQLite::Db::OpenMode::ReadWrite));
-        
+
         if (result != BE_SQLITE_OK)
 
             return result;
@@ -169,7 +169,7 @@ DbResult ScalableMeshDb::OpenShared(BENTLEY_NAMESPACE_NAME::Utf8CP path, bool re
         assert(result == BE_SQLITE_OK);
         }
 
-    this->SetAllowImplictTransactions(true);
+    this->SetAllowImplicitTransactions(true);
     return result;
 }
 
@@ -194,7 +194,7 @@ bool ScalableMeshDb::ReOpenShared(bool readonly, bool allowBusyRetry)
     if (result != BE_SQLITE_OK)
         return false;
 
-    this->SetAllowImplictTransactions(true);
+    this->SetAllowImplicitTransactions(true);
     return true;
 }
 
@@ -216,12 +216,12 @@ bool ScalableMeshDb::CommitTransaction()
 
     if (!this->IsDbOpen())
         return false;
-       
+
     m_currentSavepoint->Commit();
-    
+
     delete m_currentSavepoint;
     m_currentSavepoint = nullptr;
-   
+
     return true;
     }
 
@@ -233,11 +233,11 @@ void ScalableMeshDb::CloseShared(bool& wasTransactionAbandoned)
 
     if (m_currentSavepoint != nullptr)
         {
-        m_currentSavepoint->Cancel();        
+        m_currentSavepoint->Cancel();
         wasTransactionAbandoned = true;
-       
+
         delete m_currentSavepoint;
-        m_currentSavepoint = nullptr;       
+        m_currentSavepoint = nullptr;
         }
 
     this->CloseDb();
@@ -250,7 +250,7 @@ void ScalableMeshDb::GetSharedDbFileName(BENTLEY_NAMESPACE_NAME::Utf8String& pat
 
 #endif
 
-bool ScalableMeshDb::GetEnableSharedDatabase() 
+bool ScalableMeshDb::GetEnableSharedDatabase()
     {
     return s_enableSharedDatabase;
     }

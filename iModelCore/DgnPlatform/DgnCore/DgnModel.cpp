@@ -24,7 +24,7 @@ DgnModel::CreateParams::CreateParams(DgnDbR db, JsonValueCR val) : m_dgndb(db)
 
     m_modeledElementId = modeledElement.m_id;
     m_modeledElementRelClassId = modeledElement.m_relClassId;
-    
+
     if (val.isMember(DgnModel::json_isPrivate()))
         m_isPrivate = val[DgnModel::json_isPrivate()].asBool();
     if (val.isMember(DgnModel::json_isTemplate()))
@@ -56,10 +56,6 @@ void DgnModels::AddLoadedModel(DgnModelR model)
     model.m_persistent = true;
     BeMutexHolder _v_v(m_mutex);
     m_models.Insert(model.GetModelId(), &model);
-
-    auto geomModel = model.ToGeometricModelP();
-    if (nullptr != geomModel)
-        geomModel->InitLastElementModifiedTime();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -242,7 +238,7 @@ template<typename T> void DgnModel::CallAppData(T const& caller) const
         else
             ++entry;
         }
-    }    
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/18
@@ -697,7 +693,7 @@ DgnDbStatus DgnModel::Read(DgnModelId modelId)
         BeAssert(false);
         return DgnDbStatus::ReadError;
         }
-        
+
     if (BE_SQLITE_ROW != stmt->Step())
         return DgnDbStatus::ReadError;
 
@@ -722,27 +718,51 @@ DgnDbStatus DgnModel::_ReadSelectParams(ECSqlStatement& statement, ECSqlClassPar
         }
 
     return DgnDbStatus::Success;
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
+ @bsimethod                                    Keith.Bentley                    08/19
++---------------+---------------+---------------+---------------+---------------+------*/
+DateTime DgnModel::QueryLastModifyTime() const {
+    ECSqlStatement stmt;
+    if (!stmt.Prepare(GetDgnDb(), "SELECT LastMod FROM " BIS_SCHEMA(BIS_CLASS_Model) " WHERE ECInstanceId=?", false).IsSuccess())
+        return DateTime();
+
+    stmt.BindId(1, m_modelId);
+    stmt.Step();
+    return stmt.GetValueDateTime(0);
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+ @bsimethod                                    Keith.Bentley                    08/19
++---------------+---------------+---------------+---------------+---------------+------*/
+BeGuid GeometricModel::QueryGeometryGuid() const {
+    ECSqlStatement stmt;
+    if (!stmt.Prepare(GetDgnDb(), "SELECT GeometryGuid FROM " BIS_SCHEMA(BIS_CLASS_GeometricModel) " WHERE ECInstanceId=?", false).IsSuccess())
+        return BeGuid();
+
+    stmt.BindId(1, m_modelId);
+    stmt.Step();
+
+    return stmt.GetValueGuid(0);
+}
+
+/*---------------------------------------------------------------------------------**/ /**
 * @bsimethod                                                 Ramanujam.Raman   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::_BindWriteParams(BeSQLite::EC::ECSqlStatement& statement, ForInsert forInsert)
-    {
+void DgnModel::_BindWriteParams(BeSQLite::EC::ECSqlStatement& statement, ForInsert forInsert) {
     if (ForInsert::Yes == forInsert)
         statement.BindId(statement.GetParameterIndex(prop_ECInstanceId()), m_modelId);
 
-    if (!m_parentModelId.IsValid() || !m_modeledElementId.IsValid() || !m_modeledElementRelClassId.IsValid())
-        {
+    if (!m_parentModelId.IsValid() || !m_modeledElementId.IsValid() || !m_modeledElementRelClassId.IsValid()) {
         BeAssert(false);
         return;
-        }
+    }
 
-    if (ForInsert::Yes == forInsert)
-        {
+    if (ForInsert::Yes == forInsert) {
         statement.BindNavigationValue(statement.GetParameterIndex(prop_ParentModel()), m_parentModelId);
         statement.BindNavigationValue(statement.GetParameterIndex(prop_ModeledElement()), m_modeledElementId, m_modeledElementRelClassId);
-        }
+    }
 
     statement.BindBoolean(statement.GetParameterIndex(prop_IsPrivate()), m_isPrivate);
     statement.BindBoolean(statement.GetParameterIndex(prop_IsTemplate()), m_isTemplate);
@@ -750,7 +770,7 @@ void DgnModel::_BindWriteParams(BeSQLite::EC::ECSqlStatement& statement, ForInse
     _OnSaveJsonProperties();
     if (!m_jsonProperties.isNull())
         statement.BindText(statement.GetParameterIndex(prop_JsonProperties()), m_jsonProperties.ToString().c_str(), IECSqlBinder::MakeCopy::Yes);
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/17
@@ -762,7 +782,7 @@ void DgnModel::_ToJson(JsonValueR val, JsonValueCR opts) const
     auto ecClass = GetDgnDb().Schemas().GetClass(m_classId);
 
     val[json_classFullName()] = ecClass->GetFullName();
-    
+
     if (m_parentModelId.IsValid())
         val[json_parentModel()] = m_parentModelId.ToHexStr();
 
@@ -774,7 +794,7 @@ void DgnModel::_ToJson(JsonValueR val, JsonValueCR opts) const
 
     if (!m_jsonProperties.empty())
         val[json_jsonProperties()] = m_jsonProperties;
-    
+
     val[json_name()] = GetName();
 
     if (m_isPrivate)
@@ -783,6 +803,16 @@ void DgnModel::_ToJson(JsonValueR val, JsonValueCR opts) const
     if (m_isTemplate)
         val[json_isTemplate()] = true;
     }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                    Keith.Bentley                    08/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricModel::_ToJson(JsonValueR val, JsonValueCR opts) const {
+    T_Super::_ToJson(val, opts);
+    BeGuid guid = QueryGeometryGuid();
+    if (guid.IsValid())
+        val[json_geometryGuid()] = guid.ToString();
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/17
@@ -1166,7 +1196,7 @@ DgnDbStatus DgnModel::_OnInsert()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::_OnInserted() 
+void DgnModel::_OnInserted()
     {
     GetDgnDb().Models().AddLoadedModel(*this);
     }
@@ -1174,7 +1204,7 @@ void DgnModel::_OnInserted()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::_OnLoaded() 
+void DgnModel::_OnLoaded()
     {
     GetDgnDb().Models().AddLoadedModel(*this);
     }
@@ -1247,16 +1277,16 @@ DgnDbStatus DgnModel::Insert()
         m_modelId = DgnModelId();
         return DgnDbStatus::WriteError;
         }
-    
+
     _BindWriteParams(*stmt, ForInsert::Yes);
-        
+
     DbResult stmtResult = stmt->Step();
     if (BE_SQLITE_DONE != stmtResult)
         {
         m_modelId = DgnModelId();
         return DgnDbStatus::WriteError;
         }
-        
+
     // NB: We do this here rather than in _OnInserted() because Update() is going to request a lock too, and the server doesn't need to be involved in locks for models created locally.
     GetDgnDb().BriefcaseManager().OnModelInserted(GetModelId());
     status = Update();
@@ -1289,7 +1319,7 @@ void DgnModel::_InitFrom(DgnModelCR other)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                 Ramanujam.Raman   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricModel::_OnSaveJsonProperties() 
+void GeometricModel::_OnSaveJsonProperties()
     {
     T_Super::_OnSaveJsonProperties();
     SetJsonProperties(json_formatter(), m_displayInfo.ToJson());
@@ -1298,7 +1328,7 @@ void GeometricModel::_OnSaveJsonProperties()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                 Ramanujam.Raman   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricModel::_OnLoadedJsonProperties() 
+void GeometricModel::_OnLoadedJsonProperties()
     {
     T_Super::_OnLoadedJsonProperties();
     m_displayInfo.FromJson(GetJsonProperties(json_formatter()));
@@ -1442,7 +1472,7 @@ ECSqlClassParams const& dgn_ModelHandler::Model::GetECSqlClassParams()
 * @bsimethod                                                 Ramanujam.Raman   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void dgn_ModelHandler::Model::_GetClassParams(ECSqlClassParamsR params)
-    {  
+    {
     params.Add(DgnModel::prop_ECInstanceId(), ECSqlClassParams::StatementType::Insert);
     params.Add(DgnModel::prop_ParentModel(), ECSqlClassParams::StatementType::Insert);
     params.Add(DgnModel::prop_ModeledElement(), ECSqlClassParams::StatementType::Insert);
@@ -1538,7 +1568,7 @@ DgnDbStatus DgnModel::_SetProperties(ECN::IECInstanceCR properties)
             DgnDbStatus stat;
             if (DgnDbStatus::Success != (stat = _SetProperty(propName.c_str(), value)))
                 {
-                if (DgnDbStatus::ReadOnly == stat) // Not sure what to do when caller wants to 
+                if (DgnDbStatus::ReadOnly == stat) // Not sure what to do when caller wants to
                     {
                     BeAssert(false && "Attempt to set read-only property value.");
                     }
@@ -1550,7 +1580,7 @@ DgnDbStatus DgnModel::_SetProperties(ECN::IECInstanceCR properties)
                 }
             }
         }
-    
+
     return DgnDbStatus::Success;
     }
 
@@ -1624,7 +1654,7 @@ AxisAlignedBox3d GeometricModel3d::_QueryElementsRange() const
         }
 
     int resultSize = stmt.GetColumnBytes(0); // can be 0 if no elements in model
-    return (sizeof(AxisAlignedBox3d) == resultSize) ? *(AxisAlignedBox3d*) const_cast<void*>(stmt.GetValueBlob(0)) : AxisAlignedBox3d(); 
+    return (sizeof(AxisAlignedBox3d) == resultSize) ? *(AxisAlignedBox3d*) const_cast<void*>(stmt.GetValueBlob(0)) : AxisAlignedBox3d();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1658,7 +1688,7 @@ AxisAlignedBox3d GeometricModel2d::_QueryElementsRange() const
         }
 
     int resultSize = stmt.GetColumnBytes(0); // can be 0 if no elements in model
-    return (sizeof(AxisAlignedBox3d) == resultSize) ? *(AxisAlignedBox3d*) const_cast<void*>(stmt.GetValueBlob(0)) : AxisAlignedBox3d(); 
+    return (sizeof(AxisAlignedBox3d) == resultSize) ? *(AxisAlignedBox3d*) const_cast<void*>(stmt.GetValueBlob(0)) : AxisAlignedBox3d();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1790,8 +1820,8 @@ DgnDbStatus DgnModel::_ImportElementsFrom(DgnModelCR sourceModel, DgnImportConte
 DgnDbStatus DgnModel::_ImportElementAspectsFrom(DgnModelCR sourceModel, DgnImportContext& importer)
     {
     // This base class implementation of _ImportElementAspectsFrom knows only the ElementAspect subclasses that are defined by the
-    //  base Dgn schema. 
-    
+    //  base Dgn schema.
+
     return DgnDbStatus::Success;
     }
 
@@ -1884,7 +1914,7 @@ DgnDbStatus DgnModel::_ImportLinkTableECRelationshipsFrom(DgnModelCR sourceModel
     // Copy ECRelationships where source and target are both in this model, and where the relationship is implemented as a link table.
     // Note: this requires domain-specific knowledge of what ECRelationships exist.
 
-    // ElementGeomUsesParts are created automatically as a side effect of inserting GeometricElements 
+    // ElementGeomUsesParts are created automatically as a side effect of inserting GeometricElements
 
     StopWatch timer(true);
     ImportLinkTableECRelationshipsFrom(GetDgnDb(), sourceModel, importer, BIS_ECSCHEMA_NAME, BIS_REL_ElementGroupsMembers);
@@ -1970,7 +2000,7 @@ DgnModelPtr DgnModel::CopyModel(DgnModelCR model, DgnElementId newModeledElement
     DgnDbR db = model.GetDgnDb();
 
     DgnModelPtr model2 = model.Clone(newModeledElementId);
-    if (DgnDbStatus::Success != model2->Insert())   
+    if (DgnDbStatus::Success != model2->Insert())
         return nullptr;
 
     DgnImportContext nopimport(db, db);
@@ -2037,50 +2067,6 @@ ElementIterator DgnModel::MakeIterator(Utf8CP whereClause, Utf8CP orderByClause)
     iterator.GetStatement()->BindId(1, GetModelId());
 
     return iterator;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricModel::InitLastElementModifiedTime()
-    {
-    if (0 != m_lastModifiedTime.load())
-        return;
-
-    // NB: We're using ECSql because ECDb persists datetime as floating-point julian day value...
-    constexpr Utf8CP ecsql = "SELECT MAX(LastMod) FROM " BIS_SCHEMA(BIS_CLASS_Element) " WHERE Model.Id=?";
-    auto stmt = GetDgnDb().GetPreparedECSqlStatement(ecsql);
-    stmt->BindId(1, GetModelId());
-    if (BE_SQLITE_ROW == stmt->Step() && !stmt->IsValueNull(0))
-        {
-        DateTime dt = stmt->GetValueDateTime(0);
-        int64_t unixMillis;
-        if (SUCCESS == dt.ToUnixMilliseconds(unixMillis))
-            {
-            m_lastModifiedTime.store(static_cast<uint64_t>(unixMillis));
-            }
-        else
-            {
-            BeAssert(false);
-            UpdateLastElementModifiedTime();
-            }
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   06/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricModel::UpdateLastElementModifiedTime()
-    {
-    m_lastModifiedTime.store(BeTimeUtilities::GetCurrentTimeAsUnixMillis());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint64_t GeometricModel::GetLastElementModifiedTime() const
-    {
-    return m_lastModifiedTime.load();
     }
 
 /*---------------------------------------------------------------------------------**//**

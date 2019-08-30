@@ -41,9 +41,12 @@ bool IECSqlValue::GetBoolean() const { return _GetBoolean(); }
 //+---------------+---------------+---------------+---------------+---------------+------
 DateTime IECSqlValue::GetDateTime() const
     {
+    if (IsNull())
+        return DateTime();
+
     DateTime::Info metadata;
     const uint64_t jdMsec = GetDateTimeJulianDaysMsec(metadata);
-    
+
     //If GetDateTime is called on a select clause item which is an expression or not a DateTime ECProperty
     //metadata is not available. This is not an error, we just take DateTime::Kind::Unspecified as default
     //in this case
@@ -324,7 +327,7 @@ IECSqlValueIterable::const_iterator IECSqlValueIterable::begin() const { return 
 // @bsimethod                                    Krischan.Eberle                 02/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 IECSqlValueIterable::const_iterator::const_iterator(std::unique_ptr<IECSqlValueIterable::IIteratorState> state)
-    : m_state(std::move(state)) 
+    : m_state(std::move(state))
     {
     BeAssert(m_state != nullptr && "Call default ctor to create an end iterator");
 

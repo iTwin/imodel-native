@@ -23,9 +23,9 @@ namespace ElementDependency {
 
 struct EdgeStatusAccessor
 {
-    union 
+    union
     {
-        struct 
+        struct
         {
             uint32_t m_failed:1;           // NB: bit layout must match EdgeStatus
             uint32_t m_unused1:6;          // NB: bit layout must match EdgeStatus
@@ -65,7 +65,7 @@ struct Graph::ElementDrivesElement : Graph::TableApi
 
     public:
     ElementDrivesElement(Graph&);
-        
+
     DbResult DoPrepare();
 
     DbResult StepSelectWhereRootInDirectChanges(Edge&);
@@ -192,7 +192,7 @@ static void callJsEdgeFunc(Graph const& graph, Edge const& edge, Utf8CP methodNa
     Napi::Object props = Napi::Object::New(jsTxns.Env());
 
     auto relClass = db.Schemas().GetClass(edge.GetRelClassId());
-    if (relClass != nullptr) 
+    if (relClass != nullptr)
         props["classFullName"] = db.ToJsString(relClass->GetFullName());
     props["id"] = db.ToJsString(edge.m_relId);
     props["sourceId"] = db.ToJsString(edge.m_ein);
@@ -288,7 +288,7 @@ int Graph::Nodes::GetInDegree(DgnElementId nodeId)
 
     m_selectInDegree->Reset();
     m_selectInDegree->BindId(1, nodeId);
-    
+
     auto stat = m_selectInDegree->Step();
     if (BE_SQLITE_ROW != stat)
         return 0;
@@ -514,16 +514,16 @@ void dgn_TxnTable::ElementDep::_PropagateChanges()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Graph::LogDependencyFound(Statement& stmt, Edge const& edge)
     {
-    if (!ElementDependencyGraph_getLogger().isSeverityEnabled(LOG_TRACE)) 
+    if (!ElementDependencyGraph_getLogger().isSeverityEnabled(LOG_TRACE))
         return;
 
     auto ein    = stmt.GetValueId<DgnElementId>(3);
     auto eout   = stmt.GetValueId<DgnElementId>(4);
     auto epath  = stmt.GetValueText(5);
-    EDGLOG(LOG_TRACE, "\t%s->%s->%s (%s)", 
-                        FmtElement(ein).c_str(), 
+    EDGLOG(LOG_TRACE, "\t%s->%s->%s (%s)",
+                        FmtElement(ein).c_str(),
                             FmtRel(edge).c_str(),
-                                  FmtElement(eout).c_str(), 
+                                  FmtElement(eout).c_str(),
                                        FmtElementPath(epath).c_str());
     }
 
@@ -569,11 +569,11 @@ void Graph::InvokeHandlerForValidation(Edge const& edge)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Graph::UpdateEdgeStatusInDb(Edge const& edge, EdgeStatus newStatus) 
+DbResult Graph::UpdateEdgeStatusInDb(Edge const& edge, EdgeStatus newStatus)
     {
     if (edge.m_status == newStatus)
         return BE_SQLITE_DONE;
-    
+
     if (newStatus == EdgeStatus::EDGESTATUS_Failed)
         {
         EDGLOG(LOG_ERROR, "Failed %s\n", FmtEdge(edge).c_str());
@@ -589,7 +589,7 @@ DbResult Graph::UpdateEdgeStatusInDb(Edge const& edge, EdgeStatus newStatus)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Graph::SetFailedEdgeStatusInDb(Edge const& edge, bool failed) 
+DbResult Graph::SetFailedEdgeStatusInDb(Edge const& edge, bool failed)
     {
     if (failed)
         m_txnMgr.ElementDependencies().AddFailedTarget(edge.m_eout);
@@ -604,7 +604,7 @@ DbResult Graph::SetFailedEdgeStatusInDb(Edge const& edge, bool failed)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Graph::EdgeQueue::~EdgeQueue() 
+Graph::EdgeQueue::~EdgeQueue()
     {
     GetDgnDb().ExecuteSql("DELETE FROM " EDGE_QUEUE);
     }
@@ -618,12 +618,12 @@ Graph::EdgeQueue::EdgeQueue(Graph& graph) : Graph::TableApi(graph)
     if (!db.TableExists(EDGE_QUEUE))
         {                                                                                                   // NB default color must be 0, i.e., EdgeColor::White
         db.CreateTable(EDGE_QUEUE, "ECRelationshipId INTEGER PRIMARY KEY, SourceId INTEGER, TargetId INTEGER, ECClassId INTEGER, status INTEGER DEFAULT 0, Priority INTEGER DEFAULT 0, shared_output INTEGER DEFAULT 0, color INTEGER DEFAULT 0, Deleted INTEGER DEFAULT 0");
-        // The value of column 'Deleted' determines which method to call on the handler: 
+        // The value of column 'Deleted' determines which method to call on the handler:
         //  0 - call _OnRootChanged
         //  1 - call _ProcessDeletedDependency
 
         // *** WIP_GRAPH_PRIORITY
-        //      -- currently, the Priority column is NULL unless the user happens to populate it. 
+        //      -- currently, the Priority column is NULL unless the user happens to populate it.
         //          That is a problem, as we want the default priority to be order of creation.
         //      -- must change dgn.0.02.ecschema.xml to put an index on the priority column, so that ORDER BY Priority will work
         }
@@ -842,7 +842,7 @@ void Graph::InvokeHandlerForDeletedRelationship(ECInstanceId relId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Graph::InvokeHandlersInTopologicalOrder() 
+void Graph::InvokeHandlersInTopologicalOrder()
     {
     // This is a total topological sort of the Edge queue.
     m_edgeQueue->ResetSelectAllOrderedByPriority();
@@ -886,7 +886,7 @@ DbResult Graph::ElementDrivesElement::DoPrepare()
         " WHERE TargetId=?");
 
     m__updateStatus__ = GetTxnMgr().GetTxnStatement("UPDATE " BIS_TABLE(BIS_REL_ElementDrivesElement) " SET Status=? WHERE Id=?");
-    
+
     return BE_SQLITE_OK;
     }
 
@@ -905,7 +905,7 @@ DbResult Graph::ElementDrivesElement::SelectEdgeByRelId(Edge& edge, ECInstanceId
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Graph::ElementDrivesElement::UpdateEdgeStatusInDb(Edge const& edge, EdgeStatus newStatus) 
+DbResult Graph::ElementDrivesElement::UpdateEdgeStatusInDb(Edge const& edge, EdgeStatus newStatus)
     {
     m__updateStatus__->Reset();
     m__updateStatus__->BindInt(1,(int)newStatus);
@@ -921,7 +921,7 @@ DbResult Graph::ElementDrivesElement::SelectEdge(Edge& edge, Statement& stmt)
     auto stat = stmt.Step();
     if (BE_SQLITE_ROW != stat)
         return stat;
-        
+
     edge.m_ein = stmt.GetValueId<DgnElementId>(0);
     edge.m_eout = stmt.GetValueId<DgnElementId>(1);
     edge.m_relId = stmt.GetValueId<ECInstanceId>(2);
@@ -1087,7 +1087,7 @@ void Graph::VerifyOverlappingDependencies()
         {
         if (++count == 1)
             EDGLOG(LOG_TRACE, ".............VerifyOverlappingDependencies................");
-        
+
         InvokeHandlerForValidation(outputsElement);
         }
     }
@@ -1125,7 +1125,7 @@ void Graph::InvokeHandlersInDependencyOrder()
 void Graph::InvokeAffectedDependencyHandlers()
     {
     EDGLOG(LOG_TRACE, "--------------------------------------------------");
-    
+
     if (s_debugGraph > 1)
         WriteDot(BeFileName(L"D:\\tmp\\ChangePropagationRelationships.dot"), bvector<bvector<uint64_t>>());
 
@@ -1145,7 +1145,7 @@ BentleyStatus Graph::WhatIfChanged(bvector<DgnElementId> const& directlyChangedE
         {
         auto el = elements.GetElement(elementId);
         if (el.IsValid())
-            txnElements.AddElement(elementId, el->GetModelId(), TxnTable::ChangeType::Update, el->GetElementClassId());
+            txnElements.AddElement(elementId, el->GetModelId(), TxnTable::ChangeType::Update, el->GetElementClassId(), false);
         }
 
     auto& dependencies = m_txnMgr.ElementDependencies();

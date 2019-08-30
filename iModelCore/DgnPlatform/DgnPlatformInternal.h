@@ -56,14 +56,11 @@
 #include <DgnPlatform/Tile.h>
 #include <DgnPlatform/VecMath.h>
 #include <DgnPlatform/WebMercator.h>
-#include <DgnPlatform/ModelSpatialClassifier.h>
 #include <DgnPlatformInternal/DgnCore/DgnCoreL10N.h>
 #include <ECObjects/ECSchema.h>
 #include <Units/Units.h>
 #include <Logging/bentleylogging.h>
 #include <Napi/napi.h>
-
-
 
 #define DGNCORE_RUNONCE_CHECK(VAR) {if (VAR) return; VAR=true;}
 #define DGNCORELOG NativeLogging::LoggingManager::GetLogger(L"DgnPlatform")

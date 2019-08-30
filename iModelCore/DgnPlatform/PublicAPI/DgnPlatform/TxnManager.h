@@ -61,7 +61,14 @@ struct TxnMonitor
 };
 
 struct RevisionChangesFileReader;
-namespace dgn_TxnTable {struct Element; struct ElementDep; struct Model; struct RelationshipLinkTable; struct UniqueRelationshipLinkTable; struct MultiRelationshipLinkTable;}
+namespace dgn_TxnTable {
+    struct Element;
+    struct ElementDep;
+    struct Model;
+    struct RelationshipLinkTable;
+    struct UniqueRelationshipLinkTable;
+    struct MultiRelationshipLinkTable;
+}
 
 //=======================================================================================
 //! An instance of a TxnTable is created for a single SQLite table of a DgnDb via a DgnDomain::TableHandler.
@@ -78,12 +85,15 @@ struct TxnTable : RefCountedBase
     TxnManager& m_txnMgr;
     TxnTable(TxnManager& mgr) : m_txnMgr(mgr) {}
 
+    // look up the modelId and classId by elementId from the element table.
+    DgnModelId GetModelAndClass(ECN::ECClassId& classId, DgnElementId id);
+
     //! Return the name of the table handled by this TxnTable.
     virtual Utf8CP _GetTableName() const = 0;
 
     //! Create any temp tables that will be used by _OnValidate. The results of this method will be committed before
     //! any actual changes are validated or txns are created.
-    virtual void _Initialize() = 0;
+    virtual void _Initialize() {}
 
     //! @name Validating Direct Changes
     //@{
@@ -135,7 +145,7 @@ struct TxnTable : RefCountedBase
     virtual void _OnAppliedAdd(BeSQLite::Changes::Change const& change) {}
 
     //! Called after apply an update record from the change set
-    //! @param[in] change The change record for the update. The pre-changed data about the row will be in the "old values" of change, 
+    //! @param[in] change The change record for the update. The pre-changed data about the row will be in the "old values" of change,
     //! and the post-changed data will be in the "new values". Columns that are unchanged are in neither values.
     virtual void _OnAppliedUpdate(BeSQLite::Changes::Change const& change) {}
     //@}
@@ -144,7 +154,7 @@ typedef RefCountedPtr<TxnTable> TxnTablePtr;
 
 //=======================================================================================
 //! Manages the temp table that records all link table changes during a transaction.
-//! Includes only relationships for which tracking has been requested. 
+//! Includes only relationships for which tracking has been requested.
 //! See TxnManager::BeginTrackingRelationship for how to start tracking an ECRelationship.
 //! <p>To query changes, a TxnMonitor should query the RelationshipLinkTables. Here is an example:
 //! __PUBLISH_INSERT_FILE__ RelationshipLinkTableTrackingTxnMonitor_OnCommit_.sampleCode
@@ -158,17 +168,16 @@ struct TxnRelationshipLinkTables
     friend struct dgn_TxnTable::MultiRelationshipLinkTable;
   private:
     TxnManager& m_txnMgr;
-    // unused - bool m_changes;
     BeSQLite::CachedStatementPtr m_stmt;
     TxnRelationshipLinkTables(TxnManagerR t);
     BeSQLite::DbResult Insert(BeSQLite::EC::ECInstanceId relid, ECN::ECClassId relclsid, DgnElementId srcelemid, DgnElementId tgtelemid, TxnTable::ChangeType changeType);
-  public:      
-    DGNPLATFORM_EXPORT static Utf8CP TABLE_NAME; //!< The name of the temp table that TxnRelationshipLinkTables uses to record changes. @note Do not attempt to modify the table!
-    DGNPLATFORM_EXPORT static Utf8CP COLNAME_ECInstanceId; //!< The name of the column that contains the relationship's own ID. Type = BeSQLite::EC::ECInstanceId
-    DGNPLATFORM_EXPORT static Utf8CP COLNAME_ECClassId; //!< The name of the column that contains the ID of the relationship class. Type = ECN::ECClassId 
-    DGNPLATFORM_EXPORT static Utf8CP COLNAME_SourceECInstanceId; //!< The name of the column that contains the ID of the source element. Type = DgnElementId
-    DGNPLATFORM_EXPORT static Utf8CP COLNAME_TargetECInstanceId; //!< The name of the column that contains the ID of the target element. Type = DgnElementId
-    DGNPLATFORM_EXPORT static Utf8CP COLNAME_ChangeType; //!< The name of the column that identifies what kind of change this is. Type = TxnTable::ChangeType
+
+  public:
+    constexpr static Utf8CP COLNAME_ECInstanceId = "ECInstanceId"; //!< The name of the column that contains the relationship's own ID. Type = BeSQLite::EC::ECInstanceId
+    constexpr static Utf8CP COLNAME_ECClassId = "ECClassId"; //!< The name of the column that contains the ID of the relationship class. Type = ECN::ECClassId
+    constexpr static Utf8CP COLNAME_SourceECInstanceId = "SourceECInstanceId"; //!< The name of the column that contains the ID of the source element. Type = DgnElementId
+    constexpr static Utf8CP COLNAME_TargetECInstanceId = "TargetECInstanceId"; //!< The name of the column that contains the ID of the target element. Type = DgnElementId
+    constexpr static Utf8CP COLNAME_ChangeType = "ChangeType"; //!< The name of the column that identifies what kind of change this is. Type = TxnTable::ChangeType
     };
 
 //=======================================================================================
@@ -274,18 +283,23 @@ private:
     TxnId m_curr;
     TxnAction m_action;
     bvector<TxnId> m_multiTxnOp;
+public:
+    bset<DgnModelId> m_changedModels;    // the set of models that have changes for the current transaction
+    bset<DgnModelId> m_geometricChangedModels; // the set of models that have geometric changes for the current transaction
+private:
     bvector<TxnRange> m_reversedTxn;
     bvector<DynamicChangeTrackerPtr> m_dynamicTxns;
     BeSQLite::StatementCache m_stmts;
     BeSQLite::SnappyFromBlob m_snappyFrom;
     BeSQLite::SnappyToBlob   m_snappyTo;
+    TxnRelationshipLinkTables m_rlt;
     int m_txnErrors = 0;
     bool m_fatalValidationError;
-    TxnRelationshipLinkTables m_rlt;
     bool m_initTableHandlers;
     bool m_enableNotifyTxnMonitors;
     bool m_enableRebasers;
     bool m_isInteractive = false;
+    bool m_noModelLastMod = false; // if true, we're working on an iModel that hasn't been upgraded to include the Model.LastMod property
 
     OnCommitStatus _OnCommit(bool isCommit, Utf8CP operation) override;
     void _OnCommitted(bool isCommit, Utf8CP operation) override;
@@ -295,7 +309,7 @@ private:
     BeSQLite::DbResult SaveChanges(BeSQLite::IByteArrayCR changeset, Utf8CP operation, bool isSchemaChange);
     BeSQLite::DbResult SaveSchemaChanges(BeSQLite::DbSchemaChangeSetCR schemaChangeSet, Utf8CP operation);
     BeSQLite::DbResult SaveDataChanges(BeSQLite::ChangeSetCR changeSet, Utf8CP operation);
-    
+
     BeSQLite::DbResult SaveRebase(int64_t& id, BeSQLite::Rebase const& rebase);
 
     Byte* ReadChanges(uint32_t& sizeRead, TxnId rowId);
@@ -325,6 +339,8 @@ private:
     bool IsMultiTxnMember(TxnId rowid) const;
     TxnManager::TxnId GetLastUndoableTxnId(AllowCrossSessions allowCrossSessions) const;
     bool IsSchemaChangeTxn(TxnId rowid) const;
+    void UpdateModelChanges();
+    void DoUpdateModelChanges();
 
     void CancelDynamics();
 
@@ -343,7 +359,7 @@ public:
     DGNPLATFORM_EXPORT BeSQLite::DbResult InitializeTableHandlers(); //!< @private
     TxnRelationshipLinkTables& RelationshipLinkTables(); //!< @private
     void EnableNotifyTxnMonitors(bool enabled) { m_enableNotifyTxnMonitors = enabled; }
-    
+
     //! A statement cache exclusively for Txn-based statements.
     BeSQLite::CachedStatementPtr GetTxnStatement(Utf8CP sql) const;
 
@@ -390,7 +406,7 @@ public:
     //! @return The TxnId of the the innermost multi-Txn operation. If no multi-Txn operation is active, the TxnId will be zero.
     DGNPLATFORM_EXPORT TxnId GetMultiTxnOperationStart();
     //@}
-    
+
     //! @name Reversing and Reinstating Transactions
     //@{
     //! Get the current Action being processed by the TxnManager. This can be called from inside TxnTable methods only,
@@ -411,7 +427,7 @@ public:
 
     //! @private - adds to `rebaser` all stored rebases up to and including `thruId`.
     BeSQLite::DbResult LoadRebases(BeSQLite::Rebaser& rebaser, int64_t thruId);
-    
+
     //! Get the current SessionId.
     SessionId GetCurrentSessionId() const {return m_curr.GetSession();}
 
@@ -435,7 +451,7 @@ public:
     //! Query if there are currently any reversible (undoable) changes
     //! @return true if there are currently any reversible (undoable) changes.
     DGNPLATFORM_EXPORT bool IsUndoPossible(AllowCrossSessions allowCrossSessions = AllowCrossSessions::No) const;
-        
+
     //! Query if there are currently any reinstateable (redoable) changes
     //! @return True if there are currently any reinstate-able (redoable) changes
     bool IsRedoPossible() const {return !m_reversedTxn.empty();}
@@ -480,9 +496,9 @@ public:
     DGNPLATFORM_EXPORT DgnDbStatus ReinstateTxn();
     //@}
 
-    //! Get a summary of changes from all transactions starting with the specified TxnId. 
-    //! @remarks Errors out if there are any uncommitted changes in the current transaction. i.e., @ref HasChanges() has to 
-    //! return false. Call @ref BeSQLite::Db::SaveChanges() or @ref BeSQLite::Db::AbandonChanges() before calling this method. 
+    //! Get a summary of changes from all transactions starting with the specified TxnId.
+    //! @remarks Errors out if there are any uncommitted changes in the current transaction. i.e., @ref HasChanges() has to
+    //! return false. Call @ref BeSQLite::Db::SaveChanges() or @ref BeSQLite::Db::AbandonChanges() before calling this method.
     DGNPLATFORM_EXPORT BentleyStatus GetChangeSummary(BeSQLite::EC::ChangeSummary& changeSummary, TxnId startTxnId);
 
     //! Get the DgnDb for this TxnManager
@@ -509,7 +525,7 @@ public:
     bool InDynamicTxn() const {return !m_dynamicTxns.empty();}
 
     //! Tell the TxnManager to track changes to instances of the specified ECRelationship class.
-    //! Relationship-specific changes will be captured in the Txn summary in different ways, depending on how the relationship was mapped. 
+    //! Relationship-specific changes will be captured in the Txn summary in different ways, depending on how the relationship was mapped.
     //! Specifically:
     //!     * Changes to ECRelationships that are mapped to foreign keys will result in element table changes only. The Txn summary will not have any separate record of a change to the ECRelationship.
     //!     * Changes to all ECRelationships that are mapped to link tables will be gathered into the TxnRelationshipLinkTables table in the Txn summary.
@@ -561,9 +577,9 @@ namespace dgn_TxnTable
 
         void _Initialize() override;
         void _OnValidate() override;
-        void _OnValidateAdd(BeSQLite::Changes::Change const& change) override    {AddChange(change, TxnTable::ChangeType::Insert);}
-        void _OnValidateDelete(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Delete);}
-        void _OnValidateUpdate(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Update);}
+        void _OnValidateAdd(BeSQLite::Changes::Change const& change) override    {AddChange(change, TxnTable::ChangeType::Insert, true);}
+        void _OnValidateDelete(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Delete, true);}
+        void _OnValidateUpdate(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Update, true);}
         void _OnValidated() override;
         void _OnApply() override;
         void _OnAppliedAdd(BeSQLite::Changes::Change const&) override;
@@ -571,8 +587,8 @@ namespace dgn_TxnTable
         void _OnAppliedUpdate(BeSQLite::Changes::Change const&) override;
         void _OnApplied() override;
 
-        void AddChange(BeSQLite::Changes::Change const& change, ChangeType changeType);
-        void AddElement(DgnElementId, DgnModelId, ChangeType changeType, DgnClassId);
+        void AddChange(BeSQLite::Changes::Change const& change, ChangeType changeType, bool fromCommit);
+        void AddElement(DgnElementId, DgnModelId, ChangeType changeType, DgnClassId, bool fromCommit);
 
         //! iterator for elements that are directly changed. Only valid during _PropagateChanges.
         struct Iterator : BeSQLite::DbTableIterator
@@ -605,6 +621,31 @@ namespace dgn_TxnTable
     void CreateIndexOnECClassId();
     };
 
+    struct Geometric : TxnTable {
+        Geometric(TxnManager& mgr) : TxnTable(mgr) {}
+        int32_t GetFirstCol() {return 2;}
+        // the last columns that hold information that indicates a geometric change
+        virtual int32_t _GetLastCol() = 0;
+        bool HasChangeInColumns(BeSQLite::Changes::Change const& change);
+        void AddChange(BeSQLite::Changes::Change const& change, ChangeType changeType);
+        void _OnValidateAdd(BeSQLite::Changes::Change const& change) override    {AddChange(change, TxnTable::ChangeType::Insert);}
+        void _OnValidateUpdate(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Update);}
+    };
+
+    struct Geometric3d : Geometric {
+        virtual int32_t _GetLastCol() override {return 16; };
+        Geometric3d(TxnManager& mgr) : Geometric(mgr) {}
+        static Utf8CP MyTableName() {return BIS_TABLE(BIS_CLASS_GeometricElement3d);}
+        Utf8CP _GetTableName() const override {return MyTableName();}
+    };
+
+    struct Geometric2d : Geometric {
+        virtual int32_t _GetLastCol() override {return 10; };
+        Geometric2d(TxnManager& mgr) : Geometric(mgr) {}
+        static Utf8CP MyTableName() {return BIS_TABLE(BIS_CLASS_GeometricElement2d);}
+        Utf8CP _GetTableName() const override {return MyTableName();}
+    };
+
     struct Model : TxnTable
     {
         BeSQLite::Statement m_stmt;
@@ -618,7 +659,6 @@ namespace dgn_TxnTable
         void _OnValidate() override;
         void _OnValidateAdd(BeSQLite::Changes::Change const& change) override    {AddChange(change, TxnTable::ChangeType::Insert);}
         void _OnValidateDelete(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Delete);}
-        void _OnValidateUpdate(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Update);}
         void _OnValidated() override;
         void _OnApply() override;
         void _OnAppliedAdd(BeSQLite::Changes::Change const&) override;
@@ -694,19 +734,18 @@ namespace dgn_TxnTable
     protected:
         bool m_changes;
         BeSQLite::Statement m_stmt;
-      
+
         Utf8CP _GetTableName() const override {BeAssert(false); return "";} // many tables are merged into this. So, this handler must be installed specially.
         RelationshipLinkTable(TxnManager& mgr): TxnTable(mgr), m_changes(false) {}
         virtual void _UpdateSummary(BeSQLite::Changes::Change change, ChangeType changeType) = 0;
-      
-        void _Initialize() override;
-        void _OnValidate() override;
+
+        void _OnValidate() override { m_changes = false; }
         void _OnValidateAdd(BeSQLite::Changes::Change const& change) override {_UpdateSummary(change, TxnTable::ChangeType::Insert);}
         void _OnValidateDelete(BeSQLite::Changes::Change const& change) override {_UpdateSummary(change, TxnTable::ChangeType::Delete);}
         void _OnValidateUpdate(BeSQLite::Changes::Change const& change) override {_UpdateSummary(change, TxnTable::ChangeType::Update);}
         void _PropagateChanges() override {}
         void _OnValidated() override;
-      
+
         BeSQLite::DbResult QueryTargets(DgnElementId& srcelemid, DgnElementId& tgtelemid, BeSQLite::EC::ECInstanceId relid, ECN::ECClassCR relClass);
 
       public:
@@ -741,29 +780,31 @@ namespace dgn_TxnTable
 //! @note Only handlers from the base "Dgn" domain belong in this namespace.
 // @bsiclass                                                    Keith.Bentley   06/15
 //=======================================================================================
-namespace dgn_TableHandler
-{
-    //! TableHandler for DgnElement
-    struct Element : Dgn::DgnDomain::TableHandler
-    {
+namespace dgn_TableHandler {
+    struct Element : Dgn::DgnDomain::TableHandler {
         TABLEHANDLER_DECLARE_MEMBERS(Element, DGNPLATFORM_EXPORT)
         Dgn::TxnTable* _Create(TxnManager& mgr) const override {return new dgn_TxnTable::Element(mgr);}
     };
 
-    //! TableHandler for DgnModel
-    struct Model : DgnDomain::TableHandler
-    {
+    struct Geometric3d : Dgn::DgnDomain::TableHandler {
+        TABLEHANDLER_DECLARE_MEMBERS(Geometric3d, DGNPLATFORM_EXPORT)
+        Dgn::TxnTable* _Create(TxnManager& mgr) const override {return new dgn_TxnTable::Geometric3d(mgr);}
+    };
+
+    struct Geometric2d : Dgn::DgnDomain::TableHandler {
+        TABLEHANDLER_DECLARE_MEMBERS(Geometric2d, DGNPLATFORM_EXPORT)
+        Dgn::TxnTable* _Create(TxnManager& mgr) const override {return new dgn_TxnTable::Geometric2d(mgr);}
+    };
+
+    struct Model : DgnDomain::TableHandler {
         TABLEHANDLER_DECLARE_MEMBERS(Model, DGNPLATFORM_EXPORT)
         TxnTable* _Create(TxnManager& mgr) const override {return new dgn_TxnTable::Model(mgr);}
     };
 
-    //! TableHandler for DgnElement dependencies
-    struct ElementDep : DgnDomain::TableHandler
-    {
+    struct ElementDep : DgnDomain::TableHandler {
         TABLEHANDLER_DECLARE_MEMBERS(ElementDep, DGNPLATFORM_EXPORT)
         TxnTable* _Create(TxnManager& mgr) const override {return new dgn_TxnTable::ElementDep(mgr);}
     };
-
 };
 
 END_BENTLEY_DGN_NAMESPACE

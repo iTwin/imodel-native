@@ -461,18 +461,15 @@ DbDupValue& DbDupValue::operator = (DbDupValue&& other)
     }
 
 SqlDbP   Db::GetSqlDb() const {return m_dbFile->m_sqlDb;}
-bool     Db::IsReadonly() const {return m_dbFile->m_readonly;}
 BeGuid   Db::GetDbGuid() const {return m_dbFile->m_dbGuid;}
 int32_t  Db::GetCurrentSavepointDepth() const {return (int32_t) m_dbFile->m_txns.size();}
 Utf8String Db::GetLastError(DbResult* lastResult) const {return IsDbOpen() ? m_dbFile->GetLastError(lastResult) : "Not opened";}
 void Db::Interrupt() const {return sqlite3_interrupt(GetSqlDb());}
-BeBriefcaseId Db::GetBriefcaseId() const {return m_dbFile->m_briefcaseId;}
 
 int64_t  Db::GetLastInsertRowId() const {return sqlite3_last_insert_rowid(GetSqlDb());}
 int      Db::GetModifiedRowCount() const {return sqlite3_changes(GetSqlDb());}
 int      Db::GetTotalModifiedRowCount() const { return sqlite3_total_changes(GetSqlDb()); }
 void     SnappyFromBlob::Finish() {m_blobIO.Close();}
-void     Db::SetAllowImplictTransactions(bool val) {m_dbFile->m_allowImplicitTxns=val;}
 
 Utf8String ProfileVersion::ToJson() const { return ToString("{\"major\":%" PRIu16 ",\"minor\":%" PRIu16 ",\"sub1\":%" PRIu16 ",\"sub2\":%" PRIu16 "}"); }
 DbResult Db::FreeMemory() const { return (DbResult)sqlite3_db_release_memory(m_dbFile->m_sqlDb); }
@@ -487,17 +484,14 @@ void ProfileVersion::FromJson(Utf8CP val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Casey.Mullen      04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Statement::TryPrepare(DbCR db, Utf8CP sql)
+DbResult Statement::TryPrepare(DbFileCR dbFile, Utf8CP sql)
     {
-    DbFileCR dbFile = *db.m_dbFile;
     DbResult stat = DoPrepare(dbFile, sql);
     LOG_STATEMENT_DIAGNOSTICS(sql, stat, dbFile, false);
     return stat;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/11
-+---------------+---------------+---------------+---------------+---------------+------*/
+DbResult Statement::TryPrepare(DbCR db, Utf8CP sql) { return TryPrepare(*db.m_dbFile, sql);}
 DbResult Statement::Prepare(DbCR db, Utf8CP sql) {return Prepare(*db.m_dbFile, sql);}
 
 /*---------------------------------------------------------------------------------**//**
@@ -505,18 +499,11 @@ DbResult Statement::Prepare(DbCR db, Utf8CP sql) {return Prepare(*db.m_dbFile, s
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Statement::Prepare(DbFileCR dbFile, Utf8CP sql, bool suppressDiagnostics)
     {
-    if (!dbFile.CheckImplicitTxn())
-        {
-        BeAssert(false);
-        return BE_SQLITE_ERROR_NoTxnActive;
-        }
-
     DbResult stat = DoPrepare(dbFile, sql);
     if (stat != BE_SQLITE_OK)
         {
         Utf8String lastError = dbFile.GetLastError(nullptr); // keep on separate line for debugging
         LOG.errorv("Error \"%s\" preparing SQL: %s", lastError.c_str(), sql);
-        BeAssert(false);
         }
 
     LOG_STATEMENT_DIAGNOSTICS(sql, stat, dbFile, suppressDiagnostics);
@@ -3696,14 +3683,14 @@ void StatementCache::AddStatement(CachedStatementPtr& newEntry, Utf8CP sql) cons
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult StatementCache::GetPreparedStatement(CachedStatementPtr& stmt, DbFile const& dbFile, Utf8CP sqlString) const
+DbResult StatementCache::GetPreparedStatement(CachedStatementPtr& stmt, DbFile const& dbFile, Utf8CP sqlString, bool logError) const
     {
     FindStatement(stmt, sqlString);
     if (stmt.IsValid())
         return BE_SQLITE_OK;
 
     AddStatement(stmt, sqlString);
-    return stmt->Prepare(dbFile, sqlString);
+    return logError ? stmt->Prepare(dbFile, sqlString) : stmt->TryPrepare(dbFile, sqlString);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3727,10 +3714,10 @@ void StatementCache::FindStatement(CachedStatementPtr& stmt, Utf8CP sql) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Db::GetCachedStatement(CachedStatementPtr& stmt, Utf8CP sqlString) const
+DbResult Db::GetCachedStatement(CachedStatementPtr& stmt, Utf8CP sqlString, bool logError) const
     {
     stmt = nullptr;  // just in case caller is already holding a pointer to a valid statement. Otherwise we may not share it.
-    return GetStatementCache().GetPreparedStatement(stmt, *m_dbFile, sqlString);
+    return GetStatementCache().GetPreparedStatement(stmt, *m_dbFile, sqlString, logError);
     }
 
 /*---------------------------------------------------------------------------------**//**

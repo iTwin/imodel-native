@@ -391,7 +391,7 @@ void JsInterop::UpdateIModelProps(DgnDbR dgndb, JsonValueCR props)
         ecef.FromJson(props[json_ecefLocation()]);
         geolocation.SetEcefLocation(ecef);
         }
-    
+
     geolocation.Save();
     }
 
@@ -439,7 +439,7 @@ DgnDbStatus JsInterop::InsertElementAspect(DgnDbR db, JsonValueCR aspectProps)
     if (!aspect.IsValid())
         return DgnDbStatus::BadRequest;
 
-    std::function<bool(Utf8CP)> shouldConvertProperty = [aspectClass](Utf8CP propName) 
+    std::function<bool(Utf8CP)> shouldConvertProperty = [aspectClass](Utf8CP propName)
         {
         if ((0 == strcmp(propName, DgnElement::json_classFullName())) || (0 == strcmp(propName, json_element()))) return false;
         return nullptr != aspectClass->GetPropertyP(propName);
@@ -506,7 +506,7 @@ DgnDbStatus JsInterop::UpdateElementAspect(DgnDbR db, JsonValueCR aspectProps)
     if (nullptr == aspect)
         return DgnDbStatus::NotFound;
 
-    std::function<bool(Utf8CP)> shouldConvertProperty = [aspectClass](Utf8CP propName) 
+    std::function<bool(Utf8CP)> shouldConvertProperty = [aspectClass](Utf8CP propName)
         {
         if ((0 == strcmp(propName, DgnElement::json_classFullName())) || (0 == strcmp(propName, json_element()))) return false;
         return nullptr != aspectClass->GetPropertyP(propName);
@@ -631,7 +631,7 @@ static ECN::StandaloneECRelationshipInstancePtr getRelationshipProperties(ECN::E
 
     // NB: don't include the sourceId and targetId properties. They are specified directly by insert
     //      and are not relevant to update
-    
+
     return (count > 0) ? relationshipInstance : nullptr;
     }
 
@@ -669,7 +669,7 @@ DbResult JsInterop::UpdateLinkTableRelationship(DgnDbR dgndb, JsonValueR inJson)
     auto relClass = parseRelClass(dgndb, inJson);
     if (nullptr == relClass)
         return BE_SQLITE_NOTFOUND;
-    
+
     ECN::StandaloneECRelationshipInstancePtr props = getRelationshipProperties(relClass, inJson);
     if (!props.IsValid())
         return BE_SQLITE_OK; // Relationship class had no properties - consider update successful
@@ -699,43 +699,39 @@ DgnDbStatus JsInterop::InsertCodeSpec(Utf8StringR idStr, DgnDbR db, Utf8StringCR
         return status;
     idStr = codeSpec->GetCodeSpecId().ToHexStr();
     return DgnDbStatus::Success;
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus JsInterop::InsertModel(JsonValueR outJson, DgnDbR dgndb, JsonValueR inJson)
-    {
+DgnDbStatus JsInterop::InsertModel(JsonValueR outJson, DgnDbR dgndb, JsonValueR inJson) {
     DgnModel::CreateParams params(dgndb, inJson);
     if (!params.m_classId.IsValid())
         return DgnDbStatus::WrongClass;
 
     ModelHandlerP handler = dgn_ModelHandler::Model::FindHandler(dgndb, params.m_classId);
-    if (nullptr == handler)
-        {
+    if (nullptr == handler) {
         BeAssert(false);
         return DgnDbStatus::WrongClass;
-        }
+    }
 
     DgnModelPtr model = handler->Create(params);
-    if (!model.IsValid())
-        {
+    if (!model.IsValid()) {
         BeAssert(false);
         return DgnDbStatus::BadArg;
-        }
+    }
 
     model->FromJson(inJson);
 
     DgnDbStatus status = model->Insert();
     outJson[json_id()] = model->GetModelId().ToHexStr();
     return status;
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      09/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus JsInterop::UpdateModel(DgnDbR dgndb, JsonValueR inJson)
-    {
+DgnDbStatus JsInterop::UpdateModel(DgnDbR dgndb, JsonValueR inJson) {
     if (!inJson.isMember(DgnModel::json_id()))
         return DgnDbStatus::BadArg;
 
@@ -748,15 +744,29 @@ DgnDbStatus JsInterop::UpdateModel(DgnDbR dgndb, JsonValueR inJson)
     if (!model.IsValid())
         return DgnDbStatus::MissingId;
 
-    model->FromJson(inJson);
-    return model->Update();
+    if (model->IsGeometricModel() && inJson.isMember("geometryChanged")) {
+        auto stmt = dgndb.GetGeometricModelUpdateStatement();
+        if (stmt.IsValid()) { // has the db been upgraded?
+            stmt->BindGuid(1, BeGuid(true));
+            stmt->BindId(2, mid);
+            stmt->Step();
+        }
+    } else if (inJson.isMember("updateLastMod")) {
+        auto stmt = dgndb.GetModelLastModUpdateStatement();
+        if (stmt.IsValid()) {
+            stmt->BindId(1, mid);
+            stmt->Step();
+        }
     }
 
-/*---------------------------------------------------------------------------------**//**
+    model->FromJson(inJson);
+    return model->Update();
+}
+
+/*---------------------------------------------------------------------------------**/ /**
 * @bsimethod                                    Sam.Wilson                      09/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus JsInterop::DeleteModel(DgnDbR dgndb, Utf8StringCR midStr)
-    {
+DgnDbStatus JsInterop::DeleteModel(DgnDbR dgndb, Utf8StringCR midStr) {
     DgnModelId mid(BeInt64Id::FromString(midStr.c_str()).GetValue());
     if (!mid.IsValid())
         return DgnDbStatus::InvalidId;
@@ -766,22 +776,20 @@ DgnDbStatus JsInterop::DeleteModel(DgnDbR dgndb, Utf8StringCR midStr)
         return DgnDbStatus::MissingId;
 
     return model->Delete();
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
+/*---------------------------------------------------------------------------------**/ /**
 * @bsimethod                                    Keith.Bentley                   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus JsInterop::GetModel(JsonValueR modelJson, DgnDbR dgndb, JsonValueCR inOpts)
-    {
+DgnDbStatus JsInterop::GetModel(JsonValueR modelJson, DgnDbR dgndb, JsonValueCR inOpts) {
     DgnModelId modelId(inOpts[json_id()].asUInt64());
-    if (!modelId.IsValid())
-        {
+    if (!modelId.IsValid()) {
         auto codeVal = inOpts[json_code()];
         if (!codeVal)
             return DgnDbStatus::NotFound;
 
         modelId = dgndb.Models().QuerySubModelId(DgnCode::FromJson2(codeVal));
-        }
+    }
 
     //  Look up the model
     auto model = dgndb.Models().GetModel(modelId);
@@ -791,13 +799,12 @@ DgnDbStatus JsInterop::GetModel(JsonValueR modelJson, DgnDbR dgndb, JsonValueCR 
     modelJson = model->ToJson(inOpts);
     // Note: there are no auto-handled properties on DgnModels. Any such data goes on the modeled element.
     return DgnDbStatus::Success;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Shaun.Sewall                  07/18
 //---------------------------------------------------------------------------------------
-DgnDbStatus JsInterop::QueryModelExtents(JsonValueR extentsJson, DgnDbR db, JsonValueCR options)
-    {
+DgnDbStatus JsInterop::QueryModelExtents(JsonValueR extentsJson, DgnDbR db, JsonValueCR options) {
     DgnModelId modelId(options[json_id()].asUInt64());
     if (!modelId.IsValid())
         return DgnDbStatus::InvalidId;
@@ -816,78 +823,71 @@ DgnDbStatus JsInterop::QueryModelExtents(JsonValueR extentsJson, DgnDbR db, Json
 
     extents.ToJson(extentsJson[json_modelExtents()]);
     return DgnDbStatus::Success;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Keith.Bentley                 12/17
 //---------------------------------------------------------------------------------------
-void JsInterop::GetIModelProps(JsonValueR val, DgnDbCR dgndb)
-    {
+void JsInterop::GetIModelProps(JsonValueR val, DgnDbCR dgndb) {
     // add the root subject, if available.
     auto rootSubject = dgndb.Elements().GetRootSubject();
-    if (rootSubject.IsValid())
-        {
+    if (rootSubject.IsValid()) {
         auto& subject = val[json_rootSubject()];
         subject[json_name()] = rootSubject->GetCode().GetValueUtf8CP();
         auto descr = rootSubject->GetDescription();
         if (!descr.empty())
-            subject[json_description()] = descr; 
-        }
-    
+            subject[json_description()] = descr;
+    }
+
     auto& geolocation = dgndb.GeoLocation();
-    
+
     // add project extents
     auto extents = geolocation.GetProjectExtents();
     extents.ToJson(val[json_projectExtents()]);
-    
+
     // add global origin
     val[json_globalOrigin()] = JsonUtils::DPoint3dToJson(geolocation.GetGlobalOrigin());
 
     auto ecefLocation = geolocation.GetEcefLocation();
     if (ecefLocation.m_isValid)
         val[json_ecefLocation()] = ecefLocation.ToJson();
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Barry.Bentley                 12/18
 //---------------------------------------------------------------------------------------
-BentleyStatus JsInterop::GetGeoCoordsFromIModelCoords (JsonValueR results, DgnDbR dgnDb, JsonValueCR props)
-    {
+BentleyStatus JsInterop::GetGeoCoordsFromIModelCoords(JsonValueR results, DgnDbR dgnDb, JsonValueCR props) {
     // get the vector of points.
     bvector<DPoint3d> iModelPoints;
-    JsonUtils::DPoint3dVectorFromJson (iModelPoints, props[json_iModelCoords()]);
+    JsonUtils::DPoint3dVectorFromJson(iModelPoints, props[json_iModelCoords()]);
 
     // create return vectors.
     bvector<DPoint3d> geoPoints(iModelPoints.size());
     bvector<ReprojectStatus> statusList(geoPoints.size());
 
     GeoCoordinates::DatumConverterP datumConverter = nullptr;
-    GeoCoordinates::DatumCP      sourceDatum = nullptr;
-    GeoCoordinates::DatumCP      targetDatum = nullptr;
-    Utf8String                   targetDatumNameUtf8 = props[json_targetDatum()].ToString();
+    GeoCoordinates::DatumCP sourceDatum = nullptr;
+    GeoCoordinates::DatumCP targetDatum = nullptr;
+    Utf8String targetDatumNameUtf8 = props[json_targetDatum()].ToString();
     targetDatumNameUtf8.DropQuotes();
 
     // get the GCS
-    DgnGCSCPtr  iModelGcs = dgnDb.GeoLocation().GetDgnGCS();
-    if (iModelGcs.IsValid() && iModelGcs->IsValid() && !targetDatumNameUtf8.empty()) 
-        {
-        WCharCP     iModelDatumName = iModelGcs->GetDatumName();
-        WString     targetDatumName(targetDatumNameUtf8.c_str(), true);
+    DgnGCSCPtr iModelGcs = dgnDb.GeoLocation().GetDgnGCS();
+    if (iModelGcs.IsValid() && iModelGcs->IsValid() && !targetDatumNameUtf8.empty()) {
+        WCharCP iModelDatumName = iModelGcs->GetDatumName();
+        WString targetDatumName(targetDatumNameUtf8.c_str(), true);
 
-        if (!targetDatumName.Equals (iModelDatumName))
-            {
-            sourceDatum = GeoCoordinates::Datum::CreateDatum (iModelDatumName);
-            targetDatum = GeoCoordinates::Datum::CreateDatum (targetDatumName.c_str());
-            if ( (nullptr != sourceDatum) && (nullptr != targetDatum) )
-                datumConverter = GeoCoordinates::DatumConverter::Create (*sourceDatum, *targetDatum);
-            }
-        }    
+        if (!targetDatumName.Equals(iModelDatumName)) {
+            sourceDatum = GeoCoordinates::Datum::CreateDatum(iModelDatumName);
+            targetDatum = GeoCoordinates::Datum::CreateDatum(targetDatumName.c_str());
+            if ((nullptr != sourceDatum) && (nullptr != targetDatum))
+                datumConverter = GeoCoordinates::DatumConverter::Create(*sourceDatum, *targetDatum);
+        }
+    }
 
     auto outputStatus = statusList.begin();
-    for (auto input = iModelPoints.begin(), output = geoPoints.begin(); input != iModelPoints.end(); input++, output++, outputStatus++ )
-        {
-        if (iModelGcs.IsValid()  && iModelGcs->IsValid())
-            {
+    for (auto input = iModelPoints.begin(), output = geoPoints.begin(); input != iModelPoints.end(); input++, output++, outputStatus++) {
+        if (iModelGcs.IsValid() && iModelGcs->IsValid()) {
             GeoPoint tempPoint;
             *outputStatus = iModelGcs->LatLongFromUors(tempPoint, *input);
             // get the output point into the desired Datum.
@@ -895,32 +895,30 @@ BentleyStatus JsInterop::GetGeoCoordsFromIModelCoords (JsonValueR results, DgnDb
                 datumConverter->ConvertLatLong3D((GeoPointR)*output, tempPoint);
             else
                 *((GeoPointP)output) = tempPoint;
-            }
-        else
+        } else
             *outputStatus = ReprojectStatus::REPROJECT_BadArgument;
-        }
+    }
 
     // Put the results (a point named p and a status named s) into a Json object.
     auto& pointsWithStatusJsonArray = results[json_geoCoords()];
-    for (size_t iPoint=0; iPoint<iModelPoints.size(); ++iPoint)
-        {
+    for (size_t iPoint = 0; iPoint < iModelPoints.size(); ++iPoint) {
         auto& outputPointWithStatus = pointsWithStatusJsonArray[(Json::ArrayIndex)iPoint];
         auto& outputPoint = outputPointWithStatus[json_p()];
         outputPoint[0] = geoPoints[iPoint].x;
         outputPoint[1] = geoPoints[iPoint].y;
         outputPoint[2] = geoPoints[iPoint].z;
         outputPointWithStatus[json_s()] = statusList[iPoint];
-        }
-        
+    }
+
     if (nullptr != sourceDatum)
         sourceDatum->Destroy();
     if (nullptr != targetDatum)
         targetDatum->Destroy();
     if (nullptr != datumConverter)
         datumConverter->Destroy();
-        
+
     return BentleyStatus::BSISUCCESS;
-    }
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Barry.Bentley                 12/18
@@ -943,7 +941,7 @@ BentleyStatus JsInterop::GetIModelCoordsFromGeoCoords (JsonValueR results, DgnDb
     Utf8String                   sourceDatumNameUtf8 = props[json_sourceDatum()].ToString();
     sourceDatumNameUtf8.DropQuotes();
 
-    if (iModelGcs.IsValid() && iModelGcs->IsValid() && !sourceDatumNameUtf8.empty()) 
+    if (iModelGcs.IsValid() && iModelGcs->IsValid() && !sourceDatumNameUtf8.empty())
         {
         WCharCP     iModelDatumName = iModelGcs->GetDatumName();
         WString     sourceDatumName(sourceDatumNameUtf8.c_str(), true);
@@ -955,8 +953,8 @@ BentleyStatus JsInterop::GetIModelCoordsFromGeoCoords (JsonValueR results, DgnDb
             if ( (nullptr != sourceDatum) && (nullptr != targetDatum) )
                 datumConverter = GeoCoordinates::DatumConverter::Create (*sourceDatum, *targetDatum);
             }
-        }    
-    
+        }
+
     auto outputStatus = statusList.begin();
     for (auto input = geoPoints.begin(), output = iModelPoints.begin(); input != geoPoints.end(); input++, output++, outputStatus++ )
         {
@@ -973,7 +971,7 @@ BentleyStatus JsInterop::GetIModelCoordsFromGeoCoords (JsonValueR results, DgnDb
         else
             *outputStatus = ReprojectStatus::REPROJECT_BadArgument;
         }
-        
+
     // Put the results (a point named p and a status named s) into a Json object.
     auto& pointsWithStatusJsonArray = results[json_iModelCoords()];
     for (size_t iPoint=0; iPoint<iModelPoints.size(); ++iPoint)
@@ -985,7 +983,7 @@ BentleyStatus JsInterop::GetIModelCoordsFromGeoCoords (JsonValueR results, DgnDb
         outputPoint[2] = iModelPoints[iPoint].z;
         outputPointWithStatus[json_s()] = statusList[iPoint];
         }
-        
+
     return BentleyStatus::BSISUCCESS;
     }
 

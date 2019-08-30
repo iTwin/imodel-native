@@ -222,15 +222,14 @@ void dgn_TxnTable::Element::_OnApplied()
     {
     if (!m_txnMgr.IsInAbandon())
         _OnValidated();
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_TxnTable::Element::_OnAppliedAdd(BeSQLite::Changes::Change const& change)
-    {
+void dgn_TxnTable::Element::_OnAppliedAdd(BeSQLite::Changes::Change const& change) {
     if (!m_txnMgr.IsInAbandon())
-        AddChange(change, ChangeType::Insert);
+        AddChange(change, ChangeType::Insert, false);
 
     DgnElementId elementId = DgnElementId(change.GetValue(0, Changes::Change::Stage::New).GetValueUInt64());
 
@@ -239,15 +238,14 @@ void dgn_TxnTable::Element::_OnAppliedAdd(BeSQLite::Changes::Change const& chang
     BeAssert(el.IsValid());
     if (el.IsValid())
         el->_OnAppliedAdd();
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
+/*---------------------------------------------------------------------------------**/ /**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_TxnTable::Element::_OnAppliedDelete(BeSQLite::Changes::Change const& change)
-    {
+void dgn_TxnTable::Element::_OnAppliedDelete(BeSQLite::Changes::Change const& change) {
     if (!m_txnMgr.IsInAbandon())
-        AddChange(change, ChangeType::Delete);
+        AddChange(change, ChangeType::Delete, false);
 
     DgnElementId elementId = DgnElementId(change.GetValue(0, Changes::Change::Stage::Old).GetValueUInt64());
 
@@ -255,30 +253,28 @@ void dgn_TxnTable::Element::_OnAppliedDelete(BeSQLite::Changes::Change const& ch
     DgnElementPtr el = const_cast<DgnElementP>(m_txnMgr.GetDgnDb().Elements().FindLoadedElement(elementId));
     if (el.IsValid())
         el->_OnAppliedDelete(); // Note: this MUST be a DgnElementPtr, since we can't call _OnAppliedDelete with an element with a zero ref count
-    }
+}
 
-/*---------------------------------------------------------------------------------**//**
+/*---------------------------------------------------------------------------------**/ /**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_TxnTable::Element::_OnAppliedUpdate(BeSQLite::Changes::Change const& change)
-    {
+void dgn_TxnTable::Element::_OnAppliedUpdate(BeSQLite::Changes::Change const& change) {
     if (!m_txnMgr.IsInAbandon())
-        AddChange(change, ChangeType::Update);
+        AddChange(change, ChangeType::Update, false);
 
     auto& elements = m_txnMgr.GetDgnDb().Elements();
     DgnElementId elementId = DgnElementId(change.GetValue(0, Changes::Change::Stage::Old).GetValueUInt64());
     DgnElementCPtr el = elements.FindLoadedElement(elementId);
-    if (el.IsValid())
-        {
+    if (el.IsValid()) {
         DgnElementCPtr postModified = elements.LoadElement(el->GetElementId(), false);
         BeAssert(postModified.IsValid());
         postModified->_OnAppliedUpdate(*el);
 
         elements.FinishUpdate(*postModified.get(), *el);
-        }
     }
+}
 
-/*---------------------------------------------------------------------------------**//**
+/*---------------------------------------------------------------------------------**/ /**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params, Utf8CP jsonProps, bool makePersistent) const

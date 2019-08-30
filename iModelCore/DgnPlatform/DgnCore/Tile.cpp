@@ -34,9 +34,13 @@ USING_NAMESPACE_BENTLEY_RENDER_PRIMITIVES
 
 // Obsolete versions of table storing tile data creation time
 #define TABLE_NAME_TileTreeCreateTime2 "TileTreeCreateTime2"
-
 // Second version: Previous version retained "FileName" column which should have been renamed to "TileId"
-#define TABLE_NAME_TileTreeCreateTime "TileTreeCreateTime3"
+#define TABLE_NAME_TileTreeCreateTime3 "TileTreeCreateTime3"
+
+// Third version: The CreateTime field is now the time that the TILE was created - used solely for purging least-recently-used tiles. Updated when a tile is retrieved from the cache.
+// Adds a Guid column corresponding to the GeometryGuid property of the model at the time of tile creation. When a tile is retrieved, if this value doesn't match the model's current
+// Guid, it means some geometry has changed within the model - so we discard+regenerate the tile.
+#define TABLE_NAME_TileTreeCreateTime "TileTreeCreateTime4"
 
 #define COLUMN_TileTree_TileId TABLE_NAME_TileTree ".TileId"
 #define COLUMN_TileTreeCreateTime_TileId TABLE_NAME_TileTreeCreateTime ".TileId"
@@ -1781,11 +1785,12 @@ BentleyStatus Cache::_Prepare() const
     m_db.DropTableIfExists(TABLE_NAME_TileTree3);
     m_db.DropTableIfExists(TABLE_NAME_TileTree4);
     m_db.DropTableIfExists(TABLE_NAME_TileTreeCreateTime2);
+    m_db.DropTableIfExists(TABLE_NAME_TileTreeCreateTime3);
 
     // Create the tables; or clear them if they already exist.
     if (haveTimeTable)
         deleteFromTable(TABLE_NAME_TileTreeCreateTime);
-    else if (BE_SQLITE_OK != m_db.CreateTable(TABLE_NAME_TileTreeCreateTime, "TileId CHAR PRIMARY KEY,Created BIGINT"))
+    else if (BE_SQLITE_OK != m_db.CreateTable(TABLE_NAME_TileTreeCreateTime, "TileId CHAR PRIMARY KEY,Created BIGINT,Guid BLOB"))
         return ERROR;
 
     if (haveDataTable)
@@ -2412,7 +2417,7 @@ Tree::LoaderScope::~LoaderScope()
 * @bsimethod                                                    Paul.Connelly   08/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 Loader::Loader(TreeR tree, ContentIdCR contentId, bool useCache) : m_contentId(contentId), m_tree(tree), m_cacheKey(tree.ConstructCacheKey(contentId)),
-    m_createTime(tree.FetchModel()->GetLastElementModifiedTime()), m_useCache(useCache)
+    m_geometryGuid(tree.FetchModel()->QueryGeometryGuid()), m_useCache(useCache)
     {
     SetState(State::Loading);
     }
@@ -2449,10 +2454,9 @@ uint64_t Tree::GetDiscreteNodeId(DgnElementId elementId) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Loader::IsExpired(uint64_t createTimeMillis) const
+bool Loader::IsExpired(BeSQLite::BeGuid guid) const
     {
-    // ###TODO: For now assuming model has not been modified since loader was created...
-    return createTimeMillis < m_createTime;
+    return guid != m_geometryGuid;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2460,9 +2464,7 @@ bool Loader::IsExpired(uint64_t createTimeMillis) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Loader::IsValidData(ByteStreamCR cacheData) const
     {
-    // ###TODO: We used to verify the feature table in order to detect element updates which had been *undone* - the only sort of change
-    // not detectable by checking GeometricModel::GetLastElementModifiedTime().
-    // For now not concerned about that case - any other modification is handled by IsExpired().
+    // No further validation required currently - changes to geometric elements are detected by IsExpired.
     return true;
     }
 
@@ -2562,11 +2564,12 @@ BentleyStatus Loader::SaveToDb()
         }
 
     // Write the tile creation time into separate table so that when we update it on next use of this tile, sqlite doesn't have to copy the potentially-huge data column
-    rc = cache->GetDb().GetCachedStatement(stmt, "INSERT OR REPLACE INTO " TABLE_NAME_TileTreeCreateTime " (TileId,Created) VALUES (?,?)");
+    rc = cache->GetDb().GetCachedStatement(stmt, "INSERT OR REPLACE INTO " TABLE_NAME_TileTreeCreateTime " (TileId,Created,Guid) VALUES (?,?,?)");
     BeAssert(BE_SQLITE_OK == rc && stmt.IsValid());
 
     stmt->BindText(1, m_cacheKey, Statement::MakeCopy::No);
-    stmt->BindInt64(2, GetCreateTime());
+    stmt->BindInt64(2, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+    stmt->BindGuid(3, GetGeometryGuid());
 
     return BE_SQLITE_DONE == stmt->Step() ? SUCCESS : ERROR;
     }
@@ -2614,9 +2617,9 @@ Loader::State Loader::ReadFromCache()
         {
         RealityData::Cache::AccessLock lock(*cache); // block writes to cache while we're reading
 
-        enum Column : int { Data, DataSize, Created, Rowid };
+        enum Column : int { Data, DataSize, Guid, Rowid };
         CachedStatementPtr stmt;
-        constexpr Utf8CP selectSql = "SELECT Data,DataSize,Created," TABLE_NAME_TileTree ".ROWID as TileRowId"
+        constexpr Utf8CP selectSql = "SELECT Data,DataSize,Guid," TABLE_NAME_TileTree ".ROWID as TileRowId"
             " FROM " JOIN_TileTreeTables " WHERE " COLUMN_TileTree_TileId "=?";
 
         if (BE_SQLITE_OK != cache->GetDb().GetCachedStatement(stmt, selectSql))
@@ -2628,8 +2631,8 @@ Loader::State Loader::ReadFromCache()
             return State::NotFound;
 
         uint64_t rowId = stmt->GetValueInt64(Column::Rowid);
-        uint64_t createTime = stmt->GetValueInt64(Column::Created);
-        if (IsExpired(createTime))
+        BeSQLite::BeGuid guid = stmt->GetValueGuid(Column::Guid);
+        if (IsExpired(guid))
             {
             DropFromDb(*cache);
             return State::NotFound;
@@ -2696,7 +2699,7 @@ Loader::State Loader::ReadFromCache()
         // We've loaded data from cache. Update timestamp.
         if (BE_SQLITE_OK == cache->GetDb().GetCachedStatement(stmt, "UPDATE " TABLE_NAME_TileTreeCreateTime " SET Created=? WHERE TileId=?"))
             {
-            stmt->BindInt64(1, GetCreateTime());
+            stmt->BindInt64(1, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
             stmt->BindText(2, m_cacheKey, Statement::MakeCopy::No);
             if (BE_SQLITE_DONE != stmt->Step())
                 BeAssert(false);

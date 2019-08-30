@@ -53,7 +53,7 @@ TxnManager::UndoChangeSet::ConflictResolution TxnManager::UndoChangeSet::_OnConf
 void TxnManager::CallJsMonitors(Utf8CP eventName, int* arg)
     {
     Napi::Object jsTxns = m_dgndb.GetJsTxns();
-    if (jsTxns == nullptr) 
+    if (jsTxns == nullptr)
         return;
 
     std::vector<napi_value> args;
@@ -621,7 +621,6 @@ void TxnManager::OnChangesApplied(BeSQLite::IChangeSet& changeSet, bool invert)
 
     Utf8String currTable;
     TxnTable* txnTable = 0;
-    TxnManager& txns = m_dgndb.Txns();
 
     // Walk through each changed row in the changeset. They are ordered by table, so we know that all changes to one table will be seen
     // before we see any changes to another table.
@@ -638,7 +637,7 @@ void TxnManager::OnChangesApplied(BeSQLite::IChangeSet& changeSet, bool invert)
         if (0 != strcmp(currTable.c_str(), tableName)) // changes within a changeset are grouped by table
             {
             currTable = tableName;
-            txnTable = txns.FindTxnTable(tableName);
+            txnTable = FindTxnTable(tableName);
             }
 
         if (nullptr == txnTable)
@@ -702,8 +701,7 @@ void TxnManager::OnEndValidate()
 * changes to the database that aren't also saved in the dgn_Txn table.
 * @bsimethod                                    Keith.Bentley                   01/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operation)
-    {
+ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operation) {
     BeAssert(!InDynamicTxn() && "How is this being invoked when we have dynamic change trackers on the stack?");
     CancelDynamics();
 
@@ -713,14 +711,12 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
 
     // Create a ChangeSet from modified data records. We'll use this to drive indirect changes.
     UndoChangeSet dataChangeSet;
-    if (HasDataChanges())
-        {
+    if (HasDataChanges()) {
         DbResult result = dataChangeSet.FromChangeTrack(*this); // Note: Changes to data in the change set may not make actual records in the Db.
         BeAssert(BE_SQLITE_OK == result);
-        }
+    }
 
-    if (dataChangeSet.IsEmpty() && schemaChanges.IsEmpty())
-        {
+    if (dataChangeSet.IsEmpty() && schemaChanges.IsEmpty()) {
         // DbFile::StopSavepoint() used to check HasChanges() before invoking us here.
         // It no longer does, because we may have dynamic txns to revert even if TxnManager has no changes of its own
         // That's taken care of in the above call to CancelDynamics(), so we're finished
@@ -730,13 +726,12 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
             return OnCommitStatus::Abort;
 
         return OnCommitStatus::Continue;
-        }
+    }
 
-    if (isCommit && m_dgndb.Revisions().HasReversedRevisions())
-        {
+    if (isCommit && m_dgndb.Revisions().HasReversedRevisions()) {
         BeAssert(false && "Cannot commit when revisions have been reversed. Abandon changes, reinstate revisions and try again");
         return OnCommitStatus::Abort;
-        }
+    }
 
     Restart();  // Clear the change tracker since we have copied any changes to change sets
 
@@ -745,10 +740,9 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
 
     // NOTE: you can't delete reversed Txns for CancelChanges because the database gets rolled back and they come back! That's OK,
     // just leave them reversed and they'll get thrown away on the next commit (or reinstated.)
-    DeleteReversedTxns(); // these Txns are no longer reachable. 
+    DeleteReversedTxns(); // these Txns are no longer reachable.
 
-    if (!dataChangeSet.IsEmpty())
-        {
+    if (!dataChangeSet.IsEmpty()) {
         OnBeginValidate();
 
         Changes changes(dataChangeSet, false);
@@ -756,40 +750,36 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
 
         BentleyStatus status = PropagateChanges();   // Propagate to generate indirect changes
 
-        if (HasDataChanges()) // did we have any indirect data changes captured in the tracker?
-            {
+        if (HasDataChanges()) {// did we have any indirect data changes captured in the tracker?
             UndoChangeSet indirectDataChangeSet;
             indirectDataChangeSet.FromChangeTrack(*this);
             Restart();
             Changes indirectChanges(indirectDataChangeSet, false);
             AddChanges(indirectChanges);
             dataChangeSet.ConcatenateWith(indirectDataChangeSet); // combine direct and indirect changes into a single dataChangeSet
-            }
+        }
 
         if (GetDgnDb().BriefcaseManager().IsBulkOperation() && (RepositoryStatus::Success != GetDgnDb().BriefcaseManager().EndBulkOperation().Result()))
             status = BentleyStatus::ERROR;
 
-        if (SUCCESS != status)
-            {
+        if (SUCCESS != status) {
             LOG.errorv("Cancelling txn due to fatal validation error.");
             OnEndValidate();
             return CancelChanges(dataChangeSet); // roll back entire txn
-            }
         }
+    }
 
-    if (!schemaChanges.IsEmpty())
-        {
+    if (!schemaChanges.IsEmpty()) {
         DbResult result = SaveSchemaChanges(schemaChanges, operation);
         if (result != BE_SQLITE_DONE)
             return OnCommitStatus::Abort;
-        }
+    }
 
-    if (!dataChangeSet.IsEmpty())
-        {
+    if (!dataChangeSet.IsEmpty()) {
         DbResult result = SaveDataChanges(dataChangeSet, operation); // save changeSet into DgnDb itself, along with the description of the operation we're performing
         if (result != BE_SQLITE_DONE)
             return OnCommitStatus::Abort;
-        }
+    }
 
     // At this point, all of the changes to all tables have been applied. Tell TxnMonitors
     if (m_enableNotifyTxnMonitors)
@@ -801,17 +791,16 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
     m_dgndb.Revisions().UpdateInitialParentRevisionId(); // All new revisions are now based on the latest parent revision id
 
     return OnCommitStatus::Continue;
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * called after the commit or cancel operation is complete
 * @bsimethod                                    Keith.Bentley                   04/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::_OnCommitted(bool isCommit, Utf8CP)
-    {
+void TxnManager::_OnCommitted(bool isCommit, Utf8CP) {
     if (isCommit && m_enableNotifyTxnMonitors) // only notify on commit, not cancel
-        T_HOST.GetTxnAdmin()._OnCommitted(*this); 
-    }
+        T_HOST.GetTxnAdmin()._OnCommitted(*this);
+}
 
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                Ramanujam.Raman                    01/2017
@@ -962,24 +951,22 @@ RevisionStatus TxnManager::MergeDataChangesInRevision(DgnRevisionCR revision, Re
 
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                Ramanujam.Raman                    02/2017
- * @remarks Used only in revering or reinstating revisions. 
+ * @remarks Used only in revering or reinstating revisions.
  * @see TxnManager::MergeRevision
 +---------------+---------------+---------------+---------------+---------------+------*/
-RevisionStatus TxnManager::ApplyRevision(DgnRevisionCR revision, bool reverse)
-    {
+RevisionStatus TxnManager::ApplyRevision(DgnRevisionCR revision, bool reverse) {
     BeFileNameCR revisionChangesFile = revision.GetRevisionChangesFile();
     RevisionChangesFileReader changeStream(revisionChangesFile, m_dgndb);
     bool containsSchemaChanges = revision.ContainsSchemaChanges(m_dgndb);
 
-    if (!containsSchemaChanges)
-        {
-        // Skip the entire schema change set when reversing or reinstating - DDL and the meta-data changes. 
+    if (!containsSchemaChanges) {
+        // Skip the entire schema change set when reversing or reinstating - DDL and the meta-data changes.
         // Reversing meta data changes cause conflicts - see TFS#149046
         DbResult result = ApplyChanges(changeStream, reverse ? TxnAction::Reverse : TxnAction::Reinstate, false, nullptr, reverse);
         if (result != BE_SQLITE_OK)
             return RevisionStatus::ApplyError;
-        }
-    
+    }
+
     RevisionStatus status;
     RevisionManagerR revMgr = m_dgndb.Revisions();
     if (reverse)
@@ -987,29 +974,26 @@ RevisionStatus TxnManager::ApplyRevision(DgnRevisionCR revision, bool reverse)
     else
         status = (revision.GetId() == revMgr.GetParentRevisionId()) ? revMgr.DeleteReversedRevisionId() : revMgr.SaveReversedRevisionId(revision.GetId());
 
-    if (status == RevisionStatus::Success)
-        {
+    if (status == RevisionStatus::Success) {
         DbResult result = m_dgndb.SaveChanges();
-        if (BE_SQLITE_OK != result)
-            {
+        if (BE_SQLITE_OK != result) {
             LOG.errorv("Apply failed with SQLite error %s", m_dgndb.GetLastError().c_str());
             BeAssert(false);
             status = RevisionStatus::SQLiteError;
-            }
         }
+    }
 
-    if (status != RevisionStatus::Success)
-        {
+    if (status != RevisionStatus::Success) {
         BeAssert(!containsSchemaChanges && "Never attempt to reverse or reinstate schema changes");
         // Ensure the entire transaction is rolled back to before the merge, and the txn tables are notified to
         // appropriately revert their in-memory state.
         ChangeTracker::OnCommitStatus cancelStatus = CancelChanges(changeStream);
         BeAssert(cancelStatus == ChangeTracker::OnCommitStatus::Completed);
         UNUSED_VARIABLE(cancelStatus);
-        }
+    }
 
     return status;
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
  * Merge changes from a changeStream that originated in an external repository
@@ -1056,40 +1040,97 @@ void TxnManager::ReportError(bool fatal, Utf8CP errorType, Utf8CP msg)  {
 }
 
 /*---------------------------------------------------------------------------------**//**
+ @bsimethod                                    Keith.Bentley                    08/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void TxnManager::DoUpdateModelChanges() {
+    if (m_noModelLastMod)
+        return; // we're working on an iModel that hasn't been upgraded to include the Model.LastMod property
+
+    // if there were any geometric changes, update the "GeometryGuid" and "LastMod" properties in the Model table.
+    if (!m_geometricChangedModels.empty()) {
+        auto stmt = m_dgndb.GetGeometricModelUpdateStatement();
+        if (!stmt.IsValid()) {
+            m_noModelLastMod = true; // this iModel hasn't been upgraded. Skip this step from now on
+            return;
+        }
+
+        BeGuid guid(true); // create a new GUID to represent this state of the changed geometric models
+        for (auto model : m_geometricChangedModels) {
+            m_changedModels.erase(model); // we don't need to update the LastMod property below, since this statement updates it
+            stmt->BindGuid(1, guid);
+            stmt->BindId(2, model);
+            DbResult rc = stmt->Step();
+            UNUSED_VARIABLE(rc);
+            BeAssert(BE_SQLITE_DONE == rc);
+            stmt->Reset();
+        }
+    }
+
+    if (!m_changedModels.empty()) {
+        auto stmt = m_dgndb.GetModelLastModUpdateStatement();
+        if (!stmt.IsValid()) {
+            m_noModelLastMod = true; // this iModel hasn't been upgraded. Skip this step from now on
+            return;
+        }
+        for (auto model : m_changedModels) {
+            stmt->BindId(1, model);
+            DbResult rc = stmt->Step();
+            UNUSED_VARIABLE(rc);
+            BeAssert(BE_SQLITE_DONE == rc);
+            stmt->Reset();
+        }
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                    Keith.Bentley                    08/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void TxnManager::UpdateModelChanges() {
+    if (m_geometricChangedModels.empty() && m_changedModels.empty())
+        return;
+
+    SetMode(Mode::Indirect);
+    DoUpdateModelChanges(); // set the LastMod and GeometryGuid properties of changed models.
+    SetMode(Mode::Direct);
+    m_geometricChangedModels.clear();
+    m_changedModels.clear();
+}
+
+/*---------------------------------------------------------------------------------**//**
 * Add all changes to the TxnSummary. TxnTables store information about the changes in their own state
 * if they need to hold on to them so they can react after the changeset is applied.
 * @bsimethod                                    Keith.Bentley                   07/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::AddChanges(Changes const& changes)
-    {
+void TxnManager::AddChanges(Changes const& changes) {
     BeAssert(!m_dgndb.IsReadonly());
     TxnTable* txnTable = 0;
-    TxnManager& txns = m_dgndb.Txns();
+
+    BeAssert(m_changedModels.empty());
+    BeAssert(m_geometricChangedModels.empty());
 
     // Walk through each changed row in the changeset. They are ordered by table, so we know that all changes to one table will be seen
     // before we see any changes to another table.
-    for (auto change : changes)
-        {
+    for (auto change : changes) {
         Utf8CP tableName;
         int nCols,indirect;
         DbOpcode opcode;
         Utf8String currTable;
 
         DbResult rc = change.GetOperation(&tableName, &nCols, &opcode, &indirect);
-        BeAssert(rc==BE_SQLITE_OK);
-        UNUSED_VARIABLE(rc);
+        if (rc != BE_SQLITE_OK) {
+            BeAssert(false && "invalid changeset");
+            continue;
+        }
 
-        if (0 != strcmp(currTable.c_str(), tableName)) // changes within a changeset are grouped by table
-            {
+        if (0 != strcmp(currTable.c_str(), tableName)) { // changes within a changeset are grouped by table
             currTable = tableName;
-            txnTable = txns.FindTxnTable(tableName);
-            }
+            txnTable = FindTxnTable(tableName);
+        }
 
         if (nullptr == txnTable)
             continue; // this table does not have a TxnTable for it, skip it
 
-        switch (opcode)
-            {
+        switch (opcode) {
             case DbOpcode::Delete:
                 txnTable->_OnValidateDelete(change);
                 break;
@@ -1101,9 +1142,11 @@ void TxnManager::AddChanges(Changes const& changes)
                 break;
             default:
                 BeAssert(false);
-            }
         }
     }
+
+    UpdateModelChanges();
+}
 
 /*---------------------------------------------------------------------------------**//**
 * Apply a changeset to the database. Notify all TxnTables about what's in the Changeset, both before
@@ -1116,7 +1159,7 @@ DbResult TxnManager::ApplyChanges(IChangeSet& changeset, TxnAction action, bool 
     m_action = action;
 
     // if we're not in interactive mode, we won't keep these caches up to date, just clear them
-    if (!m_isInteractive) { 
+    if (!m_isInteractive) {
         m_dgndb.Elements().ClearCache();
         m_dgndb.Models().ClearCache();
     }
@@ -1131,8 +1174,7 @@ DbResult TxnManager::ApplyChanges(IChangeSet& changeset, TxnAction action, bool 
     EnableTracking(wasTracking);
     BeAssert(result == BE_SQLITE_OK);
 
-    if (containsSchemaChanges)
-        {
+    if (containsSchemaChanges) {
         /* Note: All caches that hold ec-classes and handler-associations in memory have to be cleared.
          * The call to ClearECDbCache also clears all EC related caches held by DgnDb.
          * Additionally, we force merging of revisions containing schema changes to happen right when the
@@ -1141,16 +1183,15 @@ DbResult TxnManager::ApplyChanges(IChangeSet& changeset, TxnAction action, bool 
         m_dgndb.ClearECDbCache();
         m_dgndb.AfterSchemaChangeApplied();
         m_dgndb.Domains().SyncWithSchemas();
-        }
+    }
 
-    if (result == BE_SQLITE_OK)
-        {
+    if (result == BE_SQLITE_OK) {
         if (m_isInteractive)
             OnChangesApplied(changeset, invert);
 
         if (!IsInAbandon())
             T_HOST.GetTxnAdmin()._OnAppliedChanges(*this);
-        }
+    }
 
     if (m_isInteractive && !IsInAbandon())
         OnEndApplyChanges();
@@ -1267,20 +1308,18 @@ void TxnManager::ApplyTxnChanges(TxnId rowId, TxnAction action)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::OnBeginApplyChanges()
-    {
+void TxnManager::OnBeginApplyChanges() {
     for (auto table : m_tables)
         table->_OnApply();
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::OnEndApplyChanges()
-    {
+void TxnManager::OnEndApplyChanges() {
     for (auto table : m_tables)
         table->_OnApplied();
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   02/04
@@ -1687,10 +1726,13 @@ void dgn_TxnTable::Model::AddChange(Changes::Change const& change, ChangeType ch
             stage = Changes::Change::Stage::New;
             break;
 
-        case ChangeType::Update:
         case ChangeType::Delete:
             stage = Changes::Change::Stage::Old;
             break;
+
+        case ChangeType::Update:
+            return; // do nothing for update
+
         default:
             BeAssert(false);
             return;
@@ -1708,25 +1750,16 @@ void dgn_TxnTable::Model::AddChange(Changes::Change const& change, ChangeType ch
         if (BE_SQLITE_ROW != stmt->Step())
             {
             BeAssert(false);
+            return;
             }
-        else
-            {
-            classId = stmt->GetValueId<DgnClassId>(0);
-            }
+        classId = stmt->GetValueId<DgnClassId>(0);
         }
     else
         {
-        static int s_ecclassIdColIdx = -1;
-        if (s_ecclassIdColIdx == -1)
-            {
-            bvector<Utf8String> columnNames;
-            m_txnMgr.GetDgnDb().GetColumns(columnNames, BIS_TABLE(BIS_CLASS_Element));
-            s_ecclassIdColIdx = (int)std::distance(columnNames.begin(), std::find(columnNames.begin(), columnNames.end(), "ECClassId"));
-            }
-        classId = DgnClassId(change.GetValue(s_ecclassIdColIdx, stage).GetValueUInt64());
+        classId = DgnClassId(change.GetValue((int) DgnModel::ColumnNumbers::ECClassId, stage).GetValueUInt64());
         }
 
-    enum Column : int {ModelId=1,ChangeType=2,ECClassId=3};
+    enum Column : int {ModelId=1, ChangeType=2, ECClassId=3};
 
     m_changes = true;
     m_stmt.BindId(Column::ModelId, modelId);
@@ -1782,9 +1815,6 @@ void dgn_TxnTable::Model::_OnAppliedDelete(BeSQLite::Changes::Change const& chan
 +---------------+---------------+---------------+---------------+---------------+------*/
 void dgn_TxnTable::Model::_OnAppliedUpdate(BeSQLite::Changes::Change const& change)
     {
-    if (!m_txnMgr.IsInAbandon())
-        AddChange(change, ChangeType::Update);
-
     DgnModelId modelId = change.GetOldValue(0).GetValueId<DgnModelId>();
     DgnModelPtr model = m_txnMgr.GetDgnDb().Models().FindModel(modelId);
     if (!model.IsValid())
@@ -1861,7 +1891,7 @@ void dgn_TxnTable::ElementDep::UpdateSummary(Changes::Change change, ChangeType 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_TxnTable::Element::AddElement(DgnElementId elementId, DgnModelId modelId, ChangeType changeType, DgnClassId elementClassId)
+void dgn_TxnTable::Element::AddElement(DgnElementId elementId, DgnModelId modelId, ChangeType changeType, DgnClassId elementClassId, bool fromCommit)
     {
     enum Column : int {ElementId=1,ModelId=2,ChangeType=3,ECClass=4};
 
@@ -1874,89 +1904,91 @@ void dgn_TxnTable::Element::AddElement(DgnElementId elementId, DgnModelId modelI
     m_stmt.BindInt(Column::ChangeType, (int) changeType);
     m_stmt.BindId(Column::ECClass, elementClassId);
 
-    auto rc = m_stmt.Step();
-    //BeAssert(rc==BE_SQLITE_DONE); // This assert may fail if element was inserted before a call to PropagateChanges and updated after that.
-    UNUSED_VARIABLE(rc);
+    m_stmt.Step(); // This may fail if element was inserted before a call to PropagateChanges and updated after that.
 
     m_stmt.Reset();
     m_stmt.ClearBindings();
+    if (fromCommit && changeType != ChangeType::Delete)
+        m_txnMgr.m_changedModels.insert(modelId); // add to set of changed models.
     }
 
-#ifdef WIP_DONT_VALIDATE_REJECTIONS
-bool TxnManager::WasElementChangeRejected(DgnElementId eid)
-    {
-    auto control = GetDgnDb().GetConcurrencyControl();
-    if (nullptr == control)
-        return false;
-    auto optimistic = control->_AsIOptimisticConcurrencyControl();
-    if (nullptr == optimistic)
-        return false;
-    return optimistic->
-    }
-#endif
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                    Keith.Bentley                    08/19
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelId TxnTable::GetModelAndClass(ECClassId& classId, DgnElementId elementId) {
+    CachedStatementPtr stmt = m_txnMgr.GetDgnDb().Elements().GetStatement("SELECT ModelId,ECClassId FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE Id=?");
+    stmt->BindId(1, elementId);
+    if (BE_SQLITE_ROW != stmt->Step())
+        return DgnModelId(); // This happens because we deleted the element locally and rejected an incoming update
+
+    classId = stmt->GetValueId<DgnClassId>(1);
+    return stmt->GetValueId<DgnModelId>(0);
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    02/2015
 //---------------------------------------------------------------------------------------
-void dgn_TxnTable::Element::AddChange(Changes::Change const& change, ChangeType changeType)
-    {
+void dgn_TxnTable::Element::AddChange(Changes::Change const& change, ChangeType changeType, bool fromCommit) {
     Changes::Change::Stage stage;
-    switch (changeType)
-        {
-        case ChangeType::Insert:
-            stage = Changes::Change::Stage::New;
-            break;
+    switch (changeType) {
+    case ChangeType::Insert:
+        stage = Changes::Change::Stage::New;
+        break;
 
-        case ChangeType::Update:
-        case ChangeType::Delete:
-            stage = Changes::Change::Stage::Old;
-            break;
-        default:
-            BeAssert(false);
-            return;
-        }
+    case ChangeType::Update:
+    case ChangeType::Delete:
+        stage = Changes::Change::Stage::Old;
+        break;
+    default:
+        BeAssert(false);
+        return;
+    }
 
     DgnElementId elementId = DgnElementId(change.GetValue(0, stage).GetValueUInt64());
     DgnModelId modelId;
     DgnClassId classId;
 
-    if (ChangeType::Update == changeType)
-        {
+    if (ChangeType::Update == changeType) {
         // for updates, the element table must be queried for ModelId since the change set will only contain changed columns
-        CachedStatementPtr stmt = m_txnMgr.GetDgnDb().Elements().GetStatement("SELECT ModelId,ECClassId FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE Id=?");
-        stmt->BindId(1, elementId);
-        if (BE_SQLITE_ROW != stmt->Step())
-            {
-#ifdef WIP_DONT_VALIDATE_REJECTIONS
-            BeAssert(false);
-#endif
+        modelId = GetModelAndClass(classId, elementId);
+        if (!modelId.IsValid())
             return; // This happens because we deleted the element locally and rejected an incoming update
-            }
-        else
-            {
-            modelId = stmt->GetValueId<DgnModelId>(0);
-            classId = stmt->GetValueId<DgnClassId>(1);
-            }
-        }
-    else
-        {
-        static int s_modelIdColIdx = -1;
-        static int s_ecclassIdColIdx = -1;
-        if (s_modelIdColIdx == -1)
-            {
-            bvector<Utf8String> columnNames;
-            m_txnMgr.GetDgnDb().GetColumns(columnNames, BIS_TABLE(BIS_CLASS_Element));
-            auto i = std::find(columnNames.begin(), columnNames.end(), "ModelId");
-            BeAssert(i != columnNames.end());
-            s_modelIdColIdx = (int)std::distance(columnNames.begin(), i);
-            s_ecclassIdColIdx = (int)std::distance(columnNames.begin(), std::find(columnNames.begin(), columnNames.end(), "ECClassId"));
-            }
-        modelId = DgnModelId(change.GetValue(s_modelIdColIdx, stage).GetValueUInt64());
-        classId = DgnClassId(change.GetValue(s_ecclassIdColIdx, stage).GetValueUInt64());
-        }
-
-    AddElement(elementId, modelId, changeType, classId);
+    } else {
+        modelId = change.GetValue((int)DgnElement::ColumnNumbers::ModelId, stage).GetValueId<DgnModelId>();
+        classId = change.GetValue((int)DgnElement::ColumnNumbers::ECClassId, stage).GetValueId<DgnClassId>();
     }
+
+    AddElement(elementId, modelId, changeType, classId, fromCommit);
+}
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                    Keith.Bentley                    08/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool dgn_TxnTable::Geometric::HasChangeInColumns(BeSQLite::Changes::Change const& change) {
+    // if any column between first and last has a new value, there were geometric changes.
+    for (int i=GetFirstCol(); i<=_GetLastCol(); ++i) {
+        if (change.GetNewValue(i).IsValid())
+            return true;
+    }
+    // there were no geometric changes
+    return false;
+}
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                    Keith.Bentley                    08/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_TxnTable::Geometric::AddChange(BeSQLite::Changes::Change const& change, ChangeType changeType) {
+    Changes::Change::Stage stage = Changes::Change::Stage::New;
+    if (changeType == ChangeType::Update) {
+        if (!HasChangeInColumns(change))
+            return; // no geometric changes
+        stage = Changes::Change::Stage::Old;
+    }
+
+    DgnElementId elementId = change.GetValue(0, stage).GetValueId<DgnElementId>();
+    DgnClassId classId;
+    m_txnMgr.m_geometricChangedModels.insert(GetModelAndClass(classId, elementId)); // mark this model as having geometric changes
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/12
@@ -1998,13 +2030,6 @@ void dgn_TxnTable::ElementDep::AddDependency(EC::ECInstanceId const& relid, Chan
     m_stmt.Reset();
     m_stmt.ClearBindings();
     }
-
-Utf8CP TxnRelationshipLinkTables::TABLE_NAME = TEMP_TABLE(TXN_TABLE_RelationshipLinkTables);
-Utf8CP TxnRelationshipLinkTables::COLNAME_ECInstanceId = "ECInstanceId";
-Utf8CP TxnRelationshipLinkTables::COLNAME_ECClassId = "ECClassId";
-Utf8CP TxnRelationshipLinkTables::COLNAME_SourceECInstanceId = "SourceECInstanceId";
-Utf8CP TxnRelationshipLinkTables::COLNAME_TargetECInstanceId = "TargetECInstanceId";
-Utf8CP TxnRelationshipLinkTables::COLNAME_ChangeType = "ChangeType";
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2016
@@ -2064,13 +2089,6 @@ BeSQLite::DbResult TxnRelationshipLinkTables::Insert(BeSQLite::EC::ECInstanceId 
     m_stmt->ClearBindings();
 
     return rc;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                   04/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_TxnTable::RelationshipLinkTable::_Initialize()
-    {
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2170,14 +2188,6 @@ void dgn_TxnTable::MultiRelationshipLinkTable::_UpdateSummary(Changes::Change ch
         }
 
     m_txnMgr.RelationshipLinkTables().Insert(relid, relclsid, srcelemid, tgtelemid, changeType);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                   04/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_TxnTable::RelationshipLinkTable::_OnValidate()
-    {
-    m_changes = false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2397,7 +2407,6 @@ dgn_TxnTable::Model::Iterator::Entry dgn_TxnTable::Model::Iterator::begin() cons
 DgnModelId dgn_TxnTable::Model::Iterator::Entry::GetModelId() const {return m_sql->GetValueId<DgnModelId>(0);}
 TxnTable::ChangeType dgn_TxnTable::Model::Iterator::Entry::GetChangeType() const {return (TxnTable::ChangeType) m_sql->GetValueInt(1);}
 DgnClassId dgn_TxnTable::Model::Iterator::Entry::GetECClassId() const {return m_sql->GetValueId<DgnClassId>(2);}
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Sam.Wilson                         08/2018

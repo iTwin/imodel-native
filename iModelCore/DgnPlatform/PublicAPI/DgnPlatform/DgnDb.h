@@ -85,7 +85,7 @@ public:
     BeSQLite::BeGuid m_guid;
     DPoint3d m_globalOrigin = DPoint3d::FromZero();
     AxisAlignedBox3d m_projectExtents;
-    
+
     //! Default constructor for CreateDgnDbParams
     //! @param[in] guid The BeSQLite::BeGuid to store in the newly created DgnDb. If not supplied, a new BeSQLite::BeGuid value is created.
     //! @note The new BeSQLite::BeGuid can be obtained via GetGuid.
@@ -125,7 +125,7 @@ public:
 
     //! Set the project extents for the new project.
     void SetProjectExtents(AxisAlignedBox3dCR extents) {m_projectExtents = extents;}
-    
+
     //! Get the BeSQLite::BeGuid to be stored in the newly created DgnDb. This is only necessary if you don't supply a valid BeSQLite::BeGuid
     //! to the ctor.
     BeSQLite::BeGuid GetGuid() const {return m_guid;}
@@ -159,7 +159,7 @@ struct DgnDb : RefCounted<BeSQLite::EC::ECDb>
         //! Constructor
         //! @param[in] openMode The mode for opening the database
         //! @param[in] startDefaultTxn Whether to start a default transaction on the database
-        //! @param[in] schemaUpgradeOptions Options to upgrade the ECSchema-s in the database from registered domains, or revisions. 
+        //! @param[in] schemaUpgradeOptions Options to upgrade the ECSchema-s in the database from registered domains, or revisions.
         explicit OpenParams(OpenMode openMode, BeSQLite::DefaultTxn startDefaultTxn = BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions schemaUpgradeOptions = SchemaUpgradeOptions()) : ECDb::OpenParams(openMode, startDefaultTxn), m_schemaUpgradeOptions(schemaUpgradeOptions)
             {}
 
@@ -226,7 +226,7 @@ protected:
 
     // *** WIP_SCHEMA_IMPORT - temporary work-around needed because ECClass objects are deleted when a schema is imported
     void _OnBeforeClearECDbCache() const override;
-    
+
     BeSQLite::DbResult CreateNewDgnDb(BeFileNameCR boundFileName, CreateDgnDbParams const& params); //!< @private
     BeSQLite::DbResult CreateDgnDbTables(CreateDgnDbParams const& params); //!< @private
     BeSQLite::DbResult CreateCodeSpecs(); //!< @private
@@ -251,6 +251,9 @@ public:
     static void CallJsFunction(Napi::Object obj, Utf8CP methodName, std::vector<napi_value> const& args);
     static void RaiseJsEvent(Napi::Object obj, Utf8CP eventName, std::vector<napi_value> const& args);
 
+    DGNPLATFORM_EXPORT BeSQLite::EC::CachedECSqlStatementPtr GetGeometricModelUpdateStatement();
+    DGNPLATFORM_EXPORT BeSQLite::CachedStatementPtr GetModelLastModUpdateStatement();
+
     DgnDb();
     virtual ~DgnDb();
 
@@ -273,11 +276,11 @@ public:
     //! <li> If this method succeeds, it will return a valid DgnDbPtr. The project will be automatically closed when the last reference
     //! to it is released. There is no way to hold a pointer to a "closed project".
     //! <li> A DgnDb can have an expiration date. See Db::IsExpired
-    //! <li> The ECSchemas supplied by registered DgnDomain-s are validated against the corresponding ones in the DgnDb, and 
-    //! an appropriate error status is returned in the case of a failure. See table below for the various ECSchema compatibility errors. 
-    //! If the error status is BE_SQLITE_ERROR_SchemaUpgradeRequired, it may be possible to 
-    //! upgrade (or import) the schemas in the DgnDb. This is done by opening the DgnDb with setting the option request upgrade of 
-    //! domain schemas (See @ref DgnDb::OpenParams). These domain schema validation errors can also be avoided by restricting the 
+    //! <li> The ECSchemas supplied by registered DgnDomain-s are validated against the corresponding ones in the DgnDb, and
+    //! an appropriate error status is returned in the case of a failure. See table below for the various ECSchema compatibility errors.
+    //! If the error status is BE_SQLITE_ERROR_SchemaUpgradeRequired, it may be possible to
+    //! upgrade (or import) the schemas in the DgnDb. This is done by opening the DgnDb with setting the option request upgrade of
+    //! domain schemas (See @ref DgnDb::OpenParams). These domain schema validation errors can also be avoided by restricting the
     //! specific checks made to validate the domain schemas by by setting the appropriate @ref SchemaUpgradeOptions::DomainUpgradeOptions
     //! in @ref DgnDb::OpenParams.
     //! <pre>
@@ -295,13 +298,13 @@ public:
     //! 3.2.2 (newer) | BE_SQLITE_ERROR_SchemaTooOld    | BE_SQLITE_ERROR_SchemaTooOld
     //! 2.3.2 (newer) | BE_SQLITE_OK by default*        | BE_SQLITE_ERROR_SchemaUpgradeRequired
     //! 2.2.3 (newer) | BE_SQLITE_OK by default*        | BE_SQLITE_OK by default*
-    //!                                                                                       
-    //! * - BE_SQLITE_OK by default, or BE_SQLITE_ERROR_SchemaUpgradeRecommended if 
+    //!
+    //! * - BE_SQLITE_OK by default, or BE_SQLITE_ERROR_SchemaUpgradeRecommended if
     //! SchemaUpgradeOptions::DomainUpgradeOptions::CheckRecommendedUpgrades is passed in
     //! -------------------------------------------------------------------------------------------------
     //! </pre>
-    //! <li> If the domain schemas are setup to be upgraded, a schema lock is first obtained before the upgrade. 
-    //! Note that any previously committed local changes that haven't been pushed up to the server 
+    //! <li> If the domain schemas are setup to be upgraded, a schema lock is first obtained before the upgrade.
+    //! Note that any previously committed local changes that haven't been pushed up to the server
     //! will cause an error. These need to be flushed out by creating a revision. See @ref RevisionManager
     //! </ul>
     DGNPLATFORM_EXPORT static DgnDbPtr OpenDgnDb(BeSQLite::DbResult* status, BeFileNameCR filename, OpenParams const& openParams);
@@ -338,22 +341,22 @@ public:
     IOptimisticConcurrencyControl* GetOptimisticConcurrencyControl() const {auto c = m_concurrencyControl.get(); return c? c->_AsIOptimisticConcurrencyControl(): nullptr; }
 
     //! Imports EC Schemas into the DgnDb
-    //! @param[in] schemas Schemas to be imported. 
-    //! @remarks 
+    //! @param[in] schemas Schemas to be imported.
+    //! @remarks
     //! <ul>
     //! <li> ONLY to be used for cases where the schemas are NOT paired with a domain.
-    //! <li> It's the caller's responsibility to start a new transaction before this call and commit it after a successful 
-    //! import. If an error happens during the import, the new transaction is abandoned within the call. 
-    //! <li> Errors out if there are local changes (uncommitted or committed). These need to be flushed by committing 
-    //! the changes if necessary, and then creating a revision. See @ref RevisionManager. 
+    //! <li> It's the caller's responsibility to start a new transaction before this call and commit it after a successful
+    //! import. If an error happens during the import, the new transaction is abandoned within the call.
+    //! <li> Errors out if there are local changes (uncommitted or committed). These need to be flushed by committing
+    //! the changes if necessary, and then creating a revision. See @ref RevisionManager.
     //! <li> If the schemas already exist in the Database, they are upgraded if the schemas passed in have a newer, but
-    //! compatible version number. 
+    //! compatible version number.
     //! </ul>
     DGNPLATFORM_EXPORT SchemaStatus ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas);
 
     DGNPLATFORM_EXPORT static BeSQLite::DbResult SchemaStatusToDbResult(SchemaStatus status, bool isUpgrade);
 
-    //! Inserts a new link table ECRelationship. 
+    //! Inserts a new link table ECRelationship.
     //! @note This function is only for ECRelationships that are stored in a link table. ECRelationships that are implemented as Navigation properties must be accessed using the element property API.
     //! @param[out] relKey key of the new ECRelationship
     //! @param[in] relClass ECRelationshipClass to create an instance of
@@ -379,10 +382,10 @@ public:
         {
         return InsertLinkTableRelationship(relKey, relClass, BeSQLite::EC::ECInstanceId(sourceId.GetValue()), BeSQLite::EC::ECInstanceId(targetId.GetValue()), relInstanceProperties);
         }
-    
-    //! Update one or more properties of an existing link table ECRelationship instance. 
-    //! Note that you cannot change the source or target. 
-    //! @note This function is only for ECRelationships that are stored in a link table. 
+
+    //! Update one or more properties of an existing link table ECRelationship instance.
+    //! Note that you cannot change the source or target.
+    //! @note This function is only for ECRelationships that are stored in a link table.
     //! @param key Identifies the relationship instance.
     //! @param props Contains the properties to be written. Note that this functions updates props by setting its InstanceId.
     //! @return BE_SQLITE_OK in case of success. Error codes otherwise
@@ -421,7 +424,7 @@ public:
     DGNPLATFORM_EXPORT BeSQLite::EC::CachedECSqlStatementPtr GetPreparedECSqlStatement(Utf8CP ecsql) const;
     //! Gets a cached and prepared ECSqlStatement that can be used to modify the Db. This should be used only for aspects.
     DGNPLATFORM_EXPORT BeSQLite::EC::CachedECSqlStatementPtr GetNonSelectPreparedECSqlStatement(Utf8CP ecsql, BeSQLite::EC::ECCrudWriteToken const*) const;
-    
+
     //! Perform a SQLite VACUUM on this DgnDb. This potentially makes the file smaller and more efficient to access.
     DGNPLATFORM_EXPORT DgnDbStatus CompactFile();
 
@@ -455,26 +458,26 @@ public:
     //! Gets the permission token which all code within DgnPlatform has to pass to non-SELECT ECSQL statements
     //! or other non-read EC CRUD operations.
     //! Otherwise the preparation of the ECSQL or the write operation will fail.
-    //! @return EC CRUD write token. Is never nullptr but is returned as pointer as this is how you pass it to the ECSQL APIs. 
+    //! @return EC CRUD write token. Is never nullptr but is returned as pointer as this is how you pass it to the ECSQL APIs.
     //! @private
     BeSQLite::EC::ECCrudWriteToken const* GetECCrudWriteToken() const; //not inlined as it must not be called externally
 
     //! Gets the permission token to perform a ECSchema import/update
-    //! @return ECSchemaImportToken. Is never nullptr but is returned as pointer as this is how you pass it to ECDbSchemaManager::ImportSchemas. 
+    //! @return ECSchemaImportToken. Is never nullptr but is returned as pointer as this is how you pass it to ECDbSchemaManager::ImportSchemas.
     //! @private
     BeSQLite::EC::SchemaImportToken const* GetSchemaImportToken() const; //not inlined as it must not be called externally
 
     //! @private internal use only (V8 converter)
     //! Imports v8 EC Schemas into the DgnDb
-    //! @param[in] schemas Schemas to be imported. 
-    //! @remarks 
+    //! @param[in] schemas Schemas to be imported.
+    //! @remarks
     //! <ul>
-    //! <li> Only used by the V8 converter for first importing V8 legacy schemas. Upgrades of existing schemas are 
-    //! not allowed. 
-    //! <li> It's the caller's responsibility to start a new transaction before this call and commit it after a successful 
-    //! import. If an error happens during the import, the new transaction is abandoned within the call. 
-    //! <li> Errors out if there are local changes (uncommitted or committed). These need to be flushed by committing 
-    //! the changes if necessary, and then creating a revision. See @ref RevisionManager. 
+    //! <li> Only used by the V8 converter for first importing V8 legacy schemas. Upgrades of existing schemas are
+    //! not allowed.
+    //! <li> It's the caller's responsibility to start a new transaction before this call and commit it after a successful
+    //! import. If an error happens during the import, the new transaction is abandoned within the call.
+    //! <li> Errors out if there are local changes (uncommitted or committed). These need to be flushed by committing
+    //! the changes if necessary, and then creating a revision. See @ref RevisionManager.
     //! </ul>
     DGNPLATFORM_EXPORT SchemaStatus ImportV8LegacySchemas(bvector<ECN::ECSchemaCP> const& schemas);
 

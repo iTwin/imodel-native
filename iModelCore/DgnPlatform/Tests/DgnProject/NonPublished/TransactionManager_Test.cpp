@@ -390,7 +390,7 @@ TEST_F(TransactionManagerTests, UndoRedo)
     BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::ReadWrite;
     DgnDbTestFixture::GetSeedDbCopy(outFileName,L"Test.bim");
     OpenDb(m_db, outFileName, mode);
-    
+
     TestDataManager::MustBeBriefcase(m_db, mode);
     ASSERT_TRUE(m_db->IsBriefcase());
 
@@ -1266,7 +1266,7 @@ struct TestRelationshipLinkTableTrackingTxnMonitor : TxnMonitor
             sql.append(RLT::COLNAME_SourceECInstanceId).append(",");       // 2
             sql.append(RLT::COLNAME_TargetECInstanceId).append(",");       // 3
             sql.append(RLT::COLNAME_ChangeType);                           // 4
-            sql.append(" FROM ").append(RLT::TABLE_NAME);
+            sql.append(" FROM ").append(TEMP_TABLE(TXN_TABLE_RelationshipLinkTables));
             sql.append(" WHERE ").append(RLT::COLNAME_ECClassId).append(" IN (");
             Utf8CP comma="";
             for (auto clsid : m_classesToTrack)

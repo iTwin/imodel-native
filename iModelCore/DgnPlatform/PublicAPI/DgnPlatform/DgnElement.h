@@ -598,8 +598,7 @@ public:
 //! @ingroup GROUP_DgnElement
 // @bsiclass                                                     KeithBentley    10/13
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DgnElement : RefCountedBase, NonCopyableClass
-{
+struct EXPORT_VTABLE_ATTRIBUTE DgnElement : RefCountedBase, NonCopyableClass {
 public:
     friend struct DgnElements;
     friend struct DgnModel;
@@ -612,9 +611,13 @@ public:
     friend struct ElementECPropertyAccessor;
     friend struct ElementAutoHandledPropertiesECInstanceAdapter;
 
+    enum class ColumnNumbers : int32_t {
+        ECClassId = 1,
+        ModelId = 2,
+    };
+
     //! Parameters for creating a new DgnElement
-    struct CreateParams
-    {
+    struct CreateParams {
     public:
         DgnDbR              m_dgndb;
         DgnModelId          m_modelId;
@@ -643,10 +646,8 @@ public:
     };
 
     //! Property filter to be use when comparing elements
-    struct ComparePropertyFilter
-    {
-        enum Ignore
-        {
+    struct ComparePropertyFilter {
+        enum Ignore {
             None      = 0,
             WriteOnly = 0x02,  //! Ignore properties such as LastMod
             ElementId = 0x10,  //! Ignore ElementIds
@@ -663,10 +664,8 @@ public:
     };
 
     //! Property filter to be used when setting properties
-    struct SetPropertyFilter
-    {
-        enum Ignore
-        {
+    struct SetPropertyFilter {
+        enum Ignore {
             None          = 0,
             Bootstrapping = 0x01,  //! Don't set properties that are specified in DgnElement::CreateParams, plus ElementId
             WriteOnly     = 0x02,  //! Don't set properties such as LastMod
@@ -690,8 +689,7 @@ public:
     };
 
     //! Information about an ECNavigationProperty
-    struct NavigationPropertyInfo
-    {
+    struct NavigationPropertyInfo {
     private:
         BeInt64Id m_id;
         DgnClassId m_relClassId;
@@ -703,8 +701,7 @@ public:
     };
 
     //! Identifies actions which may be restricted for elements created by a handler for a missing subclass of DgnElement.
-    struct RestrictedAction : DgnDomain::Handler::RestrictedAction
-    {
+    struct RestrictedAction : DgnDomain::Handler::RestrictedAction {
         DEFINE_T_SUPER(DgnDomain::Handler::RestrictedAction);
 
         static const uint64_t Clone = T_Super::NextAvailable; //!< Create a copy of element. "Clone"
@@ -730,8 +727,7 @@ public:
     };
 
     //! Application data attached to a DgnElement. Create a subclass of this to store non-persistent information on a DgnElement.
-    struct EXPORT_VTABLE_ATTRIBUTE AppData : RefCountedBase
-    {
+    struct EXPORT_VTABLE_ATTRIBUTE AppData : RefCountedBase {
         //! A unique identifier for this type of AppData. Use a static instance of this class to identify your AppData.
         struct Key : NonCopyableClass {};
 
@@ -779,8 +775,7 @@ public:
     //!     * DgnElement::UniqueAspect when the domain defines a subclass of dgn.ElementUniqueAspect for aspects that must be 1:1 with the host element.
     //!     * DgnElement::MultiAspect when the domain defines a subclass of dgn.ElementMultiAspect for cases where multiple instances of the class can be associated with a given element.
     //! The domain must also define and register a subclass of ElementAspectHandler to load instances of its aspects.
-    struct EXPORT_VTABLE_ATTRIBUTE Aspect : AppData
-    {
+    struct EXPORT_VTABLE_ATTRIBUTE Aspect : AppData {
     private:
         DGNPLATFORM_EXPORT DropMe _OnInserted(DgnElementCR el) override final;
         DGNPLATFORM_EXPORT DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original, bool isOriginal) override final;
@@ -888,8 +883,7 @@ public:
     //! @note If you override _UpdateProperties, use DgnDb::GetNonSelectPreparedECSqlStatement to prepare an update statement, and pass @a writeToken as the second argument
     //! (Note: This is not stored directly as AppData, but is held by an AppData that aggregates instances for this class.)
     //! @note A domain that defines a subclass of MultiAspect may also define a subclass of dgn_AspectHandler to load it.
-    struct EXPORT_VTABLE_ATTRIBUTE MultiAspect : Aspect
-    {
+    struct EXPORT_VTABLE_ATTRIBUTE MultiAspect : Aspect {
         DEFINE_T_SUPER(Aspect)
     protected:
         DGNPLATFORM_EXPORT BeSQLite::EC::ECInstanceKey _QueryExistingInstanceKey(DgnElementCR) override final;
@@ -929,8 +923,7 @@ public:
     };
 
     //! Represents a multiaspect that has no handler of its own.
-    struct EXPORT_VTABLE_ATTRIBUTE GenericMultiAspect : MultiAspect
-        {
+    struct EXPORT_VTABLE_ATTRIBUTE GenericMultiAspect : MultiAspect {
         DEFINE_T_SUPER(MultiAspect)
         friend struct MultiAspect;
      protected:
@@ -998,8 +991,7 @@ public:
     //!     * _LoadProperties
     //! @see MultiAspect
     //! @note A domain that defines a subclass of UniqueAspect must also define a subclass of ElementAspectHandler to load it.
-    struct EXPORT_VTABLE_ATTRIBUTE UniqueAspect : Aspect
-    {
+    struct EXPORT_VTABLE_ATTRIBUTE UniqueAspect : Aspect {
         DEFINE_T_SUPER(Aspect)
     protected:
         static Key& GetKey(ECN::ECClassCR cls) {return *(Key*)const_cast<ECN::ECClassP>(&cls);}
@@ -1015,8 +1007,7 @@ public:
 
     public:
         //! The reason why GenerateGeometricPrimitive is being called
-        enum class GenerateReason
-        {
+        enum class GenerateReason {
             Insert,         //!< The Element is being inserted into the Db
             Update,         //!< Some aspect of the Element's content has changed.
             TempDraw,       //!< A tool wants to draw the Element temporarily (the Element may not be persistent)
@@ -1057,8 +1048,7 @@ public:
     };
 
     //! holds the properties of an aspect in memory in the case where the aspect does not have its own handler
-    struct EXPORT_VTABLE_ATTRIBUTE GenericUniqueAspect : UniqueAspect
-        {
+    struct EXPORT_VTABLE_ATTRIBUTE GenericUniqueAspect : UniqueAspect {
         DEFINE_T_SUPER(UniqueAspect)
         friend struct UniqueAspect;
 
@@ -1108,8 +1098,7 @@ public:
         DGNPLATFORM_EXPORT static ECN::IECInstanceP GetAspectP(DgnElementR el, ECN::ECClassCR ecclass);
         };
 
-    struct RelatedElement
-        {
+    struct RelatedElement {
         DgnElementId m_id;
         DgnClassId m_relClassId;
 
@@ -1117,7 +1106,7 @@ public:
         bool IsValid() const {return m_id.IsValid();}
         DGNPLATFORM_EXPORT Json::Value ToJson(DgnDbR db) const;
         DGNPLATFORM_EXPORT void FromJson(DgnDbR, JsonValueCR val);
-        };
+    };
 
 private:
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
@@ -1133,16 +1122,14 @@ private:
 
 protected:
     //! @private
-    struct Flags
-    {
+    struct Flags {
         uint32_t m_persistent:1;
         uint32_t m_preassignedId:1;
         uint32_t m_propState:2; // See PropState
         Flags() {memset(this, 0, sizeof(*this));}
     };
 
-    enum PropState // must fit in 2 bits
-    {
+    enum PropState { // must fit in 2 bits
         Unknown = 0,
         NotFound = 1,
         InBuffer = 2,
@@ -2028,8 +2015,7 @@ public:
 //! @ingroup GROUP_Geometry
 // @bsiclass                                                    Keith.Bentley   12/14
 //=======================================================================================
-struct GeometryStream : ByteStream
-{
+struct GeometryStream : ByteStream {
 public:
     bool HasGeometry() const {return HasData();}  //!< return false if this GeometryStream is empty.
     DGNPLATFORM_EXPORT DgnDbStatus ReadGeometryStream(BeSQLite::SnappyFromMemory& snappy, DgnDbR dgnDb, void const* blob, int blobSize); //!< @private
@@ -2040,8 +2026,7 @@ public:
 //=======================================================================================
 // @bsiclass                                                    Brien.Bastings  11/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE GeometrySource
-{
+struct EXPORT_VTABLE_ATTRIBUTE GeometrySource {
     friend struct GeometryBuilder;
 
 protected:
@@ -2057,6 +2042,7 @@ protected:
     GeometryStreamR GetGeometryStreamR() {return const_cast<GeometryStreamR>(_GetGeometryStream());} // Only GeometryBuilder should have write access to the GeometryStream...
 
     friend struct GeometricElement;
+
 public:
     virtual ~GeometrySource() { }
 
@@ -2086,8 +2072,7 @@ public:
 //=======================================================================================
 // @bsiclass                                                    Brien.Bastings  11/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE GeometrySource3d : GeometrySource
-{
+struct EXPORT_VTABLE_ATTRIBUTE GeometrySource3d : GeometrySource {
 protected:
     GeometrySource2dCP _GetAsGeometrySource2d() const override final {return nullptr;}
     AxisAlignedBox3d _CalculateRange3d() const override final {return _GetPlacement().CalculateRange();}
@@ -2102,8 +2087,7 @@ public:
 //=======================================================================================
 // @bsiclass                                                    Brien.Bastings  11/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE GeometrySource2d : GeometrySource
-{
+struct EXPORT_VTABLE_ATTRIBUTE GeometrySource2d : GeometrySource {
 protected:
     GeometrySource3dCP _GetAsGeometrySource3d() const override final {return nullptr;}
     AxisAlignedBox3d _CalculateRange3d() const override final {return _GetPlacement().CalculateRange();}
@@ -2120,16 +2104,14 @@ public:
 //! @ingroup GROUP_DgnElement
 // @bsiclass                                                    Paul.Connelly   02/16
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE GeometricElement : DgnElement
-{
+struct EXPORT_VTABLE_ATTRIBUTE GeometricElement : DgnElement {
     DEFINE_T_SUPER(DgnElement);
 
     friend struct dgn_ElementHandler::Geometric3d;
     friend struct dgn_ElementHandler::Geometric2d;
 
     //! Parameters used to construct a GeometricElement
-    struct CreateParams : T_Super::CreateParams
-    {
+    struct CreateParams : T_Super::CreateParams {
         DEFINE_T_SUPER(GeometricElement::T_Super::CreateParams);
 
         DgnCategoryId   m_category; //!< The category to which the element belongs
@@ -2209,15 +2191,13 @@ protected:
 //! @ingroup GROUP_DgnElement
 // @bsiclass                                                    Paul.Connelly   02/16
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE GeometricElement3d : GeometricElement, GeometrySource3d
-{
+struct EXPORT_VTABLE_ATTRIBUTE GeometricElement3d : GeometricElement, GeometrySource3d {
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_GeometricElement3d, GeometricElement)
     friend struct dgn_ElementHandler::Geometric3d;
 
 public:
     //! Parameters for constructing a 3d geometric element
-    struct CreateParams : T_Super::CreateParams
-    {
+    struct CreateParams : T_Super::CreateParams {
         DEFINE_T_SUPER(GeometricElement3d::T_Super::CreateParams);
 
         Placement3d m_placement; //!< The element's placement in 3d space
@@ -2296,15 +2276,13 @@ public:
 //! @ingroup GROUP_DgnElement
 // @bsiclass                                                    Paul.Connelly   02/16
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE GeometricElement2d : GeometricElement, GeometrySource2d
-{
+struct EXPORT_VTABLE_ATTRIBUTE GeometricElement2d : GeometricElement, GeometrySource2d {
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_GeometricElement2d, GeometricElement)
     friend struct dgn_ElementHandler::Geometric2d;
 
 public:
     //! Parameters for constructing a 2d geometric element
-    struct CreateParams : T_Super::CreateParams
-    {
+    struct CreateParams : T_Super::CreateParams {
         DEFINE_T_SUPER(GeometricElement2d::T_Super::CreateParams);
 
         Placement2d m_placement; //!< The element's placement in 2d space

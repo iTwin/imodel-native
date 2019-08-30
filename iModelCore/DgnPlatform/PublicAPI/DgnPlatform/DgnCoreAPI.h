@@ -4,7 +4,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-//__PUBLISH_SECTION_START__
 
 #if !defined (DOCUMENTATION_GENERATOR)
 
@@ -42,11 +41,7 @@
 #include "DgnMaterial.h"
 #include "SnapContext.h"
 #include "NullContext.h"
-#include "Sprites.h"
 #include "Sheet.h"
-
-//__PUBLISH_SECTION_END__
 #include "LineStyleApi.h"
-//__PUBLISH_SECTION_START__
 
 #endif // DOCUMENTATION_GENERATOR

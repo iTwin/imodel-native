@@ -6,6 +6,7 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
+#include <BeSQLite/BeSQLite.h>
 #include "DgnPlatform.h"
 #include <DgnPlatform/RealityDataCache.h>
 #include <DgnPlatform/RenderPrimitives.h>
@@ -231,7 +232,7 @@ private:
     TreeR m_tree;
     Utf8String m_cacheKey;
     BeAtomic<bool> m_canceled;
-    uint64_t m_createTime; // time of most recent change to any element in model when this Loader was created.
+    BeSQLite::BeGuid m_geometryGuid;
     State m_state;
     bool m_useCache;
 
@@ -241,8 +242,8 @@ private:
     void SetNotFound() { SetState(State::NotFound); }
     void SetInvalid() { SetState(State::Invalid); }
 
-    uint64_t GetCreateTime() const { return m_createTime; }
-    bool IsExpired(uint64_t createTime) const;
+    BeSQLite::BeGuid GetGeometryGuid() const { return m_geometryGuid; }
+    bool IsExpired(BeSQLite::BeGuid geometryGuid) const;
     bool IsValidData(ByteStreamCR bytes) const;
     BentleyStatus DropFromDb(RealityData::CacheR db);
     BentleyStatus SaveToDb();

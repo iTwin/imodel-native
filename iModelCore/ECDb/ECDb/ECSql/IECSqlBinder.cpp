@@ -41,14 +41,8 @@ ECSqlStatus IECSqlBinder::BindBoolean(bool value) { return _BindBoolean(value); 
 //---------------------------------------------------------------------------------------
 ECSqlStatus IECSqlBinder::BindDateTime(DateTimeCR value)
     {
-    uint64_t jd = INT64_C(0);
-    if (SUCCESS != value.ToJulianDay(jd))
-        {
-        BeAssert(false && "ECSqlStatement::BindDateTime> Could not convert DateTime into Julian Day.");
-        return ECSqlStatus::Error;
-        }
-
-    return BindDateTime(jd, value.GetInfo());
+    uint64_t jd = 0;
+    return SUCCESS != value.ToJulianDay(jd) ? ECSqlStatus::Error : BindDateTime(jd, value.GetInfo());
     }
 
 //---------------------------------------------------------------------------------------
@@ -91,7 +85,7 @@ ECSqlStatus IECSqlBinder::BindInt(int value) { return _BindInt(value); }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2018
 //---------------------------------------------------------------------------------------
-ECSqlStatus IECSqlBinder::BindEnum(ECN::ECEnumeratorCR value) 
+ECSqlStatus IECSqlBinder::BindEnum(ECN::ECEnumeratorCR value)
     {
     if (value.IsInteger())
         return BindInt(value.GetInteger());

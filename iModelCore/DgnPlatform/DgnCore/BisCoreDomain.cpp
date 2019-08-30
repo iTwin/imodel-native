@@ -13,6 +13,8 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 namespace dgn_TableHandler
 {
 TABLEHANDLER_DEFINE_MEMBERS(Element)
+TABLEHANDLER_DEFINE_MEMBERS(Geometric3d)
+TABLEHANDLER_DEFINE_MEMBERS(Geometric2d)
 TABLEHANDLER_DEFINE_MEMBERS(Model)
 TABLEHANDLER_DEFINE_MEMBERS(ElementDep)
 };
@@ -99,7 +101,7 @@ DOMAIN_DEFINE_MEMBERS(BisCoreDomain)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain", 1) 
+BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain", 1)
     {
     // Note: Handlers must be registered in class heirarchy order (base classes before subclasses)
     RegisterHandler(ElementDependency::Handler::GetHandler());
@@ -175,12 +177,6 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_ElementHandler::PhysicalPartition::GetHandler());
     RegisterHandler(dgn_ElementHandler::SpatialLocationPartition::GetHandler());
 
-#if defined (NEEDSWORK_DIMENSION)
-    RegisterHandler(dgn_ElementHandler::DimensionStyleHandler::GetHandler());
-    RegisterHandler(dgn_ElementHandler::LinearDimensionHandler2d::GetHandler());
-    RegisterHandler(dgn_ElementHandler::LinearDimensionHandler3d::GetHandler());
-#endif
-
     RegisterHandler(dgn_ElementHandler::AnnotationTextStyleHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::AnnotationFrameStyleHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::AnnotationLeaderStyleHandler::GetHandler());
@@ -207,8 +203,10 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(ACSElementHandler::CoordSysSpatial::GetHandler());
 
     RegisterHandler(dgn_CodeSpecHandler::CodeSpec::GetHandler());
-    
+
     RegisterTableHandler(dgn_TableHandler::Element::GetHandler());
+    RegisterTableHandler(dgn_TableHandler::Geometric3d::GetHandler());
+    RegisterTableHandler(dgn_TableHandler::Geometric2d::GetHandler());
     RegisterTableHandler(dgn_TableHandler::Model::GetHandler());
     RegisterTableHandler(dgn_TableHandler::ElementDep::GetHandler());
     }

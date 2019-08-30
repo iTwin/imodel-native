@@ -77,19 +77,18 @@ struct IConcurrencyControl;
 
 //=======================================================================================
 //! Options to upgrade schemas when the DgnDb is opened
-//! @note We upgrade the schemas only when the DgnDb is opened to eliminate the impact 
-//! of the changes to existing caches. 
+//! @note We upgrade the schemas only when the DgnDb is opened to eliminate the impact
+//! of the changes to existing caches.
 //=======================================================================================
 struct SchemaUpgradeOptions
 {
 //! Option to control the validation and upgrade of domain schemas in the DgnDb.
-enum class DomainUpgradeOptions : int
-    {
-    CheckRequiredUpgrades, //!< Domain schemas will be validated for any required upgrades. Any errors will be reported back, and cause the application to fail opening the DgnDb. 
-    CheckRecommendedUpgrades, //!< Domain schemas will be validated for any required or optional upgrades. Any errors will be reported back, and cause the application to fail opening the DgnDb. 
-    SkipCheck, //!< Domain schemas will neither be validated nor be upgraded. Used only internally. 
-    Upgrade //!< Domain schemas will be upgraded if necessary. However, only compatible schema upgrades will be allowed - these are typically additions of classes, properties, and changes to custom attributes. 
-    };
+enum class DomainUpgradeOptions : int {
+    CheckRequiredUpgrades = 0,    //!< Domain schemas will be validated for any required upgrades. Any errors will be reported back, and cause the application to fail opening the DgnDb.
+    CheckRecommendedUpgrades = 1, //!< Domain schemas will be validated for any required or optional upgrades. Any errors will be reported back, and cause the application to fail opening the DgnDb.
+    Upgrade = 2,                  //!< Domain schemas will be upgraded if necessary. However, only compatible schema upgrades will be allowed - these are typically additions of classes, properties, and changes to custom attributes.
+    SkipCheck = 3                 //!< Domain schemas will neither be validated nor be upgraded. Used only internally.
+};
 
 private:
     DomainUpgradeOptions m_domainUpgradeOptions = DomainUpgradeOptions::CheckRequiredUpgrades;
@@ -139,7 +138,7 @@ public:
     //! Gets the revisions that are to be processed
     bvector<DgnRevisionCP> const& GetRevisions() const { return m_revisions; }
 
-    //! Get the option that controls the processing of revisions 
+    //! Get the option that controls the processing of revisions
     RevisionProcessOption GetRevisionProcessOption() const { return m_revisionProcessOption;  }
 
     //! Get the concurrency control used to handle conflicts
@@ -216,7 +215,7 @@ struct TxnTable;
 //! for its ECClasses. It is not possible for one DgnDomain to supply a DgnDomain::Handler for a different DgnDomain.
 //! Domains are "registered" at program startup time (via that static method DgnDomains::RegisterDomain),
 //! remain for an entire session, and apply to all DgnDb's that are opened
-//! or created during that session. 
+//! or created during that session.
 //! @ingroup GROUP_DgnDomain
 // @bsiclass                                                    Keith.Bentley   02/11
 //=======================================================================================
@@ -227,10 +226,10 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
     //! The current version of the HandlerAPI
     enum {API_VERSION = 1};
 
-    //! Flag to indicate if the domain API can be used for inserts, updates or deletes. 
+    //! Flag to indicate if the domain API can be used for inserts, updates or deletes.
     enum class Readonly { Yes = 1, No = 0 };
 
-    //! Flag to indicate if the domain is considered to be required for all DgnDb-s in the session. 
+    //! Flag to indicate if the domain is considered to be required for all DgnDb-s in the session.
     enum class Required { Yes = 1, No = 0 };
 
     struct Handler;
@@ -429,8 +428,8 @@ protected:
     //! @param[in] db The DgnDb that is about to be closed.
     virtual void _OnDgnDbClose(DgnDbR db) const {}
 
-    //! Implemented by the domain to provide the path of the schema on disk relative to the assets directory for the domain. 
-    //! Note that the assets directory for the domain can be specified when the domain is registered, but typically defaults to 
+    //! Implemented by the domain to provide the path of the schema on disk relative to the assets directory for the domain.
+    //! Note that the assets directory for the domain can be specified when the domain is registered, but typically defaults to
     //! the location specified by the host application (@see DgnDomains::RegisterDomain()).
     virtual WCharCP _GetSchemaRelativePath() const = 0;
 
@@ -450,10 +449,10 @@ public:
     //! Get the version of this DgnDomain.
     int32_t GetVersion() const {return m_version;}
 
-    //! Returns true if the domain is setup to be Readonly in this session. 
+    //! Returns true if the domain is setup to be Readonly in this session.
     bool IsReadonly() const { return m_isReadonly == Readonly::Yes; }
 
-    //! Setup this domain to be read-only/read-write in this session. 
+    //! Setup this domain to be read-only/read-write in this session.
     void SetReadonly(Readonly isReadonly) { m_isReadonly = isReadonly; }
 
     //! Returns true if the domain is setup to be required in this session
@@ -463,19 +462,19 @@ public:
     void SetRequired(Required isRequired) { m_isRequired = isRequired; }
 
     //! Imports (or upgrades) the schema of this domain into the supplied DgnDb.
-    //! @remarks 
+    //! @remarks
     //! <ul>
-    //! <li> Only used for cases where the schemas of an optional domain are to be imported in. In all other cases 
-    //! domain schemas are imported or upgraded when the DgnDb is created or opened. 
-    //! <li> It's the caller's responsibility to start a new transaction before this call and commit it after a successful 
-    //! import. If an error happens during the import, the new transaction is abandoned within the call. 
-    //! <li> Errors out if there are local changes (uncommitted or committed). These need to be flushed by committing 
-    //! the changes if necessary, and then creating a revision. See @ref RevisionManager. 
+    //! <li> Only used for cases where the schemas of an optional domain are to be imported in. In all other cases
+    //! domain schemas are imported or upgraded when the DgnDb is created or opened.
+    //! <li> It's the caller's responsibility to start a new transaction before this call and commit it after a successful
+    //! import. If an error happens during the import, the new transaction is abandoned within the call.
+    //! <li> Errors out if there are local changes (uncommitted or committed). These need to be flushed by committing
+    //! the changes if necessary, and then creating a revision. See @ref RevisionManager.
     //! </ul>
     DGNPLATFORM_EXPORT SchemaStatus ImportSchema(DgnDbR dgndb);
 
-    //! Returns true of the schema for this domain has been imported into the supplied DgnDb. 
-    //! @remarks Only checks if the schema has been imported, and does not do any validation of 
+    //! Returns true of the schema for this domain has been imported into the supplied DgnDb.
+    //! @remarks Only checks if the schema has been imported, and does not do any validation of
     //! version. @see DgnDomains::ValidateSchemas(), DgnDomain::ImportSchema().
     DGNPLATFORM_EXPORT bool IsSchemaImported(DgnDbCR dgndb) const;
 
@@ -515,7 +514,7 @@ private:
     Handlers      m_handlers;
     SchemaUpgradeOptions m_schemaUpgradeOptions;
     bool          m_allowSchemaImport;
- 
+
     void LoadDomain(DgnDomainR);
     void AddHandler(DgnClassId id, DgnDomain::Handler* handler) {m_handlers.Insert(id, handler);}
     BeSQLite::DbResult InsertHandler(DgnDomain::Handler& handler);
@@ -528,11 +527,11 @@ private:
     void SyncWithSchemas();
     void DeleteHandlers();
 
-    // Imports schemas of all required domains into the DgnDb. 
+    // Imports schemas of all required domains into the DgnDb.
     SchemaStatus ImportSchemas();
     // Validates (and upgrades if necessary) domain schemas - used when the DgnDb is first opened up.
     SchemaStatus InitializeSchemas(SchemaUpgradeOptions const& schemaUpgradeOptions);
-    // Upgrades schemas of all domains already imported into the DgnDb, and of any newly registered required domains. 
+    // Upgrades schemas of all domains already imported into the DgnDb, and of any newly registered required domains.
     SchemaStatus UpgradeSchemas();
     SchemaStatus ValidateSchemas();
     SchemaStatus DoValidateSchemas(bvector<ECN::ECSchemaPtr>* schemasToImport, bvector<DgnDomainP>* domainsToImport);
@@ -552,28 +551,28 @@ public:
 
     //! Register a domain to be used for this session. This supplies all of the handlers for classes of that domain.
     //! @param[in] domain The domain to register. Domains are singletons and cannot change during a session.
-    //! @param[in] isRequired Pass true to ensure/validate that all DgnDb-s that are created/opened in this 
-    //! session have this domain enabled. Pass false if the domain is optional. 
+    //! @param[in] isRequired Pass true to ensure/validate that all DgnDb-s that are created/opened in this
+    //! session have this domain enabled. Pass false if the domain is optional.
     //! @param[in] isReadonly Pass true to use the domain only for reading instances, or false to allow
     //! all CRUD operations (assuming the DgnDb itself is writable)
-    //! @param[in] schemaRootDir Optional root directory of Directory in which the assets for the domain are delivered. If not specified, 
-    //! the directory provided by the DgnPlatform host is used (@see DgnPlatformLib::Host::IKnownLocationsAdmin::_GetDgnPlatformAssetsDirectory()). 
+    //! @param[in] schemaRootDir Optional root directory of Directory in which the assets for the domain are delivered. If not specified,
+    //! the directory provided by the DgnPlatform host is used (@see DgnPlatformLib::Host::IKnownLocationsAdmin::_GetDgnPlatformAssetsDirectory()).
     //! Note that ECSchema-s for the domain may actually reside in some path relative to this assets directory, and this
-    //! relative path is specified by the author of the domain (@see DgnDomain::_GetSchemaRelativePath()). 
+    //! relative path is specified by the author of the domain (@see DgnDomain::_GetSchemaRelativePath()).
     //! @remarks
     //! <ul>
     //! <li> If isRequired=Required::Yes, newly created DgnDb-s will have the ECSchema of the domain (and any dependencies)
-    //! imported in, and enables use of the domain's CRUD API. Opening previously created DgnDb-s will trigger 
-    //! validation of the ECSchema of the domain against the corresponding version in the DgnDb. Any subsequent 
-    //! validation errors will cause the open to fail, but the issue may be resolvable by call to 
-    //! DgnDomains::ImportSchemas() - the process however requires locking of the schemas, and is typically done 
-    //! by a Project Administrator. 
-    //! <li> If isRequired=Required::No, an explicit call to @ref DgnDomain::ImportSchema() is required to import the domain's 
-    //! ECSchema into newly created DgnDbs. Like before, the call will require locking of the schemas, and 
-    //! is typically done by a Project Administrator. 
-    //! <li> If a domain is registered to be required, it's name is recorded in every DgnDb accessed during 
+    //! imported in, and enables use of the domain's CRUD API. Opening previously created DgnDb-s will trigger
+    //! validation of the ECSchema of the domain against the corresponding version in the DgnDb. Any subsequent
+    //! validation errors will cause the open to fail, but the issue may be resolvable by call to
+    //! DgnDomains::ImportSchemas() - the process however requires locking of the schemas, and is typically done
+    //! by a Project Administrator.
+    //! <li> If isRequired=Required::No, an explicit call to @ref DgnDomain::ImportSchema() is required to import the domain's
+    //! ECSchema into newly created DgnDbs. Like before, the call will require locking of the schemas, and
+    //! is typically done by a Project Administrator.
+    //! <li> If a domain is registered to be required, it's name is recorded in every DgnDb accessed during
     //! the session, and becomes required to access that DgnDb in the future.
-    //! <li> If a domain is registered as optional (not required), it's name is recorded in the DgnDb only if 
+    //! <li> If a domain is registered as optional (not required), it's name is recorded in the DgnDb only if
     //! the schema for the domain has been explicitly imported. Once that's done, the domain must be registered
     //! to access that DgnDb.
     //! </ul>

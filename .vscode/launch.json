@@ -6,6 +6,23 @@
     "configurations": [
         {
             "type": "node",
+            "request": "attach",
+            "name": "Attach",
+            "port": 9229
+        },
+        {
+            "name": "Launch Native debugger for index.js tests",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "node.exe",
+            "args": ["./iModelJsNodeAddon/api_package/ts/lib/test/index.js"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false
+        },
+        {
+            "type": "node",
             "request": "launch",
             "name": "imodel-native unit tests",
             "program": "${workspaceFolder}/iModelJsNodeAddon/api_package/ts/lib/test/index.js"
@@ -62,7 +79,7 @@
                     "name": "MSTN_BRIDGE_TESTS_IMODEL_BANK_SERVER_JS",
                     "value": "${env:SrcRoot}imodel-bank/server/lib/WebServer/hub-api/runWebServer.js"
                 },
-                { 
+                {
                     "name": "//imodel-bridge-fwk-briefcase-manager",
                     "value": "1"
                 },

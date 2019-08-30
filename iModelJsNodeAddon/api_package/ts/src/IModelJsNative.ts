@@ -16,7 +16,6 @@ import { ElementProps, QueryLimit, QueryQuota, QueryPriority } from "@bentley/im
  * @internal
  */
 export enum NativeLoggerCategory {
-  Success = 0,
   BeSQLite = "BeSQLite",
   Changeset = "Changeset",
   DgnCore = "DgnCore",
@@ -25,24 +24,32 @@ export enum NativeLoggerCategory {
   UnitsNative = "UnitsNative",
 }
 
+// tslint:disable: no-const-enum
 // tslint:disable:prefer-get
 /** Module that declares the IModelJs native code.
  * @internal
  */
 export declare namespace IModelJsNative {
-  export interface NativeCrashReportingConfigNameValuePair {
+  interface NativeCrashReportingConfigNameValuePair {
     name: string;
     value: string;
   }
 
-  export enum UsageType {
-    Production, Trial, Beta, HomeUse, PreActivation,
+  const enum UsageType {
+    Production = 0 , Trial = 1, Beta = 2, HomeUse= 3, PreActivation = 4,
+  }
+
+  const enum UpgradeOptions {
+    CheckRequiredUpgrades = 0,
+    CheckRecommendedUpgrades = 1,
+    Upgrade = 2,
+    SkipCheck = 3,
   }
 
   /** A string that identifies a Txn. */
-  export type TxnIdString = string;
+  type TxnIdString = string;
 
-  export interface NativeCrashReportingConfig {
+  interface NativeCrashReportingConfig {
     /** The directory to which *.dmp and/or iModelJsNativeCrash*.properties.txt files are written. */
     crashDir: string;
     /** Write .dmp files to crashDir? The default is false. Even if writeDumpsToCrashDir is false, the iModelJsNativeCrash*.properties.txt file will be written to crashDir. */
@@ -55,30 +62,30 @@ export declare namespace IModelJsNative {
     params?: NativeCrashReportingConfigNameValuePair[];
   }
 
-  export const version: string;
-  export let logger: Logger;
-  export function setUseTileCache(useTileCache: boolean): void;
-  export function setCrashReporting(cfg: NativeCrashReportingConfig): void;
-  export function storeObjectInVault(obj: any, id: string): void;
-  export function getObjectFromVault(id: string): any;
-  export function dropObjectFromVault(id: string): void;
-  export function addReferenceToObjectInVault(id: string): void;
-  export function getObjectRefCountFromVault(id: string): number;
-  export function clearLogLevelCache(): void;
+  const version: string;
+  let logger: Logger;
+  function setUseTileCache(useTileCache: boolean): void;
+  function setCrashReporting(cfg: NativeCrashReportingConfig): void;
+  function storeObjectInVault(obj: any, id: string): void;
+  function getObjectFromVault(id: string): any;
+  function dropObjectFromVault(id: string): void;
+  function addReferenceToObjectInVault(id: string): void;
+  function getObjectRefCountFromVault(id: string): number;
+  function clearLogLevelCache(): void;
 
   /** The return type of synchronous functions that may return an error or a successful result. */
-  export interface ErrorStatusOrResult<ErrorCodeType, ResultType> {
+  interface ErrorStatusOrResult<ErrorCodeType, ResultType> {
     /** Error from the operation. This property is defined if and only if the operation failed. */
     error?: StatusCodeWithMessage<ErrorCodeType>;
 
     /** Result of the operation. This property is defined if the operation completed successfully */
     result?: ResultType;
   }
-  export namespace ConcurrentQuery {
+  namespace ConcurrentQuery {
     /** Configuration for concurrent query manager
      * @internal
      */
-    export interface Config {
+    interface Config {
       /** Time seconds after which any completed query result will be purged */
       autoExpireTimeForCompletedQuery?: number;
       /** Number of concurrent worker to use. By default set to available CPUs */
@@ -97,14 +104,14 @@ export declare namespace IModelJsNative {
       quota?: QueryQuota;
       /** Use sqlite shared cache option */
       useSharedCache?: boolean;
-      /** Read uncommited read for better performance */
-      useUncommitedRead?: boolean;
+      /** Read uncommitted read for better performance */
+      useUncommittedRead?: boolean;
     }
 
     /** Post status for concurrent query manager
      *  @internal
      */
-    export enum PostStatus {
+    const enum PostStatus {
       NotInitialized = 0,
       Done = 1,
       QueueSizeExceeded = 2,
@@ -113,7 +120,7 @@ export declare namespace IModelJsNative {
     /** Poll status for concurrent query manager
      *  @internal
      */
-    export enum PollStatus {
+    const enum PollStatus {
       NotInitialized = 0,
       Done = 1,
       Pending = 2,
@@ -123,12 +130,12 @@ export declare namespace IModelJsNative {
       NotFound = 6,
     }
   }
-  export interface IConcurrentQueryManager {
+  interface IConcurrentQueryManager {
     concurrentQueryInit(config: ConcurrentQuery.Config): boolean;
     postConcurrentQuery(ecsql: string, bindings: string, limit: QueryLimit, quota: QueryQuota, priority: QueryPriority): { status: ConcurrentQuery.PostStatus, taskId: number };
     pollConcurrentQuery(taskId: number): { status: ConcurrentQuery.PollStatus, result: string, rowCount: number };
   }
-  export interface TileContent {
+  interface TileContent {
     content: Uint8Array;
     elapsedSeconds: number;
   }
@@ -136,12 +143,12 @@ export declare namespace IModelJsNative {
    * Note: lack of a "completed" state because polling a completed request returns the content as a Uint8Array.
    * @internal
    */
-  export enum TileContentState {
-    New, // Request was just created and enqueued.
-    Pending, // Request is enqueued but not yet being processed.
-    Loading, // Request is being actively processed.
+  const enum TileContentState {
+    New = 0, // Request was just created and enqueued.
+    Pending = 1, // Request is enqueued but not yet being processed.
+    Loading = 2, // Request is being actively processed.
   }
-  export class BriefcaseManagerResourcesRequest {
+  class BriefcaseManagerResourcesRequest {
     public reset(): void;
     public isEmpty(): boolean;
     public toJSON(): string;
@@ -151,7 +158,7 @@ export declare namespace IModelJsNative {
    * The scenario is that the caller has made some changes to the *local* briefcase. Now, the caller is attempting to
    * merge in changes from iModelHub. The properties of this policy specify how to handle the *incoming* changes from iModelHub.
    */
-  export interface BriefcaseManagerOnConflictPolicy {
+  interface BriefcaseManagerOnConflictPolicy {
     /** What to do with the incoming change in the case where the same entity was updated locally and also would be updated by the incoming change. */
     updateVsUpdate: number;
     /** What to do with the incoming change in the case where an entity was updated locally and would be deleted by the incoming change. */
@@ -161,7 +168,7 @@ export declare namespace IModelJsNative {
   }
 
   /** The native object for a Briefcase. */
-  export class DgnDb implements IConcurrentQueryManager {
+  class DgnDb implements IConcurrentQueryManager {
     constructor();
     public static getAssetsDir(): string;
     public abandonChanges(): DbResult;
@@ -238,7 +245,7 @@ export declare namespace IModelJsNative {
     public isUndoPossible(): boolean;
     public logTxnError(fatal: boolean): void;
     public getMassProperties(props: string): string;
-    public openIModel(dbName: string, mode: OpenMode): DbResult;
+    public openIModel(dbName: string, mode: OpenMode, upgrade?: UpgradeOptions): DbResult;
     public queryFileProperty(props: string, wantString: boolean): string | Uint8Array | undefined;
     public queryFirstTxnId(): TxnIdString;
     public queryModelExtents(options: string): ErrorStatusOrResult<IModelStatus, string>;
@@ -279,7 +286,7 @@ export declare namespace IModelJsNative {
    * Utility to apply change sets (synchronously or asynchronously)
    * @internal
    */
-  export class ApplyChangeSetsRequest {
+  class ApplyChangeSetsRequest {
     /* Create a new asynchronous request */
     constructor(db: DgnDb);
     /** Reads the change sets to be applied asynchronously */
@@ -315,7 +322,7 @@ export declare namespace IModelJsNative {
     public static doApplySync(db: DgnDb, changeSetTokens: string, applyOption: ChangeSetApplyOption): ChangeSetStatus;
   }
 
-  export class ECDb implements IDisposable, IConcurrentQueryManager {
+  class ECDb implements IDisposable, IConcurrentQueryManager {
     constructor();
     public createDb(dbName: string): DbResult;
     public openDb(dbName: string, mode: OpenMode, upgradeProfiles?: boolean): DbResult;
@@ -330,7 +337,7 @@ export declare namespace IModelJsNative {
     public pollConcurrentQuery(taskId: number): { status: ConcurrentQuery.PollStatus, result: string, rowCount: number };
   }
 
-  export class ChangedElementsECDb implements IDisposable {
+  class ChangedElementsECDb implements IDisposable {
     constructor();
     public dispose(): void;
     public createDb(db: DgnDb, dbName: string): DbResult;
@@ -342,7 +349,7 @@ export declare namespace IModelJsNative {
     public isProcessed(changesetId: string): boolean;
   }
 
-  export class ECSqlStatement implements IDisposable {
+  class ECSqlStatement implements IDisposable {
     constructor();
     public prepare(db: DgnDb | ECDb, ecsql: string): StatusCodeWithMessage<DbResult>;
     public reset(): DbResult;
@@ -357,7 +364,7 @@ export declare namespace IModelJsNative {
     public getColumnCount(): number;
   }
 
-  export class ECSqlBinder {
+  class ECSqlBinder {
     constructor();
     public bindNull(): DbResult;
     public bindBlob(base64String: string | Uint8Array | ArrayBuffer | SharedArrayBuffer): DbResult;
@@ -375,7 +382,7 @@ export declare namespace IModelJsNative {
     public addArrayElement(): ECSqlBinder;
   }
 
-  export class ECSqlColumnInfo {
+  class ECSqlColumnInfo {
     constructor();
     public getType(): number;
     public getPropertyName(): string;
@@ -388,7 +395,7 @@ export declare namespace IModelJsNative {
     public getRootClassAlias(): string;
   }
 
-  export class ECSqlValue {
+  class ECSqlValue {
     constructor();
     public getColumnInfo(): ECSqlColumnInfo;
     public isNull(): boolean;
@@ -411,13 +418,13 @@ export declare namespace IModelJsNative {
     public getArrayIterator(): ECSqlValueIterator;
   }
 
-  export class ECSqlValueIterator {
+  class ECSqlValueIterator {
     constructor();
     public moveNext(): boolean;
     public getCurrent(): ECSqlValue;
   }
 
-  export class SqliteStatement implements IDisposable {
+  class SqliteStatement implements IDisposable {
     constructor();
     public prepare(db: DgnDb | ECDb, sql: string): StatusCodeWithMessage<DbResult>;
     public isReadonly(): boolean;
@@ -445,13 +452,13 @@ export declare namespace IModelJsNative {
     public getValueGuid(columnIndex: number): GuidString;
   }
 
-  export const enum ECPresentationStatus { // tslint:disable-line:no-const-enum
+  const enum ECPresentationStatus {
     Success = 0,
     Error = 1,
     InvalidArgument = Error + 1,
   }
 
-  export class ECPresentationManager implements IDisposable {
+  class ECPresentationManager implements IDisposable {
     constructor(id?: string);
     public forceLoadSchemas(db: DgnDb, callback: (result: ECPresentationStatus) => void): void;
     public setupRulesetDirectories(directories: string[]): ErrorStatusOrResult<ECPresentationStatus, void>;
@@ -467,7 +474,7 @@ export declare namespace IModelJsNative {
     public dispose(): void;
   }
 
-  export namespace ECSchemaXmlContext {
+  namespace ECSchemaXmlContext {
     interface SchemaKey {
       name: string;
       readVersion: number;
@@ -486,20 +493,20 @@ export declare namespace IModelJsNative {
     type SchemaLocaterCallback = (key: SchemaKey, matchType: SchemaMatchType) => string | undefined | void;
   }
 
-  export class ECSchemaXmlContext {
+  class ECSchemaXmlContext {
     constructor();
     public addSchemaPath(path: string): void;
     public setSchemaLocater(locater: ECSchemaXmlContext.SchemaLocaterCallback): void;
     public readSchemaFromXmlFile(filePath: string): ErrorStatusOrResult<BentleyStatus, string>;
   }
 
-  export class SnapRequest {
+  class SnapRequest {
     constructor();
     public doSnap(db: DgnDb, request: any, callback: (result: ErrorStatusOrResult<IModelStatus, any>) => void): void;
     public cancelSnap(): void;
   }
 
-  export interface NativeUlasClientFeatureEvent {
+  interface NativeUlasClientFeatureEvent {
     featureId: string;
     versionStr: string;
     projectId?: string;
@@ -507,21 +514,21 @@ export declare namespace IModelJsNative {
   /** Authentication methods used by the native addon
    * @internal
    */
-  export enum AuthType {
+  const enum AuthType {
     None = 0, OIDC = 1, SAML = 2,
   }
-  export class NativeUlasClient {
+  class NativeUlasClient {
     public static initializeRegion(region: number): void;
     public static trackUsage(accessToken: string, appVersionStr: string, projectId: GuidString, authType?: AuthType, productId?: number, deviceId?: string, usageType?: UsageType, correlationId?: string): BentleyStatus;
     public static markFeature(accessToken: string, featureEvent: NativeUlasClientFeatureEvent, authType?: AuthType, productId?: number, deviceId?: string, usageType?: UsageType, correlationId?: string): BentleyStatus;
   }
 
-  export class DisableNativeAssertions implements IDisposable {
+  class DisableNativeAssertions implements IDisposable {
     constructor();
     public dispose(): void;
   }
 
-  export class ImportContext implements IDisposable {
+  class ImportContext implements IDisposable {
     constructor(sourceDb: DgnDb, targetDb: DgnDb);
     public dispose(): void;
     public addClass(sourceClassFullName: string, targetClassFullName: string): BentleyStatus;
@@ -538,7 +545,7 @@ export declare namespace IModelJsNative {
    * Temporary implementation to allow crashing the backend for testing purposes
    * @internal
    */
-  export class NativeDevTools {
+  class NativeDevTools {
     public static signal(signalType: number): boolean;
   }
 }
