@@ -1636,12 +1636,12 @@ void ConvertORDElementXDomain::_DetermineElementParams(DgnClassId& classId, DgnC
             if (featureDefPtr.IsNull())
                 {
                 Cif::FeaturizedConsensusItemPtr representationOf = featurizedPtr->GetRepresentationOf();
-                if (representationOf.IsNull())
-                    return;
-
-                featureName = representationOf->GetName();
-                featureDefPtr = representationOf->GetFeatureDefinition();
-                featureDescription = featureDefPtr.IsValid() ? featureDefPtr->GetDescription() : representationOf->GetFeatureDescription();
+                if (representationOf.IsValid())
+                    {
+                    featureName = representationOf->GetName();
+                    featureDefPtr = representationOf->GetFeatureDefinition();
+                    featureDescription = featureDefPtr.IsValid() ? featureDefPtr->GetDescription() : representationOf->GetFeatureDescription();
+                    }
                 }
 
             if (featureDefPtr.IsValid())
@@ -1658,13 +1658,13 @@ void ConvertORDElementXDomain::_DetermineElementParams(DgnClassId& classId, DgnC
                     if (dynamicClassId.IsValid())
                         {
                         classId = dynamicClassId;
-                        return;
                         }
                     }
                 }
             }
 
-        classId = m_graphic3dClassId;
+        if (!classId.IsValid())
+            classId = m_graphic3dClassId;
 
         /* TODO: Delete existing element if its classId needs to change
         if (m_converter.IsUpdating())
@@ -1850,15 +1850,38 @@ void assignCorridorSurfaceAspect(Dgn::DgnElementR element, Cif::CorridorSurfaceC
     bool isBottomMesh = cifCorridorSurface.IsBottomMesh();
     auto description = Utf8String(cifCorridorSurface.GetDescription().c_str());
 
+    Utf8String corridorName, horizontalName, profileName;
+    auto corridorPtr = cifCorridorSurface.GetCorridor();
+    
+    if (corridorPtr.IsValid())
+        {
+        corridorName = Utf8String(corridorPtr->GetName().c_str());
+        auto alignmentPtr = corridorPtr->GetCorridorAlignment();
+
+        if (alignmentPtr.IsValid())
+            {
+            ModelRefPinner modelPinner;
+
+            horizontalName = Utf8String(alignmentPtr->GetName().c_str());
+            auto profilePtr = alignmentPtr->GetActiveProfile();
+            if (profilePtr.IsValid())
+                profileName = Utf8String(profilePtr->GetName().c_str());
+            }
+        }
+
     if (auto corridorSurfaceAspectP = DgnV8ORDBim::CorridorSurfaceAspect::GetP(element))
         {
         corridorSurfaceAspectP->SetIsTopMesh(isTopMesh);
         corridorSurfaceAspectP->SetIsBottomMesh(isBottomMesh);
         corridorSurfaceAspectP->SetDescription(description.c_str());
+        corridorSurfaceAspectP->SetCorridorName(corridorName.c_str());
+        corridorSurfaceAspectP->SetHorizontalName(horizontalName.c_str());
+        corridorSurfaceAspectP->SetProfileName(profileName.c_str());
         }
     else
         {
-        auto corridorSurfaceAspectPtr = DgnV8ORDBim::CorridorSurfaceAspect::Create(isTopMesh, isBottomMesh, description.c_str());
+        auto corridorSurfaceAspectPtr = DgnV8ORDBim::CorridorSurfaceAspect::Create(isTopMesh, isBottomMesh, description.c_str(),
+            corridorName.c_str(), horizontalName.c_str(), profileName.c_str());
         DgnV8ORDBim::CorridorSurfaceAspect::Set(element, *corridorSurfaceAspectPtr);
         }
     }
