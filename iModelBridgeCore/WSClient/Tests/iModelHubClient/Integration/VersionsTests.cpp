@@ -354,8 +354,9 @@ TEST_F(VersionsTests, GetChangeSetsAfterVersionInvalidVersion)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(VersionsTests, GetChangeSetsAfterBaselineVersionSucceeds)
     {
-    VersionInfoPtr version0;
-    iModelHubHelpers::CreateNamedVersion(version0, s_connection, TestCodeName(), 0);
+    VersionInfoPtr version0 = iModelHubHelpers::GetVersionByChangeSetId(s_connection, "");
+    if (!version0.IsValid())
+        iModelHubHelpers::CreateNamedVersion(version0, s_connection, TestCodeName(), 0);
 
     VersionsManagerCR versionManager = s_connection->GetVersionsManager();
     ChangeSetsInfoResult result = versionManager.GetChangeSetsAfterVersion(version0->GetId())->GetResult();
@@ -368,12 +369,13 @@ TEST_F(VersionsTests, GetChangeSetsAfterBaselineVersionSucceeds)
 * @bsimethod                                    Andrius.Zonys                   08/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(VersionsTests, GetChangeSetsBetweenBaselineVersionAndChangeSetSucceeds)
-{
+    {
     ChangeSetInfoPtr changeset1 = iModelHubHelpers::GetChangeSetByIndex(s_connection, 1);
     ChangeSetInfoPtr changeset2 = iModelHubHelpers::GetChangeSetByIndex(s_connection, 2);
 
-    VersionInfoPtr version0;
-    iModelHubHelpers::CreateNamedVersion(version0, s_connection, TestCodeName(), 0);
+    VersionInfoPtr version0 = iModelHubHelpers::GetVersionByChangeSetId(s_connection, "");
+    if (!version0.IsValid())
+        iModelHubHelpers::CreateNamedVersion(version0, s_connection, TestCodeName(), 0);
 
     VersionsManagerCR versionManager = s_connection->GetVersionsManager();
     ChangeSetsInfoResult result = versionManager.GetChangeSetsBetweenVersionAndChangeSet(version0->GetId(), changeset2->GetId())->GetResult();
@@ -381,7 +383,7 @@ TEST_F(VersionsTests, GetChangeSetsBetweenBaselineVersionAndChangeSetSucceeds)
     EXPECT_EQ(2, result.GetValue().size());
     EXPECT_EQ(changeset1->GetId(), result.GetValue().at(0)->GetId());
     EXPECT_EQ(changeset2->GetId(), result.GetValue().at(1)->GetId());
-}
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Karolis.Dziedzelis              01/2018

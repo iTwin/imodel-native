@@ -54,6 +54,7 @@ namespace iModelHubHelpers
     BriefcasePtr AcquireAndAddChangeSets(ClientPtr client, iModelInfoPtr info, uint32_t count = 1);
     void PushDefaultView(ClientPtr client, iModelInfoPtr info);
     void CreateNamedVersion(VersionInfoPtr& result, iModelConnectionPtr connection, Utf8StringCR name, int index);
+    VersionInfoPtr GetVersionByChangeSetId(iModelConnectionPtr connection, Utf8StringCR changeSetId);
 
     void SetLastPulledChangeSetId(BriefcasePtr briefcase, Utf8StringCR changeSetId);
     ChangeSetInfoPtr GetChangeSetByIndex(iModelConnectionPtr connection, int index);
