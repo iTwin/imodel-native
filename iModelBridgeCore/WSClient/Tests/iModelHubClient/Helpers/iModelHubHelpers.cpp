@@ -638,6 +638,21 @@ namespace iModelHubHelpers
         CreateNamedVersion(result, *connection, name, index);
         }
 
+    /*--------------------------------------------------------------------------------------+
+    * @bsimethod                                    Andrius.Zonys                   09/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    VersionInfoPtr GetVersionByChangeSetId(iModelConnectionPtr connection, Utf8StringCR changeSetId)
+        {
+        bvector<VersionInfoPtr> versions = connection->GetVersionsManager().GetAllVersions()->GetResult().GetValue();
+        for (int i = 0; i < versions.size(); i++)
+            {
+            if (versions[i]->GetChangeSetId() == changeSetId)
+                return versions[i];
+            }
+
+        return nullptr;
+        }
+
     //---------------------------------------------------------------------------------------
     //@bsimethod                                     Eligijus.Mauragas             01/2016
     //---------------------------------------------------------------------------------------
