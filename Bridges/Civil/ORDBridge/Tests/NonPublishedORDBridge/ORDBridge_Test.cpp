@@ -283,11 +283,7 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDGeometryStationingTest)
     VerifyConvertedGeometryStationStart(bim, "SPIRAL", 10000, 370);
     VerifyConvertedGeometryStationStart(bim, "ARC", 10000, 770);
 
-    VerifyConvertedGeometryStationStart(bim, "EQNLINE", 10000, 200);
-    VerifyConvertedGeometryStationStart(bim, "EQNSPIRAL", 10000, 200);
-    VerifyConvertedGeometryStationStart(bim, "EQNARC", 10000, 100);
-
-    VerifyConvertedGeometryStationEquation(bim, "EQNLINE", 540, 1000);
-    VerifyConvertedGeometryStationEquation(bim, "EQNSPIRAL", 1200, 1000);
-    VerifyConvertedGeometryStationEquation(bim, "EQNARC", 600, 1000);
+    VerifyConvertedGeometryStationEquation(bim, "EQNLINE", 10000, 200, 1, 1200, 1000);
+    VerifyConvertedGeometryStationEquation(bim, "EQNSPIRAL", 10000, 200, 1, 540, 1000);
+    VerifyConvertedGeometryStationEquation(bim, "EQNARC", 10000, 100, 1, 600, 1000);
     }

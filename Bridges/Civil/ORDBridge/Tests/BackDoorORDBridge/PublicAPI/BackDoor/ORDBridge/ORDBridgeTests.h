@@ -69,7 +69,7 @@ struct CiviliModelBridgesORDBridgeTestsFixture : ::testing::Test
         static Dgn::DgnDbPtr VerifyConvertedGeometryTurnoutBranchCount(Utf8CP bimFileName, Utf8CP branchName, size_t branchCount);
         static Dgn::DgnDbPtr VerifyConvertedGeometrySpiralTypesAndLengths(Utf8CP bimFileName);
         static Dgn::DgnDbPtr VerifyConvertedGeometryStationStart(Utf8CP bimFileName, Utf8CP alignmentName, double startingStation, double startingDistance);
-        static Dgn::DgnDbPtr VerifyConvertedGeometryStationEquation(Utf8CP bimFileName, Utf8CP alignmentName, double distanceAlong, double eqnStationAhead);
+        static Dgn::DgnDbPtr VerifyConvertedGeometryStationEquation(Utf8CP bimFileName, Utf8CP alignmentName, double startingStation, double startingDistance, int eqnCount, double eqnDistanceAlong, double eqnStationAhead);
 
         static Dgn::DgnDbPtr VerifyConvertedGeometryElementCountAndEnds
         (

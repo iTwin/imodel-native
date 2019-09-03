@@ -372,7 +372,7 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometryUniqueA
         }
 
     if (count != 1)
-        BeAssert(false && alignmentName);
+        BeAssert(false && "Alignment not found");
 
     stmt.Finalize();
 
@@ -413,7 +413,7 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometryTurnout
         }
 
     if (branchCount != count)
-        BeAssert(false && branchName);
+        BeAssert(false && "Branch not found");
 
     stmt.Finalize();
 
@@ -579,7 +579,7 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometryElement
         }
 
     if (!found)
-        BeAssert(found && alignmentName);
+        BeAssert(false && "Alignment not found");
 
     stmt.Finalize();
 
@@ -826,7 +826,7 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometryElement
     stmt.Finalize();
 
     if (!found)
-        BeAssert(found && alignmentName);
+        BeAssert(false && "Alignment not found");
 
     return dgnDbPtr;
     }
@@ -1009,7 +1009,7 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometryStation
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Greg.Ashe       08/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometryStationEquation(Utf8CP bimFileName, Utf8CP alignmentName, double distanceAlong, double eqnStationAhead)
+DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometryStationEquation(Utf8CP bimFileName, Utf8CP alignmentName, double startingStation, double startingDistance, int eqnCount, double eqnDistanceAlong, double eqnStationAhead)
     {
     const double tolerance = 1.0E-8;
 
@@ -1029,58 +1029,49 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometryStation
         "WHERE m.ModeledElement.Id = d.ECInstanceId AND a.Model.Id = m.ECInstanceId ");
     BeAssert(stmt.IsPrepared());
 
-    int count = 0;
-
-    DgnElementId alignmentId = DgnElementId();
-
-    /// Find Alignment
+    bool found = false;
     while (DbResult::BE_SQLITE_ROW == stmt.Step())
         {
-        alignmentId = stmt.GetValueId<DgnElementId>(0);
+        auto alignmentId = stmt.GetValueId<DgnElementId>(0);
         auto alignmentNameCP = stmt.GetValueText(1);
+
         if (alignmentName == nullptr || alignmentNameCP == nullptr || 0 != Utf8String(alignmentName).CompareTo(alignmentNameCP))
             continue;
-        count++;
-        }
 
-    if (count != 1)
-        BeAssert(false && alignmentName);
+        found = true;
 
-    stmt.Finalize();
+        auto roadRailAlignmentCPtr = BentleyB0200::RoadRailAlignment::Alignment::Get(*dgnDbPtr, alignmentId);
 
-    /// Find Equations
-    stmt.Prepare(*dgnDbPtr, "SELECT a.ECInstanceId, a.Parent.Id, a.Station FROM "
-        BRRA_SCHEMA(BRRA_CLASS_AlignmentStation) " a," BIS_SCHEMA(BIS_CLASS_Model) " m "
-        "WHERE a.Model.Id = m.ECInstanceId");
-    BeAssert(stmt.IsPrepared());
+        auto startStation = roadRailAlignmentCPtr->GetStartStation();
+        auto startDistance = roadRailAlignmentCPtr->GetStartValue();
+        if (fabs(startStation - startingStation) > tolerance)
+            BeAssert(false && "Horizontal Start Station Verification failed.");
+        if (fabs(startDistance - startingDistance) > tolerance)
+            BeAssert(false && "Horizontal Start Distance Verification failed.");
 
-    bool foundEqn = false;
-    while (DbResult::BE_SQLITE_ROW == stmt.Step())
-        {
-        auto alignmentStationId = stmt.GetValueId<DgnElementId>(0);
-        auto alignmentCompareId = stmt.GetValueId<DgnElementId>(1);
-
-        if (alignmentCompareId == alignmentId)
+        int count = 0;
+        for (auto distanceAlongStationPair : roadRailAlignmentCPtr->QueryOrderedStations())
             {
-            auto stationAhead = stmt.GetValueDouble(2);
-            double staDiff = stationAhead - eqnStationAhead;
-            bool checkEqnStationAhead = fabs(staDiff) < tolerance;
-            if (!checkEqnStationAhead)
-                BeAssert(checkEqnStationAhead && "Horizontal Station Equation Verification failed.");
+            auto eqnStation = distanceAlongStationPair.GetStation();
+            auto eqnDistance = distanceAlongStationPair.GetDistanceAlongFromStart();
 
-
-            // JGATODO Ask Diego how to get lr.LinearlyReferencedAtLocation from Alignment
-            // need AtPosition.DistanceAlongFromStart from lr.LinearlyReferencedAtLocation to compare to distanceAlong test
-
-
-            foundEqn = true;
+            if (count == 1)// Skip first and last since is start station and end station ... only test first eqn for now ?
+                {
+                if (fabs(eqnStation - eqnStationAhead) > tolerance)
+                    BeAssert(false && "Horizontal First Equation Station Verification failed.");
+                if (fabs(eqnDistance - eqnDistanceAlong) > tolerance)
+                    BeAssert(false && "Horizontal First Equation Distance Verification failed.");
+                }
+            count++;
             }
+
+        if (count != eqnCount + 2)
+            BeAssert(false && "Horizontal Equation count failed.");
         }
-
-    if (!foundEqn)
-        BeAssert(foundEqn && "Station Equation not found");
-
     stmt.Finalize();
+
+    if (!found)
+        BeAssert(false && "Alignment not found");
 
     return dgnDbPtr;
     }
