@@ -950,3 +950,137 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometrySpiralT
 
     return dgnDbPtr;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Greg.Ashe       08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometryStationStart(Utf8CP bimFileName, Utf8CP alignmentName, double startingStation, double startingDistance)
+    {
+    const double tolerance = 1.0E-8;
+
+    BeFileName outputPath = m_host->GetOutputDirectory();
+    outputPath.AppendA(bimFileName);
+
+    DbResult result;
+    DgnDbPtr dgnDbPtr = DgnDb::OpenDgnDb(&result, outputPath, DgnDb::OpenParams(Db::OpenMode::Readonly));
+
+    BeAssert(dgnDbPtr.IsValid() && "OpenDgnDb failed.");
+    if (dgnDbPtr.IsNull())
+        return nullptr;
+
+    ECSqlStatement stmt;
+    stmt.Prepare(*dgnDbPtr, "SELECT a.ECInstanceId, a.UserLabel, a.StartStation, a.StartValue FROM "
+        BRRA_SCHEMA(BRRA_CLASS_Alignment) " a," BIS_SCHEMA(BIS_CLASS_Model) " m, " BRRA_SCHEMA(BRRA_CLASS_DesignAlignments) " d "
+        "WHERE m.ModeledElement.Id = d.ECInstanceId AND a.Model.Id = m.ECInstanceId ");
+    BeAssert(stmt.IsPrepared());
+
+    int count = 0;
+    while (DbResult::BE_SQLITE_ROW == stmt.Step())
+        {
+        auto alignmentId = stmt.GetValueId<DgnElementId>(0);
+        auto alignmentNameCP = stmt.GetValueText(1);
+        if (alignmentName == nullptr || alignmentNameCP == nullptr || 0 != Utf8String(alignmentName).CompareTo(alignmentNameCP))
+            continue;
+        count++;
+
+        auto startStation = stmt.GetValueDouble(2);
+        auto startDistance = stmt.GetValueDouble(3);
+
+        double staDiff = startStation - startingStation;
+        double disDiff = startDistance - startingDistance;
+
+        bool checkStartStation = fabs(staDiff) < tolerance;
+        bool checkStartDistance = fabs(disDiff) < tolerance;
+
+        if (!checkStartStation)
+            BeAssert(checkStartStation && "Horizontal Start Station Verification failed.");
+        if (!checkStartDistance)
+            BeAssert(checkStartDistance && "Horizontal Start Distance Verification failed.");
+        }
+
+    if (count != 1)
+        BeAssert(false && alignmentName);
+
+    stmt.Finalize();
+
+    return dgnDbPtr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Greg.Ashe       08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometryStationEquation(Utf8CP bimFileName, Utf8CP alignmentName, double distanceAlong, double eqnStationAhead)
+    {
+    const double tolerance = 1.0E-8;
+
+    BeFileName outputPath = m_host->GetOutputDirectory();
+    outputPath.AppendA(bimFileName);
+
+    DbResult result;
+    DgnDbPtr dgnDbPtr = DgnDb::OpenDgnDb(&result, outputPath, DgnDb::OpenParams(Db::OpenMode::Readonly));
+
+    BeAssert(dgnDbPtr.IsValid() && "OpenDgnDb failed.");
+    if (dgnDbPtr.IsNull())
+        return nullptr;
+
+    ECSqlStatement stmt;
+    stmt.Prepare(*dgnDbPtr, "SELECT a.ECInstanceId, a.UserLabel FROM "
+        BRRA_SCHEMA(BRRA_CLASS_Alignment) " a," BIS_SCHEMA(BIS_CLASS_Model) " m, " BRRA_SCHEMA(BRRA_CLASS_DesignAlignments) " d "
+        "WHERE m.ModeledElement.Id = d.ECInstanceId AND a.Model.Id = m.ECInstanceId ");
+    BeAssert(stmt.IsPrepared());
+
+    int count = 0;
+
+    DgnElementId alignmentId = DgnElementId();
+
+    /// Find Alignment
+    while (DbResult::BE_SQLITE_ROW == stmt.Step())
+        {
+        alignmentId = stmt.GetValueId<DgnElementId>(0);
+        auto alignmentNameCP = stmt.GetValueText(1);
+        if (alignmentName == nullptr || alignmentNameCP == nullptr || 0 != Utf8String(alignmentName).CompareTo(alignmentNameCP))
+            continue;
+        count++;
+        }
+
+    if (count != 1)
+        BeAssert(false && alignmentName);
+
+    stmt.Finalize();
+
+    /// Find Equations
+    stmt.Prepare(*dgnDbPtr, "SELECT a.ECInstanceId, a.Parent.Id, a.Station FROM "
+        BRRA_SCHEMA(BRRA_CLASS_AlignmentStation) " a," BIS_SCHEMA(BIS_CLASS_Model) " m "
+        "WHERE a.Model.Id = m.ECInstanceId");
+    BeAssert(stmt.IsPrepared());
+
+    bool foundEqn = false;
+    while (DbResult::BE_SQLITE_ROW == stmt.Step())
+        {
+        auto alignmentStationId = stmt.GetValueId<DgnElementId>(0);
+        auto alignmentCompareId = stmt.GetValueId<DgnElementId>(1);
+
+        if (alignmentCompareId == alignmentId)
+            {
+            auto stationAhead = stmt.GetValueDouble(2);
+            double staDiff = stationAhead - eqnStationAhead;
+            bool checkEqnStationAhead = fabs(staDiff) < tolerance;
+            if (!checkEqnStationAhead)
+                BeAssert(checkEqnStationAhead && "Horizontal Station Equation Verification failed.");
+
+
+            // JGATODO Ask Diego how to get lr.LinearlyReferencedAtLocation from Alignment
+            // need AtPosition.DistanceAlongFromStart from lr.LinearlyReferencedAtLocation to compare to distanceAlong test
+
+
+            foundEqn = true;
+            }
+        }
+
+    if (!foundEqn)
+        BeAssert(foundEqn && "Station Equation not found");
+
+    stmt.Finalize();
+
+    return dgnDbPtr;
+    }

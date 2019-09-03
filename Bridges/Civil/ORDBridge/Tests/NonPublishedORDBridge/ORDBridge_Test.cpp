@@ -260,3 +260,34 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDGeometryRailTurnoutTest)
     //VerifyConvertedGeometryTurnoutBranchCount(bim, "Branch1 Geometry", 4);
     //VerifyConvertedGeometryTurnoutBranchCount(bim, "Branch2 Geometry", 4);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Greg.Ashe       08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CiviliModelBridgesORDBridgeTests, ORDGeometryStationingTest)
+    {
+    //--gtest_filter=*Stationing*
+    WCharCP wDgnFileName = WCharCP(L"GeometryStationing.dgn");
+    WCharCP wFileName = WCharCP(L"ORDGeometryStationing.bim");
+    ASSERT_TRUE(RunTestApp(wDgnFileName, wFileName, false));
+
+    Utf8String bimFile;
+    BeStringUtilities::WCharToUtf8(bimFile, wFileName);
+    Utf8CP bim = bimFile.c_str();
+
+    /// 7 Alignments
+    VerifyConvertedElementCount(bim, 7, 0);
+
+    VerifyConvertedGeometryStationStart(bim, "ZERO", 10000, 0);
+    VerifyConvertedGeometryStationStart(bim, "LINE", 10000, 150);
+    VerifyConvertedGeometryStationStart(bim, "SPIRAL", 10000, 370);
+    VerifyConvertedGeometryStationStart(bim, "ARC", 10000, 770);
+
+    VerifyConvertedGeometryStationStart(bim, "EQNLINE", 10000, 200);
+    VerifyConvertedGeometryStationStart(bim, "EQNSPIRAL", 10000, 200);
+    VerifyConvertedGeometryStationStart(bim, "EQNARC", 10000, 100);
+
+    VerifyConvertedGeometryStationEquation(bim, "EQNLINE", 540, 1000);
+    VerifyConvertedGeometryStationEquation(bim, "EQNSPIRAL", 1200, 1000);
+    VerifyConvertedGeometryStationEquation(bim, "EQNARC", 600, 1000);
+    }
