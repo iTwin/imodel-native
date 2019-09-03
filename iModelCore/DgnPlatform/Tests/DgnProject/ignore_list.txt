@@ -22,8 +22,6 @@ ImodelJsTest.MeasureInsertPerformance # WIP Temporary "test" being used to compa
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
 
-VersionCompareTestFixture.*                                  # needs to be updated with changes to lastmod of Models
-
 #TFS 386647 : Does not import element aspects
 ElementAspectTests.ImportElementsWithAspect
 
