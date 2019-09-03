@@ -23,10 +23,13 @@ struct CorridorSurfaceAspect : Dgn::DgnElement::UniqueAspect
 private:
     bool m_isTopMesh, m_isBottomMesh;
     Utf8String m_description;
+    Utf8String m_corridorName, m_horizontalName, m_profileName;
 
 protected:
     CorridorSurfaceAspect() {}
-    CorridorSurfaceAspect(bool isTopMesh, bool isBottomMesh, Utf8CP description): m_isTopMesh(isTopMesh), m_isBottomMesh(isBottomMesh), m_description(description) {}
+    CorridorSurfaceAspect(bool isTopMesh, bool isBottomMesh, Utf8CP description, Utf8CP corridorName, Utf8CP horizontalName, Utf8CP profileName): 
+        m_isTopMesh(isTopMesh), m_isBottomMesh(isBottomMesh), m_description(description), 
+        m_corridorName(corridorName), m_horizontalName(horizontalName), m_profileName(profileName) {}
 
     //! @private
     virtual Utf8CP _GetECSchemaName() const { return V8ORD_SCHEMA_NAME; }
@@ -45,7 +48,8 @@ protected:
 
 public:
     DECLARE_DGNV8OPENROADSDESIGNER_QUERYCLASS_METHODS(CorridorSurfaceAspect)
-    DGNV8OPENROADSDESIGNER_EXPORT static CorridorSurfaceAspectPtr Create(bool isTopMesh, bool isBottomMesh, Utf8CP description);
+    DGNV8OPENROADSDESIGNER_EXPORT static CorridorSurfaceAspectPtr Create(bool isTopMesh, bool isBottomMesh, Utf8CP description,
+                                                                         Utf8CP corridorName, Utf8CP horizontalName, Utf8CP profileName);
 
     //! Retrieve the CorridorSurfaceAspect instance related to an element, if any
     //! @return An instance of CorridorSurfaceAspect, or nullptr
@@ -68,6 +72,18 @@ public:
     Utf8CP GetDescription() const { return m_description.c_str(); }
     //! @private
     void SetDescription(Utf8CP val) { m_description = val; }
+    // Get the Corridor's name
+    Utf8CP GetCorridorName() const { return m_corridorName.c_str(); }
+    //! @private
+    void SetCorridorName(Utf8CP val) { m_corridorName = val; }
+    // Get the Horizontal's name
+    Utf8CP GetHorizontalName() const { return m_horizontalName.c_str(); }
+    //! @private
+    void SetHorizontalName(Utf8CP val) { m_horizontalName = val; }
+    // Get the Horizontal's name
+    Utf8CP GetProfileName() const { return m_profileName.c_str(); }
+    //! @private
+    void SetProfileName(Utf8CP val) { m_profileName = val; }
 }; // CorridorSurfaceAspect
 
 //=======================================================================================

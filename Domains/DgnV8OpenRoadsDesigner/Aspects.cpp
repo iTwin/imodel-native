@@ -11,9 +11,10 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                              Diego.Diaz                              10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-CorridorSurfaceAspectPtr CorridorSurfaceAspect::Create(bool isTopMesh, bool isBottomMesh, Utf8CP description)
+CorridorSurfaceAspectPtr CorridorSurfaceAspect::Create(bool isTopMesh, bool isBottomMesh, Utf8CP description, 
+                                                       Utf8CP corridorName, Utf8CP horizontalName, Utf8CP profileName)
     {
-    return new CorridorSurfaceAspect(isTopMesh, isBottomMesh, description);
+    return new CorridorSurfaceAspect(isTopMesh, isBottomMesh, description, corridorName, horizontalName, profileName);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -47,7 +48,9 @@ DgnDbStatus CorridorSurfaceAspect::_LoadProperties(DgnElementCR el)
     {
     auto stmtPtr = el.GetDgnDb().GetPreparedECSqlStatement(
         "SELECT " V8ORD_PROP_CorridorSurfaceAspect_IsTopMesh ", " V8ORD_PROP_CorridorSurfaceAspect_IsBottomMesh ", "
-        V8ORD_PROP_CorridorSurfaceAspect_Description " FROM " V8ORD_SCHEMA(V8ORD_CLASS_CorridorSurfaceAspect) " WHERE Element.Id = ?;");
+        V8ORD_PROP_CorridorSurfaceAspect_Description ", " V8ORD_PROP_CorridorSurfaceAspect_CorridorName ", "
+        V8ORD_PROP_CorridorSurfaceAspect_HorizontalName ", " V8ORD_PROP_CorridorSurfaceAspect_ProfileName
+        " FROM " V8ORD_SCHEMA(V8ORD_CLASS_CorridorSurfaceAspect) " WHERE Element.Id = ?;");
     BeAssert(stmtPtr.IsValid());
 
     stmtPtr->BindId(1, el.GetElementId());
@@ -58,6 +61,9 @@ DgnDbStatus CorridorSurfaceAspect::_LoadProperties(DgnElementCR el)
     m_isTopMesh = stmtPtr->GetValueBoolean(0);
     m_isBottomMesh = stmtPtr->GetValueBoolean(1);
     m_description = stmtPtr->GetValueText(2);
+    m_corridorName = stmtPtr->GetValueText(3);
+    m_horizontalName = stmtPtr->GetValueText(4);
+    m_profileName = stmtPtr->GetValueText(5);
 
     return DgnDbStatus::Success;
     }
@@ -69,13 +75,18 @@ DgnDbStatus CorridorSurfaceAspect::_UpdateProperties(DgnElementCR el, BeSQLite::
     {
     auto stmtPtr = el.GetDgnDb().GetNonSelectPreparedECSqlStatement(
         "UPDATE " V8ORD_SCHEMA(V8ORD_CLASS_CorridorSurfaceAspect) " SET " V8ORD_PROP_CorridorSurfaceAspect_IsTopMesh " = ?, "
-        V8ORD_PROP_CorridorSurfaceAspect_IsBottomMesh " = ?, " V8ORD_PROP_CorridorSurfaceAspect_Description " = ? WHERE Element.Id = ?;", writeToken);
+        V8ORD_PROP_CorridorSurfaceAspect_IsBottomMesh " = ?, " V8ORD_PROP_CorridorSurfaceAspect_Description " = ?, "
+        V8ORD_PROP_CorridorSurfaceAspect_CorridorName " = ?, " V8ORD_PROP_CorridorSurfaceAspect_HorizontalName " = ?, "
+        V8ORD_PROP_CorridorSurfaceAspect_ProfileName " = ? WHERE Element.Id = ?;", writeToken);
     BeAssert(stmtPtr.IsValid());
 
     stmtPtr->BindBoolean(1, m_isTopMesh);
     stmtPtr->BindBoolean(2, m_isBottomMesh);
     stmtPtr->BindText(3, m_description.c_str(), IECSqlBinder::MakeCopy::No);
-    stmtPtr->BindId(4, el.GetElementId());
+    stmtPtr->BindText(4, m_corridorName.c_str(), IECSqlBinder::MakeCopy::No);
+    stmtPtr->BindText(5, m_horizontalName.c_str(), IECSqlBinder::MakeCopy::No);
+    stmtPtr->BindText(6, m_profileName.c_str(), IECSqlBinder::MakeCopy::No);
+    stmtPtr->BindId(7, el.GetElementId());
 
     if (DbResult::BE_SQLITE_DONE != stmtPtr->Step())
         return DgnDbStatus::WriteError;
@@ -94,6 +105,12 @@ DgnDbStatus CorridorSurfaceAspect::_GetPropertyValue(ECValueR value, Utf8CP prop
         value.SetBoolean(m_isBottomMesh);
     else if (0 == strcmp(V8ORD_PROP_CorridorSurfaceAspect_Description, propertyName))
         value.SetUtf8CP(m_description.c_str());
+    else if (0 == strcmp(V8ORD_PROP_CorridorSurfaceAspect_CorridorName, propertyName))
+        value.SetUtf8CP(m_corridorName.c_str());
+    else if (0 == strcmp(V8ORD_PROP_CorridorSurfaceAspect_HorizontalName, propertyName))
+        value.SetUtf8CP(m_horizontalName.c_str());
+    else if (0 == strcmp(V8ORD_PROP_CorridorSurfaceAspect_ProfileName, propertyName))
+        value.SetUtf8CP(m_profileName.c_str());
     else
         return DgnDbStatus::BadRequest;
 
@@ -111,6 +128,12 @@ DgnDbStatus CorridorSurfaceAspect::_SetPropertyValue(Utf8CP propertyName, ECValu
         SetIsBottomMesh(value.GetBoolean());
     else if (0 == strcmp(V8ORD_PROP_CorridorSurfaceAspect_Description, propertyName))
         SetDescription(value.GetUtf8CP());
+    else if (0 == strcmp(V8ORD_PROP_CorridorSurfaceAspect_CorridorName, propertyName))
+        SetCorridorName(value.GetUtf8CP());
+    else if (0 == strcmp(V8ORD_PROP_CorridorSurfaceAspect_HorizontalName, propertyName))
+        SetHorizontalName(value.GetUtf8CP());
+    else if (0 == strcmp(V8ORD_PROP_CorridorSurfaceAspect_ProfileName, propertyName))
+        SetProfileName(value.GetUtf8CP());
     else
         return DgnDbStatus::BadRequest;
 
