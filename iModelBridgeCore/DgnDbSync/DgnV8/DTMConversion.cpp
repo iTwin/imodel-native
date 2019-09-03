@@ -42,7 +42,7 @@ static bool DoTerrainModelConversion(Converter& converter)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                    Daryl.Holmwood                      9/19
 //+---------------+---------------+---------------+---------------+---------------+-------
-ConvertToDgnDbElementExtension::Result ConvertDTMElement::DoConvert(DgnV8EhCR v8el, WCharCP url, Converter& converter, ResolvedModelMapping const& v8mm)
+ConvertToDgnDbElementExtension::Result ConvertDTMElement::DoConvert(DgnV8EhCR v8el, WCharCP url, Converter& converter, ResolvedModelMapping const& v8mm, WCharCP name)
     {
     Transform               location = Transform::FromIdentity();
     ClipVectorPtr           clipVector;
@@ -57,7 +57,7 @@ ConvertToDgnDbElementExtension::Result ConvertDTMElement::DoConvert(DgnV8EhCR v8
         existingId = changeInfo.GetExistingElementId();
         }
 
-    Utf8String linkName(BeFileName(rootUrl).GetFileNameWithoutExtension());
+    Utf8String linkName(name);
     DgnDbR db = converter.GetDgnDb();
     RepositoryLinkPtr repositoryLink = RepositoryLink::Create(*db.GetRealityDataSourcesModel(), rootUrl.c_str(), linkName.c_str());
     if (!repositoryLink.IsValid() || !repositoryLink->Insert().IsValid())
@@ -215,6 +215,9 @@ ConvertToDgnDbElementExtension::Result ConvertDTMElement::_PreConvertElement(Dgn
     DgnPlatformLib::Host::IKnownLocationsAdmin& locationAdmin(DgnPlatformLib::QueryHost()->GetIKnownLocationsAdmin());
     BeFileName tempPath = locationAdmin.GetLocalTempDirectoryBaseName();
     WString file;
+    Bentley::WString name;
+    Bentley::TerrainModel::Element::DTMElementHandlerManager::GetName (v8el, name);
+
     file.Sprintf(L"%ls%ld", BeFileName(v8el.GetDgnFileP()->GetFileName().c_str()).GetFileNameWithoutExtension().c_str(), v8el.GetElementId());
     tempPath.AppendToPath(file.c_str());
 
@@ -257,7 +260,7 @@ ConvertToDgnDbElementExtension::Result ConvertDTMElement::_PreConvertElement(Dgn
             BeFileName::BeDeleteFile(dtmFile.c_str());
             }
         }
-    auto ret = DoConvert(v8el, smFile.c_str(), converter, v8mm);
+    auto ret = DoConvert(v8el, smFile.c_str(), converter, v8mm, name.c_str());
 
     //BeFileName::BeDeleteFile(smFile.c_str());
     return  Result::Proceed; // ret;
