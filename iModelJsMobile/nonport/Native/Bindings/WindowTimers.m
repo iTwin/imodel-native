@@ -1,4 +1,5 @@
 #import "WindowTimers.h"
+#import  <IModelJsHost/IModelJsHost.h>
 
 @implementation WTWindowTimers {
     NSUInteger _timeoutCounter;
@@ -36,15 +37,7 @@
         if (!isInterval) {
             dispatch_source_cancel(dispatchSource);
         }
-        // Unfortunately, JavaScript allows it that the first argument is a string which will be
-        // evaluated as callback.
-        if ([function isString]) {
-            [function.context evaluateScript:[function toString]];
-            // In all other cases, execute the callback. TODO explain the arguments.
-        } else {
-            [function callWithArguments:arguments];
-        }
-
+        [[IModelJsHost sharedInstance] exec:function arguments:arguments];
     });
     dispatch_time_t dispatchInterval = (uint64_t)[timeout toUInt32] * NSEC_PER_MSEC;
     dispatch_time_t dispatchTime = dispatch_time(DISPATCH_TIME_NOW, dispatchInterval);

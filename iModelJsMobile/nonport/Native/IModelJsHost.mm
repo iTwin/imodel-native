@@ -131,6 +131,19 @@ extern "C" {
     return _jsContext;
 }
 
+- (void)exec: (JSValue*)function arguments: (NSArray*)arguments {
+    _host->PostToEventLoop([=]() {
+        // Unfortunately, JavaScript allows it that the first argument is a string which will be
+        // evaluated as callback.
+        if ([function isString]) {
+            [function.context evaluateScript:[function toString]];
+            // In all other cases, execute the callback. TODO explain the arguments.
+        } else {
+            [function callWithArguments:arguments];
+        }
+    });
+}
+
 void BootstrapBackend(JSContext* ctx, NSURL* backendUrl, NSArray<NSString*>* searchPaths) {
     NSString* resourcePath = [[NSBundle mainBundle] bundlePath];
     NSProcessInfo* currentProcess = [NSProcessInfo processInfo];

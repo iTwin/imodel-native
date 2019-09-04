@@ -13,6 +13,7 @@
 - (int)getPort;
 - (JSContext*)getContext;
 - (BOOL)isReady;
+- (void)exec: (JSValue*)function arguments: (NSArray*)arguments;
 + (id)sharedInstance;
 
 @end
