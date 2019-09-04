@@ -309,13 +309,13 @@ Utf8String WebApiV2::GetResponseActivityId(Http::Response& response, ActivityLog
     if (!activityLogger.HasValidActivityInfo())
         return "";
 
-    Utf8StringCR actualActivityHeaderName = activityLogger.GetHeaderName();
-    Utf8StringCR actualActivityId = activityLogger.GetActivityId();
-    Utf8StringCR responseActivityId = response.GetHeaders().GetValue(actualActivityHeaderName);
+    Utf8String actualActivityHeaderName = activityLogger.GetHeaderName();
+    Utf8String actualActivityId = activityLogger.GetActivityId();
+    Utf8String responseActivityId = response.GetHeaders().GetValue(actualActivityHeaderName);
 
     Utf8CP idsMismatchMessagePrefix = "Response activity IDs do not match";
 
-    if (!responseActivityId.c_str())
+    if (responseActivityId.empty())
         {
         activityLogger.warningv("%s: response ActivityId is empty.", idsMismatchMessagePrefix);
         return "";
