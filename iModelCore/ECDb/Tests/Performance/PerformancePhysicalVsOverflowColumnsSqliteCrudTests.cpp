@@ -11,7 +11,6 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 
 #define TESTTABLE_NAME "test"
 #define TESTTABLE_OVERFLOWCOL "overflow"
-
 //---------------------------------------------------------------------------------------
 // @bsiclass                                                  Krischan.Eberle     01/2017
 //---------------------------------------------------------------------------------------
@@ -31,8 +30,8 @@ struct PerformancePhysicalVsOverflowColumnsSqliteCrudTestFixture : ECDbTestFixtu
             Last
             };
 
-        static const int s_initialRowCount = 100000;
-        static const int s_opCount = 50000;
+        static const int s_initialRowCount = 1000;
+        static const int s_opCount = 500;
 
     private:
         static int ComputeValue(int rowNo, int colNumber);
@@ -734,5 +733,4 @@ void PerformancePhysicalVsOverflowColumnsSqliteCrudTestFixture::SetupTestDb(Db& 
 
     ASSERT_EQ(BE_SQLITE_OK, db.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::ReadWrite))) << filePath.GetNameUtf8().c_str();
     }
-
 END_ECDBUNITTESTS_NAMESPACE

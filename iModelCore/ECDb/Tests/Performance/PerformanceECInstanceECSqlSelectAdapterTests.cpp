@@ -6,7 +6,7 @@
 #include "PerformanceCRUDTestsHelper.h"
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-#define OPCOUNT 100000
+#define OPCOUNT 1000
 
 //------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle    01/2017

@@ -118,7 +118,7 @@ void RunDeleteReferentialIntegrityTest(bool withRelationsToCachedInfo)
     Utf8CP testSchemaName = "TestSchema";
     Utf8CP testClassName = "TestClass";
 
-    const int childCount = 10000;
+    const int childCount = 1000;
     ECInstanceKey testECInstanceKey;
 
     {
@@ -187,7 +187,7 @@ void RunDeleteReferentialIntegrityTestUsingECSql(bool withRelationsToCachedInfo)
     Utf8CP testSchemaName = "TestSchema";
     Utf8CP testClassName = "TestClass";
 
-    const int childCount = 10000;
+    const int childCount = 1000;
     ECInstanceKey testECInstanceKey;
 
     {

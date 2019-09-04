@@ -347,7 +347,7 @@ void PerformanceCRUDTestsHelper::GenerateSqlCRUDTestStatements(ECClassCP &ecClas
     Utf8String className = (Utf8String) ecClass->GetName();
 
     m_insertSql = Utf8String("INSERT INTO ts_");
-    m_insertSql.append(className).append(" (ECInstanceId, ");
+    m_insertSql.append(className).append(" (Id, ");
     Utf8String insertValuesSql(") VALUES (?, ");
 
     m_updateSql = Utf8String("UPDATE ts_");
@@ -357,7 +357,7 @@ void PerformanceCRUDTestsHelper::GenerateSqlCRUDTestStatements(ECClassCP &ecClas
 
     //use view here to make sure referential integrity is ensured. Otherwise it is not comparable to ECSQL.
     m_deleteSql = Utf8String("DELETE FROM ts_");
-    m_deleteSql.append(className).append(" WHERE ECInstanceId = ? ");
+    m_deleteSql.append(className).append(" WHERE Id = ? ");
 
     bool isFirstItem = true;
     for (auto prop : ecClass->GetProperties(true))
@@ -395,9 +395,9 @@ void PerformanceCRUDTestsHelper::GenerateSqlCRUDTestStatements(ECClassCP &ecClas
         }
 
     m_selectSql.append(" FROM ts_");
-    m_selectSql.append(className).append(" WHERE ECInstanceId = ? ");
+    m_selectSql.append(className).append(" WHERE Id = ? ");
     m_insertSql.append(insertValuesSql).append(");");
-    m_updateSql.append("WHERE ECInstanceId = ?");
+    m_updateSql.append("WHERE Id = ?");
     }
 
 //---------------------------------------------------------------------------------------
@@ -557,7 +557,7 @@ void PerformanceCRUDTestsHelper::SqlDeleteInstances(ECDbR ecdb, ECClassR ecClass
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceCRUDTestsHelper::SetUpTestECDb(ECDbR ecdb, Utf8String destFileName)
+void PerformanceCRUDTestsHelper::SetUpTestECDb(Utf8String destFileName)
     {
     m_ecsqlTestItems.clear();
 
@@ -568,7 +568,7 @@ void PerformanceCRUDTestsHelper::SetUpTestECDb(ECDbR ecdb, Utf8String destFileNa
 
     if (!seedFilePath.DoesPathExist())
         {
-        m_instancesPerClass = 1000000;
+        m_instancesPerClass = 10000;
         ECSchemaPtr testSchema = nullptr;
         ECEntityClassP baseClass = nullptr;
 
@@ -592,6 +592,7 @@ void PerformanceCRUDTestsHelper::SetUpTestECDb(ECDbR ecdb, Utf8String destFileNa
 
         m_ecdb.SaveChanges();
         m_ecsqlTestItems.clear();
+        m_ecdb.CloseDb();
         }
     ASSERT_EQ(DbResult::BE_SQLITE_OK, CloneECDb(destFileName.c_str(), seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
     }

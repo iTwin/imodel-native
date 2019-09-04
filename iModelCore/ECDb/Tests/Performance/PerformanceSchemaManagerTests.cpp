@@ -89,7 +89,7 @@ TEST_F(PerformanceSchemaManagerTests, ECClassIdLookup_SingleClass)
     ECClassId expectedClassId = m_ecdb.Schemas().GetClassId(testSchemaName, testClassName);
     ASSERT_TRUE(expectedClassId.IsValid());
 
-    const int repetitionCount = 100000;
+    const int repetitionCount = 1000;
     StopWatch timer(true);
     for (int i = 0; i < repetitionCount; i++)
         {
@@ -129,7 +129,7 @@ TEST_F(PerformanceSchemaManagerTests, ECClassIdLookupDuringECSqlPreparation_Sing
     Utf8String ecsql;
     ecsql.Sprintf("SELECT NULL FROM %s.%s", testSchemaName, testClassName);
 
-    const int repetitionCount = 10000;
+    const int repetitionCount = 1000;
     StopWatch timer(true);
     for (int i = 0; i < repetitionCount; i++)
         {
@@ -160,7 +160,7 @@ TEST_F(PerformanceSchemaManagerTests, GetECClassIdSqlScenarios)
     ECClassId expectedClassId2 = m_ecdb.Schemas().GetClassId("ECSqlTest", testClassName2);
     ASSERT_TRUE(expectedClassId2.IsValid());
 
-    const int opCount = 100000;
+    const int opCount = 1000;
 
     //Scenario 1: By schema and class name (via join)
     Statement stmt;

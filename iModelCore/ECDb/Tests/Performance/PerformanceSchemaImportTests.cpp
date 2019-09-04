@@ -186,7 +186,7 @@ TEST_F(PerformanceSchemaImportTests, SchemaWithCustomAttributeImportPerformance)
 
         ASSERT_EQ(BE_SQLITE_OK, SetupECDb("schemaWithCAImportPerformance.ecdb"));
 
-        ecSchema = PerformanceSchemaImportTests::CreateTestSchema(5000, 100, true, true, true, i);
+        ecSchema = PerformanceSchemaImportTests::CreateTestSchema(500, 10, true, true, true, i);
         ASSERT_TRUE(ecSchema.IsValid());
         bvector<ECSchemaCP> schemas;
         schemas.push_back(ecSchema.get());
@@ -204,10 +204,10 @@ TEST_F(PerformanceSchemaImportTests, SchemaWithCustomAttributeImportPerformance)
         ASSERT_TRUE(ecschema != nullptr);
 
         Utf8String testDescription;
-        testDescription.Sprintf("Schema with 5000 Class, 100 properties each, with 1 CA on Schema, %d CA Per Class and %d CA per Property", i, i);
+        testDescription.Sprintf("Schema with 500 Class, 10 properties each, with 1 CA on Schema, %d CA Per Class and %d CA per Property", i, i);
         LOGTODB(TEST_DETAILS, importTime, i, testDescription.c_str());
-        testDescription.Sprintf("Schema with 5000 Class, 100 properties each, with 1 CA on Schema, %d CA Per Class and %d CA per Property (ClearCache Time)", i, i);
-        testDescription.Sprintf("Schema with 5000 Class, 100 properties each, with 1 CA on Schema, %d CA Per Class and %d CA per Property (Schema Export Time)", i, i);
+        testDescription.Sprintf("Schema with 500 Class, 10 properties each, with 1 CA on Schema, %d CA Per Class and %d CA per Property (ClearCache Time)", i, i);
+        testDescription.Sprintf("Schema with 500 Class, 10 properties each, with 1 CA on Schema, %d CA Per Class and %d CA per Property (Schema Export Time)", i, i);
         LOGTODB(TEST_DETAILS, schemaExportTime, i, testDescription.c_str());
         m_ecdb.CloseDb();
         }

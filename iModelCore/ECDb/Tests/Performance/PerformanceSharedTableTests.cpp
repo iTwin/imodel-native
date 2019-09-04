@@ -19,13 +19,13 @@ struct PerformanceSharedTableTests: ECDbTestFixture
 
     protected:
         static const uint64_t s_firstInstanceId = UINT64_C(1);
-        static const int s_initialInstanceCount = 1000000;
-        static const int s_opCount = 500000;
+        static const int s_initialInstanceCount = 10000;
+        static const int s_opCount = 5000;
 
         //---------------------------------------------------------------------------------------
         // @bsimethod                                      Affan.Khan                  10/15
         //+---------------+---------------+---------------+---------------+---------------+------
-        BentleyStatus SetupTestECDb(ECDbR ecdb)
+        BentleyStatus SetupTestECDb()
             {
             Utf8String seedFileName;
             bool mustCreateSeed = false;
@@ -109,8 +109,9 @@ struct PerformanceSharedTableTests: ECDbTestFixture
                     stmt.Reset();
                     stmt.ClearBindings();
                     }
-
+                stmt.Finalize();
                 m_ecdb.SaveChanges();
+                m_ecdb.CloseDb();
                 }
 
             return CloneECDb("sharedTableperformance.ecdb", s_seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)) == BE_SQLITE_OK ? SUCCESS : ERROR;
@@ -138,8 +139,7 @@ TEST_F(PerformanceSharedTableTests, CreateSeedFile)
     {
     //separate out code that creates and populates the seed files, so that multiple runs of the actual
     //perf timings can be done without influence of the heavy work to create the seed file.
-    ECDb ecdb;
-    ASSERT_EQ(SUCCESS, SetupTestECDb(ecdb));
+    ASSERT_EQ(SUCCESS, SetupTestECDb());
     }
 
 //---------------------------------------------------------------------------------------
@@ -147,12 +147,11 @@ TEST_F(PerformanceSharedTableTests, CreateSeedFile)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceSharedTableTests, Insert)
     {
-    ECDb ecdb;
-    ASSERT_EQ(SUCCESS, SetupTestECDb(ecdb));
+    ASSERT_EQ(SUCCESS, SetupTestECDb());
 
     ECSqlStatement booInsert;
     // NOT USED: const int instanceIdIncrement = DetermineECInstanceIdIncrement();
-    ASSERT_EQ(booInsert.Prepare(ecdb, "INSERT INTO dgn.Boo(ECInstanceId, F1l,F2s,F3l,F4s,G1l,G2s,G3l,G4s,B1l,B2s,B3l,B4s) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)"), ECSqlStatus::Success);
+    ASSERT_EQ(booInsert.Prepare(m_ecdb, "INSERT INTO dgn.Boo(ECInstanceId, F1l,F2s,F3l,F4s,G1l,G2s,G3l,G4s,B1l,B2s,B3l,B4s) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)"), ECSqlStatus::Success);
     StopWatch timer(true);
 
     for (int i = 0; i < s_opCount; i++)
@@ -186,11 +185,10 @@ TEST_F(PerformanceSharedTableTests, Insert)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceSharedTableTests, Update)
     {
-    ECDb ecdb;
-    ASSERT_EQ(SUCCESS, SetupTestECDb(ecdb));
+    ASSERT_EQ(SUCCESS, SetupTestECDb());
 
     ECSqlStatement booUpdate;
-    ASSERT_EQ(booUpdate.Prepare(ecdb, "UPDATE dgn.Boo SET F1l = ?,F2s = ?,F3l = ?,F4s = ?,G1l = ?,G2s = ?,G3l = ?,G4s = ?,B1l = ?,B2s = ?,B3l = ?,B4s = ? WHERE ECInstanceId = ?"), ECSqlStatus::Success);
+    ASSERT_EQ(booUpdate.Prepare(m_ecdb, "UPDATE dgn.Boo SET F1l = ?,F2s = ?,F3l = ?,F4s = ?,G1l = ?,G2s = ?,G3l = ?,G4s = ?,B1l = ?,B2s = ?,B3l = ?,B4s = ? WHERE ECInstanceId = ?"), ECSqlStatus::Success);
     StopWatch timer(true);
     for (int i = 0; i < s_opCount; i++)
         {
@@ -224,11 +222,10 @@ TEST_F(PerformanceSharedTableTests, Update)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceSharedTableTests, Select)
     {
-    ECDb ecdb;
-    ASSERT_EQ(SUCCESS, SetupTestECDb(ecdb));
+    ASSERT_EQ(SUCCESS, SetupTestECDb());
 
     ECSqlStatement booSelect;
-    ASSERT_EQ(booSelect.Prepare(ecdb, "SELECT F1l,F2s,F3l,F4s,G1l,G2s,G3l,G4s,B1l,B2s,B3l,B4s FROM dgn.Boo WHERE ECInstanceId = ?"), ECSqlStatus::Success);
+    ASSERT_EQ(booSelect.Prepare(m_ecdb, "SELECT F1l,F2s,F3l,F4s,G1l,G2s,G3l,G4s,B1l,B2s,B3l,B4s FROM dgn.Boo WHERE ECInstanceId = ?"), ECSqlStatus::Success);
     StopWatch timer(true);
     for (int i = 0; i < s_opCount; i++)
         {
@@ -266,11 +263,10 @@ TEST_F(PerformanceSharedTableTests, Select)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceSharedTableTests, Delete)
     {
-    ECDb ecdb;
-    ASSERT_EQ(SUCCESS, SetupTestECDb(ecdb));
+    ASSERT_EQ(SUCCESS, SetupTestECDb());
 
     ECSqlStatement booDelete;
-    ASSERT_EQ(booDelete.Prepare(ecdb, "DELETE FROM dgn.Boo WHERE ECInstanceId = ?"), ECSqlStatus::Success);
+    ASSERT_EQ(booDelete.Prepare(m_ecdb, "DELETE FROM dgn.Boo WHERE ECInstanceId = ?"), ECSqlStatus::Success);
     StopWatch timer(true);
     for (auto i = 0; i < s_opCount; i++)
         {

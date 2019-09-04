@@ -10,7 +10,6 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
-
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                    Muhammad Hassan                   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -22,10 +21,10 @@ struct PerformanceRegularVsOverflowTestFixture : ECDbTestFixture
         Overflow
         };
 
-    static const int s_initialInstanceCount = 1000000;
+    static const int s_initialInstanceCount = 1000;
     static const int64_t s_firstInstanceId = 2000000;
-    static const int s_insertCount = 100000;
-    static const int s_readCount = 50000;
+    static const int s_insertCount = 100;
+    static const int s_readCount = 500;
 
 
     void RunIntegerTest(int intValues[], Scenario, bool getReadTime);
@@ -1059,5 +1058,4 @@ Utf8CP PerformanceRegularVsOverflowTestFixture::PrimitiveTypeToXmlString(Primiti
                 return "";
         }
     }
-
 END_ECDBUNITTESTS_NAMESPACE

@@ -54,3 +54,12 @@ ECInstanceUpdaterTests.ReadonlyAndCalculatedProperties
 
 # This is for testing only.
 ECDbTestFixture.ConcurrentQueryManager
+
+# Performance tests to be ignored
+PerformanceJsonComparison.*
+PerformanceECSqlVsSqliteTests.*
+PerformanceOverflowTablesResearchTestFixture.*
+PerformancePhysicalVsOverflowColumnsSqliteCrudTestFixture.*
+PerformancePrimArrayJsonVsECDTests.*
+PerformanceRegularVsOverflowTestFixture.*
+PerformanceOverflowPropsTests.*

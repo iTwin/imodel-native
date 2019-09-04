@@ -7,7 +7,6 @@
 #include "PerformanceTests.h"
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
-
 //---------------------------------------------------------------------------------------
 // @bsiclass                                                  Krischan.Eberle     03/2017
 //---------------------------------------------------------------------------------------
@@ -84,8 +83,8 @@ struct PerformanceOverflowTablesResearchTestFixture : ECDbTestFixture
             Utf8CP GetSql() const { return m_stmt.GetSql(); }
             };
 
-        static const int s_initialRowCount = 100000;
-        static const int s_opCount = 50000;
+        static const int s_initialRowCount = 1000;
+        static const int s_opCount = 500;
 
     private:
         static int ComputeValue(int rowId, int colIndex);
@@ -864,8 +863,8 @@ struct PerformanceOverflowTablesResearch_NullColumnsTestFixture : ECDbTestFixtur
             };
 
     private:
-        static const int s_initialRowCount = 100000;
-        static const int s_opCount = 50000;
+        static const int s_initialRowCount = 1000;
+        static const int s_opCount = 500;
 
         static void SetupTestDb(Db&, Scenario const&);
         static Utf8String GetColumnName(int colIndex);

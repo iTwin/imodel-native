@@ -30,7 +30,7 @@ TEST_F(PerformanceJsonInserter, InsertJsonCppUsingPresistanceAPI)
     ECClassCP documentClass = m_ecdb.Schemas().GetClass("JsonTests", "Document");
     ASSERT_TRUE(documentClass != nullptr);
     JsonInserter inserter(m_ecdb, *documentClass, nullptr);
-    const int repetitionCount = 10000;
+    const int repetitionCount = 1000;
 
     //----------------------------------------------------------------------------------- 
     // Insert using JsonCpp
@@ -79,7 +79,7 @@ TEST_F(PerformanceJsonInserter, InsertRapidJsonUsingPresistanceAPI)
     ASSERT_TRUE(documentClass != nullptr);
     JsonInserter inserter(m_ecdb, *documentClass, nullptr);
 
-    const int repetitionCount = 10000;
+    const int repetitionCount = 1000;
     //-----------------------------------------------------------------------------------
     // Insert using RapidJson
     //-----------------------------------------------------------------------------------

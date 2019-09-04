@@ -23,7 +23,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 #define POINTYVALUE -133.3314134314134
 #define POINTZVALUE 100.3314134314
 
-#define OPCOUNT 100000
+#define OPCOUNT 1000
 #define SMALLARRAYLENGTH 10
 #define LARGEARRAYLENGTH 100
 
@@ -602,7 +602,7 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunInsertECD(StopWatch& timer,
                 break;
 
             case ColumnMode::Overflow:
-                insertSql = "INSERT INTO " JSONTABLE_NAME "(val) VALUES(json_object('primarray', BlobToBase64(?)))";
+                insertSql = "INSERT INTO " JSONTABLE_NAME "(val) VALUES(json_object('primarray', ?))";
                 break;
 
             default:
@@ -623,8 +623,9 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunInsertECD(StopWatch& timer,
         {
         if (SUCCESS != PopulateECDArray(*arrayInstance, propIndex, arrayType, arraySize))
             return ERROR;
-
-        if (BE_SQLITE_OK != stmt.BindBlob(1, arrayInstance->GetData(), arrayInstance->GetBytesUsed(), Statement::MakeCopy::No))
+        Utf8String base64Str;
+        Base64Utilities::Encode(base64Str, (Byte const*)arrayInstance->GetData(), arrayInstance->GetBytesUsed());
+        if (BE_SQLITE_OK != stmt.BindText(1, base64Str, Statement::MakeCopy::No))
             return ERROR;
 
         if (BE_SQLITE_DONE != stmt.Step())
@@ -679,7 +680,7 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectECD(PrimitiveType arr
                 break;
 
             case ColumnMode::Overflow:
-                selSql = "SELECT Base64ToBlob(json_extract(val,'$.primarray')) FROM " JSONTABLE_NAME;
+                selSql = "SELECT json_extract(val,'$.primarray') FROM " JSONTABLE_NAME;
                 break;
 
             default:
@@ -694,8 +695,12 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectECD(PrimitiveType arr
 
     while (BE_SQLITE_ROW == stmt.Step())
         {
-        Byte* arrayBlob = (Byte*) stmt.GetValueBlob(0);
-        const int arrayBlobSize = stmt.GetColumnBytes(0);
+        Utf8CP base64Str = stmt.GetValueText(0);
+        ByteStream blob;
+        Base64Utilities::Decode(blob, base64Str, strlen(base64Str));
+
+        Byte* arrayBlob = (Byte*) blob.GetData();
+        const size_t arrayBlobSize = blob.size();
 
         if (arrayBlob == nullptr)
             return ERROR;

@@ -7,7 +7,6 @@
 #include "PerformanceTests.h"
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
-
 //---------------------------------------------------------------------------------------
 // @bsitest                                    Shaun.Sewall                     12/13
 //---------------------------------------------------------------------------------------
@@ -18,6 +17,7 @@ TEST(PerformanceJsonComparison, ParseJsonUsingStartupCompany)
     //-----------------------------------------------------------------------------------
     BeFileName inputFile;
     BeTest::GetHost().GetDocumentsRoot(inputFile);
+    inputFile.AppendToPath(L"ECDb");
     inputFile.AppendToPath(L"StartupCompany.json");
     Json::Value seedObj(Json::objectValue);
     TestUtilities::ReadFile(seedObj, inputFile);
@@ -80,7 +80,7 @@ TEST(PerformanceJsonComparison, ParseJsonUsingStartupCompany)
 //---------------------------------------------------------------------------------------
 TEST(PerformanceJsonComparison, AddJson)
     {
-    const Json::ArrayIndex numEntries = 1000000;
+    const Json::ArrayIndex numEntries = 1000;
     //-----------------------------------------------------------------------------------
     //  Add using JsonCpp
     //-----------------------------------------------------------------------------------
@@ -190,5 +190,4 @@ TEST(PerformanceJsonComparison, AddJson)
     timer.Stop();
     LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), (int) numEntries, "Adding and Verifying entries with RapidJson");
     }
-
 END_ECDBUNITTESTS_NAMESPACE

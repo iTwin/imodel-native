@@ -182,7 +182,7 @@ TEST_F(PerformanceOverflowTablesResearchTestFixture, ViewsWithTriggers)
     select_test1_view.Prepare(m_ecdb, "select id,sc1,sc2,sc3,sc4,sc5,sc6,sc7,sc8,sc9,sc10 from test1_view where id=?");
 
     const int start = 1;
-    const int end = 500000;
+    const int end = 5000;
     std::function<void(std::function<void()>, Utf8CP)> exec = [] (std::function<void()> callback, Utf8CP msg)
         {
         StopWatch timer;
@@ -287,7 +287,6 @@ TEST_F(PerformanceOverflowTablesResearchTestFixture, ViewsWithTriggers)
             }
         }, "Delete using view");
     }
-
 
 
 END_ECDBUNITTESTS_NAMESPACE

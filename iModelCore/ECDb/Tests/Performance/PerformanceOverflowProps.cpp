@@ -23,9 +23,8 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 #define POINTYVALUE -133.3314134314134
 #define POINTZVALUE 100.3314134314
 
-#define INITIALROWCOUNT 100000
-#define ROWCOUNT 5000
-
+#define INITIALROWCOUNT 1000
+#define ROWCOUNT 50
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle       07/2016
 //=======================================================================================
@@ -1267,5 +1266,4 @@ Utf8CP PerformanceOverflowPropsTests::JsonApiToString(JsonApi jsonApi)
                 return nullptr;
         }
     }
-
 END_ECDBUNITTESTS_NAMESPACE

@@ -48,6 +48,6 @@ struct PerformanceCRUDTestsHelper : public ECDbTestFixture
         void SqlReadInstances (ECDbR ecdb, ECClassR ecClass, bool iterateResultSet);
         void SqlUpdateInstances (ECDbR ecdb, ECClassR ecClass, bool bindPropertyValues);
         void SqlDeleteInstances (ECDbR ecdb, ECClassR ecClass);
-        void SetUpTestECDb (ECDbR ecdb, Utf8String destFileName);
+        void SetUpTestECDb (Utf8String destFileName);
     };
 END_ECDBUNITTESTS_NAMESPACE

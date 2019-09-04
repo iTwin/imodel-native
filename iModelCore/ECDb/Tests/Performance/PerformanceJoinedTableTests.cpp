@@ -19,8 +19,8 @@ struct PerformanceJoinedTableTests: ECDbTestFixture
 
     protected:
         static const uint64_t s_firstInstanceId = UINT64_C(1);
-        static const int s_initialInstanceCount = 1000000;
-        static const int s_opCount = 500000;
+        static const int s_initialInstanceCount = 10000;
+        static const int s_opCount = 5000;
 
         //---------------------------------------------------------------------------------------
         // @bsimethod                                      Affan.Khan                  10/15
