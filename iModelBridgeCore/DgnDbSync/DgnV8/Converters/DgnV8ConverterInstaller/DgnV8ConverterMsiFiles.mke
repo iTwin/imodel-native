@@ -1,0 +1,12 @@
+#--------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#--------------------------------------------------------------------------------------
+
+%include mdl.mki
+
+ContextDeliveryDir = $(BuildContext)DgnV8ConverterMsiFiles/
+                
+always:
+    ~linkfile "$(ContextDeliveryDir)DgnV8ConverterInstallerOpts.mki=$(_MakeFilePath)DgnV8ConverterInstallerOpts.mki"
+    ~linkfile "$(ContextDeliveryDir)DgnV8Converter.wix.xml=$(_MakeFilePath)DgnV8Converter.wix.xml"
+    ~linkmultifiles "$(ContextDeliveryDir)msvc140=$(SrcRoot)thirdparty/mergemodules/Microsoft_VC_14_0/*x64.msm"

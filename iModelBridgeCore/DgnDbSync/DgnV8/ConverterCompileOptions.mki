@@ -1,0 +1,43 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+
+ALLOW_MSVC_PERMISSIVE=1 # otherwise we get errors Vancouver's header files; hopefully by the time permissive is Microsoft's default, Vancouver will have patched header files.
+
+# target platform needs to be defined (this is included before mdl.mki when it is included by PreCompileHeader.mke)
+%if !defined (__mdlMKI__)
+    %include mdl.mki
+%endif
+
+nameToDefine = __DGNDBSYNC_BUILD__
+%include cdefapnd.mki
+
+# Need to ignore this because it's in Vancouver's header files.
+%if defined (MSVC_VERSION)
+%if MSVC_VERSION >= 1900
+    # C4312: 'type cast': conversion from '...' to '...' of greater size
+    CCompOpts + -wd4312
+
+    # C4091: '... ': ignored on left of '...' when no variable is declared
+    CCompOpts + -wd4091
+%endif
+%endif
+
+%ifdef DGNV8_DGNPLATFORM_SDK
+    cDefs +% -DDGNV8_DGNPLATFORM_SDK
+%endif
+
+# Developers may use a PP build containing a different version of RealDWG
+%ifndef RealDwgVersion
+    %if exists(${BuildContext}/SubParts/VersionedDgnV8Libs/acdb23.lib)
+        RealDwgVersion = 2019
+        RDVSuffix = 23
+    %else
+        RealDwgVersion = 2018
+        RDVSuffix = 22
+    %endif
+    cDefs + -DRealDwgVersion=$(RealDwgVersion)
+%endif
+
