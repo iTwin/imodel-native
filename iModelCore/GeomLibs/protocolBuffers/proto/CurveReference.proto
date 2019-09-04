@@ -1,0 +1,6 @@
+message CurveReference
+{
+required ICurve ParentCurve = 1;
+required bool Reversed = 2;
+}
+

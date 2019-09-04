@@ -1,0 +1,55 @@
+#--------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------*/
+$(OUT_DIR)cluster$(OUT_EXT)          : $(geomSrcFuncs)cluster.cpp          $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)vu$(OUT_EXT)                  : $(vuSrc)vu.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+$(OUT_DIR)vucoord$(OUT_EXT)             : $(vuSrc)vucoord.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+$(OUT_DIR)vusubset$(OUT_EXT)            : $(vuSrc)vusubset.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+$(OUT_DIR)vuarray$(OUT_EXT)             : $(vuSrc)vuarray.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+$(OUT_DIR)vumem$(OUT_EXT)          : $(vuSrc)vumem.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+$(OUT_DIR)vuflood$(OUT_EXT)             : $(vuSrc)vuflood.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+$(OUT_DIR)vumerge2$(OUT_EXT)            : $(vuSrc)vumerge2.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+$(OUT_DIR)vufilter$(OUT_EXT)            : $(vuSrc)vufilter.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+$(OUT_DIR)vutriang$(OUT_EXT)            : $(vuSrc)vutriang.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+$(OUT_DIR)vureg$(OUT_EXT)               : $(vuSrc)vureg.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+$(OUT_DIR)vustack$(OUT_EXT)             : $(vuSrc)vustack.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+$(OUT_DIR)vuexcise$(OUT_EXT)            : $(vuSrc)vuexcise.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+$(OUT_DIR)vucluster$(OUT_EXT)           : $(vuSrc)vucluster.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+$(OUT_DIR)vumod2$(OUT_EXT)              : $(vuSrc)vumod2.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+$(OUT_DIR)vumod$(OUT_EXT)              : $(vuSrc)vumod.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+$(OUT_DIR)vuunion$(OUT_EXT)           : $(vuSrc)vuunion.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+$(OUT_DIR)vumaskops$(OUT_EXT)           : $(vuSrc)vumaskops.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+$(OUT_DIR)VuPositionDetail$(OUT_EXT)   : $(vuSrc)VuPositionDetail.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+$(OUT_DIR)vuSearch$(OUT_EXT)           : $(vuSrc)vuSearch.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+$(OUT_DIR)PolygonArray$(OUT_EXT)       : $(vuSrc)PolygonArray.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+#$(OUT_DIR)polygon3d$(OUT_EXT)       : $(geomSrcFuncs)polygon3d.cpp      $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)PolygonOps$(OUT_EXT)       : $(geomSrcFuncs)PolygonOps.cpp      $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
+$(OUT_DIR)vuOps$(OUT_EXT)             : $(vuSrc)vuOps.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
+$(OUT_DIR)vumerge$(OUT_EXT)             : $(vuSrc)vumerge.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+

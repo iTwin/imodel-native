@@ -1,0 +1,24 @@
+PRIMITIVE Polygon
+<def name=SUMMARY>Points joined by line segments.  Point are held as coordinates (not references to point objects).
+The decision of whether the raw point array includes a replicated start end point is
+implementation specific.  However, the implementation must support three enumerations shield
+users from the decision:
+<code>
+    foreach (DPoint3d xyz in polygon.PointsWithClosure ())
+        {
+        }
+    foreach (DPoint3d xyz in polygon.PointsNoClosure ())
+        {
+        }
+    foreach (DPoint3d xyz in polygon.Edges ())
+        {
+        }
+</code>
+</def>
+<def name=Interface_BaseList>IGeometry, IPolygonTraversal, ISurface</def>
+
+
+<def name=MEMBERS><list ItemType=DPoint3d ItemTagName=xyz ItemSemanticName=Point ItemParamName=point ListName=mPoint ItemDescription="Point coordinates around polygon." ScaleMode=Length/>
+</def>
+
+END_PRIMITIVE
