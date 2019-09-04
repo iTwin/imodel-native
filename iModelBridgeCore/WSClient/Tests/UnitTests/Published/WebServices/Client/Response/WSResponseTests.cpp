@@ -4,8 +4,10 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "WSResponseTests.h"
+#include "../../../Utils/WebServicesTestsHelper.h"
 #include <WebServices/Client/Response/WSResponse.h>
+
+struct WSResponseTests : WSClientBaseTest {};
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                 Simonas.Mulevicius 08/2019

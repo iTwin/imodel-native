@@ -296,22 +296,22 @@ void WebApiV2::SetActivityIdToRequest(ActivityLoggerR activityLogger, ChunkedUpl
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                  Simonas.Mulevicius 08/2019
 +--------------------------------------------------------------------------------------*/
-void WebApiV2::SetActivityIdToWSResponse(WSResponseR wsResponse, Utf8StringCR activityId) const
+void WebApiV2::SetActivityIdToWSResponse(WSResponseR response, Utf8StringCR activityId) const
     {
-    wsResponse.SetActivityId(activityId);
+    response.SetActivityId(activityId);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    simonas.mulevicius
 +--------------------------------------------------------------------------------------*/
-Utf8String WebApiV2::GetResponseActivityId(Http::Response& httpResponse, ActivityLoggerR activityLogger) const
+Utf8String WebApiV2::GetResponseActivityId(Http::Response& response, ActivityLoggerR activityLogger) const
     {
     if (!activityLogger.HasValidActivityInfo())
         return "";
 
     Utf8StringCR actualActivityHeaderName = activityLogger.GetHeaderName();
     Utf8StringCR actualActivityId = activityLogger.GetActivityId();
-    Utf8StringCR responseActivityId = httpResponse.GetHeaders().GetValue(actualActivityHeaderName);
+    Utf8StringCR responseActivityId = response.GetHeaders().GetValue(actualActivityHeaderName);
 
     Utf8CP idsMismatchMessagePrefix = "Response activity IDs do not match";
 
@@ -618,9 +618,9 @@ ICancellationTokenPtr ct
 
     SetActivityIdToRequest(activityLogger, request);
     request.SetCancellationToken(ct);
-    return request.PerformAsync()->Then<WSRepositoriesResult>([this, activityLogger] (Http::Response& httpResponse) mutable
+    return request.PerformAsync()->Then<WSRepositoriesResult>([this, activityLogger] (Http::Response& response) mutable
         {
-        return ResolveGetRepositoriesResponse(httpResponse, activityLogger);
+        return ResolveGetRepositoriesResponse(response, activityLogger);
         });
     }
 
@@ -653,9 +653,9 @@ ICancellationTokenPtr ct
     request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::GetObject);
     request.SetCancellationToken(ct);
 
-    return request.PerformAsync()->Then<WSObjectsResult>([this, activityLogger] (Http::Response& httpResponse) mutable
+    return request.PerformAsync()->Then<WSObjectsResult>([this, activityLogger] (Http::Response& response) mutable
         {
-        return ResolveObjectsResponse(httpResponse, activityLogger);
+        return ResolveObjectsResponse(response, activityLogger);
         });
     }
 
@@ -680,9 +680,9 @@ ICancellationTokenPtr ct
     SetActivityIdToRequest(activityLogger, request);
     request.SetCancellationToken(ct);
 
-    return request.PerformAsync()->Then<WSObjectsResult>([this, activityLogger](Http::Response& httpResponse) mutable
+    return request.PerformAsync()->Then<WSObjectsResult>([this, activityLogger](Http::Response& response) mutable
         {
-        return ResolveObjectsResponse(httpResponse, activityLogger);
+        return ResolveObjectsResponse(response, activityLogger);
         });
     }
 
@@ -804,9 +804,9 @@ ICancellationTokenPtr ct
     request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::GetObjects);
     request.SetCancellationToken(ct);
 
-    return request.PerformAsync()->Then<WSObjectsResult>([this, activityLogger] (Http::Response& httpResponse) mutable
+    return request.PerformAsync()->Then<WSObjectsResult>([this, activityLogger] (Http::Response& response) mutable
         {
-        return ResolveObjectsResponse(httpResponse, activityLogger);
+        return ResolveObjectsResponse(response, activityLogger);
         });
     }
 
@@ -853,9 +853,9 @@ ICancellationTokenPtr ct
     request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::GetObjects);
     request.SetCancellationToken(ct);
 
-    return request.PerformAsync()->Then<WSObjectsResult>([this, activityLogger] (Http::Response& httpResponse) mutable
+    return request.PerformAsync()->Then<WSObjectsResult>([this, activityLogger] (Http::Response& response) mutable
         {
-        return ResolveObjectsResponse(httpResponse, activityLogger);
+        return ResolveObjectsResponse(response, activityLogger);
         });
     }
 

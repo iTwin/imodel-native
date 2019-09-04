@@ -43,7 +43,7 @@ struct WebApiV2 : public WebApi
         ActivityLogger CreateActivityLogger(Utf8StringCR activityName, IWSRepositoryClient::RequestOptionsPtr options = nullptr) const;
         void SetActivityIdToRequest(ActivityLoggerR activityLogger, Http::RequestR request) const;
         void SetActivityIdToRequest(ActivityLoggerR activityLogger, ChunkedUploadRequestR request) const;
-        void SetActivityIdToWSResponse(WSResponseR wsResponse, Utf8StringCR activityId) const;
+        void SetActivityIdToWSResponse(WSResponseR response, Utf8StringCR activityId) const;
         Utf8String GetResponseActivityId(Http::Response& httpResponse, ActivityLoggerR activityLogger) const;
 
         Utf8String CreateSelectPropertiesQuery(const bset<Utf8String>& properties) const;

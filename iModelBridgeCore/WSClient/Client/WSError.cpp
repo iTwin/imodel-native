@@ -595,9 +595,9 @@ WSError WSError::CreateFunctionalityNotSupportedError()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Simonas.Mulevicius  07/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSCLIENT_EXPORT WSError WSError::CreateErrorUsingActivityId(Http::ResponseCR httpResponse, Utf8StringCR activityId)
+WSError WSError::CreateErrorUsingActivityId(Http::ResponseCR response, Utf8StringCR activityId)
     {
-    WSError error(httpResponse);
+    WSError error(response);
     error.SetActivityId(activityId);
     return error;
     }
@@ -605,7 +605,7 @@ WSCLIENT_EXPORT WSError WSError::CreateErrorUsingActivityId(Http::ResponseCR htt
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Simonas.Mulevicius  07/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSCLIENT_EXPORT WSError WSError::CreateErrorUsingActivityId(AzureErrorCR azureError, Utf8StringCR activityId)
+WSError WSError::CreateErrorUsingActivityId(AzureErrorCR azureError, Utf8StringCR activityId)
     {
     WSError error(azureError);
     error.SetActivityId(activityId);

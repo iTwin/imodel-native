@@ -138,10 +138,10 @@ struct WSError : public AsyncError
         WSCLIENT_EXPORT static WSError CreateServerNotSupportedErrorWithActivityId(Utf8StringCR activityId);
         WSCLIENT_EXPORT static WSError CreateFunctionalityNotSupportedError();
         //! Create WSError from httpResponse with specified activityId 
-        //! @param httpResponse is used to initialize WSError
+        //! @param response is used to initialize WSError
         //! @param activityId is set to WSError
         //! @returns WSError with set activity id
-        WSCLIENT_EXPORT static WSError CreateErrorUsingActivityId(Http::ResponseCR httpResponse, Utf8StringCR activityId);
+        WSCLIENT_EXPORT static WSError CreateErrorUsingActivityId(Http::ResponseCR response, Utf8StringCR activityId);
         //! Create WSError from azureError with specified activityId
         //! @param azureError is used to initialize WSError
         //! @param activityId is set to WSError
