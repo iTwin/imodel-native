@@ -1616,9 +1616,17 @@ bvector<RealityDataFileUpload*> RealityDataFileUpload::Create(BeFileName filenam
 
     RealityDataUploadFileManager* fileManager = new RealityDataUploadFileManager(filename, (uint32_t)transferCount);
 
-    for (size_t filePart = 0; filePart < transferCount; filePart++ )
+    if (transferCount == 0)
         {
-        uploadList.push_back(new RealityDataFileUpload(filename, root, azureServer, index + filePart, (transferCount == 1), fileManager));
+        // Case source file is empty (but exists)
+        uploadList.push_back(new RealityDataFileUpload(filename, root, azureServer, index, true, fileManager));
+        }
+    else
+        {
+        for (size_t filePart = 0; filePart < transferCount; filePart++ )
+            {
+            uploadList.push_back(new RealityDataFileUpload(filename, root, azureServer, index + filePart, (transferCount == 1), fileManager));
+            }
         }
 
     return uploadList;
@@ -2217,11 +2225,14 @@ RealityDataServiceUpload::RealityDataServiceUpload(BeFileName uploadPath, Utf8St
                 if (whiteListed)
                     {
                     fileUps = RealityDataFileUpload::Create(fileName, root, m_azureServer, i);
-                    //fileUp = new RealityDataFileUpload(fileName, root, m_azureServer, i++);
-                    //m_filesToTransfer.push_back(fileUp);
-                    m_filesToTransfer.insert(m_filesToTransfer.end(), fileUps.begin(), fileUps.end());
-                    i = m_filesToTransfer.size();
-                    m_fullTransferSize += fileUps[0]->GetFileSize();
+                    if (fileUps.size() > 0)
+                        {
+                        //fileUp = new RealityDataFileUpload(fileName, root, m_azureServer, i++);
+                        //m_filesToTransfer.push_back(fileUp);
+                        m_filesToTransfer.insert(m_filesToTransfer.end(), fileUps.begin(), fileUps.end());
+                        i = m_filesToTransfer.size();
+                        m_fullTransferSize += fileUps[0]->GetFileSize();
+                        }
                     }
                 }
             }
