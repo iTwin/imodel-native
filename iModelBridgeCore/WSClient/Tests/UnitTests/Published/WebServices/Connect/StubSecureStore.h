@@ -14,7 +14,7 @@ USING_NAMESPACE_BENTLEY_SECURITY
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct StubSecureStore : public ISecureStore
+struct StubSecureStore : ISecureStore
     {
     Json::Value values;
 

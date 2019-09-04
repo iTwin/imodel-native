@@ -16,11 +16,10 @@ using namespace ::testing;
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                  Julija.Semenenko 06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct MockBuddiClient : public IBuddiClient
+struct MockBuddiClient : IBuddiClient
     {
-    public:
-        MOCK_METHOD0(GetRegions, AsyncTaskPtr<BuddiRegionsResult>());
-        MOCK_METHOD2(GetUrl, AsyncTaskPtr<BuddiUrlResult>(Utf8StringCR urlName, uint32_t regionId));
+    MOCK_METHOD0(GetRegions, AsyncTaskPtr<BuddiRegionsResult>());
+    MOCK_METHOD2(GetUrl, AsyncTaskPtr<BuddiUrlResult>(Utf8StringCR urlName, uint32_t regionId));
     };
 #endif
 

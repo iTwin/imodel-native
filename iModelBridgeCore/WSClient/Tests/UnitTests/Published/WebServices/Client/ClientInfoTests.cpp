@@ -3,15 +3,19 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include "ClientInfoTests.h"
+
+#include "../../Utils/WebServicesTestsHelper.h"
 #include <WebServices/Client/ClientInfo.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
-void ClientInfoTests::SetUp()
+struct ClientInfoTests : WSClientBaseTest
     {
-    BackDoor::DgnClientFx_Device::Initialize();
-    }
+    void SetUp()
+        {
+        BackDoor::DgnClientFx_Device::Initialize();
+        }
+    };
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2015

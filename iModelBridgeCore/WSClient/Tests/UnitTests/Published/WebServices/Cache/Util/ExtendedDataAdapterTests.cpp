@@ -6,8 +6,6 @@
 
 #if defined (USE_GTEST) // use of gmock
 
-#include "ExtendedDataAdapterTests.h"
-
 #include <WebServices/Cache/Util/ECDbAdapter.h>
 #include <WebServices/Cache/Util/ExtendedDataAdapter.h>
 
@@ -16,6 +14,15 @@
 
 using namespace ::testing;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
+
+struct ExtendedDataAdapterTests : WSClientBaseTest
+    {
+    private:
+        static SeedFile s_seedECDb;
+
+    public:
+        std::shared_ptr<ObservableECDb> GetTestECDb();
+    };
 
 SeedFile ExtendedDataAdapterTests::s_seedECDb("ecdbAdapterTest.ecdb",
 [] (BeFileNameCR filePath)

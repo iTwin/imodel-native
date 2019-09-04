@@ -135,10 +135,17 @@ Http::Response StubJsonHttpResponse(HttpStatus httpStatus, Utf8StringCR body, co
     return StubHttpResponse(httpStatus, body, newHeaders);
     }
 
-Http::Response StubHttpResponseWithUrl(HttpStatus httpStatus, Utf8StringCR url)
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                               Simonas.Mulevicius   07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+Http::Response StubHttpResponseWithUrl(HttpStatus httpStatus, Utf8StringCR url, Utf8StringCR body)
     {
-    auto content = HttpResponseContent::Create(HttpStringBody::Create());
-    return Http::Response(content, url.c_str(), ConnectionStatus::OK, httpStatus);
+    auto content = HttpResponseContent::Create(HttpStringBody::Create(body));
+    ConnectionStatus status = ConnectionStatus::OK;
+    if (httpStatus == HttpStatus::None)
+        status = ConnectionStatus::CouldNotConnect;
+
+    return Http::Response(content, url.c_str(), status, httpStatus);
     }
 
 WSQuery StubWSQuery()
@@ -216,6 +223,11 @@ Http::Response StubWSInfoHttpResponseWebApi24()
 Http::Response StubWSInfoHttpResponseWebApi25()
     {
     return StubWSInfoHttpResponseWebApi(BeVersion(2, 5));
+    }
+
+Http::Response StubWSInfoHttpResponseWebApi26()
+    {
+    return StubWSInfoHttpResponseWebApi(BeVersion(2, 6));
     }
 
 Http::Response StubWSInfoHttpResponseWebApi27()

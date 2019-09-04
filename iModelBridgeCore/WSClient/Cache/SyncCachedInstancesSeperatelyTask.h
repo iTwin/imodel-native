@@ -33,7 +33,8 @@ struct SyncCachedInstancesSeperatelyTask : public CachingTaskBase
             CachingDataSourcePtr ds,
             const bset<ObjectId>& objects,
             SyncCachedInstancesTask::ProgressCallback onProgress,
-            ICancellationTokenPtr ct
+            ICancellationTokenPtr userCt,
+            SimpleCancellationTokenPtr abortCt
             );
     };
 

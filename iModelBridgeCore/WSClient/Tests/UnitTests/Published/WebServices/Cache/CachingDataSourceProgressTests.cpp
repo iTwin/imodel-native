@@ -4,13 +4,14 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "CachingDataSourceProgressTests.h"
-
+#include "../../Utils/WebServicesTestsHelper.h"
 #include <WebServices/Cache/ICachingDataSource.h>
 #include "CachingTestsHelper.h"
 
 using namespace ::testing;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
+
+struct CachingDataSourceProgressTests : WSClientBaseTest {};
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                     Vilius.Kazlauskas               04/2017

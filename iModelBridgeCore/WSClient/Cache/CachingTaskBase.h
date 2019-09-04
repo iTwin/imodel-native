@@ -42,17 +42,28 @@ struct CachingTaskBase : public PackagedAsyncTask<void>
         void SetError(CachingDataSource::ErrorCR error = ICachingDataSource::Status::InternalCacheError);
         // Returns true if user canceled or error occurred - SetError() was called
         bool IsTaskCanceled() const;
-        // Get main cancellation token for task
+        // Get main cancellation token to use for operations
         ICancellationTokenPtr GetCancellationToken() const;
+        // Get user provided cancellation token, use to to pass to other CachingTaskBase objects
+        ICancellationTokenPtr GetUserCancellationToken() const { return m_userProvidedCancellationToken; };
+        // Get abort cancellation token, use to to pass to other CachingTaskBase objects. Token is set to canceled when error occurs, but not when user cancels.
+        SimpleCancellationTokenPtr GetAbortCancellationToken() const { return m_errorCancellationToken; };
+        
         // Add results or error to task
         void AddResult(const CachingDataSource::BatchResult& result);
         void AddFailedObject(IDataSourceCache& cache, ObjectIdCR objectId, ICachingDataSource::ErrorCR error, Utf8String objectLabel = nullptr);
 
     public:
+        //! Create new object.
+        //! Care must be taken to properly manage cancellation tokens so cancellation and errors would not mix.
+        //! @param cachingDataSource
+        //! @param userCt - user provided cancellation token. Can be null.
+        //! @param abortCt - shared abort cancellation token or new token. Cannot be null.
         CachingTaskBase
             (
             CachingDataSourcePtr cachingDataSource,
-            ICancellationTokenPtr ct
+            ICancellationTokenPtr userCt,
+            SimpleCancellationTokenPtr abortCt
             );
 
         bool                              IsSuccess();

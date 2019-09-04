@@ -16,6 +16,8 @@ BENTLEY_TRANSLATABLE_STRINGS_START(ErrorL10N, iModelHubError)
     L10N_STRING(MESSAGE_CredentialsNotSet)                 // =="Credentials were not specified."==
     L10N_STRING(MESSAGE_InvalidServerURL)                  // =="Server URL was not specified."==
     L10N_STRING(MESSAGE_InvalidiModelName)                 // =="iModel name is not specified."==
+    L10N_STRING(MESSAGE_InvalidiModelExtentCount)          // =="Invalid iModel extent coordinates count."==
+    L10N_STRING(MESSAGE_InvalidiModelExtentCoordinate)     // =="iModel extent coordinate value is out of bounds."==
     L10N_STRING(MESSAGE_InvalidiModelId)                   // =="iModel id is not specified."==
     L10N_STRING(MESSAGE_InvalidiModelConnection)           // =="iModel connection is not specified."==
     L10N_STRING(MESSAGE_InvalidChangeSet)                  // =="ChangeSet id is not specified."==

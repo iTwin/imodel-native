@@ -3,10 +3,14 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include "SimpleConnectTokenProviderTests.h"
+
+#include "ConnectTestsHelper.h"
+#include <WebServices/Connect/SimpleConnectTokenProvider.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 using namespace ::testing;
+
+struct SimpleConnectTokenProviderTests : WSClientBaseTest {};
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             julius.cepukenas    10/2018

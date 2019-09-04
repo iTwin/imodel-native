@@ -4,12 +4,13 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "ChangeGraphTests.h"
-
+#include "../../Utils/WebServicesTestsHelper.h"
 #include "../../../../../Cache/ChangesGraph.h"
 #include "CachingTestsHelper.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
+
+struct ChangeGraphTests : WSClientBaseTest {};
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15

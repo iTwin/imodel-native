@@ -11,7 +11,7 @@
 #include <BeHttp/ProxyHttpHandler.h>
 #include <curl/curl.h>
 
-struct ImsClientTests : public WSClientBaseTest {};
+struct ImsClientTests : WSClientBaseTest {};
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     12/15

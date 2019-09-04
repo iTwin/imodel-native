@@ -4,14 +4,15 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "BeSQLiteDbTransactionHandlerTests.h"
-
+#include "../../../Utils/WebServicesTestsHelper.h"
 #include <WebServices/Cache/Transactions/BeSQLiteDbTransactionHandler.h>
 #include <Bentley/Tasks/WorkerThread.h>
 #include "../CachingTestsHelper.h"
 
 using namespace ::testing;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
+
+struct BeSQLiteDbTransactionHandlerTests : WSClientBaseTest {};
 
 void DebugLog(Utf8CP str)
     {

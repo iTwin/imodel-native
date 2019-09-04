@@ -274,7 +274,7 @@ ActivityLogger WebApiV2::CreateActivityLogger(Utf8StringCR activityName, IWSRepo
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-void WebApiV2::SetActivityIdToRequest(ActivityLoggerR activityLogger, Http::RequestR request)
+void WebApiV2::SetActivityIdToRequest(ActivityLoggerR activityLogger, Http::RequestR request) const
     {
     if (!activityLogger.HasValidActivityInfo())
         return;
@@ -285,12 +285,46 @@ void WebApiV2::SetActivityIdToRequest(ActivityLoggerR activityLogger, Http::Requ
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-void WebApiV2::SetActivityIdToRequest(ActivityLoggerR activityLogger, ChunkedUploadRequestR request)
+void WebApiV2::SetActivityIdToRequest(ActivityLoggerR activityLogger, ChunkedUploadRequestR request) const
     {
     if (!activityLogger.HasValidActivityInfo())
         return;
 
     request.GetRequestsHeaders().AddValue(activityLogger.GetHeaderName(), activityLogger.GetActivityId());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                  Simonas.Mulevicius 08/2019
++--------------------------------------------------------------------------------------*/
+void WebApiV2::SetActivityIdToWSResponse(WSResponseR response, Utf8StringCR activityId) const
+    {
+    response.SetActivityId(activityId);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    simonas.mulevicius
++--------------------------------------------------------------------------------------*/
+Utf8String WebApiV2::GetResponseActivityId(Http::Response& response, ActivityLoggerR activityLogger) const
+    {
+    if (!activityLogger.HasValidActivityInfo())
+        return "";
+
+    Utf8String actualActivityHeaderName = activityLogger.GetHeaderName();
+    Utf8String actualActivityId = activityLogger.GetActivityId();
+    Utf8String responseActivityId = response.GetHeaders().GetValue(actualActivityHeaderName);
+
+    Utf8CP idsMismatchMessagePrefix = "Response activity IDs do not match";
+
+    if (responseActivityId.empty())
+        {
+        activityLogger.warningv("%s: response ActivityId is empty.", idsMismatchMessagePrefix);
+        return "";
+        }
+
+    if (!actualActivityId.Equals(responseActivityId)) 
+        activityLogger.warningv("%s: response ActivityId is %s.", idsMismatchMessagePrefix, responseActivityId.c_str());
+
+    return responseActivityId;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -334,6 +368,39 @@ Http::Request WebApiV2::CreateQueryRequest(WSQueryCR query) const
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Simonas.Mulevicius          08/2019
++--------------------------------------------------------------------------------------*/
+WSError WebApiV2::CreateError(Http::Response& response, Utf8StringCR activityId) const
+    {
+    if (Utf8String::IsNullOrEmpty(activityId.c_str()))
+        return WSError(response);
+
+    return WSError::CreateErrorUsingActivityId(response, activityId);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Simonas.Mulevicius          08/2019
++--------------------------------------------------------------------------------------*/
+WSError WebApiV2::CreateServerNotSupportedError(Http::Response& response, Utf8StringCR activityId) const
+    {
+    if (Utf8String::IsNullOrEmpty(activityId.c_str()))
+        return WSError::CreateServerNotSupportedError();
+
+    return WSError::CreateServerNotSupportedErrorWithActivityId(activityId);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Simonas.Mulevicius          08/2019
++--------------------------------------------------------------------------------------*/
+WSError WebApiV2::CreateErrorFromAzzureError(AzureErrorCR azureError, Utf8StringCR activityId) const
+    {
+    if (Utf8String::IsNullOrEmpty(activityId.c_str()))
+        return WSError(azureError);
+
+    return WSError::CreateErrorUsingActivityId(azureError, activityId);
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
 std::shared_ptr<WSObjectsReader> WebApiV2::CreateJsonInstancesReader() const
@@ -348,7 +415,7 @@ std::shared_ptr<WSObjectsReader> WebApiV2::CreateJsonInstancesReader() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-Utf8String WebApiV2::GetNullableString(RapidJsonValueCR object, Utf8CP member)
+Utf8String WebApiV2::GetNullableString(RapidJsonValueCR object, Utf8CP member) const
     {
     if (!object.HasMember(member))
         return "";
@@ -362,14 +429,21 @@ Utf8String WebApiV2::GetNullableString(RapidJsonValueCR object, Utf8CP member)
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                 Simonas.Mulevicius 08/2019
++--------------------------------------------------------------------------------------*/
+Utf8String WebApiV2::GetActivityIdFromResponse(Http::Response& response, Utf8StringCR activityHeaderName) const
+    {
+    return Utf8String(response.GetHeaders().GetValue(activityHeaderName));
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-WSRepositoriesResult WebApiV2::ResolveGetRepositoriesResponse(Http::Response& response) const
+WSRepositoriesResult WebApiV2::ResolveGetRepositoriesResponse(Http::Response& response, ActivityLoggerCR activityLogger) const
     {
+    auto activityId = GetActivityIdFromResponse(response, activityLogger.GetHeaderName());
     if (HttpStatus::OK != response.GetHttpStatus())
-        {
-        return WSRepositoriesResult::Error(response);
-        }
+        return WSRepositoriesResult::Error(CreateError(response, activityId));
 
     auto repositoriesJson = std::make_shared<rapidjson::Document>();
     repositoriesJson->Parse<0>(response.GetBody().AsString().c_str());
@@ -378,7 +452,7 @@ WSRepositoriesResult WebApiV2::ResolveGetRepositoriesResponse(Http::Response& re
     WSObjectsReader::Instances instances = reader->ReadInstances(repositoriesJson);
     if (!instances.IsValid())
         {
-        return WSRepositoriesResult::Error(WSError::CreateServerNotSupportedError());
+        return WSRepositoriesResult::Error(CreateServerNotSupportedError(response, activityId));
         }
 
     bvector<WSRepository> repositories;
@@ -388,7 +462,7 @@ WSRepositoriesResult WebApiV2::ResolveGetRepositoriesResponse(Http::Response& re
             !instance.GetObjectId().schemaName.Equals("Repositories") ||
             !instance.GetObjectId().className.Equals("RepositoryIdentifier"))
             {
-            return WSRepositoriesResult::Error(WSError::CreateServerNotSupportedError());
+            return WSRepositoriesResult::Error(CreateServerNotSupportedError(response, activityId));
             }
 
         WSRepository repository;
@@ -405,7 +479,6 @@ WSRepositoriesResult WebApiV2::ResolveGetRepositoriesResponse(Http::Response& re
 
     return WSRepositoriesResult::Success(repositories);
     }
-
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
@@ -437,11 +510,17 @@ BeVersion WebApiV2::GetRepositoryPluginVersion(Http::Response& response, Utf8Str
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-WSUpdateObjectResult WebApiV2::ResolveUpdateObjectResponse(Http::Response& response) const
+WSUpdateObjectResult WebApiV2::ResolveUpdateObjectResponse(Http::Response& response, ActivityLoggerCR activityLogger) const
     {
+    auto activityId = GetActivityIdFromResponse(response, activityLogger.GetHeaderName());
     if (HttpStatus::OK == response.GetHttpStatus())
-        return WSUpdateObjectResult::Success(ResolveUploadResponse(response));
-    return WSUpdateObjectResult::Error(response);
+        {
+        auto uploadResponse = ResolveUploadResponse(response);
+        SetActivityIdToWSResponse(uploadResponse, activityId);
+        return WSUpdateObjectResult::Success(uploadResponse);
+        }
+
+    return WSUpdateObjectResult::Error(CreateError(response, activityId));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -455,10 +534,11 @@ WSUploadResponse WebApiV2::ResolveUploadResponse(Http::Response& response) const
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod
+* @bsimethod                                            simonas.mulevicius        08/2019
 +--------------------------------------------------------------------------------------*/
-WSObjectsResult WebApiV2::ResolveObjectsResponse(Http::Response& response, const ObjectId* objectId) const
+WSObjectsResult WebApiV2::ResolveObjectsResponse(Http::Response& response, ActivityLoggerCR activityLogger) const
     {
+    auto activityId = GetActivityIdFromResponse(response, activityLogger.GetHeaderName());
     HttpStatus status = response.GetHttpStatus();
     if (HttpStatus::OK == status ||
         HttpStatus::NotModified == status)
@@ -469,9 +549,12 @@ WSObjectsResult WebApiV2::ResolveObjectsResponse(Http::Response& response, const
         auto eTag = response.GetHeaders().GetETag();
         auto skipToken = response.GetHeaders().GetValue(HEADER_SkipToken);
 
-        return WSObjectsResult::Success(WSObjectsResponse(reader, body, status, eTag, skipToken));
+        auto objectResponse = WSObjectsResponse(reader, body, status, eTag, skipToken);
+        SetActivityIdToWSResponse(objectResponse, activityId);
+        return WSObjectsResult::Success(objectResponse);
         }
-    return WSObjectsResult::Error(response);
+
+    return WSObjectsResult::Error(CreateError(response, activityId));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -505,8 +588,10 @@ ICancellationTokenPtr ct
     request.SetCancellationToken(ct);
     return request.PerformAsync()->Then<WSRepositoryResult>([=] (Http::Response& response) mutable
         {
+        auto responseActivityId = GetResponseActivityId(response, activityLogger);
+
         if (!response.IsSuccess() && HttpStatus::InternalServerError != response.GetHttpStatus())
-            return WSRepositoryResult::Error(response);
+            return WSRepositoryResult::Error(CreateError(response, responseActivityId));
 
         repository.SetMaxUploadSize(GetMaxUploadSize(response, activityLogger, defaultMaxUploadSize));
         repository.SetPluginVersion(GetRepositoryPluginVersion(response, m_configuration->GetPersistenceProviderId()));
@@ -533,9 +618,9 @@ ICancellationTokenPtr ct
 
     SetActivityIdToRequest(activityLogger, request);
     request.SetCancellationToken(ct);
-    return request.PerformAsync()->Then<WSRepositoriesResult>([this] (Http::Response& httpResponse)
+    return request.PerformAsync()->Then<WSRepositoriesResult>([this, activityLogger] (Http::Response& response) mutable
         {
-        return ResolveGetRepositoriesResponse(httpResponse);
+        return ResolveGetRepositoriesResponse(response, activityLogger);
         });
     }
 
@@ -568,14 +653,14 @@ ICancellationTokenPtr ct
     request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::GetObject);
     request.SetCancellationToken(ct);
 
-    return request.PerformAsync()->Then<WSObjectsResult>([this, objectId] (Http::Response& httpResponse)
+    return request.PerformAsync()->Then<WSObjectsResult>([this, activityLogger] (Http::Response& response) mutable
         {
-        return ResolveObjectsResponse(httpResponse, &objectId);
+        return ResolveObjectsResponse(response, activityLogger);
         });
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod
+* @bsimethod                                                    simonas.mulevicius
 +--------------------------------------------------------------------------------------*/
 AsyncTaskPtr<WSObjectsResult> WebApiV2::SendGetChildrenRequest
 (
@@ -595,9 +680,9 @@ ICancellationTokenPtr ct
     SetActivityIdToRequest(activityLogger, request);
     request.SetCancellationToken(ct);
 
-    return request.PerformAsync()->Then<WSObjectsResult>([this] (Http::Response& httpResponse)
+    return request.PerformAsync()->Then<WSObjectsResult>([this, activityLogger](Http::Response& response) mutable
         {
-        return ResolveObjectsResponse(httpResponse);
+        return ResolveObjectsResponse(response, activityLogger);
         });
     }
 
@@ -639,15 +724,15 @@ ICancellationTokenPtr ct
         {
         if (HttpStatus::TemporaryRedirect != response.GetHttpStatus())
             {
-            *finalResult = ResolveFileDownloadResponse(response);
+            *finalResult = ResolveFileDownloadResponse(response, activityLogger);
             return;
             }
 
         Utf8String redirectUrl = response.GetHeaders().GetLocation();
         Http::Request request = CreateFileDownloadRequest(redirectUrl, bodyResponseOut, eTag, activityLogger, downloadProgressCallback, ct);
-        request.PerformAsync()->Then([=] (Http::Response& response)
+        request.PerformAsync()->Then([=] (Http::Response& response) mutable
             {
-            *finalResult = ResolveFileDownloadResponse(response);
+            *finalResult = ResolveFileDownloadResponse(response, activityLogger);
             });
         })->Then<WSResult>([=]
             {
@@ -683,15 +768,18 @@ ICancellationTokenPtr ct
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-WSResult WebApiV2::ResolveFileDownloadResponse(Http::Response& response) const
+WSResult WebApiV2::ResolveFileDownloadResponse(Http::Response& response, ActivityLoggerCR activityLogger) const
     {
+    auto activityId = GetActivityIdFromResponse(response, activityLogger.GetHeaderName());
     HttpStatus status = response.GetHttpStatus();
     if (HttpStatus::OK == status ||
         HttpStatus::NotModified == status)
         {
-        return WSResult::Success(WSResponse(status, response.GetHeaders().GetETag()));
+        auto wsResponse = WSResponse(status, response.GetHeaders().GetETag());
+        SetActivityIdToWSResponse(wsResponse, activityId);
+        return WSResult::Success(wsResponse);
         }
-    return WSResult::Error(response);
+    return WSResult::Error(CreateError(response, activityId));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -716,9 +804,9 @@ ICancellationTokenPtr ct
     request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::GetObjects);
     request.SetCancellationToken(ct);
 
-    return request.PerformAsync()->Then<WSObjectsResult>([this] (Http::Response& httpResponse)
+    return request.PerformAsync()->Then<WSObjectsResult>([this, activityLogger] (Http::Response& response) mutable
         {
-        return ResolveObjectsResponse(httpResponse);
+        return ResolveObjectsResponse(response, activityLogger);
         });
     }
 
@@ -765,9 +853,9 @@ ICancellationTokenPtr ct
     request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::GetObjects);
     request.SetCancellationToken(ct);
 
-    return request.PerformAsync()->Then<WSObjectsResult>([this] (Http::Response& httpResponse)
+    return request.PerformAsync()->Then<WSObjectsResult>([this, activityLogger] (Http::Response& response) mutable
         {
-        return ResolveObjectsResponse(httpResponse);
+        return ResolveObjectsResponse(response, activityLogger);
         });
     }
 
@@ -806,16 +894,17 @@ ICancellationTokenPtr ct
     request.SetUploadProgressCallback(uploadProgressCallback);
 
     return m_jobApi->ExecuteViaJob(request, m_info, options ? options->GetJobOptions() : nullptr, ct)
-        ->Then<WSChangesetResult>([=] (HttpJobResult& response)
+        ->Then<WSChangesetResult>([=] (HttpJobResult& response) mutable
         {
         if (!response.IsSuccess())
             return WSChangesetResult::Error(response.GetError());
 
         auto httpResponse = response.GetValue();
+        auto responseActivityId = GetResponseActivityId(httpResponse, activityLogger);
+
         if (HttpStatus::OK != httpResponse.GetHttpStatus())
-            {
-            return WSChangesetResult::Error(httpResponse);
-            }
+            return WSChangesetResult::Error(CreateError(httpResponse, responseActivityId));
+
         return WSChangesetResult::Success(httpResponse.GetContent()->GetBody());
         });
     }
@@ -901,15 +990,20 @@ ICancellationTokenPtr ct
     request.SetCancellationToken(ct);
     request.SetUploadProgressCallback(uploadProgressCallback);
     return m_jobApi->ExecuteViaJob(request, m_info, options ? options->GetJobOptions() : nullptr, ct)
-        ->Then<WSCreateObjectResult>([=] (HttpJobResult& response)
+        ->Then<WSCreateObjectResult>([=] (HttpJobResult& response) mutable
         {
         if (!response.IsSuccess())
             return WSCreateObjectResult::Error(response.GetError());
 
         auto httpResponse = response.GetValue();
+        auto responseActivityId = GetResponseActivityId(httpResponse, activityLogger);
+
         if (HttpStatus::Created != httpResponse.GetHttpStatus() && HttpStatus::OK != httpResponse.GetHttpStatus())
-            return WSCreateObjectResult::Error(httpResponse);
-        return WSCreateObjectResult::Success(ResolveUploadResponse(httpResponse));
+            return WSCreateObjectResult::Error(CreateError(httpResponse, responseActivityId));
+
+        auto uploadResponse = ResolveUploadResponse(httpResponse);
+        SetActivityIdToWSResponse(uploadResponse, responseActivityId);
+        return WSCreateObjectResult::Success(uploadResponse);
         });
     }
 
@@ -974,7 +1068,7 @@ ICancellationTokenPtr ct
         if (!response.IsSuccess())
             return WSUpdateObjectResult::Error(response.GetError());
 
-        return ResolveUpdateObjectResponse(response.GetValue());
+        return ResolveUpdateObjectResponse(response.GetValue(), activityLogger);
         });
     }
 
@@ -1005,17 +1099,17 @@ ICancellationTokenPtr ct
         request.SetTransferTimeoutSeconds(options->GetTransferTimeOut());
         
     return m_jobApi->ExecuteViaJob(request, m_info, options ? options->GetJobOptions() : nullptr, ct)
-        ->Then<WSDeleteObjectResult>([=] (HttpJobResult& response)
+        ->Then<WSDeleteObjectResult>([=] (HttpJobResult& response) mutable
         {
         if (!response.IsSuccess())
             return WSDeleteObjectResult::Error(response.GetError());
 
         auto httpResponse = response.GetValue();
+        auto responseActivityId = GetResponseActivityId(httpResponse, activityLogger);
         if (HttpStatus::OK == httpResponse.GetHttpStatus())
-            {
             return WSDeleteObjectResult::Success();
-            }
-        return WSDeleteObjectResult::Error(httpResponse);
+
+        return WSDeleteObjectResult::Error(CreateError(httpResponse, responseActivityId));
         });
     }
 
@@ -1076,6 +1170,7 @@ ICancellationTokenPtr ct
             }
 
         auto httpResponse = response.GetValue();
+
         ResolveUpdateFileResponse(httpResponse, url, filePath, activityLogger, uploadProgressCallback, ct)
             ->Then([=] (WSUpdateFileResult result)
             {
@@ -1101,15 +1196,16 @@ Http::Request::ProgressCallbackCR uploadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
+    auto responseActivityId = GetResponseActivityId(httpResponse, activityLogger);
     if (HttpStatus::OK == httpResponse.GetHttpStatus())
         {
-        return CreateCompletedAsyncTask(WSCreateObjectResult::Success(ResolveUploadResponse(httpResponse)));
+        auto uploadResponse = ResolveUploadResponse(httpResponse);
+        SetActivityIdToWSResponse(uploadResponse, responseActivityId);
+        return CreateCompletedAsyncTask(WSCreateObjectResult::Success(uploadResponse));
         }
 
     if (HttpStatus::TemporaryRedirect != httpResponse.GetHttpStatus())
-        {
-        return CreateCompletedAsyncTask(WSCreateObjectResult::Error(httpResponse));
-        }
+        return CreateCompletedAsyncTask(WSCreateObjectResult::Error(CreateError(httpResponse, responseActivityId)));
 
     Utf8String redirectUrl = httpResponse.GetHeaders().GetLocation();
     Utf8String redirectType = httpResponse.GetHeaders().GetValue(HEADER_MasFileAccessUrlType);
@@ -1118,7 +1214,7 @@ ICancellationTokenPtr ct
     if (redirectType != VALUE_FileAccessUrlType_Azure)
         {
         activityLogger.errorv("Header field '%s' contains not supported value: '%s'", HEADER_MasFileAccessUrlType, redirectType.c_str());
-        return CreateCompletedAsyncTask(WSCreateObjectResult::Error(WSError::CreateServerNotSupportedError()));
+        return CreateCompletedAsyncTask(WSCreateObjectResult::Error(CreateServerNotSupportedError(httpResponse, responseActivityId)));
         }
 
     auto azureRequestOptions = std::make_shared<IAzureBlobStorageClient::RequestOptions>();
@@ -1127,24 +1223,27 @@ ICancellationTokenPtr ct
     auto finalResult = std::make_shared<WSUpdateFileResult>();
     return m_azureClient->SendUpdateFileRequest(redirectUrl, filePath, uploadProgressCallback, azureRequestOptions, ct)->Then([=] (AzureResult azureResult) mutable
         {
+        auto secondResponseActivityId = GetResponseActivityId(httpResponse, activityLogger);
         if (!azureResult.IsSuccess())
             {
-            finalResult->SetError(azureResult.GetError());
+            finalResult->SetError(CreateErrorFromAzzureError(azureResult.GetError(), secondResponseActivityId));
             return;
             }
 
-        finalResult->SetSuccess({nullptr, azureResult.GetValue().GetETag()});
+        WSUploadResponse uploadResponse = {nullptr, azureResult.GetValue().GetETag()};
+        SetActivityIdToWSResponse(uploadResponse, secondResponseActivityId);
+        finalResult->SetSuccess(uploadResponse);
         if (confirmationId.empty())
             return;
 
-            Http::Request request = m_configuration->GetHttpClient().CreateRequest(url, "PUT");
-            SetActivityIdToRequest(activityLogger, request);
-            request.GetHeaders().SetValue(HEADER_MasUploadConfirmationId, confirmationId);
-            request.PerformAsync()->Then([=] (Http::Response& response)
-                {
-                if (HttpStatus::OK != response.GetHttpStatus())
-                    finalResult->SetError(response);
-                });
+        Http::Request request = m_configuration->GetHttpClient().CreateRequest(url, "PUT");
+        SetActivityIdToRequest(activityLogger, request);
+        request.GetHeaders().SetValue(HEADER_MasUploadConfirmationId, confirmationId);
+        request.PerformAsync()->Then([=] (Http::Response& response) mutable
+            {
+            if (HttpStatus::OK != response.GetHttpStatus())
+                finalResult->SetError(CreateError(response, GetResponseActivityId(response, activityLogger)));
+            });
         })
             ->Then<WSUpdateFileResult>([=]
             {

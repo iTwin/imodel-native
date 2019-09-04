@@ -4,8 +4,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "ServerQueryHelperTests.h"
-
+#include "../../Utils/WebServicesTestsHelper.h"
 #include <WebServices/Cache/Persistence/DataReadOptions.h>
 #include <WebServices/Cache/Persistence/DataSourceCacheCommon.h>
 #include <WebServices/Cache/ServerQueryHelper.h>
@@ -13,6 +12,16 @@
 #include "Util/MockSelectProvider.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
+
+struct ServerQueryHelperTests : WSClientBaseTest
+    {
+    static ECSchemaPtr GetTestSchema();
+    static void AddCalculatedECPropertySpecification(
+        ECSchemaPtr schema,
+        Utf8StringCR className,
+        Utf8StringCR propertyName,
+        Utf8StringCR ecExpression);
+    };
 
 ECSchemaPtr ServerQueryHelperTests::GetTestSchema()
     {

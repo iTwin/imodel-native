@@ -4,11 +4,13 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "SolrQueryTests.h"
+#include "../../Utils/WebServicesTestsHelper.h"
 #include <WebServices/Ims/SolrQuery.h>
 
 using namespace ::testing;
 using namespace ::std;
+
+struct SolrQueryTests : WSClientBaseTest {};
 
 /*Query Parameters:
 q       - Defines a query using standard query syntax. This query is mandatory.

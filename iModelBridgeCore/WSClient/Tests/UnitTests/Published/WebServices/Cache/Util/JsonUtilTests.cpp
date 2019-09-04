@@ -4,8 +4,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "JsonUtilTests.h"
-
+#include "../../../Utils/WebServicesTestsHelper.h"
 #include <WebServices/Cache/Util/JsonUtil.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
@@ -33,6 +32,8 @@ using namespace rapidjson;
 #define TEST_AreValuesNotEqual(a, b) \
     EXPECT_FALSE(JsonUtil::AreValuesEqual(a, b)); \
     EXPECT_FALSE(JsonUtil::AreValuesEqual(b, a));
+
+struct JsonUtilTests : WSClientBaseTest {};
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     06/16

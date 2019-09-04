@@ -27,7 +27,7 @@ SyncOptions options,
 CachingDataSource::ProgressCallback&& onProgress,
 ICancellationTokenPtr ct
 ) :
-CachingTaskBase(cachingDataSource, ct),
+CachingTaskBase(cachingDataSource, ct, SimpleCancellationToken::Create()),
 m_objectsToSyncPtr(objectsToSync),
 m_options(options),
 m_onProgressCallback(onProgress),
@@ -126,12 +126,6 @@ BentleyStatus SyncLocalChangesTask::PrepareChangeGroups(IDataSourceCache& cache)
 
     return SUCCESS;
     }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    08/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SyncLocalChangesTask::_OnError(CachingDataSource::ErrorCR error)
-    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014

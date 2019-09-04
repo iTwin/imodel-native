@@ -17,7 +17,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct StubCacheTransactionManager : public ICacheTransactionManager
+struct StubCacheTransactionManager : ICacheTransactionManager
     {
     private:
         std::shared_ptr<IDataSourceCache> m_cache;

@@ -171,11 +171,27 @@ iModelResult IntegrationTestsBase::CreateiModel(DgnDbPtr db, bool expectSuccess)
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Vilius.Kazlauskas               09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+iModelResult IntegrationTestsBase::CreateiModel(DgnDbPtr db, iModelCreateInfoPtr imodelCreateInfo, bool expectSuccess)
+    {
+    return iModelHubHelpers::CreateNewiModel(s_client, db, s_projectId, imodelCreateInfo, expectSuccess);
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Algirdas.Mikoliunas             01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModelResult IntegrationTestsBase::CreateEmptyiModel(Utf8StringCR name, bool expectSuccess)
     {
     return iModelHubHelpers::CreateEmptyiModel(*s_client, s_projectId, name, "", expectSuccess);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Vilius.Kazlauskas               09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+iModelResult IntegrationTestsBase::CreateEmptyiModel(iModelCreateInfoPtr imodelCreateInfo, bool expectSuccess)
+    {
+    return iModelHubHelpers::CreateEmptyiModel(*s_client, s_projectId, imodelCreateInfo, expectSuccess);
     }
 
 /*--------------------------------------------------------------------------------------+

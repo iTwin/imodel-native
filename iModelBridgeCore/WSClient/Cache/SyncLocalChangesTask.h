@@ -47,7 +47,6 @@ struct SyncLocalChangesTask : public CachingTaskBase
 
     private:
         virtual void _OnExecute();
-        virtual void _OnError(CachingDataSource::ErrorCR error);
         void OnSyncDone();
 
         BentleyStatus PrepareChangeGroups(IDataSourceCache& cache);

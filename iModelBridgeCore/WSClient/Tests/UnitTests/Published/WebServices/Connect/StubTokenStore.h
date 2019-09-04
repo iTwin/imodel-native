@@ -14,7 +14,7 @@ using namespace ::testing;
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct StubTokenStore : public ITokenStore
+struct StubTokenStore : ITokenStore
     {
     SamlTokenPtr token;
     DateTime tokenSetTime;

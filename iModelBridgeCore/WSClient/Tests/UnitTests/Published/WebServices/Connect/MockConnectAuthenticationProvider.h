@@ -12,7 +12,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct MockConnectAuthenticationProvider : public IConnectAuthenticationProvider
+struct MockConnectAuthenticationProvider : IConnectAuthenticationProvider
     {
     MOCK_CONST_METHOD3(GetAuthenticationHandler, AuthenticationHandlerPtr(Utf8StringCR, IHttpHandlerPtr, HeaderPrefix));
     };

@@ -3,10 +3,13 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
+
+#include "../../Utils/WebServicesTestsHelper.h"
 #include <WebServices/Client/WSInfo.h>
-#include "WSInfoTests.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
+
+struct WSInfoTests : WSClientBaseTest {};
 
 WSInfo CreateWSInfoWithInfoPage(Utf8CP versionString)
     {

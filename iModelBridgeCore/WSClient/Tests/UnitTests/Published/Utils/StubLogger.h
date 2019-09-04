@@ -14,11 +14,11 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Mantas.Smicius    10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-class StubLogger : public NativeLogging::ILogger
+struct StubLogger : NativeLogging::ILogger
     {
     private:
         template<typename StringType>
-        class StubLog
+        struct StubLog
             {
             private:
                 StringType m_nameSpace;
@@ -38,19 +38,15 @@ class StubLogger : public NativeLogging::ILogger
             };
 
     public:
-        class StubUtf8CPLog : public StubLog<Utf8String>
+        struct StubUtf8CPLog : StubLog<Utf8String>
             {
-            public:
-                StubUtf8CPLog(Utf8StringCR nameSpace, NativeLogging::SEVERITY severity, Utf8StringCR message) :
-                    StubLog(nameSpace, severity, message)
-                    {}
+            StubUtf8CPLog(Utf8StringCR nameSpace, NativeLogging::SEVERITY severity, Utf8StringCR message) :
+                StubLog(nameSpace, severity, message) {}
             };
-        class StubWCharCPLog : public StubLog<WString>
+        struct StubWCharCPLog : StubLog<WString>
             {
-            public:
-                StubWCharCPLog(WStringCR nameSpace, NativeLogging::SEVERITY severity, WStringCR message) :
-                    StubLog(nameSpace, severity, message)
-                    {}
+            StubWCharCPLog(WStringCR nameSpace, NativeLogging::SEVERITY severity, WStringCR message) :
+                StubLog(nameSpace, severity, message) {}
             };
 
         typedef const StubUtf8CPLog& StubUtf8CPLogCR;

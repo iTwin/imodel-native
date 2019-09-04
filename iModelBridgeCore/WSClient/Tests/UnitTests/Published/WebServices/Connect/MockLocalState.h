@@ -12,10 +12,9 @@ using namespace ::testing;
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct MockLocalState : public IJsonLocalState
+struct MockLocalState : IJsonLocalState
     {
-    public:
-        MOCK_METHOD3 (_SaveValue, void (Utf8CP nameSpace, Utf8CP key, Utf8StringCR value));
-        MOCK_CONST_METHOD2 (_GetValue, Utf8String (Utf8CP nameSpace, Utf8CP key));
+    MOCK_METHOD3 (_SaveValue, void (Utf8CP nameSpace, Utf8CP key, Utf8StringCR value));
+    MOCK_CONST_METHOD2 (_GetValue, Utf8String (Utf8CP nameSpace, Utf8CP key));
     };
 #endif

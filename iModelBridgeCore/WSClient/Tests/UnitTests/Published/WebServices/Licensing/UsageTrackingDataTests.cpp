@@ -3,11 +3,14 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include "UsageTrackingDataTests.h"
+
+#include "../../Utils/WebServicesTestsHelper.h"
 #include <WebServices/Licensing/UsageTrackingData.h>
 #include <Bentley/Base64Utilities.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
+
+struct UsageTrackingDataTests : BaseMockHttpHandlerTest {};
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Wil.Maier    05/2016

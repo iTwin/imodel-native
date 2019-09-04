@@ -4,14 +4,15 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "WSChangesetTests.h"
-
+#include "../../Utils/WebServicesTestsHelper.h"
 #include <WebServices/Client/WSChangeset.h>
 #include <Bentley/BeTimeUtilities.h>
 
 using namespace ::testing;
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
+
+struct WSChangesetTests : WSClientBaseTest {};
 
 void TestChangesetToRequestStringWithDefaultRequestOptions(WSChangeset& changeset)
     {

@@ -4,20 +4,22 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "WSJobTests.h"
+#include "../../Utils/WebServicesTestsHelper.h"
 #include <WebServices/Client/WSJob.h>
 
-void WSJobTests::SetUp()
+struct WSJobTests : WSClientBaseTest
     {
-    WSClientBaseTest::SetUpTestCase();
-    BeTest::SetFailOnAssert(false);
-    }
-
-void WSJobTests::TearDown()
-    {
-    WSClientBaseTest::TearDownTestCase();
-    BeTest::SetFailOnAssert(true);
-    }
+    void SetUp() override
+        {
+        WSClientBaseTest::SetUpTestCase();
+        BeTest::SetFailOnAssert(false);
+        };
+    void TearDown() override
+        {
+        WSClientBaseTest::TearDownTestCase();
+        BeTest::SetFailOnAssert(true);
+        };
+    };
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    julius.cepukenas                    02/18

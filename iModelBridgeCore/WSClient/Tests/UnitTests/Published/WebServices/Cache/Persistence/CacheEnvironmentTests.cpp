@@ -4,12 +4,13 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "CacheEnvironmentTests.h"
-
+#include "BaseCacheTest.h"
 #include <WebServices/Cache/Persistence/CacheEnvironment.h>
 
 using namespace ::testing;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
+
+struct CacheEnvironmentTests : WSClientBaseTest {};
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     06/16

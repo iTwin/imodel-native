@@ -3,7 +3,8 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include "ConnectTokenProviderTests.h"
+
+#include "ConnectTestsHelper.h"
 #include <WebServices/Connect/ConnectTokenProvider.h>
 #include <WebServices/Connect/ImsClient.h>
 #include <Bentley/Base64Utilities.h>
@@ -13,6 +14,16 @@
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 using namespace ::testing;
+
+struct ConnectTokenProviderTests : WSClientBaseTest
+    {
+private:
+    std::shared_ptr<StubBuddiClient> m_buddiClient;
+    RuntimeJsonLocalState m_localState;
+
+public:
+    virtual void SetUp() override;
+    };
 
 #ifdef USE_GTEST
 void ConnectTokenProviderTests::SetUp()
