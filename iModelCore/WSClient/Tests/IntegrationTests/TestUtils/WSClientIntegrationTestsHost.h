@@ -8,7 +8,7 @@
 
 #include <WebServicesTestsHelper.h>
 
-class WSClientIntegrationTestsHost : public RefCounted<BeTest::Host>
+struct WSClientIntegrationTestsHost : RefCounted<BeTest::Host>
     {
     private:
         BeFileName m_programDir;

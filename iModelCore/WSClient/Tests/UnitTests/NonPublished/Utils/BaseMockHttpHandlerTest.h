@@ -14,7 +14,7 @@ BEGIN_WSCLIENT_UNITTESTS_NAMESPACE
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    04/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-class BaseMockHttpHandlerTest : public WSClientBaseTest
+struct BaseMockHttpHandlerTest : WSClientBaseTest
     {
     private:
         std::shared_ptr<MockHttpHandler>    m_handler;

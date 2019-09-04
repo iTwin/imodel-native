@@ -24,8 +24,9 @@
 // V20 - DgnDb0601 - Q4->BIM0200 ECDb upgrade not supported.
 //--------------------------------------------------------------------------------------+
 
-#include "DataSourceCacheUpgradeTests.h"
-
+#include "../../../Utils/WebServicesTestsHelper.h"
+#include "../BaseCachingDataSourceTest.h"
+#include <WebServices/Cache/ICachingDataSource.h>
 #include <Bentley/BeDebugLog.h>
 #include <WebServices/Cache/Persistence/DataSourceCache.h>
 #include <WebServices/Cache/CachingDataSource.h>
@@ -36,6 +37,12 @@ using namespace ::testing;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 #ifdef USE_GTEST
+struct DataSourceCacheUpgradeTests : BaseCachingDataSourceTest
+    {
+    void ValidateV5SeedData(ICachingDataSourcePtr ds, BeFileNameCR path, CacheEnvironmentCR environment);
+    void ValidateV5SeedData(IDataSourceCache& cache, BeFileNameCR path, CacheEnvironmentCR environment, bool checkETags = true);
+    virtual void SetUp();
+    };
 
 void DataSourceCacheUpgradeTests::SetUp()
     {

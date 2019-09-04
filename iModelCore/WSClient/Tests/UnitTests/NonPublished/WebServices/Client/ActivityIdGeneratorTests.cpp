@@ -4,11 +4,12 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "ActivityIdGeneratorTests.h"
-
+#include "../../Utils/WebServicesTestsHelper.h"
 #include "../../../../../Client/ActivityIdGenerator.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
+
+struct ActivityIdGeneratorTests : WSClientBaseTest {};
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Mantas.Smicius    10/2018

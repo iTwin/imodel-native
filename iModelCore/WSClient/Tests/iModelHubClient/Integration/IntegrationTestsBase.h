@@ -32,7 +32,9 @@ struct IntegrationTestsBase : public ::testing::Test
         static Dgn::DgnDbPtr CreateTestDb(Utf8StringCR name);
 
         static iModelResult CreateiModel(DgnDbPtr db, bool expectSuccess = true);
+        static iModelResult CreateiModel(DgnDbPtr db, iModelCreateInfoPtr imodelCreateInfo, bool expectSuccess = true);
         static iModelResult CreateEmptyiModel(Utf8StringCR name, bool expectSuccess = true);
+        static iModelResult CreateEmptyiModel(iModelCreateInfoPtr imodelCreateInfo, bool expectSuccess = true);
         static iModelConnectionPtr CreateiModelConnection(iModelInfoPtr info);
 
         virtual Utf8String GetTestiModelName();

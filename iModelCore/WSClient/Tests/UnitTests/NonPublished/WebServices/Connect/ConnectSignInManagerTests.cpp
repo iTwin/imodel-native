@@ -3,7 +3,11 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include "ConnectSignInManagerTests.h"
+
+#include "ConnectTestsHelper.h"
+#include <WebServices/Configuration/UrlProvider.h>
+#include "StubSecureStore.h"
+#include "StubImsClient.h"
 #include <WebServices/Connect/IConnectSignInManager.h>
 #include <WebServices/Connect/ConnectSignInManager.h>
 #include <WebServices/Connect/ConnectAuthenticationPersistence.h>
@@ -13,6 +17,19 @@
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 using namespace ::testing;
+
+struct ConnectSignInManagerTests : BaseMockHttpHandlerTest
+    {
+public:
+    std::shared_ptr<StubImsClient> m_imsClient;
+    std::shared_ptr<StubBuddiClient> m_buddiClient;
+    RuntimeJsonLocalState m_localState;
+    std::shared_ptr<StubSecureStore> m_secureStore;
+
+public:
+    void StubUrlProviderEnvironment(UrlProvider::Environment env);
+    virtual void SetUp() override;
+    };
 
 #ifdef USE_GTEST
 void ConnectSignInManagerTests::SetUp()

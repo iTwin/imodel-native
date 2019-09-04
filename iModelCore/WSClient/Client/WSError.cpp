@@ -102,16 +102,13 @@ WSError::WSError(Http::ResponseCR httpResponse) : WSError()
     if (ConnectionStatus::OK == httpResponse.GetConnectionStatus() &&
         LOG.isSeverityEnabled(NativeLogging::SEVERITY::LOG_INFO))
         {
-        Utf8CP requestId = httpResponse.GetHeaders().GetValue(HEADER_MasRequestId);
         LOG.infov
             (
-            "Received WSError: %d %s\n"
-            "Server response: %s\n"
-            "Request ID: '%s'",
+            "Received WSError: %d %s, "
+            "Server response: %s",
             httpResponse.GetHttpStatus(),
             httpResponse.GetEffectiveUrl().c_str(),
-            httpResponse.GetBody().AsString().c_str(),
-            requestId ? requestId : "n/a"
+            httpResponse.GetBody().AsString().c_str()
             );
         }
 
@@ -476,6 +473,24 @@ void WSError::SetStatusReceivedError(HttpErrorCR httpError, Id errorId, Utf8Stri
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                             Simonas.Mulevicius    07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void WSError::SetActivityId(Utf8StringCR activityId)
+    {
+    m_activityId = activityId;
+
+    if (LOG.isSeverityEnabled(NativeLogging::SEVERITY::LOG_INFO)) 
+        {
+        LOG.infov
+            (
+            "WSError: %s (ActivityId: '%s')",
+            m_message.c_str(),
+            m_activityId.empty() ? "n/a" : m_activityId.c_str()
+            );
+        }
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool WSError::DoesStringFieldExist(JsonValueCR json, Utf8CP name)
@@ -557,6 +572,15 @@ WSError WSError::CreateServerNotSupportedError()
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                             Simonas.Mulevicius 07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+WSError WSError::CreateServerNotSupportedErrorWithActivityId(Utf8StringCR activityId)
+    {
+    WSError error = WSError::CreateServerNotSupportedError();
+    error.SetActivityId(activityId);
+    return error;
+    }
+/*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
 WSError WSError::CreateFunctionalityNotSupportedError()
@@ -565,6 +589,26 @@ WSError WSError::CreateFunctionalityNotSupportedError()
     error.m_status = Status::ReceivedError;
     error.m_id = Id::NotSupported;
     error.m_message = WSErrorLocalizedString(MESSAGE_FunctionalityNotSupported);
+    return error;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                             Simonas.Mulevicius  07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+WSError WSError::CreateErrorUsingActivityId(Http::ResponseCR response, Utf8StringCR activityId)
+    {
+    WSError error(response);
+    error.SetActivityId(activityId);
+    return error;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                             Simonas.Mulevicius  07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+WSError WSError::CreateErrorUsingActivityId(AzureErrorCR azureError, Utf8StringCR activityId)
+    {
+    WSError error(azureError);
+    error.SetActivityId(activityId);
     return error;
     }
 
@@ -590,6 +634,14 @@ WSError::Id WSError::GetId() const
 JsonValueCR WSError::GetData() const
     {
     return m_data ? *m_data : Json::Value::GetNull();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                               Simonas Mulevicius   07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8StringCR WSError::GetActivityId() const
+    {
+    return m_activityId;
     }
 
 /*--------------------------------------------------------------------------------------+

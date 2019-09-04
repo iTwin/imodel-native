@@ -4,13 +4,14 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "ActivityLoggerTests.h"
-
+#include "../../Utils/WebServicesTestsHelper.h"
 #include "../../../../../Client/WebApi/WebApiV2Utils/ActivityLogger.h"
 #include "../../../../../Client/Logging.h"
 #include "../../Utils/StubLogger.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
+
+struct ActivityLoggerTests : WSClientBaseTest {};
 
 void TestActivityLoggerWithActivityId
 (

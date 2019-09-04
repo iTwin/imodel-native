@@ -509,7 +509,7 @@ WString ConverterApp::_SupplySqlangRelPath()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnV8Bridge::_MakeSchemaChanges()
+BentleyStatus DgnV8Bridge::_MakeSchemaChanges(bool& hasMoreChanges)
     {
     auto status = m_converter->MakeSchemaChanges();
     return ((BSISUCCESS != status) || m_converter->WasAborted())? BSIERROR: BSISUCCESS;

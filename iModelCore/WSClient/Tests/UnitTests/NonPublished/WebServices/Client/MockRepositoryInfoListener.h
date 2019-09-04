@@ -14,10 +14,9 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct MockRepositoryInfoListener : public IWSRepositoryClient::IRepositoryInfoListener
+struct MockRepositoryInfoListener : IWSRepositoryClient::IRepositoryInfoListener
     {
-    public:
-        MOCK_METHOD1(OnInfoReceived, void(WSRepositoryCR info));
+    MOCK_METHOD1(OnInfoReceived, void(WSRepositoryCR info));
     };
 #endif
 

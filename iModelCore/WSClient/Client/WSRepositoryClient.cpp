@@ -25,16 +25,6 @@ const uint32_t IWSRepositoryClient::Timeout::Transfer::LongUpload = 120;
 const uint32_t IWSRepositoryClient::Timeout::Transfer::UploadProcessing = 300; // Longer timeout for server file processing to finish
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    julius.cepukenas 12/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-IWSRepositoryClient::RequestOptions::RequestOptions() :
-m_transferTimeOut(IWSRepositoryClient::Timeout::Transfer::Default),
-m_activityOptions(std::make_shared<ActivityOptions>()),
-m_jobOptions(std::make_shared<JobOptions>())
-    {
-    }
-
-/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Mantas.Smicius    11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String IWSRepositoryClient::ActivityOptions::HeaderNameToString(HeaderName headerName)
@@ -311,8 +301,8 @@ Http::Request::ProgressCallbackCR downloadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
-	if (filePath.empty())
-		return CreateCompletedAsyncTask(WSFileResult::Error(WSError::CreateFunctionalityNotSupportedError()));
+    if (filePath.empty())
+        return CreateCompletedAsyncTask(WSFileResult::Error(WSError::CreateFunctionalityNotSupportedError()));
 
     return m_fileDownloadQueue.Push([=]
         {
@@ -321,12 +311,12 @@ ICancellationTokenPtr ct
             return webApi->SendGetFileRequest(objectId, HttpFileBody::Create(filePath), eTag, downloadProgressCallback, nullptr, ct);
             }, ct);
         }, ct)
-	->Then<WSFileResult>([=] (WSResult response)
+    ->Then<WSFileResult>([=] (WSResult response)
         {
         if (!response.IsSuccess())
             return WSFileResult::Error(response.GetError());
 
-		auto status = response.GetValue().IsModified() ? Http::HttpStatus::OK : Http::HttpStatus::BadRequest;
+        auto status = response.GetValue().IsModified() ? Http::HttpStatus::OK : Http::HttpStatus::BadRequest;
         return WSFileResult::Success(WSFileResponse(filePath, status, response.GetValue().GetETag()));
         });
     }

@@ -111,7 +111,7 @@ Response StubHttpResponse(ConnectionStatus status = ConnectionStatus::CouldNotCo
 Response StubHttpResponse(HttpStatus httpStatus, Utf8StringCR body = "", const std::map<Utf8String, Utf8String>& headers = std::map<Utf8String, Utf8String>());
 Response StubHttpResponse(HttpStatus httpStatus, HttpBodyPtr body, const std::map<Utf8String, Utf8String>& headers = std::map<Utf8String, Utf8String>());
 Response StubJsonHttpResponse(HttpStatus httpStatus, Utf8StringCR body = "", const std::map<Utf8String, Utf8String>& headers = std::map<Utf8String, Utf8String>());
-Response StubHttpResponseWithUrl(HttpStatus httpStatus, Utf8StringCR url);
+Response StubHttpResponseWithUrl(HttpStatus httpStatus, Utf8StringCR url, Utf8StringCR body = "");
 
 WSInfo StubWSInfoWebApi(BeVersion webApiVersion = BeVersion(2, 0), WSInfo::Type type = WSInfo::Type::BentleyWSG);
 //! Stub WebApi 2.0 and BWSG server
@@ -126,6 +126,8 @@ Response StubWSInfoHttpResponseWebApi23();
 Response StubWSInfoHttpResponseWebApi24();
 //! Stub WebApi 2.5 and BWSG server
 Response StubWSInfoHttpResponseWebApi25();
+//! Stub WebApi 2.6 and BWSG server
+Response StubWSInfoHttpResponseWebApi26();
 //! Stub WebApi 2.7 and BWSG server
 Http::Response StubWSInfoHttpResponseWebApi27();
 //! Stub WebApi 2.8 version and BWSG server

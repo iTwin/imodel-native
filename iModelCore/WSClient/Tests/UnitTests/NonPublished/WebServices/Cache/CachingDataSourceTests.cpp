@@ -4,8 +4,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "CachingDataSourceTests.h"
-
+#include "BaseCachingDataSourceTest.h"
 #include <WebServices/Cache/Persistence/DataSourceCache.h>
 #include <WebServices/Cache/Persistence/DataReadOptions.h>
 #include <WebServices/Cache/SyncNotifier.h>
@@ -21,6 +20,8 @@ using namespace ::testing;
     EXPECT_EQ(expectedProgress.GetBytes(), actualProgress.GetBytes());          \
     EXPECT_EQ(expectedProgress.GetInstances(), actualProgress.GetInstances());  \
     EXPECT_NEAR(expectedProgress.GetSynced(), actualProgress.GetSynced(), 0.01);
+
+struct CachingDataSourceTests : BaseCachingDataSourceTest {};
 
 CachedResponseKey CreateTestResponseKey(ICachingDataSourcePtr ds, Utf8StringCR rootName = "StubResponseKeyRoot", Utf8StringCR keyName = BeGuid(true).ToString())
     {

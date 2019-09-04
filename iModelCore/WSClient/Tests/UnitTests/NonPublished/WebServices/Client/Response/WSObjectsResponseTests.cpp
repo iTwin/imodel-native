@@ -4,10 +4,11 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "WSObjectsResponseTests.h"
-
+#include "../../../Utils/WebServicesTestsHelper.h"
 #include <WebServices/Client/Response/WSObjectsResponse.h>
 #include <WebServices/Client/Response/WSObjectsReaderV2.h>
+
+struct WSObjectsResponseTests : WSClientBaseTest {};
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015

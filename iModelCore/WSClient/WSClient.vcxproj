@@ -191,6 +191,7 @@
     <ClCompile Include="iModelHubClient\GlobalEvents\SoftiModelDeleteEvent.cpp" />
     <ClCompile Include="iModelHubClient\GlobalRequestOptions.cpp" />
     <ClCompile Include="iModelHubClient\iModelAdmin.cpp" />
+    <ClCompile Include="iModelHubClient\iModelBaseInfo.cpp" />
     <ClCompile Include="iModelHubClient\iModelManager.cpp" />
     <ClCompile Include="iModelHubClient\iModelConnection.cpp" />
     <ClCompile Include="iModelHubClient\BreakHelper.cpp" />
@@ -317,6 +318,8 @@
     <ClInclude Include="PublicAPI\WebServices\Connect\SecurityToken.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\SimpleConnectTokenProvider.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\GlobalRequestOptions.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\iModelBaseInfo.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\iModelCreateInfo.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\EventsCommon\BaseEventManager.h" />
     <ClInclude Include="iModelHubClient\Events\EventManager.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\GlobalEvents\GlobalEventManager.h" />

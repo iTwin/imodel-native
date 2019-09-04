@@ -41,20 +41,27 @@ struct WebApiV2 : public WebApi
         Utf8String CreateNavigationSubPath(ObjectIdCR parentId) const;
 
         ActivityLogger CreateActivityLogger(Utf8StringCR activityName, IWSRepositoryClient::RequestOptionsPtr options = nullptr) const;
-        static void SetActivityIdToRequest(ActivityLoggerR activityLogger, Http::RequestR request);
-        static void SetActivityIdToRequest(ActivityLoggerR activityLogger, ChunkedUploadRequestR request);
+        void SetActivityIdToRequest(ActivityLoggerR activityLogger, Http::RequestR request) const;
+        void SetActivityIdToRequest(ActivityLoggerR activityLogger, ChunkedUploadRequestR request) const;
+        void SetActivityIdToWSResponse(WSResponseR response, Utf8StringCR activityId) const;
+        Utf8String GetResponseActivityId(Http::Response& httpResponse, ActivityLoggerR activityLogger) const;
 
         Utf8String CreateSelectPropertiesQuery(const bset<Utf8String>& properties) const;
         Http::Request CreateGetRepositoryRequest() const;
         Http::Request CreateQueryRequest(WSQueryCR query) const;
+        WSError CreateError(Http::Response& response, Utf8StringCR activityId = "") const;
+        WSError CreateServerNotSupportedError(Http::Response& response, Utf8StringCR activityId = "") const;
+        WSError CreateErrorFromAzzureError(AzureErrorCR azureError, Utf8StringCR activityId = "") const;
 
         std::shared_ptr<WSObjectsReader> CreateJsonInstancesReader() const;
-        static Utf8String GetNullableString(RapidJsonValueCR object, Utf8CP member);
+        Utf8String GetNullableString(RapidJsonValueCR object, Utf8CP member) const;
+        Utf8String GetActivityIdFromResponse(Http::Response& response, Utf8StringCR activityHeaderName) const;
 
-        WSRepositoriesResult ResolveGetRepositoriesResponse(Http::Response& response) const;
-        WSUpdateObjectResult ResolveUpdateObjectResponse(Http::Response& response) const;
+        WSRepositoriesResult ResolveGetRepositoriesResponse(Http::Response& response, ActivityLoggerCR activityLogger) const;
+        WSUpdateObjectResult ResolveUpdateObjectResponse(Http::Response& response, ActivityLoggerCR activityLogger) const;
         WSUploadResponse ResolveUploadResponse(Http::Response& response) const;
-        WSObjectsResult ResolveObjectsResponse(Http::Response& response, const ObjectId* objectId = nullptr) const;
+        WSObjectsResult ResolveObjectsResponse(Http::Response& response, ActivityLoggerCR activityLogger) const;
+
         BeVersion GetRepositoryPluginVersion(Http::Response& response, Utf8StringCR pluginId) const;
 
         Http::Request CreateFileDownloadRequest
@@ -66,7 +73,7 @@ struct WebApiV2 : public WebApi
             Http::Request::ProgressCallbackCR onProgress,
             ICancellationTokenPtr ct
             ) const;
-        WSResult ResolveFileDownloadResponse(Http::Response& response) const;
+        WSResult ResolveFileDownloadResponse(Http::Response& response, ActivityLoggerCR activityLogger) const;
 
         AsyncTaskPtr<WSUpdateFileResult> ResolveUpdateFileResponse
             (

@@ -5,10 +5,9 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "../../Utils/WebServicesTestsHelper.h"
-
-class WSRepositoryTests : public WSClientBaseTest {};
-
 #include <WebServices/Client/WSRepository.h>
+
+struct WSRepositoryTests : WSClientBaseTest {};
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015

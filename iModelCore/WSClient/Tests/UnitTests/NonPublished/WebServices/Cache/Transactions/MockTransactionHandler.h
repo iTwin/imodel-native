@@ -14,7 +14,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct MockTransactionHandler : public ITransactionHandler
+struct MockTransactionHandler : ITransactionHandler
     {
     public:
         MOCK_METHOD0 (CommitTransaction, BentleyStatus ());

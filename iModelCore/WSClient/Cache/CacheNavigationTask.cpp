@@ -26,9 +26,8 @@ bvector<ObjectId>&& navigationTreesToUpdateOnly,
 std::shared_ptr<const ISelectProvider> updateSelectProvider,
 CachingDataSource::ProgressCallback&& onProgress,
 ICancellationTokenPtr ct
-)
-:
-CachingTaskBase(cachingDataSource, ct),
+) :
+CachingTaskBase(cachingDataSource, ct, SimpleCancellationToken::Create()),
 m_navigationTreesToCacheFully(navigationTreesToCacheFully),
 m_navigationTreesToUpdateOnly(navigationTreesToUpdateOnly),
 m_updateSelectProvider(nullptr == updateSelectProvider ? std::make_shared<ISelectProvider>() : updateSelectProvider),
@@ -106,7 +105,7 @@ void CacheNavigationTask::CacheRejectedObjects()
         return;
         }
 
-    SyncCachedInstancesTask::Run(m_ds, m_objectsToRedownload, nullptr, GetCancellationToken())
+    SyncCachedInstancesTask::Run(m_ds, m_objectsToRedownload, nullptr, GetUserCancellationToken(), GetAbortCancellationToken())
         ->Then(m_ds->GetCacheAccessThread(), [=] (ICachingDataSource::BatchResult result)
         {
         AddResult(result);

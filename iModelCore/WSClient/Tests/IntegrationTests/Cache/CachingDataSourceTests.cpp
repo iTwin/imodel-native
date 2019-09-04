@@ -4,8 +4,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "CachingDataSourceTests.h"
-
+#include <WebServicesTestsHelper.h>
 #include <WebServices/Cache/CachingDataSource.h>
 #include <WebServices/Cache/Util/JsonUtil.h>
 #include <WebServices/Cache/Transactions/CacheTransactionManager.h>
@@ -19,6 +18,12 @@
 #include <WebServices/Configuration/UrlProvider.h>
 
 #include "../../UnitTests/NonPublished/WebServices/Cache/CachingTestsHelper.h"
+
+struct CachingDataSourceTests : WSClientBaseTest
+    {
+    RuntimeJsonLocalState m_localState;
+    void SetUp();
+    };
 
 void CachingDataSourceTests::SetUp()
     {

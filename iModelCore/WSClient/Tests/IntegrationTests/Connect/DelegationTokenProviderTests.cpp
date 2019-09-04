@@ -14,7 +14,7 @@
 #include "../../UnitTests/NonPublished/WebServices/Connect/StubTokenStore.h"
 #include "../../UnitTests/NonPublished/WebServices/Connect/MockConnectTokenProvider.h"
 
-struct DelegationTokenProviderTests : public WSClientBaseTest {};
+struct DelegationTokenProviderTests : WSClientBaseTest {};
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     12/15

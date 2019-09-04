@@ -3021,7 +3021,7 @@ struct ConvertScalableMeshAttachment : ConvertToDgnDbElementExtension
 struct ConvertDTMElement : ConvertScalableMeshAttachment
     {
     static void Register();
-    Result DoConvert(DgnV8EhCR v8el, WCharCP url, Converter& converter, ResolvedModelMapping const& v8mm);
+    Result DoConvert(DgnV8EhCR v8el, WCharCP url, Converter& converter, ResolvedModelMapping const& v8mm, WCharCP name);
 
     Result _PreConvertElement(DgnV8EhCR, Converter&, ResolvedModelMapping const&) override;
     bool _UseProxyGraphics(DgnV8EhCR, Converter&, ResolvedModelMapping const&) override;

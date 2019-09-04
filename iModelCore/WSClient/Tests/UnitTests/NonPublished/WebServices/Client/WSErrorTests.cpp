@@ -4,10 +4,12 @@
 |
 +--------------------------------------------------------------------------------------*/
 
+#include "../../Utils/WebServicesTestsHelper.h"
 #include <WebServices/Client/WSError.h>
-#include "WSErrorTests.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
+
+struct WSErrorTests : WSClientBaseTest {};
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
@@ -48,6 +50,65 @@ TEST_F(WSErrorTests, CreateServerNotSupported_NewError_SetsStatusAndLocalizedMes
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                             Simonas.Mulevicius  07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSErrorTests, CreateServerNotSupportedError_WhenNewErrorIsCreated_ShouldSetEmptyActivityId)
+    {
+    //Arrange and Act
+    auto error = WSError::CreateServerNotSupportedError();
+
+    //Assert
+    EXPECT_TRUE(error.GetActivityId().empty());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                         Simonas.Mulevicius    07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSErrorTests, CreateServerNotSupportedErrorWithActivityId_WhenActivityIdIsSet_ShouldSetActivityId)
+    {
+    //Arrange and act
+    Utf8String activityId = "specifiedActivityId";
+    auto error = WSError::CreateServerNotSupportedErrorWithActivityId(activityId);
+
+    //Assert
+    ASSERT_TRUE(!error.GetActivityId().empty());
+    EXPECT_STREQ(activityId.c_str(), error.GetActivityId().c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                         Simonas.Mulevicius    07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSErrorTests, CreateServerNotSupportedErrorWithActivityId_WhenActivityIdIsEmpty_ShouldSetEmptyActivityId)
+    {
+    //Arrange and act
+    auto error = WSError::CreateServerNotSupportedErrorWithActivityId(Utf8String());
+
+    //Assert
+    EXPECT_STREQ("", error.GetActivityId().c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                         Simonas.Mulevicius    07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSErrorTests, CreateServerNotSupportedErrorWithActivityId_WhenActivityIdIsSet_ShouldDifferFromCreateServerNotSupportedErrorOnlyByActivityId)
+    {
+    //Arrange
+    Utf8StringCR activityId = "specifiedActivityId";
+
+    //Act
+    auto error1 = WSError::CreateServerNotSupportedErrorWithActivityId(activityId);
+    auto error2 = WSError::CreateServerNotSupportedError();
+
+    //Assert
+    EXPECT_EQ(error1.GetStatus(), error2.GetStatus());
+    EXPECT_EQ(error1.GetId(), error2.GetId());
+    EXPECT_STREQ(error1.GetDisplayMessage().c_str(), error2.GetDisplayMessage().c_str());
+    EXPECT_STREQ(error1.GetDisplayDescription().c_str(), error2.GetDisplayDescription().c_str());
+    EXPECT_STREQ(activityId.c_str(), error1.GetActivityId().c_str());
+    EXPECT_STRNE(activityId.c_str(), error2.GetActivityId().c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSErrorTests, CreateFunctionalityNotSupportedError_NewError_SetsStatusAndIdAndLocalizedMessage)
@@ -59,6 +120,89 @@ TEST_F(WSErrorTests, CreateFunctionalityNotSupportedError_NewError_SetsStatusAnd
     EXPECT_EQ("", error.GetDisplayDescription());
     }
 #endif
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                             Simonas.Mulevicius  07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSErrorTests, CreateErrorUsingActivityId_WhenActivityIdIsSet_ShouldSetCorrespondingActivityId)
+    {
+    //Arrange
+    Utf8String activityId = "specifiedActivityId";
+
+    //Act
+    auto error = WSError::CreateErrorUsingActivityId(StubHttpResponse(HttpStatus::InternalServerError), activityId);
+
+    //Assert
+    ASSERT_FALSE(error.GetActivityId().empty());
+    EXPECT_STREQ(activityId.c_str(), error.GetActivityId().c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                             Simonas.Mulevicius  07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSErrorTests, CreateErrorUsingActivityId_WhenActivityIdIsEmpty_ShouldSetEmptyActivityId)
+    {
+    //Arrange and act
+    auto error = WSError::CreateErrorUsingActivityId(StubHttpResponse(HttpStatus::InternalServerError), "");
+
+    //Assert
+    ASSERT_TRUE(error.GetActivityId().empty());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                             Simonas.Mulevicius  07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSErrorTests, CreateErrorUsingActivityId_WhenAzureErrorIsUsedAndActivityIdIsSet_ShouldSetCorrespondingActivityId)
+    {
+    //Arrange
+    auto azureError = AzureError(StubHttpResponse(HttpStatus::InternalServerError));
+    Utf8String activityId = "specifiedActivityId";
+
+    //Act
+    auto error = WSError::CreateErrorUsingActivityId(azureError, activityId.c_str());
+
+    //Assert
+    ASSERT_FALSE(error.GetActivityId().empty());
+    EXPECT_STREQ(activityId.c_str(), error.GetActivityId().c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                             Simonas.Mulevicius  07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSErrorTests, CreateErrorUsingActivityId_WhenAzureErrorIsUsedAndActivityIdIsEmpty_ShouldSetEmptyActivityId)
+    {
+    //Arrange
+    auto azureError = AzureError(StubHttpResponse(HttpStatus::InternalServerError));
+
+    //Act
+    auto error = WSError::CreateErrorUsingActivityId(azureError, "");
+
+    //Assert
+    ASSERT_TRUE(error.GetActivityId().empty());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                             Simonas.Mulevicius  08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSErrorTests, CreateErrorUsingActivityId_WhenAzureErrorIsUsedAndActivityIdIsSet_ShouldDifferFromCtorOnlyByActivityId)
+    {
+    //Arrange
+    Utf8String activityId = "specifiedActivityId";
+    auto httpResponse = StubHttpResponse(HttpStatus::InternalServerError);
+
+    //Act
+    auto error1 = WSError::CreateErrorUsingActivityId(httpResponse, activityId);
+    auto error2 = WSError(httpResponse);
+
+    //Assert
+    ASSERT_FALSE(error1.GetActivityId().empty());
+    EXPECT_EQ(error1.GetStatus(), error2.GetStatus());
+    EXPECT_EQ(error1.GetId(), error2.GetId());
+    EXPECT_STREQ(error1.GetDisplayMessage().c_str(), error2.GetDisplayMessage().c_str());
+    EXPECT_STREQ(error1.GetDisplayDescription().c_str(), error2.GetDisplayDescription().c_str());
+    EXPECT_STREQ(activityId.c_str(), error1.GetActivityId().c_str());
+    EXPECT_STRNE(activityId.c_str(), error2.GetActivityId().c_str());
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
@@ -83,6 +227,36 @@ TEST_F(WSErrorTests, Ctor_CanceledHttpResponse_SetsStatusCanceled)
     {
     WSError error(StubHttpResponse(ConnectionStatus::Canceled));
     EXPECT_EQ(WSError::Status::Canceled, error.GetStatus());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                             Simonas.Mulevicius  07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSErrorTests, Ctor_WhenValidHttpResponseIsPassed_ShouldSetEmptyActivityId)
+    {
+    //Arrange
+    Utf8String activityHeaderName = "specifiedHeaderName";
+    Utf8String activityId = "specifiedActivityId";
+    std::map<Utf8String, Utf8String> responseHeaders {{activityHeaderName, activityId}};
+    auto httpResponse = StubHttpResponse(HttpStatus::NotFound, "specifiedResponseBody", responseHeaders);
+
+    //Act
+    auto error = WSError(httpResponse);
+
+    //Assert
+    ASSERT_TRUE(error.GetActivityId().empty());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                             Simonas.Mulevicius  07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSErrorTests, Ctor_WhenNoArgumentsArePassedToConstructor_ShouldSetEmptyActivityId)
+    {
+    //Arrange and act
+    auto error = WSError();
+
+    //Assert
+    ASSERT_TRUE(error.GetActivityId().empty());
     }
 
 /*--------------------------------------------------------------------------------------+

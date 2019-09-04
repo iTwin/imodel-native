@@ -68,6 +68,14 @@ struct iModelTests : public IntegrationTestsBase
         }
 
     /*--------------------------------------------------------------------------------------+
+    * @bsimethod                                    Vilius.Kazlauskas               09/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    iModelResult CreateiModel(iModelCreateInfoPtr imodelCreateInfo, bool expectSuccess = true)
+        {
+        return IntegrationTestsBase::CreateiModel(m_db, imodelCreateInfo, expectSuccess);
+        }
+
+    /*--------------------------------------------------------------------------------------+
     * @bsimethod                                    Algirdas.Mikoliunas             10/2018
     +---------------+---------------+---------------+---------------+---------------+------*/
     iModelInfoPtr GetOldestiModel()
@@ -110,13 +118,16 @@ TEST_F(iModelTests, SuccessfulCreateiModel)
         }
 
     // Create first iModel
-    iModelResult createResult = CreateiModel();
+    m_imodelName = GetTestiModelName();
+    iModelCreateInfoPtr imodelCreateInfo = iModelCreateInfo::Create(m_imodelName, "", bvector<double> { 1, 2, 3, 4 });
+    iModelResult createResult = CreateiModel(imodelCreateInfo);
     auto creatediModelId = createResult.GetValue()->GetId();
 
     iModelResult getResult = s_client->GetiModelById(s_projectId, creatediModelId)->GetResult();
     ASSERT_SUCCESS(getResult) << "Needs defect filed";
     EXPECT_TRUE(getResult.GetValue()->IsInitialized());
     EXPECT_EQ(getResult.GetValue()->GetUserCreated(), getResult.GetValue()->GetOwnerInfo()->GetId());
+    EXPECT_EQ(getResult.GetValue()->GetExtent(), imodelCreateInfo->GetExtent());
 
     auto queryResult = s_client->GetiModels(s_projectId)->GetResult();
     ASSERT_SUCCESS(queryResult);
@@ -157,10 +168,28 @@ TEST_F(iModelTests, SuccessfulCreateiModel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(iModelTests, CreateEmptyiModel)
     {
-    m_imodelName = GetTestiModelName();
-    iModelResult createResult = CreateEmptyiModel(m_imodelName);
-    ASSERT_SUCCESS(createResult);
+    // Create with invalid name
+    iModelCreateInfoPtr imodelCreateInfo = iModelCreateInfo::Create("", "", bvector<double> { 1, 2, 3, 4 });
+    iModelResult createResult = CreateEmptyiModel(imodelCreateInfo, false);
+    ASSERT_FAILURE(createResult);
+    EXPECT_EQ(Error::Id::InvalidiModelName, createResult.GetError().GetId());
 
+    // Create with invalid extent
+    m_imodelName = GetTestiModelName();
+    imodelCreateInfo = iModelCreateInfo::Create(m_imodelName, "", bvector<double> { 1 });
+    createResult = CreateEmptyiModel(imodelCreateInfo, false);
+    ASSERT_FAILURE(createResult);
+    EXPECT_EQ(Error::Id::InvalidiModelExtentCount, createResult.GetError().GetId());
+
+    // Create with invalid extent coordinate
+    imodelCreateInfo = iModelCreateInfo::Create(m_imodelName, "", bvector<double> { 1, -200, 3, 4 });
+    createResult = CreateEmptyiModel(imodelCreateInfo, false);
+    ASSERT_FAILURE(createResult);
+    EXPECT_EQ(Error::Id::InvalidiModelExtentCoordinate, createResult.GetError().GetId());
+
+    m_imodelName = GetTestiModelName();
+    imodelCreateInfo = iModelCreateInfo::Create(m_imodelName, "", bvector<double> { 1, 2, 3, 4 });
+    createResult = CreateEmptyiModel(imodelCreateInfo);
     iModelInfoPtr creatediModel = createResult.GetValue();
 
     iModelResult getResult = s_client->GetiModelByName(s_projectId, m_imodelName)->GetResult();
@@ -170,16 +199,19 @@ TEST_F(iModelTests, CreateEmptyiModel)
     EXPECT_EQ(creatediModel->GetUserCreated(), getResult.GetValue()->GetOwnerInfo()->GetId());
     DateTime compareDate(DateTime::Kind::Utc, 2019, 1, 1, 0, 0, 0, 0);
     EXPECT_EQ((int)DateTime::CompareResult::EarlierThan, (int)DateTime::Compare(compareDate, creatediModel->GetCreatedDate()));
+    EXPECT_EQ(creatediModel->GetExtent(), imodelCreateInfo->GetExtent());
 
     creatediModel->SetName(GetTestiModelName() + "_Renamed");
     ASSERT_SUCCESS(iModelHubHelpers::DeleteiModelByName(s_client, creatediModel->GetName()));
     creatediModel->SetDescription("Description_Renamed");
+    creatediModel->SetExtent(bvector<double>{ 5, 6, 7, 8 });
     ASSERT_SUCCESS(s_client->UpdateiModel(s_projectId, *creatediModel)->GetResult());
 
     getResult = s_client->GetiModelByName(s_projectId, creatediModel->GetName())->GetResult();
     ASSERT_SUCCESS(getResult);
     EXPECT_EQ(creatediModel->GetName(), getResult.GetValue()->GetName());
     EXPECT_EQ(creatediModel->GetDescription(), getResult.GetValue()->GetDescription());
+    EXPECT_EQ(creatediModel->GetExtent(), getResult.GetValue()->GetExtent());
 
     ASSERT_SUCCESS(iModelHubHelpers::DeleteiModelByName(s_client, creatediModel->GetName()));
     }
@@ -339,7 +371,9 @@ TEST_F(iModelTests, CreateiModelUsingOidcLogin)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(iModelTests, UpdateiModel)
     {
-    iModelResult createResult = CreateiModel();
+    m_imodelName = GetTestiModelName();
+    iModelCreateInfoPtr imodelCreateInfo = iModelCreateInfo::Create(m_imodelName, "", bvector<double> { 1, 2, 3, 4 });
+    iModelResult createResult = CreateiModel(imodelCreateInfo);
     ASSERT_SUCCESS(createResult);
 
     Utf8String name2 = "TestiModel2";
@@ -351,32 +385,47 @@ TEST_F(iModelTests, UpdateiModel)
     // Rename to existing name
     iModelInfoPtr imodel = imodelResult.GetValue();
     imodel->SetName(name2);
-    StatusResult updateResult1 = s_client->UpdateiModel(s_projectId, *imodel)->GetResult();
-    ASSERT_FAILURE(updateResult1);
-    EXPECT_EQ(Error::Id::iModelAlreadyExists, updateResult1.GetError().GetId());
+    StatusResult updateResult = s_client->UpdateiModel(s_projectId, *imodel)->GetResult();
+    ASSERT_FAILURE(updateResult);
+    EXPECT_EQ(Error::Id::iModelAlreadyExists, updateResult.GetError().GetId());
     // Clean up
     iModelHubHelpers::DeleteiModelByName(s_client, name2);
     
     // Rename to invalid name
     imodel->SetName("");
-    StatusResult updateResult2 = s_client->UpdateiModel(s_projectId, *imodel)->GetResult();
-    ASSERT_FAILURE(updateResult2);
-    EXPECT_EQ(Error::Id::MissingRequiredProperties, updateResult2.GetError().GetId());
+    updateResult = s_client->UpdateiModel(s_projectId, *imodel)->GetResult();
+    ASSERT_FAILURE(updateResult);
+    EXPECT_EQ(Error::Id::MissingRequiredProperties, updateResult.GetError().GetId());
 
-    // Rename with a valid data
+    // Change extent to one with invalid count
+    imodel->SetName(m_imodelName);
+    imodel->SetExtent(bvector<double> { 1 });
+    updateResult = s_client->UpdateiModel(s_projectId, *imodel)->GetResult();
+    ASSERT_FAILURE(updateResult);
+    EXPECT_EQ(Error::Id::InvalidPropertiesValues, updateResult.GetError().GetId());
+
+    // Change extent with invalid coordiante
+    imodel->SetExtent(bvector<double> { 1, -200, 3, 4 });
+    updateResult = s_client->UpdateiModel(s_projectId, *imodel)->GetResult();
+    ASSERT_FAILURE(updateResult);
+    EXPECT_EQ(Error::Id::InvalidPropertiesValues, updateResult.GetError().GetId());
+
+    // Edit iModel with a valid data
     m_imodelName = GetTestiModelName() + "_Renamed";
     Utf8String description = m_imodelName + "_Description";
     ASSERT_SUCCESS(iModelHubHelpers::DeleteiModelByName(s_client, m_imodelName));
     imodel->SetName(m_imodelName);
     imodel->SetDescription(description);
+    imodel->SetExtent(bvector<double> { 5, 6, 7, 8 });
     ASSERT_SUCCESS(s_client->UpdateiModel(s_projectId, *imodel)->GetResult());
 
     // Check if renamed properly and other properites have not changed
     iModelResult updatediModelResult = s_client->GetiModelById(s_projectId, imodel->GetId())->GetResult();
     ASSERT_SUCCESS(updatediModelResult);
     iModelInfoPtr updatediModel = updatediModelResult.GetValue();
-    EXPECT_EQ(m_imodelName, updatediModel->GetName());
-    EXPECT_EQ(description, updatediModel->GetDescription());
+    EXPECT_EQ(imodel->GetName(), updatediModel->GetName());
+    EXPECT_EQ(imodel->GetDescription(), updatediModel->GetDescription());
+    EXPECT_EQ(imodel->GetExtent(), updatediModel->GetExtent());
     EXPECT_EQ(imodel->GetId(), updatediModel->GetId());
     EXPECT_EQ(imodel->GetCreatedDate(), updatediModel->GetCreatedDate());
     EXPECT_EQ(imodel->GetUserCreated(), updatediModel->GetUserCreated());

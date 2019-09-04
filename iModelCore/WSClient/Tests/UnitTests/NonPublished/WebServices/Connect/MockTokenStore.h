@@ -14,7 +14,7 @@ using namespace ::testing;
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct MockTokenStore : public ITokenStore
+struct MockTokenStore : ITokenStore
     {
     MOCK_METHOD1(SetToken, void (SamlTokenPtr));
     MOCK_CONST_METHOD0(GetToken, SamlTokenPtr());

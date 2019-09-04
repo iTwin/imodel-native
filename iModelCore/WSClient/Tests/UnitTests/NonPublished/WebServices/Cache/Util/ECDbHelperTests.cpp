@@ -4,12 +4,13 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "ECDbHelperTests.h"
-
+#include "../../../Utils/WebServicesTestsHelper.h"
 #include <WebServices/Cache/Util/ECDbHelper.h>
 
 using namespace ::testing;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
+
+struct ECDbHelperTests : WSClientBaseTest {};
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15

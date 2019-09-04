@@ -1343,6 +1343,7 @@ public:
     DGNPLATFORM_EXPORT bool Add(PolyfaceHeaderR polyface, bool filled, DisplayParamsCR displayParams, TransformCR transform);
     DGNPLATFORM_EXPORT bool Add(IBRepEntityR body, DisplayParamsCR displayParams, TransformCR transform);
     DGNPLATFORM_EXPORT bool Add(TextStringR textString, DisplayParamsCR displayParams, TransformCR transform);
+    bool AddTextUnderline(TextStringR, DisplayParamsCR, TransformCR);
 
     bool IsEmpty() const { return m_geometries.empty(); }
     void Clear() { m_geometries.clear(); }

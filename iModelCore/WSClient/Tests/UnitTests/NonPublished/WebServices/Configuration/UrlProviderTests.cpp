@@ -3,8 +3,8 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include "UrlProviderTests.h"
 
+#include "../../Utils/WebServicesTestsHelper.h"
 #include "../Connect/MockLocalState.h"
 #include "MockBuddiClient.h"
 #include <WebServices/Configuration/UrlProvider.h>
@@ -14,21 +14,28 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 #define URL_COUNT 17
 
+struct UrlProviderTests : BaseMockHttpHandlerTest
+    {
+    static WorkerThreadPtr s_thread;
+
+    void SetUp() override
+        {
+        BaseMockHttpHandlerTest::SetUp();
+        if (nullptr == s_thread)
+            s_thread = WorkerThread::Create("UrlProviderTests");
+        s_thread->OnEmpty()->Wait();
+        };
+
+    void TearDown() override
+        {
+        s_thread->OnEmpty()->Wait();
+        BaseMockHttpHandlerTest::TearDown();
+        };
+    };
+
 WorkerThreadPtr UrlProviderTests::s_thread;
 
-void UrlProviderTests::SetUp()
-    {
-    BaseMockHttpHandlerTest::SetUp();
-    if (nullptr == s_thread)
-        s_thread = WorkerThread::Create("UrlProviderTests");
-    s_thread->OnEmpty()->Wait();
-    }
-
-void UrlProviderTests::TearDown()
-    {
-    s_thread->OnEmpty()->Wait();
-    BaseMockHttpHandlerTest::TearDown();
-    }
+struct UrlDescriptorTests : ::testing::Test {};
 
 #ifdef USE_GTEST
 /*--------------------------------------------------------------------------------------+

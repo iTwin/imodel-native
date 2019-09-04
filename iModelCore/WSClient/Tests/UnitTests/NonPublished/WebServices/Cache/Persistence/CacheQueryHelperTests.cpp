@@ -4,13 +4,17 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "CacheQueryHelperTests.h"
-
+#include "BaseCacheTest.h"
 #include <WebServices/Cache/Persistence/CacheQueryHelper.h>
 #include <WebServices/Cache/Persistence/DataReadOptions.h> // As Stub for ISelectProvider
 
 using namespace ::testing;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
+
+struct CacheQueryHelperTests : BaseCacheTest
+    {
+    ECSchemaPtr GetTestSchema();
+    };
 
 ECSchemaPtr CacheQueryHelperTests::GetTestSchema()
     {

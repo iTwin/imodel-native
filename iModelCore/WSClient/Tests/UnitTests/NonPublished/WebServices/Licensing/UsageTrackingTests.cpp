@@ -3,7 +3,8 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include "UsageTrackingTests.h"
+
+#include "../../Utils/WebServicesTestsHelper.h"
 #include <WebServices/Licensing/UsageTracking.h>
 #include <WebServices/Licensing/UsageTrackingData.h>
 #include <Bentley/Base64Utilities.h>
@@ -12,17 +13,24 @@
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
-void UsageTrackingTests::SetUp()
+struct UsageTrackingTests : BaseMockHttpHandlerTest
     {
-    UsageTracking::Initialize(GetHandlerPtr());
-    m_client = std::make_shared<StubBuddiClient>();
-    UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &m_localState, m_client);
-    }
+private:
+    std::shared_ptr<StubBuddiClient> m_client;
+    RuntimeJsonLocalState m_localState;
 
-void UsageTrackingTests::TearDown()
-    {
-    UsageTracking::Uninitialize ();
-    }
+public:
+    virtual void SetUp() override
+        {
+        UsageTracking::Initialize(GetHandlerPtr());
+        m_client = std::make_shared<StubBuddiClient>();
+        UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &m_localState, m_client);
+        };
+    virtual void TearDown() override
+        {
+        UsageTracking::Uninitialize();
+        };
+    };
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    George.Rodier    04/2015

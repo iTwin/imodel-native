@@ -15,7 +15,7 @@ using namespace ::testing;
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct StubRepositoryInfoStore : public IRepositoryInfoStore
+struct StubRepositoryInfoStore : IRepositoryInfoStore
     {
     private:
         WSInfo m_info;

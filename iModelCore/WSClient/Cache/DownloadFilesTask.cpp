@@ -31,7 +31,7 @@ uint64_t minTimeBetweenProgressCallsMs,
 CachingDataSource::ProgressCallback onProgress,
 ICancellationTokenPtr ct
 ) :
-CachingTaskBase(cachingDataSource, ct),
+CachingTaskBase(cachingDataSource, ct, SimpleCancellationToken::Create()),
 m_maxParalelDownloads(maxParalelDownloads),
 m_fileDownloadManager(fileDownloadManager),
 m_filesToDownloadIds(std::move(filesToDownload)),

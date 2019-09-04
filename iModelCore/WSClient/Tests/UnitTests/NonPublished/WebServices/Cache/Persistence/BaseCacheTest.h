@@ -10,7 +10,7 @@
 #include <memory>
 #include <ostream>
 
-class BaseCacheTest : public WSClientBaseTest
+struct BaseCacheTest : WSClientBaseTest
     {
     private:
         static BeFileName s_seedCacheFolderPath;

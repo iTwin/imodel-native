@@ -14,14 +14,17 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 CachingTaskBase::CachingTaskBase
 (
 CachingDataSourcePtr cachingDataSource,
-ICancellationTokenPtr ct
+ICancellationTokenPtr userCt,
+SimpleCancellationTokenPtr abortCt
 ) :
 PackagedAsyncTask<void>(nullptr),
 m_ds(cachingDataSource),
-m_errorCancellationToken(SimpleCancellationToken::Create()),
-m_userProvidedCancellationToken(ct),
-m_cancellationToken(MergeCancellationToken::Create(m_userProvidedCancellationToken, m_errorCancellationToken))
-    {}
+m_errorCancellationToken(abortCt),
+m_userProvidedCancellationToken(userCt),
+m_cancellationToken(MergeCancellationToken::Create(userCt, m_errorCancellationToken))
+    {
+    BeAssert(nullptr != m_errorCancellationToken);
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Benediktas.Lipnickas   10/2013
@@ -32,11 +35,12 @@ void CachingTaskBase::SetError(CachingDataSource::ErrorCR error)
         {
         BeAssert(false && "Unexpected error");
         }
+        
+    // Only set first error
+    if (m_error.GetStatus() == ICachingDataSource::Status::Success)
+        m_error = error;
 
-    m_error = error;
     m_errorCancellationToken->SetCanceled();
-
-    _OnError(m_error);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -114,8 +118,7 @@ CachingDataSource::Error& CachingTaskBase::GetError()
 CachingDataSource::BatchResult CachingTaskBase::GetResult()
     {
     if (!IsSuccess())
-        {
         return CachingDataSource::BatchResult::Error(GetError());
-        }
+
     return CachingDataSource::BatchResult::Success(m_failedObjects);
     }

@@ -4,14 +4,15 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "FileUtilTests.h"
-
+#include "../../../Utils/WebServicesTestsHelper.h"
 #include <WebServices/Cache/Util/FileUtil.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 using namespace ::testing;
 using std::shared_ptr;
+
+struct FileUtilTests : WSClientBaseTest {};
 
 // Convert forward slashes to backslashes for tests on Android and iOS
 WString FixSlashes(WString path)

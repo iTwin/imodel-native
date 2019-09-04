@@ -12,7 +12,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 #include "BaseCacheTest.h"
 
-struct DataSourceCachePerformanceTests : public BaseCacheTest
+struct DataSourceCachePerformanceTests : BaseCacheTest
     {
     size_t runs = 0;
     size_t iterations = 0;

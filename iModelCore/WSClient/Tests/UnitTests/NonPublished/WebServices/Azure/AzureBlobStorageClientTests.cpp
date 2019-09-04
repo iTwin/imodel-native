@@ -3,13 +3,15 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include "AzureBlobStorageClientTests.h"
 
+#include "../../Utils/WebServicesTestsHelper.h"
 #include <WebServices/Azure/AzureBlobStorageClient.h>
 #include <BeHttp/HttpHeaders.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_TASKS
+
+struct AzureBlobStorageClientTests : BaseMockHttpHandlerTest {};
 
 #define HEADER_XMsClientRequestId "x-ms-client-request-id"
 

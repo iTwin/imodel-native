@@ -43,6 +43,10 @@ GCSSpecificWKTTester::GCSSpecificWKTTester()
 static bvector<WString> s_ListOfWKTs =
     {
 
+    // From Malaysian client
+    L"PROJCS[\"MalaysiaRsoWest\",GEOGCS[\"KertauDsmm.LL\",DATUM[\"KertauDsmm\",SPHEROID[\"EVRST-MD\",6377304.063,300.80170010],TOWGS84[-379.7314,775.4071,-86.5956,2.596617,2.102283,-12.113744,0.00000000]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]],PROJECTION[\"Rectified Skew Orthomorphic, Skew Azimuth at Rectified Origin\"],PARAMETER[\"False Easting\",804671.300],PARAMETER[\"False Northing\",0.000],PARAMETER[\"Scale Reduction\",0.999840000000],PARAMETER[\"Skew Azimuth at Rectified Origin\",323.13010238888887],PARAMETER[\"Central Point Longitude\",102.25000000000000],PARAMETER[\"Central Point Latitude\",4.00000000000000],UNIT[\"Meter\",1.00000000000000]]",
+
+
     // From Open Rail ConceptStation
     L"PROJCS[\"NAD83(2011) / UTM zone 11N\",  GEOGCS[\"NAD83(2011)\", DATUM[\"NAD83 (National Spatial Reference System 2011)\", SPHEROID[\"GRS 1980\", 6378137.0, 298.257222101, AUTHORITY[\"EPSG\",\"7019\"]], TOWGS84[-1.0026, 1.9083, 0.5165, 0.026585, 0.001856, 0.011089, 0.00118], AUTHORITY[\"EPSG\",\"1116\"]],PRIMEM[\"Greenwich\", 0.0, AUTHORITY[\"EPSG\",\"8901\"]], UNIT[\"degree\", 0.017453292519943295], AXIS[\"Geodetic longitude\", EAST],AXIS[\"Geodetic latitude\", NORTH], AUTHORITY[\"EPSG\",\"6318\"]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"central_meridian\", -117.0],PARAMETER[\"latitude_of_origin\", 0.0], PARAMETER[\"scale_factor\", 0.9996],PARAMETER[\"false_easting\", 500000.0],PARAMETER[\"false_northing\", 0.0],   UNIT[\"m\", 1.0], AXIS[\"Easting\", EAST],AXIS[\"Northing\", NORTH],   AUTHORITY[\"EPSG\",\"6340\"]]",
 

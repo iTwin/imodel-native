@@ -3,12 +3,14 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include "BuddiClientTests.h"
 
+#include "../../Utils/WebServicesTestsHelper.h"
 #include <WebServices/Configuration/BuddiClient.h>
 #include <Bentley/BeDebugLog.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
+
+struct BuddiClientTests : BaseMockHttpHandlerTest {};
 
 Utf8String FormatXml(Utf8StringCR inputXml)
     {

@@ -770,6 +770,8 @@ void CurlHttpRequest::PrepareRequest()
     m_transferInfo->requestNeedsToReset.store(false);
     m_transferInfo->progressInfo.wasCanceled = false;
 
+    LOG.infov("> HTTP #%lld %s %s", GetNumber(), m_httpRequest.GetMethod().c_str(), m_httpRequest.GetUrl().c_str());
+
     if (m_transferInfo->progressInfo.cancellationToken->IsCanceled())
         {
         SetPrematureError(ConnectionStatus::Canceled);
@@ -779,7 +781,6 @@ void CurlHttpRequest::PrepareRequest()
     if (SUCCESS != SetupCurl())
         return;
 
-    LOG.infov("> HTTP #%lld %s %s", GetNumber(), m_httpRequest.GetMethod().c_str(), m_httpRequest.GetUrl().c_str());
     LOG.tracev("* #%lld CURL handle 0x%" PRIXPTR, GetNumber(), m_curl);
 
     m_transferInfo->SetActive();
