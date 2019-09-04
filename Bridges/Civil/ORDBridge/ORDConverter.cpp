@@ -1868,6 +1868,11 @@ void assignCorridorSurfaceAspect(Dgn::DgnElementR element, Cif::CorridorSurfaceC
                 profileName = Utf8String(profilePtr->GetName().c_str());
             }
         }
+    else
+        {
+        auto name = Utf8String(cifCorridorSurface.GetName().c_str());
+        ORDBRIDGE_LOGI(Utf8PrintfString("CIF CorridorSurface '%s' '%s' - related corridor not found.", name.c_str(), description.c_str()).c_str());
+        }
 
     if (auto corridorSurfaceAspectP = DgnV8ORDBim::CorridorSurfaceAspect::GetP(element))
         {
