@@ -155,7 +155,7 @@ TEST_F(WSErrorTests, CreateErrorUsingActivityId_WhenActivityIdIsEmpty_ShouldSetE
 TEST_F(WSErrorTests, CreateErrorUsingActivityId_WhenAzureErrorIsUsedAndActivityIdIsSet_ShouldSetCorrespondingActivityId)
     {
     //Arrange
-    auto azureError = AzureError::AzureError(StubHttpResponse(HttpStatus::InternalServerError));
+    auto azureError = AzureError(StubHttpResponse(HttpStatus::InternalServerError));
     Utf8String activityId = "specifiedActivityId";
 
     //Act
@@ -172,7 +172,7 @@ TEST_F(WSErrorTests, CreateErrorUsingActivityId_WhenAzureErrorIsUsedAndActivityI
 TEST_F(WSErrorTests, CreateErrorUsingActivityId_WhenAzureErrorIsUsedAndActivityIdIsEmpty_ShouldSetEmptyActivityId)
     {
     //Arrange
-    auto azureError = AzureError::AzureError(StubHttpResponse(HttpStatus::InternalServerError));
+    auto azureError = AzureError(StubHttpResponse(HttpStatus::InternalServerError));
 
     //Act
     auto error = WSError::CreateErrorUsingActivityId(azureError, "");
@@ -192,7 +192,7 @@ TEST_F(WSErrorTests, CreateErrorUsingActivityId_WhenAzureErrorIsUsedAndActivityI
 
     //Act
     auto error1 = WSError::CreateErrorUsingActivityId(httpResponse, activityId);
-    auto error2 = WSError::WSError(httpResponse);
+    auto error2 = WSError(httpResponse);
 
     //Assert
     ASSERT_FALSE(error1.GetActivityId().empty());
@@ -241,7 +241,7 @@ TEST_F(WSErrorTests, Ctor_WhenValidHttpResponseIsPassed_ShouldSetEmptyActivityId
     auto httpResponse = StubHttpResponse(HttpStatus::NotFound, "specifiedResponseBody", responseHeaders);
 
     //Act
-    auto error = WSError::WSError(httpResponse);
+    auto error = WSError(httpResponse);
 
     //Assert
     ASSERT_TRUE(error.GetActivityId().empty());
@@ -253,7 +253,7 @@ TEST_F(WSErrorTests, Ctor_WhenValidHttpResponseIsPassed_ShouldSetEmptyActivityId
 TEST_F(WSErrorTests, Ctor_WhenNoArgumentsArePassedToConstructor_ShouldSetEmptyActivityId)
     {
     //Arrange and act
-    auto error = WSError::WSError();
+    auto error = WSError();
 
     //Assert
     ASSERT_TRUE(error.GetActivityId().empty());
