@@ -1,0 +1,160 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{A06410FD-60FD-4D2E-A74B-9E4B11E013AE}</ProjectGuid>
+    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+    <ProjectName>Profiles</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Label="Generic Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Debug Configuration">
+    <UseDebugLibraries>true</UseDebugLibraries>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'" Label="Release Configuration">
+    <UseDebugLibraries>false</UseDebugLibraries>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="Build commands">
+    <NMakeBuildCommandLine>bb re ProfilesDomainDLL -b</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb re ProfilesDomainDLL -b -c &amp;&amp; bb re ProfilesDomainDLL -b</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb re ProfilesDomainDLL -b -c</NMakeCleanCommandLine>
+  </PropertyGroup>
+  <PropertyGroup Label="Header include paths for IDE intelisense">
+    <Profiles_PublicAPI>$(OUTROOT)Winx64\BuildContexts\ProfilesDomain\PublicAPI</Profiles_PublicAPI>
+    <Profiles_PrivateAPI>$(OUTROOT)Winx64\BuildContexts\ProfilesDomain\PrivateAPI</Profiles_PrivateAPI>
+    <Profiles_VendorAPI>$(OUTROOT)Winx64\BuildContexts\ProfilesDomain\VendorAPI</Profiles_VendorAPI>
+    <IncludePath>$(Profiles_PublicAPI);$(Profiles_PrivateAPI);$(Profiles_VendorAPI);$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="Documentation\DisplayDoxygenWarnings.py" />
+    <None Include="Documentation\PreprocessDoxygenWarnings.py" />
+    <None Include="Documentation\ProfilesDoc.mke" />
+    <None Include="Documentation\ProfilesDoc.remarks.md" />
+    <None Include="ProfilesDomainDLL.mke" />
+    <None Include="ProfilesDomainDLL.mki" />
+    <None Include="ProfilesDomainDLL.prewire.mke" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\ArbitraryCompositeProfileAspect.cpp" />
+    <ClCompile Include="src\AsymmetricIShapeProfile.cpp" />
+    <ClCompile Include="src\BentPlateProfile.cpp" />
+    <ClCompile Include="src\CapsuleProfile.cpp" />
+    <ClCompile Include="src\ProfilesCardinalPoints.cpp" />
+    <ClCompile Include="src\MaterialProfile.cpp" />
+    <ClCompile Include="src\MaterialProfileDefinition.cpp" />
+    <ClCompile Include="src\ParametricProfile.cpp" />
+    <ClCompile Include="src\CenterLineCShapeProfile.cpp" />
+    <ClCompile Include="src\CenterLineLShapeProfile.cpp" />
+    <ClCompile Include="src\CenterLineZShapeProfile.cpp" />
+    <ClCompile Include="src\CompositeProfile.cpp" />
+    <ClCompile Include="src\CShapeProfile.cpp" />
+    <ClCompile Include="src\ArbitraryCenterLineProfile.cpp" />
+    <ClCompile Include="src\ArbitraryCompositeProfile.cpp" />
+    <ClCompile Include="src\ArbitraryShapeProfile.cpp" />
+    <ClCompile Include="src\DerivedProfile.cpp" />
+    <ClCompile Include="src\DoubleCShapeProfile.cpp" />
+    <ClCompile Include="src\DoubleLShapeProfile.cpp" />
+    <ClCompile Include="src\CircleProfile.cpp" />
+    <ClCompile Include="src\EllipseProfile.cpp" />
+    <ClCompile Include="src\HollowCircleProfile.cpp" />
+    <ClCompile Include="src\HollowRectangleProfile.cpp" />
+    <ClCompile Include="src\IShapeProfile.cpp" />
+    <ClCompile Include="src\LShapeProfile.cpp" />
+    <ClCompile Include="src\Profile.cpp" />
+    <ClCompile Include="src\ICenterLineProfile.cpp" />
+    <ClCompile Include="src\ProfilesDomain.cpp" />
+    <ClCompile Include="src\ProfilesGeometry.cpp" />
+    <ClCompile Include="src\ProfilesPch.cpp" />
+    <ClCompile Include="src\ProfilesProperty.cpp" />
+    <ClCompile Include="src\ProfilesQuery.cpp" />
+    <ClCompile Include="src\RectangleProfile.cpp" />
+    <ClCompile Include="src\RegularPolygonProfile.cpp" />
+    <ClCompile Include="src\RoundedRectangleProfile.cpp" />
+    <ClCompile Include="src\SchifflerizedLShapeProfile.cpp" />
+    <ClCompile Include="src\SinglePerimeterProfile.cpp" />
+    <ClCompile Include="src\StandardCatalogCodeAspect.cpp" />
+    <ClCompile Include="src\TrapeziumProfile.cpp" />
+    <ClCompile Include="src\TShapeProfile.cpp" />
+    <ClCompile Include="src\TTShapeProfile.cpp" />
+    <ClCompile Include="src\ZShapeProfile.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(Profiles_PrivateAPI)\ProfilesInternal\ProfilesCardinalPoints.h" />
+    <ClInclude Include="$(Profiles_PrivateAPI)\ProfilesInternal\StandardCatalogCodeAspect.h" />
+    <ClInclude Include="$(Profiles_PrivateAPI)\ProfilesInternal\ArbitraryCompositeProfileAspect.h" />
+    <ClInclude Include="$(Profiles_PrivateAPI)\ProfilesInternal\ProfilesLogging.h" />
+    <ClInclude Include="$(Profiles_PrivateAPI)\ProfilesInternal\ProfilesQuery.h" />
+    <ClInclude Include="$(Profiles_PrivateAPI)\ProfilesInternal\ProfilesGeometry.h" />
+    <ClInclude Include="$(Profiles_PrivateAPI)\ProfilesInternal\ProfilesProperty.h" />
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\AsymmetricIShapeProfile.h" />
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\BentPlateProfile.h" />
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\CapsuleProfile.h" />
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\MaterialProfile.h" />
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\MaterialProfileDefinition.h" />
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\ParametricProfile.h" />
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\CenterLineCShapeProfile.h" />
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\CenterLineLShapeProfile.h" />
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\CenterLineZShapeProfile.h" />
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\CompositeProfile.h" />
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\CShapeProfile.h" />
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\ArbitraryCenterLineProfile.h" />
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\ArbitraryCompositeProfile.h" />
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\ArbitraryShapeProfile.h" />
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\DerivedProfile.h" />
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\DoubleCShapeProfile.h" />
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\DoubleLShapeProfile.h" />
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\CircleProfile.h" />
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\EllipseProfile.h" />
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\HollowCircleProfile.h" />
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\HollowRectangleProfile.h" />
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\IShapeProfile.h" />
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\LShapeProfile.h" />
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\Profile.h" />
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\ICenterLineProfile.h" />
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\ProfilesApi.h" />
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\ProfilesDefinitions.h" />
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\ProfilesDomain.h" />
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\RectangleProfile.h" />
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\RegularPolygonProfile.h" />
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\RoundedRectangleProfile.h" />
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\SchifflerizedLShapeProfile.h" />
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\SinglePerimeterProfile.h" />
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\TrapeziumProfile.h" />
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\TShapeProfile.h" />
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\TTShapeProfile.h" />
+    <ClInclude Include="$(Profiles_PublicAPI)\Profiles\ZShapeProfile.h" />
+    <ClInclude Include="src\ProfilesPch.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="$(SRCROOT)\BisSchemas\Domains\Profiles\Profiles.ecschema.xml" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
