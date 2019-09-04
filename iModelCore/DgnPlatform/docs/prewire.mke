@@ -1,0 +1,13 @@
+#----------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#----------------------------------------------------------------------
+
+%include  mdl.mki
+
+always:
+    ~linkfile "$(BuildContext)Delivery/BentleyDocConfig/bentley-doxygen-html-aliases.cfg=$(_MakeFilePath)bentley-doxygen-html-aliases.cfg"
+    ~linkfile "$(BuildContext)Delivery/BentleyDocConfig/bentley-doxygen-xml-aliases.cfg=$(_MakeFilePath)bentley-doxygen-xml-aliases.cfg"
+    ~linkfile "$(BuildContext)Delivery/BentleyDocConfig/bentley-doxygen.cfg=$(_MakeFilePath)bentley-doxygen.cfg"
+    ~linkfile "$(BuildContext)Delivery/BentleyDocConfig/bentley-doxygen.css=$(_MakeFilePath)bentley-doxygen.css"
+    ~linkfile "$(BuildContext)Delivery/BentleyDocConfig/bentley-doxygen.footer=$(_MakeFilePath)bentley-doxygen.footer"
+    ~linkfile "$(BuildContext)Delivery/BentleyDocConfig/bentley-doxygen.header=$(_MakeFilePath)bentley-doxygen.header"
