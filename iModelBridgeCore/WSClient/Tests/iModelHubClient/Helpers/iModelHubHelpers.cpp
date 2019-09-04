@@ -126,8 +126,8 @@ namespace iModelHubHelpers
         {
         TestsProgressCallback callback;
         auto createResult = client.CreateNewiModel(contextId, db, true, callback.Get())->GetResult();
-        EXPECT_RESULT(createResult, expectSuccess)
-            callback.Verify(expectSuccess);
+        EXPECT_RESULT(createResult, expectSuccess);
+        callback.Verify(expectSuccess);
         return createResult;
         }
 
@@ -140,11 +140,41 @@ namespace iModelHubHelpers
         }
     
     /*--------------------------------------------------------------------------------------+
+    * @bsimethod                                    Vilius.Kazlauskas               09/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    iModelResult CreateNewiModel(ClientCR client, DgnDbR db, Utf8StringCR contextId, iModelCreateInfoPtr imodelCreateInfo, bool expectSuccess)
+        {
+        TestsProgressCallback callback;
+        auto createResult = client.CreateNewiModel(contextId, db, imodelCreateInfo, true, callback.Get())->GetResult();
+        EXPECT_RESULT(createResult, expectSuccess);
+        callback.Verify(expectSuccess);
+        return createResult;
+        }
+
+    /*--------------------------------------------------------------------------------------+
+    * @bsimethod                                    Vilius.Kazlauskas               09/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    iModelResult CreateNewiModel(ClientPtr client, DgnDbPtr db, Utf8StringCR contextId, iModelCreateInfoPtr imodelCreateInfo, bool expectSuccess)
+        {
+        return CreateNewiModel(*client, *db, contextId, imodelCreateInfo, expectSuccess);
+        }
+    
+    /*--------------------------------------------------------------------------------------+
     * @bsimethod                                    Algirdas.Mikoliunas             01/2019
     +---------------+---------------+---------------+---------------+---------------+------*/
     iModelResult CreateEmptyiModel(ClientCR client, Utf8StringCR contextId, Utf8StringCR name, Utf8StringCR description, bool expectSuccess)
         {
         auto createResult = client.CreateEmptyiModel(contextId, name, description)->GetResult();
+        EXPECT_RESULT(createResult, expectSuccess);
+        return createResult;
+        }
+
+    /*--------------------------------------------------------------------------------------+
+    * @bsimethod                                    Vilius.Kazlauskas               09/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    iModelResult CreateEmptyiModel(ClientCR client, Utf8StringCR contextId, iModelCreateInfoPtr imodelCreateInfo, bool expectSuccess)
+        {
+        auto createResult = client.CreateEmptyiModel(contextId, imodelCreateInfo)->GetResult();
         EXPECT_RESULT(createResult, expectSuccess);
         return createResult;
         }

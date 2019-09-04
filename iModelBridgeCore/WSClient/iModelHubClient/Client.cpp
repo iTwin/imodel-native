@@ -322,30 +322,58 @@ ICancellationTokenPtr cancellationToken
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
 BEGIN_UNNAMED_NAMESPACE
-Json::Value iModelCreationJson(Utf8StringCR iModelName, Utf8StringCR description, Utf8StringCR imodelTemplate)
+Json::Value iModelCreationJson(iModelBaseInfoCR imodelCreateInfo)
     {
     Json::Value iModelCreation(Json::objectValue);
     JsonValueR instance = iModelCreation[ServerSchema::Instance] = Json::objectValue;
     instance[ServerSchema::SchemaName] = ServerSchema::Schema::Context;
     instance[ServerSchema::ClassName] = ServerSchema::Class::iModel;
     JsonValueR properties = instance[ServerSchema::Properties] = Json::objectValue;
-    properties[ServerSchema::Property::iModelName] = iModelName;
-    properties[ServerSchema::Property::iModelDescription] = description;
-    properties[ServerSchema::Property::iModelTemplate] = imodelTemplate;
+    properties[ServerSchema::Property::iModelName] = imodelCreateInfo.GetName();
+    properties[ServerSchema::Property::iModelDescription] = imodelCreateInfo.GetDescription();
+    properties[ServerSchema::Property::iModelTemplate] = imodelCreateInfo.GetTemplate();
+
+    if (!imodelCreateInfo.GetExtent().empty())
+        {
+        properties[ServerSchema::Property::Extent] = Json::arrayValue;
+        int i = 0;
+        for (auto const& coordinate : imodelCreateInfo.GetExtent())
+            {
+            properties[ServerSchema::Property::Extent][i++] = coordinate;
+            }
+        }
+
     return iModelCreation;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Vilius.Kazlauskas             01/2019
+//---------------------------------------------------------------------------------------
+Utf8CP GetiModelValidationLogMessage(Error::Id errorId)
+    {
+    switch (errorId)
+        {
+        case Error::Id::InvalidiModelName:
+            return "Invalid iModel name.";
+        case Error::Id::InvalidiModelExtentCount:
+            return "Invalid iModel extent coordinates count.";
+        case Error::Id::InvalidiModelExtentCoordinate:
+            return "Invalid iModel extent coordinate value out of bounds.";
+        default:
+            return "Unexpected error while validating an iModel. ErrorId: " + static_cast<int>(errorId);
+        }
     }
 END_UNNAMED_NAMESPACE
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
 //---------------------------------------------------------------------------------------
-iModelTaskPtr Client::CreateiModelInstance(Utf8StringCR contextId, Utf8StringCR iModelName, Utf8StringCR description,
-                                           Utf8StringCR imodelTemplate, ICancellationTokenPtr cancellationToken) const
+iModelTaskPtr Client::CreateiModelInstance(Utf8StringCR contextId, iModelCreateInfoPtr imodelCreateInfo, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "Client::CreateiModelInstance";
     std::shared_ptr<iModelResult> finalResult = std::make_shared<iModelResult>();
 
-    Json::Value imodelCreationJson = iModelCreationJson(iModelName, description, imodelTemplate);
+    Json::Value imodelCreationJson = iModelCreationJson(*imodelCreateInfo);
     m_globalRequestOptionsPtr->InsertRequestOptions(imodelCreationJson);
 
     auto requestOptions = LogHelper::CreateiModelHubRequestOptions();
@@ -385,7 +413,7 @@ iModelTaskPtr Client::CreateiModelInstance(Utf8StringCR contextId, Utf8StringCR 
             return;
             }
 
-        GetiModelByName(contextId, iModelName)->Then([=] (iModelResultCR queryResult)
+        GetiModelByName(contextId, imodelCreateInfo->GetName())->Then([=] (iModelResultCR queryResult)
             {
             queryResult.IsSuccess() ? finalResult->SetSuccess(queryResult.GetValue()) : finalResult->SetError(queryResult.GetError());
             });
@@ -399,8 +427,8 @@ iModelTaskPtr Client::CreateiModelInstance(Utf8StringCR contextId, Utf8StringCR 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-iModelTaskPtr Client::CreateNewiModel(Utf8StringCR contextId, Dgn::DgnDbCR db, Utf8StringCR iModelName, Utf8StringCR description,
-                                      bool waitForInitialized, Http::Request::ProgressCallbackCR callback, 
+iModelTaskPtr Client::CreateNewiModel(Utf8StringCR contextId, Dgn::DgnDbCR db, iModelCreateInfoPtr imodelCreateInfo,
+                                      bool waitForInitialized, Http::Request::ProgressCallbackCR callback,
                                       ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "Client::CreateNewiModel";
@@ -420,24 +448,27 @@ iModelTaskPtr Client::CreateNewiModel(Utf8StringCR contextId, Dgn::DgnDbCR db, U
         {
         LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Credentials are not set.");
         return CreateCompletedAsyncTask<iModelResult>(iModelResult::Error(Error::Id::CredentialsNotSet));
-        }
-    if (iModelName.empty())
-        {
-        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid iModel name.");
-        return CreateCompletedAsyncTask<iModelResult>(iModelResult::Error(Error::Id::InvalidiModelName));
-        }
+        }    
     if (!db.IsStandaloneBriefcase() && !db.IsMasterCopy())
         {
         LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Seed file is a briefcase.");
         return CreateCompletedAsyncTask<iModelResult>(iModelResult::Error(Error::Id::FileIsBriefcase));
         }
 
-    FileInfoPtr fileInfo = FileInfo::Create(db, description);
+    StatusResult imodelValidationResult = imodelCreateInfo->Validate();
+    if (!imodelValidationResult.IsSuccess())
+        {
+        Error::Id errorId = imodelValidationResult.GetError().GetId();
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, GetiModelValidationLogMessage(errorId));
+        return CreateCompletedAsyncTask<iModelResult>(iModelResult::Error(errorId));
+        }
+
+    FileInfoPtr fileInfo = FileInfo::Create(db, imodelCreateInfo->GetDescription());
     BeFileName filePath = db.GetFileName();
 
     std::shared_ptr<iModelResult> finalResult = std::make_shared<iModelResult>();
-    LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Creating iModel instance. Name: %s.", iModelName.c_str());
-    return CreateiModelInstance(contextId, iModelName, description, "", cancellationToken)
+    LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Creating iModel instance. Name: %s.", imodelCreateInfo->GetName().c_str());
+    return CreateiModelInstance(contextId, imodelCreateInfo, cancellationToken)
         ->Then([=](iModelResultCR createiModelResult)
         {
         if (!createiModelResult.IsSuccess())
@@ -482,6 +513,17 @@ iModelTaskPtr Client::CreateNewiModel(Utf8StringCR contextId, Dgn::DgnDbCR db, U
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                     Vilius.Kazlauskas             08/2019
+//---------------------------------------------------------------------------------------
+iModelTaskPtr Client::CreateNewiModel(Utf8StringCR contextId, Dgn::DgnDbCR db, Utf8StringCR iModelName, Utf8StringCR description,
+                                      bool waitForInitialized, Http::Request::ProgressCallbackCR callback,
+                                      ICancellationTokenPtr cancellationToken) const
+    {
+    iModelCreateInfoPtr imodelCreateInfo = iModelCreateInfo::Create(iModelName, description);
+    return CreateNewiModel(contextId, db, imodelCreateInfo, waitForInitialized, callback, cancellationToken);
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             11/2015
 //---------------------------------------------------------------------------------------
 iModelTaskPtr Client::CreateNewiModel(Utf8StringCR contextId, Dgn::DgnDbCR db, bool waitForInitialized, Http::Request::ProgressCallbackCR callback,
@@ -499,14 +541,15 @@ iModelTaskPtr Client::CreateNewiModel(Utf8StringCR contextId, Dgn::DgnDbCR db, b
         BeStringUtilities::WCharToUtf8(name, db.GetFileName().GetFileNameWithoutExtension().c_str());
     Utf8String description;
     db.QueryProperty(description, BeSQLite::PropertySpec(Db::Properties::Description, Db::Properties::ProjectNamespace));
-    return CreateNewiModel(contextId, db, name, description, waitForInitialized, callback, cancellationToken);
+
+    iModelCreateInfoPtr imodelCreateInfo = iModelCreateInfo::Create(name, description);
+    return CreateNewiModel(contextId, db, imodelCreateInfo, waitForInitialized, callback, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             01/2019
 //---------------------------------------------------------------------------------------
-iModelTaskPtr Client::CreateEmptyiModel(Utf8StringCR contextId, Utf8StringCR iModelName, Utf8StringCR description,
-                                      ICancellationTokenPtr cancellationToken) const
+iModelTaskPtr Client::CreateEmptyiModel(Utf8StringCR contextId, iModelCreateInfoPtr imodelCreateInfo, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "Client::CreateEmptyiModel";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
@@ -521,15 +564,20 @@ iModelTaskPtr Client::CreateEmptyiModel(Utf8StringCR contextId, Utf8StringCR iMo
         LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Credentials are not set.");
         return CreateCompletedAsyncTask<iModelResult>(iModelResult::Error(Error::Id::CredentialsNotSet));
         }
-    if (iModelName.empty())
+
+    StatusResult imodelValidationResult = imodelCreateInfo->Validate();
+    if (!imodelValidationResult.IsSuccess())
         {
-        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid iModel name.");
-        return CreateCompletedAsyncTask<iModelResult>(iModelResult::Error(Error::Id::InvalidiModelName));
+        Error::Id errorId = imodelValidationResult.GetError().GetId();
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, GetiModelValidationLogMessage(errorId));
+        return CreateCompletedAsyncTask<iModelResult>(iModelResult::Error(errorId));
         }
 
-    LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Creating empty iModel instance. Name: %s.", iModelName.c_str());
-    return CreateiModelInstance(contextId, iModelName, description, ServerSchema::iModelTemplateEmpty, cancellationToken)
-        ->Then<iModelResult>([=](iModelResultCR createiModelResult)
+    imodelCreateInfo->SetTemplate(ServerSchema::iModelTemplateEmpty);
+
+    LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Creating empty iModel instance. Name: %s.", imodelCreateInfo->GetName().c_str());
+    return CreateiModelInstance(contextId, imodelCreateInfo, cancellationToken)
+        ->Then<iModelResult>([=] (iModelResultCR createiModelResult)
         {
         if (!createiModelResult.IsSuccess())
             {
@@ -539,10 +587,20 @@ iModelTaskPtr Client::CreateEmptyiModel(Utf8StringCR contextId, Utf8StringCR iMo
 
         auto iModelInfo = createiModelResult.GetValue();
         double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-        LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
+        LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float) (end - start), "");
 
         return iModelResult::Success(iModelInfo);
         });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Vilius.Kazlauskas             01/2019
+//---------------------------------------------------------------------------------------
+iModelTaskPtr Client::CreateEmptyiModel(Utf8StringCR contextId, Utf8StringCR iModelName, Utf8StringCR description,
+                                        ICancellationTokenPtr cancellationToken) const
+    {
+    iModelCreateInfoPtr imodelCreateInfo = iModelCreateInfo::Create(iModelName, description);
+    return CreateEmptyiModel(contextId, imodelCreateInfo, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1136,7 +1194,7 @@ StatusTaskPtr Client::UpdateiModel(Utf8StringCR contextId, iModelInfoCR iModelIn
         return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(Error::Id::InvalidiModelId));
         }
 
-    Json::Value iModelJson = iModelCreationJson(iModelInfo.GetName(), iModelInfo.GetDescription(), "");
+    Json::Value iModelJson = iModelCreationJson(iModelInfo);
     IWSRepositoryClientPtr client = CreateContextConnection(contextId);
 
     return client->SendUpdateObjectRequestWithOptions(ObjectId(ServerSchema::Schema::Context, ServerSchema::Class::iModel, iModelInfo.GetId()),

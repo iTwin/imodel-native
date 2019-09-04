@@ -17,6 +17,7 @@
 #include <WebServices/Configuration/UrlProvider.h>
 #include <DgnPlatform/DgnDomain.h>
 #include <WebServices/iModelHub/Client/GlobalRequestOptions.h>
+#include <WebServices/iModelHub/Client/iModelCreateInfo.h>
 
 BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 
@@ -64,8 +65,7 @@ private:
                                    bool doSync = true, Http::Request::ProgressCallbackCR callback = nullptr,
                                    ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    iModelTaskPtr CreateiModelInstance(Utf8StringCR contextId, Utf8StringCR iModelName, Utf8StringCR description,
-                                       Utf8StringCR imodelTemplate, ICancellationTokenPtr cancellationToken) const;
+    iModelTaskPtr CreateiModelInstance(Utf8StringCR contextId, iModelCreateInfoPtr imodelCreateInfo, ICancellationTokenPtr cancellationToken) const;
                                        
     iModelConnectionResult CreateiModelConnection(iModelInfoCR iModelInfo) const
         {
@@ -185,7 +185,21 @@ public:
     //! @note CreateNewiModel without iModelName and descriptons arguments should be used instead, to resolve name and description from the dgndb file.
     //! @note Returned iModel Id might be different from the user supplied iModel name.
     IMODELHUBCLIENT_EXPORT iModelTaskPtr CreateNewiModel(Utf8StringCR contextId, DgnDbCR db, Utf8StringCR iModelName, Utf8StringCR description,
-                                                         bool waitForInitialized = true, Http::Request::ProgressCallbackCR  callback = nullptr, 
+                                                         bool waitForInitialized = true, Http::Request::ProgressCallbackCR  callback = nullptr,
+                                                         ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Create a new iModel on the server.
+    //! @param[in] contextId Context Id to connect to.
+    //! @param[in] db A DgnDb file to upload as a seed file for the iModel.
+    //! @param[in] imodelCreateInfo Information of iModel to be created
+    //! @param[in] waitForInitialized Wait for initialized iModel.
+    //! @param[in] callback Progress callback for the file upload.
+    //! @param[in] cancellationToken
+    //! @return Asynchronous task that has created iModel information as the result. See iModelInfo.
+    //! @note CreateNewiModel without iModelName and descriptons arguments should be used instead, to resolve name and description from the dgndb file.
+    //! @note Returned iModel Id might be different from the user supplied iModel name.
+    IMODELHUBCLIENT_EXPORT iModelTaskPtr CreateNewiModel(Utf8StringCR contextId, DgnDbCR db, iModelCreateInfoPtr imodelCreateInfo,
+                                                         bool waitForInitialized = true, Http::Request::ProgressCallbackCR  callback = nullptr,
                                                          ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Create an new iModel on the server from empty template.
@@ -195,7 +209,15 @@ public:
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has created iModel information as the result. See iModelInfo.
     IMODELHUBCLIENT_EXPORT iModelTaskPtr CreateEmptyiModel(Utf8StringCR contextId, Utf8StringCR iModelName, Utf8StringCR description,
-                                                         ICancellationTokenPtr cancellationToken = nullptr) const;
+                                                           ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Create an new iModel on the server from empty template.
+    //! @param[in] contextId Context Id to connect to.
+    //! @param[in] imodelCreateInfo Information of iModel to be created.
+    //! @param[in] cancellationToken
+    //! @return Asynchronous task that has created iModel information as the result. See iModelInfo.
+    IMODELHUBCLIENT_EXPORT iModelTaskPtr CreateEmptyiModel(Utf8StringCR contextId, iModelCreateInfoPtr imodelCreateInfo,
+                                                           ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Update exsiting iModel's name and/or description on the server
     //! @param[in] contextId Context Id to connect to.

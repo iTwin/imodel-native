@@ -107,7 +107,23 @@ iModelInfoPtr iModelInfo::Parse(RapidJsonValueCR properties, Utf8StringCR iModel
         DateTime::FromString(createdDate, dateStr.c_str());
     bool isInitialized = (properties.HasMember(ServerSchema::Property::Initialized) && properties[ServerSchema::Property::Initialized].IsBool()) ?
         properties[ServerSchema::Property::Initialized].GetBool() : false;
-    return new iModelInfo(url, iModelInstanceId, name, description, userUploaded, createdDate, ownerInfo, isInitialized);
+
+    bvector<double> extent;
+    if (properties.HasMember(ServerSchema::Property::Extent) && properties[ServerSchema::Property::Extent].IsArray())
+        {
+        auto extentProperty = properties[ServerSchema::Property::Extent].GetArray();
+        for (auto const& coordinate : extentProperty)
+            {
+            if (!coordinate.IsDouble())
+                {
+                extent = bvector<double>();
+                break;
+                }
+            extent.push_back(coordinate.GetDouble());
+            }
+        }
+
+    return new iModelInfo(url, iModelInstanceId, name, description, userUploaded, createdDate, ownerInfo, isInitialized, extent);
     }
 
 //---------------------------------------------------------------------------------------
