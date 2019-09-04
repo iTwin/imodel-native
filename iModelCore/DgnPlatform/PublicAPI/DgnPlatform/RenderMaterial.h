@@ -12,6 +12,36 @@
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 //=======================================================================================
+//! JSON representation of a RenderMaterial.
+//! See RENDER_MATERIAL_* constants for a list of the known property names.
+//! Only a very small subset of those properties are actually used for rendering in the iModel.js
+//! and DgnClientFx display systems. They are described below.
+//!
+//! An RGB color is defined in JSON as an array of three floating point values in [0..1].
+//!
+//! The diffuse color can be overridden by setting:
+//!     RENDER_MATERIAL_FlagHasBaseColor=true; and
+//!     RENDER_MATERIAL_Color=RGB
+//! The specular color can be overridden by setting:
+//!     RENDER_MATERIAL_FlagHasSpecularColor=true; and
+//!     RENDER_MATERIAL_SpecularColor=RGB
+//! The specular exponent can be specified as a floating point value > 0.0 by setting:
+//!     RENDER_MATERIAL_FlagHasFinish=true; and
+//!     RENDER_MATERIAL_Finish=exponent
+//! A material *always* overrides element transparency as a value from 0 (fully opaque) to 1 (fully transparent).
+//!     If RENDER_MATERIAL_FlagHasTransmit=true, then RENDER_MATERIAL_Transmit holds that transparency value.
+//!     Otherwise, the transparency value is 0.0.
+//!     If the material has a pattern map, the alpha of the sampled texture will be multiplied by the material's alpha (inverse of its transparency).
+//!     ###TODO Revit wants to be able to *not* override element transparency. This should be doable.
+//! The diffuse lighting weight can be specified as a value in [0..1] by setting:
+//!     RENDER_MATERIAL_FlagHasDiffuse=true; and
+//!     RENDER_MATERIAL_Diffuse=weight
+//! The specular weight can be specified as a value in [0..1] by setting:
+//!     RENDER_MATERIAL_FlagHasSpecular=true; and
+//!     RENDER_MATERIAL_Specular=weight
+//!     (If RENDER_MATERIAL_FlagHasSpecular=false, the weight is 0.0).
+//! The pattern map can be specified by setting json[RENDER_MATERIAL_Map][RENDER_MATERIAL_MAP_Pattern] to the JSON representation of a pattern map.
+//! 
 // @bsiclass                                            Ray.Bentley     09/2015
 //=======================================================================================
 struct RenderingAsset : Json::Value

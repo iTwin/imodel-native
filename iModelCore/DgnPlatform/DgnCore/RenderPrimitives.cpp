@@ -2134,6 +2134,25 @@ bool GeometryAccumulator::Add(TextStringR textString, DisplayParamsCR displayPar
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometryAccumulator::AddTextUnderline(TextStringR text, DisplayParamsCR params, TransformCR transform)
+    {
+    DSegment3d segment;
+    if (!text.GetUnderline(segment))
+        return false;
+
+    Transform tf = m_haveTransform ? Transform::FromProduct(m_transform, transform) : transform;
+    auto textTf = text.ComputeTransform();
+    auto range = DRange3d::From(segment.point[0], segment.point[1]);
+    Transform::FromProduct(tf, textTf).Multiply(range, range);
+
+    textTf.Multiply(segment);
+    CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None, ICurvePrimitive::CreateLineString(segment.point, 2));
+    return Add(*curve, false, params, transform, nullptr, false);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 MeshBuilderMap GeometryAccumulator::ToMeshBuilders(GeometryOptionsCR options, double tolerance, FeatureTableP featureTable, ViewContextR context) const
@@ -2978,8 +2997,8 @@ void GeometryListBuilder::_AddTextString(TextStringCR text)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryListBuilder::_AddTextStringR(TextStringR text)
     {
-    // ###TODO_ELEMENT_TILE: May want to treat as box if too small...
     m_accum.Add(text, GetTextDisplayParams(), GetLocalToWorldTransform());
+    m_accum.AddTextUnderline(text, GetLinearDisplayParams(), GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**

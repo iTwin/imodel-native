@@ -404,24 +404,29 @@ bool TextString::GetGlyphSymbology(GeometryParamsR params) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     01/2015
 //---------------------------------------------------------------------------------------
-void TextString::AddUnderline(Render::GraphicBuilderR graphic) const
+bool TextString::GetUnderline(DSegment3dR underline) const
     {
     if (!m_style.IsUnderlined())
-        return;
+        return false;
 
-    Update(); 
-    
-    DPoint3d    pts[2];
-    
-    pts[0].x = m_range.low.x;
-    pts[0].y = (m_range.low.y - (m_style.GetHeight() * DEFAULT_UNDERLINE_OFFSET_FACTOR));
-    pts[0].z = 0.0;
-    
-    pts[1].x = m_range.high.x;
-    pts[1].y = pts[0].y;
-    pts[1].z = 0.0;
+    Update();
 
-    graphic.AddLineString(2, pts);
+    underline.point[0].x = m_range.low.x;
+    underline.point[1].x = m_range.high.x;
+    underline.point[0].y = underline.point[1].y = (m_range.low.y - (m_style.GetHeight() * DEFAULT_UNDERLINE_OFFSET_FACTOR));
+    underline.point[0].z = underline.point[1].z = 0.0;
+
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     01/2015
+//---------------------------------------------------------------------------------------
+void TextString::AddUnderline(Render::GraphicBuilderR graphic) const
+    {
+    DSegment3d underline;
+    if (GetUnderline(underline))
+        graphic.AddLineString(2, underline.point);
     }
 
 static const uint8_t CURRENT_STYLE_MAJOR_VERSION = 1;
