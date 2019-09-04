@@ -360,7 +360,7 @@ Utf8CP GetiModelValidationLogMessage(Error::Id errorId)
         case Error::Id::InvalidiModelExtentCoordinate:
             return "Invalid iModel extent coordinate value out of bounds.";
         default:
-            return "Unexpected error while validating an iModel. ErrorId: " + static_cast<int>(errorId);
+            return Utf8PrintfString("Unexpected error while validating an iModel. ErrorId: %d", static_cast<int>(errorId)).c_str();
         }
     }
 END_UNNAMED_NAMESPACE
