@@ -17,6 +17,7 @@ using namespace ::testing;
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct MockQueryProvider : IQueryProvider
     {
+#ifdef WIP_MERGE
     MOCK_CONST_METHOD1 (GetInitialQueries, bvector<IQueryProvider::Query>
         (
         CacheTransactionCR txn
@@ -26,6 +27,7 @@ struct MockQueryProvider : IQueryProvider
         (
         CacheTransactionCR txn
         ));
+#endif
 
     MOCK_CONST_METHOD3 (GetQueries, bvector<IQueryProvider::Query>
         (
