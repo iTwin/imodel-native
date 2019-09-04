@@ -771,6 +771,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         RelatedClassPath m_relationshipPath;
         bvector<Field*> m_fields;
         int m_priority;
+        bool m_autoExpand;
 
     protected:
         NestedContentField* _AsNestedContentField() override {return this;}
@@ -790,18 +791,19 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         //! @param[in] contentClassAlias Alias of the content class.
         //! @param[in] relationshipPath Path from the @e contentClass to the primary instance class.
         //! @param[in] fields A list of fields which this field consists from.
+        //! @param[in] autoExpand Flag specifying if this field should be expanded.
         //! @param[in] priority Priority of the field
         NestedContentField(Category category, Utf8String name, Utf8String label, 
             ECClassCR contentClass, Utf8String contentClassAlias, RelatedClassPath relationshipPath,
-            bvector<Field*> fields = bvector<Field*>(), int priority = Property::DEFAULT_PRIORITY) 
+            bvector<Field*> fields = bvector<Field*>(), bool autoExpand = false, int priority = Property::DEFAULT_PRIORITY)
             : Field(category, name, label), m_contentClass(contentClass), m_contentClassAlias(contentClassAlias), 
-            m_relationshipPath(relationshipPath), m_fields(fields), m_priority(priority)
+            m_relationshipPath(relationshipPath), m_fields(fields), m_priority(priority), m_autoExpand(autoExpand)
             {}
         
         //! Copy constructor.
         NestedContentField(NestedContentField const& other) 
             : Field(other), m_contentClass(other.m_contentClass), m_contentClassAlias(other.m_contentClassAlias), 
-            m_relationshipPath(other.m_relationshipPath), m_priority(other.m_priority)
+            m_relationshipPath(other.m_relationshipPath), m_priority(other.m_priority), m_autoExpand(other.m_autoExpand)
             {
             for (Field const* field : other.m_fields)
                 m_fields.push_back(field->Clone());
@@ -810,7 +812,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         //! Move constructor.
         NestedContentField(NestedContentField&& other) 
             : Field(std::move(other)), m_contentClass(other.m_contentClass), m_contentClassAlias(std::move(other.m_contentClassAlias)), 
-            m_relationshipPath(std::move(other.m_relationshipPath)), m_fields(std::move(other.m_fields)), m_priority(other.m_priority)
+            m_relationshipPath(std::move(other.m_relationshipPath)), m_fields(std::move(other.m_fields)), m_priority(other.m_priority), m_autoExpand(other.m_autoExpand)
             {}
 
         //! Destructor
@@ -830,6 +832,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         //! A list of fields which this field consists from.
         bvector<Field*> const& GetFields() const {return m_fields;}
         bvector<Field*>& GetFields() {return m_fields;}
+
+        //! Should this field be automatically expanded.
+        bool ShouldAutoExpand() const {return m_autoExpand;}
         };
 
     struct ECInstanceKeyField;

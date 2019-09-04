@@ -28,6 +28,7 @@
 #define COMMON_XML_ATTRIBUTE_ISPOLYMORPHIC                                            "IsPolymorphic"
 #define COMMON_XML_ATTRIBUTE_STOPFURTHERPROCESSING                                    "StopFurtherProcessing"
 #define COMMON_XML_ATTRIBUTE_RELATIONSHIPMEANING                                      "RelationshipMeaning"
+#define COMMON_XML_ATTRIBUTE_AUTOEXPAND                                               "AutoExpand"
 
 #define PRESENTATION_RULE_SET_XML_NODE_NAME                                           "PresentationRuleSet"
 #define PRESENTATION_RULE_SET_XML_ATTRIBUTE_RULESETID                                 "RuleSetId"
@@ -43,7 +44,6 @@
 #define PRESENTATION_RULE_XML_ATTRIBUTE_CONDITION                                     "Condition"
 
 #define ROOT_NODE_RULE_XML_NODE_NAME                                                  "RootNodeRule"
-#define ROOT_NODE_RULE_XML_ATTRIBUTE_AUTOEXPAND                                       "AutoExpand"
 
 #define SUB_CONDITION_XML_NODE_NAME                                                   "SubCondition"
 

@@ -434,7 +434,7 @@ bool RootNodeRule::_ReadXml(BeXmlNodeP xmlNode)
     if (!ChildNodeRule::_ReadXml(xmlNode))
         return false;
 
-    if (BEXML_Success != xmlNode->GetAttributeBooleanValue(m_autoExpand, ROOT_NODE_RULE_XML_ATTRIBUTE_AUTOEXPAND))
+    if (BEXML_Success != xmlNode->GetAttributeBooleanValue(m_autoExpand, COMMON_XML_ATTRIBUTE_AUTOEXPAND))
         m_autoExpand = false;
 
     return true;
@@ -446,7 +446,7 @@ bool RootNodeRule::_ReadXml(BeXmlNodeP xmlNode)
 void RootNodeRule::_WriteXml(BeXmlNodeP xmlNode) const
     {
     ChildNodeRule::_WriteXml(xmlNode);
-    xmlNode->AddAttributeBooleanValue(ROOT_NODE_RULE_XML_ATTRIBUTE_AUTOEXPAND, m_autoExpand);
+    xmlNode->AddAttributeBooleanValue(COMMON_XML_ATTRIBUTE_AUTOEXPAND, m_autoExpand);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -465,7 +465,7 @@ bool RootNodeRule::_ReadJson(JsonValueCR json)
     if (!ChildNodeRule::_ReadJson(json))
         return false;
 
-    m_autoExpand = json[ROOT_NODE_RULE_JSON_ATTRIBUTE_AUTOEXPAND].asBool(false);
+    m_autoExpand = json[COMMON_JSON_ATTRIBUTE_AUTOEXPAND].asBool(false);
     return true;
     }
 
@@ -476,7 +476,7 @@ void RootNodeRule::_WriteJson(JsonValueR json) const
     {
     ChildNodeRule::_WriteJson(json);
     if (m_autoExpand)
-        json[ROOT_NODE_RULE_JSON_ATTRIBUTE_AUTOEXPAND] = m_autoExpand;
+        json[COMMON_JSON_ATTRIBUTE_AUTOEXPAND] = m_autoExpand;
     }
 
 /*---------------------------------------------------------------------------------**//**

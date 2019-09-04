@@ -28,6 +28,7 @@
 #define COMMON_JSON_ATTRIBUTE_ISPOLYMORPHIC                                             "isPolymorphic"
 #define COMMON_JSON_ATTRIBUTE_STOPFURTHERPROCESSING                                     "stopFurtherProcessing"
 #define COMMON_JSON_ATTRIBUTE_RELATIONSHIPMEANING                                       "relationshipMeaning"
+#define COMMON_JSON_ATTRIBUTE_AUTOEXPAND                                                "autoExpand"
 
 #define SCHEMAS_SPECIFICATION_SCHEMANAMES                                               "schemaNames"
 #define SCHEMAS_SPECIFICATION_ISEXCLUDE                                                 "isExclude"
@@ -52,7 +53,6 @@
 #define PRESENTATION_RULE_JSON_ATTRIBUTE_CONDITION                                      "condition"
 
 #define ROOT_NODE_RULE_JSON_TYPE                                                        "RootNodes"
-#define ROOT_NODE_RULE_JSON_ATTRIBUTE_AUTOEXPAND                                        "autoExpand"
 
 #define SUB_CONDITION_JSON_ATTRIBUTE_SUBCONDITIONS                                      "subConditions"
 #define SUB_CONDITION_JSON_ATTRIBUTE_SPECIFICATIONS                                     "specifications"

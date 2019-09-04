@@ -40,6 +40,7 @@ struct RelatedPropertiesSpecification : HashableBase
         RelatedPropertiesSpecificationList m_nestedRelatedPropertiesSpecification;
         RelationshipMeaning m_relationshipMeaning;
         bool m_polymorphic;
+        bool m_autoExpand;
 
     protected:
         //! Computes specification hash.
@@ -55,7 +56,7 @@ struct RelatedPropertiesSpecification : HashableBase
         //! Constructor.
         ECPRESENTATION_EXPORT RelatedPropertiesSpecification(RequiredRelationDirection requiredDirection,
             Utf8String relationshipClassNames, Utf8String relatedClassNames, Utf8String propertyNames,
-            RelationshipMeaning relationshipMeaning, bool polymorphic = false);
+            RelationshipMeaning relationshipMeaning, bool polymorphic = false, bool autoExpand = false);
 
         //! Destructor.
         ECPRESENTATION_EXPORT ~RelatedPropertiesSpecification (void);
@@ -109,6 +110,12 @@ struct RelatedPropertiesSpecification : HashableBase
         
         //! Add nested related property.
         ECPRESENTATION_EXPORT void AddNestedRelatedProperty(RelatedPropertiesSpecificationR specification);
+
+        //! Should properties be automatically expand
+        bool ShouldAutoExpand() const {return m_autoExpand;}
+
+        //! Set whether properties should be automatically expanded
+        void SetAutoExpand(bool value) {m_autoExpand = value;}
     };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

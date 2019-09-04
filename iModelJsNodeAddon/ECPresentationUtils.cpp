@@ -149,6 +149,8 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
         {
         fieldBaseJson.AddMember("contentClassInfo", _AsJson(nestedContentField.GetContentClass(), &fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
         fieldBaseJson.AddMember("pathToPrimaryClass", _AsJson(nestedContentField.GetRelationshipPath(), fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
+        if (nestedContentField.ShouldAutoExpand())
+            fieldBaseJson.AddMember("autoExpand", nestedContentField.ShouldAutoExpand(), fieldBaseJson.GetAllocator());
 
         rapidjson::Value nestedFieldsJson(rapidjson::kArrayType);
         for (ContentDescriptor::Field const* nestedField : nestedContentField.GetFields())

@@ -13922,3 +13922,67 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, AppliesContentItemExtendedD
     ASSERT_TRUE(extendedData2.GetJson().HasMember("constant_string"));
     EXPECT_STREQ("Red", extendedData2.GetJson()["constant_string"].GetString());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Saulius.Skliutas                08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(CreatesAutoExpandedNestedFieldForRelatedProperties,
+    R"*(
+    <ECEntityClass typeName="Element">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="Aspect">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="CodeValue" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementHasAspect" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="Aspect" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, CreatesAutoExpandedNestedFieldForRelatedProperties)
+    {
+    // set up data set
+    ECClassCP element = GetClass("Element");
+    ECClassCP aspect = GetClass("Aspect");
+
+    ECRelationshipClassCP elementHasAspect = dynamic_cast<ECRelationshipClass const *>(GetSchema()->GetClassCP("ElementHasAspect"));
+
+    IECInstancePtr elementInst = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *element);
+    IECInstancePtr aspectInst = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *aspect, [](IECInstanceR instance) {instance.SetValue("CodeValue", ECValue("test")); });
+
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *elementHasAspect, *elementInst, *aspectInst, nullptr, true);
+
+    // set up ruleset
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRule* rule = new ContentRule();
+    rules->AddPresentationRule(*rule);
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", element->GetFullName(), true));
+
+    ContentModifierP modifier = new ContentModifier(element->GetSchema().GetName(), element->GetName());
+    rules->AddPresentationRule(*modifier);
+    modifier->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, elementHasAspect->GetFullName(), "", "", RelationshipMeaning::RelatedInstance, false, true));
+
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
+
+    bvector<ContentDescriptor::Field*> fields = descriptor->GetVisibleFields();
+    ASSERT_EQ(1, fields.size());
+
+    ASSERT_TRUE(fields[0]->IsNestedContentField());
+    EXPECT_TRUE(fields[0]->AsNestedContentField()->ShouldAutoExpand());
+    }

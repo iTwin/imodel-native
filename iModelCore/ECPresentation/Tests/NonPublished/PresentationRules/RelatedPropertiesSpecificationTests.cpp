@@ -28,7 +28,8 @@ TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromJson)
         "propertyNames": ["Property","Names"],
         "relationshipMeaning": "SameInstance",
         "isPolymorphic": true,
-        "nestedRelatedProperties": [{}]
+        "nestedRelatedProperties": [{}],
+        "autoExpand": true
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
     ASSERT_FALSE(json.isNull());
@@ -41,6 +42,7 @@ TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromJson)
     EXPECT_EQ(RequiredRelationDirection_Backward, spec.GetRequiredRelationDirection());
     EXPECT_EQ(RelationshipMeaning::SameInstance, spec.GetRelationshipMeaning());
     EXPECT_TRUE(spec.IsPolymorphic());
+    EXPECT_TRUE(spec.ShouldAutoExpand());
     EXPECT_EQ(1, spec.GetNestedRelatedProperties().size());
     }
 
@@ -61,6 +63,7 @@ TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromJsonWithDefaultValues)
     EXPECT_EQ(RequiredRelationDirection_Both, spec.GetRequiredRelationDirection());
     EXPECT_EQ(RelationshipMeaning::RelatedInstance, spec.GetRelationshipMeaning());
     EXPECT_FALSE(spec.IsPolymorphic());
+    EXPECT_FALSE(spec.ShouldAutoExpand());
     EXPECT_EQ(0, spec.GetNestedRelatedProperties().size());
     }
 
@@ -69,7 +72,7 @@ TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromJsonWithDefaultValues)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RelatedPropertiesSpecificationsTests, WriteToJson)
     {
-    RelatedPropertiesSpecification spec(RequiredRelationDirection_Backward, "s1:c1", "s2:c2,c3", "p1,p2", RelationshipMeaning::SameInstance, true);
+    RelatedPropertiesSpecification spec(RequiredRelationDirection_Backward, "s1:c1", "s2:c2,c3", "p1,p2", RelationshipMeaning::SameInstance, true, true);
     Json::Value json = spec.WriteJson();
     Json::Value expected = Json::Reader::DoParse(R"({
         "requiredDirection": "Backward",
@@ -77,7 +80,8 @@ TEST_F(RelatedPropertiesSpecificationsTests, WriteToJson)
         "relatedClasses": {"schemaName": "s2", "classNames": ["c2", "c3"]},
         "relationshipMeaning": "SameInstance",
         "propertyNames": ["p1", "p2"],
-        "isPolymorphic": true
+        "isPolymorphic": true,
+        "autoExpand": true
     })");
     EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
     }
@@ -177,6 +181,7 @@ TEST_F(RelatedPropertiesSpecificationsTests, WritesToXml)
     spec.SetPropertyNames("Property,Names");
     spec.SetRelationshipMeaning(RelationshipMeaning::RelatedInstance);
     spec.SetIsPolymorphic(true);
+    spec.SetAutoExpand(true);
     spec.AddNestedRelatedProperty(*new RelatedPropertiesSpecification());
     spec.WriteXml(xml->GetRootElement());
     
@@ -188,14 +193,16 @@ TEST_F(RelatedPropertiesSpecificationsTests, WritesToXml)
                 R"(PropertyNames="Property,Names" )"
                 R"(RequiredDirection="Backward" )"
                 R"(RelationshipMeaning="RelatedInstance" )"
-                R"(IsPolymorphic="true">)"
+                R"(IsPolymorphic="true" )"
+                R"(AutoExpand="true">)"
                 "<RelatedProperties "
                     R"(RelationshipClassNames="" )"
                     R"(RelatedClassNames="" )"
                     R"(PropertyNames="" )"
                     R"(RequiredDirection="Both" )"
                     R"(RelationshipMeaning="RelatedInstance" )"
-                    R"(IsPolymorphic="false" />)"
+                    R"(IsPolymorphic="false" )"
+                    R"(AutoExpand="false" />)"
             "</RelatedProperties>"
         "</Root>";
     EXPECT_STREQ(ToPrettyString(*BeXmlDom::CreateAndReadFromString(xmlStatus, expected)).c_str(), ToPrettyString(*xml).c_str());

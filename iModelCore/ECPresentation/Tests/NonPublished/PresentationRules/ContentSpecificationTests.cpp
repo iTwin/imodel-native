@@ -224,7 +224,7 @@ TEST_F(ContentSpecificationsTests, WritesToXml)
         "<Root>"
             R"(<TestSpecification Priority="123" ShowImages="true">)"
                 R"(<RelatedProperties RelationshipClassNames="RelationshipClassName" RelatedClassNames="RelatedClassNames" )"
-                    R"(PropertyNames="Properties" RequiredDirection="Forward" RelationshipMeaning="SameInstance" IsPolymorphic="false"/>)"
+                    R"(PropertyNames="Properties" RequiredDirection="Forward" RelationshipMeaning="SameInstance" IsPolymorphic="false" AutoExpand="false"/>)"
                 R"(<DisplayedProperties PropertyNames="DisplayedProperty" Priority="123"/>)"
                 R"(<HiddenProperties PropertyNames="HiddenProperty" Priority="456"/>)"
                 R"(<RelatedInstance ClassName="TestClassName" RelationshipName="TestRelName" RelationshipDirection="Both" Alias="TestAlias" IsRequired="false" />)"

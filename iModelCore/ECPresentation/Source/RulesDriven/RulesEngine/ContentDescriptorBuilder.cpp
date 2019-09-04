@@ -66,6 +66,7 @@ private:
     RelationshipMeaning m_relationshipMeaning;
     ContentDescriptor::ECInstanceKeyField* m_keyField;
     ContentDescriptor::NestedContentField* m_nestedContentField;
+    bool m_expandNestedFields;
 
 private:
     /*---------------------------------------------------------------------------------**//**
@@ -338,12 +339,12 @@ private:
                     return m_nestedContentField;
                     }
                 }
-        
+
             // create the field
             ECClassCR primaryClass = *m_relatedClassPath.front().GetTargetClass();
             ContentDescriptor::Category fieldCategory = m_context.GetCategorySupplier().GetCategory(primaryClass, relationshipPath, m_actualClass);
             m_nestedContentField = new ContentDescriptor::NestedContentField(fieldCategory, CreateNestedContentFieldName(relationshipPath), 
-                m_actualClass.GetDisplayLabel(), m_actualClass, classAlias, relationshipPath);
+                m_actualClass.GetDisplayLabel(), m_actualClass, classAlias, relationshipPath, bvector<ContentDescriptor::Field*>(), m_expandNestedFields);
             ApplyFieldLocalization(*m_nestedContentField, m_context);
 
             if (nullptr != nestingField)
@@ -466,9 +467,9 @@ public:
     * @bsimethod                                    Grigas.Petraitis                06/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
     ContentPropertiesAppender(ContentDescriptorBuilder::Context& context, PropertyInfoStore const& propertyInfos, ContentDescriptorR descriptor,        
-        ECClassCR actualClass, RelatedClassPath const& relatedClassPath, RelationshipMeaning relationshipMeaning)
+        ECClassCR actualClass, RelatedClassPath const& relatedClassPath, RelationshipMeaning relationshipMeaning, bool expandNestedFields)
         : m_context(context), m_descriptor(descriptor), m_propertyInfos(propertyInfos), m_relatedClassPath(relatedClassPath), m_actualClass(actualClass), 
-        m_relationshipMeaning(relationshipMeaning), m_keyField(nullptr), m_nestedContentField(nullptr)
+        m_relationshipMeaning(relationshipMeaning), m_keyField(nullptr), m_nestedContentField(nullptr), m_expandNestedFields(expandNestedFields)
         {}
 };
 
@@ -515,9 +516,9 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                10/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    PropertyAppenderPtr _CreatePropertyAppender(ECClassCR propertyClass, RelatedClassPath const& pathToSelectClass, RelationshipMeaning relationshipMeaning) override
+    PropertyAppenderPtr _CreatePropertyAppender(ECClassCR propertyClass, RelatedClassPath const& pathToSelectClass, RelationshipMeaning relationshipMeaning, bool expandNestedFields) override
         {
-        return new ContentPropertiesAppender(GetContext(), m_propertyInfos, *m_descriptor, propertyClass, pathToSelectClass, relationshipMeaning);
+        return new ContentPropertiesAppender(GetContext(), m_propertyInfos, *m_descriptor, propertyClass, pathToSelectClass, relationshipMeaning, expandNestedFields);
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -609,7 +610,7 @@ public:
                 ContentDescriptor::ECPropertiesField const* propertiesField = field->AsPropertiesField();
                 BeAssert(1 == propertiesField->GetProperties().size());
                 bvector<RelatedClassPath> navigationPropertiesPaths;
-                PropertyAppenderPtr appender = _CreatePropertyAppender(contentField.GetContentClass(), RelatedClassPath(), RelationshipMeaning::SameInstance);
+                PropertyAppenderPtr appender = _CreatePropertyAppender(contentField.GetContentClass(), RelatedClassPath(), RelationshipMeaning::SameInstance, false);
                 appender->Append(propertiesField->GetProperties().front().GetProperty(), contentField.GetContentClassAlias().c_str());
                 m_descriptor->GetAllFields().back()->SetName(field->GetName());
                 }

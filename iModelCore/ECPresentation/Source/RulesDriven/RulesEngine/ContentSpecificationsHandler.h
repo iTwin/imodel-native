@@ -103,7 +103,7 @@ private:
     bset<ECClassCP> const& GetModifierClasses() const;
 
 protected:
-    virtual PropertyAppenderPtr _CreatePropertyAppender(ECClassCR propertyClass, RelatedClassPath const& pathToSelectClass, RelationshipMeaning) = 0;
+    virtual PropertyAppenderPtr _CreatePropertyAppender(ECClassCR propertyClass, RelatedClassPath const& pathToSelectClass, RelationshipMeaning, bool expandNestedFields) = 0;
     virtual bool _ShouldIncludeRelatedProperties() const {return true;}
     virtual void _AppendClass(SelectClassInfo const&) = 0;
     ECPRESENTATION_EXPORT virtual void _OnBeforeAppendClassInfos(bvector<SupportedEntityClassInfo>&);

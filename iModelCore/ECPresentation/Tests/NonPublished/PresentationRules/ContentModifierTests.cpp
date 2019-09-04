@@ -217,7 +217,7 @@ TEST_F(ContentModifierTests, WriteToXml)
     static Utf8CP expected = ""
         "<Root>"
             R"(<ContentModifier Priority="1000" ClassName="ClassName" SchemaName="SchemaName">)"
-                R"(<RelatedProperties RelationshipClassNames="RelationshipClassName" RelatedClassNames="RelatedClassNames" PropertyNames="Properties" RequiredDirection="Forward" RelationshipMeaning="RelatedInstance" IsPolymorphic="false"/>)"
+                R"(<RelatedProperties RelationshipClassNames="RelationshipClassName" RelatedClassNames="RelatedClassNames" PropertyNames="Properties" RequiredDirection="Forward" RelationshipMeaning="RelatedInstance" IsPolymorphic="false" AutoExpand="false"/>)"
                 R"(<DisplayedProperties PropertyNames="properties" Priority="1000"/>)"
                 R"(<CalculatedProperties>)"
                     R"(<Property Label="label" Priority="0">Value</Property>)"

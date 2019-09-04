@@ -186,7 +186,7 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                10/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    PropertyAppenderPtr _CreatePropertyAppender(ECClassCR propertyClass, RelatedClassPath const&, RelationshipMeaning) override
+    PropertyAppenderPtr _CreatePropertyAppender(ECClassCR propertyClass, RelatedClassPath const&, RelationshipMeaning, bool) override
         {
         return new DisplayedPropertyAppender(GetContext(), *m_currentSpecification, propertyClass);
         }

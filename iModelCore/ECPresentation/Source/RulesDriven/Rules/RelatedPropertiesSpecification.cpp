@@ -17,7 +17,7 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 RelatedPropertiesSpecification::RelatedPropertiesSpecification ()
-    : m_requiredDirection (RequiredRelationDirection_Both), m_relationshipMeaning(RelationshipMeaning::RelatedInstance), m_polymorphic(false)
+    : m_requiredDirection (RequiredRelationDirection_Both), m_relationshipMeaning(RelationshipMeaning::RelatedInstance), m_polymorphic(false), m_autoExpand(false)
     {}
 
 /*---------------------------------------------------------------------------------**//**
@@ -30,13 +30,15 @@ Utf8String                 relationshipClassNames,
 Utf8String                 relatedClassNames,
 Utf8String                 propertyNames,
 RelationshipMeaning        relationshipMeaning,
-bool                       polymorphic
+bool                       polymorphic,
+bool                       autoExpand
 ) : m_requiredDirection (requiredDirection), 
     m_relationshipClassNames (relationshipClassNames),
     m_relatedClassNames (relatedClassNames),
     m_propertyNames (propertyNames),
     m_relationshipMeaning (relationshipMeaning),
-    m_polymorphic(polymorphic)
+    m_polymorphic(polymorphic),
+    m_autoExpand(autoExpand)
     {
     }
 
@@ -46,7 +48,7 @@ bool                       polymorphic
 RelatedPropertiesSpecification::RelatedPropertiesSpecification(RelatedPropertiesSpecification const& other)
     : m_requiredDirection(other.m_requiredDirection), m_relationshipClassNames(other.m_relationshipClassNames), 
     m_relatedClassNames(other.m_relatedClassNames), m_propertyNames(other.m_propertyNames), 
-    m_relationshipMeaning(other.m_relationshipMeaning), m_polymorphic(other.m_polymorphic)
+    m_relationshipMeaning(other.m_relationshipMeaning), m_polymorphic(other.m_polymorphic), m_autoExpand(other.m_autoExpand)
     {
     CommonToolsInternal::CopyRules(m_nestedRelatedPropertiesSpecification, other.m_nestedRelatedPropertiesSpecification, this);
     }
@@ -88,6 +90,9 @@ bool RelatedPropertiesSpecification::ReadXml (BeXmlNodeP xmlNode)
     if (BEXML_Success != xmlNode->GetAttributeBooleanValue(m_polymorphic, COMMON_XML_ATTRIBUTE_ISPOLYMORPHIC))
         m_polymorphic = false;
 
+    if (BEXML_Success != xmlNode->GetAttributeBooleanValue(m_autoExpand, COMMON_XML_ATTRIBUTE_AUTOEXPAND))
+        m_autoExpand = false;
+
     CommonToolsInternal::LoadSpecificationsFromXmlNode<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList> (xmlNode, m_nestedRelatedPropertiesSpecification, RELATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME, this);
 
     return true;
@@ -106,6 +111,7 @@ void RelatedPropertiesSpecification::WriteXml (BeXmlNodeP parentXmlNode) const
     relatedPropertiesNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_REQUIREDDIRECTION, CommonToolsInternal::FormatRequiredDirectionString (m_requiredDirection));
     relatedPropertiesNode->AddAttributeStringValue (COMMON_XML_ATTRIBUTE_RELATIONSHIPMEANING, CommonToolsInternal::FormatRelationshipMeaningString(m_relationshipMeaning));
     relatedPropertiesNode->AddAttributeBooleanValue(COMMON_XML_ATTRIBUTE_ISPOLYMORPHIC, m_polymorphic);
+    relatedPropertiesNode->AddAttributeBooleanValue(COMMON_XML_ATTRIBUTE_AUTOEXPAND, m_autoExpand);
 
     CommonToolsInternal::WriteRulesToXmlNode<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList> (relatedPropertiesNode, m_nestedRelatedPropertiesSpecification);
     }
@@ -118,6 +124,7 @@ bool RelatedPropertiesSpecification::ReadJson(JsonValueCR json)
     m_relationshipClassNames = CommonToolsInternal::SchemaAndClassNamesToString(json[COMMON_JSON_ATTRIBUTE_RELATIONSHIPS]);
     m_relatedClassNames = CommonToolsInternal::SchemaAndClassNamesToString(json[COMMON_JSON_ATTRIBUTE_RELATEDCLASSES]);
     m_polymorphic = json[COMMON_JSON_ATTRIBUTE_ISPOLYMORPHIC].asBool(false);
+    m_autoExpand = json[COMMON_JSON_ATTRIBUTE_AUTOEXPAND].asBool(false);
     m_relationshipMeaning = CommonToolsInternal::ParseRelationshipMeaningString(json[COMMON_JSON_ATTRIBUTE_RELATIONSHIPMEANING].asCString(""));
     m_requiredDirection = CommonToolsInternal::ParseRequiredDirectionString(json[COMMON_JSON_ATTRIBUTE_REQUIREDDIRECTION].asCString(""));
     
@@ -150,6 +157,8 @@ Json::Value RelatedPropertiesSpecification::WriteJson() const
     Json::Value json(Json::objectValue);
     if (m_polymorphic)
         json[COMMON_JSON_ATTRIBUTE_ISPOLYMORPHIC] = m_polymorphic;
+    if (m_autoExpand)
+        json[COMMON_JSON_ATTRIBUTE_AUTOEXPAND] = m_autoExpand;
     if (RelationshipMeaning::RelatedInstance != m_relationshipMeaning)
         json[COMMON_JSON_ATTRIBUTE_RELATIONSHIPMEANING] = CommonToolsInternal::FormatRelationshipMeaningString(m_relationshipMeaning);
     if (RequiredRelationDirection_Both != m_requiredDirection)
