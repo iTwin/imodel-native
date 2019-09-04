@@ -102,7 +102,6 @@ WSError::WSError(Http::ResponseCR httpResponse) : WSError()
     if (ConnectionStatus::OK == httpResponse.GetConnectionStatus() &&
         LOG.isSeverityEnabled(NativeLogging::SEVERITY::LOG_INFO))
         {
-        Utf8CP requestId = httpResponse.GetHeaders().GetValue(HEADER_MasRequestId);
         LOG.infov
             (
             "Received WSError: %d %s, "

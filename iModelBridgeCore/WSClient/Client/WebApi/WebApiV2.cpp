@@ -395,7 +395,7 @@ WSError WebApiV2::CreateServerNotSupportedError(Http::Response& response, Utf8St
 WSError WebApiV2::CreateErrorFromAzzureError(AzureErrorCR azureError, Utf8StringCR activityId) const
     {
     if (Utf8String::IsNullOrEmpty(activityId.c_str()))
-        return WSError::WSError(azureError);
+        return WSError(azureError);
 
     return WSError::CreateErrorUsingActivityId(azureError, activityId);
     }
