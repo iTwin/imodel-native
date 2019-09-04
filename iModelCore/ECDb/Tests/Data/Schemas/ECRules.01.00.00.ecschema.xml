@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="ECRules" alias="ecr" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECStructClass typeName="ReplacementLocatorContext" modifier="None">
+        <ECProperty propertyName="ContextType" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="Context" typeName="string" readOnly="false"/>
+    </ECStructClass>
+    <ECStructClass typeName="CodeReplacementStatement" modifier="None">
+        <ECProperty propertyName="CodeSnippet" typeName="string" description="C# code snippet that evaluates to true" readOnly="false"/>
+        <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="Description" typeName="string" readOnly="false"/>
+        <ECArrayProperty propertyName="TypeReferences" typeName="string" description="An array containing the full type names of all identifiers used." readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+        <ECArrayProperty propertyName="EnumReferences" typeName="string" description="An array containing the full type names of all enumerations used." readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+        <ECProperty propertyName="ReplacementName" typeName="string" description="The name that identifies the replacement when no value has been set" readOnly="false"/>
+        <ECProperty propertyName="ReplacementId" typeName="int" readOnly="false"/>
+        <ECArrayProperty propertyName="RelatedReplacementIds" typeName="int" description="An array containing the ids for replacements that rely on this replacement for their type information" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+        <ECProperty propertyName="SupportsAssignment" typeName="boolean" readOnly="false"/>
+        <ECProperty propertyName="ReplacementType" typeName="string" description="The full type name of the type required for the replacement" readOnly="false"/>
+        <ECStructProperty propertyName="ReplacementLocatorContext" typeName="ReplacementLocatorContext" readOnly="false"/>
+    </ECStructClass>
+    <ECStructClass typeName="CodeStatement" modifier="None">
+        <ECProperty propertyName="CodeSnippet" typeName="string" description="C# code snippet that evaluates to true" readOnly="false"/>
+        <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="Description" typeName="string" readOnly="false"/>
+        <ECStructArrayProperty propertyName="CodeReplacements" typeName="CodeReplacementStatement" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+        <ECArrayProperty propertyName="TypeReferences" typeName="string" description="An array containing the full type names of all identifiers used." readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+        <ECArrayProperty propertyName="EnumReferences" typeName="string" description="An array containing the full type names of all enumerations used." readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+    </ECStructClass>
+    <ECStructClass typeName="RuleConditionStatement" modifier="None">
+        <BaseClass>CodeStatement</BaseClass>
+        <ECProperty propertyName="CombinationOperator" typeName="string" description="Accepted values are 'And' 'Or' and 'None'.  'None' indicates that this is the beginning of the list, may also be left empty if it's at the beginning of the list" readOnly="false"/>
+    </ECStructClass>
+    <ECStructClass typeName="RuleConditionGroup" modifier="None">
+        <ECProperty propertyName="Name" typeName="string" description="The name that will be shown in the UI" readOnly="false"/>
+        <ECProperty propertyName="Description" typeName="string" readOnly="false"/>
+        <ECStructArrayProperty propertyName="Conditions" typeName="RuleConditionStatement" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+    </ECStructClass>
+    <ECStructClass typeName="RuleActionStatement" modifier="None">
+        <ECProperty propertyName="LeftCodeSnippet" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="RightCodeSnippet" typeName="string" readOnly="false"/>
+        <ECStructArrayProperty propertyName="CodeReplacements" typeName="CodeReplacementStatement" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+        <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="Description" typeName="string" readOnly="false"/>
+        <ECArrayProperty propertyName="TypeReferences" typeName="string" description="An array containing the full type names of all identifiers used." readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+        <ECArrayProperty propertyName="EnumReferences" typeName="string" description="An array containing the full type names of all enumerations used." readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+        <ECProperty propertyName="IsAssignment" typeName="boolean" description="If true the variable in the LeftCodeSnippet is set to the value of the RightCodeSnippet" readOnly="false"/>
+    </ECStructClass>
+    <ECStructClass typeName="RuleActionGroup" modifier="None">
+        <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="Description" typeName="string" readOnly="false"/>
+        <ECStructArrayProperty propertyName="Actions" typeName="RuleActionStatement" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+    </ECStructClass>
+    <ECStructClass typeName="Rule" modifier="None">
+        <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="Description" typeName="string" description="A string containing a plain text description of the rule including the find and replace points." readOnly="false"/>
+        <ECProperty propertyName="ReadOnly" typeName="boolean" description="If true the rule cannot be edited" readOnly="false"/>
+        <ECStructProperty propertyName="Conditions" typeName="RuleConditionGroup" readOnly="false"/>
+        <ECStructProperty propertyName="ThenActions" typeName="RuleActionGroup" readOnly="false"/>
+        <ECStructProperty propertyName="ElseActions" typeName="RuleActionGroup" readOnly="false"/>
+        <ECStructArrayProperty propertyName="CodeReplacements" typeName="CodeReplacementStatement" description="As conditions and actions are added to the rule their code replacements should be renumbered and added here." readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+        <ECProperty propertyName="Priority" typeName="int" description="Higher priorities are exectued first" readOnly="false"/>
+        <ECProperty propertyName="Reevaluate" typeName="boolean" description="If false this rule will only be executed once regardless of chaining" readOnly="false"/>
+        <ECProperty propertyName="Active" typeName="boolean" description="Only active rules are executed" readOnly="false"/>
+        <ECProperty propertyName="Validated" typeName="boolean" description="True if the rule is fully replaced and it has been validated." readOnly="false"/>
+        <ECArrayProperty propertyName="Context" typeName="string" description="An array containing relevant context for the rule." readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+    </ECStructClass>
+    <ECEntityClass typeName="RuleSet" modifier="None">
+        <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="Description" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="BaseQuery" typeName="string" description="The starting point for building a query during the execution of a rule set." readOnly="false"/>
+        <ECProperty propertyName="ReadOnly" typeName="boolean" description="If true the rule set cannot be edited and all the rules it contains are also considered to be readonly" readOnly="false"/>
+        <ECStructArrayProperty propertyName="Rules" typeName="Rule" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+        <ECProperty propertyName="Chaining" typeName="int" description="0 for No Chaining (Sequential), 1 for Explicit Chaining (Explicit Update Only), 2 for Full Chaining" readOnly="false"/>
+        <ECArrayProperty propertyName="Context" typeName="string" description="An array containing relevant context for the rule set." readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="RuleSet_to_RuleSet" description="Relates a RuleSet to other RuleSet" modifier="Sealed" strength="referencing" strengthDirection="backward">
+        <Source multiplicity="(0..*)" roleLabel="contained in" polymorphic="true">
+            <Class class="RuleSet"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="contains" polymorphic="true">
+            <Class class="RuleSet"/>
+        </Target>
+    </ECRelationshipClass>
+</ECSchema>
