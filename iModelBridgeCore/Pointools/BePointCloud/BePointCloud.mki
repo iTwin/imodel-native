@@ -1,0 +1,24 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+
+appName = BePointCloud
+o       = $(OutBuildDir)BePointCloud/
+
+DLM_NAME    = $(appName)
+CCompPDBName = $(appName)
+
+MultiCompileIntermediatePdbFile=$(o)$(CCompPDBName).pdb
+IntermediatePdbFile = $(MultiCompileIntermediatePdbFile)
+
+#----------------------------------------------------------------------
+# We're building the BePointCloud lib
+#----------------------------------------------------------------------
+nameToDefine = __BEPOINTCLOUD_BUILD__
+%include cdefapnd.mki
+
+
+
+
