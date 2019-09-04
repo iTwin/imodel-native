@@ -279,7 +279,7 @@
 
     <Part Name="RealityDataDeleter" BentleyBuildMakeFile="RealityAdmin\RealityDataDeleter\RealityDataDeleter.mke">
         <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
-        <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
+        <SubPart PartName="BentleyDll"          PartFile="iModelCore/Bentley/Bentley"      Repository="imodel02" />
         <SubPart PartName="RealityPlatformTools"/>
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="RealityAdmin"/>
