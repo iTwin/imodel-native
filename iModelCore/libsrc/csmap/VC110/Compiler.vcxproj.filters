@@ -1,0 +1,47 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <None Include="..\Dictionaries\category.asc">
+      <Filter>DictionarySource</Filter>
+    </None>
+    <None Include="..\Dictionaries\coordsys.asc">
+      <Filter>DictionarySource</Filter>
+    </None>
+    <None Include="..\Dictionaries\datums.asc">
+      <Filter>DictionarySource</Filter>
+    </None>
+    <None Include="..\Dictionaries\elipsoid.asc">
+      <Filter>DictionarySource</Filter>
+    </None>
+    <None Include="..\Dictionaries\GeodeticPath.asc">
+      <Filter>DictionarySource</Filter>
+    </None>
+    <None Include="..\Dictionaries\GeodeticTransformation.asc">
+      <Filter>DictionarySource</Filter>
+    </None>
+    <None Include="..\Dictionaries\NameMapper.csv">
+      <Filter>DictionarySource</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="DictionarySource">
+      <UniqueIdentifier>{a9fc0344-e70f-4162-9efa-c63771caa58b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{6d9c899f-801a-45d8-8d6b-bb7e1077475d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{b6ba80ac-d35e-4d8a-abf2-91a41f6e58ce}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Include\cs_map.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\Dictionaries\CS_Comp.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
