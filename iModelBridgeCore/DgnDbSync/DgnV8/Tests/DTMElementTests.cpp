@@ -20,6 +20,8 @@ struct DTMElementTests : public GeomTestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DTMElementTests, TerrainModel)
     {
+    m_params.SetDoTerrainModelConversion(true);
+
     LineUpFiles(L"dtm.bim", L"dtm.dgn", false); // creates TestAddRef.bim from Test3d.dgn and defines m_dgnDbFileName, and m_v8FileName
 
     V8FileEditor v8editor;

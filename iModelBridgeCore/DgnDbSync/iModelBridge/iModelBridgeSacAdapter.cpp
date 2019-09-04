@@ -207,7 +207,10 @@ BentleyStatus iModelBridgeSacAdapter::CreateOrUpdateBim(iModelBridge& bridge, Pa
                            // This also prevents a call to AbandonChanges in _MakeSchemaChanges from undoing what the open calls did.
 
         //  Let the bridge generate schema changes
-        bridge._MakeSchemaChanges();
+        bool hasMoreChanges = false;
+        do {
+            bridge._MakeSchemaChanges(hasMoreChanges);
+        } while (hasMoreChanges);
 
         bool madeDynamicSchemaChanges = db->Txns().HasChanges(); // see if _MakeSchemaChanges made any changes.
 
