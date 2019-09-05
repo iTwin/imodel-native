@@ -27,7 +27,6 @@
             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
                 ECSchemas/Domain/Forms.ecschema.xml
             </Files>
-            <Directory SourceName="PublicAPI/FormsDomain" ProductDirectoryName="FormsDomainIncludes" />
         </Bindings>
     </Part>
 

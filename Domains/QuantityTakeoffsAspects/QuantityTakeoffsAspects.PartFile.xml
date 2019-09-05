@@ -18,7 +18,6 @@
 
     <Part Name="QuantityTakeoffsAspectsApi" BentleyBuildMakeFile="QuantityTakeoffsAspectsApi.prewire.mke">
         <Bindings>
-            <Directory SourceName="PublicApi/QuantityTakeoffsAspects" ProductDirectoryName="QuantityTakeoffsAspectsIncludes" />
             <PublicAPI Domain="QuantityTakeoffsAspects"/>
         </Bindings>
     </Part>

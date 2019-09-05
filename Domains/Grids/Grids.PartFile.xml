@@ -39,7 +39,6 @@
 
     <Part Name="GridsApi" BentleyBuildMakeFile="GridsApi.prewire.mke">
       <Bindings>
-        <Directory SourceName="PublicApi/Grids" ProductDirectoryName="GridsIncludes" />
         <PublicAPI Domain="Grids"/>
       </Bindings>
     </Part>

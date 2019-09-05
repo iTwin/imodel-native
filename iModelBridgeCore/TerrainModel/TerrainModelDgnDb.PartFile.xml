@@ -42,6 +42,7 @@
 
     <Part Name="inroadstmDgnDb" BentleyBuildMakeFile="formats\inroadstm\inroadstmDgnDb.mke" BentleyBuildMakeOptions="-dCreate_Static_Libraries=1">
         <SubPart PartName="Core" />
+        <SubPart LibType="Static" PartName="Compress" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
     </Part>
 
     <Part Name="inroadstmDgnDb_DgnDb06" BentleyBuildMakeFile="formats\inroadstm\inroadstmDgnDb.mke" BentleyBuildMakeOptions="-dCreate_Static_Libraries=1">

@@ -45,7 +45,6 @@
         <SubPart PartName="AecUnitsPublicAPI" Repository="imodel02" PartFile="Domains/AecUnits/AecUnits" />
         <Bindings>
             <PublicAPI Domain="Profiles" />
-            <Directory SourceName="PublicAPI/Profiles" ProductDirectoryName="ProfilesIncludes" />
         </Bindings>
     </Part>
 

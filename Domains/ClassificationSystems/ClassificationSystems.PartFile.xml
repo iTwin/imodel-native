@@ -35,7 +35,6 @@
 
     <Part Name="ClassificationSystemsApi" BentleyBuildMakeFile="ClassificationSystemsAPI.prewire.mke">
       <Bindings>
-        <Directory SourceName="PublicApi/ClassificationSystems" ProductDirectoryName="ClassificationSystemsIncludes" />
         <PublicAPI Domain="ClassificationSystems"/>
       </Bindings>
     </Part>

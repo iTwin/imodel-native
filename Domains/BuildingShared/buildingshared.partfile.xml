@@ -33,7 +33,6 @@
     
     <Part Name="BuildingSharedApi" BentleyBuildMakeFile="BuildingSharedApi.prewire.mke">
         <Bindings>
-            <Directory SourceName="PublicApi/BuildingShared" ProductDirectoryName="BuildingSharedIncludes" />
             <PublicAPI Domain="BuildingShared"/>
         </Bindings>
     </Part>
