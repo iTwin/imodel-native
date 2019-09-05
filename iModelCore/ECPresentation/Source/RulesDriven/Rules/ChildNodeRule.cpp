@@ -42,6 +42,14 @@ SubCondition::~SubCondition()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SubCondition::ShallowEqual(SubConditionCR other) const
+    {
+    return m_condition == other.m_condition;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SubCondition::ReadXml(BeXmlNodeP xmlNode)
@@ -201,6 +209,26 @@ ChildNodeRule::~ChildNodeRule()
     CommonToolsInternal::FreePresentationRules(m_subConditions);
     CommonToolsInternal::FreePresentationRules(m_specifications);
     CommonToolsInternal::FreePresentationRules(m_customizationRules);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ChildNodeRule::_ShallowEqual(PresentationKeyCR other) const
+    {
+    if (!ConditionalPresentationRule::_ShallowEqual(other))
+        return false;
+
+    ChildNodeRuleCP otherRule = dynamic_cast<ChildNodeRuleCP>(&other);
+    if (nullptr == otherRule)
+        return false;
+
+    // cannot decide if rules are similar without comparing customization rules
+    if (!m_customizationRules.empty() || !otherRule->m_customizationRules.empty())
+        return false;
+
+    return m_stopFurtherProcessing == otherRule->m_stopFurtherProcessing
+        && m_targetTree == otherRule->m_targetTree;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -417,6 +445,21 @@ RootNodeRule::RootNodeRule()
 RootNodeRule::RootNodeRule(Utf8StringCR condition, int priority, bool onlyIfNotHandled, RuleTargetTree targetTree, bool autoExpand)
     : ChildNodeRule(condition, priority, onlyIfNotHandled, targetTree), m_autoExpand(autoExpand)
     {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RootNodeRule::_ShallowEqual(PresentationKeyCR other) const
+    {
+    if (!ChildNodeRule::_ShallowEqual(other))
+        return false;
+
+    RootNodeRuleCP otherRule = dynamic_cast<RootNodeRuleCP>(&other);
+    if (nullptr == otherRule)
+        return false;
+
+    return m_autoExpand == otherRule->m_autoExpand;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012

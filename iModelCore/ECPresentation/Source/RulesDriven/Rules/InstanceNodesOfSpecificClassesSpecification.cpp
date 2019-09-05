@@ -42,6 +42,26 @@ InstanceNodesOfSpecificClassesSpecification::InstanceNodesOfSpecificClassesSpeci
     {}
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool InstanceNodesOfSpecificClassesSpecification::_ShallowEqual(PresentationRuleSpecification const& other) const
+    {
+    if (!ChildNodeSpecification::_ShallowEqual(other))
+        return false;
+
+    InstanceNodesOfSpecificClassesSpecificationCP otherRule = dynamic_cast<InstanceNodesOfSpecificClassesSpecificationCP>(&other);
+    if (nullptr == otherRule)
+        return false;
+
+    return m_arePolymorphic == otherRule->m_arePolymorphic
+        && m_groupByClass == otherRule->m_groupByClass
+        && m_groupByLabel == otherRule->m_groupByLabel
+        && m_showEmptyGroups == otherRule->m_showEmptyGroups
+        && m_classNames == otherRule->m_classNames
+        && m_instanceFilter == otherRule->m_instanceFilter;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void InstanceNodesOfSpecificClassesSpecification::_Accept(PresentationRuleSpecificationVisitor& visitor) const {visitor._Visit(*this);}

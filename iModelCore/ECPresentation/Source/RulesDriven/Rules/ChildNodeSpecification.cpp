@@ -73,6 +73,27 @@ ChildNodeSpecification::~ChildNodeSpecification ()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ChildNodeSpecification::_ShallowEqual(PresentationRuleSpecification const& other) const
+    {
+    if (!PresentationRuleSpecification::_ShallowEqual(other))
+        return false;
+
+    ChildNodeSpecificationCP otherRule = dynamic_cast<ChildNodeSpecificationCP>(&other);
+    if (nullptr == otherRule)
+        return false;
+
+    return m_doNotSort == otherRule->m_doNotSort
+        && m_hasChildren == otherRule->m_hasChildren
+        && m_hideExpression == otherRule->m_hideExpression
+        && m_hideIfNoChildren == otherRule->m_hideIfNoChildren
+        && m_hideNodesInHierarchy == otherRule->m_hideNodesInHierarchy
+        && m_priority == otherRule->m_priority
+        && m_extendedData == otherRule->m_extendedData;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 static ChildrenHint ParseChildrenHint(Utf8CP str)
@@ -284,7 +305,7 @@ void ChildNodeSpecification::SetDoNotSort (bool doNotSort)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ChildNodeRuleList const& ChildNodeSpecification::GetNestedRules (void)
+ChildNodeRuleList const& ChildNodeSpecification::GetNestedRules (void) const
     {
     return m_nestedRules;
     }

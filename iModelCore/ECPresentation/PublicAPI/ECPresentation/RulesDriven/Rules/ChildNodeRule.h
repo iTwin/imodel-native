@@ -45,6 +45,9 @@ struct SubCondition : HashableBase
         //! Destructor.
         ECPRESENTATION_EXPORT ~SubCondition (void);
 
+        //! Does shallow comparison between this subcondition and other subcondition
+        ECPRESENTATION_EXPORT bool ShallowEqual(SubConditionCR other) const;
+
         //! Reads SubCondition from xml node.
         ECPRESENTATION_EXPORT bool ReadXml (BeXmlNodeP xmlNode);
 
@@ -87,6 +90,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeRule : public ConditionalPresentationRul
         bool                       m_stopFurtherProcessing;
 
     protected:
+        ECPRESENTATION_EXPORT virtual bool _ShallowEqual(PresentationKeyCR other) const override;
+
         ECPRESENTATION_EXPORT virtual Utf8CP _GetXmlElementName() const override;
         ECPRESENTATION_EXPORT virtual bool _ReadXml(BeXmlNodeP xmlNode) override;
         ECPRESENTATION_EXPORT virtual void _WriteXml(BeXmlNodeP xmlNode) const override;
@@ -153,6 +158,8 @@ struct EXPORT_VTABLE_ATTRIBUTE RootNodeRule : public ChildNodeRule
         bool m_autoExpand;
 
     protected:
+        ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationKeyCR other) const override;
+
         ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName () const override;
         ECPRESENTATION_EXPORT bool _ReadXml (BeXmlNodeP xmlNode) override;
         ECPRESENTATION_EXPORT void _WriteXml (BeXmlNodeP xmlNode) const override;

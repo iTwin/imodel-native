@@ -51,6 +51,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeSpecification : PresentationRuleSpecific
         //! Copy constructor.
         ECPRESENTATION_EXPORT ChildNodeSpecification(ChildNodeSpecificationCR);
 
+        ECPRESENTATION_EXPORT virtual bool _ShallowEqual(PresentationRuleSpecification const& other) const override;
+
         ECPRESENTATION_EXPORT virtual bool _ReadXml(BeXmlNodeP xmlNode) override;
         ECPRESENTATION_EXPORT virtual void _WriteXml(BeXmlNodeP xmlNode) const override;
 
@@ -135,7 +137,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeSpecification : PresentationRuleSpecific
         RelatedInstanceSpecificationList const& GetRelatedInstances() const {return m_relatedInstances;}
 
         //! Collection ChildNodeSpecifications that will be used to provide child/root nodes.
-        ECPRESENTATION_EXPORT ChildNodeRuleList const&           GetNestedRules (void);
+        ECPRESENTATION_EXPORT ChildNodeRuleList const&           GetNestedRules (void) const;
 
         //! Add nested rule.
         ECPRESENTATION_EXPORT void AddNestedRule(ChildNodeRuleR rule);

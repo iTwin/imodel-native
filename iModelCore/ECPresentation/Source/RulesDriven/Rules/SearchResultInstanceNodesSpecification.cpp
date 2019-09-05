@@ -56,6 +56,22 @@ SearchResultInstanceNodesSpecification::~SearchResultInstanceNodesSpecification(
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SearchResultInstanceNodesSpecification::_ShallowEqual(PresentationRuleSpecification const& other) const
+    {
+    if (!ChildNodeSpecification::_ShallowEqual(other))
+        return false;
+
+    SearchResultInstanceNodesSpecificationCP otherRule = dynamic_cast<SearchResultInstanceNodesSpecificationCP>(&other);
+    if (nullptr == otherRule)
+        return false;
+
+    return m_groupByClass == otherRule->m_groupByClass
+        && m_groupByLabel == otherRule->m_groupByLabel;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SearchResultInstanceNodesSpecification::_Accept(PresentationRuleSpecificationVisitor& visitor) const {visitor._Visit(*this);}

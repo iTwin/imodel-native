@@ -34,6 +34,9 @@ struct RelatedInstanceSpecification : HashableBase
             : m_direction(direction), m_relationshipName(relationshipName), m_className(className), m_alias(alias), m_isRequired(isRequired)
             {}
 
+        //! Does shallow comparison between this specification and other specification
+        ECPRESENTATION_EXPORT bool ShallowEqual(RelatedInstanceSpecificationCR other) const;
+
         //! Reads specification from XML.
         ECPRESENTATION_EXPORT bool ReadXml(BeXmlNodeP xmlNode);
 

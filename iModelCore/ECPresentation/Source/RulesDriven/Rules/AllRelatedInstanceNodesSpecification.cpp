@@ -43,6 +43,26 @@ AllRelatedInstanceNodesSpecification::AllRelatedInstanceNodesSpecification(int p
     {}
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AllRelatedInstanceNodesSpecification::_ShallowEqual(PresentationRuleSpecification const& other) const
+    {
+    if (!ChildNodeSpecification::_ShallowEqual(other))
+        return false;
+
+    AllRelatedInstanceNodesSpecificationCP otherRule = dynamic_cast<AllRelatedInstanceNodesSpecificationCP>(&other);
+    if (nullptr == otherRule)
+        return false;
+
+    return m_groupByClass == otherRule->m_groupByClass
+        && m_groupByLabel == otherRule->m_groupByLabel
+        && m_groupByRelationship == otherRule->m_groupByRelationship
+        && m_requiredDirection == otherRule->m_requiredDirection
+        && m_skipRelatedLevel == otherRule->m_skipRelatedLevel
+        && m_supportedSchemas == otherRule->m_supportedSchemas;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AllRelatedInstanceNodesSpecification::_Accept(PresentationRuleSpecificationVisitor& visitor) const {visitor._Visit(*this);}

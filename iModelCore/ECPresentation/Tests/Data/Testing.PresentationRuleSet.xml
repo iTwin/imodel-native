@@ -12,7 +12,7 @@
 
 
   <!-- Child Node rules -->
-  <ChildNodeRule Condition='NOT ParentNode.Type="NODE_TYPE_BottomTestNode" AND NOT ParentNode.Type="NODE_TYPE_EmptyTestNode"'>
+  <ChildNodeRule Condition='NOT ParentNode.Type="NODE_TYPE_BottomTestNode" AND NOT ParentNode.Type="NODE_TYPE_EmptyTestNode"' Priority="4">
     <CustomNode Type='NODE_TYPE_EmptyTestNode' Label='EmptyNode' Description='Test for Empty Node' ImageId='Image://EmptyCustomNode' HideIfNoChildren='true'/>
   </ChildNodeRule>
 

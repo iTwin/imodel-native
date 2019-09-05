@@ -13,6 +13,18 @@
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RelatedInstanceSpecification::ShallowEqual(RelatedInstanceSpecificationCR other) const
+    {
+    return m_isRequired == other.m_isRequired
+        && m_direction == other.m_direction
+        && m_className == other.m_className
+        && m_relationshipName == other.m_relationshipName
+        && m_alias == other.m_alias;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool RelatedInstanceSpecification::ReadXml(BeXmlNodeP xmlNode)

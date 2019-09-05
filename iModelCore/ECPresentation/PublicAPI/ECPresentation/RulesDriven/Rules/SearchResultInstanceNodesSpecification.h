@@ -174,6 +174,8 @@ struct EXPORT_VTABLE_ATTRIBUTE SearchResultInstanceNodesSpecification : public C
     protected:
         //! Allows the visitor to visit this specification.
         ECPRESENTATION_EXPORT void _Accept(PresentationRuleSpecificationVisitor& visitor) const override;
+
+        ECPRESENTATION_EXPORT bool _ShallowEqual(PresentationRuleSpecification const& other) const override;
         
         ECPRESENTATION_EXPORT Utf8CP _GetXmlElementName () const override;
         ECPRESENTATION_EXPORT bool _ReadXml (BeXmlNodeP xmlNode) override;

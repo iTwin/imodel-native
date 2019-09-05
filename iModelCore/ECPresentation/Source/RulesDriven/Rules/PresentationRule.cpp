@@ -161,6 +161,21 @@ PresentationRule::PresentationRule (int priority, bool onlyIfNotHandled)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PresentationRule::_ShallowEqual(PresentationKeyCR other) const
+    {
+    if (!PresentationKey::_ShallowEqual(other))
+        return false;
+
+    PresentationRuleCP otherRule = dynamic_cast<PresentationRuleCP>(&other);
+    if (nullptr == otherRule)
+        return false;
+
+    return m_onlyIfNotHandled == otherRule->m_onlyIfNotHandled;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PresentationRule::_ReadXml (BeXmlNodeP xmlNode)
@@ -224,6 +239,21 @@ MD5 PresentationRule::_ComputeHash(Utf8CP parentHash) const
     MD5 md5 = PresentationKey::_ComputeHash(parentHash);
     md5.Add(&m_onlyIfNotHandled, sizeof(m_onlyIfNotHandled));
     return md5;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ConditionalPresentationRule::_ShallowEqual(PresentationKeyCR other) const
+    {
+    if (!PresentationRule::_ShallowEqual(other))
+        return false;
+
+    ConditionalPresentationRuleCP otherRule = dynamic_cast<ConditionalPresentationRuleCP>(&other);
+    if (nullptr == otherRule)
+        return false;
+
+    return m_condition == otherRule->m_condition;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -40,6 +40,23 @@ AllInstanceNodesSpecification::AllInstanceNodesSpecification(int priority, Child
     {}
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AllInstanceNodesSpecification::_ShallowEqual(PresentationRuleSpecification const& other) const
+    {
+    if (!ChildNodeSpecification::_ShallowEqual(other))
+        return false;
+
+    AllInstanceNodesSpecificationCP otherRule = dynamic_cast<AllInstanceNodesSpecificationCP>(&other);
+    if (nullptr == otherRule)
+        return false;
+
+    return m_groupByClass == otherRule->m_groupByClass
+        && m_groupByLabel == otherRule->m_groupByLabel
+        && m_supportedSchemas == otherRule->m_supportedSchemas;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AllInstanceNodesSpecification::_Accept(PresentationRuleSpecificationVisitor& visitor) const {visitor._Visit(*this);}

@@ -131,10 +131,11 @@ TEST_F (RulesPreprocessorTests, GetPresentationRuleSet_Supplementation_KeepsPrim
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void AddRulesToRuleset(PresentationRuleSetR ruleset)
+static void AddRulesToRuleset(PresentationRuleSetR ruleset, int priority = 0)
     {
-    ruleset.AddPresentationRule(*new RootNodeRule());
-    ruleset.AddPresentationRule(*new ChildNodeRule());
+    // different priority for RootNodeRule and ChildNodeRule, so they won't be merged together as the same rules after ruleset supplemention
+    ruleset.AddPresentationRule(*new RootNodeRule("", priority, false, TargetTree_MainTree, false));
+    ruleset.AddPresentationRule(*new ChildNodeRule("", priority, false, TargetTree_MainTree));
     ruleset.AddPresentationRule(*new ContentRule());
     ruleset.AddPresentationRule(*new ImageIdOverride());
     ruleset.AddPresentationRule(*new LabelOverride());
@@ -156,9 +157,9 @@ static void AddRulesToRuleset(PresentationRuleSetR ruleset)
 TEST_F (RulesPreprocessorTests, GetPresentationRuleSet_Supplementation_MergesRules)
     {
     PresentationRuleSetPtr primary = PresentationRuleSet::CreateInstance("primary", 1, 0, false, "", "", "", false);
-    AddRulesToRuleset(*primary);
+    AddRulesToRuleset(*primary, 1);
     PresentationRuleSetPtr supplemental = PresentationRuleSet::CreateInstance("supplementing", 1, 1, true, "a", "", "", false);
-    AddRulesToRuleset(*supplemental);
+    AddRulesToRuleset(*supplemental, 2);
     m_locater->AddRuleSet(*primary);
     m_locater->AddRuleSet(*supplemental);
 
@@ -187,12 +188,12 @@ TEST_F (RulesPreprocessorTests, GetPresentationRuleSet_Supplementation_MergesRul
 TEST_F (RulesPreprocessorTests, GetPresentationRuleSet_Supplementation_MergesRulesWithHigherVersion)
     {
     PresentationRuleSetPtr primary = PresentationRuleSet::CreateInstance("primary", 1, 0, false, "", "", "", false);
-    AddRulesToRuleset(*primary);
+    AddRulesToRuleset(*primary, 1);
     PresentationRuleSetPtr supplemental1 = PresentationRuleSet::CreateInstance("supplementing1", 1, 0, true, "a", "", "", false);
-    AddRulesToRuleset(*supplemental1);
+    AddRulesToRuleset(*supplemental1, 2);
     PresentationRuleSetPtr supplemental2 = PresentationRuleSet::CreateInstance("supplementing2", 1, 1, true, "a", "", "", false);
-    AddRulesToRuleset(*supplemental2);
-    AddRulesToRuleset(*supplemental2);
+    AddRulesToRuleset(*supplemental2, 3);
+    AddRulesToRuleset(*supplemental2, 4);
     m_locater->AddRuleSet(*primary);
     m_locater->AddRuleSet(*supplemental1);
     m_locater->AddRuleSet(*supplemental2);
@@ -1187,4 +1188,280 @@ TEST_F(RulesPreprocessorTests, GetCustomizationRule_WithConditions)
     // Same scope, conditions do not match, different priorities - return condition true
     ASSERT_TRUE(nullptr != labelOverride);
     EXPECT_STREQ("LabelOverrideLabelValue2", labelOverride->GetLabel().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Saulius.Skliutas                 09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesPreprocessorTests, GetPresentationRuleSet_DuplicateRulesMerging)
+    {
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("Test", 1, 1, false, "", "", "", false);
+    rules->AddPresentationRule(*new ChildNodeRule());
+    rules->AddPresentationRule(*new ChildNodeRule());
+
+    rules->AddPresentationRule(*new RootNodeRule());
+    rules->AddPresentationRule(*new RootNodeRule());
+
+    m_locater->AddRuleSet(*rules);
+    PresentationRuleSetPtr foundRules = RulesPreprocessor::GetPresentationRuleSet(m_locaterManager, *m_connection);
+
+    ASSERT_TRUE(foundRules.IsValid());
+    EXPECT_EQ(1, foundRules->GetRootNodesRules().size());
+    EXPECT_EQ(1, foundRules->GetChildNodesRules().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Saulius.Skliutas                 09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesPreprocessorTests, GetPresentationRuleSet_DuplicateRulesMerging_DoNotMergeNodeRulesWithDifferentConditions)
+    {
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("Test", 1, 1, false, "", "", "", false);
+    rules->AddPresentationRule(*new RootNodeRule("Test1", 0, true, TargetTree_MainTree, false));
+    rules->AddPresentationRule(*new RootNodeRule("Test2", 0, true, TargetTree_MainTree, false));
+
+    rules->AddPresentationRule(*new ChildNodeRule("Test1", 1, false, TargetTree_MainTree));
+    rules->AddPresentationRule(*new ChildNodeRule("Test2", 1, false, TargetTree_MainTree));
+
+    m_locater->AddRuleSet(*rules);
+    PresentationRuleSetPtr foundRules = RulesPreprocessor::GetPresentationRuleSet(m_locaterManager, *m_connection);
+
+    ASSERT_TRUE(foundRules.IsValid());
+    EXPECT_EQ(2, foundRules->GetRootNodesRules().size());
+    EXPECT_EQ(2, foundRules->GetChildNodesRules().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Saulius.Skliutas                 09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesPreprocessorTests, GetPresentationRuleSet_DuplicateRulesMerging_MergeNodeRulesWithDifferentSpecifications)
+    {
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("Test", 1, 1, false, "", "", "", false);
+    RootNodeRuleP rootRule1 = new RootNodeRule();
+    RootNodeRuleP rootRule2 = new RootNodeRule();
+    rules->AddPresentationRule(*rootRule1);
+    rules->AddPresentationRule(*rootRule2);
+
+    rootRule1->AddSpecification(*new AllRelatedInstanceNodesSpecification(1, true, true, true, true, true, true, 0, "Test1"));
+    rootRule2->AddSpecification(*new AllRelatedInstanceNodesSpecification(1, false, false, false, false, false, false, 0, "Test2"));
+
+    ChildNodeRuleP childRule1 = new ChildNodeRule();
+    ChildNodeRuleP childRule2 = new ChildNodeRule();
+    rules->AddPresentationRule(*childRule1);
+    rules->AddPresentationRule(*childRule2);
+
+    childRule1->AddSpecification(*new AllInstanceNodesSpecification(1, true, true, true, true, true, "Test1"));
+    childRule2->AddSpecification(*new AllInstanceNodesSpecification(1, false, false, false, false, false, "Test2"));
+
+    m_locater->AddRuleSet(*rules);
+    PresentationRuleSetPtr foundRules = RulesPreprocessor::GetPresentationRuleSet(m_locaterManager, *m_connection);
+
+    ASSERT_TRUE(foundRules.IsValid());
+
+    EXPECT_EQ(1, foundRules->GetRootNodesRules().size());
+    RootNodeRuleP foundRootRule = foundRules->GetRootNodesRules().front();
+    EXPECT_EQ(2, foundRootRule->GetSpecifications().size());
+
+    EXPECT_EQ(1, foundRules->GetChildNodesRules().size());
+    ChildNodeRuleP foundChildRule = foundRules->GetChildNodesRules().front();
+    EXPECT_EQ(2, foundChildRule->GetSpecifications().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Saulius.Skliutas                 09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesPreprocessorTests, GetPresentationRuleSet_DuplicateRulesMerging_MergeNodeRulesWithDuplicateSpecifications)
+    {
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("Test", 1, 1, false, "", "", "", false);
+    RootNodeRuleP rootRule1 = new RootNodeRule();
+    RootNodeRuleP rootRule2 = new RootNodeRule();
+    rules->AddPresentationRule(*rootRule1);
+    rules->AddPresentationRule(*rootRule2);
+
+    rootRule1->AddSpecification(*new AllRelatedInstanceNodesSpecification());
+    rootRule2->AddSpecification(*new AllRelatedInstanceNodesSpecification());
+
+    ChildNodeRuleP childRule1 = new ChildNodeRule();
+    ChildNodeRuleP childRule2 = new ChildNodeRule();
+    rules->AddPresentationRule(*childRule1);
+    rules->AddPresentationRule(*childRule2);
+
+    childRule1->AddSpecification(*new AllInstanceNodesSpecification());
+    childRule2->AddSpecification(*new AllInstanceNodesSpecification());
+
+    m_locater->AddRuleSet(*rules);
+    PresentationRuleSetPtr foundRules = RulesPreprocessor::GetPresentationRuleSet(m_locaterManager, *m_connection);
+
+    ASSERT_TRUE(foundRules.IsValid());
+
+    EXPECT_EQ(1, foundRules->GetRootNodesRules().size());
+    RootNodeRuleP foundRootRule = foundRules->GetRootNodesRules().front();
+    EXPECT_EQ(1, foundRootRule->GetSpecifications().size());
+
+    EXPECT_EQ(1, foundRules->GetChildNodesRules().size());
+    ChildNodeRuleP foundChildRule = foundRules->GetChildNodesRules().front();
+    EXPECT_EQ(1, foundChildRule->GetSpecifications().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Saulius.Skliutas                 09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesPreprocessorTests, GetPresentationRuleSet_DuplicateRulesMerging_MergeNodeRulesWithDifferentSubConditions)
+    {
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("Test", 1, 1, false, "", "", "", false);
+    ChildNodeRuleP childRule1 = new ChildNodeRule();
+    ChildNodeRuleP childRule2 = new ChildNodeRule();
+    rules->AddPresentationRule(*childRule1);
+    rules->AddPresentationRule(*childRule2);
+
+    SubConditionP subcondition1 = new SubCondition("TestCondition1");
+    subcondition1->AddSpecification(*new AllInstanceNodesSpecification());
+
+    SubConditionP subcondition2 = new SubCondition("TestCondition2");
+    subcondition2->AddSpecification(*new AllInstanceNodesSpecification());
+
+    childRule1->AddSubCondition(*subcondition1);
+    childRule2->AddSubCondition(*subcondition2);
+
+    m_locater->AddRuleSet(*rules);
+    PresentationRuleSetPtr foundRules = RulesPreprocessor::GetPresentationRuleSet(m_locaterManager, *m_connection);
+
+    ASSERT_TRUE(foundRules.IsValid());
+
+    EXPECT_EQ(1, foundRules->GetChildNodesRules().size());
+    ChildNodeRuleP foundChildRule = foundRules->GetChildNodesRules().front();
+    ASSERT_EQ(2, foundChildRule->GetSubConditions().size());
+
+    EXPECT_EQ(1, foundChildRule->GetSubConditions()[0]->GetSpecifications().size());
+    EXPECT_EQ(1, foundChildRule->GetSubConditions()[1]->GetSpecifications().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Saulius.Skliutas                 09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesPreprocessorTests, GetPresentationRuleSet_DuplicateRulesMerging_MergeSubConditionsWithSameSpecifications)
+    {
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("Test", 1, 1, false, "", "", "", false);
+    ChildNodeRuleP childRule1 = new ChildNodeRule();
+    ChildNodeRuleP childRule2 = new ChildNodeRule();
+    rules->AddPresentationRule(*childRule1);
+    rules->AddPresentationRule(*childRule2);
+
+    SubConditionP subcondition1 = new SubCondition("TestCondition1");
+    subcondition1->AddSpecification(*new AllInstanceNodesSpecification());
+
+    SubConditionP subcondition2 = new SubCondition("TestCondition1");
+    subcondition2->AddSpecification(*new AllInstanceNodesSpecification());
+
+    childRule1->AddSubCondition(*subcondition1);
+    childRule2->AddSubCondition(*subcondition2);
+
+    m_locater->AddRuleSet(*rules);
+    PresentationRuleSetPtr foundRules = RulesPreprocessor::GetPresentationRuleSet(m_locaterManager, *m_connection);
+
+    ASSERT_TRUE(foundRules.IsValid());
+
+    EXPECT_EQ(1, foundRules->GetChildNodesRules().size());
+    ChildNodeRuleP foundChildRule = foundRules->GetChildNodesRules().front();
+    ASSERT_EQ(1, foundChildRule->GetSubConditions().size());
+
+    EXPECT_EQ(1, foundChildRule->GetSubConditions()[0]->GetSpecifications().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Saulius.Skliutas                 09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesPreprocessorTests, GetPresentationRuleSet_DuplicateRulesMerging_MergeSubConditionsWithDifferentSpecifications)
+    {
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("Test", 1, 1, false, "", "", "", false);
+    ChildNodeRuleP childRule1 = new ChildNodeRule();
+    ChildNodeRuleP childRule2 = new ChildNodeRule();
+    rules->AddPresentationRule(*childRule1);
+    rules->AddPresentationRule(*childRule2);
+
+    SubConditionP subcondition1 = new SubCondition("TestCondition1");
+    subcondition1->AddSpecification(*new AllInstanceNodesSpecification(1, true, true, true, true, true, "Test1"));
+
+    SubConditionP subcondition2 = new SubCondition("TestCondition1");
+    subcondition2->AddSpecification(*new AllInstanceNodesSpecification(1, true, true, true, true, true, "Test2"));
+
+    childRule1->AddSubCondition(*subcondition1);
+    childRule2->AddSubCondition(*subcondition2);
+
+    m_locater->AddRuleSet(*rules);
+    PresentationRuleSetPtr foundRules = RulesPreprocessor::GetPresentationRuleSet(m_locaterManager, *m_connection);
+
+    ASSERT_TRUE(foundRules.IsValid());
+
+    EXPECT_EQ(1, foundRules->GetChildNodesRules().size());
+    ChildNodeRuleP foundChildRule = foundRules->GetChildNodesRules().front();
+    ASSERT_EQ(1, foundChildRule->GetSubConditions().size());
+
+    EXPECT_EQ(2, foundChildRule->GetSubConditions()[0]->GetSpecifications().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Saulius.Skliutas                 09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesPreprocessorTests, GetPresentationRuleSet_DuplicateRulesMerging_MergeDuplicateSpecificationsWithNestedRules)
+    {
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("Test", 1, 1, false, "", "", "", false);
+    RootNodeRuleP rootRule1 = new RootNodeRule();
+    RootNodeRuleP rootRule2 = new RootNodeRule();
+
+    ChildNodeSpecificationP specification1 = new AllInstanceNodesSpecification();
+    ChildNodeSpecificationP specification2 = new AllInstanceNodesSpecification();
+
+    ChildNodeRuleP nestedRule1 = new ChildNodeRule();
+    ChildNodeRuleP nestedRule2 = new ChildNodeRule();
+
+    specification1->AddNestedRule(*nestedRule1);
+    specification2->AddNestedRule(*nestedRule2);
+
+    rootRule1->AddSpecification(*specification1);
+    rootRule2->AddSpecification(*specification2);
+
+    rules->AddPresentationRule(*rootRule1);
+    rules->AddPresentationRule(*rootRule2);
+
+    m_locater->AddRuleSet(*rules);
+    PresentationRuleSetPtr foundRules = RulesPreprocessor::GetPresentationRuleSet(m_locaterManager, *m_connection);
+
+    ASSERT_TRUE(foundRules.IsValid());
+
+    ASSERT_EQ(1, foundRules->GetRootNodesRules().size());
+    RootNodeRuleP foundRootRule = foundRules->GetRootNodesRules().front();
+    ASSERT_EQ(1, foundRootRule->GetSpecifications().size());
+    ChildNodeSpecificationP foundSpecification = foundRootRule->GetSpecifications().front();
+    EXPECT_EQ(1, foundSpecification->GetNestedRules().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Saulius.Skliutas                 09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesPreprocessorTests, GetPresentationRuleSet_DuplicateRulesMerging_DoNotMergeNodeRulesWithCustomizationRules)
+    {
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("Test", 1, 1, false, "", "", "", false);
+    ChildNodeRuleP childRule1 = new ChildNodeRule();
+    ChildNodeRuleP childRule2 = new ChildNodeRule();
+    rules->AddPresentationRule(*childRule1);
+    rules->AddPresentationRule(*childRule2);
+
+    GroupingRuleP groupRule = new GroupingRule();
+    childRule1->AddCustomizationRule(*groupRule);
+
+    RootNodeRuleP rootRule1 = new RootNodeRule();
+    RootNodeRuleP rootRule2 = new RootNodeRule();
+    rules->AddPresentationRule(*rootRule1);
+    rules->AddPresentationRule(*rootRule2);
+
+    ImageIdOverrideP imageRule = new ImageIdOverride();
+    rootRule2->AddCustomizationRule(*imageRule);
+
+    m_locater->AddRuleSet(*rules);
+    PresentationRuleSetPtr foundRules = RulesPreprocessor::GetPresentationRuleSet(m_locaterManager, *m_connection);
+
+    ASSERT_TRUE(foundRules.IsValid());
+
+    EXPECT_EQ(2, foundRules->GetRootNodesRules().size());
+    EXPECT_EQ(2, foundRules->GetChildNodesRules().size());
     }

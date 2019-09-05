@@ -73,6 +73,8 @@ protected:
     //! Constructor.
     ECPRESENTATION_EXPORT PresentationKey (int priority);
 
+    virtual bool _ShallowEqual(PresentationKeyCR other) const {return m_priority == other.m_priority;}
+
     virtual Utf8CP _GetXmlElementName () const = 0;
     virtual bool _ReadXml(BeXmlNodeP xmlNode) {return true;}
     virtual void _WriteXml(BeXmlNodeP xmlNode) const {}
@@ -87,6 +89,9 @@ protected:
 public:
     //! Virtual destructor.
     virtual ~PresentationKey(){}
+
+    //! Does shallow comparison between this PresentationRule and other PresentationRule
+    bool ShallowEqual(PresentationKeyCR other) const {return _ShallowEqual(other);}
     
     //! Reads PresentationRule from xml node.
     ECPRESENTATION_EXPORT bool ReadXml(BeXmlNodeP xmlNode);
@@ -120,6 +125,8 @@ protected:
     //! Constructor.
     ECPRESENTATION_EXPORT PresentationRule (int priority, bool onlyIfNotHandled);
 
+    ECPRESENTATION_EXPORT virtual bool _ShallowEqual(PresentationKeyCR other) const override;
+
     ECPRESENTATION_EXPORT virtual bool _ReadXml (BeXmlNodeP xmlNode) override;
     ECPRESENTATION_EXPORT virtual void _WriteXml (BeXmlNodeP xmlNode) const override;
     
@@ -152,6 +159,8 @@ protected:
         : PresentationRule(priority, onlyIfNotHandled), m_condition(condition)
         {}
 
+    ECPRESENTATION_EXPORT virtual bool _ShallowEqual(PresentationKeyCR other) const override;
+
     ECPRESENTATION_EXPORT virtual bool _ReadXml (BeXmlNodeP xmlNode) override;
     ECPRESENTATION_EXPORT virtual void _WriteXml (BeXmlNodeP xmlNode) const override;
 
@@ -180,6 +189,8 @@ protected:
     virtual void _Accept(PresentationRuleSpecificationVisitor& visitor) const {}
     ECPRESENTATION_EXPORT virtual MD5 _ComputeHash(Utf8CP parentHash) const override;
 
+    virtual bool _ShallowEqual(PresentationRuleSpecification const& other) const { return true; }
+
     virtual Utf8CP _GetXmlElementName() const = 0;
     virtual bool _ReadXml(BeXmlNodeP xmlNode) {return true;}
     virtual void _WriteXml(BeXmlNodeP xmlNode) const {}
@@ -189,6 +200,9 @@ protected:
     virtual void _WriteJson(JsonValueR json) const {}
 
 public:
+    //! Does shallow comparison between this specification and other specification
+    bool ShallowEqual(PresentationRuleSpecification const& other) const {return _ShallowEqual(other);}
+
     //! Allows the visitor to visit this specification.
     ECPRESENTATION_EXPORT void Accept(PresentationRuleSpecificationVisitor& visitor) const;
 
