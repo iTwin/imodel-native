@@ -1485,10 +1485,10 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
 
     SetupProgressMeter();
 
-    AddPhases(10); // TODO
+    AddPhases(6);
 
     SetCurrentPhaseName("Initializing");
-    GetProgressMeter().AddSteps(10); // TODO
+    GetProgressMeter().AddSteps(3);
 
     iModelBridge::LogPerformance(setUpTimer, "Initialized iModelBridge Fwk");
 
@@ -1572,6 +1572,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
         }
 
     SetCurrentPhaseName("Cleaning up");
+    GetProgressMeter().AddSteps(2);
 
     if (m_briefcaseDgnDb.IsValid())     // must make sure briefcase dgndb is closed before tearing down host!
         {
@@ -2058,7 +2059,7 @@ int iModelBridgeFwk::DoNormalUpdate()
     m_briefcaseDgnDb->BriefcaseManager().GetChannelPropsR().channelType = IBriefcaseManager::ChannelType::Shared;
     m_briefcaseDgnDb->BriefcaseManager().GetChannelPropsR().channelParentId = m_briefcaseDgnDb->Elements().GetRootSubjectId();
 
-    SetCurrentPhaseName("Schema Changes");
+    SetCurrentPhaseName("Schemas and Definitions");
     GetProgressMeter().AddSteps(3);
 
     BeAssert(!m_briefcaseDgnDb->BriefcaseManager().StayInChannel() || !HoldsJobSubjectLock());
@@ -2122,7 +2123,7 @@ int iModelBridgeFwk::DoNormalUpdate()
     m_briefcaseDgnDb->BriefcaseManager().GetChannelPropsR().channelType = IBriefcaseManager::ChannelType::Normal;
     m_briefcaseDgnDb->BriefcaseManager().GetChannelPropsR().channelParentId = jobsubj->GetElementId();
 
-    SetCurrentPhaseName("Data Changes");
+    SetCurrentPhaseName("Elements and Models");
     GetProgressMeter().AddSteps(2);
 
     BeAssert(!iModelBridge::HoldsSchemaLock(*m_briefcaseDgnDb));
@@ -2243,7 +2244,7 @@ int iModelBridgeFwk::UpdateExistingBim()
     //                            *** The caller does all cleanup, including releasing all public locks. ***
 
     SetCurrentPhaseName("Opening Briefcase");
-    GetProgressMeter().AddSteps(10); // TODO
+    GetProgressMeter().AddSteps(2);
 
     GetLogger().infov("bridge:%s iModel:%s - Opening briefcase I.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
 
