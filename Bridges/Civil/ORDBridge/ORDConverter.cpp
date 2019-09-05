@@ -1858,7 +1858,7 @@ void assignCorridorSurfaceAspect(Dgn::DgnElementR element, Cif::CorridorSurfaceC
         }
     else
         {
-        auto corridorSurfaceAspectPtr = DgnV8ORDBim::CorridorSurfaceAspect::Create(isTopMesh, isBottomMesh, description.c_str());
+        auto corridorSurfaceAspectPtr = DgnV8ORDBim::CorridorSurfaceAspect::Create(isTopMesh, isBottomMesh, description.c_str(), nullptr, nullptr, nullptr);
         DgnV8ORDBim::CorridorSurfaceAspect::Set(element, *corridorSurfaceAspectPtr);
         }
     }
