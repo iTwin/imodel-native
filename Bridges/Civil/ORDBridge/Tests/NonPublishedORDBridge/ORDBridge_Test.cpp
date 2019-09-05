@@ -64,7 +64,6 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDAllOneConversionTest)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CiviliModelBridgesORDBridgeTests, ORDGeometryComparisonAlignmentCountTest)
     {
-    //--gtest_filter=*AlignmentCount*
     WCharCP wDgnFileName = WCharCP(L"GeometryComparison.dgn");
     WCharCP wFileName = WCharCP(L"ORDGeometryComparison.bim");
     ASSERT_TRUE(RunTestApp(wDgnFileName, wFileName, false));
@@ -81,7 +80,6 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDGeometryComparisonAlignmentCountTest
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CiviliModelBridgesORDBridgeTests, ORDGeometryComparisonElementCountAndEndsTest)
     {
-    //--gtest_filter=*ComparisonElementCount*
     WCharCP wDgnFileName = WCharCP(L"GeometryComparison.dgn");
     WCharCP wFileName = WCharCP(L"ORDGeometryComparison.bim");
     ASSERT_TRUE(RunTestApp(wDgnFileName, wFileName, false));
@@ -152,7 +150,6 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDGeometryComparisonElementCountAndEnd
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CiviliModelBridgesORDBridgeTests, ORDGeometryComparisonElementLengthsTest)
     {
-    //--gtest_filter=*ElementLengths*
     WCharCP wDgnFileName = WCharCP(L"GeometryComparison.dgn");
     WCharCP wFileName = WCharCP(L"ORDGeometryComparison.bim");
     ASSERT_TRUE(RunTestApp(wDgnFileName, wFileName, false));
@@ -196,7 +193,6 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDGeometryComparisonElementLengthsTest
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CiviliModelBridgesORDBridgeTests, ORDGeometryGapLengthsTest)
     {
-    //--gtest_filter=*Gap*
     WCharCP wDgnFileName = WCharCP(L"GeometryGap.dgn");
     WCharCP wFileName = WCharCP(L"ORDGeometryGap.bim");
     ASSERT_TRUE(RunTestApp(wDgnFileName, wFileName, false));
@@ -217,12 +213,11 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDGeometryGapLengthsTest)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Greg.Ashe       08/2019
+// JGATODO Spiral Types ... Need later or newer Geomlib NOT bim02
+// --gtest_filter=*SpiralTypes*
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CiviliModelBridgesORDBridgeTests, ORDGeometrySpiralTypesAndLengthsTest)
     {
-    // JGATODO Spiral Types ... Need later or newer Geomlib NOT bim02
-
-    //--gtest_filter=*SpiralTypes*
     WCharCP wDgnFileName = WCharCP(L"GeometrySpiral.dgn");
     WCharCP wFileName = WCharCP(L"ORDGeometrySpiral.bim");
     //ASSERT_TRUE(RunTestApp(wDgnFileName, wFileName, false));
@@ -231,17 +226,16 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDGeometrySpiralTypesAndLengthsTest)
     BeStringUtilities::WCharToUtf8(bimFile, wFileName);
     Utf8CP bim = bimFile.c_str();
 
-    //VerifyConvertedGeometrySpiralTypesAndLengths(bim);
+    //VerifyConvertedGeometrySpiralTypesAndLengths(bim, "L1");
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Greg.Ashe       08/2019
+// JGATODO Add Turnouts and branches to imodel
+// --gtest_filter=*RailTurnout*
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CiviliModelBridgesORDBridgeTests, ORDGeometryRailTurnoutTest)
     {
-    // JGATODO Add Turnouts and branches to imodel
-
-    //--gtest_filter=*RailTurnout*
     WCharCP wDgnFileName = WCharCP(L"GeometryRailTurnout.dgn");
     WCharCP wFileName = WCharCP(L"ORDGeometryRailTurnout.bim");
     ASSERT_TRUE(RunTestApp(wDgnFileName, wFileName, false));
@@ -249,9 +243,8 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDGeometryRailTurnoutTest)
     Utf8String bimFile;
     BeStringUtilities::WCharToUtf8(bimFile, wFileName);
     Utf8CP bim = bimFile.c_str();
-
-    /// 3 Alignments - 4 Turnouts (2 alignments each ) = 11 total
-    VerifyConvertedElementCount(bim, 3, 0); //(bim, 11, 0, 4); add turnout to count when done
+   
+    VerifyConvertedElementCount(bim, 3, 0); //(bim, 11, 0, 4); add turnout to count when done --- 3 Alignments - 4 Turnouts (2 alignments each ) = 11 total
 
     VerifyConvertedGeometryUniqueAlignmentNameExists(bim, "LLL1");
     VerifyConvertedGeometryUniqueAlignmentNameExists(bim, "LLL2");
@@ -266,7 +259,6 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDGeometryRailTurnoutTest)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CiviliModelBridgesORDBridgeTests, ORDGeometryStationingTest)
     {
-    //--gtest_filter=*Stationing*
     WCharCP wDgnFileName = WCharCP(L"GeometryStationing.dgn");
     WCharCP wFileName = WCharCP(L"ORDGeometryStationing.bim");
     ASSERT_TRUE(RunTestApp(wDgnFileName, wFileName, false));
@@ -275,7 +267,6 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDGeometryStationingTest)
     BeStringUtilities::WCharToUtf8(bimFile, wFileName);
     Utf8CP bim = bimFile.c_str();
 
-    /// 7 Alignments
     VerifyConvertedElementCount(bim, 7, 0);
 
     VerifyConvertedGeometryStationStart(bim, "ZERO", 10000, 0);
@@ -286,4 +277,47 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDGeometryStationingTest)
     VerifyConvertedGeometryStationEquation(bim, "EQNLINE", 10000, 200, 1, 1200, 1000);
     VerifyConvertedGeometryStationEquation(bim, "EQNSPIRAL", 10000, 200, 1, 540, 1000);
     VerifyConvertedGeometryStationEquation(bim, "EQNARC", 10000, 100, 1, 600, 1000);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Greg.Ashe       08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CiviliModelBridgesORDBridgeTests, ORDItemTypesTest)
+    {
+    WCharCP wDgnFileName = WCharCP(L"ItemTypes.dgn");
+    WCharCP wFileName = WCharCP(L"ORDItemTypes.bim");
+    ASSERT_TRUE(RunTestApp(wDgnFileName, wFileName, false));
+
+    Utf8String bimFile;
+    BeStringUtilities::WCharToUtf8(bimFile, wFileName);
+    Utf8CP bim = bimFile.c_str();
+
+    VerifyConvertedElementCount(bim, 4, 0);
+  
+    VerifyConvertedGeometryUniqueAlignmentNameExists(bim, "L1");
+    VerifyConvertedGeometryUniqueAlignmentNameExists(bim, "L2");
+    VerifyConvertedGeometryUniqueAlignmentNameExists(bim, "L3");
+    VerifyConvertedGeometryUniqueAlignmentNameExists(bim, "L4");
+
+    ///"Type1ElementAspect"
+    ///"Type2ElementAspect"
+    ///"Type3ElementAspect"
+
+    VerifyConvertedElementItemTypes(bim, "L1", "ItemTypeLibrary1", "Type1ElementAspect", 6, "TextProp", "CIFTextValue", 0, 0); 
+    VerifyConvertedElementItemTypes(bim, "L1", "ItemTypeLibrary1", "Type1ElementAspect", 6, "IntegerProp", "", 111123, 0); 
+    VerifyConvertedElementItemTypes(bim, "L1", "ItemTypeLibrary1", "Type1ElementAspect", 6, "NumberProp", "", 0, 111123.0); 
+    VerifyConvertedElementItemTypes(bim, "L1", "ItemTypeLibrary1", "Type1ElementAspect", 6, "NumberUnitProp","", 0, 111321.0); 
+    VerifyConvertedElementItemTypes(bim, "L1", "ItemTypeLibrary1", "Type1ElementAspect", 6, "PointProp", "", 0, 1111230000.0); 
+
+    VerifyConvertedElementItemTypes(bim, "L2", "ItemTypeLibrary1", "Type2ElementAspect", 2, "Name", "CIFNameNotForced", 0, 0); 
+
+    VerifyConvertedElementItemTypes(bim, "L3", "ItemTypeLibrary1", "Type3ElementAspect", 2, "Name", "CIFNameForced", 0, 0); 
+
+    VerifyConvertedElementItemTypes(bim, "L4", "ItemTypeLibrary1", "Type1ElementAspect", 6, "TextProp", "CIFTextValue", 0, 0); 
+    VerifyConvertedElementItemTypes(bim, "L4", "ItemTypeLibrary1", "Type1ElementAspect", 6, "IntegerProp", "", 111123, 0); 
+    VerifyConvertedElementItemTypes(bim, "L4", "ItemTypeLibrary1", "Type1ElementAspect", 6, "NumberProp", "", 0, 111123.0); 
+    VerifyConvertedElementItemTypes(bim, "L4", "ItemTypeLibrary1", "Type1ElementAspect", 6, "NumberUnitProp","", 0, 111321.0); 
+    VerifyConvertedElementItemTypes(bim, "L4", "ItemTypeLibrary1", "Type1ElementAspect", 6, "PointProp", "", 0, 1111230000.0); 
+
+    VerifyConvertedElementItemTypes(bim, "L4", "ItemTypeLibrary1", "Type2ElementAspect", 2, "Name", "CIFNameNotForced", 0, 0); 
     }
