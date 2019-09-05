@@ -55,6 +55,7 @@ Error::Id Error::ErrorIdFromString(Utf8StringCR errorIdString)
         map["iModelHub.FailedToGetAssetPermissions"]                = Id::FailedToGetAssetPermissions;
         map["iModelHub.FailedToGetAssetMembers"]                    = Id::FailedToGetAssetMembers;
         map["iModelHub.ChangeSetAlreadyHasVersion"]                 = Id::ChangeSetAlreadyHasVersion;
+        map["iModelHub.BaselineiModelAlreadyHasVersion"]            = Id::BaselineiModelAlreadyHasVersion;
         map["iModelHub.VersionAlreadyExists"]                       = Id::VersionAlreadyExists;
         map["iModelHub.JobSchedulingFailed"]                        = Id::JobSchedulingFailed;
         map["iModelHub.ConflictsAggregate"]                         = Id::ConflictsAggregate;
@@ -197,6 +198,8 @@ Utf8StringCR Error::GetDefaultMessage(Error::Id id)
         map[Id::CredentialsNotSet] = ErrorLocalizedString(MESSAGE_CredentialsNotSet);
         map[Id::InvalidServerURL] = ErrorLocalizedString(MESSAGE_InvalidServerURL);
         map[Id::InvalidiModelName] = ErrorLocalizedString(MESSAGE_InvalidiModelName);
+        map[Id::InvalidiModelExtentCount] = ErrorLocalizedString(MESSAGE_InvalidiModelExtentCount);
+        map[Id::InvalidiModelExtentCoordinate] = ErrorLocalizedString(MESSAGE_InvalidiModelExtentCoordinate);
         map[Id::InvalidiModelId] = ErrorLocalizedString(MESSAGE_InvalidiModelId);
         map[Id::InvalidiModelConnection] = ErrorLocalizedString(MESSAGE_InvalidiModelConnection);
         map[Id::InvalidChangeSet] = ErrorLocalizedString(MESSAGE_InvalidChangeSet);

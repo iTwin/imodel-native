@@ -126,8 +126,8 @@ namespace iModelHubHelpers
         {
         TestsProgressCallback callback;
         auto createResult = client.CreateNewiModel(contextId, db, true, callback.Get())->GetResult();
-        EXPECT_RESULT(createResult, expectSuccess)
-            callback.Verify(expectSuccess);
+        EXPECT_RESULT(createResult, expectSuccess);
+        callback.Verify(expectSuccess);
         return createResult;
         }
 
@@ -140,11 +140,41 @@ namespace iModelHubHelpers
         }
     
     /*--------------------------------------------------------------------------------------+
+    * @bsimethod                                    Vilius.Kazlauskas               09/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    iModelResult CreateNewiModel(ClientCR client, DgnDbR db, Utf8StringCR contextId, iModelCreateInfoPtr imodelCreateInfo, bool expectSuccess)
+        {
+        TestsProgressCallback callback;
+        auto createResult = client.CreateNewiModel(contextId, db, imodelCreateInfo, true, callback.Get())->GetResult();
+        EXPECT_RESULT(createResult, expectSuccess);
+        callback.Verify(expectSuccess);
+        return createResult;
+        }
+
+    /*--------------------------------------------------------------------------------------+
+    * @bsimethod                                    Vilius.Kazlauskas               09/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    iModelResult CreateNewiModel(ClientPtr client, DgnDbPtr db, Utf8StringCR contextId, iModelCreateInfoPtr imodelCreateInfo, bool expectSuccess)
+        {
+        return CreateNewiModel(*client, *db, contextId, imodelCreateInfo, expectSuccess);
+        }
+    
+    /*--------------------------------------------------------------------------------------+
     * @bsimethod                                    Algirdas.Mikoliunas             01/2019
     +---------------+---------------+---------------+---------------+---------------+------*/
     iModelResult CreateEmptyiModel(ClientCR client, Utf8StringCR contextId, Utf8StringCR name, Utf8StringCR description, bool expectSuccess)
         {
         auto createResult = client.CreateEmptyiModel(contextId, name, description)->GetResult();
+        EXPECT_RESULT(createResult, expectSuccess);
+        return createResult;
+        }
+
+    /*--------------------------------------------------------------------------------------+
+    * @bsimethod                                    Vilius.Kazlauskas               09/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    iModelResult CreateEmptyiModel(ClientCR client, Utf8StringCR contextId, iModelCreateInfoPtr imodelCreateInfo, bool expectSuccess)
+        {
+        auto createResult = client.CreateEmptyiModel(contextId, imodelCreateInfo)->GetResult();
         EXPECT_RESULT(createResult, expectSuccess);
         return createResult;
         }
@@ -624,7 +654,7 @@ namespace iModelHubHelpers
         ASSERT_SUCCESS(changeSetsResult);
         auto changeSets = changeSetsResult.GetValue();
 
-        VersionInfoPtr version = new VersionInfo(name, "Description", changeSets.at(index - 1)->GetId());
+        VersionInfoPtr version = new VersionInfo(name, "Description", index > 0 ? changeSets.at(index - 1)->GetId() : "");
         VersionInfoResult versionResult = connection.GetVersionsManager().CreateVersion(*version)->GetResult();
         ASSERT_SUCCESS(versionResult);
         result = versionResult.GetValue();
@@ -636,6 +666,21 @@ namespace iModelHubHelpers
     void CreateNamedVersion(VersionInfoPtr& result, iModelConnectionPtr connection, Utf8StringCR name, int index)
         {
         CreateNamedVersion(result, *connection, name, index);
+        }
+
+    /*--------------------------------------------------------------------------------------+
+    * @bsimethod                                    Andrius.Zonys                   09/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    VersionInfoPtr GetVersionByChangeSetId(iModelConnectionPtr connection, Utf8StringCR changeSetId)
+        {
+        bvector<VersionInfoPtr> versions = connection->GetVersionsManager().GetAllVersions()->GetResult().GetValue();
+        for (int i = 0; i < versions.size(); i++)
+            {
+            if (versions[i]->GetChangeSetId() == changeSetId)
+                return versions[i];
+            }
+
+        return nullptr;
         }
 
     //---------------------------------------------------------------------------------------

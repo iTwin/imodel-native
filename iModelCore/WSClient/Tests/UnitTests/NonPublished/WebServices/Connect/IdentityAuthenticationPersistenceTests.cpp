@@ -4,14 +4,15 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "IdentityAuthenticationPersistenceTests.h"
-
+#include "ConnectTestsHelper.h"
 #include "../../../../../Connect/IdentityAuthenticationPersistence.h"
 #include "ConnectTestsHelper.h"
 #include "StubSecureStore.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 using namespace ::testing;
+
+struct IdentityAuthenticationPersistenceTests : WSClientBaseTest {};
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2016

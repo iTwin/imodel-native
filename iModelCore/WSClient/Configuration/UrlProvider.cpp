@@ -84,15 +84,6 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectProjectUrl(
     &s_urlRegistry
     );
 
-const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectProjectSettingsUrl(
-    "Mobile.ConnectProjectSettingsUrl",
-    "https://dev-webportal-eus.cloudapp.net/Admin/ProjectRegister?id=",
-    "https://qa-connect-webportal.bentley.com/Admin/ProjectRegister?id=",
-    "https://connect.bentley.com/project/Admin/ProjectRegister?id=",
-    nullptr,
-    &s_urlRegistry
-    );    
-
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgGlobal(
     "Mobile.ConnectWsgGlobal",
     "https://dev-wsg20-eus.cloudapp.net",
@@ -176,6 +167,15 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgRepositoryFederati
 
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectForms(
     "Mobile.ConnectForms",
+    "https://dev-formswsg-eus.cloudapp.net",
+    "https://qa-connect-formswsg.bentley.com",
+    "https://connect-formswsg.bentley.com",
+    nullptr,
+    &s_urlRegistry
+    );
+
+const UrlProvider::UrlDescriptor UrlProvider::Urls::FormsWsg(
+    "Forms.WSGService",
     "https://dev-formswsg-eus.cloudapp.net",
     "https://qa-connect-formswsg.bentley.com",
     "https://connect-formswsg.bentley.com",
@@ -380,6 +380,7 @@ bset<const UrlProvider::UrlDescriptor*> UrlProvider::GetUrlRegistry()
 +---------------+---------------+---------------+---------------+---------------+------*/
 const UrlProvider::UrlDescriptor* UrlProvider::ResolveUrlDescriptor(Utf8StringCR uriString)
     {
+        // Problem - if urls change that we need to use, this will not find required descriptor, need to figure out
     BeUri uri(uriString);
     if (uri.GetScheme() != "buddi")
         return nullptr;
@@ -474,6 +475,7 @@ Utf8String UrlProvider::GetUrl(Utf8StringCR urlName, const Utf8String* defaultUr
         {
         cachedUrl = defaultUrls[s_env];
         LOG.warningv("URL '%s' not received, falling back to '%s'", urlName.c_str(), cachedUrl.c_str());
+        // If does not exist - return buddi://unresolved/Foo, let requests fail
         }
 
     return cachedUrl;

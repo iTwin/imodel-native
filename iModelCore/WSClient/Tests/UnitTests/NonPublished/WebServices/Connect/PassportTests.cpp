@@ -3,7 +3,8 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include "PassportTests.h"
+
+#include "ConnectTestsHelper.h"
 #include <WebServices/Connect/Passport.h>
 #include <Bentley/Base64Utilities.h>
 
@@ -11,17 +12,24 @@
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
-void PassportTests::SetUp()
+struct PassportTests : BaseMockHttpHandlerTest
     {
-    Passport::Initialize(GetHandlerPtr());
-    m_client = std::make_shared<StubBuddiClient>();
-    UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &m_localState, m_client);
-    }
+private:
+    std::shared_ptr<StubBuddiClient> m_client;
+    RuntimeJsonLocalState m_localState;
 
-void PassportTests::TearDown()
-    {
-    Passport::Uninintialize();
-    }
+public:
+    virtual void SetUp() override
+        {
+        Passport::Initialize(GetHandlerPtr());
+        m_client = std::make_shared<StubBuddiClient>();
+        UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &m_localState, m_client);
+        };
+    virtual void TearDown() override
+        {
+        Passport::Uninintialize();
+        };
+    };
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    George.Rodier    04/2015

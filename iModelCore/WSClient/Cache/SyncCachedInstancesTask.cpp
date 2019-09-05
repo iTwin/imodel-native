@@ -18,9 +18,10 @@ SyncCachedInstancesTask::SyncCachedInstancesTask
 CachingDataSourcePtr ds,
 const bset<ObjectId>& objects,
 ProgressCallback onProgress,
-ICancellationTokenPtr ct
+ICancellationTokenPtr userCt,
+SimpleCancellationTokenPtr abortCt
 ) :
-CachingTaskBase(ds, ct),
+CachingTaskBase(ds, userCt, abortCt),
 m_objectsToCache(objects.begin(), objects.end()),
 m_objectsLeftToCache(objects.begin(), objects.end()),
 m_onProgress(onProgress ? onProgress : [] (size_t, CacheTransactionCR, const bset<ECInstanceKey>&) {})
@@ -129,7 +130,9 @@ void SyncCachedInstancesTask::ResolveNotFoundInstances()
         m_onProgress(m_cachedInstances.size() + synced, txn, handled);
         };
 
-    auto task = std::make_shared<SyncCachedInstancesSeperatelyTask>(m_ds, objectsToResolve, onProgress, GetCancellationToken());
+    auto task = std::make_shared<SyncCachedInstancesSeperatelyTask>(
+        m_ds, objectsToResolve, onProgress, GetUserCancellationToken(), GetAbortCancellationToken());
+
     m_ds->GetCacheAccessThread()->Push(task);
     task->Then([=]
         {
@@ -145,7 +148,8 @@ AsyncTaskPtr<CachingDataSource::BatchResult> SyncCachedInstancesTask::Run
 CachingDataSourcePtr ds,
 const bset<ObjectId>& instanceIds,
 ProgressCallback onProgress,
-ICancellationTokenPtr ct
+ICancellationTokenPtr userCt,
+SimpleCancellationTokenPtr abortCt
 )
     {
     if (instanceIds.empty())
@@ -160,11 +164,13 @@ ICancellationTokenPtr ct
         std::shared_ptr<CachingTaskBase> task;
         if (ds->GetServerInfo(ds->StartCacheTransaction()).GetVersion() < BeVersion(2, 0))
             {
-            task = std::shared_ptr<CachingTaskBase>(new SyncCachedInstancesSeperatelyTask(ds, instanceIds, onProgress, ct));
+            task = std::shared_ptr<CachingTaskBase>(
+                new SyncCachedInstancesSeperatelyTask(ds, instanceIds, onProgress, userCt, abortCt));
             }
         else
             {
-            task = std::shared_ptr<CachingTaskBase>(new SyncCachedInstancesTask(ds, instanceIds, onProgress, ct));
+            task = std::shared_ptr<CachingTaskBase>(
+                new SyncCachedInstancesTask(ds, instanceIds, onProgress, userCt, abortCt));
             }
 
         ds->GetCacheAccessThread()->Push(task);

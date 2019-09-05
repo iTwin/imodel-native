@@ -4,10 +4,12 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "ProgressFilterTests.h"
+#include "../../../Utils/WebServicesTestsHelper.h"
 #include <WebServices/Cache/Util/ProgressFilter.h>
 
 using namespace ::testing;
+
+struct ProgressFilterTests : WSClientBaseTest {};
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                   Julius.Cepukenas                    02/16

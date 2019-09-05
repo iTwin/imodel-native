@@ -15,10 +15,9 @@ using namespace ::testing;
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct MockECDbAdapterDeleteListener : public IECDbAdapter::DeleteListener
+struct MockECDbAdapterDeleteListener : IECDbAdapter::DeleteListener
     {
-    public:
-        MOCK_METHOD3(OnBeforeDelete, BentleyStatus(ECClassCR ecClass, ECInstanceId ecInstanceId, bset<ECInstanceKey>& additionalToDeleteOut));
+    MOCK_METHOD3(OnBeforeDelete, BentleyStatus(ECClassCR ecClass, ECInstanceId ecInstanceId, bset<ECInstanceKey>& additionalToDeleteOut));
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

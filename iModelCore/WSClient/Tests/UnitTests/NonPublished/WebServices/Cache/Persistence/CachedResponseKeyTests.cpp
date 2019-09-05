@@ -4,10 +4,12 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "CachedResponseKeyTests.h"
+#include "BaseCacheTest.h"
 
 using namespace ::testing;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
+
+struct CachedResponseKeyTests : WSClientBaseTest {};
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     06/16

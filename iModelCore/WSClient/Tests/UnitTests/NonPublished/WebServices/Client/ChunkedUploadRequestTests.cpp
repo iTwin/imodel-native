@@ -4,11 +4,12 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "ChunkedUploadRequestTests.h"
-
+#include "../../Utils/WebServicesTestsHelper.h"
 #include "../../../../../Client/ChunkedUploadRequest.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
+
+struct ChunkedUploadRequestTests : BaseMockHttpHandlerTest {};
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015

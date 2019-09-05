@@ -4,13 +4,14 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "ECExpressionHelperTests.h"
-
+#include "../../../Utils/WebServicesTestsHelper.h"
 #include <WebServices/Cache/Util/ECExpressionHelper.h>
 #include "../CachingTestsHelper.h"
 
 using namespace ::testing;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
+
+struct ECExpressionHelperTests : WSClientBaseTest {};
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     08/15

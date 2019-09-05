@@ -26,7 +26,9 @@ namespace iModelHubHelpers
     void CreateContextWSClient(IWSRepositoryClientPtr& result, ClientR client, Utf8StringCR contextId);
 
     iModelResult CreateNewiModel(ClientPtr client, DgnDbPtr db, Utf8StringCR contextId, bool expectSuccess);
+    iModelResult CreateNewiModel(ClientPtr client, DgnDbPtr db, Utf8StringCR contextId, iModelCreateInfoPtr imodelCreateInfo, bool expectSuccess);
     iModelResult CreateEmptyiModel(ClientCR client, Utf8StringCR contextId, Utf8StringCR name, Utf8StringCR description, bool expectSuccess);
+    iModelResult CreateEmptyiModel(ClientCR client, Utf8StringCR contextId, iModelCreateInfoPtr imodelCreateInfo, bool expectSuccess);
     void CreateUninitializediModel(iModelResult& result, ClientPtr client, Utf8StringCR contextId, Utf8StringCR imodelName);
     void LockiModel(StatusResult& result, iModelConnectionPtr connection, bool expectSuccess = true);
     void UploadNewSeedFile(FileResult& result, iModelConnectionPtr connection, DgnDbPtr db, bool expectSuccess = true);
@@ -54,6 +56,7 @@ namespace iModelHubHelpers
     BriefcasePtr AcquireAndAddChangeSets(ClientPtr client, iModelInfoPtr info, uint32_t count = 1);
     void PushDefaultView(ClientPtr client, iModelInfoPtr info);
     void CreateNamedVersion(VersionInfoPtr& result, iModelConnectionPtr connection, Utf8StringCR name, int index);
+    VersionInfoPtr GetVersionByChangeSetId(iModelConnectionPtr connection, Utf8StringCR changeSetId);
 
     void SetLastPulledChangeSetId(BriefcasePtr briefcase, Utf8StringCR changeSetId);
     ChangeSetInfoPtr GetChangeSetByIndex(iModelConnectionPtr connection, int index);

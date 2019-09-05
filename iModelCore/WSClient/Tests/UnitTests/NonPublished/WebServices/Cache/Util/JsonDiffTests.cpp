@@ -4,8 +4,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "JsonDiffTests.h"
-
+#include "../../../Utils/WebServicesTestsHelper.h"
 #include <WebServices/Cache/Util/JsonDiff.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
@@ -32,6 +31,8 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
     TEST_GET_CHANGES_RUN(oldJsonString, newJsonString, outJsonString, expectedDiffString, JsonDiff::Flags::FindDeletions)
 
 using namespace ::testing;
+
+struct JsonDiffTests : WSClientBaseTest {};
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                  Benediktas.Lipnickas                   10/15

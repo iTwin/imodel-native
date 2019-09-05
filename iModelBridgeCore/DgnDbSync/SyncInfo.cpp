@@ -1196,9 +1196,29 @@ bool SyncInfo::IsElementInNamedGroup(DgnElementId sourceId, DgnElementId targetI
     stmt->BindId(1, sourceId);
     stmt->BindId(2, targetId);
 
-    return (BE_SQLITE_ROW == stmt->Step());
+    return BE_SQLITE_ROW == stmt->Step();
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            08/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus SyncInfo::AddElementToNamedGroup(DgnElementId sourceId, DgnElementId targetId)
+    {
+    CachedStatementPtr stmt = nullptr;
+    auto stat = m_dgndb->GetCachedStatement(stmt, "INSERT INTO " TEMPTABLE_ATTACH(TEMPTABLE_NamedGroups) " (SourceId, TargetId) VALUES (?, ?)");
+    if (stat != BE_SQLITE_OK)
+        {
+        BeAssert(false && "Could not retrieve cached statement.");
+        return BentleyApi::ERROR;
+        }
+
+    stmt->BindId(1, sourceId);
+    stmt->BindId(2, targetId);
+    stat = stmt->Step();
+
+    return stat == BE_SQLITE_DONE ? BentleyApi::SUCCESS : BentleyApi::ERROR;
+
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      1/19
 +---------------+---------------+---------------+---------------+---------------+------*/

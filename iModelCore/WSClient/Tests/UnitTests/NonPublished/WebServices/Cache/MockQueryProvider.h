@@ -15,8 +15,20 @@ using namespace ::testing;
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct MockQueryProvider : public IQueryProvider
+struct MockQueryProvider : IQueryProvider
     {
+#ifdef WIP_MERGE
+    MOCK_CONST_METHOD1 (GetInitialQueries, bvector<IQueryProvider::Query>
+        (
+        CacheTransactionCR txn
+        ));
+
+    MOCK_CONST_METHOD1 (GetInitialInstances, bvector<ECInstanceKey>
+        (
+        CacheTransactionCR txn
+        ));
+#endif
+
     MOCK_CONST_METHOD3 (GetQueries, bvector<IQueryProvider::Query>
         (
         CacheTransactionCR txn,

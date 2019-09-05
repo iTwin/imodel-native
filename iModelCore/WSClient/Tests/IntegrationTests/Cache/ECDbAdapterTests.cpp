@@ -4,8 +4,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "ECDbAdapterTests.h"
-
+#include <WebServicesTestsHelper.h>
 #include <WebServices/Cache/Util/ECDbAdapter.h>
 
 using namespace ::testing;
@@ -51,6 +50,11 @@ void EXPECT_CALL_OnBeforeDelete(MockECDbAdapterDeleteListener& listener, std::sh
         }));
     }
 #endif
+
+struct ECDbAdapterTests : WSClientBaseTest
+    {
+    static std::shared_ptr<ObservableECDb> CreateTestDb(ECSchemaPtr schema);
+    };
 
 std::shared_ptr<ObservableECDb> ECDbAdapterTests::CreateTestDb(ECSchemaPtr schema)
     {

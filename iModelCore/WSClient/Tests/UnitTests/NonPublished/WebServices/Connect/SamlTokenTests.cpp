@@ -3,13 +3,16 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include "SamlTokenTests.h"
+
+#include "ConnectTestsHelper.h"
 #include <WebServices/Connect/SamlToken.h>
 #include <Bentley/Base64Utilities.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 using namespace ::testing;
+
+struct SamlTokenTests : WSClientBaseTest {};
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2016

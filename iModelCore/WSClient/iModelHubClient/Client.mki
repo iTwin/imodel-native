@@ -53,7 +53,9 @@ iModelHubClientMkiHeaders =	$(iModelHubClientMkiPublicApiDir)Common.h           
                                 $(iModelHubClientMkiPublicApiDir)Client/FileAccessKey.h          \
                                 $(iModelHubClientMkiPublicApiDir)Client/BaseFileInfo.h           \
                                 $(iModelHubClientMkiPublicApiDir)Client/FileInfo.h               \
+                                $(iModelHubClientMkiPublicApiDir)Client/iModelBaseInfo.h         \
                                 $(iModelHubClientMkiPublicApiDir)Client/iModelInfo.h             \
+                                $(iModelHubClientMkiPublicApiDir)Client/iModelCreateInfo.h       \
                                 $(iModelHubClientMkiPublicApiDir)Client/BriefcaseInfo.h          \
                                 $(iModelHubClientMkiPublicApiDir)Client/ChangeSetInfo.h          \
                                 $(iModelHubClientMkiPublicApiDir)Client/VersionInfo.h            \
@@ -78,6 +80,8 @@ $(o)Utils$(oext)                           : $(iModelHubClientMkiSourceDir)Utils
 $(o)MultiProgressCallbackHandler$(oext)    : $(iModelHubClientMkiSourceDir)MultiProgressCallbackHandler.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)Error$(oext)                           : $(iModelHubClientMkiSourceDir)Error.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)iModelBaseInfo$(oext)                  : $(iModelHubClientMkiSourceDir)iModelBaseInfo.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)iModelInfo$(oext)                      : $(iModelHubClientMkiSourceDir)iModelInfo.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 

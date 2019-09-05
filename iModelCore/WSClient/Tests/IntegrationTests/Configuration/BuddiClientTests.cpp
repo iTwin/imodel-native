@@ -3,10 +3,12 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include "BuddiClientTests.h"
 
+#include <WebServicesTestsHelper.h>
 #include <WebServices/Configuration/BuddiClient.h>
 #include <BeHttp/ProxyHttpHandler.h>
+
+struct BuddiClientTests : WSClientBaseTest {};
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     12/15

@@ -164,7 +164,7 @@ BentleyStatus   DwgBridge::_ConvertToBim (Dgn::SubjectCR jobSubject)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DwgBridge::_MakeSchemaChanges () 
+BentleyStatus   DwgBridge::_MakeSchemaChanges (bool& hasMoreChanges) 
     {
     // create DwgAttributeDefinition shema
     if (m_importer->WasAborted() || BentleyStatus::SUCCESS != m_importer->MakeSchemaChanges())

@@ -277,6 +277,17 @@
         </Bindings>
     </Part>
 
+    <Part Name="RealityDataDeleter" BentleyBuildMakeFile="RealityAdmin\RealityDataDeleter\RealityDataDeleter.mke">
+        <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <SubPart PartName="BentleyDll"          PartFile="iModelCore/Bentley/Bentley"      Repository="imodel02" />
+        <SubPart PartName="RealityPlatformTools"/>
+        <SubPart PartName="RealityPlatform"/>
+        <SubPart PartName="RealityAdmin"/>
+        <Bindings>
+            <Assemblies>Delivery/RealityDataDeleter.exe</Assemblies>
+        </Bindings>
+    </Part>
+
     <Part Name="WSGServicesExample" BentleyBuildMakeFile="RealityPlatformTools\Example\WSGServicesExample.mke">
         <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="BentleyDll"          PartFile="iModelCore/Bentley/Bentley"      Repository="imodel02" />
@@ -339,6 +350,7 @@
         <SubPart PartName="RealityDataServiceUploader"/>
         <SubPart PartName="RealityDataServiceDownloader"/>
         <SubPart PartName="RealityDataServiceConsole"/>
+        <SubPart PartName="RealityDataDeleter"/>
         <SubPart PartName="CrawlerLibExample"/>
         <SubPart PartName="RealityServicesNet"/>
     </Part>

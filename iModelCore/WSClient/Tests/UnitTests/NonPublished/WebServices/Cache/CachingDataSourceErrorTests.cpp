@@ -4,14 +4,15 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "CachingDataSourceErrorTests.h"
-
+#include "../../Utils/WebServicesTestsHelper.h"
 #include <WebServices/Cache/CachingDataSource.h>
 #include <Bentley/BeDebugLog.h>
 #include "CachingTestsHelper.h"
 
 using namespace ::testing;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
+
+struct CachingDataSourceErrorTests : WSClientBaseTest {};
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15

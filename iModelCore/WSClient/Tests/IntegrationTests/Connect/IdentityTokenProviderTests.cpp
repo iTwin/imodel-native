@@ -13,7 +13,7 @@
 #include "../../../Connect/IdentityTokenProvider.h"
 #include "../../UnitTests/NonPublished/WebServices/Connect/StubTokenStore.h"
 
-struct IdentityTokenProviderTests : public WSClientBaseTest {};
+struct IdentityTokenProviderTests : WSClientBaseTest {};
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     12/15

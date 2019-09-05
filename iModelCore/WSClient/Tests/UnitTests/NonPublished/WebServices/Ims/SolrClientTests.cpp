@@ -4,15 +4,16 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "SolrClientTests.h"
+#include "../../Utils/WebServicesTestsHelper.h"
 #include <WebServices/Ims/SolrQuery.h>
 #include <WebServices/Ims/SolrClient.h>
-
 
 using namespace ::testing;
 using namespace ::std;
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
+
+struct SolrClientTests : BaseMockHttpHandlerTest {};
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    David.Jones    03/2016

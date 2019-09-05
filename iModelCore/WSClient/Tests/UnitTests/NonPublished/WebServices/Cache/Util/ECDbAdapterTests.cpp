@@ -4,8 +4,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "ECDbAdapterTests.h"
-
+#include "../CachingTestsHelper.h"
 #include <WebServices/Cache/Util/ECDbAdapter.h>
 #include "MockECDbAdapterDeleteListener.h"
 
@@ -55,6 +54,18 @@ void EXPECT_CALL_OnBeforeDelete(MockECDbAdapterDeleteListener& listener, std::sh
         }));
     }
 #endif
+
+struct ECDbAdapterTests : WSClientBaseTest
+    {
+    private:
+        static SeedFile s_seedECDb;
+        static SeedFile s_seedEmptyECDb;
+
+    protected:
+        static std::shared_ptr<ObservableECDb> CreateTestDb(ECSchemaPtr schema);
+        static std::shared_ptr<ObservableECDb> GetTestDb();
+        static std::shared_ptr<ObservableECDb> GetEmptyTestDb();
+    };
 
 SeedFile ECDbAdapterTests::s_seedECDb("ecdbAdapterTest.ecdb",
                                       [] (BeFileNameCR filePath)

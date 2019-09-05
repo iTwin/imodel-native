@@ -57,6 +57,7 @@ public:
         FailedToGetAssetPermissions,
         FailedToGetAssetMembers,
         ChangeSetAlreadyHasVersion,
+        BaselineiModelAlreadyHasVersion,
         VersionAlreadyExists,
         JobSchedulingFailed,
         ConflictsAggregate,
@@ -88,6 +89,8 @@ public:
         InvalidVersion,
         BriefcaseIsReadOnly,
         TrackingNotEnabled,
+        InvalidiModelExtentCount,
+        InvalidiModelExtentCoordinate,
 
         //Event Errors
         NoEventsFound = 300,

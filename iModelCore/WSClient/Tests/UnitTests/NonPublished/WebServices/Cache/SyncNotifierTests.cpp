@@ -4,11 +4,12 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "SyncNotifierTests.h"
-
+#include "../../Utils/WebServicesTestsHelper.h"
 #include <WebServices/Cache/SyncNotifier.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
+
+struct SyncNotifierTests : WSClientBaseTest {};
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                          Benediktas.Lipnickas        10/17

@@ -4,16 +4,16 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "ECInstanceKeyFilterTests.h"
-
+#include "../BaseCachingDataSourceTest.h"
 #include <WebServices/Cache/Util/ECInstanceKeyFilter.h>
-
 #include <Bentley/BeDebugLog.h>
 
 using namespace ::testing;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 #ifdef USE_GTEST
+
+struct ECInstanceKeyFilterTests : BaseCachingDataSourceTest {};
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                              Benediktas.Lipnickas                     08/16

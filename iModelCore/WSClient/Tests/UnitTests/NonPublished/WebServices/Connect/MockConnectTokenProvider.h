@@ -13,16 +13,15 @@ using namespace ::testing;
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct MockConnectTokenProvider : public IConnectTokenProvider
+struct MockConnectTokenProvider : IConnectTokenProvider
     {
-    public:
-        MockConnectTokenProvider()
-            {
-            ON_CALL(*this, GetToken()).WillByDefault(Return(nullptr));
-            ON_CALL(*this, UpdateToken()).WillByDefault(Return(CreateCompletedAsyncTask(ISecurityTokenPtr())));
-            }
-        MOCK_METHOD0(UpdateToken, AsyncTaskPtr<ISecurityTokenPtr>());
-        MOCK_METHOD0(GetToken, ISecurityTokenPtr());
+    MockConnectTokenProvider()
+        {
+        ON_CALL(*this, GetToken()).WillByDefault(Return(nullptr));
+        ON_CALL(*this, UpdateToken()).WillByDefault(Return(CreateCompletedAsyncTask(ISecurityTokenPtr())));
+        }
+    MOCK_METHOD0(UpdateToken, AsyncTaskPtr<ISecurityTokenPtr>());
+    MOCK_METHOD0(GetToken, ISecurityTokenPtr());
     };
 #endif
 

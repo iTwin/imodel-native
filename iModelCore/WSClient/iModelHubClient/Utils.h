@@ -91,6 +91,7 @@ namespace ServerSchema
         static Utf8CP FileDescription = "FileDescription";
         static Utf8CP iModelDescription = "Description";
         static Utf8CP iModelTemplate = "iModelTemplate";
+        static Utf8CP Extent = "Extent";
         static Utf8CP UserCreated = "UserCreated";
         static Utf8CP UserOwned = "UserOwned";
         static Utf8CP CreatedDate = "CreatedDate";
