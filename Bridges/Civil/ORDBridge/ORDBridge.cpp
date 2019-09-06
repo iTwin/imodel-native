@@ -349,13 +349,26 @@ void ORDBridge::_OnDocumentDeleted(Utf8StringCR documentId, Dgn::iModelBridgeSyn
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                    Diego.Diaz                      01/2018
  +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ORDBridge::_MakeSchemaChanges()
+BentleyStatus ORDBridge::_MakeSchemaChanges(bool& hasMoreChanges)
     {
-    auto status = m_converter->MakeSchemaChanges();
-    if (status == BSISUCCESS) 
+    BentleyStatus status = SUCCESS;
+    if (m_schemaImportPhase == SchemaImportPhase::Base)
+        {
+        status = m_converter->MakeSchemaChanges();
+        m_schemaImportPhase = SchemaImportPhase::Dynamic;
+        hasMoreChanges = true;
+        }
+    else if (m_schemaImportPhase == SchemaImportPhase::Dynamic)
+        {
         status = m_converter->AddDynamicSchema();
-
-    GetDgnDbR().Schemas().CreateClassViewsInDb(); // For debugging purposes
+        GetDgnDbR().Schemas().CreateClassViewsInDb(); // For debugging purposes
+        m_schemaImportPhase = SchemaImportPhase::Done;
+        hasMoreChanges = false;
+        }
+    else
+        {
+        BeAssert(false && "Too many calls to _MakeSchemaChanges");
+        }
 
     return ((BSISUCCESS != status) || m_converter->WasAborted()) ? BSIERROR : BSISUCCESS;
     }

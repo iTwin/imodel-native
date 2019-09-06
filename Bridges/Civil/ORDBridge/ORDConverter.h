@@ -26,6 +26,7 @@ protected:
     virtual bool _ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Model) override;
     virtual void _OnSheetsConvertViewAttachment(Dgn::DgnDbSync::DgnV8::ResolvedModelMapping const& v8SheetModelMapping, DgnAttachmentR v8DgnAttachment) override;    
     virtual void _ConvertModels() override;
+    virtual Bentley::DgnPlatform::ModelId _GetRootModelId() override;
 
 public:
     struct Params
@@ -58,11 +59,15 @@ private:
     bvector<Bentley::RefCountedPtr<Bentley::Cif::GeometryModel::SDK::LinearEntity3d>> m_cifGeneratedLinear3ds;
     bool m_isProcessing;
 
+    bset<Dgn::DgnModelId> m_planViewModels;
+    bset<Dgn::DgnModelId> m_3dModels;
+
     void CreateRoadRailElements();
     void CreateAlignments();
     void CreatePathways();
     void SetCorridorDesignAlignments();
     void AssociateGeneratedAlignments();
+    void CreateDefaultSavedViews();
 
     typedef Dgn::iModelBridge iModelBridge;
 
@@ -74,6 +79,12 @@ private:
         L10N_STRING(TASK_ASSOCIATE_CORRIDORS)  // =="Associating corridors"==
         L10N_STRING(TASK_ASSOCIATE_3DLINEARS)  // =="Associating 3d linears"==
         L10N_STRING(TASK_PROCESS_PROFILE)      // =="Processing profile"==
+    IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
+
+    //! Translatable Element-Codes
+    IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START(ORDBridgeElementCodes, ordbridge_codes)
+        L10N_STRING(VIEW_PLANVIEW_MODELS)      // =="Plan-view Models"==
+        L10N_STRING(VIEW_3D_MODELS)            // =="3D Models"==
     IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
 public:

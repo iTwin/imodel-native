@@ -266,6 +266,46 @@ bool CiviliModelBridgesORDBridgeTestsFixture::RunTestApp(WCharCP input, WCharCP 
     }
 
 /*---------------------------------------------------------------------------------**//**
++---------------+---------------+---------------+---------------+---------------+------*/
+AlignmentCPtr getRoadRailAlignmentByName(DgnDbP dgnDbPtr, Utf8CP alignmentName)
+    {
+    ECSqlStatement stmt;
+    stmt.Prepare(*dgnDbPtr, "SELECT a.ECInstanceId, a.UserLabel FROM "
+        BRRA_SCHEMA(BRRA_CLASS_Alignment) " a," BIS_SCHEMA(BIS_CLASS_Model) " m, " BRRA_SCHEMA(BRRA_CLASS_DesignAlignments) " d "
+        "WHERE m.ModeledElement.Id = d.ECInstanceId AND a.Model.Id = m.ECInstanceId ");
+    BeAssert(stmt.IsPrepared());
+
+    //ECSqlStatement stmt;
+    //stmt.Prepare(*dgnDbPtr, "SELECT a.ECInstanceId, a.UserLabel, a.StartStation, a.StartValue FROM "
+    //    BRRA_SCHEMA(BRRA_CLASS_Alignment) " a," BIS_SCHEMA(BIS_CLASS_Model) " m, " BRRA_SCHEMA(BRRA_CLASS_DesignAlignments) " d "
+    //    "WHERE m.ModeledElement.Id = d.ECInstanceId AND a.Model.Id = m.ECInstanceId ");
+    //BeAssert(stmt.IsPrepared());
+
+    bool found = false;
+    AlignmentCPtr roadRailAlignmentCPtr = nullptr;
+    while (DbResult::BE_SQLITE_ROW == stmt.Step())
+        {
+        auto alignmentId = stmt.GetValueId<DgnElementId>(0);
+        auto alignmentNameCP = stmt.GetValueText(1);
+        //auto startStation = stmt.GetValueDouble(2);
+        //auto StartValue = stmt.GetValueDouble(3);
+
+        if (alignmentName == nullptr || alignmentNameCP == nullptr || 0 != Utf8String(alignmentName).CompareTo(alignmentNameCP))
+            continue;
+        found = true;
+
+        roadRailAlignmentCPtr = BentleyB0200::RoadRailAlignment::Alignment::Get(*dgnDbPtr, alignmentId);
+        //auto alignmentPairPtr = roadRailAlignmentCPtr->QueryMainPair();
+        }
+    stmt.Finalize();
+
+    if (!found || roadRailAlignmentCPtr.IsNull())
+        BeAssert(false && "Alignment not found");
+
+    return roadRailAlignmentCPtr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Greg.Ashe       08/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedElementCount(Utf8CP bimFileName, size_t alignmentCount, size_t corridorCount)
@@ -344,7 +384,7 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometryUniqueA
         }
 
     if (count != 1)
-        BeAssert(false && "Alignment name not found OR duplicate.");
+        BeAssert(false && "Alignment not found");
 
     stmt.Finalize();
 
@@ -383,7 +423,7 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometryTurnout
         }
 
     if (branchCount != count)
-        BeAssert(false && "Branch Count Failed.");
+        BeAssert(false && "Branch not found");
 
     stmt.Finalize();
 
@@ -497,26 +537,9 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometryElement
     if (dgnDbPtr.IsNull())
         return nullptr;
 
-    ECSqlStatement stmt;
-    stmt.Prepare(*dgnDbPtr, "SELECT a.ECInstanceId, a.UserLabel FROM "
-        BRRA_SCHEMA(BRRA_CLASS_Alignment) " a," BIS_SCHEMA(BIS_CLASS_Model) " m, " BRRA_SCHEMA(BRRA_CLASS_DesignAlignments) " d "
-        "WHERE m.ModeledElement.Id = d.ECInstanceId AND a.Model.Id = m.ECInstanceId ");
-    BeAssert(stmt.IsPrepared());
-
-    bool found = false;
-    while (DbResult::BE_SQLITE_ROW == stmt.Step())
+    auto roadRailAlignmentCPtr = getRoadRailAlignmentByName(dgnDbPtr.get(), alignmentName);
+    if (roadRailAlignmentCPtr.IsValid())
         {
-        auto alignmentId = stmt.GetValueId<DgnElementId>(0);
-        auto alignmentNameCP = stmt.GetValueText(1);
-
-        if (alignmentName == nullptr || alignmentNameCP == nullptr || 0 != Utf8String(alignmentName).CompareTo(alignmentNameCP))
-            continue;
-
-        found = true;
-
-        auto roadRailAlignmentCPtr = RoadRailAlignment::Alignment::Get(*dgnDbPtr, alignmentId);
-        auto alignmentPairPtr = roadRailAlignmentCPtr->QueryMainPair();
-
         auto horizontalAlignmentCPtr = roadRailAlignmentCPtr->GetHorizontal();
         if (horizontalAlignmentCPtr.IsValid())
             {
@@ -547,11 +570,6 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometryElement
                 BeAssert(checkCount && "Vertical Check Element Count failed.");
             }
         }
-
-    if (!found)
-        BeAssert(false && "Alignment name not found.");
-
-    stmt.Finalize();
 
     return dgnDbPtr;
     }
@@ -725,26 +743,9 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometryElement
     if (dgnDbPtr.IsNull())
         return nullptr;
 
-    ECSqlStatement stmt;
-    stmt.Prepare(*dgnDbPtr, "SELECT a.ECInstanceId, a.UserLabel FROM "
-        BRRA_SCHEMA(BRRA_CLASS_Alignment) " a," BIS_SCHEMA(BIS_CLASS_Model) " m, " BRRA_SCHEMA(BRRA_CLASS_DesignAlignments) " d "
-        "WHERE m.ModeledElement.Id = d.ECInstanceId AND a.Model.Id = m.ECInstanceId ");
-    BeAssert(stmt.IsPrepared());
-
-    bool found = false;
-    while (DbResult::BE_SQLITE_ROW == stmt.Step())
+    auto roadRailAlignmentCPtr = getRoadRailAlignmentByName(dgnDbPtr.get(), alignmentName);
+    if (roadRailAlignmentCPtr.IsValid())
         {
-        auto alignmentId = stmt.GetValueId<DgnElementId>(0);
-        auto alignmentNameCP = stmt.GetValueText(1);
-
-        if (alignmentName == nullptr || alignmentNameCP == nullptr || 0 != Utf8String(alignmentName).CompareTo(alignmentNameCP))
-            continue;
-
-        found = true;
-
-        auto roadRailAlignmentCPtr = RoadRailAlignment::Alignment::Get(*dgnDbPtr, alignmentId);
-        auto alignmentPairPtr = roadRailAlignmentCPtr->QueryMainPair();
-
         auto horizontalAlignmentCPtr = roadRailAlignmentCPtr->GetHorizontal();
         if (horizontalAlignmentCPtr.IsValid())
             {
@@ -797,17 +798,14 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometryElement
                 BeAssert(checkSum && "Vertical Length Checksum failed.");
             }
         }
-    stmt.Finalize();
-
-    if (!found)
-        BeAssert(false && "Alignment name not found.");
 
     return dgnDbPtr;
     }
 
 /*---------------------------------------------------------------------------------**//**
+// JGATODO Spiral Types ... Need later or newer Geomlib NOT bim02
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool checkCurveVectorSpiralTypesAndLengths(CurveVectorCR curves, bool& foundSpiral, int spiralTypeCode, double spiralLengths, double tolerance)
+static bool checkCurveVectorSpiralTypesAndLengths(BentleyB0200::CurveVectorCR curves, bool isVertical, double tolerance)
     {
     if (curves.empty())
         return false;
@@ -858,8 +856,9 @@ static bool checkCurveVectorSpiralTypesAndLengths(CurveVectorCR curves, bool& fo
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Greg.Ashe       08/2019
+// JGATODO Spiral Types ... Need later or newer Geomlib NOT bim02
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometrySpiralTypesAndLengths(Utf8CP bimFileName, Utf8CP alignmentName, int spiralTypeCode, double spiralLengths)
+DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometrySpiralTypesAndLengths(Utf8CP bimFileName, Utf8CP alignmentName)
     {
     const double tolerance = 1.0E-8;
 
@@ -873,26 +872,9 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometrySpiralT
     if (dgnDbPtr.IsNull())
         return nullptr;
 
-    ECSqlStatement stmt;
-    stmt.Prepare(*dgnDbPtr, "SELECT a.ECInstanceId, a.UserLabel FROM "
-        BRRA_SCHEMA(BRRA_CLASS_Alignment) " a," BIS_SCHEMA(BIS_CLASS_Model) " m, " BRRA_SCHEMA(BRRA_CLASS_DesignAlignments) " d "
-        "WHERE m.ModeledElement.Id = d.ECInstanceId AND a.Model.Id = m.ECInstanceId ");
-    BeAssert(stmt.IsPrepared());
-
-    bool found = false;
-    while (DbResult::BE_SQLITE_ROW == stmt.Step())
+    auto roadRailAlignmentCPtr = getRoadRailAlignmentByName(dgnDbPtr.get(), alignmentName);
+    if (roadRailAlignmentCPtr.IsValid())
         {
-        auto alignmentId = stmt.GetValueId<DgnElementId>(0);
-        auto alignmentNameCP = stmt.GetValueText(1);
-
-        if (alignmentName == nullptr || alignmentNameCP == nullptr || 0 != Utf8String(alignmentName).CompareTo(alignmentNameCP))
-            continue;
-
-        found = true;
-
-        auto roadRailAlignmentCPtr = RoadRailAlignment::Alignment::Get(*dgnDbPtr, alignmentId);
-        auto alignmentPairPtr = roadRailAlignmentCPtr->QueryMainPair();
-
         auto horizontalAlignmentCPtr = roadRailAlignmentCPtr->GetHorizontal();
         if (horizontalAlignmentCPtr.IsValid())
             {
@@ -906,6 +888,164 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometrySpiralT
 
             if (!foundSpiral)
                 BeAssert(foundSpiral && "Horizontal Spiral not found in curve vector.");
+            }
+        }
+
+    return dgnDbPtr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Greg.Ashe       08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometryStationStart(Utf8CP bimFileName, Utf8CP alignmentName, double startingStation, double startingDistance)
+    {
+    const double tolerance = 1.0E-8;
+
+    BeFileName outputPath = m_host->GetOutputDirectory();
+    outputPath.AppendA(bimFileName);
+
+    DbResult result;
+    DgnDbPtr dgnDbPtr = DgnDb::OpenDgnDb(&result, outputPath, DgnDb::OpenParams(Db::OpenMode::Readonly));
+
+    BeAssert(dgnDbPtr.IsValid() && "OpenDgnDb failed.");
+    if (dgnDbPtr.IsNull())
+        return nullptr;
+
+    auto roadRailAlignmentCPtr = getRoadRailAlignmentByName(dgnDbPtr.get(), alignmentName);
+    if (roadRailAlignmentCPtr.IsValid())
+        {
+        auto startStation = roadRailAlignmentCPtr->GetStartStation();
+        auto startDistance = roadRailAlignmentCPtr->GetStartValue();
+        if (fabs(startStation - startingStation) > tolerance)
+            BeAssert(false && "Horizontal Start Station Verification failed.");
+        if (fabs(startDistance - startingDistance) > tolerance)
+            BeAssert(false && "Horizontal Start Distance Verification failed.");
+        }
+
+    return dgnDbPtr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Greg.Ashe       08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometryStationEquation(Utf8CP bimFileName, Utf8CP alignmentName, double startingStation, double startingDistance, int eqnCount, double eqnDistanceAlong, double eqnStationAhead)
+    {
+    const double tolerance = 1.0E-8;
+
+    BeFileName outputPath = m_host->GetOutputDirectory();
+    outputPath.AppendA(bimFileName);
+
+    DbResult result;
+    DgnDbPtr dgnDbPtr = DgnDb::OpenDgnDb(&result, outputPath, DgnDb::OpenParams(Db::OpenMode::Readonly));
+
+    BeAssert(dgnDbPtr.IsValid() && "OpenDgnDb failed.");
+    if (dgnDbPtr.IsNull())
+        return nullptr;
+
+    auto roadRailAlignmentCPtr = getRoadRailAlignmentByName(dgnDbPtr.get(), alignmentName);
+    if (roadRailAlignmentCPtr.IsValid())
+        {
+        auto startStation = roadRailAlignmentCPtr->GetStartStation();
+        auto startDistance = roadRailAlignmentCPtr->GetStartValue();
+        if (fabs(startStation - startingStation) > tolerance)
+            BeAssert(false && "Horizontal Start Station Verification failed.");
+        if (fabs(startDistance - startingDistance) > tolerance)
+            BeAssert(false && "Horizontal Start Distance Verification failed.");
+
+        int count = 0;
+        for (auto distanceAlongStationPair : roadRailAlignmentCPtr->QueryOrderedStations())
+            {
+            auto eqnStation = distanceAlongStationPair.GetStation();
+            auto eqnDistance = distanceAlongStationPair.GetDistanceAlongFromStart();
+
+            if (count == 1)// Skip first and last since is start station and end station ... only test first eqn for now ?
+                {
+                if (fabs(eqnStation - eqnStationAhead) > tolerance)
+                    BeAssert(false && "Horizontal First Equation Station Verification failed.");
+                if (fabs(eqnDistance - eqnDistanceAlong) > tolerance)
+                    BeAssert(false && "Horizontal First Equation Distance Verification failed.");
+                }
+            count++;
+            }
+
+        if (count != eqnCount + 2)
+            BeAssert(false && "Horizontal Equation count failed.");
+        }
+
+    return dgnDbPtr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Greg.Ashe       08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedElementItemTypes(Utf8CP bimFileName, Utf8CP alignmentName, Utf8CP itemTypeLibName, Utf8CP typeClassName, size_t typePropCount, Utf8CP typePropName, Utf8CP typePropStringValue, int typePropIntegerValue, double typePropDoubleValue)
+    {
+    const double tolerance = 1.0E-8;
+
+    BeFileName outputPath = m_host->GetOutputDirectory();
+    outputPath.AppendA(bimFileName);
+
+    DbResult result;
+    DgnDbPtr dgnDbPtr = DgnDb::OpenDgnDb(&result, outputPath, DgnDb::OpenParams(Db::OpenMode::Readonly));
+
+    BeAssert(dgnDbPtr.IsValid() && "OpenDgnDb failed.");
+    if (dgnDbPtr.IsNull())
+        return nullptr;
+
+    /// "DgnCustomItemTypes_ItemTypeLibrary1" "DgnCustomItemTypes_Converter"
+    Utf8PrintfString typeSchemaName("DgnCustomItemTypes_%s", itemTypeLibName);
+    BentleyApi::ECN::ECSchemaCP dynSchema = dgnDbPtr->Schemas().GetSchema(Utf8String(typeSchemaName));
+    BeAssert(NULL != dynSchema);
+    BeAssert(dynSchema->IsDynamicSchema());
+    int classCount = dynSchema->GetClassCount();
+    BeAssert(classCount > 0);
+
+    BentleyApi::ECN::ECClassCP ecClass = dynSchema->GetClassCP(typeClassName);
+    BeAssert(ecClass != NULL);
+    int classPropCount = ecClass->GetPropertyCount();
+    BeAssert(typePropCount == classPropCount);
+
+    ECSqlStatement stmt;
+    Utf8PrintfString ecSql("SELECT itemType.%s, itemType.* FROM " BRRA_SCHEMA(BRRA_CLASS_Alignment) " alg, " BIS_SCHEMA("GraphicalElement3dRepresentsElement") " rel, %s.%s itemType WHERE alg.UserLabel = ? AND alg.ECInstanceId = rel.TargetECInstanceId AND itemType.Element.Id = rel.SourceECInstanceId",
+        typePropName,
+        typeSchemaName.c_str(),
+        typeClassName);
+    stmt.Prepare(*dgnDbPtr, ecSql.c_str());
+    BeAssert(stmt.IsPrepared());
+
+    stmt.BindText(1, alignmentName, IECSqlBinder::MakeCopy::No); /// Binds to 'alg.UserLabel = ?'
+    if (DbResult::BE_SQLITE_ROW == stmt.Step())
+        {
+        int count = stmt.GetColumnCount();
+        BeAssert(count == typePropCount + 3); /// +3 additional columns
+
+        auto colInfo = stmt.GetColumnInfo(0);
+        ECN::ECPropertyCP colProp = colInfo.GetProperty();
+        auto typProp = colProp->GetTypeName();
+
+        if (0 == Utf8String("string").CompareTo(typProp.c_str()))
+            {
+            auto str = stmt.GetValueText(0);
+            BeAssert(0 == Utf8String(typePropStringValue).CompareTo(str));
+            }
+        else if (0 == Utf8String("int").CompareTo(typProp.c_str()))
+            {
+            auto val = stmt.GetValueInt64(0);
+            BeAssert(typePropIntegerValue == val);
+            }
+        else if (0 == Utf8String("double").CompareTo(typProp.c_str()))
+            {
+            auto val = stmt.GetValueDouble(0);
+            BeAssert(tolerance > fabs(typePropDoubleValue - val));
+            }
+        else if (0 == Utf8String("point3d").CompareTo(typProp.c_str()))
+            {
+            auto point = stmt.GetValuePoint3d(0);
+            BeAssert(tolerance > fabs(typePropDoubleValue - point.x));
+            }
+        else
+            {
+            BeAssert(false && "Property type was not expected.");
             }
         }
     stmt.Finalize();

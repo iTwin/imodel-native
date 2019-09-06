@@ -1607,8 +1607,6 @@ ConvertORDElementXDomain::Result ConvertORDElementXDomain::_PreConvertElement(Dg
             }
         else
             {
-            auto name = cifAlignmentPtr->GetName();
-            ORDBRIDGE_LOG.warning(Utf8PrintfString("Skipping Alignment Non-FinalElement '%s'.", Utf8String(name.c_str()).c_str()).c_str());
             return Result::SkipElement;
             }
         }
@@ -1636,17 +1634,17 @@ void ConvertORDElementXDomain::_DetermineElementParams(DgnClassId& classId, DgnC
             {
             auto featureName = featurizedPtr->GetName();
             auto featureDefPtr = featurizedPtr->GetFeatureDefinition();
-            auto featureDescription = featurizedPtr->GetFeatureDescription();
+            auto featureDescription = featureDefPtr.IsValid() ? featureDefPtr->GetDescription() : featurizedPtr->GetFeatureDescription();
 
             if (featureDefPtr.IsNull())
                 {
                 Cif::FeaturizedConsensusItemPtr representationOf = featurizedPtr->GetRepresentationOf();
-                if (representationOf.IsNull())
-                    return;
-
-                featureName = representationOf->GetName();
-                featureDefPtr = representationOf->GetFeatureDefinition();
-                featureDescription = representationOf->GetFeatureDescription();
+                if (representationOf.IsValid())
+                    {
+                    featureName = representationOf->GetName();
+                    featureDefPtr = representationOf->GetFeatureDefinition();
+                    featureDescription = featureDefPtr.IsValid() ? featureDefPtr->GetDescription() : representationOf->GetFeatureDescription();
+                    }
                 }
 
             if (featureDefPtr.IsValid())
@@ -1663,13 +1661,13 @@ void ConvertORDElementXDomain::_DetermineElementParams(DgnClassId& classId, DgnC
                     if (dynamicClassId.IsValid())
                         {
                         classId = dynamicClassId;
-                        return;
                         }
                     }
                 }
             }
 
-        classId = m_graphic3dClassId;
+        if (!classId.IsValid())
+            classId = m_graphic3dClassId;
 
         /* TODO: Delete existing element if its classId needs to change
         if (m_converter.IsUpdating())
@@ -1855,15 +1853,43 @@ void assignCorridorSurfaceAspect(Dgn::DgnElementR element, Cif::CorridorSurfaceC
     bool isBottomMesh = cifCorridorSurface.IsBottomMesh();
     auto description = Utf8String(cifCorridorSurface.GetDescription().c_str());
 
+    Utf8String corridorName, horizontalName, profileName;
+    auto corridorPtr = cifCorridorSurface.GetCorridor();
+    
+    if (corridorPtr.IsValid())
+        {
+        corridorName = Utf8String(corridorPtr->GetName().c_str());
+        auto alignmentPtr = corridorPtr->GetCorridorAlignment();
+
+        if (alignmentPtr.IsValid())
+            {
+            ModelRefPinner modelPinner;
+
+            horizontalName = Utf8String(alignmentPtr->GetName().c_str());
+            auto profilePtr = alignmentPtr->GetActiveProfile();
+            if (profilePtr.IsValid())
+                profileName = Utf8String(profilePtr->GetName().c_str());
+            }
+        }
+    else
+        {
+        auto name = Utf8String(cifCorridorSurface.GetName().c_str());
+        ORDBRIDGE_LOGI(Utf8PrintfString("CIF CorridorSurface '%s' '%s' - related corridor not found.", name.c_str(), description.c_str()).c_str());
+        }
+
     if (auto corridorSurfaceAspectP = DgnV8ORDBim::CorridorSurfaceAspect::GetP(element))
         {
         corridorSurfaceAspectP->SetIsTopMesh(isTopMesh);
         corridorSurfaceAspectP->SetIsBottomMesh(isBottomMesh);
         corridorSurfaceAspectP->SetDescription(description.c_str());
+        corridorSurfaceAspectP->SetCorridorName(corridorName.c_str());
+        corridorSurfaceAspectP->SetHorizontalName(horizontalName.c_str());
+        corridorSurfaceAspectP->SetProfileName(profileName.c_str());
         }
     else
         {
-        auto corridorSurfaceAspectPtr = DgnV8ORDBim::CorridorSurfaceAspect::Create(isTopMesh, isBottomMesh, description.c_str());
+        auto corridorSurfaceAspectPtr = DgnV8ORDBim::CorridorSurfaceAspect::Create(isTopMesh, isBottomMesh, description.c_str(),
+            corridorName.c_str(), horizontalName.c_str(), profileName.c_str());
         DgnV8ORDBim::CorridorSurfaceAspect::Set(element, *corridorSurfaceAspectPtr);
         }
     }
@@ -2187,6 +2213,20 @@ void ConvertORDElementXDomain::_ProcessResults(DgnDbSync::DgnV8::ElementConversi
         }
 
     m_converter.m_v8ToBimElmMap.insert({ v8el.GetElementRef(), elRes.m_element.get() });
+
+    auto bimModelId = v8mm.GetDgnModel().GetModelId();
+    if (v8mm.GetV8Model().Is3D())
+        {
+        auto iter = m_converter.m_3dModels.find(bimModelId);
+        if (iter == m_converter.m_3dModels.end())
+            m_converter.m_3dModels.insert(bimModelId);
+        }
+    else
+        {
+        auto iter = m_converter.m_planViewModels.find(bimModelId);
+        if (iter == m_converter.m_planViewModels.end())
+            m_converter.m_planViewModels.insert(bimModelId);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2223,6 +2263,37 @@ DgnCategoryId getSpatialCategoryToUse(SubjectCR subject, GeometrySourceCP bimGeo
         }
 
     return categoryId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+Bentley::DgnPlatform::ModelId ORDConverter::_GetRootModelId()
+    {
+    auto rootModelId = T_Super::_GetRootModelId();
+    auto rootDgnFileP = GetRootV8File();
+    ModelRefPinner modelPinner;
+
+    DgnV8Api::DgnFileStatus openStatus;
+    if (auto rootModelRefP = rootDgnFileP->LoadRootModelById((Bentley::StatusInt*)&openStatus, rootModelId, /*fillCache*/true, /*loadRefs*/true, GetParams().GetProcessAffected()))
+        {
+        if (auto planModelRefP = GeometryModelDgnECDataBinder::GetInstance().GetPlanModelFromModel(rootModelRefP))
+            {
+            BeAssert(!planModelRefP->Is3d());
+            rootModelId = planModelRefP->GetModelId();
+            ORDBRIDGE_LOGI("CIF found Plan Model '%s' - using it as root-model.", Utf8String(planModelRefP->GetModelNameCP()).c_str());
+            }
+        else
+            {
+            ORDBRIDGE_LOGW("CIF couldn't find any Plan Model. Continuing with specified root-model.");
+            }
+        }
+    else
+        {
+        ORDBRIDGE_LOGW("Specified root-model could not be loaded.");
+        }
+
+    return rootModelId;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2538,13 +2609,133 @@ void ORDConverter::CreateRoadRailElements()
     ORDBRIDGEPERF_LOGI("%s: %.2f", stopWatch.GetDescription(), stopWatch.GetElapsedSeconds());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   BentleySystems
+//---------------------------------------------------------------------------------------
+CategorySelectorPtr createDefaultSpatialCategorySelector(DefinitionModelR model)
+    {
+    Utf8String selectorName = "ORDBridge";
+    auto selectorId = model.GetDgnDb().Elements().QueryElementIdByCode(CategorySelector::CreateCode(model, selectorName));
+    auto selectorPtr = model.GetDgnDb().Elements().GetForEdit<CategorySelector>(selectorId);
+    if (selectorPtr.IsValid())
+        return selectorPtr;
+
+    selectorPtr = new CategorySelector(model, selectorName);
+    auto iter = SpatialCategory::MakeIterator(model.GetDgnDb());
+    for (auto const& category : iter)
+        selectorPtr->AddCategory(DgnCategoryId(category.GetElementId().GetValue()));
+
+    return selectorPtr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   BentleySystems
+//---------------------------------------------------------------------------------------
+DisplayStyle3dPtr createDefaultDisplayStyle3d(DefinitionModelR model)
+    {
+    Utf8String styleName = "ORDBridge";
+    auto styleId = model.GetDgnDb().Elements().QueryElementIdByCode(DisplayStyle3d::CreateCode(model, styleName));
+    auto stylePtr = model.GetDgnDb().Elements().GetForEdit<DisplayStyle3d>(styleId);
+    if (stylePtr.IsValid())
+        return stylePtr;
+
+    stylePtr = new DisplayStyle3d(model, styleName);
+    stylePtr->SetBackgroundColor(ColorDef::Black());
+    stylePtr->SetSkyBoxEnabled(false);
+    stylePtr->SetGroundPlaneEnabled(false);
+
+    Render::ViewFlags viewFlags = stylePtr->GetViewFlags();
+    viewFlags.SetRenderMode(Render::RenderMode::SmoothShade);
+    viewFlags.SetMonochrome(false);
+    viewFlags.SetShowFill(true);
+    viewFlags.SetShowMaterials(true);
+    viewFlags.SetShowPatterns(true);
+    viewFlags.SetShowShadows(true);
+    stylePtr->SetViewFlags(viewFlags);
+
+    return stylePtr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   BentleySystems
+//---------------------------------------------------------------------------------------
+ModelSelectorPtr createDefaultModelSelector(DefinitionModelR definitionModel, Utf8StringCR name, bset<DgnModelId> const& modelIds)
+    {
+    ModelSelectorPtr modelSelectorPtr = new ModelSelector(definitionModel, name);
+
+    for (auto modelId : modelIds)
+        modelSelectorPtr->AddModel(modelId);
+
+    return modelSelectorPtr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+DgnViewId create3dView(DefinitionModelR model, Utf8StringCR viewName,
+    CategorySelectorR categorySelector, ModelSelectorR modelSelector, DisplayStyle3dR displayStyle)
+    {
+    DgnDbR db = model.GetDgnDb();
+
+    SpatialViewDefinition view(model, viewName, categorySelector, displayStyle, modelSelector);
+
+    DgnViewId viewId;
+    DgnViewId existingViewId = ViewDefinition::QueryViewId(db, view.GetCode());
+    if (existingViewId.IsValid())
+        viewId = existingViewId;
+    else
+        {
+        view.SetStandardViewRotation(Dgn::StandardView::Top);
+        view.LookAtVolume(db.GeoLocation().GetProjectExtents());        
+
+        if (!view.Insert().IsValid())
+            return viewId;
+
+        viewId = view.GetViewId();
+        }
+
+    if (!viewId.IsValid())
+        return viewId;
+
+    return viewId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void ORDConverter::CreateDefaultSavedViews()
+    {
+    auto& dictionaryModelR = GetDgnDb().GetDictionaryModel();
+    auto displayStyle3dPtr = createDefaultDisplayStyle3d(dictionaryModelR);
+    auto categorySelectorPtr = createDefaultSpatialCategorySelector(dictionaryModelR);
+
+    if (!m_planViewModels.empty())
+        {
+        auto planViewModelSelectorPtr = createDefaultModelSelector(dictionaryModelR, "ORDBridge-PlanView", m_planViewModels);
+        auto viewName = ORDBridgeElementCodes::GetString(ORDBridgeElementCodes::VIEW_PLANVIEW_MODELS());
+        create3dView(dictionaryModelR, viewName, *categorySelectorPtr, *planViewModelSelectorPtr, *displayStyle3dPtr);
+        }
+
+    if (!m_3dModels.empty())
+        {
+        auto threeDModelSelectorPtr = createDefaultModelSelector(dictionaryModelR, "ORDBridge-3D", m_3dModels);
+        auto viewName = ORDBridgeElementCodes::GetString(ORDBridgeElementCodes::VIEW_3D_MODELS());
+        create3dView(dictionaryModelR, viewName, *categorySelectorPtr, *threeDModelSelectorPtr, *displayStyle3dPtr);
+        }
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ORDConverter::_OnConversionComplete()
     {
     if (m_isProcessing)
+        {
         CreateRoadRailElements();
+
+        if (!IsUpdating())
+            CreateDefaultSavedViews();
+        }
 
     T_Super::_OnConversionComplete();
     }
