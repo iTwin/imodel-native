@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../bsicommon/build/PartFile.xsd">
+
+    <Part Name="PhysicalRebar" BentleyBuildMakeFile="PhysicalRebar.mke">
+        <SubPart PartName="PublicAPI" />
+        <SubPart PartName="DgnPlatformDll"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
+        <Bindings>
+            <Libs Required="false">Delivery/$(libprefix)PhysicalRebar$(libext)</Libs>
+            <Assemblies Required="false">Delivery/$(shlibprefix)PhysicalRebar$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="PublicAPI" BentleyBuildMakeFile="PhysicalRebar.prewire.mke">
+        <Bindings>
+            <PublicAPI Domain="PhysicalRebar" />
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/PhysicalRebar*.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+</BuildContext>
