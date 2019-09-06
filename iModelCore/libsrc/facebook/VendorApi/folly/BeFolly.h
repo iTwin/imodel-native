@@ -25,6 +25,7 @@ private:
     struct Worker : BentleyApi::RefCountedBase
         {
         int m_id;
+        bool m_stopped = false;
         ThreadPool& m_pool;
 
         Worker(ThreadPool& pool, int id) noexcept : m_pool(pool), m_id(id) {}
@@ -40,12 +41,10 @@ private:
     Utf8String m_name;
     std::vector<WorkerPtr> m_workers;
     std::queue<folly::Func> m_tasks;
-    BentleyApi::BeConditionVariable m_cv;
-    bool m_stop = false;
+    std::shared_ptr<BentleyApi::BeConditionVariable> m_cv;
 
     Utf8CP GetName() const {return m_name.c_str();}
     bool HasWork() const {return !m_tasks.empty();}
-    bool IsStopped() const {return m_stop;}
     virtual void addWithPriority(folly::Func func, int8_t) override {add(std::move(func));}
     BE_FOLLY_EXPORT virtual void add(folly::Func func) override;
 
