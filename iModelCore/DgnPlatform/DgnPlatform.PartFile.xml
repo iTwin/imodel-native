@@ -1,0 +1,818 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
+
+    <Part Name="Readme" BentleyBuildMakeFile="ProcessReadme.mke">
+        <Bindings>
+            <Files ProductDirectoryName="DgnPlatform_PublishedAPI_Scope1_Doc">
+                Delivery/readme.htm
+            </Files>
+        </Bindings>
+    </Part>
+
+    <!-- Bind my own PublicAPI into BuildContext/PublicAPI. Note that this part does not cause any sub-part PublicAPIs to be bound. -->
+    <!-- Also re-deliver some ECSchemas -->
+    <Part Name="PublicAPI" BentleyBuildMakeFile="DgnPlatform.prewire.mke">
+        <SubPart PartName="StandardSchemasBim" PartFile="ECStandards"  Repository="ECStandards"/>
+        <SubPart PartName="Core" PartFile="BisSchemas" Repository="BisSchemas"/>
+        <Bindings>
+            <PublicAPI Domain="DgnPlatform" />
+            <Directory SourceName="Dox/Pages/DgnPlatform" SubPartDirectory="Dox/Pages/DgnPlatform"/>
+        </Bindings>
+    </Part>
+
+    <!-- We need this shim part to avoid pulling all psolid repos just to see their platform dependency. -->
+    <Part Name="PsolidShim">
+        <SubPart PartName="PsolidShim_AndroidARM64"/>
+        <SubPart PartName="PsolidShim_iOSArm64"/>
+        <SubPart PartName="PsolidShim_iOSx64"/>
+        <SubPart PartName="PsolidShim_LinuxX64"/>
+        <SubPart PartName="PsolidShim_MacOSx64"/>
+        <SubPart PartName="PsolidShim_x64"/>
+    </Part>
+    <Part Name="PsolidShim_AndroidARM64" OnlyPlatforms="AndroidARM64" WipPartEnable="ParasolidAndroid">
+        <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_311_pre2_AndroidARM64"/>
+    </Part>
+    <Part Name="PsolidShim_iOSArm64" OnlyPlatforms="iOSARM64">
+        <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_30_1_168_iOSArm64"/>
+    </Part>
+    <Part Name="PsolidShim_iOSx64" OnlyPlatforms="iOSx64">
+        <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_30_1_168_iOSx64"/>
+    </Part>
+    <Part Name="PsolidShim_LinuxX64" OnlyPlatforms="LinuxX64">
+        <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_30_1_168_LinuxX64"/>
+    </Part>
+    <Part Name="PsolidShim_MacOSx64" OnlyPlatforms="MacOSx64">
+        <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_30_1_168_MacOSx64"/>
+    </Part>
+    <Part Name="PsolidShim_x64" OnlyPlatforms="x64">
+        <!-- Yes, we are choosing to use a different version on x64. This is for PP compatibility. This version is not available on other platforms. -->
+        <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_31_0_249_x64"/>
+    </Part>
+
+    <!-- NOTE: IModel02 uses "M02" as a library suffix to differentiate from DgnV8, Graphite, and Bim02 libraries -->
+    <Part Name="DgnPlatformDLL" BentleyBuildMakeFile="DgnPlatform.mke" ApiNumber="M02">
+        <SubPart PartName="PublicAPI" />
+        <SubPart PartName="BeHttp"              PartFile="BeHttp"       Repository="BeHttp" /><!-- For CesiumTileWriter... -->
+        <SubPart PartName="folly" PartFile="facebook" Repository="Libsrc-facebook"/> 
+        <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
+        <SubPart PartName="ECDbLibrary"         PartFile="ECDb"         Repository="ECDb" />
+        <SubPart PartName="GeomDlls"            PartFile="geomlibs"     Repository="GeomLibs" />
+        <SubPart PartName="BeXml" PartFile="Bentley" Repository="Bentley"/>
+        <SubPart PartName="ECObjects"     PartFile="ECObjects"    Repository="ecobjects" />
+        <SubPart PartName="Freetype2" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <SubPart PartName="BeJsonCpp"           PartFile="BeJsonCpp"    Repository="Libsrc-JsonCpp"/>
+        <SubPart LibType="Static" PartName="Png" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <SubPart PartName="BeJpeg" PartFile="Bentley" Repository="Bentley"/>
+        <SubPart PartName="FlatBuffers" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <SubPart PartName="GeoCoord"            PartFile="GeoCoord"     Repository="geocoord"/>
+        <SubPart PartName="PsolidShim"/>
+        <SubPart PartName="PublicApi"           PartFile="csmap"        Repository="libsrc-csmap"/>
+        <SubPart LibType="Static" PartName="Compress" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+
+      <!--
+            Barry: For full geocoordinate capabilities, the datum conversion files are required to allow you to convert from whatever datum the GCS uses to WGS84. If our publishing code (which will have access to the datum shift files) was always able to convert from a non-WGS84-based GCS to a WGS84-based GCS as it publishes DgnDb’s, we would not need those files. I do not know whether that is always possible, perhaps Alain Robert could comment.
+            JM: We end up with the full geocoord set on Windows and iOS due to other platform-specific parts including it. These are missing on Android, and it is suspected to cause problems. Based on the description above, I am unifying DgnPlatformDLL to use the full set, so at least we're consistent across platforms.
+        -->
+        <SubPart PartName="GeoCoordData" PartFile="csmap" Repository="libsrc-csmap"/>
+
+        <Bindings>
+            <Libs>Delivery/$(libprefix)DgnPlatform$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)DgnPlatform$(ApiNumber)$(shlibext)</Assemblies>
+            <Files ProductDirectoryName="DgnPlatformXliffs" Required="false" SubPartDirectory="xliffs">Delivery/xliffs/DgnCoreMessages_en.xliff</Files>
+            <Files ProductDirectoryName="Assets">Delivery/lastresortfonts</Files>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="SkyBox" Feature="SkyBox" FeatureDefault="Yes">Delivery/SkyBox/SkyBox.jpg</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="BentleyDocConfig" BentleyBuildMakeFile="docs/prewire.mke">
+        <Bindings>
+            <Directory SourceName="Delivery/BentleyDocConfig" SubPartDirectory="BentleyDocConfig"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="DgnPlatformExtractions" BentleyBuildMakeFile="docs/DgnPlatformExtractions.mke">
+        <SubPart PartName="DgnPlatformDoc-Build-SampleCode" />
+        <Bindings>
+            <Directory SourceName="Dox/Extractions/DgnPlatform" SubPartDirectory="Dox/Extractions/DgnPlatform"/>
+        </Bindings>
+    </Part>
+
+    <!-- Check that code samples in docs/samplecode actually compile -->
+    <Part Name="DgnPlatformDoc-Build-SampleCode" DeferType="BuildDocs" BentleyBuildMakeFile="${SrcRoot}bsicommon/build/BuildSampleCode.mke" BentleyBuildMakeOptions="-dBUILD_SAMPLE_CODE_SUB_DIR=samplecode -dBUILD_SAMPLE_CODE_SOURCE_DIR=$(SrcRoot)DgnPlatform/docs/samplecode">
+        <SubPart PartName="PublishedApi"/>
+    </Part>
+
+    <Part Name="DimStyleSchemaPrewire" BentleyBuildMakeFile="DgnHandlers/Dimension/DimStyleSchemaGenerator/DimStyleSchemaGenerator.mke" >
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Dgn" SubPartDirectory="ECSchemas/Dgn">
+                GeneratedSchemas/DimensionStyleSchema.01.00.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="PublishedApi" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BentleyBuildMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI2=rapidjson +dPUBLISHAPI_VENDORAPI3=folly">
+        <SubPart PartName="DgnPlatformDLL"/>
+        <Bindings>
+            <Directory SourceName="Delivery/PublishedApi" ProductDirectoryName="PublishedAPI" SubPartDirectory="PublishedApi/DgnProject" Required="false"/>
+        </Bindings>
+    </Part>
+
+    <!-- Allow dependent tests to #include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h> -->
+    <Part Name="DgnPlatformUnitTestHelpers" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/prewire.mke">
+        <SubPart PartName="DgnPlatformDLL"      PartFile="DgnPlatform"  Repository="DgnPlatform" />
+        <Bindings>
+            <Files SubPartDirectory="UnitTests/include/UnitTests/BackDoor/DgnPlatform">Delivery/UnitTests/ScopedDgnHost.h</Files>
+            <Files SubPartDirectory="UnitTests/include/UnitTests/BackDoor/DgnPlatform">Delivery/UnitTests/DgnDbTestUtils.h</Files>
+            <Files SubPartDirectory="UnitTests/include/UnitTests/BackDoor/DgnPlatform">Delivery/UnitTests/RepositoryManagerUtil.h</Files>
+            <Files SubPartDirectory="UnitTests/include/UnitTests/BackDoor/DgnPlatform">Delivery/UnitTests/DgnPlatformTestDomain.h</Files>
+            <Files SubPartDirectory="UnitTests/include/UnitTests/BackDoor/DgnPlatform">Delivery/UnitTests/PerfTestDomain.h</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="DgnPlatformSqlang" BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke" BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)Build/DgnPlatform/DgnPlatform_en.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff">
+        <SubPart PartName="DgnPlatformDLL" />
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang">Delivery/sqlang/DgnPlatform_en.sqlang.db3</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="RawDgnClientSdkUnitTestData" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/DeliverDgnClientSdkUnitTestData.mke" BentleyBuildMakeOptions="-dUNIT_TESTS_DOCUMENTS_DIR=${SrcRoot}/DgnClientSdkUnitTestData/">
+        <RequiredRepository>DgnClientSdkUnitTestData</RequiredRepository>
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Documents-DgnDb" SourceName="Delivery/UnitTests/Documents"/>
+        </Bindings>
+    </Part>
+
+    <!-- ********************************************************************************************** -->
+    <!-- All DgnPlatform-related Unit tests -->
+    <!-- These tests are linked into various test products. -->
+    <!-- ********************************************************************************************** -->
+
+    <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/prewire.mke">
+        <RequiredRepository>CompatibilityTestFiles-2-0-1-60</RequiredRepository>
+        <SubPart PartName="DgnPlatformDLL"/>
+        <SubPart PartName="DgnPlatformSqlang" />
+        <SubPart PartName="DgnPlatformUnitTestHelpers"/>
+        <Bindings>
+            <Files     ProductDirectoryName="UnitTests-IgnoreList"   ProductSubDirectory="DgnPlatform" SubPartDirectory="UnitTests/DgnPlatform">Delivery/UnitTests/ignore_list.txt</Files>
+            <Files     ProductDirectoryName="UnitTests-Assets"       ProductSubDirectory="ECSchemas"> Delivery/UnitTests/ECSchemas/*.xml</Files>
+            <Files     ProductDirectoryName="UnitTests-Assets"       ProductSubDirectory="PerformanceTestData"> Delivery/UnitTests/PerformanceTestData/*.json</Files>
+            <Directory ProductDirectoryName="UnitTests-Assets"       ProductSubDirectory="CompatibilityTestFiles" SourceName="Delivery/UnitTests/CompatibilityTestFiles" />
+        </Bindings>
+    </Part>
+
+    <Part Name="DgnDbTestUtils" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=DgnDbTestUtils">
+        <SubPart PartName="PrewireForUnitTests" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="DgnPlatform/DgnDbTestUtils" SourceName="Delivery/UnitTests/Objects/DgnDbTestUtils"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="BackdoorForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=BackDoor">
+        <SubPart PartName="DgnDbTestUtils" />
+        <SubPart PartName="PrewireForUnitTests" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="DgnPlatform/BackDoor" SourceName="Delivery/UnitTests/Objects/BackDoor"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="TestFixtureForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=TestFixture">
+        <SubPart PartName="PrewireForUnitTests" />
+        <SubPart PartName="BackdoorForUnitTests"/> <!-- BuildTests.mke cannot be called in parallel because it always makes a static symlink; ensure it was run once in isolation -->
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="DgnPlatform/TestFixture" SourceName="Delivery/UnitTests/Objects/TestFixture"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTests-NonPublished" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
+        <SubPart PartName="PrewireForUnitTests" />
+        <SubPart PartName="TestFixtureForUnitTests" />
+        <SubPart PartName="BackdoorForUnitTests"/> <!-- BuildTests.mke cannot be called in parallel because it always makes a static symlink; ensure it was run once in isolation -->
+        
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="DgnPlatform/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTests-Performance" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Performance">
+        <SubPart PartName="PrewireForUnitTests" />
+        <SubPart PartName="TestFixtureForUnitTests" />
+        <!-- Performance tests use DgnDbTestDgnManager, which is implemented in BackDoor -->
+        <SubPart PartName="BackdoorForUnitTests"/> <!-- BuildTests.mke cannot be called in parallel because it always makes a static symlink; ensure it was run once in isolation -->
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="DgnPlatform/Performance" SourceName="Delivery/UnitTests/Objects/Performance"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTests-Published" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi">
+        <SubPart PartName="BackdoorForUnitTests"/> <!-- BuildTests.mke cannot be called in parallel because it always makes a static symlink; ensure it was run once in isolation -->
+        <SubPart PartName="PublishedApi" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="DgnPlatform/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
+        </Bindings>
+    </Part>
+
+    <!-- **********************************************************************************************
+         IModel Evolution Tests
+         ********************************************************************************************** -->
+
+    <!-- Entry point part -->
+    <Part Name="RunIModelEvolutionTests" PrgOutputDir="IModelEvolutionTests">
+        <SubPart PartName="IModelEvolutionRunAllTestRunners"/>
+        <SubNuGetProduct NuGetProductName="IModelEvolutionTestRunnerNuget"/>
+        <SubNuGetProduct NuGetProductName="IModelEvolutionTestFilesNuget"/>
+    </Part>
+
+    <!-- Runs all compatibility tests:
+         Preparation:
+         * Downloads all existing test runners and test files
+         
+         Run:
+         1) Runs current test runner (from current software) against
+            * files it creates itself (-> get saved as nuget afterwards)
+            * all downloaded test files.
+         2) Runs all downloaded test runners against 
+            * all downloaded test files
+            * files created by the current test runner
+    -->
+    <Part Name="IModelEvolutionRunAllTestRunners" DeferType="RunUnitTests" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\RunPulledTestRunners.mke" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubPart PartName="IModelEvolutionPrepareAllTestRunners"/>
+    </Part>
+
+    <!-- Runs the current compatibility test runner (from current software):
+         Preparation:
+         * Downloads all existing test files
+         
+         Run:
+         1) Runs current test runner (from current software) against
+            * files it creates itself (-> get saved as nuget afterwards)
+            * all downloaded test files.
+    -->
+    <Part Name="IModelEvolutionRunCurrentTestRunner" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/runGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=IModelEvolutionGTest -dGTEST_NAME=IModelEvolutionTests -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/IModelEvolutionTests -dGTEST_EXTRA_ARGS=--timeout=-1" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubPart PartName="IModelEvolutionPrepareCurrentTestRunner"/>
+    </Part>
+
+    <Part Name="IModelEvolutionPrepareAllTestRunners" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\PreparePulledTestRunners.mke">
+        <SubPart PartName="IModelEvolutionRunCurrentTestRunner"/>
+    </Part>
+
+    <Part Name="IModelEvolutionPrepareCurrentTestRunner" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\PrepareCurrentTestRunner.mke">
+        <SubPart PartName="IModelEvolutionPullNugets"/>
+        <SubProduct ProductName="IModelEvolutionGTest"/>
+    </Part>
+
+    <Part Name="IModelEvolutionPullNugets" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\PullNugets.mke"/>
+
+    <Product Name="IModelEvolutionGTest">
+        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="BuildIModelEvolutionGTest"/>
+    </Product>
+   
+    <Part Name="BuildIModelEvolutionGTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=IModelEvolutionTests -dTEST_COLLECTION_PRODUCT=IModelEvolutionTests -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+        <RequiredRepository>Bsitools-NuGet</RequiredRepository>
+        <SubProduct ProductName="IModelEvolutionTests"/>
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/IModelEvolutionTests/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/IModelEvolutionTests/Assets" />
+        </Bindings>
+    </Part>
+
+    <Product Name="IModelEvolutionTests">
+        <SubPart PartName="Base" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="BuildIModelEvolutionTestsStatic" />
+        <SubPart PartName="BuildIModelEvolutionTestsDynamic" />
+        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <FeatureExclude>GeoCoordAssets</FeatureExclude> <!-- Exclude geocoord assets because we don't need them for schema evolution tests -->
+        <FeatureExclude>GeoCoordAssetsLarge</FeatureExclude> <!-- Exclude geocoord assets because we don't need them for schema evolution tests -->
+    </Product>
+
+    <Part Name="BuildIModelEvolutionTestsDynamic" DeferType="BuildUnitTests" OnlyPlatforms="x86,x64,Linux*,MacOS*,WinRT*">
+        <SubPart PartName="BuildIModelEvolutionTests"/>
+    </Part>
+
+    <Part Name="BuildIModelEvolutionTestsStatic" DeferType="BuildUnitTests" ExcludePlatforms="x86,x64,Linux*,MacOS*,WinRT*">
+        <SubPart PartName="BuildIModelEvolutionTests" LibType="Static" />
+    </Part>
+
+    <Part Name="BuildIModelEvolutionTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Compatibility">
+        <SubPart PartName="PrewireIModelEvolutionTests" />
+        <SubPart PartName="TestFixtureForUnitTests" />
+        <SubPart PartName="BackdoorForUnitTests"/> <!-- BuildTests.mke cannot be called in parallel because it always makes a static symlink; ensure it was run once in isolation -->
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="DgnPlatform/Compatibility" SourceName="Delivery/UnitTests/Objects/Compatibility"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="PrewireIModelEvolutionTests" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\prewire.mke">
+        <SubPart PartName="StandardSchemasBim" PartFile="ECStandards"  Repository="ECStandards"/>
+        <SubPart PartName="Core" PartFile="BisSchemas" Repository="BisSchemas"/>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/IModelEvolutionTests.*.ecschema.xml
+            </Files>
+            <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="IModelEvolutionTests" SubPartDirectory="IModelEvolutionTests">Delivery/Gtest/IModelEvolutionTests/ignore_list.txt</Files>
+        </Bindings>
+    </Part>
+
+    <NuGetProduct Name="IModelEvolutionTestRunnerNuget" Description="Create nuget that contains the current test runner">
+        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="BuildIModelEvolutionGTest"/>
+    </NuGetProduct>
+
+    <NuGetProduct Name="IModelEvolutionTestFilesNuget" Description="Create the test files nuget">
+        <Directories DirectoryListName="IModelEvolutionTestFilesForNugetPackage"/>
+        <SubPart PartName="PrepareIModelEvolutionTestFilesNugetPackaging"/>
+    </NuGetProduct>
+
+    <Part Name="PrepareIModelEvolutionTestFilesNugetPackaging" DeferType="RunUnitTests" OnlyPlatforms="x64" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\PrepareTestFilesNugetPackaging.mke">
+        <!-- Must run after all tests are complete -->
+        <SubPart PartName="IModelEvolutionRunAllTestRunners" />
+        <Bindings>
+            <Directory ProductDirectoryName="TestFiles" SourceName="IModelEvolutionTestFilesForNugetPackage" />
+        </Bindings>
+    </Part>
+
+    <ProductDirectoryList ListName="IModelEvolutionTestFilesForNugetPackage" >
+        <ProductDirectory Name="TestFiles" Path="TestFiles"/>
+    </ProductDirectoryList>
+    
+
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <!-- // L10N                                                                   // -->
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+
+    <!-- English Xliffs generated during the build are pushed (by PRG only) to Mercurial next to translations for L10N vendor convenience -->
+    <Part Name="L10N-DgnPlatformXliffs-en" OnlyPlatforms="x64"
+        BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/PushXliffsFromBuild.mke"
+        BentleyBuildMakeOptions="-dBUILD_XLIFF_DIRECTORY=$(OutputRootDir)BuildContexts/DgnPlatform/Delivery/xliffs/ -dL10N_XLIFF_DIRECTORY=$(SrcRoot)l10n/l10n-DgnPlatform/ -dL10N_XLIFF_LANG_DIRECTORY=en">
+        <SubPart PartName="DgnPlatformDll"/>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-DgnPlatformXliffs-cs" BentleyBuildMakeFile="l10n-DgnPlatform.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=cs">
+        <RequiredRepository>l10n-DgnPlatform</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="cs" SubPartDirectory="l10n/cs">Delivery/l10n/cs/DgnCoreMessages_cs.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="cs" SubPartDirectory="l10n/cs">Delivery/l10n/cs/DgnHandlersMessages_cs.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="cs" SubPartDirectory="l10n/cs">Delivery/l10n/cs/ForeignFormat_cs.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-DgnPlatformXliffs-de" BentleyBuildMakeFile="l10n-DgnPlatform.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=de">
+        <RequiredRepository>l10n-DgnPlatform</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="de" SubPartDirectory="l10n/de">Delivery/l10n/de/DgnCoreMessages_de.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="de" SubPartDirectory="l10n/de">Delivery/l10n/de/DgnHandlersMessages_de.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="de" SubPartDirectory="l10n/de">Delivery/l10n/de/ForeignFormat_de.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-DgnPlatformXliffs-es" BentleyBuildMakeFile="l10n-DgnPlatform.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=es">
+        <RequiredRepository>l10n-DgnPlatform</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="es" SubPartDirectory="l10n/es">Delivery/l10n/es/DgnCoreMessages_es.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="es" SubPartDirectory="l10n/es">Delivery/l10n/es/DgnHandlersMessages_es.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="es" SubPartDirectory="l10n/es">Delivery/l10n/es/ForeignFormat_es.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-DgnPlatformXliffs-fi" BentleyBuildMakeFile="l10n-DgnPlatform.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=fi">
+        <RequiredRepository>l10n-DgnPlatform</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="fi" SubPartDirectory="l10n/fi">Delivery/l10n/fi/DgnCoreMessages_fi.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="fi" SubPartDirectory="l10n/fi">Delivery/l10n/fi/DgnHandlersMessages_fi.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="fi" SubPartDirectory="l10n/fi">Delivery/l10n/fi/ForeignFormat_fi.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-DgnPlatformXliffs-fr" BentleyBuildMakeFile="l10n-DgnPlatform.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=fr">
+        <RequiredRepository>l10n-DgnPlatform</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="fr" SubPartDirectory="l10n/fr">Delivery/l10n/fr/DgnCoreMessages_fr.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="fr" SubPartDirectory="l10n/fr">Delivery/l10n/fr/DgnHandlersMessages_fr.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="fr" SubPartDirectory="l10n/fr">Delivery/l10n/fr/ForeignFormat_fr.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-DgnPlatformXliffs-it" BentleyBuildMakeFile="l10n-DgnPlatform.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=it">
+        <RequiredRepository>l10n-DgnPlatform</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="it" SubPartDirectory="l10n/it">Delivery/l10n/it/DgnCoreMessages_it.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="it" SubPartDirectory="l10n/it">Delivery/l10n/it/DgnHandlersMessages_it.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="it" SubPartDirectory="l10n/it">Delivery/l10n/it/ForeignFormat_it.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-DgnPlatformXliffs-ja" BentleyBuildMakeFile="l10n-DgnPlatform.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=ja">
+        <RequiredRepository>l10n-DgnPlatform</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="ja" SubPartDirectory="l10n/ja">Delivery/l10n/ja/DgnCoreMessages_ja.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="ja" SubPartDirectory="l10n/ja">Delivery/l10n/ja/DgnHandlersMessages_ja.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="ja" SubPartDirectory="l10n/ja">Delivery/l10n/ja/ForeignFormat_ja.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-DgnPlatformXliffs-ko" BentleyBuildMakeFile="l10n-DgnPlatform.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=ko">
+        <RequiredRepository>l10n-DgnPlatform</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="ko" SubPartDirectory="l10n/ko">Delivery/l10n/ko/DgnCoreMessages_ko.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="ko" SubPartDirectory="l10n/ko">Delivery/l10n/ko/DgnHandlersMessages_ko.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="ko" SubPartDirectory="l10n/ko">Delivery/l10n/ko/ForeignFormat_ko.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-DgnPlatformXliffs-nl" BentleyBuildMakeFile="l10n-DgnPlatform.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=nl">
+        <RequiredRepository>l10n-DgnPlatform</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="nl" SubPartDirectory="l10n/nl">Delivery/l10n/nl/DgnCoreMessages_nl.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="nl" SubPartDirectory="l10n/nl">Delivery/l10n/nl/DgnHandlersMessages_nl.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="nl" SubPartDirectory="l10n/nl">Delivery/l10n/nl/ForeignFormat_nl.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-DgnPlatformXliffs-pl" BentleyBuildMakeFile="l10n-DgnPlatform.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=pl">
+        <RequiredRepository>l10n-DgnPlatform</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="pl" SubPartDirectory="l10n/pl">Delivery/l10n/pl/DgnCoreMessages_pl.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="pl" SubPartDirectory="l10n/pl">Delivery/l10n/pl/DgnHandlersMessages_pl.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="pl" SubPartDirectory="l10n/pl">Delivery/l10n/pl/ForeignFormat_pl.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-DgnPlatformXliffs-pt" BentleyBuildMakeFile="l10n-DgnPlatform.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=pt">
+        <RequiredRepository>l10n-DgnPlatform</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="pt" SubPartDirectory="l10n/pt">Delivery/l10n/pt/DgnCoreMessages_pt.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="pt" SubPartDirectory="l10n/pt">Delivery/l10n/pt/DgnHandlersMessages_pt.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="pt" SubPartDirectory="l10n/pt">Delivery/l10n/pt/ForeignFormat_pt.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-DgnPlatformXliffs-ru" BentleyBuildMakeFile="l10n-DgnPlatform.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=ru">
+        <RequiredRepository>l10n-DgnPlatform</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="ru" SubPartDirectory="l10n/ru">Delivery/l10n/ru/DgnCoreMessages_ru.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="ru" SubPartDirectory="l10n/ru">Delivery/l10n/ru/DgnHandlersMessages_ru.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="ru" SubPartDirectory="l10n/ru">Delivery/l10n/ru/ForeignFormat_ru.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-DgnPlatformXliffs-sv" BentleyBuildMakeFile="l10n-DgnPlatform.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=sv">
+        <RequiredRepository>l10n-DgnPlatform</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="sv" SubPartDirectory="l10n/sv">Delivery/l10n/sv/DgnCoreMessages_sv.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="sv" SubPartDirectory="l10n/sv">Delivery/l10n/sv/DgnHandlersMessages_sv.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="sv" SubPartDirectory="l10n/sv">Delivery/l10n/sv/ForeignFormat_sv.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-DgnPlatformXliffs-tr" BentleyBuildMakeFile="l10n-DgnPlatform.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=tr">
+        <RequiredRepository>l10n-DgnPlatform</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="tr" SubPartDirectory="l10n/tr">Delivery/l10n/tr/DgnCoreMessages_tr.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="tr" SubPartDirectory="l10n/tr">Delivery/l10n/tr/DgnHandlersMessages_tr.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="tr" SubPartDirectory="l10n/tr">Delivery/l10n/tr/ForeignFormat_tr.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-DgnPlatformXliffs-zh-cn" BentleyBuildMakeFile="l10n-DgnPlatform.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=zh-cn">
+        <RequiredRepository>l10n-DgnPlatform</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="zh-cn" SubPartDirectory="l10n/zh-cn">Delivery/l10n/zh-cn/DgnCoreMessages_zh-cn.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="zh-cn" SubPartDirectory="l10n/zh-cn">Delivery/l10n/zh-cn/DgnHandlersMessages_zh-cn.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="zh-cn" SubPartDirectory="l10n/zh-cn">Delivery/l10n/zh-cn/ForeignFormat_zh-cn.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-DgnPlatformXliffs-zh-tw" BentleyBuildMakeFile="l10n-DgnPlatform.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=zh-tw">
+        <RequiredRepository>l10n-DgnPlatform</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="zh-tw" SubPartDirectory="l10n/zh-tw">Delivery/l10n/zh-tw/DgnCoreMessages_zh-tw.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="zh-tw" SubPartDirectory="l10n/zh-tw">Delivery/l10n/zh-tw/DgnHandlersMessages_zh-tw.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="zh-tw" SubPartDirectory="l10n/zh-tw">Delivery/l10n/zh-tw/ForeignFormat_zh-tw.xliff</Files>
+        </Bindings>
+    </Part>
+ 
+    <Product Name="CompatibilityTestFiles" SaveProduct="true">
+        <SubPart PartName="SaveCompatibilityTestFiles"/>
+        <Directories DirectoryListName="CompatibilityTestFiles"/>
+    </Product>
+
+    <ProductDirectoryList ListName="CompatibilityTestFiles" >
+        <ProductDirectory Name="CompatibilityTestFiles" Path=""/>
+        <ProductDirectory Name="Assemblies" Deliver="false"/>
+        <ProductDirectory Name="VendorNotices" Deliver="false"/>
+        <ProductDirectory Name="Assets" LibType="Static" Deliver="false"/>
+    </ProductDirectoryList>
+
+    <Part Name="SaveCompatibilityTestFiles" DeferType="RunUnitTests" OnlyPlatforms="x64" BentleyBuildMakeFile="Tests/DgnProject/SaveCompatibilityTestFiles.mke">
+        <!-- Must run after the tests are complete -->
+        <SubPart PartName="RunGtest" />
+        <Bindings>
+            <Files ProductDirectoryName="CompatibilityTestFiles" SubPartDirectory="CompatibilityTestFiles">
+                CompatibilityTestFiles/CompatibilityTestSeed.bim
+            </Files>
+            <Files ProductDirectoryName="CompatibilityTestFiles" SubPartDirectory="CompatibilityTestFiles">
+                CompatibilityTestFiles/InstancesCompatibilitySeed.bim
+            </Files>
+        </Bindings>
+    </Part>
+  
+    <!-- Define a test collection part-->
+    <Part Name="Tests">
+        <SubPart PartName="UnitTests-NonPublished"/>
+        <SubPart PartName="UnitTests-Published"/>
+    </Part>
+
+    <Product Name="DgnPlatform-Tests">
+        <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
+        <SubPart PartName="Tests"/>
+        <SubPart PartName="DgnPlatformSqlang" />
+        <!-- DgnPlatform unit tests use some files that are stored in DgnClientSdkUnitTestData. They do NOT use bims that are published from those files. -->
+        <SubPart PartName="RawDgnClientSdkUnitTestData"/>
+      <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+    </Product>
+
+  <!-- ********************** -->
+  <!-- **** Gtest **** -->
+  <!-- ********************** -->
+  <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=DgnPlatformTest -dTEST_COLLECTION_PRODUCT=DgnPlatform-Tests -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+        <SubProduct ProductName="DgnPlatform-Tests"/>
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/DgnPlatformTest/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/DgnPlatformTest/Assets" />
+        </Bindings>
+    </Part>
+
+    <Product Name="DgnPlatform-Gtest" SaveProduct="true">
+        <SubPart PartName="Gtest"/>
+        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=DgnPlatform-Gtest -dGTEST_NAME=DgnPlatformTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="DgnPlatform-Gtest" />
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/DgnPlatformTest.log</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Memory leak testing of DgnPlatform tests. Only called on demand -->
+    <Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=DgnPlatform-Gtest -dGTEST_NAME=DgnPlatformTest" OnlyPlatforms="x64">
+        <SubPart PartFile="DgnDbTestingScripts" Repository="DgnDbTestingScripts" PartName="MemLeakTests" />
+        <SubProduct ProductName="DgnPlatform-Gtest" />
+    </Part>
+    
+    <!-- ********************** -->
+    <!-- **** AndroidJUnit **** -->
+    <!-- ********************** -->
+    <Part Name="AndroidJUnit" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_COLLECTION_PRODUCT=DgnPlatform-Tests -dTEST_SHORT_NAME=DgnPlatTst -dTEST_DELIVERY_SUBDIR=ANJUP -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
+        <SubProduct ProductName="DgnPlatform-Tests"/>
+        <SubPart PartName="AndroidJUnitTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="AndroidJUnit-Project" SourceName="Delivery/ANJUP" />
+        </Bindings>
+    </Part>
+
+    <Product Name="DgnPlatform-AndroidJUnit" >
+        <SubPart PartName="AndroidJUnit" LibType="Static"/>
+        <Directories DirectoryListName="AndroidJUnitProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="RunAndroidJUnitTest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=DgnPlatform-AndroidJUnit" OnlyPlatforms="Android*">
+        <SubProduct ProductName="DgnPlatform-AndroidJUnit"/>
+        <Bindings>
+          <Files Required="false" SubPartDirectory="ANJU/Logs">Delivery/ANJU/Logs/DgnPlatform-AndroidJUnit.log</Files>
+        </Bindings>
+    </Part>
+
+    <!-- ********************** -->
+    <!-- **** iOSXCTest **** -->
+    <!-- ********************** -->
+    <Part Name="iOSXCTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/iOS//MakeXCTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=DgnPlatform -dTEST_COLLECTION_PRODUCT=DgnPlatform-Tests -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOS*">
+        <SubProduct ProductName="DgnPlatform-Tests"/>
+        <SubPart PartName="iOSXCTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="iOSXCTestProject" SourceName="Delivery/iOSXCTest/DgnPlatform/Project" />
+        </Bindings>
+    </Part>
+
+    <Product Name="DgnPlatform-iOSXCTest" >
+        <SubPart PartName="iOSXCTest" LibType="Static"/>
+        <Directories DirectoryListName="iOSXCTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="RuniOSXCTest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/iOS//RunXCTestProject.mke" BentleyBuildMakeOptions="-dXCTEST_PRODUCT=DgnPlatform-iOSXCTest" OnlyPlatforms="iOS*">
+        <SubProduct ProductName="DgnPlatform-iOSXCTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="XCTest/Logs">Delivery/XCTest/Logs/DgnPlatform-iOSXCTest.log</Files>
+        </Bindings>
+    </Part>
+
+    <!-- *********************************************************** -->
+    <!-- **** UWP Microsoft::VisualStudio::CppUnitTestFramework **** -->
+    <!-- *********************************************************** -->
+    <!-- N.B. ApiNumber is important here because we must manually reference some DLLs, and thus need an accruate suffix to find them. -->
+    <Part
+        Name="UwpTest" DeferType="BuildUnitTests"
+        BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/uwp//MakeUwpTestProject.mke"
+        BentleyBuildMakeOptions="-dTEST_NAME=DgnPlatform -dTEST_COLLECTION_PRODUCT=DgnPlatform-Tests"
+        OnlyPlatforms="WinRT*"
+        ApiNumber="M02"
+        >
+        <SubProduct ProductName="DgnPlatform-Tests"/>
+        <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UwpTestProject" SourceName="Delivery/DgnPlatformUwpTest"/>
+        </Bindings>
+    </Part>
+
+    <Product Name="DgnPlatform-UwpTest">
+        <SubPart PartName="UwpTest"/>
+        <Directories DirectoryListName="UwpTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part
+        Name="RunUwpTest"
+        DeferType="RunUnitTests"
+        BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/uwp//RunUwpTestProject.mke"
+        BentleyBuildMakeOptions="-dUWPTEST_PRODUCT=DgnPlatform-UwpTest"
+        OnlyPlatforms="WinRT*"
+        >
+        <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubProduct ProductName="DgnPlatform-UwpTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="UwpTest/Logs">Delivery/UwpTest/Logs/DgnPlatform-UwpTest.log</Files>
+        </Bindings>
+    </Part>
+
+    <!-- ******************************************************************************************* -->
+    <!-- ******************* "NoView" Tests - all tests up through DgnPlatform ********************* -->
+    <!-- ******************************************************************************************* -->
+
+    <Part Name="DgnPlatformNoViewTested" PrgOutputDir="DgnClientSdk">
+      <RequiredRepository>DgnDbTestingScripts</RequiredRepository><!--To Automate Unit Testing on Linux-->
+                
+      <!-- Cannot include because they depend on DgnView
+      <SubProduct ProductName="iModelBridgeFwk" PartFile="iModelBridge" Repository="DgnDbSync"/>
+      <SubProduct ProductName="ToyTileBridge" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" />
+      <SubProduct ProductName="ToyTileCreator" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" />
+      -->
+      
+      <SubProduct ProductName="iModelBridgeAssign" PartFile="iModelBridge" Repository="DgnDbSync"/>
+      <SubProduct ProductName="Briefcase" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" />
+      <SubProduct ProductName="iModelConsole" PartFile="DgnPlatform" Repository="DgnPlatform" />
+      
+      <!-- This can't be active because Sam doesn't want iModelJsNodeAddon merged between bim0200 and bim0200dev. -->
+      <!-- <SubProduct ProductName="iModelJsNodeAddon" PartFile="iModelJsNodeAddon" Repository="iModelJsNodeAddon" /> -->
+      
+      <!-- Won't build on Linux because of capitalization problems in ImagePP.PartFile.xml:
+      <SubProduct ProductName="TilePublisher" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+      -->
+      <SubPart PartName="NoView-Gtest-RunAggregator-Linux" LibType="Static" />
+      <SubPart PartName="NoView-Gtest-RunAggregator-MacOS" LibType="Static" />
+      <SubPart PartName="NoView-Gtest-RunAggregator-Windows" LibType="Dynamic" />
+
+      <!-- Cannot include because they depend on DgnView
+      <SubPart PartName="RunToyTileCreator-Linux" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" LibType="Static"/>
+      <SubPart PartName="RunToyTileCreator-MacOS" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" LibType="Static"/>
+      <SubPart PartName="RunToyTileCreator-Windows" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" LibType="Dynamic"/>
+      -->
+
+      <!-- Required by imodeljsnodeaddon, the primary consumer of this part. -->
+      <SubPart PartName="ECPresentation" PartFile="ECPresentation" Repository="ECPresentation" LibType="Static"/>
+    </Part>
+
+    <Part Name="NoView-Gtest-RunAggregator-Linux" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic" >
+      <SubPart PartName="NoView-Gtest-RunAggregator"/>
+    </Part>
+  
+    <Part Name="NoView-Gtest-RunAggregator-MacOS" OnlyPlatforms="MacOS*" ExcludeLibType="Dynamic" >
+      <SubPart PartName="NoView-Gtest-RunAggregator"/>
+    </Part>
+  
+    <Part Name="NoView-Gtest-RunAggregator-Windows" OnlyPlatforms="x64" ExcludeLibType="Static" >
+      <SubPart PartName="NoView-Gtest-RunAggregator"/>
+    </Part>
+  
+    <Part Name="NoView-Gtest-RunAggregator" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/CheckLogfilesForFailures.mke" BentleyBuildMakeOptions="-dLogFilesDir=$(BuildContext)SubParts/Gtest/Logs">
+        <SubPart Repository="GeomLibs"              PartFile="geomlibs"         PartName="RunGtest" />
+        <SubPart Repository="ECDb"                  PartFile="ECDb"             PartName="RunGtest" />
+        <SubPart Repository="ECObjects"             PartFile="ECObjects"        PartName="RunGtest" />
+        <SubPart Repository="Units"                 PartFile="Units"            PartName="RunGtest" />
+        <!-- <SubPart Repository="DgnClientFx"           PartFile="DgnClientFx"      PartName="RunGtest" /> -->
+        <SubPart Repository="WSClient"              PartFile="WSClient"         PartName="RunGtest" />
+        <SubPart Repository="DgnPlatform"           PartFile="DgnPlatform"      PartName="RunGtest" />
+        <!-- Cannot include because they depend on DgnView
+        <SubPart Repository="DgnDbSync"             PartFile="iModelBridge"     PartName="RunGtest" />
+        <SubPart Repository="DgnDomains-Planning"   PartFile="Planning"         PartName="RunGtest" />
+        -->
+        <!-- <SubPart Repository="DgnDisplay"            PartFile="DgnDisplay"       PartName="RunGtest" /> -->
+        <SubPart Repository="BeSQLite"              PartFile="BeSQLite"         PartName="RunGtest" />
+        <SubPart Repository="Bentley"               PartFile="Bentley"          PartName="RunGtest" />
+        <SubPart Repository="BeSecurity"            PartFile="BeSecurity"       PartName="RunGtest" />
+        <SubPart Repository="DgnDomains-RealityModeling" PartFile="RealityModeling" PartName="RunGtest" />
+        <SubPart Repository="ConstructionSchema"  PartFile="ConstructionSchema" PartName="RunGtest" />
+        <!-- <SubPart Repository="DgnDbSync"             PartFile="DgnDbSync"        PartName="RunDgnV8ConverterTests" /> -->
+        <!-- Test that are too time-consuming to run every time:
+        <SubPart Repository="GeoCoord"              PartFile="GeoCoord"         PartName="RunGtest"/>
+      -->
+    </Part>
+
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <!-- // iModelConsole                                                           // -->
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+
+    <Product Name="iModelConsole">
+        <SubPart PartName="iModelConsoleExe-Windows"/>
+        <SubPart PartName="iModelConsoleExe-Linux"/>
+         <SubPart PartName="iModelConsoleExe-MacOS"/>
+        <Directories DirectoryListName="iModelConsoleDirList" />
+    </Product>
+
+    <Part Name="iModelConsoleExe-Windows" OnlyPlatforms="x64" ExcludeLibType="Static">
+        <SubPart PartName="iModelConsoleExe" LibType="Dynamic"/>
+    </Part>
+    
+    <Part Name="iModelConsoleExe-Linux" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic" >
+        <SubPart PartName="iModelConsoleExe" LibType="Static"/>
+    </Part>
+
+    <Part Name="iModelConsoleExe-MacOS" OnlyPlatforms="MacOS*" ExcludeLibType="Dynamic" >
+        <SubPart PartName="iModelConsoleExe" LibType="Static"/>
+    </Part>
+
+    <Part Name="iModelConsoleExe" DeferType="BuildSamples" BentleyBuildMakeFile="iModelConsole/iModelConsole.mke" >
+        <SubPart PartName="DgnPlatformDll"/>
+        <SubPart PartName="DgnPlatformSqlang"/>
+        <Bindings>
+            <Files ProductDirectoryName="ApplicationRoot">
+                Delivery/iModelConsole$(exeext)
+                Delivery/logging.config.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <ProductDirectoryList ListName="iModelConsoleDirList" >
+        <ProductDirectory Name="ApplicationRoot"                Path=""/>
+        <ProductDirectory Name="ApplicationRoot"                Path="" LibType="Static" />
+        <ProductDirectory Name="Assemblies"                     RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="Assemblies"                     RelativeTo="ApplicationRoot" LibType="Static"/>
+        <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot" LibType="Static" />
+       <ProductDirectory Name="VendorNotices"                  RelativeTo="ApplicationRoot" Path="notices"/>
+       <ProductDirectory Name="VendorNotices"                  RelativeTo="ApplicationRoot" Path="notices" LibType="Static"/>
+    </ProductDirectoryList>
+
+    <!-- *********************************************************** -->
+    <!-- **** NuGet package creation                            **** -->
+    <!-- *********************************************************** -->
+    <Part Name="NuGetPackage" BentleyBuildMakeFile="DgnPlatform.NuGetPackage.mke" OnlyPlatforms="x64">
+        <RequiredRepository>bsitools-nuget</RequiredRepository>
+        <SubProduct ProductName="__DgnPlatform-NuGet"/>
+        <SubPart PartName="DgnPlatformDLL" />
+        <SubPart PartName="PublishedAPI"/>
+        <SubPart PartName="DgnPlatformSqlang" />
+        <Bindings>
+            <Files ProductDirectoryName="NuGetPackages">Install\DgnPlatform\DgnPlatform.*.nupkg</Files>
+        </Bindings>
+    </Part>
+
+    <Product Name="__DgnPlatform-NuGet" >
+        <SubPart PartName="DgnPlatformDLL" />
+        <SubPart PartName="PublishedAPI"/>
+        <SubPart PartName="DgnPlatformSqlang" />
+        <Directories DirectoryListName="DgnPlatformDirList"/>
+    </Product>
+    
+    <ProductDirectoryList ListName="DgnPlatformDirList" >
+        <ProductDirectory Name="ApplicationRoot"            Path=""/>
+        <ProductDirectory Name="Assemblies"                                 RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="Assemblies" LibType="Static"                RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="Assets"                     Path="Assets"   RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="Assets"                     Path="Assets"   RelativeTo="ApplicationRoot" LibType="static" />
+        <ProductDirectory Name="Libs"                       Path="libs"/>
+        <ProductDirectory Name="VendorNotices"              Path="Notices"  RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="VendorNotices"              Path="Notices"  RelativeTo="ApplicationRoot" LibType="Static"/>
+        <ProductDirectory Name="PublishedApi"               Path="PublishedApi"/>
+    </ProductDirectoryList>
+
+</BuildContext>
