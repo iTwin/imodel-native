@@ -121,6 +121,20 @@ void        DwgProtocolExtension::RxInit ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+void        DwgProtocolExtension::RxUnInit ()
+    {
+#ifdef DWGTOOLKIT_OpenDwg
+    if (gpDesc != nullptr)
+        {
+        DwgRxClass::DeleteDwgRxClass (gpDesc);
+        gpDesc = nullptr;
+        }
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          06/16
++---------------+---------------+---------------+---------------+---------------+------*/
 void        DwgImporter::RegisterProtocolExtensions ()
     {
     DwgProtocolExtension::RxInit ();
@@ -160,3 +174,17 @@ void        DwgImporter::RegisterProtocolExtensions ()
     DwgRxClass::AddProtocolExtension (DwgDbHatch::SuperDesc(), protocolClass, DwgHatchExt::CreateObject());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void        DwgImporter::UnRegisterProtocolExtensions ()
+    {
+    DwgProtocolExtension::RxUnInit ();
+    DwgRasterImageExt::RxUnInit ();
+    DwgPointCloudExExt::RxUnInit ();
+    DwgViewportExt::RxUnInit ();
+    DwgLightExt::RxUnInit ();
+    DwgBrepExt::RxUnInit ();
+    DwgBlockReferenceExt::RxUnInit ();
+    DwgHatchExt::RxUnInit ();
+    }

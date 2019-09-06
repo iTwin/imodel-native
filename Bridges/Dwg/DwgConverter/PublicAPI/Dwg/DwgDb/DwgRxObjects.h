@@ -34,6 +34,7 @@ public:
     DWGDB_EXPORT static DWG_TypeP(RxClass)  Desc ();
     DWGDB_EXPORT static DwgRxObjectP        Cast (DWG_TypeCP(RxObject) rxObj);
     DWGDB_EXPORT static void                RxInit ();
+    DWGDB_EXPORT static void                RxUnInit ();
 
     DWGDB_EXPORT virtual DwgDbStatus        CopyFrom (DwgRxObjectCP other);
     DWGDB_EXPORT virtual bool               IsEqualTo (DwgRxObjectCP other) const;
@@ -61,6 +62,7 @@ struct DwgRxClass
     {
     DWGDB_EXPORT static DWG_TypeP(RxClass) QueryClassFromDictionary (WCharCP name);
     DWGDB_EXPORT static DWG_TypeP(RxClass) NewDwgRxClass (WCharCP className, WCharCP parentName, int proxyFlags = 0, PseudoConstructor constr = nullptr);
+    DWGDB_EXPORT static void               DeleteDwgRxClass (DWG_TypeP(RxClass) rxc);
     DWGDB_EXPORT static DwgRxObjectP       AddProtocolExtension (DWG_TypeP(RxClass) toClass, DWG_TypeP(RxClass) protocalClass, DWG_TypeP(RxObject) protocalObject);
     DWGDB_EXPORT static void               BuildClassHierarchy ();
     };

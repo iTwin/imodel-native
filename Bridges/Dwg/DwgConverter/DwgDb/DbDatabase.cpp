@@ -19,8 +19,8 @@ DwgDbObjectId       DwgDbDatabase::GetLinetypeTableId () const { return DWGDB_CA
 DwgDbObjectId       DwgDbDatabase::GetRegAppTableId () const { return DWGDB_CALLSDKMETHOD(T_Super::getRegAppTableId, T_Super::regAppTableId)(); }
 DwgDbObjectId       DwgDbDatabase::GetTextStyleTableId () const { return DWGDB_CALLSDKMETHOD(T_Super::getTextStyleTableId, T_Super::textStyleTableId)(); }
 DwgDbObjectId       DwgDbDatabase::GetViewportTableId () const { return DWGDB_CALLSDKMETHOD(T_Super::getViewportTableId, T_Super::viewportTableId)(); }
-DwgDbObjectId       DwgDbDatabase::GetModelspaceId () { return DWGDB_CALLSDKMETHOD(T_Super::getModelSpaceId(), acdbSymUtil()->blockModelSpaceId(this)); }
-DwgDbObjectId       DwgDbDatabase::GetPaperspaceId () { return DWGDB_CALLSDKMETHOD(T_Super::getPaperSpaceId(), acdbSymUtil()->blockPaperSpaceId(this)); }
+DwgDbObjectId       DwgDbDatabase::GetModelspaceId () const { return DWGDB_CALLSDKMETHOD(T_Super::getModelSpaceId(), acdbSymUtil()->blockModelSpaceId(const_cast<DwgDbDatabase*>(this))); }
+DwgDbObjectId       DwgDbDatabase::GetPaperspaceId () const { return DWGDB_CALLSDKMETHOD(T_Super::getPaperSpaceId(), acdbSymUtil()->blockPaperSpaceId(const_cast<DwgDbDatabase*>(this))); }
 DwgDbObjectId       DwgDbDatabase::GetGroupDictionaryId () const { return DWGDB_CALLSDKMETHOD(T_Super::getGroupDictionaryId(), T_Super::groupDictionaryId()); }
 double              DwgDbDatabase::GetANGBASE () const { return DWGDB_CALLSDKMETHOD(T_Super::getANGBASE(), T_Super::angbase()); }
 bool                DwgDbDatabase::GetANGDIR () const { return DWGDB_CALLSDKMETHOD(T_Super::getANGDIR(), T_Super::angdir()); }
@@ -89,14 +89,14 @@ DwgDbObjectId       DwgDbDatabase::GetObjectId (DwgDbHandleCR handle)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DwgDbObjectId       DwgDbDatabase::GetActiveUserViewportId ()
+DwgDbObjectId       DwgDbDatabase::GetActiveUserViewportId () const
     {
     DwgDbObjectId   anyvportId;
 #ifdef DWGTOOLKIT_OpenDwg
     anyvportId = this->activeViewportId ();
 #elif DWGTOOLKIT_RealDwg
     // the method returns the active viewport entity ID, not necessarily the overall viewport entity.
-    anyvportId = ::acdbGetCurVportId (this);
+    anyvportId = ::acdbGetCurVportId (const_cast<DwgDbDatabase*>(this));
 #endif
     return  anyvportId;
     }
@@ -104,7 +104,7 @@ DwgDbObjectId       DwgDbDatabase::GetActiveUserViewportId ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DwgDbObjectId       DwgDbDatabase::GetActiveModelspaceViewportId ()
+DwgDbObjectId       DwgDbDatabase::GetActiveModelspaceViewportId () const
     {
     DwgDbObjectId   vportTableRecordId;
 #ifdef DWGTOOLKIT_OpenDwg
@@ -118,7 +118,7 @@ DwgDbObjectId       DwgDbDatabase::GetActiveModelspaceViewportId ()
         }
 #elif DWGTOOLKIT_RealDwg
 
-    vportTableRecordId = acdbGetCurVportTableRecordId (this);
+    vportTableRecordId = acdbGetCurVportTableRecordId (const_cast<DwgDbDatabase*>(this));
     if (!vportTableRecordId.isValid())
         {
         AcDbViewportTableIterator*  iterator = nullptr;
@@ -436,7 +436,20 @@ DwgDbStatus DwgDbDatabase::SaveAs (WCharCP newFileName, DwgFileVersion version, 
     if (toVersion != TkDbVersion::kDHL_Unknown && nullptr != newFileName && newFileName[0] != 0)
         {
 #if DWGTOOLKIT_OpenDwg
-        T_Super::writeFile(OdString(newFileName), OdDb::SaveType::kDwg, static_cast<OdDb::DwgVersion>(version), true);
+        try
+            {
+            T_Super::writeFile(OdString(newFileName), OdDb::SaveType::kDwg, toVersion, true);
+            }
+        catch (OdError err)
+            {
+            OdString str = err.description ();
+            DwgToolkitHost::GetHost().warning (str);
+            return  ToDwgDbStatus(err.code());
+            }
+        catch (...)
+            {
+            DwgToolkitHost::GetHost().warning (L"Unknown exception!");
+            }
         return  DwgDbStatus::Success;
 
 #elif DWGTOOLKIT_RealDwg
@@ -613,4 +626,16 @@ DwgDbObjectId   DwgDbDatabase::CreateXrefBlock (DwgStringCR xrefPath, DwgStringC
         }
 #endif  // TOOLKIT
     return  blockId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbDatabasePtr DwgDbDatabase::Create (bool createDefaults)
+    {
+#if DWGTOOLKIT_OpenDwg
+    return  DwgToolkitHost::GetHost().createDatabase (createDefaults, OdDb::kMetric);
+#elif DWGTOOLKIT_RealDwg
+    return  new DwgDbDatabase (createDefaults, false);
+#endif    
     }

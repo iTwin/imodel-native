@@ -236,6 +236,7 @@ void            UnRegisterDwgDbObjectExtensions ()
     DwgDbSortentsTable::rxUninit ();
     DwgDbXrecord::rxUninit ();
 
+    DwgRxObject::rxUninit ();
     DwgResBuf::rxUninit ();
 
     DwgDbPointCloudEx::rxUninit ();

@@ -55,7 +55,7 @@
 %if defined(MSVC_VERSION)
 
     %if exists($(DEBUG_TEIGHA_SOURCE)) || exists($(DEBUG_TEIGHA_DLL))
-        CCompOpts + -D_DEBUG -MDd
+        CCompOpts + -D_DEBUG
     %endif
 
     # Use shared libraries on Windows

@@ -1786,6 +1786,8 @@ DwgImporter::~DwgImporter ()
     m_presentationRuleContents.clear ();
     m_reportedIssues.clear ();
 
+    DwgImporter::UnRegisterProtocolExtensions ();
+
     DwgImportHost::GetHost().Terminate ();
 #if defined (BENTLEYCONFIG_PARASOLID)
     PSolidKernelManager::StopSession ();

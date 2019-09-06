@@ -176,8 +176,8 @@ DwgDbBlockChildIteratorPtr  DwgDbBlockTableRecord::GetBlockChildIterator () cons
     AcDbBlockTableRecordIterator*   newIterator = nullptr;
     if (Acad::eOk == this->newIterator(newIterator, true, true))
         return new DwgDbBlockChildIterator (newIterator);
-#endif    
     return  nullptr;
+#endif    
     }
 
 /*---------------------------------------------------------------------------------**//**

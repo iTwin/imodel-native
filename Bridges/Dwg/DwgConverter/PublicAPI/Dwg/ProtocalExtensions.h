@@ -17,17 +17,24 @@ BEGIN_DWG_NAMESPACE
 
 #define DWG_PROTOCOLEXT_DECLARE_MEMBERS(_className_)                                    \
     DWG_EXPORT static void            RxInit ();                                        \
+    DWG_EXPORT static void            RxUnInit ();                                      \
     DWG_EXPORT static OdRxObjectPtr   CreateObject();
 
 #define DWG_PROTOCOLEXT_DEFINE_MEMBERS(_className_)                                     \
-    void            _className_::RxInit () { _className_::rxInit(); }                   \
+    void            _className_::RxInit ()                                              \
+        {                                                                               \
+        try { _className_::rxInit(); }                                                  \
+        catch (OdError e) { LOG.errorv("Exception thrown initializing protocol extension: %ls", e.description().c_str()); } \
+        }                                                                               \
+    void            _className_::RxUnInit () { _className_::rxUninit(); }               \
     OdRxObjectPtr   _className_::CreateObject() { return _className_::createObject(); } \
     DWGRX_CONS_DEFINE_MEMBERS(##_className_##,DwgProtocolExtension)
 
 #elif DWGTOOLKIT_RealDwg
 
 #define DWG_PROTOCOLEXT_DECLARE_MEMBERS(_className_)                                    \
-    DWG_EXPORT static void            RxInit () {;}                                     \
+    DWG_EXPORT static void            RxInit () { /*Nop*/;}                             \
+    DWG_EXPORT static void            RxUnInit () { /*Nop*/;}                           \
     DWG_EXPORT static DwgRxObjectP    CreateObject();
 
 #define DWG_PROTOCOLEXT_DEFINE_MEMBERS(_className_)                                     \
@@ -93,6 +100,7 @@ public:
     DWG_EXPORT static DWG_TypeP(RxClass)      Desc ();
     DWG_EXPORT static DwgProtocolExtension*   Cast (DWG_TypeCP(RxObject) obj);
     DWG_EXPORT static void                    RxInit ();
+    DWG_EXPORT static void                    RxUnInit ();
 
     //! Must implement this method to either create a new or update an existing element from the input entity.
     //! This method is called only when an entity is in the modelspace or a paperspace.
