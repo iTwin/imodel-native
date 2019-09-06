@@ -407,6 +407,9 @@ void CreateMesh(Bentley::TerrainModel::BcDTMR dtm, Bentley::DgnPlatform::DTMElem
     if (useOneBuilder)
         {
         builder = GeometryBuilder::Create(model, categoryId, trsf);
+        BeAssert(builder.IsValid());
+        if (builder.IsNull())
+            return;
         builder->SetAppendAsSubGraphics();
         SetSymbology(*builder, v8eh, v8mm, converter, displayParams, categoryId, subCategoryId);
         }
@@ -443,6 +446,9 @@ void CreateMesh(Bentley::TerrainModel::BcDTMR dtm, Bentley::DgnPlatform::DTMElem
                 if (!useOneBuilder && builder.IsNull())
                     {
                     builder = GeometryBuilder::Create(model, categoryId, trsf);
+                    BeAssert(builder.IsValid());
+                    if (builder.IsNull())
+                        return;
                     builder->SetAppendAsSubGraphics();
                     SetSymbology(*builder, v8eh, v8mm, converter, displayParams, categoryId, subCategoryId);
                     }
@@ -473,6 +479,7 @@ void CreateMesh(Bentley::TerrainModel::BcDTMR dtm, Bentley::DgnPlatform::DTMElem
         auto gel = Converter::CreateNewElement(model, childClassId, categoryId, elementCode, "Mesh");
         if (gel.IsValid() && SUCCESS == builder->Finish(*gel->ToGeometrySourceP()))
             {
+            gel->ToGeometrySourceP()->SetUndisplayed(true);
             ElementConversionResults resultsForChild;
             resultsForChild.m_element = gel.get();
             results.m_childElements.push_back(resultsForChild);
