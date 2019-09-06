@@ -11,7 +11,7 @@
         %error $(DGNV8_DGNPLATFORM_SDK) not found. Make sure DGNV8_DGNPLATFORM_SDK points to Product\V8_InternalSDK directory in your V8 output tree.
     %endif
 %else
-    DgnV8Sdk=$(BuildContext)nuget/native/V8_InternalSDKNuget_x64/
+    DgnV8Sdk=$(BuildContext)nuget/native/V8_InternalSDKNuget/
 %endif
 
 Delivery=$(BuildContext)Delivery/
