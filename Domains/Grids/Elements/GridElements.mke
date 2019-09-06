@@ -1,0 +1,99 @@
+#----------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#----------------------------------------------------------------------
+AppName = GridElements
+CCompPDBName = $(AppName)
+
+%include mdl.mki
+%include $(SrcRoot)DgnDomains/Grids/publicmki/Grids.mki
+
+o = $(OutputRootDir)build/ConceptBuilding/GridElements/
+
+#dirToSearch = $(GridsPublicApi)
+#%include cincapnd.mki
+
+#dirToSearch = $(BuildingUtilsPublicApi)
+#%include cincapnd.mki
+
+#dirToSearch = $(BuildingUnitsPublicApi)
+#%include cincapnd.mki
+
+nameToDefine = __GRIDELEMENTS_BUILD__
+%include cdefapnd.mki
+
+
+%if !defined (BMAKE_DELETE_ALL_TARGETS)
+    $(o):
+        ~@mkdir $@
+%else
+    always:
+        -$(rmdirRecursiveCmd) $(o)
+%endif
+
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)GridPortion$(oext) : $(_MakeFilePath)GridPortion.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridPortion.h
+
+$(o)OrthogonalGridPortion$(oext) : $(_MakeFilePath)OrthogonalGridPortion.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/OrthogonalGridPortion.h
+
+$(o)RadialGridPortion$(oext) : $(_MakeFilePath)RadialGridPortion.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/RadialGridPortion.h
+
+$(o)SketchGridPortion$(oext) : $(_MakeFilePath)SketchGridPortion.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/SketchGridPortion.h
+
+$(o)GridSurface$(oext) : $(_MakeFilePath)GridSurface.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridSurface.h
+
+$(o)GridPlaneSurface$(oext) : $(_MakeFilePath)GridPlaneSurface.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridPlaneSurface.h
+
+$(o)GridArcSurface$(oext) : $(_MakeFilePath)GridArcSurface.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridArcSurface.h
+
+$(o)GridSplineSurface$(oext) : $(_MakeFilePath)GridSplineSurface.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridSplineSurface.h
+
+$(o)GridCurvesSet$(oext) : $(_MakeFilePath)GridCurvesSet.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridCurvesSet.h
+
+$(o)GridCurve$(oext) : $(_MakeFilePath)GridCurve.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridCurve.h
+
+$(o)GridLine$(oext) : $(_MakeFilePath)GridLine.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridLine.h
+
+$(o)GridSpline$(oext) : $(_MakeFilePath)GridSpline.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridSpline.h
+
+$(o)GridArc$(oext) : $(_MakeFilePath)GridArc.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridArc.h
+
+$(o)GridAxis$(oext) : $(_MakeFilePath)GridAxis.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridAxis.h
+
+$(o)GridDrivesGridSurfaceHandler$(oext) : $(_MakeFilePath)GridDrivesGridSurfaceHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridDrivesGridSurfaceHandler.h
+
+$(o)GridCurveBundle$(oext) : $(_MakeFilePath)GridCurveBundle.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridCurveBundle.h
+
+$(o)GridSurfaceDrivesGridCurveBundleHandler$(oext) : $(_MakeFilePath)GridSurfaceDrivesGridCurveBundleHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridSurfaceDrivesGridCurveBundleHandler.h
+
+$(o)GridCurveBundleCreatesGridCurveHandler$(oext) : $(_MakeFilePath)GridCurveBundleCreatesGridCurveHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridCurveBundleCreatesGridCurveHandler.h
+
+$(o)GridLabel$(oext) : $(_MakeFilePath)GridLabel.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GridLabel.h
+
+%include MultiCppCompileGo.mki
+objs +% $(MultiCompileObjectList)
+
+DLM_CONTEXT_LOCATION = $(ContextDeliveryDir)
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+DLM_DEST = $(o)
+DLM_EXPORT_DEST = $(o)
+DLM_EXPORT_OBJS = $(objs)
+DLM_LIB_CONTEXT_LOCATION = $(ContextDeliveryDir)
+DLM_NAME = $(AppName)
+DLM_NOENTRY = 1
+DLM_OBJECT_DEST = $(o)
+DLM_OBJECT_FILES = $(objs)
+
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BuildingUtils$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BuildingDgnUtils$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BuildingUnits$(stlibext)
+
+%include $(sharedMki)linkLibrary.mki
+
