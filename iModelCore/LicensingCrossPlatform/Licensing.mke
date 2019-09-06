@@ -1,0 +1,50 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+CompileOptionsMki = $(_MakeFilePath)LicensingCompileOptions.mki
+%include $(CompileOptionsMki)
+
+#--------------------------------------------------------------------------------------
+#   Building the Licensing library
+#--------------------------------------------------------------------------------------
+baseDir                     = $(_MakeFilePath)
+SourceDir                   = $(baseDir)Licensing/
+PublicApiDir                = $(baseDir)PublicAPI/Licensing/
+BuildContext                = $(OutputRootDir)BuildContexts/LicensingCrossPlatform/
+BuildContextLibsDirectory   = $(BuildContext)SubParts/Libs/
+
+o = $(OutputRootDir)build/Licensing/
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------------------
+# Use multi-compile
+#----------------------------------------------------------------------
+%include $(baseDir)Licensing.mki
+objs =% $(MultiCompileObjectList)
+
+#----------------------------------------------------------------------
+#   Create the Licensing DLL
+#----------------------------------------------------------------------
+DLM_NAME                    = Licensing
+DLM_OBJECT_FILES            = $(objs)
+DLM_EXPORT_OBJS             = $(objs)
+DLM_OBJECT_DEST             = $(o)
+DLM_DEST                    = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeSQLite$(libext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)WebServicesClient$(libext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeJsonCpp$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeHttp$(stlibext)
+#LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeZlib$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeFolly$(libext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeOpenSSL$(libext)
+
+%include $(sharedMki)linkLibrary.mki
