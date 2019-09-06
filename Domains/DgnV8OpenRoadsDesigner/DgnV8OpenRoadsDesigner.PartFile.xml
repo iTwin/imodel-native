@@ -4,7 +4,7 @@
 
     <Part Name="DgnV8OpenRoadsDesigner" BentleyBuildMakeFile="DgnV8OpenRoadsDesigner.mke">
         <SubPart PartName="PublicAPI" />
-        <SubPart PartName="iModelBridgeFwk" PartFile="NativeNugets/NativeNugets" Repository="BsiCommon" />
+        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridge" Repository="DgnDbSync"/>
         <Bindings>
             <Libs Required="false">Delivery/$(libprefix)DgnV8OpenRoadsDesigner$(libext)</Libs>
             <Assemblies Required="false">Delivery/$(shlibprefix)DgnV8OpenRoadsDesigner$(shlibext)</Assemblies>
