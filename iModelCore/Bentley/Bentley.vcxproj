@@ -1,0 +1,293 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|ARM">
+      <Configuration>Debug</Configuration>
+      <Platform>ARM</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|ARM">
+      <Configuration>Release</Configuration>
+      <Platform>ARM</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup>
+    <ShowAllFiles>true</ShowAllFiles>
+    <LocalDebuggerCommandArguments>--gtest_repeat=1 --gtest_filter=*</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <ItemGroup>
+    <ClInclude Include="BeJpeg\PublicAPI\BeJpeg\BeJpeg.h" />
+    <ClInclude Include="Bentley\BentleyInternal.h" />
+    <ClInclude Include="Bentley\DateTimeConverter.h" />
+    <ClInclude Include="Bentley\nonport\strfunc.h" />
+    <ClInclude Include="Bentley\nonport\utf8.h" />
+    <ClInclude Include="Bentley\nonport\utf8\checked.h" />
+    <ClInclude Include="Bentley\nonport\utf8\core.h" />
+    <ClInclude Include="Bentley\nonport\utf8\unchecked.h" />
+    <ClInclude Include="BeXml\PublicApi\BeXml\BeXml.h" />
+    <ClInclude Include="LoggingSDK\src\native\interface\bsilogprivate.h" />
+    <ClInclude Include="PublicAPI\BentleyManagedUtil\ScopedDisposable.h" />
+    <ClInclude Include="PublicAPI\BentleyManagedUtil\StringInterop.h" />
+    <ClInclude Include="PublicAPI\Bentley\Base64Utilities.h" />
+    <ClInclude Include="PublicAPI\Bentley\BeAssert.h" />
+    <ClInclude Include="PublicAPI\Bentley\BeAtomic.h" />
+    <ClInclude Include="PublicAPI\Bentley\BeConsole.h" />
+    <ClInclude Include="PublicAPI\Bentley\BeDebugLog.h" />
+    <ClInclude Include="PublicAPI\Bentley\BeDebugUtilities.h" />
+    <ClInclude Include="PublicAPI\Bentley\BeDirectoryIterator.h" />
+    <ClInclude Include="PublicAPI\Bentley\BeFile.h" />
+    <ClInclude Include="PublicAPI\Bentley\BeFileListIterator.h" />
+    <ClInclude Include="PublicAPI\Bentley\BeFileName.h" />
+    <ClInclude Include="PublicAPI\Bentley\BeGetProcAddress.h" />
+    <ClInclude Include="PublicAPI\Bentley\BeIconUtilities.h" />
+    <ClInclude Include="PublicAPI\Bentley\BeId.h" />
+    <ClInclude Include="PublicAPI\Bentley\BeJStringUtilities.h" />
+    <ClInclude Include="PublicAPI\Bentley\Bentley.h" />
+    <ClInclude Include="PublicAPI\Bentley\Bentley.r.h" />
+    <ClInclude Include="PublicAPI\Bentley\BentleyAllocator.h" />
+    <ClInclude Include="PublicAPI\Bentley\BentleyConfig.h" />
+    <ClInclude Include="PublicAPI\Bentley\BentleyPortable.h" />
+    <ClInclude Include="PublicAPI\Bentley\BeNumerical.h" />
+    <ClInclude Include="PublicAPI\Bentley\BeSharedMutex.h" />
+    <ClInclude Include="PublicAPI\Bentley\BeStringUtilities.h" />
+    <ClInclude Include="PublicAPI\Bentley\BeSystemInfo.h" />
+    <ClInclude Include="PublicAPI\Bentley\BeTest.h" />
+    <ClInclude Include="PublicAPI\Bentley\BeTextFile.h" />
+    <ClInclude Include="PublicAPI\Bentley\BeThread.h" />
+    <ClInclude Include="PublicAPI\Bentley\BeThreadLocalStorage.h" />
+    <ClInclude Include="PublicAPI\Bentley\BeTimeUtilities.h" />
+    <ClInclude Include="PublicAPI\Bentley\BeVersion.h" />
+    <ClInclude Include="PublicAPI\Bentley\bmap.h" />
+    <ClInclude Include="PublicAPI\Bentley\bpool.h" />
+    <ClInclude Include="PublicAPI\Bentley\bset.h" />
+    <ClInclude Include="PublicAPI\Bentley\bstdmap.h" />
+    <ClInclude Include="PublicAPI\Bentley\bstdset.h" />
+    <ClInclude Include="PublicAPI\Bentley\btree\btree.h" />
+    <ClInclude Include="PublicAPI\Bentley\btree\btree_container.h" />
+    <ClInclude Include="PublicAPI\Bentley\btree\btree_map.h" />
+    <ClInclude Include="PublicAPI\Bentley\btree\btree_set.h" />
+    <ClInclude Include="PublicAPI\Bentley\bvector.h" />
+    <ClInclude Include="PublicAPI\Bentley\ByteStream.h" />
+    <ClInclude Include="PublicAPI\Bentley\CatchNonPortable.h" />
+    <ClInclude Include="PublicAPI\Bentley\CodePages.h" />
+    <ClInclude Include="PublicAPI\Bentley\DateTime.h" />
+    <ClInclude Include="PublicAPI\Bentley\Desktop\FileSystem.h" />
+    <ClInclude Include="PublicAPI\Bentley\DirectoryObserver.h" />
+    <ClInclude Include="PublicAPI\Bentley\GlobalHandleContainer.h" />
+    <ClInclude Include="PublicAPI\Bentley\HeapZone.h" />
+    <ClInclude Include="PublicAPI\Bentley\Iota.h" />
+    <ClInclude Include="PublicAPI\Bentley\LocalState.h" />
+    <ClInclude Include="PublicAPI\Bentley\md5.h" />
+    <ClInclude Include="PublicAPI\Bentley\NonCopyableClass.h" />
+    <ClInclude Include="PublicAPI\Bentley\Nullable.h" />
+    <ClInclude Include="PublicAPI\Bentley\PerformanceLogger.h" />
+    <ClInclude Include="PublicAPI\Bentley\PTypesU.h" />
+    <ClInclude Include="PublicAPI\Bentley\RefCounted.h" />
+    <ClInclude Include="PublicAPI\Bentley\ReleaseMarshaller.h" />
+    <ClInclude Include="PublicAPI\Bentley\ScopedArray.h" />
+    <ClInclude Include="PublicAPI\Bentley\SHA1.h" />
+    <ClInclude Include="PublicAPI\Bentley\simple_segregated_storage.h" />
+    <ClInclude Include="PublicAPI\Bentley\stdcxx\basic_string.h" />
+    <ClInclude Include="PublicAPI\Bentley\stdcxx\basic_string_cc.h" />
+    <ClInclude Include="PublicAPI\Bentley\stdcxx\bstdmap.h" />
+    <ClInclude Include="PublicAPI\Bentley\stdcxx\bstdset.h" />
+    <ClInclude Include="PublicAPI\Bentley\stdcxx\bvector.h" />
+    <ClInclude Include="PublicAPI\Bentley\stdcxx\bvector_cc.h" />
+    <ClInclude Include="PublicAPI\Bentley\stdcxx\rw\bc___rb_tree.h" />
+    <ClInclude Include="PublicAPI\Bentley\stdcxx\rw\bc___rb_tree_cc.h" />
+    <ClInclude Include="PublicAPI\Bentley\stdcxx\rw\bpair.h" />
+    <ClInclude Include="PublicAPI\Bentley\stdcxx\rw\config.h" />
+    <ClInclude Include="PublicAPI\Bentley\stdcxx\rw\_config-gcc.h" />
+    <ClInclude Include="PublicAPI\Bentley\stdcxx\rw\_config-msvc.h" />
+    <ClInclude Include="PublicAPI\Bentley\stdcxx\rw\_config-msvcrt.h" />
+    <ClInclude Include="PublicAPI\Bentley\stdcxx\rw\_config.h" />
+    <ClInclude Include="PublicAPI\Bentley\stdcxx\rw\_defs.h" />
+    <ClInclude Include="PublicAPI\Bentley\stdcxx\rw\_iterbase.h" />
+    <ClInclude Include="PublicAPI\Bentley\stdcxx\rw\_select.h" />
+    <ClInclude Include="PublicAPI\Bentley\stdcxx\rw\_specialized.h" />
+    <ClInclude Include="PublicAPI\Bentley\stdcxx\rw\_strref.h" />
+    <ClInclude Include="PublicAPI\Bentley\suppress_warnings.h" />
+    <ClInclude Include="PublicAPI\Bentley\Tasks\AsyncError.h" />
+    <ClInclude Include="PublicAPI\Bentley\Tasks\AsyncResult.h" />
+    <ClInclude Include="PublicAPI\Bentley\Tasks\AsyncTask.h" />
+    <ClInclude Include="PublicAPI\Bentley\Tasks\AsyncTaskFollyAdapter.h" />
+    <ClInclude Include="PublicAPI\Bentley\Tasks\AsyncTaskRunner.h" />
+    <ClInclude Include="PublicAPI\Bentley\Tasks\AsyncTaskRunnerFactory.h" />
+    <ClInclude Include="PublicAPI\Bentley\Tasks\AsyncTaskRunnerPool.h" />
+    <ClInclude Include="PublicAPI\Bentley\Tasks\AsyncTasksManager.h" />
+    <ClInclude Include="PublicAPI\Bentley\CancellationToken.h" />
+    <ClInclude Include="PublicAPI\Bentley\Tasks\ConcurrentQueue.h" />
+    <ClInclude Include="PublicAPI\Bentley\Tasks\ITaskRunner.h" />
+    <ClInclude Include="PublicAPI\Bentley\Tasks\LimitingTaskQueue.h" />
+    <ClInclude Include="PublicAPI\Bentley\Tasks\Tasks.h" />
+    <ClInclude Include="PublicAPI\Bentley\Tasks\TaskScheduler.h" />
+    <ClInclude Include="PublicAPI\Bentley\Tasks\ThreadlessTaskScheduler.h" />
+    <ClInclude Include="PublicAPI\Bentley\Tasks\ThreadlessTaskSheduler.h" />
+    <ClInclude Include="PublicAPI\Bentley\Tasks\UniqueTaskHolder.h" />
+    <ClInclude Include="PublicAPI\Bentley\Tasks\WorkerThread.h" />
+    <ClInclude Include="PublicAPI\Bentley\Tasks\WorkerThreadPool.h" />
+    <ClInclude Include="PublicAPI\Bentley\ValueFormat.h" />
+    <ClInclude Include="PublicAPI\Bentley\ValueFormat.r.h" />
+    <ClInclude Include="PublicAPI\Bentley\WString.h" />
+    <ClInclude Include="PublicAPI\Logging\bentleylogging.h" />
+    <ClInclude Include="Tasks\ThreadingLogging.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="BeJpeg\BeJpeg.cpp" />
+    <ClCompile Include="Bentley\BeId.cpp" />
+    <ClCompile Include="Bentley\CancellationToken.cpp" />
+    <ClCompile Include="Bentley\DateTime.cpp" />
+    <ClCompile Include="Bentley\DateTimeConverter.cpp" />
+    <ClCompile Include="Bentley\DirectoryObserver.cpp" />
+    <ClCompile Include="Bentley\GlobalHandleContainer.cpp" />
+    <ClCompile Include="Bentley\md5.cpp" />
+    <ClCompile Include="Bentley\nonport\Base64Utilities.cpp" />
+    <ClCompile Include="Bentley\nonport\BeDebugLog.cpp" />
+    <ClCompile Include="Bentley\nonport\BeDebugUtilities.cpp" />
+    <ClCompile Include="Bentley\nonport\BeDirectoryIterator.cpp" />
+    <ClCompile Include="Bentley\nonport\BeFile.cpp" />
+    <ClCompile Include="Bentley\nonport\BeFileListIterator.cpp" />
+    <ClCompile Include="Bentley\nonport\BeFileName.cpp" />
+    <ClCompile Include="Bentley\nonport\BeGetProcAddress.cpp" />
+    <ClCompile Include="Bentley\nonport\BeIconUtilities.cpp" />
+    <ClCompile Include="Bentley\nonport\BeJStringUtilities.cpp" />
+    <ClCompile Include="Bentley\nonport\BeStringUtilities.cpp" />
+    <ClCompile Include="Bentley\nonport\BeSystemInfo.cpp" />
+    <ClCompile Include="Bentley\nonport\BeSystemInfoIos.mm" />
+    <ClCompile Include="Bentley\nonport\BeTest.cpp" />
+    <ClCompile Include="Bentley\nonport\BeTextFile.cpp" />
+    <ClCompile Include="Bentley\nonport\BeThread.cpp" />
+    <ClCompile Include="Bentley\nonport\BeTimeUtilities.cpp" />
+    <ClCompile Include="Bentley\nonport\ReleaseMarshaller.cpp" />
+    <ClCompile Include="Bentley\nonport\strfunc.cpp" />
+    <ClCompile Include="Bentley\nonport\ValueFormat.cpp" />
+    <ClCompile Include="Bentley\RefCounted.cpp" />
+    <ClCompile Include="Bentley\sha1.cpp" />
+    <ClCompile Include="Bentley\WString.cpp" />
+    <ClCompile Include="BeXml\BeXml.cpp" />
+    <ClCompile Include="LoggingSDK\src\native\interface\bsilog.cpp" />
+    <ClCompile Include="LoggingSDK\src\native\interface\consoleprovider.cpp" />
+    <ClCompile Include="LoggingSDK\src\native\interface\fileprovider.cpp" />
+    <ClCompile Include="LoggingSDK\src\native\interface\loggercache.cpp" />
+    <ClCompile Include="LoggingSDK\src\native\interface\loggingconfig.cpp" />
+    <ClCompile Include="LoggingSDK\src\native\interface\loggingmanager.cpp" />
+    <ClCompile Include="LoggingSDK\src\native\interface\providerproxy.cpp" />
+    <ClCompile Include="Tasks\AsyncError.cpp" />
+    <ClCompile Include="Tasks\AsyncTask.cpp" />
+    <ClCompile Include="Tasks\AsyncTaskRunner.cpp" />
+    <ClCompile Include="Tasks\AsyncTaskRunnerPool.cpp" />
+    <ClCompile Include="Tasks\AsyncTasksManager.cpp" />
+    <ClCompile Include="Tasks\CancellationToken.cpp" />
+    <ClCompile Include="Tasks\TaskScheduler.cpp" />
+    <ClCompile Include="Tasks\WorkerThread.cpp" />
+    <ClCompile Include="Tasks\WorkerThreadPool.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".hgignore" />
+    <None Include="BeJpeg\BeJpeg.mke" />
+    <None Include="Bentley.mke" />
+    <None Include="BentleyLibTestDll.mke" />
+    <None Include="Bentley\nonport\BeSystemInfoMacOS.mm" />
+    <None Include="BeXml\bexml.mke" />
+    <None Include="Docs\Overview\BeFileName.doxpage" />
+    <None Include="Docs\Overview\Collections.doxpage" />
+    <None Include="Docs\Overview\Utf8String.doxpage" />
+    <None Include="LoggingSDK\src\native\interface\interface.mki" />
+    <None Include="prewire.mke" />
+    <None Include="PublicAPI\PublicApi.mke" />
+    <None Include="PublicMki\BentleyApi.mki" />
+    <None Include="Tasks\Tasks.mki" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="Bentley.PartFile.xml">
+      <SubType>Designer</SubType>
+    </Xml>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="bentley-notice.txt" />
+    <Text Include="btree-license.txt" />
+    <Text Include="btree-notice.txt" />
+    <Text Include="bvector-license.txt" />
+    <Text Include="bvector-notice.txt" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{FACDF7F9-8675-4EAF-B0AD-C0EB98344583}</ProjectGuid>
+    <Keyword>MakeFileProj</Keyword>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Platform)'=='x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Platform)'=='ARM'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros">
+    <NMakeBuildCommandLine>bb -v4 -r Bentley -f Bentley -p BentleyDll rebuild BentleyDll</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -v4 -r Bentley -f Bentley -p BentleyDll build</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -v4 -r Bentley -f Bentley -p BentleyDll rebuild BentleyDll -c</NMakeCleanCommandLine>
+    <IncludePath>$(ProjectDir);$(ProjectDir)PublicAPI\;$(ProjectDir)Bentley\;$(ProjectDir)Bentley\nonport\;$(IncludePath);</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Label="UserMacros" Condition="'$(Platform)'=='x64'">
+    <NMakeOutput>Bentley.lib</NMakeOutput>
+    <IncludePath>$(OutRoot)Winx64\BuildContexts\Bentley\VendorAPI\;$(OutRoot)Winx64\BuildContexts\Bentley\PublicAPI\;$(VCInstallDir)INCLUDE\;$(IncludePath)</IncludePath>
+    <NMakePreprocessorDefinitions>BENTLEY_WIN32;WIN32;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Label="UserMacros" Condition="'$(Platform)'=='ARM'">
+    <NMakeOutput>libBentley.a</NMakeOutput>
+    <IncludePath>$(OutRoot)AndroidARM64\static\BuildContexts\Bentley\VendorAPI\;$(OutRoot)AndroidARM64\static\BuildContexts\Bentley\PublicAPI\;$(ANDROID_NDK_ROOT)platforms\android-21\arch-arm64\usr\include\;$(IncludePath)</IncludePath>
+    <NMakePreprocessorDefinitions>ANDROID;__unix__;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+    <NMakePreprocessorDefinitions>DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <NMakePreprocessorDefinitions>NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>$(OutRoot)\Winx64\build\VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(OutDir)</IntDir>
+    <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <BuildLog>
+      <Path>$(OutDir)$(MSBuildProjectName).log</Path>
+    </BuildLog>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
