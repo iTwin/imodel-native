@@ -761,8 +761,10 @@ BentleyStatus AdapterHelper::PrimitiveToJson(JsonRef& jsonValue, IECSqlValue con
             return SUCCESS;
             }
             case PRIMITIVETYPE_Long:
-            {            
-            const auto isId = ecsqlValue.GetColumnInfo().GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().EqualsIAscii("Id");
+            {
+            // following is also called for array type property and ecsqlValue.GetColumnInfo().GetProperty() will yield null for that case
+            const auto primitiveProprety = ecsqlValue.GetColumnInfo().GetProperty() ? ecsqlValue.GetColumnInfo().GetProperty()->GetAsPrimitiveProperty() : nullptr;
+            const auto isId = primitiveProprety ? primitiveProprety->GetExtendedTypeName().EqualsIAscii("Id") : false;
             if (formatOptions.GetRowFormat() == JsonECSqlSelectAdapter::RowFormat::Custom || isId )
                 {
                 const int64_t val = ecsqlValue.GetInt64();
