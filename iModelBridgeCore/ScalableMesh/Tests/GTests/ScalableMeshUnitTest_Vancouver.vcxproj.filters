@@ -1,0 +1,50 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Sources">
+      <UniqueIdentifier>{a45750c8-dc5b-4b86-8f71-9858f7719cba}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Includes">
+      <UniqueIdentifier>{1e4006fb-a018-4c30-be89-1cd60afeca49}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="ScalableMeshUnitTests.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="SMUnitTestUtil.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="SMUnitTestDisplayQuery.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="SMUnitTestGroundDetection.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="SMUnitTestUtil.h">
+      <Filter>Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="SMUnitTestDisplayQuery.h">
+      <Filter>Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="SMUnitTestGroundDetection.h">
+      <Filter>Includes</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="BuildTests_vancouver.mke" />
+    <None Include="filter_list.mki" />
+    <None Include="Prewire.mke" />
+    <None Include="RunScalableMeshUnitTests.mke" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ignore_list.txt" />
+    <Text Include="..\..\..\ScalableMesh-Data\displayQueryTestCases.txt" />
+    <Text Include="..\..\..\ScalableMesh-Data\list.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="..\..\ScalableMeshCoreUnitTests.PartFile.xml" />
+  </ItemGroup>
+</Project>
