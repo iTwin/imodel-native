@@ -1,0 +1,88 @@
+#---------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#---------------------------------------------------------------------------------------+
+%include mdl.mki
+%include $(_MakeFilePath)DataCaptureSchema.mki
+
+#--------------------------------------------------------------------------------------
+#   Macros
+#--------------------------------------------------------------------------------------
+appSrc              = $(_MakeFilePath)
+appPublicApi        = $(appSrc)../PublicAPI/$(appName)/
+MultiCompileDepends = $(_MakeFileSpec) $(appSrc)DataCaptureSchemaInternal.h $(appPublicApi)DataCaptureSchemaApi.h
+
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------------------
+#   Pre-compiled header
+#----------------------------------------------------------------------
+PchCompiland        = $(appSrc)DataCaptureSchemaInternal.cpp
+PchOutputDir        = $(o)
+PchExtraOptions     = -Zm160
+PchExplicitDepends  = $(MultiCompileDepends)
+
+CompileOptionsMki =$(_MakeFilePath)DataCaptureSchema.mki
+%include $(CompileOptionsMki)
+%include $(SharedMki)PreCompileHeader.mki
+
+CCPchOpts = $(UsePrecompiledHeaderOptions)
+CPchOpts  = $(UsePrecompiledHeaderOptions)
+
+#--------------------------------------------------------------------------------------
+#   Compile source
+#--------------------------------------------------------------------------------------
+%include MultiCppCompileRule.mki
+
+$(o)DataCaptureDomain$(oext) : $(_MakeFilePath)DataCaptureDomain.cpp ${MultiCompileDepends} $(appPublicApi)DataCaptureDomain.h
+
+$(o)CameraDevice$(oext) : $(_MakeFilePath)CameraDevice.cpp ${MultiCompileDepends} $(appPublicApi)CameraDevice.h
+
+$(o)Pose$(oext) : $(_MakeFilePath)Pose.cpp ${MultiCompileDepends} $(appPublicApi)Pose.h
+
+$(o)Shot$(oext) : $(_MakeFilePath)Shot.cpp ${MultiCompileDepends} $(appPublicApi)Shot.h
+
+$(o)Geodesy$(oext) : $(_MakeFilePath)Geodesy.cpp ${MultiCompileDepends} $(appPublicApi)Geodesy.h
+
+$(o)XmlWriter$(oext) : $(_MakeFilePath)XmlWriter.cpp ${MultiCompileDepends} $(appPublicApi)XmlWriter.h
+
+$(o)XmlReader$(oext) : $(_MakeFilePath)XmlReader.cpp ${MultiCompileDepends} $(appPublicApi)XmlReader.h
+
+$(o)GimbalAngleRange$(oext) : $(_MakeFilePath)GimbalAngleRange.cpp ${MultiCompileDepends} $(appPublicApi)GimbalAngleRange.h
+
+$(o)Gimbal$(oext) : $(_MakeFilePath)Gimbal.cpp ${MultiCompileDepends} $(appPublicApi)Gimbal.h
+
+$(o)Drone$(oext) : $(_MakeFilePath)Drone.cpp ${MultiCompileDepends} $(appPublicApi)Drone.h
+
+%include MultiCppCompileGo.mki
+
+#--------------------------------------------------------------------------------------
+#   Create the library
+#--------------------------------------------------------------------------------------
+DLM_NAME                    = $(appName)
+DLM_OBJECT_FILES            = $(MultiCompileObjectList)
+DLM_OBJECT_DEST             = $(o)
+DLM_OBJECT_PCH              = $(o)DataCaptureSchemaInternal$(oext) 
+DLM_DEST                    = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+DLM_NO_DLS                  = 1
+DLM_NO_DEF                  = 1
+DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+LINKER_LIBRARIES            = $(BuildContext)SubParts/Libs/$(libprefix)BeSQLite$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeSQLiteEC$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeom$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeomSerialization$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)ECObjects$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)DgnPlatform$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeXml$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeLibxml2$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BaseGeoCoord$(libext)
+
+%include $(sharedMki)linkLibrary.mki
+
