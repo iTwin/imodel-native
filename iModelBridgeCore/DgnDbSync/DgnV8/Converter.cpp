@@ -1901,6 +1901,14 @@ void Converter::GetOrCreateJobPartitions()
     InitSheetListModel();
 
     InitBusinessKeyCodeSpec();
+
+    GetJobDefinitionModel(); // make sure this is created
+    GetUncategorizedCategory(); // NEEDS WORK: this may be needed while converting linestyles, which are shared. They really should not use this category, which is not shared.
+    GetExtractionCategoryId(V8NamedViewType::Detail);
+    GetExtractionCategoryId(V8NamedViewType::Elevation);
+    GetExtractionCategoryId(V8NamedViewType::Section);
+    GetExtractionCategoryId(V8NamedViewType::Plan);
+    GetExtractionCategoryId(V8NamedViewType::Other);
     }
 
 /*---------------------------------------------------------------------------------**//**
