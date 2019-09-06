@@ -1,0 +1,34 @@
+#----------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#----------------------------------------------------------------------------------------
+# ***
+# *** Need to clean up the test code -- then we can remove this 'NOSTRICT' setting
+# ***
+NO_DEFAULT_CLANG_WARNINGS=1
+%include mdl.mki
+
+%ifndef TestDir
+    %error must define TestDir
+%endif
+
+baseDir = $(_MakeFilePath)
+
+# Compile and Link the unit tests
+BEGTEST_NAME  = $(TestDir)BeFacebook
+BEGTEST_INPUT = $(baseDir)$(TestDir)/
+BEGTEST_IGNORE= $(baseDir)ignore_list.txt
+BEGTEST_OUTPUT=$(OutputRootDir)build/BeFacebook/UnitTests/
+o = $(PartBuildDir)
+
+dirToSearch = $(BuildContext)PublicApi/
+%include cincapnd.mki
+dirToSearch = $(BuildContext)VendorApi/
+%include cincapnd.mki
+
+%include $(SrcRoot)bsicommon/sharedmki/DetectAndCompileUnitTests.mki
+
+# Deliver 
+$(BuildContext)Delivery/UnitTests/Objects/$(TestDir) : ${o}
+    $(LinkFirstDepToFirstTargetAsDirectory)
