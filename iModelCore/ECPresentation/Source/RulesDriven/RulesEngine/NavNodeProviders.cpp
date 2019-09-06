@@ -1411,11 +1411,6 @@ bool QueryBasedNodesProvider::_GetNode(JsonNavNodePtr& node, size_t index) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool QueryBasedNodesProvider::_HasNodes() const
     {
-    ChildrenHint hint = m_query->GetResultParameters().GetNavNodeExtendedData().GetChildrenHint();
-    if (ChildrenHint::Always == hint)
-        return true;
-    if (ChildrenHint::Never == hint && !m_query->GetResultParameters().GetNavNodeExtendedData().HasGroupingType())
-        return false;
     return GetNodesCount() > 0;
     }
 
@@ -1614,9 +1609,6 @@ struct SpecificationChildrenChecker : PresentationRuleSpecificationVisitor
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool QueryBasedSpecificationNodesProvider::_HasNodes() const
     {
-    if (ChildrenHint::Always == m_specification.GetHasChildren())
-        return true;
-
     SpecificationChildrenChecker visitor(GetContext());
     m_specification.Accept(visitor);
     if (visitor.AlwaysHasChildren())
