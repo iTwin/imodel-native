@@ -1,0 +1,120 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{D4780235-FE0A-4277-9A4F-F63782F96AEC}</ProjectGuid>
+    <Keyword>MakeFileProj</Keyword>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <NMakeOutput>CivilBaseGeometry.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <NMakeOutput>CivilBaseGeometry.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <NMakeBuildCommandLine>bb -p CivilBaseGeometry -f CivilBaseGeometry -r civil-geometry -ax64 re CivilBaseGeometryDll</NMakeBuildCommandLine>
+    <NMakeCleanCommandLine>bb -p CivilBaseGeometry -f CivilBaseGeometry -r civil-geometry -ax64 re CivilBaseGeometryDll -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>$(NMakeCleanCommandLine)%26$(NMakeBuildCommandLine)</NMakeReBuildCommandLine>
+    <NMakeIncludeSearchPath>$(SrcRoot)CivilBaseGeometry\PublicAPI\;$(SrcRoot)CivilBaseGeometry\;$(OutRoot)Winx64\BuildContexts\CivilBaseGeometry\PublicAPI\;$(OutRoot)Winx64\BuildContexts\CivilBaseGeometry\VendorAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <OutDir>$(OutRoot)Winx64\build\$(MSBuildProjectName)\</OutDir>
+    <IntDir>$(OutDir)</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <NMakeBuildCommandLine>bb -p CivilBaseGeometry -f CivilBaseGeometry -r civil-geometry -ax64 re CivilBaseGeometryDll</NMakeBuildCommandLine>
+    <NMakeCleanCommandLine>bb -p CivilBaseGeometry -f CivilBaseGeometry -r civil-geometry -ax64 re CivilBaseGeometryDll -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>$(NMakeCleanCommandLine)%26$(NMakeBuildCommandLine)</NMakeReBuildCommandLine>
+    <NMakeIncludeSearchPath>$(SrcRoot)CivilBaseGeometry\PublicAPI\;$(SrcRoot)CivilBaseGeometry\;$(OutRoot)Winx64\BuildContexts\CivilBaseGeometry\PublicAPI\;$(OutRoot)Winx64\BuildContexts\CivilBaseGeometry\VendorAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <OutDir>$(OutRoot)Winx64\build\$(MSBuildProjectName)\</OutDir>
+    <IntDir>$(OutDir)</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <Text Include="readme.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\Native\AlignmentPair.cpp" />
+    <ClCompile Include="..\..\Native\AlignmentPairEditor.cpp" />
+    <ClCompile Include="..\..\Native\AlignmentPairIntersection.cpp" />
+    <ClCompile Include="..\..\Native\CivilBaseGeometryInternal.cpp" />
+    <ClCompile Include="..\..\Native\GeometryDebug.cpp" />
+    <ClCompile Include="..\..\Native\GeometryHelper.cpp" />
+    <ClCompile Include="..\..\Native\RoadAlignmentPairEditor.cpp" />
+    <ClCompile Include="..\..\Native\StationRange.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\Native\CivilBaseGeometryInternal.h" />
+    <ClInclude Include="..\..\Native\PublicAPI\CivilBaseGeometry\CivilBaseGeometry.h" />
+    <ClInclude Include="..\..\Native\PublicAPI\CivilBaseGeometry\CivilBaseGeometryApi.h" />
+    <ClInclude Include="..\..\Native\PublicAPI\CivilBaseGeometry\GeometryDebug.h" />
+    <ClInclude Include="..\..\Native\PublicAPI\CivilBaseGeometry\GeometryHelper.h" />
+    <ClInclude Include="..\..\Native\PublicAPI\CivilBaseGeometry\ProfilingMacros.h" />
+    <ClInclude Include="..\..\Native\PublicAPI\CivilBaseGeometry\StationRange.h" />
+    <ClInclude Include="..\..\Native\PublicAPI\CivilBaseGeometry\AlignmentPair.h" />
+    <ClInclude Include="..\..\Native\PublicAPI\CivilBaseGeometry\AlignmentPairEditor.h" />
+    <ClInclude Include="..\..\Native\PublicAPI\CivilBaseGeometry\AlignmentPairIntersection.h" />
+    <ClInclude Include="..\..\Native\PublicAPI\CivilBaseGeometry\RoadAlignmentPairEditor.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
