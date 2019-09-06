@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="BuildTests.mke" />
+    <None Include="prewire.mke" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="cs06bridge_ignore_list.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="BackDoorCS06Bridge\PublicAPI\BackDoor\CS06Bridge\BackDoor.h" />
+    <ClInclude Include="BackDoorCS06Bridge\PublicAPI\BackDoor\CS06Bridge\CS06BridgeTests.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="BackDoorCS06Bridge\CS06BridgeTestsFixture.cpp" />
+    <ClCompile Include="NonPublishedCS06Bridge\CS06Bridge_Test.cpp" />
+    <ClCompile Include="PublishedCS06Bridge\CS06BridgeTest.cpp" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{B9042237-8D0A-49D9-8105-A6FA37DE761E}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <NMakeOutput>
+    </NMakeOutput>
+    <NMakePreprocessorDefinitions>BENTLEY_WIN32</NMakePreprocessorDefinitions>
+    <NMakeBuildCommandLine>bb -ax64 -p CS06CiviliModelBridgesTested -r Civil-iModelBridges -f CiviliModelBridges b</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -ax64 -p Gtest-CS06-CiviliModelBridges-Tests -r Civil-iModelBridges -f CiviliModelBridges re BackdoorForCS06BridgeUnitTests CS06-CiviliModelBridges-Tests PrewireForCS06BridgeUnitTests CiviliModelBridgesCS06Bridge-UnitTests-NonPublished CiviliModelBridgesCS06Bridge-UnitTests-Published Gtest-CS06-CiviliModelBridges-Tests CiviliModelBridges:Gtest-CS06</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -ax64 -p Gtest-CS06-CiviliModelBridges-Tests -r Civil-iModelBridges -f CiviliModelBridges re BackdoorForCS06BridgeUnitTests CS06-CiviliModelBridges-Tests PrewireForDomainUnitTests CiviliModelBridgesCS06Bridge-UnitTests-NonPublished CiviliModelBridgesCS06Bridge-UnitTests-Published Gtest-CS06-CiviliModelBridges-Tests CiviliModelBridges:Gtest-CS06 -c</NMakeCleanCommandLine>
+    <NMakeIncludeSearchPath>$(SrcRoot)Civil\iModelBridges\CS06Bridge\PublicAPI\;$(OutRoot)Winx64\BuildContexts\CiviliModelBridges\PublicAPI\;$(OutRoot)Winx64\BuildContexts\CiviliModelBridges\Delivery\PublishedApi\;$(OutRoot)Winx64\BuildContexts\CiviliModelBridges\VendorAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <NMakeOutput>
+    </NMakeOutput>
+    <NMakePreprocessorDefinitions>BENTLEY_WIN32</NMakePreprocessorDefinitions>
+    <NMakeBuildCommandLine>bb -ax64 -p CS06CiviliModelBridgesTested -r Civil-iModelBridges -f CiviliModelBridges b</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -ax64 -p Gtest-CS06-CiviliModelBridges-Tests -r Civil-iModelBridges -f CiviliModelBridges re BackdoorForCS06BridgeUnitTests CS06-CiviliModelBridges-Tests PrewireForCS06BridgeUnitTests CiviliModelBridgesCS06Bridge-UnitTests-NonPublished CiviliModelBridgesCS06Bridge-UnitTests-Published Gtest-CS06-CiviliModelBridges-Tests CiviliModelBridges:Gtest-CS06</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -ax64 -p Gtest-CS06-CiviliModelBridges-Tests -r Civil-iModelBridges -f CiviliModelBridges re BackdoorForCS06BridgeUnitTests CS06-CiviliModelBridges-Tests PrewireForDomainUnitTests CiviliModelBridgesCS06Bridge-UnitTests-NonPublished CiviliModelBridgesCS06Bridge-UnitTests-Published Gtest-CS06-CiviliModelBridges-Tests CiviliModelBridges:Gtest-CS06 -c</NMakeCleanCommandLine>
+    <NMakeIncludeSearchPath>$(SrcRoot)Civil\iModelBridges\CS06Bridge\PublicAPI\;$(OutRoot)Winx64\BuildContexts\CiviliModelBridges\PublicAPI\;$(OutRoot)Winx64\BuildContexts\CiviliModelBridges\Delivery\PublishedApi\;$(OutRoot)Winx64\BuildContexts\CiviliModelBridges\VendorAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

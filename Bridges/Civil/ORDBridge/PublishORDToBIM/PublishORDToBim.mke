@@ -1,0 +1,38 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: ORDBridge/PublishORDToBIM/PublishORDToBim.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%include mdl.mki
+
+appName = PublishORDToBIM
+o = $(OutputRootDir)Build/$(appName)/
+
+always:
+    ~mkdir $(o)
+
+#--------------------------------------------------------------------------------------
+#   Compile the source
+#--------------------------------------------------------------------------------------
+%include MultiCppCompileRule.mki
+
+$(o)PublishORDToBIM$(oext) : $(_MakeFilePath)PublishORDToBIM.cpp $(_MakeFilePath)PublishORDToBIM.h ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+#--------------------------------------------------------------------------------------
+#   Link the executable
+#--------------------------------------------------------------------------------------
+EXE_DEST            = $(o)
+EXE_NAME            = $(appName)
+EXE_OBJS            = $(MultiCompileObjectList)
+EXE_LOPT1           = -entry:wmainCRTStartup
+
+LINKER_LIBRARIES    = $(ContextSubpartsLibs)$(libprefix)Bentley$(libext)
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)$(libprefix)ORDBridge$(libext)
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)$(libprefix)iModelBridge$(libext)
+
+%include $(SharedMki)linktool.mki

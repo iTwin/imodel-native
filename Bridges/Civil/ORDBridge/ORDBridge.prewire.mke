@@ -1,0 +1,11 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: ORDBridge/ORDBridge.prewire.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+%include mdl.mki
+
+$(BuildContext)PublicAPI/ORDBridge : $(_MakeFilePath)PublicAPI/ORDBridge
+    $(LinkFirstDepToFirstTargetAsDirectory)

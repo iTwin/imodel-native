@@ -1,0 +1,11 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: CS06Bridge/CS06Bridge.prewire.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+%include mdl.mki
+
+$(BuildContext)PublicAPI/CS06Bridge : $(_MakeFilePath)PublicAPI/CS06Bridge
+    $(LinkFirstDepToFirstTargetAsDirectory)

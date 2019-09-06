@@ -1,0 +1,125 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: ORDBridge/ORDBridge.mke $
+#
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+%include mdl.mki
+
+#--------------------------------------------------------------------------------------
+#   Macros
+#--------------------------------------------------------------------------------------
+appSrc              = $(_MakeFilePath)
+appPublicApi        = $(appSrc)PublicAPI/$(appName)/
+MultiCompileDepends = $(_MakeFileSpec) $(appSrc)ORDBridgeInternal.h $(appPublicApi)ORDBridgeApi.h
+DgnPlatformV8LibDir = ${BuildContext}/SubParts/VersionedDgnV8Libs/
+CifLibDir           = ${BuildContext}/SubParts/CifLibs/
+
+CompileOptionsMki =$(SrcRoot)Civil/iModelBridges/ORDBridge/ORDBridge.mki
+%include $(CompileOptionsMki)
+
+always:
+    !~@mkdir $(o)
+
+#--------------------------------------------------------------------------------------
+#   Compile source
+#--------------------------------------------------------------------------------------
+%include MultiCppCompileRule.mki
+
+$(o)DynamicSchemaComparer$(oext) : $(_MakeFilePath)DynamicSchemaComparer.cpp ${MultiCompileDepends} $(_MakeFilePath)DynamicSchemaComparer.h
+
+%include MultiCppCompileGo.mki
+
+ORDObjectList = $(o)DynamicSchemaComparer$(oext)
+
+#----------------------------------------------------------------------
+#   Pre-compiled header
+#----------------------------------------------------------------------
+PchCompiland        = $(appSrc)ORDBridgeInternal.cpp
+PchOutputDir        = $(o)
+PchExtraOptions     = -Zm160 -permissive
+PchExplicitDepends  = $(MultiCompileDepends)
+
+%if defined (winNT) && $(BUILD_TOOLSET) == "LINUX_GCC"
+    # Avoid internal compiler error in GCC using windows ndk toolchain
+    GCC_NO_PRE_COMPILED_HEADER = 1
+%endif
+
+%include $(SharedMki)PreCompileHeader.mki
+
+CCPchOpts = $(UsePrecompiledHeaderOptions)
+CPchOpts  = $(UsePrecompiledHeaderOptions)
+
+CCompOpts + -permissive
+
+#--------------------------------------------------------------------------------------
+#   Compile source
+#--------------------------------------------------------------------------------------
+%include MultiCppCompileRule.mki
+
+$(o)iModelBridgeAffinity$(oext) : $(_MakeFilePath)iModelBridgeAffinity.cpp ${MultiCompileDepends} $(_MakeFilePath)ORDBridge.h
+
+$(o)ORDBridge$(oext) : $(_MakeFilePath)ORDBridge.cpp ${MultiCompileDepends} $(_MakeFilePath)ORDBridge.h
+
+$(o)ORDConverter$(oext) : $(_MakeFilePath)ORDConverter.cpp ${MultiCompileDepends} $(_MakeFilePath)ORDConverter.h $(_MakeFilePath)DynamicSchemaComparer.h
+
+%include MultiCppCompileGo.mki
+
+ORDObjectList + $(MultiCompileObjectList)
+
+#--------------------------------------------------------------------------------------
+#   Create the library
+#--------------------------------------------------------------------------------------
+DLM_NAME                    = $(appName)
+DLM_OBJECT_FILES            = $(ORDObjectList)
+DLM_OBJECT_DEST             = $(o)
+DLM_OBJECT_PCH              = $(o)ORDBridgeInternal$(oext) 
+DLM_EXPORT_OBJS             = $(ORDObjectList) 
+DLM_DEST                    = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+LINKER_LIBRARIES            = $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BentleyGeomSerialization$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)Units$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)DgnV8Converter$(libext)
+#LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BRepCore$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)iModelBridge$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)LinearReferencing$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)RoadRailAlignment$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)RoadRailPhysical$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)DgnV8OpenRoadsDesigner$(libext)
+
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)Bentley.lib
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)BentleyAllocator.lib
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)ECObjects.lib
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)BentleyGeom.lib
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)DgnPlatform.lib
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)DgnGeoCoord.lib
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)RmgrTools.lib
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)BaseGeoCoord.lib
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)PSolidCore.lib
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)PSolidAcisInterop.lib
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)RasterCore.lib
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)DgnView.lib
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)VisEdgesLib.lib
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)DwgDgnIO.lib
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)acpal.lib
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)BentleyGeomSerialization.lib
+LINKER_LIBRARIES_DELAYLOADED + $(CifLibDir)Bentley.Cif.SDK.lib
+LINKER_LIBRARIES_DELAYLOADED + $(CifLibDir)Bentley.Cif.DGN.lib
+LINKER_LIBRARIES_DELAYLOADED + $(CifLibDir)Bentley.CIF.GeometryModel.SDK.lib
+LINKER_LIBRARIES_DELAYLOADED + $(CifLibDir)Bentley.CIF.LinearGeometry.lib
+LINKER_LIBRARIES_DELAYLOADED + msi.lib
+
+%include $(sharedMki)linkLibrary.mki
+

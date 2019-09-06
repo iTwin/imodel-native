@@ -1,0 +1,73 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: ORDBridge/ORDBridgeGUI/ORDBridgeGuiExe.mke $
+#
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%include mdl.mki
+%include $(SrcRoot)bsicommon/sharedmki/msBuildSupport.mki
+%include $(SrcRoot)bsicommon/sharedmki/VersionedPartSignatureDefaults.mki
+TOOLSET_DIAGNOSTICS=1
+
+appName                         = ORDBridgeGUI
+baseDir                         = $(_MakeFilePath)
+
+ContextDeliveryDir              = $(BuildContext)Delivery/
+ContextSubpartsLibs             = $(BuildContext)SubParts/Libs/
+ContextSubpartsAssembliesDir    = $(BuildContext)SubParts/Assemblies/
+
+#--------------------------------------------------------------------------------------
+# Create the build directory.
+#--------------------------------------------------------------------------------------
+o                               =% $(OutRoot)$(TARGET_PROCESSOR_DIRECTORY)/build/ORDBridgeGUI/
+
+always:
+    !~@mkdir $(o)
+
+#--------------------------------------------------------------------------------------
+# Build the assembly.
+#--------------------------------------------------------------------------------------
+DGNCLIENT_APP_UiTechnology      = Native
+
+# Defines REL_V, MAJ_V, MIN_V, SUBMIN_V, companyName, and Bentley_Copyright, used below.
+%include $(SharedMki)stdversion.mki
+
+ASSEMBLY_NAME                   = $(appName)
+ASSEMBLY_TITLE                  = $(appName)
+ASSEMBLY_DESCRIPTION            = $(appName)
+ASSEMBLY_FILE_VERSION           = $(REL_V).$(MAJ_V).$(MIN_V).$(SUBMIN_V)
+ASSEMBLY_VERSION                = $(ASSEMBLY_FILE_VERSION)
+ASSEMBLY_PRODUCT_NAME           = Bentley ORD Bridge GUI
+ASSEMBLY_COMPANY_NAME           = $(companyName)
+ASSEMBLY_COPYRIGHT              = $(Bentley_Copyright)
+ASSEMBLY_RESX_LIST              = $(baseDir)Properties/Resources.resx;
+
+# Override standard MSBuild output folder variables. Prefix with "MSB-" to suppress the
+# "BM-" prefix bmake would otherwise add by default. (The .csproj file can also reference
+# other bmake variables like ContextSubpartsAssembliesDir by prefixing them with "BM-".)
+MSB-OutputPath	                = $(o)
+MSB-IntermediateOutputPath      = $(o)
+
+# For a Beta build, define a symbol we can use for conditional compilation in our C# code.
+%if defined (PRG_BETABUILD)
+MSB-DefineConstants + PRG_BETABUILD
+%endif
+
+%include signrscsdefs.mki
+
+buildSolution:
+    ~task msbuild $(CommonMSBuildOpts) -i:Projects=$(baseDir)$(appName).csproj \
+         -p:Platform=$(TARGET_PROCESSOR_ARCHITECTURE) \
+         -p:SignAssembly=false \
+         -p:AssemblyOriginatorKeyFile=$(ASSEMBLY_KEYFILE_DEFAULT) \
+         -p:DelaySign=$(DelaySign) \
+         -p:PRG_BETABUILD=$(PRG_BETABUILD)
+    $(signcodecmd) $(o)$(ASSEMBLY_NAME).exe
+
+#----------------------------------------------------------------------------------------
+# Link the EXE in the build directory to the Delivery directory.
+#----------------------------------------------------------------------------------------
+always:
+    @CreateSymLinks.py -f"$(ContextDeliveryDir)$(ASSEMBLY_NAME).exe=$(o)$(ASSEMBLY_NAME).exe"
+    @CreateSymLinks.py -f"$(ContextDeliveryDir)$(ASSEMBLY_NAME).exe.config=$(o)$(ASSEMBLY_NAME).exe.config"

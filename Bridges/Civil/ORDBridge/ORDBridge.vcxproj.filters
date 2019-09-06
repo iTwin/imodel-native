@@ -1,0 +1,88 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Build Files">
+      <UniqueIdentifier>{1bb11848-bf9d-4296-9418-32e69f7b9e10}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{85bb3481-2f3f-4568-ad8d-127fc83ba595}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{88ce1536-a00a-40e4-9ff3-09ef170a7652}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\PublicAPI">
+      <UniqueIdentifier>{61d9ed11-b6e4-4186-978d-841bc3d59a92}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Installer Files">
+      <UniqueIdentifier>{084c1e4b-55c7-418b-a4d7-3bb746265c08}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="PublicAPI\ORDBridge\ORDBridgeApi.h">
+      <Filter>Header Files\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="ORDBridgeInternal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ORDConverter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ORDBridge.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DynamicSchemaComparer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="ORDBridge.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ORDBridgeInternal.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ORDConverter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="iModelBridgeAffinity.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DynamicSchemaComparer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ORDBridge.mke">
+      <Filter>Build Files</Filter>
+    </None>
+    <None Include="ORDBridge.mki">
+      <Filter>Build Files</Filter>
+    </None>
+    <None Include="ORDBridge.prewire.mke">
+      <Filter>Build Files</Filter>
+    </None>
+    <None Include="Cif.Prewire.mke">
+      <Filter>Build Files</Filter>
+    </None>
+    <None Include="installer\installer.prewire.mke">
+      <Filter>Installer Files</Filter>
+    </None>
+    <None Include="installer\ORDBridgeInstaller.wxs">
+      <Filter>Installer Files</Filter>
+    </None>
+    <None Include="installer\ORDBridgeInstallerbeforecompile.mki">
+      <Filter>Installer Files</Filter>
+    </None>
+    <None Include="xliffs.mke">
+      <Filter>Build Files</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="..\CiviliModelBridges.PartFile.xml">
+      <Filter>Build Files</Filter>
+    </Xml>
+    <Xml Include="installer\ORDBridgeinstaller.wix.xml">
+      <Filter>Installer Files</Filter>
+    </Xml>
+  </ItemGroup>
+</Project>
