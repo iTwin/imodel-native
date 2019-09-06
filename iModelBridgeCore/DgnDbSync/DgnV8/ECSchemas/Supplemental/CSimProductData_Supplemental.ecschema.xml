@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="CSimProductData_Supplemental_DgnDbConversion" nameSpacePrefix="csimdgndb" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.13" prefix="bsca" />
+    <ECSchemaReference name="ECv3ConversionAttributes" version="01.00" prefix="V2ToV3" />
+    <ECCustomAttributes>
+        <SupplementalSchemaMetaData xmlns="Bentley_Standard_CustomAttributes.01.11">
+            <PrimarySchemaName>CSimProductData</PrimarySchemaName>
+            <PrimarySchemaMajorVersion>1</PrimarySchemaMajorVersion>
+            <PrimarySchemaMinorVersion>0</PrimarySchemaMinorVersion>
+            <Precedence>998</Precedence>
+            <Purpose>Fix relationship constraint errors.</Purpose>
+            <IsUserSpecific>False</IsUserSpecific>
+        </SupplementalSchemaMetaData>
+    </ECCustomAttributes>
+
+    <ECRelationshipClass typeName="ComponentHasComponent" isDomainClass="True" strength="embedding" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+</ECSchema>
+

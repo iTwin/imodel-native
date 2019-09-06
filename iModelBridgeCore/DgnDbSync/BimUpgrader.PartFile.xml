@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
+
+    <Part Name="DgnDb0601Assemblies" BentleyBuildMakeFile="BimFromDgnDb/DgnDb0601AssembliesPrewire.mke" OnlyPlatforms="x64,WinRTX64" ApiNumber="M02" ExcludeLibType="Static">
+        <NuGetPackage targetFramework="native">DgnDb_1_6_ForUpgraderNuget</NuGetPackage>
+        <Bindings>
+            <Assemblies ProductDirectoryName="DgnDbAssemblies" Required="false">
+                Delivery/*.dll,
+            </Assemblies>
+            <Directory SourceName="Delivery/DgnDbLibs" ProductDirectoryName="DgnDb06Libs" SubPartDirectory="DgnDbLibs" Required="false"/>
+            <Directory SourceName="Delivery/DgnDbPlatformAssets" ProductDirectoryName="DgnDb06PlatformAssets" SubPartDirectory="DgnDbPlatformAssets" Required="false"/>
+            <VendorAPI Domain="DgnDb06Api"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="DgnDb0601Assemblies-static" BentleyBuildMakeFile="BimFromDgnDb/DgnDb0601AssembliesPrewire.mke" OnlyPlatforms="iOSARM64" ApiNumber="M02">
+        <NuGetPackage targetFramework="native">DgnDb_1_6_ForUpgraderNuget</NuGetPackage>
+        <Bindings>
+            <Directory SourceName="Delivery/DgnDbLibs" ProductDirectoryName="DgnDb06Libs" SubPartDirectory="DgnDbLibs" Required="false"/>
+            <Directory SourceName="Delivery/DgnDbPlatformAssets" ProductDirectoryName="DgnDb06PlatformAssets" SubPartDirectory="DgnDbPlatformAssets" Required="false"/>
+            <Libs IfNotPresent="Continue" Required="false">Delivery/$(libprefix)DgnDb_1_6_ForUpgrader$(libext)</Libs>
+            <VendorAPI Domain="DgnDb06Api"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="DgnDb0601ToJson" BentleyBuildMakeFile="BimFromDgnDb/DgnDb0601Exporter/lib/DgnDb0601ToJson.mke" OnlyPlatforms="x64,WinRTX64,iOSARM64" ApiNumber="M02">
+        <SubPart PartName="DgnDb0601Assemblies"/>
+        <SubPart PartName="DgnDb0601Assemblies-static"/>
+        <SubPart PartFile="DgnDbSync" PartName="BimFromDgnDbPublicAPI"/>
+        <Bindings>
+            <Libs ProductDirectoryName="BimFromDgnDbLibs" Required="false">Delivery/$(libprefix)DgnDb0601ToJson$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)DgnDb0601ToJson$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="DgnDb0601ExporterExe" BentleyBuildMakeFile="BimFromDgnDb/DgnDb0601Exporter/exe/DgnDb0601Exporter.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
+        <SubPart PartName="DgnDb0601ToJson"/>
+        <Bindings>
+            <Files ProductDirectoryName="ApplicationRoot">Delivery\DgnDb0601Exporter.exe</Files>
+            <Files ProductDirectoryName="DgnPlatformXliffs" Required="false" SubPartDirectory="xliffs">Delivery/xliffs/DgnDb0601Exporter_en.xliff</Files>
+            <Files ProductDirectoryName="PublisherLoggingConfigXml">Delivery/BimFromDgnDb.logging.config.xml</Files>
+        </Bindings>
+    </Part>
+
+    <Product Name="DgnDb0601Exporter">
+        <SubPart PartName="DgnDb0601ExporterExe"/>
+        <Directories DirectoryListName="DgnDbSyncAppCommonDirList" PartFile="DgnDbSync" Repository="DgnDbSync"/>
+        <Directories DirectoryListName="BimUpgraderDirList"  PartFile="DgnDbSync" Repository="DgnDbSync"/>
+    </Product>
+
+    <Part Name="DgnDbCreator" BentleyBuildMakeFile="BimFromDgnDb/Tests/DgnDbCreator.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
+        <SubPart PartName="DgnDb0601ToJson" />
+        <Bindings>
+            <Files ProductDirectoryName="ApplicationRoot">Delivery/DgnDbCreator.lib</Files>
+            <Libs ProductDirectoryName="BimFromDgnDbLibs" Required="false">Delivery/$(libprefix)DgnDbCreator$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)DgnDbCreator$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+</BuildContext>
+
