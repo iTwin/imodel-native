@@ -1,0 +1,27 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+
+AzureMkiPublicApiDir = $(ClientPublicApiDirectory)Azure/
+AzureMkiSourceDir = $(ClientSourceDirectory)Azure/
+
+#--------------------------------------------------------------------------------------
+#   Set up build dependencies
+#--------------------------------------------------------------------------------------
+AzureMkiHeaders =  $(AzureMkiPublicApiDir)AzureError.h \
+                   $(AzureMkiPublicApiDir)AzureBlobStorageClient.h \
+                   $(AzureMkiPublicApiDir)EventServiceClient.h \
+				   $(AzureMkiPublicApiDir)AzureServiceBusSASDTO.h
+
+#--------------------------------------------------------------------------------------
+#   Compile
+#--------------------------------------------------------------------------------------
+$(o)AzureError$(oext)                       : $(AzureMkiSourceDir)AzureError.cpp $(AzureMkiHeaders) ${MultiCompileDepends}
+
+$(o)AzureBlobStorageClient$(oext)           : $(AzureMkiSourceDir)AzureBlobStorageClient.cpp $(AzureMkiHeaders) ${MultiCompileDepends}
+
+$(o)EventServiceClient$(oext)               : $(AzureMkiSourceDir)EventServiceClient.cpp $(AzureMkiHeaders) ${MultiCompileDepends}
+
+$(o)AzureServiceBusSASDTO$(oext)            : $(AzureMkiSourceDir)AzureServiceBusSASDTO.cpp $(AzureMkiHeaders) ${MultiCompileDepends}
