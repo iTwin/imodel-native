@@ -36,9 +36,9 @@
     <!-- ========================================================================================================
       Platform-specific apps IOS
      ======================================================================================================== -->
-    <Part Name="iModelJsHost" BentleyBuildMakeFile="nonport/Native/IModelJsHost.mke" ApiNumber="M02">
-           <SubPart PartName="iModelJs" LibType="Static" />
-           <Bindings>
+    <Part Name="iModelJsHostLib" BentleyBuildMakeFile="nonport/Native/IModelJsHost.mke" ApiNumber="M02">
+        <SubPart PartName="iModelJs" LibType="Static" />
+        <Bindings>
             <PublicAPI ProductDirectoryName="iModelJsHostPublicAPI" Domain="iModelJsHost" />
             <Libs ProductDirectoryName="iModelJsHostLibs" >Delivery/$(libprefix)iModelJsHost$(libext)</Libs>
             <Assemblies ProductDirectoryName="iModelJsHostLibs">Delivery/$(shlibprefix)iModelJsHost$(ApiNumber)$(shlibext)</Assemblies>
@@ -46,9 +46,26 @@
         </Bindings>
     </Part>
 
+    <Part Name="MakePackages" BentleyBuildMakeFile="package/makePackages.mke">
+        <SubProduct ProductName="iModelJsHost"/>
+    </Part>
+
+    <!--
+        "Dev" means to also run the unit tests of dependencies.
+        Our highest-order dependency is iModelJsNodeAddon, but we can't run that directly on iOS...
+    -->
+    <Part Name="iModelJsHostPakage.Dev">
+        <SubPart PartName="iModelCorePRG" PartFile="iModelCore/iModelCore"/>
+        <SubPart PartName="MakePackages"/>
+    </Part>
+
+    <Part Name="iModelJsHostPakage" PrgOutputDir="iModelJsMobile">
+        <SubPart PartName="MakePackages"/>
+    </Part>
+
     <Product Name="iModelJsHost">
-          <SubPart PartName="iModelJsHost" LibType="Static" />
-          <Directories DirectoryListName="iModelJsHost" />
+        <SubPart PartName="iModelJsHostLib" LibType="Static" />
+        <Directories DirectoryListName="iModelJsHost" />
     </Product>
 
     <ProductDirectoryList ListName="iModelJsHost">
@@ -58,16 +75,15 @@
         <ProductDirectory Name="iModelJsHostPublicAPI" Path="includes" LibType="Static"/>
         <ProductDirectory Name="iModelJsHostLibs" Path="libs"/>
         <ProductDirectory Name="iModelJsHostLibs" Path="libs" LibType="Static"/>
-        <ProductDirectory Name="Libs"   RelativeTo="libs" Deliver="false"/>
-        <ProductDirectory Name="Libs"   RelativeTo="libs" LibType="Static" Deliver="false"/>
-        <ProductDirectory Name="Assemblies"   RelativeTo="libs" Deliver="false"/>
-        <ProductDirectory Name="Assemblies"   RelativeTo="libs" LibType="Static" Deliver="false"/>
-        <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="Root"/>
-        <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="Root"  LibType="static"/>
-        <ProductDirectory Name="VendorNotices"  RelativeTo="Root" Path="Notices"/>
-        <ProductDirectory Name="VendorNotices"  RelativeTo="Root" Path="Notices" LibType="static"/>
+        <ProductDirectory Name="Libs" RelativeTo="libs" Deliver="false"/>
+        <ProductDirectory Name="Libs" RelativeTo="libs" LibType="Static" Deliver="false"/>
+        <ProductDirectory Name="Assemblies" RelativeTo="libs" Deliver="false"/>
+        <ProductDirectory Name="Assemblies" RelativeTo="libs" LibType="Static" Deliver="false"/>
+        <ProductDirectory Name="Assets" Path="Assets" RelativeTo="Root"/>
+        <ProductDirectory Name="Assets" Path="Assets" RelativeTo="Root"  LibType="static"/>
+        <ProductDirectory Name="VendorNotices" RelativeTo="Root" Path="Notices"/>
+        <ProductDirectory Name="VendorNotices" RelativeTo="Root" Path="Notices" LibType="static"/>
     </ProductDirectoryList>
-
 
     <!-- ========================================================================================================
       Platform-specific apps
@@ -248,6 +264,10 @@
             <Files Required="false" SubPartDirectory="UwpTest/Logs">Delivery/UwpTest/Logs/iModelJs-UwpTest.log</Files>
         </Bindings>
 
+    </Part>
+
+    <Part Name="NpmPackage" BentleyBuildMakeFile="package/makePackages.mke" OnlyPlatforms="ios*">
+        <SubProduct ProductName="iModelJsHost"/>
     </Part>
 
 </BuildContext>
