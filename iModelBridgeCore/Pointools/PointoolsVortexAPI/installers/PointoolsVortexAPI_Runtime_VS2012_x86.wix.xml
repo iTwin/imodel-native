@@ -1,0 +1,8 @@
+<BuildInstallSet xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="..\..\bsicommon\build\buildinstallset.wix.xsd">
+    <Product>
+        <ProductName>PointoolsVortexAPI_Runtime_VS2012_x86</ProductName>
+        <ProductShortName>PointoolsVortexAPI_Runtime_VS2012</ProductShortName>
+        <ProductCode>{8ed28f94-5282-48e9-897c-c7071e6afc03};{8ed28f94-5282-48e9-897c-c7071e6afc03}</ProductCode>
+        <UpgradeCode>{542b41b5-e140-447e-a8b7-dfbcd8210d5f};{8ed28f94-5282-48e9-897c-c7071e6afc03}</UpgradeCode>
+    </Product>
+</BuildInstallSet>
