@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="KindOfQuantityInReferencedSchema" nameSpacePrefix="koq" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+    <ECSchemaReference name="KindOfQuantityInReferencedSchema_Base" version="01.00.00" prefix="koqb"/>
+    <ECEntityClass typeName="Entity">
+        <ECProperty propertyName="KindOfQuantityProperty" typeName="double" kindOfQuantity="koqb:MyKindOfQuantity" />
+    </ECEntityClass>
+</ECSchema>
