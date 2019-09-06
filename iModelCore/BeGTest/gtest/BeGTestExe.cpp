@@ -371,7 +371,6 @@ static void runUmdh(BeGTestHost& host, GtestOptions options)
     BeFileName outdirName;
     host.GetOutputRoot(outdirName);
     outdirName.PopDir();
-
     WString currentDirectory(outdirName.GetName());
     //set _NT_SYMBOL_PATH
     printf("%d\n", SetEnvironmentVariableW(L"_NT_SYMBOL_PATH", currentDirectory.c_str()));
@@ -380,11 +379,11 @@ static void runUmdh(BeGTestHost& host, GtestOptions options)
     Utf8String gflagsSet;
     BeStringUtilities::WCharToUtf8(gflagsSet, host.m_programPath.c_str());
 
-    CharCP winSdkDir = WinGetEnv("Win10SdkDir");
+    CharCP winSdkDir = WinGetEnv("SrcRoot");
 
     BeFileName gflagsPath(winSdkDir);
-    gflagsPath.AppendToPath(L"Debuggers")
-        .AppendToPath(L"x64")
+    gflagsPath.AppendToPath(L"bsitools")
+        .AppendToPath(L"winX86")
         .AppendToPath(L"gflags.exe");
 
     Utf8String setGflags;
@@ -399,9 +398,10 @@ static void runUmdh(BeGTestHost& host, GtestOptions options)
     pathSnapshotPath.AppendToPath(L"FirstSnapshot.log");
 
     BeFileName umdhPath(winSdkDir);
-    umdhPath.AppendToPath(L"Debuggers")
-        .AppendToPath(L"x64")
+        umdhPath.AppendToPath(L"bsitools")
+        .AppendToPath(L"winX86")
         .AppendToPath(L"umdh.exe");
+
 
     Utf8String umdhPathJoin;
     BeStringUtilities::WCharToUtf8(umdhPathJoin, umdhPath.c_str());
