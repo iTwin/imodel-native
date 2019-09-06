@@ -1,0 +1,5 @@
+message SolidGroup
+{
+repeated ISolid Solid = 1;
+}
+

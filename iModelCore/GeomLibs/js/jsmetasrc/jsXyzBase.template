@@ -1,0 +1,403 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $source: geometry/metasrc/xyzBase.template $
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
+
+DECL
+public:
+/// <summary>Read-only constant for __THISTYPE__ (0,0,0)</summary>
+static initonly __THISTYPE__ Zero = VALUE_CONSTRUCTOR __THISTYPE__(0.0, 0.0 3DONLY(,0.0));
+public:
+/// <summary>Read-only constant for __THISTYPE__ (1,0,0)</summary>
+static initonly __THISTYPE__ UnitX = VALUE_CONSTRUCTOR __THISTYPE__(1.0, 0.0 3DONLY(,0.0));
+
+public:
+/// <summary>Read-only constant for __THISTYPE__ (0,1,0)</summary>
+static initonly __THISTYPE__ UnitY = VALUE_CONSTRUCTOR __THISTYPE__(0.0, 1.0 3DONLY(,0.0));
+
+3DONLY(
+public:
+/// <summary>Read-only constant for __THISTYPE__ (0,0,1)</summary>
+static initonly __THISTYPE__ UnitZ = VALUE_CONSTRUCTOR __THISTYPE__(0.0, 0.0, 1.0);
+)
+
+
+//BEGIN_CPP_ONLY
+    READ_WRITE_PROPERTY_FOR_FIELD_XDC (double, X, x, "x component")
+    READ_WRITE_PROPERTY_FOR_FIELD_XDC (double, Y, y, "y component")
+
+    READ_WRITE_PROPERTY_FOR_FIELD_XDC (double, XX, x, "x component (redundant property for VB.net access)")
+    READ_WRITE_PROPERTY_FOR_FIELD_XDC (double, YY, y, "y component (redundant property for VB.net access)")
+
+3DONLY(
+    READ_WRITE_PROPERTY_FOR_FIELD_XDC (double,  Z, z, "z component")
+    READ_WRITE_PROPERTY_FOR_FIELD_XDC (double, ZZ, z, "z component (redundant property for VB.net access)")
+)
+public:
+/// <summary>Get the x, y3DONLY(, and z) values.</summary>
+    void Get
+        (
+        OUTPUT_VALUE(double, outX, "x component"),
+        OUTPUT_VALUE(double, outY, "y component")3DONLY(,
+        OUTPUT_VALUE(double, outZ, "z component"))
+        )
+            {
+            outX = x;
+            outY = y;3DONLY(
+            outZ = z;)
+            }
+public:
+/// <summary>Set the x, y3DONLY(, and z) values.</summary>            
+    void Set
+        (
+        INPUT_BYVALUE(double, inX, "x component"),
+        INPUT_BYVALUE(double, inY, "y component")3DONLY(,
+        INPUT_BYVALUE(double, inZ, "z component"))
+        )
+            {
+            x = inX;
+            y = inY;3DONLY(
+            z = inZ;)
+            }
+
+
+
+//END_CPP_ONLY
+
+
+END_DECL
+
+
+DECL
+#ifdef CSHARP
+public:
+/// <summary> Copy constructor</summary>
+__THISTYPE__
+(
+INPUT_STRUCT(__THISTYPE__, source, "Source to copy")
+)
+    {
+    x = source.x;
+    y = source.y;3DONLY(
+    z = source.z;)
+    }
+#else
+#endif
+END_DECL
+
+3DONLY(
+PUBLIC
+/// <summary>
+/// Constructor from immediate xyz
+/// </summary>
+CONSTRUCTOR(__THISTYPE__)
+(
+INPUT_BYVALUE(double,ax, "x part"),
+INPUT_BYVALUE(double,ay, "y part"),
+INPUT_BYVALUE(double,az, "z part")
+)
+BODY
+    {
+    x = ax;
+    y = ay;
+    z = az;
+    }
+END_BODY
+)
+
+PUBLIC
+/// <summary>
+/// Constructor from immediate x,y
+/// </summary>
+CONSTRUCTOR(__THISTYPE__)
+(
+INPUT_BYVALUE(double,ax, "x part"),
+INPUT_BYVALUE(double,ay, "y part")
+)
+BODY
+    {
+    x = ax;
+    y = ay;
+    3DONLY(z = 0.0;)
+    }
+END_BODY
+
+//BEGIN_CPP_ONLY
+
+PUBLIC
+/// <summary>
+/// Return String representation
+/// </summary>
+virtual STRINGPTR METHODNAME(ToString)
+(
+) override
+BODY
+    {
+    return System::String::Format (
+                SELECT_2D3D("<__THISTYPE__ xy=\"{0},{1}\"/>")("<__THISTYPE__ xyz=\"{0},{1},{2}\"/>"),
+                x.ToString(), y.ToString() 3DONLY(, z.ToString()));
+    }
+END_BODY
+//END_CPP_ONLY
+
+
+PUBLIC
+/// <summary>
+/// Set a single component identified by cylic index (0,1,2 = x,y,z).
+/// </summary>
+void METHODNAME(SetComponent)
+(
+INPUT_BYVALUE(int, index, "index"),
+INPUT_BYVALUE(double, a, "new value")
+)
+BODY
+    {
+    index = Geometry.SELECT_2D3D(Cyclic2dAxis)(Cyclic3dAxis) (index);
+    if (index == 0)
+        x = a;
+SELECT_2D3D(    else y = a;)(   else if (index == 1)
+        y = a;
+    else
+        z = a;)
+    }
+END_BODY
+
+
+
+PUBLIC
+/// <summary>
+/// Get a component by index.   Out of range index is interpretted cylclically.
+/// </summary>
+double METHODNAME(GetComponent)
+(
+INPUT_BYVALUE(int, index, "Component index.  SELECT_2D3D(x,y are 0,1)(x,y,z are 0, 1, 2)")
+)
+BODY
+    {
+    index = Geometry.SELECT_2D3D(Cyclic2dAxis)(Cyclic3dAxis) (index);
+    if (index == 0)
+        return x;
+SELECT_2D3D(    else return y;)(    else if (index == 1)
+        return y;
+    else
+        return z;)
+    }
+END_BODY
+
+PUBLIC
+/// <summary>
+/// Return a (newly constructed) __THISTYPE__ from immedate xyz (ignores weight part of source)
+/// </summary>
+STATIC __THISTYPE__ METHODNAME(FromRealPart)
+(
+INPUT_STRUCT(DPoint4d, source, "source coordinates")
+)
+BODY
+    {
+    return __THISTYPE__(source.x, source.y 3DONLY(, source.z));
+    }
+END_BODY
+
+
+
+PUBLIC
+/// <summary>
+/// Inplace scaling
+/// </summary>
+void METHODNAME(ScaleInPlace)
+(
+INPUT_BYVALUE(double, scale, "scale factor")
+)
+BODY{
+    x *= scale;
+    y *= scale;
+3DONLY(    z *= scale;)
+    }
+END_BODY
+
+
+
+
+
+
+PUBLIC
+/// <summary>
+/// Return the largest absolute value from the x,y,z parts.
+/// </summary>
+double METHODNAME(MaxAbs)
+(
+OUTPUT_VALUE(int, index, "Index of largest absolute value")
+)
+BODY
+    {
+    index = 0;
+    double maxVal = System::Math::Abs (x);
+
+    if (System::Math::Abs (y) > maxVal)
+        {
+        maxVal = System::Math::Abs (y);
+        index = 1;
+        }
+3DONLY(
+    if (System::Math::Abs (z) > maxVal)
+        {
+        maxVal = System::Math::Abs (z);
+        index = 2;
+        }
+    )
+    return maxVal;
+    }
+END_BODY
+
+
+
+
+3DONLY(
+
+PUBLIC
+/// <summary>
+/// Test if x,y parts are within a tolerance.
+/// </summary>
+bool METHODNAME(IsWithinToleranceXY)
+(
+INPUT_STRUCT(__THISTYPE__,target, "__THISTYPE__ to compare"),
+INPUT_BYVALUE(double, tolerance, "per-axis tolerance")
+)
+BODY
+    {
+    bool     result;
+    result = System::Math::Abs(x - target.x) <= tolerance &&
+             System::Math::Abs(y - target.y) <= tolerance;
+    return  result;
+    }
+END_BODY
+)
+
+
+PUBLIC
+/// <summary>
+/// Distance to a target __THISTYPE__
+/// </summary>
+double METHODNAME(Distance)
+(
+INPUT_STRUCT(__THISTYPE__,target, "target")
+)
+BODY
+    {
+    double xdist = target.x - x;
+    double ydist = target.y - y;
+3DONLY(    double zdist = target.z - z;)
+    return (System::Math::Sqrt (xdist*xdist + ydist*ydist 3DONLY(+ zdist*zdist)));
+    }
+END_BODY
+
+
+PUBLIC
+/// <summary>
+/// Squared distance to a target __THISTYPE__
+/// </summary>
+double METHODNAME(DistanceSquared)
+(
+INPUT_STRUCT(__THISTYPE__,target, "target")
+)
+BODY
+    {
+    double xdist = target.x - x;
+        double ydist = target.y - y;
+    3DONLY(double zdist = target.z - z;)
+    return (xdist*xdist + ydist*ydist 3DONLY( + zdist*zdist));
+    }
+END_BODY
+
+3DONLY(
+
+PUBLIC
+/// <summary>
+/// Squared distance to a __THISTYPE__ target point, using only xy parts
+/// </summary>
+double METHODNAME(DistanceSquaredXY)
+(
+INPUT_STRUCT(__THISTYPE__,target, "target")
+)
+BODY
+    {
+    double      xdist, ydist;
+
+    xdist = target.x - x;
+    ydist = target.y - y;
+
+    return (xdist*xdist + ydist*ydist);
+    }
+END_BODY
+)
+
+
+PUBLIC
+/// <summary>
+/// Distance to a __THISTYPE__ target point, using only xy parts
+/// </summary>
+double METHODNAME(DistanceXY)
+(
+INPUT_STRUCT(__THISTYPE__,target, "target")
+)
+BODY
+    {
+    double      xdist, ydist;
+
+    xdist = target.x - x;
+    ydist = target.y - y;
+
+    return System::Math::Sqrt (xdist*xdist + ydist*ydist);
+    }
+END_BODY
+
+
+DECL
+
+public:
+/// <summary>Return a (newly constructed) __THISTYPE__ from polar radius and angle at z=0.</summary>
+static __THISTYPE__ Polar
+(
+INPUT_BYVALUE(double, radius, "Radius"),
+INPUT_BYVALUE(Angle, theta, "Angle")
+)
+    {
+    return __THISTYPE__ (radius * theta.Cos, radius * theta.Sin);
+    }
+3DONLY(
+public:
+/// <summary>Return a (newly constructed) __THISTYPE__ from cylinder radius, xy angle, and z axis.</summary>
+static __THISTYPE__ Cylindrical
+(
+INPUT_BYVALUE(double, radius, "Radius"),
+INPUT_BYVALUE(Angle, theta, "Angle"),
+INPUT_BYVALUE(double, alongAxis, "Axial coordinate")
+)
+    {
+    return __THISTYPE__ (radius * theta.Cos, radius * theta.Sin, alongAxis);
+    }
+)
+
+3DONLY(
+public:
+/// <summary>Initalize in spherical coordinates with longitude from X towards Y and latitude from X towards Z.</summary>
+static __THISTYPE__ Spherical
+(
+INPUT_BYVALUE(double, radius, "Sphere Radius"),
+INPUT_BYVALUE(Angle, longitude, "Angle around equator"),
+INPUT_BYVALUE(Angle, latitude, "Angle from equator towards north pole on Z axis")
+)
+    {
+    double cc = latitude.Cos;
+    return __THISTYPE__ (
+            radius * longitude.Cos * cc,
+            radius * longitude.Sin * cc,
+            radius * latitude.Sin
+            );
+    }
+)
+END_DECL
+// end of template file

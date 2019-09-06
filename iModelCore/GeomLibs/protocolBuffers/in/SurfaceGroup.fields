@@ -1,0 +1,10 @@
+PRIMITIVE SurfaceGroup
+<def name=SUMMARY>A collection of ISurface objects.
+</def>
+<def name=Interface_BaseList>IAggregate, ISurface</def>
+
+
+<def name=MEMBERS><list ItemType=ISurface ItemTagName=Surface ItemSemanticName=Surface ItemParamName=surface ListName=mSurface ItemDescription="Member surface patch or collection" ScaleMode=Container/>
+</def>
+
+END_PRIMITIVE

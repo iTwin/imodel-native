@@ -1,0 +1,16 @@
+PRIMITIVE CircularArc
+<def name=SUMMARY>Circular arc primitive.
+</def>
+
+<def name=Interface_BaseList>IGeometry, IPrimitiveCurve</def>
+<def name=Class_BaseList>ICircularArc</def>
+
+
+
+<def name=MEMBERS><field ItemType=IPlacement ItemParamName=placement ItemMemberName=mPlacement ItemDescription="Center and orientation" ScaleMode=Length/>
+<field ItemType=double ItemParamName=radius ItemMemberName=mRadius ItemDescription="cicle radius." ScaleMode=Length/>
+<field ItemType=Angle ItemParamName=startAngle ItemMemberName=mStartAngle ItemDescription="Angle (in xy plane) from x axis to start." ScaleMode=None/>
+<field ItemType=Angle ItemParamName=sweepAngle ItemMemberName=mSweepAngle ItemDescription="Angle (in xy plane) from start to end." ScaleMode=None/>
+</def>
+
+END_PRIMITIVE

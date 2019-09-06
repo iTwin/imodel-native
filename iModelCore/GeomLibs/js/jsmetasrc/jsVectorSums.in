@@ -1,0 +1,53 @@
+
+
+/// <summary>Return $(ThisType) as addition of $(ThisType) and $(VectorType).</summary>
+CLASSMETHOD(public,  $(ThisType), Add)
+(
+INPUT_STRUCT ($(ThisType), origin, "origin"),
+INPUT_STRUCT ($(VectorType), vector, "second operand")
+)
+    {
+    return NEW_BY_ALL_FIELDS (FOREACH field in $(COMMASEPFIELDS) expand origin.field + vector.field END_FOREACH);
+    }
+    
+
+/// <summary>Return $(ThisType) as addition of $(ThisType) and scaled $(VectorType).</summary>
+CLASSMETHOD(public,  $(ThisType), Add, Scaled)
+(
+INPUT_STRUCT ($(ThisType), origin, "origin"),
+INPUT_STRUCT ($(VectorType), vector, "second operand"),
+INPUT_BYVALUE (double, scale, "scale")
+)
+    {
+    return NEW_BY_ALL_FIELDS (FOREACH field in $(COMMASEPFIELDS) expand origin.field + vector.field * scale END_FOREACH);
+    }
+    
+
+/// <summary>Return $(ThisType) as addition of $(ThisType) and 2 scaled $(VectorType)</summary>
+CLASSMETHOD(public,  $(ThisType), Add, 2Scaled)
+(
+INPUT_STRUCT ($(ThisType), origin, "origin"),
+INPUT_STRUCT ($(VectorType), vectorA, "termA"),
+INPUT_BYVALUE (double, scaleA, "scaleA"),
+INPUT_STRUCT ($(VectorType), vectorB, "termB"),
+INPUT_BYVALUE (double, scaleB, "scaleB")
+)
+    {
+    return NEW_BY_ALL_FIELDS (FOREACH field in $(COMMASEPFIELDS) expand origin.field + vectorA.field * scaleA + vectorB.field * scaleB END_FOREACH);
+    }
+
+/// <summary>Return $(ThisType) as addition of $(ThisType) and 3 scaled $(VectorType)</summary>
+CLASSMETHOD(public,  $(ThisType), Add, 3Scaled))
+(
+INPUT_STRUCT ($(ThisType), origin, "origin"),
+INPUT_STRUCT ($(VectorType), vectorA, "termA"),
+INPUT_BYVALUE (double, scaleA, "scaleA"),
+INPUT_STRUCT ($(VectorType), vectorB, "termB"),
+INPUT_BYVALUE (double, scaleB, "scaleB"),
+INPUT_STRUCT ($(VectorType), vectorC, "termC"),
+INPUT_BYVALUE (double, scaleC, "scaleC")
+)
+    {
+    return NEW_BY_ALL_FIELDS (FOREACH field in $(COMMASEPFIELDS) expand origin.field + vectorA.field * scaleA + vectorB.field * scaleB + vectorC.field * scaleC END_FOREACH);
+    }
+

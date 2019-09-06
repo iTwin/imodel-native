@@ -1,0 +1,30 @@
+#--------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------*/
+
+%if defined (fdf)
+# regenerate .fdf files from newer sources
+
+OUT_EXT = .fdf
+OTHER_DEPENDENCIES = $(GEMADIR)fdf.cmd $(GEMADIR)fdfSearcher.cmd $(GEMADIR)g\fdf.g $(GEMADIR)data\copyright.txt $(GEMADIR)g\domains.g $(GEMADIR)g\needswork.g $(GEMADIR)g\fdfoutput.g
+
+.c.fdf:
+    call $(GEMADIR)fdf $*
+
+.cpp.fdf:
+    call $(GEMADIR)fdf $*
+
+OUT_DIR = $(vuSrcIncludeVu)
+
+%include vuSources.mki
+
+%endif
+
+%if defined (dls)
+# regenerate bsivu.dls from sources
+
+%include vu_dls.mki
+
+%endif
