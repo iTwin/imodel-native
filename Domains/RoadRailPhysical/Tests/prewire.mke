@@ -1,0 +1,11 @@
+#*--------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------*/
+%include mdl.mki
+baseDir = $(_makeFilePath)
+
+$(BuildContext)Delivery/UnitTests/ignore_list.txt : $(baseDir)ignore_list.txt
+    $(msg)
+    $(LinkFirstDepToFirstTarget)
