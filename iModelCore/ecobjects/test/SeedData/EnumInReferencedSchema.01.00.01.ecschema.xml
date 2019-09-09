@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="EnumInReferencedSchema" nameSpacePrefix="enr" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+    <ECSchemaReference name="EnumInReferencedSchema_Base" version="01.12.05" prefix="enrb"/>
+    <ECEntityClass typeName="Entity">
+        <ECProperty propertyName="EnumeratedProperty" typeName="enrb:MyEnumeration" />
+        <ECArrayProperty propertyName="EnumeratedArray" typeName="enrb:MyEnumeration" />
+    </ECEntityClass>
+</ECSchema>
