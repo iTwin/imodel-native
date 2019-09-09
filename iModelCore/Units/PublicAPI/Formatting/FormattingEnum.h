@@ -128,6 +128,7 @@ enum class FormatProblemCode
     UnknownStdFormatName = 20011,
     UnknownUnitName = 20012,
     NotInitialized = 20013,
+    TooManyDigits = 20014,              //!< All numeric format must have maximum of 15 digits in each of the integer part, decimal part, denominator part, and exponent part 
     CVS_InconsistentFactorSet = 20051,  //!< All ratio factors between units must be bigger than one
     CVS_InconsistentUnitSet = 20052,    //!< Each pair of UOM's for parts of combo-numbers should yeild a ratio > 1
     CVS_UncomparableUnits = 20053,      //!< Units provided on the argument list are not comparable
