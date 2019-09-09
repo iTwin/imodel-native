@@ -1,0 +1,18 @@
+#---------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#---------------------------------------------------------------------------------------+
+%include mdl.mki
+
+always:
+    ~linkdir "$(BuildContext)PublicAPI/ProjectWise_InternalSDK/Include=$(BuildContext)SdkSources/ProjectWise_InternalSDK/Include"
+    ~linkdir "$(BuildContext)PublicAPI/ProjectWise_InternalSDK/PrivateSDK/aaapi=$(BuildContext)SdkSources/ProjectWise_InternalSDK/PrivateSDK/Include/aaapi"
+    ~linkdir "$(BuildContext)PublicAPI/ProjectWise_InternalSDK/PrivateSDK/utils=$(BuildContext)SdkSources/ProjectWise_InternalSDK/PrivateSDK/Include/utils"
+    ~linkdir "$(BuildContext)PublicAPI/ProjectWise_InternalSDK/PrivateSDK/butil=$(BuildContext)SdkSources/ProjectWise_InternalSDK/PrivateSDK/Include/butil"
+    ~linkdir "$(BuildContext)PublicAPI/ProjectWise_InternalSDK/PrivateSDK/aadmsapi=$(BuildContext)SdkSources/ProjectWise_InternalSDK/PrivateSDK/Include/aadmsapi"
+    ~linkdir "$(BuildContext)PublicAPI/ProjectWise_InternalSDK/PrivateSDK/aaodsapi=$(BuildContext)SdkSources/ProjectWise_InternalSDK/PrivateSDK/Include/aaodsapi"
+    ~linkdir "$(BuildContext)Delivery/ProjectWise_InternalSDK/=$(BuildContext)SdkSources/ProjectWise_InternalSDK/Libs"
+#   ~linkdir "$(BuildContext)PublicAPI/ProjectWise_InternalSDK/PrivateAPI=$(BuildContext)SdkSources/ProjectWise_InternalSDK/Include"
+
+
