@@ -1,0 +1,333 @@
+﻿#----------------------------------------------------------------------------------------
+#   Tests that are ignored specifically on imodel02
+#----------------------------------------------------------------------------------------
+
+# Wants to use FenceParams in conjunction with NonVisibleViewport to test
+# element inclusion in a volume. Neither of those classes exist any more.
+VolumeElementTestFixture.QueryTest
+
+#----------------------------------------------------------------------------------------
+#   Tests that are ignored on purpose
+#----------------------------------------------------------------------------------------
+GeometricPrimitiveTests.FacetCounts # Demonstrating disparity for Diego to fix
+
+#TFS 627787
+IndirectLocksTest.*
+
+BackwardsCompatibilityTests.OpenDgndbInCurrent # only ran by testing team after build for Compatibility Testing.
+
+ImodelJsTest.MeasureInsertPerformance # WIP Temporary "test" being used to compare C++ and imodeljs performance
+
+#----------------------------------------------------------------------------------------
+#   Tests that need attention
+#----------------------------------------------------------------------------------------
+
+ConfigurationManagerTest.*                             # UmarH -- Tests are ported from Vancouver for MacroConfiguration ,seems macros are not expanding on get variable method.
+
+#TFS 386647 : Does not import element aspects
+ElementAspectTests.ImportElementsWithAspect
+
+#TFS 557952: FindSection method in Csvfile.h does not work properly
+CsvFileTests.FindSection
+CsvFileTests.GetColumnContentsFromSection
+CsvFileTests.GetSections
+
+#TFS 386093 : Unable to query line style unless we reload the file ( which will reload the cache )
+DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad
+
+#TFS 630732
+DgnECNavigatorTest.GetElementInfo
+
+# UniqueRelationshipLinkTable::_UpdateSummary function needs to find out whether relationship link table
+# contains ECClassId column or not
+TransactionManagerTests.TestRelationshipLinkTableTracking
+
+# Waiting to hear from Krischan and Affan as to whether we expect the source's NavigationProperty value to be nulled out automatically when the target element is deleted.
+DgnElementTests.NavigationPropertyOnTargetDelete
+
+PerformanceElementsTests.ElementsInsertStrategies   #it was a disable test
+DgnChangeSummaryTestFixture.CreateSampleDataSet     #it was a disable test
+DgnChangeSummaryTestFixture.ValidateChangeSummaries  #it was a disable test
+
+ECInstancesCompatibility.UpdateInstances
+    # bim2-0r1, x64, NDEBUG, fails after updating compatibility files from 2-0-1-46 to 2-0-1-53.
+    # NOTE: Test fails because the baseline file contains an invalid bis:GeometryPart (null GeometryStream) that we cannot load. This will be resolved when the baseline files are re-created
+DgnDbTest.CreateTrackedDgnDb
+    # bim0200holdouts, x64, DEBUG
+    # [ RUN      ] DgnDbTest.CreateTrackedDgnDb
+    # !!!!!!!!!!!!!!!!!! DgnDb::CreateNewDgnDb F:\Bim0200Holdouts\out\Winx64\Product\DgnPlatform-Gtest\run\Output\TrackedDb.ibim
+    # 2017-06-05 14:20:25,813 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 
+    # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 2017-06-05 14:20:25,813 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 
+    # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 2017-06-05 14:20:25,891 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 
+    # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 2017-06-05 14:20:25,907 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 
+    # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 2017-06-05 14:20:25,907 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 
+    # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 2017-06-05 14:20:25,922 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 
+    # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 2017-06-05 14:20:25,922 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 
+    # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 2017-06-05 14:20:25,922 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 
+    # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 2017-06-05 14:20:26,000 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 
+    # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 2017-06-05 14:20:26,000 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 
+    # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 2017-06-05 14:20:26,000 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 
+    # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 2017-06-05 14:20:26,485 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 
+    # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 2017-06-05 14:20:26,485 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 
+    # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 2017-06-05 14:20:26,485 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 
+    # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 2017-06-05 14:20:26,500 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 
+    # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 2017-06-05 14:20:26,500 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 
+    # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 2017-06-05 14:20:26,500 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 
+    # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 2017-06-05 14:20:26,532 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 
+    # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 2017-06-05 14:20:26,532 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 
+    # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 2017-06-05 14:20:26,532 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 
+    # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 2017-06-05 14:20:28,188 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 
+    # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 2017-06-05 14:20:28,188 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 
+    # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 2017-06-05 14:20:28,188 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 
+    # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 2017-06-05 14:20:28,204 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 
+    # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 2017-06-05 14:20:28,204 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 
+    # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 2017-06-05 14:20:28,204 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 
+    # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 2017-06-05 14:20:28,219 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 
+    # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 2017-06-05 14:20:28,219 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 
+    # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 2017-06-05 14:20:28,235 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 
+    # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 2017-06-05 14:20:28,329 ERROR [0x0000ccb8] BeAssert - F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # 
+    # F:\Bim0200Holdouts\src\BeGTest\gtest\BeGTestExe.cpp(289): error: Failed
+    # F:\Bim0200Holdouts\src\ECDb\ECDb\ClassMapColumnFactory.cpp(692): ASSERTION FAILURE (0): false && "SharedColumnCount bypassed the limit set in CA" 
+    # [  FAILED  ] DgnDbTest.CreateTrackedDgnDb (12057 ms)
+
+#Test code needs to be adjusted.
+TransactionManagerTests.TestRelationshipLinkTableTracking
+
+#SampleDgnDbEditor ECSchema violates the BIS schema rules as well. Schema needs to be adjusted
+DgnProjectPackageTest.EnforceLinkTableFor11Relationship
+
+
+#============================================================================================================================
+# RelationshipClassEndTableMap does not support INSERT/DELETE using relationship name.
+# Following test must be  updated to use Navigation property and not INSERT INTO rel(..)
+# This must be cleared before merge.
+#----------------------------------------------------------------------------------------------------------------------------
+
+# Fails after the merge from bim0200holdouts
+CategoryTests.ValidateCategoryClass
+
+ECInstancesCompatibility.ReadInstances
+    # bim0200dev, x64, DEBUG
+    # Affan: These classes have been moved into there on PerfDomain. Either the test should not use those classes anymore or it should import following domain.
+    # [ RUN      ] ECInstancesCompatibility.ReadInstances
+    # 2017-10-11 13:17:10,511 ERROR [0x00006508] DgnCore - Missing Handler [PerfElement]
+    # 2017-10-11 13:17:10,511 ERROR [0x00006508] DgnCore - Missing Handler [PerfElementCHBase]
+    # 2017-10-11 13:17:10,511 ERROR [0x00006508] DgnCore - Missing Handler [PerfElementCHSub1]
+    # 2017-10-11 13:17:10,511 ERROR [0x00006508] DgnCore - Missing Handler [PerfElementCHSub2]
+    # 2017-10-11 13:17:10,511 ERROR [0x00006508] DgnCore - Missing Handler [PerfElementCHSub3]
+    # 2017-10-11 13:17:10,511 ERROR [0x00006508] DgnCore - Missing Handler [PerfElementSub1]
+    # 2017-10-11 13:17:10,511 ERROR [0x00006508] DgnCore - Missing Handler [PerfElementSub2]
+    # 2017-10-11 13:17:10,511 ERROR [0x00006508] DgnCore - Missing Handler [PerfElementSub3]
+    # 2017-10-11 13:17:10,511 ERROR [0x00006508] BeAssert - F:\Bim0200Dev\src\DgnPlatform\DgnCore\DgnDomain.cpp(861): ASSERTION FAILURE (0): (classId.IsValid() || m_schemaUpgradeOptions.AreDomainUpgradesAllowed()) && "ECClass associated with handler not found. The schema may not have been imported, or may need a version upgrade?" 
+    # F:\Bim0200Dev\src\BeGTest\gtest\BeGTestExe.cpp(370): error: Failed
+    # F:\Bim0200Dev\src\DgnPlatform\DgnCore\DgnDomain.cpp(861): ASSERTION FAILURE (0): (classId.IsValid() || m_schemaUpgradeOptions.AreDomainUpgradesAllowed()) && "ECClass associated with handler not found. The schema may not have been imported, or may need a version upgrade?" 
+    # [  FAILED  ] ECInstancesCompatibility.ReadInstances (385 ms)
+
+ # Crash, bim0200, NDEBUG, x64
+ VolumeElementTestFixture.QueryTest
+    # m_randerTarget is Invalid
+    # DgnPlatformB02.dll!BentleyB0200::Dgn::DgnViewport::_GetViewRect() Line 361  C++
+    # DgnPlatformB02.dll!BentleyB0200::Dgn::DgnViewport::CalcNpcToView() Line 339 C++
+    # DgnPlatformB02.dll!BentleyB0200::Dgn::DgnViewport::SetupFromViewController() Line 562   C++
+    # DgnPlatformB02.dll!BentleyB0200::Dgn::VolumeElement::CreateNonVisibleViewport(BentleyB0200::Dgn::DgnDb & project) Line 337  C++
+    # DgnPlatformB02.dll!BentleyB0200::Dgn::VolumeElement::FindElements(BentleyB0200::BeSQLite::IdSet<BentleyB0200::Dgn::DgnElementId> & elementIds, BentleyB0200::Dgn::DgnDb & dgnDb, bool allowPartialOverlaps) Line 382    C++
+    # DgnPlatformTest.exe!VolumeElementTestFixture_QueryTest_Test::TestBody() Line 168    C++
+    # DgnPlatformTest.exe!testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void>(testing::Test * object, void(testing::Test::*)() method, const char * location) Line 2446 C++
+    # DgnPlatformTest.exe!testing::internal::HandleExceptionsInMethodIfSupported<testing::Test,void>(testing::Test * object, void(testing::Test::*)() method, const char * location) Line 2497    C++
+    # DgnPlatformTest.exe!testing::Test::Run() Line 2540  C++
+    # DgnPlatformTest.exe!testing::TestInfo::Run() Line 2719  C++
+    # DgnPlatformTest.exe!testing::TestCase::Run() Line 2832  C++
+    # DgnPlatformTest.exe!testing::internal::UnitTestImpl::RunAllTests() Line 4706    C++
+    # DgnPlatformTest.exe!testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool>(testing::internal::UnitTestImpl * object, bool(testing::internal::UnitTestImpl::*)() method, const char * location) Line 2446   C++
+    # DgnPlatformTest.exe!testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool>(testing::internal::UnitTestImpl * object, bool(testing::internal::UnitTestImpl::*)() method, const char * location) Line 2497  C++
+    # DgnPlatformTest.exe!testing::UnitTest::Run() Line 4316  C++
+    # DgnPlatformTest.exe!runAllTestsWithTimeout::__l2::<lambda>() Line 355   C++
+    # DgnPlatformTest.exe!std::_LaunchPad<std::unique_ptr<std::tuple<void <lambda>(void) >,std::default_delete<std::tuple<void <lambda>(void) > > > >::_Run(std::_LaunchPad<std::unique_ptr<std::tuple<void <lambda>(void) >,std::default_delete<std::tuple<void <lambda>(void) > > > > * _Ln) Line 247   C++
+    # DgnPlatformTest.exe!std::_Pad::_Call_func(void * _Data) Line 210    C++
+    # ucrtbase.dll!00007ffb2213d885() Unknown
+    # kernel32.dll!00007ffb238e1fe4() Unknown
+    # ntdll.dll!00007ffb25d8ef91()    Unknown
+
+RevisionTestFixture.MoreWorkflow
+
+    # TFS#868775
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 03/28/2018
+    # unknown file: error: SEH exception with code 0xc0000005 thrown in the test body.
+    # *********************** STACK TRACE ************************
+    # [28] _C_specific_handler (0x7ffe3617bff0)
+    # [27] _chkstk (0x7ffe423f9f60)
+    # [26] RtlLookupFunctionEntry (0x7ffe423691a0)
+    # [25] KiUserExceptionDispatcher (0x7ffe423f90d0)
+    # [24] BentleyB0200::Dgn::DgnElements::LoadElement (0x7ffe2b374c00)
+    # [23] BentleyB0200::Dgn::DgnElements::LoadElement (0x7ffe2b374de0)
+    # [22] BentleyB0200::Dgn::DgnElements::GetElement (0x7ffe2b3741f0)
+    # [21] BentleyB0200::Dgn::dgn_TxnTable::Element::_OnAppliedAdd (0x7ffe2b376c10)
+    # [20] BentleyB0200::Dgn::TxnManager::OnChangesApplied (0x7ffe2b4d7a00)
+    # [19] BentleyB0200::Dgn::TxnManager::ApplyChanges (0x7ffe2b4d4fc0)
+    # [18] BentleyB0200::Dgn::TxnManager::MergeDataChangesInRevision (0x7ffe2b4d7320)
+    # [17] BentleyB0200::Dgn::TxnManager::MergeRevision (0x7ffe2b4d78a0)
+    # [16] BentleyB0200::Dgn::RevisionManager::DoMergeRevision (0x7ffe2b481930)
+    # [15] RevisionTestFixture_MoreWorkflow_Test::TestBody (0x7ff7c982d0c0)
+    # [14] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::TestCase,void> (0x7ff7c989ff00)
+    # [13] testing::internal::HandleExceptionsInMethodIfSupported<testing::Test,void> (0x7ff7c989fd90)
+    # [12] testing::Test::Run (0x7ff7c98b03d0)
+    # [11] testing::TestInfo::Run (0x7ff7c98b06e0)
+    # [10] testing::TestCase::Run (0x7ff7c98b04f0)
+    # [9] testing::internal::UnitTestImpl::RunAllTests (0x7ff7c98b09a0)
+    # [8] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff7c989ffa0)
+    # [7] testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff7c989fe80)
+    # [6] testing::UnitTest::Run (0x7ff7c98b0880)
+    # [5] <lambda_7a9a7085d3df21961d5208ec67fe5359>::operator() (0x7ff7c95989b0)
+    # [4] std::_LaunchPad<std::unique_ptr<std::tuple<<lambda_7a9a7085d3df21961d5208ec67fe5359> >,std::default_delete<std::tuple<<lambda_7a9a7085d3df21961d5208ec67fe5359> > > > >::_Run (0x7ff7c959a270)
+    # [3] std::_Pad::_Call_func (0x7ff7c9599ad0)
+    # [2] wcstombs_s_l (0x7ffe3ee90490)
+    # [1] BaseThreadInitThunk (0x7ffe41cd2760)
+    # [0] RtlUserThreadStart (0x7ffe423c0d30)
+    # 2018-03-27 23:54:22,765 ERROR [0x000029f0] BeSQLite - Statement not closed: 'SELECT ECClassId,ModelId,CodeSpecId,CodeScopeId,CodeValue,UserLabel,ParentId,ParentRelECClassId,FederationGuid,JsonProperties FROM bis_Element WHERE Id=?'
+    # 2018-03-27 23:54:22,765 ERROR [0x000029f0] BeSQLite - Cannot close database 'c:\build\outA\mds06t_2018-03-27_23-05-38\out\Winx64\Product\DgnPlatform-Gtest\run\Output\RevisionTestFixture\MoreWorkflow.bim'
+    # c:\build\src\mds06t\BeGTest\gtest\BeGTestExe.cpp(263): error: Failed
+    # This test called BeTest::SetFailOnAssert(false) and failed to call it again with true.
+
+MeshBuilderTest.RoundTripMeshBuilders
+
+    # TFS#895139
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 05/22/2018
+    # unknown file: error: SEH exception with code 0xc0000005 thrown in the test body.
+    # *********************** STACK TRACE ************************
+    # [26] _C_specific_handler (0x7ffcf9acbff0)
+    # [25] _chkstk (0x7ffd066c9f60)
+    # [24] RtlLookupFunctionEntry (0x7ffd066391a0)
+    # [23] KiUserExceptionDispatcher (0x7ffd066c90d0)
+    # [22] BentleyB0200::Dgn::TileTree::IO::DgnCacheTileRebuilder::AddPolylines (0x7ffcefe615a0)
+    # [21] BentleyB0200::Dgn::TileTree::IO::DgnCacheTileRebuilder::AddMeshPrimitive (0x7ffcefe60be0)
+    # [20] BentleyB0200::Dgn::TileTree::IO::DgnCacheTileRebuilder::ReadMeshPrimitive (0x7ffcefe65ab0)
+    # [19] BentleyB0200::Dgn::TileTree::IO::DgnCacheTileRebuilder::ReadGltf (0x7ffcefe650d0)
+    # [18] BentleyB0200::Dgn::TileTree::IO::DgnCacheTileRebuilder::ReadTile (0x7ffcefe672f0)
+    # [17] BentleyB0200::Dgn::TileTree::IO::ReadDgnTile (0x7ffcefe64990)
+    # [16] MeshBuilderTest::RoundTripMeshBuilders (0x7ff7b94d53c0)
+    # [15] MeshBuilderTest::RoundTripMeshBuilders<<lambda_71a829593e2e8b731e207c3c174f2fbf> > (0x7ff7b94cc280)
+    # [14] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::TestCase,void> (0x7ff7b957ab50)
+    # [13] testing::internal::HandleExceptionsInMethodIfSupported<testing::TestCase,void> (0x7ff7b957a9e0)
+    # [12] testing::Test::Run (0x7ff7b958afa0)
+    # [11] testing::TestInfo::Run (0x7ff7b958b2b0)
+    # [10] testing::TestCase::Run (0x7ff7b958b0c0)
+    # [9] testing::internal::UnitTestImpl::RunAllTests (0x7ff7b958b570)
+    # [8] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff7b957abf0)
+    # [7] testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff7b957aad0)
+    # [6] testing::UnitTest::Run (0x7ff7b958b450)
+    # [5] <lambda_7a9a7085d3df21961d5208ec67fe5359>::operator() (0x7ff7b9268ed0)
+    # [4] std::_LaunchPad<std::unique_ptr<std::tuple<<lambda_7a9a7085d3df21961d5208ec67fe5359> >,std::default_delete<std::tuple<<lambda_7a9a7085d3df21961d5208ec67fe5359> > > > >::_Run (0x7ff7b926a790)
+    # [3] std::_Pad::_Call_func (0x7ff7b9269ff0)
+    # [2] wcstombs_s_l (0x7ffd03aa0490)
+    # [1] BaseThreadInitThunk (0x7ffd040b2770)
+    # [0] RtlUserThreadStart (0x7ffd06690d30)
+
+ChangeSummaryTestFixture.ElementChildRelationshipChanges
+    # Flakey on PRG builds.
+    # [ RUN      ] ChangeSummaryTestFixture.ElementChildRelationshipChanges
+    # d:\vsts_a\46\bbsrc\imodel02\iModelCore\DgnPlatform\Tests\DgnProject\NonPublished\ChangeSummary_Test.cpp(646): error:       Expected: 3
+    # To be equal to: instance.MakeValueIterator().QueryCount()
+    #       Which is: 2
+    # [  FAILED  ] ChangeSummaryTestFixture.ElementChildRelationshipChanges (67 ms)
+
+DependencyRevisionTest.TestDependency
+    # Flakey on PRG builds.
+    # [ RUN      ] DependencyRevisionTest.TestDependency
+    # e:\Builds\dcsdk020002217\Source\DgnPlatform\Tests\DgnProject\Published\Revision_Test.cpp(798): error:       Expected: 2
+    # To be equal to: m_dep.GetInvocationCount()
+    #       Which is: 0
+    # e:\Builds\dcsdk020002217\Source\DgnPlatform\Tests\DgnProject\Published\Revision_Test.cpp(807): error:       Expected: 321
+    # To be equal to: c->GetIntegerProperty(2)
+    #       Which is: 123
+    # e:\Builds\dcsdk020002217\Source\DgnPlatform\Tests\DgnProject\Published\Revision_Test.cpp(808): error:       Expected: 654
+    # To be equal to: c->GetIntegerProperty(3)
+    #       Which is: 456
+    # [  FAILED  ] DependencyRevisionTest.TestDependency (68 ms)
