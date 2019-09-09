@@ -1,0 +1,23 @@
+#---------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#---------------------------------------------------------------------------------------+
+%include mdl.mki
+
+targetAPIDir = $(BuildContext)PublicAPI/ElectricalDomain/
+
+targetSchemasDir = $(BuildContext)ECSchemas/Domain/
+
+$(targetAPIDir)ElectricalDomainApi.h : $(_MakeFilePath)PublicApi\ElectricalDomain\ElectricalDomainApi.h
+    $(LinkFirstDepToFirstTarget)
+
+$(targetAPIDir)ElectricalDomainUtilities.h : $(_MakeFilePath)PublicApi\ElectricalDomain\ElectricalDomainUtilities.h
+    $(LinkFirstDepToFirstTarget)
+
+# %include $(_MakeFilePath)ArchitecturalPhysicalSchema/ArchitecturalPhysicalSchema.prewire.mki
+    
+%include $(_MakeFilePath)ElectricalPhysicalSchema/ElectricalPhysicalSchema.prewire.mki
+
+# %include $(_MakeFilePath)BuildingCommonSchema/BuildingCommonSchema.prewire.mki
+    
