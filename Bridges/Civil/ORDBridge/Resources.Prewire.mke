@@ -1,0 +1,13 @@
+#----------------------------------------------------------------------
+#
+#     $Source: ORDBridge/Resources.Prewire.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+%include mdl.mki
+
+Delivery=$(BuildContext)Delivery/
+
+$(Delivery)Resources/Dgnlibs : $(SrcRoot)imodel02/Bridges/Civil/ORDBridge/Resources/Dgnlibs
+    $(LinkFirstDepToFirstTargetAsDirectory)

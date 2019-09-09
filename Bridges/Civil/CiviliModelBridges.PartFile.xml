@@ -1,0 +1,560 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
+
+    <!-- ........................................................................................................................................ -->
+    <!-- ORDBridge    The bridge itself is a product, containing all of the needed shared libraries, plus assets. -->
+    <!-- ........................................................................................................................................ -->
+
+    <Part Name="Cif_InternalSDK" BentleyBuildMakeFile="ORDBridge/Cif.Prewire.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
+        <SdkSource>Cif_InternalSDK</SdkSource>
+        <Bindings>
+            <PublicAPI Domain="CifApi" />
+            <Files ProductDirectoryName="CifDlls" SubPartDirectory="CifSdk/Dlls" Required="true">
+                Delivery/CifSdk/Dlls/*.dll
+            </Files>
+            <Directory SourceName="Delivery/CifSdk/Libs" Required="false" SubPartDirectory="CifLibs" />
+            <Files ProductDirectoryName="CifDlls" ProductSubDirectory="ECSchemas/CIF" Required="true">
+                Delivery/CifSdk/ECSchemas/*.ecschema.xml
+                Delivery/CifSdk/ECSchemas/*.ecschema.liveMapping.xml
+            </Files>
+            <Files ProductDirectoryName="CifDlls" ProductSubDirectory="ECSchemas/Model" Required="true">
+                Delivery/CifSdk/ECSchemas/Model/*.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="Resources" BentleyBuildMakeFile="ORDBridge/Resources.Prewire.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
+        <Bindings>
+            <Directory SourceName="Delivery/Resources/Dgnlibs" ProductDirectoryName="Dgnlibs" SubPartDirectory="Resources/Dgnlibs"
+            Required="true"/>
+        </Bindings>
+    </Part>
+
+    <ProductDirectoryList ListName="ORDBridgeDirectoryList">
+        <ProductDirectory Name="ApplicationRoot" Path=""/>
+        <ProductDirectory Name="Assemblies"   RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="Assemblies"   RelativeTo="ApplicationRoot" LibType="static"/>
+        <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot"  LibType="static"/>
+        <ProductDirectory Name="BentleyClientSharedAssemblies"  RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="BentleyDesktopClientApi"  RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="BentleyDesktopClientApi_Native"  RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="ConfigDir"  RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="PublisherLoggingConfigXml"  RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices"/>
+        <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices" LibType="static"/>
+        <ProductDirectory Name="DgnV8Dlls"  Path="DgnV8"/>
+        <ProductDirectory Name="CifDlls"  Path="Cif"/>
+        <ProductDirectory Name="Dgnlibs"  RelativeTo="ApplicationRoot" Path="Dgnlibs"/>
+        <ProductDirectory Name="DgnV8DummyUstation"  Path="DgnV8"    RelativeTo="Assemblies"/>
+        <ProductDirectory Name="WorkSpace"   Path=""   RelativeTo="DgnV8Dlls"/>
+    </ProductDirectoryList>
+    
+    <Part Name="ORDBridgeLibrary" BentleyBuildMakeFile="ORDBridge/ORDBridge.mke" ExcludeLibType="Static">
+        <SubPart PartName="DgnV8ConverterExe" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync" Repository="imodel02"/>
+        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
+        <SubPart PartName="ORDBridgePublicAPI"/>
+        <SubPart PartName="VersionedV8_InternalSDK" Repository="imodel02" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync"/>
+        <SubPart PartName="Cif_InternalSDK" />
+        <SubPart PartName="ORDBridge-en"/>
+        <SubPart PartName="RoadRailPhysical" PartFile="Domains/RoadRailPhysical/RoadRailPhysical" Repository="imodel02"/>
+        <SubPart PartName="DgnV8OpenRoadsDesigner" PartFile="Domains/DgnV8OpenRoadsDesigner/DgnV8OpenRoadsDesigner" Repository="imodel02"/>
+        <SubPart PartName="QuantityTakeoffsAspectsSchema" PartFile="BisSchemasIModelCore" Repository="BisSchemas"/>
+        <Bindings>
+            <Libs Required="false">Delivery/$(libprefix)ORDBridge$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)ORDBridge$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="ORDBridgeInstallerFiles" BMakeFile="ORDBridge/installer/installer.prewire.mke">
+        <SubPart PartName="InstallFrameworkBase" PartFile="InstallFramework" Repository="InstallFramework"/>
+        <Bindings>
+            <Files BindToWixBuild="true">
+                InstallerBuildFiles\*.wxs
+                InstallerBuildFiles\*.mki
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Product Name="ORDBridge" PrgOutputDir="ORDBridge" BuildInstallSet="true" SaveProduct="true">
+        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
+        <SubPart PartName="PublishORDToBIMExe"/>
+        <SubPart PartName="ORDBridgeInstallerFiles"/>
+        <SubPart PartName="ORDBridgeLibrary" />
+        <SubPart PartName="Resources" />
+        <SubPart PartName="StaticAppData" PartFile="MstnAppData" Repository="miscdev-mstnappdata"/>
+        <!-- <SubPart PartName="RoadRailAlignment-Tested" Repository="imodel02" PartFile="Domains/RoadRailAlignment/RoadRailAlignment" /> -->
+        <!-- <SubPart PartName="RoadRailPhysical-Tested" Repository="imodel02" PartFile="Domains/RoadRailPhysical/RoadRailPhysical" /> -->
+        <SubPart PartName="CiviliModelBridgesTested" />
+        
+        <!-- <SubPart PartName="ORDBridgeGUI" /> -->
+                
+        <InstallerWixFile SourceFile="ORDBridge\Installer\ORDBridgeInstaller"/>
+        <Directories DirectoryListName="ORDBridgeDirectoryList" />
+    </Product>
+
+    <Part Name="ORDBridgePublicAPI" BentleyBuildMakeFile="ORDBridge/ORDBridge.prewire.mke">
+        <Bindings>
+            <PublicAPI Domain="ORDBridge"/>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Application" SubPartDirectory="ECSchemas/Application"/>
+        </Bindings>
+    </Part>
+
+    <!-- ........................................................................................................................................ -->
+    <!-- ORDBridgeTestApp    This is a test application. It links with and runs the bridge in a standalone mode.                                 -->
+    <!-- ........................................................................................................................................ -->
+
+    <Product Name="ORDBridgeTestApp">
+        <SubPart PartName="ORDBridgeTestAppExe" />
+        <Directories DirectoryListName="ORDBridgeTestAppDirectoryList" />
+    </Product>
+
+    <ProductDirectoryList ListName="ORDBridgeTestAppDirectoryList">
+        <ProductDirectory Name="ApplicationRoot"                Path=""/>
+        <ProductDirectory Name="Assemblies"   RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="Assemblies"   RelativeTo="ApplicationRoot" LibType="static"/>
+        <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot"  LibType="static"/>
+        <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices"/>
+        <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices" LibType="static"/>
+        <ProductDirectory Name="DgnV8Dlls"  Path="DgnV8"/>
+        <ProductDirectory Name="CifDlls"  Path="Cif"/>
+        <ProductDirectory Name="ScalableMeshV8SDK" Deliver="false" />
+        <ProductDirectory Name="BentleyDesktopClientApi" RelativeTo="ApplicationRoot" />
+        <ProductDirectory Name="BentleyDesktopClientApi_Native" RelativeTo="ApplicationRoot" />
+        <ProductDirectory Name="BentleyClientSharedAssemblies" RelativeTo="ApplicationRoot"/>
+    </ProductDirectoryList>
+
+    <Part Name="ORDBridgeTestAppExe" BentleyBuildMakeFile="ORDBridge/TestApp/ORDBridgeTestApp.mke" >
+        <SubPart PartName="ORDBridgeLibrary"/>
+        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
+        <Bindings>
+            <Files ProductDirectoryName="ApplicationRoot">Delivery/ORDBridgeTestApp$(exeext)</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="PrewireForORDBridgeUnitTests" BentleyBuildMakeFile="ORDBridge/Tests/prewire.mke">
+        <SubPart PartName="ORD-TestFiles" PartFile="CivilTestFiles" Repository="Civil-TestFiles"/>
+        <Bindings>
+            <Files ProductDirectoryName="UnitTests-IgnoreList"  ProductSubDirectory="CiviliModelBridgesORDBridge" SubPartDirectory="UnitTests/CivilORDBridge"> Delivery/UnitTests/ordbridge_ignore_list.txt</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="BackdoorForORDBridgeUnitTests" BentleyBuildMakeFile="ORDBridge/Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=BackdoorORDBridge">
+        <SubProduct ProductName="PublishORDToBIM"/>
+        <SubPart PartName="PrewireForORDBridgeUnitTests" />
+        <SubPart PartName="PublishORDToBimDLL"/>
+        <SubPart PartName="Cif_InternalSDK" />
+        <SubPart PartName="RoadRailPhysical" PartFile="Domains/RoadRailPhysical/RoadRailPhysical" Repository="imodel02"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="CiviliModelBridgesORDBridge/Backdoor" SourceName="Delivery/UnitTests/Objects/BackdoorORDBridge"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="CiviliModelBridgesORDBridge-UnitTests-NonPublished" BentleyBuildMakeFile="ORDBridge/Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublishedORDBridge">
+        <SubPart PartName="BackdoorForORDBridgeUnitTests" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="CiviliModelBridgesORDBridge/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublishedORDBridge"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="CiviliModelBridgesORDBridge-UnitTests-Published" BentleyBuildMakeFile="ORDBridge/Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=PublishedORDBridge">
+        <SubPart PartName="BackdoorForORDBridgeUnitTests" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="CiviliModelBridgesORDBridge/Published" SourceName="Delivery/UnitTests/Objects/PublishedORDBridge"/>
+        </Bindings>
+    </Part>
+
+    <!-- Put the unit tests into the form of a product. This product will be consumed by a platform-specific "runner" product. -->
+    <!-- Lay out the test product according to the standard BeGTest layout. -->
+    <Part Name="Tests">
+        <!-- We probabaly need a PublishedAPI part for this product.  If we do, then uncomment the following line -->
+        <!-- <SubPart PartName="UnitTests-Published" /> -->
+        <SubPart PartName="CiviliModelBridgesORDBridge-UnitTests-Published" />
+        <SubPart PartName="CiviliModelBridgesORDBridge-UnitTests-NonPublished" />
+        <!--SubPart PartName="CiviliModelBridges-CrossPlatform-UnitTests-NonPublished" /-->
+
+        <!-- We can also have Scenario and Performance tests, they'll get their own Parts -->
+
+        <!-- Conceptstation calls the sqlang parts here too -->
+    </Part>
+
+    <Product Name="CiviliModelBridges-Tests">
+        <!-- *** TRICKY: Must depend on a part in begtest repository, in order to use a productdirectorylist from there. -->
+
+        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
+        <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest" Repository="imodel02"/>
+        <SubPart PartName="DgnV8ConverterExe" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync" Repository="imodel02"/>
+        <SubPart PartName="Tests"/>
+        <!-- Lay out the Tests test product according to the standard BeGTest layout: -->
+        <Directories DirectoryListName="CollectionProduct"/>
+    </Product>
+
+    <!-- Build a gtest exe to run the tests -->
+    <Product Name="CiviliModelBridges-Gtest">
+        <SubPart PartName="Gtest" />
+        <SubPart PartName="Cif_InternalSDK" />
+        <SubPart PartName="VersionedV8_InternalSDK" Repository="imodel02" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync"/>
+        <SubPart PartName="DgnV8ConverterExe" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync" Repository="imodel02"/>
+        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
+        <Directories DirectoryListName="GtestProduct" />
+        <Directories DirectoryListName="CiviliModelBridgeTestDirectoryList" />
+    </Product>
+
+  <ProductDirectoryList ListName="CollectionProduct">
+    <ProductDirectory Name="Assemblies"            Path="Assemblies"/>
+    <ProductDirectory Name="Assemblies"            Deliver="false" LibType="static"/>
+    <ProductDirectory Name="DataCaptureAssemblies"              Path="Assemblies"/>
+    <ProductDirectory Name="DataCaptureAssemblies"              Deliver="false" LibType="static"/>
+    <ProductDirectory Name="Libs"                               Path="Libs"/>
+    <ProductDirectory Name="Libs"                               Path="Libs" LibType="static"/>
+
+    <ProductDirectory Name="BeStaticLibDir"                     Path="Libs"/>
+    <ProductDirectory Name="BeStaticLibDir"                     Path="Libs" LibType="static"/>
+    <ProductDirectory Name="UnitTests-Objects"                  Path="Objects"/>
+    <ProductDirectory Name="UnitTests-Objects"                  Path="Objects" LibType="static"/>
+    <ProductDirectory Name="Assets"                             Path="Assets"/>
+    <ProductDirectory Name="Assets"                             Path="Assets"  LibType="static"/>
+    <ProductDirectory Name="UnitTests-Assets"                   Path="Assets"/>
+    <ProductDirectory Name="UnitTests-Assets"                   Path="Assets" LibType="static"/>
+    <ProductDirectory Name="UnitTests-IgnoreList"               Path="Assets/Ignore"/>
+    <ProductDirectory Name="UnitTests-IgnoreList"               Path="Assets/Ignore" LibType="static"/>
+    <ProductDirectory Name="VendorNotices" Deliver="false" />
+    <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
+    <ProductDirectory Name="sqlang" Path="Assets/sqlang"/>
+    <ProductDirectory Name="sqlang" LibType="static" Path="Assets/sqlang"/>
+    <ProductDirectory Name="PublisherLoggingConfigXml" Deliver="false"/>
+    <ProductDirectory Name="PublisherLoggingConfigXml" Deliver="false" LibType="static"/>
+
+    <!-- Silencing warnings... are these actually needed? -->
+    <ProductDirectory Name="DgnV8Dlls" Deliver="false" />
+    <ProductDirectory Name="CifDlls" Deliver="false" />    
+    <ProductDirectory Name="ApplicationRoot" Deliver="false" />    
+  </ProductDirectoryList>
+
+  <ProductDirectoryList ListName="GtestProduct">
+    <ProductDirectory Name="Gtest-NativeAssemblies" Path=""/>
+    <ProductDirectory Name="Gtest-NativeAssemblies" Path="" LibType="Static"/>
+    <ProductDirectory Name="Assemblies" Path=""/>
+    <ProductDirectory Name="Assemblies" Path="" LibType="Static"/>
+    <ProductDirectory Name="Assets" Path="Assets-g"/>
+    <ProductDirectory Name="Assets" Path="Assets-g" LibType="static"/>
+    <ProductDirectory Name="Gtest-Assets" Path="Assets"/>
+    <ProductDirectory Name="Gtest-Assets" Path="Assets" LibType="Static"/>
+    <ProductDirectory Name="VendorNotices" Deliver="false" />
+    <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
+  </ProductDirectoryList>
+
+    <ProductDirectoryList ListName="CiviliModelBridgeTestDirectoryList">
+        <ProductDirectory Name="ApplicationRoot"                Path=""/>
+        <ProductDirectory Name="DgnV8Dlls"  Path="DgnV8"/>
+        <ProductDirectory Name="CifDlls"  Path="Cif"/>
+
+        <!-- Silencing warnings... are these actually needed? -->
+        <ProductDirectory Name="PublisherLoggingConfigXml" Deliver="false"/>
+    </ProductDirectoryList>
+
+    <Part Name="ORDBridgeUnitTests" BentleyBuildMakeFile="ORDBridge/Tests/UnitTestsPostBuild.mke" >
+        <SubProduct ProductName="CiviliModelBridges-Gtest" />
+        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
+      <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest" Repository="imodel02"/>
+    </Part>
+
+    <!-- Must Call UnitTestsPostBuild.mke last in build process in order to debug to remove ScalableMesh dlls-->
+    <Part Name="DebugGtest" BentleyBuildMakeFile="ORDBridge/Tests/UnitTestsPostBuild.mke">
+        <SubPart PartName="ORDBridgeUnitTests" />
+    </Part>
+
+    <Part Name="Gtest" BentleyBuildMakeFile="ORDBridge/gtest/buildGTest.mke" BentleyBuildMakeOptions="
+        -dTEST_NAME=CiviliModelBridgesTests
+        -dTEST_COLLECTION_PRODUCT=CiviliModelBridges-Tests
+        -dTEST_FRAMEWORK_SQLANG=DgnClientFx_en.sqlang.db3" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="CiviliModelBridges-Tests" />
+        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
+        <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest" Repository="imodel02"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/CiviliModelBridgesTests/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/CiviliModelBridgesTests/Assets" />
+        </Bindings>
+    </Part>
+
+    <Part Name="RunGtest" BentleyBuildMakeFile="ORDBridge/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=CiviliModelBridges-Gtest -dGTEST_NAME=CiviliModelBridgesTests -dGTEST_SHOW_PROGRESS -dGTEST_EXTRA_ARGS=--timeout=300" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubPart PartName="ORDBridgeUnitTests" />
+    </Part>
+
+    <Part Name="GTest-Run-CheckCoverage" Scope="Private" OnlyPlatforms="x64"
+        BentleyBuildMakeFile="${SrcRoot}/Civil/Components/sharedmke/CodeCoverage.mke"
+        BentleyBuildMakeOptions="-dProductName=CiviliModelBridges -dCodeSourceDir=${SrcRoot}/imodel02/Bridges/Civil/ORDBridge/ -dFailIfCoverageNotMet=0 -dMinimumCoverage=0.0">
+        <RequiredRepository>Civil-Components</RequiredRepository>
+        <RequiredRepository>Bsitools-OpenCppCoverage</RequiredRepository>
+        <SubProduct ProductName="CiviliModelBridges-Gtest" />
+        <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" />
+        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
+        <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest" Repository="imodel02"/>
+    </Part>
+
+    <Part Name="CiviliModelBridgesTested">
+        <!-- Tests are known to fail on bim0200; comment out the running until they can be patched on imodel02. -->
+        <!-- <SubPart PartName="RunGtest" /> -->
+        <SubPart PartName="ORDBridgeUnitTests" />
+
+        <!-- <SubPart PartName="GTest-Run-CheckCoverage" /> -->
+    </Part>
+
+  <!-- ........................................................................................................................................ -->
+  <!-- PublishORDToBIM    This is a utility application. It links with and runs the bridge in a standalone mode.                                 -->
+  <!-- ........................................................................................................................................ -->
+
+  <Product Name="PublishORDToBIM">
+    <SubPart PartName="PublishORDToBIMExe" />
+    <SubPart PartName="StaticAppData" PartFile="MstnAppData" Repository="miscdev-mstnappdata"/>
+    <Directories DirectoryListName="PublishORDToBIMDirectoryList" />
+  </Product>
+
+  <ProductDirectoryList ListName="PublishORDToBIMDirectoryList">
+    <ProductDirectory Name="ApplicationRoot"                Path=""/>
+    <ProductDirectory Name="Assemblies"   RelativeTo="ApplicationRoot"/>
+    <ProductDirectory Name="Assemblies"   RelativeTo="ApplicationRoot" LibType="static"/>
+    <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot"/>
+    <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot"  LibType="static"/>
+    <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices"/>
+    <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices" LibType="static"/>
+    <ProductDirectory Name="DgnV8Dlls"  Path="DgnV8"/>
+    <ProductDirectory Name="CifDlls"  Path="Cif"/>
+    <ProductDirectory Name="ScalableMeshV8SDK" Deliver="false" />
+    <ProductDirectory Name="BentleyDesktopClientApi" RelativeTo="ApplicationRoot" />
+    <ProductDirectory Name="BentleyDesktopClientApi_Native" RelativeTo="ApplicationRoot" />
+    <ProductDirectory Name="BentleyClientSharedAssemblies" RelativeTo="ApplicationRoot"/>
+    <ProductDirectory Name="DgnV8DummyUstation"  Path="DgnV8"    RelativeTo="Assemblies"/>
+    <ProductDirectory Name="WorkSpace"   Path=""   RelativeTo="DgnV8Dlls"/>
+
+    <!-- Silencing warnings... are these actually needed? -->
+    <ProductDirectory Name="PublisherLoggingConfigXml" Deliver="false" />
+  </ProductDirectoryList>
+
+  <Part Name="PublishORDToBIMExe" BentleyBuildMakeFile="ORDBridge/PublishORDToBIM/PublishORDToBIM.mke" >
+    <SubPart PartName="ORDBridgeLibrary"/>
+    <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
+    <Bindings>
+      <Files ProductDirectoryName="ApplicationRoot">Delivery/PublishORDToBIM$(exeext)</Files>
+    </Bindings>
+  </Part>
+
+    
+  <!-- ........................................................................................................................................ -->
+  <!-- PublishORDToBimDLL    This library is used to run the bridge. It's called during unit testing to convert the test models in-proc.        -->
+  <!-- ........................................................................................................................................ -->
+  
+  <Part Name="PublishORDToBimDLL" BentleyBuildMakeFile="ORDBridge/PublishORDToBimDLL/PublishORDToBimDLL/PublishORDToBimDLL.mke" >
+    <SubPart PartName="ORDBridgeLibrary"/>
+    <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
+    <Bindings>
+        <Libs Required="false">Delivery/$(libprefix)PublishORDToBimDLL$(libext)</Libs>
+        <Assemblies>Delivery/$(shlibprefix)PublishORDToBimDLL$(shlibext)</Assemblies>
+    </Bindings>
+  </Part>
+    
+    
+  <!-- ........................................................................................................................................ -->
+  <!-- ORDBridgeGUI    This is a GUI wrapper for the PublishORDToBIM & iModelBridgeFwk                                                          -->
+  <!-- ........................................................................................................................................ -->
+
+  <Part Name="ORDBridgeGUI" BMakeFile="ORDBridge/ORDBridgeGUI/ORDBridgeGuiExe.mke" OnlyPlatforms="x64">
+    <Bindings>
+      <Assemblies ProductDirectoryName="ApplicationRoot">Delivery/ORDBridgeGUI.exe</Assemblies>
+      <Files ProductDirectoryName="ApplicationRoot">Delivery/ORDBridgeGUI.exe.config</Files>
+    </Bindings>
+  </Part>
+
+  <!-- ........................................................................................................................................ -->
+  <!-- CS06Bridge    The bridge itself is a product, containing all of the needed shared libraries, plus assets. -->
+  <!-- ........................................................................................................................................ -->
+
+  <ProductDirectoryList ListName="CS06BridgeDirectoryList">
+    <ProductDirectory Name="ApplicationRoot" Path=""/>
+    <ProductDirectory Name="Assemblies"   RelativeTo="ApplicationRoot"/>
+    <ProductDirectory Name="Assemblies"   RelativeTo="ApplicationRoot" LibType="static"/>
+    <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot"/>
+    <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot"  LibType="static"/>
+    <ProductDirectory Name="BentleyClientSharedAssemblies"  RelativeTo="ApplicationRoot"/>
+    <ProductDirectory Name="BentleyDesktopClientApi"  RelativeTo="ApplicationRoot"/>
+    <ProductDirectory Name="BentleyDesktopClientApi_Native"  RelativeTo="ApplicationRoot"/>
+    <ProductDirectory Name="ConfigDir"  RelativeTo="ApplicationRoot"/>
+    <ProductDirectory Name="PublisherLoggingConfigXml"  RelativeTo="ApplicationRoot"/>
+    <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices"/>
+    <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices" LibType="static"/>
+    <ProductDirectory Name="CSDgnDb06Dlls"  RelativeTo="ApplicationRoot" Path="CSDgnDb06"/>
+  </ProductDirectoryList>
+
+  <Part Name="CS06BridgeLibrary" BentleyBuildMakeFile="CS06Bridge/CS06Bridge.mke" >
+    <SubPart PartName="CS06BridgePublicAPI"/>
+    <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02" />
+    <SubPart PartName="DgnDb06BimTeleporterLibrary" PartFile="CivilDataExchange" Repository="Civil-DataExchange" />
+    <SubPart PartName="LinearReferencing" PartFile="Domains/LinearReferencing/LinearReferencing" Repository="imodel02"/>
+    <SubPart PartName="RoadRailAlignment" PartFile="Domains/RoadRailAlignment/RoadRailAlignment" Repository="imodel02"/>
+    <SubPart PartName="RoadRailPhysical" PartFile="Domains/RoadRailPhysical/RoadRailPhysical" Repository="imodel02"/>
+    <Bindings>
+      <Libs Required="false">Delivery/$(libprefix)CS06Bridge$(libext)</Libs>
+      <Assemblies>Delivery/$(shlibprefix)CS06Bridge$(shlibext)</Assemblies>
+    </Bindings>
+  </Part>
+
+  <Part Name="CS06BridgeInstallerFiles" BMakeFile="CS06Bridge/installer/installer.prewire.mke">
+    <SubPart PartName="InstallFrameworkBase" PartFile="InstallFramework" Repository="InstallFramework"/>
+    <Bindings>
+      <Files BindToWixBuild="true">
+        InstallerBuildFiles\*.wxs
+        InstallerBuildFiles\*.mki
+      </Files>
+    </Bindings>
+  </Part>
+
+  <Product Name="CS06Bridge" PrgOutputDir="CS06Bridge" BuildInstallSet="true" SaveProduct="true">
+    <SubPart PartName="CS06BridgeInstallerFiles"/>
+    <SubPart PartName="CS06BridgeLibrary" />
+    <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02" />
+    <InstallerWixFile SourceFile="CS06Bridge\Installer\CS06BridgeInstaller"/>
+    <Directories DirectoryListName="CS06BridgeDirectoryList" />
+  </Product>
+
+  <Part Name="CS06BridgePublicAPI" BentleyBuildMakeFile="CS06Bridge/CS06Bridge.prewire.mke">
+    <Bindings>
+      <PublicAPI Domain="CS06Bridge"/>
+    </Bindings>
+  </Part>
+
+  <!-- ........................................................................................................................................ -->
+  <!-- ORDBridgeTestApp    This is a test application. It links with and runs the bridge in a standalone mode.                                 -->
+  <!-- ........................................................................................................................................ -->
+
+  <Product Name="CS06BridgeTestApp">
+    <SubPart PartName="CS06BridgeTestAppExe" />
+    <Directories DirectoryListName="CS06BridgeTestAppDirectoryList" />
+  </Product>
+
+  <ProductDirectoryList ListName="CS06BridgeTestAppDirectoryList">
+    <ProductDirectory Name="ApplicationRoot"                Path=""/>
+    <ProductDirectory Name="Assemblies"   RelativeTo="ApplicationRoot"/>
+    <ProductDirectory Name="Assemblies"   RelativeTo="ApplicationRoot"  LibType="static"/>
+    <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot"/>
+    <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot"  LibType="static"/>
+    <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices"/>
+    <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices" LibType="static"/>
+    <ProductDirectory Name="DgnV8Dlls"  Path="DgnV8"/>
+    <ProductDirectory Name="CifDlls"  Path="Cif"/>
+    <ProductDirectory Name="ScalableMeshV8SDK" Deliver="false" />
+    <ProductDirectory Name="BentleyDesktopClientApi" RelativeTo="ApplicationRoot" />
+    <ProductDirectory Name="BentleyDesktopClientApi_Native" RelativeTo="ApplicationRoot" />
+    <ProductDirectory Name="BentleyClientSharedAssemblies" RelativeTo="ApplicationRoot"/>
+    <ProductDirectory Name="CSDgnDb06Dlls" RelativeTo="ApplicationRoot" Path="CSDgnDb06"/>
+  </ProductDirectoryList>
+
+  <Part Name="CS06BridgeTestAppExe" BentleyBuildMakeFile="CS06Bridge/TestApp/CS06BridgeTestApp.mke" >
+    <SubPart PartName="CS06BridgeLibrary"/>
+    <SubPart PartName="DgnV8ConverterSqlang" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync" Repository="imodel02" />
+    <SubPart PartName="iModelBridgeFwk-en" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"     Repository="imodel02" />
+    <Bindings>
+      <Files ProductDirectoryName="ApplicationRoot">Delivery/CS06BridgeTestApp$(exeext)</Files>
+    </Bindings>
+  </Part>
+
+  <Part Name="PrewireForCS06BridgeUnitTests" BentleyBuildMakeFile="CS06Bridge/Tests/prewire.mke">
+    <SubPart PartName="CS06-TestFiles" PartFile="CivilTestFiles" Repository="Civil-TestFiles"/>
+    <Bindings>
+      <Files ProductDirectoryName="UnitTests-IgnoreList"  ProductSubDirectory="CiviliModelBridgesCS06Bridge" SubPartDirectory="UnitTests/CivilCS06Bridge"> Delivery/UnitTests/cs06bridge_ignore_list.txt</Files>
+    </Bindings>
+  </Part>
+
+  <Part Name="BackdoorForCS06BridgeUnitTests" BentleyBuildMakeFile="CS06Bridge/Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=BackdoorCS06Bridge">
+    <SubProduct ProductName="CS06BridgeTestApp"/>
+    <SubPart PartName="PrewireForCS06BridgeUnitTests" />
+    <Bindings>
+      <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="CiviliModelBridgesCS06Bridge/Backdoor" SourceName="Delivery/UnitTests/Objects/BackdoorCS06Bridge"/>
+    </Bindings>
+  </Part>
+
+  <Part Name="CiviliModelBridgesCS06Bridge-UnitTests-NonPublished" BentleyBuildMakeFile="CS06Bridge/Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublishedCS06Bridge">
+    <SubPart PartName="BackdoorForCS06BridgeUnitTests" />
+    <Bindings>
+      <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="CiviliModelBridgesCS06Bridge/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublishedCS06Bridge"/>
+    </Bindings>
+  </Part>
+
+  <Part Name="CiviliModelBridgesCS06Bridge-UnitTests-Published" BentleyBuildMakeFile="CS06Bridge/Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=PublishedCS06Bridge">
+    <SubPart PartName="BackdoorForCS06BridgeUnitTests" />
+    <Bindings>
+      <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="CiviliModelBridgesCS06Bridge/Published" SourceName="Delivery/UnitTests/Objects/PublishedCS06Bridge"/>
+    </Bindings>
+  </Part>
+
+  <!-- Put the unit tests into the form of a product. This product will be consumed by a platform-specific "runner" product. -->
+  <!-- Lay out the test product according to the standard BeGTest layout. -->
+  <Part Name="CS06BridgeTests">
+    <!-- We probabaly need a PublishedAPI part for this product.  If we do, then uncomment the following line -->
+    <!-- <SubPart PartName="UnitTests-Published" /> -->
+    <SubPart PartName="CiviliModelBridgesCS06Bridge-UnitTests-Published" />
+    <SubPart PartName="CiviliModelBridgesCS06Bridge-UnitTests-NonPublished" />
+
+    <!-- We can also have Scenario and Performance tests, they'll get their own Parts -->
+
+    <!-- Conceptstation calls the sqlang parts here too -->
+  </Part>
+
+  <Product Name="CS06-CiviliModelBridges-Tests">
+    <!-- *** TRICKY: Must depend on a part in begtest repository, in order to use a productdirectorylist from there. -->
+
+    <SubPart Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" PartName="Base" />
+    <SubPart PartName="CS06BridgeTests"/>
+    <!-- Lay out the Tests test product according to the standard BeGTest layout: -->
+    <Directories Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" DirectoryListName="CollectionProduct"/>
+  </Product>
+
+  <!-- Build a gtest exe to run the tests -->
+  <Product Name="Gtest-CS06-CiviliModelBridges-Tests">
+    <Directories DirectoryListName="GtestProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" />
+    <SubPart PartName="Gtest-CS06" />
+  </Product>
+
+  <Part Name="Gtest-CS06" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="
+        -dTEST_NAME=CS06CiviliModelBridgesTests
+        -dTEST_COLLECTION_PRODUCT=CS06-CiviliModelBridges-Tests
+        -dTEST_FRAMEWORK_SQLANG=DgnClientFx_en.sqlang.db3" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <SubProduct ProductName="CS06-CiviliModelBridges-Tests" />
+    <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" />
+    <Bindings>
+      <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/CS06CiviliModelBridgesTests/Assemblies/*</Files>
+      <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/CS06CiviliModelBridgesTests/Assets" />
+    </Bindings>
+  </Part>
+
+  <Part Name="RunGtest-CS06" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=Gtest-CS06-CiviliModelBridges-Tests -dGTEST_NAME=CS06CiviliModelBridgesTests -dGTEST_SHOW_PROGRESS" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <SubProduct ProductName="Gtest-CS06-CiviliModelBridges-Tests" />
+    <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" />
+  </Part>
+
+  <Part Name="CS06CiviliModelBridgesTested">
+    <SubPart PartName="CivilDataExchangeTested" Repository="Civil-DataExchange" PartFile="CivilDataExchange" />
+    <SubPart PartName="RunGtest-CS06" />
+  </Part>
+
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <!-- // L10N                                                                   // -->
+    <!-- //////////////////////////////////////////////////////////////////////////// -->    
+    <Part Name="ORDBridge-Xliffs" BentleyBuildMakeFile="ORDBridge/xliffs.mke">
+        <Bindings>
+            <Files Required="false" SubPartDirectory="xliffs">
+                Delivery/xliffs/ORDBridge_en.xliff
+            </Files>
+        </Bindings>
+    </Part>
+
+    <!-- The English Sqlang database that bundles up ORDBridge's xliff along with platform library xliffs. -->
+    <Part Name="ORDBridge-en" BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke" BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)build/ORDBridge/ORDBridge_en-US.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff">
+        <SubPart PartName="ORDBridge-Xliffs"/>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/ORDBridge_en-US.sqlang.db3</Files>
+        </Bindings>
+    </Part>
+
+</BuildContext>

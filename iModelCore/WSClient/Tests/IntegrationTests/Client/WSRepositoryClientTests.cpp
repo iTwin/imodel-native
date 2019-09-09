@@ -430,3 +430,98 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_FileLargerThanUploadChun
             }
         }
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                  Simonas.Mulevicius                   2019/09
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SendCreateAndSendUpdateObjectRequests_WhenFirstRequestReturnsActivityIdAndItIsSetToAnotherRequest_ShouldGetSuccessFromSecondRequestWithCorrespondingActivityId)
+    {
+    //Arrange
+    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+
+    Utf8String serverUrl = "https://bsw-wsg.bentley.com/ws26";
+    Utf8String repositoryId = "BentleyCONNECT.SampleAzureSqlDb--Main";
+    Credentials credentials("admin", "admin");
+
+    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
+    client->SetCredentials(credentials);
+
+    Json::Value objectCreationJson = ToJson(
+        R"( {
+            "instance" :
+                {
+                "schemaName" : "AzureSqlPluginATP",
+                "className" : "File",
+                "properties" : {}
+                }
+            })");
+
+    IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
+    options->GetActivityOptions()->SetHeaderName(IWSRepositoryClient::ActivityOptions::HeaderName::MasRequestId);
+    Utf8String requestActivityId = "5e3d3910-a228-4134-b874-41b5234d73ad";
+    options->GetActivityOptions()->SetActivityId(requestActivityId);
+
+    //Act and assert 1st time
+    auto createResult = client->SendCreateObjectRequestWithOptions(ObjectId(), objectCreationJson, StubFileWithSize(0), nullptr, options)->GetResult();
+
+    ASSERT_TRUE(createResult.IsSuccess());
+    auto createResultActivityId = createResult.GetValue().GetActivityId();
+    EXPECT_STREQ(requestActivityId.c_str(), createResultActivityId.c_str());
+    options->GetActivityOptions()->SetActivityId(createResultActivityId);
+
+    Json::Value createResultJson;
+    createResult.GetValue().GetJson(createResultJson);
+    auto id = createResultJson["changedInstance"]["instanceAfterChange"]["instanceId"].asCString();
+    auto objectId = ObjectId("AzureSqlPluginATP", "File", id);
+
+    //Act and assert 2nd time
+    auto updateResult = client->SendUpdateFileRequestWithOptions(objectId, StubFileWithSize(0), nullptr, options)->GetResult();
+
+    ASSERT_TRUE(updateResult.IsSuccess());
+    EXPECT_STREQ(requestActivityId.c_str(), updateResult.GetValue().GetActivityId().c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                  Simonas.Mulevicius                   2019/09
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SendCreateAndSendUpdateObjectRequests_WhenFirstRequestReturnsActivityIdAndItIsSetToAnotherRequestWithInvalidInfo_ShouldGetErrorFromSecondRequestWithCorrespondingActivityId)
+    {
+    //Arrange
+    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+
+    Utf8String serverUrl = "https://bsw-wsg.bentley.com/ws26";
+    Utf8String repositoryId = "BentleyCONNECT.SampleAzureSqlDb--Main";
+    Credentials credentials("admin", "admin");
+
+    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
+    client->SetCredentials(credentials);
+
+    Json::Value objectCreationJson = ToJson(
+        R"( {
+            "instance" :
+                {
+                "schemaName" : "AzureSqlPluginATP",
+                "className" : "File",
+                "properties" : {}
+                }
+            })");
+
+    IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
+    options->GetActivityOptions()->SetHeaderName(IWSRepositoryClient::ActivityOptions::HeaderName::MasRequestId);
+    Utf8String requestActivityId = "5e3d3910-a228-4134-b874-41b5234d73ad";
+    options->GetActivityOptions()->SetActivityId(requestActivityId);
+
+    //Act and assert 1st time
+    auto createResult = client->SendCreateObjectRequestWithOptions(ObjectId(), objectCreationJson, StubFileWithSize(0), nullptr, options)->GetResult();
+
+    ASSERT_TRUE(createResult.IsSuccess());
+    auto createResultActivityId = createResult.GetValue().GetActivityId();
+    EXPECT_STREQ(requestActivityId.c_str(), createResultActivityId.c_str());
+    options->GetActivityOptions()->SetActivityId(createResultActivityId);
+
+    //Act and assert 2nd time
+    auto updateResult = client->SendUpdateFileRequestWithOptions({"TestSchema.TestClass", "TestId"}, StubFileWithSize(0), nullptr, options)->GetResult();
+
+    ASSERT_FALSE(updateResult.IsSuccess());
+    EXPECT_STREQ(requestActivityId.c_str(), updateResult.GetError().GetActivityId().c_str());
+    }
