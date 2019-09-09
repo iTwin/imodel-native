@@ -20,7 +20,7 @@ BentleyStatus   iModelBridgeLdClient::Init(CharCP authKey)
     if (NULL == authKey)
         return ERROR;
 
-    LDSetLogFunction(LD_LOG_INFO, [](const char* msg) {
+    LDSetLogFunction(LD_LOG_TRACE, [](const char* msg) {
         NativeLogging::LoggingManager::GetLogger(L"iModelBridge")->info(msg);
     });
 

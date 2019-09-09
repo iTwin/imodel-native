@@ -1451,7 +1451,10 @@ BentleyApi::BentleyStatus Converter::ConvertNamedGroupsRelationshipsInModel(DgnV
                 if (group.IsValid() && !isInGroup)
                     {
                     if (Utf8String::IsNullOrEmpty(group->GetUserLabel()))
+                        {
                         group->SetUserLabel(Utf8String(ng->GetName().c_str()).c_str());
+                        group->Update();
+                        }
                     DgnDbStatus status;
                     if (DgnDbStatus::BadRequest == (status = ElementGroupsMembers::Insert(*group, *child, 0)))
                         {

@@ -1190,6 +1190,7 @@ bool iModelBridge::TestFeatureFlag(CharCP ff)
     {
     bool flagVal = false;
     iModelBridgeLdClient::GetInstance((WebServices::UrlProvider::Environment)GetParamsCR().GetUrlEnvironment()).IsFeatureOn(flagVal, ff);
+    LOG.debugv("iModelBridge::TestFeatureFlag: bridge returned %d for feature '%s'.", flagVal ? 1 : 0, ff);
     return flagVal;
     }
 
