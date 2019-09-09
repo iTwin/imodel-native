@@ -1,0 +1,9 @@
+#----------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#----------------------------------------------------------------------------------------
+%include mdl.mki
+
+always:
+    $(SrcRoot)bsicommon/build/CopyWithSymlinks.py $(OutputRootDir)Product/iModelHubNativeTests $(OutputRootDir)Product/iModelHub/NativeTests
