@@ -1,0 +1,42 @@
+ExternalSourceAspectTests.Performance   # ignore performance test in normal builds
+
+# [CGM] Drawings are now converted using the ExtractionGraphics processing and it does not process named groups anymore
+NamedGroupTests.NamedGroupOf2dElement
+    # [ RUN      ] NamedGroupTests.NamedGroupOf2dElement
+    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\GeomTestHelper.cpp(54): error: Value of: elem1.IsValid()
+    #   Actual: false
+    # Expected: true
+    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\NamedGroupTests.cpp(571): error: Value of: elem1.IsValid()
+    #   Actual: false
+    # Expected: true
+    # [  FAILED  ] NamedGroupTests.NamedGroupOf2dElement (330 ms)
+
+NamedGroupTests.NamedGroupAcrossReference # Sam broke this with switch to aspects for normal elements. Hopefully, Carole can fix it.
+
+ConverterTests.UseConverterAsLibrary # Sam - decide if we want to support the "record level mapping" feature of ConverterLibrary or not
+
+ChangeSummaryTestFixture.ElementChildRelationshipChanges
+    # bim0200, PRG, x64
+    # [ RUN      ] ChangeSummaryTestFixture.ElementChildRelationshipChanges
+    # e:\Builds\dcsdk020002194\Source\DgnPlatform\Tests\DgnProject\Published\ChangeSummary_Test.cpp(646): error:       Expected: 3
+    # To be equal to: instance.MakeValueIterator().QueryCount()
+    #       Which is: 2
+    # [  FAILED  ] ChangeSummaryTestFixture.ElementChildRelationshipChanges (76 ms)
+
+DTMElementTests.TerrainModel
+    # notified Daryl and Carole
+    # [ RUN      ] DTMElementTests.TerrainModel
+    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\gtestmain.cpp(303): error: Failed
+    # F:\Bim0200\out\Winx64\BuildContexts\DgnPlatform\PublicAPI\BeSQLite/BeSQLite.h(1243): ASSERTION FAILURE (0): val.IsValid()
+    # [  FAILED  ] DTMElementTests.TerrainModel (838 ms)
+
+ConverterTests.DetectDeletionsInEmbeddedFiles
+    # [ RUN      ] ConverterTests.DetectDeletionsInEmbeddedFiles
+    # F:\hg-imodel02\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(400): error:       Expected: BentleyApi::SUCCESS
+    #       Which is: 0
+    # To be equal to: updater.InitRootModel()
+    #       Which is: 86018
+    # F:\hg-imodel02\src\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(1501): error: Value of: db->Models().GetModel(ref__1__ModelId).IsValid()
+    #   Actual: true
+    # Expected: false
+    # [  FAILED  ] ConverterTests.DetectDeletionsInEmbeddedFiles (1041 ms)

@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="AutoPlantPDWPersistenceStrategySchema_Supplemental_DgnDbConversion" nameSpacePrefix="sappdw" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.13" prefix="bsca" />
+    <ECSchemaReference name="ECv3ConversionAttributes" version="01.00" prefix="V2ToV3" />
+    <ECCustomAttributes>
+        <SupplementalSchemaMetaData xmlns="Bentley_Standard_CustomAttributes.01.11">
+            <PrimarySchemaName>AutoPlantPDWPersistenceStrategySchema</PrimarySchemaName>
+            <PrimarySchemaMajorVersion>1</PrimarySchemaMajorVersion>
+            <PrimarySchemaMinorVersion>0</PrimarySchemaMinorVersion>
+            <Precedence>998</Precedence>
+            <Purpose>DgnDbSync hints for the AutoPlant schema.</Purpose>
+            <IsUserSpecific>False</IsUserSpecific>
+        </SupplementalSchemaMetaData>
+    </ECCustomAttributes>
+
+    <ECRelationshipClass typeName="AREA_HAS_COMPONENT" displayLabel="Area Has Component" isDomainClass="True" strength="holding" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="PIPELINE_HAS_COMPONENT" displayLabel="Pipeline Has Component" isDomainClass="True" strength="holding" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="EQUIPMENT_HAS_NOZZLE" displayLabel="Equipment Has Nozzle" isDomainClass="True" strength="embedding" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="EQUIPMENT_HAS_EQUIPMENT" displayLabel="Equipment Has Nozzle" isDomainClass="True" strength="embedding" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="COMPONENT_CONNECTEDTO_COMPONENT" displayLabel="Component Connected To Component" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="COMPONENT_HAS_ATTACHMENT" displayLabel="Component Has Attachment" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,1)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Source>
+        <Target>
+            <ECCustomAttributes>
+                <OverwriteCardinality xmlns="ECv3ConversionAttributes.01.00">
+                    <Cardinality>(0,N)</Cardinality>
+                </OverwriteCardinality>
+            </ECCustomAttributes>
+        </Target>
+    </ECRelationshipClass>
+
+</ECSchema>
+

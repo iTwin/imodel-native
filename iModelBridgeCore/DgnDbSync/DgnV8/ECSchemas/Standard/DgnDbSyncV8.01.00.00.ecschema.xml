@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="DgnDbSyncV8" nameSpacePrefix="syncv8" version="01.00.00" displayLabel="DgnDbSyncV8" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+    <ECSchemaReference name="BisCore" version="01.00" prefix="bis"/>
+    <ECCustomAttributeClass typeName="NamedGroupOwnsMembers" description="Indicates that the named group having an ECInstance of the decorated ECClass should owns its members." appliesTo="Any"/>
+    <ECCustomAttributeClass typeName="ForceIgnoreRelationshipBISBaseClass" description="Indicates that this ECRelationship class should not have a BIS base class applied to it." appliesTo="RelationshipClass"/>
+    <ECCustomAttributeClass typeName="MixinConversionContext" description="Provides hints on which ECClasses should be considered for mixin conversion as well as how to select their AppliesToEntityClass property." appliesTo="Schema">
+        <ECProperty propertyName="BaseInterfaceClassName" typeName="string" description="The base class for all ECClasses that should be considered for mixin conversion"/>
+        <ECProperty propertyName="BaseObjectClassName" typeName="string" description="The base class for all ECClasses that should not be considered for mixin conversion"/>
+    </ECCustomAttributeClass>
+    <ECCustomAttributeClass typeName="RelationshipBaseClass" isDomainClass="false" isCustomAttributeClass="True" description="Used to specify what relationship baseclass should be used instead of the default ElementRefersToElements or ElementOwnsMultiAspects">
+        <ECProperty propertyName="Name" typeName="string" description="Fullname (Schema:Class) of the relationship class.  Needs to come from either BisCore, Generic, or Functional schemas"/>
+    </ECCustomAttributeClass>
+</ECSchema>

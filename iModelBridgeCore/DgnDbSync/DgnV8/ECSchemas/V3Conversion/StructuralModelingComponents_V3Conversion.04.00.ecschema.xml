@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="StructuralModelingComponents_V3Conversion" nameSpacePrefix="ism4v3" version="4.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="ECv3ConversionAttributes" version="01.00" prefix="V2ToV3" />
+    <ECCustomAttributes>
+        <ResolvePropertyNameConflicts xmlns="ECv3ConversionAttributes.01.00" />
+        <ResolveClassNameConflicts xmlns="ECv3ConversionAttributes.01.00" />
+    </ECCustomAttributes>
+    <ECClass typeName="IsmAbstractClassAttributes" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IsmClassAttributes" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IsmConcreteClassAttributes" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IsmCustomKeyValuePair" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceStructClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IsmInternalClassAttributes" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IsmMaximumValueAttributes" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IsmMinimumValueAttributes" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IsmPropertyAttributes" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IsmRelationshipAttributes" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IsmToleranceAttributes" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceCustomAttributeClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+</ECSchema>
