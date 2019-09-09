@@ -1,0 +1,13 @@
+#---------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#---------------------------------------------------------------------------------------+
+
+$(targetAPIDir)MechanicalFunctional : $(_MakeFilePath)MechanicalFunctional/PublicAPI/MechanicalFunctional
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(targetSchemasDir)MechanicalFunctional.ecschema.xml : $(_MakeFilePath)MechanicalFunctional\EC3_Schemas\MechanicalFunctional.ecschema.xml
+    $(LinkFirstDepToFirstTarget)
+
+    
