@@ -6,7 +6,7 @@
 #
 #--------------------------------------------------------------------------------------+
 %include mdl.mki
-%include $(SrcRoot)DgnDomains/DgnV8OpenRoadsDesigner/DgnV8OpenRoadsDesigner.mki
+%include $(SrcRoot)imodel02/Domains/DgnV8OpenRoadsDesigner/DgnV8OpenRoadsDesigner.mki
 
 #--------------------------------------------------------------------------------------
 #   Macros
@@ -31,7 +31,7 @@ PchExplicitDepends = $(MultiCompileDepends)
 GCC_NO_PRE_COMPILED_HEADER = 1
 % endif
 
-CompileOptionsMki = $(SrcRoot)DgnDomains/DgnV8OpenRoadsDesigner/DgnV8OpenRoadsDesigner.mki
+CompileOptionsMki = $(SrcRoot)imodel02/Domains/DgnV8OpenRoadsDesigner/DgnV8OpenRoadsDesigner.mki
 %include $(CompileOptionsMki)
 % include $(SharedMki)PreCompileHeader.mki
 

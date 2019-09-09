@@ -22,7 +22,7 @@
 	#GTEST_LOGFILE_NAME=${GTEST_PRODUCT}/$(GTEST_NAME).log
 %endif
 
-BentleyTestDir=$(SrcRoot)util/gtest/BentleyTest/
+BentleyTestDir=$(SrcRoot)imodel02/iModelCore/util/gtest/BentleyTest/
 runDir=$[@realpath ${GTEST_OUTPUT_DIR}]/run/
 
 %if defined (BMAKE_DELETE_ALL_TARGETS)
@@ -94,7 +94,7 @@ always:
 		$(exeName)
 		<
 		%ifdef GTEST_FILTER
-			python $(SrcRoot)DgnDbTestingScripts/TestImpactAnalysis/CreateBatch.py $(exeName) "$(GTEST_EXTRA_ARGS) $(GTEST_FILTER)" $(SrcRoot)BeGTest\gtest\TeeGtest.py $(ResultsCapture)
+			python $(SrcRoot)DgnDbTestingScripts/TestImpactAnalysis/CreateBatch.py $(exeName) "$(GTEST_EXTRA_ARGS) $(GTEST_FILTER)" $(SrcRoot)imodel02/iModelCore/BeGTest/gtest/TeeGtest.py $(ResultsCapture)
 		%else			
 			>$(LogDir)run.bat
 			$(exeName) $(GTEST_EXTRA_ARGS) | python $(_makeFilePath)TeeGtest.py $(ResultsCapture)		

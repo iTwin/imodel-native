@@ -16,7 +16,7 @@ MultiCompileDepends = $(_MakeFileSpec) $(appSrc)ORDBridgeInternal.h $(appPublicA
 DgnPlatformV8LibDir = ${BuildContext}/SubParts/VersionedDgnV8Libs/
 CifLibDir           = ${BuildContext}/SubParts/CifLibs/
 
-CompileOptionsMki =$(SrcRoot)Civil/iModelBridges/ORDBridge/ORDBridge.mki
+CompileOptionsMki =$(SrcRoot)imodel02/Bridges/Civil/ORDBridge/ORDBridge.mki
 %include $(CompileOptionsMki)
 
 always:

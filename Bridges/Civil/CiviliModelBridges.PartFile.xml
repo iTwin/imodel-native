@@ -52,15 +52,15 @@
     </ProductDirectoryList>
     
     <Part Name="ORDBridgeLibrary" BentleyBuildMakeFile="ORDBridge/ORDBridge.mke" ExcludeLibType="Static">
-        <SubPart PartName="DgnV8ConverterExe" PartFile="DgnDbSync" Repository="DgnDbSync"/>
-        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridge" Repository="DgnDbSync"/>
+        <SubPart PartName="DgnV8ConverterExe" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync" Repository="imodel02"/>
+        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
         <SubPart PartName="ORDBridgePublicAPI"/>
-        <SubPart PartName="VersionedV8_InternalSDK" Repository="DgnDbSync" PartFile="DgnDbSync"/>
+        <SubPart PartName="VersionedV8_InternalSDK" Repository="imodel02" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync"/>
         <SubPart PartName="Cif_InternalSDK" />
         <SubPart PartName="ORDBridge-en"/>
-        <SubPart PartName="RoadRailPhysical" PartFile="RoadRailPhysical" Repository="DgnDomains-RoadRailPhysical"/>
-        <SubPart PartName="DgnV8OpenRoadsDesigner" PartFile="DgnV8OpenRoadsDesigner" Repository="DgnDomains-DgnV8OpenRoadsDesigner"/>
-        <SubPart PartName="QuantityTakeoffsAspectsSchema" PartFile="BisSchemas" Repository="BisSchemas"/>
+        <SubPart PartName="RoadRailPhysical" PartFile="Domains/RoadRailPhysical/RoadRailPhysical" Repository="imodel02"/>
+        <SubPart PartName="DgnV8OpenRoadsDesigner" PartFile="Domains/DgnV8OpenRoadsDesigner/DgnV8OpenRoadsDesigner" Repository="imodel02"/>
+        <SubPart PartName="QuantityTakeoffsAspectsSchema" PartFile="BisSchemasIModelCore" Repository="BisSchemas"/>
         <Bindings>
             <Libs Required="false">Delivery/$(libprefix)ORDBridge$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)ORDBridge$(shlibext)</Assemblies>
@@ -78,14 +78,14 @@
     </Part>
 
     <Product Name="ORDBridge" PrgOutputDir="ORDBridge" BuildInstallSet="true" SaveProduct="true">
-        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridge" Repository="DgnDbSync"/>
+        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
         <SubPart PartName="PublishORDToBIMExe"/>
         <SubPart PartName="ORDBridgeInstallerFiles"/>
         <SubPart PartName="ORDBridgeLibrary" />
         <SubPart PartName="Resources" />
         <SubPart PartName="StaticAppData" PartFile="MstnAppData" Repository="miscdev-mstnappdata"/>
-        <!-- <SubPart PartName="RoadRailAlignment-Tested" Repository="DgnDomains-RoadRailAlignment" PartFile="RoadRailAlignment" /> -->
-        <!-- <SubPart PartName="RoadRailPhysical-Tested" Repository="DgnDomains-RoadRailPhysical" PartFile="RoadRailPhysical" /> -->
+        <!-- <SubPart PartName="RoadRailAlignment-Tested" Repository="imodel02" PartFile="Domains/RoadRailAlignment/RoadRailAlignment" /> -->
+        <!-- <SubPart PartName="RoadRailPhysical-Tested" Repository="imodel02" PartFile="Domains/RoadRailPhysical/RoadRailPhysical" /> -->
         <SubPart PartName="CiviliModelBridgesTested" />
         
         <!-- <SubPart PartName="ORDBridgeGUI" /> -->
@@ -128,7 +128,7 @@
 
     <Part Name="ORDBridgeTestAppExe" BentleyBuildMakeFile="ORDBridge/TestApp/ORDBridgeTestApp.mke" >
         <SubPart PartName="ORDBridgeLibrary"/>
-        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridge" Repository="DgnDbSync"/>
+        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
         <Bindings>
             <Files ProductDirectoryName="ApplicationRoot">Delivery/ORDBridgeTestApp$(exeext)</Files>
         </Bindings>
@@ -146,7 +146,7 @@
         <SubPart PartName="PrewireForORDBridgeUnitTests" />
         <SubPart PartName="PublishORDToBimDLL"/>
         <SubPart PartName="Cif_InternalSDK" />
-        <SubPart PartName="RoadRailPhysical" PartFile="RoadRailPhysical" Repository="DgnDomains-RoadRailPhysical"/>
+        <SubPart PartName="RoadRailPhysical" PartFile="Domains/RoadRailPhysical/RoadRailPhysical" Repository="imodel02"/>
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="CiviliModelBridgesORDBridge/Backdoor" SourceName="Delivery/UnitTests/Objects/BackdoorORDBridge"/>
         </Bindings>
@@ -183,9 +183,9 @@
     <Product Name="CiviliModelBridges-Tests">
         <!-- *** TRICKY: Must depend on a part in begtest repository, in order to use a productdirectorylist from there. -->
 
-        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridge" Repository="DgnDbSync"/>
-        <SubPart PartName="Gtest-Tools" PartFile="BeGTest" Repository="BeGTest"/>
-        <SubPart PartName="DgnV8ConverterExe" PartFile="DgnDbSync" Repository="DgnDbSync"/>
+        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
+        <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest" Repository="imodel02"/>
+        <SubPart PartName="DgnV8ConverterExe" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync" Repository="imodel02"/>
         <SubPart PartName="Tests"/>
         <!-- Lay out the Tests test product according to the standard BeGTest layout: -->
         <Directories DirectoryListName="CollectionProduct"/>
@@ -195,9 +195,9 @@
     <Product Name="CiviliModelBridges-Gtest">
         <SubPart PartName="Gtest" />
         <SubPart PartName="Cif_InternalSDK" />
-        <SubPart PartName="VersionedV8_InternalSDK" Repository="DgnDbSync" PartFile="DgnDbSync"/>
-        <SubPart PartName="DgnV8ConverterExe" PartFile="DgnDbSync" Repository="DgnDbSync"/>
-        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridge" Repository="DgnDbSync"/>
+        <SubPart PartName="VersionedV8_InternalSDK" Repository="imodel02" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync"/>
+        <SubPart PartName="DgnV8ConverterExe" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync" Repository="imodel02"/>
+        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
         <Directories DirectoryListName="GtestProduct" />
         <Directories DirectoryListName="CiviliModelBridgeTestDirectoryList" />
     </Product>
@@ -257,8 +257,8 @@
 
     <Part Name="ORDBridgeUnitTests" BentleyBuildMakeFile="ORDBridge/Tests/UnitTestsPostBuild.mke" >
         <SubProduct ProductName="CiviliModelBridges-Gtest" />
-        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridge" Repository="DgnDbSync"/>
-      <SubPart PartName="Gtest-Tools" PartFile="BeGTest" Repository="BeGTest"/>
+        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
+      <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest" Repository="imodel02"/>
     </Part>
 
     <!-- Must Call UnitTestsPostBuild.mke last in build process in order to debug to remove ScalableMesh dlls-->
@@ -271,8 +271,8 @@
         -dTEST_COLLECTION_PRODUCT=CiviliModelBridges-Tests
         -dTEST_FRAMEWORK_SQLANG=DgnClientFx_en.sqlang.db3" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="CiviliModelBridges-Tests" />
-        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridge" Repository="DgnDbSync"/>
-        <SubPart PartName="Gtest-Tools" PartFile="BeGTest" Repository="BeGTest"/>
+        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
+        <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest" Repository="imodel02"/>
         <Bindings>
             <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/CiviliModelBridgesTests/Assemblies/*</Files>
             <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/CiviliModelBridgesTests/Assets" />
@@ -285,13 +285,13 @@
 
     <Part Name="GTest-Run-CheckCoverage" Scope="Private" OnlyPlatforms="x64"
         BentleyBuildMakeFile="${SrcRoot}/Civil/Components/sharedmke/CodeCoverage.mke"
-        BentleyBuildMakeOptions="-dProductName=CiviliModelBridges -dCodeSourceDir=${SrcRoot}\Civil\iModelBridges\ORDBridge\ -dFailIfCoverageNotMet=0 -dMinimumCoverage=0.0">
+        BentleyBuildMakeOptions="-dProductName=CiviliModelBridges -dCodeSourceDir=${SrcRoot}/imodel02/Bridges/Civil/ORDBridge/ -dFailIfCoverageNotMet=0 -dMinimumCoverage=0.0">
         <RequiredRepository>Civil-Components</RequiredRepository>
         <RequiredRepository>Bsitools-OpenCppCoverage</RequiredRepository>
         <SubProduct ProductName="CiviliModelBridges-Gtest" />
-        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest" />
-        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridge" Repository="DgnDbSync"/>
-        <SubPart PartName="Gtest-Tools" PartFile="BeGTest" Repository="BeGTest"/>
+        <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" />
+        <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
+        <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest" Repository="imodel02"/>
     </Part>
 
     <Part Name="CiviliModelBridgesTested">
@@ -335,7 +335,7 @@
 
   <Part Name="PublishORDToBIMExe" BentleyBuildMakeFile="ORDBridge/PublishORDToBIM/PublishORDToBIM.mke" >
     <SubPart PartName="ORDBridgeLibrary"/>
-    <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridge" Repository="DgnDbSync"/>
+    <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
     <Bindings>
       <Files ProductDirectoryName="ApplicationRoot">Delivery/PublishORDToBIM$(exeext)</Files>
     </Bindings>
@@ -348,7 +348,7 @@
   
   <Part Name="PublishORDToBimDLL" BentleyBuildMakeFile="ORDBridge/PublishORDToBimDLL/PublishORDToBimDLL/PublishORDToBimDLL.mke" >
     <SubPart PartName="ORDBridgeLibrary"/>
-    <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridge" Repository="DgnDbSync"/>
+    <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
     <Bindings>
         <Libs Required="false">Delivery/$(libprefix)PublishORDToBimDLL$(libext)</Libs>
         <Assemblies>Delivery/$(shlibprefix)PublishORDToBimDLL$(shlibext)</Assemblies>
@@ -389,11 +389,11 @@
 
   <Part Name="CS06BridgeLibrary" BentleyBuildMakeFile="CS06Bridge/CS06Bridge.mke" >
     <SubPart PartName="CS06BridgePublicAPI"/>
-    <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridge" Repository="DgnDbSync" />
+    <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02" />
     <SubPart PartName="DgnDb06BimTeleporterLibrary" PartFile="CivilDataExchange" Repository="Civil-DataExchange" />
-    <SubPart PartName="LinearReferencing" PartFile="LinearReferencing" Repository="DgnDomains-LinearReferencing"/>
-    <SubPart PartName="RoadRailAlignment" PartFile="RoadRailAlignment" Repository="DgnDomains-RoadRailAlignment"/>
-    <SubPart PartName="RoadRailPhysical" PartFile="RoadRailPhysical" Repository="DgnDomains-RoadRailPhysical"/>
+    <SubPart PartName="LinearReferencing" PartFile="Domains/LinearReferencing/LinearReferencing" Repository="imodel02"/>
+    <SubPart PartName="RoadRailAlignment" PartFile="Domains/RoadRailAlignment/RoadRailAlignment" Repository="imodel02"/>
+    <SubPart PartName="RoadRailPhysical" PartFile="Domains/RoadRailPhysical/RoadRailPhysical" Repository="imodel02"/>
     <Bindings>
       <Libs Required="false">Delivery/$(libprefix)CS06Bridge$(libext)</Libs>
       <Assemblies>Delivery/$(shlibprefix)CS06Bridge$(shlibext)</Assemblies>
@@ -413,7 +413,7 @@
   <Product Name="CS06Bridge" PrgOutputDir="CS06Bridge" BuildInstallSet="true" SaveProduct="true">
     <SubPart PartName="CS06BridgeInstallerFiles"/>
     <SubPart PartName="CS06BridgeLibrary" />
-    <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridge" Repository="DgnDbSync" />
+    <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02" />
     <InstallerWixFile SourceFile="CS06Bridge\Installer\CS06BridgeInstaller"/>
     <Directories DirectoryListName="CS06BridgeDirectoryList" />
   </Product>
@@ -452,8 +452,8 @@
 
   <Part Name="CS06BridgeTestAppExe" BentleyBuildMakeFile="CS06Bridge/TestApp/CS06BridgeTestApp.mke" >
     <SubPart PartName="CS06BridgeLibrary"/>
-    <SubPart PartName="DgnV8ConverterSqlang" PartFile="DgnDbSync" Repository="DgnDbSync" />
-    <SubPart PartName="iModelBridgeFwk-en" PartFile="iModelBridge"     Repository="DgnDbSync" />
+    <SubPart PartName="DgnV8ConverterSqlang" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync" Repository="imodel02" />
+    <SubPart PartName="iModelBridgeFwk-en" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"     Repository="imodel02" />
     <Bindings>
       <Files ProductDirectoryName="ApplicationRoot">Delivery/CS06BridgeTestApp$(exeext)</Files>
     </Bindings>
@@ -504,15 +504,15 @@
   <Product Name="CS06-CiviliModelBridges-Tests">
     <!-- *** TRICKY: Must depend on a part in begtest repository, in order to use a productdirectorylist from there. -->
 
-    <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
+    <SubPart Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" PartName="Base" />
     <SubPart PartName="CS06BridgeTests"/>
     <!-- Lay out the Tests test product according to the standard BeGTest layout: -->
-    <Directories Repository="BeGTest" PartFile="BeGTest" DirectoryListName="CollectionProduct"/>
+    <Directories Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" DirectoryListName="CollectionProduct"/>
   </Product>
 
   <!-- Build a gtest exe to run the tests -->
   <Product Name="Gtest-CS06-CiviliModelBridges-Tests">
-    <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest" />
+    <Directories DirectoryListName="GtestProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" />
     <SubPart PartName="Gtest-CS06" />
   </Product>
 
@@ -521,7 +521,7 @@
         -dTEST_COLLECTION_PRODUCT=CS06-CiviliModelBridges-Tests
         -dTEST_FRAMEWORK_SQLANG=DgnClientFx_en.sqlang.db3" OnlyPlatforms="x86,x64,MacOs*,Linux*">
     <SubProduct ProductName="CS06-CiviliModelBridges-Tests" />
-    <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest" />
+    <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" />
     <Bindings>
       <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/CS06CiviliModelBridgesTests/Assemblies/*</Files>
       <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/CS06CiviliModelBridgesTests/Assets" />
@@ -530,7 +530,7 @@
 
   <Part Name="RunGtest-CS06" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=Gtest-CS06-CiviliModelBridges-Tests -dGTEST_NAME=CS06CiviliModelBridgesTests -dGTEST_SHOW_PROGRESS" OnlyPlatforms="x86,x64,MacOs*,Linux*">
     <SubProduct ProductName="Gtest-CS06-CiviliModelBridges-Tests" />
-    <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest" />
+    <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" />
   </Part>
 
   <Part Name="CS06CiviliModelBridgesTested">

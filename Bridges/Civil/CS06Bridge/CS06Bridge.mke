@@ -6,7 +6,7 @@
 #
 #---------------------------------------------------------------------------------------+
 %include mdl.mki
-%include $(SrcRoot)Civil/iModelBridges/CS06Bridge/CS06Bridge.mki
+%include $(SrcRoot)imodel02/Bridges/Civil/CS06Bridge/CS06Bridge.mki
 
 #--------------------------------------------------------------------------------------
 #   Macros
@@ -33,7 +33,7 @@ PchExplicitDepends  = $(MultiCompileDepends)
     GCC_NO_PRE_COMPILED_HEADER = 1
 %endif
 
-CompileOptionsMki =$(SrcRoot)Civil/iModelBridges/CS06Bridge/CS06Bridge.mki
+CompileOptionsMki =$(SrcRoot)imodel02/Bridges/Civil/CS06Bridge/CS06Bridge.mki
 %include $(CompileOptionsMki)
 %include $(SharedMki)PreCompileHeader.mki
 
