@@ -317,3 +317,17 @@ ChangeSummaryTestFixture.ElementChildRelationshipChanges
     # To be equal to: instance.MakeValueIterator().QueryCount()
     #       Which is: 2
     # [  FAILED  ] ChangeSummaryTestFixture.ElementChildRelationshipChanges (67 ms)
+
+DependencyRevisionTest.TestDependency
+    # Flakey on PRG builds.
+    # [ RUN      ] DependencyRevisionTest.TestDependency
+    # e:\Builds\dcsdk020002217\Source\DgnPlatform\Tests\DgnProject\Published\Revision_Test.cpp(798): error:       Expected: 2
+    # To be equal to: m_dep.GetInvocationCount()
+    #       Which is: 0
+    # e:\Builds\dcsdk020002217\Source\DgnPlatform\Tests\DgnProject\Published\Revision_Test.cpp(807): error:       Expected: 321
+    # To be equal to: c->GetIntegerProperty(2)
+    #       Which is: 123
+    # e:\Builds\dcsdk020002217\Source\DgnPlatform\Tests\DgnProject\Published\Revision_Test.cpp(808): error:       Expected: 654
+    # To be equal to: c->GetIntegerProperty(3)
+    #       Which is: 456
+    # [  FAILED  ] DependencyRevisionTest.TestDependency (68 ms)
