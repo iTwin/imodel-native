@@ -92,7 +92,7 @@ LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)ECObjects$(libex
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)Units$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)DgnV8Converter$(libext)
-#LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BRepCore$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BRepCore$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)iModelBridge$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)LinearReferencing$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)RoadRailAlignment$(libext)
