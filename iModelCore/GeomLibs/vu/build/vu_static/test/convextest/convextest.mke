@@ -1,0 +1,68 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+%include    geomlibsdev.mki
+%include    mdl.mki
+
+MYOBJ       = $(vuObj)convextest/
+MYSRC       = $(_MakeFilePath)/
+
+dirToSearch = $(vuSrcInclude)
+%include cincapnd.mki
+
+dirToSearch = $(utilSharedInc)
+%include cincapnd.mki
+
+dirToSearch = $(vu_include)
+%include cincapnd.mki
+
+# avoid "warning C4013: 'toolSubsystem_printf' undefined"
+nameToDefine = NO_IODEFS
+%include cdefapnd.mki
+
+nameToDefine = VU_STANDALONE
+%include cdefapnd.mki
+
+#----------------------------------------------------------------------
+#
+#       Make output directories
+#
+#----------------------------------------------------------------------
+$(MYOBJ)$(tstdir)           :       $(MYOBJ)$(tstdir)
+
+#----------------------------------------------------------------------
+#
+#       Build C files
+#
+#----------------------------------------------------------------------
+$(MYOBJ)convextest$(oext)   :       $(MYSRC)convextest.c
+
+#----------------------------------------------------------------------
+#   Link the executable
+#----------------------------------------------------------------------
+EXE_NAME        = convextest
+EXE_DEST        = $(MYOBJ)
+EXE_LIBS        = $(vu_lib)vu_static$(stlibext)
+EXE_OBJS        = $(MYOBJ)convextest$(oext)
+
+%if defined (VUSTATIC_USEBSIBASEGEOM_DLL)
+
+        EXE_LIBS + $(vu_lib)bsibasegeom$(libext)
+
+%else
+
+$(MYOBJ)bsibasegeom_for_vu_static$(oext)    :   $(MYSRC)../bsibasegeom_for_vu_static.c
+
+        EXE_OBJS + $(MYOBJ)bsibasegeom_for_vu_static$(oext)
+
+%endif
+
+%include $(SrcRoot)bsicommon/sharedmki/linktool.mki
+
+%iffile $(MYOBJ)convextest$(exeext)
+always:
+        $(MYOBJ)convextest$(exeext)
+
+%endif

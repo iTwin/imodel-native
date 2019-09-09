@@ -1,0 +1,9 @@
+-I..
+-I\bsiout\geomlibs\delivery\basegeom\extras\sharedinc\
+-I\bsiout\geomlibs\delivery\basegeom\include\
+-I\bsiout\geomlibs\delivery\vu\include\
+-DwinNT=1
+/EHsc
+\bsiout\geomlibs\delivery\basegeom_static\library\geom_static.lib
+\bsiout\geomlibs\delivery\vu_static\library\vu_static.lib
+/MD

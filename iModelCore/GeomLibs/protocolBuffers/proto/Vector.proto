@@ -1,0 +1,6 @@
+message Vector
+{
+required DPoint3d xyz = 1;
+required DVector3d vector = 2;
+}
+

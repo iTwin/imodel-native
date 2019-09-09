@@ -1,0 +1,8 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+TESTAPP_NAME=test20
+
+%include    $(_MakeFilePath)/../testapp.mki
