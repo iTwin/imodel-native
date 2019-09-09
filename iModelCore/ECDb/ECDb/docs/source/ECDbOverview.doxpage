@@ -1,0 +1,1125 @@
+﻿/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+//__PUBLISH_SECTION_START__
+
+    //****** API doc main page *******
+    //! @namespace BentleyApi::BeSQLite::EC Classes used to access an @ref ECDbFile.
+
+    //! @addtogroup ECDbGroup
+    //! ECDb is the API to access %EC data in an @ref ECDbFile "ECDb file" (see @ref ECDbOverview).
+
+
+    //****** ECDbOverview *******
+    /**
+    @page ECDbOverview ECDb Overview
+
+    @tableofcontents
+
+    @b %ECDb is the API to access %EC data in an @ref ECDbFile "ECDb file".
+
+    @section ECDbECIntro EC - Bentley's Information Modeling System
+    %EC is Bentley's information modeling system. It is the self-describing business data as it can be found in iModels or
+    @ref ECDbFile "ECDb files" (though it is not limited to those).
+    It provides standard metadata that allows <em>%EC aware</em> apps to understand the business data,
+    including appropriate display labels, engineering units, UI hints, etc.
+    An @ref BentleyApi::ECN::ECSchema "ECSchema" defines the EC data model. You can think of it as a namespace
+    for a set of ECClasses. ECSchemas are made up of @ref BentleyApi::ECN::ECClass "ECClasses" which in turn
+    consist of @ref BentleyApi::ECN::ECProperty "ECProperties". Relationships among ECClasses are described by
+    @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClasses". An analogy to SQL is often helpful.
+    ECClasses are like tables. ECProperties are like columns. ECRelationshipClasses act like <em>link tables</em>.
+    ECProperties can be primitive, but can also be @e arrays or @e structs (think of C++ array and struct concepts).
+    ECInstances (instances of objects) are like @e rows.
+
+    On the data side @b %ECInstances represent the business objects of a given @ref BentleyApi::ECN::ECClass "ECClass",
+    i.e. an %ECInstance is an instantiation of an ECClass.
+
+    See @ref ECObjectsGroup for more information about an ECSchemas and ECInstances.
+
+    @section ECDbBigPicture ECDb API Big Picture
+    The @ref ECDbGroup "ECDb API" is a SQL based database API like ODBC, ADO, ADO.NET, or the SQLite API and other
+    vendor specific database APIs. They all share the following characteristic workflow:
+    - Open a connection to the repository
+    - Create a SQL statement
+    - Execute the SQL statement
+    - Iterate over the results and retrieve the data (in case of SELECT statements)
+    - Close the connection
+
+    In the @ref ECDbGroup "ECDb API" the role of SQL is taken by @ref ECSQLOverview "ECSQL".
+
+    Putting it in a catchy way: If you know a database API you know %ECDb by 90% and if you know SQL you know 90% of ECSQL.
+
+    @section ECDbCoreFeatures ECDb Core Features
+    Core features:
+    - the <b>%EC CRUD</b> API for performing Create, Read, Update, Delete operations on %ECInstances in an
+    @ref ECDbFile "ECDb file" (see @ref ECSqlStatementOverview)
+    - <b>ECSchema management</b> capabilities (e.g. importing or updating ECSchemas into an @ref ECDbFile "ECDb file",
+    retrieving ECSchema entities from an @ref ECDbFile "ECDb file" (see BentleyApi::BeSQLite::EC::SchemaManager and @ref ECDbECSchemaRules))
+    - Internally maps %EC data to SQLite tables and columns
+    - Accessing the history of changes to the EC data (see @ref ECDbChange)
+
+    @section ECDbMapping ECSQL hides away the database mapping of EC data
+    A key feature of @ref ECSQLOverview "ECSQL" is that it <b>targets the
+    logical schema, i.e. the BentleyApi::ECN::ECSchema, of the repository and not the schema of the underlying database.</b>
+    @ref ECDbGroup "ECDb" can therefore encapsulate all internal details of how the %EC content gets actually mapped to
+    tables and columns in the @ref ECDbFile "ECDb file".
+
+    @image html ecdb_encapsulation.png
+
+    Clients of the @ref ECDbGroup "ECDb API" therefore don't need to be aware of how the %EC data is
+    stored in the @ref ECDbFile "ECDb file". For example, clients neither need to know in which table
+    instances of a given @ref BentleyApi::ECN::ECClass "ECClass" nor in which columns the given
+    @ref BentleyApi::ECN::ECProperty "ECProperties" of the ECClass are stored. Especially
+    @ref BentleyApi::ECN::ECProperty "ECProperties" of non-primitive type (e.g. arrays, structs)
+    do not simply map to a single column, but can map to multiple columns or even to another table.
+    <b>Clients just author an ECSQL statement against the ECSchema of the repository.</b>
+
+    The section @ref ECDbSchemaMappingCustomization describes how clients can customize how ECSchemas
+    are mapped to the ECDb database schema.
+
+    @section ECDbApiEntryPoints ECDb API entry points
+    The main entry points of the %ECDb API are:
+    - The BentleyApi::BeSQLite::EC::ECDb class. It subclasses BentleyApi::BeSQLite::Db which in turn is
+    the lowest-level wrapper around the SQLite API.
+    - BentleyApi::BeSQLite::EC::ECSqlStatement for the %EC CRUD functionality
+
+    @section ECDbApiFurtherReading Further Reading
+    - @ref ECDbGroup "API reference"
+    - @ref WorkingWithECDb : Explains concepts of the %ECDb API as well as details and <em>How To's</em>
+    for using the %ECDb API.
+    - @ref ECSqlStatementOverview
+    - @ref ECSQLOverview
+    - @ref ECSQLSamples
+    - @ref ECDbCodeSamples "Code examples": Illustrates typical workflows when working with business
+    data in the @ref ECDbFile "ECDb file".
+    - @ref ECDbChange
+    - @ref ECDbECSchemaRules
+    - @ref ECDbSchemaMappingCustomization
+    - @ref ECDbCreatingECDbFromScratch
+
+    */
+
+    //****** WorkingWithECDb *******
+
+    /**
+    @page WorkingWithECDb Working with ECDb
+
+    This page provides various details and hints about the %ECDb API and how to work with it.
+
+    @li @subpage ECDbFile
+    @li @subpage ECSQLOverview
+    @li @subpage ECSQLSamples
+    @li @subpage ECSqlStatementOverview
+    @li @subpage ECDbChange
+    @li @subpage ECDbSchemas
+    @li @subpage ECDbECSchemaImportAndUpgrade
+    @li @subpage ECDbECSchemaRules
+    @li @subpage ECDbRelationshipRules
+    @li @subpage ECDbRelationshipInheritanceRules
+    @li @subpage ECDbNavigationProperties
+    @li @subpage ECDbSchemaMappingCustomization
+    @li @subpage ECDbFileInfo
+    @li @subpage ECDbTransactions
+    @li @subpage ECDbCreatingECDbFromScratch
+    @li @subpage ECDbCodeSamples
+    @see @ref ECDbOverview
+    */
+
+    /**
+    @page ECDbFile ECDb File
+    Throughout the @ref ECDbOverview "ECDb documentation", we refer to <b>%ECDb files</b>.
+    An %ECDb file is a SQLite database that is set up to store %EC data (Information Modeling content). It contains
+    - well-defined tables to store @ref BentleyApi::ECN::ECSchema "ECSchemas", @ref BentleyApi::ECN::ECClass "ECClasses",
+    @ref BentleyApi::ECN::ECRelationshipClass "ECRelationships", @ref BentleyApi::ECN::ECProperty "ECProperties", etc.
+    - well-defined tables to store the ECInstance data.
+
+    The set of those well-defined tables is called the <b>%ECDb profile</b> of a SQLite database.
+
+    The @ref ECDbOverview "ECDb API" is used to access the data in the %ECDb file.
+
+    ### %ECDb files versus DgnDb files
+    The @e DgnDb format includes the %ECDb profile, so often the <em>%ECDb file</em> you are using will actually be
+    a <em>DgnDb file</em>. In short, every <em>DgnDb file</em> is an <em>%ECDb file</em>, but not
+    every <em>%ECDb file</em> is a <em>DgnDb file</em>.
+
+    @image html ecdb_vs_dgndb_profiles.png
+
+    In particular, %ECDb files cannot store DGN graphics. This can only be done in a DgnDb file.
+    So %ECDb files are ideal for applications that work with EC business data and without DGN content.
+    The %ECDb file format is slimmer than the DgnDb file format, and you can work against the @ref ECDbOverview "ECDb API" directly.
+    The DGN related technology stack is not needed in that case.
+
+    @see @ref ECDbOverview
+    */
+
+    /**
+    @page ECDbTransactions ECDb and Transactions
+    In order to be as efficient and performant as possible ECDb's data modifying operations don't do any
+    internal or implicit transaction management. So if you call a data modifying method (e.g. via
+    @ref BentleyApi::BeSQLite::EC::ECSqlStatement "ECSqlStatement" or
+    @ref BentleyApi::BeSQLite::EC::SchemaManager "SchemaManager"), ECDb does not internally
+    create a transaction for that call. <b>ECDb therefore intentionally does not grant
+    atomicity for its data modifying operations</b> (Exceptions to this rule are documented on the respective method).
+    This implies, in particular, that ECDb - like SQLite - does not grant statement-level atomicity.
+
+    What operations a transaction should encompass is mainly driven by the application's workflows anyways. So you should
+    define the transaction boundaries in your workflows and wrap the respective ECDb calls in a transaction at your discretion.
+
+    By default, each connection to an @ref ECDbFile has an active default transaction as SQLite always needs an
+    active transaction when accessing the data. (See @ref BentleyApi::BeSQLite::DefaultTxn "StartDefaultTransaction"
+    if you think you need to deviate from the default.)
+
+    You commit the transaction via @ref BentleyApi::BeSQLite::Db::SaveChanges "ECDb::SaveChanges" and
+    roll it back via @ref BentleyApi::BeSQLite::Db::AbandonChanges "ECDb::AbandonChanges".
+    The default transaction will be automatically restarted after having committed it or rolled it back.
+
+    See the @ref BentleyApi::BeSQLite::Db "BeSQLite API" for details about transactions.
+
+    @see @ref ECDbOverview
+    */
+
+    /**
+    @page ECDbSchemas ECDb's ECSchemas
+    
+    ECDb ships with a set of ECSchemas.
+
+    @section ECDbBuiltInSchemas Built-in schemas
+    Every ECDb file comes with the following ECSchemas already included. That means you don't have to import them anymore:
+    
+    - %ECDbFileInfo (see also @ref ECDbFileInfo)
+    - %ECDbMeta
+    - %ECDbMap
+    
+    @section ECDbDeployedSchemas Deployed schemas
+    The following schemas are deployed to the application's asset directory, but are not included in an ECDb file by default.
+
+    - %ECDbSchemaPolicies
+
+    @see @ref ECDbOverview
+    */
+
+
+    /**
+    @page ECDbECSchemaImportAndUpgrade ECSchema Import and Upgrade
+    
+    @ref BentleyApi::BeSQLite::EC::SchemaManager::ImportSchemas "SchemaManager::ImportSchemas" is the key API to
+    - @b import new @ref BentleyApi::ECN::ECSchema "ECSchemas" into an @ref ECDbFile "ECDb file"
+    - @b upgrade @ref BentleyApi::ECN::ECSchema "ECSchemas" which already exist in an @ref ECDbFile "ECDb file" with a newer version of them.
+    %ECDb computes the changes between the newer and existing schema version and applies the changes to the %ECDb file
+    
+    See also @ref ECDbECSchemaRules
+
+    @note If @ref BentleyApi::BeSQLite::EC::SchemaManager::ImportSchemas "SchemaManager::ImportSchemas" fails, callers
+    should roll back the current savepoint or transaction. %ECDb, by design, does not do any transaction management itself and
+    does not ensure that its operations are atomic. See @ref ECDbTransactions for details.
+    
+
+    @section ECDbECSchemaUpgradeSupportedFeatures ECSchema Upgrade Supported Features
+    
+    @note Deleting ECClasses, ECEnumerations, KindOfQuantities, ECProperties is only supported in a major schema version change, i.e. 
+    the @ref BentleyApi::ECN::ECSchema::GetVersionRead "VersionRead" must be incremented and @b SchemaImportOptions::DisallowMajorSchemaUpgrade must be false false
+    (see @ref BentleyApi::BeSQLite::EC::SchemaManager::SchemaImportOptions). Otherwise the ECSchema upgrade will fail.
+
+    ### ECSchema
+    - @ref BentleyApi::ECN::ECSchema::GetDescription "Description": Modify
+    - @ref BentleyApi::ECN::ECSchema::GetDisplayLabel "DisplayLabel": Modify
+    - Schema Version (@ref BentleyApi::ECN::ECSchema::GetVersionRead "VersionRead", @ref BentleyApi::ECN::ECSchema::GetVersionWrite "VersionWrite", @ref BentleyApi::ECN::ECSchema::GetVersionMinor "VersionMinor"): Version can be incremented. Major version changes, however, can only be performed if @b SchemaImportOptions::DisallowMajorSchemaUpgrade is false
+    - @ref BentleyApi::ECN::ECSchema::GetReferencedSchemas "Schema references": Add, Remove
+    - @ref BentleyApi::ECN::ECSchema::GetClasses "Classes":
+        - Add
+        - Remove, if class is
+            - an @ref BentleyApi::ECN::ECEntityClass "ECEntityClass" and
+                - does not have subclasses
+                - is not used as constraint class in an @ref BentleyApi::ECN::ECRelationshipConstraint "ECRelationshipConstraint"
+            - a @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" which is mapped as <b>link table</b> 
+    - @ref BentleyApi::ECN::ECSchema::GetEnumerations "ECEnumerations": Add
+    - @ref BentleyApi::ECN::ECSchema::GetKindOfQuantities "KindOfQuantities": Add
+    - @ref BentleyApi::ECN::ECSchema::GetPropertyCategories "PropertyCategories": Add
+    - @ref BentleyApi::ECN::ECSchema::GetPhenomena "Phenomena": Add
+    - @ref BentleyApi::ECN::ECSchema::GetUnitSystems "UnitSystems": Add
+    - @ref BentleyApi::ECN::ECSchema::GetUnits "Units": Add
+    - @b CustomAttributes on the ECSchema: Add, Remove, Modify
+
+    ### ECClass
+    - @ref BentleyApi::ECN::ECClass::GetDescription "Description": Modify
+    - @ref BentleyApi::ECN::ECClass::GetDisplayLabel "DisplayLabel": Modify
+    - @ref BentleyApi::ECN::ECClass::GetBaseClasses "BaseClasses": Only property-less @ref BentleyApi::ECN::ECEntityClass::IsMixin "Mixins" can be @b Added or @b removed
+    - @ref BentleyApi::ECN::ECClassModifier "ECClassModifier":
+        - from @b Sealed to @b None, but only if 
+            - the class is no ECRelationshipClass 
+            - the class is mapped as 'TablePerHierarchy'
+        - from @b None to @b Sealed (for leaf classes only, of course)
+    - @ref BentleyApi::ECN::ECClass::GetProperties "Properties":
+        - Add
+        - Remove, if the property is
+            - mapped to a shared column (see ShareColumns custom attribute in @ref ClassMapCustomAttributeDescription)
+            - not used in an @ref BentleyApi::ECN::ECStructClass "ECStructClass"
+            - not overridden
+            - not a @ref BentleyApi::ECN::NavigationECProperty
+    - @b CustomAttributes on the ECClass: Add, Remove, Modify
+
+    ### ECEnumeration
+    - @b Modify 
+        - @ref BentleyApi::ECN::ECEnumeration::GetIsStrict "IsStrict"
+            - Only when modifying from true to false.
+        - @ref BentleyApi::ECN::ECEnumeration::GetDisplayLabel "DisplayLabel"
+        - @ref BentleyApi::ECN::ECEnumeration::GetDescription "Description"
+
+    - @b ECEnumerators
+        - @b Add a new @ref BentleyApi::ECN::ECEnumerator "ECEnumerator"
+
+    ### ECEnumerator
+    - @b Modify 
+        - @ref BentleyApi::ECN::ECEnumerator::GetDisplayLabel "DisplayLabel"
+        - @ref BentleyApi::ECN::ECEnumerator::GetDescription "Description"
+
+    ### PropertyCategory
+    - @ref BentleyApi::ECN::PropertyCategory::GetDescription "Description": Modify
+    - @ref BentleyApi::ECN::PropertyCategory::GetDisplayLabel "DisplayLabel": Modify
+    - @ref BentleyApi::ECN::PropertyCategory::GetPriority "Priority": Modify
+
+    ### KindOfQuantity
+    - @ref BentleyApi::ECN::KindOfQuantity::GetDisplayLabel "DisplayLabel": Modify
+    - @ref BentleyApi::ECN::KindOfQuantity::GetDescription "Description": Modify
+    - @ref BentleyApi::ECN::KindOfQuantity::GetRelativeError "RelativeError": Modify
+    - @ref BentleyApi::ECN::KindOfQuantity::GetPresentationFormats "PresentationFormats": Add, Remove
+
+    ### Phenomenon
+    - @ref BentleyApi::ECN::Phenomenon::GetDisplayLabel "DisplayLabel": Modify
+    - @ref BentleyApi::ECN::Phenomenon::GetDescription "Description": Modify
+
+    ### UnitSystem
+    - @ref BentleyApi::ECN::UnitSystem::GetDisplayLabel "DisplayLabel": Modify
+    - @ref BentleyApi::ECN::UnitSystem::GetDescription "Description": Modify
+
+    ### Unit
+    - @ref BentleyApi::ECN::ECUnit::GetDisplayLabel "DisplayLabel": Modify
+    - @ref BentleyApi::ECN::ECUnit::GetDescription "Description": Modify
+
+    ### Format
+    - @ref BentleyApi::ECN::ECFormat::GetDisplayLabel "DisplayLabel": Modify
+    - @ref BentleyApi::ECN::ECFormat::GetDescription "Description": Modify
+    - @b NumericSpec: Modify any of its attributes
+    - @b CompositeSpec: 
+        - Spacer: Modify
+        - IncludeZero: Modify
+        - Unit labels: Modify
+
+    In other words: Anything can be modified except for the format name and the composite units (neither adding/modifying/removing).
+
+    ### ECProperty
+    - @ref BentleyApi::ECN::ECProperty::GetDescription "Description": Modify
+    - @ref BentleyApi::ECN::ECProperty::GetDisplayLabel "DisplayLabel": Modify
+    - @ref BentleyApi::ECN::ECProperty::GetIsReadOnly "IsReadOnly": Modify
+    - @ref BentleyApi::ECN::ECProperty::GetMinimumValue "MinimumValue": Modify
+    - @ref BentleyApi::ECN::ECProperty::GetMaximumValue "MaximumValue": Modify
+    - @ref BentleyApi::ECN::ECProperty::GetMinimumLength "MinimumLength": Modify
+    - @ref BentleyApi::ECN::ECProperty::GetMaximumLength "MaximumLength": Modify
+    - @ref BentleyApi::ECN::ECProperty::GetCategory "Category": Assign, Remove
+    - @ref BentleyApi::ECN::ECProperty::GetPriority "Priority": Assign, Remove
+    - @ref BentleyApi::ECN::ECProperty::GetKindOfQuantity "KindOfQuantity":
+        - Assign
+        - Replace, only if its @ref BentleyApi::ECN::KindOfQuantity::GetPersistenceUnit "PersistenceUnit" does not change
+    - @b CustomAttributes on the ECProperty: Add, Remove, Modify
+
+    #### Primitive ECProperty
+    - @ref BentleyApi::ECN::PrimitiveECProperty::GetExtendedTypeName "ExtendedTypeName": Modify
+    - @ref BentleyApi::ECN::PrimitiveECProperty::GetEnumeration "ECEnumeration": Modify with these restrictions:
+        - It is possible to 
+            - assign an ECEnumeration to an ECProperty that was an ordinary primitive property before
+            - change the ECEnumeration of an ECProperty to another ECEnumeration
+            - remove the ECEnumeration from the ECProperty, so that it becomes an ordinary primitive property
+        - This is possible only if
+            - the involved ECEnumerations are @ref BentleyApi::ECN::ECEnumeration::GetIsStrict "not strict"
+            - the @ref BentleyApi::ECN::ECEnumeration::GetType "underlying type" of the involved ECEnumerations is the same,
+            or if the @ref BentleyApi::ECN::PrimitiveECProperty::GetType "property type" and the ECEnumeration's underlying type is the same.
+
+    #### Primitive Array ECProperty
+    - @ref BentleyApi::ECN::PrimitiveArrayECProperty::GetExtendedTypeName "ExtendedTypeName": Modify
+    - @ref BentleyApi::ECN::PrimitiveArrayECProperty::GetEnumeration "ECEnumeration": Modify with these restrictions:
+        - It is possible to 
+            - assign an ECEnumeration to an ECProperty that was an ordinary primitive property before
+            - change the ECEnumeration of an ECProperty to another ECEnumeration
+            - remove the ECEnumeration from the ECProperty, so that it becomes an ordinary primitive property
+        - This is possible only if
+            - the involved ECEnumerations are @ref BentleyApi::ECN::ECEnumeration::GetIsStrict "not strict"
+            - the @ref BentleyApi::ECN::ECEnumeration::GetType "underlying type" of the involved ECEnumerations is the same,
+            or if the @ref BentleyApi::ECN::PrimitiveArrayECProperty::GetPrimitiveElementType "array element type" and the ECEnumeration's underlying type is the same.
+
+    ### ECRelationshipConstraint
+    - @ref BentleyApi::ECN::ECRelationshipConstraint::GetRoleLabel "RoleLabel": Modify
+    - @b CustomAttributes on the ECRelationshipConstraint: Add, Remove, Modify
+    
+    ### ECDbMap ECSchema Custom Attributes
+
+    Generally, the Custom Attributes from the @b ECDbMap ECSchema cannot be added, removed, or modified if they affected the mapping of the ECSchemas and 
+    therefore the layout of the database schema.
+        
+    @see @ref ECDbOverview
+    */
+
+    /**
+    @page ECDbECSchemaRules Rules for ECSchemas supported by ECDb
+    
+    This lists rules that ECDb enforces in addition to what ECObjects already enforces, as well as limitations which ECDb cannot enforce.
+    Rules already enforced by ECObjects are not listed here.
+
+    ### ECClasses
+    - %ECDb does not support generic multi-inheritance. Use @ref BentleyApi::ECN::ECEntityClass::IsMixin "Mixin" base classes instead.
+    - %ECDb does not support abstract ECClasses having a non-abstract base class.
+    
+    ### ECRelationshipClasses
+    - See @ref ECDbRelationshipRules
+
+    ### Enumerations
+    - %ECDb does not enforce @ref BentleyApi::ECN::ECEnumeration::GetIsStrict "strict" 
+    @ref BentleyApi::ECN::ECEnumeration "ECEnumerations". For %ECProperties that
+    have a @ref BentleyApi::ECN::ECEnumeration::GetIsStrict "strict" %ECEnumeration as property type, 
+    callers have to make sure to not assign values which are not defined in the %ECEnumeration.
+    
+    ### Properties
+    - @ref BentleyApi::ECN::ECProperty "ECProperties" must not have these names which are used by ECSQL system properties: @b Id, @b ECInstanceId,
+    @b ECClassId, @b SourceECInstanceId, @b SourceId, @b SourceECClassId, @b TargetECInstanceId, @b TargetId, @b TargetECClassId 
+    - @ref BentleyApi::ECN::ECProperty "ECProperties" may not be of the same type as its @ref BentleyApi::ECN::ECClass "ECClass".
+    - For @ref BentleyApi::ECN::NavigationECProperty "NavigationECProperties" see @ref ECDbNavigationProperties
+    -
+    @see @ref ECDbOverview
+    */
+
+    /**
+    @page ECDbRelationshipRules Rules for ECRelationshipClasses in ECDb
+    The specification of @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClasses" allows for constructs which don't necessarily
+    lead to a good database design. ECDb therefore only supports @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClasses" that 
+    can be mapped to a reasonable database layout.
+
+    ## ECRelationshipClass Definition Consistency
+    Technically, @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClasses" can be defined with incompatible 
+    values for cardinality, strength and strength direction. The table shows what is actually allowed.
+
+    Cardinality  | Supported Strength | Supported Strength Direction
+    ------------ | ------------------ | ----------------------------
+    1:1          | Any                | @ref BentleyApi::ECN::Forward "Forward" or @ref BentleyApi::ECN::Backward "Backward"
+    1:N          | @ref BentleyApi::ECN::Embedding "Embedding" | @ref BentleyApi::ECN::Forward "Forward"
+    &nbsp;       | @ref BentleyApi::ECN::Referencing "Referencing" or @ref BentleyApi::ECN::Holding "Holding" | @ref BentleyApi::ECN::Forward "Forward" or @ref BentleyApi::ECN::Backward "Backward"
+    N:1          | @ref BentleyApi::ECN::Embedding "Embedding" | @ref BentleyApi::ECN::Backward "Backward"
+    &nbsp;       | @ref BentleyApi::ECN::Referencing "Referencing" or @ref BentleyApi::ECN::Holding "Holding" | @ref BentleyApi::ECN::Forward "Forward" or @ref BentleyApi::ECN::Backward "Backward"
+    M:N          | @ref BentleyApi::ECN::Referencing "Referencing" or @ref BentleyApi::ECN::Holding "Holding" | @ref BentleyApi::ECN::Forward "Forward" or @ref BentleyApi::ECN::Backward "Backward"
+
+    ## Foreign Key mapping versus Link Table mapping
+    ECDb always attempts to map an @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" using a 
+    @ref ECDbForeignKeyMapping "Foreign Key mapping", because this type is more performant and less complex.
+    For those cases where a Foreign Key mapping is not possible (because a <i>link table</i> is required), 
+    ECDb chooses the <b>Link Table</b> mapping.
+
+    @section ECDbRelationshipMappingRules ECRelationship Mapping Rules
+
+    <b>Link Table</b> mapping is chosen if
+    - the cardinality is M:N or
+    - ECProperties are defined for the ECRelationshipClass or
+    - the @b LinkTableRelationshipMap custom attribute is present on the ECRelationshipClass (see also @ref LinkTableRelationshipMapCustomAttributeDescription) or
+    - no @ref BentleyApi::ECN::NavigationECProperty "NavigationECProperty" is defined for the relationship class on any constraint class
+      on the foreign key end of the relationship (see @ref ECDbForeignKeyMapping for what the foreign key end is).
+
+    Otherwise, the @ref ECDbForeignKeyMapping is chosen:
+    - <b>Physical Foreign Key</b> mapping if the respective navigation property has the @b ForeignKeyConstraint custom attribute. 
+    - <b>Logical Foreign Key</b> mapping otherwise.
+
+    @note The schema import fails if the ECRelationshipClass evaluates to <b>Link Table</b> mapping by one of the first three criteria above and
+          also has a navigation property defined for it.
+
+    @subsection ECDbForeignKeyMapping Foreign Key Mapping (a.k.a Navigation Property Mapping)
+    Foreign key mapping means that a foreign key column (and sometimes an additional column for the relationship class id) 
+    is created in the table of the class on the <i>foreign key constraint end</i>. It is used to store the id of the related instance.
+    
+    ## How ECDb determines the foreign key end of a relationship
+    
+    The foreign key end of a relationship is determined by cardinality and, only if the cardinality is 1:1, by the strength direction:
+
+    Cardinality  | Strength Direction | Foreign Key end
+    ------------ | ------------------ | ------------------------
+    1:1          | Forward            | Target
+    &nbsp;       | Backward           | Source
+    1:N          | not relevant       | Target
+    N:1          | not relevant       | Source
+
+    ## Foreign Key Mapping Types
+
+    Two flavors of Foreign Key mapping exist:
+    If the ECRelationshipClass's @ref BentleyApi::ECN::NavigationECProperty "NavigationECProperty" has 
+    the @ref ForeignKeyConstraintCustomAttributeDescription "ForeignKeyConstraint custom attribute":
+    - <b>Physical Foreign Key</b> mapping: ECDb creates these things in the database:
+        - a Foreign Key constraint
+        - indexes on the Foreign Key column
+        - if the multiplicity on the referenced end is (1..1), a NOT NULL constraint on the Foreign Key column and its RelECClassId column (if there)
+        - If the multiplicity on the foreign key end is (0..1) or (1..1), a unique index on the Foreign Key column
+
+    If the ForeignKeyConstraint custom attribute is not present:
+    - <b>Logical Foreign Key</b> mapping: ECDb does neither create Foreign Key constraints nor respective indexes, nor NOT NULL constraints in the database.
+
+    ## Foreign Key Mapping Requires Navigation Properties
+    
+    @b Rules: 
+        - Every constraint class on the <i>foreign key end</i> of the relationship class must define a navigation property for this relationship class
+        - The navigation properties of each constraint class must have the same name.
+    
+    If none of the constraint classes on the <i>foreign key end</i> of the relationship defines a navigation property, the
+    <i>link table mapping</i> is chosen (see above).
+    
+    In all other cases, the schema import fails. See section <i>Foreign Key Mapping Restrictions</i> below
+    The schema import fails however, if
+         - at least one, but not all constraint classes on the <i>foreign key end</i> define a navigation property
+         - The constraint classes' navigation property names differ
+         - a navigation property for this relationship class is defined on a class other than the constraint classes (including
+         subclasses of them and the @ref BentleyApi::ECN::ECRelationshipConstraint::GetAbstractConstraint "constraint's common base class")
+
+    
+    ## Foreign Key Mapping Restrictions
+
+    The schema import fails for the ECRelationshipClass, if
+        - if it evaluates to <b>Physical Foreign Key</b> mapping and the Foreign Key is created in a <b>joined table</b> 
+          (see @ref ClassMapCustomAttributeDescription) and 
+            - the relationship strength is @b Embedding or
+            - in the navigation property's @b ForeignKeyConstraint custom attribute @b OnDeleteAction is set to @b Cascade
+        - at least one, but not all constraint classes on the <i>foreign key end</i> define a navigation property
+        - The constraint classes' navigation property names differ
+        - a navigation property for this relationship class is defined on a class other than the constraint classes (including
+         subclasses of them and the @ref BentleyApi::ECN::ECRelationshipConstraint::GetAbstractConstraint "constraint's common base class") 
+        
+
+    The <b>number of tables to which the two relationship constraint ends map to</b> is another criterion for ECDb to decide whether
+    an ECRelationshipClass is supported or not.
+
+    <b>Rule of thumb: The ECRelationshipClass is supported, if the number of tables on either end is 1.</b>
+
+    - Link Table mapping: Number of tables must be 1 on both ends.
+    - Foreign Key mapping:
+        - Number of tables on the referenced end must be 1 (joined tables are not to be counted).
+        - Number of tables on the Foreign Key end (joined tables are to be counted)
+            - 1: ok
+            - > 1: ok, but <b>relationship becomes read-only</b>, i.e. it cannot be used in ECSQL INSERT, UPDATE, DELETE.
+            Creating relationships of that kind is possible through @ref BentleyApi::ECN::NavigationECProperty "NavigationECProperties".
+        
+    #### Counting the tables on the ECRelationshipClass ends
+    - Count the distinct tables to which each class specified in the 
+    @ref BentleyApi::ECN::ECRelationshipConstraint "ECRelationshipConstraint" maps.
+    - If the @ref BentleyApi::ECN::ECRelationshipConstraint "constraint" is 
+    @ref BentleyApi::ECN::ECRelationshipConstraint::GetIsPolymorphic "polymorphic", 
+    you need to count the subclasses' tables, too.
+    
+    @note ECDb fails the schema import for unsupported ECRelationshipClasses and logs the error. If you are not sure 
+    how to determine the table count on the relationship ends, you can attempt schema import dry-runs and 
+    look at the logged errors.
+    
+    ## Features supported but not enforced
+    - %ECDb generally only enforces the @ref BentleyApi::ECN::RelationshipMultiplicity "ECRelationshipConstraint multiplicities" 
+    common to databases: (0..1), (1..1), (0..*), (1..*) (see exceptions above)
+    Abitrary numbers for the lower and upper bound of the multiplicity are not enforced.
+    - %ECDb does not enforce multiplicities narrowed by derived ECRelationshipClasses.
+    - For @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClasses" with strength
+    @ref BentleyApi::ECN::Holding "Holding" foreign key constraints exist to delete the relationship @em instances. But ECDb
+    does not delete the actual orphaned instances automatically because there are different ways to interpret and implement the strength 
+    @ref BentleyApi::ECN::Holding "Holding". Consequently, <b>%ECDb treats Holding relationships as Referencing relationships</b>.
+        
+    @see @ref ECDbOverview
+    */
+
+    /**
+    @page ECDbRelationshipInheritanceRules Inheriting ECRelationshipClasses in ECDb
+    
+    In addition to the rules for @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" inheritance specified by the EC specification, 
+    %ECDb has some more:
+
+    - The @b LinkTableRelationshipMap custom attributes (see @ref ECDbSchemaMappingCustomization) can only 
+    be applied to the @b root of the @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" hierarchy. The @b root is the ECRelationshipClass which
+    does not have a base class itself.
+    - The mapping type must not change within a relationship class hierarchy. In other words, the @ref BentleyApi::ECN::ECRelationshipClass "Root ECRelationshipClass"
+    determines the mapping for the entire hierarchy.
+    - This implies in particular that if the root class implies a <em>foreign key type mapping</em>, the subclasses must 
+    not add ECProperties, because ECRelationshipClasses with ECProperties are only supported when mapped as link tables.
+    - Link tables implicitly use the @b TablePerHierarchy strategy if they store an ECRelationshipClass hierarchy.
+    - %ECDb does not enforce multiplicities narrowed by derived ECRelationshipClasses.
+
+    @see @ref ECDbRelationshipRules
+    @see @ref ECDbSchemaMappingCustomization
+    @see @ref ECDbOverview
+    */
+
+    /**
+    @page ECDbNavigationProperties Navigation Properties in ECDb
+    
+    As described in <a href="files/ecdb/ecsql_overview.pdf" target="_blank">ECSQL Overview.pdf</a> @ref BentleyApi::ECN::NavigationECProperty "Navigation Properties"
+    are exposed to ECSQL as structs with the two system members @b Id and @b RelECClassId (see @ref ECSqlSystemProperties).
+
+    The RelECClassId is mandatory if the @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" backing 
+    the navigation property has subclasses. Callers must make sure
+    to set the RelECClassId along with the Id when inserting an ECInstance. ECDb does not enforce that, nor validate the specified
+    values.
+    Likewise ECDb's referential integrity does not clean up the RelECClassId values. If for an ECRelationshipClass with OnDelete action 'SetNull', a parent is deleted,
+    the navigation property's Id value is set to NULL, but the RelECClassId's value is not changed.
+    
+    ### Rules
+    - A @ref BentleyApi::ECN::NavigationECProperty "NavigationECProperty" must always be defined on the root @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass".
+    Consequently, it cannot be defined on subclasses of an ECRelationshipClass.
+    - A @ref BentleyApi::ECN::NavigationECProperty "NavigationECProperty" can only be defined on the foreign key end of an ECRelationshipClass (see @ref ECDbForeignKeyMapping)
+    - An %ECClass cannot have more than one @ref BentleyApi::ECN::NavigationECProperty "NavigationECProperty" defined for the same
+    @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass"
+    
+       
+    @see BentleyApi::BeSQLite::EC::ECSqlStatement::BindNavigationValue
+
+    @see @ref ECDbRelationshipRules
+    @see @ref ECDbOverview
+    */
+
+    /**
+    @page ECDbSchemaMappingCustomization Customizing the ECDb schema mapping
+
+    %ECDb applies a default mapping when importing an @ref BentleyApi::ECN::ECSchema "ECSchema" into the @ref ECDbFile "ECDb file".
+    However, %ECDb allows ECSchema designers to modify the default mapping by decorating the ECSchema
+    with dedicated custom attributes defined in the ECSchema <a href="files/ecdb/ECDbMap.ecschema.xml" target="_blank">ECDbMap.ecschema.xml</a>.
+
+    @section ECDbDefaultMappingRules ECDb Default Mapping Rules
+    - Type of ECClasses that <b>are not mapped</b>.
+        - CustomAttribute ECClasses
+        - Struct ECClasses
+    - Type of ECClasses that are mapped using the @b OwnTable strategy by default.
+        - Entity ECClasses
+    - ECRelationshipClasses are either mapped to the table of one of the constraint ends (ForeignKey mapping)
+    or to a link table (see @ref ECDbRelationshipRules for details).
+
+    @section SchemaMapCustomAttributeDescription The SchemaMap custom attribute
+
+    Customizing the mapping on the schema level is done by applying the @b SchemaMap custom attribute to the respective ECSchema.
+    Description of the SchemaMap properties:
+    - TablePrefix: Specifies a prefix for generated tables. If not specified, the alias of the ECSchema is used.
+    The prefix should be 2-4 letters long followed by an underbar, e.g. plnt_. This setting will affect all tables that are created
+    for this ECSchema unless it is overwritten on the ECClass level via the @ref ClassMapCustomAttributeDescription "ClassMap" property @b TableName.
+
+    ####Example
+
+        <ECCustomAttributes>
+            <SchemaMap xmlns="ECDbMap.02.00.00">
+                <TablePrefix>sp</TablePrefix>
+            </SchemaMap>
+        </ECCustomAttributes>
+
+    @section ClassMapCustomAttributeDescription The ClassMap custom attribute for Entity ECClasses and link table ECRelationshipClasses
+
+    Customizing the mapping for an @ref BentleyApi::ECN::ECEntityClass "ECEntityClass" or
+    <b>LinkTable ECRelationshipClasses</b> (see @ref ECDbRelationshipMappingRules) is done by applying 
+    the @b ClassMap custom attribute to the respective ECClass.
+    (ECDb will only look for it in local attributes on the ECClass).
+    
+    Indexes are defined using the @b DbIndexList custom attribute. 
+      
+    @note The @b ClassMap custom attribute cannot be applied to Mixin classes.
+
+    Description of the ClassMap properties:
+
+    - @b MapStrategy (optional): Specifies how the ECClass is mapped to table(s). Default strategy is 'OwnTable'.
+        - @c NotMapped : The class is not mapped to any database table. 
+            - If the class has subclasses, the MapStrategy applies to the subclasses, too.
+            - If the class is used as constraint class in a relationship, the relationship must also be marked 'NotMapped'.
+            - If the class is a relationship class with @ref ECDbForeignKeyMapping, the class containing the navigation property of the relationship
+             must also be marked 'NotMapped'.
+            - The strategy may not be applied to relationship classes @b deriving from a relationship class with @ref ECDbForeignKeyMapping.
+        - @c OwnTable (default): This class is mapped to its own table.
+        - @c TablePerHierarchy: The class and all its subclasses are mapped to a single table. See also section <i>Additional customization for MapStrategy TablePerHierarchy</i>
+        - @c ExistingTable : This class is mapped to an existing table. the class must be sealed (see BentleyApi::ECN::ECClassModifier).
+        The existing table must be specified in the @b TableName ECProperty. The table must have a primary key column of type INTEGER.
+        The primary key column must either be called @b Id or its name must be specified in the @b ECInstanceIdColumn ECProperty.
+        <b>ECClasses mapped to existing tables are read-only in ECSQL, i.e. only ECSQL SELECT can be used against them.</b>
+    - @b TableName (optional, required for MapStrategies @em ExistingTable):
+         Specify a table name for this class for the MapStrategy.
+    - @b ECInstanceIdColumn (optional): Specify a name for the ECInstanceId column. If not specified, ECDb picks @b Id as default ECInstanceId column name.
+
+    Description of the DbIndexList properties:
+        - @b Indexes: List of indexes to be created for properties of the class.
+        - @b Name (optional): Index name. Follow EC identifier naming rules. The name must unique in database.
+        - @b IsUnique (optional): If true, the index will be a unique index. Default value is @em false.
+        - @b Properties: List of Names of properties that will be part of index. Only primitive properties can be used. The properties must exist
+        in the ECClass or in the base classes.
+        - @b Where (optional): Creates a partial index. Right now only the special value <b>IndexedColumnsAreNotNull</b> is supported which
+        creates a partial index ignoring any NULL values in the indexed columns.
+
+    #### Additional customization for MapStrategy TablePerHierarchy
+
+    The custom attribute @b ShareColumns can be applied to any node (but only once) in a class hierarchy using the MapStrategy TablePerHierarchy.
+    This tells ECDb that different ECProperties (from different ECClasses) are mapped to the same column. This can reduce the number of columns (and cells with NULL values) in the table significantly.
+
+    The custom attribute @b JoinedTablePerDirectSubclass can be applied to any node (but only once) in a class hierarchy using the MapStrategy TablePerHierarchy.
+    This tells ECDb that the properties of the subclasses are mapped to an extra table joined to the table of the 
+    root class. Each direct subclass of this class is mapped to its own joined table.
+
+    ####Examples
+
+    #### MapStrategy NotMapped
+
+        <ECEntityClass typeName="Foo" modifier="Sealed">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>NotMapped</MapStrategy>
+                </ClassMap>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Name" typeName="string" />
+        </ECEntityClass>
+
+    #### MapStrategy TablePerHierarchy for a class hierarchy
+
+        <ECEntityClass typeName="Foo">
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+            </ECCustomAttributes>
+        ...
+        </ECEntityClass>
+
+    #### Creating database indexes on ECProperties
+
+        <ECEntityClass typeName="Person" modifier="Sealed">
+            <ECCustomAttributes>
+                <DbIndexList xmlns="ECDbMap.02.00.00">
+                    <Indexes>
+                        <DbIndex>
+                            <Name>ix_Person_Name</Name>
+                            <IsUnique>False</IsUnique>
+                            <Properties>
+                                <string>FirstName</string>
+                                <string>LastName</string>
+                            </Properties>
+                        </DbIndex>
+                        <DbIndex>
+                            <Name>ix_Person_Birthday</Name>
+                            <IsUnique>False</IsUnique>
+                            <Properties>
+                                <string>Birthday</string>
+                            </Properties>
+                            <Where>IndexedColumnsAreNotNull</Where>
+                        </DbIndex>
+                    </Indexes>
+                </DbIndexList>
+            </ECCustomAttributes>
+            <ECProperty propertyName="FirstName" typeName="string"/>
+            <ECProperty propertyName="LastName" typeName="string"/>
+            <ECProperty propertyName="Birthday" typeName="dateTime"/>
+            ...
+        </ECEntityClass>
+
+    @section PropertyMapCustomAttributeDescription The PropertyMap custom attribute for primitive ECProperties
+
+    Customizing the mapping for a @ref BentleyApi::ECN::PrimitiveECProperty "PrimitiveECProperties" is done by applying the @b PropertyMap custom attribute to the respective ECProperty.
+    (ECDb will only look for it in local attributes on the ECProperty)
+
+    Description of the PropertyMap properties:
+
+    - <b>IsNullable</b> (optional): If false, values must not be NULL.
+    - <b>IsUnique</b> (optional): If true, values must be unique for this ECProperty.
+    - <b>Collation</b> (optional): Specifies the string comparison mode for this property. Possible values:
+        - <CODE>Binary</CODE>: (default): bit to bit matching.
+        - <CODE>NoCase</CODE>: The same as binary, except that the 26 upper case characters of ASCII are folded to their lower case equivalents before the comparison is performed. Note it only folds ASCII characters.
+        - <CODE>RTrim</CODE>: The same as binary, except that trailing space characters are ignored.​
+    - <b>ColumnName</b> (optional): Can only be used for MapStrategy 'ExistingTable'. It specifies the column name to which the ECProperty is to be mapped. 
+    If not specified, the ECProperty name is used.
+
+        @note 
+        - the @b PropertyMap custom attribute cannot be applied to Mixin Entity classes.
+        - @em IsNullable is ignored if the ECProperty maps to a shared column 
+        or if the ECProperty has base classes mapping to the same table (see ShareColumns custom attribute in section @ref ClassMapCustomAttributeDescription).
+        - @em IsUnique is ignored if the ECProperty maps to a shared column (see ShareColumns custom attribute in section @ref ClassMapCustomAttributeDescription).
+
+    ###Example
+
+    #### Case-insensitive Collation
+
+        <ECProperty propertyName="Name" typeName="string">
+            <ECCustomAttributes>
+               <PropertyMap xmlns="ECDbMap.02.00.00">
+                    <Collation>NoCase</Collation>
+               </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>
+
+    @section ForeignKeyConstraintCustomAttributeDescription The ForeignKeyConstraint custom attribute for navigation ECProperties
+    
+    Please read @ref ECDbRelationshipRules before.
+
+    For @ref BentleyApi::ECN::NavigationECProperty "NavigationECProperties" you can apply the @b ForeignKeyConstraint custom attribute 
+    if you want a <b>foreign key constraint</b> to be created on the foreign key column to which the navigation property is mapped. 
+    A foreign key constraint ensures that the ECInstanceId of the related instance you want to insert exists. 
+    And it allows you to specify actions for when the instance on the other end is updated or deleted:
+    
+    Description of the @b ForeignKeyConstraint properties:
+    - <b>OnDeleteAction</b>: Possible values: NoAction (default), Cascade (deletes child rows when parent row is deleted), SetNull(foreign key property in child is set to NULL), Restrict (cannot delete parent if it still has children).
+    - <b>OnUpdateAction</b>: Possible values: NoAction (default) or Cascade (updates child foreign key when parent primary key is updated).
+    
+    
+    ####Example
+
+         <ECEntityClass typeName="Folder">
+             <ECProperty propertyName="Name" typeName="string">
+         </ECEntityClass>
+
+         <ECEntityClass typeName="File">
+             <ECNavigationProperty propertyName="Folder" relationshipName="FolderHasFiles" direction="Backward">
+                <ECCustomAttributes>
+                    <ForeignKeyConstraint xmlns="ECDbMap.02.00.00">
+                        <OnDeleteAction>Cascade</OnDeleteAction>
+                    </ForeignKeyConstraint>
+                </ECCustomAttributes>
+             </ECNavigationProperty>
+             <ECProperty propertyName="Name" typeName="string">
+         </ECEntityClass>
+  
+        <ECRelationshipClass typeName="FolderHasFiles" modifier="Sealed" strength="embedding" >
+            <Source multiplicity="(1..1)" polymorphic="True" roleLabel="contains">
+                <Class class="Folder" />
+            </Source>
+            <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is in">
+                <Class class="File" />
+            </Target>
+        </ECRelationshipClass>
+
+
+    @section LinkTableRelationshipMapCustomAttributeDescription The LinkTableRelationshipMap custom attribute for ECRelationshipClasses
+
+    Please read @ref ECDbRelationshipRules before.
+
+    If you apply the @b LinkTableRelationshipMap custom attribute to an @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass", 
+    it is forced to be mapped to a link table - even if a @ref ECDbForeignKeyMapping "foreign key mapping" would have been possible as well.
+    
+    Description of the @b LinkTableRelationshipMap properties:
+    - <b>SourceECInstanceIdColumn</b>: (optional) Defines the column to which the ECInstanceId of the source constraint is mapped to.
+    If not set, %ECDb generates a column with a default name.
+    - <b>TargetECInstanceIdColumn</b>: (optional) Defines the column to which the ECInstanceId of the target constraint is mapped to.
+    If not set, %ECDb generates a column with a default name.
+    - <b>CreateForeignKeyConstraints</b>: (optional) if true (default), ECDb creates foreign key constraints in the SourceECInstanceId
+    and TargetECInstanceId columns in the link table. This ensures that, when deleting the source or target instance, the respective
+    link table entry is deleted as well.
+    If false, no FK constraints are created. Applications must then care for deleting the link table entries themselves. 
+    - <b>AllowDuplicateRelationship</b>: (optional) If false (default), no duplicate entries for a given relationship instance
+    can be inserted. If true, duplicate relationship instances can be inserted. Cardinality must not be violated though. E.g.
+    there cannot be duplicate relationships with a cardinality of 1:1. 
+    @b Note: The flag is applied to subclasses of this relationship class, too.
+    
+    ####Example
+
+        <ECRelationshipClass typeName="HardwareUsedByEmployee" modifier="Sealed" strength="referencing">
+            <ECCustomAttributes>
+                <LinkTableRelationshipMap xmlns="ECDbMap.02.00.00">
+                    <SourceECInstanceIdColumn>EmployeeId</SourceECInstanceIdColumn>
+                    <TargetECInstanceIdColumn>HardwareId</TargetECInstanceIdColumn>
+                </LinkTableRelationshipMap>
+            </ECCustomAttributes>
+            <Source multiplicity="(0..*)" roleLabel="uses" polymorphic="True">
+                <Class class="Employee" />
+            </Source>
+            <Target multiplicity="(0..*)" roleLabel="is used by" polymorphic="True">
+                <Class class="Hardware" />
+            </Target>
+        </ECRelationshipClass>
+
+    @see @ref ECDbOverview
+    */
+
+    /**
+    @page ECDbChange EC Changes
+    
+    ECDb supports extracting summaries of changes of ECInstances from SQLite changesets. Those extractions are called <b>change summaries</b>.
+    ECDb persists them locally in a <b>Change Cache file</b> (which is an %ECDb file), so that they can be accessed across sessions.
+    
+    The <b>Change Cache file</b> can be attached to the primary file using ECDb::AttachChangeCache. 
+
+    Once attached the Change Cache file is visible in ECSQL under the table space @b ecchange.
+
+    @see BentleyApi::BeSQLite::EC::ECDb::AttachChangeCache
+    @see BentleyApi::BeSQLite::EC::ECDb::CreateChangeCache
+    @see BentleyApi::BeSQLite::EC::ECDb::IsChangeCacheAttached
+    @see BentleyApi::BeSQLite::EC::ECDb::ExtractChangeSummary
+
+    ### Querying into the change summaries
+    You can use ECSQL against the @b ECDbChange ECSchema to find out what ECInstances and what properties in them have changed 
+    in a given changeset. The @b ECDbChange ECSchema is built into every <b>Change Cache file</b>. Once attached
+    the entities of that schema can be referenced by the table space mentioned above.
+
+    Example:
+
+        SELECT ChangedInstance.Id, OpCode FROM ecchange.change.InstanceChange WHERE Summary.Id=?
+
+    ### Querying for the changed values
+    Whereas the @b ECDbChange ECSchema yields information about what ECInstances and what properties have changed, querying for the actual
+    changed values is done with the ECSQL function @b Changes.
+
+    Syntax:
+
+        SELECT ... FROM MySchema.MyClass.Changes(ChangeSummaryId, ChangedValueState) ...
+
+
+    - %ChangeSummaryId: The ECInstanceId of the ChangeSummary instance created by BentleyApi::BeSQLite::EC::ECDb::ExtractChangeSummary.
+    - %ChangedValueState: corresponds to the values of the enum @ref BentleyApi::BeSQLite::EC::ChangedValueState "ChangedValueState".
+    
+    @note You can format the ChangedValueState in the ECSQL either by the enum's integral values or by the enum value's name. The following
+    two ECSQL statements are equivalent:
+        
+        SELECT ... FROM MySchema.MyClass.Changes(12, 1)
+        SELECT ... FROM MySchema.MyClass.Changes(12, 'AfterInsert')
+
+
+    ### Notes when specifying ChangedValueStatue::BeforeUpdate or ChangedValueStatue::AfterUpdate
+    For any property in the select clause item the value of which has not changed in the specified change summary, 
+    the <b>value of the current state of the file</b> is returned. The function does @b NOT return the value it was at the 
+    revision the change summary referred to.
+    If the row in the current state doesn't exist anymore (because it was deleted in subsequent changesets), null will be returned
+    for the unchanged values.
+    See @ref ECDbChangeSummariesExampleScenario for examples.
+
+    @section ECDbChangeCacheFileCustomization Change Cache File Customization
+    As the <b>Change Cache file</b> is a regular @ref ECDbFile "ECDb file", you can add other information to it at your discretion.
+    ECDb will not take ownership of that, so that you have to maintain any extra information yourself.
+
+    A typical use case is to add information about the changeset (e.g. the push date, the user name) from which a change summary has 
+    been extracted to the Change Cache file. This can then be used in queries against the change summaries.
+    
+    @note Changeset information is not built into the ECDbChange ECSchema because different use cases require different pieces of information.
+    
+    ### Using ChangeSummary::ExtendedProperties
+    The @b ChangeSummary ECClass has a property called @b ExtendedProperties which can be used to add additional information to the change summary.
+    Typically you would format the value of that property as a JSON string.
+    Specify the ExtendedProperties value in the @ref BentleyApi::BeSQLite::EC::ChangeSetArg "ChangeSetArg" object passed to
+    @ref BentleyApi::BeSQLite::EC::ECDb::ExtractChangeSummary "ECDb::ExtractChangeSummary".
+
+    ### Using custom ECSchemas
+    You can import any other ECSchema into the cache file and populate it with your additional information.
+    
+    This sample code is an example for a typical use case:
+
+    $SAMPLECODE_BEGIN[Overview_ECDb_CustomizeChangeCacheFile,Example]
+    __PUBLISH_INSERT_FILE__ Overview_ECDb_CustomizeChangeCacheFile.sampleCode
+    $SAMPLECODE_END
+    
+
+    @section ECDbChangeSummariesExampleScenario Example Scenario
+
+    ### Example ECClass
+
+        <ECSchema schemaName="ACME" alias="acme" version="01.00.00">
+            <ECEntityClass typeName="Person">
+                <ECProperty propertyName="Name" typeName="string"/>
+                <ECProperty propertyName="Age" typeName="int"/>
+            </ECEntityClass>
+        </ECSchema>
+
+    ## Revision 1
+    
+    - Insert a new Person (Id 1)
+
+    #### Result
+
+    Id  | Name | Age
+    --- | ---- | ---
+    1   | Mery | 20
+    
+
+    ## Revision 2
+    
+    - Update Name of Person (Id 1) from Mery to Mary
+    - Insert a new Person (Id 2)
+
+    #### Result
+
+    Id  | Name | Age
+    --- | ---- | ---
+    1   | Mary | 20
+    2   | Sam  | 30
+
+    ## Revision 3
+    
+    - Delete Person (Id 1)
+
+    #### Result
+
+    Id  | Name | Age
+    --- | ---- | ---
+    2   | Sam  | 30
+    
+
+    ## ECSQL Examples
+    
+    After having extracting change summaries for each of the three changesets the following ECSQL examples would return the following results.
+
+    ### ECSQL against ECDbChange ECSchema
+
+    <table>
+    <tr><th>ECSQL</th><th>Result</th></tr>
+    <tr><td align="left" valign="top"><c>SELECT Summary.Id,ChangedInstance.Id,OpCode,IsIndirect FROM change.InstanceChange</c></td>
+        <td>
+        <table>
+            <tr><th>Summary.Id</th><th>ChangedInstance.Id</th><th>OpCode</th><th>IsIndirect</th></tr>
+            <tr><td>1</td><td>1</td><td>1 (Insert)</td><td>false</td></tr>
+            <tr><td>2</td><td>1</td><td>2 (Update)</td><td>false</td></tr>
+            <tr><td>2</td><td>2</td><td>1 (Insert)</td><td>false</td></tr>
+            <tr><td>3</td><td>1</td><td>4 (Delete)</td><td>false</td></tr>
+        </table>
+        @b Note 
+            - <c>ChangedInstance.Id</c> is the ECInstanceId of the changed instance, i.e. the changed @c Person instance in this example.
+            - The @c OpCode values refer to the @c OpCode %ECEnumeration as defined in the @b ECDbChange ECSchema.
+        </td>
+     </tr>
+    <tr><td align="left" valign="top"><c>SELECT i.ChangedInstance.Id, p.AccessString, i.OpCode FROM change.PropertyValueChange p 
+        JOIN change.InstanceChange i USING change.InstanceChangeOwnsPropertyValueChanges 
+        WHERE i.Summary.Id = 2</c></td>
+        <td>
+        <table>
+            <tr><th>ChangedInstance.Id</th><th>AccessString</th><th>OpCode</th></tr>
+            <tr><td>1</td><td>Name</td><td>2 (Update)</td></tr>
+            <tr><td>2</td><td>Name</td><td>1 (Insert)</td></tr>
+            <tr><td>2</td><td>Age</td><td>1 (Insert)</td></tr>
+        </table>
+
+       The ECSQL returns the property values that have changed in the ChangeSummary with Id 2. For every property value change, the 
+        ECInstanceId of the respective class is returned as well as the OpCode. 
+        - Row #1 means that the @c Name of @c Person 1 was @b updated.
+        - Row #2 means that the @c Name of @c Person 2 was @b inserted.
+        - Row #3 means that the @c Age of @c Person 2 was @b inserted.
+        </td>
+     </tr>
+    </table>
+
+
+    ### ECSQL Function Changes 
+
+    <table>
+    <tr><th>ECSQL</th><th>Result</th></tr>
+    <tr><td align="left" valign="top"><c>SELECT ECInstanceId, Name, Age FROM acme.Person</c></td>
+        <td>
+        <table>
+            <tr><th>ECInstanceId</th><th>Name</th><th>Age</th></tr>
+            <tr><td>2</td><td>Sam</td><td>30</td></tr>
+        </table>
+        </td>
+     </tr>
+    <tr><td align="left" valign="top"><c>SELECT ECInstanceId, Name, Age FROM acme.Person.Changes(1, 'AfterInsert')</c></td>
+        <td>
+        <table>
+            <tr><th>ECInstanceId</th><th>Name</th><th>Age</th></tr>
+            <tr><td>1</td><td>Mery</td><td>20</td></tr>
+        </table>
+        </td>
+     </tr>
+    <tr><td align="left" valign="top"><c>SELECT ECInstanceId, Name, Age FROM acme.Person.Changes(1, 'BeforeUpdate')</c></td>
+        <td>
+        <table>
+            <tr><th>ECInstanceId</th><th>Name</th><th>Age</th></tr>
+        </table>
+        </td>
+     </tr>
+    <tr><td align="left" valign="top"><c>SELECT ECInstanceId, Name, Age FROM acme.Person.Changes(1, 'AfterUpdate')</c></td>
+        <td>
+        <table>
+            <tr><th>ECInstanceId</th><th>Name</th><th>Age</th></tr>
+        </table>
+        </td>
+     </tr>
+    <tr><td align="left" valign="top"><c>SELECT ECInstanceId, Name, Age FROM acme.Person.Changes(1, 'AfterDelete')</c></td>
+        <td>
+        <table>
+            <tr><th>ECInstanceId</th><th>Name</th><th>Age</th></tr>
+        </table>
+        </td>
+     </tr>
+
+     <tr><td align="left" valign="top"><c>SELECT ECInstanceId, Name, Age FROM acme.Person.Changes(2, 'AfterInsert')</c></td>
+        <td>
+        <table>
+            <tr><th>ECInstanceId</th><th>Name</th><th>Age</th></tr>
+            <tr><td>2</td><td>Sam</td><td>30</td></tr>
+        </table>
+        </td>
+     </tr>
+    <tr><td align="left" valign="top"><c>SELECT ECInstanceId, Name, Age FROM acme.Person.Changes(2, 'BeforeUpdate')</c></td>
+        <td>
+        <table>
+            <tr><th>ECInstanceId</th><th>Name</th><th>Age</th></tr>
+            <tr><td>1</td><td>Mery</td><td>null</td></tr>
+        </table>
+        </td>
+     </tr>
+    <tr><td align="left" valign="top"><c>SELECT ECInstanceId, Name, Age FROM acme.Person.Changes(2, 'AfterUpdate')</c></td>
+        <td>
+        <table>
+            <tr><th>ECInstanceId</th><th>Name</th><th>Age</th></tr>
+            <tr><td>1</td><td>Mary</td><td>null</td></tr>
+        </table>
+        </td>
+     </tr>
+    <tr><td align="left" valign="top"><c>SELECT ECInstanceId, Name, Age FROM acme.Person.Changes(2, 'AfterDelete')</c></td>
+        <td>
+        <table>
+            <tr><th>ECInstanceId</th><th>Name</th><th>Age</th></tr>
+        </table>
+        </td>
+     </tr>
+
+     <tr><td align="left" valign="top"><c>SELECT ECInstanceId, Name, Age FROM acme.Person.Changes(3, 'AfterInsert')</c></td>
+        <td>
+        <table>
+            <tr><th>ECInstanceId</th><th>Name</th><th>Age</th></tr>
+        </table>
+        </td>
+     </tr>
+    <tr><td align="left" valign="top"><c>SELECT ECInstanceId, Name, Age FROM acme.Person.Changes(3, 'BeforeUpdate')</c></td>
+        <td>
+        <table>
+            <tr><th>ECInstanceId</th><th>Name</th><th>Age</th></tr>
+        </table>
+        </td>
+     </tr>
+    <tr><td align="left" valign="top"><c>SELECT ECInstanceId, Name, Age FROM acme.Person.Changes(3, 'AfterUpdate')</c></td>
+        <td>
+        <table>
+            <tr><th>ECInstanceId</th><th>Name</th><th>Age</th></tr>
+        </table>
+        </td>
+     </tr>
+    <tr><td align="left" valign="top"><c>SELECT ECInstanceId, Name, Age FROM acme.Person.Changes(3, 'AfterDelete')</c></td>
+        <td>
+        <table>
+            <tr><th>ECInstanceId</th><th>Name</th><th>Age</th></tr>
+            <tr><td>1</td><td>Mary</td><td>null</td></tr>
+        </table>
+        </td>
+     </tr>
+    </table>
+
+
+    @see @ref ECDbOverview
+    */
+
+
+    /**
+    @page ECDbFileInfo File-backed ECInstances
+    %ECDb provides basic support for file-backed ECInstances. Every %ECDb file contains the system ECSchema
+    @b ECDbFileInfo. The ECClass @b FileInfo and its subclasses are used to describe the file to which
+    an ECInstance is associated. The ECClass @b FileInfoOwnership is used to relate a @b FileInfo to its owning
+    ECInstance.
+    
+    With the help of that ECSchema you can just use ECSQL to create or delete FileInfo instances, and 
+    to relate them to its owning ECInstances.
+    
+    @note Instances of the @b EmbeddedFileInfo class cannot be created/modified/deleted via ECSQL. Use the
+    dedicated API @ref BentleyApi::BeSQLite::Db::EmbeddedFiles instead.
+    
+    @note
+    ECDb does not automatically manage any referential integrity between FileInfos and their owning
+    ECInstances. You can either do that manually via ECSQL DELETE. Alternatively, orphaned FileInfoOwnership instances
+    can be cleaned-up by calling the method @ref BentleyApi::BeSQLite::EC::ECDb::Purge "ECDb::Purge" (FileInfo instances are not
+    cleaned-up by the Purge method).
+     
+  
+    @see @ref ECDbOverview
+    */
+
+   
