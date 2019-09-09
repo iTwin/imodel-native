@@ -1,0 +1,14 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+appName                         = StructuralDomain
+o                               = $(OutputRootDir)build/$(appName)/
+CCompPDBName                    = $(appName)
+MultiCompileIntermediatePdbFile = $(o)$(CCompPDBName).pdb
+IntermediatePdbFile             = $(MultiCompileIntermediatePdbFile)
+
+nameToDefine = __STRUCTURAL_DOMAIN_BUILD__
+%include cdefapnd.mki
+
