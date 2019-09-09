@@ -1,0 +1,135 @@
+#--------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+#
+# Builds a gtest program to run a specified collection of tests
+#
+# Inputs:
+%ifndef TEST_NAME
+    %error Define TEST_NAME as the name of the test. The .exe will use this name. Various output directories will also be based on it, so it must be unique among tests.
+%endif
+
+%ifndef TEST_COLLECTION_PRODUCT
+    %error Define TEST_COLLECTION_PRODUCT as the name of the test collection product
+%endif
+
+# Optional. TEST_FRAMEWORK_SQLANG - Full filepath of .db3 file to return as the "framework" sqlang file
+
+# the gtest compilands themselves contain warnings
+NO_DEFAULT_CLANG_WARNINGS=1
+
+%include mdl.mki
+
+BE_TEST_TESTHARNESS=GUnitTests
+USE_GTEST=1
+
+nameToDefine=USE_GTEST=1
+%include cdefapnd.mki
+
+baseDir      = $(_MakeFilePath)
+progName     = $(TEST_NAME)
+progNameExe  = $(progName)$(exeext)
+o            = $(OutputRootDir)build/$(TEST_NAME)/
+
+%ifdef CREATE_STATIC_LIBRARIES
+    ProductDir = $(OutputRootDir)../Product/
+%else
+    ProductDir = $(OutputRootDir)Product/
+%endif
+
+collectionProduct = $(ProductDir)${TEST_COLLECTION_PRODUCT}/
+
+%ifdef BMAKE_DELETE_ALL_TARGETS    
+always:
+    $(rmdirRecursiveCmd) $(o)
+%return
+%endif
+
+always:
+    !~@mkdir $(o)
+    !~@putenv PYTHONPATH=$(PYTHONPATH)$(bsicommon_ospathsep)$(SrcRoot)bsicommon/PublicSDK
+
+%ifndef TEST_FRAMEWORK_SQLANG
+    TEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3
+%endif
+
+always:
+    > $(o)TEST_FRAMEWORK_SQLANG_DEF.h
+\#define TEST_FRAMEWORK_SQLANG L"$(TEST_FRAMEWORK_SQLANG)"
+    <
+
+cIncs + -I$(o)
+
+# -----------------------------------------------------
+# Compile BeGTestExe.cpp. It contains "main"
+# -----------------------------------------------------
+cDefs        + -DCREATE_STATIC_LIBRARIES=1
+CCompPDBName = $(progName)
+
+$(o)BeGTestExe$(oext)   : $(baseDir)BeGTestExe.cpp $(BuildContext)PublicAPI/Bentley/BeTest.h
+
+#GUnitTestDir = $(BuildContext)SubParts/google_gtest/
+#%include $(BuildContext)SubParts/google_gtest_mki/gtestobj.mki
+
+# -----------------------------------------------------
+# Link begtest.exe. This EXE incorporates the unittest .objs into itself (so that their static C++ constructors will be called).
+# -----------------------------------------------------
+
+#   Link the unit tests themselves
+LOCAL_GUNITTEST_OBJS + $(o)BeGTestExe$(oext) $[@wildcard $(collectionProduct)Objects/*$(oext)]
+
+%ifdef __unix
+
+    # Roll up all .a files in both SubParts/Libs and $(collectionProduct)Libs into a single thin archive
+
+    THIN_ARCHIVE_ADDITIONAL_LIBS_DIR = $(collectionProduct)Libs
+
+    %include $(SharedMki)rollUpSubPartsLibsThin.mki
+
+    LOCAL_GUNITTEST_OBJS + $(THIN_ARCHIVE_PATH)
+
+
+%else
+
+    #   Link the unit tests themselves
+    LOCAL_GUNITTEST_OBJS + $[@wildcard $(collectionProduct)Libs/*$(stlibext)]
+
+    #   Satisfy the link requirements of the unit tests
+    GUNITTEST_LIBS       + $[@wildcard $(collectionProduct)Libs/*$(libext)]
+
+    #   Satisfy the link requirements of begtest itself
+    GUNITTEST_LIBS       + $[@wildcard $(BuildContext)SubParts/Libs/*$(libext)]
+
+    # Windows-specific stuff
+    GUNITTEST_LIBS      + advapi32$(libext) rpcrt4$(libext) Shlwapi$(libext) version$(libext) ws2_32$(libext) user32.lib jsrt.lib ole32.lib
+
+%endif
+
+GUNITTEST_OUT       = $(o)
+GUNITTEST_NAME      = $(progName)
+GUNITTEST_DEST      = $(o)
+GUNITTEST_PATH      = $(o) 
+GUNITTEST_SYMB      = $(o)
+GUNITTEST_NOEXEC    = 1
+GTEST_MAIN_IS_SUPPLIED = 1
+
+%include $(SharedMki)gunittest.mki
+
+# Make the program executable
+%ifdef __unix
+always:
+  chmod +x $(o)$(progName)
+%endif
+
+# ---------------------------------------------------------------------------------------------------
+# Link files into the Delivery directory with the names and locations that BeGTestExe.cpp expects.
+# ---------------------------------------------------------------------------------------------------
+always:
+    python $(SrcRoot)bsicommon/build/CreateSymLinks.py -f "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assemblies/$(progNameExe)=$(o)$(progNameExe)"
+    python $(SrcRoot)bsicommon/build/CreateSymLinks.py -m "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assemblies=$(o)/*.pdb"
+    python $(SrcRoot)bsicommon/build/CreateSymLinks.py -m "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assemblies=$(collectionProduct)Assemblies/*$(shlibext)"
+    python $(SrcRoot)bsicommon/build/CreateSymLinks.py -m "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assemblies=$(BuildContext)SubParts/Assemblies/*$(shlibext)"
+    python $(SrcRoot)bsicommon/build/CreateSymLinks.py -f "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assemblies/logging.config.xml=$(baseDir)logging.config.xml"
+    python $(SrcRoot)bsicommon/build/CreateSymLinks.py -d "$(BuildContext)Delivery/Gtest/$(TEST_NAME)/Assets=$(collectionProduct)Assets"

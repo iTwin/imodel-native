@@ -1,0 +1,115 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: CS06Bridge/CS06Bridge.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+%include mdl.mki
+%include $(SrcRoot)Civil/iModelBridges/CS06Bridge/CS06Bridge.mki
+
+#--------------------------------------------------------------------------------------
+#   Macros
+#--------------------------------------------------------------------------------------
+appSrc                   = $(_MakeFilePath)
+appPublicApi             = $(appSrc)PublicAPI/$(appName)/
+MultiCompileDepends      = $(_MakeFileSpec) $(appSrc)CS06BridgeInternal.h $(appPublicApi)CS06BridgeApi.h
+DgnPlatformDgnDb06LibDir = ${BuildContext}/SubParts/VersionedDgnDb06Libs/
+TeleporterApiDir         = ${BuildContext}/PublicAPI/DgnDb06BimTeleporter/
+
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------------------
+#   Pre-compiled header
+#----------------------------------------------------------------------
+PchCompiland        = $(appSrc)CS06BridgeInternal.cpp
+PchOutputDir        = $(o)
+PchExtraOptions     = -Zm160
+PchExplicitDepends  = $(MultiCompileDepends)
+
+%if defined (winNT) && $(BUILD_TOOLSET) == "LINUX_GCC"
+    # Avoid internal compiler error in GCC using windows ndk toolchain
+    GCC_NO_PRE_COMPILED_HEADER = 1
+%endif
+
+CompileOptionsMki =$(SrcRoot)Civil/iModelBridges/CS06Bridge/CS06Bridge.mki
+%include $(CompileOptionsMki)
+%include $(SharedMki)PreCompileHeader.mki
+
+CCPchOpts = $(UsePrecompiledHeaderOptions)
+CPchOpts  = $(UsePrecompiledHeaderOptions)
+
+#--------------------------------------------------------------------------------------
+#   Compile source
+#--------------------------------------------------------------------------------------
+%include MultiCppCompileRule.mki
+
+$(o)iModelBridgeAffinity$(oext) : $(_MakeFilePath)iModelBridgeAffinity.cpp ${MultiCompileDepends} $(appPublicApi)CS06Bridge.h
+
+$(o)CS06Bridge$(oext) : $(_MakeFilePath)CS06Bridge.cpp ${MultiCompileDepends} $(appPublicApi)CS06Bridge.h
+
+$(o)MarshalHelper$(oext) : $(_MakeFilePath)MarshalHelper.cpp ${MultiCompileDepends}
+
+$(o)ChangeDetectorFacade$(oext) : $(_MakeFilePath)ChangeDetectorFacade.cpp ${MultiCompileDepends} $(_MakeFilePath)ChangeDetectorFacade.h $(TeleporterApiDir)IChangeDetector.h $(_MakeFilePath)SourceIdentityFacade.h $(_MakeFilePath)SourceStateFacade.h $(_MakeFilePath)RecordFacade.h $(_MakeFilePath)SourceItemProxy.h
+
+$(o)SourceIdentityFacade$(oext) : $(_MakeFilePath)SourceIdentityFacade.cpp ${MultiCompileDepends} $(_MakeFilePath)SourceIdentityFacade.h $(TeleporterApiDir)ISourceIdentity.h
+
+$(o)SourceStateFacade$(oext) : $(_MakeFilePath)SourceStateFacade.cpp ${MultiCompileDepends} $(_MakeFilePath)SourceStateFacade.h $(TeleporterApiDir)ISourceState.h
+
+$(o)RecordFacade$(oext) : $(_MakeFilePath)RecordFacade.cpp ${MultiCompileDepends} $(_MakeFilePath)RecordFacade.h $(TeleporterApiDir)IRecord.h $(TeleporterApiDir)ISourceIdentity.h $(TeleporterApiDir)ISourceState.h $(_MakeFilePath)SourceIdentityFacade.h $(_MakeFilePath)SourceStateFacade.h
+
+$(o)SourceItemProxy$(oext) : $(_MakeFilePath)SourceItemProxy.cpp ${MultiCompileDepends} $(_MakeFilePath)SourceItemProxy.h $(TeleporterApiDir)ISourceItem.h
+
+%include MultiCppCompileGo.mki
+
+#--------------------------------------------------------------------------------------
+#   Create the library
+#--------------------------------------------------------------------------------------
+DLM_NAME                    = $(appName)
+DLM_OBJECT_FILES            = $(MultiCompileObjectList)
+DLM_OBJECT_DEST             = $(o)
+DLM_OBJECT_PCH              = $(o)CS06BridgeInternal$(oext) 
+DLM_DEST                    = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+LINKER_LIBRARIES            = $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BentleyGeomSerialization$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
+#LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)DgnV8Converter$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)iModelBridge$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)LinearReferencing$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)RoadRailAlignment$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)RoadRailPhysical$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)CivilDataExchange$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)DgnDb06BimTeleporter$(libext)
+
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformDgnDb06LibDir)Bentley.lib
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformDgnDb06LibDir)BentleyAllocator.lib
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformDgnDb06LibDir)BeSQLite.lib
+#LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformDgnDb06LibDir)ECObjects.lib
+#LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformDgnDb06LibDir)BentleyGeom.lib
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformDgnDb06LibDir)DgnPlatform.lib
+#LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformDgnDb06LibDir)DgnGeoCoord.lib
+#LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformDgnDb06LibDir)RmgrTools.lib
+#LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformDgnDb06LibDir)BaseGeoCoord.lib
+#LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformDgnDb06LibDir)PSolidCore.lib
+#LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformDgnDb06LibDir)PSolidAcisInterop.lib
+#LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformDgnDb06LibDir)RasterCore.lib
+#LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformDgnDb06LibDir)DgnView.lib
+#LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformDgnDb06LibDir)VisEdgesLib.lib
+#LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformDgnDb06LibDir)DwgDgnIO.lib
+#LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformDgnDb06LibDir)acpal.lib
+#LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformDgnDb06LibDir)BentleyGeomSerialization.lib
+LINKER_LIBRARIES_DELAYLOADED + msi.lib
+
+%include $(sharedMki)linkLibrary.mki
+
