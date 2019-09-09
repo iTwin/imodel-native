@@ -1,0 +1,60 @@
+The Future of the SDKs
+
+At present both the RDS SDK and the GCS SDK work well seperately, for their 
+basic intended purposes. However,they were not designed to work optimally 
+together, and new requirements have underlined that fact. In the worst case 
+scenario, if the GCS downloader wants to download multiple meshes from RDS, 
+those downloads must all be performed sequentially, despite the inefficiency 
+(sequential parallel downloads). 
+
+Ideally all requests could be dumped into the same pool and executed together.
+This will require a few changes.
+
+/*--------------------------------------------------------------*/
+PHASE 1: Being able to pool RDS requests (relatively easy)
+/*--------------------------------------------------------------*/
+within the RDS SDK, RealityDataServiceTransfer subclasses could be deconstructed
+a bit so there's more seperation between the initial discovery phase (finding 
+all the files that need to be uploaded/downloaded and generating requests for each
+of them) and the actual execution of those requests. The goal being that you could
+perform the "discovery phase" on multiple entries, have the generated requests 
+pooled together and all sent to a central multi_curl execution.
+
+/*--------------------------------------------------------------*/
+PHASE 2: Being able to pool GCS and RDS requests
+/*--------------------------------------------------------------*/
+It is unfortunate that the GCS and RDS SDK use different multi_curl functions
+(the Perform() function), there is a fair amount of code duplication between these
+two implementations. To fix this, RealityDataDownload (RealityDataDownload.h)should
+inherit from RequestConstructor (WSGServices.h) and RequestConstructor should 
+implement a generic multi_curl function with no specific logic. Instead of casting 
+the void* to either a FileTransfer*, a RealityDataUrl*, a RealityDataFileTransfer* etc etc etc, it 
+should cast a shared base class that both FileTransfer and RealityDataFileTransfer
+inherit from. All the request handling logic should be moved from the RequestConstructors
+to the generic RequestBaseClass as virtual methods. That way, the RequestConstructor can 
+blindly call these functions on the requests. The same thing goes for the SetupRequestandFile
+function; it should be handled by the requests themselves. All you'd need to do is pass 
+a pointer to the request and have it set all of the curl parameters itself.
+In the same vein, we should pool the Report classes and all other peripheral classes that
+were duplicated between GCS and RDS. Hopefully, reworking everything will help bring the 
+GCS SDK up to the standards of the RDS SDK, because the naive implementation I initially 
+came up with, years ago, is confusing and could use a bit more structure.
+Once all of this has been done, when GCS decides to download multiple meshes from RDS
+along with imagery, terrain data, etc, we should be able to generate all of the requests 
+up front and process them all in the same curl_multi process.
+
+/*--------------------------------------------------------------*/
+PLAN B: The nuclear option
+/*--------------------------------------------------------------*/
+When work started on the RealityDataDownload suite, BeHttp was in its infancy and
+did not offer exactly what we needed. But as time went on, it became harder and
+harder to justify why we had two independant Curl wrappers, other than that it 
+would represent too much work to restart from scratch and ensuring retrocompatibility 
+wouldn't be easy. If we had unlimited time (or an intern) we could completely migrate 
+our curl implementation to BeHttp. 
+Most of the objects could remain intact, but all of the callbacks etc would 
+likely need to be changed.
+
+Conforming to BeHttp's pre-established standards and framework, instead of trying to 
+reinvent something new for GCS and RDS could simplify things a bit and provide more 
+of a solid base to build on.
