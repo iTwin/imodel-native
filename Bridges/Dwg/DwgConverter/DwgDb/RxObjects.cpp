@@ -26,6 +26,7 @@ DWG_Type(Rx::Ordering)  DwgRxObject::comparedTo (DWG_TypeCP(RxObject) other) con
 DwgDbBool           DwgRxObject::isEqualTo (DWG_TypeCP(RxObject) other) const { return T_Super::isEqualTo(other); }
 
 void                DwgRxObject::RxInit () { DwgRxObject::rxInit(); }
+void                DwgRxObject::RxUnInit () { DWGDB_CALLSDKMETHOD(DwgRxObject::rxInit(), ); }
 bool                DwgRxObject::IsEqualTo (DwgRxObjectCP other) const { return this->isEqualTo(static_cast<DWG_TypeCP(RxObject)>(other)); }
 
 /*---------------------------------------------------------------------------------**//**
@@ -100,6 +101,20 @@ DWG_TypeP(RxClass) DwgRxClass::NewDwgRxClass (WCharCP className, WCharCP parentN
     rxc = ::newAcRxClass (className, parentName, proxyFlags, constr);
 #endif
     return  rxc;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DwgRxClass::DeleteDwgRxClass (DWG_TypeP(RxClass) rxc)
+    {
+    if (rxc == nullptr)
+        return;
+#ifdef DWGTOOLKIT_OpenDwg
+    ::deleteOdRxClass (rxc);
+#elif DWGTOOLKIT_RealDwg
+    ::deleteAcRxClass (rxc);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

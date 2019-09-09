@@ -1053,6 +1053,7 @@ private:
     DgnSubCategoryId        GetSubcategoryForDrawingCategory (DefinitionModelR model, DgnCategoryId categoryId, DgnSubCategory::Appearance const& appear, Utf8StringCR name);
 
     static void             RegisterProtocolExtensions ();
+    static void             UnRegisterProtocolExtensions ();
 
 //__PUBLISH_SECTION_START__
 protected:

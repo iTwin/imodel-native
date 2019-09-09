@@ -1135,6 +1135,8 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params, FwkRepoAdmin
 	if (!m_jobEnvArgs.m_jobSubjectName.empty())
 		params.SetBridgeJobName(m_jobEnvArgs.m_jobSubjectName);
     params.SetMergeDefinitions(m_jobEnvArgs.m_mergeDefinitions);
+    if (!m_jobEnvArgs.m_revisionComment.empty())
+        params.SetRevisionComment(m_jobEnvArgs.m_revisionComment);
 
     setEmbeddedFileIdRecipe(params);
 
@@ -1485,10 +1487,10 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
 
     SetupProgressMeter();
 
-    AddPhases(10); // TODO
+    AddPhases(6);
 
     SetCurrentPhaseName("Initializing");
-    GetProgressMeter().AddSteps(10); // TODO
+    GetProgressMeter().AddSteps(3);
 
     iModelBridge::LogPerformance(setUpTimer, "Initialized iModelBridge Fwk");
 
@@ -1572,6 +1574,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
         }
 
     SetCurrentPhaseName("Cleaning up");
+    GetProgressMeter().AddSteps(2);
 
     if (m_briefcaseDgnDb.IsValid())     // must make sure briefcase dgndb is closed before tearing down host!
         {
@@ -1684,6 +1687,14 @@ Utf8String   iModelBridgeFwk::GetRevisionComment()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool isUpgradeFailure(DbResult dbres)
+    {
+    return (DbResult::BE_SQLITE_ERROR_ProfileUpgradeFailed == dbres) || (DbResult::BE_SQLITE_ERROR_SchemaUpgradeFailed == dbres);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   iModelBridgeFwk::TryOpenBimWithOptions(DgnDb::OpenParams& oparams)
@@ -1697,7 +1708,7 @@ BentleyStatus   iModelBridgeFwk::TryOpenBimWithOptions(DgnDb::OpenParams& oparam
     DbResult dbres;
     m_briefcaseDgnDb = iModelBridge::OpenBimAndMergeSchemaChanges(dbres, madeSchemaChanges, m_briefcaseName, oparams);
     uint8_t retryopenII = 0;
-    while (!m_briefcaseDgnDb.IsValid() && (DbResult::BE_SQLITE_ERROR_SchemaUpgradeFailed == dbres) && (++retryopenII < m_maxRetryCount) && IModelClientBase::SleepBeforeRetry())
+    while (!m_briefcaseDgnDb.IsValid() && isUpgradeFailure(dbres) && (++retryopenII < m_maxRetryCount) && IModelClientBase::SleepBeforeRetry())
         {
         // The upgrade may have failed because we could not get the schema lock, and that may have failed because
         // another briefcase pushed schema changes after this briefcase last pulled.
@@ -2058,7 +2069,7 @@ int iModelBridgeFwk::DoNormalUpdate()
     m_briefcaseDgnDb->BriefcaseManager().GetChannelPropsR().channelType = IBriefcaseManager::ChannelType::Shared;
     m_briefcaseDgnDb->BriefcaseManager().GetChannelPropsR().channelParentId = m_briefcaseDgnDb->Elements().GetRootSubjectId();
 
-    SetCurrentPhaseName("Schema Changes");
+    SetCurrentPhaseName("Schemas and Definitions");
     GetProgressMeter().AddSteps(3);
 
     BeAssert(!m_briefcaseDgnDb->BriefcaseManager().StayInChannel() || !HoldsJobSubjectLock());
@@ -2122,7 +2133,7 @@ int iModelBridgeFwk::DoNormalUpdate()
     m_briefcaseDgnDb->BriefcaseManager().GetChannelPropsR().channelType = IBriefcaseManager::ChannelType::Normal;
     m_briefcaseDgnDb->BriefcaseManager().GetChannelPropsR().channelParentId = jobsubj->GetElementId();
 
-    SetCurrentPhaseName("Data Changes");
+    SetCurrentPhaseName("Elements and Models");
     GetProgressMeter().AddSteps(2);
 
     BeAssert(!iModelBridge::HoldsSchemaLock(*m_briefcaseDgnDb));
@@ -2156,6 +2167,33 @@ int iModelBridgeFwk::DoNormalUpdate()
     BeAssert(BSISUCCESS == MustHoldJobSubjectLock());                                                   // ==== CHANNEL LOCK
                                                                                                         // ==== CHANNEL LOCK
     return RETURN_STATUS_SUCCESS;                                                                       // ==== CHANNEL LOCK
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      05/19
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridgeFwk::LockAllJobSubjects()
+    {
+    if (!m_briefcaseDgnDb->BriefcaseManager().StayInChannel() || m_briefcaseDgnDb->BriefcaseManager().IsNoChannel())
+        return BSISUCCESS;
+
+    Utf8String thisBridge(m_jobEnvArgs.m_bridgeRegSubKey);
+
+    EC::ECSqlStatement stmt;
+    stmt.Prepare(*m_briefcaseDgnDb, "SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_Subject) " WHERE json_extract(JsonProperties, '$.Subject.Job') is not null");
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        auto subj = m_briefcaseDgnDb->Elements().Get<Subject>(stmt.GetValueId<DgnElementId>(0));
+        if (subj.IsValid() && (JobSubjectUtils::GetBridge(*subj) == thisBridge))
+            {
+            m_briefcaseDgnDb->BriefcaseManager().GetChannelPropsR().channelParentId = subj->GetElementId();
+
+            if (LockChannelParent(*subj) != BSISUCCESS)
+                return BSIERROR;     // caller will relinquish all locks
+            }
+        }
+
+    return BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2196,23 +2234,29 @@ int iModelBridgeFwk::OnAllDocsProcessed()
         return RETURN_STATUS_CONVERTER_ERROR;
         }
 
-    GetLogger().infov("bridge:%s iModel:%s - OnAllDocsProcessed.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
-
-    BentleyStatus bridgeCvtStatus = m_bridge->DoOnAllDocumentsProcessed(*m_briefcaseDgnDb);
-    if (BSISUCCESS != bridgeCvtStatus)
+    if (BSISUCCESS != LockAllJobSubjects())
         {
-        GetLogger().errorv("Bridge::DoOnAllDocumentsProcessed failed with status %d", bridgeCvtStatus);
-        return RETURN_STATUS_CONVERTER_ERROR;
+        GetLogger().error("Failed to get Channel Parent Subject locks before calling OnAllDocsProcessed");
+        return RETURN_STATUS_SERVER_ERROR;
         }
-
-    //Call save changes before the bridge is closed.
-    dbres = m_briefcaseDgnDb->SaveChanges();
-    
-    callCloseOnReturn.m_status = BSISUCCESS;
-
-    BeAssert(!iModelBridge::HoldsSchemaLock(*m_briefcaseDgnDb));
-
-    return RETURN_STATUS_SUCCESS;
+                                                                                                        // ==== CHANNEL LOCKS (caller will relinquish them all)
+    GetLogger().infov("bridge:%s iModel:%s - OnAllDocsProcessed.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
+                                                                                                        // ==== CHANNEL LOCKS
+    BentleyStatus bridgeCvtStatus = m_bridge->DoOnAllDocumentsProcessed(*m_briefcaseDgnDb);             // ==== CHANNEL LOCKS
+    if (BSISUCCESS != bridgeCvtStatus)                                                                  // ==== CHANNEL LOCKS
+        {                                                                                               // ==== CHANNEL LOCKS
+        GetLogger().errorv("Bridge::DoOnAllDocumentsProcessed failed with status %d", bridgeCvtStatus); // ==== CHANNEL LOCKS
+        return RETURN_STATUS_CONVERTER_ERROR;                                                           // ==== CHANNEL LOCKS
+        }                                                                                               // ==== CHANNEL LOCKS
+                                                                                                        // ==== CHANNEL LOCKS
+    //Call save changes before the bridge is closed.                                                    // ==== CHANNEL LOCKS
+    dbres = m_briefcaseDgnDb->SaveChanges();                                                            // ==== CHANNEL LOCKS
+                                                                                                        // ==== CHANNEL LOCKS
+    callCloseOnReturn.m_status = BSISUCCESS;                                                            // ==== CHANNEL LOCKS
+                                                                                                        // ==== CHANNEL LOCKS
+    BeAssert(!iModelBridge::HoldsSchemaLock(*m_briefcaseDgnDb));                                        // ==== CHANNEL LOCKS
+                                                                                                        // ==== CHANNEL LOCKS
+    return RETURN_STATUS_SUCCESS;                                                                       // ==== CHANNEL LOCKS
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2243,7 +2287,7 @@ int iModelBridgeFwk::UpdateExistingBim()
     //                            *** The caller does all cleanup, including releasing all public locks. ***
 
     SetCurrentPhaseName("Opening Briefcase");
-    GetProgressMeter().AddSteps(10); // TODO
+    GetProgressMeter().AddSteps(2);
 
     GetLogger().infov("bridge:%s iModel:%s - Opening briefcase I.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
 

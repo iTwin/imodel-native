@@ -36,6 +36,7 @@ struct BroadcastProgressMeter : DgnProgressMeter, BroadcasterBase
     Utf8String m_phaseName;
     Utf8String m_stepName;
     Utf8String m_taskName;
+    uint32_t m_totalPhases{}, m_totalSteps{}, m_totalTasks{};
     uint32_t m_phasesRemaining {};
     uint32_t m_spinCount {};
 
@@ -43,12 +44,14 @@ struct BroadcastProgressMeter : DgnProgressMeter, BroadcasterBase
     Abort _ShowProgress() override;
     void _SetCurrentStepName(Utf8CP stepName) override;
     void _SetCurrentTaskName(Utf8CP taskName) override;
+    void _AddSteps(uint32_t numSteps) override {m_totalSteps += numSteps; DgnProgressMeter::_AddSteps(numSteps); }
+    void _AddTasks(uint32_t numTasksToAdd) override {m_totalTasks += numTasksToAdd; DgnProgressMeter::_AddTasks(numTasksToAdd);}
 
     void PostProgressMessage();
 
     public:
 
-    void AddPhases(uint32_t numPhases) {m_phasesRemaining += numPhases;}
+    void AddPhases(uint32_t numPhases) {m_totalPhases += numPhases; m_phasesRemaining += numPhases;}
     void SetCurrentPhaseName(Utf8StringCR);
     };
 
@@ -133,6 +136,19 @@ void iModelBridgeFwk::PostStatusMessage(Utf8StringCR msg, Utf8StringCR details, 
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      09/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static int pct(uint32_t remaining, uint32_t total)
+    {
+    if (total == 0)
+        return 0;
+    uint32_t done = (total - (remaining + 1)); // tricky: "remaining" actually includes the step that is in progress. So, that step is not done yet.
+    if (done > total)
+        return 100;
+    return (done * 100) / total;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/19
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BroadcastProgressMeter::PostProgressMessage()
@@ -147,9 +163,9 @@ void BroadcastProgressMeter::PostProgressMessage()
     json["phase"] = m_phaseName.c_str();
     json["step"] = m_stepName.c_str();
     json["task"] = m_taskName.c_str();
-    json["phasesRemaining"] = (int)m_phasesRemaining;
-    json["stepsRemaining"] = (int)m_stepsRemaining;
-    json["tasksRemaining"] = (int)m_tasksRemaining;
+    json["phasesPct"] = pct(m_phasesRemaining, m_totalPhases);
+    json["stepsPct"] = pct(m_stepsRemaining, m_totalSteps);
+    json["tasksPct"] = pct(m_tasksRemaining, m_totalTasks);
     json["lastUpdateTime"] = m_timeOfLastPost;
     json["spinCount"] = (int)m_spinCount;
 
@@ -184,6 +200,8 @@ void BroadcastProgressMeter::SetCurrentPhaseName(Utf8StringCR newName)
     m_phaseName = newName;
     m_stepName.clear();
     m_taskName.clear();
+    m_totalSteps = 0;
+    m_totalTasks = 0;
     m_spinCount=0;
     PostProgressMessage();
     }
@@ -201,6 +219,7 @@ void BroadcastProgressMeter::_SetCurrentStepName(Utf8CP newName)
     m_stepName.AssignOrClear(newName);
 
     m_taskName.clear();
+    m_totalTasks = 0;
     m_spinCount=0;
     PostProgressMessage();
     }

@@ -1,0 +1,38 @@
+#----------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#----------------------------------------------------------------------
+%include mdl.mki
+
+# Similar to iModelJsNodeAddon, we want to make an NPM package... but unlike
+# it, it's NOT directly usable as an NPM package, it's just a packaging
+# technique... so we can re-use some of the "make package" logic, but need
+# substantial changes.
+
+ProductDir = $(OutputRootDir)Product/iModelJsHost
+o = $(OutputRootDir)imodeljsnodeaddon_pkgs/
+baseDir = $(_MakeFilePath)
+imjsAddonDir = $(SrcRoot)imodel02/iModelJsNodeAddon/
+
+# -------------------------------------------------------------------------------------------------
+%if defined (BMAKE_DELETE_ALL_TARGETS)
+    always:
+        -$(rmdirRecursiveCmd) $(o)
+
+    %return
+%endif
+
+# -------------------------------------------------------------------------------------------------
+%if $(TARGET_PROCESSOR_ARCHITECTURE) == "iOSARM64"
+    NodeOS=iOS
+    NodeCPU=ARM64
+%elif $(TARGET_PROCESSOR_ARCHITECTURE) == "iOSX64"
+    NodeOS=iOS
+    NodeCPU=X64
+%else
+    %error Don't know how to build for platform $(TARGET_PROCESSOR_ARCHITECTURE).
+%endif
+
+always:
+    |-- Making package imodeljs-$(NodeOS)-$(NodeCPU) --
+    -@$(rmdirRecursiveCmd) $(o)
+    python $(baseDir)makePackages.py $(ProductDir) $(o) $(NodeOS) $(NodeCPU) $(imjsAddonDir)

@@ -1327,9 +1327,15 @@ DwgDbStatus     DwgDbViewport::SetAnnotationScale (double scale)
     if (nullptr == contextCollection)
         return  status;
 
-    DWGDB_TypeP(ObjectContextCollectionIterator) iter = contextCollection->newIterator ();
+#ifdef DWGTOOLKIT_OpenDwg
+    OdDbObjectContextCollectionIteratorPtr iter = contextCollection->newIterator ();
+    if (iter.isNull())
+        return  status;
+#elif DWGTOOLKIT_RealDwg
+    AcDbObjectContextCollectionIterator* iter = contextCollection->newIterator ();
     if (nullptr == iter)
         return  status;
+#endif
 
     for (iter->start(); !iter->done(); iter->next())
         {

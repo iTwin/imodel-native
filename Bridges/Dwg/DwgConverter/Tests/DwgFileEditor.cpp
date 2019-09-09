@@ -70,9 +70,9 @@ void DwgFileEditor::ValidateHost ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DwgFileEditor::CreateFile (BeFileNameCR infile)
     {
-    if (infile.DoesPathExist());
+    if (infile.DoesPathExist())
         infile.BeDeleteFile ();
-    m_dwgdb = new DwgDbDatabase (true, true);
+    m_dwgdb = DwgDbDatabase::Create (true);
     ASSERT_FALSE (m_dwgdb.IsNull());
     DwgImportHost::SetWorkingDatabase (m_dwgdb.get());
     m_fileName = infile;
@@ -289,7 +289,7 @@ size_t  DwgFileEditor::CountAndCheckModelspaceEntity (bool& found, DwgDbHandleCR
     if (modelspace.OpenStatus() == DwgDbStatus::Success)
         {
         auto iter = modelspace->GetBlockChildIterator ();
-        if (iter.IsValid() && iter->IsValid());
+        if (iter.IsValid() && iter->IsValid())
             {
             for (iter->Start(); !iter->Done(); iter->Step())
                 {

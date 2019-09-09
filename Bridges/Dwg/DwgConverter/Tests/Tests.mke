@@ -17,10 +17,11 @@ BEGTEST_INPUT=$(baseDir)
     %error RealDWG only supports Windows platform!
 %endif
 
-DwgImporterLib  = $(BuildContext)Delivery/$(DWGTOOLKIT)$(VendorVersion)Importer/DwgImporter.lib
-DwgBridgeLib    = $(BuildContext)Delivery/$(DWGTOOLKIT)$(VendorVersion)Importer/DwgBridge.lib
-
 %include $(baseDir)../DwgCompileOptions.mki
+
+DwgImporterLib  = $(ContextDeliveryDir)DwgImporter$(libext)
+DwgBridgeLib    = $(ContextDeliveryDir)DwgBridge$(libext)
+TestDeliveryDir = $(BuildContext)Delivery/$(DWGTOOLKIT)ImporterTests/
 
 %ifdef PRG
     CCompOpts +% -DPRG=1
@@ -41,7 +42,7 @@ BEGTEST_OUTPUT=$(OutputRootDir)build/$(BEGTEST_NAME)/
 TestsHeaders = $(baseDir)Tests.h $(baseDir)ImporterBaseFixture.h $(baseDir)ImporterTests.h $(baseDir)ImportConfigeditor.h $(baseDir)ImporterCommandBuilder.h
 
 # Let all stand-alone tests share the same gtestmain and TestFixture objects.
-o = $(OutputRootDir)build/Dwg/$(programName)/
+o = $(OutputRootDir)build/$(DWGTOOLKIT)ImporterTests/
 
 always:
     !~@mkdir $(o)
@@ -75,7 +76,7 @@ $(o)DwgFileEditor.obj               : $(BEGTEST_INPUT)DwgFileEditor.cpp         
 GUNITTEST_OUT       = $(o)
 GUNITTEST_NAME      = $(programName)
 GUNITTEST_DEST      = $(o)
-GUNITTEST_NTLIBS    = advapi32.lib ole32.lib ws2_32.lib Wininet.lib $(DwgImporterLib)
+GUNITTEST_NTLIBS    = advapi32.lib ole32.lib ws2_32.lib Wininet.lib $(DwgImporterLib) $(DwgDbLib)
 GUNITTEST_PATH      = $(o)
 GUNITTEST_SYMB      = $(o)
 GTEST_MAIN_IS_SUPPLIED = 1
@@ -89,7 +90,7 @@ LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Libs/Be*.lib]
 LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Libs/Dgn*.lib]
 LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Libs/iModel*.lib]
 LOCAL_GUNITTEST_OBJS + $(BuildContext)SubParts/Libs/Raster.lib
-LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Libs/RealDwg$(VendorVersion)/*.lib]
+LOCAL_GUNITTEST_OBJS + $[@wildcard $(ToolkitLibs)*.lib]
 
 
 LINKER_LIBRARIES    + $(DwgImporterLib)
@@ -97,23 +98,23 @@ LINKER_LIBRARIES    + $(DwgImporterLib)
 %include $(SharedMki)gunittest.mki
 
 always:
-    ~linkfile "$(BuildContext)Delivery/$(programName).exe=$(o)$(programName).exe"
+    ~linkfile "$(TestDeliveryDir)$(programName).exe=$(o)$(programName).exe"
 
-$(BuildContext)Delivery/$(programName).logging.config.xml : $(baseDir)logging.config.xml
+$(TestDeliveryDir)$(programName).logging.config.xml : $(baseDir)logging.config.xml
     $(LinkFirstDepToFirstTarget)
 
-$(BuildContext)Delivery/ImporterTestsConfig.xml : $(baseDir)../Config/ConvertConfig.xml
+$(TestDeliveryDir)ImporterTestsConfig.xml : $(baseDir)../Config/ConvertConfig.xml
     $(LinkFirstDepToFirstTarget)
     
-$(BuildContext)Delivery/ignore_list.txt : $(baseDir)ignore_list.txt
+$(TestDeliveryDir)ignore_list.txt : $(baseDir)ignore_list.txt
     $(LinkFirstDepToFirstTarget)
 
-$(BuildContext)Delivery/ImportTestData/ : $(baseDir)data/
+$(TestDeliveryDir)ImportTestData/ : $(baseDir)data/
     $(LinkFirstDepToFirstTargetAsDirectory)
 
 # Create the sqlang database
 SQLANG_OutputDb     = $(o)DwgImporterTests_en-US.sqlang.db3
-SQLANG_DeliveryDir  = $(BuildContext)Delivery/
+SQLANG_DeliveryDir  = $(TestDeliveryDir)
 SQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff
 %include $(SrcRoot)bsicommon\sqlang\mki\XliffsToDb.mke
 
@@ -149,4 +150,4 @@ EXE_TMP_DIR     = $(o)
 %include $(sharedMki)linktool.mki
 
 always:
-    ~linkfile "$(BuildContext)Delivery/Test2dImporter$(exeext)=$(o)Test2dImporter$(exeext)"
+    ~linkfile "$(TestDeliveryDir)Test2dImporter$(exeext)=$(o)Test2dImporter$(exeext)"

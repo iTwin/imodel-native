@@ -585,6 +585,7 @@ struct iModelBridge
         int                                     m_environment;    //!< Connect environment. Should match UrlProvider::Environment
         Utf8String                              m_iModelHubUserName;
         Utf8String                              m_projectGuid;
+        Utf8String  m_revisionComment;
 
         void SetIsCreatingNewDgnDb(bool b) {m_isCreatingNewDb=b;}
         IMODEL_BRIDGE_EXPORT void SetReportFileName();
@@ -687,6 +688,8 @@ struct iModelBridge
             else
                 SetEmbeddedFileIdRecipe(FileIdRecipe());
             }
+        void SetRevisionComment(Utf8StringCR str) {m_revisionComment=str;}
+        Utf8StringCR GetRevisionComment() const {return m_revisionComment;}
         void SetBridgeJobName(Utf8StringCR str) {m_converterJobName=str;}
         Utf8String GetBridgeJobName() const {return m_converterJobName;}
         void SetBridgeRegSubKey(WStringCR str) {m_thisBridgeRegSubKey=str;}

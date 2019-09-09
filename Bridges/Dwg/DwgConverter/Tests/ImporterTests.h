@@ -5,6 +5,10 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
+#ifndef UNICODE
+    #define UNICODE
+#endif
+
 #include "../DwgImportInternal.h"
 #include <Bentley/BeTest.h>
 #include "Tests.h"

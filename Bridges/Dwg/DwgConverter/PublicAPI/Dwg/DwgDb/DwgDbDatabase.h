@@ -24,6 +24,7 @@
 BEGIN_DWGDB_NAMESPACE
 
 class DwgDbObjectId;
+class DwgDbDatabasePtr;
 
 
 /*=================================================================================**//**
@@ -56,8 +57,8 @@ public:
     DWGDB_EXPORT DwgDbStatus        SetFileIdPolicy (uint32_t policy);
     DWGDB_EXPORT DwgDbStatus        GetRepositoryLinkId (uint64_t& linkId);
     DWGDB_EXPORT DwgDbStatus        SetRepositoryLinkId (uint64_t linkId);
-    DWGDB_EXPORT DwgDbObjectId      GetModelspaceId ();
-    DWGDB_EXPORT DwgDbObjectId      GetPaperspaceId ();
+    DWGDB_EXPORT DwgDbObjectId      GetModelspaceId () const;
+    DWGDB_EXPORT DwgDbObjectId      GetPaperspaceId () const;
     DWGDB_EXPORT DwgDbObjectId      GetBlockTableId () const;
     DWGDB_EXPORT DwgDbObjectId      GetLayerTableId () const;
     DWGDB_EXPORT DwgDbObjectId      GetLayer0Id () const;
@@ -106,8 +107,8 @@ public:
     DWGDB_EXPORT bool               GetVISRETAIN () const;
     DWGDB_EXPORT DwgDbStatus        SetVISRETAIN (bool on);
     DWGDB_EXPORT bool               GetLineweightDisplay () const;
-    DWGDB_EXPORT DwgDbObjectId      GetActiveUserViewportId ();         // active viewport entity in active layout
-    DWGDB_EXPORT DwgDbObjectId      GetActiveModelspaceViewportId ();   // active viewport table record in modelspace
+    DWGDB_EXPORT DwgDbObjectId      GetActiveUserViewportId () const;         // active viewport entity in active layout
+    DWGDB_EXPORT DwgDbObjectId      GetActiveModelspaceViewportId () const;   // active viewport table record in modelspace
     DWGDB_EXPORT DwgString          GetFingerprintGuid () const;
     DWGDB_EXPORT DwgString          GetVersionGuid () const;
     DWGDB_EXPORT DwgDbObjectId      GetLinetypeByBlockId () const;
@@ -127,6 +128,8 @@ public:
     DWGDB_EXPORT DwgDbStatus        BindXrefs (DwgDbObjectIdArrayCR xrefBlocks, bool insertBind = true, bool allowUnresolved = false, bool quiet = true);
     //! Create a new xRef block from a path and block name, and get the block ID back if succeeded.
     DWGDB_EXPORT DwgDbObjectId      CreateXrefBlock (DwgStringCR xrefPath, DwgStringCR blockName);
+    //! Create a new DWG database
+    DWGDB_EXPORT static DwgDbDatabasePtr Create (bool createDefaults = true);
     };  // DwgDbDatabase
 
 /*=================================================================================**//**

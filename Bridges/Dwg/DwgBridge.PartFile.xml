@@ -4,16 +4,19 @@
   
     <Part Name="DwgBridgePRG" PrgOutputDir="DwgBridge">
         <SubProduct ProductName="RealDwgBridge"/>
-        <!-- In an effort to reduce CI Pipeline build time, OpenDwgBridge is moved into dev build, until it is needed again -->
         <SubNuGetProduct NuGetProductName="RealDwgBridgeSdkNuget"/>
-        <SubPart PartName="RunDwgImporterTests" PartFile="Bridges/Dwg/DwgConverter/DwgConverter"/>
+        <SubPart PartName="RunRealDwgImporterTests" PartFile="Bridges/Dwg/DwgConverter/DwgConverter"/>
         <SubProduct ProductName="DwgBridgeTests"/>
+        <SubProduct ProductName="OpenDwgBridge"/>
+        <SubNuGetProduct NuGetProductName="OpenDwgBridgeSdkNuget"/>
     </Part>
 
     <Part Name="DwgBridge.Dev" PrgOutputDir="DwgBridge">
         <SubPart PartName="DwgBridgePRG"/>
+        <!-- Before we get RealDWG to support AEC property sets, deliver both OpenDwg and RealDWG bridges
         <SubProduct ProductName="OpenDwgBridge"/>
         <SubNuGetProduct NuGetProductName="OpenDwgBridgeSdkNuget"/>
+        -->
     </Part>
 
 
@@ -198,7 +201,7 @@
         <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
         <Directories DirectoryListName="RealDwgConverterDirList"  PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
         <Directories DirectoryListName="DwgAppCommonDirList"  PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
-        <Directories DirectoryListName="Tests" PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
+        <Directories DirectoryListName="RealDwgTestsDirList"  PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
         <Directories DirectoryListName="TestDirList"/>
     </Product>
 
@@ -218,8 +221,8 @@
         <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest" Repository="imodel02"/>
         <SubPart PartName="iModelBridgeFwkLib" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
         <Bindings>
-            <Files ProductDirectoryName="DwgImporterTestsExe">Delivery/DwgBridgeTests.exe</Files>
-            <Files ProductDirectoryName="DwgImporterTestsExe">Delivery/DwgBridgeTests.logging.config.xml</Files>
+            <Files ProductDirectoryName="RealDwgImporterTestsExe">Delivery/DwgBridgeTests.exe</Files>
+            <Files ProductDirectoryName="RealDwgImporterTestsExe">Delivery/DwgBridgeTests.logging.config.xml</Files>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang">Delivery/DwgBridgeTests_en-US.sqlang.db3</Files>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="Ignore">Delivery/ignore_list.txt</Files>
             <Directory SourceName="Delivery/DwgBridgeTestData"  SubPartDirectory="TestData"  ProductDirectoryName="ImportTestData" Required="false"/>

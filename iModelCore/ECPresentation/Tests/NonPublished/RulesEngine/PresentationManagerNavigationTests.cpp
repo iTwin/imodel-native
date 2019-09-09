@@ -6713,3 +6713,48 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, HideNodeWhenItHasNoChild
     DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(0, childNodes.GetSize());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Saulius.Skliutas                09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(CorrectHasChildrenFlagWhenChildSpecificationHasChildrenHintAlways, R"*(
+    <ECEntityClass typeName="Element" />
+    <ECEntityClass typeName="Subject" />
+    <ECRelationshipClass typeName="ElementOwnsSubjects" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="owns child" polymorphic="false">
+            <Class class="Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by parent" polymorphic="false">
+            <Class class="Subject"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, CorrectHasChildrenFlagWhenChildSpecificationHasChildrenHintAlways)
+    {
+    ECClassCP elementClass = GetClass("Element");
+    ECClassCP subjectClass = GetClass("Subject");
+    ECRelationshipClassCP relElementOwndSubject = GetClass("ElementOwnsSubjects")->GetRelationshipClassCP();
+    IECInstancePtr element = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rootRule = new RootNodeRule("", 1000, false, TargetTree_Both, true);
+    rules->AddPresentationRule(*rootRule);
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
+        "", elementClass->GetFullName(), false));
+
+    ChildNodeRule* childRule = new ChildNodeRule("ParentNode.ClassName = \"Element\"", 1000, false, TargetTree_Both);
+    rules->AddPresentationRule(*childRule);
+    childRule->AddSpecification(*new RelatedInstanceNodesSpecification(1000, ChildrenHint::Always, false, false, false, false, 0, "",
+        RequiredRelationDirection_Forward, "", relElementOwndSubject->GetFullName(), subjectClass->GetFullName()));
+
+    // request for nodes
+    RulesDrivenECPresentationManager::NavigationOptions options(BeTest::GetNameOfCurrentTest(), TargetTree_MainTree);
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get(); });
+    ASSERT_EQ(1, rootNodes.GetSize());
+   
+    NavNodeCPtr rootNode = rootNodes[0];
+    EXPECT_FALSE(rootNode->HasChildren());
+    }

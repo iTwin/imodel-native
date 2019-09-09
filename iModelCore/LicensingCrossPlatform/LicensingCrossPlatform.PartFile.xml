@@ -21,7 +21,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="Licensing" OnlyPlatforms="x64,Linux*,MacOS*,iOSARM64,AndroidARM64">
+    <Part Name="Licensing" OnlyPlatforms="x64,Linux*,MacOS*,iOS*,Android*">
         <SubPart PartName="LicensingNativeLib" />
     </Part>
 

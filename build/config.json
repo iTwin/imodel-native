@@ -5,7 +5,7 @@
     "strategies": [
         {
             "name": "iModelCore",
-            "archs": "x64+winrtx64+androidarm64+iosarm64+macosx64+linuxx64",
+            "archs": "x64+winrtx64+androidarm64+iosarm64+iosx64+macosx64+linuxx64",
             "version_seed": "2.1.0",
             "linux_symbol_config": [
                 {
@@ -30,6 +30,15 @@
                     "upload": true,
                     "glob": "*.node"
                 }
+            ]
+        },
+        {
+            "name": "iModelJsMobile",
+            "archs": "iosarm64+iosx64",
+            "prg_id": "2348",
+            "version_file": "$SRCROOT/iModel02/iModelJsNodeAddon/package_version.txt",
+            "depends" : [
+                "iModelCore"
             ]
         },
         {

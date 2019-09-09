@@ -918,7 +918,7 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridge)
         bvector<WString> rargs(args);
         rargs.push_back(L"--fwk-bridge-regsubkey=ABD");
         RunTheBridge(rargs);
-        ASSERT_EQ(modelCount + 2, DbFileInfo(m_briefcaseName).GetModelCount()) << "ABD bridge should have detected and converted the new attachments, and it should have that both point to the same model. It will also create its own Definitions model.";
+        ASSERT_EQ(modelCount + 1, DbFileInfo(m_briefcaseName).GetModelCount()) << "ABD bridge should have detected and converted the new attachments, and it should have that both point to the same model.";
         }
     }
 

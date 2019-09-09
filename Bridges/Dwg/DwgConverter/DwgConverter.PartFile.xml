@@ -2,6 +2,7 @@
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
 
+    <!-- This is no longer an active product since the code split from DgnDbSync, and only kept for debugging build purposes -->
     <Product Name="DwgConverters" PrgOutputDir="DwgConverters" AddIn="true"> <!-- AddIn to ignore product directories -->
         <!-- DWG importer using OpenDwg -->
         <SubProduct ProductName="OpenDwgImporter" />
@@ -10,7 +11,8 @@
         <!-- Build unit tests -->
         <SubProduct ProductName="DwgImporterTests" />
         <!-- Run unit tests -->
-        <SubPart PartName="RunDwgImporterTests" />
+        <SubPart PartName="RunRealDwgImporterTests" />
+        <SubPart PartName="RunOpenDwgImporterTests" />
     </Product>
 
     <!-- Bind PublicAPI for DwgConverter into BuildContext/PublicAPI. -->
@@ -46,6 +48,8 @@
     <Part Name="OpenDwgImportExe" BentleyBuildMakeFile="Apps/DwgImportExe.mke" BentleyBuildMakeOptions="+dDWGTOOLKIT=OpenDwg +dVendorVersion=190815" OnlyPlatforms="x64" ExcludeLibType="Static" >
         <SubPart PartName="BentleyDll"          PartFile="iModelCore/Bentley/Bentley"      Repository="imodel02"/>
         <SubPart PartName="iModelBridgeFwkExe"  PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"/>
+        <!-- Need to pull ShxFonts from RealDWG -->
+        <SubPart PartName="RealDwg"             PartFile="${SrcRoot}bsicommon/CvsPartFiles/realdwg" Repository="bin-realdwg" />
         <SubPart PartName="DwgResources" />
         <SubPart PartName="OpenDwgBridgeDLL" />
         <SubPart PartName="OpenDwgImportDLL" />
@@ -99,7 +103,10 @@
       <ProductDirectory Name="ApplicationRoot"            Path="" />
       <ProductDirectory Name="OpenDwgImportAssemblies"    Deliver="true"                  RelativeTo="ApplicationRoot"/>
       <ProductDirectory Name="OpenDwgDbAssemblies"        Deliver="true"                  RelativeTo="ApplicationRoot"/>
-      <ProductDirectory Name="MergeModules"               Deliver="false"                 RelativeTo="ApplicationRoot"/>
+      <ProductDirectory Name="ShxFonts"                   Deliver="true"  Path="Fonts"    RelativeTo="ApplicationRoot"/>
+      <ProductDirectory Name="MergeModules"               Deliver="false" />
+      <ProductDirectory Name="RealDwgAssemblies"          Deliver="false" />
+      <ProductDirectory Name="RealDwgAssembliesEnUS"      Deliver="false" />
       <ProductDirectory Name="SampleXData"                Deliver="false" />
       <ProductDirectory Name="SampleListProp"             Deliver="false" />
     </ProductDirectoryList>
@@ -245,39 +252,79 @@
         <SubPart PartName="google_gtest_lib"    PartFile="iModelCore/util/gtest/gtest"  Repository="imodel02"/>
     </Part>
 
-    <Part Name="DwgImporterTestsExe" BentleyBuildMakeFile="Tests/Tests.mke" BentleyBuildMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2019" OnlyPlatforms="x64">
-        <SubPart PartName="GTestDependencies"/>
-        <SubPart PartName="RealDwgImportExe"/>
-        <SubPart PartName="DgnPlatformSqlang"   PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
-        <SubPart PartName="napi-stub"           PartFile="node-addon-api/node-addon-api"/>
-        <Bindings>
-            <Files ProductDirectoryName="DwgImporterTestsExe">Delivery/DwgImporterTests.exe</Files>
-            <Files ProductDirectoryName="DwgImporterTestsExe">Delivery/Test2dImporter.exe</Files>
-            <Files ProductDirectoryName="Assets" Required="false">Delivery/ImporterTestsConfig.xml</Files>
-            <Files ProductDirectoryName="Assets" Required="false">Delivery/DwgImporterTests.logging.config.xml</Files>
-            <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="false">Delivery/DwgImporterTests_en-US.sqlang.db3</Files>
-            <Files ProductDirectoryName="Assets" ProductSubDirectory="Ignore" Required="false">Delivery/ignore_list.txt</Files>
-            <Directory SourceName="Delivery/ImportTestData"  SubPartDirectory="TestData"  ProductDirectoryName="ImportTestData" Required="false"/>
-        </Bindings>
-    </Part>
-
-    <ProductDirectoryList ListName="Tests">
-        <ProductDirectory Name="DwgImporterTestsExe"            Path=""/>
+    <ProductDirectoryList ListName="TestsCommonDirList">
         <ProductDirectory Name="IgnoreList"                     Path="Ignore"/>
         <ProductDirectory Name="DgnV8ConverterSeedData"         Path="SeedData"/>
         <ProductDirectory Name="ImportTestData"                 Path="TestData"/>
         <ProductDirectory Name="DgnPlatformSqlang"              Path="sqlang"/>
     </ProductDirectoryList>
 
-    <Product Name="DwgImporterTests" SaveProduct="false" OnlyPlatforms="x64">
-        <SubPart PartName="DwgImporterTestsExe"/>
+    <!-- RealDwgImporterTests -->
+    <Part Name="RealDwgImporterTestsExe" BentleyBuildMakeFile="Tests/Tests.mke" BentleyBuildMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2019" OnlyPlatforms="x64">
+        <SubPart PartName="GTestDependencies"/>
+        <SubPart PartName="RealDwgImportExe"/>
+        <SubPart PartName="DgnPlatformSqlang"   PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
+        <SubPart PartName="napi-stub"           PartFile="node-addon-api/node-addon-api"/>
+        <Bindings>
+            <Files ProductDirectoryName="RealDwgImporterTestsExe">Delivery/RealDwgImporterTests/DwgImporterTests.exe</Files>
+            <Files ProductDirectoryName="RealDwgImporterTestsExe">Delivery/RealDwgImporterTests/Test2dImporter.exe</Files>
+            <Files ProductDirectoryName="Assets" Required="false">Delivery/RealDwgImporterTests/ImporterTestsConfig.xml</Files>
+            <Files ProductDirectoryName="Assets" Required="false">Delivery/RealDwgImporterTests/DwgImporterTests.logging.config.xml</Files>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="false">Delivery/RealDwgImporterTests/DwgImporterTests_en-US.sqlang.db3</Files>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="Ignore" Required="false">Delivery/RealDwgImporterTests/ignore_list.txt</Files>
+            <Directory SourceName="Delivery/RealDwgImporterTests/ImportTestData"  SubPartDirectory="TestData"  ProductDirectoryName="ImportTestData" Required="false"/>
+        </Bindings>
+    </Part>
+
+    <ProductDirectoryList ListName="RealDwgTestsDirList">
+        <ProductDirectory Name="RealDwgImporterTestsExe"        Path=""/>
+    </ProductDirectoryList>
+
+    <Product Name="RealDwgImporterTests" SaveProduct="false" OnlyPlatforms="x64">
+        <SubPart PartName="RealDwgImporterTestsExe"/>
         <Directories DirectoryListName="RealDwgConverterDirList" />
         <Directories DirectoryListName="DwgAppCommonDirList"/>
-        <Directories DirectoryListName="Tests"/>
+        <Directories DirectoryListName="TestsCommonDirList"/>
+        <Directories DirectoryListName="RealDwgTestsDirList"/>
     </Product>
 
-    <Part Name="RunDwgImporterTests" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=DwgImporterTests -dGTEST_NAME=DwgImporterTests" OnlyPlatforms="x64" ExcludeLibType="Static">
-        <SubProduct ProductName="DwgImporterTests" />
+    <Part Name="RunRealDwgImporterTests" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=RealDwgImporterTests -dGTEST_NAME=DwgImporterTests" OnlyPlatforms="x64" ExcludeLibType="Static">
+        <SubProduct ProductName="RealDwgImporterTests" />
+        <Bindings>
+          <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/DwgImporterTests.log</Files>
+        </Bindings>
+    </Part>
+
+    <!-- OpenDwgImporterTests -->
+    <Part Name="OpenDwgImporterTestsExe" BentleyBuildMakeFile="Tests/Tests.mke" BentleyBuildMakeOptions="+dDWGTOOLKIT=OpenDwg +dVendorVersion=190815" OnlyPlatforms="x64">
+        <SubPart PartName="GTestDependencies"/>
+        <SubPart PartName="OpenDwgImportExe"/>
+        <SubPart PartName="DgnPlatformSqlang"   PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
+        <SubPart PartName="napi-stub"           PartFile="node-addon-api/node-addon-api"/>
+        <Bindings>
+            <Files ProductDirectoryName="OpenDwgImporterTestsExe">Delivery/OpenDwgImporterTests/DwgImporterTests.exe</Files>
+            <Files ProductDirectoryName="Assets" Required="false">Delivery/OpenDwgImporterTests/ImporterTestsConfig.xml</Files>
+            <Files ProductDirectoryName="Assets" Required="false">Delivery/OpenDwgImporterTests/DwgImporterTests.logging.config.xml</Files>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="false">Delivery/OpenDwgImporterTests/DwgImporterTests_en-US.sqlang.db3</Files>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="Ignore" Required="false">Delivery/OpenDwgImporterTests/ignore_list.txt</Files>
+            <Directory SourceName="Delivery/OpenDwgImporterTests/ImportTestData"  SubPartDirectory="TestData"  ProductDirectoryName="ImportTestData" Required="false"/>
+        </Bindings>
+    </Part>
+
+    <ProductDirectoryList ListName="OpenDwgTestsDirList">
+        <ProductDirectory Name="OpenDwgImporterTestsExe"        Path=""/>
+    </ProductDirectoryList>
+
+    <Product Name="OpenDwgImporterTests" SaveProduct="false" OnlyPlatforms="x64">
+        <SubPart PartName="OpenDwgImporterTestsExe"/>
+        <Directories DirectoryListName="OpenDwgConverterDirList" />
+        <Directories DirectoryListName="DwgAppCommonDirList"/>
+        <Directories DirectoryListName="TestsCommonDirList"/>
+        <Directories DirectoryListName="OpenDwgTestsDirList"/>
+    </Product>
+
+    <Part Name="RunOpenDwgImporterTests" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=OpenDwgImporterTests -dGTEST_NAME=DwgImporterTests" OnlyPlatforms="x64" ExcludeLibType="Static">
+        <SubProduct ProductName="OpenDwgImporterTests" />
         <Bindings>
           <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/DwgImporterTests.log</Files>
         </Bindings>

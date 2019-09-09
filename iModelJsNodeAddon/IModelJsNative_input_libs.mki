@@ -41,10 +41,12 @@ THIN_ARCHIVE_INPUTS  + $(ContextSubpartsLibs)libBeOpenSSL.a
 #    %error parasolid should be available on all platforms that support imodeljs addon
 %endif
 
+%if defined (USING_BREAKPAD)
 %if $(USING_BREAKPAD) == 1
     THIN_ARCHIVE_INPUTS + $(ContextSubPartsLibs)libbreakpad_client.a
     THIN_ARCHIVE_INPUTS + $(ContextSubPartsLibs)libbreakpad.a
     THIN_ARCHIVE_INPUTS + $(ContextSubPartsLibs)libdisasm.a
+%endif
 %endif
 
 %if defined(BENTLEYCONFIG_CRASHPAD)
@@ -71,10 +73,12 @@ LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)WebServicesClient$(libext)
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeHttp$(stlibext)
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeOpenSSL$(libext)
 
+%if defined (USING_BREAKPAD)
 %if $(USING_BREAKPAD) == 1
     LINKER_LIBRARIES  + $(ContextSubpartsLibs)libbreakpad.lib
     LINKER_LIBRARIES  + $(ContextSubpartsLibs)libbreakpad_client.lib
     LINKER_LIBRARIES  + $(ContextSubpartsLibs)libdisasm.lib
+%endif
 %endif
 
 %if defined(BENTLEYCONFIG_CRASHPAD)

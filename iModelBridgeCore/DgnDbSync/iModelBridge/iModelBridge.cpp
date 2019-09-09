@@ -1109,6 +1109,10 @@ Utf8String iModelBridge::_FormatPushComment(DgnDbR db, Utf8CP commitComment)
 
     Utf8PrintfString comment("%s - %s (%s)", key.c_str(), Utf8String(localFileName.GetBaseName()).c_str(), docProps.m_docGuid.c_str());
 
+    auto const& rcomment = params.GetRevisionComment();
+    if (!rcomment.empty())
+        comment.append(" - ").append(rcomment);
+
     if (commitComment)
         comment.append(" - ").append(commitComment);
 
