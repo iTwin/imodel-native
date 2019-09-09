@@ -1,0 +1,27 @@
+#----------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#----------------------------------------------------------------------------------------
+%include mdl.mki
+
+TestDir = ScalableMesh
+baseDir = $(_MakeFilePath)
+
+# Compile and Link the unit tests
+BEGTEST_NAME  = $(TestDir)
+BEGTEST_INPUT = $(baseDir)
+BEGTEST_IGNORE= $(baseDir)ignore_list.txt
+BEGTEST_OUTPUT=$(OutputRootDir)build/ScalableMesh/UnitTests/
+#BEGTEST_ADDITIONAL_HFILES = 
+o = $(BEGTEST_OUTPUT)/
+
+%ifdef UsePublishedApi
+    BEGTEST_API = $(BuildContext)SubParts/PublishedApi/$(TestDir)/
+%endif
+
+%include $(SrcRoot)bsicommon/sharedmki/DetectAndCompileUnitTests.mki
+
+# Deliver 
+$(BuildContext)Delivery/UnitTests/Objects/$(TestDir) : ${o}
+    $(LinkFirstDepToFirstTargetAsDirectory)
