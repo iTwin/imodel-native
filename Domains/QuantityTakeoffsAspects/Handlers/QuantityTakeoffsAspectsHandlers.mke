@@ -1,0 +1,83 @@
+#---------------------------------------------------------------------------------------+
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#---------------------------------------------------------------------------------------+
+%include mdl.mki
+
+AppName = QuantityTakeoffsAspectsHandlers
+CCompPDBName = $(AppName)
+
+o = $(OutputRootDir)build/QuantityTakeoffsAspects/Handlers/
+
+nameToDefine = __QUANTITYTAKEOFFSASPECTS_BUILD__
+%include cdefapnd.mki
+
+
+%if !defined (BMAKE_DELETE_ALL_TARGETS)
+    $(o):
+        ~@mkdir $@
+%else
+    always:
+        -$(rmdirRecursiveCmd) $(o)
+%endif
+
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)DimensionsAspectHandler$(oext) : $(_MakeFilePath)DimensionsAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/DimensionsAspectHandler.h
+
+$(o)DoorAspectHandler$(oext) : $(_MakeFilePath)DoorAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/DoorAspectHandler.h
+
+$(o)EnergyPerformanceAspectHandler$(oext) : $(_MakeFilePath)EnergyPerformanceAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/EnergyPerformanceAspectHandler.h
+
+$(o)FoundationAspectHandler$(oext) : $(_MakeFilePath)FoundationAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/FoundationAspectHandler.h
+
+
+$(o)MaterialAspectHandler$(oext) : $(_MakeFilePath)MaterialAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/MaterialAspectHandler.h
+
+$(o)PerimeterAspectHandler$(oext) : $(_MakeFilePath)PerimeterAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/PerimeterAspectHandler.h
+
+$(o)PileAspectHandler$(oext) : $(_MakeFilePath)PileAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/PileAspectHandler.h
+
+$(o)PipeAspectHandler$(oext) : $(_MakeFilePath)PipeAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/PipeAspectHandler.h
+
+$(o)SideAreasAspectHandler$(oext) : $(_MakeFilePath)SideAreasAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/SideAreasAspectHandler.h
+
+$(o)SlabAspectHandler$(oext) : $(_MakeFilePath)SlabAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/SlabAspectHandler.h
+
+$(o)SlopeAspectHandler$(oext) : $(_MakeFilePath)SlopeAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/SlopeAspectHandler.h
+
+$(o)StairsAspectHandler$(oext) : $(_MakeFilePath)StairsAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/StairsAspectHandler.h
+
+$(o)StructuralLinearMemberAspectHandler$(oext) : $(_MakeFilePath)StructuralLinearMemberAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/StructuralLinearMemberAspectHandler.h
+
+$(o)SurfaceAreaAspectHandler$(oext) : $(_MakeFilePath)SurfaceAreaAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/SurfaceAreaAspectHandler.h
+
+$(o)ThicknessAspectHandler$(oext) : $(_MakeFilePath)ThicknessAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ThicknessAspectHandler.h
+
+$(o)VolumeAspectHandler$(oext) : $(_MakeFilePath)VolumeAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/VolumeAspectHandler.h
+
+$(o)WallAspectHandler$(oext) : $(_MakeFilePath)WallAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/WallAspectHandler.h
+
+$(o)WindowAspectHandler$(oext) : $(_MakeFilePath)WindowAspectHandler.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/WindowAspectHandler.h
+
+%include MultiCppCompileGo.mki
+objs +% $(MultiCompileObjectList)
+
+DLM_CONTEXT_LOCATION = $(ContextDeliveryDir)
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+DLM_DEST = $(o)
+DLM_EXPORT_DEST = $(o)
+DLM_EXPORT_OBJS = $(objs)
+DLM_LIB_CONTEXT_LOCATION = $(ContextDeliveryDir)
+DLM_NAME = $(AppName)
+DLM_NOENTRY = 1
+DLM_OBJECT_DEST = $(o)
+DLM_OBJECT_FILES = $(objs)
+
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)QuantityTakeoffsAspectsElements$(libext)
+
+%include $(sharedMki)linkLibrary.mki
+
