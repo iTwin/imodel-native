@@ -1,0 +1,17 @@
+#--------------------------------------------------------------------------------------+
+#
+#     $Source: DgnV8OpenRoadsDesigner.mki $
+#
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------+
+#%include $(BuildContext)SubParts/PublicMki/BentleyApi.mki
+
+appName = DgnV8OpenRoadsDesigner
+o = $(OutputRootDir)build/$(appName)/
+CCompPDBName = $(appName)
+MultiCompileIntermediatePdbFile = $(o)$(CCompPDBName).pdb
+IntermediatePdbFile = $(MultiCompileIntermediatePdbFile)
+
+nameToDefine = __DGNV8OPENROADSDESIGNER_BUILD__
+% include cdefapnd.mki

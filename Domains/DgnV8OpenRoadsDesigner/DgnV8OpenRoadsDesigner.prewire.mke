@@ -1,0 +1,11 @@
+#--------------------------------------------------------------------------------------+
+#
+#     $Source: DgnV8OpenRoadsDesigner.prewire.mke $
+#
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------+
+%include mdl.mki
+
+$(BuildContext)PublicAPI/DgnV8OpenRoadsDesigner : $(_MakeFilePath)PublicAPI/DgnV8OpenRoadsDesigner
+    $(LinkFirstDepToFirstTargetAsDirectory)
