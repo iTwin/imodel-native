@@ -58,6 +58,9 @@ public:
     static IBriefcaseManagerPtr Create(DgnDbR db) { return new MasterBriefcaseManager(db); }
 };
 
+#define MUST_BE_IN_BULK_MODE(ERET) if (BSISUCCESS != CheckInBulkMode()) {return ERET;}
+#define MUST_BE_IN_BULK_MODE_V     if (BSISUCCESS != CheckInBulkMode()) {return;}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Sam.Wilson      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -76,8 +79,20 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
         T_HOST.GetTxnAdmin().DropTxnMonitor(*this);
         }
 
+    BentleyStatus CheckInBulkMode()
+        {
+        if (m_inBulkUpdate)
+            return BSISUCCESS;
+
+        JsInterop::ThrowJsException("You forgot to call iModelDb.concurrencyControl.setPolicy.");
+        BeAssert(false && "You forgot to call iModelDb.concurrencyControl.setPolicy.");
+        return BSIERROR;
+        }
+
     Response _ProcessRequest(Request& req, RequestPurpose purpose) override
         {
+        MUST_BE_IN_BULK_MODE(IBriefcaseManager::Response(purpose, req.Options(), RepositoryStatus::ServerUnavailable));
+
         if (req.IsEmpty())
             return Response(purpose, req.Options(), RepositoryStatus::Success);
 
@@ -89,13 +104,7 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
 
         if (RequestPurpose::Acquire == purpose)
             {
-            if (m_inBulkUpdate)
-                AccumulateRequests(req);
-            else
-                {
-                JsInterop::ThrowJsException("Cannot acquire resources in native code. See startBulkOperation.");
-                BeAssert(req.IsEmpty() && "Cannot acquire resources in native code. See startBulkOperation.");
-                }
+            AccumulateRequests(req);
             }
         else
             {
@@ -122,6 +131,8 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
 
     RepositoryStatus _PrepareForElementOperation(Request& req, DgnElementCR el, BeSQLite::DbOpcode op) override
         {
+        MUST_BE_IN_BULK_MODE(RepositoryStatus::ServerUnavailable);
+
         auto rstat = el.PopulateRequest(req, op);
         if (RepositoryStatus::Success != rstat)
             return rstat;
@@ -134,21 +145,21 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
 
     RepositoryStatus _PrepareForModelOperation(Request& req, DgnModelCR model, BeSQLite::DbOpcode op) override
         {
+        MUST_BE_IN_BULK_MODE(RepositoryStatus::ServerUnavailable);
+
         auto rstat = model.PopulateRequest(req, op);
 
         if (RepositoryStatus::Success != rstat)
             return rstat;
 
-        if (m_inBulkUpdate)
-            AccumulateRequests(req);
+        AccumulateRequests(req);
 
         return RepositoryStatus::Success;
         }
 
     void _OnElementInserted(DgnElementId id) override
         {
-        if (!m_inBulkUpdate)
-            return;
+        MUST_BE_IN_BULK_MODE_V;
 
         if (LocksRequired())
             m_req.Locks().GetLockSet().insert(DgnLock(LockableId(id), LockLevel::Exclusive));
@@ -156,8 +167,7 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
 
     void _OnModelInserted(DgnModelId id) override
         {
-        if (!m_inBulkUpdate)
-            return;
+        MUST_BE_IN_BULK_MODE_V;
 
         if (LocksRequired())
             m_req.Locks().GetLockSet().insert(DgnLock(LockableId(id), LockLevel::Exclusive));
@@ -165,14 +175,10 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
 
     RepositoryStatus _ReserveCode(DgnCodeCR code) override
         {
-        if (m_inBulkUpdate)
-            {
-            m_req.Codes().insert(code);
-            return RepositoryStatus::Success;
-            }
+        MUST_BE_IN_BULK_MODE(RepositoryStatus::ServerUnavailable);
 
-        BeAssert(false && "Cannot process requests from native code. See startBulkOperation.");
-        return RepositoryStatus::ServerUnavailable;
+        m_req.Codes().insert(code);
+        return RepositoryStatus::Success;
         }
 
     void _OnDgnDbDestroyed() override { m_req.Reset(); m_inBulkUpdate = false; IBriefcaseManager::_OnDgnDbDestroyed(); }
