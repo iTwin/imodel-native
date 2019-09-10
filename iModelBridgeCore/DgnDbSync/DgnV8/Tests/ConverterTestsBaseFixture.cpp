@@ -895,7 +895,7 @@ void ConverterTestBaseFixture::countModels(DgnDbR db, int ndrawings_expected, in
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ConverterTestBaseFixture::countElements(DgnModel& model, int expected)
+void ConverterTestBaseFixture::countElements(DgnModel const& model, int expected)
     {
     auto stmt = model.GetDgnDb().GetPreparedECSqlStatement("SELECT COUNT(*) from " BIS_SCHEMA(BIS_CLASS_Element) " WHERE Model.Id=?");
     stmt->BindId(1, model.GetModelId());
@@ -906,7 +906,7 @@ void ConverterTestBaseFixture::countElements(DgnModel& model, int expected)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ConverterTestBaseFixture::countElementsInModelByClass(DgnModel& model, DgnClassId classId, int expected)
+void ConverterTestBaseFixture::countElementsInModelByClass(DgnModel const& model, DgnClassId classId, int expected)
     {
     auto stmt = model.GetDgnDb().GetPreparedECSqlStatement("SELECT COUNT(*) from " BIS_SCHEMA(BIS_CLASS_Element) " WHERE Model.Id=? AND ECClassId=?");
     stmt->BindId(1, model.GetModelId());

@@ -696,6 +696,8 @@ struct Converter
 
         //! Called when a DgnModel is deleted
         virtual void _OnModelDelete(DgnModelR, SyncInfo::V8ModelExternalSourceAspect const&) {}
+
+        virtual void _OnModelConverted(ResolvedModelMapping const&, uint32_t changeCount) {}
     };
 
     //! The severity of an issue

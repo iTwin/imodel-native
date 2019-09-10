@@ -75,8 +75,8 @@ struct ConverterTestBaseFixture : public testing::Test
     void TestElementChanges(BentleyApi::BeFileNameCR rootV8FileName, BentleyApi::BeFileNameCR editV8FileName, size_t nModelsExpected);
     DgnClassId getBisClassId(DgnDbR db, Utf8CP className);
     DgnElementId findFirstElementByClass(DgnDbR db, DgnClassId classId);
-    void countElements(DgnModel& model, int expected);
-    void countElementsInModelByClass(DgnModel& model, DgnClassId classId, int expected);
+    void countElements(DgnModel const& model, int expected);
+    void countElementsInModelByClass(DgnModel const& model, DgnClassId classId, int expected);
     void countModels(DgnDbR db, int ndrawings_expected, int nspatial_expected);
     SubjectCPtr GetFirstJobSubjectUnderParent(SubjectCR);
     SubjectCPtr GetFirstJobSubject(DgnDbR db);

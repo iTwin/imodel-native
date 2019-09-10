@@ -337,7 +337,7 @@ Currently, provenance for model elements is required. Provenance for other kinds
 <h3>ElementHasLinks</h3>
 A bridge must relate each physical model that it creates to source document(s) that it used to create that model.
 Specifically, each bridge must create a ElementHasLinks ECRelationship from the InformationContentElement element that represents the model
-to one or more RepositoryLink elements that describe the source document. See iModelBridge::WriteRepositoryLink and iModelBridge::InsertElementHasLinksRelationship.
+to one or more RepositoryLink elements that describe the source document. See iModelBridge::MakeRepositoryLink and iModelBridge::InsertElementHasLinksRelationship.
 
 When you create a physical partition model, link it to the RepositoryLink that corresponds to the source document. For example:
 

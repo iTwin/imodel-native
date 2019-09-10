@@ -171,6 +171,34 @@ TEST_F(V8AttachmentTests, ElementUpdateInReferenceFile)
         EXPECT_EQ(originalGeomModelCount + 1, CountGeometricModels(*db));
         }
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(V8AttachmentTests, DoNotConvertAttachmentAsMasterFile)
+    {
+    LineUpFiles(L"DoNotConvertAttachmentAsMasterFile.bim", L"Test3d.dgn", true);
+
+    BentleyApi::BeFileName refV8File;
+    CreateAndAddV8Attachment(refV8File, 1);  // Create a copy of Test3d.dgn and attach it. Note that it will have the same level table.
+
+    DoUpdate(m_dgnDbFileName, m_v8FileName);
+
+    // Verify that converter refuses to convert refV8File directly.
+    auto db = OpenExistingDgnDb(m_dgnDbFileName);
+    ASSERT_TRUE(db.IsValid());
+    RootModelConverter::RootModelSpatialParams params(m_params);
+    params.SetKeepHostAlive(true);
+    params.SetInputFileName(refV8File);
+    params.SetBridgeRegSubKey(RootModelConverter::GetRegistrySubKey());
+    TestRootModelCreator creator(params, this);
+    creator.SetDgnDb(*db);
+    creator.SetIsUpdating(false);
+    creator.AttachSyncInfo();
+    ASSERT_EQ(BentleyApi::SUCCESS, creator.InitRootModel());
+    creator.MakeSchemaChanges();
+    ASSERT_FALSE(creator.WasAborted());
+    ASSERT_EQ(TestRootModelCreator::ImportJobCreateStatus::FailedExistingNonRootModel, creator.InitializeJob());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat                          04/16

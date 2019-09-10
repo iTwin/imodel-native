@@ -5,6 +5,28 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "(Windows) DgnV8Converter",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}/Winx64/Product/DgnV8Converter/DgnV8Converter.exe",
+            "args": ["--input=d:/dgn/079_Main.i.dgn", "--output=d:/tmp/079_Main.i.bim", "--update"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false
+        },
+        {
+            "name": "(Windows) DgnV8ConverterTests",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}/Winx64/Product/DgnV8ConverterTests/DgnV8ConverterTests.exe",
+            "args": ["--gtest_break_on_failure", "--gtest_filter=ConverterTests.CrashAndRerun"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": true
+        },
+        {
             "type": "node",
             "request": "attach",
             "name": "Attach",
@@ -28,7 +50,7 @@
             "program": "${workspaceFolder}/iModelJsNodeAddon/api_package/ts/lib/test/index.js"
         },
         {
-            "name": "Bridge.File",
+            "name": "(Windows) Bridge.File",
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${env:OutRoot}WinX64/Product/MstnBridgeTests/MstnBridgeTests.exe",
@@ -46,7 +68,7 @@
             "externalConsole": false
         },
         {
-            "name": "iModelBridgeFwk.exe",
+            "name": "(Windows) iModelBridgeFwk.exe",
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${env:OutRoot}Winx64/Product/iModelBridgeFwk/bin/iModelBridgeFwk.exe",
@@ -65,7 +87,7 @@
             "externalConsole": false
         },
         {
-            "name": "MstnBridgeTests.exe",
+            "name": "(Windows) MstnBridgeTests.exe",
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${env:OutRoot}WinX64/Product/MstnBridgeTests/MstnBridgeTests.exe",

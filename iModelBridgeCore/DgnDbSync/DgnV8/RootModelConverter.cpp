@@ -1240,6 +1240,9 @@ void RootModelConverter::DoConvertSpatialElements()
             ConverterLogging::LogPerformance(timer, "Convert Spatial Elements> Model '%s' (%" PRIu32 " element(s))",
                                              modelMapping.GetDgnModel().GetName().c_str(),
                                              convertedElementCount);
+
+            if (convertedElementCount != 0 && m_monitor.IsValid())
+                m_monitor->_OnModelConverted(modelMapping, convertedElementCount);
             }
 
         if (_GetParams().GetPushIntermediateRevisions() == iModelBridge::Params::PushIntermediateRevisions::ByFile)
@@ -1870,20 +1873,20 @@ void RootModelConverter::_FinishConversion()
             GetChangeDetector()._DetectDeletedModelsEnd(*this);
             ConverterLogging::LogPerformance(timer, "Remove deleted items");
             }
+        }
 
-        // Update syncinfo for all V8 files *** WIP_UPDATER - really only need to update syncinfo for changed files, but we don't keep track of that.
-        for (DgnFileP v8File : m_v8Files)
-            {
-            if (!IsFileAssignedToBridge(*v8File))
-                continue;
-            // Note: Bridges do not retain their locks on RepositoryLink elements. So, even if another job created this element,
-            // it is safe for this bridge job to update it.
-            auto rlinkEd = GetDgnDb().Elements().GetForEdit<RepositoryLink>(GetRepositoryLinkId(*v8File));
-            auto rlinkXsa = SyncInfo::RepositoryLinkExternalSourceAspect::GetAspectForEdit(*rlinkEd);
-            auto anyChanges = rlinkXsa.Update(GetSyncInfo().ComputeFileInfo(*v8File));
-            if (anyChanges)
-                rlinkEd->Update();
-            }
+    // See "When to mark file as processed" comment below
+    for (DgnFileP v8File : m_v8Files)
+        {
+        if (!IsFileAssignedToBridge(*v8File))
+            continue;
+        // Note: Bridges do not retain their locks on RepositoryLink elements. So, even if another job created this element,
+        // it is safe for this bridge job to update it.
+        auto rlinkEd = GetDgnDb().Elements().GetForEdit<RepositoryLink>(GetRepositoryLinkId(*v8File));
+        auto rlinkXsa = SyncInfo::RepositoryLinkExternalSourceAspect::GetAspectForEdit(*rlinkEd);
+        auto anyChanges = rlinkXsa.Update(GetSyncInfo().ComputeFileInfo(*v8File));
+        if (anyChanges)
+            rlinkEd->Update();
         }
 
     CopyExpirationDate(*m_rootFile);
@@ -2247,3 +2250,24 @@ bool RootModelConverter::_WasEmbeddedFileSeen(Utf8StringCR uniqueName) const
     }
 
 END_DGNDBSYNC_DGNV8_NAMESPACE
+
+/* "When to mark file as processed"
+
+A RepositoryLink element represents an external file, and the ExternalSourceAspect (XSA) 
+for a RepositoryLink captures information about the external file.
+
+The XSA's lastModifiedFile and lastSaveTime properties record the last-modified
+time of the file as of the last time that it was converted. These XSA properties are used 
+by the ChangeDetector to decide if the file can be skipped.
+
+The XSA's lastModifiedFile and lastSaveTime properties must be updated to match the file's 
+current state only *after* all content in the file has been processed. By updating these properties
+at the end, we ensure that the converter will process the file again in the case where it 
+crashed part way through and is then re-run.
+
+We had a bug where we were setting the up-to-date values for these properties in the XSA
+at the time that we first discovered a file and created the XSA. We were getting away with that
+most of the time because we also added the file's model to a special list of newly discovered models.
+But that list is in memory only. It is lost after a crash. Bug #171870.
+
+*/

@@ -323,7 +323,7 @@ protected:
     BentleyStatus Briefcase_AcquireBriefcase(FwkContext& context);
     BentleyStatus Briefcase_Push(Utf8CP);
     BentleyStatus Briefcase_PullMergePush(Utf8CP, bool doPullAndMerge = true, bool doPush = true);
-    BentleyStatus Briefcase_ReleaseAllPublicLocks();
+    BentleyStatus Briefcase_ReleaseAllPublicLocks(bool isCrash = false);
     //! @}
 
     BentleyStatus ParseDocProps();

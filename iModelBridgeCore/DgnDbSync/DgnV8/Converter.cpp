@@ -251,6 +251,8 @@ RepositoryLinkId Converter::WriteRepositoryLink(DgnV8FileR file)
         GetDgnDb().BriefcaseManager().Acquire(req).Result();
         }
 
+    finfo.m_lastModifiedTime = 0; // See "When to mark file as processed" in RootModelConverter.cpp. Bug #171870
+    finfo.m_lastSaveTime = 0;     //                "
     auto xsa = SyncInfo::RepositoryLinkExternalSourceAspect::CreateAspect(GetDgnDb(), finfo, _GetIdPolicy(file));
     xsa.AddAspect(*rlink);
 

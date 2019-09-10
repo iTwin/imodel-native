@@ -22,7 +22,7 @@ struct V8FileEditor
     void Open(BentleyApi::BeFileNameCR);
     void Save();
     void GetAndLoadModel(DgnV8ModelP&, DgnV8Api::ModelId = -2);
-    void AddAttachment(BentleyApi::BeFileNameCR, DgnV8ModelP v8model = nullptr, Bentley::DPoint3d origin = Bentley::DPoint3d::FromZero());
+    void AddAttachment(BentleyApi::BeFileNameCR, DgnV8ModelP v8model = nullptr, Bentley::DPoint3d origin = Bentley::DPoint3d::FromZero(), wchar_t const* attachedModelName = nullptr);
     void AddFileLink(DgnV8Api::ElementId elementId, BentleyApi::BeFileName& linkFile, DgnV8ModelP v8model = nullptr);
     void AddTextElement(DgnTextStyleCR textStyle, bool addToModel=true);
     DgnV8Api::LevelId AddV8Level(BentleyApi::Utf8CP levelname);

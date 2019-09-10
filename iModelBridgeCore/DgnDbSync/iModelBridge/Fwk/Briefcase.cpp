@@ -643,10 +643,17 @@ static bool shouldBridgeHoldThisLock(DgnLockCR lock, DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridgeFwk::Briefcase_ReleaseAllPublicLocks()
+BentleyStatus iModelBridgeFwk::Briefcase_ReleaseAllPublicLocks(bool isCrash)
     {
     if (!m_briefcaseDgnDb.IsValid())
         return BSIERROR;
+
+    if (isCrash && m_briefcaseDgnDb->BriefcaseManager().IsBulkOperation())
+        {
+        // Must abandon current/pending request. Otherwise, DemoteLocks will just update an in-memory cache and Relinquish will throw an exception.
+        IBriefcaseManager::Request abandonedRequest;
+        m_briefcaseDgnDb->BriefcaseManager().ExtractRequestFromBulkOperation(abandonedRequest, true, true);
+        }
 
     if (!m_briefcaseDgnDb->BriefcaseManager().GetChannelPropsR().oneBriefcaseOwnsChannel)
         {

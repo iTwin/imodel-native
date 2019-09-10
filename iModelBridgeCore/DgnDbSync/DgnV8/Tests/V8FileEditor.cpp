@@ -74,7 +74,7 @@ void V8FileEditor::AddLine(DgnV8Api::ElementId* eid, DgnV8ModelP v8model, DPoint
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void V8FileEditor::AddAttachment(BentleyApi::BeFileNameCR attachmentFileName, DgnV8ModelP v8model, Bentley::DPoint3d origin)
+void V8FileEditor::AddAttachment(BentleyApi::BeFileNameCR attachmentFileName, DgnV8ModelP v8model, Bentley::DPoint3d origin, wchar_t const* attachedModelName)
     {
     if (nullptr == v8model)
         v8model = m_defaultModel;
@@ -82,7 +82,7 @@ void V8FileEditor::AddAttachment(BentleyApi::BeFileNameCR attachmentFileName, Dg
     //  Add refV8File as an attachment to v8File
     Bentley::DgnDocumentMonikerPtr moniker = DgnV8Api::DgnDocumentMoniker::CreateFromFileName(attachmentFileName.c_str());
     DgnV8Api::DgnAttachment* attachment;
-    ASSERT_EQ( BentleyApi::SUCCESS, v8model->CreateDgnAttachment(attachment, *moniker, nullptr, true) );
+    ASSERT_EQ( BentleyApi::SUCCESS, v8model->CreateDgnAttachment(attachment, *moniker, attachedModelName, true) );
     ASSERT_TRUE(nullptr != attachment);
     attachment->SetRefOrigin(origin);
     ASSERT_EQ( BentleyApi::SUCCESS, attachment->WriteToModel() );

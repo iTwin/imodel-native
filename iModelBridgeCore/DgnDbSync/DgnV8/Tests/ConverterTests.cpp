@@ -3,10 +3,32 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
+#include <windows.h>
 #include "ConverterTestsBaseFixture.h"
 #include <iModelBridge/iModelBridgeSacAdapter.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <iModelBridge/iModelBridge.h>
+
+struct CrashControlMonitor : DgnV8::Converter::Monitor
+    {
+    enum class ModelAction {Nothing, Save, Crash};
+    BentleyApi::bmap<BentleyApi::WString, ModelAction> m_modelsAndActions;
+
+    void _OnModelConverted(ResolvedModelMapping const& v8mm, uint32_t changeCount) override
+        {
+        auto const& iModelAndAction = m_modelsAndActions.find(v8mm.GetV8Model().GetModelNameCP());
+        if (iModelAndAction == m_modelsAndActions.end())
+            return;
+        if (iModelAndAction->second == ModelAction::Save)
+            {
+            v8mm.GetDgnModel().GetDgnDb().SaveChanges();
+            }
+        else if (iModelAndAction->second == ModelAction::Crash)
+            {
+            *((int*)nullptr) = 0;
+            }
+        }
+    };
 
 //----------------------------------------------------------------------------------------
 // @bsiclass                                    Umar.Hayat                      08/15
@@ -14,6 +36,8 @@
 struct ConverterTests : public ConverterTestBaseFixture
     {
     void CheckNoDupXsas(DgnDbR, Utf8CP kind);
+    void ConvertWithCrash(DgnDbR, CrashControlMonitor&);
+    bool ConvertWithCrashCaught(DgnDbR, CrashControlMonitor&);
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -1662,4 +1686,113 @@ TEST_F(ConverterTests, EmbeddedFileIdRecipe)
     ASSERT_STRCASEEQ("133735_2A-EWR-OXD-OB_33-M3-CE-010001", converter.ComputeEffectiveEmbeddedFileName("133735_2A-EWR-OXD-OB_33-M3-CE-010001_P02-01_S2.dgn.i.dgn", &recipe).c_str());
 
     ASSERT_STRCASEEQ("Ph1-BBV-HS2SG1 Routewide LOD 3d", converter.ComputeEffectiveEmbeddedFileName("1MC08-BBV-DS-DMB-NS01_NL01-100001.i.dgn<24>Ph1-BBV-HS2SG1 Routewide LOD 3d.dgn.i.dgn", &recipe).c_str());
+    }
+
+void ConverterTests::ConvertWithCrash(DgnDbR db, CrashControlMonitor& monitor)
+    {
+    RootModelConverter::RootModelSpatialParams params(m_params);
+    params.SetKeepHostAlive(true);
+    params.SetInputFileName(m_v8FileName);
+
+    TestRootModelCreator converter(params, this);
+    params.SetBridgeRegSubKey(RootModelConverter::GetRegistrySubKey());
+    converter.SetDgnDb(db);
+    converter.SetIsUpdating(false);
+    converter.AttachSyncInfo();
+
+    converter.SetMonitor(monitor);
+
+    ASSERT_EQ(BentleyApi::SUCCESS, converter.InitRootModel());
+    converter.MakeSchemaChanges();
+    ASSERT_FALSE(converter.WasAborted());
+    ASSERT_EQ(TestRootModelCreator::ImportJobCreateStatus::Success, converter.InitializeJob());
+    ASSERT_EQ(BentleyApi::SUCCESS, converter.MakeDefinitionChanges());
+    converter.ConvertData();
+    }
+
+bool ConverterTests::ConvertWithCrashCaught(DgnDbR db, CrashControlMonitor& monitor)
+    {
+    __try
+        {
+        ConvertWithCrash(db, monitor);
+        return false;
+        }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+        {        
+        }
+    return  true;
+    }
+
+TEST_F(ConverterTests, CrashAndRerun)
+    {
+    LineUpFiles(L"CrashAndRerun.bim", L"Test3d.dgn", false);
+
+    wchar_t const* model1Name = L"Model1";
+    wchar_t const* model2Name = L"Model2";
+
+    if (true)
+        {
+        V8FileEditor v8editor;
+        v8editor.Open(m_v8FileName);
+        DgnV8Api::DgnModelStatus modelStatus;
+    
+        Bentley::DgnModelP newModel1 = v8editor.m_file->CreateNewModel(&modelStatus, model1Name, DgnV8Api::DgnModelType::Normal, /*is3D*/ true);
+        DgnV8Api::ElementId eid1;
+        v8editor.AddLine(&eid1, newModel1);
+    
+        Bentley::DgnModelP newModel2 = v8editor.m_file->CreateNewModel(&modelStatus, model2Name, DgnV8Api::DgnModelType::Normal, /*is3D*/ true);
+        DgnV8Api::ElementId eid2;
+        v8editor.AddLine(&eid2, newModel2);
+
+        auto parentModel = v8editor.m_defaultModel;
+
+        v8editor.AddAttachment(m_v8FileName, nullptr, Bentley::DPoint3d::FromZero(), newModel1->GetModelNameCP());
+        v8editor.AddAttachment(m_v8FileName, nullptr, Bentley::DPoint3d::FromZero(), newModel2->GetModelNameCP());
+    
+        ASSERT_TRUE(DgnV8Api::DGNMODEL_STATUS_Success == modelStatus);
+        }
+
+    // Do the initial conversion but crash half way through, after converting model1 but before converting model2.
+    if (true)
+        {
+        auto db = OpenExistingDgnDb(m_dgnDbFileName);
+        ASSERT_TRUE(db.IsValid());
+
+        RefCountedPtr<CrashControlMonitor> monitor = new CrashControlMonitor();
+        monitor->m_modelsAndActions[model1Name] = CrashControlMonitor::ModelAction::Save;
+        monitor->m_modelsAndActions[model2Name] = CrashControlMonitor::ModelAction::Crash;
+
+        ASSERT_TRUE(ConvertWithCrashCaught(*db, *monitor));
+
+        db->AbandonChanges();
+        db->CloseDb();
+        }
+
+    if (true)
+        {
+        auto db = OpenExistingDgnDb(m_dgnDbFileName);
+        auto model1Found = getModelsByName(*db, Utf8String(model1Name).c_str());
+        auto model2Found = getModelsByName(*db, Utf8String(model2Name).c_str());
+        ASSERT_EQ(1, model1Found.size());
+        ASSERT_EQ(1, model2Found.size());
+        countElements(*model1Found[0], 1);
+        countElements(*model2Found[0], 0);  // because of the crash, model2 should not have been converted
+        }
+
+    // Re-run the converter, this time with no crash. The converter should convert model2 (and leave model1 as is)
+
+    DoUpdate(m_dgnDbFileName, m_v8FileName);
+
+    if (true)
+        {
+        auto db = OpenExistingDgnDb(m_dgnDbFileName);
+        ASSERT_TRUE(db.IsValid());
+
+        auto model1Found = getModelsByName(*db, Utf8String(model1Name).c_str());
+        auto model2Found = getModelsByName(*db, Utf8String(model2Name).c_str());
+        ASSERT_EQ(1, model1Found.size());
+        ASSERT_EQ(1, model2Found.size());
+        countElements(*model1Found[0], 1);
+        countElements(*model2Found[0], 1);  // this time, model2 should have been converted
+        }
     }
