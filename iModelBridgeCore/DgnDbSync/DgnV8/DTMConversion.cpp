@@ -479,7 +479,6 @@ void CreateMesh(Bentley::TerrainModel::BcDTMR dtm, Bentley::DgnPlatform::DTMElem
         auto gel = Converter::CreateNewElement(model, childClassId, categoryId, elementCode, "Mesh");
         if (gel.IsValid() && SUCCESS == builder->Finish(*gel->ToGeometrySourceP()))
             {
-            gel->ToGeometrySourceP()->SetUndisplayed(true);
             ElementConversionResults resultsForChild;
             resultsForChild.m_element = gel.get();
             results.m_childElements.push_back(resultsForChild);
