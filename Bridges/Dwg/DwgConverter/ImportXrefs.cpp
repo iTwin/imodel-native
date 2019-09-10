@@ -10,6 +10,19 @@ USING_NAMESPACE_DWGDB
 USING_NAMESPACE_DWG
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            DwgImporter::IsXrefInsertedInPaperspace (DwgDbObjectIdCR xrefInsertId) const
+    {
+    // find an xref insert from a paperspace
+    auto found = std::find_if (m_paperspaceXrefs.begin(), m_paperspaceXrefs.end(), [&](DwgXRefInPaperspace const& entry)
+        {
+        return  entry.GetXrefInsertId() == xrefInsertId;
+        });
+    return  found != m_paperspaceXrefs.end();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   DwgImporter::_ImportXReference (ElementImportResults& results, ElementImportInputs& inputs)

@@ -104,6 +104,8 @@ $(o)ElementFactory$(oext)   : $(baseDir)ElementFactory.cpp $(DwgDepends) ${Multi
 
 $(o)RepositoryLinks$(oext)  : $(baseDir)RepositoryLinks.cpp $(DwgDepends) ${MultiCompileDepends}
 
+$(o)DwgModels$(oext)        : $(baseDir)DwgModels.cpp $(DwgDepends) ${MultiCompileDepends}
+
 $(o)DwgHelper$(oext)        : $(baseDir)DwgHelper.cpp $(DwgDepends) ${MultiCompileDepends}
 
 $(o)DwgSourceAspects$(oext) : $(baseDir)DwgSourceAspects.cpp $(DwgDepends) ${MultiCompileDepends}
