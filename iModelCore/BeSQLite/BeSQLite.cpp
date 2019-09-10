@@ -837,6 +837,13 @@ DbResult Savepoint::_Cancel() {return m_dbFile ? m_dbFile->StopSavepoint(*this, 
 DbResult Savepoint::_Commit(Utf8CP operation) {return m_dbFile ? m_dbFile->StopSavepoint(*this, true, operation) : BE_SQLITE_ERROR;}
 DbResult Savepoint::Begin(BeSQLiteTxnMode mode)  {return _Begin(mode);}
 DbResult Savepoint::Commit(Utf8CP operation) {return _Commit(operation);}
+DbResult Savepoint::Save(Utf8CP operation) 
+    {
+    DbResult res = Commit(operation);
+    if (BE_SQLITE_BUSY == res)
+        return res;
+    return Begin();
+    }
 DbResult Savepoint::Cancel() {return _Cancel();}
 
 /*---------------------------------------------------------------------------------**//**

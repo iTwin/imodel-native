@@ -200,7 +200,8 @@ protected:
     ECDB_EXPORT DbResult _OnDbDetached(Utf8CP dbAlias) const override;
     ECDB_EXPORT int _OnAddFunction(DbFunction&) const override;
     ECDB_EXPORT void _OnRemoveFunction(DbFunction&) const override;
-    ECDB_EXPORT DbResult _AfterSchemaChangeApplied() const;
+    ECDB_EXPORT virtual DbResult _AfterSchemaChangeSetApplied() const;
+    ECDB_EXPORT virtual DbResult _AfterDataChangeSetApplied();
     //! Resets ECDb's ECInstanceId sequence to the current maximum ECInstanceId for the specified BriefcaseId.
     //! @param[in] briefcaseId BriefcaseId to which the sequence will be reset
     //! @param[in] ecClassIgnoreList List of ids of ECClasses whose ECInstanceIds should be ignored when
@@ -438,7 +439,8 @@ public:
     //! to free any items that referred to the objects in the cache.
     ECDB_EXPORT void ClearECDbCache() const;
 
-    BeSQLite::DbResult AfterSchemaChangeApplied() const { return _AfterSchemaChangeApplied(); }
+    BeSQLite::DbResult AfterSchemaChangeSetApplied() const { return _AfterSchemaChangeSetApplied(); }
+    BeSQLite::DbResult AfterDataChangeSetApplied() { return _AfterDataChangeSetApplied(); }
 
 #if !defined (DOCUMENTATION_GENERATOR)
     Impl& GetImpl() const;

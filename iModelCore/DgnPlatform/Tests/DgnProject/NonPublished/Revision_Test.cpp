@@ -578,6 +578,49 @@ TEST_F(RevisionTestFixture, Codes)
     ExpectCodes(expectedCodes, createdCodes);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    07/2015
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, ResetIdSequencesAfterApply)
+    {
+    // Setup a test file
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"ResetElementIdSequenceAfterApply.bim");
+    m_db->SaveChanges("Created Initial Model");
+
+    DgnRevisionPtr initialRevision = CreateRevision();
+    ASSERT_TRUE(initialRevision.IsValid());
+
+    DgnElementId idBeforeInserts;
+    DbResult result = m_db->GetElementIdSequence().GetNextValue(idBeforeInserts);
+    ASSERT_TRUE(result == BE_SQLITE_OK);
+    
+    // Backup the test file
+    BackupTestFile();
+
+    // Make some element inserts, and create the baseline last sequence id (for later comparision)
+    InsertFloor(1, 1);
+    m_db->SaveChanges("Inserted floor");
+
+    DgnRevisionPtr revision = CreateRevision();
+    ASSERT_TRUE(revision.IsValid());
+
+    DgnElementId idAfterInserts;
+    result = m_db->GetElementIdSequence().GetNextValue(idAfterInserts);
+    ASSERT_TRUE(result == BE_SQLITE_OK);
+    ASSERT_GE(idAfterInserts, idBeforeInserts);
+    
+    // Restore baseline file, apply the change sets with the same element inserts, and validate the last sequence id
+    RestoreTestFile();
+
+    RevisionStatus status = m_db->Revisions().MergeRevision(*revision);
+    ASSERT_TRUE(status == RevisionStatus::Success);
+
+    DgnElementId idAfterMerge;
+    result = m_db->GetElementIdSequence().GetNextValue(idAfterMerge);
+    ASSERT_TRUE(result == BE_SQLITE_OK);
+    ASSERT_EQ(idAfterMerge, idAfterInserts);
+    }
+
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   05/16
 //=======================================================================================

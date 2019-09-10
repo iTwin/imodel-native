@@ -364,6 +364,37 @@ DbResult DgnDb::_OnAfterSetAsBriefcase(BeBriefcaseId newBriefcaseId)
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    09/19
+//--------------------------------------------------------------------------------------
+DbResult DgnDb::_AfterSchemaChangeSetApplied() const
+    {
+    DbResult result = T_Super::_AfterSchemaChangeSetApplied();
+    if (result != BE_SQLITE_OK)
+        return result;
+    Domains().SyncWithSchemas();
+    return BE_SQLITE_OK;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    09/19
+//--------------------------------------------------------------------------------------
+DbResult DgnDb::_AfterDataChangeSetApplied()
+    {
+    DbResult result = T_Super::_AfterDataChangeSetApplied();
+    if (result != BE_SQLITE_OK)
+        return result;
+
+    result = ResetElementIdSequence(GetBriefcaseId());
+    if (result != BE_SQLITE_OK)
+        {
+        LOG.errorv("Failed to reset element id sequence after apply with SQLite error %s", GetLastError().c_str());   
+        return result;
+        }
+
+    return BE_SQLITE_OK;
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    04/18
 //--------------------------------------------------------------------------------------
 void DgnDb::InitParentChangeSetIds()

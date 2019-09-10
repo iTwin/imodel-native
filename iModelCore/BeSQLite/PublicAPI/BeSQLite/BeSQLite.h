@@ -1872,7 +1872,7 @@ public:
 
     //! Commit this transaction and then restart it. If this is the outermost Savepoint, this will save changes to disk but leave
     //! a new transaction active.
-    DbResult Save(Utf8CP operation) {Commit(operation); return Begin();}
+    BE_SQLITE_EXPORT DbResult Save(Utf8CP operation);
 
     //! Cancel this transaction. Executes the SQLite "ROLLBACK" command if the Savepoint is active.
     BE_SQLITE_EXPORT DbResult Cancel();

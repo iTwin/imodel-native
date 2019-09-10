@@ -176,7 +176,6 @@ private:
     SchemaStatus PickSchemasToImport(bvector<ECN::ECSchemaCP>& importSchemas, bvector<ECN::ECSchemaCP> const& schemas, bool isImportingFromV8) const;
     void OnBisCoreSchemaImported(CreateDgnDbParams const& params);
     BeSQLite::DbResult InitializeElementIdSequence();
-    BeSQLite::DbResult ResetElementIdSequence(BeSQLite::BeBriefcaseId briefcaseId);
     void ClearECSqlCache() const { m_ecsqlCache.Empty(); }
 
     BeSQLite::DbResult InitializeSchemas(BeSQLite::Db::OpenParams const& params);
@@ -222,6 +221,10 @@ protected:
 
     DGNPLATFORM_EXPORT BeSQLite::DbResult _OnBeforeSetAsBriefcase(BeSQLite::BeBriefcaseId newBriefcaseId) override;
     DGNPLATFORM_EXPORT BeSQLite::DbResult _OnAfterSetAsBriefcase(BeSQLite::BeBriefcaseId newBriefcaseId) override;
+
+    DGNPLATFORM_EXPORT BeSQLite::DbResult _AfterSchemaChangeSetApplied() const override;
+    DGNPLATFORM_EXPORT BeSQLite::DbResult _AfterDataChangeSetApplied() override;
+
     DGNPLATFORM_EXPORT void DestroyBriefcaseManager();
 
     // *** WIP_SCHEMA_IMPORT - temporary work-around needed because ECClass objects are deleted when a schema is imported
@@ -484,6 +487,10 @@ public:
     //! Utility method to get the next id in a sequence
     //! @private internal use only
     BeSQLite::BeBriefcaseBasedIdSequence const& GetElementIdSequence() const { return m_elementIdSequence; }
+
+    //! Utility method to get the reset the element id sequence
+    //! @private internal use only
+    BeSQLite::DbResult ResetElementIdSequence(BeSQLite::BeBriefcaseId briefcaseId);
 
     BeSQLite::DbResult CreateRebaseTable(); //!< @private
     DGNPLATFORM_EXPORT DRange3d ComputeGeometryExtentsWithoutOutliers(DRange3dP rangeWithOutliers = nullptr, bvector<BeInt64Id>* elementOutliers = nullptr, double maxDeviations = 5.0) const;

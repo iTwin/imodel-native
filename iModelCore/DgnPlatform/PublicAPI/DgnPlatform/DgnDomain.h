@@ -508,7 +508,6 @@ struct DgnDomains : DgnDbTable
 private:
     friend struct DgnDb;
     friend struct DgnDomain;
-    friend struct TxnManager;
 
     DomainList    m_domains;
     Handlers      m_handlers;

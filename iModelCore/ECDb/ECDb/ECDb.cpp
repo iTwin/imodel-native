@@ -72,10 +72,22 @@ DbResult ECDb::_OnDbCreated(CreateParams const& params)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Affan.Khan                    07/2018
 //---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::_AfterSchemaChangeApplied() const
+DbResult ECDb::_AfterSchemaChangeSetApplied() const
     {
+    ClearECDbCache();
     Schemas().RepopulateCacheTables();
     Schemas().UpgradeECInstances();
+    return BE_SQLITE_OK;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Raman.Ramanujam                09/2019
+//---------------+---------------+---------------+---------------+---------------+------
+DbResult ECDb::_AfterDataChangeSetApplied()
+    {
+    BentleyStatus status = ResetInstanceIdSequence(GetBriefcaseId());
+    if (status != SUCCESS)
+        return BE_SQLITE_ERROR;
     return BE_SQLITE_OK;
     }
 

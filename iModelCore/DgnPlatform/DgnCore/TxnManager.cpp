@@ -1174,15 +1174,27 @@ DbResult TxnManager::ApplyChanges(IChangeSet& changeset, TxnAction action, bool 
     EnableTracking(wasTracking);
     BeAssert(result == BE_SQLITE_OK);
 
-    if (containsSchemaChanges) {
-        /* Note: All caches that hold ec-classes and handler-associations in memory have to be cleared.
-         * The call to ClearECDbCache also clears all EC related caches held by DgnDb.
-         * Additionally, we force merging of revisions containing schema changes to happen right when the
-         * DgnDb is opened, and the Element caches haven't had a chance to get initialized.
-         */
-        m_dgndb.ClearECDbCache();
-        m_dgndb.AfterSchemaChangeApplied();
-        m_dgndb.Domains().SyncWithSchemas();
+    if (action == TxnAction::Merge && result == BE_SQLITE_OK) {
+        if (containsSchemaChanges) {
+            /* Note: All caches that hold ec-classes and handler-associations in memory have to be cleared.
+            * The call to ClearECDbCache also clears all EC related caches held by DgnDb.
+            * Additionally, we force merging of revisions containing schema changes to happen right when the
+            * DgnDb is opened, and the Element caches haven't had a chance to get initialized.
+            */
+            result = m_dgndb.AfterSchemaChangeSetApplied();
+            if (result != BE_SQLITE_OK) {
+                BeAssert(false);
+                m_dgndb.AbandonChanges();
+                return result;
+            }
+        }
+
+        result = m_dgndb.AfterDataChangeSetApplied();
+        if (result != BE_SQLITE_OK) {
+            BeAssert(false);
+            m_dgndb.AbandonChanges();
+            return result;
+        }
     }
 
     if (result == BE_SQLITE_OK) {
