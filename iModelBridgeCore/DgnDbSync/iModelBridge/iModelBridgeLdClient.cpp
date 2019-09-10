@@ -38,11 +38,11 @@ BentleyStatus   iModelBridgeLdClient::Init(CharCP authKey)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   iModelBridgeLdClient::InitClient()
     {
-    if (NULL == m_user)//If a user is not set fallback to deviceid
-        m_user = LDUserNew(NULL);//TODO check whether we need the user key.
-
     if (NULL != m_client)
         return SUCCESS;
+
+    if (NULL == m_user)
+        return ERROR;
 
     m_client = LDClientInit(m_config, m_user, 0);
     if (NULL == m_client)
@@ -184,28 +184,41 @@ CharCP          iModelBridgeLdClient::GetSDKKey(WebServices::UrlProvider::Enviro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   iModelBridgeLdClient::SetUserName(CharCP userName)
+BentleyStatus   iModelBridgeLdClient::SetUserName(CharCP userNameIn)
     {
+    Utf8String userName(userNameIn);
+    userName.ToLower();
     if (NULL == m_user)
-        m_user = LDUserNew(userName);//TODO check whether we need the user key.
+        m_user = LDUserNew(userName.c_str());//TODO check whether we need the user key.
+    else
+        {
+        LDFree(m_user);
+        m_user = LDUserNew(userName.c_str());
+        }
     
-    LDUserSetName(m_user, userName);
+    LDUserSetName(m_user, userName.c_str());
     return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  01/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   iModelBridgeLdClient::SetProjectDetails(CharCP iModelName, CharCP guid)
+BentleyStatus   iModelBridgeLdClient::SetProjectDetails(CharCP iModelNameIn, CharCP guidIn)
     {
     //rapidjson::Document json(rapidjson::kObjectType);
     //auto& allocator = json.GetAllocator();
     //json.AddMember("iModelName", rapidjson::Value(iModelName,allocator), allocator);
     //json.AddMember("ConnectProjectGuid", rapidjson::Value(guid, allocator), allocator);
-    
+    if (NULL == m_user)
+        return ERROR;
+
     LDNode* customAttributes = LDNodeCreateHash();
-    LDNodeAddString(&customAttributes, "iModelName", iModelName);
-    LDNodeAddString(&customAttributes, "ConnectProjectGuid", guid);
+    Utf8String iModelName(iModelNameIn);
+    iModelName.ToLower();
+    Utf8String guid(guidIn);
+    guid.ToLower();
+    LDNodeAddString(&customAttributes, "iModelName", iModelName.c_str());
+    LDNodeAddString(&customAttributes, "ConnectProjectGuid", guid.c_str());
     
     //return LDUserSetCustomAttributesJSON(m_user, BeRapidJsonUtilities::ToString(json).c_str()) ? SUCCESS : ERROR;
 
