@@ -495,7 +495,10 @@ int main(int argc, char **argv)
     //  Configure the test runner
     BeTest::SetRunningUnderGtest();
 
-    BeTest::SetAssertionFailureHandler([](WCharCP msg) {FAIL() << msg;});
+    BeTest::SetAssertionFailureHandler([](WCharCP msg)
+        {
+        FAIL() << msg;
+        });
 
     if (::testing::GTEST_FLAG(filter).empty() || ::testing::GTEST_FLAG(filter) == "*")
         { // use ignore lists if the user did not specify any filters on the command line
