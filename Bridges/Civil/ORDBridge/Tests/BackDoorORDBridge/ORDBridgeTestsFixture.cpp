@@ -209,6 +209,20 @@ void CiviliModelBridgesORDBridgeTestsFixture::TearDownTestCase()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Greg.Ashe       09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool CiviliModelBridgesORDBridgeTestsFixture::TestFileName(Utf8CP source)
+    {
+    char* outPath = getenv("OutRoot");
+
+    BeFileName sourcePath(outPath);
+    sourcePath.AppendA("Winx64\\Product\\CiviliModelBridges-Tests\\Assets\\TestFiles\\ORD\\");
+    sourcePath.AppendA(source);
+
+    return sourcePath.DoesPathExist();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool CiviliModelBridgesORDBridgeTestsFixture::CopyTestFile(Utf8CP source, Utf8CP target)
@@ -303,6 +317,39 @@ AlignmentCPtr getRoadRailAlignmentByName(DgnDbP dgnDbPtr, Utf8CP alignmentName)
         BeAssert(false && "Alignment not found");
 
     return roadRailAlignmentCPtr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Greg.Ashe       09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedBimFileSchemas(Utf8CP bimFileName)
+    {
+    BeFileName outputPath = m_host->GetOutputDirectory();
+    outputPath.AppendA(bimFileName);
+
+    DbResult result;
+    DgnDbPtr dgnDbPtr = DgnDb::OpenDgnDb(&result, outputPath, DgnDb::OpenParams(Db::OpenMode::Readonly));
+
+    BeAssert(dgnDbPtr.IsValid() && "OpenDgnDb failed.");
+    if (dgnDbPtr.IsNull())
+        return nullptr;
+
+    BentleyApi::ECN::ECSchemaCP schema = dgnDbPtr->Schemas().GetSchema(Utf8String("DgnV8OpenRoadsDesigner"));
+    BeAssert(NULL != schema);
+    BeAssert(false == schema->IsDynamicSchema());
+    BeAssert(schema->GetClassCount() > 0);
+
+    BentleyApi::ECN::ECSchemaCP dynSchema = dgnDbPtr->Schemas().GetSchema(Utf8String("DgnV8OpenRoadsDesignerDynamic"));
+    BeAssert(NULL != dynSchema);
+    BeAssert(true == dynSchema->IsDynamicSchema());
+    BeAssert(dynSchema->GetClassCount() > 0);
+
+    //BentleyApi::ECN::ECClassCP ecClass = dynSchema->GetClassCP(typeClassName);
+    //BeAssert(ecClass != NULL);
+    //int classPropCount = ecClass->GetPropertyCount();
+    //BeAssert(typePropCount == classPropCount);
+
+    return dgnDbPtr;
     }
 
 /*---------------------------------------------------------------------------------**//**

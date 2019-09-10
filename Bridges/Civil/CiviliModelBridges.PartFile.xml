@@ -82,6 +82,7 @@
         <SubPart PartName="PublishORDToBIMExe"/>
         <SubPart PartName="ORDBridgeInstallerFiles"/>
         <SubPart PartName="ORDBridgeLibrary" />
+        <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
         <SubPart PartName="Resources" />
         <SubPart PartName="StaticAppData" PartFile="MstnAppData" Repository="miscdev-mstnappdata"/>
         <!-- <SubPart PartName="RoadRailAlignment-Tested" Repository="imodel02" PartFile="Domains/RoadRailAlignment/RoadRailAlignment" /> -->
@@ -198,6 +199,7 @@
         <SubPart PartName="VersionedV8_InternalSDK" Repository="imodel02" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync"/>
         <SubPart PartName="DgnV8ConverterExe" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync" Repository="imodel02"/>
         <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
+        <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
         <Directories DirectoryListName="GtestProduct" />
         <Directories DirectoryListName="CiviliModelBridgeTestDirectoryList" />
     </Product>
@@ -296,7 +298,7 @@
 
     <Part Name="CiviliModelBridgesTested">
         <!-- Tests are known to fail on bim0200; comment out the running until they can be patched on imodel02. -->
-        <!-- <SubPart PartName="RunGtest" /> -->
+        <SubPart PartName="RunGtest" />
         <SubPart PartName="ORDBridgeUnitTests" />
 
         <!-- <SubPart PartName="GTest-Run-CheckCoverage" /> -->

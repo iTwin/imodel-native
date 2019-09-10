@@ -88,6 +88,14 @@ private:
 
 public:
     BentleyStatus Generate(Dgn::DgnDbR dgnDb, BeFileNameCR assetsDir, ConsensusConnectionR cifConn);
+
+    ///////////////////////////////////////////////////////////////////////////////////////
+    // TEMP PROOF OF CONCEPT FOR SCHEMA FROM PLUGIN PROVIDERS
+    // GABEDIEGOGREG -- Just placed in ORDDynamicSchemaGenerator for updates?, not sure where will need to call it from
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //BentleyStatus GenerateNewDiegoSchema(Dgn::DgnDbR dgnDb, BeFileNameCR assetsDir, ConsensusConnectionR cifConn);
+    ///////////////////////////////////////////////////////////////////////////////////////
+
 }; // ORDDynamicSchemaGenerator
 
 /*---------------------------------------------------------------------------------**//**
@@ -362,6 +370,13 @@ BentleyStatus ORDDynamicSchemaGenerator::Generate(DgnDbR dgnDb, BeFileNameCR ass
     {
     m_dgnDbPtr = &dgnDb;
 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    // TEMP PROOF OF CONCEPT FOR SCHEMA FROM PLUGIN PROVIDERS
+    // GABEDIEGOGREG -- Just placed in ORDDynamicSchemaGenerator for updates?, not sure where will need to call it from
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //GenerateNewDiegoSchema(dgnDb, assetsDir, cifConn);
+    ///////////////////////////////////////////////////////////////////////////////////////
+
     Initialize();
     BentleyStatus status = SetupSchema(assetsDir);
     if (status != BentleyStatus::SUCCESS)
@@ -374,6 +389,33 @@ BentleyStatus ORDDynamicSchemaGenerator::Generate(DgnDbR dgnDb, BeFileNameCR ass
 
     return Finish();
     }
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+// TEMP PROOF OF CONCEPT FOR SCHEMA FROM PLUGIN PROVIDERS
+// GABEDIEGOGREG -- Just placed in ORDDynamicSchemaGenerator for updates?, not sure where will need to call it from
+///////////////////////////////////////////////////////////////////////////////////////
+//BentleyStatus ORDDynamicSchemaGenerator::GenerateNewDiegoSchema(Dgn::DgnDbR dgnDb, BeFileNameCR assetsDir, ConsensusConnectionR cifConn)
+//    {
+//    // Will not need to pass locations once we decide how to do this, will pass back whatever is needed
+//    Bentley::WString schemaPath(L"C:\\Temp\\");
+//    Bentley::WString xmlFileName(L"CivilSchema_Published.02.00.ecschema.xml");
+//
+//    // Need schemaRefPath to where EditorCustomAttributes 01.03 beca is located
+//    Bentley::WString schemaRefPath(assetsDir.c_str());
+//    schemaRefPath.append(L"\\ECSchemas\\Standard");
+//
+//    Bentley::ECN::ECSchemaCP newPublishedDynamicSchema = cifConn.GetNewDiegoSchema(schemaPath, xmlFileName, schemaRefPath);
+//
+//    //// I assume this is for an update ??? 
+//    //// Put Diego stuff here for new Published Dynamic schema ???
+//
+//    return newPublishedDynamicSchema != nullptr ? BentleyStatus::SUCCESS : BentleyStatus::ERROR;
+//    }
+///////////////////////////////////////////////////////////////////////////////////////
+
+
+
 
 struct ConsensusSourceItem : iModelBridgeSyncInfoFile::ISourceItem
 {
@@ -1547,6 +1589,13 @@ ConvertORDElementXDomain::ConvertORDElementXDomain(ORDConverter& converter): m_c
     m_cifConsensusConnection = ConsensusConnection::Create(*m_converter.GetRootModelRefP());
     m_graphic3dClassId = converter.GetDgnDb().Schemas().GetClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_Graphic3d);    
 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    // TEMP PROOF OF CONCEPT FOR SCHEMA FROM PLUGIN PROVIDERS
+    // GABEDIEGOGREG -- Just placed in ConvertORDElementXDomain for element instance, not sure where will need to call it from
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //GetNewDiegoSchema();
+    ///////////////////////////////////////////////////////////////////////////////////////
+
     m_aspectAssignFuncs.push_back(&ConvertORDElementXDomain::AssignAlignmentAspect);
     m_aspectAssignFuncs.push_back(&ConvertORDElementXDomain::AssignLinear3dAspect);
     m_aspectAssignFuncs.push_back(&ConvertORDElementXDomain::AssignCorridorSurfaceAspect);    
@@ -1554,6 +1603,31 @@ ConvertORDElementXDomain::ConvertORDElementXDomain(ORDConverter& converter): m_c
     m_aspectAssignFuncs.push_back(&ConvertORDElementXDomain::AssignTemplateDropAspect);
     m_aspectAssignFuncs.push_back(&ConvertORDElementXDomain::AssignSuperelevationAspect);
     }
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+// TEMP PROOF OF CONCEPT FOR SCHEMA FROM PLUGIN PROVIDERS
+// GABEDIEGOGREG -- Just placed in ConvertORDElementXDomain for element instance, not sure where will need to call it from
+///////////////////////////////////////////////////////////////////////////////////////
+//BentleyStatus ConvertORDElementXDomain::GetNewDiegoSchema()
+//    {
+//    // Will not need to pass locations once we decide how to do this, will pass back whatever is needed
+//    Bentley::WString schemaPath(L"C:\\Temp\\");
+//    Bentley::WString xmlFileName(L"CivilSchema_Published.02.00.ecschema.xml");
+//
+//    // Need schemaRefPath to where EditorCustomAttributes 01.03 beca is located
+//    BeFileNameCR assetsDir = m_converter.GetParams().GetAssetsDir();
+//    Bentley::WString schemaRefPath(assetsDir.c_str());
+//    schemaRefPath.append(L"\\ECSchemas\\Standard");
+//
+//    Bentley::ECN::ECSchemaCP newPublishedDynamicSchema = m_cifConsensusConnection->GetNewDiegoSchema(schemaPath, xmlFileName, schemaRefPath);
+//
+//    // Do something ?
+//
+//    return newPublishedDynamicSchema != nullptr ? BentleyStatus::SUCCESS : BentleyStatus::ERROR;
+//    }
+///////////////////////////////////////////////////////////////////////////////////////
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      01/2018
@@ -1565,6 +1639,13 @@ ConvertORDElementXDomain::Result ConvertORDElementXDomain::_PreConvertElement(Dg
         return Result::Proceed;
 
     m_elementsSeen.insert(v8el.GetElementRef());
+
+    ///////////////////////////////////////////////////////////////////////////////////////
+    // TEMP PROOF OF CONCEPT FOR SCHEMA FROM PLUGIN PROVIDERS
+    // GABEDIEGOGREG -- Called from PreConvertElement just to debug element instance calls, not sure where will need to call it from
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //Bentley::ECN::IECInstanceP instance = m_cifConsensusConnection->GetNewDiegoECInstance(v8el);
+    ///////////////////////////////////////////////////////////////////////////////////////
 
     auto cifAlignmentPtr = Alignment::CreateFromElementHandle(*m_cifConsensusConnection, v8el);
     Bentley::Cif::CorridorPtr cifCorridorPtr;
@@ -2856,7 +2937,10 @@ BentleyStatus ORDConverter::AddDynamicSchema()
     auto cifConsensusConnectionPtr = ConsensusConnection::Create(*GetRootModelRefP());
 
     ORDDynamicSchemaGenerator dynSchemaGen;
+
+
     return dynSchemaGen.Generate(GetDgnDb(), GetParams().GetAssetsDir(), *cifConsensusConnectionPtr);
     }
+
 
 END_ORDBRIDGE_NAMESPACE

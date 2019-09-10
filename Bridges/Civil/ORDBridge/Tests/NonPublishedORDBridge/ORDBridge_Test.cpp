@@ -347,3 +347,30 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDItemTypesTest)
 
     VerifyConvertedElementItemTypes(bim, "L4", "ItemTypeLibrary1", "Type2ElementAspect", 2, "Name", "CIFNameNotForced", 0, 0); 
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Greg.Ashe       09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CiviliModelBridgesORDBridgeTests, ORDDebugTest)
+    {
+    //WString name = L"Debug";
+    //WString name = L"superelevation";
+    //WString name = L"signing_pavt markings_2019-R3_v28";
+    WString name = L"PointItemType";
+
+    WString dgn = name + L".dgn";
+    WString sql = L"ORD" + name + L".bim";
+
+    Utf8String dgnFile;
+    BeStringUtilities::WCharToUtf8(dgnFile, dgn.c_str());
+    if (!TestFileName(dgnFile.c_str()))
+        return;
+
+    ASSERT_TRUE(RunTestApp(dgn.c_str(), sql.c_str(), false));
+
+    Utf8String bimFile;
+    BeStringUtilities::WCharToUtf8(bimFile, sql.c_str());
+    Utf8CP bim = bimFile.c_str();
+
+    VerifyConvertedBimFileSchemas(bim);
+    }

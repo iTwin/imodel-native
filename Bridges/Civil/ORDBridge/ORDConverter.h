@@ -125,6 +125,13 @@ private:
     Bentley::Cif::ConsensusConnectionPtr m_cifConsensusConnection;
     Utf8String m_currentFeatureName, m_currentFeatureDefName, m_currentFeatureDescription;
 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    // TEMP PROOF OF CONCEPT FOR SCHEMA FROM PLUGIN PROVIDERS
+    // GABEDIEGOGREG
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //BentleyStatus GetNewDiegoSchema();
+    ///////////////////////////////////////////////////////////////////////////////////////
+
     typedef bool (ConvertORDElementXDomain::*AspectAssignmentFunc)(Dgn::DgnElementR, DgnV8EhCR) const;
     bvector<AspectAssignmentFunc> m_aspectAssignFuncs;
 
