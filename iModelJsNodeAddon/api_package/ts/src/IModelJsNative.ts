@@ -506,10 +506,16 @@ export declare namespace IModelJsNative {
     public cancelSnap(): void;
   }
 
+  interface FeatureUserDataKeyValuePair {
+    key: string;
+    value: string;
+  }
+
   interface NativeUlasClientFeatureEvent {
     featureId: string;
     versionStr: string;
     projectId?: string;
+    featureUserData?: FeatureUserDataKeyValuePair[];
   }
   /** Authentication methods used by the native addon
    * @internal

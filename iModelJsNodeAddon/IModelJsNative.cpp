@@ -44,6 +44,10 @@ USING_NAMESPACE_BENTLEY_EC
 
 #define REQUIRE_DB_TO_BE_OPEN if (!IsOpen()) return CreateBentleyReturnErrorObject(DgnDbStatus::NotOpen);
 
+#define THROW_JS_EXCEPTION(str) Napi::Error::New(info.Env(), str).ThrowAsJavaScriptException();
+
+#define THROW_JS_EXCEPTION_AND_RETURN(str,retval) {THROW_JS_EXCEPTION(str) return retval;}
+
 #define THROW_JS_TYPE_ERROR(str) Napi::TypeError::New(info.Env(), str).ThrowAsJavaScriptException();
 
 #define THROW_TYPE_EXCEPTION_AND_RETURN(str,retval) {THROW_JS_TYPE_ERROR(str) return retval;}
@@ -4634,54 +4638,106 @@ struct NativeUlasClient : BeObjectWrap<NativeUlasClient>
             }
 
         //---------------------------------------------------------------------------------------
-        // @bsimethod                                     Evan.Preslar                    05/2019
+        // @bsimethod                                     Evan.Preslar                    08/2019
         //+---------------+---------------+---------------+---------------+---------------+------
-        static Napi::Value TrackUsage(Napi::CallbackInfo const& info)
+        static void TrackUsage(Napi::CallbackInfo const& info)
             {
-            REQUIRE_ARGUMENT_STRING(0, accessToken, Napi::Number::New(info.Env(), (int) BentleyStatus::ERROR));
-            REQUIRE_ARGUMENT_STRING(1, appVersionStr, Napi::Number::New(info.Env(), (int) BentleyStatus::ERROR));
+            REQUIRE_ARGUMENT_STRING(0, accessToken, );
+            REQUIRE_ARGUMENT_STRING(1, appVersionStr, );
             BeVersion appVersion = BeVersion(appVersionStr.c_str());
-            REQUIRE_ARGUMENT_STRING(2, projectId, Napi::Number::New(info.Env(), (int) BentleyStatus::ERROR));
-            OPTIONAL_ARGUMENT_INTEGER(3, authType, (int) Licensing::AuthType::OIDC, Napi::Number::New(info.Env(), (int) BentleyStatus::ERROR));
-            OPTIONAL_ARGUMENT_INTEGER(4, productId, -1, Napi::Number::New(info.Env(), (int) BentleyStatus::ERROR));
-            OPTIONAL_ARGUMENT_STRING(5, deviceId, Napi::Number::New(info.Env(), (int) BentleyStatus::ERROR));
-            OPTIONAL_ARGUMENT_INTEGER(6, usageType, (int) Licensing::UsageType::Production, Napi::Number::New(info.Env(), (int) BentleyStatus::ERROR));
-            OPTIONAL_ARGUMENT_STRING(7, correlationId, Napi::Number::New(info.Env(), (int) BentleyStatus::ERROR));
+            REQUIRE_ARGUMENT_STRING(2, projectId, );
+            OPTIONAL_ARGUMENT_INTEGER(3, authType, (int) Licensing::AuthType::OIDC, );
+            OPTIONAL_ARGUMENT_INTEGER(4, productId, -1, );
+            OPTIONAL_ARGUMENT_STRING(5, deviceId, );
+            OPTIONAL_ARGUMENT_INTEGER(6, usageType, (int) Licensing::UsageType::Production, );
+            OPTIONAL_ARGUMENT_STRING(7, correlationId, );
 
             BentleyStatus status = UlasClient::Get().TrackUsage(accessToken, appVersion, projectId, (Licensing::AuthType) authType, productId, deviceId, (Licensing::UsageType) usageType, correlationId);
+            if (status == BentleyStatus::ERROR)
+              {
+              THROW_JS_EXCEPTION("Could not log usage information");
+              return;
+              }
 
-            return Napi::Number::New(info.Env(), (int) status);
+            return;
             }
 
         //---------------------------------------------------------------------------------------
-        // @bsimethod                                     Evan.Preslar                    05/2019
+        // @bsimethod                                     Evan.Preslar                    08/2019
         //+---------------+---------------+---------------+---------------+---------------+------
-        static Napi::Value MarkFeature(Napi::CallbackInfo const& info)
+        static void MarkFeature(Napi::CallbackInfo const& info)
             {
-            REQUIRE_ARGUMENT_STRING(0, accessToken, Napi::Number::New(info.Env(), (int) BentleyStatus::ERROR));
+            REQUIRE_ARGUMENT_STRING(0, accessToken, );
 
-            REQUIRE_ARGUMENT_ANY_OBJ(1, featureEventObj, Napi::Number::New(info.Env(), (int) BentleyStatus::ERROR));
+            REQUIRE_ARGUMENT_ANY_OBJ(1, featureEventObj, );
             if (!featureEventObj.Has("featureId"))
-                return Napi::Number::New(info.Env(), (int) BentleyStatus::ERROR);
+              {
+              THROW_JS_TYPE_ERROR("Could not track feature information: featureId must be specified");
+              return;
+              }
             Utf8String featureId = featureEventObj.Get("featureId").ToString().Utf8Value().c_str();
 
             if (!featureEventObj.Has("versionStr"))
-                return Napi::Number::New(info.Env(), (int) BentleyStatus::ERROR);
+              {
+              THROW_JS_TYPE_ERROR("Could not track feature information: version must be specified");
+              return;
+              }
             BeVersion appVersion = BeVersion(featureEventObj.Get("versionStr").ToString().Utf8Value().c_str());
+            
+            Utf8String projectId = featureEventObj.Has("projectId")
+              ? featureEventObj.Get("projectId").ToString().Utf8Value().c_str()
+              : BeSQLite::BeGuid(false).ToString();
 
-            Licensing::FeatureEvent featureEvent = !featureEventObj.Has("projectId")
-                ? Licensing::FeatureEvent(featureId, appVersion)
-                : Licensing::FeatureEvent(featureId, appVersion, featureEventObj.Get("projectId").ToString().Utf8Value().c_str());
+            Licensing::FeatureUserDataMapPtr userFeatureData = std::make_shared<Licensing::FeatureUserDataMap>();
+            if (featureEventObj.Has("featureUserData"))
+              {
+              Napi::Array arr = featureEventObj.Get("featureUserData").As<Napi::Array>();
+              for (uint32_t arrIndex = 0; arrIndex < arr.Length(); ++arrIndex)
+                {
+                Napi::Value arrValue = arr[arrIndex];
+                if (arrValue.IsObject())
+                  {
+                  Napi::Object item = arrValue.As<Napi::Object>();
+                  if (!item.Has("value"))
+                    {
+                    JsInterop::GetLogger().error("Invalid feature tracking data: userFeatureData entry is missing the field: value. Omitting this field from the feature tracking request.");
+                    continue;
+                    }
+                  
+                  Utf8String key = getOptionalStringProperty(item, "key", "");
+                  Utf8String value = getOptionalStringProperty(item, "value", "");
 
-            OPTIONAL_ARGUMENT_INTEGER(2, authType, (int) Licensing::AuthType::OIDC, Napi::Number::New(info.Env(), (int) BentleyStatus::ERROR));
-            OPTIONAL_ARGUMENT_INTEGER(3, productId, -1, Napi::Number::New(info.Env(), (int) BentleyStatus::ERROR));
-            OPTIONAL_ARGUMENT_STRING(4, deviceId, Napi::Number::New(info.Env(), (int) BentleyStatus::ERROR));
-            OPTIONAL_ARGUMENT_INTEGER(5, usageType, (int) Licensing::UsageType::Production, Napi::Number::New(info.Env(), (int) BentleyStatus::ERROR));
-            OPTIONAL_ARGUMENT_STRING(6, correlationId, Napi::Number::New(info.Env(), (int) BentleyStatus::ERROR));
+                  if (key.empty())
+                    {
+                    JsInterop::GetLogger().error("Invalid feature tracking data: userFeatureData entry has an empty or invalid field: key. Omitting this field from the feature tracking request.");
+                    continue;
+                    }
+                  userFeatureData->AddAttribute(Utf8String(key.c_str()), Utf8String(value.c_str()));
+                  }
+                else
+                  {
+                  JsInterop::GetLogger().error("Invalid feature tracking data: userFeatureData entry is not a key-value pair. Omitting this field from the feature tracking request.");
+                  continue;
+                  }
+                }
+              }
+
+            Licensing::FeatureEvent featureEvent = Licensing::FeatureEvent(featureId, appVersion, projectId, userFeatureData);
+
+            OPTIONAL_ARGUMENT_INTEGER(2, authType, (int) Licensing::AuthType::OIDC, );
+            OPTIONAL_ARGUMENT_INTEGER(3, productId, -1, );
+            OPTIONAL_ARGUMENT_STRING(4, deviceId, );
+            OPTIONAL_ARGUMENT_INTEGER(5, usageType, (int) Licensing::UsageType::Production, );
+            OPTIONAL_ARGUMENT_STRING(6, correlationId, );
 
             BentleyStatus status = UlasClient::Get().MarkFeature(accessToken, featureEvent, (Licensing::AuthType) authType, productId, deviceId, (Licensing::UsageType) usageType, correlationId);
+            if (status == BentleyStatus::ERROR)
+              {
+              THROW_JS_EXCEPTION("Could not track feature information");
+              return;
+              }
 
-            return Napi::Number::New(info.Env(), (int) status);
+            return; 
             }
     public:
         NativeUlasClient(Napi::CallbackInfo const &info) : BeObjectWrap<NativeUlasClient>(info) {}
