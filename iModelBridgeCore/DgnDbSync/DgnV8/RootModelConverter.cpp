@@ -2134,6 +2134,8 @@ BentleyStatus  RootModelConverter::ConvertData()
     if (WasAborted())
         return ERROR;
 
+    _ConvertDynamicViews();
+
     if (ShouldCreateIntermediateRevisions())
         PushChangesForFile(*GetRootV8File(), ConverterDataStrings::Sheets());
 

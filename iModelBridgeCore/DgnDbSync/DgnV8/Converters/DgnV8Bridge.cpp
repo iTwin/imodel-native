@@ -356,6 +356,7 @@ BentleyStatus DgnV8Bridge::_Initialize(int argc, WCharCP argv[])
     BentleyStatus status = SUCCESS;
     status = T_Super::_Initialize(argc, argv);
     
+    m_params.SetBridgeInstance(this);
     return status;
     }
 

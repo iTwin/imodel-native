@@ -601,6 +601,8 @@ struct Converter
         Utf8String m_pwUser;
         Utf8String m_pwPassword;
         Utf8String m_pwDataSource;
+
+        iModelBridge*           m_bridge = NULL;
         //!private
         bool m_keepHostAlive {};
         bool m_wantDebugCodes {};
@@ -664,6 +666,9 @@ struct Converter
         bool GetConvertViewsOfAllDrawings() const {return m_convertViewsOfAllDrawings;}
         bool GetWantDebugCodes() const { return  m_wantDebugCodes; }
         void SetWantDebugCodes(bool value) { m_wantDebugCodes = value; }
+        void SetBridgeInstance(iModelBridge* bridge) { m_bridge = bridge; }
+        iModelBridge* GetBridgeInstance() const { return m_bridge; }
+
     };
 
 
@@ -1289,6 +1294,9 @@ public:
     
     //! Convert a NamedView
     DgnViewId ConvertNamedView(DgnV8Api::NamedView&, TransformCR, ViewFactory&);
+
+    //!Convert a DynamicView
+    BentleyStatus ConvertDynamicView(DgnV8Api::NamedView&, TransformCR transform, DgnV8Api::ISupportCallout& callout);
 
     //! Convert all 2D views of in the specified viewgroup where the view root model is equal to the specified V8 model.
     void Convert2dViewsOf(DgnV8Api::ViewInfoPtr& firstViewInfo, DgnV8Api::ViewGroup&, DgnV8ModelR, ViewFactory&);
@@ -2116,6 +2124,8 @@ public:
     bool DetectedDeletedExtractionGraphicsCategories(DgnModelR proxyGraphicScope, Utf8StringCR sectionedV8ElementPath, DgnCategoryIdSet const& seenCategories);
 
     bool HadAnyChanges() const { return m_hadAnyChanges || m_elementsConverted != 0; }
+
+    bool EnableDynamicViewConversion();
 };
 
 //=======================================================================================
@@ -2634,6 +2644,9 @@ protected:
     DGNDBSYNC_EXPORT virtual void _ConvertSpatialElements();
     DGNDBSYNC_EXPORT virtual void _ConvertSheets();
     DGNDBSYNC_EXPORT virtual void _ConvertDrawings();
+    
+    void _ConvertDynamicViews(DgnFileR file);
+    DGNDBSYNC_EXPORT virtual void _ConvertDynamicViews();
     DGNDBSYNC_EXPORT virtual void _FinishConversion();
     //! override this to filter out specific DgnAttachments from the spatial model hierarchy
     virtual bool _WantAttachment(DgnAttachmentCR attach) const {return true;}

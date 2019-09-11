@@ -1037,6 +1037,15 @@ DgnViewId Converter::ConvertNamedView(DgnV8Api::NamedView& namedView, TransformC
     if (nullptr == model)
         return DgnViewId();
 
+    DgnV8Api::INamedViewElementHandler*   namedViewHandler = namedView.GetElementHandlerP();
+    DgnV8Api::ISupportCallout*  supportDetailingSymbol = dynamic_cast <DgnV8Api::ISupportCallout*> (namedViewHandler);
+
+    if (NULL != supportDetailingSymbol && EnableDynamicViewConversion())
+        {
+        //Do not convert a dyanmic view into a saved view
+        return DgnViewId();
+        }
+
     viewInfo.EnsureLevelMaskCoverage();
     LevelMaskTreeP levelMasks = viewInfo.GetLevelMasksP();
     if (levelMasks)
@@ -1170,4 +1179,338 @@ void Converter::UpdateViewChildren(ViewDefinitionR newViewDef, DgnViewId existin
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void RootModelConverter::_ConvertDynamicViews(DgnFileR file)
+    {
+    if (!IsFileAssignedToBridge(file))
+        return;
+
+    NamedViewCollectionCR namedViews = file.GetNamedViews();
+    for (DgnV8Api::NamedViewPtr namedView : namedViews)
+        {
+        DgnV8Api::INamedViewElementHandler*   namedViewHandler = namedView->GetElementHandlerP();
+        DgnV8Api::ISupportCallout*  supportDetailingSymbol = dynamic_cast <DgnV8Api::ISupportCallout*> (namedViewHandler);
+
+        if (NULL == supportDetailingSymbol)
+            continue;
+        
+        ConvertDynamicView(*namedView, m_rootTrans, *supportDetailingSymbol);
+        }
+
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void RootModelConverter::_ConvertDynamicViews()
+    {
+    if (!EnableDynamicViewConversion())
+        return;
+
+    _ConvertDynamicViews(*GetRootV8File());
+
+    for (auto& file : m_filesKeepAlive)
+        _ConvertDynamicViews(*file);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+struct DynamicViewMapper
+    {
+    DgnV8Api::NamedView&        m_namedView;
+    TransformCR                 m_transform;
+    DgnV8Api::ISupportCallout&  m_calloutSupport;
+    Converter&                  m_converter;
+    ViewInfoP                   m_viewInfo;
+    DgnV8ModelP                 m_v8Model;
+    ResolvedModelMapping        m_modelMapping;
+    DynamicViewMapper(DgnV8Api::NamedView& namedView, TransformCR trans, DgnV8Api::ISupportCallout& callout, Converter& converter)
+        :m_namedView(namedView), m_transform(trans), m_calloutSupport(callout), m_converter(converter)
+        {}
+
+    BentleyStatus Init();
+
+    DgnModelR GetDgnModel() { return m_modelMapping.GetDgnModel(); }
+
+    int GetSectionLocationType();
+
+    RenderMaterialId GetIconMaterial();
+
+    static StatusInt   GetCalloutOriginFromIClip(DPoint3d& origin, ElementHandleCR clipEH);
+
+    BentleyStatus GetClipData(Utf8StringR clipdata, ElementHandleCR clipElement);
+
+    BentleyStatus CreateSectionLocation(DgnElementPtr& element, Utf8StringCR name);
+
+    BentleyStatus UpdateGeometryStream(DgnElementR element, ElementHandleCR clipElement);
+
+    BentleyStatus UpdateProperties(DgnElementR element);
+
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+int DynamicViewMapper::GetSectionLocationType()
+    {
+    DgnV8Api::ElementHandle namedViewElement(m_namedView.GetElementRef(), NULL);
+    Bentley::DetailingSymbolType type = m_calloutSupport.GetCalloutType(namedViewElement);
+    return static_cast<int> (type);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DynamicViewMapper::Init ()
+    {
+    m_viewInfo = &m_namedView.GetViewInfoR();
+
+    m_v8Model = m_viewInfo->GetRootModelP();
+    if (nullptr == m_v8Model)
+        return BSIERROR;
+
+    m_modelMapping = m_converter.FindResolvedModelMapping(*m_v8Model, m_transform);
+    if (!m_modelMapping.IsValid())
+        return BSIERROR;
+
+    DgnModel* model = &GetDgnModel();
+    if (nullptr == model)
+        return BSIERROR;
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    SunandSandurkar 03/10
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt   DynamicViewMapper::GetCalloutOriginFromIClip (DPoint3d& origin, ElementHandleCR clipEH)
+    {
+    DgnV8Api::IHasViewClipObject* hasViewClipObject = dynamic_cast <DgnV8Api::IHasViewClipObject*> (&clipEH.GetHandler ());
+    if (!hasViewClipObject)
+        return ERROR;
+
+    DgnV8Api::IViewClipObjectPtr viewClipObject = hasViewClipObject->GetClipObject (clipEH);
+    if (viewClipObject.IsNull ())
+        return ERROR;
+
+    size_t         numPoints = viewClipObject->GetNumPoints ();
+    DgnV8Api::DPoint3dVector  points;
+    viewClipObject->GetPoints (points, 0, numPoints);
+
+    origin = (DPoint3dCR)points[0];
+    
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DynamicViewMapper::GetClipData(Utf8StringR clipdata, ElementHandleCR clipElement)
+    {
+    Transform unitTransform = m_modelMapping.GetTransform();
+    auto clipVector = m_converter.ConvertClip(DgnV8Api::ClipVector::CreateFromElement(clipElement, m_v8Model), &unitTransform); // got one, turn it into a ClipVector
+    if (clipVector.IsNull())
+        return BSIERROR;
+
+    auto jsonVal = clipVector->ToJson();
+    if (jsonVal.isNull())
+        return BSIERROR;
+
+    clipdata = Json::FastWriter::ToString(jsonVal);
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+RenderMaterialId DynamicViewMapper::GetIconMaterial ()
+    {
+    RenderMaterialId materialId;
+    //TODO: Find the icon file from assets. Till then this code is not used.
+    WCharCP imageFileName = L"M:\\work\\imodel02\\src\\imodel02\\iModelBridgeCore\\DgnDbSync\\DgnV8\\Converters\\CalloutHUD_SectionClipped.png";
+    DgnFileP v8File = m_viewInfo->GetRootDgnFileP();
+
+    DgnTextureId textureId = m_converter.FindOrInsertTextureImage(imageFileName, *v8File);
+    if (!textureId.IsValid())
+        return materialId;
+
+    Json::Value     patternMap, mapsMap;
+
+    patternMap[RENDER_MATERIAL_TextureId] = textureId.ToHexStr();
+    patternMap[RENDER_MATERIAL_PatternScaleMode] = (int)RenderingAsset::TextureMap::Units::Inches;
+    patternMap[RENDER_MATERIAL_PatternMapping] = (int)Render::TextureMapping::Mode::Parametric;
+
+    mapsMap[RENDER_MATERIAL_MAP_Pattern] = patternMap;
+
+    RenderingAsset renderMaterialAsset;
+    RgbFactor white = { 1.0, 1.0, 1.0 };
+    renderMaterialAsset.SetColor(RENDER_MATERIAL_Color, white);
+    renderMaterialAsset.SetBool(RENDER_MATERIAL_FlagHasBaseColor, true);
+    renderMaterialAsset.GetValueR(RENDER_MATERIAL_Map) = mapsMap;
+
+    RenderMaterial material(*m_converter.GetJobDefinitionModel(), "Section icon", "Section icon");
+    material.SetRenderingAsset(renderMaterialAsset);
+    auto createdMaterial = material.Insert();
+    return createdMaterial->GetMaterialId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DynamicViewMapper::UpdateGeometryStream(DgnElementR element, ElementHandleCR clipElement)
+    {
+    DgnV8Api::ElementHandle namedViewElement(m_namedView.GetElementRef(), NULL);
+    auto categoryId = m_converter.GetSyncInfo().GetCategory(namedViewElement, m_modelMapping);
+
+    DPoint3d origin = DPoint3d::From(0.0, 0.0, 0.0);
+    if (SUCCESS != GetCalloutOriginFromIClip(origin, clipElement))
+        {
+        LOG.error("Unable to get callout origin.");
+        }
+
+    Transform unitTransform = m_modelMapping.GetTransform();
+    unitTransform.Multiply(origin);
+    GeometryBuilderPtr builder = GeometryBuilder::Create(GetDgnModel(), categoryId, origin);
+
+    auto geomEl = element.ToGeometrySourceP();
+    if (nullptr != geomEl)
+        geomEl->SetCategoryId(categoryId);
+
+    Render::GeometryParams elemDisplayParams = builder->GetGeometryParams();
+    elemDisplayParams.SetCategoryId(categoryId);
+    elemDisplayParams.SetFillColor(ColorDef::White());
+    //    elemDisplayParams.SetMaterialId(GetIconMaterial());
+    builder->Append(elemDisplayParams);
+
+    //double uorPerMeter = DgnV8Api::ModelInfo::GetUorPerMeter(&m_v8Model->GetModelInfo());
+    BentleyApi::DgnSphereDetail  detail(DPoint3d::FromZero(), 0.1);
+    ISolidPrimitiveCPtr primitive = BentleyApi::ISolidPrimitive::CreateDgnSphere(detail);
+    builder->Append(*primitive);
+    builder->Finish(*element.ToGeometrySourceP());
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DynamicViewMapper::UpdateProperties(DgnElementR element)
+    {
+    DgnV8Api::EditElementHandle clipElement;
+    if (SUCCESS != m_namedView.GetClipElement(clipElement))
+        return BSIERROR;
+
+    if (SUCCESS != UpdateGeometryStream(element, clipElement))
+        return BSIERROR;
+
+    Utf8String clipdata;
+    if (SUCCESS != GetClipData(clipdata, clipElement))
+        {
+        LOG.error("Unable to get clip information");
+        return BSIERROR;
+        }
+
+    element.SetPropertyValue("ClipGeometry", clipdata.c_str());
+    element.SetPropertyValue("SectionType", GetSectionLocationType());
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DynamicViewMapper::CreateSectionLocation(DgnElementPtr& element, Utf8StringCR viewName)
+    {
+    DgnV8Api::ElementHandle namedViewElement(m_namedView.GetElementRef(), NULL);
+    DgnClassId sectionLocationId = Dgn::DgnClassId(m_converter.GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SectionLocation));
+    ElementHandlerP elementHandler = dgn_ElementHandler::SpatialLocation::FindHandler(m_converter.GetDgnDb(), sectionLocationId);
+    if (nullptr == elementHandler)
+        {
+        BeAssert(false);
+        LOG.debugv("Failed to find element handler for %s %s", Converter::IssueReporter::FmtElement(namedViewElement).c_str(), Converter::IssueReporter::FmtModel(*namedViewElement.GetDgnModelP()).c_str());
+        return BSIERROR;
+        }
+
+    DgnModelId targetModelId = GetDgnModel().GetModelId();
+    
+    //TODO: Generate a code for a dynamic view.
+
+    DgnElement::CreateParams params(m_converter.GetDgnDb(), targetModelId, sectionLocationId);
+    element = elementHandler->Create(params);
+    if (!element.IsValid())
+        {
+        LOG.debugv("Failed to create element from element handler for %s %s", Converter::IssueReporter::FmtElement(namedViewElement).c_str(), Converter::IssueReporter::FmtModel(*namedViewElement.GetDgnModelP()).c_str());
+        return BSIERROR;
+        }
+    
+    if (SUCCESS != UpdateProperties(*element))
+        return BSIERROR;
+
+    //TODO: Store and update the aspect
+    DgnElementId externalSourceAspectScope = m_converter.GetRepositoryLinkId(*m_viewInfo->GetRootDgnFileP());
+    auto aspect = SyncInfo::ViewDefinitionExternalSourceAspect::CreateAspect(externalSourceAspectScope, viewName, *m_viewInfo, m_converter.GetDgnDb());
+    aspect.AddAspect(*element);
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus Converter::ConvertDynamicView(DgnV8Api::NamedView& namedView, TransformCR trans, DgnV8Api::ISupportCallout& callout)
+    {
+    DynamicViewMapper mapper(namedView, trans, callout, *this);
+    if (SUCCESS != mapper.Init())
+        return ERROR;
+
+    DgnViewId existingViewId;
+    Utf8String v8ViewName(namedView.GetName().c_str());
+    Utf8String name = _GetNamePrefix().append(_ComputeViewName(v8ViewName, namedView.GetViewInfo()));
+
+    if (IsUpdating())
+        {
+        DgnElementId externalSourceAspectScope = GetRepositoryLinkId(*namedView.GetViewInfo().GetRootDgnFileP());
+        SyncInfo::ViewDefinitionExternalSourceAspect aspect(nullptr);
+
+        std::tie(aspect, existingViewId) = SyncInfo::ViewDefinitionExternalSourceAspect::GetAspectBySourceId(externalSourceAspectScope, namedView.GetViewInfo(), GetDgnDb());
+        if (existingViewId.IsValid())
+            {
+            v8ViewName = aspect.GetV8ViewName();
+            }
+        else
+            {
+            existingViewId = ViewDefinition::QueryViewId(*GetJobDefinitionModel(), name);
+            }
+        }
+    DgnElementPtr element;
+    if (existingViewId.IsValid())
+        {
+        element = GetDgnDb().Elements().GetForEdit<DgnElement>(existingViewId);
+        mapper.UpdateProperties(*element);
+        if (element->Update().IsNull())
+            return BSIERROR;
+        }
+    else
+        {
+        if (SUCCESS != mapper.CreateSectionLocation(element, name))
+            return ERROR;
+
+        if (element->Insert().IsNull())
+            return BSIERROR;
+        }
+    
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            Converter::EnableDynamicViewConversion()
+    {
+    iModelBridge* bridge = GetParams().GetBridgeInstance();
+    if (NULL == bridge)
+        return false;
+
+    return bridge->TestFeatureFlag("allow-hypermodeling");
+    }
 END_DGNDBSYNC_DGNV8_NAMESPACE

@@ -100,6 +100,7 @@
     <Product Name="MstnBridgeTested">
         <SubProduct ProductName="MstnBridge"/>
         <SubPart PartName="RunMstnBridgeTests" />
+        <SubPart PartName="RunGtest" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
         <Directories DirectoryListName="DgnDbSyncAppCommonDirList" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync"/>
         <Directories DirectoryListName="MstnBridgeDirList"/>
         <Directories DirectoryListName="DgnV8ConverterDirList"  PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync"/>
