@@ -2,7 +2,7 @@
 |
 |   $Source: DgnGeoCoord/DgnGeoCoord.cpp $
 |
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #include    <DgnPlatform\DgnPlatformApi.h>
@@ -3941,7 +3941,7 @@ LocalTransformerP   localTransformer
     type66.deprec_mastname[1] = (char) (masterUnitLabel[1] && 0xFF);
     type66.deprec_subname[0]  = (char) (subUnitLabel[0] && 0xFF);
     type66.deprec_subname[1]  = (char) (subUnitLabel[1] && 0xFF);
-    type66.deprec_dgnUnitNm[UNTSZ];
+    type66.deprec_dgnUnitNm[UNTSZ - 1];
 
     // used by some projections.
     CSMap::CS_stncp (type66.cs_knm,     csParams.csdef.key_nm,  DIM (type66.cs_knm));

@@ -549,6 +549,7 @@ bool                anyWord
     int numMixedCaseStrings = mixedCaseMatchStrings->Length;
     int numUpperCaseStrings = upperCaseMatchStrings->Length;
     char ** nativeStrings = (char**)_alloca ((numMixedCaseStrings + numUpperCaseStrings) * sizeof (char *));
+    #pragma warning(disable: 6386)
     for (int iString=0; iString < numMixedCaseStrings; iString++)
         {
         BI::ScopedString thisString (mixedCaseMatchStrings[iString]);
@@ -565,6 +566,7 @@ bool                anyWord
         strcpy (stackString, scopedString);
         nativeStrings[numMixedCaseStrings + iString] = stackString;
         }
+    #pragma warning(default: 6386)
     return m_baseGCSPeer->Matches (nativeStrings, numMixedCaseStrings, numUpperCaseStrings, anyWord);
     }
 
@@ -581,6 +583,7 @@ bool                    anyWord
     int numMixedCaseStrings = mixedCaseMatchStrings->Count;
     int numUpperCaseStrings = upperCaseMatchStrings->Count;
     char ** nativeStrings = (char**)_alloca ((numMixedCaseStrings + numUpperCaseStrings) * sizeof (char *));
+    #pragma warning(disable: 6386)
     for (int iString=0; iString < numMixedCaseStrings; iString++)
         {
         BI::ScopedString thisString (mixedCaseMatchStrings[iString]);
@@ -597,6 +600,7 @@ bool                    anyWord
         strcpy (stackString, scopedString);
         nativeStrings[numMixedCaseStrings + iString] = stackString;
         }
+    #pragma warning(default: 6386)
     return m_baseGCSPeer->Matches (nativeStrings, numMixedCaseStrings, numUpperCaseStrings, anyWord);
     }
 
