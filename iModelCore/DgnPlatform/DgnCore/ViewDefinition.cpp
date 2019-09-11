@@ -1322,6 +1322,7 @@ void DisplayStyle::_CopyFrom(DgnElementCR el, CopyFromOptions const& opts)
     m_viewFlags = other.m_viewFlags;
     m_subCategories = other.m_subCategories;
     m_subCategoryOverrides = other.m_subCategoryOverrides;
+    m_excludedElements = other.m_excludedElements;
     }
 
 /*---------------------------------------------------------------------------------**//**
