@@ -3225,7 +3225,8 @@ StatusInt SetParameterToCoordSys (WStringR parameterName, WStringR parameterStri
              (upperParameterName == L"LATITUDE OF PROJECTION CENTRE") )
         {
         if ((BaseGCS::pcvHotineObliqueMercator1XY == coordinateSystem.GetProjectionCode()) ||
-            (BaseGCS::pcvRectifiedSkewOrthomorphic == coordinateSystem.GetProjectionCode()))
+            (BaseGCS::pcvRectifiedSkewOrthomorphic == coordinateSystem.GetProjectionCode()) ||
+            (BaseGCS::pcvRectifiedSkewOrthomorphicOrigin == coordinateSystem.GetProjectionCode()))
             coordinateSystem.SetCentralPointLatitude (parameterValue * conversionToDegree);
         else
             coordinateSystem.SetOriginLatitude (parameterValue * conversionToDegree);
@@ -3404,6 +3405,7 @@ StatusInt SetParameterToCoordSys (WStringR parameterName, WStringR parameterStri
 
             case BaseGCS::pcvHotineObliqueMercator1XY:
             case BaseGCS::pcvRectifiedSkewOrthomorphic:
+            case BaseGCS::pcvRectifiedSkewOrthomorphicOrigin:
                 if (SUCCESS != coordinateSystem.SetCentralPointLongitude (parameterValue * conversionToDegree))
                     return ERROR;
                 break;
@@ -6360,6 +6362,12 @@ WCharCP                 wellKnownText       // The Well Known Text specifying th
     StatusInt           status = ERROR;
 
     status = CSMap::CS_wktToCsEx (&csDef, &csDatumDef, &csEllipsoidDef, wktFlavor, mbWellKnownText.c_str());
+
+    // Bursa Wolf implementation is flawed as forward/inverse drift significantly.
+    // As 7 param is the generalized and precise version this is what we use.
+    // No WKT should be interpreted as Bursa-Wolfe.
+    if (csDatumDef.to84_via == cs_DTCTYP_BURS)
+        csDatumDef.to84_via = cs_DTCTYP_7PARM;
 
     if (SUCCESS != status)
         {
