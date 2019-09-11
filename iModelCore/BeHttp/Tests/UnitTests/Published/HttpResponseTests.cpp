@@ -17,15 +17,68 @@ struct HttpResponseTests : public ::testing::Test {};
 TEST_F(HttpResponseTests, ToStatusString_AllConnectionStatusValues_NotEmpty)
     {
     for (int i = (int) ConnectionStatus::None; i <= (int) ConnectionStatus::UnknownError; i++)
-        {
         EXPECT_NE("", Response::ToStatusString((ConnectionStatus) i, HttpStatus::None));
-        }
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                Vincas.Razma                        09/19
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(HttpResponseTests, Ctor_Default_ExpectedValues)
+    {
+    Response response;
+    EXPECT_STREQ("", response.GetBody().AsString().c_str());
+    EXPECT_STREQ("", response.GetEffectiveUrl().c_str());
+    EXPECT_EQ(ConnectionStatus::None, response.GetConnectionStatus());
+    EXPECT_EQ(HttpStatus::None, response.GetHttpStatus());
+    EXPECT_TRUE(response.GetHeaders().GetMap().empty());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                Vincas.Razma                        09/19
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(HttpResponseTests, Ctor_UsingHttpStatus_ExpectedValues)
+    {
+    auto content = HttpResponseContent::Create(HttpStringBody::Create("TestBody"));
+    content->GetHeaders().SetValue("A", "B");
+    Response response(HttpStatus::BadGateway, "TestUrl", content);
+    EXPECT_STREQ("TestBody", response.GetBody().AsString().c_str());
+    EXPECT_STREQ("TestUrl", response.GetEffectiveUrl().c_str());
+    EXPECT_EQ(ConnectionStatus::OK, response.GetConnectionStatus());
+    EXPECT_EQ(HttpStatus::BadGateway, response.GetHttpStatus());
+    EXPECT_EQ(1, response.GetHeaders().GetMap().size());
+    EXPECT_STREQ(response.GetHeaders().GetValue("A"), "B");
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                Vincas.Razma                        09/19
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(HttpResponseTests, Ctor_UsingHttpStatusAndNullContent_ExpectedValues)
+    {
+    Response response(HttpStatus::BadGateway, "TestUrl", nullptr);
+    EXPECT_STREQ("", response.GetBody().AsString().c_str());
+    EXPECT_STREQ("TestUrl", response.GetEffectiveUrl().c_str());
+    EXPECT_EQ(ConnectionStatus::OK, response.GetConnectionStatus());
+    EXPECT_EQ(HttpStatus::BadGateway, response.GetHttpStatus());
+    EXPECT_TRUE(response.GetHeaders().GetMap().empty());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                Vincas.Razma                        09/19
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(HttpResponseTests, Ctor_UsingConnectionStatus_ExpectedValues)
+    {
+    Response response(ConnectionStatus::CertificateError);
+    EXPECT_STREQ("", response.GetBody().AsString().c_str());
+    EXPECT_STREQ("", response.GetEffectiveUrl().c_str());
+    EXPECT_EQ(ConnectionStatus::CertificateError, response.GetConnectionStatus());
+    EXPECT_EQ(HttpStatus::None, response.GetHttpStatus());
+    EXPECT_TRUE(response.GetHeaders().GetMap().empty());
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    julius.cepukenas                   02/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(HttpResponseTests, HttpResponseFromStrings_CorrectFormatNoHeaders_CorrectResponse)
+TEST_F(HttpResponseTests, Ctor_FromStringsWithCorrectFormatNoHeaders_CorrectResponse)
     {
     Response response(HttpStatus::OK, "good/url", "", "good-content");
     EXPECT_STREQ("good-content", response.GetBody().AsString().c_str());
@@ -37,7 +90,7 @@ TEST_F(HttpResponseTests, HttpResponseFromStrings_CorrectFormatNoHeaders_Correct
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    julius.cepukenas                   02/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(HttpResponseTests, HttpResponseFromStrings_CorrectOneHeader_ResponseHasCorrectHeader)
+TEST_F(HttpResponseTests, Ctor_FromStringsWithCorrectOneHeader_ResponseHasCorrectHeader)
     {
     Response response(HttpStatus::OK, "", "header1:a", "");
     EXPECT_EQ(1, response.GetHeaders().GetMap().size());
@@ -47,7 +100,7 @@ TEST_F(HttpResponseTests, HttpResponseFromStrings_CorrectOneHeader_ResponseHasCo
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    julius.cepukenas                   02/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(HttpResponseTests, HttpResponseFromStrings_HeaderWithoutHeaderSeparator_HeaderValueIsEmpty)
+TEST_F(HttpResponseTests, Ctor_FromStringsWithHeaderWithoutHeaderSeparator_HeaderValueIsEmpty)
     {
     Response response(HttpStatus::OK, "", "header1", "");
     EXPECT_EQ(1, response.GetHeaders().GetMap().size());
@@ -57,7 +110,7 @@ TEST_F(HttpResponseTests, HttpResponseFromStrings_HeaderWithoutHeaderSeparator_H
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    julius.cepukenas                   02/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(HttpResponseTests, HttpResponseFromStrings_HeaderWithoutHeaderValue_HeaderValueIsEmpty)
+TEST_F(HttpResponseTests, Ctor_FromStringsWithHeaderWithoutHeaderValue_HeaderValueIsEmpty)
     {
     Response response(HttpStatus::OK, "", "header1:", "");
     EXPECT_EQ(1, response.GetHeaders().GetMap().size());
@@ -67,7 +120,7 @@ TEST_F(HttpResponseTests, HttpResponseFromStrings_HeaderWithoutHeaderValue_Heade
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    julius.cepukenas                   02/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(HttpResponseTests, HttpResponseFromStrings_HeaderWithoutHeaderName_NoHeaderCreated)
+TEST_F(HttpResponseTests, Ctor_FromStringsWithHeaderWithoutHeaderName_NoHeaderCreated)
     {
     Response response(HttpStatus::OK, "", ":a", "");
     EXPECT_EQ(0, response.GetHeaders().GetMap().size());
@@ -76,7 +129,7 @@ TEST_F(HttpResponseTests, HttpResponseFromStrings_HeaderWithoutHeaderName_NoHead
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    julius.cepukenas                   02/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(HttpResponseTests, HttpResponseFromStrings_CorrectOneHeaderWithSpaces_ResponseHasCorrectHeader)
+TEST_F(HttpResponseTests, Ctor_FromStringsWithCorrectOneHeaderWithSpaces_ResponseHasCorrectHeader)
     {
     Response response(HttpStatus::OK, "", " header1  : a  ", "");
     EXPECT_EQ(1, response.GetHeaders().GetMap().size());
@@ -86,7 +139,7 @@ TEST_F(HttpResponseTests, HttpResponseFromStrings_CorrectOneHeaderWithSpaces_Res
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    julius.cepukenas                   02/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(HttpResponseTests, HttpResponseFromStrings_MultipleHeadersSeparatedByNewLine_ResponseHasCorrectHeaders)
+TEST_F(HttpResponseTests, Ctor_FromStringsWithMultipleHeadersSeparatedByNewLine_ResponseHasCorrectHeaders)
     {
     Response response(HttpStatus::OK, "", "header:a\nheader2:b", "");
     EXPECT_EQ(2, response.GetHeaders().GetMap().size());
@@ -97,7 +150,7 @@ TEST_F(HttpResponseTests, HttpResponseFromStrings_MultipleHeadersSeparatedByNewL
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    julius.cepukenas                   02/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(HttpResponseTests, HttpResponseFromStrings_MultipleHeadersSeparatedByNewLineWithSpaces_ResponseHasCorrectHeaders)
+TEST_F(HttpResponseTests, Ctor_FromStringsWithMultipleHeadersSeparatedByNewLineWithSpaces_ResponseHasCorrectHeaders)
     {
     Response response(HttpStatus::OK, "", "header:a \n  header2:b", "");
     EXPECT_EQ(2, response.GetHeaders().GetMap().size());
@@ -108,7 +161,7 @@ TEST_F(HttpResponseTests, HttpResponseFromStrings_MultipleHeadersSeparatedByNewL
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    julius.cepukenas                   02/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(HttpResponseTests, HttpResponseFromStrings_DublicatedHeaderNames_ResponseHeadersHasLastHeaderValue)
+TEST_F(HttpResponseTests, Ctor_FromStringsWithDublicatedHeaderNames_ResponseHeadersHasLastHeaderValue)
     {
     Response response(HttpStatus::OK, "", "header:a\nheader:b", "");
     EXPECT_EQ(1, response.GetHeaders().GetMap().size());
@@ -118,7 +171,7 @@ TEST_F(HttpResponseTests, HttpResponseFromStrings_DublicatedHeaderNames_Response
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    julius.cepukenas                   02/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(HttpResponseTests, HttpResponseFromStrings_MultipleDoubleLineSepareted_ResponseHasCorrectHeaders)
+TEST_F(HttpResponseTests, Ctor_FromStringsWithMultipleDoubleLineSepareted_ResponseHasCorrectHeaders)
     {
     Response response(HttpStatus::OK, "", "header:a\n\nheader3:c", "");
     EXPECT_EQ(2, response.GetHeaders().GetMap().size());
@@ -130,7 +183,7 @@ TEST_F(HttpResponseTests, HttpResponseFromStrings_MultipleDoubleLineSepareted_Re
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    julius.cepukenas                   02/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(HttpResponseTests, HttpResponseFromStrings_MultipleHeaderSeparator_HeaderValueWithHeaderSeparator)
+TEST_F(HttpResponseTests, Ctor_FromStringsWithMultipleHeaderSeparator_HeaderValueWithHeaderSeparator)
     {
     Response response(HttpStatus::OK, "", "header:aheader2:b", "");
     EXPECT_EQ(1, response.GetHeaders().GetMap().size());

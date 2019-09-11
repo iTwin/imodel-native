@@ -47,7 +47,7 @@ private:
     BEHTTP_EXPORT HttpResponseContent(HttpBodyPtr responseBody);
 
 public:
-    static HttpResponseContentPtr Create(HttpBodyPtr responseBody) {return new HttpResponseContent(responseBody);}
+    static HttpResponseContentPtr Create(HttpBodyPtr responseBody = nullptr) {return new HttpResponseContent(responseBody);}
 
     HttpBodyPtr GetBody() {return m_body;}
     HttpResponseHeadersR GetHeaders() {return m_headers;}
@@ -69,19 +69,19 @@ public:
     //! Create invalid response with ConnectionStatus::None
     BEHTTP_EXPORT Response();
 
-    //! DEPRECATED- Create response
-    BEHTTP_EXPORT Response(HttpResponseContentPtr responseData, Utf8CP effectiveUrl, ConnectionStatus connectionStatus, HttpStatus httpStatus);
-
-    //! Create response with ConnectionStatus
-    //! If connection status is ConnectionStatus::OK the response is not valid
+    //! Create failed connection response.
     BEHTTP_EXPORT Response(ConnectionStatus connectionStatus);
-    //! Create valid response with ConnectionStatus::OK
-    BEHTTP_EXPORT Response(HttpStatus httpStatus, Utf8String effectiveUrl, HttpResponseContentPtr responseData);
-    //! Create valid response by providing response content as string values
-    BEHTTP_EXPORT Response(HttpStatus httpStatus, Utf8String effectiveUrl, Utf8String headers, Utf8String responseContent);
+    //! Create success connection response with content.
+    BEHTTP_EXPORT Response(HttpStatus httpStatus, Utf8StringCR effectiveUrl, HttpResponseContentPtr responseContent);
+    //! Create success connection response with content.
+    BEHTTP_EXPORT Response(HttpStatus httpStatus, Utf8StringCR effectiveUrl, Utf8StringCR headers, Utf8StringCR body);
 
-    // Get last used url where response came from
+    //! DEPRECATED! Use other constructors.
+    BEHTTP_EXPORT Response(HttpResponseContentPtr responseContent, Utf8CP effectiveUrl, ConnectionStatus connectionStatus, HttpStatus httpStatus);
+
+    //! Get last used url where response came from
     Utf8String GetEffectiveUrl() const {return m_effectiveUrl;}
+
     HttpBodyCR GetBody() const {return *m_content->GetBody();}
 
     HttpResponseHeadersCR GetHeaders() const {return m_content->GetHeaders();}
