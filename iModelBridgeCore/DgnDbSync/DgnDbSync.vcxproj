@@ -12,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DgnV8\ConverterInternal.h" />
+    <ClInclude Include="DgnV8\DynamicSchemaGenerator\Comparer.h" />
     <ClInclude Include="DgnV8\ECSchemaMappings.h" />
     <ClInclude Include="DgnV8\LinkConverter.h" />
     <ClInclude Include="DgnV8\RulesetEmbedder.h" />
@@ -47,6 +48,7 @@
     <ClCompile Include="DgnV8\DgnV8Text.cpp" />
     <ClCompile Include="DgnV8\DrawingConverter.cpp" />
     <ClCompile Include="DgnV8\DTMConversion.cpp" />
+    <ClCompile Include="DgnV8\DynamicSchemaGenerator\Comparer.cpp" />
     <ClCompile Include="DgnV8\ECElementConverter.cpp" />
     <ClCompile Include="DgnV8\GeometryConversion.cpp" />
     <ClCompile Include="DgnV8\ImportConfig\ImportConfig.cpp" />

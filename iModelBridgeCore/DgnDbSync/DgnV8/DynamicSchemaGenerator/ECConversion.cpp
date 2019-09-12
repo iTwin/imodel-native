@@ -8,7 +8,7 @@
 #include "ECDiff.h"
 #include <regex>
 #include <ECObjects/StandardCustomAttributeHelper.h>
-// #include <ECObjects/SchemaComparer.h>
+#include "Comparer.h"
 #include <Units/Units.h>
 #include <Formatting/FormattingApi.h>
 
@@ -2121,6 +2121,8 @@ BentleyStatus DynamicSchemaGenerator::FlattenSchemas(ECN::ECSchemaP ecSchema)
         ECN::ECSchema::CreateSchema(flatSchema, sourceSchema->GetName(), sourceSchema->GetAlias(), sourceSchema->GetVersionRead(), sourceSchema->GetVersionWrite(), sourceSchema->GetVersionMinor(), sourceSchema->GetECVersion());
         m_flattenedRefs[flatSchema->GetName()] = flatSchema.get();
         flatSchema->SetOriginalECXmlVersion(2, 0);
+        flatSchema->SetDisplayLabel(sourceSchema->GetDisplayLabel());
+        flatSchema->SetDescription(sourceSchema->GetDescription());
 
         ECN::ECSchemaReferenceListCR referencedSchemas = sourceSchema->GetReferencedSchemas();
         for (ECN::ECSchemaReferenceList::const_iterator it = referencedSchemas.begin(); it != referencedSchemas.end(); ++it)
@@ -2148,17 +2150,17 @@ BentleyStatus DynamicSchemaGenerator::FlattenSchemas(ECN::ECSchemaP ecSchema)
             CreateFlatClass(targetClass, flatSchema.get(), sourceClass);
             }
 
-        ECN::IECInstancePtr flattenedInstance = ECN::ConversionCustomAttributeHelper::CreateCustomAttributeInstance("IsFlattened");
-        if (flattenedInstance.IsValid())
-            {
-            if (!ECN::ECSchema::IsSchemaReferenced(flattenedInstance->GetClass().GetSchema(), *flatSchema))
-                {
-                ECN::ECClassCR constClass = flattenedInstance->GetClass();
-                ECN::ECClassP nonConst = const_cast<ECN::ECClassP>(&constClass);
-                flatSchema->AddReferencedSchema(nonConst->GetSchemaR());
-                }
-            flatSchema->SetCustomAttribute(*flattenedInstance);
-            }
+        //ECN::IECInstancePtr flattenedInstance = ECN::ConversionCustomAttributeHelper::CreateCustomAttributeInstance("IsFlattened");
+        //if (flattenedInstance.IsValid())
+        //    {
+        //    if (!ECN::ECSchema::IsSchemaReferenced(flattenedInstance->GetClass().GetSchema(), *flatSchema))
+        //        {
+        //        ECN::ECClassCR constClass = flattenedInstance->GetClass();
+        //        ECN::ECClassP nonConst = const_cast<ECN::ECClassP>(&constClass);
+        //        flatSchema->AddReferencedSchema(nonConst->GetSchemaR());
+        //        }
+        //    flatSchema->SetCustomAttribute(*flattenedInstance);
+        //    }
 
         for (ECN::ECClassCP sourceClass : sourceSchema->GetClasses())
             {
@@ -2313,20 +2315,20 @@ void DynamicSchemaGenerator::ProcessSP3DSchema(ECN::ECSchemaP schema, ECN::ECCla
             verifyBaseClassAbstract(ecClass);
         }
 
-    if (wasFlattened)
-        {
-        ECN::IECInstancePtr flattenedInstance = ECN::ConversionCustomAttributeHelper::CreateCustomAttributeInstance("IsFlattened");
-        if (flattenedInstance.IsValid())
-            {
-            if (!ECN::ECSchema::IsSchemaReferenced(flattenedInstance->GetClass().GetSchema(), *schema))
-                {
-                ECN::ECClassCR constClass = flattenedInstance->GetClass();
-                ECN::ECClassP nonConst = const_cast<ECN::ECClassP>(&constClass);
-                schema->AddReferencedSchema(nonConst->GetSchemaR());
-                }
-            schema->SetCustomAttribute(*flattenedInstance);
-            }
-        }
+    //if (wasFlattened)
+    //    {
+    //    ECN::IECInstancePtr flattenedInstance = ECN::ConversionCustomAttributeHelper::CreateCustomAttributeInstance("IsFlattened");
+    //    if (flattenedInstance.IsValid())
+    //        {
+    //        if (!ECN::ECSchema::IsSchemaReferenced(flattenedInstance->GetClass().GetSchema(), *schema))
+    //            {
+    //            ECN::ECClassCR constClass = flattenedInstance->GetClass();
+    //            ECN::ECClassP nonConst = const_cast<ECN::ECClassP>(&constClass);
+    //            schema->AddReferencedSchema(nonConst->GetSchemaR());
+    //            }
+    //        schema->SetCustomAttribute(*flattenedInstance);
+    //        }
+    //    }
     }
 
 //---------------------------------------------------------------------------------------
@@ -2717,6 +2719,18 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ImportTargetECSchemas()
         if (nullptr == existing)
             continue;
 
+        if (InternalComparer::IsChanged(existing, schema))
+            {
+            ECN::ECSchemaP nonConst = const_cast<ECN::ECSchemaP>(schema);
+            nonConst->SetVersionMinor(existing->GetVersionMinor() + 1);
+            }
+        else if (existing->GetVersionRead() != schema->GetVersionRead() || existing->GetVersionWrite() != schema->GetVersionWrite() || existing->GetVersionMinor() != schema->GetVersionMinor())
+            {
+            ECN::ECSchemaP nonConst = const_cast<ECN::ECSchemaP>(schema);
+            nonConst->SetVersionRead(existing->GetVersionRead());
+            nonConst->SetVersionWrite(existing->GetVersionWrite());
+            nonConst->SetVersionMinor(existing->GetVersionMinor());
+            }
         /*
         ** Include SchemaComparer causes compiler errors related to the template in the comparer and DPoint3d
         BECN::SchemaComparer comparer;
@@ -2733,13 +2747,12 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ImportTargetECSchemas()
                 nonConst->SetVersionMinor(nonConst->GetVersionMinor() + 1);
                 }
             }
-        }
-        */
         auto diff = ECDiff::Diff(*existing, *schema);
         if (diff->GetStatus() == DiffStatus::Success && diff->IsEmpty())
             continue;
         ECN::ECSchemaP nonConst = const_cast<ECN::ECSchemaP>(schema);
         nonConst->SetVersionMinor(existing->GetVersionMinor() + 1);
+        */
         }
 
     auto importStatus = GetDgnDb().ImportV8LegacySchemas(constSchemas);

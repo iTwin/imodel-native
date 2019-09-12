@@ -67,6 +67,9 @@
     <ClInclude Include="DgnV8\ECSchemaMappings.h">
       <Filter>DgnV8\DynamicSchemaGenerator</Filter>
     </ClInclude>
+    <ClInclude Include="DgnV8\DynamicSchemaGenerator\Comparer.h">
+      <Filter>DgnV8\DynamicSchemaGenerator</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DgnV8\DynamicSchemaGenerator\ECConversion.h">
@@ -185,6 +188,9 @@
     </ClCompile>
     <ClCompile Include="DgnV8\DTMConversion.cpp">
       <Filter>DgnV8</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnV8\DynamicSchemaGenerator\Comparer.cpp">
+      <Filter>DgnV8\DynamicSchemaGenerator</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -173,6 +173,8 @@ $(o)V8IModelExtraFiles$(oext) : $(SrcV8IModelExtraFiles)V8IModelExtraFiles.cpp $
 
 $(o)ScalableMeshV8Utilities$(oext):  $(baseDir)ScalableMeshV8Utilities.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 
+$(o)Comparer$(oext):  $(dynamicSchemaGeneratorDir)Comparer.cpp $(dynamicSchemaGeneratorDepends) $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
 %include MultiCppCompileGo.mki
 
 nonPortableObjects =% $(MultiCompileObjectList)
