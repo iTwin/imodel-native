@@ -497,11 +497,9 @@ void ArrayECSqlField::JsonECSqlValue::ArrayIteratorState::_MoveToNext(bool onIni
         return;
 
     BeAssert(m_jsonIteratorIndex < (int) GetJson().Size());
-    if (m_jsonIteratorIndex >= m_value.m_arrayElementCache.size())
-        {
-        ECSqlColumnInfo elementColumnInfo = ECSqlFieldFactory::CreateColumnInfoForArrayElement(m_value.m_columnInfo, m_jsonIteratorIndex);
-        m_value.m_arrayElementCache.push_back(std::make_unique<JsonECSqlValue>(m_value.m_ecdb, *m_jsonIterator, elementColumnInfo));
-        }
+
+    ECSqlColumnInfo elementColumnInfo = ECSqlFieldFactory::CreateColumnInfoForArrayElement(m_value.m_columnInfo, m_jsonIteratorIndex);
+    m_value.m_arrayElementCache.push_back(std::make_unique<JsonECSqlValue>(m_value.m_ecdb, *m_jsonIterator, elementColumnInfo));
     }
 
 //---------------------------------------------------------------------------------------
