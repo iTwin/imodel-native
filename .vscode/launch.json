@@ -5,6 +5,23 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "(Windows) iModelBridgeAssign.exe",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}Winx64/Product/iModelBridgeFwk/bin/iModelBridgeAssign.exe",
+            "args": [
+                "--server-repository=?",
+                "--fwk-staging-dir=D:/samw/sourceFiles",
+                "--fwk-search-in-staging-dir",
+                "--registry-dir=d:/tmp/job2",
+                "--fwk-logging-config-file=D:/imodel02/source/iModelBridgeFramework/Desktop/Orchestrator/static/bridge-logging.config.xml"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false
+        },
+        {
             "name": "Debug specific DgnPlatformTest",
             "type": "cppvsdbg",
             "request": "launch",

@@ -982,10 +982,7 @@ void RootModelConverter::_ConvertDrawingLevels()
             {
             for (DgnV8Api::PersistentElementRef* v8Element : *graphicElements)
                 {
-                DgnV8Api::EditElementHandle v8eh(v8Element);
-                // We must therefore visit complex children and ensure that their levels are converted.
-                ConvertLevels(v8eh);
-                ConvertDrawingLevel(*v8eh.GetDgnFileP(), GetV8Level(v8eh));
+                ConvertDrawingLevels(DgnV8Api::ElementHandle(v8Element));
                 }
             }
         }

@@ -28,7 +28,7 @@ USING_NAMESPACE_BENTLEY_LOGGING
 #define RETURN_STATUS_SERVER_ERROR      3
 #define RETURN_STATUS_LOCAL_ERROR       4
 
-#define MUSTBEDBRESULT(stmt,RESULT) {auto rc=stmt; if (RESULT!=rc) {return rc;}}
+#define MUSTBEDBRESULT(stmt,RESULT) {auto rc=stmt; if (RESULT!=rc) {LOG.fatalv("%s", BeSQLite::Db::InterpretDbResult(rc)); return rc;}}
 #define MUSTBEOK(stmt) MUSTBEDBRESULT(stmt,BE_SQLITE_OK)
 #define MUSTBEROW(stmt) MUSTBEDBRESULT(stmt,BE_SQLITE_ROW)
 #define MUSTBEDONE(stmt) MUSTBEDBRESULT(stmt,BE_SQLITE_DONE)
@@ -60,6 +60,7 @@ BeSQLite::DbResult iModelBridgeRegistryBase::OpenOrCreateStateDb()
 
     if (m_stateFileName.DoesPathExist())
         {
+        LOG.infov(L"Opening registry file %ls", m_stateFileName.c_str());
         MUSTBEOK(m_stateDb.OpenBeSQLiteDb(m_stateFileName, Db::OpenParams(Db::OpenMode::ReadWrite)));
 
         // Double-check that this really is a fwk registry db
@@ -74,6 +75,7 @@ BeSQLite::DbResult iModelBridgeRegistryBase::OpenOrCreateStateDb()
 
     if (!m_stateFileName.DoesPathExist())
         {
+        LOG.infov(L"Creating registry file %ls", m_stateFileName.c_str());
         MUSTBEOK(m_stateDb.CreateNewDb(m_stateFileName));
         MUSTBEOK(m_stateDb.CreateTable("fwk_InstalledBridges", "Name TEXT NOT NULL UNIQUE COLLATE NoCase, \
                                                                 BridgeLibraryPath TEXT UNIQUE COLLATE NoCase, \

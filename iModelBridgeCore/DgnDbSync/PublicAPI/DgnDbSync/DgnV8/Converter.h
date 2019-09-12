@@ -1561,8 +1561,8 @@ public:
     //! Convert the elements in a sheet model. This includes only the elements actually in the V8 drawing model.
     DGNDBSYNC_EXPORT void DoConvertDrawingElementsInSheetModel(ResolvedModelMapping const&);
 
-    //! Convert levels in v8 element (used to preconvert drawing element levels).
-    void ConvertLevels(DgnV8EhCR v8eh);
+    //! Convert levels in v8 element that is found on a drawing (used to preconvert drawing element levels).
+    void ConvertDrawingLevels(DgnV8EhCR v8eh);
 
     //! Default logic for converting a drawing or sheet element
     DGNDBSYNC_EXPORT void DoConvertDrawingElement(ElementConversionResults&, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, bool isNewElement);

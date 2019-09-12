@@ -1906,6 +1906,7 @@ void Converter::GetOrCreateJobPartitions()
 
     GetJobDefinitionModel(); // make sure this is created
     GetUncategorizedCategory(); // NEEDS WORK: this may be needed while converting linestyles, which are shared. They really should not use this category, which is not shared.
+    GetUncategorizedDrawingCategory(); 
     GetExtractionCategoryId(V8NamedViewType::Detail);
     GetExtractionCategoryId(V8NamedViewType::Elevation);
     GetExtractionCategoryId(V8NamedViewType::Section);
@@ -3053,14 +3054,16 @@ void Converter::DoConvertControlElement(ElementConversionResults& results, DgnV8
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Converter::ConvertLevels(DgnV8EhCR v8eh)
+void Converter::ConvertDrawingLevels(DgnV8EhCR v8eh)
     {
-    ConvertDrawingLevel(*v8eh.GetDgnFileP(), GetV8Level(v8eh));
+    auto level = GetV8Level(v8eh);
+    if (0 != level)
+        ConvertDrawingLevel(*v8eh.GetDgnFileP(), level);
 
     // *** TRICKY: Keep this consistent with V8GraphicsCollector::ProcessElement
     for (DgnV8Api::ChildElemIter childIt(v8eh, DgnV8Api::ExposeChildrenReason::Query); childIt.IsValid(); childIt = childIt.ToNext())
         {
-        ConvertLevels(childIt);
+        ConvertDrawingLevels(childIt);
         }
     }
 
