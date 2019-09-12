@@ -1935,8 +1935,8 @@ PolyfaceList SharedGeom::GetPolyfaces(double chordTolerance, NormalMode normalMo
             // ###TODO_INSTANCING: Do we expect to encounter multiple geometries with differing symbologies?
             // Polyface polyface(*thisPolyface.m_displayParams, *thisPolyface.m_polyface->Clone());
             // auto const& displayParams = nullptr != instance ? instance->GetDisplayParams() : *m_key.m_displayParams;
-            auto const& displayParams = GetInstanceDisplayParams(instance, *thisPolyface.m_displayParams);
-            Polyface polyface(displayParams, *thisPolyface.m_polyface->Clone());
+            auto displayParams = CloneDisplayParamsForInstance(*thisPolyface.m_displayParams, nullptr != instance ? instance->GetDisplayParams() : GetDisplayParams());
+            Polyface polyface(*displayParams, *thisPolyface.m_polyface->Clone());
             if (nullptr != instance)
                 polyface.Transform(instance->GetTransform());
 
@@ -2057,6 +2057,7 @@ IFacetOptionsPtr Geometry::CreateFacetOptions(double chordTolerance, bool wantEd
     // Avoid Parasolid concurrency bottlenecks.
     opts->SetIgnoreHiddenBRepEntities(true);
     opts->SetOmitBRepEdgeChainIds(true);
+    opts->SetBRepIgnoredFeatureSize(chordTolerance * 2.5); // s_minRangeBoxSize from Tile.cpp...
 
     return opts;
     }

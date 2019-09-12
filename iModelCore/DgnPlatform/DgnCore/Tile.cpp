@@ -2057,6 +2057,12 @@ TreePtr Tree::Create(GeometricModelR model, Render::SystemR system, Id id)
         rootTileEmpty = 0 == accum.GetElementCount();
         }
 
+// un-comment this to always populate the root tile
+// #define POPULATE_ROOT_TILE
+#if defined(POPULATE_ROOT_TILE)
+    populateRootTile = true;
+#endif
+
     auto rootTile = rootTileEmpty ? RootTile::Empty : (populateRootTile ? RootTile::Displayable : RootTile::Undisplayable);
 
     // Translate world coordinates to center of range in order to reduce precision errors
