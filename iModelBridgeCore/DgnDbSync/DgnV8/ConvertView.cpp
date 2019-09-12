@@ -1237,9 +1237,7 @@ struct DynamicViewMapper
 
     int GetSectionLocationType();
 
-    RenderMaterialId GetIconMaterial();
-
-    static StatusInt   GetCalloutOriginFromIClip(DPoint3d& origin, ElementHandleCR clipEH);
+    static StatusInt   GetCalloutPlacementFromIClip(DPoint3d& origin, BentleyApi::RotMatrixR rotMatrix, ElementHandleCR clipEH);
 
     BentleyStatus GetClipData(Utf8StringR clipdata, ElementHandleCR clipElement);
 
@@ -1286,7 +1284,7 @@ BentleyStatus   DynamicViewMapper::Init ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    SunandSandurkar 03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt   DynamicViewMapper::GetCalloutOriginFromIClip (DPoint3d& origin, ElementHandleCR clipEH)
+StatusInt   DynamicViewMapper::GetCalloutPlacementFromIClip(DPoint3d& origin, BentleyApi::RotMatrixR rotMatrix, ElementHandleCR clipEH)
     {
     DgnV8Api::IHasViewClipObject* hasViewClipObject = dynamic_cast <DgnV8Api::IHasViewClipObject*> (&clipEH.GetHandler ());
     if (!hasViewClipObject)
@@ -1302,6 +1300,8 @@ StatusInt   DynamicViewMapper::GetCalloutOriginFromIClip (DPoint3d& origin, Elem
 
     origin = (DPoint3dCR)points[0];
     
+    rotMatrix = (BentleyApi::RotMatrixCR) viewClipObject->GetRotationMatrix();
+
     return SUCCESS;
     }
 
@@ -1324,40 +1324,6 @@ BentleyStatus   DynamicViewMapper::GetClipData(Utf8StringR clipdata, ElementHand
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  08/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-RenderMaterialId DynamicViewMapper::GetIconMaterial ()
-    {
-    RenderMaterialId materialId;
-    //TODO: Find the icon file from assets. Till then this code is not used.
-    WCharCP imageFileName = L"M:\\work\\imodel02\\src\\imodel02\\iModelBridgeCore\\DgnDbSync\\DgnV8\\Converters\\CalloutHUD_SectionClipped.png";
-    DgnFileP v8File = m_viewInfo->GetRootDgnFileP();
-
-    DgnTextureId textureId = m_converter.FindOrInsertTextureImage(imageFileName, *v8File);
-    if (!textureId.IsValid())
-        return materialId;
-
-    Json::Value     patternMap, mapsMap;
-
-    patternMap[RENDER_MATERIAL_TextureId] = textureId.ToHexStr();
-    patternMap[RENDER_MATERIAL_PatternScaleMode] = (int)RenderingAsset::TextureMap::Units::Inches;
-    patternMap[RENDER_MATERIAL_PatternMapping] = (int)Render::TextureMapping::Mode::Parametric;
-
-    mapsMap[RENDER_MATERIAL_MAP_Pattern] = patternMap;
-
-    RenderingAsset renderMaterialAsset;
-    RgbFactor white = { 1.0, 1.0, 1.0 };
-    renderMaterialAsset.SetColor(RENDER_MATERIAL_Color, white);
-    renderMaterialAsset.SetBool(RENDER_MATERIAL_FlagHasBaseColor, true);
-    renderMaterialAsset.GetValueR(RENDER_MATERIAL_Map) = mapsMap;
-
-    RenderMaterial material(*m_converter.GetJobDefinitionModel(), "Section icon", "Section icon");
-    material.SetRenderingAsset(renderMaterialAsset);
-    auto createdMaterial = material.Insert();
-    return createdMaterial->GetMaterialId();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  09/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   DynamicViewMapper::UpdateGeometryStream(DgnElementR element, ElementHandleCR clipElement)
@@ -1366,30 +1332,29 @@ BentleyStatus   DynamicViewMapper::UpdateGeometryStream(DgnElementR element, Ele
     auto categoryId = m_converter.GetSyncInfo().GetCategory(namedViewElement, m_modelMapping);
 
     DPoint3d origin = DPoint3d::From(0.0, 0.0, 0.0);
-    if (SUCCESS != GetCalloutOriginFromIClip(origin, clipElement))
+    BentleyApi::RotMatrix rotMatrix = BentleyApi::RotMatrix::FromIdentity();
+
+    if (SUCCESS != GetCalloutPlacementFromIClip(origin, rotMatrix, clipElement))
         {
         LOG.error("Unable to get callout origin.");
         }
 
     Transform unitTransform = m_modelMapping.GetTransform();
     unitTransform.Multiply(origin);
-    GeometryBuilderPtr builder = GeometryBuilder::Create(GetDgnModel(), categoryId, origin);
-
-    auto geomEl = element.ToGeometrySourceP();
+    YawPitchRollAngles  angles;
+    YawPitchRollAngles::TryFromRotMatrix(angles, rotMatrix);
+    
+    auto geomEl = element.ToGeometrySource3dP();
     if (nullptr != geomEl)
+        {
+        Placement3d placement;
+        placement.SetOrigin(origin);
+        placement.SetAngles(angles);
+        geomEl->SetPlacement(placement);
         geomEl->SetCategoryId(categoryId);
+        }
 
-    Render::GeometryParams elemDisplayParams = builder->GetGeometryParams();
-    elemDisplayParams.SetCategoryId(categoryId);
-    elemDisplayParams.SetFillColor(ColorDef::White());
-    //    elemDisplayParams.SetMaterialId(GetIconMaterial());
-    builder->Append(elemDisplayParams);
 
-    //double uorPerMeter = DgnV8Api::ModelInfo::GetUorPerMeter(&m_v8Model->GetModelInfo());
-    BentleyApi::DgnSphereDetail  detail(DPoint3d::FromZero(), 0.1);
-    ISolidPrimitiveCPtr primitive = BentleyApi::ISolidPrimitive::CreateDgnSphere(detail);
-    builder->Append(*primitive);
-    builder->Finish(*element.ToGeometrySourceP());
     return SUCCESS;
     }
 
