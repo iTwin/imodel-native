@@ -214,6 +214,7 @@
         <ProductDirectory Name="VendorNotices"                  Path="notices"  RelativeTo="applicationroot" LibType="static"/>
     
         <ProductDirectory Name="DgnV8Dlls"                      Deliver="false" />
+        <ProductDirectory Name="PublisherLoggingConfigXml"      Deliver="false" />
     </ProductDirectoryList>
 
     <ProductDirectoryList ListName="Bimv8SyncSDKDirList">
