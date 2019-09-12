@@ -40,3 +40,15 @@ ConverterTests.DetectDeletionsInEmbeddedFiles
     #   Actual: true
     # Expected: false
     # [  FAILED  ] ConverterTests.DetectDeletionsInEmbeddedFiles (1041 ms)
+
+
+LevelTests.NoLevelChangesInTile
+    # Notified Carole
+    # [ RUN      ] LevelTests.NoLevelChangesInTile
+    # +++ LOG> FATAL DgnV8Converter - CorruptData - Level [New level] found in tile file [F:\imodel02\out\Winx64\Product\DgnV8ConverterTests\run\Output\LevelTests\NoLevelChangesInTile\Test3d-Tile1.dgn] but not in root file [F:\imodel02\out\Winx64\Product\DgnV8ConverterTests\run\Output\LevelTests\NoLevelChangesInTile\Test3d.dgn]. The root file must define all levels.
+    # 
+    # F:\imodel02\src\imodel02\iModelBridgeCore\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(447): error:       Expected: hadAnyChanges
+    #       Which is: true
+    # To be equal to: expectUpdate
+    #       Which is: false
+    # [  FAILED  ] LevelTests.NoLevelChangesInTile (803 ms)
