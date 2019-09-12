@@ -107,6 +107,30 @@ TEST_F(UnitConversionTests, VolumetricFlowUnitConversions)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                  09/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(UnitConversionTests, ProbabilityUnitConversions)
+    {
+    ECUnitCP probFraction = ECTestFixture::GetUnitsSchema()->GetUnitCP("PROBABILITY_FRACTION");
+    ECUnitCP propPercent = ECTestFixture::GetUnitsSchema()->GetUnitCP("PROBABILITY_PERCENT");
+    double expected = 100.0; // 1
+    double actual;
+    probFraction->Convert(actual, 1.0, propPercent);
+    CompareValues(expected, actual, 15, "Conversion from Probability Fraction to Probability Percent not as expected");
+
+    expected = 0.42; // 42%
+    propPercent->Convert(actual, 42.0, probFraction);
+    CompareValues(expected, actual, 15, "Conversion from Probability Percent to Probability Fraction not as expected");
+
+    expected = 1.0;
+    propPercent->Convert(actual, 1.0, propPercent);
+    CompareValues(expected, actual, 15, "Conversion from Probability Percent to itself not as expected");
+
+    probFraction->Convert(actual, 1.0, probFraction);
+    CompareValues(expected, actual, 15, "Conversion from Probability Fraction to itself not as expected");
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                  02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(UnitsTests, BasicECUnitCreation)
