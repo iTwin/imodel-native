@@ -2719,9 +2719,14 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ImportTargetECSchemas()
         if (nullptr == existing)
             continue;
 
+        if (ExcludeSchemaFromBisification(*schema))
+            continue;
+
         if (InternalComparer::IsChanged(existing, schema))
             {
             ECN::ECSchemaP nonConst = const_cast<ECN::ECSchemaP>(schema);
+            nonConst->SetVersionRead(existing->GetVersionRead());
+            nonConst->SetVersionWrite(existing->GetVersionWrite());
             nonConst->SetVersionMinor(existing->GetVersionMinor() + 1);
             }
         else if (existing->GetVersionRead() != schema->GetVersionRead() || existing->GetVersionWrite() != schema->GetVersionWrite() || existing->GetVersionMinor() != schema->GetVersionMinor())

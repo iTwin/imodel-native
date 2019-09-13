@@ -1953,6 +1953,12 @@ BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, PropertyChange& propert
 
         if (change.GetNew().IsNull())
             {
+            if (ctx.IgnoreIllegalDeletionsAndModifications())
+                {
+                ctx.Issues().ReportV("Ignoring update error: ECSchema Upgrade failed. Removing a KindOfQuantity from a property is not supported.");
+                return SUCCESS;
+                }
+
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECProperty %s.%s: Removing a KindOfQuantity from a property is not supported.",
                                  oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
             return ERROR;
@@ -2330,8 +2336,12 @@ BentleyStatus SchemaWriter::UpdateClass(Context& ctx, ClassChange& classChange, 
 
     if (classChange.Name().IsChanged())
         {
-        ctx.Issues().ReportV("ECSchema Upgrade failed. Changing the name of an ECClass is not supported.");
-        return ERROR;
+        if (!ctx.IgnoreIllegalDeletionsAndModifications())
+            {
+            ctx.Issues().ReportV("ECSchema Upgrade failed. Changing the name of an ECClass is not supported.");
+            return ERROR;
+            }
+        ctx.Issues().ReportV("Ignoring update error: ECSchema Upgrade failed: Changing name of an ECClass is not supported.  %s", oldClass.GetFullName());
         }
 
     ECClassId classId = ctx.GetSchemaManager().GetClassId(newClass);
@@ -3020,6 +3030,13 @@ BentleyStatus SchemaWriter::UpdateKindOfQuantities(Context& ctx, KindOfQuantityC
 
         if (change.GetOpCode() == ECChange::OpCode::Deleted)
             {
+            if (ctx.IgnoreIllegalDeletionsAndModifications())
+                {
+                ctx.Issues().ReportV("Ignoring update error: ECSchema Upgrade failed. ECSchema %s: Deleting KindOfQuantity from an ECSchema is not supported.",
+                                     oldSchema.GetFullSchemaName().c_str());
+                continue;
+                }
+
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Deleting KindOfQuantity from an ECSchema is not supported.",
                             oldSchema.GetFullSchemaName().c_str());
             return ERROR;
@@ -3042,6 +3059,13 @@ BentleyStatus SchemaWriter::UpdateKindOfQuantities(Context& ctx, KindOfQuantityC
 
         if (change.GetOpCode() == ECChange::OpCode::Modified)
             {
+            if (ctx.IgnoreIllegalDeletionsAndModifications())
+                {
+                ctx.Issues().ReportV("Ignoring update error: ECSchema Upgrade failed. ECSchema %s: Modifying KindOfQuantity is not supported.",
+                                     oldSchema.GetFullSchemaName().c_str());
+                continue;
+                }
+
             KindOfQuantityCP oldKoq = oldSchema.GetKindOfQuantityCP(change.GetChangeName());
             KindOfQuantityCP newKoq = newSchema.GetKindOfQuantityCP(change.GetChangeName());
             if (oldKoq == nullptr || newKoq == nullptr)
@@ -3172,6 +3196,13 @@ BentleyStatus SchemaWriter::UpdatePropertyCategories(Context& ctx, PropertyCateg
 
         if (change.GetOpCode() == ECChange::OpCode::Modified)
             {
+            if (ctx.IgnoreIllegalDeletionsAndModifications())
+                {
+                ctx.Issues().ReportV("Ignoring update error: ECSchema Upgrade failed. ECSchema %s: Modifying PropertyCategory from an ECSchema is not supported.",
+                                     oldSchema.GetFullSchemaName().c_str());
+                continue;
+                }
+
             PropertyCategoryCP oldCat = oldSchema.GetPropertyCategoryCP(change.GetChangeName());
             PropertyCategoryCP newCat = newSchema.GetPropertyCategoryCP(change.GetChangeName());
             if (oldCat == nullptr || newCat == nullptr)
