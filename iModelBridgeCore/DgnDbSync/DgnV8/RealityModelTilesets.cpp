@@ -153,8 +153,8 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
     Bentley::WString serverConfigVar;
     Utf8String      localUrlPrefix("http://localhost:8080/");
 
-    if (_GetParamsR().DoRealityDataUpload() || GetConfig().GetOptionValueBool("DoRealityDataUpload", false))
-        {
+    if (_GetParamsR().DoRealityDataUpload() || GetConfig().GetOptionValueBool("DoRealityDataUpload", false) || SUCCESS == DgnV8Api::ConfigurationManager::GetVariable(serverConfigVar, L"DGNDB_REALITY_MODEL_UPLOAD"))
+        {                                                                                                                                                                                                           
         doUpload = true;
         }
     else
@@ -236,7 +236,7 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
         if (nullptr == geometricModel)
             {
             BeAssert(false && "Reality model requested for non-geometric model");
-            return ERROR;
+            continue;
             }
 
         SyncInfo::UriContentInfo currentInfo;
@@ -280,8 +280,7 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
         bvector<GeoPoint2d> footprint;
 
         if (SUCCESS != ComputeRealityModelFootprint(footprint, geometricModel, *wgs84GCS))
-            return ERROR;
-
+            continue;
         
         BeFileName  rootJsonFile(nullptr, modelDir.c_str(), L"TileRoot", L"json");
         auto smModel = dynamic_cast<ScalableMeshModelCP>(geometricModel);
@@ -341,7 +340,7 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
             if (!response.simpleSuccess)
                 {
                 ReportIssue(Converter::IssueSeverity::Error, IssueCategory::DiskIO(), Issue::RDSUploadFailed(), "");
-                return ERROR;
+                continue;
                 }
 
             identifier = crd.GetIdentifier();

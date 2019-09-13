@@ -63,7 +63,7 @@ static Utf8String getJsonString(Json::Value const& value)
     {
     Utf8String str = Json::FastWriter().write(value);
     auto pad = 4 - (str.size() % 4);
-    str.append(' ', pad);
+    str.append(pad, ' ');
     return str;
     }
 

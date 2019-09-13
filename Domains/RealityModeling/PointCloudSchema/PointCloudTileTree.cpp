@@ -168,8 +168,8 @@ BentleyStatus DoGetFromSource()
                 }
             }
         }
-
-    if (points.size() < s_maxLeafPointCount)
+                 
+    if (points.size() < s_maxLeafPointCount && tile.GetParent() != nullptr)         // TFS 173793 - Children are required at root.
         tile.SetIsLeaf();
 
     // TODO - Add technique for monochrome point clouds...
