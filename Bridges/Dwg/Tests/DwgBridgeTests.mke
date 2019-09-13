@@ -40,7 +40,7 @@ TestsHeaders =  \
     $(ImporterTestsDir)DwgFileEditor.h
 
 # Let all stand-alone tests share the same gtestmain and TestFixture objects.
-o = $(OutputRootDir)build/DwgBridge/$(programName)/
+o = $(OutputRootDir)build/$(DWGTOOLKIT)Bridge/$(programName)/
 
 always:
     !~@mkdir $(o)
@@ -69,6 +69,8 @@ GUNITTEST_DEST      = $(o)
 GUNITTEST_NTLIBS    = advapi32.lib ole32.lib ws2_32.lib Wininet.lib
 GUNITTEST_PATH      = $(o)
 GUNITTEST_SYMB      = $(o)
+# will link to a $(DWGTOOLKIT) sub folder explicitly
+EXE_NO_CONTEXT_LINK = 1
 
 GTEST_MAIN_IS_SUPPLIED = 1
 
@@ -80,19 +82,19 @@ LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Files/$(DWGTOOLKIT)$(
 %include $(SharedMki)gunittest.mki
 
 always:
-    ~linkfile "$(BuildContext)Delivery/$(programName).exe=$(o)$(programName).exe"
+    ~linkfile "$(BuildContext)Delivery/$(DWGTOOLKIT)/$(programName).exe=$(o)$(programName).exe"
 
-$(BuildContext)Delivery/$(programName).logging.config.xml : $(baseDir)logging.config.xml
+$(BuildContext)Delivery/$(DWGTOOLKIT)/$(programName).logging.config.xml : $(baseDir)logging.config.xml
     $(LinkFirstDepToFirstTarget)
 
-$(BuildContext)Delivery/ignore_list.txt : $(baseDir)ignore_list.txt
+$(BuildContext)Delivery/$(DWGTOOLKIT)/ignore_list.txt : $(baseDir)ignore_list.txt
     $(LinkFirstDepToFirstTarget)
 
-$(BuildContext)Delivery/DwgBridgeTestData/ : $(baseDir)data/
+$(BuildContext)Delivery/$(DWGTOOLKIT)/TestData/ : $(baseDir)data/
     $(LinkFirstDepToFirstTargetAsDirectory)
 
 # Create the sqlang database
 SQLANG_OutputDb         = $(o)$(programName)_en-US.sqlang.db3
-SQLANG_DeliveryDir      = $(BuildContext)Delivery/
+SQLANG_DeliveryDir      = $(BuildContext)Delivery/$(DWGTOOLKIT)/
 SQLANG_XliffWildcard    = $(BuildContext)SubParts/xliffs/*.xliff
 %include $(SrcRoot)bsicommon/sqlang/mki/XliffsToDb.mke
