@@ -541,18 +541,15 @@ BentleyStatus ECDbAdapter::ExtractJsonInstanceArrayFromStatement(ECSqlStatement&
 BentleyStatus ECDbAdapter::ExtractJsonInstanceFromStatement(ECSqlStatement& statement, ECClassCP ecClass, JsonValueR jsonInstanceOut)
     {
     Utf8String className(ecClass->GetName());
+    jsonInstanceOut = Json::Value::GetNull();
 
-    if (BE_SQLITE_ROW != statement.Step())
-        {
-        jsonInstanceOut = Json::Value::GetNull();
+    DbResult result = statement.Step();
+    if (BE_SQLITE_ROW != result)
         return ERROR;
-        }
 
     JsonECSqlSelectAdapter adapter(statement);
     if (SUCCESS != adapter.GetRowInstance(jsonInstanceOut, ecClass->GetId()))
-        {
         return ERROR;
-        }
 
     return SUCCESS;
     }
