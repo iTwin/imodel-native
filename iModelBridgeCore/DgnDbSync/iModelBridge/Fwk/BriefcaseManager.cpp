@@ -195,7 +195,7 @@ struct BriefcaseManager : IBriefcaseManager, TxnMonitor
 
         auto stat = IBriefcaseManager::AcquireLocks(req, ResponseOptions::All).Result();
         if (RepositoryStatus::Success != stat)
-            return stat; // NB: May be RepositoryStatus::LockAlreadyHeld
+            return stat;
 
         m_heldLocks.insert(locksAcquired.begin(), locksAcquired.end());
 

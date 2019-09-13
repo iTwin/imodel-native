@@ -1831,7 +1831,7 @@ BentleyStatus iModelBridgeFwk::LockChannelParent(SubjectCR jobSubj)
         return BSIERROR;
         }
 
-    GetLogger().infov("LockChannelParent.");
+    GetLogger().infov("LockChannelParent %llx.", jobSubj.GetElementId().GetValue());
 
     RepositoryStatus status = RepositoryStatus::Success;
     int retryAttempt = 0;
@@ -1845,9 +1845,9 @@ BentleyStatus iModelBridgeFwk::LockChannelParent(SubjectCR jobSubj)
                 return BSIERROR;
             }
         status = db.BriefcaseManager().LockChannelParent();
-        } while ((RepositoryStatus::Success != status) && (RepositoryStatus::LockAlreadyHeld != status) && (++retryAttempt < m_maxRetryCount) && IModelClientBase::SleepBeforeRetry());
+        } while ((RepositoryStatus::Success != status) && (++retryAttempt < m_maxRetryCount) && IModelClientBase::SleepBeforeRetry());
 
-    if ((RepositoryStatus::Success != status) && (RepositoryStatus::LockAlreadyHeld != status))
+    if (RepositoryStatus::Success != status)
         {
         LOG.fatalv("Failed to acquire exclusive lock on the Job Subject element %llx. Status = %x", jobSubj.GetElementId().GetValue(), status);
         return BSIERROR;
