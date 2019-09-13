@@ -231,12 +231,15 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--testExe", help = "The Full path of the Tests exe e.g. --testExe=C:\BSW\Bim0200\out\winx64\Product\Bentley-GTest\BentleyTests.exe", required = False)
     parser.add_argument("--gtest_filter", help = "The usual gtest_filter to run it selectively e.g. --gtest_filter=MyTest.Test1", nargs='?')
+    parser.add_argument("--root_dir", help = "Root directory from where test exes to run.", nargs='?')
 
 
-    ComponentList = ["BeSQLite","BeHttp","ECDb","ECObjects","ECPresentation","GeomLibs","Units","WSClient","ConstructionSchema","DgnClientFx","DgnDisplay","DgnDomains-Planning" ]
+    ComponentList = ["BeSQLite","BeHttp" ,"ECDb","ECObjects","GeomLibs","Units","ConstructionSchema","DgnClientFx","DgnDisplay","DgnDomains-Planning","DgnPlatform" ]
             
     args = parser.parse_args()
     exeName = args.testExe
+    dirName = args.root_dir
+
     if exeName != None:
         runTest(exeName)
     elif exeName == None:
@@ -246,6 +249,6 @@ if __name__ == '__main__':
         for component in comps1:
             if component in ComponentList:
                 print '***Printing components: ' + component
-                exes = cmp.ExePathForComp(component)
+                exes = os.path.join(dirName , component +  "-Gtest",  component + "Test.exe")
                 print "Exe to run: " + exes
                 runTest(exes)
