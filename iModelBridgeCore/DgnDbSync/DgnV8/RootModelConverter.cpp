@@ -1638,6 +1638,30 @@ BentleyApi::BentleyStatus RootModelConverter::RecreateElementRefersToElementsInd
                                 result = GetDgnDb().TryExecuteSql(index.second.c_str());
                             }
                         }
+                    else
+                        {
+                        CachedStatementPtr stmt = nullptr;
+                        auto stat = m_dgndb->GetCachedStatement(stmt, "select SourceId, TargetId, ECClassId from bis_ElementRefersToElements group by SourceId, TargetId, ECClassId having count(*) > 1 ");
+                        while (BE_SQLITE_ROW == stmt->Step())
+                            {
+                            LOG.tracev("Looking for rowids for %" PRIu64 ", %" PRIu64 ", %" PRIu64, stmt->GetValueId<DgnElementId>(0).GetValue(), stmt->GetValueId<DgnElementId>(1).GetValue(), stmt->GetValueId<ECN::ECClassId>(2).GetValue());
+                            CachedStatementPtr stmt2 = nullptr;
+                            auto stat2 = m_dgndb->GetCachedStatement(stmt2, "select rowid from bis_ElementRefersToElements where SourceId=? and TargetId=? and ECClassId=?");
+                            stmt2->BindId(1, stmt->GetValueId<DgnElementId>(0));
+                            stmt2->BindId(2, stmt->GetValueId<DgnElementId>(1));
+                            stmt2->BindId(3, stmt->GetValueId<ECN::ECClassId>(2));
+                            stmt2->Step(); // skip the first result as we need to keep one
+                            while (BE_SQLITE_ROW == stmt2->Step())
+                                {
+                                CachedStatementPtr stmt3 = nullptr;
+                                m_dgndb->GetCachedStatement(stmt3, "delete from bis_ElementRefersToElements where rowid=?");
+                                stmt3->BindInt64(1, stmt2->GetValueInt64(0));
+                                result = stmt3->Step();
+                                LOG.tracev("Deleting rowid %ld", stmt2->GetValueInt64(0));
+                                }
+                            }
+                        result = GetDgnDb().TryExecuteSql(index.second.c_str());
+                        }
                     }
                 // If we didn't succeed, fatally end as we can't make schema changes at this point in the process
                 if (BE_SQLITE_OK != result)

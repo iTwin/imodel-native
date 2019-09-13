@@ -54,7 +54,32 @@ public:
 struct ECSchemaXmlDeserializer : public ECN::IECSchemaLocater
     {
 private:
-    bmap<Utf8String, bvector<bpair<ECN::SchemaKey, Utf8String>>> m_schemaXmlMap;
+    struct KeyComparer
+        {
+        bool operator()(ECN::SchemaKey k1, ECN::SchemaKey k2) const
+            {
+            int nameCompare = k1.CompareByName(k2.m_schemaName);
+
+            if (nameCompare != 0)
+                return nameCompare > 0;
+
+            if (k1.m_versionRead != k2.m_versionRead)
+                return k1.m_versionRead > k2.m_versionRead;
+
+            if (k1.m_versionWrite != k2.m_versionWrite)
+                return k1.m_versionWrite > k2.m_versionWrite;
+
+            if (k1.m_versionMinor != k2.m_versionMinor)
+                return k1.m_versionMinor > k2.m_versionMinor;
+
+            if (!k1.m_checksum.empty() || !k2.m_checksum.empty())
+                return 0 < strcmp(k1.m_checksum.c_str(), k2.m_checksum.c_str());
+
+            return false;
+            }
+        };
+
+    bmap<Utf8String, bmap<ECN::SchemaKey, Utf8String, KeyComparer>> m_schemaXmlMap;
     ECN::ECSchemaCache m_schemaCache;
     DynamicSchemaGenerator& m_converter;
 

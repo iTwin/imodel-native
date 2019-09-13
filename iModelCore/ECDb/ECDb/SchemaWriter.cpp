@@ -3424,9 +3424,12 @@ BentleyStatus SchemaWriter::VerifyEnumeratorChanges(Context& ctx, ECEnumerationC
             if (enumeratorNameChangeAllowed && newIntEnumerators.find(val) != newIntEnumerators.end())
                 continue;
 
-            //no counterpart with matching value found or old name is not the auto-generated EC3.2 conversion default name
-            ctx.Issues().ReportV("ECSchema Upgrade failed. An enumerator was deleted from Enumeration %s which is not supported.", oldEnum.GetFullName().c_str());
-            return ERROR;
+            if (!ctx.IgnoreIllegalDeletionsAndModifications())
+                {
+                //no counterpart with matching value found or old name is not the auto-generated EC3.2 conversion default name
+                ctx.Issues().ReportV("ECSchema Upgrade failed. An enumerator was deleted from Enumeration %s which is not supported.", oldEnum.GetFullName().c_str());
+                return ERROR;
+                }
             }
         }
     else
@@ -3438,9 +3441,12 @@ BentleyStatus SchemaWriter::VerifyEnumeratorChanges(Context& ctx, ECEnumerationC
             if (enumeratorNameChangeAllowed && newStringEnumerators.find(val) != newStringEnumerators.end())
                 continue;
 
-            //no counterpart with matching value found or old name is not the auto-generated EC3.2 conversion default name
-            ctx.Issues().ReportV("ECSchema Upgrade failed. An enumerator was deleted from Enumeration %s which is not supported.", oldEnum.GetFullName().c_str());
-            return ERROR;
+            if (!ctx.IgnoreIllegalDeletionsAndModifications())
+                {
+                //no counterpart with matching value found or old name is not the auto-generated EC3.2 conversion default name
+                ctx.Issues().ReportV("ECSchema Upgrade failed. An enumerator was deleted from Enumeration %s which is not supported.", oldEnum.GetFullName().c_str());
+                return ERROR;
+                }
             }
         }
 

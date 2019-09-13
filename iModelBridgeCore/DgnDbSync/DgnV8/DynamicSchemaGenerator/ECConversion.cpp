@@ -887,7 +887,7 @@ BECN::ECSchemaPtr ECSchemaXmlDeserializer::_LocateSchema(BECN::SchemaKeyR key, B
         {
         auto schemaIter = kvPairs.second.begin();
         BECN::SchemaKey const& schemaKey = schemaIter->first;
-        if (!schemaKey.Matches(key, matchType))
+        if (0 != schemaKey.CompareByName(key.GetName()) || ! (schemaKey.GetVersionRead() == key.GetVersionRead() && schemaKey.GetVersionWrite() == key.GetVersionWrite()))
             continue;
 
         BECN::ECSchemaPtr leftSchema;
@@ -979,14 +979,14 @@ BECN::ECSchemaPtr ECSchemaXmlDeserializer::_LocateSchema(BECN::SchemaKeyR key, B
 //---------------+---------------+---------------+---------------+---------------+-------
 void ECSchemaXmlDeserializer::AddSchemaXml(Utf8CP schemaName, ECN::SchemaKeyCR key, Utf8CP xml)
     {
-    bvector<bpair<ECN::SchemaKey, Utf8String>> map = m_schemaXmlMap[schemaName];
+    bmap<ECN::SchemaKey, Utf8String, KeyComparer> map = m_schemaXmlMap[schemaName];
     auto mapIter = map.begin();
     for (; mapIter != map.end(); mapIter++)
         {
         if (mapIter->first == key)
             return;
         }
-    m_schemaXmlMap[schemaName].push_back({key, xml});
+    m_schemaXmlMap[schemaName].insert(bpair<ECN::SchemaKey, Utf8String>(key, xml));
     }
 
 //---------------------------------------------------------------------------------------
