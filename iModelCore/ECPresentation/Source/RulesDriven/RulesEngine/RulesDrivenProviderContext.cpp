@@ -11,11 +11,14 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 * @bsiclass                                     Grigas.Petraitis                04/2017
 +===============+===============+===============+===============+===============+======*/
 struct UsedUserSettingsListener : IUsedUserSettingsListener
-    {
+{
+private:
     bset<Utf8String> m_settingIds;
+protected:
     void _OnUserSettingUsed(Utf8CP settingId) override {m_settingIds.insert(settingId);}
+public:
     bset<Utf8String> const& GetSettingIds() const {return m_settingIds;}
-    };
+};
 END_BENTLEY_ECPRESENTATION_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
@@ -56,7 +59,6 @@ RulesDrivenProviderContext::~RulesDrivenProviderContext()
         m_ruleset.Release();
 
     DELETE_AND_CLEAR(m_schemaHelper);
-    DELETE_AND_CLEAR(m_usedSettingsListener);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -64,7 +66,6 @@ RulesDrivenProviderContext::~RulesDrivenProviderContext()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RulesDrivenProviderContext::Init()
     {
-    m_usedSettingsListener = nullptr;
     m_isLocalizationContext = false;
     m_localizationProvider = nullptr;
     m_isQueryContext = false;
@@ -127,9 +128,17 @@ void RulesDrivenProviderContext::SetQueryContext(RulesDrivenProviderContextCR ot
 +---------------+---------------+---------------+---------------+---------------+------*/
 IUsedUserSettingsListener& RulesDrivenProviderContext::GetUsedSettingsListener() const
     {
-    if (nullptr == m_usedSettingsListener)
+    if (m_usedSettingsListener.IsNull())
         m_usedSettingsListener = new UsedUserSettingsListener();
     return *m_usedSettingsListener;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void RulesDrivenProviderContext::SetUsedSettingsListener(RulesDrivenProviderContext const& other)
+    {
+    m_usedSettingsListener = other.m_usedSettingsListener;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -137,7 +146,7 @@ IUsedUserSettingsListener& RulesDrivenProviderContext::GetUsedSettingsListener()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bset<Utf8String> RulesDrivenProviderContext::GetRelatedSettingIds() const
     {
-    if (nullptr == m_usedSettingsListener)
+    if (m_usedSettingsListener.IsNull())
         return bset<Utf8String>();
     return m_usedSettingsListener->GetSettingIds();
     }

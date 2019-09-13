@@ -477,6 +477,7 @@ static NavNodesProviderContextPtr CreateContextForSameHierarchyLevel(NavNodesPro
     {
     NavNodesProviderContextPtr ctx = NavNodesProviderContext::Create(baseContext);
     ctx->SetProvidersIndexAllocator(baseContext.GetProvidersIndexAllocator());
+    ctx->SetUsedSettingsListener(baseContext);
     if (!copyNodesContext)
         return ctx;
 
@@ -1879,7 +1880,7 @@ void SQLiteCacheNodesProvider::InitializeUsedSettings()
     stmt->BindText(bindingIndex++, GetContext().GetLocale(), Statement::MakeCopy::No);
 
     while (BE_SQLITE_ROW == stmt->Step())
-        GetContext().GetUsedSettingsListener()._OnUserSettingUsed(stmt->GetValueText(0));
+        GetContext().GetUsedSettingsListener().OnUserSettingUsed(stmt->GetValueText(0));
     }
 
 /*---------------------------------------------------------------------------------**//**

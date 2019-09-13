@@ -32,7 +32,7 @@ private:
     Utf8String m_locale;
     IJsonLocalState const* m_localState;
     IUserSettings const& m_userSettings;
-    mutable UsedUserSettingsListener* m_usedSettingsListener;
+    mutable RefCountedPtr<UsedUserSettingsListener> m_usedSettingsListener;
     RelatedPathsCache& m_relatedPathsCache;
     PolymorphicallyRelatedClassesCache& m_polymorphicallyRelatedClassesCache;
     ECExpressionsCache& m_ecexpressionsCache;
@@ -69,6 +69,7 @@ public:
     JsonNavNodesFactory const& GetNodesFactory() const {return m_nodesFactory;}
     IUserSettings const& GetUserSettings() const {return m_userSettings;}
     ECPRESENTATION_EXPORT IUsedUserSettingsListener& GetUsedSettingsListener() const;
+    ECPRESENTATION_EXPORT void SetUsedSettingsListener(RulesDrivenProviderContextCR other);
     bset<Utf8String> GetRelatedSettingIds() const;
     ECExpressionsCache& GetECExpressionsCache() const {return m_ecexpressionsCache;}
     IJsonLocalState const* GetLocalState() const {return m_localState;}

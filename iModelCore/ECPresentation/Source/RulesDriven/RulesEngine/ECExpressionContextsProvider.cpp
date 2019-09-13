@@ -488,7 +488,7 @@ private:
     static void OnVariableUsed(Context const& context, Utf8CP variableId)
         {
         if (nullptr != context.m_usedSettingsListener)
-            context.m_usedSettingsListener->_OnUserSettingUsed(variableId);
+            context.m_usedSettingsListener->OnUserSettingUsed(variableId);
         }
     static ExpressionStatus GetStringVariableValue(EvaluationResult& evalResult, void* methodContext, EvaluationResultVector& arguments)
         {

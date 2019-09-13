@@ -5062,6 +5062,59 @@ TEST_F (HierarchyUpdateTests, DoesntUpdateHierarchiesOfClosedConnectionsOnUserSe
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @betest                                       Saulius.Skliutas                09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (HierarchyUpdateTests, UpdatesAffectedBranchesWhenUserSettingChangesSeveralTimes_UsedInRuleCondition)
+    {
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("WidgetID")); }, true);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
+
+    RootNodeRule* rule = new RootNodeRule("1 = GetSettingIntValue(\"test\")", 1, false, RuleTargetTree::TargetTree_Both, false);
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest"));
+    rules->AddPresentationRule(*rule);
+
+    // request for root nodes
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
+    ASSERT_EQ(0, rootNodes.GetSize());
+
+    // change a setting
+    m_manager->GetUserSettings(rules->GetRuleSetId().c_str()).SetSettingIntValue("test", 1);
+
+    // expect 1 root node now
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
+    ASSERT_EQ(1, rootNodes.GetSize());
+    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
+
+    // expect 1 update record
+    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
+
+    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
+    EXPECT_STREQ(widget->GetInstanceId().c_str(), m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey()->AsECInstanceNodeKey()->GetInstanceId().ToString().c_str());
+    EXPECT_TRUE(NavNodeExtendedData(*m_updateRecordsHandler->GetRecords()[0].GetNode()).IsCustomized());
+    EXPECT_EQ(0, m_updateRecordsHandler->GetRecords()[0].GetPosition());
+
+    // change a setting one more time
+    m_manager->GetUserSettings(rules->GetRuleSetId().c_str()).SetSettingIntValue("test", 2);
+
+    // expect 0 root nodes now
+    rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
+    ASSERT_EQ(0, rootNodes.GetSize());
+
+    ASSERT_EQ(1, m_updateRecordsHandler->GetRecords().size());
+
+    EXPECT_EQ(ChangeType::Delete, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
+    EXPECT_STREQ(widget->GetInstanceId().c_str(), m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey()->AsECInstanceNodeKey()->GetInstanceId().ToString().c_str());
+    EXPECT_TRUE(NavNodeExtendedData(*m_updateRecordsHandler->GetRecords()[0].GetNode()).IsCustomized());
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
 * @betest                                       Saulius.Skliutas                06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HierarchyUpdateTests, DoesNotUpdateHierarchyWhenNodeRemovedFromCollapsedHierarchy)

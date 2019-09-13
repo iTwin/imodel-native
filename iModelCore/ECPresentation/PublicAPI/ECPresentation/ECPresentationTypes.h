@@ -250,11 +250,13 @@ typedef RelatedClassPath const& RelatedClassPathCR;
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                07/2016
 +===============+===============+===============+===============+===============+======*/
-struct IUsedUserSettingsListener
-    {
-    virtual ~IUsedUserSettingsListener() {}
+struct IUsedUserSettingsListener : RefCountedBase
+{
+protected:
     virtual void _OnUserSettingUsed(Utf8CP settingId) = 0;
-    };
+public:
+    void OnUserSettingUsed(Utf8CP settingId) { _OnUserSettingUsed(settingId); }
+};
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                11/2017

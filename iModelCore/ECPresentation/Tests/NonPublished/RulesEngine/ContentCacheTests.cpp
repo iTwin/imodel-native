@@ -37,7 +37,7 @@ struct ContentCacheTests : ECPresentationTest
         ContentProviderContextPtr context = ContentProviderContext::Create(*ruleset, true, "locale", "", 0, *NavNodeKeyListContainer::Create(),
             m_nodesLocater, m_categorySupplier, m_userSettings, m_ecexpressionsCache, m_relatedPathsCache,
             m_polymorphicallyRelatedClassesCache, m_nodesFactory, nullptr);
-        context->GetUsedSettingsListener()._OnUserSettingUsed(TEST_RELATED_SETTING);
+        context->GetUsedSettingsListener().OnUserSettingUsed(TEST_RELATED_SETTING);
         return SpecificationContentProvider::Create(*context, ContentRuleInstanceKeysList());
         }
     };

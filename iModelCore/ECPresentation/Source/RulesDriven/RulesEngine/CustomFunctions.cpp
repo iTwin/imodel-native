@@ -1160,7 +1160,7 @@ struct GetStringVariableValueScalar : ECPresentation::ScalarFunction
         ctx.SetResultText(value.c_str(), (int)value.size(), DbFunction::Context::CopyData::Yes);
 
         if (nullptr != GetContext().GetUsedUserSettingsListener())
-            GetContext().GetUsedUserSettingsListener()->_OnUserSettingUsed(settingId);
+            GetContext().GetUsedUserSettingsListener()->OnUserSettingUsed(settingId);
         }
     };
 
@@ -1181,7 +1181,7 @@ struct GetIntVariableValueScalar : ECPresentation::ScalarFunction
         ctx.SetResultInt64(GetContext().GetUserSettings().GetSettingIntValue(settingId));
 
         if (nullptr != GetContext().GetUsedUserSettingsListener())
-            GetContext().GetUsedUserSettingsListener()->_OnUserSettingUsed(settingId);
+            GetContext().GetUsedUserSettingsListener()->OnUserSettingUsed(settingId);
         }
     };
 
@@ -1202,7 +1202,7 @@ struct GetBoolVariableValueScalar : ECPresentation::ScalarFunction
         ctx.SetResultInt(GetContext().GetUserSettings().GetSettingBoolValue(settingId) ? 1 : 0);
 
         if (nullptr != GetContext().GetUsedUserSettingsListener())
-            GetContext().GetUsedUserSettingsListener()->_OnUserSettingUsed(settingId);
+            GetContext().GetUsedUserSettingsListener()->OnUserSettingUsed(settingId);
         }
     };
 
@@ -1225,7 +1225,7 @@ struct InIntVariableValuesScalar : CachingScalarFunction<bmap<Utf8String, bvecto
         int64_t lookupValue = args[1].GetValueInt64();
 
         if (nullptr != GetContext().GetUsedUserSettingsListener())
-            GetContext().GetUsedUserSettingsListener()->_OnUserSettingUsed(settingId);
+            GetContext().GetUsedUserSettingsListener()->OnUserSettingUsed(settingId);
 
         bmap<Utf8String, bvector<int64_t>>& cache = GetCache();
         auto iter = cache.find(settingId);
