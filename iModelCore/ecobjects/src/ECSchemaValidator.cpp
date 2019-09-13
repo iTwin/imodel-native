@@ -4,6 +4,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
+#include <functional>
 
 #define EC_Class    "Class"
 #define EC_Source   "Source"
@@ -17,6 +18,9 @@
 #define ElementUniqueAspect                 "ElementUniqueAspect"
 #define ElementOwnsUniqueAspect             "ElementOwnsUniqueAspect"
 #define ElementOwnsMultiAspects             "ElementOwnsMultiAspects"
+
+#define CORECA_SCHEMA_NAME                  "CoreCustomAttributes"
+#define CORECA_DEPRECATED                   "Deprecated"
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -51,6 +55,51 @@ static Utf8CP validExtendedTypes[] =
     "GeometryStream",
     "Json"
     };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Bao.Tran                    08/2019
+//+---------------+---------------+---------------+---------------+---------------+------
+static bool TraverseBaseClasses(ECClassCR ecClass, std::function<bool(ECClassCP)> delegate, bool recursive)
+    {
+    const auto &baseList = ecClass.GetBaseClasses();
+    if (baseList.empty())
+        return false;
+
+    for (ECClassCP base : baseList)
+        {
+        if (delegate(base))
+            return true;
+        if (!recursive && TraverseBaseClasses(*base, delegate, recursive))
+            return true;
+        }
+
+    return false;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Bao.Tran                    08/2019
+//+---------------+---------------+---------------+---------------+---------------+------
+static ECClassCP GetClassDefinedCustomAttribute(ECClassCR ecClass, Utf8StringCR schemaName, Utf8StringCR customAttributeName)
+    {
+    if (ecClass.IsDefinedLocal(schemaName, customAttributeName))
+        return &ecClass;
+
+    ECClassCP res = nullptr;
+    auto CABaseGetter = [&](ECClassCP base) 
+        {
+        bool found = false;
+        if (base->IsDefinedLocal(schemaName, customAttributeName))
+            {
+            res = base;
+            found = true;
+            }
+        return found;
+        };
+
+    TraverseBaseClasses(ecClass, CABaseGetter, true);
+    return res;
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman              01/2018
@@ -240,6 +289,10 @@ ECObjectsStatus ECSchemaValidator::BaseECValidator(ECSchemaCR schema)
                         schema.GetFullSchemaName().c_str(), refCurrentAlias.c_str(), refSchema->GetFullSchemaName().c_str(), refOriginalAlias.c_str());
             status = ECObjectsStatus::Error;
             }
+
+        // RULE: Warn about Schema using deprecated Schema Reference. No check if schema is already deprecated
+        if (!schema.IsDefinedLocal(CORECA_SCHEMA_NAME, CORECA_DEPRECATED) && refSchema->IsDefinedLocal(CORECA_SCHEMA_NAME, CORECA_DEPRECATED))
+            LOG.warningv("Schema '%s' references a deprecated schema, '%s'.", schema.GetFullSchemaName().c_str(), refSchema->GetFullSchemaName().c_str());
         }
 
     // RULE: Entity classes within the same schema should not have the same display label
@@ -293,11 +346,42 @@ ECObjectsStatus ECSchemaValidator::AllClassValidator(ECClassCR ecClass)
 
     bool isModel = (!ecClass.GetSchema().GetName().EqualsI(BISCORE_SCHEMA_NAME)) && ecClass.Is(BISCORE_SCHEMA_NAME, "Model");
 
+    // RULE: Class should not derived from a class or implements a mixin which is deprecated (warn). No check if class is already deprecated
+    bool isThisClassDeprecated = ecClass.IsDefinedLocal(CORECA_SCHEMA_NAME, CORECA_DEPRECATED);
+    if (!isThisClassDeprecated)
+        {
+        // We only check the first base because all ECClasses except ECEntityClass will only have one base class. This is consitent with 
+        // typescript validator side as well where we check deprecated only for the main base of all ECClasses. We will check deprecated for mixin bases in the ECEntityClass rule 
+        const auto &baseList = ecClass.GetBaseClasses();
+        auto mainBaseIter = baseList.begin();
+        if (mainBaseIter != baseList.end())
+            {
+            auto mainBase = *mainBaseIter;
+            auto deprecated = GetClassDefinedCustomAttribute(*mainBase, CORECA_SCHEMA_NAME, CORECA_DEPRECATED);
+            if (deprecated)
+                LOG.warningv("Class '%s' derived from a deprecated class, '%s'.", 
+                    ecClass.GetFullName(), deprecated->GetFullName());
+            }
+        }
+
+    // RULE: Class should not use deprecated custom attributes. No check if class is already deprecated
+    if (!isThisClassDeprecated)
+        {
+        for (const auto &customAttribute : ecClass.GetCustomAttributes(false))
+            {
+            const auto &customAttributeClass = customAttribute->GetClass();
+            if (customAttributeClass.IsDefinedLocal(CORECA_SCHEMA_NAME, CORECA_DEPRECATED))
+                LOG.warningv("Class '%s' uses a deprecated custom attribute '%s'", ecClass.GetFullName(), customAttributeClass.GetFullName());
+            }
+        }
+
     // RULE: Properties should have a description (warn)
     // RULE: Properties should not be of type long.
     // RULE: All extended types of properties should be on the valid list
     // RULE: All Model subclasses outside of BisCore should not add properties
     //      Except: Raster:RasterModel.Clip, ScalableMesh:ScalableMeshModel.SmModelClips, ScalableMesh:ScalableMeshModel.SmGroundCoverages, ScalableMesh:ScalableMeshModel.SmModelClipVectors
+    // RULE: Properties should not be deprecated (warn). No warning issued if class is deprecated.
+    // RULE: Properties should not be of deprecated struct (warn). No warning issued if class is deprecated or property is deprecated.
     for (ECPropertyP prop : ecClass.GetProperties(false))
         {
         if (prop->GetInvariantDescription().empty())
@@ -368,6 +452,23 @@ ECObjectsStatus ECSchemaValidator::AllClassValidator(ECClassCR ecClass)
                 {
                 if (ECObjectsStatus::Success != CheckForValidExtendedType(prop->GetAsPrimitiveArrayProperty()->GetExtendedTypeName(), ecClass.GetFullName(), prop->GetName()))
                     status = ECObjectsStatus::Error;
+                }
+            }
+
+        if (!isThisClassDeprecated)
+            {
+            if (prop->IsDefined(CORECA_SCHEMA_NAME, CORECA_DEPRECATED))
+                LOG.warningv("Class '%s' has property '%s' which is deprecated", ecClass.GetFullName(), prop->GetName().c_str());
+            else if (prop->GetIsStruct() || prop->GetIsStructArray())
+                {
+                ECStructClassCP structClass;
+                if (prop->GetIsStruct())
+                    structClass = &(prop->GetAsStructProperty()->GetType());
+                else
+                    structClass = &(prop->GetAsStructArrayProperty()->GetStructElementType());
+
+                if (structClass->IsDefinedLocal(CORECA_SCHEMA_NAME, CORECA_DEPRECATED))
+                    LOG.warningv("Class '%s' has property '%s' which is of a deprecated struct class, '%s'", ecClass.GetFullName(), prop->GetName().c_str(), structClass->GetFullName());
                 }
             }
         }
@@ -610,6 +711,14 @@ ECObjectsStatus ECSchemaValidator::EntityValidator(ECClassCR entity)
         if (!baseClass->GetEntityClassCP()->IsMixin())
             numBaseClasses++;
 
+        // RULE: Class should not subclass deprecated mixin classes
+        if (!entity.IsDefinedLocal(CORECA_SCHEMA_NAME, CORECA_DEPRECATED) && !entity.IsMixin() && baseClass->IsMixin())
+            {
+            auto deprecated = GetClassDefinedCustomAttribute(*baseClass, CORECA_SCHEMA_NAME, CORECA_DEPRECATED);
+            if (deprecated)
+                LOG.warningv("Entity class '%s' derives from a deprecated mixin, '%s'.", entity.GetFullName(), deprecated->GetFullName());
+            }
+
         if (0 == BeStringUtilities::Stricmp(baseClass->GetFullName(), BISCORE_CLASS_IParentElement))
             foundIParentElement = true;
         if (0 == BeStringUtilities::Stricmp(baseClass->GetFullName(), BISCORE_CLASS_ISubModeledElement))
@@ -801,6 +910,52 @@ static ECObjectsStatus CheckEndpointForElementAspect(ECRelationshipConstraintCR 
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                    Bao.Tran                  06/2019
+//+---------------+---------------+---------------+---------------+---------------+------
+static void CheckDeprecatedRelationshipConstraint(ECRelationshipConstraintCR endpoint, Utf8CP classname, Utf8CP constraintType)
+    {
+    // check abstract constraint class
+    const auto abstractConstraint = endpoint.GetAbstractConstraint();
+    if (abstractConstraint) 
+        {
+        if (abstractConstraint->IsDefinedLocal(CORECA_SCHEMA_NAME, CORECA_DEPRECATED))
+            {
+            LOG.warningv("%s Relationship Constraint of Relationship class '%s' has deprecated abstract constraint '%s'", 
+                constraintType, classname, abstractConstraint->GetFullName());
+            }
+        else
+            {
+            for (auto base : abstractConstraint->GetBaseClasses())
+                {
+                auto deprecated = GetClassDefinedCustomAttribute(*base, CORECA_SCHEMA_NAME, CORECA_DEPRECATED);
+                if (deprecated)
+                    LOG.warningv("%s Relationship Constraint of Relationship class '%s' has abstract constraint '%s' derived from a deprecated base, '%s'.",
+                        constraintType, classname, abstractConstraint->GetFullName(), deprecated->GetFullName());
+                }
+            }
+        }
+
+    // check constraint classes
+    for (auto constraintClass : endpoint.GetConstraintClasses())
+        {
+        if (constraintClass->IsDefinedLocal(CORECA_SCHEMA_NAME, CORECA_DEPRECATED))
+            {
+            LOG.warningv("%s Relationship Constraint of Relationship class '%s' has deprecated constraint class '%s'", 
+                constraintType, classname, constraintClass->GetFullName());
+            continue;
+            }
+
+        for (auto base : constraintClass->GetBaseClasses())
+            {
+            auto deprecated = GetClassDefinedCustomAttribute(*base, CORECA_SCHEMA_NAME, CORECA_DEPRECATED);
+            if (deprecated)
+                LOG.warningv("%s Relationship Constraint of Relationship class '%s' has constraint class '%s' derived from a deprecated base, '%s'.",
+                    constraintType, classname, constraintClass->GetFullName(), deprecated->GetFullName());
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                    Dan.Perlman                  04/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 // static
@@ -841,7 +996,14 @@ ECObjectsStatus ECSchemaValidator::RelationshipValidator(ECClassCR ecClass)
         if (ECObjectsStatus::Success != CheckEndpointForElementAspect(targetConstraint, relClass->GetFullName(), EC_Target))
             status = ECObjectsStatus::Error;
         }
-    
+
+    // RULE: Relationship class has constraint classes or mixin which is deprecated (warn). No check if relationship is already deprecated
+    if (!ecClass.IsDefinedLocal(CORECA_SCHEMA_NAME, CORECA_DEPRECATED))
+        {
+        CheckDeprecatedRelationshipConstraint(sourceConstraint, relClass->GetFullName(), EC_Source);
+        CheckDeprecatedRelationshipConstraint(targetConstraint, relClass->GetFullName(), EC_Target);
+        }
+
     return status;
     }
 
@@ -877,7 +1039,7 @@ ECObjectsStatus ECSchemaValidator::KindOfQuantityValidator(KindOfQuantityCR koq)
     ECSchemaCR schema = koq.GetSchema();
     bset<Utf8String> uniqueFormats;
     const auto &presentFormats = koq.GetPresentationFormats();
-    for (const auto &format : presentFormats) 
+    for (const auto &format : presentFormats)
         {
         auto formatQualifiedName = format.GetQualifiedFormatString(schema);
         auto resultInsertion = uniqueFormats.insert(formatQualifiedName);

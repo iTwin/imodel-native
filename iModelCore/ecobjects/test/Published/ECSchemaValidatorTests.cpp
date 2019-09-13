@@ -3026,4 +3026,679 @@ TEST_F(SchemaValidatorTests, OriginalSchemaReferenceAliasTest)
     }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bao.Tran                         06/2019
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaValidatorTests, SchemaUseDeprecatedSchema)
+    {
+    Utf8CP deprecatedSchemaXml = R"xml(
+        <ECSchema schemaName="deprecatedSchema" alias="deprecated" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="CoreCustomAttributes" version="01.00.02" alias="CoreCA"/>
+            <ECCustomAttributes>
+                <Deprecated xmlns="CoreCustomAttributes.01.00.02"/>
+            </ECCustomAttributes>
+        </ECSchema>)xml";
+    InitBisContextWithSchemaXml(deprecatedSchemaXml);
+    EXPECT_TRUE(schema.IsValid());
+    EXPECT_TRUE(schema->IsDefined("CoreCustomAttributes", "Deprecated"));
+
+    Utf8CP schemaXml = R"xml(
+        <ECSchema schemaName="testSchema1" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="deprecatedSchema" version="01.00.00" alias="deprecated"/>
+        </ECSchema>)xml";
+    ECSchemaPtr testSchema;
+    EXPECT_EQ(ECSchema::ReadFromXmlString(testSchema, schemaXml, *context), SchemaReadStatus::Success);
+    EXPECT_TRUE(testSchema.IsValid());
+    EXPECT_TRUE(validator.Validate(*testSchema)) << "there should be warning about using deprecated reference schema";
+
+    schemaXml = R"xml(
+        <ECSchema schemaName="testSchema2" alias="deprecatedTs" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="deprecatedSchema" version="01.00.00" alias="deprecated"/>
+            <ECCustomAttributes>
+                <Deprecated xmlns="CoreCustomAttributes.01.00.02"/>
+            </ECCustomAttributes>
+        </ECSchema>)xml";
+    ECSchemaPtr deprecatedTestSchema;
+    EXPECT_EQ(ECSchema::ReadFromXmlString(deprecatedTestSchema, schemaXml, *context), SchemaReadStatus::Success);
+    EXPECT_TRUE(deprecatedTestSchema.IsValid());
+    EXPECT_TRUE(validator.Validate(*deprecatedTestSchema)) << "there should be no warning about using deprecated reference schema because current schema is deprecated";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bao.Tran                         06/2019
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaValidatorTests, SchemaClassDerivedFromDeprecatedClass)
+    {
+    {
+    Utf8CP schemaXml = R"xml(
+        <ECSchema schemaName="testSchema1" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+            <ECEntityClass typeName="DeprecatedEntityClass" description="description here for silencing validator warning">
+                <ECCustomAttributes>
+                    <Deprecated xmlns="CoreCustomAttributes.01.00.02"/>
+                </ECCustomAttributes>
+                <BaseClass>bis:Element</BaseClass>
+                <ECProperty propertyName="intProps" typeName="int" description="description here for silencing validator warning"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="Entity" description="description here for silencing validator warning">
+                <BaseClass>DeprecatedEntityClass</BaseClass>
+                <ECCustomAttributes>
+                    <Deprecated xmlns="CoreCustomAttributes.01.00.02"/>
+                </ECCustomAttributes>
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    InitBisContextWithSchemaXml(schemaXml);
+    EXPECT_TRUE(schema.IsValid());
+    EXPECT_TRUE(validator.Validate(*schema)) << "There should be no warning about using deprecated base class for a deprecated Entity class.";
+    }
+    {
+    Utf8CP deprecatedSchemaXml = R"xml(
+        <ECSchema schemaName="deprecatedSchema" alias="deprecated" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+            <ECSchemaReference name="CoreCustomAttributes" version="01.00.02" alias="CoreCA"/>
+            <ECEntityClass typeName="DeprecatedEntityClass">
+                <ECCustomAttributes>
+                    <Deprecated xmlns="CoreCustomAttributes.01.00.02"/>
+                </ECCustomAttributes>
+                <BaseClass>bis:Element</BaseClass>
+                <ECProperty propertyName="intProps" typeName="int"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="DeprecatedMixinClass">
+                <ECCustomAttributes>
+                    <IsMixin xmlns="CoreCustomAttributes.01.00.02">
+                        <AppliesToEntityClass>bis:Element</AppliesToEntityClass>
+                    </IsMixin>
+                </ECCustomAttributes>
+                <ECCustomAttributes>
+                    <Deprecated xmlns="CoreCustomAttributes.01.00.02"/>
+                </ECCustomAttributes>
+                <ECProperty propertyName="intStructProps" typeName="int"/>
+                <ECProperty propertyName="stringStructProps" typeName="string"/>
+            </ECEntityClass>
+        </ECSchema>)xml";
+    InitBisContextWithSchemaXml(deprecatedSchemaXml);
+    EXPECT_TRUE(schema.IsValid());
+    EXPECT_TRUE(schema->GetClassCP("DeprecatedEntityClass")->IsDefinedLocal("CoreCustomAttributes", "Deprecated"));
+    EXPECT_TRUE(schema->GetClassCP("DeprecatedMixinClass")->IsDefinedLocal("CoreCustomAttributes", "Deprecated"));
+
+    Utf8CP schemaXml = R"xml(
+        <ECSchema schemaName="testSchema2" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="deprecatedSchema" version="01.00.00" alias="deprecated"/>
+            <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+            <ECSchemaReference name="CoreCustomAttributes" version="01.00.02" alias="CoreCA"/>
+            <ECEntityClass typeName="EntityClass" description="description here for silencing validator warning">
+                <BaseClass>deprecated:DeprecatedEntityClass</BaseClass>
+                <ECProperty propertyName="stringProps" typeName="string" description="description here for silencing validator warning"/>
+            </ECEntityClass>
+
+            <ECEntityClass typeName="MixinClass" description="description here for silencing validator warning">
+                <ECCustomAttributes>
+                    <IsMixin xmlns="CoreCustomAttributes.01.00.02">
+                        <AppliesToEntityClass>bis:Element</AppliesToEntityClass>
+                    </IsMixin>
+                </ECCustomAttributes>
+                <BaseClass>deprecated:DeprecatedMixinClass</BaseClass>
+            </ECEntityClass>
+
+            <ECEntityClass typeName='A' modifier='abstract' description="description here for silencing validator warning">
+                <BaseClass>bis:Element</BaseClass>
+            </ECEntityClass>
+            <ECEntityClass typeName='B' modifier='abstract' description="description here for silencing validator warning">
+                <BaseClass>bis:Element</BaseClass>
+            </ECEntityClass>
+            <ECEntityClass typeName='A1' modifier='abstract' description="description here for silencing validator warning">
+                <BaseClass>A</BaseClass>
+            </ECEntityClass>
+            <ECEntityClass typeName='A2' modifier='abstract' description="description here for silencing validator warning">
+                <BaseClass>A</BaseClass>
+            </ECEntityClass>
+            <ECEntityClass typeName='B1' modifier='abstract' description="description here for silencing validator warning">
+                <BaseClass>B</BaseClass>
+            </ECEntityClass>
+            <ECEntityClass typeName='B2' modifier='abstract' description="description here for silencing validator warning">
+                <BaseClass>B</BaseClass>
+            </ECEntityClass>
+            <ECRelationshipClass typeName='BRelD' modifier='sealed' description="description here for silencing validator warning">
+                <BaseClass>ARelB</BaseClass>
+                <Source multiplicity='(1..1)' polymorphic='true' roleLabel='testSource'  abstractConstraint='A'>
+                    <Class class='A1'/>
+                    <Class class='A2'/>
+                </Source>
+                <Target multiplicity='(0..*)' polymorphic='true' roleLabel='testTarget' abstractConstraint='B'>
+                    <Class class='B1'/>
+                    <Class class='B2'/>
+                </Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName='ARelB' modifier='abstract' description="description here for silencing validator warning">
+                <ECCustomAttributes>
+                    <Deprecated xmlns="CoreCustomAttributes.01.00.02"/>
+                </ECCustomAttributes>
+                <Source multiplicity='(1..1)' polymorphic='true' roleLabel='testSource' abstractConstraint='A'>
+                    <Class class='A1'/>
+                    <Class class='A2'/>
+                </Source>
+                <Target multiplicity='(0..*)' polymorphic='true' roleLabel='testTarget' abstractConstraint='B'>
+                    <Class class='B1'/>
+                    <Class class='B2'/>
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml";
+    ECSchemaPtr goodSchema;
+    ECSchema::ReadFromXmlString(goodSchema, schemaXml, *context);
+    EXPECT_TRUE(goodSchema.IsValid());
+    EXPECT_TRUE(validator.Validate(*goodSchema)) << "There should be warning about using deprecated base class for Entity, Mixin, and Relationship class.";
+    }
+    {
+    Utf8CP deprecatedSchemaXmlLayer1 = R"xml(
+        <ECSchema schemaName="deprecatedSchema" alias="deprecated" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+            <ECSchemaReference name="CoreCustomAttributes" version="01.00.02" alias="CoreCA"/>
+            <ECEntityClass typeName="DeprecatedEntityClass" description="description here for silencing validator warning">
+                <ECCustomAttributes>
+                    <Deprecated xmlns="CoreCustomAttributes.01.00.02"/>
+                </ECCustomAttributes>
+                <BaseClass>bis:Element</BaseClass>
+                <ECProperty propertyName="intProps" 
+                            typeName="int"
+                            description="description here for silencing validator warning"/>
+            </ECEntityClass>
+        </ECSchema>)xml";
+    InitBisContextWithSchemaXml(deprecatedSchemaXmlLayer1);
+    EXPECT_TRUE(schema.IsValid());
+
+    Utf8CP schemaXmlLayer2 = R"xml(
+        <ECSchema schemaName="testSchemaLayer2" version="01.00.00" alias="tsLayer2" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="deprecatedSchema" version="01.00.00" alias="deprecated"/>
+            <ECEntityClass typeName="Layer2EntityClass" description="description here for silencing validator warning">
+                <BaseClass>deprecated:DeprecatedEntityClass</BaseClass>
+            </ECEntityClass>
+        </ECSchema>)xml";
+    ECSchemaPtr goodSchemaLayer2;
+    ECSchema::ReadFromXmlString(goodSchemaLayer2, schemaXmlLayer2, *context);
+    EXPECT_TRUE(goodSchemaLayer2.IsValid());
+
+    Utf8CP schemaXmlLayer3 = R"xml(
+        <ECSchema schemaName="testSchemaLayer3" version="01.00.00" alias="tsLayer3" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="testSchemaLayer2" version="01.00.00" alias="tsLayer2"/>
+            <ECEntityClass typeName="Layer3EntityClass" description="description here for silencing validator warning">
+                <BaseClass>tsLayer2:Layer2EntityClass</BaseClass>
+            </ECEntityClass>
+        </ECSchema>)xml";
+    ECSchemaPtr goodSchemaLayer3;
+    ECSchema::ReadFromXmlString(goodSchemaLayer3, schemaXmlLayer3, *context);
+    EXPECT_TRUE(goodSchemaLayer3.IsValid());
+    EXPECT_TRUE(validator.Validate(*goodSchemaLayer3)) << "There should be warning about using deprecated base class in layer3 since the validation does check it recursively.";
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bao.Tran                         06/2019
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaValidatorTests, PropertyDeprecatedWarning)
+    {
+    {
+    Utf8CP schemaXml = R"xml(
+        <ECSchema schemaName="testSchema1" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+            <ECSchemaReference name="CoreCustomAttributes" version="01.00.02" alias="CoreCA"/>
+            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+            <ECStructClass typeName="DeprecatedTestStruct" description="description here for silencing validator warning">
+                <ECCustomAttributes>
+                    <Deprecated xmlns="CoreCustomAttributes.01.00.02"/>
+                </ECCustomAttributes>
+                <ECProperty propertyName="prop" 
+                            typeName="int" 
+                            description="description here for silencing validator warning">
+                    <ECCustomAttributes>
+                        <Deprecated xmlns="CoreCustomAttributes.01.00.02"/>
+                    </ECCustomAttributes>
+                </ECProperty>
+            </ECStructClass>
+        </ECSchema>)xml";
+    InitBisContextWithSchemaXml(schemaXml);
+    EXPECT_TRUE(schema.IsValid());
+    EXPECT_TRUE(validator.Validate(*schema)) << "There should be no warning about deprecated property because the struct class is deprecated.";
+    }
+    {
+    Utf8CP schemaXml = R"xml(
+        <ECSchema schemaName="testSchema2" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+            <ECSchemaReference name="CoreCustomAttributes" version="01.00.02" alias="CoreCA"/>
+            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+            <ECStructClass typeName="TestStruct" description="description here for silencing validator warning">
+                <ECProperty propertyName="prop" 
+                            typeName="int" 
+                            description="description here for silencing validator warning">
+                    <ECCustomAttributes>
+                        <Deprecated xmlns="CoreCustomAttributes.01.00.02"/>
+                    </ECCustomAttributes>
+                </ECProperty>
+            </ECStructClass>
+        </ECSchema>)xml";
+    InitBisContextWithSchemaXml(schemaXml);
+    EXPECT_TRUE(schema.IsValid());
+    EXPECT_TRUE(validator.Validate(*schema)) << "There should be warning about deprecated property.";
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bao.Tran                         06/2019
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaValidatorTests, PropertyBeingDeprecatedStruct)
+    {
+    {
+    Utf8CP schemaXml = R"xml(
+        <ECSchema schemaName="testSchema1" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+            <ECSchemaReference name="CoreCustomAttributes" version="01.00.02" alias="CoreCA"/>
+            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+            <ECStructClass typeName="DeprecatedStruct" description="description here for silencing validator warning">
+                <ECCustomAttributes>
+                    <Deprecated xmlns="CoreCustomAttributes.01.00.02"/>
+                </ECCustomAttributes>
+                <ECProperty propertyName="depProps" 
+                            typeName="int" 
+                            description="description here for silencing validator warning"/>
+            </ECStructClass>
+            <ECEntityClass typeName="DeprecatedEntityClass" description="description here for silencing validator warning">
+                <BaseClass>bis:Element</BaseClass>
+                <ECCustomAttributes>
+                    <Deprecated xmlns="CoreCustomAttributes.01.00.02"/>
+                </ECCustomAttributes>
+                <ECStructProperty propertyName="deprecatedStructProps" 
+                                  typeName="DeprecatedStruct" 
+                                  description="description here for silencing validator warning"/>
+            </ECEntityClass>
+        </ECSchema>)xml";
+    InitBisContextWithSchemaXml(schemaXml);
+    EXPECT_TRUE(schema.IsValid());
+    EXPECT_TRUE(validator.Validate(*schema)) << "There should be no warning about property being of a struct class that is deprecated because the entity class is deprecated.";
+    }
+    {
+    Utf8CP schemaXml = R"xml(
+    <ECSchema schemaName="testSchema2" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+        <ECSchemaReference name="CoreCustomAttributes" version="01.00.02" alias="CoreCA"/>
+        <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+        <ECStructClass typeName="DeprecatedStruct" description="description here for silencing validator warning">
+            <ECCustomAttributes>
+                <Deprecated xmlns="CoreCustomAttributes.01.00.02"/>
+            </ECCustomAttributes>
+            <ECProperty propertyName="depProps" 
+                        typeName="int" 
+                        description="description here for silencing validator warning"/>
+        </ECStructClass>
+        <ECEntityClass typeName="DeprecatedEntityClass" description="description here for silencing validator warning">
+            <BaseClass>bis:Element</BaseClass>
+            <ECStructProperty propertyName="deprecatedStructProps" 
+                              typeName="DeprecatedStruct" 
+                              description="description here for silencing validator warning">
+                <ECCustomAttributes>
+                    <Deprecated xmlns="CoreCustomAttributes.01.00.02"/>
+                </ECCustomAttributes>
+            </ECStructProperty>
+        </ECEntityClass>
+    </ECSchema>)xml";
+    InitBisContextWithSchemaXml(schemaXml);
+    EXPECT_TRUE(schema.IsValid());
+    EXPECT_TRUE(validator.Validate(*schema)) << "There is warning about DeprecatedEntityClass using deprecated property."
+                                             << "There should be no warning about using property being of a deprecated struct class because the property is deprecated.";
+    }
+    {
+    Utf8CP schemaXml = R"xml(
+        <ECSchema schemaName="testSchema3" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+            <ECSchemaReference name="CoreCustomAttributes" version="01.00.02" alias="CoreCA"/>
+            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+            <ECStructClass typeName="DeprecatedStruct" description="description here for silencing validator warning">
+                <ECCustomAttributes>
+                    <Deprecated xmlns="CoreCustomAttributes.01.00.02"/>
+                </ECCustomAttributes>
+                <ECProperty propertyName="depProps" 
+                            typeName="int" 
+                            description="description here for silencing validator warning"/>
+            </ECStructClass>
+            <ECEntityClass typeName="EntityClass" description="description here for silencing validator warning">
+                <BaseClass>bis:Element</BaseClass>
+                <ECStructProperty propertyName="deprecatedStructProps" 
+                                  typeName="DeprecatedStruct" 
+                                  description="description here for silencing validator warning"/>
+                <ECStructArrayProperty propertyName="deprecatedStructArrayProps" 
+                                       typeName="DeprecatedStruct" 
+                                       minOccurs="0" 
+                                       maxOccurs="unbounded" 
+                                       description="description here for silencing validator warning"/>
+            </ECEntityClass>
+        </ECSchema>)xml";
+    InitBisContextWithSchemaXml(schemaXml);
+    EXPECT_TRUE(schema.IsValid());
+    EXPECT_TRUE(validator.Validate(*schema)) << "There should be warning about property being of a struct class that is deprecated";
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bao.Tran                         08/2019
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaValidatorTests, ClassShouldNotUseDeprecatedCustomAttributes)
+    {
+    {
+    Utf8CP schemaXml = R"xml(
+        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+            <ECSchemaReference name="CoreCustomAttributes" version="01.00.02" alias="CoreCA"/>
+            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+            <ECCustomAttributeClass typeName="DeprecatedEntityCA" appliesTo="EntityClass" modifier="Sealed" description="description here for silencing validator warning">
+                <ECCustomAttributes>
+                    <Deprecated xmlns="CoreCustomAttributes.01.00.02"/>
+                </ECCustomAttributes>
+            </ECCustomAttributeClass>
+            <ECCustomAttributeClass typeName="DeprecatedStructCA" appliesTo="StructClass" modifier="Sealed" description="description here for silencing validator warning">
+                <ECCustomAttributes>
+                    <Deprecated xmlns="CoreCustomAttributes.01.00.02"/>
+                </ECCustomAttributes>
+            </ECCustomAttributeClass>
+            <ECEntityClass typeName="testEntity" description="description here for silencing validator warning">
+                <BaseClass>bis:Element</BaseClass>
+                <ECCustomAttributes>
+                    <DeprecatedEntityCA xmlns="testSchema.01.00.00"/>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECStructClass typeName="DeprecatedStruct" description="description here for silencing validator warning">
+                <ECCustomAttributes>
+                    <DeprecatedStructCA xmlns="testSchema.01.00.00"/>
+                </ECCustomAttributes>
+                <ECProperty propertyName="depProps" 
+                            typeName="int" 
+                            description="description here for silencing validator warning"/>
+            </ECStructClass>
+        </ECSchema>
+        )xml";
+    InitBisContextWithSchemaXml(schemaXml);
+    EXPECT_TRUE(schema.IsValid());
+    EXPECT_TRUE(validator.Validate(*schema)) << "There should be warning about entity class and struct class using deprecated CA";
+    }
+    {
+    Utf8CP schemaXml = R"xml(
+        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+            <ECSchemaReference name="CoreCustomAttributes" version="01.00.02" alias="CoreCA"/>
+            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+            <ECCustomAttributeClass typeName="DeprecatedEntityCA" appliesTo="EntityClass" modifier="Sealed" description="description here for silencing validator warning">
+                <ECCustomAttributes>
+                    <Deprecated xmlns="CoreCustomAttributes.01.00.02"/>
+                </ECCustomAttributes>
+            </ECCustomAttributeClass>
+            <ECCustomAttributeClass typeName="DeprecatedStructCA" appliesTo="StructClass" modifier="Sealed" description="description here for silencing validator warning">
+                <ECCustomAttributes>
+                    <Deprecated xmlns="CoreCustomAttributes.01.00.02"/>
+                </ECCustomAttributes>
+            </ECCustomAttributeClass>
+            <ECEntityClass typeName="testEntity" description="description here for silencing validator warning">
+                <BaseClass>bis:Element</BaseClass>
+                <ECCustomAttributes>
+                    <Deprecated xmlns="CoreCustomAttributes.01.00.02"/>
+                </ECCustomAttributes>
+                <ECCustomAttributes>
+                    <DeprecatedEntityCA xmlns="testSchema.01.00.00"/>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECStructClass typeName="DeprecatedStruct" description="description here for silencing validator warning">
+                <ECCustomAttributes>
+                    <Deprecated xmlns="CoreCustomAttributes.01.00.02"/>
+                </ECCustomAttributes>
+                <ECCustomAttributes>
+                    <DeprecatedStructCA xmlns="testSchema.01.00.00"/>
+                </ECCustomAttributes>
+                <ECProperty propertyName="depProps" 
+                            typeName="int" 
+                            description="description here for silencing validator warning"/>
+            </ECStructClass>
+        </ECSchema>
+        )xml";
+    InitBisContextWithSchemaXml(schemaXml);
+    EXPECT_TRUE(schema.IsValid());
+    EXPECT_TRUE(validator.Validate(*schema)) << "There should be no warning about entity class and struct class using deprecated CA";
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bao.Tran                         08/2019
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaValidatorTests, EntityClassShouldNotDeriveFromDeprecatedMixinClass)
+    {
+    {
+    Utf8CP schemaXml = R"xml(
+        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+            <ECSchemaReference name="CoreCustomAttributes" version="01.00.02" alias="CoreCA"/>
+            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+            <ECEntityClass typeName="DeprecatedMixinFirst" description="description here for silencing validator warning">
+                <ECCustomAttributes>
+                    <IsMixin xmlns="CoreCustomAttributes.01.00.02">
+                        <AppliesToEntityClass>bis:Element</AppliesToEntityClass>
+                    </IsMixin>
+                </ECCustomAttributes>
+                <ECCustomAttributes>
+                    <Deprecated xmlns="CoreCustomAttributes.01.00.02"/>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="DeprecatedMixinSecond" description="description here for silencing validator warning">
+                <ECCustomAttributes>
+                    <IsMixin xmlns="CoreCustomAttributes.01.00.02">
+                        <AppliesToEntityClass>bis:Element</AppliesToEntityClass>
+                    </IsMixin>
+                </ECCustomAttributes>
+                <ECCustomAttributes>
+                    <Deprecated xmlns="CoreCustomAttributes.01.00.02"/>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="EntityClass" description="description here for silencing validator warning">
+                <BaseClass>bis:Element</BaseClass>
+                <BaseClass>DeprecatedMixinFirst</BaseClass>
+                <BaseClass>DeprecatedMixinSecond</BaseClass>
+            </ECEntityClass>
+        </ECSchema>
+        )xml";
+    InitBisContextWithSchemaXml(schemaXml);
+    EXPECT_TRUE(schema.IsValid());
+    EXPECT_TRUE(validator.Validate(*schema)) << "There should be warning about entity class derives from 2 deprecated mixin classes";
+    }
+    {
+    Utf8CP schemaXml = R"xml(
+        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+            <ECSchemaReference name="CoreCustomAttributes" version="01.00.02" alias="CoreCA"/>
+            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+            <ECEntityClass typeName="DeprecatedMixinFirst" description="description here for silencing validator warning">
+                <ECCustomAttributes>
+                    <IsMixin xmlns="CoreCustomAttributes.01.00.02">
+                        <AppliesToEntityClass>bis:Element</AppliesToEntityClass>
+                    </IsMixin>
+                </ECCustomAttributes>
+                <ECCustomAttributes>
+                    <Deprecated xmlns="CoreCustomAttributes.01.00.02"/>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="DeprecatedMixinSecond" description="description here for silencing validator warning">
+                <ECCustomAttributes>
+                    <IsMixin xmlns="CoreCustomAttributes.01.00.02">
+                        <AppliesToEntityClass>bis:Element</AppliesToEntityClass>
+                    </IsMixin>
+                </ECCustomAttributes>
+                <ECCustomAttributes>
+                    <Deprecated xmlns="CoreCustomAttributes.01.00.02"/>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="EntityClass" description="description here for silencing validator warning">
+                <ECCustomAttributes>
+                    <Deprecated xmlns="CoreCustomAttributes.01.00.02"/>
+                </ECCustomAttributes>
+                <BaseClass>bis:Element</BaseClass>
+                <BaseClass>DeprecatedMixinFirst</BaseClass>
+                <BaseClass>DeprecatedMixinSecond</BaseClass>
+            </ECEntityClass>
+        </ECSchema>
+        )xml";
+    InitBisContextWithSchemaXml(schemaXml);
+    EXPECT_TRUE(schema.IsValid());
+    EXPECT_TRUE(validator.Validate(*schema)) << "There should be no warning about deprecated entity class derives from 2 deprecated mixin classes";
+    }
+    {
+    Utf8CP schemaXml = R"xml(
+        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+            <ECSchemaReference name="CoreCustomAttributes" version="01.00.02" alias="CoreCA"/>
+            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+            <ECEntityClass typeName="DeprecatedMixinFirst" description="description here for silencing validator warning">
+                <ECCustomAttributes>
+                    <IsMixin xmlns="CoreCustomAttributes.01.00.02">
+                        <AppliesToEntityClass>bis:Element</AppliesToEntityClass>
+                    </IsMixin>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="DeprecatedMixinSecond" description="description here for silencing validator warning">
+                <ECCustomAttributes>
+                    <IsMixin xmlns="CoreCustomAttributes.01.00.02">
+                        <AppliesToEntityClass>bis:Element</AppliesToEntityClass>
+                    </IsMixin>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="EntityClass" description="description here for silencing validator warning">
+                <BaseClass>bis:Element</BaseClass>
+                <BaseClass>DeprecatedMixinFirst</BaseClass>
+                <BaseClass>DeprecatedMixinSecond</BaseClass>
+            </ECEntityClass>
+        </ECSchema>
+        )xml";
+    InitBisContextWithSchemaXml(schemaXml);
+    EXPECT_TRUE(schema.IsValid());
+    EXPECT_TRUE(validator.Validate(*schema)) << "There should be no warning about entity class derives from 2 deprecated mixin classes";
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bao.Tran                         06/2019
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaValidatorTests, RelationshipClassHasDeprecatedConstraint)
+    {
+    {
+    Utf8CP schemaXml = R"xml(
+        <ECSchema schemaName="testSchema1" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+            <ECSchemaReference name="CoreCustomAttributes" version="01.00.02" alias="CoreCA"/>
+
+            <ECEntityClass typeName='A' modifier='abstract' description="description here for silencing validator warning">
+                <BaseClass>bis:Element</BaseClass>
+            </ECEntityClass>
+            <ECEntityClass typeName='B' modifier='abstract' description="description here for silencing validator warning">
+                <BaseClass>bis:Element</BaseClass>
+            </ECEntityClass>
+            <ECEntityClass typeName='A1' modifier='abstract' description="description here for silencing validator warning">
+                <BaseClass>A</BaseClass>
+            </ECEntityClass>
+            <ECEntityClass typeName='A2' modifier='abstract' description="description here for silencing validator warning">
+                <BaseClass>A</BaseClass>
+            </ECEntityClass>
+            <ECEntityClass typeName='B1' modifier='abstract' description="description here for silencing validator warning">
+                <BaseClass>B</BaseClass>
+            </ECEntityClass>
+            <ECEntityClass typeName='B2' modifier='abstract' description="description here for silencing validator warning">
+                <BaseClass>B</BaseClass>
+            </ECEntityClass>
+
+            <ECRelationshipClass typeName='ArelB' modifier='sealed' description="description here for silencing validator warning">
+                <Source multiplicity='(1..1)' polymorphic='true' roleLabel='testSource'  abstractConstraint='A'>
+                    <ECCustomAttributes>
+                        <Deprecated xmlns="CoreCustomAttributes.01.00.02"/>
+                    </ECCustomAttributes>
+                    <Class class='A1'/>
+                    <Class class='A2'/>
+                </Source>
+                <Target multiplicity='(0..*)' polymorphic='true' roleLabel='testTarget' abstractConstraint='B'>
+                    <ECCustomAttributes>
+                        <Deprecated xmlns="CoreCustomAttributes.01.00.02"/>
+                    </ECCustomAttributes>
+                    <Class class='B1'/>
+                    <Class class='B2'/>
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml";
+    InitBisContextWithSchemaXml(schemaXml);
+    EXPECT_TRUE(schema.IsValid());
+    EXPECT_TRUE(validator.Validate(*schema)) << "There should be no warning about target and source constraints being deprecated because relationship class is already deprecated";
+    }
+    {
+    Utf8CP schemaXml = R"xml(
+        <ECSchema schemaName="testSchema2" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+            <ECSchemaReference name="CoreCustomAttributes" version="01.00.02" alias="CoreCA"/>
+
+            <ECEntityClass typeName='BaseA' modifier='abstract' description="description here for silencing validator warning">
+                <BaseClass>bis:Element</BaseClass>
+                <ECCustomAttributes>
+                    <Deprecated xmlns="CoreCustomAttributes.01.00.02"/>
+                </ECCustomAttributes>
+            </ECEntityClass>
+
+            <ECEntityClass typeName='A' modifier='abstract' description="description here for silencing validator warning">
+                <BaseClass>BaseA</BaseClass>
+                <ECCustomAttributes>
+                    <Deprecated xmlns="CoreCustomAttributes.01.00.02"/>
+                </ECCustomAttributes>
+            </ECEntityClass>
+
+            <ECEntityClass typeName='B' modifier='abstract' description="description here for silencing validator warning">
+                <ECCustomAttributes>
+                    <Deprecated xmlns="CoreCustomAttributes.01.00.02"/>
+                </ECCustomAttributes>
+                <BaseClass>bis:Element</BaseClass>
+            </ECEntityClass>
+
+            <ECEntityClass typeName='A1' modifier='abstract' description="description here for silencing validator warning">
+                <ECCustomAttributes>
+                    <Deprecated xmlns="CoreCustomAttributes.01.00.02"/>
+                </ECCustomAttributes>
+                <BaseClass>A</BaseClass>
+            </ECEntityClass>
+
+            <ECEntityClass typeName='A2' modifier='abstract' description="description here for silencing validator warning">
+                <BaseClass>A</BaseClass>
+            </ECEntityClass>
+
+            <ECEntityClass typeName='B1' modifier='abstract' description="description here for silencing validator warning">
+                <BaseClass>B</BaseClass>
+            </ECEntityClass>
+
+            <ECEntityClass typeName='B2' modifier='abstract' description="description here for silencing validator warning">
+                <BaseClass>B1</BaseClass>
+            </ECEntityClass>
+
+            <ECEntityClass typeName='B3' modifier='abstract' description="description here for silencing validator warning">
+                <BaseClass>B1</BaseClass>
+            </ECEntityClass>
+
+            <ECRelationshipClass typeName='ArelB' modifier='sealed' description="description here for silencing validator warning">
+                <Source multiplicity='(1..1)' polymorphic='true' roleLabel='testSource'  abstractConstraint='A'>
+                    <Class class='A1'/>
+                    <Class class='A2'/>
+                </Source>
+                <Target multiplicity='(0..*)' polymorphic='true' roleLabel='testTarget' abstractConstraint='B1'>
+                    <Class class='B2'/>
+                    <Class class='B3'/>
+                </Target>
+            </ECRelationshipClass>
+
+        </ECSchema>)xml";
+    InitBisContextWithSchemaXml(schemaXml);
+    EXPECT_TRUE(schema.IsValid());
+    EXPECT_TRUE(validator.Validate(*schema)) << "There is a relationship warning about abstract constraint A deprecated. No warning issued for BaseA because A is already deprecated. "
+                                             << "There is a relationship warning about constraint class A1 deprecated. No warning issued for A1 derived from deprecated base. "
+                                             << "There is a relationship warning about constraint class A2 derived from deprecated base A. "
+                                             << "There is a relationship warning about abstract constraint B1 derived from deprecated base B. "
+                                             << "There is a relationship warning about abstract constraint B2 derived from deprecated base B1 (recursive check here). "
+                                             << "There is a relationship warning about abstract constraint B3 derived from deprecated base B1 (recursive check here). ";
+    }
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE
