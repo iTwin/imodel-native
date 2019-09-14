@@ -44,31 +44,18 @@ def isExe(path):
 #-------------------------------------------------------------------------------------------
 # bsimethod                                     Akash.Dharani    07/2017
 #-------------------------------------------------------------------------------------------
+
+
 def get_file_text(file_name, output_dir):
-    '''
-        file_name : name of the file
-        output_dir : path of file
-        return : text in the file
-        
-    '''
-
-    ls_file_splits = file_name.split('.')       #Spliting the name of file on the basis of '.'
-    splits_length = len(ls_file_splits)
-    issue_file = ""
-
-    for j in range(splits_length-1):            #Removing last part of file name
-        issue_file += ls_file_splits[j]
-        issue_file += '.'
-
-    issue_file += "ibim-issues"                 #Appending 'ibim-issues' in file name
-    issue_file_path = os.path.join(output_dir, issue_file)
-
-    file_text = None
-    if os.path.isfile(issue_file_path):
-        with open(issue_file_path, 'r') as issue_file_read:
-            file_text = str(issue_file_read.readlines())
-    return file_text
-
+    rootName = os.path.splitext(file_name)[0]
+    
+    for ext in ['.ibim-issues', '.bim-issues']:
+        issueFilePath = os.path.join(output_dir, rootName + ext)
+        if os.path.isfile(issueFilePath):
+            with open(issueFilePath, 'r') as issueFile:
+                return issueFile.read()
+    
+    return None
 
 #-------------------------------------------------------------------------------------------
 # bsimethod                                     Akash.Dharani    07/2017
@@ -85,14 +72,12 @@ def run_cmd(cmd, status_call):
 #-------------------------------------------------------------------------------------------
 def get_bim_size(file_name, output_dir):
     
-    pure_file_name = os.path.splitext(file_name)[0]
-    file_name = pure_file_name+".ibim"
-    file_path = os.path.join(output_dir, file_name)
     size = -1
-    print file_path
-    if os.path.isfile(file_path):
-        size = os.stat(file_path).st_size/1024.0/1024.0
-
+    pure_file_name = os.path.splitext(file_name)[0]
+    for ext in ['.ibim', '.bim']:
+        file_path = os.path.join(output_dir, pure_file_name + ext)
+        if os.path.isfile(file_path):
+            size = os.stat(file_path).st_size/1024.0/1024.0        
     return size
 
 #-------------------------------------------------------------------------------------------
