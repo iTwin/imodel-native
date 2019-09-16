@@ -68,9 +68,10 @@ private:
     Utf8CP m_input;   // the text to explore
     size_t m_start;   // the starting position in the input string
     size_t m_next;    // the offset to the character following the numeric sequence
-    int m_ival;
+    int64_t m_ival;
     double m_dval;
     ParsingSegmentType m_type;
+    FormatProblemDetail m_problem;
 
 public:
     NumberGrabber() : NumberGrabber(nullptr) {}
@@ -78,10 +79,13 @@ public:
     ParsingSegmentType GetType() const { return m_type; }
     size_t GetStartIndex() const { return m_start; }
     size_t GetNextIndex() const { return m_next; }
-    int GetInteger() const { return m_ival; }
+    int64_t GetInteger() const { return m_ival; }
     double GetReal() const { return m_dval; }
     bool IsEndOfLine() const { return (m_type == ParsingSegmentType::EndOfLine); }
     size_t GetLength() const { return (m_type == ParsingSegmentType::NotNumber)? 0 : m_next - m_start; }
+    bool HasProblem() const {return m_problem.IsProblem();}
+    FormatProblemCode GetProblemCode() {return m_problem.GetProblemCode();}
+    Utf8String GetProblemDescription() {return m_problem.GetProblemDescription();}
 
     //! Given an input string and a starting index, this Number Grabber will contain the resulting value.
     //! @param[in] input  The string to extract a value from.
@@ -103,7 +107,7 @@ private:
     Utf8String m_name;
     BEU::UnitCP m_unit;
     ParsingSegmentType m_type;
-    int m_ival;
+    int64_t m_ival;
     double m_dval;
 
     void Init(size_t start);

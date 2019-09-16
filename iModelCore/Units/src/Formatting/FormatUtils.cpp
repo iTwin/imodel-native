@@ -433,6 +433,7 @@ Utf8String FormatProblemDetail::GetProblemDescription() const
         case FormatProblemCode::UnknownStdFormatName: return "Unknown name of the standard format";
         case FormatProblemCode::UnknownUnitName: return "Unknown name of the unit";
         case FormatProblemCode::NotInitialized: return "Object not initialized";
+        case FormatProblemCode::TooManyDigits: return "Numeric format has too many digits. The maximum number of digits allowed in each of the integer part, decimal part, denominator part, and exponent part is 15 digits";
         case FormatProblemCode::CVS_InconsistentFactorSet: return "Inconsistent set of factors";
         case FormatProblemCode::CVS_InconsistentUnitSet: return "Inconsistent set of units";
         case FormatProblemCode::CVS_UncomparableUnits: return "Units are not comparable";

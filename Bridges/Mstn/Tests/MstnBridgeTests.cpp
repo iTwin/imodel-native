@@ -474,6 +474,7 @@ TEST_F(MstnBridgeTests, ConvertLinesUsingBridgeFwk)
         RunTheBridge(args);
         }
 
+    CleanupElementECExtensions();
     int prevCount = DbFileInfo(m_briefcaseName).GetElementCount();
     if (true)
         {
@@ -482,7 +483,7 @@ TEST_F(MstnBridgeTests, ConvertLinesUsingBridgeFwk)
         EXPECT_EQ(prevCount, DbFileInfo(m_briefcaseName).GetElementCount());
         }
 
-
+    CleanupElementECExtensions();
     AddLine(inputFile);
     if (true)
         {
@@ -491,12 +492,15 @@ TEST_F(MstnBridgeTests, ConvertLinesUsingBridgeFwk)
         EXPECT_EQ(1 + prevCount, DbFileInfo(m_briefcaseName).GetElementCount());
         }
 
+    CleanupElementECExtensions();
     if (true)
         {
         //Make sure a second run of the bridge does not add any elements.
         RunTheBridge(args);
         EXPECT_EQ(1 + prevCount, DbFileInfo(m_briefcaseName).GetElementCount());
         }
+    CleanupElementECExtensions();
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -557,6 +561,7 @@ TEST_F(MstnBridgeTests, TestSourceElementIdAspect)
     ASSERT_EQ(SUCCESS, info.GetiModelElementByDgnElementId(id, srcId));
 
     ASSERT_TRUE(id.IsValid());
+    CleanupElementECExtensions();
 
     }
 
@@ -719,7 +724,7 @@ TEST_F(MstnBridgeTests, ConvertAttachmentSingleBridge)
         ASSERT_EQ(8, modelCount);
         }
 
-   
+    CleanupElementECExtensions();
     AddAttachment(inputFile, refFile, 1, true);
     AddAttachment(inputFile, refFile, 1, true);
     if (true)
@@ -807,7 +812,7 @@ TEST_F(MstnBridgeTests, ConvertAttachmentSingleBridgeAlternateRegistry)
         ASSERT_EQ(8, modelCount);
         }
 
-   
+    CleanupElementECExtensions();
     AddAttachment(inputFile, refFile, 1, true);
     AddAttachment(inputFile, refFile, 1, true);
     if (true)
@@ -893,6 +898,8 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridge)
         RunTheBridge(margs);
         modelCount = DbFileInfo(m_briefcaseName).GetModelCount(); // MstnBridge will create some definition models for its own use, plus a PhysicalModel for the root input model
         }
+
+    CleanupElementECExtensions();
     if (true)
         {
         bvector<WString> rargs(args);
@@ -901,6 +908,7 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridge)
         modelCount = DbFileInfo(m_briefcaseName).GetModelCount(); // ABD bridge will create some definition models for its own use
         }
 
+    CleanupElementECExtensions();
     // Add an ABD-specific attachment (twice)
     AddAttachment(inputFile, refFile, 1, true);
     AddAttachment(inputFile, refFile, 1, true);
@@ -912,7 +920,7 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridge)
         RunTheBridge(margs);
         ASSERT_EQ(modelCount, DbFileInfo(m_briefcaseName).GetModelCount()) << "MstnBridge should not have converted or created any more models";
         }
-
+    CleanupElementECExtensions();
     if (true)
         {
         bvector<WString> rargs(args);
@@ -986,6 +994,7 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridgeSharedReference)
         b1BriefcaseName = m_briefcaseName;
         }
     
+    CleanupElementECExtensions();
     if (true)
         {
         BentleyApi::BeFileName testDir2;
@@ -1010,6 +1019,7 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridgeSharedReference)
         ASSERT_TRUE(!b1BriefcaseName.EqualsI(m_briefcaseName)) << "Different bridges should use different briefcases";
         }
     
+    CleanupElementECExtensions();
     if (true)
         {
         BentleyApi::BeFileName testDir3;
@@ -1033,6 +1043,7 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridgeSharedReference)
         ASSERT_EQ(1, provenanceCount2);
         }
 
+    CleanupElementECExtensions();
     if (true)
         {
         BentleyApi::BeFileName testDir4;
@@ -1450,6 +1461,7 @@ TEST_F(MstnBridgeTests, PushAfterEachFile)
         ASSERT_EQ(8, modelCount);
         }
    
+    CleanupElementECExtensions();
     // Add two attachments => two new models should be discovered.
     AddAttachment(masterFile, refFile1, 1, true);
     AddAttachment(masterFile, refFile2, 1, true);
@@ -1621,12 +1633,15 @@ TEST_F(MstnBridgeTests, DetectDeletionsInEmbeddedFiles)
         args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", master1.c_str()));
         RunTheBridge(args);
         
+        CleanupElementECExtensions();
         args.pop_back();
         args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", master2.c_str()));
         RunTheBridge(args);
+        CleanupElementECExtensions();
         
         args.push_back(WPrintfString(L"--fwk-all-docs-processed"));
         RunTheBridge(args);
+        CleanupElementECExtensions();
 
         modelCount = DbFileInfo(m_briefcaseName).GetPhysicalModelCount();
         ASSERT_EQ(3, modelCount);
@@ -1649,13 +1664,16 @@ TEST_F(MstnBridgeTests, DetectDeletionsInEmbeddedFiles)
 
         args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", master1.c_str()));
         RunTheBridge(args);
+        CleanupElementECExtensions();
         
         args.pop_back();
         args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", master2.c_str()));
         RunTheBridge(args);
+        CleanupElementECExtensions();
 
         args.push_back(WPrintfString(L"--fwk-all-docs-processed"));
         RunTheBridge(args);
+        CleanupElementECExtensions();
 
         ASSERT_EQ(modelCount, DbFileInfo(m_briefcaseName).GetPhysicalModelCount()) << "commonRef should still be in the iModel";
         }
@@ -1677,10 +1695,12 @@ TEST_F(MstnBridgeTests, DetectDeletionsInEmbeddedFiles)
 
         args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", master1.c_str()));
         RunTheBridge(args);
+        CleanupElementECExtensions();
         
         args.pop_back();
         args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", master2.c_str()));
         RunTheBridge(args);
+        CleanupElementECExtensions();
 
         args.push_back(WPrintfString(L"--fwk-all-docs-processed"));
         RunTheBridge(args);
@@ -1773,9 +1793,11 @@ TEST_F(MstnBridgeTests, DetectCommonReferencesUsingRecipes)
 
         args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", masterFileName.c_str()));
         RunTheBridge(args);
+        CleanupElementECExtensions();
         
         args.push_back(WPrintfString(L"--fwk-all-docs-processed"));
         RunTheBridge(args);
+        CleanupElementECExtensions();
 
         DbFileInfo bcInfo(m_briefcaseName);
         modelCount = bcInfo.GetPhysicalModelCount();
@@ -1800,9 +1822,11 @@ TEST_F(MstnBridgeTests, DetectCommonReferencesUsingRecipes)
 
         args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", masterFileName.c_str()));
         RunTheBridge(args);
+        CleanupElementECExtensions();
         
         args.push_back(WPrintfString(L"--fwk-all-docs-processed"));
         RunTheBridge(args);
+        CleanupElementECExtensions();
 
         // No change in model count is expected, as we still have the same two files in v1 as we did in v0
         DbFileInfo bcInfo(m_briefcaseName);

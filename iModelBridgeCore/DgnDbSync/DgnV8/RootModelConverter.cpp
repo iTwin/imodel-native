@@ -1663,6 +1663,7 @@ BentleyApi::BentleyStatus RootModelConverter::RecreateElementRefersToElementsInd
                         result = GetDgnDb().TryExecuteSql(index.second.c_str());
                         }
                     }
+
                 // If we didn't succeed, fatally end as we can't make schema changes at this point in the process
                 if (BE_SQLITE_OK != result)
                     {

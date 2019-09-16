@@ -658,6 +658,24 @@ struct ECValue
         //! @return SUCCESS or ERROR
         ECOBJECTS_EXPORT BentleyStatus  SetDateTimeTicks(int64_t ceTicks, DateTime::Info const& dateTimeMetadata = DateTime::Info());
 
+        //! Set the integer enumeration value.
+        //! If enumeration is strict, the ECValue will be set to enumeratorValue if the enumeratorValue exists in enumeration
+        //! If enumeration is not strict, the ECValue will be set to enumeratorValue regardless whether the enumeratorValue exists in enumeration or not
+        //! @note To perform strict check for enumeration, you will need to use ECValue::SetEnumeration. IECInstance::SetValue does not perform the strict check for enumeration 
+        //! @param[in] enumeration ECEnumeration use to perform strict check for enumeratorValue
+        //! @param[in] enumeratorValue int32_t the potential value the ECValue will be set to
+        //! @return SUCCESS or ERROR
+        ECOBJECTS_EXPORT BentleyStatus SetEnumeration(ECEnumerationCR enumeration, int32_t enumeratorValue);
+
+        //! Set the integer enumeration value.
+        //! If enumeration is strict, the ECValue will be set to enumeratorValue if the enumeratorValue exists in enumeration
+        //! If enumeration is not strict, the ECValue will be set to enumeratorValue regardless whether the enumeratorValue exists in enumeration or not
+        //! @note To perform strict check for enumeration, you will need to use ECValue::SetEnumeration. IECInstance::SetValue does not perform the strict check for enumeration 
+        //! @param[in] enumeration ECEnumeration use to perform strict check for enumeratorValue
+        //! @param[in] enumeratorValue Utf8CP the potential value the ECValue will be set to
+        //! @return SUCCESS or ERROR
+        ECOBJECTS_EXPORT BentleyStatus SetEnumeration(ECEnumerationCR enumeration, Utf8CP enumeratorValue);
+
 #ifndef DOCUMENTATION_GENERATOR
         BentleyStatus                   SetDateTimeMetadata(DateTime::Info const& caDateTimeMetadata);
         bool                            IsDateTimeMetadataSet() const;

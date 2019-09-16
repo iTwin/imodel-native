@@ -223,13 +223,14 @@ ICancellationTokenPtr ct
 ) const
     {
     BeFile file;
-    file.Open(filePath, BeFileAccess::Read);
-
+    BeFileStatus status;
     uint64_t fileSize;
-    if (BeFileStatus::Success != file.GetSize(fileSize))
+    if (BeFileStatus::Success != (status = file.Open(filePath, BeFileAccess::Read)) ||
+        BeFileStatus::Success != (status = file.GetSize(fileSize)))
         {
-        Http::Response response(HttpResponseContent::Create(HttpStringBody::Create("Invalid file.")), "", ConnectionStatus::None, HttpStatus::BadRequest);
-        return CreateCompletedAsyncTask<AzureResult>(AzureResult::Error(response));
+        file.Close();
+        LOG.errorv("AzureBlobStorageClient: Failed to get file size for upload (status %d), path: '%s'", status, filePath.GetNameUtf8().c_str());
+        return CreateCompletedAsyncTask<AzureResult>(AzureResult::Error({}));
         }
     file.Close();
 

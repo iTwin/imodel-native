@@ -1054,6 +1054,20 @@ void MstnBridgeTestsFixture::RunTheBridge(BentleyApi::bvector<BentleyApi::WStrin
     m_briefcaseName = fwk.GetBriefcaseName();
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+void MstnBridgeTestsFixture::CleanupElementECExtensions()
+    {
+    ScopedDgnv8Host testHost;
+    bool adoptHost = NULL == DgnV8Api::DgnPlatformLib::QueryHost();
+    if (adoptHost)
+        testHost.Init();
+
+    DgnV8Api::ElementECExtension::DropExtension(DgnV8Api::ACSHandler::GetInstance());
+    DgnV8Api::ElementECExtension::DropExtension(DgnV8Api::LineHandler::GetInstance());
+    }
+
 void ProcessRunner::DoSleep(size_t ms)
     {
     ::Sleep(ms);

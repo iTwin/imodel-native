@@ -905,6 +905,102 @@ TEST_F (PropertyTests, GetEnumeratorValueFromInstance)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Bao.Tran        04/19
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (PropertyTests, SetEnumerationThroughECValue)
+    {
+    // Arrange
+    CreateSchema();
+
+    auto const strictStringEnum = CreateEnumeration("StrictStringEnum", PRIMITIVETYPE_String, true, { "Strict1", "Strict2" });
+    auto const looseStringEnum = CreateEnumeration("LooseStringEnum", PRIMITIVETYPE_String, false, { "Loose3", "Loose4" });
+    
+    auto const strictIntegerEnum = CreateEnumeration("StrictIntegerEnum", PRIMITIVETYPE_Integer, true, { 1, 2 });
+    auto const looseIntegerEnum = CreateEnumeration("LooseIntegerEnum", PRIMITIVETYPE_Integer, false, { 3, 4 });
+
+    CreateEnumerationProperty("StrictStringEnum_ValidValue", strictStringEnum);
+    CreateEnumerationProperty("StrictStringEnum_InvalidValue", strictStringEnum);
+
+    CreateEnumerationProperty("LooseStringEnum_ValidValue", looseStringEnum);
+    CreateEnumerationProperty("LooseStringEnum_InvalidValue", looseStringEnum);
+
+    CreateEnumerationProperty("StrictIntegerEnum_ValidValue", strictIntegerEnum);
+    CreateEnumerationProperty("StrictIntegerEnum_InvalidValue", strictIntegerEnum);
+
+    CreateEnumerationProperty("LooseIntegerEnum_ValidValue", looseIntegerEnum);
+    CreateEnumerationProperty("LooseIntegerEnum_InvalidValue", looseIntegerEnum);
+
+    // set enum
+    CreateInstance();
+
+    ECValue strictStringValue;
+    EXPECT_EQ(BentleyStatus::SUCCESS, strictStringValue.SetEnumeration(*strictStringEnum, "Strict1"));
+    EXPECT_STREQ("Strict1", strictStringValue.GetUtf8CP());
+    m_instance->SetValue("StrictStringEnum_ValidValue", strictStringValue);
+
+    ECValue invalidStrictStringValue;
+    EXPECT_EQ(BentleyStatus::ERROR, invalidStrictStringValue.SetEnumeration(*strictStringEnum, "StrictInvalid"));
+    EXPECT_TRUE(invalidStrictStringValue.IsNull());
+    m_instance->SetValue("strictStringEnum_InvalidValue", invalidStrictStringValue);
+
+    ECValue looseStringValue;
+    EXPECT_EQ(BentleyStatus::SUCCESS, looseStringValue.SetEnumeration(*looseStringEnum, "Loose3"));
+    EXPECT_STREQ("Loose3", looseStringValue.GetUtf8CP());
+    m_instance->SetValue("LooseStringEnum_ValidValue", looseStringValue);
+
+    ECValue invalidLooseStringValue;
+    EXPECT_EQ(BentleyStatus::SUCCESS, invalidLooseStringValue.SetEnumeration(*looseStringEnum, "LooseInvalid"));
+    EXPECT_STREQ("LooseInvalid", invalidLooseStringValue.GetUtf8CP());
+    m_instance->SetValue("LooseStringEnum_InvalidValue", invalidLooseStringValue);
+
+    ECValue strictIntegerValue;
+    EXPECT_EQ(BentleyStatus::SUCCESS, strictIntegerValue.SetEnumeration(*strictIntegerEnum, 2));
+    EXPECT_EQ(2, strictIntegerValue.GetInteger());
+    m_instance->SetValue("StrictIntegerEnum_ValidValue", strictIntegerValue);
+
+    ECValue invalidStrictIntegerValue;
+    EXPECT_EQ(BentleyStatus::ERROR, invalidStrictIntegerValue.SetEnumeration(*strictIntegerEnum, 12));
+    EXPECT_TRUE(invalidStrictIntegerValue.IsNull());
+    m_instance->SetValue("StrictIntegerEnum_InvalidValue", invalidStrictIntegerValue);
+
+    ECValue looseIntegerValue;
+    EXPECT_EQ(BentleyStatus::SUCCESS, looseIntegerValue.SetEnumeration(*looseIntegerEnum, 4));
+    EXPECT_EQ(4, looseIntegerValue.GetInteger());
+    m_instance->SetValue("LooseIntegerEnum_ValidValue", looseIntegerValue);
+
+    ECValue invalidLooseIntegerValue;
+    EXPECT_EQ(BentleyStatus::SUCCESS, invalidLooseIntegerValue.SetEnumeration(*looseIntegerEnum, 34));
+    EXPECT_EQ(34, invalidLooseIntegerValue.GetInteger());
+    m_instance->SetValue("LooseIntegerEnum_InvalidValue", invalidLooseIntegerValue);
+
+    // assert property set
+    ECValue actualValue;
+    ASSERT_EQ(ECObjectsStatus::Success, m_instance->GetValue(actualValue, "StrictStringEnum_ValidValue"));
+    EXPECT_STREQ("Strict1", actualValue.GetUtf8CP()) << actualValue.GetUtf8CP();
+
+    ASSERT_EQ(ECObjectsStatus::Success, m_instance->GetValue(actualValue, "StrictStringEnum_InvalidValue"));
+    ASSERT_TRUE(actualValue.IsNull());
+
+    ASSERT_EQ(ECObjectsStatus::Success, m_instance->GetValue(actualValue, "LooseStringEnum_ValidValue"));
+    EXPECT_STREQ("Loose3", actualValue.GetUtf8CP());
+
+    ASSERT_EQ(ECObjectsStatus::Success, m_instance->GetValue(actualValue, "LooseStringEnum_InvalidValue"));
+    EXPECT_STREQ("LooseInvalid", actualValue.GetUtf8CP());
+
+    ASSERT_EQ(ECObjectsStatus::Success, m_instance->GetValue(actualValue, "StrictIntegerEnum_ValidValue"));
+    ASSERT_EQ(2, actualValue.GetInteger());
+
+    ASSERT_EQ(ECObjectsStatus::Success, m_instance->GetValue(actualValue, "StrictIntegerEnum_InvalidValue"));
+    ASSERT_TRUE(actualValue.IsNull());
+
+    ASSERT_EQ(ECObjectsStatus::Success, m_instance->GetValue(actualValue, "LooseIntegerEnum_ValidValue"));
+    ASSERT_EQ(4, actualValue.GetInteger());
+
+    ASSERT_EQ(ECObjectsStatus::Success, m_instance->GetValue(actualValue, "LooseIntegerEnum_InvalidValue"));
+    ASSERT_EQ(34, actualValue.GetInteger());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (StringEncodingTests, TestComparisons)

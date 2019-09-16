@@ -172,7 +172,7 @@ TEST_F(VersionsTests, CreateVersionAlreadyExists)
 TEST_F(VersionsTests, CreateVersionChangeSetDoesNotExist)
     {
     VersionsManagerCR versionManager = s_connection->GetVersionsManager();
-    VersionInfo version2 = VersionInfo(TestCodeName(), nullptr, "NotExistingChangeSet");
+    VersionInfo version2 = VersionInfo(TestCodeName(), nullptr, "0000000000000000000000000000000000000000");
     VersionInfoResult result = versionManager.CreateVersion(version2)->GetResult();
     ASSERT_FAILURE(result);
     EXPECT_EQ(Error::Id::ChangeSetDoesNotExist, result.GetError().GetId());

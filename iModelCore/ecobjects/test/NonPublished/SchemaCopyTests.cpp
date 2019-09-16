@@ -1720,6 +1720,299 @@ TEST_F(ClassCopyTest, RelationshipClassWithAbstractContraintWithoutCopyingType)
     EXPECT_TRUE(ECSchema::IsSchemaReferenced(*m_targetSchema, *m_sourceSchema));
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                               Bao.Tran              05/2019
+//---------------------------------------------------------------------------------------
+TEST_F(ClassCopyTest, CopyRelationshipClassWithConstraintClassesInRefSchema)
+    {
+    Utf8String referenceSchemaString = R"xml(
+                <ECSchema schemaName="referenceSchema" alias="rs" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                    <ECEntityClass typeName="House"/>
+                    <ECEntityClass typeName="Room" />
+                </ECSchema>)xml";
+
+    Utf8String schemaString = R"xml(
+                <ECSchema schemaName="testSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                    <ECSchemaReference name="referenceSchema" version="01.00.00" alias="rs"/>
+                    <ECRelationshipClass typeName="HouseHasRooms" strengthDirection="Forward" modifier="Abstract">
+                        <Source multiplicity="(0..1)" roleLabel="House" polymorphic="False">
+                            <Class class="rs:House"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" roleLabel="Room" polymorphic="False">
+                            <Class class="rs:Room"/>
+                        </Target>
+                    </ECRelationshipClass>
+                </ECSchema>)xml";
+
+    auto const schemaContext = ECSchemaReadContext::CreateContext();
+
+    ECSchemaPtr referenceSchema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(referenceSchema, referenceSchemaString.c_str(), *schemaContext));
+
+    ECSchemaPtr copySchemaFrom;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(copySchemaFrom, schemaString.c_str(), *schemaContext));
+
+    ECSchemaPtr copySchemaTo;
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(copySchemaTo, "copySchemaTo", "copySchemaTo", 1, 0, 0));
+
+    ECClassP ecclass = copySchemaFrom->GetClassP("HouseHasRooms");
+    ASSERT_NE(ecclass, nullptr);
+    ASSERT_TRUE(ecclass->IsRelationshipClass());
+
+    // copy relationship class should fail because copySchemaTo schema does not reference referenceSchema before copying
+    ECRelationshipClassP ecRel = ecclass->GetRelationshipClassP();
+    ECClassP ecCopiedClass;
+    ASSERT_NE(ECObjectsStatus::Success, copySchemaTo->CopyClass(ecCopiedClass, *ecRel, ecRel->GetName(), true));
+    ASSERT_EQ(ECObjectsStatus::Success, copySchemaTo->DeleteClass(*copySchemaTo->GetClassP(ecRel->GetName().c_str())));
+
+    // copy relationship class should success now because copySchemaTo schema now references referenceSchema before copying
+    copySchemaTo->AddReferencedSchema(*referenceSchema);
+    ASSERT_EQ(ECObjectsStatus::Success, copySchemaTo->CopyClass(ecCopiedClass, *ecRel, ecRel->GetName(), true));
+
+    // assert if relationship class is copied
+    ECRelationshipClassP ecCopiedRel = ecCopiedClass->GetRelationshipClassP();
+    ASSERT_NE(ecCopiedRel, nullptr);
+    ASSERT_EQ(ecCopiedRel->GetStrengthDirection(), ECRelatedInstanceDirection::Forward);
+    ASSERT_EQ(ecCopiedRel->GetStrength(), StrengthType::Referencing);
+    ASSERT_EQ(ecCopiedRel->GetClassModifier(), ECClassModifier::Abstract);
+
+    ASSERT_STREQ(ecCopiedRel->GetSource().GetRoleLabel().c_str(), "House");
+    ASSERT_FALSE(ecCopiedRel->GetSource().GetIsPolymorphic());
+    ASSERT_EQ(RelationshipMultiplicity::Compare(ecCopiedRel->GetSource().GetMultiplicity(), RelationshipMultiplicity::ZeroOne()), 0);
+    ASSERT_EQ(ecCopiedRel->GetSource().GetConstraintClasses().size(), 1);
+    ASSERT_EQ(ecCopiedRel->GetSource().GetConstraintClasses().at(0), referenceSchema->GetClassCP("House"));
+
+    ASSERT_STREQ(ecCopiedRel->GetTarget().GetRoleLabel().c_str(), "Room");
+    ASSERT_FALSE(ecCopiedRel->GetTarget().GetIsPolymorphic());
+    ASSERT_EQ(RelationshipMultiplicity::Compare(ecCopiedRel->GetTarget().GetMultiplicity(), RelationshipMultiplicity::ZeroMany()), 0);
+    ASSERT_EQ(ecCopiedRel->GetTarget().GetConstraintClasses().size(), 1);
+    ASSERT_EQ(ecCopiedRel->GetTarget().GetConstraintClasses().at(0), referenceSchema->GetClassCP("Room"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                               Bao.Tran              05/2019
+//---------------------------------------------------------------------------------------
+TEST_F(ClassCopyTest, CopyRelationshipClassWithConstraintClassesInRefSchemaAndOriginal)
+    {
+    Utf8String referenceSchemaString = R"xml(
+                <ECSchema schemaName="referenceSchema" alias="rs" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                    <ECEntityClass typeName="House" />
+                </ECSchema>)xml";
+
+    Utf8String schemaString = R"xml(
+                <ECSchema schemaName="testSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                    <ECSchemaReference name="referenceSchema" version="01.00.00" alias="rs"/>
+                    <ECRelationshipClass typeName="HouseHasRooms" strengthDirection="Forward" modifier="Abstract">
+                        <Source multiplicity="(0..1)" roleLabel="House" polymorphic="False">
+                            <Class class="rs:House"/>
+                        </Source>
+                        <Target multiplicity="(0..1)" roleLabel="Room" polymorphic="true">
+                            <Class class="Room"/>
+                        </Target>
+                    </ECRelationshipClass>
+                    <ECEntityClass typeName="Room" />
+                </ECSchema>)xml";
+
+    auto const schemaContext = ECSchemaReadContext::CreateContext();
+
+    ECSchemaPtr referenceSchema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(referenceSchema, referenceSchemaString.c_str(), *schemaContext));
+
+    ECSchemaPtr copySchemaFrom;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(copySchemaFrom, schemaString.c_str(), *schemaContext));
+
+    ECSchemaPtr copySchemaTo;
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(copySchemaTo, "copySchemaTo", "copySchemaTo", 1, 0, 0));
+
+    ECClassP ecclass = copySchemaFrom->GetClassP("HouseHasRooms");
+    ASSERT_NE(ecclass, nullptr);
+    ASSERT_TRUE(ecclass->IsRelationshipClass());
+
+    // copy relationship class should fail because destination schema does not refer to the schema at which the constraint classes are defined
+    ECRelationshipClassP ecRel = ecclass->GetRelationshipClassP();
+    ECClassP ecCopiedClass;
+    ASSERT_NE(ECObjectsStatus::Success, copySchemaTo->CopyClass(ecCopiedClass, *ecRel, ecRel->GetName(), false));
+    ASSERT_EQ(ECObjectsStatus::Success, copySchemaTo->DeleteClass(*copySchemaTo->GetClassP(ecRel->GetName().c_str())));
+
+    // copy relationship class should success because destination schema refer to the schema at which one of the constraint classes is defined
+    copySchemaTo->AddReferencedSchema(*referenceSchema);
+    ASSERT_EQ(ECObjectsStatus::Success, copySchemaTo->CopyClass(ecCopiedClass, *ecRel, ecRel->GetName(), false));
+
+    // assert if relationship class is copied
+    ECRelationshipClassP ecCopiedRel = ecCopiedClass->GetRelationshipClassP();
+    ASSERT_NE(ecCopiedRel, nullptr);
+    ASSERT_EQ(ecCopiedRel->GetStrengthDirection(), ECRelatedInstanceDirection::Forward);
+    ASSERT_EQ(ecCopiedRel->GetStrength(), StrengthType::Referencing);
+    ASSERT_EQ(ecCopiedRel->GetClassModifier(), ECClassModifier::Abstract);
+
+    ASSERT_STREQ(ecCopiedRel->GetSource().GetRoleLabel().c_str(), "House");
+    ASSERT_FALSE(ecCopiedRel->GetSource().GetIsPolymorphic());
+    ASSERT_EQ(RelationshipMultiplicity::Compare(ecCopiedRel->GetSource().GetMultiplicity(), RelationshipMultiplicity::ZeroOne()), 0);
+    ASSERT_EQ(ecCopiedRel->GetSource().GetConstraintClasses().size(), 1);
+    ASSERT_EQ(ecCopiedRel->GetSource().GetConstraintClasses().at(0), referenceSchema->GetClassCP("House"));
+
+    ASSERT_STREQ(ecCopiedRel->GetTarget().GetRoleLabel().c_str(), "Room");
+    ASSERT_TRUE(ecCopiedRel->GetTarget().GetIsPolymorphic());
+    ASSERT_EQ(RelationshipMultiplicity::Compare(ecCopiedRel->GetTarget().GetMultiplicity(), RelationshipMultiplicity::ZeroOne()), 0);
+    ASSERT_EQ(ecCopiedRel->GetTarget().GetConstraintClasses().size(), 1);
+    ASSERT_EQ(ecCopiedRel->GetTarget().GetConstraintClasses().at(0), copySchemaFrom->GetClassP("Room"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                               Bao.Tran              05/2019
+//---------------------------------------------------------------------------------------
+TEST_F(ClassCopyTest, CopyRelationshipClassWithAbstractConstraintInRefSchema)
+    {
+    Utf8String referenceSchemaString = R"xml(
+        <ECSchema schemaName="referenceSchema" alias="rs" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEntityClass typeName="BaseSource" />
+            <ECEntityClass typeName="BaseTarget" />
+            <ECEntityClass typeName="Source">
+                <BaseClass>BaseSource</BaseClass>
+            </ECEntityClass>
+            <ECEntityClass typeName="Target">
+                <BaseClass>BaseTarget</BaseClass>
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    Utf8String schemaString = R"xml(
+        <ECSchema schemaName="testSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="referenceSchema" version="01.00.00" alias="rs" />
+            <ECRelationshipClass typeName="RelClass" modifier="None" strength="referencing">
+                <Source multiplicity="(0..1)" polymorphic="true" roleLabel="Source" abstractConstraint="rs:BaseSource">
+                    <Class class="rs:Source" />
+                </Source>
+                <Target multiplicity="(0..1)" polymorphic="true" roleLabel="Target" abstractConstraint="rs:BaseTarget">
+                    <Class class="rs:Target" />
+                </Target>
+            </ECRelationshipClass>  
+        </ECSchema>)xml";
+
+    auto const schemaContext = ECSchemaReadContext::CreateContext();
+
+    ECSchemaPtr referenceSchema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(referenceSchema, referenceSchemaString.c_str(), *schemaContext));
+
+    ECSchemaPtr copySchemaFrom;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(copySchemaFrom, schemaString.c_str(), *schemaContext));
+
+    ECSchemaPtr copySchemaTo;
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(copySchemaTo, "copySchemaTo", "copySchemaTo", 1, 0, 0));
+
+    ECClassP ecclass = copySchemaFrom->GetClassP("RelClass");
+    ASSERT_NE(ecclass, nullptr);
+    ASSERT_TRUE(ecclass->IsRelationshipClass());
+
+    // copy relationship class will fail because copySchemaTo does not reference the referenceSchema in which abstractConstraints are in
+    ECRelationshipClassP ecRel = ecclass->GetRelationshipClassP();
+    ECClassP ecCopiedClass;
+    ASSERT_NE(ECObjectsStatus::Success, copySchemaTo->CopyClass(ecCopiedClass, *ecRel, ecclass->GetName(), true));
+    ASSERT_EQ(ECObjectsStatus::Success, copySchemaTo->DeleteClass(*copySchemaTo->GetClassP(ecRel->GetName().c_str())));
+
+    // copy relationship class will success now because copySchemaTo references the referenceSchema in which abstractConstraints are in
+    copySchemaTo->AddReferencedSchema(*referenceSchema);
+    ASSERT_EQ(ECObjectsStatus::Success, copySchemaTo->CopyClass(ecCopiedClass, *ecRel, ecRel->GetName(), false));
+
+    // assert the relationship class is copied
+    ECRelationshipClassP ecCopiedRel = ecCopiedClass->GetRelationshipClassP();
+    ASSERT_NE(ecCopiedRel, nullptr);
+    ASSERT_EQ(ecCopiedRel->GetStrengthDirection(), ECRelatedInstanceDirection::Forward);
+    ASSERT_EQ(ecCopiedRel->GetStrength(), StrengthType::Referencing);
+    ASSERT_EQ(ecCopiedRel->GetClassModifier(), ECClassModifier::None);
+
+    ASSERT_STREQ(ecCopiedRel->GetSource().GetRoleLabel().c_str(), "Source");
+    ASSERT_TRUE(ecCopiedRel->GetSource().GetIsPolymorphic());
+    ASSERT_EQ(RelationshipMultiplicity::Compare(ecCopiedRel->GetSource().GetMultiplicity(), RelationshipMultiplicity::ZeroOne()), 0);
+    ASSERT_EQ(ecCopiedRel->GetSource().GetAbstractConstraint(), referenceSchema->GetClassCP("BaseSource"));
+    ASSERT_EQ(ecCopiedRel->GetSource().GetConstraintClasses().size(), 1);
+    ASSERT_EQ(ecCopiedRel->GetSource().GetConstraintClasses().at(0), referenceSchema->GetClassCP("Source"));
+
+    ASSERT_STREQ(ecCopiedRel->GetTarget().GetRoleLabel().c_str(), "Target");
+    ASSERT_TRUE(ecCopiedRel->GetTarget().GetIsPolymorphic());
+    ASSERT_EQ(RelationshipMultiplicity::Compare(ecCopiedRel->GetTarget().GetMultiplicity(), RelationshipMultiplicity::ZeroOne()), 0);
+    ASSERT_EQ(ecCopiedRel->GetTarget().GetAbstractConstraint(), referenceSchema->GetClassCP("BaseTarget"));
+    ASSERT_EQ(ecCopiedRel->GetTarget().GetConstraintClasses().size(), 1);
+    ASSERT_EQ(ecCopiedRel->GetTarget().GetConstraintClasses().at(0), referenceSchema->GetClassCP("Target"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                               Bao.Tran              05/2019
+//---------------------------------------------------------------------------------------
+TEST_F(ClassCopyTest, CopyRelationshipClassWithAbstractConstraintInRefSchemaAndOriginal)
+    {
+    Utf8String referenceSchemaString = R"xml(
+        <ECSchema schemaName="referenceSchema" alias="rs" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEntityClass typeName="BaseSource" />
+            <ECEntityClass typeName="Source">
+                <BaseClass>BaseSource</BaseClass>
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    Utf8String schemaString = R"xml(
+        <ECSchema schemaName="testSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="referenceSchema" version="01.00.00" alias="rs" />
+            <ECRelationshipClass typeName="RelClass" modifier="None" strength="referencing">
+                <Source multiplicity="(0..1)" polymorphic="true" roleLabel="Source" abstractConstraint="rs:BaseSource">
+                    <Class class="rs:Source" />
+                </Source>
+                <Target multiplicity="(0..1)" polymorphic="true" roleLabel="Target" abstractConstraint="BaseTarget">
+                    <Class class="Target" />
+                </Target>
+            </ECRelationshipClass>  
+            <ECEntityClass typeName="BaseTarget" />
+            <ECEntityClass typeName="Target">
+                <BaseClass>BaseTarget</BaseClass>
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    auto const schemaContext = ECSchemaReadContext::CreateContext();
+
+    ECSchemaPtr referenceSchema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(referenceSchema, referenceSchemaString.c_str(), *schemaContext));
+
+    ECSchemaPtr copySchemaFrom;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(copySchemaFrom, schemaString.c_str(), *schemaContext));
+
+    ECSchemaPtr copySchemaTo;
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(copySchemaTo, "copySchemaTo", "copySchemaTo", 1, 0, 0));
+
+    ECClassP ecclass = copySchemaFrom->GetClassP("RelClass");
+    ASSERT_NE(ecclass, nullptr);
+    ASSERT_EQ(ecclass->IsRelationshipClass(), true);
+
+    // copy relationship class will fail because copySchemaTo does not reference the referenceSchema in which abstractConstraints are in
+    ECRelationshipClassP ecRel = ecclass->GetRelationshipClassP();
+    ECClassP ecCopiedClass;
+    ASSERT_NE(ECObjectsStatus::Success, copySchemaTo->CopyClass(ecCopiedClass, *ecRel, ecclass->GetName(), false));
+    ASSERT_EQ(ECObjectsStatus::Success, copySchemaTo->DeleteClass(*copySchemaTo->GetClassP(ecclass->GetName().c_str())));
+
+    // copy relationship class should success because copySchemaTo references the referenceSchema in which abstractConstraint and constraint classes are in
+    copySchemaTo->AddReferencedSchema(*referenceSchema);
+    ASSERT_EQ(ECObjectsStatus::Success, copySchemaTo->CopyClass(ecCopiedClass, *ecRel, ecclass->GetName(), false));
+
+    // assert the relationship class is copied
+    ECRelationshipClassP ecCopiedRel = ecCopiedClass->GetRelationshipClassP();
+    ASSERT_NE(ecCopiedRel, nullptr);
+    ASSERT_EQ(ecCopiedRel->GetStrengthDirection(), ECRelatedInstanceDirection::Forward);
+    ASSERT_EQ(ecCopiedRel->GetStrength(), StrengthType::Referencing);
+    ASSERT_EQ(ecCopiedRel->GetClassModifier(), ECClassModifier::None);
+
+    ASSERT_STREQ(ecCopiedRel->GetSource().GetRoleLabel().c_str(), "Source");
+    ASSERT_TRUE(ecCopiedRel->GetSource().GetIsPolymorphic());
+    ASSERT_EQ(RelationshipMultiplicity::Compare(ecCopiedRel->GetSource().GetMultiplicity(), RelationshipMultiplicity::ZeroOne()), 0);
+    ASSERT_EQ(ecCopiedRel->GetSource().GetAbstractConstraint(), referenceSchema->GetClassCP("BaseSource"));
+    ASSERT_EQ(ecCopiedRel->GetSource().GetConstraintClasses().size(), 1);
+    ASSERT_EQ(ecCopiedRel->GetSource().GetConstraintClasses().at(0), referenceSchema->GetClassCP("Source"));
+
+    ASSERT_STREQ(ecCopiedRel->GetTarget().GetRoleLabel().c_str(), "Target");
+    ASSERT_TRUE(ecCopiedRel->GetTarget().GetIsPolymorphic());
+    ASSERT_EQ(RelationshipMultiplicity::Compare(ecCopiedRel->GetTarget().GetMultiplicity(), RelationshipMultiplicity::ZeroOne()), 0);
+    ASSERT_EQ(ecCopiedRel->GetTarget().GetAbstractConstraint(), copySchemaFrom->GetClassCP("BaseTarget"));
+    ASSERT_EQ(ecCopiedRel->GetTarget().GetConstraintClasses().size(), 1);
+    ASSERT_EQ(ecCopiedRel->GetTarget().GetConstraintClasses().at(0), copySchemaFrom->GetClassCP("Target"));
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                             Gintaras.Volkvicius                   12/2018
 //---------------------------------------------------------------------------------------
