@@ -185,9 +185,13 @@ void AnnotationTextStyle::_CopyFrom(DgnElementCR src, CopyFromOptions const& opt
 //---------------------------------------------------------------------------------------
 void AnnotationTextStyle::_RemapIds(DgnImportContext& context)
     {
-    DgnFontId srcFontId = GetFontId();
-    DgnFontId dstFontId = context.RemapFont(srcFontId);
-    SetFontId(dstFontId);
+    T_Super::_RemapIds(context);
+    if (context.IsBetweenDbs())
+        {
+        DgnFontId srcFontId = GetFontId();
+        DgnFontId dstFontId = context.RemapFont(srcFontId);
+        SetFontId(dstFontId);
+        }
     }
 
 //---------------------------------------------------------------------------------------

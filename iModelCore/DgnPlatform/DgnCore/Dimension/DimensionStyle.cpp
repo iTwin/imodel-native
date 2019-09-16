@@ -55,13 +55,15 @@ void DimensionStyle::_CopyFrom(DgnElementCR rhsElement)
 //---------------------------------------------------------------------------------------
 void DimensionStyle::_RemapIds(DgnImportContext& context)
     {
-    DgnElementId srcTextStyleId = GetTextStyleId();
+    T_Super::_RemapIds(context);
 #if defined (NEEDSWORK)
-    DgnElementId dstTextStyleId = context.RemapTextStyleId(srcTextStyleId);
-#else
-    DgnElementId dstTextStyleId = srcTextStyleId;
+    if (context.IsBetweenDbs())
+        {
+        DgnElementId srcTextStyleId = GetTextStyleId();
+        DgnElementId dstTextStyleId = context.RemapTextStyleId(srcTextStyleId);
+        SetTextStyleId(dstTextStyleId);
+        }
 #endif
-    SetTextStyleId(dstTextStyleId);
     }
 
 //---------------------------------------------------------------------------------------
