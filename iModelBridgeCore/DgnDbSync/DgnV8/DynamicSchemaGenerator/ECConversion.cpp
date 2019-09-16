@@ -84,7 +84,22 @@ ECN::ECObjectsStatus ExtendTypeConverter::ReplaceWithKOQ(ECN::ECSchemaR schema, 
     ECN::KindOfQuantityP koq = schema.GetKindOfQuantityP(koqName.c_str());
     if (nullptr == koq)
         {
-        schema.CreateKindOfQuantity(koq, koqName.c_str());
+        ECN::ECObjectsStatus status = schema.CreateKindOfQuantity(koq, koqName.c_str());
+        if (ECN::ECObjectsStatus::NamedItemAlreadyExists == status)
+            {
+            koq = schema.GetKindOfQuantityP(koqName.append("_koq").c_str());
+            if (nullptr != koq)
+                {
+                prop->SetKindOfQuantity(koq);
+                prop->RemoveCustomAttribute("EditorCustomAttributes", EXTEND_TYPE);
+                prop->RemoveSupplementedCustomAttribute("EditorCustomAttributes", EXTEND_TYPE);
+                return ECN::ECObjectsStatus::Success;
+                }
+            status = schema.CreateKindOfQuantity(koq, koqName.c_str());
+            }
+
+        if (ECN::ECObjectsStatus::Success != status)
+            return status;
 
         if (!m_unitsStandardSchema.IsValid())
             {
