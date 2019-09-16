@@ -1,0 +1,34 @@
+#----------------------------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#----------------------------------------------------------------------------------------
+%include mdl.mki
+
+dirToSearch = $(SrcRoot)DgnPlatform/
+%include cincapnd.mki
+
+%ifndef TestDir
+    %error must define TestDir
+%endif
+
+baseDir = $(_MakeFilePath)
+
+BEGTEST_IGNORE= $(baseDir)ignore_list.txt
+
+# Compile and Link the unit tests
+BEGTEST_NAME  = $(TestDir)BuildingShared
+BEGTEST_INPUT = $(baseDir)$(TestDir)/
+
+
+BEGTEST_OUTPUT=$(OutputRootDir)build/BuildingShared/UnitTests/
+o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/
+
+# ignore: local variable is initialized but not referenced
+CCompOpts + -wd4189
+
+%include $(SrcRoot)bsicommon/sharedmki/DetectAndCompileUnitTests.mki
+
+# Deliver 
+$(BuildContext)Delivery/UnitTests/Objects/$(TestDir) : ${o}
+    $(LinkFirstDepToFirstTargetAsDirectory)
