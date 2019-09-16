@@ -15,25 +15,20 @@ USING_NAMESPACE_BENTLEY_HTTP
 * @bsimethod                                                    Vincas.Razma    04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 HttpResponseContent::HttpResponseContent(HttpBodyPtr responseBody) :
-m_body(responseBody)
-    {
-    BeAssert(!m_body.IsNull());
-    }
+m_body(responseBody.IsValid() ? responseBody : static_cast<HttpBodyPtr>(HttpStringBody::Create()))
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    09/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-Response::Response() :
-m_content(HttpResponseContent::Create(HttpStringBody::Create())),
-m_connectionStatus(ConnectionStatus::None),
-m_httpStatus(HttpStatus::None)
+Response::Response() : Response(nullptr, nullptr, ConnectionStatus::None, HttpStatus::None)
     {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 Response::Response(HttpResponseContentPtr responseContent, Utf8CP effectiveUrl, ConnectionStatus connectionStatus, HttpStatus httpStatus) :
-m_content(responseContent),
+m_content(responseContent.IsValid() ? responseContent : HttpResponseContent::Create()),
 m_effectiveUrl(effectiveUrl),
 m_connectionStatus(connectionStatus),
 m_httpStatus(httpStatus)
@@ -42,77 +37,64 @@ m_httpStatus(httpStatus)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    09/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-Response::Response(ConnectionStatus status) : m_connectionStatus(status)
+Response::Response(ConnectionStatus status) : Response(nullptr, nullptr, status, HttpStatus::None)
     {
     if (ConnectionStatus::OK != status)
         return;
 
     BeAssert(false && "Bad creation of HttpResponse: ConnectionStatus is ok, no other parameters given");
-    m_effectiveUrl = "";
-    m_httpStatus = HttpStatus::InternalServerError;
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    09/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-Response::Response(HttpStatus httpStatus, Utf8String effectiveUrl, HttpResponseContentPtr responseData)
-    :   m_content(responseData),
-        m_effectiveUrl(effectiveUrl),
-        m_connectionStatus(ConnectionStatus::OK),
-        m_httpStatus(httpStatus)
-    {
-    }
+Response::Response(HttpStatus httpStatus, Utf8StringCR effectiveUrl, HttpResponseContentPtr responseContent) :
+Response(responseContent, effectiveUrl.c_str(), ConnectionStatus::OK, httpStatus)
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    julius.cepukenas  12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-Response::Response(HttpStatus httpStatus, Utf8String effectiveUrl, Utf8String headers, Utf8String responseContent)
-    :
-    m_effectiveUrl(effectiveUrl),
-    m_connectionStatus(ConnectionStatus::OK),
-    m_httpStatus(httpStatus)
+Response::Response(HttpStatus httpStatus, Utf8StringCR effectiveUrl, Utf8StringCR headers, Utf8StringCR body) :
+Response(HttpResponseContent::Create(HttpStringBody::Create(body)), effectiveUrl.c_str(), ConnectionStatus::OK, httpStatus)
     {
-    auto content = HttpResponseContent::Create(HttpStringBody::Create(responseContent));
+    if (headers.empty())
+        return;
 
-    if (!headers.empty())
+    bvector<Utf8String> headerPairs;
+    BeStringUtilities::Split(headers.c_str(), "\n", headerPairs);
+    for (auto headerPair : headerPairs)
         {
-        bvector<Utf8String> headerPairs;
-        BeStringUtilities::Split(headers.c_str(), "\n", headerPairs);
-        for (auto headerPair : headerPairs)
+        bvector<Utf8String> header;
+        if (':' == headerPair[0])
+            continue;
+
+        BeStringUtilities::Split(headerPair.c_str(), ":", header);
+        if (0 == header.size() || "" == header[0])
+            continue;
+
+        if (1 == header.size())
             {
-            bvector<Utf8String> header;
-            if (':' == headerPair[0])
-                continue;
-
-            BeStringUtilities::Split(headerPair.c_str(), ":", header);
-            if (0 == header.size() || "" == header[0])
-                continue;
-
-            if (1 == header.size())
-                {
-                content->GetHeaders().SetValue(header[0], " ");
-                continue;
-                }
-
-            if (2 == header.size())
-                {
-                content->GetHeaders().SetValue(header[0], header[1]);
-                continue;
-                }
-
-            Utf8String value;
-            for (size_t i = 1; i < header.size(); ++i)
-                {
-                value += header[i];
-                if (header.size() - 1 != i)
-                    value += ":";
-                }
-
-            content->GetHeaders().SetValue(header[0], value);
+            m_content->GetHeaders().SetValue(header[0], " ");
+            continue;
             }
-        }
 
-    m_content = content;
+        if (2 == header.size())
+            {
+            m_content->GetHeaders().SetValue(header[0], header[1]);
+            continue;
+            }
+
+        Utf8String value;
+        for (size_t i = 1; i < header.size(); ++i)
+            {
+            value += header[i];
+            if (header.size() - 1 != i)
+                value += ":";
+            }
+
+        m_content->GetHeaders().SetValue(header[0], value);
+        }
     }
 
 /*--------------------------------------------------------------------------------------+
