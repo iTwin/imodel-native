@@ -1,0 +1,456 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="DgnPlatformTest" alias="dptest" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+    <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+    <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
+    <ECStructClass typeName="CityStruct">
+        <ECProperty propertyName="Name" typeName="string"/>
+        <ECProperty propertyName="State" typeName="string"/>
+        <ECProperty propertyName="Country" typeName="string"/>
+        <ECProperty propertyName="Zip" typeName="int"/>
+    </ECStructClass>
+    <ECStructClass typeName="LocationStruct">
+        <ECProperty propertyName="Street" typeName="string"/>
+        <ECStructProperty propertyName="City" typeName="CityStruct"/>
+    </ECStructClass>
+    <ECEntityClass typeName="TestElement">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <!-- The following properties are meant to be auto-handled. -->
+        <ECProperty propertyName="IntegerProperty1" typeName="int"/>
+        <ECProperty propertyName="IntegerProperty2" typeName="int"/>
+        <ECProperty propertyName="IntegerProperty3" typeName="int"/>
+        <ECProperty propertyName="IntegerProperty4" typeName="int"/>
+        <ECProperty propertyName="DoubleProperty1" typeName="double"/>
+        <ECProperty propertyName="DoubleProperty2" typeName="double"/>
+        <ECProperty propertyName="DoubleProperty3" typeName="double"/>
+        <ECProperty propertyName="DoubleProperty4" typeName="double"/>
+        <ECProperty propertyName="PointProperty1" typeName="point3d"/>
+        <ECProperty propertyName="PointProperty2" typeName="point3d"/>
+        <ECProperty propertyName="PointProperty3" typeName="point3d"/>
+        <ECProperty propertyName="PointProperty4" typeName="point3d"/>
+        <ECProperty propertyName="b" typeName="boolean"/>
+        <ECProperty propertyName="d" typeName="double"/>
+        <ECProperty propertyName="dt" typeName="dateTime"/>
+        <ECProperty propertyName="dtUtc" typeName="dateTime">
+            <ECCustomAttributes>
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
+                    <DateTimeKind>Utc</DateTimeKind>
+                </DateTimeInfo>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="i" typeName="int"/>
+        <ECProperty propertyName="l" typeName="long"/>
+        <ECProperty propertyName="s" typeName="string"/>
+        <ECProperty propertyName="p2d" typeName="point2d"/>
+        <ECProperty propertyName="p3d" typeName="point3d"/>
+        <ECStructProperty propertyName="Location" typeName="LocationStruct"/>
+        <ECArrayProperty propertyName="ArrayOfString" typeName="string" minOccurs="0" maxOccurs="unbounded"/>
+        <ECArrayProperty propertyName="ArrayOfInt" typeName="int" minOccurs="0" maxOccurs="unbounded"/>
+        <ECArrayProperty propertyName="ArrayOfPoint3d" typeName="point3d" minOccurs="0" maxOccurs="unbounded"/>
+        <ECStructArrayProperty propertyName="ArrayOfStructs" typeName="LocationStruct" minOccurs="0" maxOccurs="unbounded"/>
+        <!-- The rest of the properties are custom-handled -->
+        <ECProperty propertyName="TestElementProperty" typeName="string">
+            <ECCustomAttributes>
+                <CustomHandledProperty xmlns="BisCore.01.00"/>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="TestIntegerProperty1" typeName="int">
+            <ECCustomAttributes>
+                <CustomHandledProperty xmlns="BisCore.01.00"/>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="TestIntegerProperty2" typeName="int">
+            <ECCustomAttributes>
+                <CustomHandledProperty xmlns="BisCore.01.00"/>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="TestIntegerProperty3" typeName="int">
+            <ECCustomAttributes>
+                <CustomHandledProperty xmlns="BisCore.01.00"/>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="TestIntegerProperty4" typeName="int">
+            <ECCustomAttributes>
+                <CustomHandledProperty xmlns="BisCore.01.00"/>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="TestDoubleProperty1" typeName="double">
+            <ECCustomAttributes>
+                <CustomHandledProperty xmlns="BisCore.01.00"/>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="TestDoubleProperty2" typeName="double">
+            <ECCustomAttributes>
+                <CustomHandledProperty xmlns="BisCore.01.00"/>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="TestDoubleProperty3" typeName="double">
+            <ECCustomAttributes>
+                <CustomHandledProperty xmlns="BisCore.01.00"/>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="TestDoubleProperty4" typeName="double">
+            <ECCustomAttributes>
+                <CustomHandledProperty xmlns="BisCore.01.00"/>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="TestPointProperty1" typeName="point3d">
+            <ECCustomAttributes>
+                <CustomHandledProperty xmlns="BisCore.01.00"/>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="TestPointProperty2" typeName="point3d">
+            <ECCustomAttributes>
+                <CustomHandledProperty xmlns="BisCore.01.00"/>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="TestPointProperty3" typeName="point3d">
+            <ECCustomAttributes>
+                <CustomHandledProperty xmlns="BisCore.01.00"/>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="TestPointProperty4" typeName="point3d">
+            <ECCustomAttributes>
+                <CustomHandledProperty xmlns="BisCore.01.00"/>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECEntityClass>
+    <ECEntityClass typeName="TestDriverBundle">
+        <BaseClass>bis:DriverBundleElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="TestElement2d">
+        <BaseClass>bis:AnnotationElement2d</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="TestElementProperty" typeName="string"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="TestSpatialLocation">
+        <BaseClass>bis:SpatialLocationElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="TestInformationRecord">
+        <BaseClass>bis:InformationRecordElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="TestUniqueAspect">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="TestUniqueAspectProperty" typeName="string"/>
+        <ECProperty propertyName="Length" typeName="double"/>
+		<ECProperty propertyName="test1" typeName="double"/>
+		<ECProperty propertyName="test2" typeName="string"/>
+		<ECProperty propertyName="test3" typeName="double"/>
+		<ECProperty propertyName="test4" typeName="string"/>
+		<ECProperty propertyName="test5" typeName="double"/>
+		<ECProperty propertyName="test6" typeName="string"/>
+		<ECProperty propertyName="test7" typeName="double"/>
+		<ECProperty propertyName="test8" typeName="string"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="TestMultiAspect">
+        <BaseClass>bis:ElementMultiAspect</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="TestMultiAspectProperty" typeName="string"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="DgnSqlTestUniqueAspect">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="TestUniqueAspectProperty" typeName="string"/>
+        <ECProperty propertyName="Length" typeName="double"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="DgnSqlTestMultiAspect">
+        <BaseClass>bis:ElementMultiAspect</BaseClass>
+        <ECProperty propertyName="TestMultiAspectProperty" typeName="string"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="TestUniqueAspectNoHandler">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="TestUniqueAspectProperty" typeName="string"/>
+        <ECProperty propertyName="Length" typeName="double"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="TestUniqueAspectNoHandlerD1">
+        <BaseClass>TestUniqueAspectNoHandler</BaseClass>
+        <ECProperty propertyName="D1" typeName="string"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="TestUniqueAspectNoHandlerD2">
+        <BaseClass>TestUniqueAspectNoHandler</BaseClass>
+        <ECProperty propertyName="D2" typeName="string"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="TestMultiAspectNoHandler">
+        <BaseClass>bis:ElementMultiAspect</BaseClass>
+        <ECProperty propertyName="TestMultiAspectProperty" typeName="string"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="TestElementDrivesElement" strength="referencing" modifier="None">
+        <BaseClass>bis:ElementDrivesElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Property1" typeName="string"/>
+        <Source multiplicity="(0..1)" roleLabel="Element with datum plane" polymorphic="true">
+            <Class class="bis:Element"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="Element to move" polymorphic="true">
+            <Class class="bis:Element"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="TestElementIsRelatedToElement" strength="referencing" modifier="Sealed">
+        <BaseClass>bis:ElementRefersToElements</BaseClass>
+        <ECProperty propertyName="Property1" typeName="string"/>
+        <Source multiplicity="(0..*)" roleLabel="TestElementIsRelatedToElement" polymorphic="true">
+            <Class class="bis:Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="TestElementIsRelatedToElement (Reversed)" polymorphic="true">
+            <Class class="bis:Element"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="TestElementIsRelatedToElement2" strength="referencing" modifier="Sealed">
+        <BaseClass>bis:ElementRefersToElements</BaseClass>
+        <ECProperty propertyName="Property1" typeName="string"/>
+        <Source multiplicity="(0..*)" roleLabel="TestElementIsRelatedToElement2" polymorphic="true">
+            <Class class="bis:Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="TestElementIsRelatedToElement2 (Reversed)" polymorphic="true">
+            <Class class="bis:Element"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="TestModelModelsElement" strength="embedding" strengthDirection="Backward" modifier="None">
+        <BaseClass>bis:ModelModelsElement</BaseClass>
+        <Source multiplicity="(0..1)" roleLabel="models" polymorphic="true">
+            <Class class="bis:Model"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is modeled by" polymorphic="true">
+            <Class class="bis:ISubModeledElement" />
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="TestGroup">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+        <!-- Used to test the IElementGroup interface -->
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="Robot">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Name" typeName="string"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Obstacle">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="CanMove" typeName="boolean"/>
+        <ECProperty propertyName="SomeProperty" typeName="string"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="RestrictedElement1">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00">
+                <Restrictions>
+                    <string>Delete</string>
+                    <string>Insert</string>
+                    <string>SetCode</string>
+                    <string>DeleteChild</string>
+                    <string>Move</string>
+                    <string>SetGeometry</string>
+                </Restrictions>
+            </ClassHasHandler>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="RestrictedElement2">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00">
+                <Restrictions>
+                    <string>Clone</string>
+                    <string>SetParent</string>
+                    <string>InsertChild</string>
+                    <string>UpdateChild</string>
+                    <string>SetCategory</string>
+                </Restrictions>
+            </ClassHasHandler>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECStructClass typeName="TestStruct">
+        <ECProperty propertyName="TestStructDoubleMember" typeName="double"/>
+        <ECProperty propertyName="TestStructIntMember" typeName="int"/>
+        <ECProperty propertyName="TestStructBoolMember" typeName="boolean"/>
+    </ECStructClass>
+    <ECEntityClass typeName="TestElementWithNoHandler">
+        <BaseClass>TestElement</BaseClass>
+        <ECProperty propertyName="StringProperty" typeName="string"/>
+        <ECProperty propertyName="IntProperty" typeName="int"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="TestPhysicalType">
+        <BaseClass>bis:PhysicalType</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="StringProperty" typeName="string"/>
+        <ECProperty propertyName="IntProperty" typeName="int"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="TestGraphicalType2d">
+        <BaseClass>bis:GraphicalType2d</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="StringProperty" typeName="string"/>
+        <ECProperty propertyName="IntProperty" typeName="int"/>
+    </ECEntityClass>
+    <!--Class Hierarchy used by PerformanceElementsCRUDTests -->
+    <ECEntityClass typeName="PerfElement">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="BaseStr" typeName="string"/>
+        <ECProperty propertyName="BaseLong" typeName="long"/>
+        <ECProperty propertyName="BaseDouble" typeName="double"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="PerfElementSub1">
+        <BaseClass>PerfElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Sub1Str" typeName="string"/>
+        <ECProperty propertyName="Sub1Long" typeName="long"/>
+        <ECProperty propertyName="Sub1Double" typeName="double"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="PerfElementSub2">
+        <BaseClass>PerfElementSub1</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Sub2Str" typeName="string"/>
+        <ECProperty propertyName="Sub2Long" typeName="long"/>
+        <ECProperty propertyName="Sub2Double" typeName="double"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="PerfElementSub3">
+        <BaseClass>PerfElementSub2</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Sub3Str" typeName="string"/>
+        <ECProperty propertyName="Sub3Long" typeName="long"/>
+        <ECProperty propertyName="Sub3Double" typeName="double"/>
+    </ECEntityClass>
+    <!-- The following classes must be defined exactly the same as the corresponding classes with no "CH" in their names .. same number of properties with the same
+         names and types .., except each property in these classes has the CustomHandledProperty CA. -->
+    <ECEntityClass typeName="PerfElementCHBase">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="BaseStr" typeName="string"><ECCustomAttributes><CustomHandledProperty xmlns="BisCore.01.00"/></ECCustomAttributes></ECProperty>
+        <ECProperty propertyName="BaseLong" typeName="long"><ECCustomAttributes><CustomHandledProperty xmlns="BisCore.01.00"/></ECCustomAttributes></ECProperty>
+        <ECProperty propertyName="BaseDouble" typeName="double"><ECCustomAttributes><CustomHandledProperty xmlns="BisCore.01.00"/></ECCustomAttributes></ECProperty>
+    </ECEntityClass>
+    <ECEntityClass typeName="PerfElementCHSub1">
+        <BaseClass>PerfElementCHBase</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Sub1Str" typeName="string"><ECCustomAttributes><CustomHandledProperty xmlns="BisCore.01.00"/></ECCustomAttributes></ECProperty>
+        <ECProperty propertyName="Sub1Long" typeName="long"><ECCustomAttributes><CustomHandledProperty xmlns="BisCore.01.00"/></ECCustomAttributes></ECProperty>
+        <ECProperty propertyName="Sub1Double" typeName="double"><ECCustomAttributes><CustomHandledProperty xmlns="BisCore.01.00"/></ECCustomAttributes></ECProperty>
+    </ECEntityClass>
+    <ECEntityClass typeName="PerfElementCHSub2">
+        <BaseClass>PerfElementCHSub1</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Sub2Str" typeName="string"><ECCustomAttributes><CustomHandledProperty xmlns="BisCore.01.00"/></ECCustomAttributes></ECProperty>
+        <ECProperty propertyName="Sub2Long" typeName="long"><ECCustomAttributes><CustomHandledProperty xmlns="BisCore.01.00"/></ECCustomAttributes></ECProperty>
+        <ECProperty propertyName="Sub2Double" typeName="double"><ECCustomAttributes><CustomHandledProperty xmlns="BisCore.01.00"/></ECCustomAttributes></ECProperty>
+    </ECEntityClass>
+    <ECEntityClass typeName="PerfElementCHSub3">
+        <BaseClass>PerfElementCHSub2</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Sub3Str" typeName="string"><ECCustomAttributes><CustomHandledProperty xmlns="BisCore.01.00"/></ECCustomAttributes></ECProperty>
+        <ECProperty propertyName="Sub3Long" typeName="long"><ECCustomAttributes><CustomHandledProperty xmlns="BisCore.01.00"/></ECCustomAttributes></ECProperty>
+        <ECProperty propertyName="Sub3Double" typeName="double"><ECCustomAttributes><CustomHandledProperty xmlns="BisCore.01.00"/></ECCustomAttributes></ECProperty>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="TestOverrideAutohadledProperties">
+        <BaseClass>TestElement</BaseClass>
+        <ECProperty propertyName="p2d" typeName="point2d"/>
+    </ECEntityClass>
+
+    <ECRelationshipClass typeName="AnalyticalPipeDrivesPhysicalPipes" strengthDirection="Backward" strength="referencing" modifier="Sealed">
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="drives">
+            <Class class="AnalyticalPipe"/>
+        </Source>
+        <!-- 0..* - many AnalyticalPipes can refer to the same PhysicalPipe, or there may be no AnalyticalPipes that refer to a given PhysicalPipe. -->
+        <!-- 0..1 - a given AnalyticalPipe refers to only one PhysicalPipe, or the AnalyticalPipe may be a TBD and have no PhysicalPipe -->
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="is driven by">
+            <Class class="PhysicalPipe"/>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECEntityClass typeName="AnalyticalPipe" >
+        <BaseClass>TestElement</BaseClass>
+        <ECNavigationProperty propertyName="PhysicalPipe" relationshipName="AnalyticalPipeDrivesPhysicalPipes" direction="Forward" readOnly="True">
+        </ECNavigationProperty>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="PhysicalPipe" >
+        <BaseClass>TestElement</BaseClass>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="ImodelJsTestElement">
+      <BaseClass>bis:PhysicalElement</BaseClass>
+      <ECCustomAttributes>
+        <ClassHasHandler xmlns="BisCore.01.00"/>
+      </ECCustomAttributes>
+      <!-- NB: All properties must be auto-handled! -->
+      <ECProperty propertyName="IntegerProperty1" typeName="int"/>
+      <ECProperty propertyName="IntegerProperty2" typeName="int"/>
+      <ECProperty propertyName="IntegerProperty3" typeName="int"/>
+      <ECProperty propertyName="IntegerProperty4" typeName="int"/>
+      <ECProperty propertyName="DoubleProperty1" typeName="double"/>
+      <ECProperty propertyName="DoubleProperty2" typeName="double"/>
+      <ECProperty propertyName="DoubleProperty3" typeName="double"/>
+      <ECProperty propertyName="DoubleProperty4" typeName="double"/>
+      <ECProperty propertyName="PointProperty1" typeName="point3d"/>
+      <ECProperty propertyName="PointProperty2" typeName="point3d"/>
+      <ECProperty propertyName="PointProperty3" typeName="point3d"/>
+      <ECProperty propertyName="PointProperty4" typeName="point3d"/>
+      <ECProperty propertyName="b" typeName="boolean"/>
+      <ECProperty propertyName="d" typeName="double"/>
+      <ECProperty propertyName="dt" typeName="dateTime"/>
+      <ECProperty propertyName="dtUtc" typeName="dateTime">
+        <ECCustomAttributes>
+          <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
+            <DateTimeKind>Utc</DateTimeKind>
+          </DateTimeInfo>
+        </ECCustomAttributes>
+      </ECProperty>
+      <ECProperty propertyName="i" typeName="int"/>
+      <ECProperty propertyName="l" typeName="long"/>
+      <ECProperty propertyName="s" typeName="string"/>
+      <ECProperty propertyName="p2d" typeName="point2d"/>
+      <ECProperty propertyName="p3d" typeName="point3d"/>
+      <ECStructProperty propertyName="Location" typeName="LocationStruct"/>
+      <ECArrayProperty propertyName="ArrayOfString" typeName="string" minOccurs="0" maxOccurs="unbounded"/>
+      <ECArrayProperty propertyName="ArrayOfInt" typeName="int" minOccurs="0" maxOccurs="unbounded"/>
+      <ECArrayProperty propertyName="ArrayOfPoint3d" typeName="point3d" minOccurs="0" maxOccurs="unbounded"/>
+      <ECStructArrayProperty propertyName="ArrayOfStructs" typeName="LocationStruct" minOccurs="0" maxOccurs="unbounded"/>
+    </ECEntityClass>
+
+</ECSchema>
