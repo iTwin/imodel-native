@@ -310,7 +310,7 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
                 deleter.Delete();
                 }
             ConnectedRealityData crd = ConnectedRealityData();
-            crd.SetName(Utf8String(dbFileName).c_str());
+            crd.SetName(model->GetName().c_str());
             Utf8PrintfString description(ConverterDataStrings::RDS_Description(), Utf8String(dbFileName).c_str());
             crd.SetDescription(description.c_str());
             Utf8String rootDoc("TileRoot.json");
