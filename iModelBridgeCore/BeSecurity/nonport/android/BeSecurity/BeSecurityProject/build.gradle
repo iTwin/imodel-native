@@ -1,0 +1,37 @@
+// See https://developer.android.com/studio/build/ for seed file.
+
+plugins {
+    id 'com.android.library'
+
+    // BSI - https://github.com/wupdigital/android-maven-publish
+    // Modification of the standard Maven Publish plugin to be compatible with android-library projects (aar).
+    id 'digital.wup.android-maven-publish' version '3.6.2'
+}
+
+android {
+    compileSdkVersion 28
+
+    defaultConfig {
+        minSdkVersion 21
+        targetSdkVersion 28
+        versionCode 1
+        versionName "1.0"
+    }
+}
+
+publishing {
+    publications {
+        mavenAar(MavenPublication) {
+            groupId = 'com.bentley.android'
+            artifactId = 'BeSecurity'
+            version = '1.0.0'
+            from components.android
+        }
+    }
+
+    repositories {
+        maven {
+            url = "$buildDir/MavenArchive"
+        }
+    }
+}
