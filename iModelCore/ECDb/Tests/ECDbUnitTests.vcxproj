@@ -1,0 +1,142 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ignore_list.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="BackDoor\BackDoor.cpp" />
+    <ClCompile Include="BackDoor\ECDbTestFixture.cpp" />
+    <ClCompile Include="BackDoor\ECDbTests.cpp" />
+    <ClCompile Include="BackDoor\TestHelper.cpp" />
+    <ClCompile Include="BackDoor\TestInfoHolders.cpp" />
+    <ClCompile Include="Performance\PerformanceCRUDTestsHelper.cpp" />
+    <ClCompile Include="Performance\PerformanceECDbMapCATests.cpp" />
+    <ClCompile Include="Performance\PerformanceECDbReferentialIntegrityTests.cpp" />
+    <ClCompile Include="Performance\PerformanceECDbTests.cpp" />
+    <ClCompile Include="Performance\PerformanceECInstanceECSqlSelectAdapterTests.cpp" />
+    <ClCompile Include="Performance\PerformanceECInstanceInserterTests.cpp" />
+    <ClCompile Include="Performance\PerformanceECSqlVsSqliteTests.cpp" />
+    <ClCompile Include="Performance\PerformanceJoinedTableTests.cpp" />
+    <ClCompile Include="Performance\PerformanceJsonComparison.cpp" />
+    <ClCompile Include="Performance\PerformanceJsonInserterTests.cpp" />
+    <ClCompile Include="Performance\PerformanceOverflowProps.cpp" />
+    <ClCompile Include="Performance\PerformanceOverflowTablesResearchTests.cpp" />
+    <ClCompile Include="Performance\PerformancePhysicalVsOverflowColumnsSqliteCrudTests.cpp" />
+    <ClCompile Include="Performance\PerformancePrimArrayJsonVsECDTests.cpp" />
+    <ClCompile Include="Performance\PerformanceRegularVsOverflowTests.cpp" />
+    <ClCompile Include="Performance\PerformanceSchemaImportTests.cpp" />
+    <ClCompile Include="Performance\PerformanceSchemaManagerTests.cpp" />
+    <ClCompile Include="Performance\PerformanceSharedTableTests.cpp" />
+    <ClCompile Include="Performance\QueryTests.cpp" />
+    <ClCompile Include="Published\ECInstanceFinderTests.cpp" />
+    <ClCompile Include="Published\FuzzTests.cpp" />
+    <ClCompile Include="Published\TableSpaceTests.cpp" />
+    <ClCompile Include="Published\BulkCrudTestFixture.cpp" />
+    <ClCompile Include="Published\BulkCrudTests.cpp" />
+    <ClCompile Include="Published\ChangeSummaryTests.cpp" />
+    <ClCompile Include="Published\ECSqlToSqlGenerationTests.cpp" />
+    <ClCompile Include="Published\FileFormatCompatibilityTests.cpp" />
+    <ClCompile Include="Published\DateTimeTests.cpp" />
+    <ClCompile Include="Published\DbMappingTests.cpp" />
+    <ClCompile Include="Published\ECCrudWriteTokenTests.cpp" />
+    <ClCompile Include="Published\ECDbMetaSchemaECSqlTestFixture.cpp" />
+    <ClCompile Include="Published\ECDbSymbolProviderTests.cpp" />
+    <ClCompile Include="Published\ECDbTests.cpp" />
+    <ClCompile Include="Published\ECInstanceInserterTests.cpp" />
+    <ClCompile Include="Published\ECInstanceUpdaterTests.cpp" />
+    <ClCompile Include="Published\ECRelationshipClassInheritanceTests.cpp" />
+    <ClCompile Include="Published\ECSqlCustomFunctionTests.cpp" />
+    <ClCompile Include="Published\ECSqlExecutionFrameworkHelper.cpp" />
+    <ClCompile Include="Published\ECSqlExecutionFrameworkTests.cpp" />
+    <ClCompile Include="Published\ECSqlPrepareTests.cpp" />
+    <ClCompile Include="Published\ECSqlRangeTreeTests.cpp" />
+    <ClCompile Include="Published\ECSqlStatementCacheTest.cpp" />
+    <ClCompile Include="Published\ECSqlStatementFunctionTests.cpp" />
+    <ClCompile Include="Published\ECSqlStatementTests.cpp" />
+    <ClCompile Include="Published\FileInfoTests.cpp" />
+    <ClCompile Include="Published\FSRTests.cpp" />
+    <ClCompile Include="Published\IndexTests.cpp" />
+    <ClCompile Include="Published\JoinedTableTests.cpp" />
+    <ClCompile Include="Published\JsonInserterTests.cpp" />
+    <ClCompile Include="Published\JsonLibraryTests.cpp" />
+    <ClCompile Include="Published\JsonReaderTests.cpp" />
+    <ClCompile Include="Published\JsonUpdaterTests.cpp" />
+    <ClCompile Include="Published\NavigationPropsTests.cpp" />
+    <ClCompile Include="Published\NestedStructArrayTestSchemaHelper.cpp" />
+    <ClCompile Include="Published\ProfileTests.cpp" />
+    <ClCompile Include="Published\RelationshipTests.cpp" />
+    <ClCompile Include="Published\SchemaManagerTests.cpp" />
+    <ClCompile Include="Published\SchemaPolicyTests.cpp" />
+    <ClCompile Include="Published\SchemaRulesTests.cpp" />
+    <ClCompile Include="Published\SchemaUpgradeTests.cpp" />
+    <ClCompile Include="Published\ThreadSafetyTests.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\BackDoor.h" />
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\ECDbTestFixture.h" />
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\ECDbTests.h" />
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\TestHelper.h" />
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\TestInfoHolders.h" />
+    <ClInclude Include="Performance\PerformanceCRUDTestsHelper.h" />
+    <ClInclude Include="Performance\PerformanceOverflowTablesResearchTestFixture.h" />
+    <ClInclude Include="Performance\PerformanceTests.h" />
+    <ClInclude Include="Performance\ProfileBreak.h" />
+    <ClInclude Include="Published\BulkCrudTestFixture.h" />
+    <ClInclude Include="Published\ECDbPublishedTests.h" />
+    <ClInclude Include="Published\ECSqlExecutionFrameworkHelper.h" />
+    <ClInclude Include="Published\NestedStructArrayTestSchemaHelper.h" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{739F36F2-2002-4DD7-8C46-97AF109867D3}</ProjectGuid>
+    <Keyword>MakeFileProj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros">
+    <OutDir>$(OutRoot)Winx64\Build\ECDbTest\</OutDir>
+    <IntDir>$(OutRoot)Winx64\Build\ECDbTest\</IntDir>
+    <IntermediateOutputPath>$(OutRoot)Winx64\Build\ECDbTest\</IntermediateOutputPath>
+    <BaseIntermediateOutputPath>$(OutRoot)Winx64\Build\ECDbTest\</BaseIntermediateOutputPath>
+    <NMakeOutput>$(OutRoot)Winx64\product\ECDb-Gtest\ECDbTest.exe</NMakeOutput>
+    <NMakeIncludeSearchPath>$(ProjectDir)BackDoor\PublicAPI\BackDoor\ECDb\;$(ProjectDir)Published\;$(ProjectDir)Performance;$(OutRoot)Winx64\BuildContexts\ECDb\VendorAPI\;$(OutRoot)Winx64\BuildContexts\ECDb\PublicAPI\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions);BENTLEY_WIN32;BENTLEY_WIN32</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions);BENTLEY_WIN32;</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
