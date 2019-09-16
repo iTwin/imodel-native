@@ -23,12 +23,6 @@ ChangeSummaryTestFixture.ElementChildRelationshipChanges
     #       Which is: 2
     # [  FAILED  ] ChangeSummaryTestFixture.ElementChildRelationshipChanges (76 ms)
 
-DTMElementTests.TerrainModel
-    # notified Daryl and Carole
-    # [ RUN      ] DTMElementTests.TerrainModel
-    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\gtestmain.cpp(303): error: Failed
-    # F:\Bim0200\out\Winx64\BuildContexts\DgnPlatform\PublicAPI\BeSQLite/BeSQLite.h(1243): ASSERTION FAILURE (0): val.IsValid()
-    # [  FAILED  ] DTMElementTests.TerrainModel (838 ms)
 
 ConverterTests.DetectDeletionsInEmbeddedFiles
     # [ RUN      ] ConverterTests.DetectDeletionsInEmbeddedFiles

@@ -2123,116 +2123,6 @@ DgnCode Converter::CreateDebuggingCode(DgnV8EhCR v8eh)
     return WantDebugCodes() ? CreateCode(Utf8PrintfString("%sDgnV8-%lld-%lld", _GetNamePrefix().c_str(), GetRepositoryLinkId(*v8eh.GetDgnFileP()).GetValueUnchecked(), v8eh.GetElementId())) : DgnCode();
     }
 
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod                                                   Krischan.Eberle   10/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Converter::GetECContentOfElement(V8ElementECContent& content, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, bool isNewElement)
-    {
-    //gather primary and secondary instances first (and hold them as Ptrs to ensure lifetime after iterated instances are out of scope
-    //primary instances need to processed before secondary instances
-    content.m_primaryV8Instance = nullptr;
-    content.m_v8ElementType = V8ElementTypeHelper::GetType(v8eh);
-    content.m_elementConversionRule = BisConversionRule::ToDefaultBisClass;
-    RepositoryLinkId v8FileId = GetRepositoryLinkId(*v8eh.GetDgnModelP()->GetDgnFileP());
-    content.m_namedGroupsWithOwnershipHintPerFile = nullptr;
-    V8NamedGroupInfo::TryGetNamedGroupsWithOwnershipHint(content.m_namedGroupsWithOwnershipHintPerFile, v8FileId);
-
-    DgnModelR targetModel = v8mm.GetDgnModel();
-
-    if (!m_skipECContent)
-        {
-        DgnV8Api::FindInstancesScopePtr scope = CreateFindInstancesScope(v8eh);
-        for (DgnV8Api::DgnECInstance* v8Instance : DgnV8Api::DgnECManager::GetManager().FindInstances(*scope, GetSelectAllV8ECQuery()))
-            {
-            ECClassName v8ClassName(v8Instance->GetClass());
-            if (0 == BeStringUtilities::Strnicmp("EWR", v8ClassName.GetSchemaName(), 3) && 0 != strcmp("EWRData", v8ClassName.GetSchemaName()))
-                v8ClassName = ECClassName("EWR", v8ClassName.GetClassName());
-
-            BisConversionRule conversionRule;
-            bool hasSecondary;
-            if (!V8ECClassInfo::TryFind(conversionRule, hasSecondary, GetDgnDb(), v8ClassName.GetClassFullName()))
-                {
-                continue;
-                }
-
-            if (BisConversionRuleHelper::IgnoreInstance(conversionRule))
-                {
-                DgnV8ModelCP v8Model = v8eh.GetDgnModelP();
-                Utf8String warning;
-                warning.Sprintf("Skipped v8 %s ECInstance (%s) on v8 Element '%s'in v8 model '%s' because its class was ignored during schema conversion. See ECSchema conversion log entries above.",
-                                v8ClassName.GetClassFullName().c_str(), Utf8String(v8Instance->GetInstanceId().c_str()).c_str(),
-                                IssueReporter::FmtElement(v8eh).c_str(),
-                                v8Model != nullptr ? IssueReporter::FmtModel(*v8Model).c_str() : "nullptr");
-
-                ReportIssue(IssueSeverity::Warning, IssueCategory::Sync(), Issue::Message(), warning.c_str());
-                continue;
-                }
-
-            // In the situation where a class can be used as both a primary instance and a secondary instance, the conversionRule is going to come back is the Element rule and not ToAspectOnly.
-            // Therefore, if we already have a primary instance set and the hasSecondary flag indicates that this ecClass also has ToAspect rule, then we just set it as a secondaryInstance.
-            // Also need to check if there is a 3dmismatch, in which case we make it an aspect
-            if (BisConversionRuleHelper::IsSecondaryInstance(conversionRule) || (hasSecondary && !DgnV8Api::DgnECManager::GetManager().GetPrimaryInstanceId(v8eh, false, true).Equals(v8Instance->GetInstanceId())))
-            //if (BisConversionRuleHelper::IsSecondaryInstance(conversionRule) || (hasSecondary && content.HasPrimaryInstance()))
-                {
-                content.m_secondaryV8Instances.push_back(std::make_pair(v8Instance, BisConversionRule::ToAspectOnly));
-                }
-            else if (hasSecondary && (v8mm.GetDgnModel().Is3dModel() && BisConversionRule::ToDrawingGraphic == conversionRule) || (!v8mm.GetDgnModel().Is3dModel() && BisConversionRule::ToDrawingGraphic != conversionRule))
-                content.m_secondaryV8Instances.push_back(std::make_pair(v8Instance, BisConversionRule::ToAspectOnly));
-
-            else if (IsUpdating() && BisConversionRule::ToDefaultBisBaseClass == conversionRule)
-                {
-                // We must be trying to do an update, and we found a primary ECInstance from a class that had no instances when we first converted it.
-                // If this is an existing element, then it needs to be added as a secondary instance as we cannot change the element's class.  If it is a new element, then it is added as the primary instance
-
-                const bool namedGroupOwnsMembersFlag = content.m_namedGroupsWithOwnershipHintPerFile != nullptr && content.m_namedGroupsWithOwnershipHintPerFile->find(v8eh.GetElementId()) != content.m_namedGroupsWithOwnershipHintPerFile->end();
-                BisConversionTargetModelInfo targetModelInfo(targetModel);
-                BisConversionRule rule = BisConversionRuleHelper::ConvertToBisConversionRule(content.m_v8ElementType, targetModelInfo, namedGroupOwnsMembersFlag, !isNewElement);
-                if (isNewElement)
-                    {
-                    ECClassName previousECClass = BisConversionRuleHelper::GetElementBisBaseClassName(conversionRule);
-                    ECClassName newECClass = BisConversionRuleHelper::GetElementBisBaseClassName(rule);
-                    if (previousECClass != newECClass)
-                        {
-                        Utf8String msg;
-                        DgnV8ModelCP v8Model = v8eh.GetDgnModelP();
-                        msg.Sprintf("Skipped v8 ECInstance (%s) on v8 Element '%s' in v8 model '%s' because its base class has changed since the initial schema import.  Previous ECClass was '%s'.  It now requires '%s'.",
-                                    Utf8String(v8Instance->GetInstanceId().c_str()).c_str(),
-                                    IssueReporter::FmtElement(v8eh).c_str(),
-                                    v8Model != nullptr ? IssueReporter::FmtModel(*v8Model).c_str() : "nullptr",
-                                    previousECClass.GetClassFullName().c_str(), newECClass.GetClassFullName().c_str());
-                        ReportIssueV(IssueSeverity::Error, IssueCategory::Unsupported(), Issue::Message(), nullptr, msg.c_str());
-                        return BentleyApi::ERROR;
-                        }
-                    content.m_primaryV8Instance = v8Instance;
-                    content.m_elementConversionRule = rule;
-                    }
-                else
-                    content.m_secondaryV8Instances.push_back(std::make_pair(v8Instance, rule));
-                }
-            else
-                {
-                content.m_primaryV8Instance = v8Instance;
-                content.m_elementConversionRule = conversionRule;
-                }
-            }
-        }
-
-    if (!content.HasPrimaryInstance())
-        {
-        bool namedGroupOwnsMembersFlag = false;
-        if (content.m_namedGroupsWithOwnershipHintPerFile != nullptr)
-            namedGroupOwnsMembersFlag = content.m_namedGroupsWithOwnershipHintPerFile->find(v8eh.GetElementId()) != content.m_namedGroupsWithOwnershipHintPerFile->end();
-        BisConversionTargetModelInfo targetModelInfo(targetModel);
-        content.m_elementConversionRule = BisConversionRuleHelper::ConvertToBisConversionRule(content.m_v8ElementType, targetModelInfo, namedGroupOwnsMembersFlag);
-        if (content.m_elementConversionRule == BisConversionRule::ToPhysicalElement)
-            content.m_elementConversionRule = BisConversionRule::ToPhysicalObject; // ToPhysicalElement can only be used if the element has an ECInstance.  Otherwise, it needs the non-abstract generic::PhysicalObject rule
-        else if (content.m_elementConversionRule == BisConversionRule::ToGroup)
-            content.m_elementConversionRule = BisConversionRule::ToGenericGroup; // ToGroup can only be used if the element has an ECInstance.  Otherwise, it needs the non-abstract Generic:Group class.
-        }
-
-    return BentleyApi::SUCCESS;
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson          03/17
 //---------------------------------------------------------------------------------------
@@ -2622,7 +2512,7 @@ bool Converter::DetermineNamedGroupOwnershipFlag(BECN::ECClassCR ecClass)
 DgnV8Api::ECQuery const& Converter::GetSelectAllV8ECQuery() const
     {
     if (m_selectAllQueryV8 == nullptr)
-        m_selectAllQueryV8 = DgnV8Api::ECQuery::CreateQuery(DgnV8Api::ECQUERY_PROCESS_SearchAllExtrinsic);
+        m_selectAllQueryV8 = DgnV8Api::ECQuery::CreateQuery(DgnV8Api::ECQUERY_PROCESS_SearchAllClasses);
 
     return *m_selectAllQueryV8;
     }
