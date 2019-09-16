@@ -38,7 +38,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
     return SUCCESS; \
     }));
 #else
-void EXPECT_CALL_OnBeforeDelete(MockECDbAdapterDeleteListener& listener, std::shared_ptr<ObservableECDb> db, ECInstanceKey instanceKey)
+    void EXPECT_CALL_OnBeforeDelete(MockECDbAdapterDeleteListener& listener, std::shared_ptr<ObservableECDb> db, ECInstanceKey instanceKey)
     {
     EXPECT_CALL(listener, OnBeforeDelete(Ref(*ECDbAdapter(*db).GetECClass(instanceKey)), instanceKey.GetInstanceId(), _))
         .WillOnce(Invoke([&] (ECClassCR ecClass, ECInstanceId id, bset<ECInstanceKey>&)
@@ -76,7 +76,7 @@ std::shared_ptr<ObservableECDb> ECDbAdapterTests::CreateTestDb(ECSchemaPtr schem
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     01/16
-+---------------+---------------+---------------+---------------+---------------+------*/    
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, DeleteInstances_DeletingLotsOfHoldingInstances_PerformanceIsAcceptable)
     {
     // Prepare seed file
@@ -129,7 +129,7 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingLotsOfHoldingInstances_Performa
         }
     auto end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
 
-    BeDebugLog(Utf8PrintfString("Adding %d instances took %f ms", allInstances.size(), end - start).c_str());
+    TESTLOG.infov("Adding %d instances took %f ms", allInstances.size(), end - start);
     ASSERT_EQ(DbResult::BE_SQLITE_OK, seed.SaveChanges());
 
     // Test performance
@@ -156,12 +156,12 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingLotsOfHoldingInstances_Performa
 
         double currentTime = end - start;
         totalTime += currentTime;
-        BeDebugLog(Utf8PrintfString("DeleteInstances took %f ms", currentTime).c_str());
+        TESTLOG.infov("DeleteInstances took %f ms", currentTime);
 
         auto notDeletedInstances = adapter.FindInstances(ecClass);
         EXPECT_EQ(0, notDeletedInstances.size());
         }
-    BeDebugLog(Utf8PrintfString("DeleteInstances mean took %f ms", totalTime / count).c_str());
+    TESTLOG.infov("DeleteInstances mean took %f ms", totalTime / count);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -195,11 +195,11 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingLotsOfInstances_PerformanceIsAc
         {
         ECInstanceKey key;
         INSERT_INSTANCE(seed, ecClass, key);
-        instances.insert({key.GetClassId(), key.GetInstanceId()});
+        instances.insert({ key.GetClassId(), key.GetInstanceId() });
         }
     auto end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
 
-    BeDebugLog(Utf8PrintfString("Adding %d instances took %f ms", instances.size(), end - start).c_str());
+    TESTLOG.infov("Adding %d instances took %f ms", instances.size(), end - start);
     ASSERT_EQ(DbResult::BE_SQLITE_OK, seed.SaveChanges());
 
     // Test performance
@@ -223,10 +223,10 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingLotsOfInstances_PerformanceIsAc
 
         double currentTime = end - start;
         totalTime += currentTime;
-        BeDebugLog(Utf8PrintfString("DeleteInstances took %f ms", currentTime).c_str());
+        TESTLOG.infov("DeleteInstances took %f ms", currentTime);
 
         auto notDeletedInstances = adapter.FindInstances(ecClass);
         EXPECT_EQ(0, notDeletedInstances.size());
         }
-    BeDebugLog(Utf8PrintfString("DeleteInstances mean took %f ms", totalTime / count).c_str());
+    TESTLOG.infov("DeleteInstances mean took %f ms", totalTime / count);
     }
