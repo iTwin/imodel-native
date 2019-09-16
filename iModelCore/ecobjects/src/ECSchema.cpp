@@ -1493,8 +1493,14 @@ ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass
             newRelationshipClass->SetStrength(sourceAsRelationshipClass->GetStrength());
             newRelationshipClass->SetStrengthDirection(sourceAsRelationshipClass->GetStrengthDirection());
 
-            sourceAsRelationshipClass->GetSource().CopyTo(newRelationshipClass->GetSource(), copyReferences);
-            sourceAsRelationshipClass->GetTarget().CopyTo(newRelationshipClass->GetTarget(), copyReferences);
+            status = sourceAsRelationshipClass->GetSource().CopyTo(newRelationshipClass->GetSource(), copyReferences);
+            if (ECObjectsStatus::Success != status)
+                return status;
+
+            status = sourceAsRelationshipClass->GetTarget().CopyTo(newRelationshipClass->GetTarget(), copyReferences);
+            if (ECObjectsStatus::Success != status)
+                return status;
+
             targetClass = newRelationshipClass;
             break;
             }

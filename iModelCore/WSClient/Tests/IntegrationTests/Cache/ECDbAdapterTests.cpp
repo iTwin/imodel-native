@@ -38,7 +38,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
     return SUCCESS; \
     }));
 #else
-void EXPECT_CALL_OnBeforeDelete(MockECDbAdapterDeleteListener& listener, std::shared_ptr<ObservableECDb> db, ECInstanceKey instanceKey)
+    void EXPECT_CALL_OnBeforeDelete(MockECDbAdapterDeleteListener& listener, std::shared_ptr<ObservableECDb> db, ECInstanceKey instanceKey)
     {
     EXPECT_CALL(listener, OnBeforeDelete(Ref(*ECDbAdapter(*db).GetECClass(instanceKey)), instanceKey.GetInstanceId(), _))
         .WillOnce(Invoke([&] (ECClassCR ecClass, ECInstanceId id, bset<ECInstanceKey>&)
@@ -76,7 +76,7 @@ std::shared_ptr<ObservableECDb> ECDbAdapterTests::CreateTestDb(ECSchemaPtr schem
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     01/16
-+---------------+---------------+---------------+---------------+---------------+------*/    
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbAdapterTests, DeleteInstances_DeletingLotsOfHoldingInstances_PerformanceIsAcceptable)
     {
     // Prepare seed file
@@ -129,7 +129,7 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingLotsOfHoldingInstances_Performa
         }
     auto end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
 
-    BeDebugLog(Utf8PrintfString("Adding %d instances took %f ms", allInstances.size(), end - start).c_str());
+    TESTLOG.infov("Adding %d instances took %f ms", allInstances.size(), end - start);
     ASSERT_EQ(DbResult::BE_SQLITE_OK, seed.SaveChanges());
 
     // Test performance
@@ -156,12 +156,12 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingLotsOfHoldingInstances_Performa
 
         double currentTime = end - start;
         totalTime += currentTime;
-        BeDebugLog(Utf8PrintfString("DeleteInstances took %f ms", currentTime).c_str());
+        TESTLOG.infov("DeleteInstances took %f ms", currentTime);
 
         auto notDeletedInstances = adapter.FindInstances(ecClass);
         EXPECT_EQ(0, notDeletedInstances.size());
         }
-    BeDebugLog(Utf8PrintfString("DeleteInstances mean took %f ms", totalTime / count).c_str());
+    TESTLOG.infov("DeleteInstances mean took %f ms", totalTime / count);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -195,11 +195,11 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingLotsOfInstances_PerformanceIsAc
         {
         ECInstanceKey key;
         INSERT_INSTANCE(seed, ecClass, key);
-        instances.insert({key.GetClassId(), key.GetInstanceId()});
+        instances.insert({ key.GetClassId(), key.GetInstanceId() });
         }
     auto end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
 
-    BeDebugLog(Utf8PrintfString("Adding %d instances took %f ms", instances.size(), end - start).c_str());
+    TESTLOG.infov("Adding %d instances took %f ms", instances.size(), end - start);
     ASSERT_EQ(DbResult::BE_SQLITE_OK, seed.SaveChanges());
 
     // Test performance
@@ -223,10 +223,85 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingLotsOfInstances_PerformanceIsAc
 
         double currentTime = end - start;
         totalTime += currentTime;
-        BeDebugLog(Utf8PrintfString("DeleteInstances took %f ms", currentTime).c_str());
+        TESTLOG.infov("DeleteInstances took %f ms", currentTime);
 
         auto notDeletedInstances = adapter.FindInstances(ecClass);
         EXPECT_EQ(0, notDeletedInstances.size());
         }
-    BeDebugLog(Utf8PrintfString("DeleteInstances mean took %f ms", totalTime / count).c_str());
+    TESTLOG.infov("DeleteInstances mean took %f ms", totalTime / count);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECDbAdapterTests, ImportSchemas_WithManyProperties_Success)
+    {
+    // Testing SQLite/ECDb column count limits.
+
+    Utf8String schemaXml = R"xml(<ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">)xml" "\n";
+
+    schemaXml += R"xml(
+    <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
+    <ECClass typeName="BaseClass">
+        <ECProperty propertyName="TestPropertyBase" typeName="string" />
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+            <ShareColumns xmlns="ECDbMap.02.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SomeClass">
+        <ECProperty propertyName="TestPropertySome" typeName="string" />
+    </ECClass>
+    <ECRelationshipClass typeName="TestRelationship" strength="holding" modifier="Sealed">
+        <Source multiplicity="(0..1)" polymorphic="false">
+            <Class class="SomeClass"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="true">
+            <Class class="BaseClass"/>
+        </Target>
+    </ECRelationshipClass>)xml";
+
+    size_t pTotal = 0;
+    for (size_t c = 0; c < 200; c++)
+        {
+        Utf8PrintfString classXml(R"xml(<ECClass typeName="TestClass_%d">)xml", c);
+        schemaXml += classXml + "\n";
+
+        for (size_t p = 0; p < 100; p++)
+            {
+            pTotal++;
+            Utf8PrintfString propertyXml(R"xml(<ECProperty propertyName="TestProperty_%d_%d" typeName="string" />)xml", p, pTotal);
+            schemaXml += propertyXml + "\n";
+            }
+        schemaXml += R"xml(<BaseClass>BaseClass</BaseClass>)xml"  "\n";
+        schemaXml += R"xml(</ECClass>)xml" "\n";
+        }
+
+    schemaXml += R"xml(</ECSchema>)xml" "\n";
+
+    auto start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+    auto schema = ParseSchema(schemaXml);
+    auto end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+    TESTLOG.infov("Parsing schema took %f ms", end - start);
+
+    auto seedPath = StubFilePath("seed.ecdb");
+    TESTLOG.infov("Using path: %s", Utf8String(seedPath).c_str());
+
+    if (seedPath.DoesPathExist())
+        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeDeleteFile(seedPath));
+
+    ObservableECDb seed;
+    seed.CreateNewDb(seedPath);
+
+    auto cache = ECSchemaCache::Create();
+    cache->AddSchema(*schema);
+
+    start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+    ASSERT_EQ(SUCCESS, seed.Schemas().ImportSchemas(cache->GetSchemas()));
+    end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+    TESTLOG.infov("Importing schema took %f ms", end - start);
+
+    auto ecClass = seed.Schemas().GetClass("TestSchema", "TestClass");
     }

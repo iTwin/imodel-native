@@ -9,6 +9,8 @@
 #include "../../PrivateAPI/Formatting/NumericFormatUtils.h"
 #include <regex>
 
+#define MAX_PARSING_DIGITS 16
+
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
 //===================================================
@@ -377,11 +379,12 @@ size_t NumberGrabber::Grab(Utf8CP input, size_t start, Utf8Char const decimalSep
         return 0;
         }
 
+    m_problem.Reset();
     m_type = ParsingSegmentType::NotNumber; // Reset this as a non-number until determined otherwise.
-    int ival = 0; // integer value
-    int fval = 0; // floating point value
-    int eval = 0; // exponent value
-    int denom = 0; // denominator value
+    int64_t ival = 0; // integer value
+    int64_t fval = 0; // floating point value
+    int64_t eval = 0; // exponent value
+    int64_t denom = 0; // denominator value
     double dval = 0.0;
     int iCount = 0; // integer digit count
     int fCount = 0; // floating point digit count - number of numbers after decimal separator
@@ -406,6 +409,12 @@ size_t NumberGrabber::Grab(Utf8CP input, size_t start, Utf8Char const decimalSep
         }
     while (csp.IsDigit())    // if there any digits - they will be accumulated in the int part
         {
+        if (iCount + 1 >= MAX_PARSING_DIGITS)
+            {
+            m_problem.UpdateProblemCode(FormatProblemCode::TooManyDigits);
+            return m_next - m_start;
+            }
+
         int d = (int)(csp.GetAscii() - '0');
         ival = ival * 10 + d;
         iCount++;
@@ -421,6 +430,12 @@ size_t NumberGrabber::Grab(Utf8CP input, size_t start, Utf8Char const decimalSep
             csp.Iterate(m_input);
             while (csp.IsDigit())    // if there any digits - they will be accumulated in the int part
                 {
+                if (dCount + 1 >= MAX_PARSING_DIGITS) 
+                    {
+                    m_problem.UpdateProblemCode(FormatProblemCode::TooManyDigits);
+                    return m_next - m_start;
+                    }
+
                 int d = (int)(csp.GetAscii() - '0');
                 denom = denom * 10 + d;
                 dCount++;
@@ -431,7 +446,7 @@ size_t NumberGrabber::Grab(Utf8CP input, size_t start, Utf8Char const decimalSep
                 {
                 dval = (double)ival / (double)denom;
                 m_dval = (sign < 0) ? -dval : dval;
-                m_ival = (int)m_dval;    // regardless of what we collected there it should be refreshed
+                m_ival = (int64_t)m_dval;    // regardless of what we collected there it should be refreshed
                 m_type = ParsingSegmentType::Fraction;
                 }
             else
@@ -452,6 +467,12 @@ size_t NumberGrabber::Grab(Utf8CP input, size_t start, Utf8Char const decimalSep
             csp.Iterate(m_input);
             while (csp.IsDigit())    // if there any digits - they will be accumulated in the fraction
                 {
+                if (fCount + 1 >= MAX_PARSING_DIGITS)
+                    {
+                    m_problem.UpdateProblemCode(FormatProblemCode::TooManyDigits);
+                    return m_next - m_start;
+                    }
+
                 int d = (int) (csp.GetAscii() - '0');
                 fval = fval * 10 + d;
                 fCount++;
@@ -460,7 +481,13 @@ size_t NumberGrabber::Grab(Utf8CP input, size_t start, Utf8Char const decimalSep
                 }
             if (csp.IsSeparator(decimalSep, thousandSep))
                 {
-                ival = ival * (int)(pow(10, fCount)) + fval;
+                if (iCount + fCount >= MAX_PARSING_DIGITS)
+                    {
+                    m_problem.UpdateProblemCode(FormatProblemCode::TooManyDigits);
+                    return m_next - m_start;
+                    }
+
+                ival = ival * (int64_t)(pow(10, fCount)) + fval;
                 iCount = iCount + fCount;
                 fval = 0;
                 fCount = 0;
@@ -472,6 +499,12 @@ size_t NumberGrabber::Grab(Utf8CP input, size_t start, Utf8Char const decimalSep
             csp.Iterate(m_input);
             while (csp.IsDigit())    // if there any digits - they will be accumulated in the int part
                 {
+                if (iCount + 1 >= MAX_PARSING_DIGITS)
+                    {
+                    m_problem.UpdateProblemCode(FormatProblemCode::TooManyDigits);
+                    return m_next - m_start;
+                    }
+
                 int d = (int) (csp.GetAscii() - '0');
                 ival = ival * 10 + d;
                 iCount++;
@@ -494,6 +527,12 @@ size_t NumberGrabber::Grab(Utf8CP input, size_t start, Utf8Char const decimalSep
             }
         while (csp.IsDigit())    // if there any digits - they will be accumulated in the fraction
             {
+            if (eCount + 1 >= MAX_PARSING_DIGITS)
+                {
+                m_problem.UpdateProblemCode(FormatProblemCode::TooManyDigits);
+                return m_next - m_start;
+                }
+
             int d = (int)(csp.GetAscii() - '0');
             eval = eval * 10 + d;
             eCount++;
@@ -522,7 +561,7 @@ size_t NumberGrabber::Grab(Utf8CP input, size_t start, Utf8Char const decimalSep
             dval *= f;
             }
         m_dval = (sign < 0)? -dval : dval;
-        m_ival = (int)dval;    // regardless of what we collected there it should be refreshed
+        m_ival = (int64_t)dval;    // regardless of what we collected there it should be refreshed
         }
     else if(iCount > 0)
         {
@@ -748,6 +787,12 @@ void FormatParsingSet::Init(Utf8CP input, size_t start, BEU::UnitCP unit, Format
     while (!ng.IsEndOfLine())
         {
         ng.Grab(m_input, ind, decSep, thousSep);
+        if (ng.HasProblem())
+            {
+            m_problem.UpdateProblemCode(ng.GetProblemCode());
+            break;
+            }
+
         if (ng.GetLength() > 0)  // a number is detected
             {
             if (!m_symbs.empty())

@@ -42,6 +42,8 @@ public:
     BEU::UnitCP foot;
     BEU::UnitCP inch;
     BEU::UnitCP arcDeg;
+    BEU::UnitCP meter;
+    BEU::UnitCP millimeter;
     void SetUp() override
         {
         FormattingTestFixture::SetUp();
@@ -50,6 +52,8 @@ public:
         ASSERT_NE(nullptr, foot = s_unitsContext->LookupUnit("FT"));
         ASSERT_NE(nullptr, inch = s_unitsContext->LookupUnit("IN"));
         ASSERT_NE(nullptr, arcDeg = s_unitsContext->LookupUnit("ARC_DEG"));
+        ASSERT_NE(nullptr, meter = s_unitsContext->LookupUnit("M"));
+        ASSERT_NE(nullptr, millimeter = s_unitsContext->LookupUnit("MM"));
         }
 
     Utf8String GetFmtStringErrMsg(Utf8CP fmtStr){ return Utf8String("format string: \"") + fmtStr + "\""; }
@@ -875,6 +879,52 @@ TEST_F(FormatParsingSetTest, CompositeFormats_IGNORED)
     TestValidParseToQuantity("1 MILE 3 YRD 2 FT 6 IN", inch, 1*63360 + 3*36       + 2*12       + 6*1);
 
     TestValidParseToQuantity("2 1/2 FT 6 IN", inch, 2.5*12 + 6*1);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Bao.Tran                  03/18
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(FormatParsingSetTest, OverflowNumberTest)
+    {
+    TestValidParseToQuantity("812345678910111 m", meter, 812345678910111);
+    FormatParsingSet fps("8123456789101110 m", meter);
+    EXPECT_TRUE(fps.HasProblem());
+    EXPECT_TRUE(fps.GetProblemCode() == FormatProblemCode::TooManyDigits);
+
+    TestValidParseToQuantity("0.012345678910111 m", meter, 0.01234567891011101);
+    fps = FormatParsingSet("0.0123456789101112 m", meter);
+    EXPECT_TRUE(fps.HasProblem()) << "Should be overflow because the number of digits in the floating part is more than 15";
+    EXPECT_TRUE(fps.GetProblemCode() == FormatProblemCode::TooManyDigits);
+
+    TestValidParseToQuantity("0.000000000000001 m", meter, 0.000000000000001);
+    fps = FormatParsingSet("0.0000000000000001 m", meter);
+    EXPECT_TRUE(fps.HasProblem()) << "Should be overflow because the number of digits in the floating part is more than 15";
+    EXPECT_TRUE(fps.GetProblemCode() == FormatProblemCode::TooManyDigits);
+
+    TestValidParseToQuantity("123456789101112.123456789101112 m", meter, 123456789101112.123456789101112);
+    fps = FormatParsingSet("123456789101112134.123456789101112 m", meter);
+    EXPECT_TRUE(fps.HasProblem()) << "Should be overflow because the number of digits in the integer part is more than 15";
+    EXPECT_TRUE(fps.GetProblemCode() == FormatProblemCode::TooManyDigits);
+
+    TestValidParseToQuantity("223,372,036,854,775 m", millimeter, 2.2337203685477501e+17);
+    fps = FormatParsingSet("9,223,372,036,854,775 m", meter);
+    EXPECT_TRUE(fps.HasProblem()) << "Should be overflow because the number of digits in the integer part is more than 15";
+    EXPECT_TRUE(fps.GetProblemCode() == FormatProblemCode::TooManyDigits);
+
+    TestValidParseToQuantity("1/223372036854775 m", meter, 4.4768361075121889e-15);
+    fps = FormatParsingSet("1/9223372036854775 m", meter);
+    EXPECT_TRUE(fps.HasProblem()) << "Should be overflow because the number of digits in the denominator part is more than 15";
+    EXPECT_TRUE(fps.GetProblemCode() == FormatProblemCode::TooManyDigits);
+
+    TestValidParseToQuantity("1/999999999999999 m", meter, 1.0000000000000011e-15);
+    fps = FormatParsingSet("1/9999999999999999 m", meter);
+    EXPECT_TRUE(fps.HasProblem()) << "Should be overflow because the number of digits in the denominator part is more than 15";
+    EXPECT_TRUE(fps.GetProblemCode() == FormatProblemCode::TooManyDigits);
+
+    TestValidParseToQuantity("100000000000000/1 m", meter, 100000000000000);
+    fps = FormatParsingSet("1000000000000000/1 m", meter);
+    EXPECT_TRUE(fps.HasProblem()) << "Should be overflow because the number of digits in the nominator part is more than 15";
+    EXPECT_TRUE(fps.GetProblemCode() == FormatProblemCode::TooManyDigits);
     }
 
 //---------------------------------------------------------------------------------------
