@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BuildContext
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd"
+    >
+
+    <Part Name="QuantityTakeoffsAspects">        
+        <SubPart PartName="QuantityTakeoffsAspectsApi"/>
+        <SubPart PartName="QuantityTakeoffsAspectsElements"/>
+        <SubPart PartName="QuantityTakeoffsAspectsHandlers"/>
+        <SubPart PartName="QuantityTakeoffsAspectsDomain"/>
+        <SubPart PartName="QuantityTakeoffsAspectsSchema" />
+    </Part>
+
+    <Part Name="QuantityTakeoffsAspectsSchema">
+        <SubPart PartName="QuantityTakeoffsAspectsSchema" Repository="BisSchemas" PartFile="BisSchemas" />
+    </Part>
+
+    <Part Name="QuantityTakeoffsAspectsApi" BentleyBuildMakeFile="QuantityTakeoffsAspectsApi.prewire.mke">
+        <Bindings>
+            <Directory SourceName="PublicApi/QuantityTakeoffsAspects" ProductDirectoryName="QuantityTakeoffsAspectsIncludes" />
+            <PublicAPI Domain="QuantityTakeoffsAspects"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="QuantityTakeoffsAspectsElements" BentleyBuildMakeFile="Elements/QuantityTakeoffsAspectsElements.mke" ApiNumber="M02">
+        <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+        <SubPart PartName="QuantityTakeoffsAspectsApi"/>
+        <Bindings>
+            <Libs>Delivery/$(libprefix)QuantityTakeoffsAspectsElements$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)QuantityTakeoffsAspectsElements$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="QuantityTakeoffsAspectsHandlers" BentleyBuildMakeFile="Handlers/QuantityTakeoffsAspectsHandlers.mke" ApiNumber="M02">
+        <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+        <SubPart PartName="QuantityTakeoffsAspectsElements"/>
+        <Bindings>
+            <Libs>Delivery/$(libprefix)QuantityTakeoffsAspectsHandlers$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)QuantityTakeoffsAspectsHandlers$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+    
+    <Part Name="QuantityTakeoffsAspectsDomain" BentleyBuildMakeFile="Domain/QuantityTakeoffsAspectsDomain.mke" ApiNumber="M02">
+        <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+        <SubPart PartName="QuantityTakeoffsAspectsApi"/>
+        <SubPart PartName="QuantityTakeoffsAspectsSchema" />
+        <SubPart PartName="QuantityTakeoffsAspectsHandlers"/>
+        <Bindings>
+            <Libs>Delivery/$(libprefix)QuantityTakeoffsAspectsDomain$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)QuantityTakeoffsAspectsDomain$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+
+    <Part
+        Name="RunGtest"
+        DeferType="RunUnitTests"
+        BentleyBuildMakeFile="Tests/RunTests.mke"
+        BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/QuantityTakeoffsAspects-GtestProduct/QuantityTakeoffsAspectsTest"
+        OnlyPlatforms="x86,x64,MacOs*,Linux*"
+    >
+        <SubProduct ProductName="QuantityTakeoffsAspects-GtestProduct" />
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/QuantityTakeoffsAspectsTest.log</Files>
+        </Bindings>
+    </Part>
+
+    <Product Name="QuantityTakeoffsAspects-GtestProduct" >
+        <SubPart PartName="QuantityTakeoffsAspects-Gtest"/>
+        <Directories DirectoryListName="QuantityTakeoffsAspectsGTestDirectories"/>
+    </Product>
+
+    <ProductDirectoryList ListName="QuantityTakeoffsAspectsGTestDirectories">
+        <ProductDirectory Name="Gtest-NativeAssemblies" Path=""/>
+        <ProductDirectory Name="Gtest-NativeAssemblies" Path="" LibType="Static"/>
+        <ProductDirectory Name="Assemblies" Path=""/>
+        <ProductDirectory Name="Assemblies" Path="" LibType="Static"/>
+        <ProductDirectory Name="Assets" Path="Assets-g"/>
+        <ProductDirectory Name="Assets" Path="Assets-g" LibType="static"/>
+        <ProductDirectory Name="Gtest-Assets" Path="Assets"/>
+        <ProductDirectory Name="Gtest-Assets" Path="Assets" LibType="Static"/>
+        <ProductDirectory Name="VendorNotices" Deliver="false" />
+        <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
+        <ProductDirectory Name="QuantityTakeoffsAspectsIncludes" Path="QuantityTakeoffs" />
+        <ProductDirectory Name="UnitTests-Objects" Path="unittests" />
+    </ProductDirectoryList>
+
+    <Part
+        Name="QuantityTakeoffsAspects-Gtest"
+        DeferType="BuildUnitTests"
+        BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke"
+        BentleyBuildMakeOptions="-dTEST_NAME=QuantityTakeoffsAspectsTest -dTEST_COLLECTION_PRODUCT=QuantityTakeoffsAspects-TestsProduct -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3"
+        OnlyPlatforms="x86,x64,Linux*,MacOS*"
+    >
+        <SubProduct ProductName="QuantityTakeoffsAspects-TestsProduct"/>
+        <SubPart PartName="DgnClientSdk-TestHelpers" Repository="DgnClientFx" PartFile="DgnClientFx"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/QuantityTakeoffsAspectsTest/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/QuantityTakeoffsAspectsTest/Assets" />
+        </Bindings>
+    </Part>
+
+    <Product Name="QuantityTakeoffsAspects-TestsProduct">
+        <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
+        <SubPart PartName="QuantityTakeoffsAspects-Tests"/>
+        <SubPart PartName="DgnPlatformSqlang" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="QuantityTakeoffsAspects-Tests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
+        <SubPart PartName="BuildSharedTestUtils" PartFile="BuildingShared" Repository="BuildingShared" />
+        <SubPart PartName="PrewireForUnitTests"/>
+        <SubPart PartName="BackdoorForUnitTests" Repository="DgnClientFx" PartFile="DgnClientFx"/>
+        <SubPart PartName="QuantityTakeoffsAspects"/>
+        <SubPart PartName="QuantityTakeoffsAspectsDomain"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="QuantityTakeoffsAspects/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/QuantityTakeoffsAspects_en.sqlang.db3</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/Prewire.mke">
+        <Bindings>
+            <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="QuantityTakeoffsAspects">
+                Delivery/UnitTests/ignore_list.txt
+            </Files>
+        </Bindings>
+    </Part>
+
+</BuildContext>
