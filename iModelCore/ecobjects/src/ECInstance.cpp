@@ -2738,7 +2738,7 @@ struct  InstanceXmlReader
                 }
             if (NULL == foundClass)
                 {
-                LOG.errorv("Failed to find ECClass %s in %s", m_className.c_str(), schema->GetFullSchemaName().c_str());
+                LOG.errorv("Failed to find ECClass '%s' in '%s'", m_className.c_str(), schema->GetFullSchemaName().c_str());
                 return InstanceReadStatus::ECClassNotFound;
                 }
 

@@ -1166,6 +1166,32 @@ BentleyStatus ECValue::SetDateTimeTicks(int64_t ceTicks, DateTime::Info const& d
     return m_dateTimeInfo.SetMetadata(dateTimeMetadata);
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Bao.Tran                       04/2019
+//+---------------+---------------+---------------+---------------+---------------+-----
+BentleyStatus ECValue::SetEnumeration(ECEnumerationCR enumeration, int32_t enumeratorValue)
+    {
+    if (!enumeration.GetIsStrict() || enumeration.FindEnumerator(enumeratorValue) != nullptr)
+        {
+        SetInteger(enumeratorValue);
+        return BentleyStatus::SUCCESS;
+        }
+    return BentleyStatus::ERROR;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Bao.Tran                       04/2019
+//+---------------+---------------+---------------+---------------+---------------+-----
+BentleyStatus ECValue::SetEnumeration(ECEnumerationCR enumeration, Utf8CP enumeratorValue)
+    {
+    if (!enumeration.GetIsStrict() || enumeration.FindEnumerator(enumeratorValue) != nullptr)
+        {
+        SetUtf8CP(enumeratorValue);
+        return BentleyStatus::SUCCESS;
+        }
+    return BentleyStatus::ERROR;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
