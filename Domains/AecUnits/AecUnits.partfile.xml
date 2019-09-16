@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../bsicommon/build/PartFile.xsd">
+
+    <Part Name="AecUnits" PrgOutputDir="DesignModelingDomainsSDK">
+        <SubPart PartName="RunAecUnitsTests"/>
+        <SubPart PartName="AecUnitsDomain"/>
+    </Part>
+
+    <Part Name="AecUnitsDomain" BentleyBuildMakeFile="AecUnits.mke" ApiNumber="M02">
+        <SubPart PartName="AecUnitsPublicAPI"/>
+        <SubPart PartName="DgnPlatformDLL"        PartFile="DgnPlatform"  Repository="DgnPlatform" />
+        <Bindings>
+            <Libs>Delivery/$(libprefix)AecUnits$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)AecUnits$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>   
+
+    <Part Name="AecUnitsPublicAPI" BentleyBuildMakeFile="AecUnits.prewire.mke" ApiNumber="M02">
+        <SubPart PartName="AecUnitsSchema" Repository="BisSchemas" PartFile="BisSchemas" />
+        <Bindings>
+            <PublicAPI Domain="AecUnits"/>
+          <!--  <Directory SourceName="Dox/Pages/Building"  SubPartDirectory="Dox/Pages/Building"/>
+            <Directory SourceName="Dox/Images/Building" SubPartDirectory="Dox/Images/Building"/> -->
+        </Bindings>
+    </Part>
+    
+    <Part Name="AecUnitsTestsExe" DeferType="AecUnitsTests" BentleyBuildMakeFile="Tests/Tests.mke" OnlyPlatforms="x64">
+        <SubPart PartName="google_gtest_lib"           PartFile="gtest"                 Repository="util-gtest"  />
+        <SubPart PartName="DgnView"                    PartFile="DgnDisplay"            Repository="DgnDisplay"  />
+        <SubPart PartName="DgnPlatformSqlang"          PartFile="DgnPlatform"           Repository="DgnPlatform" />
+        <SubPart PartName="AecUnitsDomain"/>
+        <Bindings>
+            <Assemblies>Delivery/$(shlibprefix)AecUnitsTests.exe</Assemblies>
+            <Files ProductDirectoryName="Assets"> Delivery/AecUnitsTests.logging.config.xml</Files>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang">Delivery/AecUnitsTests_en-US.sqlang.db3</Files>
+        </Bindings>
+    </Part>
+
+    <ProductDirectoryList ListName="Tests">
+        <ProductDirectory Name="VendorNotices"                  Path="VendorNotices"/>
+        <ProductDirectory Name="Assemblies"                     Path="Assemblies"/>
+        <ProductDirectory Name="Libs"                           Path="Libs"/>
+        <ProductDirectory Name="Assets"                         Path="Assemblies/Assets"/>
+        <ProductDirectory Name="IgnoreList"                     Path="Ignore"/>
+        <ProductDirectory Name="DgnPlatformSqlang"              Path="sqlang"/>
+        <ProductDirectory Name="UnitTests-Assets"               Deliver="false"/>
+        <ProductDirectory Name="UnitTests-IgnoreList"           Deliver="false"/>
+        <ProductDirectory Name="UnitTests-Objects"              Deliver="false"/>
+    </ProductDirectoryList>
+
+    <Product Name="AecUnitsTests" OnlyPlatforms="x64">
+        <SubPart PartName="AecUnitsTestsExe"/>
+        <Directories DirectoryListName="Tests"/>
+    </Product>
+
+
+    <Part Name="RunAecUnitsTests" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=AecUnitsTests\Assemblies\  -dGTEST_NAME=AecUnitsTests" OnlyPlatforms="x64" ExcludeLibType="Static">
+        <SubProduct ProductName="AecUnitsTests" />
+        <Bindings>
+            <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/AecUnitsTests.log</Files>
+        </Bindings>
+    </Part>
+
+
+
+</BuildContext>
