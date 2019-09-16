@@ -1,0 +1,37 @@
+#--------------------------------------------------------------------------------------
+#
+#   Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#--------------------------------------------------------------------------------------
+HAVE_PERMISSION_TO_COMPILE_AT_W3=1
+
+%include mdl.mki
+%include $(SrcRoot)LoggingSdk/mki/LoggingSdkCommon.mki
+
+programName         = Bentley.logging.console$(DLM_API_NUMBER)
+prodSrc             = $(_MakeFilePath)
+
+ASSEMBLY_REFERENCE  = $(BuildContextDelivery)Bentley.logging$(DLM_API_NUMBER).dll
+%include csrefapnd.mki
+
+always:
+    !~@mkdir $(o)
+
+
+#-----------------------------------------------------------------------
+#   Compile C# Modules
+#-----------------------------------------------------------------------
+
+ASSEMBLY_DLL = 1
+ASSEMBLY_VERSION = 2.0.0.0
+ASSEMBLY_DESCRIPTION = Console Logging Provider
+ASSEMBLY_PRODUCT_NAME = Console Logging Provider
+%include $(SharedMki)VersionedPartSignatureDefaults.mki
+ASSEMBLY_KEYFILE = $(ASSEMBLY_KEYFILE_DEFAULT)
+
+
+ASSEMBLY_SOURCE_LIST = $(prodSrc)console.cs
+
+%include $(SharedMki)VersionedPartLinkCSharpAssembly.mki
+
+#-----------------------------------------------------------------------
