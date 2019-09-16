@@ -222,7 +222,9 @@ struct MstnBridgeTestsFixture : ::testing::Test
         };
 
     void RunTheBridge(BentleyApi::bvector<BentleyApi::WString> const& args);
-    
+
+    void CleanupElementECExtensions();
+
     static void TerminateHost();
 
     static void SetupTestDirectory(BentleyApi::BeFileNameR dirPath,  BentleyApi::WCharCP dirName, BentleyApi::WCharCP iModelName,
