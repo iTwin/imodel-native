@@ -1,0 +1,17 @@
+[repository]
+native = CRLF
+only-consistent = False
+
+[patterns]
+**.mke = CRLF
+**.mki = CRLF
+**.vcxproj = CRLF
+**.vcproj = CRLF
+**.csproj = CRLF
+**.sln = CRLF
+**.ibim = BIN
+**.bim = BIN
+**.imodel = BIN
+**.xcodeproj** = LF
+**.xcconfig = LF
+** = native
