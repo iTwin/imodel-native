@@ -1615,6 +1615,35 @@ bool IsInitializationFinished(InitializationState state)
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             09/2019
+//---------------------------------------------------------------------------------------
+void ProcessInitializationFailure(InitializationState initializationState, FileResultPtr finalResult, Utf8StringCR methodName)
+    {
+    switch (initializationState)
+        {
+        case InitializationState::Scheduled:
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Scheduled");
+            finalResult->SetError({ Error::Id::FileIsNotYetInitialized });
+            break;
+        case InitializationState::OutdatedFile:
+            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File is outdated");
+            finalResult->SetError({ Error::Id::FileIsOutdated });
+            break;
+        case InitializationState::CodeTooLong:
+            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Code too long");
+            finalResult->SetError({ Error::Id::FileCodeTooLong });
+            break;
+        case InitializationState::SeedFileIsBriefcase:
+            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Uploaded seed file is a briefcase");
+            finalResult->SetError({ Error::Id::FileIsBriefcase });
+            break;
+        default:
+            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File initialization failed");
+            finalResult->SetError({ Error::Id::FileInitializationFailed });
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                   Algirdas.Mikoliunas             10/2016
 //---------------------------------------------------------------------------------------
 void iModelConnection::WaitForInitializedBIMFile(BeGuid fileGuid, FileResultPtr finalResult, ICancellationTokenPtr cancellationToken) const
@@ -1644,29 +1673,26 @@ void iModelConnection::WaitForInitializedBIMFile(BeGuid fileGuid, FileResultPtr 
 
     if (initializationState != InitializationState::Success)
         {
-        switch (initializationState)
-            {
-            case InitializationState::Scheduled:
-                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Scheduled");
-                finalResult->SetError({Error::Id::FileIsNotYetInitialized});
-                break;
-            case InitializationState::OutdatedFile:
-                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File is outdated");
-                finalResult->SetError({Error::Id::FileIsOutdated});
-                break;
-            case InitializationState::CodeTooLong:
-                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Code too long");
-                finalResult->SetError({Error::Id::FileCodeTooLong});
-                break;
-            case InitializationState::SeedFileIsBriefcase:
-                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Uploaded seed file is a briefcase");
-                finalResult->SetError({ Error::Id::FileIsBriefcase });
-                break;
-            default:
-                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File initialization failed");
-                finalResult->SetError({Error::Id::FileInitializationFailed});
-            }
+        ProcessInitializationFailure(initializationState, finalResult, methodName);
         }
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             09/2019
+//---------------------------------------------------------------------------------------
+StatusTaskPtr iModelConnection::WaitForInitialization(ICancellationTokenPtr cancellationToken) const
+    {
+    FileResultPtr finalResult = std::make_shared<FileResult>();
+    finalResult->SetSuccess(nullptr);
+    BeGuid imodelId;
+    BentleyStatus status = imodelId.FromString(GetiModelInfo().GetId().c_str());
+    if (status != BentleyStatus::SUCCESS)
+        return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(Error::Id::InvalidiModelId));
+
+    WaitForInitializedBIMFile(imodelId, finalResult, cancellationToken);
+    if (!finalResult->IsSuccess())
+        return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(finalResult->GetError()));
+    return CreateCompletedAsyncTask<StatusResult>(StatusResult::Success());
     }
 
 //---------------------------------------------------------------------------------------

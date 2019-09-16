@@ -604,6 +604,84 @@ iModelTaskPtr Client::CreateEmptyiModel(Utf8StringCR contextId, Utf8StringCR iMo
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             09/2019
+//---------------------------------------------------------------------------------------
+iModelTaskPtr Client::CloneiModel(Utf8StringCR contextId, Utf8StringCR sourceiModelId, Utf8StringCR sourceChangeSetId, 
+    iModelCreateInfoPtr imodelCreateInfo, bool waitForInitialized, ICancellationTokenPtr cancellationToken) const
+    {
+    const Utf8String methodName = "Client::CloneiModel";
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+    if (m_serverUrl.empty())
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid server URL.");
+        return CreateCompletedAsyncTask<iModelResult>(iModelResult::Error(Error::Id::InvalidServerURL));
+        }
+    if (!m_credentials.IsValid() && !m_customHandler)
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Credentials are not set.");
+        return CreateCompletedAsyncTask<iModelResult>(iModelResult::Error(Error::Id::CredentialsNotSet));
+        }
+
+    StatusResult imodelValidationResult = imodelCreateInfo->Validate();
+    if (!imodelValidationResult.IsSuccess())
+        {
+        Error::Id errorId = imodelValidationResult.GetError().GetId();
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, GetiModelValidastionLogMessage(errorId));
+        return CreateCompletedAsyncTask<iModelResult>(iModelResult::Error(errorId));
+        }
+
+    imodelCreateInfo->SetTemplate(Utf8PrintfString("%s:%s", sourceiModelId.c_str(), sourceChangeSetId.c_str()));
+
+    std::shared_ptr<iModelResult> finalResult = std::make_shared<iModelResult>();
+    LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Cloning iModel. Source iModel Id: %s.", sourceiModelId.c_str());
+    return CreateiModelInstance(contextId, imodelCreateInfo, cancellationToken)
+        ->Then([=](iModelResultCR createiModelResult)
+        {
+        if (!createiModelResult.IsSuccess())
+            {
+            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, createiModelResult.GetError().GetMessage().c_str());
+            finalResult->SetError(createiModelResult.GetError());
+            return;
+            }
+
+        
+        iModelInfoPtr imodelInfo = createiModelResult.GetValue();
+        finalResult->SetSuccess(imodelInfo);
+
+        if (!waitForInitialized)
+            return;
+
+        ConnectToiModel(*imodelInfo, cancellationToken)->Then([=](iModelConnectionResultCR connectionResult)
+            {
+            if (!connectionResult.IsSuccess())
+                {
+                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, connectionResult.GetError().GetMessage().c_str());
+                finalResult->SetError(connectionResult.GetError());
+                return;
+                }
+
+            iModelConnectionPtr connection = connectionResult.GetValue();
+            LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Waiting for iModel initialization.");
+            connection->WaitForInitialization(cancellationToken)
+                ->Then([=](StatusResultCR statusResult)
+                    {
+                    if (!statusResult.IsSuccess())
+                        {
+                        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, statusResult.GetError().GetMessage().c_str());
+                        finalResult->SetError(statusResult.GetError());
+                        }
+                    });
+            });
+        })->Then<iModelResult>([=]
+            {
+            double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+            LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
+            return *finalResult;
+            });
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
 BriefcaseTaskPtr Client::OpenBriefcase(Dgn::DgnDbPtr db, bool doSync, Http::Request::ProgressCallbackCR callback,

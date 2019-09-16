@@ -38,8 +38,8 @@ private:
     iModelInfo() {}
     iModelInfo(Utf8StringCR serverUrl, Utf8StringCR id) : m_serverUrl(serverUrl), m_id(id) {}
     iModelInfo(Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR name, Utf8StringCR description, Utf8StringCR user, 
-               DateTimeCR date, UserInfoPtr ownerInfo, bool isInitialized, bvector<double> extent)
-        : iModelBaseInfo(name, description, extent), m_serverUrl(serverUrl), m_id(id), m_userCreated(user), m_createdDate(date), 
+               DateTimeCR date, UserInfoPtr ownerInfo, bool isInitialized, bvector<double> extent, Utf8StringCR imodelTemplate)
+        : iModelBaseInfo(name, description, extent, imodelTemplate), m_serverUrl(serverUrl), m_id(id), m_userCreated(user), m_createdDate(date), 
         m_ownerInfo(ownerInfo), m_isInitialized(isInitialized) {}
 
     bool operator==(iModelInfoCR rhs) const {return rhs.GetId() == GetId() && rhs.GetServerURL() == GetServerURL();}
