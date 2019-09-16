@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="NonPublished\SchemaParseUtilsTests.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ECObjectsTestPCH.h" />
+    <ClInclude Include="TestFixture\TestFixture.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="BuildTests.mke" />
+    <None Include="prewire.mke" />
+    <None Include="SeedData.prewire.mke" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ignore_list.txt" />
+  </ItemGroup>
+</Project>
