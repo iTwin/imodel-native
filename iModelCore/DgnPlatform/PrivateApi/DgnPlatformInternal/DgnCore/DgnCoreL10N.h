@@ -279,6 +279,21 @@ BENTLEY_TRANSLATABLE_STRINGS_START(DgnCoreL10N,dgncore_msg)
     L10N_STRING(ECPROPERTYCATEGORY_Material)                    // =="Material"==
     L10N_STRING(ECPROPERTYCATEGORY_Relationships)               // =="Relationships"==
 
+    L10N_STRING(RepositoryStatus_ServerUnavailable)             // =="The repository server did not respond to a request"==
+    L10N_STRING(RepositoryStatus_LockAlreadyHeld)               // =="A requested lock was already held by another briefcase"==
+    L10N_STRING(RepositoryStatus_SyncError)                     // =="Failed to sync briefcase manager with server"==
+    L10N_STRING(RepositoryStatus_InvalidResponse)               // =="Response from server not understood"==
+    L10N_STRING(RepositoryStatus_PendingTransactions)           // =="An operation requires local changes to be committed or abandoned"==
+    L10N_STRING(RepositoryStatus_LockUsed)                      // =="A lock cannot be relinquished because the associated object has been modified"==
+    L10N_STRING(RepositoryStatus_CannotCreateRevision)          // =="An operation required creation of a DgnRevision, which failed"==
+    L10N_STRING(RepositoryStatus_InvalidRequest)                // =="Request to server not understood"==
+    L10N_STRING(RepositoryStatus_RevisionRequired)              // =="A revision committed to the server must be integrated into the briefcase before the operation can be completed"==
+    L10N_STRING(RepositoryStatus_CodeUnavailable)               // =="A requested DgnCode is reserved by another briefcase or in use"==
+    L10N_STRING(RepositoryStatus_CodeNotReserved)               // =="A DgnCode cannot be released because it has not been reserved by the requesting briefcase"==
+    L10N_STRING(RepositoryStatus_CodeUsed)                      // =="A DgnCode cannot be relinquished because it has been used locally"==
+    L10N_STRING(RepositoryStatus_LockNotHeld)                   // =="A required lock is not held by this briefcase"==
+    L10N_STRING(RepositoryStatus_RepositoryIsLocked)            // =="Repository is currently locked, no changes allowed"==
+
 BENTLEY_TRANSLATABLE_STRINGS_END
 
 END_BENTLEY_DGN_NAMESPACE

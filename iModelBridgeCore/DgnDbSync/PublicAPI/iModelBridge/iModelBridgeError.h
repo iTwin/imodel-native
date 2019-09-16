@@ -30,7 +30,7 @@ enum class iModelBridgeErrorId
     {
     Unknown = -1,
     Success = 0,
-    //Leaving a gap to deal with all the iModelHub Error Ids
+    //Leaving a gap to deal with all the iModelHub Error Ids that start at 0 and stop before 600
     Usage_Error = 10000,
     Converter_Error,
     Local_error,
@@ -39,121 +39,8 @@ enum class iModelBridgeErrorId
     MissingFunctionExport,
     MissingInstance,
     ProjectwiseError,
-
-    /*
-#define RETURN_STATUS_SUCCESS           0
-#define RETURN_STATUS_USAGE_ERROR       1
-#define RETURN_STATUS_CONVERTER_ERROR   2
-#define RETURN_STATUS_SERVER_ERROR      3
-#define RETURN_STATUS_LOCAL_ERROR       4
-#define RETURN_STATUS_UNHANDLED_EXCEPTION -2
-*/
-/*
-        //iModel Hub Services Errors
-        MissingRequiredProperties = 1,
-        InvalidPropertiesValues,
-        UserDoesNotHavePermission,
-        UserDoesNotHaveAccess,
-        InvalidBriefcase,
-        BriefcaseDoesNotExist,
-        BriefcaseDoesNotBelongToUser,
-        AnotherUserPushing,
-        ChangeSetAlreadyExists,
-        ChangeSetDoesNotExist,
-        FileIsNotUploaded,
-        iModelIsNotInitialized,
-        ChangeSetPointsToBadSeed,
-        OperationFailed,
-        PullIsRequired,
-        MaximumNumberOfBriefcasesPerUser,
-        MaximumNumberOfBriefcasesPerUserPerMinute,
-        DatabaseTemporarilyLocked,
-        iModelIsLocked,
-        CodesExist,
-        LocksExist,
-        iModelAlreadyExists,
-        iModelDoesNotExist,
-        FileDoesNotExist,
-        FileAlreadyExists,
-        LockDoesNotExist,
-        LockOwnedByAnotherBriefcase,
-        CodeStateInvalid,
-        CodeReservedByAnotherBriefcase,
-        CodeDoesNotExist,
-        EventTypeDoesNotExist,
-        EventSubscriptionDoesNotExist,
-        EventSubscriptionAlreadyExists,
-        ProjectIdIsNotSpecified,
-        FailedToGetProjectPermissions,
-        FailedToGetProjectMembers,
-        FailedToGetAssetPermissions,
-        FailedToGetAssetMembers,
-        ChangeSetAlreadyHasVersion,
-        VersionAlreadyExists,
-        JobSchedulingFailed,
-        ConflictsAggregate,
-        FailedToGetProjectById,
-
-        DatabaseOperationFailed,
-        SQLiteOperationFailed,
-
-        //Long Running Processes Errors
-        FileIsNotYetInitialized = 100,
-        FileIsOutdated,
-        FileCodeTooLong,
-        FileInitializationFailed,
-        FileIsBriefcase,
-
-        //iModel Hub Client API Errors
-        NoRepositoriesFound = 200,
-        UserDoesNotExist,
-        QueryIdsNotSpecified,
-        FileIsNotBriefcase,
-        CredentialsNotSet,
-        FileNotFound,
-        iModelHubClientNotInitialized,
-        InvalidServerURL,
-        InvalidiModelName,
-        InvalidiModelId,
-        InvalidiModelConnection,
-        InvalidChangeSet,
-        InvalidVersion,
-        BriefcaseIsReadOnly,
-        TrackingNotEnabled,
-
-        //Event Errors
-        NoEventsFound = 300,
-        NoSubscriptionFound,
-        NoSASFound,
-        NotSubscribedToEventService,
-        EventServiceSubscribingError,
-        EventCallbackNotFound,
-        EventCallbackAlreadySubscribed,
-        EventCallbackNotSpecified,
-        ExecutionTimeout,
-        EventInvalid,
-
-        //WebServices Errors
-        LoginFailed = 400,
-        SslRequired,
-        NotEnoughRights,
-        NoServerLicense,
-        NoClientLicense,
-        TooManyBadLoginAttempts,
-        InternalServerError,
-        WebServicesError,
-        ConnectionError,
-        Canceled,
-
-        //ChangeSet Manager Errors
-        ApplyError = 500,
-        ChangeSetManagerError,
-        MergeSchemaChangesOnOpen,
-        ReverseOrReinstateSchemaChangesOnOpen,
-
-        AzureError,
-        DgnDbError
-*/
+    FailedToLockChannelParent,
+    // The error status could also be a RepositoryStatus, which starts at 86016 (0x15000)
     };
 
 

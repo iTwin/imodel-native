@@ -359,6 +359,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_AcquireBriefcase(iModelBridgeFwk::FwkCo
         if (BSISUCCESS != m_client->RestoreBriefcase(m_briefcaseName, m_briefcaseBasename.c_str(), briefcaseId))
             {
             context.m_error = iModelBridgeError(m_client->GetLastError());
+            SetLastError(iModelBridgeError(m_client->GetLastError()));
             return BSIERROR;
             }
         }
@@ -373,6 +374,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_AcquireBriefcase(iModelBridgeFwk::FwkCo
             {
             GetLogger().fatalv("%s - AcquireBriefcase failed\n", m_briefcaseBasename.c_str());
             }
+        SetLastError(iModelBridgeError(m_client->GetLastError()));
         return BSIERROR;
         }
 
@@ -451,6 +453,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_IModelHub_CreateRepository()
 
     ReportIssue(hubClient->GetLastError().GetMessage());
     GetLogger().error(hubClient->GetLastError().GetMessage().c_str());
+    SetLastError(iModelBridgeError(hubClient->GetLastError()));
     return BSIERROR;
     }
 
@@ -515,6 +518,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_PullMergePush(Utf8CP descIn, bool doPul
     if (BSISUCCESS != m_client->OpenBriefcase(*m_briefcaseDgnDb))
         {
         ReportIssue(m_client->GetLastError().GetMessage());
+        SetLastError(iModelBridgeError(m_client->GetLastError()));
         GetLogger().error(m_client->GetLastError().GetMessage().c_str());
         return BSIERROR;
         }
@@ -556,6 +560,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_PullMergePush(Utf8CP descIn, bool doPul
     if (BSISUCCESS != status)
         {
         ReportIssue(m_client->GetLastError().GetMessage());
+        SetLastError(iModelBridgeError(m_client->GetLastError()));
         GetLogger().error(m_client->GetLastError().GetMessage().c_str());
         return BSIERROR;
         }
@@ -781,6 +786,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_Initialize(int argc, WCharCP argv[], iM
         {
         context = iModelBridgeError(m_client->GetLastError());
         GetLogger().error("iModelBridgeFwk client is not connected.");
+        SetLastError(iModelBridgeError(m_client->GetLastError()));
         return BSIERROR;
         }
 

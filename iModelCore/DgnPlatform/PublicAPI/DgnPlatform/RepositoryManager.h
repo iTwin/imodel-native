@@ -224,7 +224,7 @@ protected:
     // Channel management
     virtual DgnElementId _GetNormalChannelParentOf(DgnModelId mid, DgnElementCP el) {return DgnElementId();}
     virtual bool _IsLockRequired(DgnElementCR element) {return true;}
-    DGNPLATFORM_EXPORT virtual RepositoryStatus _LockChannelParent();
+    DGNPLATFORM_EXPORT virtual Response _LockChannelParent();
 
     DGNPLATFORM_EXPORT virtual RepositoryStatus _PerformPrepareAction(Request& req, PrepareAction action);
 
@@ -239,7 +239,7 @@ protected:
 public:
     DgnDbR GetDgnDb() const { return m_db; } //!< The DgnDb managed by this object
 
-    RepositoryStatus LockChannelParent() {return _LockChannelParent();}
+    Response LockChannelParent() {return _LockChannelParent();}
 
     //! Of this model is in a *normal channel* return its channel parent ID.
     //! @param mid The ModelId of the model to check
@@ -404,11 +404,11 @@ public:
 
     //! Acquire an exclusive lock on Schemas in the DgnDb. 
     //! In bulk operation mode, this function does not acquire the resource but merely adds it to the pending request.
-    Response LockSchemas() { Request req; req.Locks().InsertSchemasLock(GetDgnDb()); return Acquire(req); }
+    Response LockSchemas() { Request req; req.SetOptions(ResponseOptions::All); req.Locks().InsertSchemasLock(GetDgnDb()); return Acquire(req); }
 
     //! Acquire an exclusive lock on CodeSpecs in the DgnDb. 
     //! In bulk operation mode, this function does not acquire the resource but merely adds it to the pending request.
-    Response LockCodeSpecs() { Request req; req.Locks().InsertCodeSpecsLock(GetDgnDb()); return Acquire(req); }
+    Response LockCodeSpecs() { Request req; req.SetOptions(ResponseOptions::All); req.Locks().InsertCodeSpecsLock(GetDgnDb()); return Acquire(req); }
 
     //! Obtain an iterator over the locks currently owned by this briefcase.
     //! By default, iteration is provided over a local cache of held locks. Specifying FastQuery::Yes will query the server for an up-to-date list of held locks.
@@ -592,6 +592,9 @@ public:
     //! @return Success, or an error status
     //! @remarks This method only returns locks tracked by the repository - e.g., excluding locks implicitly held for elements/models created locally by this briefcase and not yet committed to the repository
     DGNPLATFORM_EXPORT RepositoryStatus QueryHeldLocks(DgnLockSet& states, DgnDbR db) { return _QueryHeldLocks(states, db); };
+
+    //! Get a readable description of a RepositoryStatus
+    DGNPLATFORM_EXPORT static Utf8String RepositoryStatusToString(RepositoryStatus);
 
 };
 

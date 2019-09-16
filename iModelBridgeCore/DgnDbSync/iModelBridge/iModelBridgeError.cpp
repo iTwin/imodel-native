@@ -42,8 +42,12 @@ void iModelBridgeError::WriteErrorMessage(BeFileNameCR errorFileName)
         document.AddMember("Message", rapidjson::Value(m_message.c_str(), allocator), allocator);
     if (!m_description.empty())
         document.AddMember("Description", rapidjson::Value(m_description.c_str(), allocator), allocator);
-    //if (!m_extendedData.isNull())
-    //    document.AddMember("Details", m_extendedData, allocator);
+    if (!m_extendedData.isNull())
+        {
+        rapidjson::Document extendedData;
+        extendedData.Parse(Json::FastWriter::ToString(m_extendedData).c_str());
+        document.AddMember("ExtendedData", extendedData, allocator);
+        }
     
     FILE* fp = fopen(fileNameutf8.c_str(), "w");
     char buffer[1024];

@@ -289,6 +289,7 @@ protected:
     IDmsSupport*    m_dmsSupport;
     NativeLogging::Provider::Log4cxxProvider* m_logProvider;
     RefCountedPtr<iModelBridgeFwkPush> m_bcMgrForBridges;
+    iModelBridgeError* m_lastError{};
 
     BeSQLite::DbResult OpenOrCreateStateDb(iModelBridgeError& errorContext);
     void PrintUsage(WCharCP programName);
@@ -389,6 +390,10 @@ public:
     IMODEL_BRIDGE_FWK_EXPORT static BeFileName ComputeReportFileName(BeFileNameCR bcName);
     //! @private
     IMODEL_BRIDGE_FWK_EXPORT void ReportIssue(WStringCR);
+    //! @private
+    IMODEL_BRIDGE_FWK_EXPORT void SetLastError(iModelBridgeError const&);
+    //! @private
+    IMODEL_BRIDGE_FWK_EXPORT void SetLastError(IBriefcaseManager::Response const&, Utf8CP description, iModelBridgeErrorId* errId = nullptr);
     //! @private
     void ReportIssue(Utf8StringCR msg) {ReportIssue(WString(msg.c_str(), true));}
     //! @private

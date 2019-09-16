@@ -1561,6 +1561,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
 
     //  The repo already exists. Run the bridge to update it and then push the changeset to the iModel.
     int status;
+    m_lastError = &errorContext;
     try
         {
         StopWatch updateExistingBim(true);
@@ -1572,6 +1573,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
         LOG.fatal("UpdateExistingBim failed");
         status = RETURN_STATUS_LOCAL_ERROR;
         }
+    m_lastError = nullptr;
 
     SetCurrentPhaseName("Cleaning up");
     GetProgressMeter().AddSteps(2);
@@ -1805,7 +1807,9 @@ BentleyStatus   iModelBridgeFwk::GetSchemaLock()
             if (0 != PullMergeAndPushChange("GetSchemaLock", false, true))  // pullmergepush + re-open
                 return BSIERROR;
             }
-        status = m_briefcaseDgnDb->BriefcaseManager().LockSchemas().Result();
+        auto response = m_briefcaseDgnDb->BriefcaseManager().LockSchemas();
+        status = response.Result();
+        SetLastError(response, "");
         } while ((RepositoryStatus::Success != status) && (++retryAttempt < m_maxRetryCount) && IModelClientBase::SleepBeforeRetry());
 
     if (RepositoryStatus::Success != status)
@@ -1844,7 +1848,10 @@ BentleyStatus iModelBridgeFwk::LockChannelParent(SubjectCR jobSubj)
             if (0 != PullMergeAndPushChange("LockChannelParent", false, true))  // pullmergepush + re-open
                 return BSIERROR;
             }
-        status = db.BriefcaseManager().LockChannelParent();
+        auto resp = db.BriefcaseManager().LockChannelParent();
+        auto errId = iModelBridgeErrorId::FailedToLockChannelParent;
+        SetLastError(resp, "", &errId);
+        status = resp.Result();
         } while ((RepositoryStatus::Success != status) && (++retryAttempt < m_maxRetryCount) && IModelClientBase::SleepBeforeRetry());
 
     if (RepositoryStatus::Success != status)
@@ -2787,4 +2794,30 @@ bool            iModelBridgeFwk::EnableECProfileUpgrade() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void iModelBridgeFwk::WriteErrorDocument()
     {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeFwk::SetLastError(iModelBridgeError const& err)
+    {
+    if (m_lastError != nullptr)
+        *m_lastError = err;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeFwk::SetLastError(IBriefcaseManager::Response const& response, Utf8CP description, iModelBridgeErrorId* idToUse)
+    {
+    if (response.Result() == RepositoryStatus::Success)
+        return;
+
+    iModelBridgeError err;
+    err.m_id = idToUse? *idToUse : static_cast<iModelBridgeErrorId>(response.Result());
+    err.m_description = description;
+    err.m_message = IRepositoryManager::RepositoryStatusToString(response.Result());
+    response.ToJson(err.m_extendedData);
+
+    SetLastError(err);
     }

@@ -2798,14 +2798,14 @@ DgnElementId IBriefcaseManager::GetNormalChannelParentOf(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus IBriefcaseManager::_LockChannelParent()
+IBriefcaseManager::Response IBriefcaseManager::_LockChannelParent()
     {
     auto channelParentInfo = GetChannelProps();
     auto channelParent = GetDgnDb().Elements().GetElement(channelParentInfo.channelParentId);
     if (!channelParent.IsValid())
         {
         BeAssert(false);
-        return RepositoryStatus::InvalidRequest;
+        return Response(RequestPurpose::Acquire, ResponseOptions::All, RepositoryStatus::InvalidRequest);
         }
 
     Request req;
@@ -2814,5 +2814,33 @@ RepositoryStatus IBriefcaseManager::_LockChannelParent()
     req.Locks().InsertLock(LockableId(channelParent->GetModelId()), LockLevel::Shared);
     req.Locks().InsertLock(LockableId(channelParent->GetDgnDb()), LockLevel::Shared);
  
-    return Acquire(req).Result();
+    req.SetOptions(ResponseOptions::All);
+
+    return Acquire(req);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      08/19
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String IRepositoryManager::RepositoryStatusToString(RepositoryStatus s)
+    {
+    switch(s)
+        {
+        case RepositoryStatus::Success: return "";
+        case RepositoryStatus::ServerUnavailable:       return DgnCoreL10N::GetString(DgnCoreL10N::RepositoryStatus_ServerUnavailable());
+        case RepositoryStatus::LockAlreadyHeld:         return DgnCoreL10N::GetString(DgnCoreL10N::RepositoryStatus_LockAlreadyHeld());
+        case RepositoryStatus::SyncError:               return DgnCoreL10N::GetString(DgnCoreL10N::RepositoryStatus_SyncError());
+        case RepositoryStatus::InvalidResponse:         return DgnCoreL10N::GetString(DgnCoreL10N::RepositoryStatus_InvalidResponse());
+        case RepositoryStatus::PendingTransactions:     return DgnCoreL10N::GetString(DgnCoreL10N::RepositoryStatus_PendingTransactions());
+        case RepositoryStatus::LockUsed:                return DgnCoreL10N::GetString(DgnCoreL10N::RepositoryStatus_LockUsed());
+        case RepositoryStatus::CannotCreateRevision:    return DgnCoreL10N::GetString(DgnCoreL10N::RepositoryStatus_CannotCreateRevision());
+        case RepositoryStatus::InvalidRequest:          return DgnCoreL10N::GetString(DgnCoreL10N::RepositoryStatus_InvalidRequest());
+        case RepositoryStatus::RevisionRequired:        return DgnCoreL10N::GetString(DgnCoreL10N::RepositoryStatus_RevisionRequired());
+        case RepositoryStatus::CodeUnavailable:         return DgnCoreL10N::GetString(DgnCoreL10N::RepositoryStatus_CodeUnavailable());
+        case RepositoryStatus::CodeNotReserved:         return DgnCoreL10N::GetString(DgnCoreL10N::RepositoryStatus_CodeNotReserved());
+        case RepositoryStatus::CodeUsed:                return DgnCoreL10N::GetString(DgnCoreL10N::RepositoryStatus_CodeUsed());
+        case RepositoryStatus::LockNotHeld:             return DgnCoreL10N::GetString(DgnCoreL10N::RepositoryStatus_LockNotHeld());
+        case RepositoryStatus::RepositoryIsLocked:      return DgnCoreL10N::GetString(DgnCoreL10N::RepositoryStatus_RepositoryIsLocked());
+        }
+    return "?";
     }
