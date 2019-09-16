@@ -1,0 +1,178 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Mke">
+      <UniqueIdentifier>{7ce51174-8ca6-41f6-bfa1-5e12d2e867e6}</UniqueIdentifier>
+      <Extensions>*.mke;*.mki</Extensions>
+    </Filter>
+    <Filter Include="Schemas">
+      <UniqueIdentifier>{4fa80fe8-5e7a-4865-8e40-d0ee486fd6a9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="StructuralPhysical">
+      <UniqueIdentifier>{6646c568-d20a-486b-947a-94209b2db834}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utilities">
+      <UniqueIdentifier>{f163d5b0-dfe7-4b74-b751-cb31b378e72f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="PublicAPI">
+      <UniqueIdentifier>{60a0ce86-96c2-4e08-97c6-47cb9445f87d}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="structural.mke">
+      <Filter>Mke</Filter>
+    </None>
+    <None Include="Structural.prewire.mke">
+      <Filter>Mke</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="StructuralDomains.Partfile.xml">
+      <Filter>Mke</Filter>
+    </Xml>
+    <Xml Include="StructuralPhysical.ecschema.xml">
+      <Filter>Schemas</Filter>
+    </Xml>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="StructuralDomainUtilities.cpp">
+      <Filter>Utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="StructuralPhysicalModel.cpp">
+      <Filter>StructuralPhysical</Filter>
+    </ClCompile>
+    <ClCompile Include="StructuralMember.cpp">
+      <Filter>StructuralPhysical</Filter>
+    </ClCompile>
+    <ClCompile Include="StructuralSubtraction.cpp">
+      <Filter>StructuralPhysical</Filter>
+    </ClCompile>
+    <ClCompile Include="Wall.cpp">
+      <Filter>StructuralPhysical</Filter>
+    </ClCompile>
+    <ClCompile Include="Brace.cpp">
+      <Filter>StructuralPhysical</Filter>
+    </ClCompile>
+    <ClCompile Include="FoundationMember.cpp">
+      <Filter>StructuralPhysical</Filter>
+    </ClCompile>
+    <ClCompile Include="Slab.cpp">
+      <Filter>StructuralPhysical</Filter>
+    </ClCompile>
+    <ClCompile Include="SpreadFooting.cpp">
+      <Filter>StructuralPhysical</Filter>
+    </ClCompile>
+    <ClCompile Include="StripFooting.cpp">
+      <Filter>StructuralPhysical</Filter>
+    </ClCompile>
+    <ClCompile Include="StructuralAddition.cpp">
+      <Filter>StructuralPhysical</Filter>
+    </ClCompile>
+    <ClCompile Include="StructuralElement.cpp">
+      <Filter>StructuralPhysical</Filter>
+    </ClCompile>
+    <ClCompile Include="StructuralPhysicalDomain.cpp">
+      <Filter>StructuralPhysical</Filter>
+    </ClCompile>
+    <ClCompile Include="Beam.cpp">
+      <Filter>StructuralPhysical</Filter>
+    </ClCompile>
+    <ClCompile Include="Column.cpp">
+      <Filter>StructuralPhysical</Filter>
+    </ClCompile>
+    <ClCompile Include="ConcreteMaterialProperties.cpp">
+      <Filter>StructuralPhysical</Filter>
+    </ClCompile>
+    <ClCompile Include="MaterialProperties.cpp">
+      <Filter>StructuralPhysical</Filter>
+    </ClCompile>
+    <ClCompile Include="SteelMaterialProperties.cpp">
+      <Filter>StructuralPhysical</Filter>
+    </ClCompile>
+    <ClCompile Include="Pile.cpp">
+      <Filter>StructuralPhysical</Filter>
+    </ClCompile>
+    <ClCompile Include="PileCap.cpp">
+      <Filter>StructuralPhysical</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="PublicAPI\StructuralDomainUtilities.h">
+      <Filter>Utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\Beam.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\Brace.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\Column.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ConcreteMaterialProperties.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\FoundationMember.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\MaterialProperties.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\Slab.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\SpreadFooting.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\SteelMaterialProperties.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\StripFooting.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\StructuralAddition.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\StructuralDomainApi.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\StructuralElement.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\StructuralMember.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\StructuralPhysicalApi.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\StructuralPhysicalDefinitions.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\StructuralPhysicalDomain.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\StructuralPhysicalModel.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\StructuralSubtraction.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\Wall.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\Pile.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\PileCap.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
