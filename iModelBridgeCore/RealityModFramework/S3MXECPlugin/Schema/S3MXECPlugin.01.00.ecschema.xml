@@ -1,0 +1,147 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="S3MX" nameSpacePrefix="S3MX" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00" prefix="bsca" />
+
+    <!-- A RealityData represents the full dataset encompassing all folders and documents required to fully represent the RealidyData -->
+    <ECClass typeName="RealityData" isDomainClass="True">
+
+        <!-- [Set by default/Unmodifyable] Id of the RealityData. This field uniquely identifies the RealityData -->
+        <ECProperty propertyName="Id" typeName="string" />
+
+        <!-- [Set by default/Unmodifyable except for a CONNECT Service which may specify a value other than Bentey Systems] EnterpriseId is a string that contains the CONNECT id of the enterprise owner of the data. -->
+        <ECProperty propertyName="EnterpriseId" typeName="string" />
+
+        <!-- [Set by default/Unmodifyable] The name of the Azure Blob container that contains the reality data -->
+        <ECProperty propertyName="ContainerName" typeName="string" />
+
+        <!-- [Required] Name of the RealityData -->
+        <ECProperty propertyName="Name" typeName="string" />
+
+        <!-- [Optional] The Dataset is a textual key that represents the dataset the reality data belongs to if applicable. For the purpose of query and indexation it is preferable that the Dataset/Name pair be unique even if this simply implies setting the company name or CONNECT guid as Dataset -->
+        <ECProperty propertyName="Dataset" typeName="string" />
+
+        <!-- [Optional] The group is used to be able to group RealityData with each other. This can be used to mimic a one-level folder structure to group many reality data together -->
+        <ECProperty propertyName="Group" typeName="string" />
+
+        <!-- [Optional] The Description field can be used to specify a descriptive human-readable explaining the content of the RealityData. The description is specified by the owner of the data in whatever language he or she wishes. -->
+        <ECProperty propertyName="Description" typeName="string" />
+
+        <!-- [Optional] Reference within container of the root document of the RealityData. In most RealityData formats such as 3MX, POD etc, there is a main root document that is normally sufficient to obtain a handle on the RealityData (such as .3mx text files for 3MX data that serves as the root of the data structure). The field only contains the folder/document name portion starting after the Blob container (example: if the full S3MX URL to the root is: "https://dev-realitydataservices-eus.cloudapp.net/v2.4/Repositories/S3MXECPlugin-Server/S3MX/Document/e82a584b-9fae-409f-9581-fd154f7b9ef9~2FMarseille3mx~2FMarseille3mx.3mx/$file"  then the field will only contain: "Marseille3mx/Marseille3mx.3mx" with the slashes non WSG encoded. The server, protocol, and schema portions can be infered from the currently accessed server while the container identifier is stored in the ContainerName field above. -->
+        <ECProperty propertyName="RootDocument" typeName="string" />
+
+        <!-- [Always handled by the application. User can't modify.] The full size of the data in Kilobytes (only the digits without spaces and no end symbols [no 'Kb']). Normally this size is the sum of sizes of every document part of the RealityData -->
+        <ECProperty propertyName="Size" typeName="int" />
+
+        <!-- [Required] Classification in the same sense as the one in the GeoCoordination Services. This string classifies the nature of the content of the RealityData regardless of the format used (see the 'Type' attribute below). Typical values are 'Terrain', 'Imagery', 'Model' and 'Pinned' but may be, eventually complemented by a reference to schema and class definition especially for 'Model' classification. Refer to GeoCoordination Service documentation for details. -->
+        <ECProperty propertyName="Classification" typeName="string" />
+
+        <!-- [Optional | default is true] Indicates if the reality data is meant to be streamed (downloaded relatively small portions at a time on use) or if the data set is meant to be downloaded to use. Default is true. -->
+        <ECProperty propertyName="Streamed" typeName="bool" />
+
+        <!-- [Required] Type or format of the reality data. It is a string key indicating the format of the data such as 3SM, 3MX, tif, jpg, pdf, and so on. This string dictates the storage structure of the data. Notice that some of these can refer to a single file (jpg, tif for example) while others hint to the existence of many structured interrelated documents (3SM, 3MX,...). Note also that the file format does not necessariy imply the Classification of the RealityData. A TIF file can store Imagery (a raster), Terrain (DEM file which is a TIF with a numeric pixel type), Pinned (A scan from a textual document). -->
+        <ECProperty propertyName="Type" typeName="string" />
+
+        <!-- [Optional] Footprint of the whole reality data in 2D only. The footprint is a polygon stored in a string in the JSON format shown {"points":[[-90.20294,30.652816],[-90.187693,30.652816],[-90.187693,30.666673],[-90.20294,30.666673],[-90.20294,30.652816]],"coordinate_system":"4326"}. Note that in the JSON originating or ongoing to the RDS server the quotes must be escaped (\") or replaced by single quotes ('). -->
+        <ECProperty propertyName="Footprint" typeName="string" />
+
+        <!-- [Optional] The ThumbnailDocument field indicates the name of the thumbnail file. This file must be part of the RealityData proper as part of the service. The field only contains the folder/document name portion starting after the Blob container (example is the full S3MX URL to the thumbnail is: "https://dev-realitydataservices-eus.cloudapp.net/v2.4/Repositories/S3MXECPlugin-Server/S3MX/Document/e82a584b-9fae-409f-9581-fd154f7b9ef9~2FMarseille3mx~2FThumbnail~2FThumbnail.jpg/$file" then the field will only contain: "Marseille3mx/Thumbnail/Thumbnail.jpg" with the slashes non WSG encoded. The server, protocol, and schema portions can be infered from the currently accessed server while the container identifier is stored in the ContainerName field above. -->
+        <ECProperty propertyName="ThumbnailDocument" typeName="string" />
+
+        <!-- [Optional] Contains the Metadata URL  -->
+        <ECProperty propertyName="MetadataURL" typeName="string" />
+
+        <!-- [Optional] Mainly used for PUBLIC data. The Copyright field contains the mention of the ownership of the data. It can contain text or link or both -->
+        <ECProperty propertyName="Copyright" typeName="string" />
+
+        <!-- [Optional] Mainly used for PUBLIC data. The terms of use indicates limitations to the use of the data. It can contain text of link or both.  -->
+        <ECProperty propertyName="TermsOfUse" typeName="string" />
+
+        <!-- [Optional] The AccuracyInMeters is a text containing a floating point value. It represents the positionnal accuracy of samples relative to the real world objects it represents -->
+        <ECProperty propertyName="AccuracyInMeters" typeName="string" />
+
+        <!-- [Optional; formated field] The ResolutionInMeters field indicates the approximate resolution of samples in the reality data. The interpretation of this field is type dependent. The string is formatted as 'resolution in X' the 'x' character the 'resolution in Y' such as 15.2x23.5 indicates a resolution of 15.2 meters in X and 23.5 in Y. The string is easily interpreted for rasters but less so for pointclouds that could interpret the values as mean distance between samples. -->
+        <ECProperty propertyName="ResolutionInMeters" typeName="string" />
+
+        <!-- [Optional] This string value can have 1 of those four states [PRIVATE, PUBLIC, PERMISSION, ENTERPRISE] -->
+        <!--FUTURE --- DO NOT USE: PUBLIC -> Visible for everyone either from the enterprise or foreign to the enterprise regardless of any other access rights -->
+        <!--ENTERPRISE ->  Visible for everyone either from the enterprise regardless of any other access rights-->
+        <!--PERMISSION -> Normal mode. Data is accessible for everyone part of the enterprise that possess the access right 'RDS_USE' either through a corporate role or through project-based access definitions OR if the user is the owner of the reality data -->
+        <!--PRIVATE -> Data accessible only by the owner -->
+        <ECProperty propertyName="Visibility" typeName="string" />
+
+        <!-- [Optional] This is how we know if the directory is listable, since we have folder RealityData with over 800k documents flat -->
+        <ECProperty propertyName="Listable" typeName="boolean" />
+
+        <!-- [Set by default/Unmodifyable] The ISO-8601 compliant string that indicates the last time the folder was modified -->
+        <ECProperty propertyName="ModifiedTimestamp" typeName="string" />
+
+        <!-- [Set by default/Unmodifyable] The ISO-8601 compliant string that indicates the time of creation of the folder -->
+        <ECProperty propertyName="CreatedTimestamp" typeName="string" />
+
+        <!-- [Set by default] The CONNECT email address of the owner. It is possible to change it to give ownership to someone else -->
+        <ECProperty propertyName="OwnedBy" typeName="string" />
+
+    </ECClass>
+
+    <!-- This class is used to represent a pair RealityDataId/ProjectId indicating a relationship beteen them. RealityData can be linked with many projects and projects can link with many different reality data -->
+    <ECClass typeName="RealityDataProjectRelationship" isDomainClass="True">
+        <!-- The RealityDataId of the RealityData linked to the project. Normally both RealityData and Project are of the same enterprise but if the RealityData is marked as public it may be referenced by projects from external enterprises. -->
+        <ECProperty propertyName="RealityDataId" typeName="string" />
+
+        <!-- The project that is linked with reality data -->
+        <ECProperty propertyName="ProjectId" typeName="string" />
+    </ECClass>
+
+    <!-- This class is used to get analytics about enterprise -->
+    <ECClass typeName="EnterpriseStat" isDomainClass="True">
+        <!-- Total size of all container assign to this enterprise in GB -->
+        <ECProperty propertyName="TotalSize" typeName="double" />
+
+        <!-- The number of Reality Data assign to the enterprise -->
+        <ECProperty propertyName="NumberOfRealityData" typeName="int" />
+
+        <!-- The enterprise ID -->
+        <ECProperty propertyName="EnterpriseId" typeName="string" />
+    </ECClass>
+
+    <ECClass typeName="Document" isDomainClass="True">
+
+        <!-- [Set by default/Unmodifyable] The name of the Azure blob container the document is stored in -->
+        <ECProperty propertyName="ContainerName" typeName="string" />
+
+        <!-- [Set by default/Unmodifyable] Name of document -->
+        <ECProperty propertyName="Name" typeName="string" />
+
+        <!-- [Set by default/Unmodifyable] The indentifier of the document -->
+        <ECProperty propertyName="Id" typeName="string" />
+
+        <!-- [Set by default/Unmodifyable] The id of the folder the document is located in -->
+        <ECProperty propertyName="FolderId" typeName="string" />
+
+        <!-- [Set by default/Unmodifyable] The full access URL to the document in the Azure Blob Storage. This URL is fully formed with the current server name, protocol and all properly encoded path -->
+        <ECProperty propertyName="AccessUrl" typeName="string" />
+
+        <!-- [Set by default/Unmodifyable] The id of the RealityData the document is a part of -->
+        <ECProperty propertyName="RealityDataId" typeName="string" />
+
+        <!-- [Set by default/Unmodifyable] This is the content of the file, the extension in other word to be able to filter it if necessary -->
+        <ECProperty propertyName="ContentType" typeName="string" />
+
+        <!-- [Set by default/Unmodifyable] The size of the document in Kilobytes (only the digits without spaces and no end symbols [no 'Kb']). -->
+        <ECProperty propertyName="Size" typeName="string" />
+
+    </ECClass>
+
+    <ECClass typeName="Folder" isDomainClass="True">
+
+        <!-- [Set by default/Unmodifyable] The FolderName -->
+        <ECProperty propertyName="Name" typeName="string" />
+
+        <!-- [Set by default/Unmodifyable] The identifier of the Reality Data the folder belongs to -->
+        <ECProperty propertyName="RealityDataId" typeName="string" />
+
+        <!-- [Set by default/Unmodifyable] The identifier of the parent folder -->
+        <ECProperty propertyName="ParentFolderId" typeName="string" />
+
+    </ECClass>
+</ECSchema>

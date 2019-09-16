@@ -1,0 +1,207 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{4C8D1843-9555-4ACA-A7A7-CA4D7B020410}</ProjectGuid>
+    <RootNamespace>BentleyTemplate</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <NMakeBuildCommandLine>bb -p RealityPlatform -f RealityModFramework -r RealityModFramework -ax64 re RealityPlatform </NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -p RealityPlatform -f RealityModFramework -r RealityModFramework -ax64 re RealityPlatform -c
+bb -p RealityPlatform -f RealityModFramework -r RealityModFramework -ax64 re RealityPlatform</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -p RealityPlatform -f RealityModFramework -r RealityModFramework -ax64 re RealityPlatform -c</NMakeCleanCommandLine>
+    <NMakeIncludeSearchPath>$(OutRoot)Winx64\BuildContexts\ConceptDataAccess\PublicAPI\;$(OutRoot)Winx64\BuildContexts\ConceptDataAccess\VendorAPI\;$(SrcRoot)ConceptDataAccess\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakePreprocessorDefinitions>__CONCEPTDATAACCESS_BUILD__</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <NMakeBuildCommandLine>bb -p ConceptDataAccess -f ConceptDataAccess -r ConceptDataAccess -ax64 re ConceptDataAccess </NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -p ConceptDataAccess -f ConceptDataAccess -r ConceptDataAccess -ax64 re ConceptDataAccess -c
+bb -p ConceptDataAccess -f ConceptDataAccess -r ConceptDataAccess -ax64 re ConceptDataAccess </NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -p ConceptDataAccess -f ConceptDataAccess -r ConceptDataAccess -ax64 re ConceptDataAccess -c</NMakeCleanCommandLine>
+    <NMakeIncludeSearchPath>$(OutRoot)Winx64\BuildContexts\ConceptDataAccess\PublicAPI\;$(OutRoot)Winx64\BuildContexts\ConceptDataAccess\VendorAPI\;$(SrcRoot)ConceptDataAccess\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakePreprocessorDefinitions>__CONCEPTDATAACCESS_BUILD__</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <NMakeBuildCommandLine>bb r conceptdataaccess</NMakeBuildCommandLine>
+    <NMakeCleanCommandLine>bb r conceptdataaccess -c</NMakeCleanCommandLine>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="ConceptDataAccessInternal.h" />
+    <ClInclude Include="PublicAPI\ConceptDataAccess\BridgeAspect.h" />
+    <ClInclude Include="PublicAPI\ConceptDataAccess\ConceptDataAccessApi.h" />
+    <ClInclude Include="PublicAPI\ConceptDataAccess\ConceptualAspect.h" />
+    <ClInclude Include="PublicAPI\ConceptDataAccess\ConceptualBulkInserter.h" />
+    <ClInclude Include="PublicAPI\ConceptDataAccess\ConceptualCategories.h" />
+    <ClInclude Include="PublicAPI\ConceptDataAccess\ConceptualConfigurationData.h" />
+    <ClInclude Include="PublicAPI\ConceptDataAccess\ConceptualConfigurationHandler.h" />
+    <ClInclude Include="PublicAPI\ConceptDataAccess\ConceptualDomain.h" />
+    <ClInclude Include="PublicAPI\ConceptDataAccess\ConceptualEGA.h" />
+    <ClInclude Include="PublicAPI\ConceptDataAccess\ConceptualElement.h" />
+    <ClInclude Include="PublicAPI\ConceptDataAccess\ConceptualElementBulkInserter.h" />
+    <ClInclude Include="PublicAPI\ConceptDataAccess\ConceptualElementHandler.h" />
+    <ClInclude Include="PublicAPI\ConceptDataAccess\ConceptualItemBulkInserter.h" />
+    <ClInclude Include="PublicAPI\ConceptDataAccess\ConceptualItemHandler.h" />
+    <ClInclude Include="PublicAPI\ConceptDataAccess\DesignSpeed.h" />
+    <ClInclude Include="PublicAPI\ConceptDataAccess\ECDbUtilities.h" />
+    <ClInclude Include="PublicAPI\ConceptDataAccess\ECSchemaUtilities.h" />
+    <ClInclude Include="PublicAPI\ConceptDataAccess\GeometryHelper.h" />
+    <ClInclude Include="PublicAPI\ConceptDataAccess\ITerrainModel.h" />
+    <ClInclude Include="PublicAPI\ConceptDataAccess\PropertyPaneEditorModel.h" />
+    <ClInclude Include="PublicAPI\ConceptDataAccess\RoadAlignment.h" />
+    <ClInclude Include="PublicAPI\ConceptDataAccess\RoadTemplate.h" />
+    <ClInclude Include="PublicAPI\ConceptDataAccess\TerrainUtilities.h" />
+    <ClInclude Include="TerrainModel.h" />
+    <ClInclude Include="TexturedMesh.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="BridgeAspect.cpp" />
+    <ClCompile Include="ConceptDataAccessInternal.cpp" />
+    <ClCompile Include="ConceptualAspect.cpp" />
+    <ClCompile Include="ConceptualCategories.cpp" />
+    <ClCompile Include="ConceptualConfigurationData.cpp" />
+    <ClCompile Include="ConceptualConfigurationHandler.cpp" />
+    <ClCompile Include="ConceptualDomain.cpp" />
+    <ClCompile Include="ConceptualEGA.cpp" />
+    <ClCompile Include="ConceptualElement.cpp" />
+    <ClCompile Include="ConceptualElementBulkInserter.cpp" />
+    <ClCompile Include="ConceptualElementHandler.cpp" />
+    <ClCompile Include="ConceptualItemBulkInserter.cpp" />
+    <ClCompile Include="ConceptualItemHandler.cpp" />
+    <ClCompile Include="DesignSpeed.cpp" />
+    <ClCompile Include="ECDbUtilities.cpp" />
+    <ClCompile Include="ConceptualBulkInserter.cpp" />
+    <ClCompile Include="ECSchemaUtilities.cpp" />
+    <ClCompile Include="GeometryHelper.cpp" />
+    <ClCompile Include="PropertyPaneEditorModel.cpp" />
+    <ClCompile Include="RoadAlignment.cpp" />
+    <ClCompile Include="RoadTemplate.cpp" />
+    <ClCompile Include="ScalableMeshUtilities.cpp" />
+    <ClCompile Include="TerrainModel.cpp" />
+    <ClCompile Include="TerrainUtilities.cpp" />
+    <ClCompile Include="TexturedMesh.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ConceptDataAccess.mke" />
+    <None Include="ConceptDataAccess.prewire.mke" />
+    <None Include="ConceptDataAccessPolicy.mki" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="BentleyConceptual.01.00.ecschema.xml">
+      <SubType>Designer</SubType>
+    </Xml>
+    <Xml Include="ConceptDataAccess.PartFile.xml">
+      <SubType>Designer</SubType>
+    </Xml>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
