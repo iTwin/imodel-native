@@ -1,0 +1,13 @@
+#*--------------------------------------------------------------------------------------+
+#
+#     $Source: CS06Bridge/Tests/prewire.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+%include mdl.mki
+baseDir = $(_makeFilePath)
+
+$(BuildContext)Delivery/UnitTests/cs06bridge_ignore_list.txt : $(baseDir)cs06bridge_ignore_list.txt
+    $(msg)
+    $(LinkFirstDepToFirstTarget)
