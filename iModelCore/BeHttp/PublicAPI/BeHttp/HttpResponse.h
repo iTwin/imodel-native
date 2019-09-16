@@ -79,24 +79,38 @@ public:
     //! DEPRECATED! Use other constructors.
     BEHTTP_EXPORT Response(HttpResponseContentPtr responseContent, Utf8CP effectiveUrl, ConnectionStatus connectionStatus, HttpStatus httpStatus);
 
-    //! Get last used url where response came from
-    Utf8String GetEffectiveUrl() const {return m_effectiveUrl;}
-
-    HttpBodyCR GetBody() const {return *m_content->GetBody();}
-
-    HttpResponseHeadersCR GetHeaders() const {return m_content->GetHeaders();}
-    HttpResponseContentPtr GetContent() {return m_content;}
-   
+    //! Get connection status for this response.
+    //! Will return ConnectionStatus::None if request was not executed, or other undefined error occurred.
+    //! Use GetHttpStatus() to get more information on response status, when ConnectionStatus::OK is returned.
     ConnectionStatus GetConnectionStatus() const {return m_connectionStatus;}
+    
+    //! Get HttpStatus for this response.
+    //! Will return standard HttpStatus values when response was received with ConnectionStatus::OK.
+    //! Use GetConnectionStatus() to get connection status when HttpStatus::None is returned, as response was not received.
     HttpStatus GetHttpStatus() const {return m_httpStatus;}
     
+    //! Get URL where response came from. This is usually same as request URL, but is different in some cases, for example redirects.
+    Utf8String GetEffectiveUrl() const {return m_effectiveUrl;}
+
+    //! Get response headers.
+    HttpResponseHeadersCR GetHeaders() const {return m_content->GetHeaders();}
+    
+    //! Get response body stream.
+    HttpBodyCR GetBody() const {return *m_content->GetBody();}
+    
+    //! Get response content object - headers and body. Mostly used internally.
+    HttpResponseContentPtr GetContent() {return m_content;}
+   
+    //! Convert statuses to user friendly message.
+    BEHTTP_EXPORT static Utf8String ToStatusString(ConnectionStatus connectionStatus, HttpStatus httpStatus);
+    
+    //! DEPRECATED! Use GetHttpStatus() to check for required result.
+    //! Discussion: HttpStatusType (categories) are not well defined, and some statuses (even treated as "Success") can mean unexpected responses in some cases.
     bool IsSuccess() const 
         {
         if (m_connectionStatus != ConnectionStatus::OK) return false;
         return HttpStatusHelper::GetType(m_httpStatus) == HttpStatusType::Success;
         }
-
-    BEHTTP_EXPORT static Utf8String ToStatusString(ConnectionStatus connectionStatus, HttpStatus httpStatus);
 };
 
 END_BENTLEY_HTTP_NAMESPACE
