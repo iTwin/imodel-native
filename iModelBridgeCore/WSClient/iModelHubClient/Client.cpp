@@ -627,7 +627,7 @@ iModelTaskPtr Client::CloneiModel(Utf8StringCR contextId, Utf8StringCR sourceiMo
     if (!imodelValidationResult.IsSuccess())
         {
         Error::Id errorId = imodelValidationResult.GetError().GetId();
-        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, GetiModelValidastionLogMessage(errorId));
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, GetiModelValidationLogMessage(errorId));
         return CreateCompletedAsyncTask<iModelResult>(iModelResult::Error(errorId));
         }
 
