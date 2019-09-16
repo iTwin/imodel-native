@@ -367,6 +367,53 @@ TEST_F(iModelTests, CreateiModelUsingOidcLogin)
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Karolis.Dziedzelis              09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(iModelTests, CloneEmptyiModel)
+    {
+    m_imodelName = GetTestiModelName();
+    iModelCreateInfoPtr imodelCreateInfo = iModelCreateInfo::Create(m_imodelName, "", bvector<double> { 1, 2, 3, 4 });
+    iModelResult createResult = CreateEmptyiModel(imodelCreateInfo, true);
+    iModelInfoPtr info = createResult.GetValue();
+
+    Utf8String imodel2Name = Utf8PrintfString("%s-%d", m_imodelName.c_str(), 2);
+    iModelHubHelpers::DeleteiModelByName(s_client, imodel2Name);
+    iModelCreateInfoPtr imodelCreateInfo2 = iModelCreateInfo::Create(imodel2Name, "", bvector<double> { 1, 2, 3, 4 });
+    iModelResult create2Result = s_client->CloneiModel(s_projectId, info->GetId(), "", imodelCreateInfo2)->GetResult();
+    ASSERT_SUCCESS(create2Result);
+
+    iModelResult imodelResult = s_client->GetiModelById(s_projectId, create2Result.GetValue()->GetId())->GetResult();
+    ASSERT_SUCCESS(imodelResult);
+    EXPECT_EQ(Utf8PrintfString("%s:", info->GetId().c_str()), imodelResult.GetValue()->GetTemplate());
+    iModelHubHelpers::DeleteiModelByName(s_client, imodel2Name);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Karolis.Dziedzelis              09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(iModelTests, CloneWithChangeSets)
+    {
+    m_imodelName = GetTestiModelName();
+    iModelCreateInfoPtr imodelCreateInfo = iModelCreateInfo::Create(m_imodelName, "", bvector<double> { 1, 2, 3, 4 });
+    iModelResult createResult = CreateEmptyiModel(imodelCreateInfo, true);
+    iModelInfoPtr info = createResult.GetValue();
+
+    BriefcasePtr briefcase = iModelHubHelpers::AcquireAndAddChangeSets(s_client, info, 1);
+    Utf8String changeSetId = briefcase->GetLastChangeSetPulled();
+
+    Utf8String imodel2Name = Utf8PrintfString("%s-%d", m_imodelName.c_str(), 2);
+    iModelHubHelpers::DeleteiModelByName(s_client, imodel2Name);
+    iModelCreateInfoPtr imodelCreateInfo2 = iModelCreateInfo::Create(imodel2Name, "", bvector<double> { 1, 2, 3, 4 });
+    iModelResult create2Result = s_client->CloneiModel(s_projectId, info->GetId(), changeSetId, imodelCreateInfo2)->GetResult();
+    ASSERT_SUCCESS(create2Result);
+
+    iModelResult imodelResult = s_client->GetiModelById(s_projectId, create2Result.GetValue()->GetId())->GetResult();
+    ASSERT_SUCCESS(imodelResult);
+    EXPECT_EQ(Utf8PrintfString("%s:%s", info->GetId().c_str(), changeSetId.c_str()), imodelResult.GetValue()->GetTemplate());
+    iModelHubHelpers::DeleteiModelByName(s_client, imodel2Name);
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Vilius.Kazlauskas               09/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(iModelTests, UpdateiModel)

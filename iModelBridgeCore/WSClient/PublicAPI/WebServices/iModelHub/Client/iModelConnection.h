@@ -613,6 +613,11 @@ public:
     //! This method does not unlock the iModel and allows the same user to attempt seed file replacement again.
     IMODELHUBCLIENT_EXPORT StatusTaskPtr CancelSeedFileCreation(ICancellationTokenPtr cancellationToken = nullptr) const;
 
+    //! Waits for iModel initialization.
+    //! @param[in] cancellationToken
+    //! @return Asynchronous task that is successful if file initialization has completed.
+    IMODELHUBCLIENT_EXPORT StatusTaskPtr WaitForInitialization(ICancellationTokenPtr cancellationToken) const;
+
     //! Unlock iModel.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has the status of releasing iModel lock as result.

@@ -122,8 +122,9 @@ iModelInfoPtr iModelInfo::Parse(RapidJsonValueCR properties, Utf8StringCR iModel
             extent.push_back(coordinate.GetDouble());
             }
         }
+    Utf8String imodelTemplate = properties[ServerSchema::Property::iModelTemplate].GetString();
 
-    return new iModelInfo(url, iModelInstanceId, name, description, userUploaded, createdDate, ownerInfo, isInitialized, extent);
+    return new iModelInfo(url, iModelInstanceId, name, description, userUploaded, createdDate, ownerInfo, isInitialized, extent, imodelTemplate);
     }
 
 //---------------------------------------------------------------------------------------

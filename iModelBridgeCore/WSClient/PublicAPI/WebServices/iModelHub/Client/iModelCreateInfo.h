@@ -24,7 +24,7 @@ private:
     iModelCreateInfo(Utf8StringCR name, Utf8StringCR description, bvector<double> extent, Utf8StringCR imodelTemplate)
         : iModelBaseInfo(name, description, extent, imodelTemplate) {}
 public:
-    static iModelCreateInfoPtr Create(Utf8StringCR name, Utf8StringCR description, bvector<double> extent = bvector<double>(), Utf8StringCR imodelTemplate = "")
-        {return iModelCreateInfoPtr(new iModelCreateInfo(name, description, extent, imodelTemplate));}
+    static iModelCreateInfoPtr Create(Utf8StringCR name, Utf8StringCR description, bvector<double> extent = bvector<double>())
+        {return iModelCreateInfoPtr(new iModelCreateInfo(name, description, extent, ""));}
 };
 END_BENTLEY_IMODELHUB_NAMESPACE

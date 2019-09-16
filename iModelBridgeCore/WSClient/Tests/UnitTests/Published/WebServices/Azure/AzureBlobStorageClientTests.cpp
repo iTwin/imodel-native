@@ -86,6 +86,19 @@ TEST_F(AzureBlobStorageClientTests, SendGetFileRequest_ActivityOptionsEnabled_Se
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     09/19
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_NotExistingFile_ReturnsErrorResponse)
+    {
+    auto client = AzureBlobStorageClient::Create(GetHandlerPtr());
+    auto result = client->SendUpdateFileRequest("SASUrl", StubFilePath())->GetResult();
+    ASSERT_FALSE(result.IsSuccess());
+    EXPECT_EQ(ConnectionStatus::None, result.GetError().GetConnectionStatus());
+    EXPECT_EQ(HttpStatus::None, result.GetError().GetHttpStatus());
+    EXPECT_STREQ("", result.GetError().GetMessage().c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_ServerReturnsError_ReturnsErrorResponse)

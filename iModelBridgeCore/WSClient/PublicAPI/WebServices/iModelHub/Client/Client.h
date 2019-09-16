@@ -219,6 +219,17 @@ public:
     IMODELHUBCLIENT_EXPORT iModelTaskPtr CreateEmptyiModel(Utf8StringCR contextId, iModelCreateInfoPtr imodelCreateInfo,
                                                            ICancellationTokenPtr cancellationToken = nullptr) const;
 
+    //! Create an new iModel by cloning another iModel as of a specified changeset.
+    //! @param[in] contextId Context Id to connect to.
+    //! @param[in] sourceiModelId Id of the iModel that should be cloned.
+    //! @param[in] sourceChangeSetId Id of the changeset, that should be merged up to for the new seed file. Can be empty to clone just the seed file.
+    //! @param[in] imodelCreateInfo Information of iModel to be created.
+    //! @param[in] waitForInitialized Wait for initialized iModel.
+    //! @param[in] cancellationToken
+    //! @return Asynchronous task that has created iModel information as the result. See iModelInfo.
+    IMODELHUBCLIENT_EXPORT iModelTaskPtr CloneiModel(Utf8StringCR contextId, Utf8StringCR sourceiModelId, Utf8StringCR sourceChangeSetId,
+        iModelCreateInfoPtr imodelCreateInfo, bool waitForInitialized = true, ICancellationTokenPtr cancellationToken = nullptr) const;
+
     //! Update exsiting iModel's name and/or description on the server
     //! @param[in] contextId Context Id to connect to.
     //! @param[in] iModelInfo Information of iModel to be updated.
