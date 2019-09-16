@@ -1,0 +1,85 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Parser\ArgumentParser.cpp" />
+    <ClCompile Include="Parser\ArgumentParserTests.cpp" />
+    <ClCompile Include="Disk\DiskRepositoryClient.cpp" />
+    <ClCompile Include="Disk\DiskRepositoryClientTests.cpp" />
+    <ClCompile Include="Logging\GenericLogProvider.cpp" />
+    <ClCompile Include="Parser\TestDataTests.cpp" />
+    <ClCompile Include="RepositoryCompatibilityTests.cpp" />
+    <ClCompile Include="Parser\TestData.cpp" />
+    <ClCompile Include="TestMain.cpp" />
+    <ClCompile Include="TestsHelper.cpp" />
+    <ClCompile Include="TestsHost.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Parser\ArgumentParser.h" />
+    <ClInclude Include="Disk\DiskRepositoryClient.h" />
+    <ClInclude Include="Logging\GenericLogProvider.h" />
+    <ClInclude Include="Logging\Logging.h" />
+    <ClInclude Include="Parser\TestData.h" />
+    <ClInclude Include="Logging\GenericLogProviderActivator.h" />
+    <ClInclude Include="RepositoryCompatibilityTests.h" />
+    <ClInclude Include="TestsHelper.h" />
+    <ClInclude Include="TestsHost.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="CompatibilityTests.mke" />
+    <None Include="RunTests\RunWSClientCompatibilityTestToolForKnownServices.bat" />
+    <None Include="RunTests\RunWSClientCompatibilityTestToolForKnownServices.config">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="RunTests\TestReport\makereport.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="RunTests\TestReport\gtest.xsl" />
+  </ItemGroup>
+  <PropertyGroup>
+    <ShowAllFiles>true</ShowAllFiles>
+    <LocalDebuggerCommandArguments>--gtest_repeat=1 --gtest_filter=*Tests*</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{AB2F1193-A44F-4AA1-B84B-DD1453D73782}</ProjectGuid>
+    <Keyword>MakeFileProj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <NMakeOutput>$(OutRoot)Winx64\Product\WSClientCompatibilityTestTool\WSClientCompatibilityTests.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>USE_GTEST;BENTLEY_WIN32;DEBUG</NMakePreprocessorDefinitions>
+    <NMakeBuildCommandLine>bb -v4 -ax64 -r WSClient -f WSClient -p WSClientCompatibilityTestTool re  WSClientCompatibilityTests WebServices*</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -v4 -ax64 -r WSClient -f WSClient -p WSClientCompatibilityTestTool b</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -v4 -ax64 -r WSClient -f WSClient -p WSClientCompatibilityTestTool re  WSClientCompatibilityTests WebServices* -c</NMakeCleanCommandLine>
+    <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath);$(OutRoot)Winx64\BuildContexts\WSClient\PublicAPI\</NMakeIncludeSearchPath>
+    <IncludePath>$(SrcRoot)util\gtest\include;$(SrcRoot)util\gmock\include;$(OutRoot)Winx64\Product\MobileDgnSdk-Winx64\include;$(SrcRoot)WSClient\Tests\CompatibilityTests\TestUtils;$(OutRoot)Winx64\build\WSClientCompatibilityTests\gensrc\;$(IncludePath)</IncludePath>
+    <OutDir>$(OutRoot)\Winx64\build\VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(OutDir)</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <BuildLog>
+      <Path>$(OutDir)$(MSBuildProjectName).log</Path>
+    </BuildLog>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
