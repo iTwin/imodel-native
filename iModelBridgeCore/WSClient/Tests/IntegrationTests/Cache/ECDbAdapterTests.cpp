@@ -248,6 +248,7 @@ TEST_F(ECDbAdapterTests, ImportSchemas_WithManyProperties_Success)
             <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
+            <ShareColumns xmlns="ECDbMap.02.00" />
         </ECCustomAttributes>
     </ECClass>
     <ECClass typeName="SomeClass">
@@ -270,7 +271,7 @@ TEST_F(ECDbAdapterTests, ImportSchemas_WithManyProperties_Success)
 
         for (size_t p = 0; p < 100; p++)
             {
-            //pTotal++;
+            pTotal++;
             Utf8PrintfString propertyXml(R"xml(<ECProperty propertyName="TestProperty_%d_%d" typeName="string" />)xml", p, pTotal);
             schemaXml += propertyXml + "\n";
             }
@@ -286,6 +287,8 @@ TEST_F(ECDbAdapterTests, ImportSchemas_WithManyProperties_Success)
     TESTLOG.infov("Parsing schema took %f ms", end - start);
 
     auto seedPath = StubFilePath("seed.ecdb");
+    TESTLOG.infov("Using path: %s", Utf8String(seedPath).c_str());
+
     if (seedPath.DoesPathExist())
         ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeDeleteFile(seedPath));
 
