@@ -1,0 +1,95 @@
+PRIMITIVE TransitionSpiral
+<def name=SUMMARY>TransitionSpiral curve described by coordinates, bearing, and radius of tangent circle at start and end.
+
+(Radius of 0 indicates a straight line.)
+
+The SpiralType is indicated by a string. Interpretation of various types -- Clothoid, Bloth, BiQuadratic -- requires appropriate code
+in the application.   Specialized (e.g. Viennese) types may require furter parameters in auxiliary geometry.
+
+A various spiral formulations (clothoid, bloss, sine, cosine, etc) each have a primary interval.  The start and end
+bearing and curvature are at the ends of the nominal interval.  The primary interval is placed so its 0 point is at the
+origin of the placement.  However, the actual active portion of the spiral is not required to start or end at the nominal
+interval.    The active interval is specified as fractional coordinates.   Fraction 0 is the start of the nominal interval.
+Fraction 1 is the end of the nominal interval.
+
+Spirals used in road and railway transitions will nearly always have the active and nominal intervals the same, i.e. active interval
+fratctions are 0 and 1.   Active interval fractions other than 0 and 1 occur due to trim and extend operations.
+
+</def>
+<def name=Interface_BaseList>IGeometry, IPrimitiveCurve</def>
+
+<def name=MEMBERS>
+<value ItemType=String
+        ItemSemanticName=SpiralType
+        ItemParamName=spiralType
+        ItemMemberName=mSpiralType
+        ItemDescription="TransitionSpiral type."
+        ScaleMode=None
+ />
+
+<value ItemType=IPlacement
+    ItemSemanticName=Placement
+    ItemParamName=placement
+    ItemMemberName=mPlacement
+    ItemDescription="Origin and orientation"
+    ScaleMode=Length/>
+
+<value  ItemType=Angle
+        ItemSemanticName=StartBearing
+        ItemParamName=startBearing
+        ItemMemberName=mStartBearing
+        ItemDescription="bearing angle at start point"
+        ScaleMode=None
+ />
+
+<value  ItemType=double
+        ItemSemanticName=StartRadius
+        ItemParamName=startRadius
+        ItemMemberName=mStartRadius
+        ItemDescription="Radius at start.  0 for straight line"
+        ScaleMode=InverseLength
+ />
+
+<value  ItemType=Angle
+        ItemSemanticName=EndBearing
+        ItemParamName=endBearing
+        ItemMemberName=mEndBearing
+        ItemDescription="bearing angle at end point"
+        ScaleMode=None
+ />
+
+<value  ItemType=double
+        ItemSemanticName=EndRadius
+        ItemParamName=endRadius
+        ItemMemberName=mEndRadius
+        ItemDescription="Radius at end.  0 for straight line"
+        ScaleMode=InverseLength
+ />
+
+<value  ItemType=double
+        ItemSemanticName=ActiveStartFraction
+        ItemParamName=activeStartFraction
+        ItemMemberName=mActiveStartFraction
+        ItemDescription="Fractional position of active interval start."
+        ScaleMode=None
+ />
+
+<value  ItemType=double
+        ItemSemanticName=ActiveEndFraction
+        ItemParamName=activeEndFraction
+        ItemMemberName=mActiveEndFraction
+        ItemDescription="Fractional position of active interval end."
+        ScaleMode=None
+ />
+
+<child  ItemType=IGeometry
+        ItemTagName=Geometry
+        ItemSemanticName=Geometry
+        ItemParamName=geometry
+        ItemMemberName=mGeom
+        ItemDescription="Auxiliry geometry.  Required contents depends on the TransitionSpiral type"
+        ScaleMode=Container
+/>
+</def>
+
+END_PRIMITIVE

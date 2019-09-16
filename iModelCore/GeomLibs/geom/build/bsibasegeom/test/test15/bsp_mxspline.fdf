@@ -1,0 +1,51 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
+
+/* DO NOT EDIT!  THIS FILE IS GENERATED. */
+
+#pragma once
+
+
+/*-----------------------------------------------------------------
+@description Initialize an MSBspline using MX-style conditions, i.e.
+(a) both bearing and curvature at ends
+(b) knots spaced to match arc length.
+@param pCurve OUT curve
+@param pXYZ IN points to interpolate.  All spline z values are z from the first point.
+@param numXYZ IN number of points.
+@param radiansA IN start point bearing (into curve) in radians.
+@param radiusA IN start point radius of curvature.  Positive is to left of curve.
+             zero radius means straight line.
+@param radiansA IN end point bearing (outbounds from curve!!!) in radians.
+@param radiusA IN end point radius of curvature.  Positive is to left of curve.
+             zero radius means straight line.
+@returns ERROR if unable to fit.
+-------------------------------------------------------------------*/
+Public StatusInt bspcurv_interpolateXYWithBearingAndRadius
+(
+MSBsplineCurve *pCurve,
+DPoint3d *pXYZ,
+int numXYZ,
+double radiansA,
+double radiusA,
+double radiansB,
+double radiusB
+);
+
+// Construct a cubic approximation to an arc.
+// For positive radius, the arc turns to the left (and the arc is to the right of the simple segment)
+// For negative radius, the arc turns to the right (and the arc is to the left of the simple segment)
+// For "larger arc" the arc takes the longer path.
+Public StatusInt bspcurv_approximateXYArc
+(
+MSBsplineCurve *pCurve,
+DPoint3d *pXYZStart,
+DPoint3d *pXYZEnd,
+double   radius,
+bool     bLargerArc,
+double   maxRadiansBetweenPassthroughPoints
+);
+

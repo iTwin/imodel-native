@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<MDLDOCProjectDescription Name="The Bentley Vertex Use Library" FilePrefix="us">
+
+  <MdlExamples>
+
+    <MdlExample Name="PolygonBoolean">
+        <Title>Polygon Boolean Example</Title>
+        <GenerateBidirectionalLinks>Yes</GenerateBidirectionalLinks>
+        <Group>Examples</Group>
+        <Comments>
+        This function performs an area boolean operation among polygons.
+        </Comments>
+        <CodeFile>polygonboolean.cpp</CodeFile>
+    </MdlExample>
+
+    <MdlExample Name="TriangulateContours">
+        <Title>Triangulate Contours Example</Title>
+        <GenerateBidirectionalLinks>Yes</GenerateBidirectionalLinks>
+        <Group>Examples</Group>
+        <Comments>
+        The function myTriangulateContours (at bottom) triangulates polylines, e.g., from stroked topographical contours.
+        Though the triangulation is performed in the xy-plane, the z-coordinates are preserved.
+        </Comments>
+        <Comments>
+        Some functions in the bsibasegeom library are used.
+        Also used are the vertex, face and graph traversal macros discussed in the "VU Loops" section of ~s"Vertex Use Graphs".
+        </Comments>
+        <CodeFile>triangulatecontours.cpp</CodeFile>
+    </MdlExample>
+
+    <MdlExample Name="SplitConvexParts">
+        <Title>Split to Convex Parts Example</Title>
+        <GenerateBidirectionalLinks>Yes</GenerateBidirectionalLinks>
+        <Group>Examples</Group>
+        <Comments>
+        Here is the implementation of ~mvu_splitToConvexParts.
+        </Comments>
+        <CodeFile>splitconvexparts.cpp</CodeFile>
+    </MdlExample>
+
+  </MdlExamples>
+
+  <Files>
+    <Entry Name="MSOffice.css"/>
+    <Entry Name="Office.css"/>
+  </Files>
+
+</MDLDOCProjectDescription>
+

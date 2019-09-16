@@ -1,0 +1,5 @@
+message SurfaceGroup
+{
+repeated ISurface Surface = 1;
+}
+
