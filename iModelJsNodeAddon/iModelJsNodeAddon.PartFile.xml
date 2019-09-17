@@ -92,11 +92,15 @@
     <SubPart PartName="napi-dll-win" PartFile="node-addon-api/node-addon-api"/>
   </Part>
 
-  <Part Name="iModelJsNative-Static" OnlyPlatforms="Linux*,MacOS*"  ExcludeLibType="Dynamic" BentleyBuildMakeFile="IModelJsNative.mke" >
-    <SubPart PartName="napi-lib"  PartFile="node-addon-api/node-addon-api"/>
+  <Part Name="CrashpadShim" OnlyPlatforms="linux*">
+    <SubPart PartName="CrashpadHandler" PartFile="iModelCore/libsrc/crashpad/crashpad"/>
+  </Part>
+
+  <Part Name="iModelJsNative-Static" OnlyPlatforms="Linux*,MacOS*" ExcludeLibType="Dynamic" BentleyBuildMakeFile="IModelJsNative.mke">
+    <SubPart PartName="napi-lib" PartFile="node-addon-api/node-addon-api"/>
     <SubPart PartName="iModelJsNativeLibCommon"/>
     <SubPart PartName="iModelJsNativeLibSqlang"/>
-    <SubPart PartName="crashpad_handler" PartFile="iModelCore/libsrc/crashpad/crashpad"/>
+    <SubPart PartName="CrashpadShim"/>
     <Bindings>
         <Files ProductDirectoryName="StaticAssemblies">Delivery/imodeljs.node</Files>
     </Bindings>

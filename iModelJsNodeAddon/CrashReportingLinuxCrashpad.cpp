@@ -77,11 +77,11 @@ void JsInterop::InitializeCrashReporting(CrashReportingConfig const& cfg)
 
     //.............................................................................................
     BeFileName handlerPathW = Desktop::FileSystem::GetLibraryDir();
-    handlerPathW.AppendToPath(L"crashpad_handler");
+    handlerPathW.AppendToPath(L"CrashpadHandler");
     if (!handlerPathW.DoesPathExist())
         {
         // BeAssert(false);
-        printf("JsInterop::InitializeCrashReporting: 'crashpad_handler' application not found: %s\n", Utf8String(handlerPathW).c_str());
+        printf("JsInterop::InitializeCrashReporting: 'CrashpadHandler' application not found: %s\n", Utf8String(handlerPathW).c_str());
         return;
         }
 

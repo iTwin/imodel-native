@@ -50,7 +50,7 @@ THIN_ARCHIVE_INPUTS  + $(ContextSubpartsLibs)libBeOpenSSL.a
 %endif
 
 %if defined(BENTLEYCONFIG_CRASHPAD)
-    THIN_ARCHIVE_INPUTS + $(ContextSubPartsLibs)libcrashpad_client.a
+    THIN_ARCHIVE_INPUTS + $(ContextSubPartsLibs)libCrashpadClient.a
 %endif
 
 %else
@@ -82,7 +82,7 @@ LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeOpenSSL$(libext)
 %endif
 
 %if defined(BENTLEYCONFIG_CRASHPAD)
-    LINKER_LIBRARIES + $(ContextSubpartsLibs)libcrashpad_client.lib
+    LINKER_LIBRARIES + $(ContextSubPartsStaticLibs)$(stlibprefix)CrashpadClient$(stlibext)
 %endif
 
 %endif

@@ -4,21 +4,35 @@
     xsi:noNamespaceSchemaLocation="../build/PartFile.xsd"
     >
 
-    <Part Name="crashpad_client" BentleyBuildMakeFile="client.mke" OnlyPlatforms="linux*">
+    <!--
+        Crashpad only uses openssl on Linux.
+        But also:
+            Crashpad only builds as a static library.
+            I personally like this anyway since it makes the Handler self-contained.
+            However, the rest of the platform, on Windows, uses openssl as a DLL.
+            BB gets confused creating SDK Products when there is a static LIB, and a LIB for a DLL.
+            While this is likely a bug in BB, the easiest way around it is not to include openssl on Windows.
+    -->
+    <Part Name="__OpenSslShim" OnlyPlatforms="linux*">
         <SubPart LibType="Static" PartName="OpenSsl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+    </Part>        
+
+    <!-- N.B. Crashpad only builds as a static library. -->
+    <Part Name="__CrashpadStaticClient" BentleyBuildMakeFile="client.mke" OnlyPlatforms="linux*,x*" ExcludeLibType="Dynamic">
+        <SubPart PartName="__OpenSslShim"/>
         <SubPart LibType="Static" PartName="Compress" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <Bindings>
             <VendorAPI Domain="crashpad"/>
-            <Assemblies>Delivery/$(shlibprefix)crashpad_client$(ApiNumber)$(shlibext)</Assemblies>
-            <Libs>Delivery/$(libprefix)crashpad_client$(libext)</Libs>
+            <Libs>Delivery/$(libprefix)CrashpadClient$(libext)</Libs>
+            <Libs IfNotPresent="Continue">Delivery/$(stlibprefix)CrashpadClient$(stlibdebugext)</Libs>
             <VendorNotices>Delivery/crashpad-license.txt</VendorNotices>
         </Bindings>
     </Part>
 
-    <Part Name="crashpad_handler" BentleyBuildMakeFile="handler.mke" OnlyPlatforms="linux*">
-        <SubPart LibType="Static" PartName="crashpad_client"/>
+    <Part Name="CrashpadHandler" BentleyBuildMakeFile="handler.mke" OnlyPlatforms="linux*,x*">
+        <SubPart LibType="Static" PartName="__CrashpadStaticClient"/>
         <Bindings>
-            <Files ProductDirectoryName="CrashpadHandler" Required="false">Delivery/crashpad_handler$(exeext)</Files>
+            <Files ProductDirectoryName="CrashpadHandler" Required="false">Delivery/CrashpadHandler$(exeext)</Files>
         </Bindings>
     </Part>
 

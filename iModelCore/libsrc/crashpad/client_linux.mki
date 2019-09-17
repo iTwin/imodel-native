@@ -1,0 +1,255 @@
+#--------------------------------------------------------------------------------------
+#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
+#--------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+dirToSearch = $(VendorDir)
+%include cincapnd.mki
+
+dirToSearch = $(VendorDir)third_party/mini_chromium/mini_chromium/
+%include cincapnd.mki
+
+dirToSearch = $(BuildContext)VendorAPI/zlib/
+%include cincapnd.mki
+
+nameToDefine = _FILE_OFFSET_BITS=64
+%include cdefapnd.mki
+
+dirToSearch = $(VendorDir)compat/non_mac/
+%include cincapnd.mki
+
+dirToSearch = $(VendorDir)compat/linux/
+%include cincapnd.mki
+
+dirToSearch = $(VendorDir)compat/non_win/
+%include cincapnd.mki
+
+nameToDefine = CRASHPAD_LSS_SOURCE_EMBEDDED
+%include cdefapnd.mki
+
+nameToDefine = CRASHPAD_ZLIB_SOURCE_EXTERNAL
+%include cdefapnd.mki
+
+nameToDefine = CRASHPAD_USE_BORINGSSL
+%include cdefapnd.mki
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+%include MultiCppCompileRule.mki
+
+# -- libbase --------------------------------------------------------------------------------------
+
+$(o)alias$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/debug/alias.cc ${MultiCompileDepends}
+
+$(o)file_path$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/files/file_path.cc ${MultiCompileDepends}
+
+$(o)file_util_posix$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/files/file_util_posix.cc ${MultiCompileDepends}
+
+$(o)scoped_file$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/files/scoped_file.cc ${MultiCompileDepends}
+
+$(o)logging$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/logging.cc ${MultiCompileDepends}
+
+$(o)safe_strerror$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/posix/safe_strerror.cc ${MultiCompileDepends}
+
+$(o)memory$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/process/memory.cc ${MultiCompileDepends}
+
+$(o)process_metrics_posix$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/process/process_metrics_posix.cc ${MultiCompileDepends}
+
+$(o)rand_util$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/rand_util.cc ${MultiCompileDepends}
+
+$(o)string16$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/strings/string16.cc ${MultiCompileDepends}
+
+$(o)string_number_conversions$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/strings/string_number_conversions.cc ${MultiCompileDepends}
+
+$(o)stringprintf$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/strings/stringprintf.cc ${MultiCompileDepends}
+
+$(o)utf_string_conversion_utils$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/strings/utf_string_conversion_utils.cc ${MultiCompileDepends}
+
+$(o)utf_string_conversions$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/strings/utf_string_conversions.cc ${MultiCompileDepends}
+
+$(o)condition_variable_posix$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/synchronization/condition_variable_posix.cc ${MultiCompileDepends}
+
+$(o)lock$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/synchronization/lock.cc ${MultiCompileDepends}
+
+$(o)lock_impl_posix$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/synchronization/lock_impl_posix.cc ${MultiCompileDepends}
+
+$(o)icu_utf$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/third_party/icu/icu_utf.cc ${MultiCompileDepends}
+
+$(o)thread_local_storage$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/threading/thread_local_storage.cc ${MultiCompileDepends}
+
+$(o)thread_local_storage_posix$(oext) : $(VendorDir)third_party/mini_chromium/mini_chromium/base/threading/thread_local_storage_posix.cc ${MultiCompileDepends}
+
+# -- libutil --------------------------------------------------------------------------------------
+
+$(o)delimited_file_reader$(oext) : $(VendorDir)util/file/delimited_file_reader.cc ${MultiCompileDepends}
+
+$(o)directory_reader_posix$(oext) : $(VendorDir)util/file/directory_reader_posix.cc ${MultiCompileDepends}
+
+$(o)file_io$(oext) : $(VendorDir)util/file/file_io.cc ${MultiCompileDepends}
+
+$(o)file_io_posix$(oext) : $(VendorDir)util/file/file_io_posix.cc ${MultiCompileDepends}
+
+$(o)file_reader$(oext) : $(VendorDir)util/file/file_reader.cc ${MultiCompileDepends}
+
+$(o)file_seeker$(oext) : $(VendorDir)util/file/file_seeker.cc ${MultiCompileDepends}
+
+$(o)file_writer$(oext) : $(VendorDir)util/file/file_writer.cc ${MultiCompileDepends}
+
+$(o)filesystem_posix$(oext) : $(VendorDir)util/file/filesystem_posix.cc ${MultiCompileDepends}
+
+$(o)scoped_remove_file$(oext) : $(VendorDir)util/file/scoped_remove_file.cc ${MultiCompileDepends}
+
+$(o)string_file$(oext) : $(VendorDir)util/file/string_file.cc ${MultiCompileDepends}
+
+$(o)auxiliary_vector$(oext) : $(VendorDir)util/linux/auxiliary_vector.cc ${MultiCompileDepends}
+
+$(o)direct_ptrace_connection$(oext) : $(VendorDir)util/linux/direct_ptrace_connection.cc ${MultiCompileDepends}
+
+$(o)exception_handler_client$(oext) : $(VendorDir)util/linux/exception_handler_client.cc ${MultiCompileDepends}
+
+$(o)exception_handler_protocol$(oext) : $(VendorDir)util/linux/exception_handler_protocol.cc ${MultiCompileDepends}
+
+$(o)memory_map$(oext) : $(VendorDir)util/linux/memory_map.cc ${MultiCompileDepends}
+
+$(o)proc_stat_reader$(oext) : $(VendorDir)util/linux/proc_stat_reader.cc ${MultiCompileDepends}
+
+$(o)proc_task_reader$(oext) : $(VendorDir)util/linux/proc_task_reader.cc ${MultiCompileDepends}
+
+$(o)ptrace_broker$(oext) : $(VendorDir)util/linux/ptrace_broker.cc ${MultiCompileDepends}
+
+$(o)ptrace_client$(oext) : $(VendorDir)util/linux/ptrace_client.cc ${MultiCompileDepends}
+
+$(o)ptracer$(oext) : $(VendorDir)util/linux/ptracer.cc ${MultiCompileDepends}
+
+$(o)scoped_pr_set_dumpable$(oext) : $(VendorDir)util/linux/scoped_pr_set_dumpable.cc ${MultiCompileDepends}
+
+$(o)scoped_pr_set_ptracer$(oext) : $(VendorDir)util/linux/scoped_pr_set_ptracer.cc ${MultiCompileDepends}
+
+$(o)scoped_ptrace_attach$(oext) : $(VendorDir)util/linux/scoped_ptrace_attach.cc ${MultiCompileDepends}
+
+$(o)socket$(oext) : $(VendorDir)util/linux/socket.cc ${MultiCompileDepends}
+
+$(o)thread_info$(oext) : $(VendorDir)util/linux/thread_info.cc ${MultiCompileDepends}
+
+$(o)clock_posix$(oext) : $(VendorDir)util/misc/clock_posix.cc ${MultiCompileDepends}
+
+$(o)initialization_state_dcheck$(oext) : $(VendorDir)util/misc/initialization_state_dcheck.cc ${MultiCompileDepends}
+
+$(o)lexing$(oext) : $(VendorDir)util/misc/lexing.cc ${MultiCompileDepends}
+
+$(o)metrics$(oext) : $(VendorDir)util/misc/metrics.cc ${MultiCompileDepends}
+
+$(o)paths_linux$(oext) : $(VendorDir)util/misc/paths_linux.cc ${MultiCompileDepends}
+
+$(o)pdb_structures$(oext) : $(VendorDir)util/misc/pdb_structures.cc ${MultiCompileDepends}
+
+$(o)random_string$(oext) : $(VendorDir)util/misc/random_string.cc ${MultiCompileDepends}
+
+$(o)range_set$(oext) : $(VendorDir)util/misc/range_set.cc ${MultiCompileDepends}
+
+$(o)reinterpret_bytes$(oext) : $(VendorDir)util/misc/reinterpret_bytes.cc ${MultiCompileDepends}
+
+$(o)scoped_forbid_return$(oext) : $(VendorDir)util/misc/scoped_forbid_return.cc ${MultiCompileDepends}
+
+$(o)time$(oext) : $(VendorDir)util/misc/time.cc ${MultiCompileDepends}
+
+$(o)uuid$(oext) : $(VendorDir)util/misc/uuid.cc ${MultiCompileDepends}
+
+$(o)zlib$(oext) : $(VendorDir)util/misc/zlib.cc ${MultiCompileDepends}
+
+$(o)http_body$(oext) : $(VendorDir)util/net/http_body.cc ${MultiCompileDepends}
+
+$(o)http_body_gzip$(oext) : $(VendorDir)util/net/http_body_gzip.cc ${MultiCompileDepends}
+
+$(o)http_multipart_builder$(oext) : $(VendorDir)util/net/http_multipart_builder.cc ${MultiCompileDepends}
+
+$(o)http_transport$(oext) : $(VendorDir)util/net/http_transport.cc ${MultiCompileDepends}
+
+$(o)http_transport_socket$(oext) : $(VendorDir)util/net/http_transport_socket.cc ${MultiCompileDepends}
+
+$(o)url$(oext) : $(VendorDir)util/net/url.cc ${MultiCompileDepends}
+
+$(o)checked_address_range$(oext) : $(VendorDir)util/numeric/checked_address_range.cc ${MultiCompileDepends}
+
+$(o)close_multiple$(oext) : $(VendorDir)util/posix/close_multiple.cc ${MultiCompileDepends}
+
+$(o)close_stdio$(oext) : $(VendorDir)util/posix/close_stdio.cc ${MultiCompileDepends}
+
+$(o)double_fork_and_exec$(oext) : $(VendorDir)util/posix/double_fork_and_exec.cc ${MultiCompileDepends}
+
+$(o)drop_privileges$(oext) : $(VendorDir)util/posix/drop_privileges.cc ${MultiCompileDepends}
+
+$(o)process_info_linux$(oext) : $(VendorDir)util/posix/process_info_linux.cc ${MultiCompileDepends}
+
+$(o)scoped_dir$(oext) : $(VendorDir)util/posix/scoped_dir.cc ${MultiCompileDepends}
+
+$(o)scoped_mmap$(oext) : $(VendorDir)util/posix/scoped_mmap.cc ${MultiCompileDepends}
+
+$(o)signals$(oext) : $(VendorDir)util/posix/signals.cc ${MultiCompileDepends}
+
+$(o)symbolic_constants_posix$(oext) : $(VendorDir)util/posix/symbolic_constants_posix.cc ${MultiCompileDepends}
+
+$(o)process_memory$(oext) : $(VendorDir)util/process/process_memory.cc ${MultiCompileDepends}
+
+$(o)process_memory_linux$(oext) : $(VendorDir)util/process/process_memory_linux.cc ${MultiCompileDepends}
+
+$(o)process_memory_range$(oext) : $(VendorDir)util/process/process_memory_range.cc ${MultiCompileDepends}
+
+$(o)process_memory_sanitized$(oext) : $(VendorDir)util/process/process_memory_sanitized.cc ${MultiCompileDepends}
+
+$(o)aligned_allocator$(oext) : $(VendorDir)util/stdlib/aligned_allocator.cc ${MultiCompileDepends}
+
+$(o)string_number_conversion$(oext) : $(VendorDir)util/stdlib/string_number_conversion.cc ${MultiCompileDepends}
+
+$(o)strlcpy$(oext) : $(VendorDir)util/stdlib/strlcpy.cc ${MultiCompileDepends}
+
+$(o)strnlen$(oext) : $(VendorDir)util/stdlib/strnlen.cc ${MultiCompileDepends}
+
+$(o)split_string$(oext) : $(VendorDir)util/string/split_string.cc ${MultiCompileDepends}
+
+$(o)semaphore_posix$(oext) : $(VendorDir)util/synchronization/semaphore_posix.cc ${MultiCompileDepends}
+
+$(o)thread$(oext) : $(VendorDir)util/thread/thread.cc ${MultiCompileDepends}
+
+$(o)thread_log_messages$(oext) : $(VendorDir)util/thread/thread_log_messages.cc ${MultiCompileDepends}
+
+$(o)thread_posix$(oext) : $(VendorDir)util/thread/thread_posix.cc ${MultiCompileDepends}
+
+$(o)worker_thread$(oext) : $(VendorDir)util/thread/worker_thread.cc ${MultiCompileDepends}
+
+# -- libclient ------------------------------------------------------------------------------------
+
+$(o)annotation$(oext) : $(VendorDir)client/annotation.cc ${MultiCompileDepends}
+
+$(o)annotation_list$(oext) : $(VendorDir)client/annotation_list.cc ${MultiCompileDepends}
+
+$(o)client_argv_handling$(oext) : $(VendorDir)client/client_argv_handling.cc ${MultiCompileDepends}
+
+$(o)crash_report_database$(oext) : $(VendorDir)client/crash_report_database.cc ${MultiCompileDepends}
+
+$(o)crash_report_database_generic$(oext) : $(VendorDir)client/crash_report_database_generic.cc ${MultiCompileDepends}
+
+$(o)crashpad_client_linux$(oext) : $(VendorDir)client/crashpad_client_linux.cc ${MultiCompileDepends}
+
+$(o)crashpad_info$(oext) : $(VendorDir)client/crashpad_info.cc ${MultiCompileDepends}
+
+$(o)prune_crash_reports$(oext) : $(VendorDir)client/prune_crash_reports.cc ${MultiCompileDepends}
+
+$(o)settings$(oext) : $(VendorDir)client/settings.cc ${MultiCompileDepends}
+
+#==================================================================================================
+%include MultiCppCompileGo.mki
+
+objs +% $(MultiCompileObjectList)
+
+#-- ASM -------------------------------------------------------------------------------------------
+
+.S.o:
+    |[== Building $@, ($=) ==]
+    $(BENTLEY_LINUX_TOOLCHAIN_compile) -MMD -MF $@.d -I$(VendorDir) -c $< -o $@
+    ~set objs $(objs) $@
+
+# libutil
+$(o)capture_context_linux$(oext) : $(VendorDir)util/misc/capture_context_linux.S ${MultiCompileDepends}
+
+# libclient
+$(o)crashpad_info_note$(oext) : $(VendorDir)client/crashpad_info_note.S ${MultiCompileDepends}
