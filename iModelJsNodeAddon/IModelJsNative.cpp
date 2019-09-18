@@ -2977,7 +2977,7 @@ struct NativeECSqlColumnInfo : BeObjectWrap<NativeECSqlColumnInfo>
                         case PRIMITIVETYPE_Binary:
                         {
                         ECPropertyCP prop = m_colInfo->GetProperty();
-                        if (prop->HasExtendedType())
+                        if (prop && prop->HasExtendedType())
                             {
                             BeAssert(prop->GetIsPrimitive());
                             Utf8StringCR extendedTypeName = prop->GetAsPrimitiveProperty()->GetExtendedTypeName();
@@ -3015,7 +3015,7 @@ struct NativeECSqlColumnInfo : BeObjectWrap<NativeECSqlColumnInfo>
                             }
 
                         ECPropertyCP prop = m_colInfo->GetProperty();
-                        if (prop->HasExtendedType())
+                        if (prop && prop->HasExtendedType())
                             {
                             BeAssert(prop->GetIsPrimitive());
                             if (prop->GetAsPrimitiveProperty()->GetExtendedTypeName().EqualsIAscii("Id"))
