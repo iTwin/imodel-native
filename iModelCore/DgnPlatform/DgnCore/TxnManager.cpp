@@ -263,7 +263,7 @@ bool TxnManager::IsMultiTxnMember(TxnId rowid) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TxnManager::TxnManager(DgnDbR dgndb) : m_dgndb(dgndb), m_stmts(20), m_rlt(*this), m_initTableHandlers(false), m_enableNotifyTxnMonitors(true)
+TxnManager::TxnManager(DgnDbR dgndb) : m_dgndb(dgndb), m_stmts(20), m_rlt(*this), m_initTableHandlers(false), m_enableNotifyTxnMonitors(true), m_modelChanges(*this)
     {
     m_action = TxnAction::None;
 
@@ -1040,97 +1040,128 @@ void TxnManager::ReportError(bool fatal, Utf8CP errorType, Utf8CP msg)  {
 }
 
 /*---------------------------------------------------------------------------------**//**
- @bsimethod                                    Keith.Bentley                    08/19
+* @bsimethod                                                    Paul.Connelly   09/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::DoUpdateModelChanges() {
-    if (m_noModelLastMod)
-        return; // we're working on an iModel that hasn't been upgraded to include the Model.LastMod property
+void TxnManager::ModelChanges::Apply()
+    {
+    if (m_enabled)
+        {
+        m_mgr.SetMode(BeSQLite::ChangeTracker::Mode::Indirect);
+        DoApply();
+        m_mgr.SetMode(BeSQLite::ChangeTracker::Mode::Direct);
+        }
+    }
 
-    // if there were any geometric changes, update the "GeometryGuid" and "LastMod" properties in the Model table.
-    if (!m_geometricChangedModels.empty()) {
-        auto stmt = m_dgndb.GetGeometricModelUpdateStatement();
-        if (!stmt.IsValid()) {
-            m_noModelLastMod = true; // this iModel hasn't been upgraded. Skip this step from now on
-            return;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void TxnManager::ModelChanges::DoApply()
+    {
+    // When we get a Change that deletes a geometric element, we don't have access to its model Id at that time - look it up now.
+    for (auto elemId : m_deletedGeometricElements)
+        {
+        auto iter = m_modelsForDeletedElements.find(elemId);
+        if (m_modelsForDeletedElements.end() != iter)
+            m_geometricModels.insert(iter->second);
         }
 
+    m_deletedGeometricElements.clear();
+    m_modelsForDeletedElements.clear();
+
+    if (m_models.empty() && m_geometricModels.empty())
+        return;
+
+    m_mgr.SetMode(Mode::Indirect);
+    auto disable = [&]()
+        {
+        m_enabled = false; // this iModel hasn't been upgraded. Skip this function from now on.
+        m_mgr.SetMode(Mode::Direct);
+        Clear();
+        };
+
+    // if there were any geometric changes, update the "GeometryGuid" and "LastMod" properties in the Model table.
+    if (!m_geometricModels.empty())
+        {
+        auto stmt = m_mgr.GetDgnDb().GetGeometricModelUpdateStatement();
+        if (!stmt.IsValid())
+            {
+            disable();
+            return;
+            }
+
         BeGuid guid(true); // create a new GUID to represent this state of the changed geometric models
-        for (auto model : m_geometricChangedModels) {
-            m_changedModels.erase(model); // we don't need to update the LastMod property below, since this statement updates it
+        for (auto model : m_geometricModels)
+            {
+            m_models.erase(model); // we don't need to update the LastMod property below, since this statement updates it
             stmt->BindGuid(1, guid);
             stmt->BindId(2, model);
             DbResult rc = stmt->Step();
             UNUSED_VARIABLE(rc);
             BeAssert(BE_SQLITE_DONE == rc);
             stmt->Reset();
+            }
         }
-    }
 
-    if (!m_changedModels.empty()) {
-        auto stmt = m_dgndb.GetModelLastModUpdateStatement();
-        if (!stmt.IsValid()) {
-            m_noModelLastMod = true; // this iModel hasn't been upgraded. Skip this step from now on
+    if (!m_models.empty())
+        {
+        auto stmt = m_mgr.GetDgnDb().GetModelLastModUpdateStatement();
+        if (!stmt.IsValid())
+            {
+            disable();
             return;
-        }
-        for (auto model : m_changedModels) {
+            }
+
+        for (auto model : m_models)
+            {
             stmt->BindId(1, model);
             DbResult rc = stmt->Step();
             UNUSED_VARIABLE(rc);
             BeAssert(BE_SQLITE_DONE == rc);
             stmt->Reset();
+            }
         }
+
+    Clear();
+    m_mgr.SetMode(Mode::Direct);
     }
-}
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                    Keith.Bentley                    08/19
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::UpdateModelChanges() {
-    if (m_geometricChangedModels.empty() && m_changedModels.empty())
-        return;
-
-    SetMode(Mode::Indirect);
-    DoUpdateModelChanges(); // set the LastMod and GeometryGuid properties of changed models.
-    SetMode(Mode::Direct);
-    m_geometricChangedModels.clear();
-    m_changedModels.clear();
-}
 
 /*---------------------------------------------------------------------------------**//**
 * Add all changes to the TxnSummary. TxnTables store information about the changes in their own state
 * if they need to hold on to them so they can react after the changeset is applied.
 * @bsimethod                                    Keith.Bentley                   07/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::AddChanges(Changes const& changes) {
+void TxnManager::AddChanges(Changes const& changes)
+    {
     BeAssert(!m_dgndb.IsReadonly());
     TxnTable* txnTable = 0;
 
-    BeAssert(m_changedModels.empty());
-    BeAssert(m_geometricChangedModels.empty());
-
     // Walk through each changed row in the changeset. They are ordered by table, so we know that all changes to one table will be seen
     // before we see any changes to another table.
-    for (auto change : changes) {
+    for (auto change : changes)
+        {
         Utf8CP tableName;
         int nCols,indirect;
         DbOpcode opcode;
         Utf8String currTable;
 
         DbResult rc = change.GetOperation(&tableName, &nCols, &opcode, &indirect);
-        if (rc != BE_SQLITE_OK) {
+        if (rc != BE_SQLITE_OK)
+            {
             BeAssert(false && "invalid changeset");
             continue;
-        }
+            }
 
-        if (0 != strcmp(currTable.c_str(), tableName)) { // changes within a changeset are grouped by table
+        if (0 != strcmp(currTable.c_str(), tableName))
+            { // changes within a changeset are grouped by table
             currTable = tableName;
             txnTable = FindTxnTable(tableName);
-        }
+            }
 
         if (nullptr == txnTable)
             continue; // this table does not have a TxnTable for it, skip it
 
-        switch (opcode) {
+        switch (opcode)
+            {
             case DbOpcode::Delete:
                 txnTable->_OnValidateDelete(change);
                 break;
@@ -1142,11 +1173,11 @@ void TxnManager::AddChanges(Changes const& changes) {
                 break;
             default:
                 BeAssert(false);
+            }
         }
-    }
 
-    UpdateModelChanges();
-}
+    m_modelChanges.Apply();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * Apply a changeset to the database. Notify all TxnTables about what's in the Changeset, both before
@@ -1920,8 +1951,12 @@ void dgn_TxnTable::Element::AddElement(DgnElementId elementId, DgnModelId modelI
 
     m_stmt.Reset();
     m_stmt.ClearBindings();
-    if (fromCommit && changeType != ChangeType::Delete)
-        m_txnMgr.m_changedModels.insert(modelId); // add to set of changed models.
+    if (fromCommit)
+        {
+        m_txnMgr.m_modelChanges.AddModel(modelId); // add to set of changed models.
+        if (ChangeType::Delete == changeType)
+            m_txnMgr.m_modelChanges.AddDeletedElement(elementId, modelId); // Record model Id in case it's a geometric element.
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1989,18 +2024,24 @@ bool dgn_TxnTable::Geometric::HasChangeInColumns(BeSQLite::Changes::Change const
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                    Keith.Bentley                    08/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_TxnTable::Geometric::AddChange(BeSQLite::Changes::Change const& change, ChangeType changeType) {
-    Changes::Change::Stage stage = Changes::Change::Stage::New;
-    if (changeType == ChangeType::Update) {
-        if (!HasChangeInColumns(change))
-            return; // no geometric changes
-        stage = Changes::Change::Stage::Old;
-    }
+void dgn_TxnTable::Geometric::AddChange(BeSQLite::Changes::Change const& change, ChangeType changeType)
+    {
+    if (ChangeType::Update == changeType && !HasChangeInColumns(change))
+        return; // no geometric changes
 
+    auto stage = ChangeType::Insert == changeType ? Changes::Change::Stage::New : Changes::Change::Stage::Old;
     DgnElementId elementId = change.GetValue(0, stage).GetValueId<DgnElementId>();
+
+    if (ChangeType::Delete == changeType)
+        {
+        // We don't have access to the model Id here. Rely on the Element txn table to record it for later use.
+        m_txnMgr.m_modelChanges.AddDeletedGeometricElement(elementId);
+        return;
+        }
+
     DgnClassId classId;
-    m_txnMgr.m_geometricChangedModels.insert(GetModelAndClass(classId, elementId)); // mark this model as having geometric changes
-}
+    m_txnMgr.m_modelChanges.AddGeometricModel(GetModelAndClass(classId, elementId)); // mark this model as having geometric changes
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/12

@@ -3084,6 +3084,9 @@ bool GeometryLoader::GenerateGeometry()
 
         if (IsCanceled())
             return false;
+
+        if (meshGenerator.DidDecimation())
+            geometryList.MarkIncomplete();
         }
 
     meshGenerator.AddDeferredGlyphMeshes(GetRenderSystem());

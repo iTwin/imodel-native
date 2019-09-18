@@ -283,9 +283,31 @@ private:
     TxnId m_curr;
     TxnAction m_action;
     bvector<TxnId> m_multiTxnOp;
+
 public:
-    bset<DgnModelId> m_changedModels;    // the set of models that have changes for the current transaction
-    bset<DgnModelId> m_geometricChangedModels; // the set of models that have geometric changes for the current transaction
+    struct ModelChanges
+    {
+    private:
+        bset<DgnModelId> m_models;    // the set of models that have changes for the current transaction
+        bset<DgnModelId> m_geometricModels; // the set of models that have geometric changes for the current transaction
+        bmap<DgnElementId, DgnModelId> m_modelsForDeletedElements; // maps Id of a deleted element to its model Id
+        bset<DgnElementId> m_deletedGeometricElements; // Ids of deleted geometric elements
+        TxnManager& m_mgr;
+        bool m_enabled = true;
+
+        void Clear() { m_models.clear(); m_geometricModels.clear(); m_modelsForDeletedElements.clear(); m_deletedGeometricElements.clear(); }
+        void DoApply();
+    public:
+        ModelChanges(TxnManager& mgr) : m_mgr(mgr) { }
+
+        void AddModel(DgnModelId modelId) { if (m_enabled) m_models.insert(modelId); }
+        void AddGeometricModel(DgnModelId modelId) { if (m_enabled) m_geometricModels.insert(modelId); }
+        void AddDeletedElement(DgnElementId elemId, DgnModelId modelId) { if (m_enabled) m_modelsForDeletedElements.Insert(elemId, modelId); }
+        void AddDeletedGeometricElement(DgnElementId elemId) { if (m_enabled) m_deletedGeometricElements.insert(elemId); }
+
+        void Apply();
+    };
+
 private:
     bvector<TxnRange> m_reversedTxn;
     bvector<DynamicChangeTrackerPtr> m_dynamicTxns;
@@ -299,8 +321,9 @@ private:
     bool m_enableNotifyTxnMonitors;
     bool m_enableRebasers;
     bool m_isInteractive = false;
-    bool m_noModelLastMod = false; // if true, we're working on an iModel that hasn't been upgraded to include the Model.LastMod property
-
+public:
+    ModelChanges m_modelChanges;
+private:
     OnCommitStatus _OnCommit(bool isCommit, Utf8CP operation) override;
     void _OnCommitted(bool isCommit, Utf8CP operation) override;
     TrackChangesForTable _FilterTable(Utf8CP tableName) override;
@@ -339,8 +362,6 @@ private:
     bool IsMultiTxnMember(TxnId rowid) const;
     TxnManager::TxnId GetLastUndoableTxnId(AllowCrossSessions allowCrossSessions) const;
     bool IsSchemaChangeTxn(TxnId rowid) const;
-    void UpdateModelChanges();
-    void DoUpdateModelChanges();
 
     void CancelDynamics();
 
@@ -630,6 +651,7 @@ namespace dgn_TxnTable
         void AddChange(BeSQLite::Changes::Change const& change, ChangeType changeType);
         void _OnValidateAdd(BeSQLite::Changes::Change const& change) override    {AddChange(change, TxnTable::ChangeType::Insert);}
         void _OnValidateUpdate(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Update);}
+        void _OnValidateDelete(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Delete);}
     };
 
     struct Geometric3d : Geometric {
