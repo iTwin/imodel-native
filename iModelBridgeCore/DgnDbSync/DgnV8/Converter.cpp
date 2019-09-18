@@ -2522,7 +2522,7 @@ bool Converter::DetermineNamedGroupOwnershipFlag(BECN::ECClassCR ecClass)
 DgnV8Api::ECQuery const& Converter::GetSelectAllV8ECQuery() const
     {
     if (m_selectAllQueryV8 == nullptr)
-        m_selectAllQueryV8 = DgnV8Api::ECQuery::CreateQuery(DgnV8Api::ECQUERY_PROCESS_SearchAllClasses);
+        m_selectAllQueryV8 = DgnV8Api::ECQuery::CreateQuery(DgnV8Api::ECQUERY_PROCESS_SearchAllExtrinsic);
 
     return *m_selectAllQueryV8;
     }

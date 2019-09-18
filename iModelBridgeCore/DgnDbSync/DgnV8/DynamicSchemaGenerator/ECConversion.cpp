@@ -2458,7 +2458,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::DoAnalyze(DgnV8Api::ElementHan
     auto& v8ECManager = DgnV8Api::DgnECManager::GetManager();
     DgnV8Api::ElementECClassInfo classes;
     v8ECManager.FindECClassesOnElement(v8Element.GetElementRef(), classes);
-    FindIntrinsicClassesOnElement(v8Element.GetElementRef(), classes);
+    //FindIntrinsicClassesOnElement(v8Element.GetElementRef(), classes);
     for (auto& ecClassInfo : classes)
         {
         auto& ecClass = ecClassInfo.first;
