@@ -2093,7 +2093,7 @@ Tree::Tree(GeometricModelCR model, TransformCR location, DRange3dCR range, Rende
     if (!range.IsNull())
         m_range.Extend(range);
 
-    if (GetType() == Type::Animation)
+    if (m_id.ContainsAnimation())
         LoadNodeMapFromAnimation();
     }
 
@@ -2222,22 +2222,26 @@ Utf8String Tree::Id::GetPrefixString() const
         {
         prefix.append(IsVolumeClassifier() ? s_classifierIdPrefix : s_planarClassifierIdPrefix);
         prefix.append(Utf8PrintfString("%.6f_", m_expansion));
+        if (this->ContainsAnimation())
+            prefix.append(s_animationIdPrefix + m_animationSourceId.ToHexStr()).append(1, '_');
         }
     else
         {
-        if (IsAnimation())
+        if (this->ContainsAnimation())
             prefix.append(s_animationIdPrefix + m_animationSourceId.ToHexStr()).append(1, '_');
 
         if (GetOmitEdges())
             prefix.append(s_omitEdgesPrefix).append(1, '_');
-        }
+
+        }   
+
 
     return prefix;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * v3.0 and earlier:
-*   Classifiers: "prefix:expansion_modelId"
+*   Classifiers: "prefix:[A:animSourceId_]expansion_modelId"
 *       prefix=CP (planar classifier) or P (volume classifier)
 *       expansion=.6f double-precision floating point value
 *       modelId=hex-formatted BeInt64Id
@@ -2313,13 +2317,24 @@ Tree::Id Tree::Id::FromString(Utf8StringCR str, DgnDbP db)
             if (nullptr == pCur)
                 return invalidId;
 
+            if ('A' == *pCur) 
+                {
+                if (':' != *(++pCur))
+                    return invalidId;
+
+                pCur = parseId(animationId64, ++pCur, '_');
+                if (nullptr == pCur)
+                    return invalidId;
+
+                ++pCur;
+                }
+
             break;
             }
         case '0':
             break;
         case 'A':
             {
-            type = Tree::Type::Animation;
             if (':' != *(++pCur))
                 return invalidId;
 
@@ -2375,19 +2390,18 @@ Tree::Id Tree::Id::FromString(Utf8StringCR str, DgnDbP db)
             if (model.IsValid() && !model->Is3d())
                 return invalidId;
             else
-                return Tree::Id(modelId, flags, majorVersion, expansion, Tree::Type::PlanarClassifier == type);
-        case Tree::Type::Animation:
-            if (!animationId.IsValid())
-                return invalidId;
-            else if (nullptr != db)
-                {
-                auto style = db->Elements().Get<DisplayStyle>(animationId);
-                if (style.IsNull() || style->GetStyle("scheduleScript").isNull())
-                    return invalidId;
-                }
-
+                return Tree::Id(modelId, flags, majorVersion, expansion, Tree::Type::PlanarClassifier == type, animationId);
+        case Tree::Type::Model:
             break;
         }
+
+    if (animationId.IsValid() && nullptr != db)
+        {
+        auto style = db->Elements().Get<DisplayStyle>(animationId);
+        if (style.IsNull() || style->GetStyle("scheduleScript").isNull())
+            return invalidId;
+        }
+
 
     return Tree::Id(modelId, flags, majorVersion, omitEdges, animationId);
     }

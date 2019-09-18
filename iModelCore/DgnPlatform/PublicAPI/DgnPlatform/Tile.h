@@ -324,7 +324,6 @@ struct Tree : RefCountedBase, NonCopyableClass
     {
         Model,
         VolumeClassifier,
-        Animation,
         PlanarClassifier,
     };
 
@@ -362,15 +361,15 @@ struct Tree : RefCountedBase, NonCopyableClass
         Id() : Id(DgnModelId(), Tree::Type::Model, Tree::Flags::None, GetDefaultMajorVersion(), true, 0.0, DgnElementId()) { }
 
         // Create an Id for a classifier tree
-        Id(DgnModelId modelId, Tree::Flags flags, uint16_t majorVersion, double expansion, bool isPlanar)
-            : Id(modelId, isPlanar ? Tree::Type::PlanarClassifier : Tree::Type::VolumeClassifier, flags, majorVersion, true, expansion, DgnElementId()) { }
+        Id(DgnModelId modelId, Tree::Flags flags, uint16_t majorVersion, double expansion, bool isPlanar, DgnElementId animationId = DgnElementId())
+            : Id(modelId, isPlanar ? Tree::Type::PlanarClassifier : Tree::Type::VolumeClassifier, flags, majorVersion, true, expansion, animationId) { }
 
         // Create an Id for a V3 classifier tree
-        Id(DgnModelId modelId, double expansion, bool isPlanar) : Id(modelId, isPlanar ? Tree::Flags::None : Tree::Flags::UseProjectExtents, 3, expansion, isPlanar) { }
+        Id(DgnModelId modelId, double expansion, bool isPlanar) : Id(modelId, isPlanar ? Tree::Flags::None : Tree::Flags::UseProjectExtents, 3, expansion, isPlanar, DgnElementId()) { }
 
         // Create an Id for a model or animation tree
         Id(DgnModelId modelId, Tree::Flags flags, uint16_t majorVersion, bool omitEdges, DgnElementId animationSourceId=DgnElementId())
-            : Id(modelId, animationSourceId.IsValid() ? Tree::Type::Animation : Tree::Type::Model, flags, majorVersion, omitEdges, 0.0, animationSourceId) { }
+            : Id(modelId, Tree::Type::Model, flags, majorVersion, omitEdges, 0.0, animationSourceId) { }
 
         // Create an Id for a V3 model or animation tree
         Id(DgnModelId modelId, bool omitEdges, DgnElementId animationSourceId=DgnElementId()) : Id(modelId, Tree::Flags::None, 3, omitEdges, animationSourceId) { }
@@ -378,7 +377,7 @@ struct Tree : RefCountedBase, NonCopyableClass
         bool IsValid() const { return m_modelId.IsValid() && (!IsVolumeClassifier() || GetUseProjectExtents()); }
 
         Tree::Type GetType() const { return m_type; }
-        bool IsAnimation() const { return Tree::Type::Animation == GetType(); }
+        bool ContainsAnimation() const { return m_animationSourceId.IsValid(); }
         bool IsPlanarClassifier() const { return Tree::Type::PlanarClassifier == GetType(); }
         bool IsVolumeClassifier() const { return Tree::Type::VolumeClassifier == GetType(); }
         bool IsClassifier() const { return IsPlanarClassifier() || IsVolumeClassifier(); }

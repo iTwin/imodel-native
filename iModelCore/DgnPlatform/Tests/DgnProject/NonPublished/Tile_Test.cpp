@@ -272,7 +272,7 @@ static void expectEqualTreeIds(TreeId const& lhs, TreeId const& rhs)
 
     if (lhs.IsClassifier())
         EXPECT_TRUE(DoubleOps::WithinTolerance(lhs.GetClassifierExpansion(), rhs.GetClassifierExpansion(), 0.0000009));
-    else if (lhs.IsAnimation())
+    else if (lhs.ContainsAnimation())
         EXPECT_EQ(lhs.GetAnimationSourceId(), rhs.GetAnimationSourceId());
     }
 
@@ -329,10 +329,10 @@ TEST(TreeId, RoundTrip)
 
     expectInvalidTreeId();
     expectInvalidTreeId(DgnModelId(), kNone, curMaj, false);
-    expectInvalidTreeId(DgnModelId(), kNone, curMaj, 1.0, false);
+    expectInvalidTreeId(DgnModelId(), kNone, curMaj, 1.0, false, DgnElementId());
 
     DgnModelId modelId(uint64_t(0x1c));
-    expectInvalidTreeId(modelId, kNone, v4, 12.0, false); // must specify UseProjectExtents flag for volume classifier
+    expectInvalidTreeId(modelId, kNone, v4, 12.0, false, DgnElementId()); // must specify UseProjectExtents flag for volume classifier
 
     roundTripTreeId("0x123");
     roundTripTreeId("0xdef");
@@ -341,10 +341,16 @@ TEST(TreeId, RoundTrip)
     roundTripTreeId("CP:0.000000_0x1c");
     roundTripTreeId("C:1.000001_0x1c");
     roundTripTreeId("C:333.333333_0x1c");
+    roundTripTreeId("C:0.123456_A:0x123abd_0x1c");
+    roundTripTreeId("CP:12345.678900_A:0x123abd_0x1c");
+    roundTripTreeId("CP:0.000000_A:0x123abd_0x1c");
+    roundTripTreeId("C:1.000001_A:0x123abd_0x1c");
+    roundTripTreeId("C:333.333333_A:0x123abd_0x1c");
     roundTripTreeId("E:0_0x123");
     roundTripTreeId("E:0_0xabc02400def0");
     roundTripTreeId("A:0x123abd_0x420cf");
     roundTripTreeId("A:0x123abd_E:0_0x420cf");
+
     roundTripTreeId("0x10000000001");
 
     roundTripTreeId("4_0-0x1c");
@@ -437,6 +443,9 @@ TEST(TreeId, RoundTrip)
             { "4_f6000a21-A:0xf7_E:0_0x1c", modelId, kLots, v4, true, animId },
             { "4_f6000a21-C:12.345678_0x1c", modelId, kLots, v4, 12.345678, false },
             { "4_f6000a21-CP:0.000300_0x1c", modelId, kLots, v4, 0.0003, true },
+            { "4_f6000a21-C:12.345678_A:0xf7_0x1c", modelId, kLots, v4, 12.345678, false, animId },
+            { "4_f6000a21-CP:0.000300_A:0xf7_0x1c", modelId, kLots, v4, 0.0003, true, animId },
+
         };
 
     for (auto const& expectedId : expectedIds)
@@ -445,8 +454,7 @@ TEST(TreeId, RoundTrip)
         EXPECT_TRUE(id.IsValid());
         EXPECT_TRUE(id.GetModelId().IsValid());
         EXPECT_TRUE(Tile::IO::IModelTile::Version::IsKnownMajorVersion(id.GetMajorVersion()));
-        EXPECT_EQ(id.GetAnimationSourceId().IsValid(), id.IsAnimation());
-
+        EXPECT_EQ(id.ContainsAnimation(), id.GetAnimationSourceId().IsValid());
         auto actualStr = id.ToString();
         expectEqualStrings(actualStr, expectedId.m_str);
 
@@ -462,7 +470,6 @@ TEST(TreeId, RoundTrip)
                 EXPECT_TRUE(id.GetClassifierExpansion() > 0.0);
                 EXPECT_TRUE(id.GetOmitEdges());
                 break;
-            case Tree::Type::Animation:
             case Tree::Type::Model:
                 EXPECT_EQ(0.0, id.GetClassifierExpansion());
                 break;
