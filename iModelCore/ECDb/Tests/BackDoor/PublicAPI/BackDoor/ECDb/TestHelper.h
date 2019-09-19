@@ -44,7 +44,7 @@ struct TestHelper final
         //! Runs an isolated schema import. It first creates an ECDb and then imports the specified schemas.
         //! @param[in] fileName ECDb file name. If omitted, a file name will be generated
         static BentleyStatus RunSchemaImport(std::vector<SchemaItem> const&, Utf8CP fileName = nullptr);
-
+        static BentleyStatus RunSchemaImportOneAtATime(std::vector<SchemaItem> const& schemas, Utf8CP fileName = nullptr);
         //! Imports the specified schema into this Test's ECDb
         //! Changes are committed in case of success, and rolled back in case of error
         BentleyStatus ImportSchema(SchemaItem const&, SchemaManager::SchemaImportOptions options = SchemaManager::SchemaImportOptions::None) const;

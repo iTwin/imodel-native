@@ -42,6 +42,23 @@ BentleyStatus TestHelper::RunSchemaImport(std::vector<SchemaItem> const& schemas
     return TestHelper(ecdb).ImportSchemas(schemas);
     }
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                   06/19
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+BentleyStatus TestHelper::RunSchemaImportOneAtATime(std::vector<SchemaItem> const& schemas, Utf8CP fileName /*= nullptr*/)
+    {
+    ECDb ecdb;
+    if (BE_SQLITE_OK != ECDbTestFixture::CreateECDb(ecdb, fileName))
+        return ERROR;
+
+    for (auto& schema : schemas)
+        {
+        if (TestHelper(ecdb).ImportSchema(schema, SchemaManager::SchemaImportOptions::None) != SUCCESS)
+            return ERROR;
+        }
+    return SUCCESS;
+    }
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  06/17
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus TestHelper::ImportSchemas(std::vector<SchemaItem> const& schemas) const

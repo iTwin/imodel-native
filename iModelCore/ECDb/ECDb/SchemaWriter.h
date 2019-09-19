@@ -72,6 +72,18 @@ struct SchemaWriter final
                         return Action::Import;
                         }
                 };
+            //! Implement reserved property name policy
+            struct ReservedPropertyNamesPolicy
+                {
+                private:
+                    typedef std::map<ECN::IECInstanceCP, std::pair<ECN::ECClassCP, std::set<Utf8String, CompareIUtf8Ascii>>> PolicyCacheMap;
+                    mutable PolicyCacheMap m_reservedProperties;
+                    static ECN::ECClassCP FindCustomAttributeOwner(ECN::ECClassCP entityClass, ECN::IECInstanceCP ca);
+                    PolicyCacheMap::iterator RegisterPolicy(IssueReporter const& issues, ECN::ECClassCR entityClass, ECN::IECInstanceCP policyCA) const;
+                public:
+                    //! return true if policy voilation occure else false
+                    bool Evaluate(IssueReporter const& issues, ECN::ECClassCR entityClass, ECN::ECPropertyCP property = nullptr) const;
+                };
 
         private:
             SchemaImportContext& m_importCtx;
@@ -81,7 +93,7 @@ struct SchemaWriter final
             bvector<ECN::ECSchemaCP> m_schemasToImport;
             bset<ECN::ECSchemaId> m_schemasWithMajorVersionChange;
             ECN::CustomAttributeValidator m_schemaUpgradeCustomAttributeValidator;
-
+            ReservedPropertyNamesPolicy m_reservedPropertyNamePolicy;
             bool m_ec32AvailableInFile = true;
             LegacySchemaImportHelper m_legacyHelper;
 
@@ -121,7 +133,7 @@ struct SchemaWriter final
                 }
 
             BentleyStatus PreprocessSchemas(bvector<ECN::ECSchemaCP>& out, bvector<ECN::ECSchemaCP> const& in);
-
+            bool AssertReservedPropertyPolicy(ECN::ECClassCR entityClass, ECN::ECPropertyCP property = nullptr) const;
             void ClearCache() { m_schemasToImport.clear(); m_existingSchemas.clear(); GetECDb().ClearECDbCache(); }
             SchemaImportContext& ImportCtx() const { return m_importCtx; }
             bvector<ECN::ECSchemaCP> const& GetSchemasToImport() const { return m_schemasToImport; }

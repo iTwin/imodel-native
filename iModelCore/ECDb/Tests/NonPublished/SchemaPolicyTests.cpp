@@ -21,6 +21,436 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicesNotIncludedByDefault)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiMethod                                      Affan.Khan                    09/19
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaPolicyTestFixture, ReservedPropertyNames_LinkTableRelationships)
+    {
+        auto bisCore = SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="BisCore" alias="bis" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+            <!-- Applied to an ECClass to reserve list properties that cannot be used by that class or its dervied classes. -->
+            <ECCustomAttributeClass typeName="ReservedPropertyNames" modifier="Sealed" appliesTo="EntityClass, RelationshipClass"
+                                    description="Declare a list of properties as reserved. The property name listed would be forbidden from use in that class context.">
+                <ECArrayProperty propertyName="PropertyNames" typeName="string" minOccurs="0" maxOccurs="unbounded" 
+                                description="Name of the property. System will do case insensitive comparison."/>
+            </ECCustomAttributeClass>
+        </ECSchema>)xml");
+
+        ASSERT_EQ(ERROR, TestHelper::RunSchemaImport({bisCore, SchemaItem(
+                                                                   R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="OptingInSchema" alias="master" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+            <ECSchemaReference name="BisCore" version="01.00.01" alias="bis"/>
+            <ECEntityClass typeName="ClassA" modifier="None" >
+                <ECProperty propertyName="P1" typeName="string" />
+            </ECEntityClass>
+
+            <ECRelationshipClass typeName="MyLinkTableRel" modifier="None" strength="Referencing">
+                <ECCustomAttributes>
+                    <ReservedPropertyNames xmlns="BisCore.01.00.01">
+                        <PropertyNames>
+                            <string>p1</string>
+                            <string>p2</string>
+                        </PropertyNames>
+                    </ReservedPropertyNames>
+                </ECCustomAttributes>            
+                <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to">
+                    <Class class="ClassA"/>
+                </Source>
+                <Target multiplicity="(0..*)" polymorphic="true" roleLabel="refers to">
+                    <Class class="ClassA"/>
+                </Target>
+                <ECProperty propertyName="P1" typeName="string" />
+                <ECProperty propertyName="P2" typeName="int" />
+           </ECRelationshipClass>
+        </ECSchema>)xml")}))
+            << "LinkTable should reject its own declar property if its part of reserved property list";
+
+        ASSERT_EQ(SUCCESS, TestHelper::RunSchemaImport({bisCore, SchemaItem(
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="OptingInSchema" alias="master" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+            <ECSchemaReference name="BisCore" version="01.00.01" alias="bis"/>
+            <ECEntityClass typeName="ClassA" modifier="None" >
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="P1" typeName="string" />
+            </ECEntityClass>
+
+            <ECRelationshipClass typeName="MyLinkTableRel" modifier="None" strength="Referencing">
+                <ECCustomAttributes>
+                    <ReservedPropertyNames xmlns="BisCore.01.00.01">
+                        <PropertyNames>
+                            <string>Id</string>
+                            <string>ClassName</string>
+                            <string>ClassFullName</string>
+                            <string>SourceId</string>
+                            <string>TargetId</string>
+                            <string>SourceClassId</string>
+                            <string>TargetClassId</string>
+                            <string>MyProp</string>
+                        </PropertyNames>
+                    </ReservedPropertyNames>
+                </ECCustomAttributes>            
+                <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to">
+                    <Class class="ClassA"/>
+                </Source>
+                <Target multiplicity="(0..*)" polymorphic="true" roleLabel="refers to">
+                    <Class class="ClassA"/>
+                </Target>
+                <ECProperty propertyName="P1" typeName="string" />
+           </ECRelationshipClass>
+        </ECSchema>)xml"),
+        SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="Schema1" alias="s1" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+            <ECSchemaReference name="OptingInSchema" version="01.00.00" alias="master"/>
+            <ECEntityClass typeName="ClassB" modifier="None" >
+                <BaseClass>master:ClassA</BaseClass>
+                <ECProperty propertyName="P3" typeName="string" />
+                <ECProperty propertyName="P4" typeName="int" />
+            </ECEntityClass>
+            <ECRelationshipClass typeName="MyLinkTableRelDrv" modifier="None" strength="Referencing">
+                <BaseClass>master:MyLinkTableRel</BaseClass>
+                <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to">
+                    <Class class="ClassB"/>
+                </Source>
+                <Target multiplicity="(0..*)" polymorphic="true" roleLabel="refers to">
+                    <Class class="ClassB"/>
+                </Target>
+                <ECProperty propertyName="P1" typeName="string" />
+                <ECProperty propertyName="P2" typeName="int" />
+           </ECRelationshipClass>
+        </ECSchema>)xml")}))
+            << "New dervied class in new schema with reserved properties name";
+
+        ASSERT_EQ(ERROR, TestHelper::RunSchemaImport({bisCore, SchemaItem(
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="OptingInSchema" alias="master" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+            <ECSchemaReference name="BisCore" version="01.00.01" alias="bis"/>
+            <ECEntityClass typeName="ClassA" modifier="None" >
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="P1" typeName="string" />
+            </ECEntityClass>
+
+            <ECRelationshipClass typeName="MyLinkTableRel" modifier="None" strength="Referencing">
+                <ECCustomAttributes>
+                    <ReservedPropertyNames xmlns="BisCore.01.00.01">
+                        <PropertyNames>
+                            <string>Id</string>
+                            <string>ClassName</string>
+                            <string>ClassFullName</string>
+                            <string>SourceId</string>
+                            <string>TargetId</string>
+                            <string>SourceClassId</string>
+                            <string>TargetClassId</string>
+                            <string>MyProp</string>
+                        </PropertyNames>
+                    </ReservedPropertyNames>
+                </ECCustomAttributes>            
+                <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to">
+                    <Class class="ClassA"/>
+                </Source>
+                <Target multiplicity="(0..*)" polymorphic="true" roleLabel="refers to">
+                    <Class class="ClassA"/>
+                </Target>
+                <ECProperty propertyName="P1" typeName="string" />
+           </ECRelationshipClass>
+        </ECSchema>)xml"),
+        SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="Schema1" alias="s1" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+            <ECSchemaReference name="OptingInSchema" version="01.00.00" alias="master"/>
+            <ECEntityClass typeName="ClassB" modifier="None" >
+                <BaseClass>master:ClassA</BaseClass>
+                <ECProperty propertyName="P3" typeName="string" />
+                <ECProperty propertyName="P4" typeName="int" />
+            </ECEntityClass>
+            <ECRelationshipClass typeName="MyLinkTableRelDrv" modifier="None" strength="Referencing">
+                <BaseClass>master:MyLinkTableRel</BaseClass>
+                <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to">
+                    <Class class="ClassB"/>
+                </Source>
+                <Target multiplicity="(0..*)" polymorphic="true" roleLabel="refers to">
+                    <Class class="ClassB"/>
+                </Target>
+                <ECProperty propertyName="P1" typeName="string" />
+                <ECProperty propertyName="P2" typeName="int" />
+                <ECProperty propertyName="ClassFullName" typeName="int" />
+                <ECProperty propertyName="MyProp" typeName="int" />
+           </ECRelationshipClass>
+        </ECSchema>)xml")}))
+            << "New dervied class in new schema with reserved properties name";
+
+        ASSERT_EQ(ERROR, TestHelper::RunSchemaImportOneAtATime({bisCore, SchemaItem(
+                                                                             R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="OptingInSchema" alias="master" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+            <ECSchemaReference name="BisCore" version="01.00.01" alias="bis"/>
+            <ECEntityClass typeName="ClassA" modifier="None" >
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="P1" typeName="string" />
+            </ECEntityClass>
+
+            <ECRelationshipClass typeName="MyLinkTableRel" modifier="None" strength="Referencing">
+                <ECCustomAttributes>
+                    <ReservedPropertyNames xmlns="BisCore.01.00.01">
+                        <PropertyNames>
+                            <string>Id</string>
+                            <string>ClassName</string>
+                            <string>ClassFullName</string>
+                            <string>SourceId</string>
+                            <string>TargetId</string>
+                            <string>SourceClassId</string>
+                            <string>TargetClassId</string>
+                            <string>MyProp</string>
+                            <string>P2</string>
+                        </PropertyNames>
+                    </ReservedPropertyNames>
+                </ECCustomAttributes>            
+                <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to">
+                    <Class class="ClassA"/>
+                </Source>
+                <Target multiplicity="(0..*)" polymorphic="true" roleLabel="refers to">
+                    <Class class="ClassA"/>
+                </Target>
+                <ECProperty propertyName="P1" typeName="string" />
+           </ECRelationshipClass>
+        </ECSchema>)xml"),
+                                                                SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="OptingInSchema" alias="master" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+            <ECSchemaReference name="BisCore" version="01.00.01" alias="bis"/>
+            <ECEntityClass typeName="ClassA" modifier="None" >
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="P1" typeName="string" />
+            </ECEntityClass>
+
+            <ECRelationshipClass typeName="MyLinkTableRel" modifier="None" strength="Referencing">
+                <ECCustomAttributes>
+                    <ReservedPropertyNames xmlns="BisCore.01.00.01">
+                        <PropertyNames>
+                            <string>Id</string>
+                            <string>ClassName</string>
+                            <string>ClassFullName</string>
+                            <string>SourceId</string>
+                            <string>TargetId</string>
+                            <string>SourceClassId</string>
+                            <string>TargetClassId</string>
+                            <string>MyProp</string>
+                            <string>P2</string>
+                        </PropertyNames>
+                    </ReservedPropertyNames>
+                </ECCustomAttributes>            
+                <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to">
+                    <Class class="ClassA"/>
+                </Source>
+                <Target multiplicity="(0..*)" polymorphic="true" roleLabel="refers to">
+                    <Class class="ClassA"/>
+                </Target>
+                <ECProperty propertyName="P1" typeName="string"/>
+                <ECProperty propertyName="MyProp" typeName="string"/>
+                <ECProperty propertyName="P2" typeName="string"/>
+           </ECRelationshipClass>
+        </ECSchema>)xml")}))
+            << "Updating schema add add a reserved property";
+
+    }
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                      Affan.Khan                    09/19
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaPolicyTestFixture, ReservedPropertyNames_EntitiyClasses)
+    {
+        auto bisCore = SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="BisCore" alias="bis" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+            <!-- Applied to an ECClass to reserve list properties that cannot be used by that class or its dervied classes. -->
+            <ECCustomAttributeClass typeName="ReservedPropertyNames" modifier="Sealed" appliesTo="EntityClass, RelationshipClass"
+                                    description="Declare a list of properties as reserved. The property name listed would be forbidden from use in that class context.">
+                <ECArrayProperty propertyName="PropertyNames" typeName="string" minOccurs="0" maxOccurs="unbounded" 
+                                description="Name of the property. System will do case insensitive comparison."/>
+            </ECCustomAttributeClass>
+        </ECSchema>)xml");
+        ASSERT_EQ(ERROR, TestHelper::RunSchemaImport({bisCore, SchemaItem(
+                                                                   R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="OptingInSchema" alias="master" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+            <ECSchemaReference name="BisCore" version="01.00.01" alias="bis"/>
+            <ECEntityClass typeName="ClassA" modifier="None" >
+                <ECCustomAttributes>
+                    <ReservedPropertyNames xmlns="BisCore.01.00.01">
+                        <PropertyNames>
+                            <string>P1</string>
+                            <string>P2</string>
+                        </PropertyNames>
+                    </ReservedPropertyNames>
+                </ECCustomAttributes>            
+                <ECProperty propertyName="P1" typeName="string" />
+                <ECProperty propertyName="P2" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml")}))
+            << "Class with ReservedPropertyNames reject its on properties";
+
+        ASSERT_EQ(ERROR, TestHelper::RunSchemaImport({bisCore, SchemaItem(
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="OptingInSchema" alias="master" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+            <ECSchemaReference name="BisCore" version="01.00.01" alias="bis"/>
+            <ECEntityClass typeName="ClassA" modifier="None" >
+                <ECCustomAttributes>
+                    <ReservedPropertyNames xmlns="BisCore.01.00.01">
+                        <PropertyNames>
+                            <string>p1</string>
+                            <string>p2</string>
+                        </PropertyNames>
+                    </ReservedPropertyNames>
+                </ECCustomAttributes>            
+                <ECProperty propertyName="P1" typeName="string" />
+                <ECProperty propertyName="P2" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml")})) << "Class with ReservedPropertyNames reject its on properties -Case-insensitive";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport({bisCore, SchemaItem(
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="OptingInSchema" alias="master" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+            <ECSchemaReference name="BisCore" version="01.00.01" alias="bis"/>
+            <ECEntityClass typeName="ClassA" modifier="None" >
+                <ECCustomAttributes>
+                    <ReservedPropertyNames xmlns="BisCore.01.00.01">
+                        <PropertyNames>
+                            <string>P3</string>
+                            <string>p4</string>
+                        </PropertyNames>
+                    </ReservedPropertyNames>
+                </ECCustomAttributes>            
+                <ECProperty propertyName="P1" typeName="string" />
+                <ECProperty propertyName="P2" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml"),
+        SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="Schema1" alias="s1" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+            <ECSchemaReference name="OptingInSchema" version="01.00.00" alias="master"/>
+            <ECEntityClass typeName="ClassB" modifier="None" >
+                <BaseClass>master:ClassA</BaseClass>
+                <ECProperty propertyName="P3" typeName="string" />
+                <ECProperty propertyName="P4" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml")})) << "New dervied class in new schema with reserved properties name";
+
+        ASSERT_EQ(ERROR, TestHelper::RunSchemaImport({bisCore, SchemaItem(
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="OptingInSchema" alias="master" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+            <ECSchemaReference name="BisCore" version="01.00.01" alias="bis"/>
+            <ECEntityClass typeName="ClassA" modifier="None" >
+                <ECCustomAttributes>
+                    <ReservedPropertyNames xmlns="BisCore.01.00.01">
+                        <PropertyNames>
+                            <string>P3</string>
+                            <string>p4</string>
+                        </PropertyNames>
+                    </ReservedPropertyNames>
+                </ECCustomAttributes>            
+                <ECProperty propertyName="P1" typeName="string" />
+                <ECProperty propertyName="P2" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml"),
+        SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="Schema1" alias="s1" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+            <ECSchemaReference name="BisCore" version="01.00.01" alias="bis"/>
+            <ECEntityClass typeName="ClassA" modifier="None" >
+                <ECCustomAttributes>
+                    <ReservedPropertyNames xmlns="BisCore.01.00.01">
+                        <PropertyNames>
+                            <string>P3</string>
+                            <string>p4</string>
+                        </PropertyNames>
+                    </ReservedPropertyNames>
+                </ECCustomAttributes>            
+                <ECProperty propertyName="P1" typeName="string" />
+                <ECProperty propertyName="P2" typeName="int" />
+                <ECProperty propertyName="P4" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml")})) << "add new property to existing class";
+
+        ASSERT_EQ(SUCCESS, TestHelper::RunSchemaImport({bisCore, SchemaItem(
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="OptingInSchema" alias="master" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+            <ECSchemaReference name="BisCore" version="01.00.01" alias="bis"/>
+            <ECEntityClass typeName="ClassA" modifier="None" >
+                <ECCustomAttributes>
+                    <ReservedPropertyNames xmlns="BisCore.01.00.01">
+                        <PropertyNames>
+                            <string>P3</string>
+                            <string>p4</string>
+                        </PropertyNames>
+                    </ReservedPropertyNames>
+                </ECCustomAttributes>            
+                <ECProperty propertyName="P1" typeName="string" />
+                <ECProperty propertyName="P2" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml"),
+        SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="Schema1" alias="s1" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+            <ECSchemaReference name="BisCore" version="01.00.01" alias="bis"/>
+            <ECEntityClass typeName="ClassA" modifier="None" >
+                <ECCustomAttributes>
+                    <ReservedPropertyNames xmlns="BisCore.01.00.01">
+                        <PropertyNames>
+                            <string>P3</string>
+                        </PropertyNames>
+                    </ReservedPropertyNames>
+                </ECCustomAttributes>            
+                <ECProperty propertyName="P1" typeName="string" />
+                <ECProperty propertyName="P2" typeName="int" />
+                <ECProperty propertyName="P4" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml")})) << "add new property to existing class and update reserved property policy";
+        
+        ASSERT_EQ(ERROR, TestHelper::RunSchemaImport({bisCore, SchemaItem(
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="OptingInSchema" alias="master" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+            <ECSchemaReference name="BisCore" version="01.00.01" alias="bis"/>
+            <ECEntityClass typeName="ClassA" modifier="None" >
+                <ECCustomAttributes>
+                    <ReservedPropertyNames xmlns="BisCore.01.00.01">
+                        <PropertyNames>
+                            <string>P3</string>
+                            <string>p4</string>
+                        </PropertyNames>
+                    </ReservedPropertyNames>
+                </ECCustomAttributes>            
+                <ECProperty propertyName="P1" typeName="string" />
+                <ECProperty propertyName="P2" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml"),
+        SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="Schema1" alias="s1" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+            <ECSchemaReference name="BisCore" version="01.00.01" alias="bis"/>
+            <ECEntityClass typeName="ClassA" modifier="None" >
+                <ECCustomAttributes>
+                    <ReservedPropertyNames xmlns="BisCore.01.00.01">
+                        <PropertyNames>
+                            <string>P3</string>
+                            <string>p4</string>
+                        </PropertyNames>
+                    </ReservedPropertyNames>
+                </ECCustomAttributes>            
+                <ECProperty propertyName="P1" typeName="string" />
+                <ECProperty propertyName="P2" typeName="int" />
+            </ECEntityClass>
+            <ECEntityClass typeName="ClassB" modifier="None" >
+                <BaseClass>ClassA</BaseClass>
+                <ECProperty propertyName="P3" typeName="string" />
+                <ECProperty propertyName="P4" typeName="int" />
+            </ECEntityClass>            
+        </ECSchema>)xml")})) << "New dervied class in current schema using schema upgrade";
+    }
+//---------------------------------------------------------------------------------------
 // @bsiMethod                                      Krischan.Eberle                06/17
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaPolicyTestFixture, NoAdditionalRootEntityClasses)
