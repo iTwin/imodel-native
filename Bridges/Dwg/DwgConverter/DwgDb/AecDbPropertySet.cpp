@@ -100,6 +100,33 @@ static bool AddVariantToJson (rapidjson::Document& json, OdString const& name, A
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          08/19
 +---------------+---------------+---------------+---------------+---------------+------*/
+static bool GetVariantAsUtf8 (Utf8StringR out, AECVariant const& variant)
+    {
+    switch (variant.GetType())
+        {
+        case AECVariant::eInt32:
+        case AECVariant::eUInt32:
+            out.Sprintf ("%d", variant.GetInt32());
+            break;
+        case AECVariant::eReal:
+            out.Sprintf ("%g", variant.GetDouble());
+            break;
+        case AECVariant::eBool:
+            out.Sprintf ("%s", variant.GetBool() ? "True" : "False");
+            break;
+        case AECVariant::eString:
+            out.Assign (reinterpret_cast<WCharCP>(variant.GetString().c_str()));
+            break;
+        case AECVariant::eVariantArray:
+        default:
+            return  false;
+        }
+    return  true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/19
++---------------+---------------+---------------+---------------+---------------+------*/
 static DwgDbStatus ParsePSetById (rapidjson::Document& json, AECPropertyExtensionBase& propExtractor, OdDbObject* entity, OdDbObjectId const& aecpsetId)
     {
     AECDbPropertySetPtr propertySet = aecpsetId.openObject();
@@ -113,22 +140,51 @@ static DwgDbStatus ParsePSetById (rapidjson::Document& json, AECPropertyExtensio
     auto count = propsetDef->GetPropertyDefCount();
     for (OdUInt32 i = 0; i < count; i++)
         {
-        const AECPropertyDefSubPtr def = propsetDef->GetPropertyDefByPosition(i);
+        AECPropertyDefSubPtr def = propsetDef->GetPropertyDefByPosition(i);
         if (def.isNull())
             continue;
 
         auto name = def->GetName();
 
+        // do not format value - need raw value with correct type
         AECVariant  var;
         if (def->IsAutomatic())
-            var = propExtractor.GetAutomaticProperty(entity, def->GetName(), def->GetDataFormat());
+            var = propExtractor.GetAutomaticProperty(entity, name);
         else
-            var = propExtractor.GetProperty(entity, propsetDef->objectId(), def->GetIndex(), def->GetDataFormat());
+            var = propExtractor.GetProperty(entity, propsetDef->objectId(), def->GetIndex());
 
         AddVariantToJson (json, name, var);
         }
 
     return json.ObjectEmpty() ? DwgDbStatus::InvalidInput : DwgDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/19
++---------------+---------------+---------------+---------------+---------------+------*/
+static void FindValuesFrom (T_Utf8StringVectorR values, T_Utf8StringVectorCR names, AECDbPropertySet const& propertySet, bvector<bool>& found, size_t& foundCount)
+    {
+    for (size_t i = 0; i < names.size(); i++)
+        {
+        if (names[i].empty())
+            {
+            found[i] = true;
+            foundCount++;
+            continue;
+            }
+
+        if (!found[i])
+            {
+            AECPropertySubPtr prop = propertySet.GetPropertyByName (names[i].c_str());
+            if (!prop.isNull())
+                {
+                GetVariantAsUtf8 (values[i], prop->GetValue());
+
+                found[i] = true;
+                foundCount++;
+                }
+            }
+        }
     }
 #endif
 
@@ -205,6 +261,61 @@ DwgDbStatus UtilsLib::ParseAecDbPropertySetDef (rapidjson::Document& json, DwgDb
 #elif DWGTOOLKIT_RealDwg
     BeAssert (false && "AecDbPropertySet is not implemented for RealDWG");
 #endif
+    return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          09/19
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus UtilsLib::FindAecDbPropertyValues (T_Utf8StringVectorR values1, T_Utf8StringVectorR values2, T_Utf8StringVectorCR names1, T_Utf8StringVectorCR names2, DwgDbObjectIdCR entityId)
+    {
+    DwgDbStatus status = DwgDbStatus::NotSupported;
+
+#ifdef DWGTOOLKIT_OpenDwg
+    auto entity = entityId.openObject ();
+    if (entity.isNull())
+        return  DwgDbStatus::NotPersistentObject;
+    
+    OdDbDictionaryPtr extensionDict = AECDbPropertySet::GetAECDictionaryExt(entity).openObject(OdDb::kForRead);
+    if (extensionDict.isNull())
+        return  DwgDbStatus::InvalidInput;
+
+    auto iter = extensionDict->newIterator ();
+    if (iter.isNull())
+        return  DwgDbStatus::MemoryError;
+
+    size_t  nRequested1 = names1.size ();
+    size_t  nRequested2 = names2.size ();
+    size_t  foundCount1 = 0;
+    size_t  foundCount2 = 0;
+
+    bvector<bool>   found1, found2;
+
+    found1.resize (nRequested1, false);
+    found2.resize (nRequested2, false);
+    values1.resize (nRequested1, "");
+    values2.resize (nRequested2, "");
+
+    // exhaust search all AecDbPropertySets for the property value(s)
+    for (; !iter->done(); iter->next())
+        {
+        AECDbPropertySetPtr propertySet = iter->objectId().openObject();
+        if (propertySet.isNull())
+            continue;
+
+        if (foundCount1 < nRequested1)
+            FindValuesFrom (values1, names1, *propertySet, found1, foundCount1);
+
+        if (foundCount2 < nRequested2)
+            FindValuesFrom (values2, names2, *propertySet, found2, foundCount2);
+
+        if (foundCount1 == nRequested1 && foundCount2 == nRequested2)
+            return  DwgDbStatus::Success;
+        }
+    // treat the second property list as optional
+    status = foundCount1 == 0 ? DwgDbStatus::NotFound : DwgDbStatus::Success;
+#endif
+
     return  status;
     }
 

@@ -461,6 +461,7 @@ enum class DwgDbStatus
     UnknownError,
     ObjectNotOpenYet,
     FileNotFound,
+    NotFound,
     InvalidData,
     MemoryError,
     InvalidInput,

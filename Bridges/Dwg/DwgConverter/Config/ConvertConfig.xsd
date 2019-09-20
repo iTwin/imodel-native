@@ -476,6 +476,42 @@
                     </xs:complexType>
                 </xs:element>
 
+                <xs:element name="ElementClassMapping" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>Map entity's AEC property to a element class</xs:documentation>
+                    </xs:annotation>
+                        <xs:complexType>
+                            <xs:list>
+                                <xs:element name="AecPropertySet" minOccurs="0" maxOccurs="unbounded">
+                                    <xs:annotation>
+                                        <xs:documentation>A map entry</xs:documentation>
+                                    </xs:annotation>
+                                <xs:attribute name="FromPropertyName" type="xs:string" use="required">
+                                    <xs:annotation>
+                                        <xs:documentation>An AEC property name</xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="FromPropertyValue" type="xs:string" use="required">
+                                    <xs:annotation>
+                                        <xs:documentation>The value of the AEC property</xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="ToClassName" type="xs:string" use="required">
+                                    <xs:annotation>
+                                        <xs:documentation>Class name for the target element</xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="ElementLabelFrom" type="xs:string" use="optional">
+                                    <xs:annotation>
+                                        <xs:documentation>AEC property from which the target element's display label is set</xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                </xs:element>
+                            </xs:list>
+                        </xs:complexType>
+                    </xs:element>
+                </xs:element>
+
                 <xs:element name="Options" minOccurs="0" maxOccurs="1">
                     <xs:complexType>
                         <xs:sequence>

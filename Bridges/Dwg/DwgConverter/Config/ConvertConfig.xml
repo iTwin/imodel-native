@@ -93,6 +93,28 @@
         <MapEntry DwgWeight="2.00mm" DgnWeight="20" />
         <MapEntry DwgWeight="2.11mm" DgnWeight="31" />
     </LineWeightMapping>
+    <ElementClassMapping>
+        <!--
+        By default, a DWG entity in the modelspace is mapped to PhysicalObject.
+        This table maps an entity, which has AEC property sets attached, to be a named element class from 
+        a specified AEC property name & value.  If a modelspace entity has AEC property sets attached as 
+        extended data, and a property's name & value match a mapping entry set in this table, the target 
+        element will be set to the class name in that mapping entry.
+
+        Since the element class mapping searches through propert sets, a large number of properties on 
+        many entities has a performance cost.
+
+        FromPropertyName = Source AEC property name found in an AEC property set definition
+        FromPropertyValue = The default value for the source AEC property (i.e. set in the definition)
+        ToClassName = Desired element class name when both FromPropertyName and FromPropertyValue found on the source entity
+        ElementLabelFrom = AEC property from whose value the target element's display label is set, optional(default to DWG entity name)
+        -->
+        <AecPropertySet FromPropertyName="ClassId" FromPropertyValue="MLCR" ToClassName="Central Reserve" ElementLabelFrom="ACBOS_ObjectId" />
+        <AecPropertySet FromPropertyName="ClassId" FromPropertyValue="GTVE" ToClassName="Verge" ElementLabelFrom="ACBOS_ObjectId" />
+        <AecPropertySet FromPropertyName="ClassId" FromPropertyValue="GTEM" ToClassName="Embankment" ElementLabelFrom="ACBOS_ObjectId" />
+        <AecPropertySet FromPropertyName="ClassId" FromPropertyValue="PVPV" ToClassName="Pavement Section" ElementLabelFrom="ACBOS_ObjectId" />
+        <AecPropertySet FromPropertyName="ClassId" FromPropertyValue="KFKB" ToClassName="Kerb" ElementLabelFrom="ACBOS_ObjectId" />
+    </ElementClassMapping>
     <Options>
         <OptionBool name="PreferRenderableGeometry" value="false"/> <!--"true" to tell object enablers to create renderable geometry; "false" to use the active view settings. -->
         <OptionBool name="SyncBlockChanges" value="false"/>         <!--Save & analyze DWG block contents to track changes, but with a performance penalty -->

@@ -146,6 +146,8 @@ ECPropertyP AecPsetSchemaFactory::CreateECProperty (ECEntityClassP aecpsetClass,
     if (status == ECObjectsStatus::Success && ecProp != nullptr)
         ecProp->SetDisplayLabel (displayName);
 
+    this->TrackPropertiesForElementMapping (displayName, iter);
+
     return  ecProp;
     }
 
@@ -210,18 +212,109 @@ BentleyStatus   AecPsetSchemaFactory::ImportFromDwg (DwgDbDatabaseR dwg)
     if (!iter.IsValid() || !iter->IsValid())
         return  BSISUCCESS;
 
+    this->PrepareForElementMapping ();
+
     return this->ImportFromDictionaries (*iter.get());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          08/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaPtr DwgImporter::CreateAecPropertySetSchema ()
+void AecPsetSchemaFactory::TrackPropertiesForElementMapping (Utf8StringCR propName, rapidjson::Value::ConstMemberIterator const& iter)
+    {
+    // check if the property name is in the user property name list - this test alone shall filter out most properties
+    if (m_userPropertyNames.find(propName) == m_userPropertyNames.end())
+        return;
+
+    // only if both the property name & the default value match will user input, the user target class name will be remapped:
+    auto defaultValue = BeRapidJsonUtilities::ToString(iter->value).DropQuotes ();
+    if (defaultValue.empty())
+        return;
+
+    auto &userElementMap = m_importer.GetElementClassMapR ();
+    auto found = std::find_if(userElementMap.begin(), userElementMap.end(), [&](DwgImporter::ElementClassMap& map)
+        {
+        return defaultValue.EqualsI(map.GetAecPropertyValue());
+        });
+    if (found != userElementMap.end())
+        m_foundUserClassNames.insert (found->GetTargetClassName());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          09/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void AecPsetSchemaFactory::PrepareForElementMapping ()
+    {
+    // for performance reason, build a property name set from the user property name list used for element class mapping
+    m_userPropertyNames.clear ();
+    m_foundUserClassNames.clear ();
+
+    // raw user mapping table read from the config file:
+    auto& elementMapList = m_importer.GetElementClassMapR ();
+
+    // create a unique property name list:
+    for (auto map : elementMapList)
+        m_userPropertyNames.insert (map.GetAecPropertyName());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          09/19
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   AecPsetSchemaFactory::CreateUserElementClasses ()
+    {
+    if (!m_targetSchema.IsValid() || m_foundUserClassNames.empty())
+        return  BSISUCCESS;
+
+    ECClassCP   physicalBase = nullptr;
+
+    /*-----------------------------------------------------------------------------------
+    The default importer maps modelspace entities to sealed GenericPhysicalObject or GraphicDrawing
+    element classes.  Remap them to user element classes, which will be based on an abstract class, 
+    PhysicalElement or GraphicElement2d.  If an extended importer maps to a different element class
+    change it PhysicalElement based user class.
+    -----------------------------------------------------------------------------------*/
+    DwgDbBlockTableRecordPtr modelspace(m_importer.GetDwgDb().GetModelspaceId(), DwgDbOpenMode::ForRead);
+    if (modelspace.OpenStatus() == DwgDbStatus::Success)
+        {
+        physicalBase = m_dgndb.Schemas().GetClass (m_importer._GetElementType (*modelspace));
+        if (physicalBase != nullptr)
+            {
+            auto name = physicalBase->GetName ();
+            if (name.Equals(BIS_CLASS_DrawingGraphic))
+                physicalBase = m_dgndb.Schemas().GetClass (BIS_ECSCHEMA_NAME, BIS_CLASS_GraphicalElement2d);
+            else
+                physicalBase = m_dgndb.Schemas().GetClass (BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalElement);
+            }
+        }
+    if (physicalBase == nullptr)
+        return  BSIERROR;
+
+    // create user element classes
+    for (auto userClassName : m_foundUserClassNames)
+        {
+        ECEntityClassP  elementClass = nullptr;
+        auto ecclassName = DwgHelper::ValidateECNameFrom (userClassName);
+
+        auto status = m_targetSchema->CreateEntityClass (elementClass, ecclassName);
+        if (ECObjectsStatus::Success == status)
+            {
+            elementClass->AddBaseClass (*physicalBase);
+            elementClass->SetDisplayLabel (userClassName.c_str());
+            }
+        }
+
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/19
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaPtr DwgImporter::_CreateAecPropertySetSchema ()
     {
     ECSchemaPtr aecpsetSchema;
 
 #ifdef DWGTOOLKIT_OpenDwg
-    AecPsetSchemaFactory factory(aecpsetSchema, this->GetDgnDb());
+    AecPsetSchemaFactory factory(aecpsetSchema, *this);
     auto status = factory.ImportFromDwg (this->GetDwgDb());
 
     for (auto xref : this->GetLoadedXrefs())
@@ -229,6 +322,8 @@ ECSchemaPtr DwgImporter::CreateAecPropertySetSchema ()
         auto& dwg = xref.GetDatabaseR ();
         status = factory.ImportFromDwg (dwg);
         }
+
+    status = factory.CreateUserElementClasses ();
 #endif
 
     return  aecpsetSchema;
@@ -452,4 +547,89 @@ BentleyStatus   DwgImporter::_PostImportEntity (ElementImportResults& results, E
         }
 
     return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          09/19
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DwgImporter::_PreImportEntity (ElementImportInputs& inputs)
+    {
+    if (m_elementClassMap.empty() || m_aecPropertySetSchema == nullptr)
+        return  BSIERROR;
+
+    // only remap element classes for entities in modelspace
+    auto& entity = inputs.GetEntity ();
+    auto dwg = entity.GetDatabase ();
+    if (dwg.IsValid() && entity.GetOwnerId() != dwg->GetModelspaceId())
+        return  BSIERROR;
+
+    auto entityId = entity.GetObjectId ();
+
+    // prepare unique input property names for the DwgDb API:
+    T_Utf8StringVector  searchNames1, searchNames2, foundValues1, foundValues2;
+    for (auto map : m_elementClassMap)
+        {
+        auto name = map.GetAecPropertyName ();
+        auto found = std::find_if(searchNames1.begin(), searchNames1.end(), [&](Utf8StringCR s)
+            {
+            return !s.empty() && name.Equals(s);
+            });
+        if (found == searchNames1.end())
+            searchNames1.push_back (name);
+
+        name = map.GetTargetLabelFrom ();
+        found = std::find_if(searchNames2.begin(), searchNames2.end(), [&](Utf8StringCR s)
+            {
+            return !s.empty() && name.Equals(s);
+            });
+        if (found == searchNames2.end())
+            searchNames2.push_back (name);
+        }
+    
+    // search all AEC properties on the entity
+    if (UtilsLib::FindAecDbPropertyValues(foundValues1, foundValues2, searchNames1, searchNames2, entityId) == DwgDbStatus::Success)
+        {
+        // at least 1 property has been found on the entity for element class mapping
+        for (size_t i = 0; i < searchNames1.size(); i++)
+            {
+            // match name & value pair from the user mapping table
+            auto found = std::find_if(m_elementClassMap.begin(), m_elementClassMap.end(), [&](ElementClassMap const& map)
+                {
+                auto mapName = map.GetAecPropertyName();
+                auto mapValue = map.GetAecPropertyValue();
+                return mapName.Equals(searchNames1[i]) && mapValue.EqualsI(foundValues1[i]);
+                });
+
+            if (found != m_elementClassMap.end())
+                {
+                // first match is found, use it
+                auto ecclassName = DwgHelper::ValidateECNameFrom (found->GetTargetClassName());
+                auto elementClass = m_aecPropertySetSchema->GetClassCP (ecclassName.c_str());
+                if (elementClass != nullptr)
+                    {
+                    // remap element class
+                    inputs.SetClassId (elementClass->GetId());
+
+                    // check if element lable is also set and the value is found:
+                    for (size_t j = 0; j < searchNames2.size(); j++)
+                        {
+                        found = std::find_if(m_elementClassMap.begin(), m_elementClassMap.end(), [&](ElementClassMap const& map)
+                            {
+                            return map.GetTargetLabelFrom().Equals(searchNames2[j]);
+                            });
+                        if (found != m_elementClassMap.end() && !foundValues2[i].empty())
+                            {
+                            // set element display label
+                            inputs.SetElementLabel (foundValues2[i]);
+                            break;
+                            }
+                        }
+                    
+                    return  BSISUCCESS;
+                    }
+                }
+            }
+        }
+
+    return  BSIERROR;
     }

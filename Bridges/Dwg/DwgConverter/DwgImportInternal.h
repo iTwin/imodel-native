@@ -755,14 +755,20 @@ struct AecPsetSchemaFactory
 private:
     DgnDbR  m_dgndb;
     ECSchemaPtr& m_targetSchema;
+    DwgImporterR m_importer;
+    bset<Utf8String> m_userPropertyNames;
+    bset<Utf8String> m_foundUserClassNames;
 
     ECObjectsStatus CreateTargetSchema ();
     ECPropertyP CreateECProperty (ECEntityClassP aecpsetClass, rapidjson::Value::ConstMemberIterator const& iter);
+    void TrackPropertiesForElementMapping (Utf8StringCR propName, rapidjson::Value::ConstMemberIterator const& iter);
+    void PrepareForElementMapping ();
     BentleyStatus ImportFromDictionaries (DwgDbDictionaryIteratorR iter);
 
 public:
-    AecPsetSchemaFactory (ECSchemaPtr& s, DgnDbR db) : m_targetSchema(s), m_dgndb(db) {}
+    AecPsetSchemaFactory (ECSchemaPtr& s, DwgImporterR i) : m_targetSchema(s), m_importer(i), m_dgndb(i.GetDgnDb()) {}
     BentleyStatus ImportFromDwg (DwgDbDatabaseR dwg);
+    BentleyStatus CreateUserElementClasses ();
 };  // AecPsetSchemaFactory
 
 END_DWG_NAMESPACE

@@ -275,6 +275,7 @@ struct DwgImporter
     friend struct XRefLoader;
     friend struct GroupFactory;
     friend struct ElementFactory;
+    friend struct AecPsetSchemaFactory;
     friend class DwgProtocolExtension;
     friend class DwgRasterImageExt;
     friend class DwgPointCloudExExt;
@@ -635,6 +636,7 @@ public:
     public:
         DgnModelR               m_targetModel;
         DgnClassId              m_dgnClassId;
+        Utf8String              m_elementLabel;
         Transform               m_transformToDgn;
         DwgDbObjectId           m_entityId;
         DwgDbEntityPtr          m_entity;
@@ -655,6 +657,8 @@ public:
         DgnModelR               GetTargetModelR () { return m_targetModel; }
         void                    SetClassId (DgnClassId id) { m_dgnClassId = id; }
         DgnClassId              GetClassId () const { return m_dgnClassId; }
+        void                    SetElementLabel (Utf8StringCR label) { m_elementLabel = label; }
+        Utf8StringCR            GetElementLabel () const { return m_elementLabel; }
         void                    SetTransform (TransformCR t) { m_transformToDgn = t; }
         TransformCR             GetTransform () const { return m_transformToDgn; }
         void                    SetEntityId (DwgDbObjectIdCR eid) { m_entityId = eid; }
@@ -837,6 +841,28 @@ public:
         };  // ConstantAttrdefs
     typedef bvector<ConstantBlockAttrdefs>              T_ConstantBlockAttrdefList;
 
+    //! Map an entity which has AEC property sets attached to a desired named element class
+    struct ElementClassMap
+        {
+    private:
+        Utf8String  m_aecPropertyName;
+        Utf8String  m_aecPropertyValue;
+        Utf8String  m_targetClassName;
+        Utf8String  m_targetLabelFrom;
+    public:
+        ElementClassMap (Utf8StringCR n, Utf8StringCR v, Utf8StringCR n2, Utf8StringCR n3)
+                        : m_aecPropertyName(n), m_aecPropertyValue(v), m_targetClassName(n2), m_targetLabelFrom(n3) {}
+        Utf8StringCR GetAecPropertyName () const { return m_aecPropertyName; }
+        void SetAecPropertyName (Utf8StringCR name) { m_aecPropertyName.assign(name); }
+        Utf8StringCR GetAecPropertyValue ()const { return m_aecPropertyValue; }
+        void SetAecPropertyValue (Utf8StringCR value) { m_aecPropertyValue.assign(value); }
+        Utf8StringCR GetTargetClassName () const { return m_targetClassName; }
+        void SetTargetClassName (Utf8StringCR name) { m_targetClassName.assign(name); }
+        Utf8StringCR GetTargetLabelFrom () const { return m_targetLabelFrom; }
+        void SetTargetLabelFrom (Utf8StringCR name) { m_targetLabelFrom.assign(name); }
+        }; // ElementClassMap
+    typedef bvector<ElementClassMap>    T_ElementClassMapList;
+
     //! Information about the root model transformation.
     struct RootTransformInfo
         {
@@ -1017,6 +1043,7 @@ protected:
     T_BlockPartsMap             m_blockPartsMap;
     T_PresentationRuleContents  m_presentationRuleContents;
     double                      m_sizeTolerance;
+    T_ElementClassMapList       m_elementClassMap;
 
 //__PUBLISH_SECTION_END__
 private:
@@ -1038,7 +1065,6 @@ private:
     Utf8String              ComputeModelName (Utf8StringR proposedName, BeFileNameCR baseFileName, BeFileNameCR refPath, Utf8CP inSuffix, DgnClassId modelType);
     BentleyStatus           ImportXrefModelsFrom (DwgXRefHolder& xref, SubjectCR parentSubject, bool& hasPushedReferencesSubject);
     ECN::ECObjectsStatus    AddAttrdefECClassFromBlock (ECN::ECSchemaPtr& schema, DwgDbBlockTableRecordCR block);
-    ECN::ECSchemaPtr        CreateAecPropertySetSchema ();
     SchemaStatus            ImportDwgSchemas (bvector<ECN::ECSchemaPtr>& dwgSchemas);
     void                    SaveViewDefinition (ViewControllerR viewController);
     void                    CheckSameRootModelAndUnits ();
@@ -1112,6 +1138,8 @@ protected:
     DWG_EXPORT virtual BentleyStatus  _MakeSchemaChanges ();
     //! This method is called while the framework holds the dictionary locks for the bridge. The default implementation updates shared DefinitionElements from DWG symbol tables.
     DWG_EXPORT virtual BentleyStatus  _MakeDefinitionChanges (SubjectCR);
+    //! This method is called from the default implementation of _MakeSchemaChanges. The default implementation of this method creates a schema from AecDbPropertySetDef dictionaries in all DWG files.  It also adds EC classes from ElementClassMapping table in ConvertConfig.
+    DWG_EXPORT virtual ECN::ECSchemaPtr _CreateAecPropertySetSchema ();
 
     //! @name  Creating DgnModels for DWG
     //! @{
@@ -1225,16 +1253,22 @@ protected:
     DWG_EXPORT virtual BentleyStatus  _ImportXReference (ElementImportResults& results, ElementImportInputs& inputs);
     //! Import a normal block reference entity
     DWG_EXPORT virtual BentleyStatus  _ImportBlockReference (ElementImportResults& results, ElementImportInputs& inputs);
-    //! Called at the end of _ImportEntity or _ImportEntityByProtocolExtension.  Default implementation is to import AecDbPropertySets as extended dictionaries.
+    //! Called at the beginning of _ImportEntity or _ImportEntityByProtocolExtension.  The default implementation remaps PhysicalObjects to named objects based on ElementClassMap set in ConvertConfig.
     //! @see _ImportEntity
     //! @see _ImportEntityByProtocolExtension
+    //! @see _PostImportEntity
+    DWG_EXPORT virtual BentleyStatus  _PreImportEntity (ElementImportInputs& inputs);
+    //! Called at the end of _ImportEntity or _ImportEntityByProtocolExtension.  The default implementation imports AecDbPropertySets from extended dictionaries as EC properties.
+    //! @see _ImportEntity
+    //! @see _ImportEntityByProtocolExtension
+    //! @see _PreImportEntity
     DWG_EXPORT virtual BentleyStatus  _PostImportEntity (ElementImportResults& results, ElementImportInputs& inputs);
     //! This method is called to setup ElementCreatParams for each entity to be imported by default:
     DWG_EXPORT virtual BentleyStatus  _GetElementCreateParams (ElementCreateParams& params, TransformCR toDgn, DwgDbEntityCR entity, Utf8CP desiredCode = nullptr);
-    //! Determine DgnClassId for an entity by its owner block
+    //! Determine DgnClassId for an entity by its owner block.  The default implementation maps modelspace entities to GenericPhysicalObjects for 3D or DrawingGraphics for 2D.
     DWG_EXPORT virtual DgnClassId     _GetElementType (DwgDbBlockTableRecordCR block);
-    //! Determine graphical element label from an entity
-    DWG_EXPORT virtual Utf8String     _GetElementLabel (DwgDbEntityCR entity);
+    //! Determine graphical element label from the input data.  The default implementation returns element label the label in the inputs(if pre-set); otherwise returns the entity name.
+    DWG_EXPORT virtual Utf8String     _GetElementLabel (ElementImportInputs& inputs);
     //! Should the entity be imported at all?
     DWG_EXPORT virtual bool           _FilterEntity (ElementImportInputs& inputs) const;
     //! Should create a DgnElement if there is no geometry at all?
@@ -1374,6 +1408,7 @@ public:
     T_BlockPartsMap&            GetBlockPartsR () { return m_blockPartsMap; }
     //! Get/create the DefinitionModel that stores all other job specific definitions
     DWG_EXPORT DefinitionModelPtr GetOrCreateJobDefinitionModel ();
+    T_ElementClassMapList&      GetElementClassMapR () { return m_elementClassMap; }
 
     //! An iModelBridge must call this method from _MakeSchemaChanges, to change schemas.
     //! The default implementation iterates DWG block table for multiple tasks:

@@ -65,7 +65,7 @@ SchemaStatus    DwgImporter::ImportDwgSchemas (bvector<ECSchemaPtr>& dwgSchemas)
         }
     schemaContext->RemoveSchemaLocater (m_dgndb->GetSchemaLocater());
 
-    this->SetStepName (ProgressMessage::STEP_IMPORTING_SCHEMAS(), nSchemas, nClasses);
+    this->SetStepName (ProgressMessage::STEP_IMPORTING_SCHEMAS(), nSchemas, nSchemas < 2 ? "," : "s,", nClasses);
 
     auto status = m_dgndb->ImportSchemas (schemaContext->GetCache().GetSchemas());
     if (status != SchemaStatus::Success)
@@ -105,6 +105,13 @@ BentleyStatus   DwgImporter::_MakeSchemaChanges ()
 
     bvector<ECSchemaPtr>    dwgSchemas;
 
+    this->SetStepName (ProgressMessage::TASK_LOADING_XREFS());
+
+    StopWatch totalTimer (true);
+    StopWatch timer (true);
+
+    timer.Start();
+
     /*-----------------------------------------------------------------------------------
     Iterate the block table once for multiple tasks in an import job:
         1) Load xRef files from xRef block table records
@@ -132,7 +139,7 @@ BentleyStatus   DwgImporter::_MakeSchemaChanges ()
         }
 
     // create AEC property set definitions schema
-    auto aecpsetSchema = this->CreateAecPropertySetSchema ();
+    auto aecpsetSchema = this->_CreateAecPropertySetSchema ();
     if (aecpsetSchema.IsValid() && aecpsetSchema->GetClassCount() > 0)
         {
         if (m_dgndb->BriefcaseManager().LockSchemas().Result() != RepositoryStatus::Success)
@@ -140,10 +147,17 @@ BentleyStatus   DwgImporter::_MakeSchemaChanges ()
         dwgSchemas.push_back (aecpsetSchema);
         }
 
+    DwgImportLogging::LogPerformance(timer, "Creating schemas");
+
     // import schemas into db
     if (!dwgSchemas.empty())
         {
+        timer.Start();
+
         auto status = this->ImportDwgSchemas (dwgSchemas);
+
+        DwgImportLogging::LogPerformance(timer, "Importing schemas");
+
         if (status != SchemaStatus::Success)
             return  static_cast<BentleyStatus>(status);
         }
@@ -905,6 +919,26 @@ void            DwgImporter::ParseConfigurationFile (T_Utf8StringVectorR userObj
             {
             if (BeXmlStatus::BEXML_Success == childNode->GetAttributeBooleanValue(boolValue, "IncludeDwgPath"))
                 m_options.SetDwgPathInMaterialSearch (boolValue);
+            }
+        }
+
+    xmlDom->SelectNodes (nodes, "/ConvertConfig/ElementClassMapping/AecPropertySet", nullptr);
+    for (auto node : nodes)
+        {
+        // collect element class map
+        Utf8String  str2, str3;
+        if (BeXmlStatus::BEXML_Success == node->GetAttributeStringValue(str, "FromPropertyName") &&
+            BeXmlStatus::BEXML_Success == node->GetAttributeStringValue(str2, "FromPropertyValue") &&
+            BeXmlStatus::BEXML_Success == node->GetAttributeStringValue(str3, "ToClassName"))
+            {
+            // skip empty key names
+            if (str.empty() || str3.empty())
+                continue;
+
+            Utf8String  str4;
+            if (BeXmlStatus::BEXML_Success != node->GetAttributeStringValue(str4, "ElementLabelFrom"))
+                str4.clear ();
+            m_elementClassMap.push_back (ElementClassMap(str, str2, str3, str4));
             }
         }
     }

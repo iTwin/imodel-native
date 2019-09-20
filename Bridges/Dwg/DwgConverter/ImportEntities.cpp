@@ -276,10 +276,17 @@ BentleyStatus   DwgImporter::ImportNewEntity (ElementImportResults& results, Ele
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String      DwgImporter::_GetElementLabel (DwgDbEntityCR entity)
+Utf8String      DwgImporter::_GetElementLabel (ElementImportInputs& inputs)
     {
+    // if an element label is set, use it:
+    auto label = inputs.GetElementLabel ();
+    if (!label.empty())
+        return  label;
+    
+    DwgDbEntityCR entity = inputs.GetEntity ();
+
     // default element label to entity name:
-    Utf8String  label(entity.GetDxfName().c_str());
+    label.Assign (entity.GetDxfName().c_str());
     if (label.empty())
         label.Assign (entity.GetDwgClassName().c_str());
     
@@ -410,14 +417,18 @@ BentleyStatus   DwgImporter::ImportEntity (ElementImportResults& results, Elemen
     uint64_t    entityId = entity->GetObjectId().ToUInt64 ();
 #endif
 
+    // make a copy of inputs to be used only for this entity
+    ElementImportInputs inputs2(inputs.GetTargetModelR(), entity.get(), inputs);
+    this->_PreImportEntity (inputs2);
+
     DwgProtocolExtension*   objExt = DwgProtocolExtension::Cast (entity->QueryX(DwgProtocolExtension::Desc()));
     if (nullptr != objExt)
-        status = this->_ImportEntityByProtocolExtension (results, inputs, *objExt);
+        status = this->_ImportEntityByProtocolExtension (results, inputs2, *objExt);
     else
-        status = this->_ImportEntity (results, inputs);
+        status = this->_ImportEntity (results, inputs2);
 
     if (status == BSISUCCESS)
-        this->_PostImportEntity (results, inputs);
+        this->_PostImportEntity (results, inputs2);
 
     return  status;
     }

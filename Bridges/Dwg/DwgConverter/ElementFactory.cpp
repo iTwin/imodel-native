@@ -19,7 +19,7 @@ ElementFactory::ElementFactory (DwgImporter::ElementImportResults& results, DwgI
     // update DgnCode & caller will set user label as needed
     m_elementCode = m_createParams.GetElementCode ();
     m_elementParams.SetCode (m_elementCode);
-    m_elementLabel = m_importer._GetElementLabel (m_inputs.GetEntity());
+    m_elementLabel = m_importer._GetElementLabel (m_inputs);
     m_elementParams.SetUserLabel (m_elementLabel.c_str());
 
     m_partModel = m_importer.GetOrCreateJobDefinitionModel ();
