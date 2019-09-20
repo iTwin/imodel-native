@@ -22,6 +22,7 @@ TABLEHANDLER_DEFINE_MEMBERS(ElementDep)
 namespace dgn_ModelHandler
 {
 HANDLER_DEFINE_MEMBERS(Model)
+HANDLER_DEFINE_MEMBERS(Geometric3d)
 HANDLER_DEFINE_MEMBERS(Spatial)
 HANDLER_DEFINE_MEMBERS(SpatialLocation)
 HANDLER_DEFINE_MEMBERS(Physical)
@@ -109,6 +110,7 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_AspectHandler::TextAnnotationDataHandler::GetHandler());
 
     RegisterHandler(dgn_ModelHandler::Model::GetHandler());
+    RegisterHandler(dgn_ModelHandler::Geometric3d::GetHandler());
     RegisterHandler(dgn_ModelHandler::Spatial::GetHandler());
     RegisterHandler(dgn_ModelHandler::SpatialLocation::GetHandler());
     RegisterHandler(dgn_ModelHandler::Physical::GetHandler());

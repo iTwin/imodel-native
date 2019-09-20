@@ -940,18 +940,11 @@ DbResult DgnDomains::InsertHandler(DgnDomain::Handler& handler)
         return BE_SQLITE_ERROR;
         }
 
+    m_handlers.Insert(id, &handler); // for this session, record the ClassId --> Handler mapping for all handlers
     uint64_t restrictions = 0;
     bool shouldHaveHandler = GetHandlerInfo(&restrictions, id, handler);
     if (!shouldHaveHandler)
-        {
-        BeAssert(m_schemaUpgradeOptions.AreDomainUpgradesAllowed() && "You cannot register a handler unless its ECClass has a ClassHasHandler custom attribute");
-#if !defined (NDEBUG)
-        LOG.errorv("ERROR: HANDLER [%s] handles ECClass '%s' which lacks a ClassHasHandler custom attribute. Handler not registered.",
-                typeid(handler).name(), handler.GetClassName().c_str());
-#endif
-
-        return BE_SQLITE_ERROR;
-        }
+        return BE_SQLITE_OK; // don't persist (in the iModel) the mapping for session-specific handlers (ECClasses that do not have the ClassHasHandler CA)
 
     Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE_Handler " (Domain,Name,ClassId,Permissions) VALUES(?,?,?,?)");
     stmt.BindText(1, handler.GetDomain().GetDomainName(), Statement::MakeCopy::No);
@@ -963,7 +956,6 @@ DbResult DgnDomains::InsertHandler(DgnDomain::Handler& handler)
     if (BE_SQLITE_DONE != status)
         return status;
 
-    m_handlers.Insert(id, &handler);
     return BE_SQLITE_OK;
     }
 

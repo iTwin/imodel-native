@@ -25,6 +25,7 @@ struct Definition;
 struct DocumentList;
 struct Drawing;
 struct Geometric2d;
+struct Geometric3d;
 struct GroupInformation;
 struct Information;
 struct InformationRecord;
@@ -974,7 +975,8 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GeometricModel3d : GeometricModel
 {
-    DEFINE_T_SUPER(GeometricModel);
+    DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_GeometricModel3d, GeometricModel);
+    friend struct dgn_ModelHandler::Geometric3d;
 
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _FillRangeIndex() override;
@@ -1352,10 +1354,16 @@ namespace dgn_ModelHandler
         MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_DrawingModel, DrawingModel, Drawing, Geometric2d, DGNPLATFORM_EXPORT)
     };
 
-    //! The ModelHandler for SpatialModel
-    struct EXPORT_VTABLE_ATTRIBUTE Spatial : Model
+    //! The ModelHandler for GeometricModel3d
+    struct EXPORT_VTABLE_ATTRIBUTE Geometric3d : Model
     {
-        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_SpatialModel, SpatialModel, Spatial, Model, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_GeometricModel3d, GeometricModel3d, Geometric3d, Model, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ModelHandler for SpatialModel
+    struct EXPORT_VTABLE_ATTRIBUTE Spatial : Geometric3d
+    {
+        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_SpatialModel, SpatialModel, Spatial, Geometric3d, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for SpatialLocationModel
