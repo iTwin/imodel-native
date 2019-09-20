@@ -423,10 +423,16 @@ iModelExternalSourceAspect iModelExternalSourceAspect::GetAspectForEdit(DgnEleme
     if (!aspectClass)
         aspectClass = GetAspectClass(el.GetDgnDb());
     if (nullptr == aspectClass)
+        {
+        LOG.debugv("iModelExternalSourceAspect::GetAspectForEdit - unable to get AspectClass from %s", el.GetDgnDb().GetFileName().c_str());
         return iModelExternalSourceAspect();
+        }
     auto instance = DgnElement::GenericMultiAspect::GetAspectP(el, *aspectClass, aspectid);    // NB: Call GetAspectP, not GetAspect! GetAspectP sets the aspect's dirty flag, which tells its _OnUpdate method to write out changes.
     if (nullptr == instance)
+        {
+        LOG.tracev("iModelExternalSourceAspect::GetAspectForEdit -- no instance for Element %lld and Aspect %lld", el.GetElementId().GetValueUnchecked(), aspectid.GetValueUnchecked());
         return iModelExternalSourceAspect();
+        }
     return iModelExternalSourceAspect(instance);
     }
     

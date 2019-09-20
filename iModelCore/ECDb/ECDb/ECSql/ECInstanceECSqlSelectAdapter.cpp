@@ -96,7 +96,10 @@ ECN::IECInstancePtr ECInstanceECSqlSelectAdapter::GetInstance() const
         }
 
     if (nullptr == ecClass)
+        {
+        LOG.debugv("ECInstanceECSqlSelectAdapter::GetInstance - failed to get ecClass from %s", m_ecSqlStatement.GetECSql());
         return nullptr;
+        }
 
     ECN::IECInstancePtr instance = ECInstanceAdapterHelper::CreateECInstance(*ecClass);
     if (SUCCESS != SetInstanceData(*instance, false))
@@ -169,6 +172,7 @@ BentleyStatus ECInstanceECSqlSelectAdapter::SetPropertyData(IECInstanceR instanc
         if (ecStatus != ECObjectsStatus::Success && ecStatus != ECObjectsStatus::PropertyValueMatchesNoChange)
             {
             BeAssert(false);
+            LOG.debugv("ECInstanceECSqlSelectAdapter::SetPropertyData - failed to set primitive value for property %s.  Error (%d)", accessString.c_str(), ecStatus);
             return ERROR;
             }
 
@@ -180,7 +184,10 @@ BentleyStatus ECInstanceECSqlSelectAdapter::SetPropertyData(IECInstanceR instanc
         for (IECSqlValue const& memberVal : value.GetStructIterable())
             {
             if (SUCCESS != SetPropertyData(instance, accessString.c_str(), memberVal))
+                {
+                LOG.debugv("ECInstanceECSqlSelectAdapter::SetPropertyData - failed to set struct property %s", accessString.c_str());
                 return ERROR;
+                }
             }
 
         return SUCCESS;
@@ -199,18 +206,25 @@ BentleyStatus ECInstanceECSqlSelectAdapter::SetPropertyData(IECInstanceR instanc
             if (prop->GetIsStructArray())
                 {
                 if (SUCCESS != SetStructArrayElement(ecVal, prop->GetAsStructArrayProperty()->GetStructElementType(), arrayElementValue))
+                    {
+                    LOG.debugv("ECInstanceECSqlSelectAdapter::SetPropertyData - failed to set struct array element (%d) on property %s", arrayIndex, accessString.c_str());
                     return ERROR;
+                    }
                 }
             else if (prop->GetIsPrimitiveArray())
                 {
                 if (SUCCESS != SetPrimitiveValue(ecVal, prop->GetAsPrimitiveArrayProperty()->GetPrimitiveElementType(), arrayElementValue))
+                    {
+                    LOG.debugv("ECInstanceECSqlSelectAdapter::SetPropertyData - failed to set primitive array element (%d) on property %s", arrayIndex, accessString.c_str());
                     return ERROR;
+                    }
                 }
 
             ECObjectsStatus ecStatus = instance.SetValue(accessString.c_str(), ecVal, arrayIndex);
             if (ecStatus != ECObjectsStatus::Success && ecStatus != ECObjectsStatus::PropertyValueMatchesNoChange)
                 {
                 BeAssert(false);
+                LOG.debugv("ECInstanceECSqlSelectAdapter::SetPropertyData - failed to set array value (%d) for property %s.  Error (%d)", arrayIndex, accessString.c_str(), ecStatus);
                 return ERROR;
                 }
             arrayIndex++;

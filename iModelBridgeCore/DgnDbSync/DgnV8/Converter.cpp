@@ -3581,6 +3581,7 @@ void Converter::PopulateRangePartIdMap()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Converter::EmbedSpecifiedFiles()
     {
+    LOG.trace("Begin Converter::EmbedSpecifiedFiles");
     SetStepName(ProgressMessage::STEP_EMBEDDING_FILES());
 
     bvector<BeFileName> embedFiles = _GetParams().GetEmbedFiles();
@@ -3623,6 +3624,7 @@ void Converter::EmbedSpecifiedFiles()
             continue;
             }
         }
+    LOG.trace("End Converter::EmbedSpecifiedFiles");
     }
 
 //---------------------------------------------------------------------------------------
