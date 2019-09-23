@@ -2775,6 +2775,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ImportTargetECSchemas()
     }
 #endif
     // If we're either updating or mapping a new file, need to see if this schema already exists in the db and if so, increment the minor version
+    ECN::ECSchemaPtr mergedBDG;
     for (BECN::ECSchemaCP schema : constSchemas)
         {
         BECN::ECSchemaCP existing = GetDgnDb().Schemas().GetSchema(schema->GetName());
@@ -2784,19 +2785,70 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ImportTargetECSchemas()
         if (ExcludeSchemaFromBisification(*schema))
             continue;
 
-        if (InternalComparer::IsChanged(existing, schema))
+        // The BuildingDataGroup schema is different with every project.  Therefore, if one already exists, we need to merge it with the new one.  Otherwise, ECDb treats it as
+        // an upgrade and tries to delete or rename things.  So merge them, using the existing schema as the conflict resultion
+        if (existing->GetName().EqualsIAscii("BuildingDataGroup"))
             {
-            ECN::ECSchemaP nonConst = const_cast<ECN::ECSchemaP>(schema);
-            nonConst->SetVersionRead(existing->GetVersionRead());
-            nonConst->SetVersionWrite(existing->GetVersionWrite());
-            nonConst->SetVersionMinor(existing->GetVersionMinor() + 1);
+            auto diff = ECDiff::Diff(*existing, *schema);
+            if (diff->IsEmpty())
+                continue;
+            if (diff->Merge(mergedBDG, CONFLICTRULE_TakeLeft) == MergeStatus::Success)
+                {
+                mergedBDG->SetVersionRead(existing->GetVersionRead());
+                mergedBDG->SetVersionWrite(existing->GetVersionWrite());
+                mergedBDG->SetVersionMinor(existing->GetVersionMinor() + 1);
+
+                // Current merge tool does not handle KoQ, PropertyCategories, or Enumerations
+                for (ECN::KindOfQuantityCP koq : existing->GetKindOfQuantities())
+                    {
+                    ECN::KindOfQuantityP destKoq = nullptr;
+                    mergedBDG->CopyKindOfQuantity(destKoq, *koq);
+                    }
+                for (ECN::KindOfQuantityCP koq : schema->GetKindOfQuantities())
+                    {
+                    ECN::KindOfQuantityP destKoq = nullptr;
+                    mergedBDG->CopyKindOfQuantity(destKoq, *koq);
+                    }
+
+                for (auto prop : existing->GetPropertyCategories())
+                    {
+                    ECN::PropertyCategoryP destProp = nullptr;
+                    mergedBDG->CopyPropertyCategory(destProp, *prop);
+                    }
+                for (auto prop : schema->GetPropertyCategories())
+                    {
+                    ECN::PropertyCategoryP destProp = nullptr;
+                    mergedBDG->CopyPropertyCategory(destProp, *prop);
+                    }
+
+                for (auto sourceEnum : existing->GetEnumerations())
+                    {
+                    ECN::ECEnumerationP destEnum = nullptr;
+                    mergedBDG->CopyEnumeration(destEnum, *sourceEnum);
+                    }
+                for (auto sourceEnum : schema->GetEnumerations())
+                    {
+                    ECN::ECEnumerationP destEnum = nullptr;
+                    mergedBDG->CopyEnumeration(destEnum, *sourceEnum);
+                    }
+                }
             }
-        else if (existing->GetVersionRead() != schema->GetVersionRead() || existing->GetVersionWrite() != schema->GetVersionWrite() || existing->GetVersionMinor() != schema->GetVersionMinor())
+        else
             {
-            ECN::ECSchemaP nonConst = const_cast<ECN::ECSchemaP>(schema);
-            nonConst->SetVersionRead(existing->GetVersionRead());
-            nonConst->SetVersionWrite(existing->GetVersionWrite());
-            nonConst->SetVersionMinor(existing->GetVersionMinor());
+            if (InternalComparer::IsChanged(existing, schema))
+                {
+                ECN::ECSchemaP nonConst = const_cast<ECN::ECSchemaP>(schema);
+                nonConst->SetVersionRead(existing->GetVersionRead());
+                nonConst->SetVersionWrite(existing->GetVersionWrite());
+                nonConst->SetVersionMinor(existing->GetVersionMinor() + 1);
+                }
+            else if (existing->GetVersionRead() != schema->GetVersionRead() || existing->GetVersionWrite() != schema->GetVersionWrite() || existing->GetVersionMinor() != schema->GetVersionMinor())
+                {
+                ECN::ECSchemaP nonConst = const_cast<ECN::ECSchemaP>(schema);
+                nonConst->SetVersionRead(existing->GetVersionRead());
+                nonConst->SetVersionWrite(existing->GetVersionWrite());
+                nonConst->SetVersionMinor(existing->GetVersionMinor());
+                }
             }
         /*
         ** Include SchemaComparer causes compiler errors related to the template in the comparer and DPoint3d
@@ -2822,6 +2874,12 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ImportTargetECSchemas()
         */
         }
 
+    if (mergedBDG.IsValid())
+        {
+        auto removeAt = std::remove_if(constSchemas.begin(), constSchemas.end(), [&] (BECN::ECSchemaCP const& arg) { return arg->GetName().EqualsIAscii("BuildingDataGroup"); });
+        constSchemas.erase(removeAt, constSchemas.end());
+        constSchemas.push_back(mergedBDG.get());
+        }
     auto importStatus = GetDgnDb().ImportV8LegacySchemas(constSchemas);
     if (SchemaStatus::Success != importStatus)
         {
