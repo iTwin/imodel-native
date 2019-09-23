@@ -14,25 +14,23 @@ struct UsedUserSettingsListener : IUsedUserSettingsListener
 {
 private:
     bset<Utf8String> m_settingIds;
+    mutable BeMutex m_mutex;
 protected:
-    void _OnUserSettingUsed(Utf8CP settingId) override {m_settingIds.insert(settingId);}
+    void _OnUserSettingUsed(Utf8CP settingId) override {BeMutexHolder lock(m_mutex); m_settingIds.insert(settingId);}
 public:
-    bset<Utf8String> const& GetSettingIds() const {return m_settingIds;}
+    bset<Utf8String> const& GetSettingIds() const {BeMutexHolder lock(m_mutex); return m_settingIds;}
 };
 END_BENTLEY_ECPRESENTATION_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RulesDrivenProviderContext::RulesDrivenProviderContext(PresentationRuleSetCR ruleset, bool holdRuleset, Utf8String locale, IUserSettings const& settings, ECExpressionsCache& ecexpressionsCache, 
+RulesDrivenProviderContext::RulesDrivenProviderContext(PresentationRuleSetCR ruleset, Utf8String locale, IUserSettings const& settings, ECExpressionsCache& ecexpressionsCache,
     RelatedPathsCache& relatedPathsCache, PolymorphicallyRelatedClassesCache& polymorphicallyRelatedClassesCache, JsonNavNodesFactory const& nodesFactory, IJsonLocalState const* localState)
-    : m_ruleset(ruleset), m_holdsRuleset(holdRuleset), m_locale(locale), m_userSettings(settings), m_relatedPathsCache(relatedPathsCache), 
-    m_polymorphicallyRelatedClassesCache(polymorphicallyRelatedClassesCache), m_ecexpressionsCache(ecexpressionsCache), m_nodesFactory(nodesFactory), 
+    : m_ruleset(&ruleset), m_locale(locale), m_userSettings(settings), m_relatedPathsCache(relatedPathsCache),
+    m_polymorphicallyRelatedClassesCache(polymorphicallyRelatedClassesCache), m_ecexpressionsCache(ecexpressionsCache), m_nodesFactory(nodesFactory),
     m_localState(localState)
     {
-    if (holdRuleset)
-        m_ruleset.AddRef();
-
     Init();
     }
 
@@ -40,8 +38,8 @@ RulesDrivenProviderContext::RulesDrivenProviderContext(PresentationRuleSetCR rul
 * @bsimethod                                    Grigas.Petraitis                07/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 RulesDrivenProviderContext::RulesDrivenProviderContext(RulesDrivenProviderContextCR other)
-    : m_ruleset(other.m_ruleset), m_holdsRuleset(false), m_locale(other.m_locale), m_userSettings(other.m_userSettings), m_relatedPathsCache(other.m_relatedPathsCache), 
-    m_polymorphicallyRelatedClassesCache(other.m_polymorphicallyRelatedClassesCache), m_ecexpressionsCache(other.m_ecexpressionsCache), 
+    : m_ruleset(other.m_ruleset), m_locale(other.m_locale), m_userSettings(other.m_userSettings), m_relatedPathsCache(other.m_relatedPathsCache),
+    m_polymorphicallyRelatedClassesCache(other.m_polymorphicallyRelatedClassesCache), m_ecexpressionsCache(other.m_ecexpressionsCache),
     m_nodesFactory(other.m_nodesFactory), m_localState(other.m_localState), m_cancelationToken(other.m_cancelationToken)
     {
     Init();
@@ -55,9 +53,6 @@ RulesDrivenProviderContext::RulesDrivenProviderContext(RulesDrivenProviderContex
 +---------------+---------------+---------------+---------------+---------------+------*/
 RulesDrivenProviderContext::~RulesDrivenProviderContext()
     {
-    if (m_holdsRuleset)
-        m_ruleset.Release();
-
     DELETE_AND_CLEAR(m_schemaHelper);
     }
 
@@ -71,9 +66,7 @@ void RulesDrivenProviderContext::Init()
     m_isQueryContext = false;
     m_connections = nullptr;
     m_connection = nullptr;
-    m_statementCache = nullptr;
     m_schemaHelper = nullptr;
-    m_cancelationToken = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -99,15 +92,13 @@ void RulesDrivenProviderContext::SetLocalizationContext(RulesDrivenProviderConte
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RulesDrivenProviderContext::SetQueryContext(IConnectionManagerCR connections, IConnectionCR connection, ECSqlStatementCache const& statementCache, CustomFunctionsInjector& customFunctions)
+void RulesDrivenProviderContext::SetQueryContext(IConnectionManagerCR connections, IConnectionCR connection)
     {
     BeAssert(!IsQueryContext());
     m_isQueryContext = true;
     m_connections = &connections;
     m_connection = &connection;
-    m_statementCache = &statementCache;
-    m_schemaHelper = new ECSchemaHelper(connection, &m_relatedPathsCache, &m_polymorphicallyRelatedClassesCache, m_statementCache, &m_ecexpressionsCache);
-    customFunctions.OnConnection(connection);
+    m_schemaHelper = new ECSchemaHelper(connection, &m_relatedPathsCache, &m_polymorphicallyRelatedClassesCache, &m_ecexpressionsCache);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -119,8 +110,7 @@ void RulesDrivenProviderContext::SetQueryContext(RulesDrivenProviderContextCR ot
     m_isQueryContext = true;
     m_connections = other.m_connections;
     m_connection = other.m_connection;
-    m_statementCache = other.m_statementCache;
-    m_schemaHelper = new ECSchemaHelper(*m_connection, &m_relatedPathsCache, &m_polymorphicallyRelatedClassesCache, m_statementCache, &m_ecexpressionsCache);
+    m_schemaHelper = new ECSchemaHelper(*m_connection, &m_relatedPathsCache, &m_polymorphicallyRelatedClassesCache, &m_ecexpressionsCache);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -136,7 +126,7 @@ IUsedUserSettingsListener& RulesDrivenProviderContext::GetUsedSettingsListener()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RulesDrivenProviderContext::SetUsedSettingsListener(RulesDrivenProviderContext const& other)
+void RulesDrivenProviderContext::SetUsedSettingsListener(RulesDrivenProviderContextCR other)
     {
     m_usedSettingsListener = other.m_usedSettingsListener;
     }
@@ -164,9 +154,45 @@ struct NeverCanceledToken : ICancelationToken
 +---------------+---------------+---------------+---------------+---------------+------*/
 ICancelationTokenCR RulesDrivenProviderContext::GetCancelationToken() const
     {
-    if (nullptr != m_cancelationToken)
+    if (m_cancelationToken.IsValid())
         return *m_cancelationToken;
 
     static ICancelationTokenPtr s_neverCanceled = new NeverCanceledToken();
     return *s_neverCanceled;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mantas.Kontrimas                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void RulesDrivenProviderContext::Adopt(IConnectionCR connection, ICancelationTokenCP token)
+    {
+    m_cancelationToken = token;
+    if (m_connection != &connection)
+        {
+        m_connection = &connection;
+        DELETE_AND_CLEAR(m_schemaHelper);
+        m_schemaHelper = new ECSchemaHelper(connection, &m_relatedPathsCache, &m_polymorphicallyRelatedClassesCache, &m_ecexpressionsCache);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void RulesDrivenProviderContext::Adopt(RulesDrivenProviderContextCR other)
+    {
+    m_cancelationToken = &other.GetCancelationToken();
+    if (m_connection != &other.GetConnection())
+        {
+        m_connection = &other.GetConnection();
+        DELETE_AND_CLEAR(m_schemaHelper);
+        m_schemaHelper = new ECSchemaHelper(*m_connection, &m_relatedPathsCache, &m_polymorphicallyRelatedClassesCache, &m_ecexpressionsCache);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void RulesDrivenProviderContext::AdoptToSameConnection(ICancelationTokenCP token)
+    {
+    Adopt(*m_connections->GetConnection(m_connection->GetId().c_str()), token);
     }

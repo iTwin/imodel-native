@@ -5,7 +5,6 @@
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 #include <ECPresentation/RulesDriven/PresentationManager.h>
-#include <ECDb/ECDbExpressionSymbolContext.h>
 #include "CustomFunctions.h"
 #include "RulesPreprocessor.h"
 #include "JsonNavNode.h"
@@ -26,12 +25,7 @@ static void ApplyLocalization(Utf8StringR str, CustomFunctionsContext const& con
     {
     if (nullptr == context.GetLocalizationProvider())
         {
-        static bool s_didOutputWarning = false;
-        if (!s_didOutputWarning)
-            {
-            LoggingHelper::LogMessage(Log::Localization, "Localization is not available as the localization provider is not set", NativeLogging::LOG_ERROR);
-            s_didOutputWarning = true;
-            }
+        LoggingHelper::LogMessage(Log::Localization, "Localization is not available as the localization provider is not set", NativeLogging::LOG_ERROR, true);
         return;
         }
 
@@ -120,16 +114,16 @@ private:
         NavNodesHelper::AddRelatedInstanceInfo(*thisNode, relatedInstanceInfo);
 
         // look for label override
-        ECDbExpressionSymbolContext ecdbSymbols(GetContext().GetSchemaHelper().GetConnection().GetECDb(), &GetContext().GetSchemaHelper().GetStatementCache());
         RulesPreprocessor preprocessor(GetContext().GetConnections(), GetContext().GetConnection(), GetContext().GetRuleset(), GetContext().GetLocale(),
-            GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener(), GetContext().GetECExpressionsCache(), GetContext().GetSchemaHelper().GetStatementCache());
+            GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener(), GetContext().GetECExpressionsCache());
         RulesPreprocessor::CustomizationRuleParameters params(*thisNode, GetContext().GetParentNode());
         LabelOverrideCP labelOverride = preprocessor.GetLabelOverride(params);
         if (nullptr != labelOverride && !labelOverride->GetLabel().empty())
             {
             // evaluate the ECExpression to get the label
             ECExpressionContextsProvider::CustomizationRulesContextParameters params(*thisNode, GetContext().GetParentNode(),
-                GetContext().GetConnection(), GetContext().GetLocale(), GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener());
+                GetContext().GetConnection(), GetContext().GetLocale(),
+                GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener());
             ExpressionContextPtr expressionContext = ECExpressionContextsProvider::GetCustomizationRulesContext(params);
             ECValue value;
             if (ECExpressionsHelper(GetContext().GetECExpressionsCache()).EvaluateECExpression(value, labelOverride->GetLabel(), *expressionContext) && value.IsPrimitive() && value.ConvertPrimitiveToString(label))
@@ -201,7 +195,7 @@ private:
         bvector<InstanceLabelOverrideValueSpecification const*> labelOverrideSpecs = QueryBuilderHelpers::SerializeECClassMapPolymorphically(QueryBuilderHelpers::GetLabelOverrideValuesMap(GetContext().GetSchemaHelper(),
             GetContext().GetRuleset().GetInstanceLabelOverrides()), *key.GetClass());
         GenericQueryPtr labelQuery = QueryBuilderHelpers::CreateInstanceLabelQuery(key, labelOverrideSpecs);
-        GenericQueryExecutor executor(GetContext().GetSchemaHelper().GetConnection(), GetContext().GetSchemaHelper().GetStatementCache(), *labelQuery, [&label](ECSqlStatement& stmt)
+        GenericQueryExecutor executor(GetContext().GetSchemaHelper().GetConnection(), *labelQuery, [&label](ECSqlStatement& stmt)
             {
             label = stmt.GetValueText(0);
             });
@@ -284,13 +278,14 @@ struct GetECClassDisplayLabelScalar : CachingScalarFunction<bmap<ECClassId, Utf8
             thisNode->SetNodeKey(*NavNodesHelper::CreateNodeKey(GetContext().GetConnection(), *thisNode, bvector<Utf8String>()));
 
             RulesPreprocessor preprocessor(GetContext().GetConnections(), GetContext().GetConnection(), GetContext().GetRuleset(), GetContext().GetLocale(),
-                GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener(), GetContext().GetECExpressionsCache(), GetContext().GetSchemaHelper().GetStatementCache());
+                GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener(), GetContext().GetECExpressionsCache());
             RulesPreprocessor::CustomizationRuleParameters params(*thisNode, GetContext().GetParentNode());
             LabelOverrideCP labelOverride = preprocessor.GetLabelOverride(params);
             if (nullptr != labelOverride && !labelOverride->GetLabel().empty())
                 {
                 ECExpressionContextsProvider::CustomizationRulesContextParameters params(*thisNode, GetContext().GetParentNode(),
-                    GetContext().GetConnection(), GetContext().GetLocale(), GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener());
+                    GetContext().GetConnection(), GetContext().GetLocale(),
+                    GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener());
                 ExpressionContextPtr expressionContext = ECExpressionContextsProvider::GetCustomizationRulesContext(params);
                 ECValue value;
                 if (ECExpressionsHelper(GetContext().GetECExpressionsCache()).EvaluateECExpression(value, labelOverride->GetLabel(), *expressionContext) && value.IsPrimitive() && value.ConvertPrimitiveToString(label))
@@ -476,13 +471,14 @@ public:
             // create temporary node key
             thisNode->SetNodeKey(*NavNodesHelper::CreateNodeKey(GetContext().GetConnection(), *thisNode, bvector<Utf8String>()));
             RulesPreprocessor preprocessor(GetContext().GetConnections(), GetContext().GetConnection(), GetContext().GetRuleset(), GetContext().GetLocale(),
-                GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener(), GetContext().GetECExpressionsCache(), GetContext().GetSchemaHelper().GetStatementCache());
+                GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener(), GetContext().GetECExpressionsCache());
             RulesPreprocessor::CustomizationRuleParameters params(*thisNode, GetContext().GetParentNode());
             LabelOverrideCP labelOverride = preprocessor.GetLabelOverride(params);
             if (nullptr != labelOverride && !labelOverride->GetLabel().empty())
                 {
                 ECExpressionContextsProvider::CustomizationRulesContextParameters params(*thisNode, GetContext().GetParentNode(),
-                    GetContext().GetConnection(), GetContext().GetLocale(), GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener());
+                    GetContext().GetConnection(), GetContext().GetLocale(),
+                    GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener());
                 ExpressionContextPtr expressionContext = ECExpressionContextsProvider::GetCustomizationRulesContext(params);
                 ECValue value;
                 if (ECExpressionsHelper(GetContext().GetECExpressionsCache()).EvaluateECExpression(value, labelOverride->GetLabel(), *expressionContext) && value.IsPrimitive() && value.ConvertPrimitiveToString(label))
@@ -1820,7 +1816,6 @@ CustomFunctionsManager::~CustomFunctionsManager()
         BeAssert(contexts->empty());
         delete contexts;
         }
-
     DELETE_AND_CLEAR(m_contexts);
     }
 
@@ -1874,11 +1869,13 @@ void CustomFunctionsManager::PushContext(CustomFunctionsContext& context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 CustomFunctionsContext* CustomFunctionsManager::PopContext()
     {
-    CustomFunctionsContext* context = GetContexts().back();
-    if (nullptr != context)
-        GetContexts().pop_back();
+    bvector<CustomFunctionsContext*>& contexts = GetContexts();
+    if (contexts.empty())
+        return nullptr;
 
-    return context;
+    CustomFunctionsContext* back = contexts.back();
+    contexts.pop_back();
+    return back;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1914,8 +1911,8 @@ CustomFunctionsInjector::CustomFunctionsInjector(IConnectionManagerCR connection
 +---------------+---------------+---------------+---------------+---------------+------*/
 CustomFunctionsInjector::~CustomFunctionsInjector()
     {
+    BeMutexHolder lock(m_mutex);
     bset<ECDb const*> removedPrimaryConnections;
-
     for (IConnectionCP connection : m_handledConnections)
         {
         Unregister(*connection);
@@ -2074,6 +2071,8 @@ bool CustomFunctionsInjector::HandlesPrimaryConnection(Utf8StringCR connectionId
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CustomFunctionsInjector::OnConnection(IConnectionCR connection)
     {
+    BeMutexHolder lock(m_mutex);
+
     if (Handles(connection))
         return;
 
@@ -2091,6 +2090,7 @@ void CustomFunctionsInjector::_OnConnectionEvent(ConnectionEvent const& evt)
     {
     if (ConnectionEventType::Closed == evt.GetEventType())
         {
+        BeMutexHolder lock(m_mutex);
         bvector<IConnectionCP> toErase;
         for (IConnectionCP conn : m_handledConnections)
             {
@@ -2102,5 +2102,9 @@ void CustomFunctionsInjector::_OnConnectionEvent(ConnectionEvent const& evt)
             }
         for (IConnectionCP conn : toErase)
             m_handledConnections.erase(conn);
+        }
+    else if (ConnectionEventType::Opened == evt.GetEventType() || ConnectionEventType::ProxyCreated == evt.GetEventType())
+        {
+        OnConnection(evt.GetConnection());
         }
     }

@@ -88,6 +88,7 @@ bool PolymorphicallyRelatedClassesCache::Key::operator<(PolymorphicallyRelatedCl
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<RelatedClass> const* PolymorphicallyRelatedClassesCache::Get(Key const& key) const
     {
+    BeMutexHolder lock(m_mutex);
     auto iter = m_map.find(key);
     return m_map.end() != iter ? &iter->second : nullptr;
     }
@@ -97,6 +98,7 @@ bvector<RelatedClass> const* PolymorphicallyRelatedClassesCache::Get(Key const& 
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<RelatedClass> const& PolymorphicallyRelatedClassesCache::Add(Key key, bvector<RelatedClass> relatedClasses)
     {
+    BeMutexHolder lock(m_mutex);
     auto iter = m_map.Insert(key, relatedClasses).first;
     return iter->second;
     }
@@ -104,25 +106,26 @@ bvector<RelatedClass> const& PolymorphicallyRelatedClassesCache::Add(Key key, bv
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PolymorphicallyRelatedClassesCache::Clear() {m_map.clear();}
+void PolymorphicallyRelatedClassesCache::Clear()
+    {
+    BeMutexHolder lock(m_mutex);
+    m_map.clear();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaHelper::ECSchemaHelper(IConnectionCR connection, RelatedPathsCache* relatedPathsCache, PolymorphicallyRelatedClassesCache* polymorphicallyRelatedClassesCache,
-    ECSqlStatementCache const* statementCache, ECExpressionsCache* ecexpressionsCache)
+ECSchemaHelper::ECSchemaHelper(IConnectionCR connection, RelatedPathsCache* relatedPathsCache, 
+    PolymorphicallyRelatedClassesCache* polymorphicallyRelatedClassesCache, ECExpressionsCache* ecexpressionsCache)
     : m_connection(connection),
     m_relatedPathsCache(relatedPathsCache), m_ownsRelatedPathsCache(nullptr == relatedPathsCache),
     m_polymorphicallyRelatedClassesCache(polymorphicallyRelatedClassesCache), m_ownsPolymorphicallyRelatedClassesCache(nullptr == polymorphicallyRelatedClassesCache),
-    m_statementCache(statementCache), m_ownsStatementCache(nullptr == statementCache),
     m_ecexpressionsCache(ecexpressionsCache), m_ownsECExpressionsCache(nullptr == ecexpressionsCache)
     {
     if (nullptr == m_relatedPathsCache)
         m_relatedPathsCache = new RelatedPathsCache();
     if (nullptr == m_polymorphicallyRelatedClassesCache)
         m_polymorphicallyRelatedClassesCache = new PolymorphicallyRelatedClassesCache();
-    if (nullptr == m_statementCache)
-        m_statementCache = new ECSqlStatementCache(10, "ECSchemaHelper");
     if (nullptr == m_ecexpressionsCache)
         m_ecexpressionsCache = new ECExpressionsCache();
     }
@@ -133,13 +136,11 @@ ECSchemaHelper::ECSchemaHelper(IConnectionCR connection, RelatedPathsCache* rela
 ECSchemaHelper::~ECSchemaHelper()
     {
     if (m_ownsRelatedPathsCache)
-        delete m_relatedPathsCache;
+        DELETE_AND_CLEAR(m_relatedPathsCache);
     if (m_ownsPolymorphicallyRelatedClassesCache)
-        delete m_polymorphicallyRelatedClassesCache;
-    if (m_ownsStatementCache)
-        delete m_statementCache;
+        DELETE_AND_CLEAR(m_polymorphicallyRelatedClassesCache);
     if (m_ownsECExpressionsCache)
-        delete m_ecexpressionsCache;
+        DELETE_AND_CLEAR(m_ecexpressionsCache);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -190,7 +191,7 @@ bvector<ECClassCP> ECSchemaHelper::GetECClassesByName(Utf8CP name) const
     BeAssert(txn.IsActive());
 
     static Utf8CP statementStr = "SELECT ECInstanceId FROM [meta].[ECClassDef] WHERE Name = ?";
-    CachedECSqlStatementPtr stmt = m_statementCache->GetPreparedStatement(m_connection.GetECDb().Schemas(), m_connection.GetDb(), statementStr);
+    CachedECSqlStatementPtr stmt = m_connection.GetStatementCache().GetPreparedStatement(m_connection.GetECDb().Schemas(), m_connection.GetDb(), statementStr);
     if (stmt.IsNull())
         {
         BeAssert(false);
@@ -260,7 +261,7 @@ static bool IsAllowed(ECClassCR ecClass)
 static bool IsAllowed(ECSchemaCR schema)
     {
     // WIP: temporary workaround until TFS#782547 is implemented
-    static std::set<Utf8String> s_ignoredSchemas = {
+    static const std::set<Utf8String> s_ignoredSchemas = {
         "ECDbMap",
         "ECDbSchemaPolicies",
         "ECDbSystem",
@@ -538,7 +539,6 @@ struct ECSchemaHelper::SupportedClassesResolver
 
 private:
     IConnectionCR m_connection;
-    ECSqlStatementCache const& m_statementsCache;
     mutable int m_flags;
     mutable ECSchemaSet m_schemaList;
     mutable IdSet<ECSchemaId> m_schemaIds;
@@ -584,7 +584,7 @@ private:
         Utf8String query = "SELECT SourceECInstanceId FROM [meta].[ClassHasAllBaseClasses] ";
         query.append("WHERE ").append(helper.CreateWhereClause("[TargetECInstanceId]"));
 
-        CachedECSqlStatementPtr stmt = m_statementsCache.GetPreparedStatement(m_connection.GetECDb().Schemas(), m_connection.GetDb(), query.c_str());
+        CachedECSqlStatementPtr stmt = m_connection.GetStatementCache().GetPreparedStatement(m_connection.GetECDb().Schemas(), m_connection.GetDb(), query.c_str());
 
         BoundQueryValuesList bindings = helper.CreateBoundValues();
         uint32_t i = 1;
@@ -605,9 +605,9 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                07/2016
     +---------------+---------------+---------------+---------------+---------------+------*/
-    SupportedClassesResolver(IConnectionCR connection, ECSqlStatementCache const& statements,
-        ECSchemaSet const& supportedSchemas, SupportedEntityClassInfos const* classInfos, SupportedRelationshipClassInfos const* relationshipInfos)
-        : m_flags(0), m_connection(connection), m_statementsCache(statements)
+    SupportedClassesResolver(IConnectionCR connection, ECSchemaSet const& supportedSchemas, 
+        SupportedEntityClassInfos const* classInfos, SupportedRelationshipClassInfos const* relationshipInfos)
+        : m_flags(0), m_connection(connection)
         {
         m_schemaList = supportedSchemas;
         m_classInfos = classInfos;
@@ -1047,7 +1047,7 @@ void ECSchemaHelper::GetPaths(bvector<bpair<RelatedClassPath, bool>>& paths, bma
 
     Utf8String query;
     BoundQueryValuesList bindings = CreateRelationshipPathsQuery(query, resolver, sourceClassIds, relationshipDirection, depth, include);
-    CachedECSqlStatementPtr stmt = m_statementCache->GetPreparedStatement(m_connection.GetECDb().Schemas(), m_connection.GetDb(), query.c_str());
+    CachedECSqlStatementPtr stmt = m_connection.GetStatementCache().GetPreparedStatement(m_connection.GetECDb().Schemas(), m_connection.GetDb(), query.c_str());
     if (!stmt.IsValid())
         {
         BeAssert(false);
@@ -1155,6 +1155,7 @@ ECSchemaHelper::RelationshipClassPathOptions::RelationshipClassPathOptions(ECCla
 bvector<bpair<RelatedClassPath, bool>> ECSchemaHelper::GetRelationshipClassPaths(RelationshipClassPathOptions const& options) const
     {
     // look for cached results first
+    BeMutexHolder lock(m_relatedPathsCache->GetMutex());
     RelatedPathsCache::Key key(options);
     RelatedPathsCache::Result const* cacheResult = m_relatedPathsCache->Get(key);
     if (nullptr != cacheResult)
@@ -1163,11 +1164,12 @@ bvector<bpair<RelatedClassPath, bool>> ECSchemaHelper::GetRelationshipClassPaths
             options.m_relationshipsUseCounter[pair.first] += pair.second;
         return cacheResult->m_paths;
         }
+    lock.unlock();
 
     bvector<bpair<RelatedClassPath, bool>> paths;
     SupportedEntityClassInfos classInfos = GetECClassesFromClassList(options.m_supportedClasses, true);
     SupportedRelationshipClassInfos relationshipInfos = GetECRelationshipClasses(options.m_supportedRelationships);
-    SupportedClassesResolver resolver(m_connection, *m_statementCache, GetECSchemas(options.m_supportedSchemas),
+    SupportedClassesResolver resolver(m_connection, GetECSchemas(options.m_supportedSchemas),
         (classInfos.empty() && 0 == *options.m_supportedClasses) ? nullptr : &classInfos,
         (relationshipInfos.empty() && 0 == *options.m_supportedRelationships) ? nullptr : &relationshipInfos);
 
@@ -1316,6 +1318,7 @@ bvector<RelatedClassPath> ECSchemaHelper::GetPolymorphicallyRelatedClassesWithIn
         }
 
     PolymorphicallyRelatedClassesCache::Key key = {&sourceClass, direction, relationships};
+    BeMutexHolder lock(m_polymorphicallyRelatedClassesCache->GetMutex());
     bvector<RelatedClass> const* polymorphicallyRelatedClasses = m_polymorphicallyRelatedClassesCache->Get(key);
     if (!polymorphicallyRelatedClasses)
         {
@@ -1337,7 +1340,7 @@ bvector<RelatedClassPath> ECSchemaHelper::GetPolymorphicallyRelatedClassesWithIn
         q.append(") WHERE BaseClassId = ? ");
         q.append("GROUP BY RelationshipId, RelatedClassId");
 
-        CachedECSqlStatementPtr stmt = m_statementCache->GetPreparedStatement(m_connection.GetECDb().Schemas(),
+        CachedECSqlStatementPtr stmt = m_connection.GetStatementCache().GetPreparedStatement(m_connection.GetECDb().Schemas(),
             m_connection.GetDb(), q.c_str());
         if (stmt.IsNull())
             {
@@ -1363,7 +1366,10 @@ bvector<RelatedClassPath> ECSchemaHelper::GetPolymorphicallyRelatedClassesWithIn
         polymorphicallyRelatedClasses = &m_polymorphicallyRelatedClassesCache->Add(key, std::move(vec));
         }
 
-    for (RelatedClass const& relatedClass : *polymorphicallyRelatedClasses)
+    bvector<RelatedClass> polymorphicallyRelatedClassesCopy = *polymorphicallyRelatedClasses;
+    lock.unlock();
+
+    for (RelatedClass const& relatedClass : polymorphicallyRelatedClassesCopy)
         {
         BoundQueryValuesList filterBindingsCopy;
         for (BoundQueryValue const* binding : filterBindings)
@@ -1383,7 +1389,7 @@ bvector<RelatedClassPath> ECSchemaHelper::GetPolymorphicallyRelatedClassesWithIn
         query->Where(Utf8String("[RelatedInstanceId] IN (").append(filteringQuery->ToString()).append(")").c_str(), filterBindingsCopy);
         query->GroupByContract(*SimpleQueryContract::Create(*PresentationQueryContractSimpleField::Create("RelatedClassId", "RelatedClassId")));
 
-        CachedECSqlStatementPtr stmt = m_statementCache->GetPreparedStatement(m_connection.GetECDb().Schemas(),
+        CachedECSqlStatementPtr stmt = m_connection.GetStatementCache().GetPreparedStatement(m_connection.GetECDb().Schemas(),
             m_connection.GetDb(), query->ToString().c_str());
         if (stmt.IsNull())
             {
@@ -1518,89 +1524,7 @@ void SupportedClassNamesParser::Parse()
         ParseClass(begin, end);
     }
 
-/*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                12/2018
-+===============+===============+===============+===============+===============+======*/
-struct ECInstanceLoadStatementCacheInvalidator : BeSQLite::Db::AppData
-{
-private:
-    std::function<void()> m_callback;
-private:
-    ECInstanceLoadStatementCacheInvalidator(std::function<void()> callback): m_callback(callback) {}
-public:
-    static RefCountedPtr<ECInstanceLoadStatementCacheInvalidator> Create(std::function<void()> callback) {return new ECInstanceLoadStatementCacheInvalidator(callback);}
-    ~ECInstanceLoadStatementCacheInvalidator()
-        {
-        if (m_callback)
-            m_callback();
-        }
-    void OnCacheDestroyed() {m_callback = nullptr;}
-};
-
-/*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                12/2015
-+===============+===============+===============+===============+===============+======*/
-struct ECInstanceLoadStatementCache : BeSQLite::Db::AppData
-{
-private:
-    ECSqlStatementCache m_cache;
-    ECInstanceLoadStatementCacheInvalidator* m_invalidator;
-public:
-    static Key s_key;
-    Key m_invalidatorKey;
-private:
-    ECInstanceLoadStatementCache() : m_cache(50, "ECInstanceLoadStatementCache"), m_invalidator(nullptr) {}
-public:
-    static RefCountedPtr<ECInstanceLoadStatementCache> Create() {return new ECInstanceLoadStatementCache();}
-    ~ECInstanceLoadStatementCache()
-        {
-        if (nullptr != m_invalidator)
-            m_invalidator->OnCacheDestroyed();
-        }
-    void SetInvalidator(ECInstanceLoadStatementCacheInvalidator* invalidator) {m_invalidator = invalidator;}
-    void OnInvalidatorDestroyed()
-        {
-        m_cache.Empty();
-        m_invalidator = nullptr;
-        }
-    CachedECSqlStatementPtr GetStatement(IConnectionCR connection, Utf8CP query) {return m_cache.GetPreparedStatement(connection.GetECDb().Schemas(), connection.GetDb(), query);}
-};
-ECInstanceLoadStatementCache::Key ECInstanceLoadStatementCache::s_key;
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-static CachedECSqlStatementPtr GetPreparedStatement(IConnectionCR connection, Utf8CP ecsql)
-    {
-    RefCountedPtr<BeSQLite::Db::AppData> cacheAppData = connection.GetDb().FindAppData(ECInstanceLoadStatementCache::s_key);
-    RefCountedPtr<ECInstanceLoadStatementCache> cache = static_cast<ECInstanceLoadStatementCache*>(cacheAppData.get());
-    if (cache.IsNull())
-        {
-        cache = ECInstanceLoadStatementCache::Create();
-        connection.GetDb().AddAppData(ECInstanceLoadStatementCache::s_key, cache.get());
-        }
-
-    // note: we may get here when the primary connection (ECDb) is being closed. In that case the close
-    // is stopped while destroying app data and waits for ECPresentation threads to finish - we have to make
-    // sure we don't alter the app data during that process
-    if (connection.IsOpen())
-        {
-        RefCountedPtr<BeSQLite::Db::AppData> invalidatorAppData = connection.GetECDb().FindAppData(cache->m_invalidatorKey);
-        RefCountedPtr<ECInstanceLoadStatementCacheInvalidator> invalidator = static_cast<ECInstanceLoadStatementCacheInvalidator*>(invalidatorAppData.get());
-        if (invalidator.IsNull())
-            {
-            RefCountedPtr<ECInstanceLoadStatementCacheInvalidator> invalidator = ECInstanceLoadStatementCacheInvalidator::Create([cache = cache.get()]()
-                {
-                cache->OnInvalidatorDestroyed();
-                });
-            connection.GetECDb().AddAppData(cache->m_invalidatorKey, invalidator.get(), true);
-            cache->SetInvalidator(invalidator.get());
-            }
-        }
-
-    return cache->GetStatement(connection, ecsql);
-    }
-
+static BeMutex s_getIntanceMutex;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1618,7 +1542,7 @@ DbResult ECInstancesHelper::LoadInstance(IECInstancePtr& instance, IConnectionCR
 
     Utf8String ecsql("SELECT * FROM ONLY ");
     ecsql.append(selectClass->GetECSqlName()).append(" WHERE ECInstanceId=?");
-    CachedECSqlStatementPtr stmt = GetPreparedStatement(connection, ecsql.c_str());
+    CachedECSqlStatementPtr stmt = connection.GetStatementCache().GetPreparedStatement(connection.GetECDb().Schemas(), connection.GetDb(), ecsql.c_str());
     if (stmt.IsNull())
         {
         BeAssert(false);
@@ -1634,7 +1558,10 @@ DbResult ECInstancesHelper::LoadInstance(IECInstancePtr& instance, IConnectionCR
     ECInstanceECSqlSelectAdapter adapter(*stmt);
     DbResult result = stmt->Step();
     if (DbResult::BE_SQLITE_ROW == result)
+        {
+        BeMutexHolder lock(s_getIntanceMutex);
         instance = adapter.GetInstance();
+        }
 
     BeAssert(BE_SQLITE_ROW == result || BE_SQLITE_DONE == result || BE_SQLITE_INTERRUPT == result);
     return result;
@@ -1672,7 +1599,7 @@ ECValue ECInstancesHelper::GetValue(IConnectionCR connection, ECClassCR ecClass,
     ecsql.append("[").append(ecProperty.GetName()).append("] ");
     ecsql.append("FROM ONLY ");
     ecsql.append(ecClass.GetECSqlName()).append(" WHERE ECInstanceId = ?");
-    CachedECSqlStatementPtr stmt = GetPreparedStatement(connection, ecsql.c_str());
+    CachedECSqlStatementPtr stmt = connection.GetStatementCache().GetPreparedStatement(connection.GetECDb().Schemas(), connection.GetDb(), ecsql.c_str());
     if (stmt.IsNull())
         {
         BeAssert(false);
@@ -1725,7 +1652,7 @@ void ECInstancesHelper::SetValue(IConnectionCR connection, ECClassCR ecClass, EC
     ecsql.append(" WHERE ECInstanceId = ?");
 
     ECSqlStatus status;
-    CachedECSqlStatementPtr stmt = GetPreparedStatement(connection, ecsql.c_str());
+    CachedECSqlStatementPtr stmt = connection.GetStatementCache().GetPreparedStatement(connection.GetECDb().Schemas(), connection.GetDb(), ecsql.c_str());
     if (stmt.IsNull())
         {
         BeAssert(false);

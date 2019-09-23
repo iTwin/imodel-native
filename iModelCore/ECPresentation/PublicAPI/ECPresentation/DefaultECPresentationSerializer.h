@@ -84,8 +84,6 @@ protected:
     ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(KeySet const&, rapidjson::Document::AllocatorType*) const override;
     ECPRESENTATION_EXPORT virtual KeySetPtr _GetKeySetFromJson(IConnectionCR, JsonValueCR json) const override;
 
-    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(SelectionChangedEvent const& selectionChangedEvent, rapidjson::Document::AllocatorType*) const override;
-    ECPRESENTATION_EXPORT virtual SelectionChangedEventPtr _GetSelectionChangedEventFromJson(IConnectionCacheCR connectionCache, JsonValueCR json) const override;
     ECPRESENTATION_EXPORT virtual rapidjson::Value _AsJson(ECEnumerationCR enumeration, rapidjson::Document::AllocatorType&) const override;
 
     ECPRESENTATION_EXPORT virtual rapidjson::Value _AsJson(KindOfQuantityCR koq, rapidjson::Document::AllocatorType&) const override;

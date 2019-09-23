@@ -13,10 +13,18 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Pranciskus.Ambrazas            06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-JsonNavNode::JsonNavNode() 
-    : m_allocator(NAVNODE_JSON_CHUNK_SIZE), m_json(rapidjson::Document(&m_allocator))//, m_ecdb(nullptr)
+JsonNavNode::JsonNavNode()
+    : m_allocator(new rapidjson::MemoryPoolAllocator<>(NAVNODE_JSON_CHUNK_SIZE)), m_json(rapidjson::Document(m_allocator))//, m_ecdb(nullptr)
     {
     m_json.SetObject();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+JsonNavNode::~JsonNavNode()
+    {
+    DELETE_AND_CLEAR(m_allocator);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -86,7 +94,7 @@ Utf8String JsonNavNode::_GetDescription() const {return m_json.HasMember(NAVNODE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-RapidJsonValueR JsonNavNode::_GetExtendedData() const 
+RapidJsonValueR JsonNavNode::_GetExtendedData() const
     {
     if (!m_json.IsObject() || !m_json.HasMember(NAVNODE_InternalData))
         m_json.AddMember(NAVNODE_InternalData, rapidjson::Value(rapidjson::kObjectType), m_json.GetAllocator());
@@ -158,7 +166,7 @@ bool JsonNavNode::_IsCheckboxVisible() const {return m_json.HasMember(NAVNODE_Is
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool JsonNavNode::_IsCheckboxEnabled() const {return m_json.HasMember(NAVNODE_IsCheckboxEnabled) ? m_json[NAVNODE_IsCheckboxEnabled].GetBool() : false;} 
+bool JsonNavNode::_IsCheckboxEnabled() const {return m_json.HasMember(NAVNODE_IsCheckboxEnabled) ? m_json[NAVNODE_IsCheckboxEnabled].GetBool() : false;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                05/2017
@@ -297,7 +305,7 @@ void JsonNavNode::_SetIsEditable(bool value) {AddMember(NAVNODE_IsEditable, rapi
 NavNodePtr JsonNavNode::_Clone() const
     {
     JsonNavNode* node = new JsonNavNode();
-    node->m_json.CopyFrom(m_json, node->m_allocator);
+    node->m_json.CopyFrom(m_json, node->m_json.GetAllocator());
     node->m_nodeKey = m_nodeKey;
     return node;
     }
@@ -375,10 +383,10 @@ JsonNavNodePtr JsonNavNodesFactory::CreateCustomNode(Utf8StringCR connectionId, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-JsonNavNodePtr JsonNavNodesFactory::CreateFromJson(IConnectionCR connection, rapidjson::Document&& json) const
+JsonNavNodePtr JsonNavNodesFactory::CreateFromJson(IConnectionCR connection, rapidjson::Document json, rapidjson::MemoryPoolAllocator<>* allocator) const
     {
     JsonNavNodePtr node = JsonNavNode::Create();
-    InitFromJson(*node, connection, std::move(json));
+    InitFromJson(*node, connection, std::move(json), allocator);
     return node;
     }
 
@@ -526,7 +534,7 @@ void JsonNavNodesFactory::InitCustomNode(JsonNavNodeR node, Utf8StringCR connect
     node.SetType(type);
     node.SetExpandedImageId(imageId);
     node.SetCollapsedImageId(imageId);
-    
+
     NavNodeExtendedData extendedData(node);
     extendedData.SetConnectionId(connectionId);
     extendedData.SetLocale(locale.c_str());
@@ -535,9 +543,12 @@ void JsonNavNodesFactory::InitCustomNode(JsonNavNodeR node, Utf8StringCR connect
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsonNavNodesFactory::InitFromJson(JsonNavNodeR node, IConnectionCR connection, rapidjson::Document&& json) const
+void JsonNavNodesFactory::InitFromJson(JsonNavNodeR node, IConnectionCR connection, rapidjson::Document json, rapidjson::MemoryPoolAllocator<>* allocator) const
     {
-    node.m_json = std::move(json);    
+    DELETE_AND_CLEAR(node.m_allocator);
+    if (nullptr != allocator)
+        node.m_allocator = allocator;
+    node.m_json.Swap(json);
     NavNodeExtendedData extendedData(node);
     extendedData.SetConnectionId(connection.GetId());
     }
@@ -601,13 +612,13 @@ static void GetJsonNodeChanges(bvector<JsonChange>& changes, RapidJsonValueCR ol
         if (IsMemberSignificant(member))
             changes.push_back(JsonChange(GetPrefixedName(member).c_str(), oldJson[member.c_str()], rapidjson::Value()));
         }
-    
+
     for (Utf8StringCR member : newToOldMembersDiff)
         {
         if (IsMemberSignificant(member))
             changes.push_back(JsonChange(GetPrefixedName(member).c_str(), rapidjson::Value(), newJson[member.c_str()]));
         }
-    
+
     for (Utf8StringCR member : commonMembers)
         {
         if (!IsMemberSignificant(member))
@@ -650,7 +661,7 @@ void NavNodesHelper::SetSkippedInstanceKeys(NavNodeR node, Utf8CP serializedJson
     {
     if (nullptr == serializedJson || 0 == *serializedJson)
         return;
-    
+
     rapidjson::Document doc(&node.GetExtendedDataAllocator());
     doc.Parse(serializedJson);
     if (doc.IsArray())
@@ -714,13 +725,16 @@ NavNodeKeyPtr NavNodesHelper::CreateNodeKey(IConnectionCR connection, JsonNavNod
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeKeyPtr NavNodesHelper::CreateNodeKey(IConnectionCR connection, JsonNavNodeCR node, Utf8CP pathFromRootJsonString)
+NavNodeKeyPtr NavNodesHelper::CreateNodeKey(IConnectionCR connection, JsonNavNodeCR node, Utf8CP pathFromRootString)
     {
-    rapidjson::Document json;
-    json.Parse(pathFromRootJsonString);
     bvector<Utf8String> path;
-    for (RapidJsonValueCR pathElement : json.GetArray())
-        path.push_back(pathElement.GetString());
+    CharP context;
+    Utf8CP token = BeStringUtilities::Strtok(const_cast<CharP>(pathFromRootString), ",", &context);
+    while (nullptr != token)
+        {
+        path.push_back(token);
+        token = BeStringUtilities::Strtok(nullptr, ",", &context);
+        }
     return CreateNodeKey(connection, node, path);
     }
 

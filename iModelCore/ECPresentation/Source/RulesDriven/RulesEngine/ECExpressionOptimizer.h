@@ -125,15 +125,16 @@ private:
     Utf8String m_className;
     bmap<ECDb const*, Cache> m_cache;
     IConnectionManagerCP m_connections;
+    BeMutex& m_cacheMutex;
 private:
-    IsOfClassOptimizedExpression(Utf8CP schema, Utf8CP className) : m_schemaName(schema), m_className(className), m_connections(nullptr) {}
+    IsOfClassOptimizedExpression(Utf8CP schema, Utf8CP className, BeMutex& mutex) : m_schemaName(schema), m_className(className), m_connections(nullptr), m_cacheMutex(mutex) {}
 protected:
     ECPRESENTATION_EXPORT bool _Value(OptimizedExpressionsParameters const& params) override;
     ECPRESENTATION_EXPORT bool _IsEqual(OptimizedExpression const& other) const override;
     IsOfClassOptimizedExpression const* _AsIsOfClassOptimizedExpression() const override {return this;}
     ECPRESENTATION_EXPORT void _OnConnectionEvent(ConnectionEvent const&) override;
 public:
-    static RefCountedPtr<IsOfClassOptimizedExpression> Create(Utf8CP schema, Utf8CP className) {return new IsOfClassOptimizedExpression(schema, className);}
+    static RefCountedPtr<IsOfClassOptimizedExpression> Create(Utf8CP schema, Utf8CP className, BeMutex& mutex) {return new IsOfClassOptimizedExpression(schema, className, mutex);}
     ECPRESENTATION_EXPORT ~IsOfClassOptimizedExpression();
 };
 
@@ -146,15 +147,16 @@ private:
     Utf8String m_className;
     bmap<ECDb const*, bmap<ECN::ECClassId, bool>> m_resultsCache;
     IConnectionManagerCP m_connections;
+    BeMutex& m_cacheMutex;
 private:
-    ClassNameOptimizedExpression(Utf8CP className) : m_className(className), m_connections(nullptr) {}
+    ClassNameOptimizedExpression(Utf8CP className, BeMutex& mutex) : m_className(className), m_connections(nullptr), m_cacheMutex(mutex) {}
 protected:
     ECPRESENTATION_EXPORT bool _Value(OptimizedExpressionsParameters const& params) override;
     ECPRESENTATION_EXPORT bool _IsEqual(OptimizedExpression const& other) const override;
     ClassNameOptimizedExpression const* _AsClassNameOptimizedExpression() const override {return this;}
     ECPRESENTATION_EXPORT void _OnConnectionEvent(ConnectionEvent const&) override;
 public:
-    static RefCountedPtr<ClassNameOptimizedExpression> Create(Utf8CP className) {return new ClassNameOptimizedExpression(className);}
+    static RefCountedPtr<ClassNameOptimizedExpression> Create(Utf8CP className, BeMutex& mutex) {return new ClassNameOptimizedExpression(className, mutex);}
     ECPRESENTATION_EXPORT ~ClassNameOptimizedExpression();
 };
 

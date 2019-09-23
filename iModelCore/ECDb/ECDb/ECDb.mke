@@ -120,8 +120,7 @@ ECDbAllHeaders = \
                 $(baseDir)DbSchemaPersistenceManager.h \
                 $(baseDir)LightweightCache.h \
                 $(baseDir)SqlNames.h \
-                $(baseDir)ClassMapColumnFactory.h \
-                $(baseDir)ECDbExpressionSymbolProvider.h
+                $(baseDir)ClassMapColumnFactory.h
 
 
 #----------------------------------------------------------------------

@@ -174,7 +174,7 @@ private:
 protected:
     Utf8CP _GetName() const override {return m_name.c_str();}
     Params* _Clone() const override {return new TestEditorParams(m_name);}
-    int _CompareTo(Params const& other) const override 
+    int _CompareTo(Params const& other) const override
         {
         if (0 != Params::_CompareTo(other))
             return Params::_CompareTo(other);
@@ -207,7 +207,7 @@ TEST_F(DefaultECPresentationSerializerTests, ContentFieldEditorsSerializationWit
             "test_params": "params_content"
             }
         })*");
-    
+
     EXPECT_EQ(expected, actual)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actual);
@@ -246,7 +246,7 @@ TEST_F(DefaultECPresentationSerializerTests, PropertySerializationSimplePrimitiv
 
     rapidjson::Document expected;
     expected.Parse(R"({
-        "Property": { 
+        "Property": {
             "BaseClassInfo": {
                 "Id": "",
                 "Name": "TestSchema:PropertyTestClassA",
@@ -284,7 +284,7 @@ TEST_F(DefaultECPresentationSerializerTests, PropertySerializationSimplePrimitiv
 
     rapidjson::Document expected;
     expected.Parse(R"({
-        "Property": { 
+        "Property": {
             "BaseClassInfo": {
                 "Id": "",
                 "Name": "TestSchema:PropertyTestClassA",
@@ -317,7 +317,7 @@ TEST_F(DefaultECPresentationSerializerTests, PropertySerializationSimplePrimitiv
             },
             "IsForwardRelationship": false,
             "IsPolymorphicRelationship": true
-            } 
+            }
         ]
         })");
     expected["Property"]["BaseClassInfo"]["Id"].SetString(testClassA->GetId().ToString().c_str(), expected.GetAllocator());
@@ -342,7 +342,7 @@ TEST_F(DefaultECPresentationSerializerTests, PropertySerializationEnumInt)
 
     rapidjson::Document expected;
     expected.Parse(R"({
-        "Property": { 
+        "Property": {
             "BaseClassInfo": {
                 "Id": "",
                 "Name": "TestSchema:PropertyTestClassA",
@@ -388,7 +388,7 @@ TEST_F(DefaultECPresentationSerializerTests, PropertySerializationEnumString)
 
     rapidjson::Document expected;
     expected.Parse(R"({
-        "Property": { 
+        "Property": {
             "BaseClassInfo": {
                 "Id": "",
                 "Name": "TestSchema:PropertyTestClassA",
@@ -434,7 +434,7 @@ TEST_F(DefaultECPresentationSerializerTests, PropertySerializationWithKOQ)
 
     rapidjson::Document expected;
     expected.Parse(R"*({
-        "Property": { 
+        "Property": {
             "BaseClassInfo": {
                 "Id": "",
                 "Name": "TestSchema:PropertyTestClassA",
@@ -1175,7 +1175,7 @@ TEST_F(DefaultECPresentationSerializerTests, FieldEditorJsonParamsSerialization)
         "Test1": 1,
         "Test2": [2, 3]
         })");
-    
+
     EXPECT_EQ(expected, actual)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actual);
@@ -1194,7 +1194,7 @@ TEST_F(DefaultECPresentationSerializerTests, FieldEditorMultilineParamsSerializa
     expected.Parse(R"({
         "HeightInRows": 999
         })");
-    
+
     EXPECT_EQ(expected, actual)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actual);
@@ -1214,7 +1214,7 @@ TEST_F(DefaultECPresentationSerializerTests, FieldEditorRangeParamsSerialization
         "Minimum": 123.33,
         "Maximum": 456.66
         })");
-    
+
     EXPECT_EQ(expected, actual)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actual);
@@ -1234,7 +1234,7 @@ TEST_F(DefaultECPresentationSerializerTests, FieldEditorRangeParamsNoMinOrMaxSet
         "Minimum": null,
         "Maximum": null
         })");
-    
+
     EXPECT_EQ(expected, actual)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actual);
@@ -1257,7 +1257,7 @@ TEST_F(DefaultECPresentationSerializerTests, FieldEditorSliderParamsSerializatio
         "ValueFactor": 100,
         "IsVertical": true
         })");
-    
+
     EXPECT_EQ(expected, actual)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actual);
@@ -1865,170 +1865,6 @@ TEST_F(DefaultECPresentationSerializerTests, KeySetSerialization)
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DefaultECPresentationSerializerTests, SelectionChangedEventSerialization)
-    {
-    KeySetPtr keySet = KeySet::Create({
-        ECClassInstanceKey(*GetClassA(), ECInstanceId((uint64_t)1))
-        });
-    SelectionChangedEventPtr selectionChangedEvent = SelectionChangedEvent::Create(*m_connection, "SourceNameText", SelectionChangeType::Add, false, *keySet, 123);
-    selectionChangedEvent->GetExtendedDataR().AddMember("ExtendedDataPropertyName", "ExtendedDataProperty", selectionChangedEvent->GetExtendedDataAllocator());
-    // Serialize
-    rapidjson::Document actual = selectionChangedEvent->AsJson();
-
-    rapidjson::Document expected;
-    expected.Parse(R"({
-        "ConnectionId": "",
-        "Source": "SourceNameText",
-        "IsSubSelection": false,
-        "ChangeType": 0,
-        "Timestamp": "123",
-        "Keys": {
-            "InstanceKeys": {},
-            "NodeKeys": []
-            },
-        "ExtendedData": {
-            "ExtendedDataPropertyName": "ExtendedDataProperty"
-            }
-        })");
-    expected["ConnectionId"].SetString(m_connection->GetId().c_str(), expected.GetAllocator());
-    expected["Keys"]["InstanceKeys"].AddMember(rapidjson::Value(GetClassA()->GetId().ToString().c_str(), expected.GetAllocator()), rapidjson::Value(rapidjson::kArrayType), expected.GetAllocator());
-    expected["Keys"]["InstanceKeys"][GetClassA()->GetId().ToString().c_str()].PushBack(1, expected.GetAllocator());
-
-    ASSERT_EQ(expected, actual)
-        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
-        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actual);
-
-    //Deserialize
-    TestConnectionCache cache;
-    cache.m_connections.Insert(m_connection->GetId(), m_connection);
-    Json::Value expectedJson;
-    Json::Reader::Parse(BeRapidJsonUtilities::ToString(actual), expectedJson);
-    SelectionChangedEventPtr deserializedChangedEvent = SelectionChangedEvent::FromJson(cache, expectedJson);
-
-    EXPECT_EQ(selectionChangedEvent->GetConnection().GetId(), deserializedChangedEvent->GetConnection().GetId());
-    EXPECT_EQ(selectionChangedEvent->GetSourceName(), deserializedChangedEvent->GetSourceName());
-    EXPECT_EQ(selectionChangedEvent->GetChangeType(), deserializedChangedEvent->GetChangeType());
-    EXPECT_EQ(selectionChangedEvent->IsSubSelection(), deserializedChangedEvent->IsSubSelection());
-    EXPECT_EQ(selectionChangedEvent->GetSelectedKeys(), deserializedChangedEvent->GetSelectedKeys());
-    EXPECT_EQ(selectionChangedEvent->GetExtendedData(), deserializedChangedEvent->GetExtendedData());
-    }
-
-//---------------------------------------------------------------------------------------
-// @betest                                      Mantas.Kontrimas                03/2018
-//---------------------------------------------------------------------------------------
-TEST_F(DefaultECPresentationSerializerTests, SelectionChangedEventDeserializationNoExtendedData)
-    {
-    rapidjson::Document expected;
-    expected.Parse(R"({
-        "ConnectionId": "",
-        "Source": "SourceNameText",
-        "IsSubSelection": false,
-        "ChangeType": 0,
-        "Timestamp": "123",
-        "Keys": {
-            "InstanceKeys": {
-                "55": [1]
-                },
-            "NodeKeys": []
-            }
-        })");
-    expected["ConnectionId"].SetString(m_connection->GetId().c_str(), expected.GetAllocator());
-
-    //Deserialize
-    TestConnectionCache cache;
-    cache.m_connections.Insert(m_connection->GetId(), m_connection);
-    Json::Value expectedJson;
-    Json::Reader::Parse(BeRapidJsonUtilities::ToString(expected), expectedJson);
-    SelectionChangedEventPtr deserializedChangedEvent = SelectionChangedEvent::FromJson(cache, expectedJson);
-
-    EXPECT_EQ(m_connection->GetId(), deserializedChangedEvent->GetConnection().GetId());
-    EXPECT_EQ("SourceNameText", deserializedChangedEvent->GetSourceName());
-    EXPECT_EQ(SelectionChangeType::Add, deserializedChangedEvent->GetChangeType());
-    EXPECT_EQ(false, deserializedChangedEvent->IsSubSelection());
-    EXPECT_EQ(123, deserializedChangedEvent->GetTimestamp());
-    EXPECT_FALSE(deserializedChangedEvent->GetSelectedKeys().empty());
-    EXPECT_TRUE(deserializedChangedEvent->GetExtendedData().ObjectEmpty());
-    }
-
-//---------------------------------------------------------------------------------------
-// @betest                                      Mantas.Kontrimas                03/2018
-//---------------------------------------------------------------------------------------
-TEST_F(DefaultECPresentationSerializerTests, SelectionChangedEventDeserializationExtendedDataIsArray)
-    {
-    rapidjson::Document expected;
-    expected.Parse(R"({
-        "ConnectionId": "",
-        "Source": "SourceNameText",
-        "IsSubSelection": false,
-        "ChangeType": 0,
-        "Timestamp": "123",
-        "Keys": {
-            "InstanceKeys": {
-                "55": [1]
-                },
-            "NodeKeys": []
-            },
-        "ExtendedData": []
-        })");
-    expected["ConnectionId"].SetString(m_connection->GetId().c_str(), expected.GetAllocator());
-
-    //Deserialize
-    TestConnectionCache cache;
-    cache.m_connections.Insert(m_connection->GetId(), m_connection);
-    Json::Value expectedJson;
-    Json::Reader::Parse(BeRapidJsonUtilities::ToString(expected), expectedJson);
-    SelectionChangedEventPtr deserializedChangedEvent = SelectionChangedEvent::FromJson(cache, expectedJson);
-
-    EXPECT_EQ(m_connection->GetId(), deserializedChangedEvent->GetConnection().GetId());
-    EXPECT_EQ("SourceNameText", deserializedChangedEvent->GetSourceName());
-    EXPECT_EQ(SelectionChangeType::Add, deserializedChangedEvent->GetChangeType());
-    EXPECT_EQ(false, deserializedChangedEvent->IsSubSelection());
-    EXPECT_EQ(123, deserializedChangedEvent->GetTimestamp());
-    EXPECT_FALSE(deserializedChangedEvent->GetSelectedKeys().empty());
-    EXPECT_TRUE(deserializedChangedEvent->GetExtendedData().ObjectEmpty());
-    }
-
-//---------------------------------------------------------------------------------------
-// @betest                                      Mantas.Kontrimas                03/2018
-//---------------------------------------------------------------------------------------
-TEST_F(DefaultECPresentationSerializerTests, SelectionChangedEventDeserializationExtendedDataIsEmptyObject)
-    {
-    rapidjson::Document expected;
-    expected.Parse(R"({
-        "ConnectionId": "",
-        "Source": "SourceNameText",
-        "IsSubSelection": false,
-        "ChangeType": 0,
-        "Timestamp": "123",
-        "Keys": {
-            "InstanceKeys": {
-                "55": [1]
-                },
-            "NodeKeys": []
-            },
-        "ExtendedData": {}
-        })");
-    expected["ConnectionId"].SetString(m_connection->GetId().c_str(), expected.GetAllocator());
-
-    //Deserialize
-    TestConnectionCache cache;
-    cache.m_connections.Insert(m_connection->GetId(), m_connection);
-    Json::Value expectedJson;
-    Json::Reader::Parse(BeRapidJsonUtilities::ToString(expected), expectedJson);
-    SelectionChangedEventPtr deserializedChangedEvent = SelectionChangedEvent::FromJson(cache, expectedJson);
-
-    EXPECT_EQ(m_connection->GetId(), deserializedChangedEvent->GetConnection().GetId());
-    EXPECT_EQ("SourceNameText", deserializedChangedEvent->GetSourceName());
-    EXPECT_EQ(SelectionChangeType::Add, deserializedChangedEvent->GetChangeType());
-    EXPECT_EQ(false, deserializedChangedEvent->IsSubSelection());
-    EXPECT_EQ(123, deserializedChangedEvent->GetTimestamp());
-    EXPECT_FALSE(deserializedChangedEvent->GetSelectedKeys().empty());
-    EXPECT_TRUE(deserializedChangedEvent->GetExtendedData().ObjectEmpty());
-    }
-
-//---------------------------------------------------------------------------------------
-// @betest                                      Mantas.Kontrimas                03/2018
-//---------------------------------------------------------------------------------------
 TEST_F(DefaultECPresentationSerializerTests, ContentDescriptorSerializationNoSelectionInfo)
     {
     ECClassCP testClassA = GetClass("PropertyTestClassA");
@@ -2321,7 +2157,7 @@ TEST_F(DefaultECPresentationSerializerTests, ContentSerialization)
     rapidjson::Document displayValues(rapidjson::kObjectType);
     ContentSetItemPtr contentSetItem = ContentSetItem::Create({primaryKey}, "", "", std::move(values), std::move(displayValues),
                                                               bvector<Utf8String>(), bmap<ContentSetItem::FieldProperty, bvector<ECClassInstanceKey>>());
-    RefCountedPtr<TestDataSource> dataSource = TestDataSource::Create();
+    RefCountedPtr<TestContentDataSource> dataSource = TestContentDataSource::Create();
     dataSource->AddContentSetItem(contentSetItem);
 
     ContentPtr content = Content::Create(*descriptor, *dataSource);
@@ -2375,7 +2211,7 @@ TEST_F(DefaultECPresentationSerializerTests, ContenteSerializationContentSetItem
                                                                 *NavNodeKeyListContainer::Create(bvector<NavNodeKeyCPtr>{}), "DisplayTypeText");
 
     ContentSetItemPtr contentSetItem = nullptr;
-    RefCountedPtr<TestDataSource> dataSource = TestDataSource::Create();
+    RefCountedPtr<TestContentDataSource> dataSource = TestContentDataSource::Create();
     dataSource->AddContentSetItem(contentSetItem);
 
     ContentPtr content = Content::Create(*descriptor, *dataSource);

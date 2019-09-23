@@ -968,7 +968,7 @@ private:
     SortDirection m_sortDirection;
     int m_contentFlags;
     Utf8String m_filterExpression;
-    IConnectionCR m_connection;
+    Utf8String m_connectionId;
     INavNodeKeysContainerCPtr m_inputKeys;
     SelectionInfoCPtr m_selectionInfo;
     Json::Value m_options;
@@ -1015,8 +1015,8 @@ public:
     Utf8StringCR GetPreferredDisplayType() const {return m_preferredDisplayType;}
     //! Get node keys which this descriptor is created for.
     INavNodeKeysContainerCR GetInputNodeKeys() const {return *m_inputKeys;}
-    //! Get connection which this descriptor is created for.
-    IConnectionCR GetConnection() const {return m_connection;}
+    //! Get connection ID which this descriptor is created for.
+    Utf8StringCR GetConnectionId() const {return m_connectionId;}
     //! Get content options which this descriptor is created using.
     JsonValueCR GetOptions() const {return m_options;}
     //! Get selection info which this descriptor is created with. (returns nullptr if no selection info was provided)
@@ -1349,14 +1349,14 @@ public:
 struct IECPropertyFormatter
 {
 protected:
-    //! Virtual destructor.
-    virtual ~IECPropertyFormatter() {}
-
     //! @see GetFormattedPropertyValue
     virtual BentleyStatus _GetFormattedPropertyValue(Utf8StringR, ECPropertyCR, ECValueCR) const = 0;
     virtual BentleyStatus _GetFormattedPropertyLabel(Utf8StringR, ECPropertyCR, ECClassCR, RelatedClassPath const&, RelationshipMeaning) const = 0;
 
 public:
+    //! Virtual destructor.
+    virtual ~IECPropertyFormatter() {}
+
     //! Formats the supplied ECValue.
     //! @param[out] formattedValue The formatted value.
     //! @param[in] ecProperty The property whose value is being formatted.
@@ -1395,6 +1395,8 @@ protected:
 protected:
     ECPRESENTATION_EXPORT virtual BentleyStatus _GetFormattedPropertyValue(Utf8StringR, ECPropertyCR, ECValueCR) const override;
     ECPRESENTATION_EXPORT virtual BentleyStatus _GetFormattedPropertyLabel(Utf8StringR, ECPropertyCR, ECClassCR, RelatedClassPath const&, RelationshipMeaning) const override;
+public:
+    DefaultPropertyFormatter() {}
 };
 
 //=======================================================================================
@@ -1407,23 +1409,23 @@ protected:
 struct IPropertyCategorySupplier
 {
 protected:
+    //! @see GetCategory(ECClassCR, RelatedClassPathCR, ECPropertyCR)
+    virtual ContentDescriptor::Category _GetCategory(ECClassCR, RelatedClassPathCR, ECPropertyCR, RelationshipMeaning) const = 0;
+    
+    //! @see GetCategory(ECClassCR, RelatedClassPathCR, ECClassCR)
+    virtual ContentDescriptor::Category _GetCategory(ECClassCR, RelatedClassPathCR, ECClassCR) const = 0;
+
+public:
     //! Virtual destructor.
     virtual ~IPropertyCategorySupplier() {}
 
-    //! @see GetCategory(ECClassCR, RelatedClassPathCR, ECPropertyCR)
-    virtual ContentDescriptor::Category _GetCategory(ECClassCR, RelatedClassPathCR, ECPropertyCR, RelationshipMeaning) = 0;
-    
-    //! @see GetCategory(ECClassCR, RelatedClassPathCR, ECClassCR)
-    virtual ContentDescriptor::Category _GetCategory(ECClassCR, RelatedClassPathCR, ECClassCR) = 0;
-
-public:
     //! Get category for the specified ECProperty.
     //! @param[in] primaryClass ECClass of the primary (root) instance.
     //! @param[in] path Relationship path from @e primaryClass to @e ecProperty class. Not empty only if @e ecProperty belongs
     //!                 to a related instance.
     //! @param[in] ecProperty ECProperty whose category is requested.
     //! @param[in] relationshipMeaning Meaning of relationship between the primaryClass and ECProperty class.
-    ContentDescriptor::Category GetCategory(ECClassCR primaryClass, RelatedClassPathCR path, ECPropertyCR ecProperty, RelationshipMeaning relationshipMeaning)
+    ContentDescriptor::Category GetCategory(ECClassCR primaryClass, RelatedClassPathCR path, ECPropertyCR ecProperty, RelationshipMeaning relationshipMeaning) const
         {
         return _GetCategory(primaryClass, path, ecProperty, relationshipMeaning);
         }
@@ -1432,7 +1434,7 @@ public:
     //! @param[in] primaryClass ECClass of the primary (root) instance.
     //! @param[in] path Relationship path from @e primaryClass to @e nestedContentClass.
     //! @param[in] nestedContentClass ECClass whose category is requested.
-    ContentDescriptor::Category GetCategory(ECClassCR primaryClass, RelatedClassPathCR path, ECClassCR nestedContentClass)
+    ContentDescriptor::Category GetCategory(ECClassCR primaryClass, RelatedClassPathCR path, ECClassCR nestedContentClass) const
         {
         return _GetCategory(primaryClass, path, nestedContentClass);
         }
@@ -1450,8 +1452,10 @@ struct EXPORT_VTABLE_ATTRIBUTE DefaultCategorySupplier : IPropertyCategorySuppli
 public:
     ECPRESENTATION_EXPORT static const int NESTED_CONTENT_CATEGORY_PRIORITY;
 protected:
-    ECPRESENTATION_EXPORT virtual ContentDescriptor::Category _GetCategory(ECClassCR, RelatedClassPathCR, ECPropertyCR, RelationshipMeaning) override;
-    ECPRESENTATION_EXPORT virtual ContentDescriptor::Category _GetCategory(ECClassCR, RelatedClassPathCR, ECClassCR) override;
+    ECPRESENTATION_EXPORT virtual ContentDescriptor::Category _GetCategory(ECClassCR, RelatedClassPathCR, ECPropertyCR, RelationshipMeaning) const override;
+    ECPRESENTATION_EXPORT virtual ContentDescriptor::Category _GetCategory(ECClassCR, RelatedClassPathCR, ECClassCR) const override;
+public:
+    DefaultCategorySupplier() {}
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

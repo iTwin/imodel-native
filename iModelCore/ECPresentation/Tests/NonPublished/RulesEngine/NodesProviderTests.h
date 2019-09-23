@@ -23,7 +23,6 @@ struct NodesProviderTests : ECPresentationTest
     {
     static ECDbTestProject* s_project;
     IConnectionPtr m_connection;
-    ECSqlStatementCache m_statementCache;
     ECExpressionsCache m_expressionsCache;
     RelatedPathsCache m_relatedPathsCache;
     PresentationRuleSetPtr m_ruleset;
@@ -38,7 +37,7 @@ struct NodesProviderTests : ECPresentationTest
     uint64_t m_providerIndex;
     
     NodesProviderTests() 
-        : m_statementCache(10), m_providerContextFactory(m_connections), m_nodesCache(m_connections, &m_providerContextFactory),
+        : m_providerContextFactory(m_connections), m_nodesCache(m_connections, &m_providerContextFactory),
         m_providerIndex(0)
         {}
 

@@ -186,7 +186,6 @@
             <Files SubPartDirectory="UnitTests/include/UnitTests/BackDoor/ECPresentation">Delivery/UnitTests/ECPresentationTest.h</Files>
             <Files SubPartDirectory="UnitTests/include/UnitTests/BackDoor/ECPresentation">Delivery/UnitTests/TestECPresentationManager.h</Files>
             <Files SubPartDirectory="UnitTests/include/UnitTests/BackDoor/ECPresentation">Delivery/UnitTests/TestConnectionCache.h</Files>
-            <Files SubPartDirectory="UnitTests/include/UnitTests/BackDoor/ECPresentation">Delivery/UnitTests/TestSelectionProvider.h</Files>
             <Files SubPartDirectory="UnitTests/include/UnitTests/BackDoor/ECPresentation">Delivery/UnitTests/TestRuleSetLocater.h</Files>
             <Files SubPartDirectory="UnitTests/include/UnitTests/BackDoor/ECPresentation">Delivery/UnitTests/TestUserSettings.h</Files>
             <Files SubPartDirectory="UnitTests/include/UnitTests/BackDoor/ECPresentation">Delivery/UnitTests/IssueReporter.h</Files>
@@ -312,7 +311,7 @@
     <Product Name="ECPresentation-iOSXCTest">
         <SubPart PartName="iOSXCTest" LibType="Static"/>
         <Directories DirectoryListName="iOSXCTestProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
-    </Product>    
+    </Product>
     <Part Name="RuniOSXCTest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/iOS//RunXCTestProject.mke" BentleyBuildMakeOptions="-dXCTEST_PRODUCT=ECPresentation-iOSXCTest" OnlyPlatforms="iOS*">
         <SubProduct ProductName="ECPresentation-iOSXCTest"/>
         <Bindings>

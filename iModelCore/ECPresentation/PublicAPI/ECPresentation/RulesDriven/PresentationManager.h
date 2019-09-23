@@ -11,7 +11,6 @@
 #include <ECPresentation/RulesDriven/IRulesPreprocessor.h>
 #include <ECPresentation/RulesDriven/RuleSetLocater.h>
 #include <ECPresentation/RulesDriven/UserSettings.h>
-#include <ECPresentation/RulesDriven/ECInstanceChangeHandlers.h>
 #include <ECPresentation/RulesDriven/ECInstanceChangeEvents.h>
 #include <ECPresentation/Update.h>
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
@@ -39,9 +38,12 @@ USING_NAMESPACE_BENTLEY_EC
     #define DEFAULT_DISK_CACHE_SIZE_LIMIT   1024 * 1024 * 1024
 #endif
 
+#define DEFAULT_BACKGROUND_THREADS_COUNT    1
+#define DEFAULT_REQUEST_PRIORITY            1000
+
 //__PUBLISH_SECTION_END__
-//#define RULES_ENGINE_FORCE_SINGLE_THREAD
-struct IRulesDrivenECPresentationManagerDependenciesFactory;
+struct ECPresentationTasksManager;
+struct IECPresentationTask;
 //__PUBLISH_SECTION_START__
 
 //=======================================================================================
@@ -53,11 +55,12 @@ struct IRulesDrivenECPresentationManagerDependenciesFactory;
 struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentationManager
 {
     struct Impl;
-    struct CancelableTasksStore;
+//__PUBLISH_SECTION_END__
     struct ConnectionManagerWrapper;
     struct RulesetLocaterManagerWrapper;
     struct UserSettingsManagerWrapper;
     struct ECInstanceChangeEventSourceWrapper;
+//__PUBLISH_SECTION_START__
 
     //===================================================================================
     //! An object that stores paths used by RulesDrivenECPresentationManager
@@ -82,30 +85,99 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
     //===================================================================================
     struct Params
     {
+        //===================================================================================
+        // @bsiclass                                    Grigas.Petraitis            09/2019
+        //===================================================================================
+        struct CachingParams
+        {
+        private:
+            bool m_disableDiskCache;
+            uint64_t m_diskCacheFileSizeLimit;
+        public:
+            CachingParams() : m_disableDiskCache(false), m_diskCacheFileSizeLimit(DEFAULT_DISK_CACHE_SIZE_LIMIT) {}
+            CachingParams(uint64_t diskCacheFileSizeLimit): m_disableDiskCache(false), m_diskCacheFileSizeLimit(diskCacheFileSizeLimit) {}
+            //! Is hierarchy caching on disk disabled
+            bool ShouldDisableDiskCache() const {return m_disableDiskCache;}
+            void SetDisableDiskCache(bool value) {m_disableDiskCache = value;}
+            //! Maximum allowed size (in bytes) of cache that's stored on disk by presentation manager.
+            //! 0 means infinite size. Defaults to DEFAULT_DISK_CACHE_SIZE_LIMIT.
+            uint64_t GetDiskCacheFileSizeLimit() const {return m_diskCacheFileSizeLimit;}
+            void SetDiskCacheFileSizeLimit(uint64_t value) {m_diskCacheFileSizeLimit = value;}
+        };
+
+        //===================================================================================
+        // @bsiclass                                    Grigas.Petraitis            09/2019
+        //===================================================================================
+        struct MultiThreadingParams
+        {
+        private:
+            bmap<int, unsigned> m_backgroundThreadAllocations; // max task priority => threads count
+        public:
+            MultiThreadingParams()
+                {
+                // allocate 1 thread for tasks of any priority
+                m_backgroundThreadAllocations.Insert(INT32_MAX, DEFAULT_BACKGROUND_THREADS_COUNT);
+                }
+            MultiThreadingParams(bmap<int, unsigned> backgroundThreadAllocations)
+                : m_backgroundThreadAllocations(backgroundThreadAllocations)
+                {}
+            MultiThreadingParams(bpair<int, unsigned> backgroundThreadAllocations)
+                {
+                m_backgroundThreadAllocations.insert(backgroundThreadAllocations);
+                }
+            bmap<int, unsigned> const& GetBackgroundThreadAllocations() const {return m_backgroundThreadAllocations;}
+        };
+
     private:
-        IConnectionManagerR m_connections;
+        IConnectionManagerP m_connections;
         Paths m_paths;
-        bool m_disableDiskCache;
-        uint64_t m_diskCacheFileSizeLimit;
+        CachingParams m_cachingParams;
+        MultiThreadingParams m_multiThreadingParams;
+        IJsonLocalState* m_localState;
+        ILocalizationProvider const* m_localizationProvider;
+        IECPropertyFormatter const* m_propertyFormatter;
+        IPropertyCategorySupplier const* m_categorySupplier;
+        IRulesetLocaterManager* m_rulesetLocaters;
+        IUserSettingsManager* m_userSettings;
+        bvector<ECInstanceChangeEventSourcePtr> m_ecInstanceChangeEventSources;
+        bvector<RefCountedPtr<IUpdateRecordsHandler>> m_updateRecordsHandlers;
     public:
         //! Constructor.
-        //! @param[in] connections Connection manager used by the presentation manager
         //! @param[in] paths Known directory paths required by the presentation manager
-        Params(IConnectionManagerR connections, Paths paths)
-            : m_connections(connections), m_paths(paths)
-            {
-            m_disableDiskCache = false;
-            m_diskCacheFileSizeLimit = DEFAULT_DISK_CACHE_SIZE_LIMIT;
-            }
-        IConnectionManagerR GetConnections() const {return m_connections;}
+        Params(Paths paths)
+            : m_paths(paths), m_connections(nullptr), m_localState(nullptr), m_localizationProvider(nullptr),
+            m_propertyFormatter(nullptr), m_categorySupplier(nullptr), m_rulesetLocaters(nullptr),
+            m_userSettings(nullptr)
+            {}
+
         Paths const& GetPaths() const {return m_paths;}
-        //! Is hierarchy caching on disk disabled
-        bool ShouldDisableDiskCache() const {return m_disableDiskCache;}
-        void SetDisableDiskCache(bool value) {m_disableDiskCache = value;}
-        //! Maximum allowed size (in bytes) of cache that's stored on disk by presentation manager.
-        //! 0 means infinite size. Defaults to DEFAULT_DISK_CACHE_SIZE_LIMIT.
-        uint64_t GetDiskCacheFileSizeLimit() const {return m_diskCacheFileSizeLimit;}
-        void SetDiskCacheFileSizeLimit(uint64_t value) {m_diskCacheFileSizeLimit = value;}
+        CachingParams const& GetCachingParams() const { return m_cachingParams; }
+        void SetCachingParams(CachingParams params) { m_cachingParams = params; }
+        MultiThreadingParams const& GetMultiThreadingParams() const { return m_multiThreadingParams; }
+        void SetMultiThreadingParams(MultiThreadingParams params) { m_multiThreadingParams = params; }
+
+        //! @note: Manager takes ownership of the supplied `IConnectionManager` object
+        void SetConnections(IConnectionManagerP connections) {m_connections = connections;}
+        IConnectionManagerP GetConnections() const {return m_connections;}
+        //! @note: Manager takes ownership of the supplied `IRulesetLocaterManager` object
+        void SetRulesetLocaters(IRulesetLocaterManager* locaters) { m_rulesetLocaters = locaters; }
+        IRulesetLocaterManager* GetRulesetLocaters() const { return m_rulesetLocaters; }
+        //! @note: Manager takes ownership of the supplied `IUserSettingsManager` object
+        void SetUserSettings(IUserSettingsManager* settings) { m_userSettings = settings; }
+        IUserSettingsManager* GetUserSettings() const { return m_userSettings; }
+
+        IJsonLocalState* GetLocalState() const {return m_localState;}
+        void SetLocalState(IJsonLocalState* localState) {m_localState = localState;}
+        ILocalizationProvider const* GetLocalizationProvider() const {return m_localizationProvider;}
+        void SetLocalizationProvider(ILocalizationProvider const* provider) {m_localizationProvider = provider;}
+        IECPropertyFormatter const* GetECPropertyFormatter() const {return m_propertyFormatter;}
+        void SetECPropertyFormatter(IECPropertyFormatter const* formatter) {m_propertyFormatter = formatter;}
+        IPropertyCategorySupplier const* GetCategorySupplier() const {return m_categorySupplier;}
+        void SetCategorySupplier(IPropertyCategorySupplier const* supplier) {m_categorySupplier = supplier;}
+        bvector<ECInstanceChangeEventSourcePtr> const& GetECInstanceChangeEventSources() const {return m_ecInstanceChangeEventSources;}
+        void SetECInstanceChangeEventSources(bvector<ECInstanceChangeEventSourcePtr> sources) {m_ecInstanceChangeEventSources = sources;}
+        bvector<RefCountedPtr<IUpdateRecordsHandler>> const& GetUpdateRecordsHandlers() const {return m_updateRecordsHandlers;}
+        void SetUpdateRecordsHandlers(bvector<RefCountedPtr<IUpdateRecordsHandler>> handlers) {m_updateRecordsHandlers = handlers;}
     };
 
     //===================================================================================
@@ -114,23 +186,24 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
     // @bsiclass                                    Grigas.Petraitis            07/2018
     //===================================================================================
     struct CommonOptions : JsonCppAccessor
-    {
-    ECPRESENTATION_EXPORT static const Utf8CP OPTION_NAME_RulesetId;
-    ECPRESENTATION_EXPORT static const Utf8CP OPTION_NAME_Locale;
+        {
+        ECPRESENTATION_EXPORT static const Utf8CP OPTION_NAME_RulesetId;
+        ECPRESENTATION_EXPORT static const Utf8CP OPTION_NAME_Locale;
+        ECPRESENTATION_EXPORT static const Utf8CP OPTION_NAME_Priority;
 
-    protected:
         //! Constructor. Creates a read-only accessor.
         CommonOptions(JsonValueCR data) : JsonCppAccessor(data) {}
         //! Constructor. Creates a read-write accessor.
         CommonOptions(JsonValueR data) : JsonCppAccessor(data) {}
+        //! Constructor. Creates a read-write accessor.
+        CommonOptions(Json::Value&& data) : JsonCppAccessor(std::move(data)) {}
         //! Copy constructor.
         CommonOptions(CommonOptions const& other) : JsonCppAccessor(other) {}
         //! Constructor.
         //! @param[in] rulesetId The ID of the ruleset.
         //! @param[in] locale Locale identifier
-        CommonOptions(Utf8CP rulesetId, Utf8CP locale = nullptr) : JsonCppAccessor() {SetRulesetId(rulesetId); SetLocale(locale);}
+        CommonOptions(Utf8CP rulesetId, Utf8CP locale = nullptr) : JsonCppAccessor() { SetRulesetId(rulesetId); SetLocale(locale); }
 
-    public:
         //! Is ruleset ID defined.
         bool HasRulesetId() const {return GetJson().isMember(OPTION_NAME_RulesetId);}
         //! Get the ruleset ID.
@@ -142,7 +215,12 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
         Utf8CP GetLocale() const {return GetJson().isMember(OPTION_NAME_Locale) ? GetJson()[OPTION_NAME_Locale].asCString() : "";}
         //! Set locale identifier.
         void SetLocale(Utf8CP locale) {AddMember(OPTION_NAME_Locale, locale);}
-    };
+
+        //! Get priority.
+        int GetPriority() const {return GetJson().isMember(OPTION_NAME_Priority) ? GetJson()[OPTION_NAME_Priority].asInt() : DEFAULT_REQUEST_PRIORITY;}
+        //! Set priority.
+        void SetPriority(int priority) {AddMember(OPTION_NAME_Priority, priority);}
+        };
 
     //===================================================================================
     //! A helper class to help create the extended options JSON object for rules-driven
@@ -158,6 +236,8 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
         NavigationOptions(JsonValueCR data) : CommonOptions(data) {}
         //! Constructor. Creates a read-write accessor.
         NavigationOptions(JsonValueR data) : CommonOptions(data) {}
+        //! Constructor. Creates a read-write accessor.
+        NavigationOptions(Json::Value&& data) : CommonOptions(std::move(data)) {}
         //! Copy constructor.
         NavigationOptions(NavigationOptions const& other) : CommonOptions(other) {}
         //! Constructor.
@@ -199,6 +279,8 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
         ContentOptions(JsonValueCR data) : CommonOptions(data) {}
         //! Constructor. Creates a read-write accessor.
         ContentOptions(JsonValueR data) : CommonOptions(data) {}
+        //! Constructor. Creates a read-write accessor.
+        ContentOptions(Json::Value&& data) : CommonOptions(std::move(data)) {}
         //! Copy constructor.
         ContentOptions(ContentOptions const& other) : CommonOptions(other) {}
         //! Constructor.
@@ -213,46 +295,44 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
 
 private:
     Impl* m_impl;
-    folly::Executor* m_executor;
-    CancelableTasksStore* m_cancelableTasks;
-    ConnectionManagerWrapper* m_connectionsWrapper;
-    bvector<ECInstanceChangeEventSourceWrapper*> m_ecInstanceChangeEventSourceWrappers;
+    ECPresentationTasksManager* m_tasksManager;
+
+private:
+    Utf8CP GetConnectionId(ECDbCR) const;
+    IConnectionCPtr GetTaskConnection(IECPresentationTask const&) const;
 
 protected:
+    // IECPresentationManager: General
+    ECPRESENTATION_EXPORT IConnectionManagerR _GetConnections() override;
+
     // IECPresentationManager: Navigation
-    ECPRESENTATION_EXPORT virtual folly::Future<NavNodesContainer> _GetRootNodes(IConnectionCR, PageOptionsCR, JsonValueCR, PresentationTaskNotificationsContextCR) override;
-    ECPRESENTATION_EXPORT virtual folly::Future<size_t> _GetRootNodesCount(IConnectionCR, JsonValueCR, PresentationTaskNotificationsContextCR) override;
-    ECPRESENTATION_EXPORT virtual folly::Future<NavNodesContainer> _GetChildren(IConnectionCR, NavNodeCR, PageOptionsCR, JsonValueCR, PresentationTaskNotificationsContextCR) override;
-    ECPRESENTATION_EXPORT virtual folly::Future<size_t> _GetChildrenCount(IConnectionCR, NavNodeCR, JsonValueCR, PresentationTaskNotificationsContextCR) override;
-    ECPRESENTATION_EXPORT virtual folly::Future<bool> _HasChild(IConnectionCR, NavNodeCR, ECInstanceKeyCR, JsonValueCR, PresentationTaskNotificationsContextCR) override;
-    ECPRESENTATION_EXPORT virtual folly::Future<NavNodeCPtr> _GetParent(IConnectionCR, NavNodeCR, JsonValueCR, PresentationTaskNotificationsContextCR) override;
-    ECPRESENTATION_EXPORT virtual folly::Future<NavNodeCPtr> _GetNode(IConnectionCR, NavNodeKeyCR, JsonValueCR, PresentationTaskNotificationsContextCR) override;
-    ECPRESENTATION_EXPORT virtual folly::Future<bvector<NavNodeCPtr>> _GetFilteredNodes(IConnectionCR, Utf8CP filterText, JsonValueCR, PresentationTaskNotificationsContextCR) override;
-    ECPRESENTATION_EXPORT virtual folly::Future<folly::Unit> _OnNodeChecked(IConnectionCR, NavNodeKeyCR, JsonValueCR, PresentationTaskNotificationsContextCR) override;
-    ECPRESENTATION_EXPORT virtual folly::Future<folly::Unit> _OnNodeUnchecked(IConnectionCR, NavNodeKeyCR, JsonValueCR, PresentationTaskNotificationsContextCR) override;
-    ECPRESENTATION_EXPORT virtual folly::Future<folly::Unit> _OnNodeExpanded(IConnectionCR, NavNodeKeyCR, JsonValueCR, PresentationTaskNotificationsContextCR) override;
-    ECPRESENTATION_EXPORT virtual folly::Future<folly::Unit> _OnNodeCollapsed(IConnectionCR, NavNodeKeyCR, JsonValueCR, PresentationTaskNotificationsContextCR) override;
-    ECPRESENTATION_EXPORT virtual folly::Future<folly::Unit> _OnAllNodesCollapsed(IConnectionCR, JsonValueCR, PresentationTaskNotificationsContextCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<NavNodesContainer> _GetRootNodes(ECDbCR, PageOptionsCR, JsonValueCR, PresentationRequestContextCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<size_t> _GetRootNodesCount(ECDbCR, JsonValueCR, PresentationRequestContextCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<NavNodesContainer> _GetChildren(ECDbCR, NavNodeCR, PageOptionsCR, JsonValueCR, PresentationRequestContextCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<size_t> _GetChildrenCount(ECDbCR, NavNodeCR, JsonValueCR, PresentationRequestContextCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<NavNodeCPtr> _GetParent(ECDbCR, NavNodeCR, JsonValueCR, PresentationRequestContextCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<NavNodeCPtr> _GetNode(ECDbCR, NavNodeKeyCR, JsonValueCR, PresentationRequestContextCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<bvector<NavNodeCPtr>> _GetFilteredNodes(ECDbCR, Utf8CP filterText, JsonValueCR, PresentationRequestContextCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<bvector<NodesPathElement>> _GetFilteredNodePaths(ECDbCR, Utf8CP filterText, JsonValueCR, PresentationRequestContextCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<bvector<NodesPathElement>> _GetNodePaths(ECDbCR, bvector<bvector<ECInstanceKey>> const&, int64_t, JsonValueCR, PresentationRequestContextCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<NodesPathElement> _GetNodePath(ECDbCR, bvector<ECInstanceKey> const&, JsonValueCR, PresentationRequestContextCR) override;
 
     // IECPresentationManager: Content
-    ECPRESENTATION_EXPORT virtual folly::Future<bvector<SelectClassInfo>> _GetContentClasses(IConnectionCR, Utf8CP, int, bvector<ECClassCP> const&, JsonValueCR, PresentationTaskNotificationsContextCR) override;
-    ECPRESENTATION_EXPORT virtual folly::Future<ContentDescriptorCPtr> _GetContentDescriptor(IConnectionCR, Utf8CP, int, KeySetCR, SelectionInfo const*, JsonValueCR, PresentationTaskNotificationsContextCR) override;
-    ECPRESENTATION_EXPORT virtual folly::Future<ContentCPtr> _GetContent(ContentDescriptorCR, PageOptionsCR, PresentationTaskNotificationsContextCR) override;
-    ECPRESENTATION_EXPORT virtual folly::Future<size_t> _GetContentSetSize(ContentDescriptorCR, PresentationTaskNotificationsContextCR) override;
-    ECPRESENTATION_EXPORT virtual folly::Future<Utf8String> _GetDisplayLabel(IConnectionCR, KeySetCR, PresentationTaskNotificationsContextCR) override;
-
-    // IECPresentationManager: Updating
-    ECPRESENTATION_EXPORT virtual folly::Future<bvector<ECInstanceChangeResult>> _SaveValueChange(IConnectionCR, bvector<ChangedECInstanceInfo> const&, Utf8CP, ECValueCR, JsonValueCR, PresentationTaskNotificationsContextCR) override;
-    
-    ECPRESENTATION_EXPORT virtual void _OnLocalizationProviderChanged() override;
+    ECPRESENTATION_EXPORT virtual folly::Future<bvector<SelectClassInfo>> _GetContentClasses(ECDbCR, Utf8CP, int, bvector<ECClassCP> const&, JsonValueCR, PresentationRequestContextCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<ContentDescriptorCPtr> _GetContentDescriptor(ECDbCR, Utf8CP, int, KeySetCR, SelectionInfo const*, JsonValueCR, PresentationRequestContextCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<ContentCPtr> _GetContent(ContentDescriptorCR, PageOptionsCR, PresentationRequestContextCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<size_t> _GetContentSetSize(ContentDescriptorCR, PresentationRequestContextCR) override;
+    ECPRESENTATION_EXPORT virtual folly::Future<Utf8String> _GetDisplayLabel(ECDbCR, KeySetCR, JsonValueCR, PresentationRequestContextCR) override;
 
 //__PUBLISH_SECTION_END__
 public:
-    folly::Executor& GetExecutor() const {return *m_executor;}
+    ECPresentationTasksManager& GetTasksManager() const {return *m_tasksManager;}
     ECPRESENTATION_EXPORT IUserSettingsManager& GetUserSettings() const;
+    ECPRESENTATION_EXPORT Params CreateImplParams(Params const& managerParams);
     Impl& GetImpl() const {return *m_impl;}
     ECPRESENTATION_EXPORT void SetImpl(Impl&);
-    ECPRESENTATION_EXPORT std::unique_ptr<IRulesDrivenECPresentationManagerDependenciesFactory> CreateDependenciesFactory();
+    ECPRESENTATION_EXPORT folly::Future<folly::Unit> GetTasksCompletion() const;
+    ECPRESENTATION_EXPORT unsigned GetBackgroundThreadsCount() const;
 
 //__PUBLISH_SECTION_START__
 public:
@@ -260,7 +340,8 @@ public:
     //! @param[in] connections Connection manager used by this presentation manager.
     //! @param[in] paths Application paths provider.
     //! @param[in] disableDiskCache Is hierarchy caching on disk disabled. It's recommended to keep
-    //! this enabled unless being used for testing.
+    //!            this enabled unless being used for testing.
+    //! @deprecated Use RulesDrivenECPresentationManager::RulesDrivenECPresentationManager(Params const&)
     ECPRESENTATION_EXPORT RulesDrivenECPresentationManager(IConnectionManagerR connections, Paths const& paths, bool disableDiskCache = false);
 
     //! Constructor.
@@ -277,70 +358,9 @@ public:
     //! @note Local state must be set for user settings to work.
     //! @see SetLocalState
     ECPRESENTATION_EXPORT IUserSettings& GetUserSettings(Utf8CP rulesetId) const;
-
-    //! Set the local state to use for storing user settings.
-    ECPRESENTATION_EXPORT void SetLocalState(IJsonLocalState*);
-
-    //! Get a rules preprocessor for a specific ruleset
-    //! @param[in] connection Connection that is used for locating the ruleset.
-    //! @param[in] rulesetId The ruleset identifier.
-    //! @param[in] locale Locale to use.
-    //! @param[in] usedSettingsListener (optional) Listener that is passed to the rules preprocessor.
-    ECPRESENTATION_EXPORT IRulesPreprocessorPtr GetRulesPreprocessor(IConnectionCR connection, Utf8StringCR rulesetId, Utf8StringCR locale, IUsedUserSettingsListener* usedSettingsListener = nullptr) const;
-
-    //! Get a navigation nodes factory that can be used for navigation node manual creation.
-    ECPRESENTATION_EXPORT INavNodesFactoryPtr GetNavNodesFactory() const;
-
-/** @name Property Formatting */
-/** @{ */
-    //! Set the property formatter.
-    //! @details Property formatter is used to format content display values.
-    ECPRESENTATION_EXPORT void SetECPropertyFormatter(IECPropertyFormatter const* formatter);
-
-    //! Get the property formatter.
-    ECPRESENTATION_EXPORT IECPropertyFormatter const& GetECPropertyFormatter() const;
-/** @} */
-
-/** @name Property Categories */
-/** @{ */
-    //! Set the property category supplier. If null, the @ref DefaultCategorySupplier is used.
-    //! @details The category supplier is responsible for determining category for an ECProperty.
-    ECPRESENTATION_EXPORT void SetCategorySupplier(IPropertyCategorySupplier* supplier);
-
-    //! Get the property category supplier used by this presentation manager.
-    ECPRESENTATION_EXPORT IPropertyCategorySupplier& GetCategorySupplier() const;
-
-    //! Should be called to force content controls request new categories for displayed content.
-    ECPRESENTATION_EXPORT void NotifyCategoriesChanged();
-/** @} */
-
-/** @name ECInstance Changes */
-/** @{ */
-    //! Register an IECInstanceChangeHandler.
-    //! @details IECInstanceChangeHandlers are responsible for changing ECInstances in the data
-    //! sources. E.g. the DgnDbECInstanceChangeHandler can change ECInstances in DgbDb-based
-    //! data sources.
-    ECPRESENTATION_EXPORT void RegisterECInstanceChangeHandler(IECInstanceChangeHandler&);
-
-    //! Unregister an IECInstanceChangeHandler.
-    //! @see RegisterECInstanceChangeHandler
-    ECPRESENTATION_EXPORT void UnregisterECInstanceChangeHandler(IECInstanceChangeHandler&);
-
-    //! Register an ECInstanceChange events source.
-    //! @details ECInstanceChange events sources are responsible for notifying the presentation
-    //! manager when some ECInstance-related changes happen in the database.
-    ECPRESENTATION_EXPORT void RegisterECInstanceChangeEventSource(ECInstanceChangeEventSource&);
-
-    //! Unregister an ECInstanceChange events source.
-    //! @see RegisterECInstanceChangeEventSource
-    ECPRESENTATION_EXPORT void UnregisterECInstanceChangeEventSource(ECInstanceChangeEventSource&);
-
-    //! Register an update records handler.
-    ECPRESENTATION_EXPORT void RegisterUpdateRecordsHandler(IUpdateRecordsHandler&);
-
-    //! Unregister an update records handler.
-    ECPRESENTATION_EXPORT void UnregisterUpdateRecordsHandler(IUpdateRecordsHandler&);
-/** @} */
+    
+    //! Get the connection manager used by this presentation manager.
+    ECPRESENTATION_EXPORT IConnectionManagerCR GetConnectionsCR() const;
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

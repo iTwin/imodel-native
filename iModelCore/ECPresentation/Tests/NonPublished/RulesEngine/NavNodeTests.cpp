@@ -25,6 +25,11 @@ struct NavNodeTests : ECPresentationTest
         s_project->Create("NavNodeTests", "RulesEngineTest.01.00.ecschema.xml");
         }
 
+    static void TearDownTestCase()
+        {
+        DELETE_AND_CLEAR(s_project);
+        }
+
     void TearDown() override
         {
         s_project->GetECDb().AbandonChanges();

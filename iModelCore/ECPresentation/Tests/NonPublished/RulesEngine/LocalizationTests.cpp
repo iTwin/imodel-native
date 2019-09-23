@@ -311,7 +311,7 @@ TEST_F(QueryExecutorLocalizationTests, ECInstanceNodesLabelIsLocalized)
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
     ctx.SetLocalizationProvider(localizationProvider);
 
-    NavigationQueryExecutor executor(s_nodesFactory, *m_connection, "locale", m_statementCache, *query);
+    NavigationQueryExecutor executor(s_nodesFactory, *m_connection, "locale", *query);
     executor.ReadRecords();
 
     EXPECT_TRUE(executor.GetNodesCount() > 0);
@@ -346,7 +346,7 @@ TEST_F(QueryExecutorLocalizationTests, ECClassGroupingNodesLabelIsLocalized)
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
     ctx.SetLocalizationProvider(localizationProvider);
     
-    NavigationQueryExecutor executor(s_nodesFactory, *m_connection, "locale", m_statementCache, *query);
+    NavigationQueryExecutor executor(s_nodesFactory, *m_connection, "locale", *query);
     executor.ReadRecords();
 
     EXPECT_TRUE(executor.GetNodesCount() > 0);
@@ -382,7 +382,7 @@ TEST_F(QueryExecutorLocalizationTests, ECPropertyGroupingNodesLabelIsLocalized)
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
     ctx.SetLocalizationProvider(localizationProvider);
     
-    NavigationQueryExecutor executor(s_nodesFactory, *m_connection, "locale", m_statementCache, *query);
+    NavigationQueryExecutor executor(s_nodesFactory, *m_connection, "locale", *query);
     executor.ReadRecords();
 
     EXPECT_TRUE(executor.GetNodesCount() > 0);
@@ -418,7 +418,7 @@ TEST_F(QueryExecutorLocalizationTests, DisplayLabelGroupingNodesLabelIsLocalized
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
     ctx.SetLocalizationProvider(localizationProvider);
     
-    NavigationQueryExecutor executor(s_nodesFactory, *m_connection, "locale", m_statementCache, *query);
+    NavigationQueryExecutor executor(s_nodesFactory, *m_connection, "locale", *query);
     executor.ReadRecords();
 
     EXPECT_TRUE(executor.GetNodesCount() > 0);

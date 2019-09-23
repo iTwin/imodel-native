@@ -29,7 +29,6 @@ struct CustomizationHelperTests : ECPresentationTest
     ECExpressionsCache m_expressionsCache;
     RelatedPathsCache m_relatedPathsCache;
     PolymorphicallyRelatedClassesCache m_polymorphicallyRelatedClassesCache;
-    ECSqlStatementCache m_statementCache;
     PresentationRuleSetPtr m_ruleset;
     NavNodesProviderContextPtr m_context;
     TestNodesProviderFactory m_providerFactory;
@@ -37,7 +36,7 @@ struct CustomizationHelperTests : ECPresentationTest
     TestNodesFactory m_nodesFactory;
     TestNodesCache m_nodesCache;
 
-    CustomizationHelperTests() : m_statementCache(5), m_nodesFactory("CustomizationHelperTests"), m_nodesCache(m_connections) {}
+    CustomizationHelperTests() : m_nodesFactory("CustomizationHelperTests"), m_nodesCache(m_connections) {}
     
     static void SetUpTestCase();
     static void TearDownTestCase();
@@ -51,10 +50,10 @@ struct CustomizationHelperTests : ECPresentationTest
         m_connection = m_connections.NotifyConnectionOpened(s_project->GetECDb());
         m_customFunctions = new CustomFunctionsInjector(m_connections, *m_connection);
         m_ruleset = PresentationRuleSet::CreateInstance("CustomizationHelperTests", 1, 0, false, "", "", "", false);
-        m_context = NavNodesProviderContext::Create(*m_ruleset, true, TargetTree_Both, "locale", 0, 
+        m_context = NavNodesProviderContext::Create(*m_ruleset, TargetTree_Both, "locale", 0, 
             m_settings, m_expressionsCache, m_relatedPathsCache, m_polymorphicallyRelatedClassesCache, 
             m_nodesFactory, m_nodesCache, m_providerFactory, nullptr);
-        m_context->SetQueryContext(m_connections, *m_connection, m_statementCache, *m_customFunctions, nullptr);
+        m_context->SetQueryContext(m_connections, *m_connection, nullptr);
         }
 
     void TearDown() override
@@ -246,7 +245,7 @@ TEST_F (CustomizationHelperTests, CustomizationExpressionContextHasParentNodeSym
     uint64_t parentNodeId = parentNode->GetNodeId();
 
     ChildNodeRule rule("", 1, false, RuleTargetTree::TargetTree_Both);
-    NavNodesProviderContextPtr childContext = NavNodesProviderContext::Create(*m_ruleset, true, TargetTree_Both, "locale", &parentNodeId, 
+    NavNodesProviderContextPtr childContext = NavNodesProviderContext::Create(*m_ruleset, TargetTree_Both, "locale", &parentNodeId, 
         m_settings, m_expressionsCache, m_relatedPathsCache, m_polymorphicallyRelatedClassesCache, 
         m_nodesFactory, m_nodesCache, m_providerFactory, nullptr);
     childContext->SetQueryContext(*m_context);

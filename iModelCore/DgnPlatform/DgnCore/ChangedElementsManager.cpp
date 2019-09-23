@@ -6,6 +6,7 @@
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/ChangedElementsManager.h>
 #include <ECDb/ECDbApi.h>
+#include <ECPresentation/RulesDriven/PresentationManager.h>
 
 #define CHANGE_PROPSPEC_NAMESPACE "ec_ChangedElements"
 
@@ -13,12 +14,25 @@ USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_SQLITE
+USING_NAMESPACE_BENTLEY_ECPRESENTATION
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Grigas.Petraitis     09/2019
+//---------------------------------------------------------------------------------------
+IECPresentationManager* ChangedElementsManager::CreatePresentationManager()
+    {
+    RulesDrivenECPresentationManager::Paths paths(T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory(),
+        T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName());
+    RulesDrivenECPresentationManager::Params params(paths);
+    return new RulesDrivenECPresentationManager(params);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Diego.Pinate     12/2018
 //---------------------------------------------------------------------------------------
 ChangedElementsManager::~ChangedElementsManager()
     {
+    DELETE_AND_CLEAR(m_presentationManager);
     m_db = nullptr;
     }
 
@@ -165,7 +179,7 @@ DbResult ChangedElementsManager::InsertEntries(ECDbR cacheDb, DgnRevisionPtr rev
                 dataStmt.BindInt(3, OPC_UPDATE);
                 break;
             }
-        
+
         // Bind model Id
         dataStmt.BindId(4, modelIds[i]);
 
@@ -188,7 +202,7 @@ DbResult ChangedElementsManager::InsertEntries(ECDbR cacheDb, DgnRevisionPtr rev
         }
 
     dataStmt.Finalize();
-    
+
     // Insert changed models data
     ECSqlStatement modelStmt;
     modelStmt.Prepare(cacheDb, "INSERT INTO chems.ModelChange (ModelId, BBoxLow, BBoxHigh, Changeset.Id) VALUES (?, ?, ?, ?)");
@@ -210,7 +224,7 @@ DbResult ChangedElementsManager::InsertEntries(ECDbR cacheDb, DgnRevisionPtr rev
         modelStmt.Reset();
         modelStmt.ClearBindings();
         }
-    
+
     modelStmt.Finalize();
 
     return cacheDb.SaveChanges();
@@ -226,7 +240,7 @@ DgnDbPtr    ChangedElementsManager::CloneDb(DgnDbR db)
 
     BeFileName tempFilename;
     T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectory(tempFilename, L"ChangedElementsManager");
-    
+
     WString name = WString(L"Temp_") + db.GetFileName().GetFileNameWithoutExtension();
     tempFilename.AppendToPath(name.c_str());
     tempFilename.AppendExtension(L"bim");
@@ -328,7 +342,7 @@ void ChangedElementsManager::ChangedElementsToJSON(JsonValueR val, ChangedElemen
         modelIds.push_back(pair.second.m_modelId);
         bboxes.push_back(pair.second.m_bbox);
         }
-    
+
     // Compute union of ranges then generate entries in changedModels JSON object
     bmap<DgnModelId, AxisAlignedBox3d> map = ChangedElementsManager::ComputeChangedModels(changedElements);
     // Set it in the JSON object
@@ -366,13 +380,13 @@ DbResult ChangedElementsManager::ProcessChangesets(ECDbR cacheDb, Utf8String rul
         bvector<DgnRevisionPtr> currentRevisions;
         currentRevisions.push_back(revision);
         // Process going backwards
-        VersionCompareChangeSummaryPtr summary = VersionCompareChangeSummary::Generate(*db, currentRevisions, rulesetId, true, m_filterSpatial, true);
+        VersionCompareChangeSummaryPtr summary = VersionCompareChangeSummary::Generate(*db, currentRevisions, *m_presentationManager, rulesetId, true, m_filterSpatial, true);
         if (!summary.IsValid())
             {
             LOG.errorv(L"Could not generate change summary for revision");
             return BE_SQLITE_ERROR;
             }
-        
+
         // Get changed elements
         bvector<DgnElementId> elementIds;
         bvector<ECClassId> classIds;
@@ -426,7 +440,7 @@ DbResult ChangedElementsManager::GetChangedElements(ECDbR cacheDb, ChangedElemen
     stmt.BindText(1, startChangesetId.c_str(), IECSqlBinder::MakeCopy::No);
     if (BE_SQLITE_ROW != stmt.Step())
         return BE_SQLITE_ERROR;
-    
+
     // Check if null
     if (stmt.IsValueNull(0))
         {
@@ -441,7 +455,7 @@ DbResult ChangedElementsManager::GetChangedElements(ECDbR cacheDb, ChangedElemen
     stmt.BindText(1, endChangesetId.c_str(), IECSqlBinder::MakeCopy::No);
     if (BE_SQLITE_ROW != stmt.Step())
         return BE_SQLITE_ERROR;
-    
+
     // Check if null
     if (stmt.IsValueNull(0))
         {
@@ -530,7 +544,7 @@ DbResult ChangedElementsManager::GetChangedModels(ECDbR cacheDb, bmap<DgnModelId
     stmt.BindText(1, startChangesetId.c_str(), IECSqlBinder::MakeCopy::No);
     if (BE_SQLITE_ROW != stmt.Step())
         return BE_SQLITE_ERROR;
-    
+
     // Check if null
     if (stmt.IsValueNull(0))
         {
@@ -545,7 +559,7 @@ DbResult ChangedElementsManager::GetChangedModels(ECDbR cacheDb, bmap<DgnModelId
     stmt.BindText(1, endChangesetId.c_str(), IECSqlBinder::MakeCopy::No);
     if (BE_SQLITE_ROW != stmt.Step())
         return BE_SQLITE_ERROR;
-    
+
     // Check if null
     if (stmt.IsValueNull(0))
         {

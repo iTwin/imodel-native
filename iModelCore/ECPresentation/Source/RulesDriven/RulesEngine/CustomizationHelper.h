@@ -38,7 +38,6 @@ private:
     JsonNavNodeCR m_node;
     JsonNavNodeCP m_parentNode;
     ICustomizablePropertiesSetter const& m_setter;
-    BeSQLite::EC::ECDbExpressionSymbolContext const* m_ecdbSymbolsContext;
     ExpressionContextPtr m_nodeExpressionContext;
 
 private:
@@ -63,7 +62,6 @@ struct CustomizationHelper
     ECPRESENTATION_EXPORT static void Customize(NavNodesProviderContextCR, JsonNavNode&, bool customizeLabel);
     ECPRESENTATION_EXPORT static void Customize(ContentProviderContextCR, ContentDescriptorCR, ContentSetItemR);
     ECPRESENTATION_EXPORT static NodeArtifacts EvaluateArtifacts(NavNodesProviderContextCR, JsonNavNodeCR);
-    ECPRESENTATION_EXPORT static void NotifyCheckedStateChanged(IConnectionCR, JsonNavNodeCR node, bool isChecked);
     };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

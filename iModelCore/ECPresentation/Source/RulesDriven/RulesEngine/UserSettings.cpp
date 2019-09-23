@@ -418,7 +418,7 @@ UserSettingsManager::UserSettingsManager(BeFileNameCR) {}
 +---------------+---------------+---------------+---------------+---------------+------*/
 UserSettingsManager::~UserSettingsManager()
     {
-    BeMutexHolder lock(m_mutex);
+    BeMutexHolder lock(GetMutex());
     for (auto iter : m_settings)
         delete iter.second;
     }
@@ -428,7 +428,7 @@ UserSettingsManager::~UserSettingsManager()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UserSettingsManager::_OnLocalStateChanged()
     {
-    BeMutexHolder lock(m_mutex);
+    BeMutexHolder lock(GetMutex());
     for (auto iter : m_settings)
         iter.second->SetLocalState(GetLocalState());
     }
@@ -438,7 +438,7 @@ void UserSettingsManager::_OnLocalStateChanged()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UserSettingsManager::_OnLocalizationProviderChanged()
     {
-    BeMutexHolder lock(m_mutex);
+    BeMutexHolder lock(GetMutex());
     for (auto iter : m_settings)
         iter.second->SetLocalizationProvider(GetLocalizationProvider());
     }
@@ -448,7 +448,7 @@ void UserSettingsManager::_OnLocalizationProviderChanged()
 +---------------+---------------+---------------+---------------+---------------+------*/
 UserSettings& UserSettingsManager::GetSettings(Utf8StringCR rulesetId) const
     {
-    BeMutexHolder lock(m_mutex);
+    BeMutexHolder lock(GetMutex());
     auto iter = m_settings.find(rulesetId);
     if (m_settings.end() == iter)
         {
@@ -465,7 +465,7 @@ UserSettings& UserSettingsManager::GetSettings(Utf8StringCR rulesetId) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UserSettingsManager::_OnRulesetDispose(RuleSetLocaterCR, PresentationRuleSetR ruleset)
     {
-    BeMutexHolder lock(m_mutex);
+    BeMutexHolder lock(GetMutex());
     auto iter = m_settings.find(ruleset.GetRuleSetId());
     if (m_settings.end() != iter)
         {
@@ -479,6 +479,7 @@ void UserSettingsManager::_OnRulesetDispose(RuleSetLocaterCR, PresentationRuleSe
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UserSettingsManager::_OnSettingChanged(Utf8CP rulesetId, Utf8CP settingId) const
     {
+    BeMutexHolder lock(GetMutex());
     if (nullptr != GetChangesListener())
         GetChangesListener()->_OnSettingChanged(rulesetId, settingId);
     }

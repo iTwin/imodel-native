@@ -102,10 +102,10 @@ bvector<uint64_t> ProvidersIndexAllocator::CreateIndex(bool createNew)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodesProviderContext::NavNodesProviderContext(PresentationRuleSetCR ruleset, bool holdRuleset, RuleTargetTree targetTree, Utf8String locale, uint64_t const* physicalParentId,
+NavNodesProviderContext::NavNodesProviderContext(PresentationRuleSetCR ruleset, RuleTargetTree targetTree, Utf8String locale, uint64_t const* physicalParentId,
     IUserSettings const& userSettings, ECExpressionsCache& ecexpressionsCache, RelatedPathsCache& relatedPathsCache, PolymorphicallyRelatedClassesCache& polymorphicallyRelatedClassesCache,
     JsonNavNodesFactory const& nodesFactory, IHierarchyCache& nodesCache, INodesProviderFactoryCR providerFactory, IJsonLocalState const* localState)
-    : RulesDrivenProviderContext(ruleset, holdRuleset, locale, userSettings, ecexpressionsCache, relatedPathsCache, polymorphicallyRelatedClassesCache, nodesFactory, localState),
+    : RulesDrivenProviderContext(ruleset, locale, userSettings, ecexpressionsCache, relatedPathsCache, polymorphicallyRelatedClassesCache, nodesFactory, localState),
     m_targetTree(targetTree), m_nodesCache(&nodesCache), m_providerFactory(providerFactory)
     {
     Init();
@@ -310,9 +310,9 @@ void NavNodesProviderContext::SetChildNodeContext(NavNodesProviderContextCR othe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NavNodesProviderContext::SetQueryContext(IConnectionManagerCR connections, IConnectionCR connection, ECSqlStatementCache const& statementCache, CustomFunctionsInjector& customFunctions, IECDbUsedClassesListener* usedClassesListener)
+void NavNodesProviderContext::SetQueryContext(IConnectionManagerCR connections, IConnectionCR connection, IECDbUsedClassesListener* usedClassesListener)
     {
-    RulesDrivenProviderContext::SetQueryContext(connections, connection, statementCache, customFunctions);
+    RulesDrivenProviderContext::SetQueryContext(connections, connection);
     if (nullptr != usedClassesListener)
         m_usedClassesListener = new ECDbUsedClassesListenerWrapper(GetConnection(), *usedClassesListener);
     }
@@ -655,6 +655,7 @@ void NavNodesProvider::FinalizeNode(JsonNavNodeR node, bool customizeLabel) cons
     if (!GetContext().NeedsFullLoad())
         return;
 
+    BeMutexHolder lock(GetContext().GetNodesCache().GetMutex());
     DataSourceRelatedSettingsUpdater updater(GetContext(), &node);
     bool changed = false;
 
@@ -808,6 +809,9 @@ bool CustomNodesProvider::_InitializeNodes()
     if (!NavNodesProvider::_InitializeNodes())
         return false;
 
+    // mutex is required for savepoint what no read/write requests would happen from another thread during savepoint and also does synchronization of datasource initialization
+    BeMutexHolder lock(GetContext().GetNodesCache().GetMutex());
+
     NavNodesProviderPtr cachedProvider = GetCachedProvider();
     if (cachedProvider.IsValid())
         {
@@ -959,7 +963,7 @@ bvector<NodeArtifacts> CustomNodesProvider::_GetArtifacts() const
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 QueryBasedNodesProvider::QueryBasedNodesProvider(NavNodesProviderContextCR context, NavigationQuery const& query, bmap<ECClassId, bool> const& usedClassIds)
-    : MultiNavNodesProvider(context), m_query(&query), m_executor(context.GetNodesFactory(), context.GetConnection(), GetLocale(context), context.GetStatementCache(), query),
+    : MultiNavNodesProvider(context), m_query(&query), m_executor(context.GetNodesFactory(), context.GetConnection(), GetLocale(context), query),
     m_executorIndex(0), m_usedClassIds(usedClassIds), m_offset(0)
     { }
 
@@ -1309,6 +1313,9 @@ bool QueryBasedNodesProvider::_InitializeNodes()
     if (!MultiNavNodesProvider::_InitializeNodes())
         return false;
 
+    // mutex is required for savepoint what no read/write requests would happen from another thread during savepoint and also does synchronization of datasource initialization
+    BeMutexHolder lock(GetContext().GetNodesCache().GetMutex());
+
     if (GetContext().GetNodesCache().IsInitialized(GetContext().GetDataSourceInfo()))
         return InitializeProvidersFromCache();
 
@@ -1356,6 +1363,12 @@ void QueryBasedNodesProvider::EnsureQueryRecordsRead() const
     JsonNavNodePtr node;
     while ((node = m_executor.GetNode(index++)).IsValid())
         {
+        if (GetContext().GetCancelationToken().IsCanceled())
+            {
+            LoggingHelper::LogMessage(Log::Navigation, "[QueryBasedNodesProvider] Records read canceled", NativeLogging::LOG_DEBUG);
+            return;
+            }
+
         if (node->HasKey())
             continue;
 
@@ -1420,6 +1433,7 @@ bool QueryBasedNodesProvider::_HasNodes() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t QueryBasedNodesProvider::_GetNodesCount() const
     {
+    BeMutexHolder lock(GetContext().GetNodesCache().GetMutex());
     if (GetContext().GetNodesCache().IsInitialized(GetContext().GetDataSourceInfo()))
         {
         const_cast<QueryBasedNodesProvider*>(this)->InitializeProvidersFromCache();
@@ -1454,7 +1468,7 @@ size_t QueryBasedNodesProvider::_GetNodesCount() const
     countQuery->GroupByContract(*contract);
     countQuery->From(*StringGenericQuery::Create(queryNotSorted->ToString(), queryNotSorted->GetBoundValues()));
 
-    CountQueryExecutor executor(GetContext().GetConnection(), GetContext().GetStatementCache(), *countQuery);
+    CountQueryExecutor executor(GetContext().GetConnection(), *countQuery);
     executor.ReadRecords(&GetContext().GetCancelationToken());
     return executor.GetResult();
     }
@@ -1879,6 +1893,7 @@ void SQLiteCacheNodesProvider::InitializeUsedSettings()
     stmt->BindText(bindingIndex++, GetContext().GetRuleset().GetRuleSetId().c_str(), Statement::MakeCopy::No);
     stmt->BindText(bindingIndex++, GetContext().GetLocale(), Statement::MakeCopy::No);
 
+    BeMutexHolder lock(GetContext().GetNodesCache().GetMutex());
     while (BE_SQLITE_ROW == stmt->Step())
         GetContext().GetUsedSettingsListener().OnUserSettingUsed(stmt->GetValueText(0));
     }
@@ -1890,6 +1905,8 @@ void SQLiteCacheNodesProvider::InitializeNodes()
     {
     if (nullptr != m_nodes)
         return; // already initialized
+
+    BeMutexHolder lock(GetContext().GetNodesCache().GetMutex());
 
     m_nodes = new bvector<JsonNavNodePtr>();
     CachedStatementPtr statement = _GetNodesStatement();
@@ -1905,9 +1922,10 @@ void SQLiteCacheNodesProvider::InitializeNodes()
             continue;
             }
 
-        rapidjson::Document json;
+        rapidjson::MemoryPoolAllocator<>* allocator = new rapidjson::MemoryPoolAllocator<>(NAVNODE_JSON_CHUNK_SIZE);
+        rapidjson::Document json(allocator);
         json.Parse(serializedNode);
-        JsonNavNodePtr node = GetContext().GetNodesFactory().CreateFromJson(GetContext().GetConnection(), std::move(json));
+        JsonNavNodePtr node = GetContext().GetNodesFactory().CreateFromJson(GetContext().GetConnection(), std::move(json), allocator);
         if (node.IsNull())
             continue;
 
@@ -1918,9 +1936,8 @@ void SQLiteCacheNodesProvider::InitializeNodes()
             NavNodeExtendedData(*node).SetVirtualParentId(statement->GetValueUInt64(2));
 
         node->SetNodeId(statement->GetValueUInt64(3));
-        node->SetIsExpanded(!statement->IsColumnNull(4));
 
-        node->SetNodeKey(*NavNodesHelper::CreateNodeKey(GetContext().GetConnection(), *node, statement->GetValueText(5)));
+        node->SetNodeKey(*NavNodesHelper::CreateNodeKey(GetContext().GetConnection(), *node, statement->GetValueText(4)));
 
         m_nodes->push_back(node);
         }
@@ -1959,6 +1976,7 @@ size_t SQLiteCacheNodesProvider::_GetNodesCount() const
         return m_nodes->size();
     if (nullptr == m_nodesCount)
         {
+        BeMutexHolder lock(GetContext().GetNodesCache().GetMutex());
         CachedStatementPtr stmt = _GetCountStatement();
         if (BE_SQLITE_ROW != stmt->Step())
             {
@@ -1999,13 +2017,12 @@ struct DatasourceIdSet : VirtualSet, bset<uint64_t>
 +---------------+---------------+---------------+---------------+---------------+------*/
 CachedStatementPtr CachedCombinedHierarchyLevelProvider::_GetNodesStatement() const
     {
-    Utf8String query = "SELECT [n].[Data], [hl].[PhysicalParentNodeId], [hl].[VirtualParentNodeId], [n].[Id], [ex].[NodeId], [nk].[PathFromRoot] "
+    Utf8String query = "SELECT [n].[Data], [hl].[PhysicalParentNodeId], [hl].[VirtualParentNodeId], [n].[Id], [nk].[PathFromRoot] "
                        "  FROM [" NODESCACHE_TABLENAME_HierarchyLevels "] hl "
                        "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[HierarchyLevelId] = [hl].[Id]"
                        "  JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[DataSourceId] = [ds].[Id]"
                        "  JOIN [" NODESCACHE_TABLENAME_NodeKeys "] nk ON [nk].[NodeId] = [n].[Id]"
                        "  JOIN [" NODESCACHE_TABLENAME_NodesOrder "] no ON [no].[HierarchyLevelId] = [hl].[Id] AND [no].[DataSourceId] = [ds].[Id] AND [no].[NodeId] = [n].[Id]"
-                       "  LEFT JOIN [" NODESCACHE_TABLENAME_ExpandedNodes "] ex ON [n].[Id] = [ex].[NodeId]"
                        " WHERE     NOT [n].[IsVirtual] AND [hl].[RemovalId] IS NULL "
                        "       AND [hl].[ConnectionId] = ? AND [hl].[RulesetId] = ? AND [hl].[Locale] = ? AND [hl].[PhysicalParentNodeId] ";
     if (nullptr == m_info.GetPhysicalParentNodeId())
@@ -2067,13 +2084,12 @@ CachedStatementPtr CachedCombinedHierarchyLevelProvider::_GetCountStatement() co
 +---------------+---------------+---------------+---------------+---------------+------*/
 CachedStatementPtr CachedHierarchyLevelProvider::_GetNodesStatement() const
     {
-    Utf8CP query = "SELECT [n].[Data], [hl].[PhysicalParentNodeId], [hl].[VirtualParentNodeId], [n].[Id], [ex].[NodeId], [nk].[PathFromRoot] "
+    Utf8CP query = "SELECT [n].[Data], [hl].[PhysicalParentNodeId], [hl].[VirtualParentNodeId], [n].[Id], [nk].[PathFromRoot] "
                    "  FROM [" NODESCACHE_TABLENAME_HierarchyLevels "] hl "
                    "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[HierarchyLevelId] = [hl].[Id]"
                    "  JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[DataSourceId] = [ds].[Id]"
                    "  JOIN [" NODESCACHE_TABLENAME_NodeKeys "] nk ON [nk].[NodeId] = [n].[Id]"
                    "  JOIN [" NODESCACHE_TABLENAME_NodesOrder "] no ON [no].[HierarchyLevelId] = [hl].[Id] AND [no].[DataSourceId] = [ds].[Id] AND [no].[NodeId] = [n].[Id]"
-                   "  LEFT JOIN [" NODESCACHE_TABLENAME_ExpandedNodes "] ex ON [n].[Id] = [ex].[NodeId]"
                    " WHERE NOT [n].[IsVirtual] AND [hl].[Id] = ? "
                    " ORDER BY [no].[OrderValue]";
 
@@ -2117,13 +2133,12 @@ CachedStatementPtr CachedHierarchyLevelProvider::_GetCountStatement() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 CachedStatementPtr CachedPartialDataSourceProvider::_GetNodesStatement() const
     {
-    Utf8CP query = "SELECT [n].[Data], [hl].[PhysicalParentNodeId], [hl].[VirtualParentNodeId], [n].[Id], [ex].[NodeId], [nk].[PathFromRoot] "
+    Utf8CP query = "SELECT [n].[Data], [hl].[PhysicalParentNodeId], [hl].[VirtualParentNodeId], [n].[Id], [nk].[PathFromRoot] "
                    "  FROM [" NODESCACHE_TABLENAME_HierarchyLevels "] hl "
                    "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[HierarchyLevelId] = [hl].[Id]"
                    "  JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[DataSourceId] = [ds].[Id]"
                    "  JOIN [" NODESCACHE_TABLENAME_NodeKeys "] nk ON [nk].[NodeId] = [n].[Id]"
                    "  JOIN [" NODESCACHE_TABLENAME_NodesOrder "] no ON [no].[HierarchyLevelId] = [hl].[Id] AND [no].[DataSourceId] = [ds].[Id] AND [no].[NodeId] = [n].[Id]"
-                   "  LEFT JOIN [" NODESCACHE_TABLENAME_ExpandedNodes "] ex ON [n].[Id] = [ex].[NodeId]"
                    " WHERE [ds].[Id] = ? "
                    " ORDER BY [no].[OrderValue]";
 
@@ -2201,12 +2216,11 @@ CachedStatementPtr NodesWithUndeterminedChildrenProvider::_GetCountStatement() c
 +---------------+---------------+---------------+---------------+---------------+------*/
 CachedStatementPtr NodesWithUndeterminedChildrenProvider::_GetNodesStatement() const
     {
-    Utf8String query = "   SELECT [n].[Data], [hln].[PhysicalParentNodeId], [hln].[VirtualParentNodeId], [n].[Id], [ex].[NodeId], [nk].[PathFromRoot] "
+    Utf8String query = "   SELECT [n].[Data], [hln].[PhysicalParentNodeId], [hln].[VirtualParentNodeId], [n].[Id], [nk].[PathFromRoot] "
                        "     FROM [" NODESCACHE_TABLENAME_HierarchyLevels "] hln "
                        "     JOIN [" NODESCACHE_TABLENAME_DataSources "] dsn ON [dsn].[HierarchyLevelId] = [hln].[Id] "
                        "     JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[DataSourceId] = [dsn].[Id] "
                        "     JOIN [" NODESCACHE_TABLENAME_NodeKeys "] nk ON [nk].[NodeId] = [n].[Id] "
-                       "LEFT JOIN [" NODESCACHE_TABLENAME_ExpandedNodes "] ex ON [n].[Id] = [ex].[NodeId] "
                        "LEFT JOIN [" NODESCACHE_TABLENAME_HierarchyLevels "] hl ON [hl].[VirtualParentNodeId] = [n].[Id] "
                        "LEFT JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[HierarchyLevelId] = [hl].[Id] "
                        "    WHERE     [hln].[ConnectionId] = ? AND [hln].[RulesetId] = ? AND [hln].[Locale] = ? "
@@ -2265,12 +2279,11 @@ CachedStatementPtr FilteredNodesProvider::_GetCountStatement() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 CachedStatementPtr FilteredNodesProvider::_GetNodesStatement() const
     {
-    Utf8String query = "SELECT [n].[Data], [hl].[PhysicalParentNodeId], [hl].[VirtualParentNodeId], [n].[Id], [ex].[NodeId], [nk].[PathFromRoot] "
+    Utf8String query = "SELECT [n].[Data], [hl].[PhysicalParentNodeId], [hl].[VirtualParentNodeId], [n].[Id], [nk].[PathFromRoot] "
         "  FROM [" NODESCACHE_TABLENAME_Nodes "] n "
         "  JOIN [" NODESCACHE_TABLENAME_NodeKeys "] nk ON [nk].[NodeId] = [n].[Id] "
         "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [n].[DataSourceId] "
         "  JOIN [" NODESCACHE_TABLENAME_HierarchyLevels "] hl ON [hl].[Id] = [ds].[HierarchyLevelId] "
-        "  LEFT JOIN [" NODESCACHE_TABLENAME_ExpandedNodes "] ex ON [n].[Id] = [ex].[NodeId] "
         " WHERE [hl].[ConnectionId] = ? AND [hl].[RulesetId] = ? AND [hl].[Locale] = ? AND [n].[Label] LIKE ? ESCAPE \'\\\'";
 
     CachedStatementPtr stmt;

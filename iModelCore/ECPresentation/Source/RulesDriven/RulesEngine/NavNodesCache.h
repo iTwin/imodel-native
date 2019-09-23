@@ -101,6 +101,8 @@ protected:
 
     virtual SavepointPtr _CreateSavepoint() = 0;
 
+    virtual BeMutex& _GetMutex() = 0;
+
 public:
     virtual ~IHierarchyCache() {}
 
@@ -147,6 +149,8 @@ public:
     void FinalizeInitialization(DataSourceInfo const& info) {_FinalizeInitialization(info);}
 
     SavepointPtr CreateSavepoint() {return _CreateSavepoint();}
+
+    BeMutex& GetMutex() { return _GetMutex(); }
 };
 
 #define NODESCACHE_TABLENAME_HierarchyLevels    "HierarchyLevels"
@@ -154,7 +158,6 @@ public:
 #define NODESCACHE_TABLENAME_DataSourceClasses  "DataSourceClasses"
 #define NODESCACHE_TABLENAME_DataSourceSettings "DataSourceSettings"
 #define NODESCACHE_TABLENAME_Nodes              "Nodes"
-#define NODESCACHE_TABLENAME_ExpandedNodes      "ExpandedNodes"
 #define NODESCACHE_TABLENAME_NodeKeys           "NodeKeys"
 #define NODESCACHE_TABLENAME_NodesOrder         "NodesOrder"
 #define NODESCACHE_TABLENAME_AffectingInstances "AffectingECInstances"
@@ -188,11 +191,12 @@ private:
     bool m_tempCache;
     mutable BeSQLite::Db m_db;
     mutable BeSQLite::StatementCache m_statements;
-    IECSqlStatementCacheProvider& m_ecsqlStamementCache;
     mutable bvector<bpair<CombinedHierarchyLevelInfo, NavNodesProviderPtr>> m_quickDataSourceCache;
     mutable bvector<bpair<uint64_t, JsonNavNodePtr>> m_quickNodesCache;
     uint64_t m_sizeLimit;
     bvector<BeSQLite::ScalarFunction*> m_customFunctions;
+    mutable BeMutex m_mutex;
+    mutable BeMutex m_quickCacheMutex;
 
 private:
     void Initialize(BeFileNameCR tempDirectory);
@@ -207,7 +211,6 @@ private:
     void CacheNodeInstanceKeys(NavNodeCR);
     void ChangeVisibility(uint64_t nodeId, bool isVirtual, bool updateChildDatasources);
     bool IsUpdatesDisabled(CombinedHierarchyLevelInfo const& info) const;
-    void SetIsExpanded(uint64_t nodeId, bool isExpanded) const;
     void LimitCacheSize();
     void ResetDataSource(DataSourceInfo const&);
     bvector<DataSourceInfo> GetDataSourcesWithChangedUserSettings(CombinedHierarchyLevelInfo const&) const;
@@ -249,6 +252,7 @@ protected:
     ECPRESENTATION_EXPORT bool _IsInitialized(DataSourceInfo const&) const override;
     ECPRESENTATION_EXPORT void _FinalizeInitialization(DataSourceInfo const&) override;
     ECPRESENTATION_EXPORT SavepointPtr _CreateSavepoint() override;
+    BeMutex& _GetMutex() override { return m_mutex; }
 
     // INavNodeLocater
     ECPRESENTATION_EXPORT JsonNavNodeCPtr _LocateNode(IConnectionCR, Utf8StringCR, NavNodeKeyCR) const override;
@@ -257,7 +261,7 @@ protected:
     ECPRESENTATION_EXPORT void _OnConnectionEvent(ConnectionEvent const&) override;
 
 public:
-    ECPRESENTATION_EXPORT NodesCache(BeFileNameCR tempDirectory, JsonNavNodesFactoryCR, INodesProviderContextFactoryCR, IConnectionManagerCR, IUserSettingsManager const&, IECSqlStatementCacheProvider&, NodesCacheType);
+    ECPRESENTATION_EXPORT NodesCache(BeFileNameCR tempDirectory, JsonNavNodesFactoryCR, INodesProviderContextFactoryCR, IConnectionManagerCR, IUserSettingsManager const&, NodesCacheType);
     ECPRESENTATION_EXPORT ~NodesCache();
 
     ECPRESENTATION_EXPORT void CacheHierarchyLevel(CombinedHierarchyLevelInfo const&, NavNodesProviderR);
@@ -274,7 +278,7 @@ public:
     ECPRESENTATION_EXPORT void RemapNodeIds(bmap<uint64_t, uint64_t> const&);
     ECPRESENTATION_EXPORT bool HasParentNode(uint64_t nodeId, bset<uint64_t> const& parentNodeIds) const;
 
-    ECPRESENTATION_EXPORT bvector<HierarchyLevelInfo> GetRelatedHierarchyLevels(Utf8StringCR connectionId, bset<ECInstanceKey> const&) const;
+    ECPRESENTATION_EXPORT bvector<HierarchyLevelInfo> GetRelatedHierarchyLevels(IConnectionCR connection, bset<ECInstanceKey> const&) const;
     ECPRESENTATION_EXPORT bvector<HierarchyLevelInfo> GetRelatedHierarchyLevels(Utf8CP rulesetId, Utf8CP settingId) const;
 
     ECPRESENTATION_EXPORT void Clear(IConnectionCP connection = nullptr, Utf8CP rulesetId = nullptr);
@@ -284,7 +288,6 @@ public:
     BeSQLite::Db const& GetDb() const {return m_db;}
     void SetCacheFileSizeLimit(uint64_t size) {m_sizeLimit = size;}
 
-    ECPRESENTATION_EXPORT void ResetExpandedNodes(Utf8CP connectionId, Utf8CP rulesetId);
     ECPRESENTATION_EXPORT NavNodesProviderPtr GetUndeterminedNodesProvider(IConnectionCR connection, Utf8CP ruleSetId, Utf8CP locale, bool isUpdatesDisabled) const;
     ECPRESENTATION_EXPORT NavNodesProviderPtr GetFilteredNodesProvider(Utf8CP filter, IConnectionCR connection, Utf8CP ruleSetId, Utf8CP locale) const;
 };

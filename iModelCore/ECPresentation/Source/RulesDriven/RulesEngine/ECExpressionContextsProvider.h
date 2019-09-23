@@ -64,8 +64,8 @@ struct ECExpressionContextsProvider : NonCopyableClass
         bool m_isSubSelection;
         NavNodeKeyCP m_selectedNodeKey;
     public:
-        ContentRulesContextParameters(Utf8CP contentDisplayType, Utf8CP selectionProviderName, bool isSubSelection, IConnectionCR connection, Utf8String locale, 
-            INavNodeLocaterCP nodeLocater, NavNodeKeyCP selectedNodeKey, IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener)
+        ContentRulesContextParameters(Utf8CP contentDisplayType, Utf8CP selectionProviderName, bool isSubSelection, IConnectionCR connection,
+            Utf8String locale, INavNodeLocaterCP nodeLocater, NavNodeKeyCP selectedNodeKey, IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener)
             : ContextParametersBase(connection, locale, userSettings, usedSettingsListener), m_contentDisplayType(contentDisplayType), 
             m_selectionProviderName(selectionProviderName), m_isSubSelection(isSubSelection), m_nodeLocater(nodeLocater), m_selectedNodeKey(selectedNodeKey)
             {}
@@ -101,7 +101,7 @@ struct ECExpressionContextsProvider : NonCopyableClass
     private:
         JsonNavNodeCR m_node;
     public:
-        CalculatedPropertyContextParameters(JsonNavNodeCR node, IConnectionCR connection, Utf8String locale, 
+        CalculatedPropertyContextParameters(JsonNavNodeCR node, IConnectionCR connection, Utf8String locale,
             IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener)
             : ContextParametersBase(connection, locale, userSettings, usedSettingsListener), m_node(node)
             {}
@@ -127,6 +127,7 @@ private:
     bmap<Utf8String, NodePtr> m_cache;
     bmap<Utf8String, OptimizedExpressionPtr> m_optimizedCache;
     bmap<Utf8String, bvector<Utf8String>> m_usedClasses;
+    mutable BeMutex m_mutex;
 
 public:
     ECExpressionsCache() {}
@@ -138,6 +139,7 @@ public:
     void Add(Utf8CP expression, OptimizedExpressionPtr);
     bvector<Utf8String> const& Add(Utf8CP expression, bvector<Utf8String>&);
     void Clear();
+    BeMutex& GetMutex() const {return m_mutex;}
 };
 
 /*=================================================================================**//**

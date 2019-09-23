@@ -4,7 +4,6 @@
 |
 +-------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include "ECDbExpressionSymbolProvider.h"
 #include <Formatting/FormattingApi.h>
 #include <limits>
 

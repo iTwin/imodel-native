@@ -5064,58 +5064,12 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
                 {}
         };
 
-    /*=================================================================================**//**
-    * @bsiclass                                     Aidas.Kililnskas                05/2018
-    +===============+===============+===============+===============+===============+======*/
-    struct LocalState : IJsonLocalState
-    {
-    //! Saves the Utf8String value in the local state. Set to empty to delete value.
-    //! @note The nameSpace and key pair must be unique.
-    private:
-        bmap<Utf8String, Utf8String> m_map;
-    protected:
-        void _SaveValue(Utf8CP nameSpace, Utf8CP key, Utf8StringCR value) override
-            {
-            Utf8PrintfString compositeKey("%s:%s", nameSpace, key);
-            m_map[compositeKey] = value;
-            }
-
-        //! Returns a stored Utf8String from the local state. Returns empty if value does not exist.
-        //! @note The nameSpace and key pair uniquely identifies the value.
-        Utf8String _GetValue(Utf8CP nameSpace, Utf8CP key) const override
-            {
-            Utf8PrintfString compositeKey("%s:%s", nameSpace, key);
-            auto iter = m_map.find(compositeKey);
-            if (iter != m_map.end())
-                return iter->second;
-            return "";
-            }
-    };
-
     DEFINE_CONSTRUCTOR;
 
-    ConnectionManager m_connections;
     std::unique_ptr<RulesDrivenECPresentationManager> m_presentationManager;
     RefCountedPtr<SimpleRuleSetLocater> m_ruleSetLocater;
-    LocalState m_localState;
-
-    NativeECPresentationManager(Napi::CallbackInfo const& info)
-        : BeObjectWrap<NativeECPresentationManager>(info)
-        {
-        OPTIONAL_ARGUMENT_STRING(0, id, );
-        m_presentationManager = std::unique_ptr<RulesDrivenECPresentationManager>(ECPresentationUtils::CreatePresentationManager(m_connections,
-            T_HOST.GetIKnownLocationsAdmin(), id));
-        m_ruleSetLocater = SimpleRuleSetLocater::Create();
-        m_presentationManager->GetLocaters().RegisterLocater(*m_ruleSetLocater);
-        m_presentationManager->SetLocalState(&m_localState);
-        }
-    ~NativeECPresentationManager()
-        {
-        SetInDestructor();  // Must be the first line of every ObjectWrap destructor
-        // 'terminate' not called
-        BeAssert(m_presentationManager == nullptr);
-        }
-
+    RuntimeJsonLocalState m_localState;
+    
     static bool InstanceOf(Napi::Value val) {
         if (!val.IsObject())
             return false;
@@ -5132,7 +5086,6 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
             InstanceMethod("forceLoadSchemas", &NativeECPresentationManager::ForceLoadSchemas),
             InstanceMethod("setupRulesetDirectories", &NativeECPresentationManager::SetupRulesetDirectories),
             InstanceMethod("setupSupplementalRulesetDirectories", &NativeECPresentationManager::SetupSupplementalRulesetDirectories),
-            InstanceMethod("setupLocaleDirectories", &NativeECPresentationManager::SetupLocaleDirectories),
             InstanceMethod("setRulesetVariableValue", &NativeECPresentationManager::SetRulesetVariableValue),
             InstanceMethod("getRulesetVariableValue", &NativeECPresentationManager::GetRulesetVariableValue),
             InstanceMethod("getRulesets", &NativeECPresentationManager::GetRulesets),
@@ -5146,6 +5099,37 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         exports.Set("ECPresentationManager", t);
 
         SET_CONSTRUCTOR(t);
+        }
+
+    static bool ParseInt(int& value, Napi::Value const& jsValue)
+        {
+        if (jsValue.IsNumber())
+            {
+            value = jsValue.ToNumber().Int32Value();
+            return true;
+            }
+        if (jsValue.IsString())
+            {
+            value = atoi(jsValue.ToString().Utf8Value().c_str());
+            return true;
+            }
+        return false;
+        }
+
+    static bmap<int, unsigned> CreateTaskAllocationSlotsMap(Napi::Object& jsMap)
+        {
+        bmap<int, unsigned> slots;
+        Napi::Array jsMemberNames = jsMap.GetPropertyNames();
+        for (uint32_t i = 0; i < jsMemberNames.Length(); ++i) {
+            Napi::Value const& jsMemberName = jsMemberNames[i];
+            Napi::Value const& jsMemberValue = jsMap.Get(jsMemberName);
+            int priority, slotsCount;
+            if (ParseInt(priority, jsMemberName) && ParseInt(slotsCount, jsMemberValue))
+                slots.Insert(priority, slotsCount);
+            }
+        if (slots.empty())
+            slots.Insert(INT_MAX, 1);
+        return slots;
         }
 
     static Napi::Value CreateReturnValue(Napi::Env const& env, ECPresentationResult const& result, bool serializeResponse = false)
@@ -5174,23 +5158,43 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
             }
         return NapiUtils::CreateBentleyReturnSuccessObject(NapiUtils::Convert(env, result.GetSuccessResponse()), env);
         }
+    
+    NativeECPresentationManager(Napi::CallbackInfo const& info)
+        : BeObjectWrap<NativeECPresentationManager>(info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, id, );
+        REQUIRE_ARGUMENT_STRING_ARRAY(1, localeDirectories, );
+        REQUIRE_ARGUMENT_ANY_OBJ(2, taskAllocationSlots, );
+        m_presentationManager = std::unique_ptr<RulesDrivenECPresentationManager>(ECPresentationUtils::CreatePresentationManager(T_HOST.GetIKnownLocationsAdmin(),
+            m_localState, id, localeDirectories, CreateTaskAllocationSlotsMap(taskAllocationSlots)));
+        m_ruleSetLocater = SimpleRuleSetLocater::Create();
+        m_presentationManager->GetLocaters().RegisterLocater(*m_ruleSetLocater);
+        }
+
+    ~NativeECPresentationManager()
+        {
+        SetInDestructor();  // Must be the first line of every ObjectWrap destructor
+        // 'terminate' not called
+        BeAssert(m_presentationManager == nullptr);
+        }
 
     Napi::Value CreateReturnValue(ECPresentationResult const& result, bool serializeResponse = false)
         {
         return CreateReturnValue(Env(), result, serializeResponse);
         }
 
-    static PresentationTaskNotificationsContext CreateAsyncLoggingContext()
+    static PresentationRequestContext CreateRequestContext()
         {
-        JsInterop::ObjectReferenceClaimCheck requestContext = JsInterop::GetCurrentClientRequestContextForMainThread();
-        return PresentationTaskNotificationsContext([requestContext]()
+        JsInterop::ObjectReferenceClaimCheck jsRequestContext = JsInterop::GetCurrentClientRequestContextForMainThread();
+        PresentationRequestContext context([jsRequestContext]()
             {
             if (!JsInterop::IsMainThread())
                 {
                 // WIP: Seems like on MacOS _only_ we somehow get here on the main thread. Needs investigation.
-                JsInterop::SetCurrentClientRequestContextForWorkerThread(requestContext);
+                JsInterop::SetCurrentClientRequestContextForWorkerThread(jsRequestContext);
                 }
             });
+        return context;
         }
 
     void HandleRequest(Napi::CallbackInfo const& info)
@@ -5218,7 +5222,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
             return;
             }
 
-        m_connections.NotifyConnectionOpened(db->GetDgnDb());
+        m_presentationManager->GetConnections().CreateConnection(db->GetDgnDb());
 
         JsonValueCR params = request["params"];
 
@@ -5230,27 +5234,29 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
             folly::Future<ECPresentationResult> result = folly::makeFutureWith([]() {return ECPresentationResult(ECPresentationStatus::InvalidArgument, "request.requestId"); });
 
             if (0 == strcmp("GetRootNodesCount", requestId))
-                result = ECPresentationUtils::GetRootNodesCount(*m_presentationManager, db->GetDgnDb(), params, CreateAsyncLoggingContext());
+                result = ECPresentationUtils::GetRootNodesCount(*m_presentationManager, db->GetDgnDb(), params, CreateRequestContext());
             else if (0 == strcmp("GetRootNodes", requestId))
-                result = ECPresentationUtils::GetRootNodes(*m_presentationManager, db->GetDgnDb(), params, CreateAsyncLoggingContext());
+                result = ECPresentationUtils::GetRootNodes(*m_presentationManager, db->GetDgnDb(), params, CreateRequestContext());
             else if (0 == strcmp("GetChildrenCount", requestId))
-                result = ECPresentationUtils::GetChildrenCount(*m_presentationManager, db->GetDgnDb(), params, CreateAsyncLoggingContext());
+                result = ECPresentationUtils::GetChildrenCount(*m_presentationManager, db->GetDgnDb(), params, CreateRequestContext());
             else if (0 == strcmp("GetChildren", requestId))
-                result = ECPresentationUtils::GetChildren(*m_presentationManager, db->GetDgnDb(), params, CreateAsyncLoggingContext());
+                result = ECPresentationUtils::GetChildren(*m_presentationManager, db->GetDgnDb(), params, CreateRequestContext());
             else if (0 == strcmp("GetNodePaths", requestId))
-                result = ECPresentationUtils::GetNodesPaths(*m_presentationManager, db->GetDgnDb(), params, CreateAsyncLoggingContext());
+                result = ECPresentationUtils::GetNodesPaths(*m_presentationManager, db->GetDgnDb(), params, CreateRequestContext());
             else if (0 == strcmp("GetFilteredNodePaths", requestId))
-                result = ECPresentationUtils::GetFilteredNodesPaths(*m_presentationManager, db->GetDgnDb(), params, CreateAsyncLoggingContext());
+                result = ECPresentationUtils::GetFilteredNodesPaths(*m_presentationManager, db->GetDgnDb(), params, CreateRequestContext());
+            else if (0 == strcmp("LoadHierarchy", requestId))
+                result = ECPresentationUtils::LoadHierarchy(*m_presentationManager, db->GetDgnDb(), params, CreateRequestContext());
             else if (0 == strcmp("GetContentDescriptor", requestId))
-                result = ECPresentationUtils::GetContentDescriptor(*m_presentationManager, db->GetDgnDb(), params, CreateAsyncLoggingContext());
+                result = ECPresentationUtils::GetContentDescriptor(*m_presentationManager, db->GetDgnDb(), params, CreateRequestContext());
             else if (0 == strcmp("GetContent", requestId))
-                result = ECPresentationUtils::GetContent(*m_presentationManager, db->GetDgnDb(), params, CreateAsyncLoggingContext());
+                result = ECPresentationUtils::GetContent(*m_presentationManager, db->GetDgnDb(), params, CreateRequestContext());
             else if (0 == strcmp("GetContentSetSize", requestId))
-                result = ECPresentationUtils::GetContentSetSize(*m_presentationManager, db->GetDgnDb(), params, CreateAsyncLoggingContext());
+                result = ECPresentationUtils::GetContentSetSize(*m_presentationManager, db->GetDgnDb(), params, CreateRequestContext());
             else if (0 == strcmp("GetDistinctValues", requestId))
-                result = ECPresentationUtils::GetDistinctValues(*m_presentationManager, db->GetDgnDb(), params, CreateAsyncLoggingContext());
+                result = ECPresentationUtils::GetDistinctValues(*m_presentationManager, db->GetDgnDb(), params, CreateRequestContext());
             else if (0 == strcmp("GetDisplayLabel", requestId))
-                result = ECPresentationUtils::GetDisplayLabel(*m_presentationManager, db->GetDgnDb(), params, CreateAsyncLoggingContext());
+                result = ECPresentationUtils::GetDisplayLabel(*m_presentationManager, db->GetDgnDb(), params, CreateRequestContext());
 
             result
             .then([responseSender](ECPresentationResult result)
@@ -5291,13 +5297,6 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         {
         REQUIRE_ARGUMENT_STRING_ARRAY(0, directories, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "directories")));
         ECPresentationResult result = ECPresentationUtils::SetupSupplementalRulesetDirectories(*m_presentationManager, directories);
-        return CreateReturnValue(result);
-        }
-
-    Napi::Value SetupLocaleDirectories(Napi::CallbackInfo const& info)
-        {
-        REQUIRE_ARGUMENT_STRING_ARRAY(0, localeDirectories, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "localeDirectories")));
-        ECPresentationResult result = ECPresentationUtils::SetupLocaleDirectories(*m_presentationManager, localeDirectories);
         return CreateReturnValue(result);
         }
 

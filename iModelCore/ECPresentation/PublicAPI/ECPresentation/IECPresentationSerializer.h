@@ -3,14 +3,14 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#pragma once 
+#pragma once
 //__PUBLISH_SECTION_START__
 
 #include <ECPresentation/ECPresentation.h>
+#include <ECPresentation/Connection.h>
 #include <ECPresentation/Content.h>
 #include <ECPresentation/ContentFieldEditors.h>
 #include <ECPresentation/Update.h>
-#include <ECPresentation/SelectionManager.h>
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
@@ -88,9 +88,6 @@ protected:
     virtual rapidjson::Document _AsJson(KeySet const&, rapidjson::Document::AllocatorType*) const = 0;
     virtual KeySetPtr _GetKeySetFromJson(IConnectionCR, JsonValueCR) const = 0;
 
-    virtual rapidjson::Document _AsJson(SelectionChangedEvent const&, rapidjson::Document::AllocatorType*) const = 0;
-    virtual SelectionChangedEventPtr _GetSelectionChangedEventFromJson(IConnectionCacheCR, JsonValueCR) const = 0;
-
     virtual rapidjson::Value _AsJson(ECEnumerationCR, rapidjson::Document::AllocatorType&) const = 0;
 
     virtual rapidjson::Value _AsJson(KindOfQuantityCR, rapidjson::Document::AllocatorType&) const = 0;
@@ -106,9 +103,6 @@ public:
     rapidjson::Document AsJson(UpdateRecord const& updateRecord, rapidjson::Document::AllocatorType* allocator = nullptr) const {return _AsJson(updateRecord, allocator);}
 
     rapidjson::Document AsJson(ConnectionEvent const& connectionEvent, rapidjson::Document::AllocatorType* allocator = nullptr) const {return _AsJson(connectionEvent, allocator);}
-
-    rapidjson::Document AsJson(SelectionChangedEvent const& selectionChangedEvent, rapidjson::Document::AllocatorType* allocator = nullptr) const {return _AsJson(selectionChangedEvent, allocator);}
-    SelectionChangedEventPtr GetSelectionChangedEventFromJson(IConnectionCacheCR connectionCache, JsonValueCR json) const {return _GetSelectionChangedEventFromJson(connectionCache, json);}
 
     rapidjson::Document AsJson(NavNode const& navNode, rapidjson::Document::AllocatorType* allocator = nullptr) const {return _AsJson(navNode, allocator);}
 

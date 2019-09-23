@@ -39,13 +39,6 @@ ECPRESENTATION_TYPEDEFS(IPropertyCategorySupplier)
 ECPRESENTATION_TYPEDEFS(SelectionInfo)
 ECPRESENTATION_REFCOUNTED_PTR(SelectionInfo)
 
-ECPRESENTATION_TYPEDEFS(ISelectionProvider)
-ECPRESENTATION_TYPEDEFS(SelectionManager)
-ECPRESENTATION_TYPEDEFS(SelectionChangedEvent)
-ECPRESENTATION_REFCOUNTED_PTR(SelectionChangedEvent)
-ECPRESENTATION_TYPEDEFS(SelectionSyncHandler)
-ECPRESENTATION_REFCOUNTED_PTR(SelectionSyncHandler)
-
 ECPRESENTATION_TYPEDEFS(ICancelationToken)
 ECPRESENTATION_REFCOUNTED_PTR(ICancelationToken)
 
@@ -255,7 +248,7 @@ struct IUsedUserSettingsListener : RefCountedBase
 protected:
     virtual void _OnUserSettingUsed(Utf8CP settingId) = 0;
 public:
-    void OnUserSettingUsed(Utf8CP settingId) { _OnUserSettingUsed(settingId); }
+    void OnUserSettingUsed(Utf8CP settingId) {_OnUserSettingUsed(settingId);}
 };
 
 /*=================================================================================**//**
@@ -275,13 +268,13 @@ public:
 struct SimpleCancelationToken : ICancelationToken
 {
 private:
-    bool m_isCanceled;
+    BeAtomic<bool> m_isCanceled;
 protected:
     SimpleCancelationToken() : m_isCanceled(false) {}
-    bool _IsCanceled() const {return m_isCanceled;}
+    bool _IsCanceled() const override {return m_isCanceled.load();}
 public:
     static RefCountedPtr<SimpleCancelationToken> Create() {return new SimpleCancelationToken();}
-    void SetCanceled(bool value) {m_isCanceled = value;}
+    void SetCanceled(bool value) {m_isCanceled.store(value);}
 };
 typedef RefCountedPtr<SimpleCancelationToken> SimpleCancelationTokenPtr;
 

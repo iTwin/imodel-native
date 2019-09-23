@@ -103,8 +103,6 @@ private:
     bool m_ownsRelatedPathsCache;
     PolymorphicallyRelatedClassesCache* m_polymorphicallyRelatedClassesCache;
     bool m_ownsPolymorphicallyRelatedClassesCache;
-    ECSqlStatementCache const* m_statementCache;
-    bool m_ownsStatementCache;
     ECExpressionsCache* m_ecexpressionsCache;
     bool m_ownsECExpressionsCache;
 
@@ -118,11 +116,10 @@ private:
         int relationshipDirection, int depth, ECEntityClassCP targetClass, bool include) const;
                 
 public:
-    ECPRESENTATION_EXPORT ECSchemaHelper(IConnectionCR, RelatedPathsCache*, PolymorphicallyRelatedClassesCache*, ECSqlStatementCache const*, ECExpressionsCache*);
+    ECPRESENTATION_EXPORT ECSchemaHelper(IConnectionCR, RelatedPathsCache*, PolymorphicallyRelatedClassesCache*, ECExpressionsCache*);
     ECPRESENTATION_EXPORT ~ECSchemaHelper();
     IConnectionCR GetConnection() const {return m_connection;}
     ECExpressionsCache& GetECExpressionsCache() const {return *m_ecexpressionsCache;}
-    ECSqlStatementCache const& GetStatementCache() const { return *m_statementCache; }
 
     ECPRESENTATION_EXPORT ECSchemaCP GetSchema(Utf8CP schemaName) const;
     ECPRESENTATION_EXPORT ECClassCP GetECClass(Utf8CP schemaName, Utf8CP className, bool isFullSchemaName = false) const;
@@ -173,13 +170,17 @@ struct RelatedPathsCache
 
 private:
     bmap<Key, Result> m_cache;
+    mutable BeMutex m_mutex;
 
 public:
+    BeMutex& GetMutex() const { return m_mutex; }
+
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                02/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
     Result const* Get(Key const& key) const
         {
+        BeMutexHolder lock(m_mutex);
         auto iter = m_cache.find(key);
         if (m_cache.end() == iter)
             return nullptr;
@@ -191,6 +192,7 @@ public:
     +---------------+---------------+---------------+---------------+---------------+------*/
     Result const* Put(Key const& key, Result&& result)
         {
+        BeMutexHolder lock(m_mutex);
         return &m_cache.Insert(key, result).first->second;
         }
 };
@@ -210,11 +212,13 @@ struct PolymorphicallyRelatedClassesCache
 
 private:
     bmap<Key, bvector<RelatedClass>> m_map;
+    mutable BeMutex m_mutex;
 
 public:
     bvector<RelatedClass> const* Get(Key const&) const;
     bvector<RelatedClass> const& Add(Key, bvector<RelatedClass>);
     void Clear();
+    BeMutex& GetMutex() const {return m_mutex;}
 };
 
 /*=================================================================================**//**

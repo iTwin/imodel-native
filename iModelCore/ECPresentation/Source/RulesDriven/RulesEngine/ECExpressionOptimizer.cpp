@@ -89,6 +89,7 @@ bool IsOfClassOptimizedExpression::_Value(OptimizedExpressionsParameters const& 
     if (!lookupClassId.IsValid())
         return false;
     
+    BeMutexHolder lock(m_cacheMutex);
     auto cacheIter = m_cache.find(&params.GetConnection().GetECDb());
     if (m_cache.end() == cacheIter)
         {
@@ -120,6 +121,7 @@ bool IsOfClassOptimizedExpression::_Value(OptimizedExpressionsParameters const& 
 +---------------+---------------+---------------+---------------+---------------+--*/
 void IsOfClassOptimizedExpression::_OnConnectionEvent(ConnectionEvent const& evt)
     {
+    BeMutexHolder lock(m_cacheMutex);
     m_cache.erase(&evt.GetConnection().GetECDb());
     }
 
@@ -156,6 +158,7 @@ bool ClassNameOptimizedExpression::_Value(OptimizedExpressionsParameters const& 
     if (!lookupClassId.IsValid())
         return false;
 
+    BeMutexHolder lock(m_cacheMutex);
     auto cacheIter = m_resultsCache.find(&params.GetConnection().GetECDb());
     if (m_resultsCache.end() == cacheIter)
         {
@@ -183,6 +186,7 @@ bool ClassNameOptimizedExpression::_Value(OptimizedExpressionsParameters const& 
 +---------------+---------------+---------------+---------------+---------------+--*/
 void ClassNameOptimizedExpression::_OnConnectionEvent(ConnectionEvent const& evt)
     {
+    BeMutexHolder lock(m_cacheMutex);
     m_resultsCache.erase(&evt.GetConnection().GetECDb());
     }
 
@@ -252,6 +256,7 @@ private:
     bool m_ignoreOpenParens;
     bool m_ignoreArguments;
     int m_openedParens;
+    BeMutex& m_cacheMutex;
 private:
     bool HandleIdent(IdentNodeCR node)
         {
@@ -373,7 +378,7 @@ private:
 
         NodeCP parensNode = nullptr == m_lastLogicalNode ? m_startNode.GetLeftCP() : m_lastLogicalNode->GetRightCP();
         BeAssert(nullptr != parensNode);
-        ECExpressionToOptimizedExpressionConverter parensConverter(*parensNode, true);
+        ECExpressionToOptimizedExpressionConverter parensConverter(*parensNode, m_cacheMutex, true);
         RefCountedPtr<OptimizedExpression> parensExpression = parensConverter.ConvertToOptimizedExpression();
         if (!parensExpression.IsNull())
             {
@@ -446,12 +451,12 @@ private:
 
     void CreateSelectedNodeExpression()
         {
-        CreateLogicalExpressionIfNecessary(IsOfClassOptimizedExpression::Create(m_schemaName.c_str(), m_className.c_str()));
+        CreateLogicalExpressionIfNecessary(IsOfClassOptimizedExpression::Create(m_schemaName.c_str(), m_className.c_str(), m_cacheMutex));
         }
 
     void CreateClassNameNodeExpression()
         {
-        CreateLogicalExpressionIfNecessary(ClassNameOptimizedExpression::Create(m_className.c_str()));
+        CreateLogicalExpressionIfNecessary(ClassNameOptimizedExpression::Create(m_className.c_str(), m_cacheMutex));
         }
 
     void CreateIsInstanceNodeExpression()
@@ -475,9 +480,9 @@ private:
         }
 
 public:
-    ECExpressionToOptimizedExpressionConverter(NodeCR startNode, bool ignoreFirstParens = false)
+    ECExpressionToOptimizedExpressionConverter(NodeCR startNode, BeMutex& cacheMutex, bool ignoreFirstParens = false)
         : m_state(ConverterState::NotParsing), m_expression(nullptr), m_openedParens(0), m_startNode(startNode), m_lastLogicalNode(nullptr),
-        m_ignoreOpenParens(ignoreFirstParens), m_ignoreArguments(false)
+        m_ignoreOpenParens(ignoreFirstParens), m_ignoreArguments(false), m_cacheMutex(cacheMutex)
         {}
 
     bool StartArrayIndex(NodeCR node) override { return false; }
@@ -603,7 +608,7 @@ OptimizedExpressionPtr ECExpressionOptimizer::GetOptimizedExpression(Utf8CP expr
     NodePtr node = ECExpressionsHelper(m_expressionsCache).GetNodeFromExpression(expression);
     if (node.IsValid())
         {
-        ECExpressionToOptimizedExpressionConverter converter(*node);
+        ECExpressionToOptimizedExpressionConverter converter(*node, m_expressionsCache.GetMutex());
         optimizedExp = converter.ConvertToOptimizedExpression();
         }
 

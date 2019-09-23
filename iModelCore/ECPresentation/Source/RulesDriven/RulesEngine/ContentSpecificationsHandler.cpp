@@ -12,7 +12,7 @@
 
 #define NO_RELATED_PROPERTIES_KEYWORD "_none_"
 
-static RelatedClassPath s_emptyRelationshipPath;
+static const RelatedClassPath s_emptyRelationshipPath;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016

@@ -20,7 +20,6 @@
 // ECPresentation includes
 #include <ECPresentation/ECPresentationTypes.h>
 #include <ECPresentation/IECPresentationManager.h>
-#include <ECPresentation/SelectionManager.h>
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 #include <ECPresentation/RulesDriven/PresentationManager.h>
 

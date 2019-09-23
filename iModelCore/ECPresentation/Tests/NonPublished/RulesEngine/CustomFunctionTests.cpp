@@ -50,7 +50,7 @@ struct CustomFunctionTests : ECPresentationTest
         m_widgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *s_widgetClass);
         ECInstanceId::FromString(m_widgetInstanceId, m_widgetInstance->GetInstanceId().c_str());
         m_propertyFormatter = new TestPropertyFormatter();
-        m_schemaHelper = new ECSchemaHelper(*m_connection, nullptr, nullptr, nullptr, nullptr);
+        m_schemaHelper = new ECSchemaHelper(*m_connection, nullptr, nullptr, nullptr);
         m_locale = "test locale";
         }
 
@@ -1503,4 +1503,97 @@ TEST_F(CustomFunctionTests, CompareDoubles_ReturnsNon0WhenComparingNullPropertyA
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_CompareDoubles "(DoubleProperty, 0.0) FROM RET.Widget"));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
     EXPECT_NE(0, stmt.GetValueInt(0));
+    }
+
+/*=================================================================================**//**
+* @bsiclass                                     Mantas.Kontrimas                06/2018
++===============+===============+===============+===============+===============+======*/
+struct CustomFunctionsManagerTests : CustomFunctionTests
+    {
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Mantas.Kontrimas                06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CustomFunctionsManagerTests, ReturnsDifferentContextsOnDifferentThreads)
+    {
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_locale, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
+    ASSERT_EQ(&CustomFunctionsManager::GetManager().GetCurrentContext(), &ctx);
+
+    std::thread([&]()
+        {
+        ASSERT_TRUE(CustomFunctionsManager::GetManager().IsContextEmpty());
+
+        CustomFunctionsContext ctx2(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_locale, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
+        ASSERT_EQ(&CustomFunctionsManager::GetManager().GetCurrentContext(), &ctx2);
+        }).join();
+
+    // Check if another thread context is not visible
+    ASSERT_EQ(&CustomFunctionsManager::GetManager().GetCurrentContext(), &ctx);
+    }
+
+/*=================================================================================**//**
+* @bsiclass                                     Mantas.Kontrimas                07/2018
++===============+===============+===============+===============+===============+======*/
+struct CustomFunctionsInjectorTests : ECPresentationTest
+    {
+    static ECDbTestProject* s_project;
+    ConnectionManager m_connections;
+    CustomFunctionsInjector* m_customFunctionsInjector;
+
+    void SetUp() override
+        {
+        ECPresentationTest::SetUp();
+        m_customFunctionsInjector = new CustomFunctionsInjector(m_connections);
+        }
+
+    void TearDown() override
+        {
+        delete m_customFunctionsInjector;
+        }
+
+    static void SetUpTestCase()
+        {
+        s_project = new ECDbTestProject();
+        s_project->Create("CustomFunctionTests", "RulesEngineTest.01.00.ecschema.xml");
+        }
+
+    static void TearDownTestCase()
+        {
+        DELETE_AND_CLEAR(s_project);
+        }
+    };
+ECDbTestProject* CustomFunctionsInjectorTests::s_project = nullptr;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Mantas.Kontrimas                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CustomFunctionsInjectorTests, MultipleConnectionsAreStoredWhenMultipleThreadsAreUsed)
+    {
+    IConnectionCPtr primaryConnection = m_connections.CreateConnection(s_project->GetECDb());
+    IConnectionCP firstProxyConnection;
+    IConnectionCP secondProxyConnection;
+    ASSERT_TRUE(m_customFunctionsInjector->Handles(*primaryConnection));
+
+    std::thread([&]()
+        {
+        firstProxyConnection = m_connections.GetConnection(primaryConnection->GetId().c_str());
+        ASSERT_TRUE(m_customFunctionsInjector->Handles(*firstProxyConnection));
+        }).join();
+
+    std::thread([&]()
+        {
+        secondProxyConnection = m_connections.GetConnection(primaryConnection->GetId().c_str());
+        ASSERT_TRUE(m_customFunctionsInjector->Handles(*secondProxyConnection));
+        }).join();
+
+    ASSERT_TRUE(m_customFunctionsInjector->Handles(*primaryConnection));
+    ASSERT_TRUE(m_customFunctionsInjector->Handles(*firstProxyConnection));
+    ASSERT_TRUE(m_customFunctionsInjector->Handles(*secondProxyConnection));
+
+    s_project->GetECDb().CloseDb();
+
+    ASSERT_FALSE(m_customFunctionsInjector->Handles(*primaryConnection));
+    ASSERT_FALSE(m_customFunctionsInjector->Handles(*firstProxyConnection));
+    ASSERT_FALSE(m_customFunctionsInjector->Handles(*secondProxyConnection));
     }

@@ -173,48 +173,6 @@ TEST_F(CheckboxRuleTests, AppliesDefaultValueIfNotPropertyBound)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                01/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CheckboxRuleTests, CustomizationHelper_NotifyCheckedStateChanged)
-    {
-    RulesEngineTestHelpers::DeleteInstances(s_project->GetECDb(), *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("BoolProperty", ECValue(true));});
-    
-    CheckBoxRuleP rule = new CheckBoxRule("", 1, false, "BoolProperty", false, false, "");
-    m_ruleset->AddPresentationRule(*rule);
-
-    NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(m_widgetClass);
-    ComplexNavigationQueryPtr query = &ComplexNavigationQuery::Create()->SelectContract(*contract).From(*m_widgetClass, false);
-    query->GetResultParametersR().SetResultType(NavigationQueryResultType::ECInstanceNodes);
-    query->GetResultParametersR().GetNavNodeExtendedDataR().SetSpecificationHash("");
-    
-    RefCountedPtr<QueryBasedNodesProvider> provider = QueryBasedNodesProvider::Create(*m_context, *query);
-    ASSERT_EQ(1, provider->GetNodesCount());
-    
-    JsonNavNodePtr node;
-    ASSERT_TRUE(provider->GetNode(node, 0));
-    //m_nodesCache.Cache(*node, false);
-
-    EXPECT_TRUE(node->IsCheckboxVisible());
-    EXPECT_TRUE(node->IsCheckboxEnabled());
-    EXPECT_TRUE(node->IsChecked());
-
-    ECInstanceNodeKey const* key = node->GetKey()->AsECInstanceNodeKey();
-
-    ECValue value;
-    EXPECT_EQ(ECObjectsStatus::Success, RulesEngineTestHelpers::GetInstance(s_project->GetECDb(), *m_widgetClass, key->GetInstanceId())->GetValue(value, "BoolProperty"));
-    EXPECT_EQ(true, value.GetBoolean());
-
-    CustomizationHelper::NotifyCheckedStateChanged(*m_connection, *node, false);
-    EXPECT_EQ(ECObjectsStatus::Success, RulesEngineTestHelpers::GetInstance(s_project->GetECDb(), *m_widgetClass, key->GetInstanceId())->GetValue(value, "BoolProperty"));
-    EXPECT_EQ(false, value.GetBoolean());
-    
-    CustomizationHelper::NotifyCheckedStateChanged(*m_connection, *node, true);
-    EXPECT_EQ(ECObjectsStatus::Success, RulesEngineTestHelpers::GetInstance(s_project->GetECDb(), *m_widgetClass, key->GetInstanceId())->GetValue(value, "BoolProperty"));
-    EXPECT_EQ(true, value.GetBoolean());
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CheckboxRuleTests, SetCheckBoxEnabled)

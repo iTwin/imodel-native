@@ -38,7 +38,6 @@ typedef RefCountedPtr<TestNavNode> TestNavNodePtr;
 +===============+===============+===============+===============+===============+======*/
 struct TestNodesHelper
     {
-    //static TestNavNodePtr CreateTreeNode(uint64_t nodeId, uint64_t parentId);
     static TestNavNodePtr CreateInstanceNode(IConnectionCR, ECClassCR ecClass, ECInstanceId instanceId = ECInstanceId((uint64_t)123));
     static TestNavNodePtr CreateInstanceNode(IConnectionCR, IECInstanceR instance);
     static TestNavNodePtr CreateClassGroupingNode(IConnectionCR, ECClassCR ecClass, Utf8CP label);

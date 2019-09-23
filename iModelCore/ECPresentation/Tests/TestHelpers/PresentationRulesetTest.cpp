@@ -152,12 +152,11 @@ PresentationRulesetTester::PresentationRulesetTester(BeTest::Host& host, BeFileN
     host.GetDgnPlatformAssetsDirectory(assetsDirectory);
     host.GetTempDir(temporaryDirectory);
     RulesDrivenECPresentationManager::Paths paths(assetsDirectory, temporaryDirectory);
-
-    m_localState = new RuntimeJsonLocalState();
-
-    m_presentationManager = new RulesDrivenECPresentationManager(m_connections, paths);
+    
+    RulesDrivenECPresentationManager::Params params(paths);
+    params.SetLocalState(&m_localState);
+    m_presentationManager = new RulesDrivenECPresentationManager(params);
     m_presentationManager->GetLocaters().RegisterLocater(*DirectoryRuleSetLocater::Create(rulesetsDir.GetNameUtf8().c_str()));
-    m_presentationManager->SetLocalState(m_localState);
     }
 
 //---------------------------------------------------------------------------------------
@@ -176,7 +175,6 @@ PresentationRulesetTester::PresentationRulesetTester(BeTest::Host& host, BeFileN
 PresentationRulesetTester::~PresentationRulesetTester()
     {
     DELETE_AND_CLEAR(m_presentationManager);
-    DELETE_AND_CLEAR(m_localState);
     }
 
 //---------------------------------------------------------------------------------------
@@ -328,7 +326,7 @@ Json::Value PresentationRulesetTester::ExportJson(Utf8CP rulesetId)
 void PresentationRulesetTester::SetECDb(ECDbR db)
     {
     m_db = &db;
-    m_connections.NotifyConnectionOpened(db);
+    m_presentationManager->GetConnections().CreateConnection(db);
     }
 
 //----------------------------------------------------------------------------------------

@@ -44,10 +44,10 @@ void ContentProviderTests::SetUp()
     m_customFunctions = new CustomFunctionsInjector(m_connections, *m_connection);
     m_ruleset = PresentationRuleSet::CreateInstance("ContentProviderTests", 1, 0, false, "", "", "", false);
 
-    m_context = ContentProviderContext::Create(*m_ruleset, true, "locale", ContentDisplayType::Undefined, 0,
+    m_context = ContentProviderContext::Create(*m_ruleset, "locale", ContentDisplayType::Undefined, 0,
         *NavNodeKeyListContainer::Create(), m_nodesLocater, m_categorySupplier,
         m_settings, m_expressionsCache, m_relatedPathsCache, m_polymorphicallyRelatedClassesCache, m_nodesFactory, nullptr);
-    m_context->SetQueryContext(m_connections, *m_connection, m_statementCache, *m_customFunctions);
+    m_context->SetQueryContext(m_connections, *m_connection);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -567,4 +567,36 @@ TEST_F(ContentProviderTests, AllowsUsingCustomFunctionsInInstanceFilterWithPolym
 
     ContentSetItemPtr item;
     EXPECT_TRUE(provider->GetContentSetItem(item, 0));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Mantas.Kontrimas                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ContentProviderTests, CloneContentProviderAndChangeCancelationToken)
+    {
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+
+    NavNodePtr node = TestNodesHelper::CreateInstanceNode(*m_connection, *instance1);
+
+    NavNodeKeyList keys;
+    keys.push_back(node->GetKey());
+    m_context->SetInputKeys(*NavNodeKeyListContainer::Create(keys));
+
+    bvector<ECInstanceKey> instanceKeys;
+    instanceKeys.push_back(node->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
+
+    ContentRule rule;
+    rule.AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
+    SpecificationContentProviderPtr provider = SpecificationContentProvider::Create(*m_context, ContentRuleInstanceKeys(rule, instanceKeys));
+    ICancelationTokenPtr cancelationToken = new TestCancelationToken([&](){return false;});
+    provider->GetContextR().SetCancelationToken(cancelationToken.get());
+
+    SpecificationContentProviderPtr clonedProvider = provider->Clone();
+
+    // Update cancelation token
+    ICancelationTokenPtr newCancelationToken = new TestCancelationToken([&](){return false;});
+    clonedProvider->GetContextR().SetCancelationToken(newCancelationToken.get());
+
+    // Check what only one cancelation token has changed
+    ASSERT_NE(&provider->GetContext().GetCancelationToken(), &clonedProvider->GetContext().GetCancelationToken());
     }

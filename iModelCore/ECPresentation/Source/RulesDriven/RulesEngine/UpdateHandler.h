@@ -142,6 +142,7 @@ private:
     IECExpressionsCacheProvider& m_ecexpressionsCacheProvider;
     RefCountedPtr<IUpdateRecordsHandler> m_updateRecordsHandler;
     HierarchyUpdater* m_hierarchyUpdater;
+    mutable BeMutex m_mutex;
 
 private:
     bvector<IUpdateTaskPtr> CreateUpdateTasks(UpdateContext&, IConnectionCR, bvector<ECInstanceChangeEventSource::ChangedECInstance> const&) const;

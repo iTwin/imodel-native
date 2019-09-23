@@ -227,7 +227,7 @@ void ExpectedQueries::PrepareSchemaContext()
     m_project.GetECDb().SaveChanges();
 
     m_connection = m_connections.NotifyConnectionOpened(m_project.GetECDb());
-    m_schemaHelper = new ECSchemaHelper(*m_connection, nullptr, nullptr, nullptr, nullptr);
+    m_schemaHelper = new ECSchemaHelper(*m_connection, nullptr, nullptr, nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -6011,7 +6011,7 @@ static void ExecuteQueries(bmap<Utf8String, NavigationQueryCPtr> queries, IConne
         LOGI("Query: '%s'", name.c_str());
 
         JsonNavNodesFactory nodesFactory;
-        ECSchemaHelper schemaHelper(connection, nullptr, nullptr, nullptr, nullptr);
+        ECSchemaHelper schemaHelper(connection, nullptr, nullptr, nullptr);
         CustomFunctionsContext functionsContext(schemaHelper, connections, connection, ruleset, "locale", userSettings,
             nullptr, schemaHelper.GetECExpressionsCache(), nodesFactory, nullptr, nullptr, &query->GetExtendedData());
         
@@ -6040,7 +6040,7 @@ static void ExecuteQueries(bmap<Utf8String, ContentQueryCPtr> queries, IConnecti
         LOGI("Query: '%s'", name.c_str());
         
         JsonNavNodesFactory nodesFactory;
-        ECSchemaHelper schemaHelper(connection, nullptr, nullptr, nullptr, nullptr);
+        ECSchemaHelper schemaHelper(connection, nullptr, nullptr, nullptr);
         CustomFunctionsContext functionsContext(schemaHelper, connections, connection, ruleset, "locale", userSettings,
             nullptr, schemaHelper.GetECExpressionsCache(), nodesFactory, nullptr, nullptr, nullptr);
         

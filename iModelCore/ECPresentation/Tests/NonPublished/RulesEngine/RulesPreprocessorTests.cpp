@@ -28,7 +28,6 @@ protected:
     RuleSetLocaterManager m_locaterManager;
     TestUserSettings m_userSettings;
     ECExpressionsCache m_expressionsCache;
-    ECSqlStatementCache m_statementsCache;
     Utf8String m_locale;
 
 public:
@@ -43,7 +42,7 @@ public:
         DELETE_AND_CLEAR(s_project);
         }
 
-    RulesPreprocessorTests() : m_locaterManager(m_connections), m_statementsCache(10) {}
+    RulesPreprocessorTests() : m_locaterManager(m_connections) {}
 
     void SetUp() override
         {
@@ -63,7 +62,7 @@ public:
     RulesPreprocessor GetTestRulesPreprocessor(PresentationRuleSetCR ruleset)
         {
         return RulesPreprocessor(m_connections, *m_connection, ruleset, m_locale, m_userSettings, nullptr, 
-            m_expressionsCache, m_statementsCache);
+            m_expressionsCache);
         }
 };
 ECDbTestProject* RulesPreprocessorTests::s_project = nullptr;
@@ -80,6 +79,7 @@ TEST_F (RulesPreprocessorTests, GetPresentationRuleSet_FindsRulesetWithHighestVe
     
     PresentationRuleSetPtr foundRules = RulesPreprocessor::GetPresentationRuleSet(m_locaterManager, *m_connection);
     ASSERT_EQ(foundRules, rules2);
+    ASSERT_EQ(foundRules->GetHash(), rules2->GetHash());
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -23,7 +23,6 @@ struct ContentProviderTests : ECPresentationTest
     CustomFunctionsInjector* m_customFunctions;
     TestConnectionManager m_connections;
     IConnectionPtr m_connection;
-    ECSqlStatementCache m_statementCache;
     PresentationRuleSetPtr m_ruleset;
     JsonNavNodesFactory m_nodesFactory;
     ContentProviderContextPtr m_context;
@@ -40,7 +39,7 @@ struct ContentProviderTests : ECPresentationTest
     ECClassCP m_sprocketClass;
     
     ContentProviderTests() 
-        : m_statementCache(5), m_locaterManager(m_connections)
+        : m_locaterManager(m_connections)
         {}
 
     static void SetUpTestCase();

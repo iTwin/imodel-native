@@ -20,11 +20,10 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 struct PresentationRulesetTester
 {
 private:
-    ConnectionManager m_connections;
     RulesDrivenECPresentationManager* m_presentationManager;
     ECDb* m_db;
     IssueReporter m_issueReporter;
-    IJsonLocalState* m_localState;
+    RuntimeJsonLocalState m_localState;
 
     //! Compare a node we read from the BIM file with the corresponding node in the JSON expected output file
     //! The last 3 arguments are used to recursively call the function on the node's children
@@ -84,12 +83,6 @@ public:
     //! Set ECDb to use for testing
     void SetECDb(ECDbR db);
 
-    //! Set local state for RulesDrivenECPresentationManager
-    void SetLocalState(IJsonLocalState& localState) { m_presentationManager->SetLocalState(&localState); };
-
-    //! Set localization provider used by RulesDrivenECPresentationManager
-    void SetLocalizationProvider(ILocalizationProvider const* provider) { m_presentationManager->SetLocalizationProvider(provider); };
-    
     //! @return A reference to the private RulesDrivenECPresentationManager
     RulesDrivenECPresentationManager& GetPresentationManager() { return *m_presentationManager; }
 

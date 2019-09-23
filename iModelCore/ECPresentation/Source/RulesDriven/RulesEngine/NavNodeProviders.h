@@ -86,17 +86,17 @@ private:
 private:
     void Init();
     void InitProvidersIndexAllocator(uint64_t const* physicalParentNodeId);
-    ECPRESENTATION_EXPORT NavNodesProviderContext(PresentationRuleSetCR, bool, RuleTargetTree, Utf8String, uint64_t const*, IUserSettings const&, ECExpressionsCache&, 
+    ECPRESENTATION_EXPORT NavNodesProviderContext(PresentationRuleSetCR, RuleTargetTree, Utf8String, uint64_t const*, IUserSettings const&, ECExpressionsCache&, 
         RelatedPathsCache&, PolymorphicallyRelatedClassesCache&, JsonNavNodesFactory const&, IHierarchyCache&, INodesProviderFactoryCR, IJsonLocalState const*);
     ECPRESENTATION_EXPORT NavNodesProviderContext(NavNodesProviderContextCR other);
     
 public:
-    static NavNodesProviderContextPtr Create(PresentationRuleSetCR ruleset, bool holdRuleset, RuleTargetTree targetTree, Utf8String locale, uint64_t const* physicalParentId, 
+    static NavNodesProviderContextPtr Create(PresentationRuleSetCR ruleset, RuleTargetTree targetTree, Utf8String locale, uint64_t const* physicalParentId, 
         IUserSettings const& userSettings, ECExpressionsCache& ecexpressionsCache, RelatedPathsCache& relatedPathsCache, 
         PolymorphicallyRelatedClassesCache& polymorphicallyRelatedClassesCache, JsonNavNodesFactory const& nodesFactory, IHierarchyCache& nodesCache, 
         INodesProviderFactoryCR providerFactory, IJsonLocalState const* localState) 
         {
-        return new NavNodesProviderContext(ruleset, holdRuleset, targetTree, locale, physicalParentId, userSettings, ecexpressionsCache, 
+        return new NavNodesProviderContext(ruleset, targetTree, locale, physicalParentId, userSettings, ecexpressionsCache, 
             relatedPathsCache, polymorphicallyRelatedClassesCache, nodesFactory, nodesCache, providerFactory, localState);
         }
     static NavNodesProviderContextPtr Create(NavNodesProviderContextCR other) {return new NavNodesProviderContext(other);}
@@ -142,7 +142,7 @@ public:
     ChildNodeRuleCP GetChildNodeRule() const {BeAssert(IsChildNodeContext()); return m_childNodeRule;}
 
     // ECDb context
-    ECPRESENTATION_EXPORT void SetQueryContext(IConnectionManagerCR, IConnectionCR, ECSqlStatementCache const&, CustomFunctionsInjector&, IECDbUsedClassesListener*);
+    ECPRESENTATION_EXPORT void SetQueryContext(IConnectionManagerCR, IConnectionCR, IECDbUsedClassesListener*);
     ECPRESENTATION_EXPORT void SetQueryContext(NavNodesProviderContextCR other);
     NavigationQueryBuilder& GetQueryBuilder() const;
     IUsedClassesListener* GetUsedClassesListener() const;

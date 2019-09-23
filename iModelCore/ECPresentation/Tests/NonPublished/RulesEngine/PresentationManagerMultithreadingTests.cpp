@@ -4,16 +4,15 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "TestHelpers.h"
-#include "TestRulesDrivenPresentationManagerImpl.h"
+#include "TestRulesDrivenECPresentationManagerImpl.h"
+#include "../../../Source/RulesDriven/RulesEngine/TaskScheduler.h"
 #include <UnitTests/BackDoor/ECPresentation/TestRuleSetLocater.h>
-#include <UnitTests/BackDoor/ECPresentation/TestSelectionProvider.h>
+#include <folly/BeFolly.h>
 
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
 USING_NAMESPACE_ECPRESENTATIONTESTS
-
-#ifndef RULES_ENGINE_FORCE_SINGLE_THREAD
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                04/2015
@@ -24,18 +23,28 @@ struct RulesDrivenECPresentationManagerMultithreadingTestsBase : ECPresentationT
     static ECDbTestProject* s_project;
     IConnectionManager* m_connections;
     IConnection* m_connection;
+    RefCountedPtr<TestECInstanceChangeEventsSource> m_eventsSource;
     RulesDrivenECPresentationManager* m_manager;
 
     static void SetUpTestCase();
     static void TearDownTestCase();
     virtual void SetUp() override;
     virtual void TearDown() override;
-    virtual IConnectionManager* _CreateConnectionManager() const = 0;
 
-    void Sync()
+    virtual IConnectionManager* _CreateConnectionManager() const = 0;
+    virtual RulesDrivenECPresentationManager::Params _CreateManagerParams() const
         {
-        folly::via(&m_manager->GetExecutor(), []() {}).wait();
+        RulesDrivenECPresentationManager::Params::CachingParams cachingParams;
+        cachingParams.SetDisableDiskCache(true);
+        RulesDrivenECPresentationManager::Params params(RulesEngineTestHelpers::GetPaths(BeTest::GetHost()));
+        params.SetConnections(m_connections);
+        params.SetCachingParams(cachingParams);
+        params.SetECInstanceChangeEventSources({ m_eventsSource });
+        return params;
         }
+    virtual RulesDrivenECPresentationManager::Impl* _CreateCustomImpl(RulesDrivenECPresentationManager::Params) {return nullptr;}
+
+    void Sync() { m_manager->GetTasksCompletion().wait(); }
     };
 Utf8CP RulesDrivenECPresentationManagerMultithreadingTestsBase::s_projectName = "RulesDrivenECPresentationManagerMultithreadingTestsBase";
 ECDbTestProject* RulesDrivenECPresentationManagerMultithreadingTestsBase::s_project = nullptr;
@@ -66,8 +75,25 @@ void RulesDrivenECPresentationManagerMultithreadingTestsBase::SetUp()
     {
     ECPresentationTest::SetUp();
     m_connections = _CreateConnectionManager();
-    m_manager = new RulesDrivenECPresentationManager(*m_connections, RulesEngineTestHelpers::GetPaths(BeTest::GetHost()), true);
     m_connection = m_connections->CreateConnection(s_project->GetECDb()).get();
+    m_eventsSource = new TestECInstanceChangeEventsSource();
+    RulesDrivenECPresentationManager::Params params(_CreateManagerParams());
+    m_manager = new RulesDrivenECPresentationManager(params);
+
+    IConnectionManagerP tempConnections = _CreateConnectionManager();
+    params.SetConnections(tempConnections);
+    RulesDrivenECPresentationManager::Impl* customImpl = _CreateCustomImpl(m_manager->CreateImplParams(params));
+    if (nullptr != customImpl)
+        {
+        m_connections = tempConnections;
+        m_connection = m_connections->CreateConnection(s_project->GetECDb()).get();
+        m_manager->SetImpl(*customImpl);
+        }
+    else
+        {
+        delete tempConnections;
+        }
+
     Sync();
     }
 
@@ -76,16 +102,10 @@ void RulesDrivenECPresentationManagerMultithreadingTestsBase::SetUp()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RulesDrivenECPresentationManagerMultithreadingTestsBase::TearDown()
     {
-    if (nullptr != m_manager)
-        DELETE_AND_CLEAR(m_manager);
-    DELETE_AND_CLEAR(m_connections);
+    DELETE_AND_CLEAR(m_manager);
     }
 
-#ifdef RULES_ENGINE_FORCE_SINGLE_THREAD
-    #define VERIFY_THREAD_NE(threadId)  (void)threadId;
-#else
-    #define VERIFY_THREAD_NE(threadId)  EXPECT_NE(threadId, BeThreadUtilities::GetCurrentThreadId())
-#endif
+#define VERIFY_THREAD_NE(threadId)  EXPECT_NE(threadId, BeThreadUtilities::GetCurrentThreadId())
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                04/2015
@@ -96,40 +116,6 @@ struct RulesDrivenECPresentationManagerMultithreadingTests : RulesDrivenECPresen
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @betest                                       Grigas.Petraitis                11/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerMultithreadingTests, RulesetLocaterCallsItsCallbacksOnECPresentationThread)
-    {
-    TestRuleSetLocaterPtr locater = TestRuleSetLocater::Create();
-    m_manager->GetLocaters().RegisterLocater(*locater);
-
-    TestRulesetCallbacksHandler callbacksHandler;
-    m_manager->GetLocaters().SetRulesetCallbacksHandler(&callbacksHandler);
-
-    uintptr_t mainThreadId = BeThreadUtilities::GetCurrentThreadId();
-
-    BeAtomic<bool> didGetCreatedCallback(false);
-    callbacksHandler.SetCreatedHandler([&](PresentationRuleSetCR ruleset)
-        {
-        didGetCreatedCallback.store(true);
-        VERIFY_THREAD_NE(mainThreadId);
-        });
-    locater->AddRuleSet(*PresentationRuleSet::CreateInstance("test", 1, 0, false, "", "", "", false));
-    Sync();
-    EXPECT_TRUE(didGetCreatedCallback.load());
-
-    BeAtomic<bool> didGetDisposedCallback(false);
-    callbacksHandler.SetDisposedHandler([&](PresentationRuleSetCR ruleset)
-        {
-        didGetDisposedCallback.store(true);
-        VERIFY_THREAD_NE(mainThreadId);
-        });   
-    locater->Clear();
-    Sync();
-    EXPECT_TRUE(didGetDisposedCallback.load());
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                06/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerMultithreadingTests, AllowsLocatingRulesetsFromAnyThread)
@@ -138,7 +124,7 @@ TEST_F(RulesDrivenECPresentationManagerMultithreadingTests, AllowsLocatingRulese
     m_manager->GetLocaters().RegisterLocater(*locater);
 
     // verify we can locate rulesets on the ECPresentation worker thread
-    folly::via(&m_manager->GetExecutor(), [&]() 
+    m_manager->GetTasksManager().CreateAndExecute([&](IECPresentationTaskCR)
         {
         EXPECT_EQ(1, m_manager->GetLocaters().LocateRuleSets(*m_connection, "test").size());
         }).wait();
@@ -178,9 +164,6 @@ TEST_F(RulesDrivenECPresentationManagerMultithreadingTests, UserSettingsManagerC
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerMultithreadingTests, ECInstanceChangeEventSourceCallbacksAreCalledOnECPresentationThread)
     {
-    RefCountedPtr<TestECInstanceChangeEventsSource> eventsSource = new TestECInstanceChangeEventsSource();
-    m_manager->RegisterECInstanceChangeEventSource(*eventsSource);
-    
     TestECInstanceChangeEventsHandler handler;
     m_manager->GetImpl().GetECInstanceChangeEventSources().back()->RegisterEventHandler(handler);
 
@@ -192,10 +175,9 @@ TEST_F(RulesDrivenECPresentationManagerMultithreadingTests, ECInstanceChangeEven
         VERIFY_THREAD_NE(mainThreadId);
         });
     IECInstancePtr anyInstance = s_project->GetECDb().Schemas().GetClass(ECClassId((uint64_t)1))->GetDefaultStandaloneEnabler()->CreateInstance();
-    eventsSource->NotifyECInstanceDeleted(s_project->GetECDb(), *anyInstance);
+    m_eventsSource->NotifyECInstanceDeleted(s_project->GetECDb(), *anyInstance);
     Sync();
     EXPECT_TRUE(didGetCallback.load());
-    m_manager->UnregisterECInstanceChangeEventSource(*eventsSource);
     }
 
 /*=================================================================================**//**
@@ -270,8 +252,8 @@ TEST_F(RulesDrivenECPresentationManagerMultithreadingRealConnectionTests, SetsUp
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
-    ContentInstancesOfSpecificClassesSpecificationP specification = new ContentInstancesOfSpecificClassesSpecification(1, 
-        Utf8PrintfString("this.IsOfClass(\"%s\", \"%s\")", ecClass->GetName().c_str(), ecClass->GetSchema().GetName().c_str()), 
+    ContentInstancesOfSpecificClassesSpecificationP specification = new ContentInstancesOfSpecificClassesSpecification(1,
+        Utf8PrintfString("this.IsOfClass(\"%s\", \"%s\")", ecClass->GetName().c_str(), ecClass->GetSchema().GetName().c_str()),
         ecClass->GetFullName(), true);
     ContentRuleP rule = new ContentRule("", 1, false);
     rule->AddSpecification(*specification);
@@ -324,7 +306,7 @@ TEST_F(RulesDrivenECPresentationManagerMultithreadingRealConnectionTests, Unregi
     DbFunction* function = nullptr;
     m_db.TryGetSqlFunction(function, FUNCTION_NAME_IsOfClass, 3);
     ASSERT_NE(nullptr, function);
-    
+
     // Remove presentation manager
     DELETE_AND_CLEAR(m_manager);
 
@@ -352,7 +334,7 @@ TEST_F(RulesDrivenECPresentationManagerMultithreadingRealConnectionTests, Handle
     ECSchemaPtr schema = nullptr;
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     ECSchema::ReadFromXmlString(schema, schemaXML, *context);
-    
+
     // prepare the dataset
     ECClassCP ecClass = m_db.Schemas().GetClass("RulesEngineTest", "Widget");
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *ecClass, nullptr, true);
@@ -390,19 +372,13 @@ TEST_F(RulesDrivenECPresentationManagerMultithreadingRealConnectionTests, Handle
 struct RulesDrivenECPresentationManagerCustomImplMultithreadingTests : RulesDrivenECPresentationManagerMultithreadingTests
     {
     TestRulesDrivenECPresentationManagerImpl* m_impl;
-    virtual void SetUp() override;
+    virtual RulesDrivenECPresentationManager::Impl* _CreateCustomImpl(RulesDrivenECPresentationManager::Params params) override
+        {
+        m_impl = new TestRulesDrivenECPresentationManagerImpl(params);
+        return m_impl;
+        }
     };
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                07/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RulesDrivenECPresentationManagerCustomImplMultithreadingTests::SetUp()
-    {
-    RulesDrivenECPresentationManagerMultithreadingTests::SetUp();
-    RulesDrivenECPresentationManager::Params params(*m_connections, RulesEngineTestHelpers::GetPaths(BeTest::GetHost()));
-    m_impl = new TestRulesDrivenECPresentationManagerImpl(*m_manager->CreateDependenciesFactory(), params);
-    m_manager->SetImpl(*m_impl);
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                11/2017
@@ -573,7 +549,7 @@ TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsConte
     {
     BeAtomic<bool> wasCalled(false);
     uintptr_t mainThreadId = BeThreadUtilities::GetCurrentThreadId();
-    m_impl->SetContentHandler([&](ContentDescriptorCR, PageOptionsCR, ICancelationTokenCR)
+    m_impl->SetContentHandler([&](IConnectionCR, ContentDescriptorCR, PageOptionsCR, ICancelationTokenCR)
         {
         wasCalled.store(true);
         VERIFY_THREAD_NE(mainThreadId);
@@ -591,10 +567,10 @@ TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsConte
 * @betest                                       Grigas.Petraitis                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsContentSetSizeRequestOnECPresentationThread)
-    {        
+    {
     BeAtomic<bool> wasCalled(false);
     uintptr_t mainThreadId = BeThreadUtilities::GetCurrentThreadId();
-    m_impl->SetContentSetSizeHandler([&](ContentDescriptorCR, ICancelationTokenCR)
+    m_impl->SetContentSetSizeHandler([&](IConnectionCR, ContentDescriptorCR, ICancelationTokenCR)
         {
         wasCalled.store(true);
         VERIFY_THREAD_NE(mainThreadId);
@@ -605,134 +581,6 @@ TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsConte
     RulesDrivenECPresentationManager::ContentOptions options("doesnt matter");
     ContentDescriptorCPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
     m_manager->GetContentSetSize(*descriptor).wait();
-    EXPECT_TRUE(wasCalled.load());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                       Grigas.Petraitis                11/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsNodeCheckedCallbackOnECPresentationThread)
-    {    
-    BeAtomic<bool> wasCalled(false);
-    uintptr_t mainThreadId = BeThreadUtilities::GetCurrentThreadId();
-    m_impl->SetNodeCheckedHandler([&](IConnectionCR, NavNodeKeyCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR)
-        {
-        wasCalled.store(true);
-        VERIFY_THREAD_NE(mainThreadId);
-        });
-
-    // request and verify
-    RulesDrivenECPresentationManager::NavigationOptions options("doesnt matter", TargetTree_Both);
-    m_manager->NotifyNodeChecked(s_project->GetECDb(), *NavNodeKey::Create("type", {"1"}), options.GetJson()).wait();
-    EXPECT_TRUE(wasCalled.load());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                       Grigas.Petraitis                11/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsNodeUncheckedCallbackOnECPresentationThread)
-    {    
-    BeAtomic<bool> wasCalled(false);
-    uintptr_t mainThreadId = BeThreadUtilities::GetCurrentThreadId();
-    m_impl->SetNodeUncheckedHandler([&](IConnectionCR, NavNodeKeyCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR)
-        {
-        wasCalled.store(true);
-        VERIFY_THREAD_NE(mainThreadId);
-        });
-
-    // request and verify
-    RulesDrivenECPresentationManager::NavigationOptions options("doesnt matter", TargetTree_Both);
-    m_manager->NotifyNodeUnchecked(s_project->GetECDb(), *NavNodeKey::Create("type", {"1"}), options.GetJson()).wait();
-    EXPECT_TRUE(wasCalled.load());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                       Grigas.Petraitis                11/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsNodeExpandedCallbackOnECPresentationThread)
-    {    
-    BeAtomic<bool> wasCalled(false);
-    uintptr_t mainThreadId = BeThreadUtilities::GetCurrentThreadId();
-    m_impl->SetNodeExpandedHandler([&](IConnectionCR, NavNodeKeyCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR)
-        {
-        wasCalled.store(true);
-        VERIFY_THREAD_NE(mainThreadId);
-        });
-
-    // request and verify
-    RulesDrivenECPresentationManager::NavigationOptions options("doesnt matter", TargetTree_Both);
-    m_manager->NotifyNodeExpanded(s_project->GetECDb(), *NavNodeKey::Create("type", {"1"}), options.GetJson()).wait();
-    EXPECT_TRUE(wasCalled.load());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                       Grigas.Petraitis                11/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsNodeCollapsedCallbackOnECPresentationThread)
-    {    
-    BeAtomic<bool> wasCalled(false);
-    uintptr_t mainThreadId = BeThreadUtilities::GetCurrentThreadId();
-    m_impl->SetNodeCollapsedHandler([&](IConnectionCR, NavNodeKeyCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR)
-        {
-        wasCalled.store(true);
-        VERIFY_THREAD_NE(mainThreadId);
-        });
-
-    // request and verify
-    RulesDrivenECPresentationManager::NavigationOptions options("doesnt matter", TargetTree_Both);
-    m_manager->NotifyNodeCollapsed(s_project->GetECDb(), *NavNodeKey::Create("type", {"1"}), options.GetJson()).wait();
-    EXPECT_TRUE(wasCalled.load());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                       Aidas.Vaiksnoras               12/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsAllNodesCollapsedCallbackOnECPresentationThread)
-    {    
-    BeAtomic<bool> wasCalled(false);
-    uintptr_t mainThreadId = BeThreadUtilities::GetCurrentThreadId();
-    m_impl->SetAllNodesCollapsedHandler([&](IConnectionCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR)
-        {
-        wasCalled.store(true);
-        VERIFY_THREAD_NE(mainThreadId);
-        });
-
-    // request and verify
-    m_manager->NotifyAllNodesCollapsed(s_project->GetECDb(), 1).wait();
-    EXPECT_TRUE(wasCalled.load());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                       Grigas.Petraitis                11/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsSaveValueChangeOnMainThread)
-    {
-    BeAtomic<bool> wasCalled(false);
-    uintptr_t mainThreadId = BeThreadUtilities::GetCurrentThreadId();
-    m_impl->SetSaveValueChangeHandler([&](IConnectionCR, bvector<ChangedECInstanceInfo> const&, Utf8CP, ECValueCR)
-        {
-        wasCalled.store(true);
-        EXPECT_EQ(mainThreadId, BeThreadUtilities::GetCurrentThreadId());
-        return bvector<ECInstanceChangeResult>();
-        });
-    m_manager->SaveValueChange(s_project->GetECDb(), bvector<ChangedECInstanceInfo>(), "", ECValue(), Json::Value()).wait();
-    EXPECT_TRUE(wasCalled.load());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                       Grigas.Petraitis                11/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsCategoriesChangedCallbackOnECPresentationThread)
-    {
-    BeAtomic<bool> wasCalled(false);
-    uintptr_t mainThreadId = BeThreadUtilities::GetCurrentThreadId();
-    m_impl->SetCategoriesChangedHandler([&]()
-        {
-        wasCalled.store(true);
-        VERIFY_THREAD_NE(mainThreadId);
-        });
-    m_manager->NotifyCategoriesChanged();
-    Sync();
     EXPECT_TRUE(wasCalled.load());
     }
 
@@ -759,12 +607,17 @@ struct RulesDrivenECPresentationManagerRequestCancelationTests : RulesDrivenECPr
     bool m_connectionInterrupted;
 
     RulesDrivenECPresentationManagerRequestCancelationTests()
-        : m_result(folly::makeFuture()), m_connectionInterrupted(false)
+        : m_result(folly::makeFuture())
         {}
 
     virtual void SetUp() override
         {
         RulesDrivenECPresentationManagerCustomImplMultithreadingTests::SetUp();
+
+        m_blockingState.store(BlockingState::Waiting);
+        m_hitCount.store(0);
+        m_result = folly::makeFuture();
+        m_connectionInterrupted = false;
 
         m_locater = TestRuleSetLocater::Create();
         m_manager->GetLocaters().RegisterLocater(*m_locater);
@@ -773,18 +626,35 @@ struct RulesDrivenECPresentationManagerRequestCancelationTests : RulesDrivenECPr
         static_cast<TestConnection*>(m_connection)->SetInterruptHandler([&](){m_connectionInterrupted = true;});
         }
 
-    void BlockECPresentationThread()
+    virtual void TearDown() override
+        {
+        m_locater->Clear();
+        RulesDrivenECPresentationManagerCustomImplMultithreadingTests::TearDown();
+        }
+
+    void RunTestWithParams(std::function<void(bool)> test)
+        {
+        test(false);
+        TearDown();
+        SetUp();
+        test(true);
+        }
+
+    void BlockECPresentationThreads()
         {
         // add a blocking task to the ECPresentation thread
         uint64_t startTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
         m_blockingState.store(BlockingState::Waiting);
-        folly::via(&m_manager->GetExecutor(), [this, startTime]()
+        for (unsigned i = 0; i < m_manager->GetBackgroundThreadsCount(); ++i)
             {
-            m_blockingState.store(BlockingState::Blocking);
-            while (BlockingState::Blocking == m_blockingState.load() && (BeTimeUtilities::GetCurrentTimeAsUnixMillis() < (startTime + s_blockingTaskTimeout)))
-                BeThreadUtilities::BeSleep(1);
-            m_blockingState.store(BlockingState::Finished);
-            });
+            m_manager->GetTasksManager().CreateAndExecute([this, startTime](IECPresentationTaskCR)
+                {
+                m_blockingState.store(BlockingState::Blocking);
+                while (BlockingState::Blocking == m_blockingState.load() && (BeTimeUtilities::GetCurrentTimeAsUnixMillis() < (startTime + s_blockingTaskTimeout)))
+                    BeThreadUtilities::BeSleep(1);
+                m_blockingState.store(BlockingState::Finished);
+                });
+            }
         }
 
     void EnsureBlocked()
@@ -794,6 +664,15 @@ struct RulesDrivenECPresentationManagerRequestCancelationTests : RulesDrivenECPr
             // wait for the handler to block
             BeThreadUtilities::BeSleep(1);
             }
+        }
+
+    void WaitTillStateGetsChanged()
+        {
+        uint64_t startTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
+        m_blockingState.store(BlockingState::Blocking);
+        while (BlockingState::Blocking == m_blockingState.load() && (BeTimeUtilities::GetCurrentTimeAsUnixMillis() < (startTime + s_blockingTaskTimeout)))
+            BeThreadUtilities::BeSleep(1);
+        m_blockingState.store(BlockingState::Finished);
         }
 
     template<typename TCallback>
@@ -816,13 +695,13 @@ struct RulesDrivenECPresentationManagerRequestCancelationTests : RulesDrivenECPr
 
     void VerifyCancelation(bool expectCanceled, bool expectConnectionInterrupted, int expectedHitCount)
         {
+        expectConnectionInterrupted = false; // WIP: interrupting requests is temporarily disabled
         if (expectCanceled)
             {
             // verify the request is finished with a cancelation exception
             EXPECT_TRUE(m_result.isReady());
             EXPECT_TRUE(m_result.hasException());
             EXPECT_TRUE(m_result.getTry().exception().is_compatible_with<folly::FutureCancellation>());
-            
             }
         else
             {
@@ -843,13 +722,13 @@ struct RulesDrivenECPresentationManagerRequestCancelationTests : RulesDrivenECPr
         VerifyCancelation(true, false, 0);
         }
 
-    void CloseConnectionAndVerifyResult()
+    void CloseConnectionAndVerifyResult(bool expectConnectionInterrupted)
         {
         EnsureBlocked();
         static_cast<TestConnectionManager*>(m_connections)->NotifyConnectionClosed(*m_connections->GetConnection(s_project->GetECDb()));
-        VerifyCancelation(true, true, 0);
+        VerifyCancelation(true, expectConnectionInterrupted, 0);
         }
-    
+
     void DisposeRulesetAndVerifyResult()
         {
         EnsureBlocked();
@@ -865,18 +744,29 @@ Utf8CP RulesDrivenECPresentationManagerRequestCancelationTests::s_rulesetId = "s
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsRootNodesCountRequestWhenManagerIsTerminated)
     {
-    // set the request handler
-    m_impl->SetRootNodesCountHandler([&](IConnectionCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR)
+    RunTestWithParams([this](bool started)
         {
-        m_hitCount.IncrementAtomicPre();
-        return 0;
-        });
+        // set the request handler
+        m_impl->SetRootNodesCountHandler([&](IConnectionCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR cancelationToken)
+            {
+            if (started)
+                {
+                // Wait till request gets canceled
+                WaitTillStateGetsChanged();
+                if (cancelationToken.IsCanceled())
+                    return 0;
+                }
+            m_hitCount.IncrementAtomicPre();
+            return 0;
+            });
 
-    // request and verify
-    RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
-    BlockECPresentationThread();
-    DoRequest(m_manager->GetRootNodesCount(s_project->GetECDb(), options.GetJson()));
-    TerminateAndVerifyResult();
+        // request and verify
+        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
+        if (!started)
+            BlockECPresentationThreads();
+        DoRequest(m_manager->GetRootNodesCount(s_project->GetECDb(), options.GetJson()));
+        TerminateAndVerifyResult();
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -884,18 +774,29 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsRootNodes
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsRootNodesCountRequestWhenConnectionIsClosed)
     {
-    // set the request handler
-    m_impl->SetRootNodesCountHandler([&](IConnectionCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR)
+    RunTestWithParams([this](bool started)
         {
-        m_hitCount.IncrementAtomicPre();
-        return 0;
-        });
+        // set the request handler
+        m_impl->SetRootNodesCountHandler([&] (IConnectionCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR cancelationToken)
+            {
+            if (started)
+                {
+                // Wait till request gets canceled
+                WaitTillStateGetsChanged();
+                if (cancelationToken.IsCanceled())
+                    return 0;
+                }
+            m_hitCount.IncrementAtomicPre();
+            return 0;
+            });
 
-    // request and verify
-    RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
-    BlockECPresentationThread();
-    DoRequest(m_manager->GetRootNodesCount(s_project->GetECDb(), options.GetJson()));
-    CloseConnectionAndVerifyResult();
+        // request and verify
+        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
+        if (!started)
+            BlockECPresentationThreads();
+        DoRequest(m_manager->GetRootNodesCount(s_project->GetECDb(), options.GetJson()));
+        CloseConnectionAndVerifyResult(started);
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -903,18 +804,29 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsRootNodes
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsRootNodesCountRequestWhenRulesetIsDisposed)
     {
-    // set the request handler
-    m_impl->SetRootNodesCountHandler([&](IConnectionCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR)
+    RunTestWithParams([this](bool started)
         {
-        m_hitCount.IncrementAtomicPre();
-        return 0;
-        });
+        // set the request handler
+        m_impl->SetRootNodesCountHandler([&] (IConnectionCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR cancelationToken)
+            {
+            if (started)
+                {
+                // Wait till request gets canceled
+                WaitTillStateGetsChanged();
+                if (cancelationToken.IsCanceled())
+                    return 0;
+                }
+            m_hitCount.IncrementAtomicPre();
+            return 0;
+            });
 
-    // request and verify
-    RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
-    BlockECPresentationThread();
-    DoRequest(m_manager->GetRootNodesCount(s_project->GetECDb(), options.GetJson()));
-    DisposeRulesetAndVerifyResult();
+        // request and verify
+        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
+        if (!started)
+            BlockECPresentationThreads();
+        DoRequest(m_manager->GetRootNodesCount(s_project->GetECDb(), options.GetJson()));
+        DisposeRulesetAndVerifyResult();
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -922,18 +834,29 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsRootNodes
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsRootNodesRequestWhenManagerIsTerminated)
     {
-    // set the request handler
-    m_impl->SetRootNodesHandler([&](IConnectionCR, PageOptionsCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR)
+    RunTestWithParams([this](bool started)
         {
-        m_hitCount.IncrementAtomicPre();
-        return nullptr;
-        });
+        // set the request handler
+        m_impl->SetRootNodesHandler([&] (IConnectionCR, PageOptionsCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR cancelationToken)
+            {
+            if (started)
+                {
+                // Wait till request gets canceled
+                WaitTillStateGetsChanged();
+                if (cancelationToken.IsCanceled())
+                    return nullptr;
+                }
+            m_hitCount.IncrementAtomicPre();
+            return nullptr;
+            });
 
-    // request and verify
-    RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
-    BlockECPresentationThread();
-    DoRequest(m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()));
-    TerminateAndVerifyResult();
+        // request and verify
+        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
+        if (!started)
+            BlockECPresentationThreads();
+        DoRequest(m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()));
+        TerminateAndVerifyResult();
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -941,18 +864,29 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsRootNodes
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsRootNodesRequestWhenConnectionIsClosed)
     {
-    // set the request handler
-    m_impl->SetRootNodesHandler([&](IConnectionCR, PageOptionsCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR)
+    RunTestWithParams([this](bool started)
         {
-        m_hitCount.IncrementAtomicPre();
-        return nullptr;
-        });
+        // set the request handler
+        m_impl->SetRootNodesHandler([&] (IConnectionCR, PageOptionsCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR cancelationToken)
+            {
+            if (started)
+                {
+                // Wait till request gets canceled
+                WaitTillStateGetsChanged();
+                if (cancelationToken.IsCanceled())
+                    return nullptr;
+                }
+            m_hitCount.IncrementAtomicPre();
+            return nullptr;
+            });
 
-    // request and verify
-    RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
-    BlockECPresentationThread();
-    DoRequest(m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()));
-    CloseConnectionAndVerifyResult();
+        // request and verify
+        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
+        if (!started)
+            BlockECPresentationThreads();
+        DoRequest(m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()));
+        CloseConnectionAndVerifyResult(started);
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -960,18 +894,29 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsRootNodes
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsRootNodesRequestWhenRulesetIsDisposed)
     {
-    // set the request handler
-    m_impl->SetRootNodesHandler([&](IConnectionCR, PageOptionsCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR)
+    RunTestWithParams([this](bool started)
         {
-        m_hitCount.IncrementAtomicPre();
-        return nullptr;
-        });
+        // set the request handler
+        m_impl->SetRootNodesHandler([&] (IConnectionCR, PageOptionsCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR cancelationToken)
+            {
+            if (started)
+                {
+                // Wait till request gets canceled
+                WaitTillStateGetsChanged();
+                if (cancelationToken.IsCanceled())
+                    return nullptr;
+                }
+            m_hitCount.IncrementAtomicPre();
+            return nullptr;
+            });
 
-    // request and verify
-    RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
-    BlockECPresentationThread();
-    DoRequest(m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()));
-    DisposeRulesetAndVerifyResult();
+        // request and verify
+        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
+        if (!started)
+            BlockECPresentationThreads();
+        DoRequest(m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()));
+        DisposeRulesetAndVerifyResult();
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -979,19 +924,30 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsRootNodes
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsChildNodesCountRequestWhenManagerIsTerminated)
     {
-    // set the request handler
-    m_impl->SetChildNodesCountHandler([&](IConnectionCR, NavNodeCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR)
+    RunTestWithParams([this](bool started)
         {
-        m_hitCount.IncrementAtomicPre();
-        return 0;
-        });
+        // set the request handler
+        m_impl->SetChildNodesCountHandler([&] (IConnectionCR, NavNodeCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR cancelationToken)
+            {
+            if (started)
+                {
+                // Wait till request gets canceled
+                WaitTillStateGetsChanged();
+                if (cancelationToken.IsCanceled())
+                    return 0;
+                }
+            m_hitCount.IncrementAtomicPre();
+            return 0;
+            });
 
-    // request and verify
-    TestNavNodePtr parentNode = TestNavNode::Create(*m_connection);
-    RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
-    BlockECPresentationThread();
-    DoRequest(m_manager->GetChildrenCount(s_project->GetECDb(), *parentNode, options.GetJson()));
-    TerminateAndVerifyResult();
+        // request and verify
+        TestNavNodePtr parentNode = TestNavNode::Create(*m_connection);
+        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
+        if (!started)
+            BlockECPresentationThreads();
+        DoRequest(m_manager->GetChildrenCount(s_project->GetECDb(), *parentNode, options.GetJson()));
+        TerminateAndVerifyResult();
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -999,19 +955,30 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsChildNode
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsChildNodesCountRequestWhenConnectionIsClosed)
     {
-    // set the request handler
-    m_impl->SetChildNodesCountHandler([&](IConnectionCR, NavNodeCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR)
+    RunTestWithParams([this](bool started)
         {
-        m_hitCount.IncrementAtomicPre();
-        return 0;
-        });
+        // set the request handler
+        m_impl->SetChildNodesCountHandler([&] (IConnectionCR, NavNodeCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR cancelationToken)
+            {
+            if (started)
+                {
+                // Wait till request gets canceled
+                WaitTillStateGetsChanged();
+                if (cancelationToken.IsCanceled())
+                    return 0;
+                }
+            m_hitCount.IncrementAtomicPre();
+            return 0;
+            });
 
-    // request and verify
-    TestNavNodePtr parentNode = TestNavNode::Create(*m_connection);
-    RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
-    BlockECPresentationThread();
-    DoRequest(m_manager->GetChildrenCount(s_project->GetECDb(), *parentNode, options.GetJson()));
-    CloseConnectionAndVerifyResult();
+        // request and verify
+        TestNavNodePtr parentNode = TestNavNode::Create(*m_connection);
+        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
+        if (!started)
+            BlockECPresentationThreads();
+        DoRequest(m_manager->GetChildrenCount(s_project->GetECDb(), *parentNode, options.GetJson()));
+        CloseConnectionAndVerifyResult(started);
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1019,19 +986,30 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsChildNode
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsChildNodesCountRequestWhenRulesetIsDisposed)
     {
-    // set the request handler
-    m_impl->SetChildNodesCountHandler([&](IConnectionCR, NavNodeCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR)
+    RunTestWithParams([this](bool started)
         {
-        m_hitCount.IncrementAtomicPre();
-        return 0;
-        });
+        // set the request handler
+        m_impl->SetChildNodesCountHandler([&] (IConnectionCR, NavNodeCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR cancelationToken)
+            {
+            if (started)
+                {
+                // Wait till request gets canceled
+                WaitTillStateGetsChanged();
+                if (cancelationToken.IsCanceled())
+                    return 0;
+                }
+            m_hitCount.IncrementAtomicPre();
+            return 0;
+            });
 
-    // request and verify
-    TestNavNodePtr parentNode = TestNavNode::Create(*m_connection);
-    RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
-    BlockECPresentationThread();
-    DoRequest(m_manager->GetChildrenCount(s_project->GetECDb(), *parentNode, options.GetJson()));
-    DisposeRulesetAndVerifyResult();
+        // request and verify
+        TestNavNodePtr parentNode = TestNavNode::Create(*m_connection);
+        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
+        if (!started)
+            BlockECPresentationThreads();
+        DoRequest(m_manager->GetChildrenCount(s_project->GetECDb(), *parentNode, options.GetJson()));
+        DisposeRulesetAndVerifyResult();
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1039,19 +1017,30 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsChildNode
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsChildNodesRequestWhenManagerIsTerminated)
     {
-    // set the request handler
-    m_impl->SetChildNodesHandler([&](IConnectionCR, NavNodeCR, PageOptionsCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR)
+    RunTestWithParams([this](bool started)
         {
-        m_hitCount.IncrementAtomicPre();
-        return nullptr;
-        });
+        // set the request handler
+        m_impl->SetChildNodesHandler([&] (IConnectionCR, NavNodeCR, PageOptionsCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR cancelationToken)
+            {
+            if (started)
+                {
+                // Wait till request gets canceled
+                WaitTillStateGetsChanged();
+                if (cancelationToken.IsCanceled())
+                    return nullptr;
+                }
+            m_hitCount.IncrementAtomicPre();
+            return nullptr;
+            });
 
-    // request and verify
-    TestNavNodePtr parentNode = TestNavNode::Create(*m_connection);
-    RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
-    BlockECPresentationThread();
-    DoRequest(m_manager->GetChildren(s_project->GetECDb(), *parentNode, PageOptions(), options.GetJson()));
-    TerminateAndVerifyResult();
+        // request and verify
+        TestNavNodePtr parentNode = TestNavNode::Create(*m_connection);
+        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
+        if (!started)
+            BlockECPresentationThreads();
+        DoRequest(m_manager->GetChildren(s_project->GetECDb(), *parentNode, PageOptions(), options.GetJson()));
+        TerminateAndVerifyResult();
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1059,19 +1048,30 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsChildNode
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsChildNodesRequestWhenConnectionIsClosed)
     {
-    // set the request handler
-    m_impl->SetChildNodesHandler([&](IConnectionCR, NavNodeCR, PageOptionsCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR)
+    RunTestWithParams([this](bool started)
         {
-        m_hitCount.IncrementAtomicPre();
-        return nullptr;
-        });
+        // set the request handler
+        m_impl->SetChildNodesHandler([&] (IConnectionCR, NavNodeCR, PageOptionsCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR cancelationToken)
+            {
+            if (started)
+                {
+                // Wait till request gets canceled
+                WaitTillStateGetsChanged();
+                if (cancelationToken.IsCanceled())
+                    return nullptr;
+                }
+            m_hitCount.IncrementAtomicPre();
+            return nullptr;
+            });
 
-    // request and verify
-    TestNavNodePtr parentNode = TestNavNode::Create(*m_connection);
-    RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
-    BlockECPresentationThread();
-    DoRequest(m_manager->GetChildren(s_project->GetECDb(), *parentNode, PageOptions(), options.GetJson()));
-    CloseConnectionAndVerifyResult();
+        // request and verify
+        TestNavNodePtr parentNode = TestNavNode::Create(*m_connection);
+        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
+        if (!started)
+            BlockECPresentationThreads();
+        DoRequest(m_manager->GetChildren(s_project->GetECDb(), *parentNode, PageOptions(), options.GetJson()));
+        CloseConnectionAndVerifyResult(started);
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1079,19 +1079,30 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsChildNode
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsChildNodesRequestWhenRulesetIsDisposed)
     {
-    // set the request handler
-    m_impl->SetChildNodesHandler([&](IConnectionCR, NavNodeCR, PageOptionsCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR)
+    RunTestWithParams([this](bool started)
         {
-        m_hitCount.IncrementAtomicPre();
-        return nullptr;
-        });
+        // set the request handler
+        m_impl->SetChildNodesHandler([&] (IConnectionCR, NavNodeCR, PageOptionsCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR cancelationToken)
+            {
+            if (started)
+                {
+                // Wait till request gets canceled
+                WaitTillStateGetsChanged();
+                if (cancelationToken.IsCanceled())
+                    return nullptr;
+                }
+            m_hitCount.IncrementAtomicPre();
+            return nullptr;
+            });
 
-    // request and verify
-    TestNavNodePtr parentNode = TestNavNode::Create(*m_connection);
-    RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
-    BlockECPresentationThread();
-    DoRequest(m_manager->GetChildren(s_project->GetECDb(), *parentNode, PageOptions(), options.GetJson()));
-    DisposeRulesetAndVerifyResult();
+        // request and verify
+        TestNavNodePtr parentNode = TestNavNode::Create(*m_connection);
+        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
+        if (!started)
+            BlockECPresentationThreads();
+        DoRequest(m_manager->GetChildren(s_project->GetECDb(), *parentNode, PageOptions(), options.GetJson()));
+        DisposeRulesetAndVerifyResult();
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1099,18 +1110,29 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsChildNode
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsNodeRequestWhenManagerIsTerminated)
     {
-    // set the request handler
-    m_impl->SetGetNodeHandler([&](IConnectionCR, NavNodeKeyCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR)
+    RunTestWithParams([this](bool started)
         {
-        m_hitCount.IncrementAtomicPre();
-        return nullptr;
-        });
+        // set the request handler
+        m_impl->SetGetNodeHandler([&] (IConnectionCR, NavNodeKeyCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR cancelationToken)
+            {
+            if (started)
+                {
+                // Wait till request gets canceled
+                WaitTillStateGetsChanged();
+                if (cancelationToken.IsCanceled())
+                    return nullptr;
+                }
+            m_hitCount.IncrementAtomicPre();
+            return nullptr;
+            });
 
-    // request and verify
-    RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
-    BlockECPresentationThread();
-    DoRequest(m_manager->GetNode(s_project->GetECDb(), *NavNodeKey::Create("type", {"1"}), options.GetJson()));
-    TerminateAndVerifyResult();
+        // request and verify
+        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
+        if (!started)
+            BlockECPresentationThreads();
+        DoRequest(m_manager->GetNode(s_project->GetECDb(), *NavNodeKey::Create("type", {"1"}), options.GetJson()));
+        TerminateAndVerifyResult();
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1118,18 +1140,29 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsNodeReque
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsNodeRequestWhenConnectionIsClosed)
     {
-    // set the request handler
-    m_impl->SetGetNodeHandler([&](IConnectionCR, NavNodeKeyCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR)
+    RunTestWithParams([this](bool started)
         {
-        m_hitCount.IncrementAtomicPre();
-        return nullptr;
-        });
+        // set the request handler
+        m_impl->SetGetNodeHandler([&] (IConnectionCR, NavNodeKeyCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR cancelationToken)
+            {
+            if (started)
+                {
+                // Wait till request gets canceled
+                WaitTillStateGetsChanged();
+                if (cancelationToken.IsCanceled())
+                    return nullptr;
+                }
+            m_hitCount.IncrementAtomicPre();
+            return nullptr;
+            });
 
-    // request and verify
-    RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
-    BlockECPresentationThread();
-    DoRequest(m_manager->GetNode(s_project->GetECDb(), *NavNodeKey::Create("type", {"1"}), options.GetJson()));
-    CloseConnectionAndVerifyResult();
+        // request and verify
+        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
+        if (!started)
+            BlockECPresentationThreads();
+        DoRequest(m_manager->GetNode(s_project->GetECDb(), *NavNodeKey::Create("type", {"1"}), options.GetJson()));
+        CloseConnectionAndVerifyResult(started);
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1137,19 +1170,30 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsNodeReque
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsParentNodeRequestWhenManagerIsTerminated)
     {
-    // set the request handler
-    m_impl->SetGetParentHandler([&](IConnectionCR, NavNodeCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR)
+    RunTestWithParams([this](bool started)
         {
-        m_hitCount.IncrementAtomicPre();
-        return nullptr;
-        });
+        // set the request handler
+        m_impl->SetGetParentHandler([&] (IConnectionCR, NavNodeCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR cancelationToken)
+            {
+            if (started)
+                {
+                // Wait till request gets canceled
+                WaitTillStateGetsChanged();
+                if (cancelationToken.IsCanceled())
+                    return nullptr;
+                }
+            m_hitCount.IncrementAtomicPre();
+            return nullptr;
+            });
 
-    // request and verify
-    TestNavNodePtr childNode = TestNavNode::Create(*m_connection);
-    RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
-    BlockECPresentationThread();
-    DoRequest(m_manager->GetParent(s_project->GetECDb(), *childNode, options.GetJson()));
-    TerminateAndVerifyResult();
+        // request and verify
+        TestNavNodePtr childNode = TestNavNode::Create(*m_connection);
+        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
+        if (!started)
+            BlockECPresentationThreads();
+        DoRequest(m_manager->GetParent(s_project->GetECDb(), *childNode, options.GetJson()));
+        TerminateAndVerifyResult();
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1157,19 +1201,30 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsParentNod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsParentNodeRequestWhenConnectionIsClosed)
     {
-    // set the request handler
-    m_impl->SetGetParentHandler([&](IConnectionCR, NavNodeCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR)
+    RunTestWithParams([this](bool started)
         {
-        m_hitCount.IncrementAtomicPre();
-        return nullptr;
-        });
+        // set the request handler
+        m_impl->SetGetParentHandler([&] (IConnectionCR, NavNodeCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR cancelationToken)
+            {
+            if (started)
+                {
+                // Wait till request gets canceled
+                WaitTillStateGetsChanged();
+                if (cancelationToken.IsCanceled())
+                    return nullptr;
+                }
+            m_hitCount.IncrementAtomicPre();
+            return nullptr;
+            });
 
-    // request and verify
-    TestNavNodePtr childNode = TestNavNode::Create(*m_connection);
-    RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
-    BlockECPresentationThread();
-    DoRequest(m_manager->GetParent(s_project->GetECDb(), *childNode, options.GetJson()));
-    CloseConnectionAndVerifyResult();
+        // request and verify
+        TestNavNodePtr childNode = TestNavNode::Create(*m_connection);
+        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
+        if (!started)
+            BlockECPresentationThreads();
+        DoRequest(m_manager->GetParent(s_project->GetECDb(), *childNode, options.GetJson()));
+        CloseConnectionAndVerifyResult(started);
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1177,19 +1232,30 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsParentNod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsParentNodeRequestWhenRulesetIsDisposed)
     {
-    // set the request handler
-    m_impl->SetGetParentHandler([&](IConnectionCR, NavNodeCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR)
+    RunTestWithParams([this](bool started)
         {
-        m_hitCount.IncrementAtomicPre();
-        return nullptr;
-        });
+        // set the request handler
+        m_impl->SetGetParentHandler([&] (IConnectionCR, NavNodeCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR cancelationToken)
+            {
+            if (started)
+                {
+                // Wait till request gets canceled
+                WaitTillStateGetsChanged();
+                if (cancelationToken.IsCanceled())
+                    return nullptr;
+                }
+            m_hitCount.IncrementAtomicPre();
+            return nullptr;
+            });
 
-    // request and verify
-    TestNavNodePtr childNode = TestNavNode::Create(*m_connection);
-    RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
-    BlockECPresentationThread();
-    DoRequest(m_manager->GetParent(s_project->GetECDb(), *childNode, options.GetJson()));
-    DisposeRulesetAndVerifyResult();
+        // request and verify
+        TestNavNodePtr childNode = TestNavNode::Create(*m_connection);
+        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
+        if (!started)
+            BlockECPresentationThreads();
+        DoRequest(m_manager->GetParent(s_project->GetECDb(), *childNode, options.GetJson()));
+        DisposeRulesetAndVerifyResult();
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1197,19 +1263,30 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsParentNod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsFilteredNodesRequestWhenManagerIsTerminated)
     {
-    // set the request handler
-    m_impl->SetGetFilteredNodesHandler([&](IConnectionCR, Utf8CP, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR)
+    RunTestWithParams([this](bool started)
         {
-        m_hitCount.IncrementAtomicPre();
-        return bvector<NavNodeCPtr>();
-        });
+        // set the request handler
+        m_impl->SetGetFilteredNodesHandler([&] (IConnectionCR, Utf8CP, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR cancelationToken)
+            {
+            if (started)
+                {
+                // Wait till request gets canceled
+                WaitTillStateGetsChanged();
+                if (cancelationToken.IsCanceled())
+                    return bvector<NavNodeCPtr>();
+                }
+            m_hitCount.IncrementAtomicPre();
+            return bvector<NavNodeCPtr>();
+            });
 
-    // request and verify
-    TestNavNodePtr childNode = TestNavNode::Create(*m_connection);
-    RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
-    BlockECPresentationThread();
-    DoRequest(m_manager->GetFilteredNodesPaths(s_project->GetECDb(), "", options.GetJson()));
-    TerminateAndVerifyResult();
+        // request and verify
+        TestNavNodePtr childNode = TestNavNode::Create(*m_connection);
+        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
+        if (!started)
+            BlockECPresentationThreads();
+        DoRequest(m_manager->GetFilteredNodePaths(s_project->GetECDb(), "", options.GetJson()));
+        TerminateAndVerifyResult();
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1217,19 +1294,30 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsFilteredN
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsFilteredNodesRequestWhenConnectionIsClosed)
     {
-    // set the request handler
-    m_impl->SetGetFilteredNodesHandler([&](IConnectionCR, Utf8CP, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR)
+    RunTestWithParams([this](bool started)
         {
-        m_hitCount.IncrementAtomicPre();
-        return bvector<NavNodeCPtr>();
-        });
+        // set the request handler
+        m_impl->SetGetFilteredNodesHandler([&] (IConnectionCR, Utf8CP, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR cancelationToken)
+            {
+            if (started)
+                {
+                // Wait till request gets canceled
+                WaitTillStateGetsChanged();
+                if (cancelationToken.IsCanceled())
+                    return bvector<NavNodeCPtr>();
+                }
+            m_hitCount.IncrementAtomicPre();
+            return bvector<NavNodeCPtr>();
+            });
 
-    // request and verify
-    TestNavNodePtr childNode = TestNavNode::Create(*m_connection);
-    RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
-    BlockECPresentationThread();
-    DoRequest(m_manager->GetFilteredNodesPaths(s_project->GetECDb(), "", options.GetJson()));
-    CloseConnectionAndVerifyResult();
+        // request and verify
+        TestNavNodePtr childNode = TestNavNode::Create(*m_connection);
+        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
+        if (!started)
+            BlockECPresentationThreads();
+        DoRequest(m_manager->GetFilteredNodePaths(s_project->GetECDb(), "", options.GetJson()));
+        CloseConnectionAndVerifyResult(started);
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1237,19 +1325,30 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsFilteredN
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsFilteredNodesRequestWhenRulesetIsDisposed)
     {
-    // set the request handler
-    m_impl->SetGetFilteredNodesHandler([&](IConnectionCR, Utf8CP, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR)
+    RunTestWithParams([this](bool started)
         {
-        m_hitCount.IncrementAtomicPre();
-        return bvector<NavNodeCPtr>();
-        });
+        // set the request handler
+        m_impl->SetGetFilteredNodesHandler([&] (IConnectionCR, Utf8CP, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR cancelationToken)
+            {
+            if (started)
+                {
+                // Wait till request gets canceled
+                WaitTillStateGetsChanged();
+                if (cancelationToken.IsCanceled())
+                    return bvector<NavNodeCPtr>();
+                }
+            m_hitCount.IncrementAtomicPre();
+            return bvector<NavNodeCPtr>();
+            });
 
-    // request and verify
-    TestNavNodePtr childNode = TestNavNode::Create(*m_connection);
-    RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
-    BlockECPresentationThread();
-    DoRequest(m_manager->GetFilteredNodesPaths(s_project->GetECDb(), "", options.GetJson()));
-    DisposeRulesetAndVerifyResult();
+        // request and verify
+        TestNavNodePtr childNode = TestNavNode::Create(*m_connection);
+        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
+        if (!started)
+            BlockECPresentationThreads();
+        DoRequest(m_manager->GetFilteredNodePaths(s_project->GetECDb(), "", options.GetJson()));
+        DisposeRulesetAndVerifyResult();
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1257,18 +1356,29 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsFilteredN
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentClassesRequestWhenManagerIsTerminated)
     {
-    // set the request handler
-    m_impl->SetContentClassesHandler([&](IConnectionCR, Utf8CP, int, bvector<ECClassCP> const&, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
+    RunTestWithParams([this](bool started)
         {
-        m_hitCount.IncrementAtomicPre();
-        return bvector<SelectClassInfo>();
-        });
+        // set the request handler
+        m_impl->SetContentClassesHandler([&] (IConnectionCR, Utf8CP, int, bvector<ECClassCP> const&, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR cancelationToken)
+            {
+            if (started)
+                {
+                // Wait till request gets canceled
+                WaitTillStateGetsChanged();
+                if (cancelationToken.IsCanceled())
+                    return bvector<SelectClassInfo>();
+                }
+            m_hitCount.IncrementAtomicPre();
+            return bvector<SelectClassInfo>();
+            });
 
-    // request and verify
-    RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
-    BlockECPresentationThread();
-    DoRequest(m_manager->GetContentClasses(s_project->GetECDb(), nullptr, 0, bvector<ECClassCP>(), options.GetJson()));
-    TerminateAndVerifyResult();
+        // request and verify
+        RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
+        if (!started)
+            BlockECPresentationThreads();
+        DoRequest(m_manager->GetContentClasses(s_project->GetECDb(), nullptr, 0, bvector<ECClassCP>(), options.GetJson()));
+        TerminateAndVerifyResult();
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1276,18 +1386,29 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentCl
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentClassesRequestWhenConnectionIsClosed)
     {
-    // set the request handler
-    m_impl->SetContentClassesHandler([&](IConnectionCR, Utf8CP, int, bvector<ECClassCP> const&, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
+    RunTestWithParams([this](bool started)
         {
-        m_hitCount.IncrementAtomicPre();
-        return bvector<SelectClassInfo>();
-        });
+        // set the request handler
+        m_impl->SetContentClassesHandler([&] (IConnectionCR, Utf8CP, int, bvector<ECClassCP> const&, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR cancelationToken)
+            {
+            if (started)
+                {
+                // Wait till request gets canceled
+                WaitTillStateGetsChanged();
+                if (cancelationToken.IsCanceled())
+                    return bvector<SelectClassInfo>();
+                }
+            m_hitCount.IncrementAtomicPre();
+            return bvector<SelectClassInfo>();
+            });
 
-    // request and verify
-    RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
-    BlockECPresentationThread();
-    DoRequest(m_manager->GetContentClasses(s_project->GetECDb(), nullptr, 0, bvector<ECClassCP>(), options.GetJson()));
-    CloseConnectionAndVerifyResult();
+        // request and verify
+        RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
+        if (!started)
+            BlockECPresentationThreads();
+        DoRequest(m_manager->GetContentClasses(s_project->GetECDb(), nullptr, 0, bvector<ECClassCP>(), options.GetJson()));
+        CloseConnectionAndVerifyResult(started);
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1295,18 +1416,29 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentCl
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentClassesRequestWhenRulesetIsDisposed)
     {
-    // set the request handler
-    m_impl->SetContentClassesHandler([&](IConnectionCR, Utf8CP, int, bvector<ECClassCP> const&, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
+    RunTestWithParams([this](bool started)
         {
-        m_hitCount.IncrementAtomicPre();
-        return bvector<SelectClassInfo>();
-        });
+        // set the request handler
+        m_impl->SetContentClassesHandler([&] (IConnectionCR, Utf8CP, int, bvector<ECClassCP> const&, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR cancelationToken)
+            {
+            if (started)
+                {
+                // Wait till request gets canceled
+                WaitTillStateGetsChanged();
+                if (cancelationToken.IsCanceled())
+                    return bvector<SelectClassInfo>();
+                }
+            m_hitCount.IncrementAtomicPre();
+            return bvector<SelectClassInfo>();
+            });
 
-    // request and verify
-    RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
-    BlockECPresentationThread();
-    DoRequest(m_manager->GetContentClasses(s_project->GetECDb(), nullptr, 0, bvector<ECClassCP>(), options.GetJson()));
-    DisposeRulesetAndVerifyResult();
+        // request and verify
+        RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
+        if (!started)
+            BlockECPresentationThreads();
+        DoRequest(m_manager->GetContentClasses(s_project->GetECDb(), nullptr, 0, bvector<ECClassCP>(), options.GetJson()));
+        DisposeRulesetAndVerifyResult();
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1314,18 +1446,29 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentCl
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentDescriptorRequestWhenManagerIsTerminated)
     {
-    // set the request handler
-    m_impl->SetContentDescriptorHandler([&](IConnectionCR, Utf8CP, int, KeySetCR, SelectionInfo const*, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
+    RunTestWithParams([this](bool started)
         {
-        m_hitCount.IncrementAtomicPre();
-        return nullptr;
-        });
+        // set the request handler
+        m_impl->SetContentDescriptorHandler([&] (IConnectionCR, Utf8CP, int, KeySetCR, SelectionInfo const*, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR cancelationToken)
+            {
+            if (started)
+                {
+                // Wait till request gets canceled
+                WaitTillStateGetsChanged();
+                if (cancelationToken.IsCanceled())
+                    return nullptr;
+                }
+            m_hitCount.IncrementAtomicPre();
+            return nullptr;
+            });
 
-    // request and verify
-    RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
-    BlockECPresentationThread();
-    DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()));
-    TerminateAndVerifyResult();
+        // request and verify
+        RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
+        if (!started)
+            BlockECPresentationThreads();
+        DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()));
+        TerminateAndVerifyResult();
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1333,18 +1476,29 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentDe
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentDescriptorRequestWhenConnectionIsClosed)
     {
-    // set the request handler
-    m_impl->SetContentDescriptorHandler([&](IConnectionCR, Utf8CP, int, KeySetCR, SelectionInfo const*, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
+    RunTestWithParams([this](bool started)
         {
-        m_hitCount.IncrementAtomicPre();
-        return nullptr;
-        });
+        // set the request handler
+        m_impl->SetContentDescriptorHandler([&] (IConnectionCR, Utf8CP, int, KeySetCR, SelectionInfo const*, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR cancelationToken)
+            {
+            if (started)
+                {
+                // Wait till request gets canceled
+                WaitTillStateGetsChanged();
+                if (cancelationToken.IsCanceled())
+                    return nullptr;
+                }
+            m_hitCount.IncrementAtomicPre();
+            return nullptr;
+            });
 
-    // request and verify
-    RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
-    BlockECPresentationThread();
-    DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()));
-    CloseConnectionAndVerifyResult();
+        // request and verify
+        RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
+        if (!started)
+            BlockECPresentationThreads();
+        DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()));
+        CloseConnectionAndVerifyResult(started);
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1352,18 +1506,29 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentDe
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentDescriptorRequestWhenRulesetIsDisposed)
     {
-    // set the request handler
-    m_impl->SetContentDescriptorHandler([&](IConnectionCR, Utf8CP, int, KeySetCR, SelectionInfo const*, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
+    RunTestWithParams([this](bool started)
         {
-        m_hitCount.IncrementAtomicPre();
-        return nullptr;
-        });
+        // set the request handler
+        m_impl->SetContentDescriptorHandler([&] (IConnectionCR, Utf8CP, int, KeySetCR, SelectionInfo const*, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR cancelationToken)
+            {
+            if (started)
+                {
+                // Wait till request gets canceled
+                WaitTillStateGetsChanged();
+                if (cancelationToken.IsCanceled())
+                    return nullptr;
+                }
+            m_hitCount.IncrementAtomicPre();
+            return nullptr;
+            });
 
-    // request and verify
-    RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
-    BlockECPresentationThread();
-    DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()));
-    DisposeRulesetAndVerifyResult();
+        // request and verify
+        RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
+        if (!started)
+            BlockECPresentationThreads();
+        DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()));
+        DisposeRulesetAndVerifyResult();
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1371,26 +1536,37 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentDe
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentDescriptorRequestCancelsOtherRequestsWithSameConnectionAndDisplayTypeAndDifferentSelectionTimestamps)
     {
-    // set the request handler
-    m_impl->SetContentDescriptorHandler([&](IConnectionCR, Utf8CP, int, KeySetCR, SelectionInfo const*, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
+    RunTestWithParams([this](bool started)
         {
-        m_hitCount.IncrementAtomicPre();
-        return nullptr;
+        // set the request handler
+        m_impl->SetContentDescriptorHandler([&] (IConnectionCR, Utf8CP, int, KeySetCR, SelectionInfo const*, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR cancelationToken)
+            {
+            if (started && m_blockingState < BlockingState::Blocking)
+                {
+                // Wait till request gets canceled
+                WaitTillStateGetsChanged();
+                if (cancelationToken.IsCanceled())
+                    return nullptr;
+                }
+            m_hitCount.IncrementAtomicPre();
+            return nullptr;
+            });
+
+        // make first request
+        SelectionInfoPtr selectionInfo1 = SelectionInfo::Create(BeTest::GetNameOfCurrentTest(), false, 1);
+        RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
+        if (!started)
+            BlockECPresentationThreads();
+        DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), "Test", 0, *KeySet::Create(), selectionInfo1.get(), options.GetJson()));
+        EnsureBlocked();
+
+        // make second request
+        SelectionInfoPtr selectionInfo2 = SelectionInfo::Create(BeTest::GetNameOfCurrentTest(), false, 2);
+        m_manager->GetContentDescriptor(s_project->GetECDb(), "Test", 0, *KeySet::Create(), selectionInfo2.get(), options.GetJson()).wait();
+
+        // verify
+        VerifyCancelation(true, started, 1);
         });
-
-    // make first request
-    SelectionInfoPtr selectionInfo1 = SelectionInfo::Create(BeTest::GetNameOfCurrentTest(), false, 1);
-    RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
-    BlockECPresentationThread();
-    DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), "Test", 0, *KeySet::Create(), selectionInfo1.get(), options.GetJson()));
-    EnsureBlocked();
-
-    // make second request
-    SelectionInfoPtr selectionInfo2 = SelectionInfo::Create(BeTest::GetNameOfCurrentTest(), false, 2);
-    m_manager->GetContentDescriptor(s_project->GetECDb(), "Test", 0, *KeySet::Create(), selectionInfo2.get(), options.GetJson()).wait();
-
-    // verify
-    VerifyCancelation(true, true, 1);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1408,7 +1584,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentDescripto
     // make first request
     SelectionInfoPtr selectionInfo1 = SelectionInfo::Create(Utf8PrintfString("%s:%d", BeTest::GetNameOfCurrentTest(), 1), false);
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
-    BlockECPresentationThread();
+    BlockECPresentationThreads();
     DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), selectionInfo1.get(), options.GetJson()), false);
 
     // make second request
@@ -1441,7 +1617,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentDescripto
     // make first request
     SelectionInfoPtr selectionInfo = SelectionInfo::Create(BeTest::GetNameOfCurrentTest(), false);
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
-    BlockECPresentationThread();
+    BlockECPresentationThreads();
     DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), selectionInfo.get(), options.GetJson()), false);
 
     // make second request
@@ -1477,7 +1653,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentDescripto
     // make the first request
     SelectionInfoPtr selectionInfo = SelectionInfo::Create(BeTest::GetNameOfCurrentTest(), false);
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
-    BlockECPresentationThread();
+    BlockECPresentationThreads();
     DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), selectionInfo.get(), options.GetJson()), false);
 
     // make second request
@@ -1489,7 +1665,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentDescripto
 
     // let the second request finish
     req.wait();
-    
+
     // verify
     VerifyCancelation(false, false, 2);
 
@@ -1511,7 +1687,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentDescripto
     // make first request
     SelectionInfoPtr selectionInfo = SelectionInfo::Create(BeTest::GetNameOfCurrentTest(), false);
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
-    BlockECPresentationThread();
+    BlockECPresentationThreads();
     DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), "Test1", 0, *KeySet::Create(), selectionInfo.get(), options.GetJson()), false);
 
     // make second request
@@ -1533,19 +1709,30 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentDescripto
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentRequestWhenManagerIsTerminated)
     {
-    // set the request handler
-    m_impl->SetContentHandler([&](ContentDescriptorCR, PageOptionsCR, ICancelationTokenCR)
+    RunTestWithParams([this](bool started)
         {
-        m_hitCount.IncrementAtomicPre();
-        return nullptr;
-        });
+        // set the request handler
+        m_impl->SetContentHandler([&] (IConnectionCR, ContentDescriptorCR, PageOptionsCR, ICancelationTokenCR cancelationToken)
+            {
+            if (started)
+                {
+                // Wait till request gets canceled
+                WaitTillStateGetsChanged();
+                if (cancelationToken.IsCanceled())
+                    return nullptr;
+                }
+            m_hitCount.IncrementAtomicPre();
+            return nullptr;
+            });
 
-    // request and verify
-    RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
-    ContentDescriptorCPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
-    BlockECPresentationThread();
-    DoRequest(m_manager->GetContent(*descriptor, PageOptions()));
-    TerminateAndVerifyResult();
+        // request and verify
+        RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
+        ContentDescriptorCPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
+        if (!started)
+            BlockECPresentationThreads();
+        DoRequest(m_manager->GetContent(*descriptor, PageOptions()));
+        TerminateAndVerifyResult();
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1553,19 +1740,30 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentRe
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentRequestWhenConnectionIsClosed)
     {
-    // set the request handler
-    m_impl->SetContentHandler([&](ContentDescriptorCR, PageOptionsCR, ICancelationTokenCR)
+    RunTestWithParams([this](bool started)
         {
-        m_hitCount.IncrementAtomicPre();
-        return nullptr;
-        });
+        // set the request handler
+        m_impl->SetContentHandler([&] (IConnectionCR, ContentDescriptorCR, PageOptionsCR, ICancelationTokenCR cancelationToken)
+            {
+            if (started)
+                {
+                // Wait till request gets canceled
+                WaitTillStateGetsChanged();
+                if (cancelationToken.IsCanceled())
+                    return nullptr;
+                }
+            m_hitCount.IncrementAtomicPre();
+            return nullptr;
+            });
 
-    // request and verify
-    RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
-    ContentDescriptorCPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
-    BlockECPresentationThread();
-    DoRequest(m_manager->GetContent(*descriptor, PageOptions()));
-    CloseConnectionAndVerifyResult();
+        // request and verify
+        RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
+        ContentDescriptorCPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
+        if (!started)
+            BlockECPresentationThreads();
+        DoRequest(m_manager->GetContent(*descriptor, PageOptions()));
+        CloseConnectionAndVerifyResult(started);
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1573,19 +1771,30 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentRe
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentRequestWhenRulesetIsDisposed)
     {
-    // set the request handler
-    m_impl->SetContentHandler([&](ContentDescriptorCR, PageOptionsCR, ICancelationTokenCR)
+    RunTestWithParams([this](bool started)
         {
-        m_hitCount.IncrementAtomicPre();
-        return nullptr;
-        });
+        // set the request handler
+        m_impl->SetContentHandler([&] (IConnectionCR, ContentDescriptorCR, PageOptionsCR, ICancelationTokenCR cancelationToken)
+            {
+            if (started)
+                {
+                // Wait till request gets canceled
+                WaitTillStateGetsChanged();
+                if (cancelationToken.IsCanceled())
+                    return nullptr;
+                }
+            m_hitCount.IncrementAtomicPre();
+            return nullptr;
+            });
 
-    // request and verify
-    RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
-    ContentDescriptorCPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
-    BlockECPresentationThread();
-    DoRequest(m_manager->GetContent(*descriptor, PageOptions()));
-    DisposeRulesetAndVerifyResult();
+        // request and verify
+        RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
+        ContentDescriptorCPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
+        if (!started)
+            BlockECPresentationThreads();
+        DoRequest(m_manager->GetContent(*descriptor, PageOptions()));
+        DisposeRulesetAndVerifyResult();
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1593,28 +1802,39 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentRe
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentRequestCancelsOtherRequestsWithSameConnectionAndDisplayTypeAndDifferentSelectionTimestamps)
     {
-    // set the request handler
-    m_impl->SetContentHandler([&](ContentDescriptorCR, PageOptionsCR, ICancelationTokenCR)
+    RunTestWithParams([this](bool started)
         {
-        m_hitCount.IncrementAtomicPre();
-        return nullptr;
+        // set the request handler
+        m_impl->SetContentHandler([&] (IConnectionCR, ContentDescriptorCR, PageOptionsCR, ICancelationTokenCR cancelationToken)
+            {
+            if (started && m_blockingState < BlockingState::Blocking)
+                {
+                // Wait till request gets canceled
+                WaitTillStateGetsChanged();
+                if (cancelationToken.IsCanceled())
+                    return nullptr;
+                }
+            m_hitCount.IncrementAtomicPre();
+            return nullptr;
+            });
+
+        // make first request
+        RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
+        ContentDescriptorPtr descriptor1 = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
+        descriptor1->SetSelectionInfo(*SelectionInfo::Create(BeTest::GetNameOfCurrentTest(), false, 1));
+        if (!started)
+            BlockECPresentationThreads();
+        DoRequest(m_manager->GetContent(*descriptor1, PageOptions()));
+        EnsureBlocked();
+
+        // make second request
+        ContentDescriptorPtr descriptor2 = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
+        descriptor2->SetSelectionInfo(*SelectionInfo::Create(BeTest::GetNameOfCurrentTest(), false, 2));
+        m_manager->GetContent(*descriptor2, PageOptions()).wait();
+
+        // verify
+        VerifyCancelation(true, started, 1);
         });
-
-    // make first request
-    RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
-    ContentDescriptorPtr descriptor1 = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
-    descriptor1->SetSelectionInfo(*SelectionInfo::Create(BeTest::GetNameOfCurrentTest(), false, 1));
-    BlockECPresentationThread();
-    DoRequest(m_manager->GetContent(*descriptor1, PageOptions()));
-    EnsureBlocked();
-    
-    // make second request
-    ContentDescriptorPtr descriptor2 = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
-    descriptor2->SetSelectionInfo(*SelectionInfo::Create(BeTest::GetNameOfCurrentTest(), false, 2));
-    m_manager->GetContent(*descriptor2, PageOptions()).wait();
-
-    // verify
-    VerifyCancelation(true, true, 1);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1623,7 +1843,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentRequestCa
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentRequestDoesntCancelRequestsWithDifferentSelectionSources)
     {
     // set the request handler
-    m_impl->SetContentHandler([&](ContentDescriptorCR, PageOptionsCR, ICancelationTokenCR)
+    m_impl->SetContentHandler([&](IConnectionCR, ContentDescriptorCR, PageOptionsCR, ICancelationTokenCR)
         {
         m_hitCount.IncrementAtomicPre();
         return nullptr;
@@ -1633,7 +1853,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentRequestDo
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
     ContentDescriptorPtr descriptor1 = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
     descriptor1->SetSelectionInfo(*SelectionInfo::Create(Utf8PrintfString("%s:%d", BeTest::GetNameOfCurrentTest(), 1), false));
-    BlockECPresentationThread();
+    BlockECPresentationThreads();
     DoRequest(m_manager->GetContent(*descriptor1, PageOptions()), false);
 
     // make second request
@@ -1658,7 +1878,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentRequestDo
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentRequestDoesntCancelRequestsWithSameSelectionTimestamps)
     {
     // set the request handler
-    m_impl->SetContentHandler([&](ContentDescriptorCR, PageOptionsCR, ICancelationTokenCR)
+    m_impl->SetContentHandler([&](IConnectionCR, ContentDescriptorCR, PageOptionsCR, ICancelationTokenCR)
         {
         m_hitCount.IncrementAtomicPre();
         return nullptr;
@@ -1668,7 +1888,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentRequestDo
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
     ContentDescriptorPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
     descriptor->SetSelectionInfo(*SelectionInfo::Create(BeTest::GetNameOfCurrentTest(), false));
-    BlockECPresentationThread();
+    BlockECPresentationThreads();
     DoRequest(m_manager->GetContent(*descriptor, PageOptions()), false);
 
     // make second request
@@ -1695,7 +1915,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentRequestDo
     IConnectionPtr connection2 = static_cast<TestConnectionManager*>(m_connections)->NotifyConnectionOpened(project2.GetECDb());
 
     // set the request handler
-    m_impl->SetContentHandler([&](ContentDescriptorCR, PageOptionsCR, ICancelationTokenCR)
+    m_impl->SetContentHandler([&](IConnectionCR, ContentDescriptorCR, PageOptionsCR, ICancelationTokenCR)
         {
         m_hitCount.IncrementAtomicPre();
         return nullptr;
@@ -1704,7 +1924,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentRequestDo
     // make the first request
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
     ContentDescriptorCPtr descriptor1 = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
-    BlockECPresentationThread();
+    BlockECPresentationThreads();
     DoRequest(m_manager->GetContent(*descriptor1, PageOptions()), false);
 
     // make second request
@@ -1717,7 +1937,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentRequestDo
 
     // let the second request finish
     req.wait();
-    
+
     // verify
     VerifyCancelation(false, false, 2);
 
@@ -1728,60 +1948,93 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentRequestDo
 * @betest                                       Grigas.Petraitis                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentSetSizeRequestWhenManagerIsTerminated)
-    {        
-    // set the request handler
-    m_impl->SetContentSetSizeHandler([&](ContentDescriptorCR, ICancelationTokenCR)
+    {
+    RunTestWithParams([this](bool started)
         {
-        m_hitCount.IncrementAtomicPre();
-        return 0;
-        });
+        // set the request handler
+        m_impl->SetContentSetSizeHandler([&] (IConnectionCR, ContentDescriptorCR, ICancelationTokenCR cancelationToken)
+            {
+            if (started)
+                {
+                // Wait till request gets canceled
+                WaitTillStateGetsChanged();
+                if (cancelationToken.IsCanceled())
+                    return 0;
+                }
+            m_hitCount.IncrementAtomicPre();
+            return 0;
+            });
 
-    // request and verify
-    RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
-    ContentDescriptorCPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
-    BlockECPresentationThread();
-    DoRequest(m_manager->GetContentSetSize(*descriptor));
-    TerminateAndVerifyResult();
+        // request and verify
+        RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
+        ContentDescriptorCPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
+        if (!started)
+            BlockECPresentationThreads();
+        DoRequest(m_manager->GetContentSetSize(*descriptor));
+        TerminateAndVerifyResult();
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentSetSizeRequestWhenConnectionIsClosed)
-    {        
-    // set the request handler
-    m_impl->SetContentSetSizeHandler([&](ContentDescriptorCR, ICancelationTokenCR)
+    {
+    RunTestWithParams([this](bool started)
         {
-        m_hitCount.IncrementAtomicPre();
-        return 0;
-        });
+        // set the request handler
+        m_impl->SetContentSetSizeHandler([&] (IConnectionCR, ContentDescriptorCR, ICancelationTokenCR cancelationToken)
+            {
+            if (started)
+                {
+                // Wait till request gets canceled
+                WaitTillStateGetsChanged();
+                if (cancelationToken.IsCanceled())
+                    return 0;
+                }
+            m_hitCount.IncrementAtomicPre();
+            return 0;
+            });
 
-    // request and verify
-    RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
-    ContentDescriptorCPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
-    BlockECPresentationThread();
-    DoRequest(m_manager->GetContentSetSize(*descriptor));
-    CloseConnectionAndVerifyResult();
+        // request and verify
+        RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
+        ContentDescriptorCPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
+        if (!started)
+            BlockECPresentationThreads();
+        DoRequest(m_manager->GetContentSetSize(*descriptor));
+        CloseConnectionAndVerifyResult(started);
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentSetSizeRequestWhenRulesetIsDisposed)
-    {        
-    // set the request handler
-    m_impl->SetContentSetSizeHandler([&](ContentDescriptorCR, ICancelationTokenCR)
+    {
+    RunTestWithParams([this](bool started)
         {
-        m_hitCount.IncrementAtomicPre();
-        return 0;
-        });
+        // set the request handler
+        m_impl->SetContentSetSizeHandler([&] (IConnectionCR, ContentDescriptorCR, ICancelationTokenCR cancelationToken)
+            {
+            if (started)
+                {
+                // Wait till request gets canceled
+                WaitTillStateGetsChanged();
+                if (cancelationToken.IsCanceled())
+                    return 0;
+                }
+            m_hitCount.IncrementAtomicPre();
+            return 0;
+            });
 
-    // request and verify
-    RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
-    ContentDescriptorCPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
-    BlockECPresentationThread();
-    DoRequest(m_manager->GetContentSetSize(*descriptor));
-    DisposeRulesetAndVerifyResult();
+        // request and verify
+        RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
+        ContentDescriptorCPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
+        if (!started)
+            BlockECPresentationThreads();
+        DoRequest(m_manager->GetContentSetSize(*descriptor));
+        DisposeRulesetAndVerifyResult();
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1789,28 +2042,39 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentSe
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentSetSizeRequestCancelsOtherRequestsWithSameConnectionAndDisplayTypeAndDifferentSelectionTimestamps)
     {
-    // set the request handler
-    m_impl->SetContentSetSizeHandler([&](ContentDescriptorCR, ICancelationTokenCR)
+    RunTestWithParams([this](bool started)
         {
-        m_hitCount.IncrementAtomicPre();
-        return 0;
+        // set the request handler
+        m_impl->SetContentSetSizeHandler([&] (IConnectionCR, ContentDescriptorCR, ICancelationTokenCR cancelationToken)
+            {
+            if (started && m_blockingState < BlockingState::Blocking)
+                {
+                // Wait till request gets canceled
+                WaitTillStateGetsChanged();
+                if (cancelationToken.IsCanceled())
+                    return 0;
+                }
+            m_hitCount.IncrementAtomicPre();
+            return 0;
+            });
+
+        // make first request
+        RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
+        ContentDescriptorPtr descriptor1 = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
+        descriptor1->SetSelectionInfo(*SelectionInfo::Create(BeTest::GetNameOfCurrentTest(), false, 1));
+        if (!started)
+            BlockECPresentationThreads();
+        DoRequest(m_manager->GetContentSetSize(*descriptor1));
+        EnsureBlocked();
+
+        // make second request
+        ContentDescriptorPtr descriptor2 = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
+        descriptor2->SetSelectionInfo(*SelectionInfo::Create(BeTest::GetNameOfCurrentTest(), false, 2));
+        m_manager->GetContentSetSize(*descriptor2).wait();
+
+        // verify
+        VerifyCancelation(true, started, 1);
         });
-
-    // make first request
-    RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
-    ContentDescriptorPtr descriptor1 = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
-    descriptor1->SetSelectionInfo(*SelectionInfo::Create(BeTest::GetNameOfCurrentTest(), false, 1));
-    BlockECPresentationThread();
-    DoRequest(m_manager->GetContentSetSize(*descriptor1));
-    EnsureBlocked();
-
-    // make second request
-    ContentDescriptorPtr descriptor2 = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
-    descriptor2->SetSelectionInfo(*SelectionInfo::Create(BeTest::GetNameOfCurrentTest(), false, 2));
-    m_manager->GetContentSetSize(*descriptor2).wait();
-
-    // verify
-    VerifyCancelation(true, true, 1);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1819,7 +2083,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentSetSizeRe
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentSetSizeRequestDoesntCancelRequestsWithDifferentSelectionSources)
     {
     // set the request handler
-    m_impl->SetContentSetSizeHandler([&](ContentDescriptorCR, ICancelationTokenCR)
+    m_impl->SetContentSetSizeHandler([&](IConnectionCR, ContentDescriptorCR, ICancelationTokenCR)
         {
         m_hitCount.IncrementAtomicPre();
         return 0;
@@ -1829,7 +2093,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentSetSizeRe
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
     ContentDescriptorPtr descriptor1 = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
     descriptor1->SetSelectionInfo(*SelectionInfo::Create(Utf8PrintfString("%s:%d", BeTest::GetNameOfCurrentTest(), 1), false));
-    BlockECPresentationThread();
+    BlockECPresentationThreads();
     DoRequest(m_manager->GetContentSetSize(*descriptor1), false);
 
     // make second request
@@ -1854,7 +2118,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentSetSizeRe
 TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentSetSizeRequestDoesntCancelRequestsWithSameSelectionTimestamps)
     {
     // set the request handler
-    m_impl->SetContentSetSizeHandler([&](ContentDescriptorCR, ICancelationTokenCR)
+    m_impl->SetContentSetSizeHandler([&](IConnectionCR, ContentDescriptorCR, ICancelationTokenCR)
         {
         m_hitCount.IncrementAtomicPre();
         return 0;
@@ -1864,7 +2128,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentSetSizeRe
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
     ContentDescriptorPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
     descriptor->SetSelectionInfo(*SelectionInfo::Create(BeTest::GetNameOfCurrentTest(), false));
-    BlockECPresentationThread();
+    BlockECPresentationThreads();
     DoRequest(m_manager->GetContentSetSize(*descriptor), false);
 
     // make second request
@@ -1889,9 +2153,9 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentSetSizeRe
     ECDbTestProject project2;
     project2.Create(BeTest::GetNameOfCurrentTest());
     RefCountedPtr<TestConnection> connection2 = static_cast<TestConnectionManager*>(m_connections)->NotifyConnectionOpened(project2.GetECDb());
-    
+
     // set the request handler
-    m_impl->SetContentSetSizeHandler([&](ContentDescriptorCR, ICancelationTokenCR)
+    m_impl->SetContentSetSizeHandler([&](IConnectionCR, ContentDescriptorCR, ICancelationTokenCR)
         {
         m_hitCount.IncrementAtomicPre();
         return 0;
@@ -1900,7 +2164,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentSetSizeRe
     // make the first request
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
     ContentDescriptorCPtr descriptor1 = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
-    BlockECPresentationThread();
+    BlockECPresentationThreads();
     DoRequest(m_manager->GetContentSetSize(*descriptor1), false);
 
     // make second request
@@ -1913,83 +2177,9 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentSetSizeRe
 
     // let the second request finish
     req.wait();
-    
+
     // verify
     VerifyCancelation(false, false, 2);
 
     static_cast<TestConnectionManager*>(m_connections)->NotifyConnectionClosed(*connection2);
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                       Grigas.Petraitis                11/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsNodeCheckedCallbackWhenManagerIsTerminated)
-    {    
-    // set the request handler
-    m_impl->SetNodeCheckedHandler([&](IConnectionCR, NavNodeKeyCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR)
-        {
-        m_hitCount.IncrementAtomicPre();
-        });
-
-    // request and verify
-    RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
-    BlockECPresentationThread();
-    DoRequest(m_manager->NotifyNodeChecked(s_project->GetECDb(), *NavNodeKey::Create("type", {"1"}), options.GetJson()));
-    TerminateAndVerifyResult();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                       Grigas.Petraitis                11/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsNodeUncheckedCallbackWhenManagerIsTerminated)
-    {    
-    // set the request handler
-    m_impl->SetNodeUncheckedHandler([&](IConnectionCR, NavNodeKeyCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR)
-        {
-        m_hitCount.IncrementAtomicPre();
-        });
-
-    // request and verify
-    RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
-    BlockECPresentationThread();
-    DoRequest(m_manager->NotifyNodeUnchecked(s_project->GetECDb(), *NavNodeKey::Create("type", {"1"}), options.GetJson()));
-    TerminateAndVerifyResult();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                       Grigas.Petraitis                11/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsNodeExpandedCallbackWhenManagerIsTerminated)
-    {    
-    // set the request handler
-    m_impl->SetNodeExpandedHandler([&](IConnectionCR, NavNodeKeyCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR)
-        {
-        m_hitCount.IncrementAtomicPre();
-        });
-
-    // request and verify
-    RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
-    BlockECPresentationThread();
-    DoRequest(m_manager->NotifyNodeExpanded(s_project->GetECDb(), *NavNodeKey::Create("type", {"1"}), options.GetJson()));
-    TerminateAndVerifyResult();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                       Grigas.Petraitis                11/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsNodeCollapsedCallbackWhenManagerIsTerminated)
-    {    
-    // set the request handler
-    m_impl->SetNodeCollapsedHandler([&](IConnectionCR, NavNodeKeyCR, RulesDrivenECPresentationManager::NavigationOptions const&, ICancelationTokenCR)
-        {
-        m_hitCount.IncrementAtomicPre();
-        });
-
-    // request and verify
-    RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
-    BlockECPresentationThread();
-    DoRequest(m_manager->NotifyNodeCollapsed(s_project->GetECDb(), *NavNodeKey::Create("type", {"1"}), options.GetJson()));
-    TerminateAndVerifyResult();
-    }
-
-#endif // RULES_ENGINE_FORCE_SINGLE_THREAD

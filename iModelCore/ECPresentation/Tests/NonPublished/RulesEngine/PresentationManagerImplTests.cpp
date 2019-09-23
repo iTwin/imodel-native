@@ -4,9 +4,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "TestHelpers.h"
-#include "TestRulesDrivenPresentationManagerImpl.h"
 #include <UnitTests/BackDoor/ECPresentation/TestRuleSetLocater.h>
-#include <UnitTests/BackDoor/ECPresentation/TestSelectionProvider.h>
+#include "../../../Source/RulesDriven/RulesEngine/PresentationManagerImpl.h"
 
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -20,12 +19,11 @@ struct RulesDrivenECPresentationManagerImplTests : ECPresentationTest
     {
     static ECDbTestProject* s_project;
     IConnectionPtr m_connection;
-    TestConnectionManager m_connections;
     RulesDrivenECPresentationManagerImpl* m_impl;
     TestCategorySupplier m_categorySupplier;
     TestRuleSetLocaterPtr m_locater;
-    ILocalizationProvider* m_localizationProvider;
-    
+    SQLangLocalizationProvider m_localizationProvider;
+
     static void SetUpTestCase();
     static void TearDownTestCase();
     virtual void SetUp() override;
@@ -61,17 +59,24 @@ void RulesDrivenECPresentationManagerImplTests::TearDownTestCase()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RulesDrivenECPresentationManagerImplTests::SetUp()
     {
-    ECPresentationTest::SetUp();    
+    ECPresentationTest::SetUp();
+
     m_locater = TestRuleSetLocater::Create();
-    RulesDrivenECPresentationManagerImpl::Params params(m_connections, RulesEngineTestHelpers::GetPaths(BeTest::GetHost()));
-    m_localizationProvider = new SQLangLocalizationProvider();
-    params.SetDisableDiskCache(true);
-    m_impl = new RulesDrivenECPresentationManagerImpl(RulesDrivenECPresentationManagerDependenciesFactory(), params);
-    m_impl->SetCategorySupplier(&m_categorySupplier);
+
+    RulesDrivenECPresentationManagerImpl::Params::CachingParams cachingParams;
+    cachingParams.SetDisableDiskCache(true);
+    RulesDrivenECPresentationManagerImpl::Params params(RulesEngineTestHelpers::GetPaths(BeTest::GetHost()));
+    params.SetConnections(new TestConnectionManager());
+    params.SetCachingParams(cachingParams);
+    params.SetCategorySupplier(&m_categorySupplier);
+    params.SetLocalizationProvider(&m_localizationProvider);
+    m_impl = new RulesDrivenECPresentationManagerImpl(params);
+    
     m_impl->GetLocaters().RegisterLocater(*m_locater);
-    //m_impl->SetLocalizationProvider(m_localizationProvider);
-    m_connections.NotifyConnectionOpened(s_project->GetECDb());
-    m_connection = m_connections.GetConnection(s_project->GetECDb());
+    
+    m_impl->GetConnections().CreateConnection(s_project->GetECDb());
+    m_connection = m_impl->GetConnections().GetConnection(s_project->GetECDb());
+
     m_impl->Initialize();
     }
 
@@ -82,13 +87,17 @@ void RulesDrivenECPresentationManagerImplTests::TearDown()
     {
     m_connection = nullptr;
     DELETE_AND_CLEAR(m_impl);
-    DELETE_AND_CLEAR(m_localizationProvider);
     }
 
 struct NeverCanceledToken : ICancelationToken
-    {
+{
+private:
+    NeverCanceledToken() {}
+protected:
     bool _IsCanceled() const override {return false;}
-    };
+public:
+    static RefCountedPtr<NeverCanceledToken> Create() {return new NeverCanceledToken();}
+};
 
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                07/2018
@@ -108,20 +117,20 @@ TEST_F(RulesDrivenECPresentationManagerImplTests, LocatesChildNodeWhoseGrandPare
     m_locater->AddRuleSet(*ruleset);
 
     // request and verify
-    NeverCanceledToken cancelationToken;
+    auto cancelationToken = NeverCanceledToken::Create();
     RulesDrivenECPresentationManager::NavigationOptions options(ruleset->GetRuleSetId().c_str(), TargetTree_Both);
-    INavNodesDataSourcePtr rootNodes = m_impl->GetRootNodes(*m_connection, PageOptions(), options, cancelationToken);
+    INavNodesDataSourcePtr rootNodes = m_impl->GetRootNodes(*m_connection, PageOptions(), options, *cancelationToken);
     ASSERT_EQ(2, rootNodes->GetSize());
     EXPECT_STREQ("child1", rootNodes->GetNode(0)->GetLabel().c_str());
     EXPECT_STREQ("child2", rootNodes->GetNode(1)->GetLabel().c_str());
-    INavNodesDataSourcePtr childNodes = m_impl->GetChildren(*m_connection, *rootNodes->GetNode(1), PageOptions(), options, cancelationToken);
+    INavNodesDataSourcePtr childNodes = m_impl->GetChildren(*m_connection, *rootNodes->GetNode(1), PageOptions(), options, *cancelationToken);
     ASSERT_EQ(1, childNodes->GetSize());
     EXPECT_STREQ("child2.1", childNodes->GetNode(0)->GetLabel().c_str());
 
     // clear nodes cache and try to locate the node by its key
     NavNodeKeyCPtr key = childNodes->GetNode(0)->GetKey();
     m_impl->GetNodesCache().Clear();
-    NavNodeCPtr locatedNode = m_impl->GetNode(*m_connection, *key, options, cancelationToken);
+    NavNodeCPtr locatedNode = m_impl->GetNode(*m_connection, *key, options, *cancelationToken);
     ASSERT_TRUE(locatedNode.IsValid());
     EXPECT_STREQ("child2.1", locatedNode->GetLabel().c_str());
     }
@@ -151,11 +160,10 @@ struct RulesDrivenECPresentationManagerImplRequestCancelationTests : RulesDriven
 
         return ruleset;
         }
-    
+
     virtual void SetUp() override
         {
         RulesDrivenECPresentationManagerImplTests::SetUp();
-        m_impl->SetLocalizationProvider(new SQLangLocalizationProvider());
         m_ruleset = CreateRuleSet();
         m_locater->AddRuleSet(*m_ruleset);
         }
@@ -283,7 +291,7 @@ TEST_F(RulesDrivenECPresentationManagerImplRequestCancelationTests, AbortsConten
 * @betest                                       Grigas.Petraitis                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerImplRequestCancelationTests, AbortsContentDescriptorRequestWhenCanceledWhileLookingForRulesets)
-    {    
+    {
     // add a ruleset locater which cancels the request
     SimpleCancelationTokenPtr token = SimpleCancelationToken::Create();
     RefCountedPtr<TestCallbackRulesetLocater> locater = TestCallbackRulesetLocater::Create();
@@ -306,11 +314,11 @@ TEST_F(RulesDrivenECPresentationManagerImplRequestCancelationTests, AbortsConten
 TEST_F(RulesDrivenECPresentationManagerImplRequestCancelationTests, AbortsContentRequestWhenCanceledWhileLookingForRulesets)
     {
     SimpleCancelationTokenPtr token = SimpleCancelationToken::Create();
-    
+
     // get the descriptor
     RulesDrivenECPresentationManager::ContentOptions options(m_ruleset->GetRuleSetId().c_str());
     ContentDescriptorCPtr descriptor = m_impl->GetContentDescriptor(*m_connection, nullptr, 0, *KeySet::Create(), nullptr, options, *token);
-        
+
     // add a ruleset locater which cancels the request
     RefCountedPtr<TestCallbackRulesetLocater> locater = TestCallbackRulesetLocater::Create();
     m_impl->GetLocaters().RegisterLocater(*locater);
@@ -321,7 +329,7 @@ TEST_F(RulesDrivenECPresentationManagerImplRequestCancelationTests, AbortsConten
         });
 
     // request and verify
-    ContentCPtr content = m_impl->GetContent(*descriptor, PageOptions(), *token);
+    ContentCPtr content = m_impl->GetContent(*m_connection, *descriptor, PageOptions(), *token);
     EXPECT_TRUE(content.IsNull());
     }
 
@@ -331,11 +339,11 @@ TEST_F(RulesDrivenECPresentationManagerImplRequestCancelationTests, AbortsConten
 TEST_F(RulesDrivenECPresentationManagerImplRequestCancelationTests, AbortsContentSetSizeRequestWhenCanceledWhileLookingForRulesets)
     {
     SimpleCancelationTokenPtr token = SimpleCancelationToken::Create();
-    
+
     // get the descriptor
     RulesDrivenECPresentationManager::ContentOptions options(m_ruleset->GetRuleSetId().c_str());
     ContentDescriptorCPtr descriptor = m_impl->GetContentDescriptor(*m_connection, nullptr, 0, *KeySet::Create(), nullptr, options, *token);
-        
+
     // add a ruleset locater which cancels the request
     RefCountedPtr<TestCallbackRulesetLocater> locater = TestCallbackRulesetLocater::Create();
     m_impl->GetLocaters().RegisterLocater(*locater);
@@ -346,6 +354,6 @@ TEST_F(RulesDrivenECPresentationManagerImplRequestCancelationTests, AbortsConten
         });
 
     // request and verify
-    size_t size = m_impl->GetContentSetSize(*descriptor, *token);
+    size_t size = m_impl->GetContentSetSize(*m_connection, *descriptor, *token);
     EXPECT_EQ(0, size);
     }

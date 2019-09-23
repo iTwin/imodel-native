@@ -74,6 +74,9 @@ struct PresentationRuleSet : public RefCountedBase, HashableBase
         void WriteJson(JsonValueR json) const;
 
     protected:
+        //! Allow lots of refcounted references to a ruleset
+        uint32_t _GetExcessiveRefCountThreshold() const override {return (uint32_t)-1;}
+
         //! Computes rules set hash.
         ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
 

@@ -348,6 +348,16 @@ DbResult ECDbTestProject::Open (Utf8CP ecdbFileName, ECDb::OpenParams openParams
     return m_ecdb->OpenBeSQLiteDb (ecdbFilePath, openParams);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                04/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult ECDbTestProject::ReOpen()
+    {
+    BeFileName path(m_ecdb->GetDbFileName());
+    m_ecdb->CloseDb();
+    return m_ecdb->OpenBeSQLiteDb(path, BeSQLite::Db::OpenParams(Db::OpenMode::ReadWrite));
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Ramanujam.Raman                04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/

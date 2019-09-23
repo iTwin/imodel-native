@@ -8,217 +8,16 @@
 #include "PresentationManagerImpl.h"
 #include "NavNodesDataSource.h"
 #include "LoggingHelper.h"
-
-#ifdef RULES_ENGINE_FORCE_SINGLE_THREAD
+#include "NodePathsHelper.h"
+#include "TaskScheduler.h"
 #include <folly/futures/InlineExecutor.h>
-#else
-#include "SingleThreadQueueExecutor.h"
-#endif
+#include <folly/BeFolly.h>
 
 const Utf8CP RulesDrivenECPresentationManager::CommonOptions::OPTION_NAME_RulesetId = "RulesetId";
 const Utf8CP RulesDrivenECPresentationManager::CommonOptions::OPTION_NAME_Locale = "Locale";
+const Utf8CP RulesDrivenECPresentationManager::CommonOptions::OPTION_NAME_Priority = "Priority";
 const Utf8CP RulesDrivenECPresentationManager::NavigationOptions::OPTION_NAME_RuleTargetTree = "RuleTargetTree";
 const Utf8CP RulesDrivenECPresentationManager::NavigationOptions::OPTION_NAME_DisableUpdates = "DisableUpdates";
-
-/*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                11/2017
-+===============+===============+===============+===============+===============+======*/
-struct CancelationToken : ICancelationToken
-{
-private:
-    BeMutex& m_mutex;
-    bool m_isCanceled;
-protected:
-    bool _IsCanceled() const {BeMutexHolder lock(m_mutex); return m_isCanceled;}
-public:
-    CancelationToken(BeMutex& mutex) : m_mutex(mutex), m_isCanceled(false) {}
-    void SetCanceled(bool value) {BeMutexHolder lock(m_mutex); m_isCanceled = value;}
-};
-
-/*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                11/2017
-+===============+===============+===============+===============+===============+======*/
-struct TaskDependencies
-{
-private:
-    Utf8String m_connectionId;
-    Utf8String m_rulesetId;
-    Utf8String m_displayType;
-    SelectionInfoCPtr m_selectionInfo;
-    Utf8String m_selectionSourceName;
-public:
-    TaskDependencies(Utf8String connectionId = "", Utf8String rulesetId = "", Utf8CP displayType = nullptr, SelectionInfo const* selectionInfo = nullptr)
-        : m_connectionId(connectionId), m_rulesetId(rulesetId), m_displayType(displayType), m_selectionInfo(selectionInfo)
-        {}
-    TaskDependencies(TaskDependencies const& other)
-        : m_connectionId(other.m_connectionId), m_rulesetId(other.m_rulesetId), m_displayType(other.m_displayType),
-        m_selectionInfo(other.m_selectionInfo)
-        {}
-    TaskDependencies(TaskDependencies&& other)
-        : m_connectionId(std::move(other.m_connectionId)), m_rulesetId(std::move(other.m_rulesetId)),
-        m_displayType(std::move(other.m_displayType)), m_selectionInfo(std::move(other.m_selectionInfo))
-        {}
-    Utf8StringCR GetConnectionIdDependency() const {return m_connectionId;}
-    Utf8StringCR GetRulesetIdDependency() const {return m_rulesetId;}
-    Utf8StringCR GetDisplayTypeDependency() const {return m_displayType;}
-    SelectionInfo const* GetSelectionInfo() const {return m_selectionInfo.get();}
-};
-
-/*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                11/2017
-+===============+===============+===============+===============+===============+======*/
-struct ICancelableTask
-{
-private:
-    Utf8String m_id;
-    TaskDependencies m_dependencies;
-public:
-    ICancelableTask(Utf8String id, TaskDependencies dependencies = TaskDependencies()) : m_id(id), m_dependencies(dependencies) {}
-    virtual ~ICancelableTask() {}
-    virtual void _Cancel() = 0;
-    Utf8StringCR GetId() const {return m_id;}
-    TaskDependencies const& GetDependencies() const {return m_dependencies;}
-};
-
-/*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                11/2017
-+===============+===============+===============+===============+===============+======*/
-struct RulesDrivenECPresentationManager::CancelableTasksStore
-{
-private:
-    mutable BeMutex m_mutex;
-    bset<ICancelableTask*> m_tasks;
-private:
-    bool Cancel(std::function<bool(ICancelableTask const&)> predicate)
-        {
-        BeMutexHolder lock(m_mutex);
-        bvector<ICancelableTask*> tasks;
-        for (ICancelableTask* task : m_tasks)
-            {
-            if (!predicate || predicate(*task))
-                tasks.push_back(task);
-            }
-        for (ICancelableTask* task : tasks)
-            {
-            // note: the task will get removed from m_tasks when the promise actually gets canceled
-            task->_Cancel();
-            LoggingHelper::LogMessage(Log::Default, Utf8PrintfString("Promise canceled: %s", task->GetId().c_str()).c_str());
-            }
-        return !tasks.empty();
-        }
-public:
-    BeMutex& GetMutex() {return m_mutex;}
-    bool Contains(ICancelableTask& task) const
-        {
-        BeMutexHolder lock(m_mutex);
-        return m_tasks.end() != m_tasks.find(&task);
-        }
-    void Add(ICancelableTask& task)
-        {
-        BeMutexHolder lock(m_mutex);
-        m_tasks.insert(&task);
-        }
-    void Remove(ICancelableTask& task)
-        {
-        BeMutexHolder lock(m_mutex);
-        m_tasks.erase(&task);
-        }
-    void CancelAll(){Cancel(nullptr);}
-    void CancelSelectionDependants(IConnectionCR connection, Utf8StringCR displayType, SelectionInfo const& selectionInfo)
-        {
-        bool didCancel = Cancel([&](ICancelableTask const& task)
-            {
-            return task.GetDependencies().GetDisplayTypeDependency().Equals(displayType)
-                && task.GetDependencies().GetConnectionIdDependency().Equals(connection.GetId())
-                && task.GetDependencies().GetSelectionInfo()
-                && selectionInfo.GetSelectionProviderName().Equals(task.GetDependencies().GetSelectionInfo()->GetSelectionProviderName())
-                && selectionInfo.GetTimestamp() != task.GetDependencies().GetSelectionInfo()->GetTimestamp();
-            });
-        if (didCancel)
-            {
-            LoggingHelper::LogMessage(Log::Default, "Interrupting connection requests due to canceled tasks");
-            connection.InterruptRequests();
-            }
-        }
-    void CancelConnectionRequests(IConnectionCR connection)
-        {
-        bool didCancel = Cancel([&](ICancelableTask const& task)
-            {
-            return task.GetDependencies().GetConnectionIdDependency().Equals(connection.GetId());
-            });
-        if (didCancel)
-            {
-            LoggingHelper::LogMessage(Log::Default, "Interrupting connection requests due to canceled tasks");
-            connection.InterruptRequests();
-            }
-        }
-    void CancelByRulesetId(Utf8StringCR rulesetId)
-        {
-        Cancel([&](ICancelableTask const& task)
-            {
-            return task.GetDependencies().GetRulesetIdDependency().Equals(rulesetId);
-            });
-        }
-};
-
-/*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                11/2017
-+===============+===============+===============+===============+===============+======*/
-template<typename T>
-struct CancelablePromise : private folly::Promise<T>, ICancelableTask
-{
-    DEFINE_T_SUPER(folly::Promise<T>)
-private:
-    BeMutex& m_mutex;
-    folly::Future<T> m_future;
-    RulesDrivenECPresentationManager::CancelableTasksStore& m_cancelableTasks;
-    RefCountedPtr<CancelationToken> m_cancelationToken;
-public:
-    CancelablePromise(RulesDrivenECPresentationManager::CancelableTasksStore& cancelableTasks, Utf8String id, TaskDependencies dependencies)
-        : ICancelableTask(id, dependencies), m_mutex(cancelableTasks.GetMutex()), m_cancelableTasks(cancelableTasks), m_future(T_Super::getFuture())
-        {
-        m_cancelationToken = new CancelationToken(m_mutex);
-        T_Super::setInterruptHandler([&](folly::exception_wrapper const& e)
-            {
-            BeAssert(e.is_compatible_with<folly::FutureCancellation>() && "Only cancellation exceptions are supported");
-            BeMutexHolder lock(m_mutex);
-            m_cancelationToken->SetCanceled(true);
-            m_cancelableTasks.Remove(*this);
-            lock.unlock();
-            if (!T_Super::isFulfilled())
-                T_Super::setException(e);
-            });
-        m_cancelableTasks.Add(*this);
-        }
-    ~CancelablePromise()
-        {
-        BeAssert(!m_cancelableTasks.Contains(*this));
-        m_cancelableTasks.Remove(*this);
-        }
-    template<class M> void SetValue(M&& value)
-        {
-        BeMutexHolder lock(m_mutex);
-        m_cancelableTasks.Remove(*this);
-        lock.unlock();
-        if (!T_Super::isFulfilled())
-            T_Super::setValue(std::forward<M>(value));
-        }
-    void SetValue() {SetValue(folly::unit);}
-    folly::Future<T> GetFuture() {return m_future.then([](T&& result){return folly::Future<T>(result);});}
-    void _Cancel() override {m_future.cancel();}
-    bool IsCanceled() const {return m_cancelationToken->IsCanceled();}
-    ICancelationTokenCR GetCancelationToken() const {return *m_cancelationToken;}
-};
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                11/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T>
-static std::shared_ptr<CancelablePromise<T>> CreateCancelablePromise(RulesDrivenECPresentationManager::CancelableTasksStore& cancelableTasks,
-    Utf8CP id, TaskDependencies dependencies = TaskDependencies())
-    {
-    return std::make_shared<CancelablePromise<T>>(cancelableTasks, id, dependencies);
-    }
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                11/2017
@@ -246,19 +45,25 @@ protected:
         }
     void _OnECInstancesChanged(ECDbCR db, bvector<ChangedECInstance> changes) override
         {
-        IConnectionPtr connection = m_manager.GetConnections().GetConnection(db);
+        IConnectionCacheCR connections = m_manager.GetConnections();
+        IConnectionPtr connection = connections.GetConnection(db);
         if (connection.IsNull())
             {
             // don't forward the event if connection is not tracked
             return;
             }
-
-        folly::via(&m_manager.GetExecutor(), [&, connectionId = connection->GetId(), changes]()
+        RefCountedPtr<ECPresentationTask> task = new ECPresentationTask(m_manager.GetTasksManager().GetMutex(),
+            [&, connectionId = connection->GetId(), changes](IECPresentationTaskCR task)
+                {
+                NotifyECInstancesChanged(connections.GetConnection(connectionId.c_str())->GetECDb(), changes);
+                }
+            );
+        task->SetDependencies(TaskDependencies(connection->GetId()));
+        task->SetBlockedTasksPredicate([connectionId = connection->GetId()](IECPresentationTaskCR task)
             {
-            // WIP: need to bring task notifications context here when we start getting instance changes
-            IConnectionPtr connection = m_manager.GetConnections().GetConnection(connectionId.c_str());
-            NotifyECInstancesChanged(connection->GetECDb(), changes);
+            return task.GetDependencies().GetConnectionId().Equals(connectionId);
             });
+        m_manager.GetTasksManager().Execute(*task);
         }
 public:
     static RefCountedPtr<ECInstanceChangeEventSourceWrapper> Create(RulesDrivenECPresentationManager& manager, ECInstanceChangeEventSource& wrapped)
@@ -274,40 +79,69 @@ public:
 struct RulesDrivenECPresentationManager::ConnectionManagerWrapper : IConnectionManager, IConnectionsListener
 {
 private:
-    RulesDrivenECPresentationManager& m_manager;
+    ECPresentationTasksManager& m_tasksManager;
     IConnectionManagerR m_wrapped;
-    mutable bvector<IConnectionsListener*> m_listeners;
+    mutable bmap<int, bset<IConnectionsListener*>> m_listeners;
+    mutable BeMutex m_mutex;
 
 protected:
     IConnection* _GetConnection(Utf8CP connectionId) const override {return m_wrapped.GetConnection(connectionId);}
     IConnection* _GetConnection(ECDbCR ecdb) const override {return m_wrapped.GetConnection(ecdb);}
     IConnectionPtr _CreateConnection(ECDbR ecdb) override {return m_wrapped.CreateConnection(ecdb);}
-    void _AddListener(IConnectionsListener& listener) const override {m_listeners.push_back(&listener);}
-    void _DropListener(IConnectionsListener& listener) const override {m_listeners.erase(std::remove(m_listeners.begin(), m_listeners.end(), &listener));}
+    void _AddListener(IConnectionsListener& listener) const override
+        {
+        BeMutexHolder lock(m_mutex);
+        auto iter = m_listeners.find(listener.GetPriority());
+        if (m_listeners.end() == iter)
+            iter = m_listeners.Insert(listener.GetPriority(), bset<IConnectionsListener*>()).first;
+        iter->second.insert(&listener);
+        }
+    void _DropListener(IConnectionsListener& listener) const override
+        {
+        BeMutexHolder lock(m_mutex);
+        auto iter = m_listeners.find(listener.GetPriority());
+        if (m_listeners.end() != iter)
+            iter->second.erase(&listener);
+        }
     void _OnConnectionEvent(ConnectionEvent const& evt) override
         {
+        RefCountedPtr<ECPresentationTasksBlocker> block;
         if (ConnectionEventType::Closed == evt.GetEventType())
-            m_manager.m_cancelableTasks->CancelConnectionRequests(evt.GetConnection());
-
-        folly::via(m_manager.m_executor, [&, evt, connectionId = evt.GetConnection().GetId()]()
             {
-            // WIP: need to bring task notifications context here
-            IConnectionPtr connection = m_wrapped.GetConnection(connectionId.c_str());
-            ConnectionEvent evtForThisThread(*connection, evt.IsPrimaryConnection(), evt.GetEventType());
-            for (IConnectionsListener* listener : m_listeners)
-                listener->NotifyConnectionEvent(evtForThisThread);
-            }).wait();
+            BeMutexHolder lock(m_tasksManager.GetMutex());
+            TasksCancelationResult cancelation = m_tasksManager.Cancel([&](IECPresentationTaskCR task)
+                {
+                return task.GetDependencies().GetConnectionId().Equals(evt.GetConnection().GetId());
+                });
+            block = m_tasksManager.Block([&](IECPresentationTaskCR task)
+                {
+                return task.GetDependencies().GetConnectionId().Equals(evt.GetConnection().GetId())
+                    && cancelation.GetTasks().end() == cancelation.GetTasks().find(&task);
+                });
+            lock.unlock();
+            cancelation.GetCompletion().wait();
+            }
+        BeMutexHolder listenerLock(m_mutex);
+        bmap<int, bset<IConnectionsListener*>> listeners = m_listeners;
+        listenerLock.unlock();
+        for (auto entry : listeners)
+            {
+            for (IConnectionsListener* listener : entry.second)
+                listener->NotifyConnectionEvent(evt);
+            }
         }
 
 public:
-    ConnectionManagerWrapper(RulesDrivenECPresentationManager& manager, IConnectionManagerR wrapped)
-        : m_manager(manager), m_wrapped(wrapped)
+    ConnectionManagerWrapper(RulesDrivenECPresentationManager& manager, IConnectionManagerP wrapped)
+        : m_tasksManager(manager.GetTasksManager()),
+        m_wrapped(nullptr != wrapped ? *wrapped : *new ConnectionManager())
         {
         m_wrapped.AddListener(*this);
         }
     ~ConnectionManagerWrapper()
         {
         m_wrapped.DropListener(*this);
+        delete &m_wrapped;
         }
 };
 
@@ -317,47 +151,41 @@ public:
 struct RulesDrivenECPresentationManager::RulesetLocaterManagerWrapper : IRulesetLocaterManager, IRulesetCallbacksHandler
 {
 private:
-    RulesDrivenECPresentationManager& m_manager;
+    ECPresentationTasksManager& m_tasksManager;
     RuleSetLocaterManager m_wrapped;
 
 protected:
     // IRulesetLocaterManager
-    BeMutex& _GetMutex() const override {return m_wrapped.GetMutex();}
     void _InvalidateCache(Utf8CP rulesetId) override {m_wrapped.InvalidateCache(rulesetId);}
     void _RegisterLocater(RuleSetLocater& locater) override {m_wrapped.RegisterLocater(locater);}
     void _UnregisterLocater(RuleSetLocater& locater) override {m_wrapped.UnregisterLocater(locater);}
     bvector<PresentationRuleSetPtr> _LocateRuleSets(IConnectionCR connection, Utf8CP rulesetId) const override {return m_wrapped.LocateRuleSets(connection, rulesetId);}
     bvector<Utf8String> _GetRuleSetIds() const override {return m_wrapped.GetRuleSetIds();}
+    BeMutex& _GetMutex() const override { return m_wrapped.GetMutex(); }
 
     // IRulesetCallbacksHandler
     void _OnRulesetDispose(RuleSetLocaterCR locater, PresentationRuleSetR ruleset) override
         {
-        m_manager.m_cancelableTasks->CancelByRulesetId(ruleset.GetRuleSetId());
-        folly::via(&m_manager.GetExecutor(), [&, ruleset = PresentationRuleSetPtr(&ruleset)]()
+        if (nullptr == GetRulesetCallbacksHandler())
+            return;
+
+        m_tasksManager.Cancel([&](IECPresentationTaskCR task)
             {
-            // WIP: need to bring task notifications context here
-            BeMutexHolder lock(GetMutex());
-            if (nullptr != GetRulesetCallbacksHandler())
-                GetRulesetCallbacksHandler()->_OnRulesetDispose(locater, *ruleset);
-            });
+            return task.GetDependencies().GetRulesetId().Equals(ruleset.GetRuleSetId());
+            }).GetCompletion().wait();
+        GetRulesetCallbacksHandler()->_OnRulesetDispose(locater, ruleset);
         }
     void _OnRulesetCreated(RuleSetLocaterCR locater, PresentationRuleSetR ruleset) override
         {
-        IUserSettings& settings = m_manager.GetUserSettings(ruleset.GetRuleSetId().c_str());
-        settings.InitFrom(ruleset.GetUserSettings());
+        if (nullptr == GetRulesetCallbacksHandler())
+            return;
 
-        folly::via(&m_manager.GetExecutor(), [&, ruleset = PresentationRuleSetPtr(&ruleset)]()
-            {
-            // WIP: need to bring task notifications context here
-            BeMutexHolder lock(GetMutex());
-            if (nullptr != GetRulesetCallbacksHandler())
-                GetRulesetCallbacksHandler()->_OnRulesetCreated(locater, *ruleset);
-            });
+        GetRulesetCallbacksHandler()->_OnRulesetCreated(locater, ruleset);
         }
 
 public:
     RulesetLocaterManagerWrapper(RulesDrivenECPresentationManager& manager, IConnectionManagerCR connections)
-        : m_manager(manager), m_wrapped(connections)
+        : m_tasksManager(manager.GetTasksManager()), m_wrapped(connections)
         {
         m_wrapped.SetRulesetCallbacksHandler(this);
         }
@@ -369,7 +197,7 @@ public:
 struct RulesDrivenECPresentationManager::UserSettingsManagerWrapper : IUserSettingsManager, IUserSettingsChangeListener
 {
 private:
-    RulesDrivenECPresentationManager& m_manager;
+    ECPresentationTasksManager& m_tasksManager;
     UserSettingsManager m_wrapped;
 protected:
     IUserSettings& _GetSettings(Utf8StringCR rulesetId) const override {return m_wrapped.GetSettings(rulesetId);}
@@ -377,47 +205,41 @@ protected:
     void _OnLocalStateChanged() override {m_wrapped.SetLocalState(GetLocalState());}
     void _OnSettingChanged(Utf8CP rulesetId, Utf8CP settingId) const override
         {
-        folly::via(&m_manager.GetExecutor(), [&, rulesetId = Utf8String(rulesetId), settingId = Utf8String(settingId)]()
-            {
-            // WIP: need to bring task notifications context here
-            if (nullptr != GetChangesListener())
+        if (nullptr == GetChangesListener())
+            return;
+
+        RefCountedPtr<ECPresentationTask> task = new ECPresentationTask(m_tasksManager.GetMutex(),
+            [&, rulesetId = Utf8String(rulesetId), settingId = Utf8String(settingId)](IECPresentationTaskCR task)
+                {
+                BeMutexHolder lock(GetMutex());
                 GetChangesListener()->_OnSettingChanged(rulesetId.c_str(), settingId.c_str());
+                }
+            );
+        task->SetBlockedTasksPredicate([rulesetId = Utf8String(rulesetId)](IECPresentationTaskCR)
+            {
+            // we don't know which connections this task can affect - need to block everything..
+            return true;
             });
+        m_tasksManager.Execute(*task);
         }
 public:
     UserSettingsManagerWrapper(RulesDrivenECPresentationManager& manager, BeFileNameCR temporaryDirectory)
-        : m_wrapped(temporaryDirectory), m_manager(manager)
+        : m_wrapped(temporaryDirectory), m_tasksManager(manager.GetTasksManager())
         {
         m_wrapped.SetChangesListener(this);
         }
     };
-
-/*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                11/2017
-+===============+===============+===============+===============+===============+======*/
-struct WrappedDependenciesFactory : IRulesDrivenECPresentationManagerDependenciesFactory
-    {
-    RulesDrivenECPresentationManager& m_manager;
-    IRulesetLocaterManager* _CreateRulesetLocaterManager(IConnectionManagerCR connections) const override {return new RulesDrivenECPresentationManager::RulesetLocaterManagerWrapper(m_manager, connections);}
-    IUserSettingsManager* _CreateUserSettingsManager(BeFileNameCR tempDir) const override {return new RulesDrivenECPresentationManager::UserSettingsManagerWrapper(m_manager, tempDir);}
-    WrappedDependenciesFactory(RulesDrivenECPresentationManager& manager) : m_manager(manager) {}
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                11/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-std::unique_ptr<IRulesDrivenECPresentationManagerDependenciesFactory> RulesDrivenECPresentationManager::CreateDependenciesFactory()
-    {
-    return std::make_unique<WrappedDependenciesFactory>(*this);
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 static RulesDrivenECPresentationManager::Params CreateParams(IConnectionManagerR connections, RulesDrivenECPresentationManager::Paths const& paths, bool disableDiskCache)
     {
-    RulesDrivenECPresentationManager::Params params(connections, paths);
-    params.SetDisableDiskCache(disableDiskCache);
+    RulesDrivenECPresentationManager::Params::CachingParams cachingParams;
+    cachingParams.SetDisableDiskCache(disableDiskCache);
+    RulesDrivenECPresentationManager::Params params(paths);
+    params.SetConnections(&connections);
+    params.SetCachingParams(cachingParams);
     return params;
     }
 
@@ -432,19 +254,9 @@ RulesDrivenECPresentationManager::RulesDrivenECPresentationManager(IConnectionMa
 * @bsimethod                                    Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 RulesDrivenECPresentationManager::RulesDrivenECPresentationManager(Params const& params)
-    : IECPresentationManager(params.GetConnections())
     {
-#ifdef RULES_ENGINE_FORCE_SINGLE_THREAD
-    m_executor = new folly::InlineExecutor();
-#else
-    m_executor = new SingleThreadedQueueExecutor("ECPresentation");
-#endif
-    m_cancelableTasks = new CancelableTasksStore();
-    m_connectionsWrapper = new ConnectionManagerWrapper(*this, params.GetConnections());
-    Params implParams(*m_connectionsWrapper, params.GetPaths());
-    implParams.SetDisableDiskCache(params.ShouldDisableDiskCache());
-    implParams.SetDiskCacheFileSizeLimit(params.GetDiskCacheFileSizeLimit());
-    RulesDrivenECPresentationManagerImpl* impl = new RulesDrivenECPresentationManagerImpl(*CreateDependenciesFactory(), implParams);
+    m_tasksManager = new ECPresentationTasksManager(params.GetMultiThreadingParams().GetBackgroundThreadAllocations());
+    RulesDrivenECPresentationManagerImpl* impl = new RulesDrivenECPresentationManagerImpl(CreateImplParams(params));
     m_impl = impl;
     impl->Initialize();
     }
@@ -454,22 +266,8 @@ RulesDrivenECPresentationManager::RulesDrivenECPresentationManager(Params const&
 +---------------+---------------+---------------+---------------+---------------+------*/
 RulesDrivenECPresentationManager::~RulesDrivenECPresentationManager()
     {
-    // cancel all pending promises and wait for the worker thread to terminate -
-    // it allows the canceled promises finish gracefully
-    m_cancelableTasks->CancelAll();
-    folly::via(m_executor, [&]()
-        {
-        // terminate on the ECPresentation thread (m_impl is not thread safe and should only
-        // be used from one thread)
-        DELETE_AND_CLEAR(m_impl);
-        });
-#ifndef RULES_ENGINE_FORCE_SINGLE_THREAD
-    static_cast<SingleThreadedQueueExecutor&>(*m_executor).Terminate().wait();
-#endif
-
-    DELETE_AND_CLEAR(m_connectionsWrapper);
-    DELETE_AND_CLEAR(m_executor);
-    DELETE_AND_CLEAR(m_cancelableTasks);
+    DELETE_AND_CLEAR(m_tasksManager);
+    DELETE_AND_CLEAR(m_impl);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -482,294 +280,450 @@ void RulesDrivenECPresentationManager::SetImpl(Impl& impl)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+RulesDrivenECPresentationManager::Params RulesDrivenECPresentationManager::CreateImplParams(Params const& source)
+    {
+    RulesDrivenECPresentationManager::Params result(source);
+    result.SetConnections(new RulesDrivenECPresentationManager::ConnectionManagerWrapper(*this, source.GetConnections()));
+    result.SetUserSettings(new RulesDrivenECPresentationManager::UserSettingsManagerWrapper(*this, source.GetPaths().GetTemporaryDirectory()));
+    result.SetRulesetLocaters(new RulesDrivenECPresentationManager::RulesetLocaterManagerWrapper(*this, *result.GetConnections()));
+
+    bvector<ECInstanceChangeEventSourcePtr> ecInstanceChangeEventSources;
+    for (ECInstanceChangeEventSourcePtr const& evtSource : source.GetECInstanceChangeEventSources())
+        {
+        auto wrapper = RulesDrivenECPresentationManager::ECInstanceChangeEventSourceWrapper::Create(*this, *evtSource);
+        ecInstanceChangeEventSources.push_back(wrapper);
+        }
+    result.SetECInstanceChangeEventSources(ecInstanceChangeEventSources);
+
+    return result;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+unsigned RulesDrivenECPresentationManager::GetBackgroundThreadsCount() const {return m_tasksManager->GetThreadsCount();}
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 IUserSettingsManager& RulesDrivenECPresentationManager::GetUserSettings() const {return m_impl->GetUserSettingsManager();}
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+IConnectionManagerCR RulesDrivenECPresentationManager::GetConnectionsCR() const {return m_impl->GetConnections();}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+IConnectionManagerR RulesDrivenECPresentationManager::_GetConnections() {return m_impl->GetConnections();}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP RulesDrivenECPresentationManager::GetConnectionId(ECDbCR db) const
+    {
+    IConnectionCP connection = GetConnectionsCR().GetConnection(db);
+    if (!connection)
+        return nullptr;
+    return connection->GetId().c_str();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+IConnectionCPtr RulesDrivenECPresentationManager::GetTaskConnection(IECPresentationTaskCR task) const
+    {
+    return GetConnectionsCR().GetConnection(task.GetDependencies().GetConnectionId().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+folly::Future<folly::Unit> RulesDrivenECPresentationManager::GetTasksCompletion() const
+    {
+    return m_tasksManager->GetAllTasksCompletion();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<NavNodesContainer> RulesDrivenECPresentationManager::_GetRootNodes(IConnectionCR primaryConnection, PageOptionsCR pageOpts, JsonValueCR jsonOptions, PresentationTaskNotificationsContextCR notificationsContext)
+folly::Future<NavNodesContainer> RulesDrivenECPresentationManager::_GetRootNodes(ECDbCR db, PageOptionsCR pageOpts, JsonValueCR jsonOptions, PresentationRequestContextCR context)
     {
-    auto promise = CreateCancelablePromise<INavNodesDataSourcePtr>(*m_cancelableTasks, "Root nodes", TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
-    folly::via(m_executor, [&, notificationsContext, promise, connectionId = primaryConnection.GetId(), pageOpts, jsonOptions]()
+    Utf8CP connectionId = GetConnectionId(db);
+    if (!connectionId)
         {
-        notificationsContext.OnTaskStart();
-        if (promise->IsCanceled())
-            return;
-
-        NavigationOptions options(jsonOptions);
-        IConnectionPtr connection = GetConnections().GetConnection(connectionId.c_str());
-        INavNodesDataSourcePtr source = m_impl->GetRootNodes(*connection, pageOpts, options, promise->GetCancelationToken());
+        BeAssert(false && "ECDb not registered as a connection");
+        return NavNodesContainer();
+        }
+    NavigationOptions options(jsonOptions);
+    return m_tasksManager->CreateAndExecute<NavNodesContainer>([&, pageOpts, options, context](IECPresentationTaskWithResult<NavNodesContainer> const& task)
+        {
+        context.OnTaskStart();
+        INavNodesDataSourcePtr source = m_impl->GetRootNodes(*GetTaskConnection(task), pageOpts, options, *task.GetCancelationToken());
         if (source.IsValid())
+            {
             source = PreloadedDataSource::Create(*source);
-        promise->SetValue(source);
-        });
-    return promise->GetFuture().then([](INavNodesDataSourcePtr ds)
-        {
-        if (ds.IsNull())
-            return DataContainer<NavNodeCPtr>();
-        return DataContainer<NavNodeCPtr>(*ds);
-        });
+            return DataContainer<NavNodeCPtr>(*source);
+            }
+        return DataContainer<NavNodeCPtr>();
+        }, TaskDependencies(connectionId, options.GetRulesetId()), true, options.GetPriority());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<size_t> RulesDrivenECPresentationManager::_GetRootNodesCount(IConnectionCR primaryConnection, JsonValueCR jsonOptions, PresentationTaskNotificationsContextCR notificationsContext)
+folly::Future<size_t> RulesDrivenECPresentationManager::_GetRootNodesCount(ECDbCR db, JsonValueCR jsonOptions, PresentationRequestContextCR context)
     {
-    auto promise = CreateCancelablePromise<size_t>(*m_cancelableTasks, "Root nodes count", TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
-    folly::via(m_executor, [&, notificationsContext, promise, connectionId = primaryConnection.GetId(), jsonOptions]()
+    Utf8CP connectionId = GetConnectionId(db);
+    if (!connectionId)
         {
-        notificationsContext.OnTaskStart();
-        if (promise->IsCanceled())
-            return;
-
-        NavigationOptions options(jsonOptions);
-        IConnectionPtr connection = GetConnections().GetConnection(connectionId.c_str());
-        size_t count = m_impl->GetRootNodesCount(*connection, options, promise->GetCancelationToken());
-        promise->SetValue(count);
-        });
-    return promise->GetFuture();
+        BeAssert(false && "ECDb not registered as a connection");
+        return 0;
+        }
+    NavigationOptions options(jsonOptions);
+    return m_tasksManager->CreateAndExecute<size_t>([&, options, context](IECPresentationTaskWithResult<size_t> const& task)
+        {
+        context.OnTaskStart();
+        return m_impl->GetRootNodesCount(*GetTaskConnection(task), options, *task.GetCancelationToken());
+        }, TaskDependencies(connectionId, options.GetRulesetId()), true, options.GetPriority());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<NavNodesContainer> RulesDrivenECPresentationManager::_GetChildren(IConnectionCR primaryConnection, NavNodeCR parent, PageOptionsCR pageOpts, JsonValueCR jsonOptions, PresentationTaskNotificationsContextCR notificationsContext)
+folly::Future<NavNodesContainer> RulesDrivenECPresentationManager::_GetChildren(ECDbCR db, NavNodeCR parent, PageOptionsCR pageOpts, JsonValueCR jsonOptions, PresentationRequestContextCR context)
     {
-    auto promise = CreateCancelablePromise<INavNodesDataSourcePtr>(*m_cancelableTasks, "Child nodes", TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
-    folly::via(m_executor, [&, notificationsContext, promise, connectionId = primaryConnection.GetId(), parent = (NavNodeCPtr)&parent, pageOpts, jsonOptions]()
+    Utf8CP connectionId = GetConnectionId(db);
+    if (!connectionId)
         {
-        notificationsContext.OnTaskStart();
-        if (promise->IsCanceled())
-            return;
-
-        NavigationOptions options(jsonOptions);
-        IConnectionPtr connection = GetConnections().GetConnection(connectionId.c_str());
-        INavNodesDataSourcePtr source = m_impl->GetChildren(*connection, *parent, pageOpts, options, promise->GetCancelationToken());
+        BeAssert(false && "ECDb not registered as a connection");
+        return NavNodesContainer();
+        }
+    NavigationOptions options(jsonOptions);
+    return m_tasksManager->CreateAndExecute<NavNodesContainer>([&, parent = NavNodeCPtr(&parent), pageOpts, options, context](IECPresentationTaskWithResult<NavNodesContainer> const& task)
+        {
+        context.OnTaskStart();
+        INavNodesDataSourcePtr source = m_impl->GetChildren(*GetTaskConnection(task), *parent, pageOpts, options, *task.GetCancelationToken());
         if (source.IsValid())
+            {
             source = PreloadedDataSource::Create(*source);
-        promise->SetValue(source);
-        });
-    return promise->GetFuture().then([](INavNodesDataSourcePtr ds)
-        {
-        if (ds.IsNull())
-            return DataContainer<NavNodeCPtr>();
-        return DataContainer<NavNodeCPtr>(*ds);
-        });
+            return DataContainer<NavNodeCPtr>(*source);
+            }
+        return DataContainer<NavNodeCPtr>();
+        }, TaskDependencies(connectionId, options.GetRulesetId()), true, options.GetPriority());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<size_t> RulesDrivenECPresentationManager::_GetChildrenCount(IConnectionCR primaryConnection, NavNodeCR parent, JsonValueCR jsonOptions, PresentationTaskNotificationsContextCR notificationsContext)
+folly::Future<size_t> RulesDrivenECPresentationManager::_GetChildrenCount(ECDbCR db, NavNodeCR parent, JsonValueCR jsonOptions, PresentationRequestContextCR context)
     {
-    auto promise = CreateCancelablePromise<size_t>(*m_cancelableTasks, "Child nodes count", TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
-    folly::via(m_executor, [&, notificationsContext, promise, connectionId = primaryConnection.GetId(), parent = (NavNodeCPtr)&parent, jsonOptions]()
+    Utf8CP connectionId = GetConnectionId(db);
+    if (!connectionId)
         {
-        notificationsContext.OnTaskStart();
-        if (promise->IsCanceled())
-            return;
-
-        NavigationOptions options(jsonOptions);
-        IConnectionPtr connection = GetConnections().GetConnection(connectionId.c_str());
-        size_t count = m_impl->GetChildrenCount(*connection, *parent, options, promise->GetCancelationToken());
-        promise->SetValue(count);
-        });
-    return promise->GetFuture();
+        BeAssert(false && "ECDb not registered as a connection");
+        return 0;
+        }
+    NavigationOptions options(jsonOptions);
+    return m_tasksManager->CreateAndExecute<size_t>([&, parent = NavNodeCPtr(&parent), options, context](IECPresentationTaskWithResult<size_t> const& task)
+        {
+        context.OnTaskStart();
+        return m_impl->GetChildrenCount(*GetTaskConnection(task), *parent, options, *task.GetCancelationToken());
+        }, TaskDependencies(connectionId, options.GetRulesetId()), true, options.GetPriority());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<NavNodeCPtr> RulesDrivenECPresentationManager::_GetParent(IConnectionCR primaryConnection, NavNodeCR node, JsonValueCR jsonOptions, PresentationTaskNotificationsContextCR notificationsContext)
+folly::Future<NavNodeCPtr> RulesDrivenECPresentationManager::_GetParent(ECDbCR db, NavNodeCR node, JsonValueCR jsonOptions, PresentationRequestContextCR context)
     {
-    auto promise = CreateCancelablePromise<NavNodeCPtr>(*m_cancelableTasks, "Parent node", TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
-    folly::via(m_executor, [&, notificationsContext, promise, connectionId = primaryConnection.GetId(), node = (NavNodeCPtr)&node, jsonOptions]()
+    Utf8CP connectionId = GetConnectionId(db);
+    if (!connectionId)
         {
-        notificationsContext.OnTaskStart();
-        if (promise->IsCanceled())
-            return;
-
-        NavigationOptions options(jsonOptions);
-        IConnectionPtr connection = GetConnections().GetConnection(connectionId.c_str());
-        NavNodeCPtr parentNode = m_impl->GetParent(*connection, *node, options, promise->GetCancelationToken());
-        promise->SetValue(parentNode);
-        });
-    return promise->GetFuture();
+        BeAssert(false && "ECDb not registered as a connection");
+        return folly::makeFuture(nullptr);
+        }
+    NavigationOptions options(jsonOptions);
+    return m_tasksManager->CreateAndExecute<NavNodeCPtr>([&, node = NavNodeCPtr(&node), options, context](IECPresentationTaskWithResult<NavNodeCPtr> const& task)
+        {
+        context.OnTaskStart();
+        return m_impl->GetParent(*GetTaskConnection(task), *node, options, *task.GetCancelationToken());
+        }, TaskDependencies(connectionId, options.GetRulesetId()), true, options.GetPriority());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<NavNodeCPtr> RulesDrivenECPresentationManager::_GetNode(IConnectionCR primaryConnection, NavNodeKeyCR nodeKey, JsonValueCR jsonOptions, PresentationTaskNotificationsContextCR notificationsContext)
+folly::Future<NavNodeCPtr> RulesDrivenECPresentationManager::_GetNode(ECDbCR db, NavNodeKeyCR nodeKey, JsonValueCR jsonOptions, PresentationRequestContextCR context)
     {
-    auto promise = CreateCancelablePromise<NavNodeCPtr>(*m_cancelableTasks, "Node", TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
-    folly::via(m_executor, [&, notificationsContext, promise, connectionId = primaryConnection.GetId(), nodeKeyPtr = NavNodeKeyCPtr(&nodeKey), jsonOptions]()
+    Utf8CP connectionId = GetConnectionId(db);
+    if (!connectionId)
         {
-        notificationsContext.OnTaskStart();
-        if (promise->IsCanceled())
-            return;
-
-        NavigationOptions options(jsonOptions);
-        IConnectionPtr connection = GetConnections().GetConnection(connectionId.c_str());
-        NavNodeCPtr node = m_impl->GetNode(*connection, *nodeKeyPtr, options, promise->GetCancelationToken());
-        promise->SetValue(node);
-        });
-    return promise->GetFuture();
+        BeAssert(false && "ECDb not registered as a connection");
+        return folly::makeFuture(nullptr);
+        }
+    NavigationOptions options(jsonOptions);
+    return m_tasksManager->CreateAndExecute<NavNodeCPtr>([&, nodeKey = NavNodeKeyCPtr(&nodeKey), options, context](IECPresentationTaskWithResult<NavNodeCPtr> const& task)
+        {
+        context.OnTaskStart();
+        return m_impl->GetNode(*GetTaskConnection(task), *nodeKey, options, *task.GetCancelationToken());
+        }, TaskDependencies(connectionId, options.GetRulesetId()), true, options.GetPriority());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<bvector<NavNodeCPtr>> RulesDrivenECPresentationManager::_GetFilteredNodes(IConnectionCR primaryConnection, Utf8CP filterText, JsonValueCR jsonOptions, PresentationTaskNotificationsContextCR notificationsContext)
+folly::Future<bvector<NavNodeCPtr>> RulesDrivenECPresentationManager::_GetFilteredNodes(ECDbCR db, Utf8CP filterText, JsonValueCR jsonOptions, PresentationRequestContextCR context)
     {
-    auto promise = CreateCancelablePromise<bvector<NavNodeCPtr>>(*m_cancelableTasks, "Filtered nodes", TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
-    folly::via(m_executor, [&, notificationsContext, promise, connectionId = primaryConnection.GetId(), filterText = Utf8String(filterText), jsonOptions]()
+    Utf8CP connectionId = GetConnectionId(db);
+    if (!connectionId)
         {
-        notificationsContext.OnTaskStart();
-        if (promise->IsCanceled())
-            return;
+        BeAssert(false && "ECDb not registered as a connection");
+        return bvector<NavNodeCPtr>();
+        }
+    NavigationOptions options(jsonOptions);
+    return m_tasksManager->CreateAndExecute<bvector<NavNodeCPtr>>([&, filterText = Utf8String(filterText), options, context](IECPresentationTaskWithResult<bvector<NavNodeCPtr>> const& task)
+        {
+        context.OnTaskStart();
+        return m_impl->GetFilteredNodes(*GetTaskConnection(task), filterText.c_str(), options, *task.GetCancelationToken());
+        }, TaskDependencies(connectionId, options.GetRulesetId()), true, options.GetPriority());
+    }
 
-        NavigationOptions options(jsonOptions);
-        IConnectionPtr connection = GetConnections().GetConnection(connectionId.c_str());
-        bvector<NavNodeCPtr> nodes = m_impl->GetFilteredNodes(*connection, filterText.c_str(), options, promise->GetCancelationToken());
-        promise->SetValue(nodes);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+folly::Future<bvector<NodesPathElement>> RulesDrivenECPresentationManager::_GetFilteredNodePaths(ECDbCR db, Utf8CP filterText, JsonValueCR jsonOptions, PresentationRequestContextCR context)
+    {
+    Utf8String escapedString(filterText);
+    escapedString.ReplaceAll("\\", "\\\\");
+    escapedString.ReplaceAll("%", "\\%");
+    escapedString.ReplaceAll("_", "\\_");
+
+    return GetFilteredNodes(db, escapedString.c_str(), jsonOptions, context)
+        .then([&, context, filterText = Utf8String(filterText).ToLower(), jsonOptions](bvector<NavNodeCPtr> filteredNodes)
+        {
+        context.OnTaskStart();
+        return NodePathsHelper::CreateHierarchy(*this, db, jsonOptions, filteredNodes, filterText.c_str());
         });
-    return promise->GetFuture();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+folly::Future<bvector<NodesPathElement>> RulesDrivenECPresentationManager::_GetNodePaths(ECDbCR db, bvector<bvector<ECInstanceKey>> const& keyPaths, int64_t markedIndex, JsonValueCR jsonOptions, PresentationRequestContextCR context)
+    {
+    Utf8CP connectionId = GetConnectionId(db);
+    if (!connectionId)
+        {
+        BeAssert(false && "ECDb not registered as a connection");
+        return bvector<NodesPathElement>();
+        }
+    bvector<folly::Future<NodesPathElement>> pathFutures;
+    for (size_t i = 0; i < keyPaths.size(); ++i)
+        {
+        bvector<ECInstanceKey> const& keyPath = keyPaths[i];
+        pathFutures.push_back(GetNodePath(db, keyPath, jsonOptions, context));
+        }
+    return folly::collect(pathFutures).then([markedIndex, context](std::vector<NodesPathElement> paths) -> bvector<NodesPathElement>
+        {
+        context.OnTaskStart();
+        return NodePathsHelper::MergePaths(paths, &markedIndex);
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<bool> RulesDrivenECPresentationManager::_HasChild(IConnectionCR primaryConnection, NavNodeCR parent, ECInstanceKeyCR childKey, JsonValueCR jsonOptions, PresentationTaskNotificationsContextCR notificationsContext)
+static folly::Future<NodesPathElement> FindNode(IECPresentationManagerR manager, ECDbCR db, NavNodeCP parentNode, ECInstanceKeyCR lookupKey, JsonValueCR jsonOptions, PresentationRequestContextCR context)
     {
-    auto promise = CreateCancelablePromise<bool>(*m_cancelableTasks, "Child check", TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
-    folly::via(m_executor, [&, notificationsContext, promise, connectionId = primaryConnection.GetId(), parent = (NavNodeCPtr)&parent, childKey, jsonOptions]()
+    folly::Future<DataContainer<NavNodeCPtr>> nodesFuture = (nullptr == parentNode)
+        ? manager.GetRootNodes(db, PageOptions(), jsonOptions, context)
+        : manager.GetChildren(db, *parentNode, PageOptions(), jsonOptions, context);
+    return nodesFuture.then([&, lookupKey, jsonOptions, context](DataContainer<NavNodeCPtr> nodes) -> NodesPathElement
         {
-        notificationsContext.OnTaskStart();
-        if (promise->IsCanceled())
-            return;
-
-        NavigationOptions options(jsonOptions);
-        IConnectionPtr connection = GetConnections().GetConnection(connectionId.c_str());
-        bool result = m_impl->HasChild(*connection, *parent, childKey, options, promise->GetCancelationToken());
-        promise->SetValue(result);
+        context.OnTaskStart();
+        for (size_t i = 0; i < nodes.GetSize(); ++i)
+            {
+            NavNodeCPtr node = nodes[i];
+            if (node->GetKey()->AsECInstanceNodeKey() && node->GetKey()->AsECInstanceNodeKey()->GetInstanceKey() == lookupKey)
+                return NodesPathElement(*node, i);
+            if (nullptr != node->GetKey()->AsGroupingNodeKey())
+                {
+                NavNodeExtendedData extendedData(*node);
+                if (extendedData.HasGroupingType())
+                    {
+                    bvector<ECInstanceKey> groupedKeys = extendedData.GetGroupedInstanceKeys();
+                    auto iter = std::find(groupedKeys.begin(), groupedKeys.end(), lookupKey);
+                    if (groupedKeys.end() != iter)
+                        return NodesPathElement(*node, i);
+                    }
+                }
+            }
+        return NodesPathElement();
         });
-    return promise->GetFuture();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static folly::Future<NodesPathElement> CreateNodePath(IECPresentationManagerR manager, ECDbCR db, NavNodeCP parentNode, bvector<ECInstanceKey> keyPath, JsonValueCR jsonOptions, PresentationRequestContextCR context)
+    {
+    if (keyPath.empty())
+        return NodesPathElement();
+
+    return FindNode(manager, db, parentNode, keyPath.front(), jsonOptions, context).then([&, keyPath, jsonOptions, context](NodesPathElement parentEl) mutable
+        {
+        context.OnTaskStart();
+
+        if (!parentEl.GetNode().IsValid())
+            {
+            BeAssert(false && "Provided nodes path doesn't exist in the hierarchy");
+            return folly::makeFuture(NodesPathElement());
+            }
+
+        if (parentEl.GetNode()->GetKey()->AsECInstanceNodeKey() && parentEl.GetNode()->GetKey()->AsECInstanceNodeKey()->GetInstanceKey() == keyPath.front())
+            keyPath.erase(keyPath.begin());
+
+        return CreateNodePath(manager, db, parentEl.GetNode().get(), keyPath, jsonOptions, context).then([parentEl](NodesPathElement childEl) mutable
+            {
+            if (childEl.GetNode().IsValid())
+                parentEl.GetChildren().push_back(childEl);
+            return parentEl;
+            });
+        });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+folly::Future<NodesPathElement> RulesDrivenECPresentationManager::_GetNodePath(ECDbCR db, bvector<ECInstanceKey> const& keyPath, JsonValueCR jsonOptions, PresentationRequestContextCR context)
+    {
+    return CreateNodePath(*this, db, nullptr, keyPath, jsonOptions, context);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<bvector<SelectClassInfo>> RulesDrivenECPresentationManager::_GetContentClasses(IConnectionCR primaryConnection, Utf8CP preferredDisplayType, int contentFlags,
-    bvector<ECClassCP> const& classes, JsonValueCR jsonOptions, PresentationTaskNotificationsContextCR notificationsContext)
+folly::Future<bvector<SelectClassInfo>> RulesDrivenECPresentationManager::_GetContentClasses(ECDbCR db, Utf8CP preferredDisplayType, int contentFlags,
+    bvector<ECClassCP> const& classes, JsonValueCR jsonOptions, PresentationRequestContextCR context)
     {
-    auto promise = CreateCancelablePromise<bvector<SelectClassInfo>>(*m_cancelableTasks, "Content classes", TaskDependencies(primaryConnection.GetId(), ContentOptions(jsonOptions).GetRulesetId()));
-    folly::via(m_executor, [&, notificationsContext, promise, connectionId = primaryConnection.GetId(), displayType = (Utf8String)preferredDisplayType, contentFlags, classes, jsonOptions]()
+    Utf8CP connectionId = GetConnectionId(db);
+    if (!connectionId)
         {
-        notificationsContext.OnTaskStart();
-        if (promise->IsCanceled())
-            return;
+        BeAssert(false && "ECDb not registered as a connection");
+        return bvector<SelectClassInfo>();
+        }
+    ContentOptions options(jsonOptions);
+    return m_tasksManager->CreateAndExecute<bvector<SelectClassInfo>>([&, displayType = Utf8String(preferredDisplayType), contentFlags, classes, options, context](IECPresentationTaskWithResult<bvector<SelectClassInfo>> const& task)
+        {
+        context.OnTaskStart();
+        return m_impl->GetContentClasses(*GetTaskConnection(task), displayType.c_str(), contentFlags, classes, options, *task.GetCancelationToken());
+        }, TaskDependencies(connectionId, options.GetRulesetId()), true, options.GetPriority());
+    }
 
-        ContentOptions options(jsonOptions);
-        IConnectionPtr connection = GetConnections().GetConnection(connectionId.c_str());
-        bvector<SelectClassInfo> contentClasses = m_impl->GetContentClasses(*connection, displayType.c_str(), contentFlags, classes, options, promise->GetCancelationToken());
-        promise->SetValue(contentClasses);
-        });
-
-    return promise->GetFuture();
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool ShouldCancelContentRequest(IECPresentationTaskCR request, Utf8CP displayType, Utf8CP connectionId, SelectionInfoCR selectionInfo)
+    {
+    return request.GetDependencies().GetDisplayType().Equals(displayType ? displayType : "")
+        && request.GetDependencies().GetConnectionId().Equals(connectionId ? connectionId : "")
+        && request.GetDependencies().GetSelectionInfo()
+        && selectionInfo.GetSelectionProviderName().Equals(request.GetDependencies().GetSelectionInfo()->GetSelectionProviderName())
+        && selectionInfo.GetTimestamp() != request.GetDependencies().GetSelectionInfo()->GetTimestamp();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<ContentDescriptorCPtr> RulesDrivenECPresentationManager::_GetContentDescriptor(IConnectionCR primaryConnection, Utf8CP preferredDisplayType, int contentFlags,
-    KeySetCR inputKeys, SelectionInfo const* selectionInfo, JsonValueCR jsonOptions, PresentationTaskNotificationsContextCR notificationsContext)
+folly::Future<ContentDescriptorCPtr> RulesDrivenECPresentationManager::_GetContentDescriptor(ECDbCR db, Utf8CP preferredDisplayType, int contentFlags,
+    KeySetCR inputKeys, SelectionInfo const* selectionInfo, JsonValueCR jsonOptions, PresentationRequestContextCR context)
     {
+    Utf8CP connectionId = GetConnectionId(db);
+    if (!connectionId)
+        {
+        BeAssert(false && "ECDb not registered as a connection");
+        return folly::makeFuture(nullptr);
+        }
+
     if (selectionInfo)
-        m_cancelableTasks->CancelSelectionDependants(primaryConnection, preferredDisplayType, *selectionInfo);
-
-    TaskDependencies dependencies(primaryConnection.GetId(), ContentOptions(jsonOptions).GetRulesetId(), preferredDisplayType, selectionInfo);
-    auto promise = CreateCancelablePromise<ContentDescriptorCPtr>(*m_cancelableTasks, "Content descriptor", dependencies);
-    folly::via(m_executor, [&, notificationsContext, promise, connectionId = primaryConnection.GetId(), displayType = Utf8String(preferredDisplayType), contentFlags, input = KeySetCPtr(&inputKeys), selectionInfo = SelectionInfoCPtr(selectionInfo), jsonOptions]()
         {
-        notificationsContext.OnTaskStart();
-        if (promise->IsCanceled())
-            return;
+        m_tasksManager->Cancel([&](IECPresentationTaskCR task)
+            {
+            return ShouldCancelContentRequest(task, preferredDisplayType, connectionId, *selectionInfo);
+            });
+        }
 
-        ContentOptions options(jsonOptions);
-        IConnectionPtr connection = GetConnections().GetConnection(connectionId.c_str());
-        ContentDescriptorCPtr descriptor = m_impl->GetContentDescriptor(*connection, displayType.c_str(), contentFlags, *input, selectionInfo.get(), options, promise->GetCancelationToken());
-        promise->SetValue(descriptor);
-        });
-
-    return promise->GetFuture();
+    ContentOptions options(jsonOptions);
+    return m_tasksManager->CreateAndExecute<ContentDescriptorCPtr>([&, displayType = Utf8String(preferredDisplayType), contentFlags, input = KeySetCPtr(&inputKeys), selectionInfo = SelectionInfoCPtr(selectionInfo), options, context](IECPresentationTaskWithResult<ContentDescriptorCPtr> const& task)
+        {
+        context.OnTaskStart();
+        return m_impl->GetContentDescriptor(*GetTaskConnection(task), displayType.c_str(), contentFlags, *input, selectionInfo.get(), options, *task.GetCancelationToken());
+        }, TaskDependencies(connectionId, options.GetRulesetId(), preferredDisplayType, selectionInfo), true, options.GetPriority());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<ContentCPtr> RulesDrivenECPresentationManager::_GetContent(ContentDescriptorCR descriptor, PageOptionsCR pageOpts, PresentationTaskNotificationsContextCR notificationsContext)
+folly::Future<ContentCPtr> RulesDrivenECPresentationManager::_GetContent(ContentDescriptorCR descriptor, PageOptionsCR pageOpts, PresentationRequestContextCR context)
     {
     if (descriptor.GetSelectionInfo())
-        m_cancelableTasks->CancelSelectionDependants(descriptor.GetConnection(), descriptor.GetPreferredDisplayType().c_str(), *descriptor.GetSelectionInfo());
-
-    TaskDependencies dependencies(descriptor.GetConnection().GetId(), ContentOptions(descriptor.GetOptions()).GetRulesetId(), descriptor.GetPreferredDisplayType().c_str(), descriptor.GetSelectionInfo());
-    auto promise = CreateCancelablePromise<ContentCPtr>(*m_cancelableTasks, "Content", dependencies);
-    folly::via(m_executor, [&, notificationsContext, promise, descriptor = ContentDescriptorCPtr(&descriptor), pageOpts]()
         {
-        notificationsContext.OnTaskStart();
-        if (promise->IsCanceled())
-            return;
+        m_tasksManager->Cancel([&](IECPresentationTaskCR task)
+            {
+            return ShouldCancelContentRequest(task, descriptor.GetPreferredDisplayType().c_str(), descriptor.GetConnectionId().c_str(), *descriptor.GetSelectionInfo());
+            });
+        }
 
-        ContentCPtr content = m_impl->GetContent(*descriptor, pageOpts, promise->GetCancelationToken());
-        promise->SetValue(content);
-        });
-    return promise->GetFuture();
+    ContentOptions options(descriptor.GetOptions());
+    return m_tasksManager->CreateAndExecute<ContentCPtr>([&, descriptor = ContentDescriptorCPtr(&descriptor), pageOpts, context](IECPresentationTaskWithResult<ContentCPtr> const& task)
+        {
+        context.OnTaskStart();
+        return m_impl->GetContent(*GetTaskConnection(task), *descriptor, pageOpts, *task.GetCancelationToken());
+        }, TaskDependencies(descriptor.GetConnectionId(), options.GetRulesetId(), descriptor.GetPreferredDisplayType(), descriptor.GetSelectionInfo()), true, options.GetPriority());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<size_t> RulesDrivenECPresentationManager::_GetContentSetSize(ContentDescriptorCR descriptor, PresentationTaskNotificationsContextCR notificationsContext)
+folly::Future<size_t> RulesDrivenECPresentationManager::_GetContentSetSize(ContentDescriptorCR descriptor, PresentationRequestContextCR context)
     {
     if (descriptor.GetSelectionInfo())
-        m_cancelableTasks->CancelSelectionDependants(descriptor.GetConnection(), descriptor.GetPreferredDisplayType().c_str(), *descriptor.GetSelectionInfo());
-
-    TaskDependencies dependencies(descriptor.GetConnection().GetId(), ContentOptions(descriptor.GetOptions()).GetRulesetId(), descriptor.GetPreferredDisplayType().c_str(), descriptor.GetSelectionInfo());
-    auto promise = CreateCancelablePromise<size_t>(*m_cancelableTasks, "Content set size", dependencies);
-    folly::via(m_executor, [&, notificationsContext, promise, descriptor = ContentDescriptorCPtr(&descriptor)]()
         {
-        notificationsContext.OnTaskStart();
-        if (promise->IsCanceled())
-            return;
+        m_tasksManager->Cancel([&](IECPresentationTaskCR task)
+            {
+            return ShouldCancelContentRequest(task, descriptor.GetPreferredDisplayType().c_str(), descriptor.GetConnectionId().c_str(), *descriptor.GetSelectionInfo());
+            });
+        }
 
-        size_t size = m_impl->GetContentSetSize(*descriptor, promise->GetCancelationToken());
-        promise->SetValue(size);
-        });
-    return promise->GetFuture();
+    ContentOptions options(descriptor.GetOptions());
+    return m_tasksManager->CreateAndExecute<size_t>([&, descriptor = ContentDescriptorCPtr(&descriptor), context](IECPresentationTaskWithResult<size_t> const& task)
+        {
+        context.OnTaskStart();
+        return m_impl->GetContentSetSize(*GetTaskConnection(task), *descriptor, *task.GetCancelationToken());
+        }, TaskDependencies(descriptor.GetConnectionId(), options.GetRulesetId(), descriptor.GetPreferredDisplayType(), descriptor.GetSelectionInfo()), true, options.GetPriority());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<Utf8String> RulesDrivenECPresentationManager::_GetDisplayLabel(IConnectionCR primaryConnection, KeySetCR keys, PresentationTaskNotificationsContextCR notificationsContext)
+folly::Future<Utf8String> RulesDrivenECPresentationManager::_GetDisplayLabel(ECDbCR db, KeySetCR keys, JsonValueCR jsonOptions, PresentationRequestContextCR context)
     {
-    TaskDependencies dependencies(primaryConnection.GetId(), DISPLAY_LABEL_RULESET_ID, ContentDisplayType::List, nullptr);
-    auto promise = CreateCancelablePromise<Utf8String>(*m_cancelableTasks, "Display label", dependencies);
-    folly::via(m_executor, [&, notificationsContext, promise, connectionId = primaryConnection.GetId(), keys = KeySetCPtr(&keys)]()
+    Utf8CP connectionId = GetConnectionId(db);
+    if (!connectionId)
         {
-        notificationsContext.OnTaskStart();
-        if (promise->IsCanceled())
-            return;
-
-        IConnectionPtr connection = GetConnections().GetConnection(connectionId.c_str());
-        Utf8String label = m_impl->GetDisplayLabel(*connection, *keys, promise->GetCancelationToken());
-        promise->SetValue(label);
-        });
-    return promise->GetFuture();
+        BeAssert(false && "ECDb not registered as a connection");
+        return "";
+        }
+    CommonOptions options(jsonOptions);
+    return m_tasksManager->CreateAndExecute<Utf8String>([&, keys = KeySetCPtr(&keys), context](IECPresentationTaskWithResult<Utf8String> const& task)
+        {
+        context.OnTaskStart();
+        return m_impl->GetDisplayLabel(*GetTaskConnection(task), *keys, *task.GetCancelationToken());
+        }, TaskDependencies(connectionId, DISPLAY_LABEL_RULESET_ID, ContentDisplayType::List, nullptr), true, options.GetPriority());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -781,228 +735,3 @@ IRulesetLocaterManager& RulesDrivenECPresentationManager::GetLocaters() {return 
 * @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 IUserSettings& RulesDrivenECPresentationManager::GetUserSettings(Utf8CP rulesetId) const {return m_impl->GetUserSettings(rulesetId);}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                01/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RulesDrivenECPresentationManager::SetLocalState(IJsonLocalState* localState) {m_impl->SetLocalState(localState);}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Robert.Lukasonok                11/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-IRulesPreprocessorPtr RulesDrivenECPresentationManager::GetRulesPreprocessor(IConnectionCR connection, Utf8StringCR rulesetId, Utf8StringCR locale, IUsedUserSettingsListener* usedSettingsListener) const
-    {
-    return m_impl->GetRulesPreprocessor(connection, rulesetId, locale, usedSettingsListener);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Robert.Lukasonok                11/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-INavNodesFactoryPtr RulesDrivenECPresentationManager::GetNavNodesFactory() const {return new JsonNavNodesFactory();}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                01/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RulesDrivenECPresentationManager::RegisterECInstanceChangeEventSource(ECInstanceChangeEventSource& source)
-    {
-    RefCountedPtr<ECInstanceChangeEventSourceWrapper> wrapper = ECInstanceChangeEventSourceWrapper::Create(*this, source);
-    m_impl->RegisterECInstanceChangeEventSource(*wrapper);
-    m_ecInstanceChangeEventSourceWrappers.push_back(wrapper.get());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                01/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RulesDrivenECPresentationManager::UnregisterECInstanceChangeEventSource(ECInstanceChangeEventSource& source)
-    {
-    for (auto iter = m_ecInstanceChangeEventSourceWrappers.begin(); iter != m_ecInstanceChangeEventSourceWrappers.end(); ++iter)
-        {
-        ECInstanceChangeEventSourceWrapper* wrapper = (*iter);
-        if (&wrapper->GetWrappedEventSource() == &source)
-            {
-            m_ecInstanceChangeEventSourceWrappers.erase(iter);
-            m_impl->UnregisterECInstanceChangeEventSource(*wrapper);
-            return;
-            }
-        }
-    BeAssert(false && "Did not find an ECInstanceChangeEventSource to remove");
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                02/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RulesDrivenECPresentationManager::RegisterUpdateRecordsHandler(IUpdateRecordsHandler& handler) {m_impl->RegisterUpdateRecordsHandler(handler);}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                02/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RulesDrivenECPresentationManager::UnregisterUpdateRecordsHandler(IUpdateRecordsHandler& handler) {m_impl->UnregisterUpdateRecordsHandler(handler);}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                11/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RulesDrivenECPresentationManager::SetECPropertyFormatter(IECPropertyFormatter const* formatter) {m_impl->SetECPropertyFormatter(formatter);}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                06/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-IECPropertyFormatter const& RulesDrivenECPresentationManager::GetECPropertyFormatter() const {return m_impl->GetECPropertyFormatter();}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                01/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RulesDrivenECPresentationManager::SetCategorySupplier(IPropertyCategorySupplier* supplier) {m_impl->SetCategorySupplier(supplier);}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                10/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-IPropertyCategorySupplier& RulesDrivenECPresentationManager::GetCategorySupplier() const {return m_impl->GetCategorySupplier();}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                01/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RulesDrivenECPresentationManager::NotifyCategoriesChanged()
-    {
-    folly::via(m_executor, [&]()
-        {
-        m_impl->NotifyCategoriesChanged();
-        });
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                06/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RulesDrivenECPresentationManager::RegisterECInstanceChangeHandler(IECInstanceChangeHandler& handler)
-    {
-    m_impl->RegisterECInstanceChangeHandler(handler);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RulesDrivenECPresentationManager::UnregisterECInstanceChangeHandler(IECInstanceChangeHandler& handler)
-    {
-    m_impl->UnregisterECInstanceChangeHandler(handler);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                06/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<bvector<ECInstanceChangeResult>> RulesDrivenECPresentationManager::_SaveValueChange(IConnectionCR primaryConnection, bvector<ChangedECInstanceInfo> const& instances,
-    Utf8CP propertyAccessor, ECValueCR value, JsonValueCR, PresentationTaskNotificationsContextCR notificationsContext)
-    {
-    // note: the connection should be changed only on the primary thread so we're not
-    // switching to the executor thread here.
-    return m_impl->SaveValueChange(primaryConnection, instances, propertyAccessor, value);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Haroldas.Vitunskas              01/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RulesDrivenECPresentationManager::_OnLocalizationProviderChanged()
-    {
-    IECPresentationManager::_OnLocalizationProviderChanged();
-
-    if (nullptr != m_impl)
-        m_impl->SetLocalizationProvider(GetLocalizationProvider());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                08/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<folly::Unit> RulesDrivenECPresentationManager::_OnNodeChecked(IConnectionCR primaryConnection, NavNodeKeyCR nodeKey, JsonValueCR jsonOptions, PresentationTaskNotificationsContextCR notificationsContext)
-    {
-    auto promise = CreateCancelablePromise<folly::Unit>(*m_cancelableTasks, "Node checked", TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
-    folly::via(m_executor, [&, notificationsContext, promise, connectionId = primaryConnection.GetId(), nodeKeyPtr = NavNodeKeyCPtr(&nodeKey), jsonOptions]()
-        {
-        notificationsContext.OnTaskStart();
-        if (promise->IsCanceled())
-            return;
-
-        NavigationOptions options(jsonOptions);
-        IConnectionPtr connection = GetConnections().GetConnection(connectionId.c_str());
-        m_impl->NotifyNodeChecked(*connection, *nodeKeyPtr, options, promise->GetCancelationToken());
-        promise->SetValue();
-        });
-    return promise->GetFuture();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                08/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<folly::Unit> RulesDrivenECPresentationManager::_OnNodeUnchecked(IConnectionCR primaryConnection, NavNodeKeyCR nodeKey, JsonValueCR jsonOptions, PresentationTaskNotificationsContextCR notificationsContext)
-    {
-    auto promise = CreateCancelablePromise<folly::Unit>(*m_cancelableTasks, "Node unchecked", TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
-    folly::via(m_executor, [&, notificationsContext, promise, connectionId = primaryConnection.GetId(), nodeKeyPtr = NavNodeKeyCPtr(&nodeKey), jsonOptions]()
-        {
-        notificationsContext.OnTaskStart();
-        if (promise->IsCanceled())
-            return;
-
-        NavigationOptions options(jsonOptions);
-        IConnectionPtr connection = GetConnections().GetConnection(connectionId.c_str());
-        m_impl->NotifyNodeUnchecked(*connection, *nodeKeyPtr, options, promise->GetCancelationToken());
-        promise->SetValue();
-        });
-    return promise->GetFuture();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<folly::Unit> RulesDrivenECPresentationManager::_OnNodeExpanded(IConnectionCR primaryConnection, NavNodeKeyCR nodeKey, JsonValueCR jsonOptions, PresentationTaskNotificationsContextCR notificationsContext)
-    {
-    auto promise = CreateCancelablePromise<folly::Unit>(*m_cancelableTasks, "Node expanded", TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
-    folly::via(m_executor, [&, notificationsContext, promise, connectionId = primaryConnection.GetId(), nodeKeyPtr = NavNodeKeyCPtr(&nodeKey), jsonOptions]()
-        {
-        notificationsContext.OnTaskStart();
-        if (promise->IsCanceled())
-            return;
-
-        NavigationOptions options(jsonOptions);
-        IConnectionPtr connection = GetConnections().GetConnection(connectionId.c_str());
-        m_impl->NotifyNodeExpanded(*connection, *nodeKeyPtr, options, promise->GetCancelationToken());
-        promise->SetValue();
-        });
-    return promise->GetFuture();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                08/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<folly::Unit> RulesDrivenECPresentationManager::_OnNodeCollapsed(IConnectionCR primaryConnection, NavNodeKeyCR nodeKey, JsonValueCR jsonOptions, PresentationTaskNotificationsContextCR notificationsContext)
-    {
-    auto promise = CreateCancelablePromise<folly::Unit>(*m_cancelableTasks, "Node collapsed", TaskDependencies(primaryConnection.GetId(), NavigationOptions(jsonOptions).GetRulesetId()));
-    folly::via(m_executor, [&, notificationsContext, promise, connectionId = primaryConnection.GetId(), nodeKeyPtr = NavNodeKeyCPtr(&nodeKey), jsonOptions]()
-        {
-        notificationsContext.OnTaskStart();
-        if (promise->IsCanceled())
-            return;
-
-        NavigationOptions options(jsonOptions);
-        IConnectionPtr connection = GetConnections().GetConnection(connectionId.c_str());
-        m_impl->NotifyNodeCollapsed(*connection, *nodeKeyPtr, options, promise->GetCancelationToken());
-        promise->SetValue();
-        });
-    return promise->GetFuture();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                08/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<folly::Unit> RulesDrivenECPresentationManager::_OnAllNodesCollapsed(IConnectionCR primaryConnection, JsonValueCR jsonOptions, PresentationTaskNotificationsContextCR notificationsContext)
-    {
-    auto promise = CreateCancelablePromise<folly::Unit>(*m_cancelableTasks, "All nodes collapsed");
-    folly::via(m_executor, [&, notificationsContext, promise, connectionId = primaryConnection.GetId(), jsonOptions]()
-        {
-        notificationsContext.OnTaskStart();
-        if (promise->IsCanceled())
-            return;
-
-        NavigationOptions options(jsonOptions);
-        IConnectionPtr connection = GetConnections().GetConnection(connectionId.c_str());
-        m_impl->NotifyAllNodesCollapsed(*connection, options, promise->GetCancelationToken());
-        promise->SetValue();
-        });
-    return promise->GetFuture();
-    }

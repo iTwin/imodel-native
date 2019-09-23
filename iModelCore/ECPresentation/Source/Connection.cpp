@@ -10,6 +10,7 @@
 #include "ECDbBasedCache.h"
 
 #define LOG_CONNECTIONS (*LoggingManager::GetLogger(LOGGER_NAMESPACE_ECPRESENTATION_CONNECTIONS))
+#define STATEMENT_CACHE_SIZE 50
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2017
@@ -31,13 +32,14 @@ private:
     ConnectionManager& m_manager;
     Utf8String m_id;
     ECDbR m_ecdb;
+    ECSqlStatementCache m_statementCache;
     bool m_isPrimary;
     bool m_isOpen;
     bset<ProxyConnection const*> m_proxyConnections;
 
 private:
     PrimaryConnection(ConnectionManager& manager, Utf8String id, ECDbR db, bool isPrimary)
-        : m_manager(manager), m_id(id), m_ecdb(db), m_isPrimary(isPrimary)
+        : m_manager(manager), m_id(id), m_ecdb(db), m_isPrimary(isPrimary), m_statementCache(STATEMENT_CACHE_SIZE, "ECPresentation: PrimaryConnection")
         {
         ECDbClosedNotifier::Register(*this, m_ecdb, true);
         m_isOpen = m_ecdb.IsDbOpen();
@@ -48,6 +50,7 @@ protected:
     Utf8StringCR _GetId() const override {return m_id;}
     ECDbR _GetECDb() const override {return m_ecdb;}
     BeSQLite::Db& _GetDb() const override {return m_ecdb;}
+    ECSqlStatementCache const& _GetStatementCache() const override {return m_statementCache;}
     bool _IsOpen() const override {return m_isOpen;}
     bool _IsReadOnly() const override {return m_ecdb.IsReadonly();}
     int _GetPriority() const override {return 100;}
@@ -57,8 +60,8 @@ protected:
 
 public:
     static RefCountedPtr<PrimaryConnection> Create(ConnectionManager& manager, Utf8String id, ECDbR db, bool isPrimary) {return new PrimaryConnection(manager, id, db, isPrimary);}
-    void NotifyProxyConnectionOpened(ProxyConnection const& proxy) {m_proxyConnections.insert(&proxy);}
-    void NotifyProxyConnectionClosed(ProxyConnection const& proxy) {m_proxyConnections.erase(&proxy);}
+    void NotifyProxyConnectionOpened(ProxyConnection const& proxy);
+    void NotifyProxyConnectionClosed(ProxyConnection const& proxy);
 };
 
 //=======================================================================================
@@ -94,47 +97,26 @@ private:
     PrimaryConnection const& m_primaryConnection;
     mutable BeSQLite::Db m_db;
     mutable BeAtomic<uint32_t> m_refCount;
+    ECSqlStatementCache m_statementCache;
 
 private:
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            11/2017
     +---------------+---------------+---------------+---------------+-----------+------*/
     ProxyConnection(IProxyConnectionsTracker* tracker, PrimaryConnection const& primaryConnection)
-        : m_tracker(tracker), m_primaryConnection(primaryConnection)
+        : m_tracker(tracker), m_primaryConnection(primaryConnection), m_statementCache(STATEMENT_CACHE_SIZE, Utf8PrintfString("ECPresentation: ProxyConnection(%d)", (int)BeThreadUtilities::GetCurrentThreadId()).c_str())
         {
         m_db.OpenBeSQLiteDb(m_primaryConnection.GetDb().GetDbFileName(), Db::OpenParams(Db::OpenMode::Readonly, DefaultTxn::No, new BusyRetry()));
         LOG_CONNECTIONS.infov("%p ProxyConnection[%s] created on thread %d.", this, m_primaryConnection.GetId().c_str(), (int)BeThreadUtilities::GetCurrentThreadId());
         }
 
 protected:
-    /*-----------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis            11/2017
-    +---------------+---------------+---------------+---------------+-----------+------*/
     Utf8StringCR _GetId() const override {return m_primaryConnection.GetId();}
-    
-    /*-----------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis            11/2017
-    +---------------+---------------+---------------+---------------+-----------+------*/
     ECDbR _GetECDb() const override {return m_primaryConnection.GetECDb();}
-
-    /*-----------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis            01/2018
-    +---------------+---------------+---------------+---------------+-----------+------*/
     BeSQLite::Db& _GetDb() const override {return m_db;}
-
-    /*-----------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis            11/2017
-    +---------------+---------------+---------------+---------------+-----------+------*/
+    ECSqlStatementCache const& _GetStatementCache() const override {return m_statementCache;}
     bool _IsOpen() const override {return m_primaryConnection.IsOpen();}
-
-    /*-----------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis            11/2017
-    +---------------+---------------+---------------+---------------+-----------+------*/
     bool _IsReadOnly() const override {return m_primaryConnection.IsReadOnly();}
-    
-    /*-----------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis            01/2018
-    +---------------+---------------+---------------+---------------+-----------+------*/
     void _InterruptRequests() const override {m_db.Interrupt();}
 
 public:
@@ -143,7 +125,6 @@ public:
     +---------------+---------------+---------------+---------------+-----------+------*/
     static RefCountedPtr<ProxyConnection> Create(IProxyConnectionsTracker* tracker, PrimaryConnection const& primaryConnection)
         {
-        BeAssert(primaryConnection.IsOpen());
         return new ProxyConnection(tracker, primaryConnection);
         }
 
@@ -152,6 +133,7 @@ public:
     +---------------+---------------+---------------+---------------+-----------+------*/
     ~ProxyConnection()
         {
+        m_statementCache.Empty();
         m_db.CloseDb();
         LOG_CONNECTIONS.infov("%p ProxyConnection[%s] closed on thread %d", this, GetId().c_str(), (int)BeThreadUtilities::GetCurrentThreadId());
         }
@@ -213,6 +195,7 @@ void PrimaryConnection::_OnConnectionClosed(ECDbCR db)
     if (m_isOpen)
         {
         LOG_CONNECTIONS.infov("%p PrimaryConnection[%s] closed on thread %d", this, m_id.c_str(), (int)BeThreadUtilities::GetCurrentThreadId());
+        m_statementCache.Empty();
         m_isOpen = false;
         m_manager.NotifyConnectionClosed(m_id);
         }
@@ -236,10 +219,27 @@ void PrimaryConnection::_OnConnectionReloaded(ECDbCR db)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrimaryConnection::NotifyProxyConnectionOpened(ProxyConnection const& proxy)
+    {
+    m_proxyConnections.insert(&proxy);
+    m_manager.NotifyProxyConnectionOpened(proxy);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void PrimaryConnection::NotifyProxyConnectionClosed(ProxyConnection const& proxy)
+    {
+    m_proxyConnections.erase(&proxy);
+    }
+
 //=======================================================================================
 // @bsiclass                                    Grigas.Petraitis                10/2017
 //=======================================================================================
-struct ThreadLocalConnectionStore : IProxyConnectionsTracker, protected BeThreadLocalStorage
+struct ThreadLocalConnectionStore : RefCountedBase, IProxyConnectionsTracker, protected BeThreadLocalStorage
 {
     struct ReleasedProxyConnectionsPredicate : IConditionVariablePredicate
         {
@@ -262,18 +262,6 @@ private:
     RefCountedPtr<PrimaryConnection> m_primaryConnection;
     bvector<RefCountedPtr<ProxyConnection>> m_proxyConnections;
     BeConditionVariable m_proxyConnectionsCV;
-
-private:
-    /*-----------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis            10/2017
-    +---------------+---------------+---------------+---------------+-----------+------*/
-    IConnection* GetConnectionPtr()
-        {
-        void* ptr = GetValueAsPointer();
-        if (nullptr != ptr)
-            return static_cast<IConnection*>(ptr);
-        return nullptr;
-        }
 
 public:
     /*-----------------------------------------------------------------------------**//**
@@ -321,15 +309,26 @@ public:
     +---------------+---------------+---------------+---------------+-----------+------*/
     IConnection* GetConnection()
         {
-        IConnection* connection = GetConnectionPtr();
+        void* ptr = GetValueAsPointer();
+        if (nullptr != ptr)
+            return static_cast<IConnection*>(ptr);
+        return nullptr;
+        }
+
+    /*-----------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis            10/2017
+    +---------------+---------------+---------------+---------------+-----------+------*/
+    IConnection& GetOrCreateConnection()
+        {
+        IConnection* connection = GetConnection();
         if (nullptr != connection)
-            return connection;
+            return *connection;
 
         RefCountedPtr<ProxyConnection> proxy = ProxyConnection::Create(this, *m_primaryConnection);
         m_proxyConnections.push_back(proxy);
         m_primaryConnection->NotifyProxyConnectionOpened(*proxy);
         SetValueAsPointer(proxy.get());
-        return proxy.get();
+        return *proxy;
         }
 
     /*-----------------------------------------------------------------------------**//**
@@ -344,18 +343,9 @@ public:
 struct ConnectionManager::ConnectionsStore
 {
 private:
-    bmap<Utf8String, ThreadLocalConnectionStore*> m_connections;
+    bmap<Utf8String, RefCountedPtr<ThreadLocalConnectionStore>> m_connections;
 
 public:
-    /*-----------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis            11/2017
-    +---------------+---------------+---------------+---------------+-----------+------*/
-    ~ConnectionsStore()
-        {
-        for (auto pair : m_connections)
-            delete pair.second;
-        }
-
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            10/2017
     +---------------+---------------+---------------+---------------+-----------+------*/
@@ -372,15 +362,15 @@ public:
     /*-----------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis            10/2017
     +---------------+---------------+---------------+---------------+-----------+------*/
-    bool Remove(Utf8StringCR connectionId)
+    RefCountedPtr<ThreadLocalConnectionStore> Remove(Utf8StringCR connectionId)
         {
         auto iter = m_connections.find(connectionId);
         if (m_connections.end() == iter)
-            return false;
+            return nullptr;
 
-        delete iter->second;
+        auto store = iter->second;
         m_connections.erase(iter);
-        return true;
+        return store;
         }
 
     /*-----------------------------------------------------------------------------**//**
@@ -392,7 +382,7 @@ public:
         if (m_connections.end() == iter)
             return nullptr;
 
-        return iter->second->GetConnection();
+        return &iter->second->GetOrCreateConnection();
         }
 
     /*-----------------------------------------------------------------------------**//**
@@ -402,7 +392,9 @@ public:
         {
         for (auto pair : m_connections)
             {
-            if (&pair.second->GetPrimaryConnection().GetDb() == &ecdb || &pair.second->GetConnection()->GetDb() == &ecdb)
+            BeSQLite::Db const* primaryDb = &pair.second->GetPrimaryConnection().GetDb();
+            BeSQLite::Db const* proxyDb = pair.second->GetConnection() ? &pair.second->GetConnection()->GetDb() : nullptr;
+            if (primaryDb == &ecdb || proxyDb == &ecdb)
                 return pair.second->GetConnection();
             }
         return nullptr;
@@ -431,7 +423,10 @@ ConnectionManager::~ConnectionManager()
 void ConnectionManager::_AddListener(IConnectionsListener& listener) const
     {
     BeMutexHolder lock(m_listenersMutex);
-    m_listeners.push_back(&listener);
+    auto iter = m_listeners.find(listener.GetPriority());
+    if (m_listeners.end() == iter)
+        iter = m_listeners.Insert(listener.GetPriority(), bset<IConnectionsListener*>()).first;
+    iter->second.insert(&listener);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -440,7 +435,9 @@ void ConnectionManager::_AddListener(IConnectionsListener& listener) const
 void ConnectionManager::_DropListener(IConnectionsListener& listener) const
     {
     BeMutexHolder lock(m_listenersMutex);
-    m_listeners.erase(std::find(m_listeners.begin(), m_listeners.end(), &listener));
+    auto iter = m_listeners.find(listener.GetPriority());
+    if (m_listeners.end() != iter)
+        iter->second.erase(&listener);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -449,11 +446,14 @@ void ConnectionManager::_DropListener(IConnectionsListener& listener) const
 void ConnectionManager::BroadcastEvent(ConnectionEvent const& evt) const
     {
     BeMutexHolder lock(m_listenersMutex);
-    bvector<IConnectionsListener*> listeners = m_listeners;
+    bmap<int, bset<IConnectionsListener*>> listeners = m_listeners;
     lock.unlock();
 
-    for (IConnectionsListener* listener : listeners)
-        listener->NotifyConnectionEvent(evt);
+    for (auto entry : listeners)
+        {
+        for (IConnectionsListener* listener : entry.second)
+            listener->NotifyConnectionEvent(evt);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -491,7 +491,7 @@ IConnectionPtr ConnectionManager::GetOrCreateConnection(ECDbR ecdb, bool isProje
     lock.unlock();
 
     BroadcastEvent(ConnectionEvent(*primaryConnection, isProjectPrimary, ConnectionEventType::Opened));
-    
+
     return primaryConnection;
     }
 
@@ -533,13 +533,21 @@ void ConnectionManager::NotifyConnectionClosed(Utf8StringCR connectionId)
         }
     lock.unlock();
 
-    // must broadcast before removing the connection
+    // broadcast the event with the connections still available
     BroadcastEvent(ConnectionEvent(*primaryConnection, false, ConnectionEventType::Closed));
 
-    // release the connection (it's still kept in m_activeConnections)
-    primaryConnection = nullptr;
+    lock.lock();
+    // remove the store from m_activeConnections within a mutex, but release it outside
+    // note: destruction of ThreadLocalConnectionStore will block this thread until all
+    // proxy connections are finished being used on other threads
+    RefCountedPtr<ThreadLocalConnectionStore> tempStore = m_activeConnections->Remove(connectionId);
+    lock.unlock();
+    }
 
-    // note: Remove will block this thread until all proxy connections
-    // are finished being used on other threads
-    m_activeConnections->Remove(connectionId);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConnectionManager::NotifyProxyConnectionOpened(IConnectionCR connection)
+    {
+    BroadcastEvent(ConnectionEvent(connection, false, ConnectionEventType::ProxyCreated));
     }

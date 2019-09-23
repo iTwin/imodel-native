@@ -113,9 +113,14 @@ struct ECInstanceContextEvaluator : PropertySymbol::ContextEvaluator
 private:
     IConnectionCR m_connection;
     ECInstanceKey m_key;
-    ECInstanceContextEvaluator(IConnectionCR connection, ECInstanceKey key) : m_connection(connection), m_key(key) {}
+    ECInstanceContextEvaluator(IConnectionCR connection, ECInstanceKey key)
+        : m_connection(connection), m_key(key)
+        {}
 public:
-    static RefCountedPtr<ECInstanceContextEvaluator> Create(IConnectionCR connection, ECInstanceKey key) {return new ECInstanceContextEvaluator(connection, key);}
+    static RefCountedPtr<ECInstanceContextEvaluator> Create(IConnectionCR connection, ECInstanceKey key)
+        {
+        return new ECInstanceContextEvaluator(connection, key);
+        }
     ExpressionContextPtr _GetContext() override
         {
         IECInstancePtr instance;
@@ -152,9 +157,14 @@ struct NodeECInstanceContextEvaluator : PropertySymbol::ContextEvaluator
 private:
     IConnectionCR m_connection;
     NavNodeCPtr m_node;
-    NodeECInstanceContextEvaluator(IConnectionCR connection, NavNodeCR node) : m_connection(connection), m_node(&node) {}
+    NodeECInstanceContextEvaluator(IConnectionCR connection, NavNodeCR node)
+        : m_connection(connection), m_node(&node)
+        {}
 public:
-    static RefCountedPtr<NodeECInstanceContextEvaluator> Create(IConnectionCR connection, NavNodeCR node) {return new NodeECInstanceContextEvaluator(connection, node);}
+    static RefCountedPtr<NodeECInstanceContextEvaluator> Create(IConnectionCR connection, NavNodeCR node)
+        {
+        return new NodeECInstanceContextEvaluator(connection, node);
+        }
     ExpressionContextPtr _GetContext() override
         {
         ECInstanceNodeKey const* key = m_node->GetKey()->AsECInstanceNodeKey();
@@ -261,7 +271,9 @@ struct NodeSymbolsProvider : IECSymbolProvider
         {
         IConnectionCR m_connection;
         NavNodeCPtr m_node;
-        Context(IConnectionCR connection, NavNodeCP node) : m_connection(connection), m_node(node) {}
+        Context(IConnectionCR connection, NavNodeCP node) 
+            : m_connection(connection), m_node(node) 
+            {}
         };
 
 private:
@@ -782,6 +794,31 @@ public:
     LabelSymbolsProvider(Context const& context) : m_context(context) {}
 };
 
+//=======================================================================================
+// @bsiclass                                    Grigas.Petraitis                09/2019
+//=======================================================================================
+struct ECDbSymbolsProvider : IECSymbolProvider
+{
+    struct Context : ProviderContext
+        {
+        ECDbExpressionSymbolProvider m_provider;
+        Context(IConnectionCR connection) : m_provider(connection.GetECDb(), connection.GetStatementCache()) {}
+        };
+
+private:
+    Context const& m_context;
+
+protected:
+    Utf8CP _GetName() const override { return "ECDbSymbols"; }
+    void _PublishSymbols(SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const override
+        {
+        m_context.m_provider.PublishSymbols(context, requestedSymbolSets);
+        }
+
+public:
+    ECDbSymbolsProvider(Context const& context) : m_context(context) {}
+};
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -803,6 +840,10 @@ ExpressionContextPtr ECExpressionContextsProvider::GetNodeRulesContext(NodeRules
     ECInstanceMethodSymbolsProvider ecInstanceMethods;
     ecInstanceMethods.PublishSymbols(rootCtx->GetSymbolsContext(), bvector<Utf8String>());
 
+    // ECDb methods
+    ECDbSymbolsProvider ecdbSymbols(rootCtx->AddContext(*new ECDbSymbolsProvider::Context(params.GetConnection())));
+    ecdbSymbols.PublishSymbols(rootCtx->GetSymbolsContext(), bvector<Utf8String>());
+
     return rootCtx;
     }
 
@@ -818,7 +859,8 @@ ExpressionContextPtr ECExpressionContextsProvider::GetContentRulesContext(Conten
     rulesetVariablesSymbols.PublishSymbols(rootCtx->GetSymbolsContext(), bvector<Utf8String>());
 
     // SelectedNode
-    rootCtx->GetSymbolsContext().AddSymbol(*PropertySymbol::Create("SelectedNode", *NodeContextEvaluator::Create(*rootCtx, params.GetConnection(), params.GetLocale(), params.GetNodeLocater(), params.GetSelectedNodeKey())));
+    rootCtx->GetSymbolsContext().AddSymbol(*PropertySymbol::Create("SelectedNode", *NodeContextEvaluator::Create(*rootCtx, params.GetConnection(),
+        params.GetLocale(), params.GetNodeLocater(), params.GetSelectedNodeKey())));
 
     // Content-specific
     rootCtx->GetSymbolsContext().AddSymbol(*ValueSymbol::Create("ContentDisplayType", ECValue(params.GetContentDisplayType().c_str())));
@@ -828,6 +870,10 @@ ExpressionContextPtr ECExpressionContextsProvider::GetContentRulesContext(Conten
     // ECInstance methods
     ECInstanceMethodSymbolsProvider ecInstanceMethods;
     ecInstanceMethods.PublishSymbols(rootCtx->GetSymbolsContext(), bvector<Utf8String>());
+
+    // ECDb methods
+    ECDbSymbolsProvider ecdbSymbols(rootCtx->AddContext(*new ECDbSymbolsProvider::Context(params.GetConnection())));
+    ecdbSymbols.PublishSymbols(rootCtx->GetSymbolsContext(), bvector<Utf8String>());
 
     return rootCtx;
     }
@@ -878,6 +924,10 @@ ExpressionContextPtr ECExpressionContextsProvider::GetCustomizationRulesContext(
     LabelSymbolsProvider labelOverrrideMethods(rootCtx->AddContext(*new LabelSymbolsProvider::Context(params.GetConnection())));
     labelOverrrideMethods.PublishSymbols(rootCtx->GetSymbolsContext(), bvector<Utf8String>());
 
+    // ECDb methods
+    ECDbSymbolsProvider ecdbSymbols(rootCtx->AddContext(*new ECDbSymbolsProvider::Context(params.GetConnection())));
+    ecdbSymbols.PublishSymbols(rootCtx->GetSymbolsContext(), bvector<Utf8String>());
+
     return rootCtx;
     }
 
@@ -898,6 +948,10 @@ ExpressionContextPtr ECExpressionContextsProvider::GetCalculatedPropertyContext(
     // ECInstance methods
     ECInstanceMethodSymbolsProvider ecInstanceMethods;
     ecInstanceMethods.PublishSymbols(rootCtx->GetSymbolsContext(), bvector<Utf8String>());
+
+    // ECDb methods
+    ECDbSymbolsProvider ecdbSymbols(rootCtx->AddContext(*new ECDbSymbolsProvider::Context(params.GetConnection())));
+    ecdbSymbols.PublishSymbols(rootCtx->GetSymbolsContext(), bvector<Utf8String>());
 
     return rootCtx;
     }
@@ -1794,7 +1848,7 @@ Utf8String ECExpressionsHelper::ConvertToECSql(Utf8StringCR expression)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<Utf8String> const& ECExpressionsHelper::GetUsedClasses(Utf8StringCR expression)
     {
-    static bvector<Utf8String> empty;
+    static const bvector<Utf8String> empty;
     if (expression.empty())
         return empty;
 
@@ -1900,6 +1954,7 @@ NodePtr ECExpressionsHelper::GetNodeFromExpression(Utf8CP expr)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECExpressionsCache::Get(NodePtr& node, Utf8CP expression) const
     {
+    BeMutexHolder lock(m_mutex);
     auto iter = m_cache.find(expression);
     if (m_cache.end() == iter)
         return ERROR;
@@ -1912,6 +1967,7 @@ BentleyStatus ECExpressionsCache::Get(NodePtr& node, Utf8CP expression) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECExpressionsCache::Get(OptimizedExpressionPtr& optimizedExpr, Utf8CP expression) const
     {
+    BeMutexHolder lock(m_mutex);
     auto iter = m_optimizedCache.find(expression);
     if (m_optimizedCache.end() == iter)
         return ERROR;
@@ -1924,6 +1980,7 @@ BentleyStatus ECExpressionsCache::Get(OptimizedExpressionPtr& optimizedExpr, Utf
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<Utf8String> const* ECExpressionsCache::GetUsedClasses(Utf8CP expression) const
     {
+    BeMutexHolder lock(m_mutex);
     auto iter = m_usedClasses.find(expression);
     if (m_usedClasses.end() == iter)
         return nullptr;
@@ -1933,24 +1990,45 @@ bvector<Utf8String> const* ECExpressionsCache::GetUsedClasses(Utf8CP expression)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECExpressionsCache::HasOptimizedExpression(Utf8CP expression) const {return m_optimizedCache.end() != m_optimizedCache.find(expression);}
+bool ECExpressionsCache::HasOptimizedExpression(Utf8CP expression) const 
+    {
+    BeMutexHolder lock(m_mutex); 
+    return m_optimizedCache.end() != m_optimizedCache.find(expression);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECExpressionsCache::Add(Utf8CP expression, NodePtr node) {m_cache.Insert(expression, node);}
+void ECExpressionsCache::Add(Utf8CP expression, NodePtr node) 
+    {
+    BeMutexHolder lock(m_mutex); 
+    m_cache.Insert(expression, node);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECExpressionsCache::Add(Utf8CP expression, OptimizedExpressionPtr node) {m_optimizedCache.Insert(expression, node);}
+void ECExpressionsCache::Add(Utf8CP expression, OptimizedExpressionPtr node) 
+    {
+    BeMutexHolder lock(m_mutex); 
+    m_optimizedCache.Insert(expression, node);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<Utf8String> const& ECExpressionsCache::Add(Utf8CP expression, bvector<Utf8String>& classes) {return m_usedClasses.Insert(expression, classes).first->second;}
+bvector<Utf8String> const& ECExpressionsCache::Add(Utf8CP expression, bvector<Utf8String>& classes)
+    {
+    BeMutexHolder lock(m_mutex); 
+    return m_usedClasses.Insert(expression, classes).first->second;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECExpressionsCache::Clear() {m_cache.clear(); m_optimizedCache.clear();}
+void ECExpressionsCache::Clear()
+    {
+    BeMutexHolder lock(m_mutex); 
+    m_cache.clear();
+    m_optimizedCache.clear();
+    }

@@ -15,7 +15,7 @@ void ContentQueryBuilderTests::SetUp()
     IConnectionManagerCR connections = ExpectedQueries::GetInstance(BeTest::GetHost()).GetConnections();
     IConnectionCR connection = ExpectedQueries::GetInstance(BeTest::GetHost()).GetConnection();
     m_ruleset = PresentationRuleSet::CreateInstance("", 1, 0, false, "", "", "", false);
-    m_schemaHelper = new ECSchemaHelper(connection, nullptr, nullptr, nullptr, nullptr);
+    m_schemaHelper = new ECSchemaHelper(connection, nullptr, nullptr, nullptr);
     m_context = new ContentDescriptorBuilder::Context(*m_schemaHelper, connections,
         connection, *m_ruleset, ContentDisplayType::Undefined, 0, m_categorySupplier, nullptr, 
         &m_localizationProvider, "test locale", *NavNodeKeyListContainer::Create(), nullptr);

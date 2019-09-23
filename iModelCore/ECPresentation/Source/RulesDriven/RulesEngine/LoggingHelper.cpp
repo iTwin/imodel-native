@@ -50,6 +50,7 @@ RefCountedPtr<PerformanceLogger> LoggingHelper::CreatePerformanceLogger(Log ns, 
     return CreatePerformanceLogger(GetLogger(ns), message, severity);
     }
 
+static BeMutex s_onceMutex;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -61,6 +62,7 @@ void LoggingHelper::LogMessage(ILogger& logger, Utf8CP message, SEVERITY severit
     if (once)
         {
         static bset<Utf8CP> s_loggedMessages;
+        BeMutexHolder lock(s_onceMutex);
         if (s_loggedMessages.end() != s_loggedMessages.find(message))
             return;
         s_loggedMessages.insert(message);
@@ -83,7 +85,7 @@ void LoggingHelper::LogMessage(Log ns, Utf8CP message, SEVERITY severity, bool o
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String IndentedLogger::GetIndent() const
     {
-    static unsigned SPACES_PER_INDENT = 3;
+    static const unsigned SPACES_PER_INDENT = 3;
     return Utf8String(SPACES_PER_INDENT * m_indent, ' ');
     }
 

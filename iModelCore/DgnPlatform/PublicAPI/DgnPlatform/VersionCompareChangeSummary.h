@@ -11,10 +11,12 @@
 #include <ECDb/ChangeSummary.h>
 #include <ECObjects/ECObjects.h>
 #include <ECObjects/ECSchema.h>
-#include <ECPresentation/Content.h>
+#include <ECPresentation/IECPresentationManager.h>
 #include <Geom/GeomApi.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+
+USING_NAMESPACE_BENTLEY_ECPRESENTATION
 
 struct VersionCompareChangeSummary;
 typedef RefCountedPtr<struct VersionCompareChangeSummary> VersionCompareChangeSummaryPtr;
@@ -79,6 +81,7 @@ struct VersionCompareChangeSummary : RefCountedBase
         }; // RelatedPathCache
 
 private:
+    IECPresentationManagerR m_presentationManager;
     BentleyApi::Dgn::DgnDbPtr                               m_targetDb;
     BentleyApi::Dgn::DgnDbR                                 m_db;
     bvector<BentleyApi::Dgn::DgnRevisionPtr>                m_changesets;
@@ -128,10 +131,10 @@ private:
     void            FindRelatedInstanceIds(ECInstanceKeySet& relatedInstances, Utf8CP ecsql, BentleyApi::BeSQLite::EC::ECInstanceIdSet const& inInstances, BentleyApi::BeSQLite::EC::ChangeSummary::QueryDbOpcode opcode);
     StatusInt       ParseClassFullName(Utf8StringR schemaName, Utf8StringR className, Utf8CP classFullName);
     StatusInt       GetInstancesWithAspectUpdates(BentleyApi::Dgn::DgnChangeSummary* changeSummary, ECInstanceKeySet& instances, Utf8CP elementClassFullName, Utf8CP aspectRelationshipClassFullName, Utf8CP aspectClassFullName);
-    
+
     //! Get an element pointer by searching the correct Db based on the opcode
     DgnElementCPtr  GetElement(BentleyApi::Dgn::DgnElementId elementId, BentleyApi::BeSQLite::DbOpcode opcode);
-    
+
     //! Gets the content classes from Presentation Rules to know the paths relevant for change inspection
     bvector<BentleyApi::ECPresentation::SelectClassInfo> GetContentClasses(Utf8String schemaName, Utf8String className);
 
@@ -139,7 +142,7 @@ private:
     StatusInt   GetElementContent(BentleyApi::Dgn::DgnDbPtr db, BentleyApi::Dgn::DgnElementId elementId, BentleyApi::ECN::ECClassId ecclassId, JsonValueR content);
 
     //! Constructor
-    VersionCompareChangeSummary(BentleyApi::Dgn::DgnDbR db, bool backwards) : m_db(db), m_targetDb(nullptr), m_statementCache(nullptr), m_backwardsComparison(backwards), m_filterSpatial(false), m_filterLastMod(false) { }
+    VersionCompareChangeSummary(BentleyApi::Dgn::DgnDbR db, IECPresentationManagerR presentationManager, bool backwards) : m_db(db), m_targetDb(nullptr), m_presentationManager(presentationManager), m_statementCache(nullptr), m_backwardsComparison(backwards), m_filterSpatial(false), m_filterLastMod(false) { }
 
     //! This method will process the changesets and obtain all the changed instances
     //! @param[in] changesets Vector of DgnRevisionPtr containing the changesets to compile together
@@ -236,7 +239,7 @@ public:
     //! @param[in] rulesetId Name of the presentation rules to use
     //! @param[in] backwardsRoll whether this changesets are applied to go backwards or forwards in the db's history
     //! @return VersionCompareChangeSummaryPtr with the results
-    DGNPLATFORM_EXPORT static VersionCompareChangeSummaryPtr     Generate(BentleyApi::Dgn::DgnDbR db, bvector<BentleyApi::Dgn::DgnRevisionPtr>& changesets, Utf8String rulesetId, bool backwardsRoll);
+    DGNPLATFORM_EXPORT static VersionCompareChangeSummaryPtr Generate(BentleyApi::Dgn::DgnDbR db, bvector<BentleyApi::Dgn::DgnRevisionPtr> &changesets, IECPresentationManagerR presentationManager, Utf8String rulesetId, bool backwardsRoll);
 
     //! Creates a change summary that compares the db after applying the given changesets
     //! This will generate a temporary Db that is rolled to the target state to be able to obtain elements from it
@@ -250,7 +253,7 @@ public:
     //! @param[in] filterSpatial whether to only show SpatialElements in the results
     //! @param[in] filterLastMod whether to filter out updates that only have last modified date changes
     //! @return VersionCompareChangeSummaryPtr with the results
-    DGNPLATFORM_EXPORT static VersionCompareChangeSummaryPtr     Generate(BentleyApi::Dgn::DgnDbR db, bvector<BentleyApi::Dgn::DgnRevisionPtr>& changesets, Utf8String rulesetId, bool backwardsRoll, bool filterSpatial, bool filterLastMod);
+    DGNPLATFORM_EXPORT static VersionCompareChangeSummaryPtr     Generate(BentleyApi::Dgn::DgnDbR db, bvector<BentleyApi::Dgn::DgnRevisionPtr>& changesets, IECPresentationManagerR presentationManager, Utf8String rulesetId, bool backwardsRoll, bool filterSpatial, bool filterLastMod);
     }; // VersionCompareChangeSummary
 
 typedef bmap<BentleyApi::BeSQLite::EC::ECInstanceKey, VersionCompareChangeSummary::SummaryElementInfo> ChangedElementsMap;

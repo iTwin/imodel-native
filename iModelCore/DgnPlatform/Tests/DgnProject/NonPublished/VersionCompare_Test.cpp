@@ -34,8 +34,7 @@ struct VersionCompareTestFixture : public ::testing::Test
 public:
     static ScopedDgnHost*       s_host;
 
-    static ECPresentation::RulesDrivenECPresentationManager*     m_manager;
-    static ConnectionManager*  m_conMgr;
+    static ECPresentation::RulesDrivenECPresentationManager* m_manager;
     static DgnDbPtr            m_db;
     static PhysicalModelPtr    m_defaultModel;
     static DgnModelId          m_defaultModelId;
@@ -66,7 +65,6 @@ public:
 
 ScopedDgnHost*                      VersionCompareTestFixture::s_host           = nullptr;
 RulesDrivenECPresentationManager*   VersionCompareTestFixture::m_manager        = nullptr;
-ConnectionManager*                  VersionCompareTestFixture::m_conMgr         = nullptr;
 DgnDbPtr                            VersionCompareTestFixture::m_db             = nullptr;
 PhysicalModelPtr                    VersionCompareTestFixture::m_defaultModel   = nullptr;
 DgnModelId                          VersionCompareTestFixture::m_defaultModelId;
@@ -189,21 +187,18 @@ void VersionCompareTestFixture::SetUp()
     BeSQLiteLib::Initialize(tempDir);
 
     // Initialize RulesDrivenECPresentationManager and connection
-    m_conMgr = new ConnectionManager();
-    RulesDrivenECPresentationManager::Paths paths (rulesetsDir, tempDir);
     IECPresentationManager::SetSerializer(new ECPresentation::DefaultECPresentationSerializer());
-
-    m_manager = new RulesDrivenECPresentationManager(*m_conMgr, paths);
-    m_manager->SetLocalizationProvider(new ECPresentation::SQLangLocalizationProvider());
+    RulesDrivenECPresentationManager::Params params(RulesDrivenECPresentationManager::Paths(rulesetsDir, tempDir));
+    params.SetLocalizationProvider(new ECPresentation::SQLangLocalizationProvider());
+    m_manager = new RulesDrivenECPresentationManager(params);
 
     // Add presentation rules
     rulesetsDir.AppendToPath(L"PresentationRules");
     RuleSetLocaterPtr locater = DirectoryRuleSetLocater::Create(rulesetsDir.GetNameUtf8().c_str());
     m_manager->GetLocaters().RegisterLocater(*locater);
-    IECPresentationManager::RegisterImplementation(m_manager);
 
     // Notify we have a connection to a db
-    m_conMgr->CreateConnection(*m_db);
+    m_manager->GetConnections().CreateConnection(*m_db);
 
 #define CREATE_DGNDBCHANGESETSDIR
 #ifdef CREATE_DGNDBCHANGESETSDIR
@@ -231,9 +226,7 @@ void VersionCompareTestFixture::TearDownTestCase()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void VersionCompareTestFixture::TearDown()
     {
-    IECPresentationManager::RegisterImplementation(nullptr);
     delete m_manager;
-    delete m_conMgr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -309,7 +302,7 @@ DgnDbPtr    VersionCompareTestFixture::CloneTemporaryDb(DgnDbPtr db)
     BeSQLite::DbResult result;
     DgnDb::OpenParams params (Db::OpenMode::ReadWrite);
     DgnDbPtr clonedDb = DgnDb::OpenDgnDb(&result, tempFilename, params);
-    m_conMgr->CreateConnection(*clonedDb);
+    m_manager->GetConnections().CreateConnection(*clonedDb);
     return clonedDb;
     }
 
@@ -455,7 +448,7 @@ void CheckOutput(DgnDbR db, ElementMap & map, bvector<DgnElementId> const& eleme
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    09/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CreateSummaryAndCheckOutput(DgnDbPtr db, ElementMap& map, bvector<DgnRevisionPtr>& changesets, bool backwards = true, Utf8String debugLabel = "", bool filterSpatial = false, bool filterLastMod = false)
+void CreateSummaryAndCheckOutput(DgnDbPtr db, ElementMap& map, bvector<DgnRevisionPtr>& changesets, IECPresentationManagerR presentationManager, bool backwards = true, Utf8String debugLabel = "", bool filterSpatial = false, bool filterLastMod = false)
     {
     bvector<DgnElementId> elementIds;
     bvector<ECClassId> ecclassIds;
@@ -465,7 +458,7 @@ void CreateSummaryAndCheckOutput(DgnDbPtr db, ElementMap& map, bvector<DgnRevisi
     StatusInt status = SUCCESS;
 
     clock_t t0 = clock();
-    VersionCompareChangeSummaryPtr changeSummary = VersionCompareChangeSummary::Generate (*db, changesets, "Items", backwards, filterSpatial, filterLastMod);
+    VersionCompareChangeSummaryPtr changeSummary = VersionCompareChangeSummary::Generate (*db, changesets, presentationManager, "Items", backwards, filterSpatial, filterLastMod);
     clock_t t1 = clock();
     double elapsed = (t1-t0)/(double)CLOCKS_PER_SEC;
     if (!Utf8String::IsNullOrEmpty(debugLabel.c_str()))
@@ -498,10 +491,10 @@ TEST_F(VersionCompareTestFixture, CompareOneRevisionOneInsertion)
     changesets.push_back(CreateRevision());
 
     // Test that the output matches with the input rolling forward
-    CreateSummaryAndCheckOutput(targetDb, elementMap, changesets, false);
+    CreateSummaryAndCheckOutput(targetDb, elementMap, changesets, *m_manager, false);
     // Test that the output matches with the input rolling backwards
     std::reverse(changesets.begin(), changesets.end());
-    CreateSummaryAndCheckOutput(m_db, elementMap, changesets, true);
+    CreateSummaryAndCheckOutput(m_db, elementMap, changesets, *m_manager, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -527,10 +520,10 @@ TEST_F(VersionCompareTestFixture, CompareOneRevisionOneDeletion)
     changesets.push_back(CreateRevision());
 
     // Test that the output matches with the input rolling forward
-    CreateSummaryAndCheckOutput(targetDb, elementMap, changesets, false);
+    CreateSummaryAndCheckOutput(targetDb, elementMap, changesets, *m_manager, false);
     // Test that the output matches with the input rolling backwards
     std::reverse(changesets.begin(), changesets.end());
-    CreateSummaryAndCheckOutput(m_db, elementMap, changesets, true);
+    CreateSummaryAndCheckOutput(m_db, elementMap, changesets, *m_manager, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -556,10 +549,10 @@ TEST_F(VersionCompareTestFixture, CompareOneRevisionOneUpdate)
     changesets.push_back(CreateRevision());
 
     // Test that the output matches with the input rolling forward
-    CreateSummaryAndCheckOutput(targetDb, elementMap, changesets, false);
+    CreateSummaryAndCheckOutput(targetDb, elementMap, changesets, *m_manager, false);
     // Test that the output matches with the input rolling backwards
     std::reverse(changesets.begin(), changesets.end());
-    CreateSummaryAndCheckOutput(m_db, elementMap, changesets, true);
+    CreateSummaryAndCheckOutput(m_db, elementMap, changesets, *m_manager, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -587,10 +580,10 @@ TEST_F(VersionCompareTestFixture, CompareTenVersionsTwentyInserts)
         }
 
     // Test that the output matches with the input rolling forward
-    CreateSummaryAndCheckOutput(targetDb, elementMap, changesets, false);
+    CreateSummaryAndCheckOutput(targetDb, elementMap, changesets, *m_manager, false);
     // Test that the output matches with the input rolling backwards
     std::reverse(changesets.begin(), changesets.end());
-    CreateSummaryAndCheckOutput(m_db, elementMap, changesets, true);
+    CreateSummaryAndCheckOutput(m_db, elementMap, changesets, *m_manager, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -617,18 +610,18 @@ TEST_F(VersionCompareTestFixture, TestFilterSpatial)
 
     // Test filtering out the 2D element first
     // Test that the output matches with the input rolling forward
-    CreateSummaryAndCheckOutput(targetDb, elementMap, changesets, false, "", true);
+    CreateSummaryAndCheckOutput(targetDb, elementMap, changesets, *m_manager, false, "", true);
     // Test that the output matches with the input rolling backwards
     std::reverse(changesets.begin(), changesets.end());
-    CreateSummaryAndCheckOutput(m_db, elementMap, changesets, true, "", true);
+    CreateSummaryAndCheckOutput(m_db, elementMap, changesets, *m_manager, true, "", true);
 
     // Test without filtering out the 2D element now
     elementMap[tempEl2d->GetElementId()] = ElementData(tempEl2d, DbOpcode::Insert);
     // Test that the output matches with the input rolling forward
-    CreateSummaryAndCheckOutput(targetDb, elementMap, changesets, false, "", false);
+    CreateSummaryAndCheckOutput(targetDb, elementMap, changesets, *m_manager, false, "", false);
     // Test that the output matches with the input rolling backwards
     std::reverse(changesets.begin(), changesets.end());
-    CreateSummaryAndCheckOutput(m_db, elementMap, changesets, true, "", false);
+    CreateSummaryAndCheckOutput(m_db, elementMap, changesets, *m_manager, true, "", false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -661,10 +654,10 @@ TEST_F(VersionCompareTestFixture, CompareSchemaChangesAccumulation1)
     changesets.push_back(CreateRevision());
 
     // Test that the output matches with the input rolling forward
-    CreateSummaryAndCheckOutput(targetDb, elementMap, changesets, false);
+    CreateSummaryAndCheckOutput(targetDb, elementMap, changesets, *m_manager, false);
     // Test that the output matches with the input rolling backwards
     std::reverse(changesets.begin(), changesets.end());
-    CreateSummaryAndCheckOutput(m_db, elementMap, changesets, true);
+    CreateSummaryAndCheckOutput(m_db, elementMap, changesets, *m_manager, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -699,10 +692,10 @@ TEST_F(VersionCompareTestFixture, CompareSchemaChangesAccumulation2)
     changesets.push_back(CreateRevision());
 
     // Test that the output matches with the input rolling forward
-    CreateSummaryAndCheckOutput(targetDb, elementMap, changesets, false);
+    CreateSummaryAndCheckOutput(targetDb, elementMap, changesets, *m_manager, false);
     // Test that the output matches with the input rolling backwards
     std::reverse(changesets.begin(), changesets.end());
-    CreateSummaryAndCheckOutput(m_db, elementMap, changesets, true);
+    CreateSummaryAndCheckOutput(m_db, elementMap, changesets, *m_manager, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -765,10 +758,10 @@ TEST_F(VersionCompareTestFixture, CompareSchemaChangesAccumulation3)
     changesets.push_back(CreateRevision());
 
     // Test that the output matches with the input rolling forward
-    CreateSummaryAndCheckOutput(targetDb, elementMap, changesets, false);
+    CreateSummaryAndCheckOutput(targetDb, elementMap, changesets, *m_manager, false);
     // Test that the output matches with the input rolling backwards
     std::reverse(changesets.begin(), changesets.end());
-    CreateSummaryAndCheckOutput(m_db, elementMap, changesets, true);
+    CreateSummaryAndCheckOutput(m_db, elementMap, changesets, *m_manager, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -792,10 +785,10 @@ TEST_F(VersionCompareTestFixture, CompareAspectChange1)
     changesets.push_back(CreateRevision());
 
     // Test that the output matches with the input rolling forward
-    CreateSummaryAndCheckOutput(targetDb, elementMap, changesets, false);
+    CreateSummaryAndCheckOutput(targetDb, elementMap, changesets, *m_manager, false);
     // Test that the output matches with the input rolling backwards
     std::reverse(changesets.begin(), changesets.end());
-    CreateSummaryAndCheckOutput(m_db, elementMap, changesets, true);
+    CreateSummaryAndCheckOutput(m_db, elementMap, changesets, *m_manager, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -830,10 +823,10 @@ TEST_F(VersionCompareTestFixture, CompareAspectChange2)
     changesets.push_back(changeset1);
 
     // Test that the output matches with the input rolling forward
-    CreateSummaryAndCheckOutput(targetDb, elementMap, changesets, false);
+    CreateSummaryAndCheckOutput(targetDb, elementMap, changesets, *m_manager, false);
     // Test that the output matches with the input rolling backwards
     std::reverse(changesets.begin(), changesets.end());
-    CreateSummaryAndCheckOutput(m_db, elementMap, changesets, true);
+    CreateSummaryAndCheckOutput(m_db, elementMap, changesets, *m_manager, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -863,10 +856,10 @@ TEST_F(VersionCompareTestFixture, CompareMultiAspectChange1)
     changesets.push_back(changeset1);
 
     // Test that the output matches with the input rolling forward
-    CreateSummaryAndCheckOutput(targetDb, elementMap, changesets, false);
+    CreateSummaryAndCheckOutput(targetDb, elementMap, changesets, *m_manager, false);
     // Test that the output matches with the input rolling backwards
     std::reverse(changesets.begin(), changesets.end());
-    CreateSummaryAndCheckOutput(m_db, elementMap, changesets, true);
+    CreateSummaryAndCheckOutput(m_db, elementMap, changesets, *m_manager, true);
     }
 
 //--------------------------------------------------------------------------------------
@@ -982,7 +975,7 @@ void CheckPropertyOutput(ElementInputPropertyMap& inputMap, ElementOutputPropert
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    09/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CreateSummaryAndCheckPropertyOutput(DgnDbPtr db, ElementInputPropertyMap& inputMap, bvector<DgnRevisionPtr>& changesets, bool backwards = true, bool filterSpatial = false, bool filterLastMod = false)
+void CreateSummaryAndCheckPropertyOutput(DgnDbPtr db, ElementInputPropertyMap& inputMap, bvector<DgnRevisionPtr>& changesets, IECPresentationManagerR presentationManager, bool backwards = true, bool filterSpatial = false, bool filterLastMod = false)
     {
     bvector<DgnElementId> elementIds;
     bvector<ECClassId> ecclassIds;
@@ -990,7 +983,7 @@ void CreateSummaryAndCheckPropertyOutput(DgnDbPtr db, ElementInputPropertyMap& i
     bvector<DgnModelId> modelIds;
     bvector<AxisAlignedBox3d> bboxes;
     StatusInt status = SUCCESS;
-    VersionCompareChangeSummaryPtr changeSummary = VersionCompareChangeSummary::Generate (*db, changesets, "Items", backwards, filterSpatial, filterLastMod);
+    VersionCompareChangeSummaryPtr changeSummary = VersionCompareChangeSummary::Generate (*db, changesets, presentationManager, "Items", backwards, filterSpatial, filterLastMod);
 
     status = changeSummary->GetChangedElements(elementIds, ecclassIds, opcodes, modelIds, bboxes);
     EXPECT_EQ(SUCCESS, status);
@@ -1065,10 +1058,10 @@ TEST_F(VersionCompareTestFixture, PropertyTest1)
     changesets.push_back(changeset2);
 
     // Test property comparison going forwards
-    CreateSummaryAndCheckPropertyOutput(targetDb, inputMap, changesets, false);
+    CreateSummaryAndCheckPropertyOutput(targetDb, inputMap, changesets, *m_manager, false);
     // Test property comparison going backwards
     std::reverse(changesets.begin(), changesets.end());
-    CreateSummaryAndCheckPropertyOutput(m_db, inputMap, changesets, true);
+    CreateSummaryAndCheckPropertyOutput(m_db, inputMap, changesets, *m_manager, true);
     }
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -1103,10 +1096,10 @@ TEST_F(VersionCompareTestFixture, PropertyTest2)
     changesets.push_back(changeset1);
 
     // Test property comparison going forwards
-    CreateSummaryAndCheckPropertyOutput(targetDb, inputMap, changesets, false);
+    CreateSummaryAndCheckPropertyOutput(targetDb, inputMap, changesets, *m_manager, false);
     // Test property comparison going backwards
     std::reverse(changesets.begin(), changesets.end());
-    CreateSummaryAndCheckPropertyOutput(m_db, inputMap, changesets, true);
+    CreateSummaryAndCheckPropertyOutput(m_db, inputMap, changesets, *m_manager, true);
     }
 
 #ifdef WIP_
@@ -1140,18 +1133,18 @@ TEST_F(VersionCompareTestFixture, TestFilterLastMod)
     changesets.push_back(changeset1);
 
     // Test property comparison going forwards and filtering last modified
-    CreateSummaryAndCheckPropertyOutput(targetDb, inputMap, changesets, false, false, true);
+    CreateSummaryAndCheckPropertyOutput(targetDb, inputMap, changesets, *m_manager, false, false, true);
     // Test property comparison going backwards and filtering last modified
     std::reverse(changesets.begin(), changesets.end());
-    CreateSummaryAndCheckPropertyOutput(m_db, inputMap, changesets, true, false, true);
+    CreateSummaryAndCheckPropertyOutput(m_db, inputMap, changesets, *m_manager, true, false, true);
 
     // Now test without filtering
     AddEntry(inputMap, tempEl->GetElementId(), "LastMod", time1, ECValue(time2));
     // Test property comparison going forwards and filtering last modified
-    CreateSummaryAndCheckPropertyOutput(targetDb, inputMap, changesets, false, false, false);
+    CreateSummaryAndCheckPropertyOutput(targetDb, inputMap, changesets, *m_manager, false, false, false);
     // Test property comparison going backwards and filtering last modified
     std::reverse(changesets.begin(), changesets.end());
-    CreateSummaryAndCheckPropertyOutput(m_db, inputMap, changesets, true, false, false);
+    CreateSummaryAndCheckPropertyOutput(m_db, inputMap, changesets, *m_manager, true, false, false);
     }
 
 //-------------------------------------------------------------------------------------------

@@ -95,7 +95,7 @@ private:
     bvector<FunctionCache> m_caches;
     bset<ICustomFunctionsContextListener*> m_listeners;
     IECPropertyFormatter const* m_propertyFormatter;
-    
+
 public:
     ECPRESENTATION_EXPORT CustomFunctionsContext(ECSchemaHelper const&, IConnectionManagerCR, IConnectionCR, PresentationRuleSetCR, Utf8String locale, IUserSettings const&, IUsedUserSettingsListener*,
         ECExpressionsCache&, JsonNavNodesFactory const&, IUsedClassesListener*, JsonNavNodeCP parentNode, rapidjson::Value const* queryExtendedData, IECPropertyFormatter const* formatter = nullptr);
@@ -137,6 +137,7 @@ private:
     bset<IConnectionCP> m_handledConnections;
     bvector<ScalarFunction*> m_scalarFunctions;
     bvector<AggregateFunction*> m_aggregateFunctions;
+    mutable BeMutex m_mutex;
 
 private:
     void CreateFunctions();
@@ -144,6 +145,7 @@ private:
     void Register(IConnectionCR, bool primary = false);
     void Unregister(IConnectionCR, bool primary = false);
     bool HandlesPrimaryConnection(Utf8StringCR connectionId) const;
+    void OnConnection(IConnectionCR);
 
 protected:
     void _OnConnectionEvent(ConnectionEvent const&) override;
@@ -152,7 +154,6 @@ public:
     ECPRESENTATION_EXPORT CustomFunctionsInjector(IConnectionManagerCR);
     ECPRESENTATION_EXPORT CustomFunctionsInjector(IConnectionManagerCR, IConnectionCR);
     ECPRESENTATION_EXPORT ~CustomFunctionsInjector();
-    ECPRESENTATION_EXPORT void OnConnection(IConnectionCR);
     ECPRESENTATION_EXPORT bool Handles(IConnectionCR connection) const;
     };
 

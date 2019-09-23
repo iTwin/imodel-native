@@ -1111,7 +1111,8 @@ Utf8String ComplexPresentationQuery<TBase>::GetClause(PresentationQueryClauses c
         {
         if (m_nestedQuery.IsValid())
             {
-            Utf8PrintfString clause("(%s)", m_nestedQuery->ToString().c_str());
+            Utf8String clause;
+            clause.append("(").append(m_nestedQuery->ToString()).append(")");
             if (!m_nestedQueryAlias.empty())
                 clause.append(" ").append(QueryHelpers::Wrap(m_nestedQueryAlias));
             return clause;

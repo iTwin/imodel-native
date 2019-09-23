@@ -154,7 +154,7 @@ void RuleSetLocaterManager::RemoveCachedRulesets(Utf8CP rulesetId)
 bvector<PresentationRuleSetPtr> RuleSetLocaterManager::_LocateRuleSets(IConnectionCR connection, Utf8CP rulesetId) const
     {
     BeMutexHolder lock(m_mutex);
-    ECSchemaHelper helper(connection, nullptr, nullptr, nullptr, nullptr);
+    ECSchemaHelper helper(connection, nullptr, nullptr, nullptr);
 
     if (nullptr != rulesetId)
         {

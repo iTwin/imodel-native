@@ -76,7 +76,7 @@ TEST_F(ECExpressionsOptimizerTests, OptimizeIsOfClassExpression)
     OptimizedExpressionPtr optimizedExpression = m_optimizer.GetOptimizedExpression(expression);
     ASSERT_TRUE(optimizedExpression.IsValid());
 
-    OptimizedExpressionPtr expected = IsOfClassOptimizedExpression::Create("SchemaName", "ClassName");
+    OptimizedExpressionPtr expected = IsOfClassOptimizedExpression::Create("SchemaName", "ClassName", m_expressionsCache.GetMutex());
     EXPECT_TRUE(optimizedExpression->IsEqual(*expected));
     }
 
@@ -128,7 +128,7 @@ TEST_F(ECExpressionsOptimizerTests, OptimizeClassNameEqualsExpression)
     OptimizedExpressionPtr optimizedExpression = m_optimizer.GetOptimizedExpression(expression);
     ASSERT_TRUE(optimizedExpression.IsValid());
 
-    OptimizedExpressionPtr expected = ClassNameOptimizedExpression::Create("ClassName");
+    OptimizedExpressionPtr expected = ClassNameOptimizedExpression::Create("ClassName", m_expressionsCache.GetMutex());
     EXPECT_TRUE(optimizedExpression->IsEqual(*expected));
     }
 
@@ -162,7 +162,7 @@ TEST_F(ECExpressionsOptimizerTests, OptimizeLogicalAndExpression)
     ASSERT_TRUE(optimizedExpression.IsValid());
 
     OptimizedExpressionPtr expected = LogicalOptimizedExpression::Create(DisplayTypeOptimizedExpression::Create("PropertyPane", false),
-        IsOfClassOptimizedExpression::Create("SchemaName", "ClassName"), true);
+        IsOfClassOptimizedExpression::Create("SchemaName", "ClassName", m_expressionsCache.GetMutex()), true);
     EXPECT_TRUE(optimizedExpression->IsEqual(*expected));
     }
 
@@ -176,7 +176,7 @@ TEST_F(ECExpressionsOptimizerTests, OptimizeLogicalORExpression)
     ASSERT_TRUE(optimizedExpression.IsValid());
 
     OptimizedExpressionPtr expected = LogicalOptimizedExpression::Create(DisplayTypeOptimizedExpression::Create("PropertyPane", false),
-        IsOfClassOptimizedExpression::Create("SchemaName", "ClassName"), false);
+        IsOfClassOptimizedExpression::Create("SchemaName", "ClassName", m_expressionsCache.GetMutex()), false);
     EXPECT_TRUE(optimizedExpression->IsEqual(*expected));
     }
 
@@ -190,8 +190,8 @@ TEST_F(ECExpressionsOptimizerTests, OptimizeLogicalExpressionWithParenthesesAtTh
     OptimizedExpressionPtr optimizedExpression = m_optimizer.GetOptimizedExpression(expression);
     ASSERT_TRUE(optimizedExpression.IsValid());
 
-    OptimizedExpressionPtr rightSide = LogicalOptimizedExpression::Create(IsOfClassOptimizedExpression::Create("Schema", "Class"),
-        IsOfClassOptimizedExpression::Create("OtherSchema", "OtherClass"), false);
+    OptimizedExpressionPtr rightSide = LogicalOptimizedExpression::Create(IsOfClassOptimizedExpression::Create("Schema", "Class", m_expressionsCache.GetMutex()),
+        IsOfClassOptimizedExpression::Create("OtherSchema", "OtherClass", m_expressionsCache.GetMutex()), false);
     OptimizedExpressionPtr leftSide = DisplayTypeOptimizedExpression::Create("PropertyPane", false);
     OptimizedExpressionPtr expected = LogicalOptimizedExpression::Create(leftSide, rightSide, true);
     EXPECT_TRUE(optimizedExpression->IsEqual(*expected));
@@ -208,8 +208,8 @@ TEST_F(ECExpressionsOptimizerTests, OptimizeLogicalExpressionWithParenthesesAtTh
     ASSERT_TRUE(optimizedExpression.IsValid());
 
     OptimizedExpressionPtr leftSide = LogicalOptimizedExpression::Create(DisplayTypeOptimizedExpression::Create("PropertyPane", false),
-        IsOfClassOptimizedExpression::Create("Schema", "Class"), true);
-    OptimizedExpressionPtr rightSide = IsOfClassOptimizedExpression::Create("OtherSchema", "OtherClass");
+        IsOfClassOptimizedExpression::Create("Schema", "Class", m_expressionsCache.GetMutex()), true);
+    OptimizedExpressionPtr rightSide = IsOfClassOptimizedExpression::Create("OtherSchema", "OtherClass", m_expressionsCache.GetMutex());
     OptimizedExpressionPtr expected = LogicalOptimizedExpression::Create(leftSide, rightSide, false);
     EXPECT_TRUE(optimizedExpression->IsEqual(*expected));
     }
@@ -226,8 +226,8 @@ TEST_F(ECExpressionsOptimizerTests, OptimizeLogicalExpressionWithNestedParenthes
 
     OptimizedExpressionPtr expected = LogicalOptimizedExpression::Create(DisplayTypeOptimizedExpression::Create("PropertyPane", false),
         DisplayTypeOptimizedExpression::Create("OtherPane", true), false);
-    expected = LogicalOptimizedExpression::Create(expected, IsOfClassOptimizedExpression::Create("Schema", "Class"), true);
-    expected = LogicalOptimizedExpression::Create(expected, IsOfClassOptimizedExpression::Create("OtherSchema", "OtherClass"), false);
+    expected = LogicalOptimizedExpression::Create(expected, IsOfClassOptimizedExpression::Create("Schema", "Class", m_expressionsCache.GetMutex()), true);
+    expected = LogicalOptimizedExpression::Create(expected, IsOfClassOptimizedExpression::Create("OtherSchema", "OtherClass", m_expressionsCache.GetMutex()), false);
     EXPECT_TRUE(optimizedExpression->IsEqual(*expected));
     }
 
@@ -242,7 +242,7 @@ TEST_F(ECExpressionsOptimizerTests, OptimizeLogicalExpressionWithSeveralOperator
 
     OptimizedExpressionPtr expected = LogicalOptimizedExpression::Create(DisplayTypeOptimizedExpression::Create("PropertyPane", false),
         DisplayTypeOptimizedExpression::Create("OtherPane", true), false);
-    expected = LogicalOptimizedExpression::Create(expected, IsOfClassOptimizedExpression::Create("Schema", "Class"), true);
+    expected = LogicalOptimizedExpression::Create(expected, IsOfClassOptimizedExpression::Create("Schema", "Class", m_expressionsCache.GetMutex()), true);
     EXPECT_TRUE(optimizedExpression->IsEqual(*expected));
     }
 
@@ -281,7 +281,7 @@ TEST_F(ECExpressionsOptimizerTests, OptimizeThisIsOfClassExpression)
     OptimizedExpressionPtr optimizedExpression = m_optimizer.GetOptimizedExpression(expression);
     ASSERT_TRUE(optimizedExpression.IsValid());
 
-    OptimizedExpressionPtr expected = IsOfClassOptimizedExpression::Create("BisCore", "DefinitionPartition");
+    OptimizedExpressionPtr expected = IsOfClassOptimizedExpression::Create("BisCore", "DefinitionPartition", m_expressionsCache.GetMutex());
     EXPECT_TRUE(optimizedExpression->IsEqual(*expected));
     }
 
@@ -294,7 +294,7 @@ TEST_F(ECExpressionsOptimizerTests, OptimizeParentIsOfClassExpression)
     OptimizedExpressionPtr optimizedExpression = m_optimizer.GetOptimizedExpression(expression);
     ASSERT_TRUE(optimizedExpression.IsValid());
 
-    OptimizedExpressionPtr expected = IsOfClassOptimizedExpression::Create("BisCore", "Subject");
+    OptimizedExpressionPtr expected = IsOfClassOptimizedExpression::Create("BisCore", "Subject", m_expressionsCache.GetMutex());
     EXPECT_TRUE(optimizedExpression->IsEqual(*expected));
     }
 

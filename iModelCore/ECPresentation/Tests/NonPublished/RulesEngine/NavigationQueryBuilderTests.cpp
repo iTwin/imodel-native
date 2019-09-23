@@ -16,7 +16,7 @@ void NavigationQueryBuilderTests::SetUp()
     
     m_connection = &ExpectedQueries::GetInstance(BeTest::GetHost()).GetConnection();
     m_ruleset = PresentationRuleSet::CreateInstance("NavigationQueryBuilderTests", 1, 0, false, "", "", "", false);
-    m_schemaHelper = new ECSchemaHelper(*m_connection, nullptr, nullptr, nullptr, nullptr);
+    m_schemaHelper = new ECSchemaHelper(*m_connection, nullptr, nullptr, nullptr);
     m_builder = new NavigationQueryBuilder(NavigationQueryBuilderParameters(*m_schemaHelper, ExpectedQueries::GetInstance(BeTest::GetHost()).GetConnections(),
         *m_connection, *m_ruleset, "test locale", m_settings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesCache));
 

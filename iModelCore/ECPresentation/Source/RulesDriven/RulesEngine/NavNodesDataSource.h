@@ -51,46 +51,6 @@ public:
     RelatedInstanceInfo const* GetRelatedInstanceInfo() const {return m_relatedInstanceInfo;}
 };
 
-#ifdef wip_merge
-/*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                03/2017
-+===============+===============+===============+===============+===============+======*/
-struct DataSourceFilter
-{
-    struct RelatedInstanceInfo
-        {
-        bset<ECClassId> m_relationshipClassIds;
-        BeSQLite::EC::ECInstanceId m_instanceId;
-        RequiredRelationDirection m_direction;
-        RelatedInstanceInfo() {}
-        RelatedInstanceInfo(bset<ECClassId> relationshipClassIds, RequiredRelationDirection direction, BeSQLite::EC::ECInstanceId id)
-            : m_relationshipClassIds(relationshipClassIds), m_direction(direction), m_instanceId(id)
-            {}
-        bool IsValid() const {return !m_relationshipClassIds.empty() && m_instanceId.IsValid();}
-        };
-
-private:
-    RelatedInstanceInfo const* m_relatedInstanceInfo;
-    Utf8String m_instanceFilter;
-
-private:
-    void InitFromJson(RapidJsonValueCR json);
-
-public:
-    DataSourceFilter() : m_relatedInstanceInfo(nullptr) {}
-    ECPRESENTATION_EXPORT DataSourceFilter(DataSourceFilter const&);
-    ECPRESENTATION_EXPORT DataSourceFilter(DataSourceFilter&&);
-    DataSourceFilter(RapidJsonValueCR json) : m_relatedInstanceInfo(nullptr) {InitFromJson(json);}
-    DataSourceFilter(Utf8CP instanceFilter) : m_instanceFilter(instanceFilter) {}
-    ECPRESENTATION_EXPORT DataSourceFilter(RelatedInstanceInfo const&, Utf8CP instanceFilter);
-    ~DataSourceFilter() {DELETE_AND_CLEAR(m_relatedInstanceInfo);}
-    DataSourceFilter& operator=(DataSourceFilter const&);
-    DataSourceFilter& operator=(DataSourceFilter&&);
-    rapidjson::Document AsJson() const;
-    RelatedInstanceInfo const* GetRelatedInstanceInfo() const {return m_relatedInstanceInfo;}
-};
-#endif
-
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                02/2016
 +===============+===============+===============+===============+===============+======*/
@@ -190,6 +150,21 @@ protected:
     size_t _GetSize() const override {return 0;}
 public:
     static EmptyNavNodesDataSourcePtr Create() {return new EmptyNavNodesDataSource();}
+};
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                12/2016
++===============+===============+===============+===============+===============+======*/
+struct NodesVectorDataSource : INavNodesDataSource
+{
+private:
+    bvector<NavNodePtr> m_vec;
+    NodesVectorDataSource(bvector<NavNodePtr> vec) : m_vec(vec) {}
+protected:
+    NavNodePtr _GetNode(size_t index) const override { return m_vec[index]; }
+    size_t _GetSize() const override { return m_vec.size(); }
+public:
+    static RefCountedPtr<NodesVectorDataSource> Create(bvector<NavNodePtr> vec) { return new NodesVectorDataSource(vec); }
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

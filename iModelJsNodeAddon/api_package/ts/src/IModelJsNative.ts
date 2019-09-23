@@ -459,11 +459,10 @@ export declare namespace IModelJsNative {
   }
 
   class ECPresentationManager implements IDisposable {
-    constructor(id?: string);
+    constructor(id: string, localeDirectories: string[], taskAllocationsMap: {[priority: number]: number});
     public forceLoadSchemas(db: DgnDb, callback: (result: ECPresentationStatus) => void): void;
     public setupRulesetDirectories(directories: string[]): ErrorStatusOrResult<ECPresentationStatus, void>;
     public setupSupplementalRulesetDirectories(directories: string[]): ErrorStatusOrResult<ECPresentationStatus, void>;
-    public setupLocaleDirectories(directories: string[]): ErrorStatusOrResult<ECPresentationStatus, void>;
     public setRulesetVariableValue(rulesetId: string, variableId: string, type: string, value: any): ErrorStatusOrResult<ECPresentationStatus, void>;
     public getRulesetVariableValue(rulesetId: string, variableId: string, type: string): ErrorStatusOrResult<ECPresentationStatus, any>;
     public getRulesets(rulesetId: string): ErrorStatusOrResult<ECPresentationStatus, string>;

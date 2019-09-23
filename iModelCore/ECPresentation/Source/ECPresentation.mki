@@ -5,7 +5,7 @@
 #--------------------------------------------------------------------------------------
 %include MultiCppCompileRule.mki
 
-$(o)PresentationManager$(oext)      : $(SourceDirectory)PresentationManager.cpp $(ECPresentationDependencies)
+$(o)IECPresentationManager$(oext)   : $(SourceDirectory)IECPresentationManager.cpp $(ECPresentationDependencies)
 
 $(o)NavNode$(oext)                  : $(SourceDirectory)NavNode.cpp $(ECPresentationDependencies)
 
@@ -14,8 +14,6 @@ $(o)Content$(oext)                  : $(SourceDirectory)Content.cpp $(ECPresenta
 $(o)KeySet$(oext)                   : $(SourceDirectory)KeySet.cpp $(ECPresentationDependencies)
 
 $(o)Connection$(oext)               : $(SourceDirectory)Connection.cpp $(ECPresentationDependencies)
-
-$(o)Selection$(oext)                : $(SourceDirectory)Selection.cpp $(ECPresentationDependencies)
 
 $(o)ECDbBasedCache$(oext)           : $(SourceDirectory)ECDbBasedCache.cpp $(ECPresentationDependencies)
 

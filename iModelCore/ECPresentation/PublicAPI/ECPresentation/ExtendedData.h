@@ -283,7 +283,10 @@ public:
 
     //! Initializes a read-write accessor with the given JSON. Does not copy the supplied JSON
     JsonCppAccessor(JsonValueR data) : m_ownsData(false), m_writableData(&data), m_readonlyData(m_writableData) {}
-    
+
+    //! Initializes a read-write accessor with the given JSON.
+    JsonCppAccessor(Json::Value&& data) {InitWritable(Json::Value()); m_writableData->swap(data);}
+
     //! Initializes a read-write accessor with the JSON contained in the specified IJsonCppExtendedDataHolder. Does not copy the supplied JSON.
     JsonCppAccessor(IJsonCppExtendedDataHolder& holder) : m_ownsData(false), m_writableData(&holder.GetExtendedDataR()), m_readonlyData(m_writableData) {}
 

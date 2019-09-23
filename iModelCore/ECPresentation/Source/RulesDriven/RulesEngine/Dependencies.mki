@@ -19,9 +19,7 @@ RulesEnginePublicHeaders      = $(RulesEnginePublicApiDirectory)PresentationMana
                                 $(RulesEnginePublicApiDirectory)RuleSetLocater.h                    \
                                 $(RulesEnginePublicApiDirectory)UserSettings.h                      \
                                 $(RulesEnginePublicApiDirectory)ECInstanceChangeEvents.h            \
-                                $(RulesEnginePublicApiDirectory)ECInstanceChangeHandlers.h          \
-                                $(RulesEnginePublicApiDirectory)RuleSetEmbedder.h                   \
-                                $(RulesEnginePublicApiDirectory)SelectionSyncHandler.h              
+                                $(RulesEnginePublicApiDirectory)RuleSetEmbedder.h
 
 RulesEngineInternalHeaders    = $(RulesEngineSourceDirectory)RulesEngineTypes.h                     \
                                 $(RulesEngineSourceDirectory)RulesPreprocessor.h                    \
@@ -37,6 +35,7 @@ RulesEngineInternalHeaders    = $(RulesEngineSourceDirectory)RulesEngineTypes.h 
                                 $(RulesEngineSourceDirectory)LocalizationHelper.h                   \
                                 $(RulesEngineSourceDirectory)NavNodesDataSource.h                   \
                                 $(RulesEngineSourceDirectory)NavNodesCache.h                        \
+                                $(RulesEngineSourceDirectory)NodePathsHelper.h                      \
                                 $(RulesEngineSourceDirectory)ContentCache.h                         \
                                 $(RulesEngineSourceDirectory)LoggingHelper.h                        \
                                 $(RulesEngineSourceDirectory)ImageHelper.h                          \
@@ -46,7 +45,6 @@ RulesEngineInternalHeaders    = $(RulesEngineSourceDirectory)RulesEngineTypes.h 
                                 $(RulesEngineSourceDirectory)UpdateHandler.h                        \
                                 $(RulesEngineSourceDirectory)ContentProviders.h                     \
                                 $(RulesEngineSourceDirectory)RulesDrivenProviderContext.h           \
-                                $(RulesEngineSourceDirectory)ECInstanceChangesDirector.h            \
                                 $(RulesEngineSourceDirectory)DataSourceInfo.h                       \
                                 $(RulesEngineSourceDirectory)ContentClassesLocater.h                \
                                 $(RulesEngineSourceDirectory)ContentSpecificationsHandler.h         \
@@ -54,7 +52,7 @@ RulesEngineInternalHeaders    = $(RulesEngineSourceDirectory)RulesEngineTypes.h 
                                 $(RulesEngineSourceDirectory)ECExpressionOptimizer.h                \
                                 $(RulesEngineSourceDirectory)UsedClassesListener.h                  \
                                 $(RulesEngineSourceDirectory)PresentationManagerImpl.h              \
-                                $(RulesEngineSourceDirectory)SingleThreadQueueExecutor.h
+                                $(RulesEngineSourceDirectory)TaskScheduler.h
 
 RulesEngineXliffHeaders       = $(XliffsDirectory)RulesEngine.xliff.h
 

@@ -132,6 +132,7 @@ template<typename ValueType> static void Erase(bmap<ContentProviderKey, ValueTyp
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ContentCache::ClearCache(IConnectionCR connection)
     {
+    BeMutexHolder lock(m_mutex);
     auto pred = [&](ContentProviderKey const& key){return key.GetConnectionId().Equals(connection.GetId());};
     Erase(m_providers, pred);
     }
@@ -141,8 +142,20 @@ void ContentCache::ClearCache(IConnectionCR connection)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ContentCache::ClearCache(Utf8StringCR rulesetId)
     {
+    BeMutexHolder lock(m_mutex);
     auto pred = [&](ContentProviderKey const& key){return key.GetRulesetId().Equals(rulesetId);};
     Erase(m_providers, pred);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static SpecificationContentProviderPtr GetProviderOrClone(SpecificationContentProviderR provider)
+    {
+    // if provider ref count > 1, the provider is currently in use, we can't share it
+    if (provider.GetRefCount() <= 1)
+        return &provider;
+    return provider.Clone();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -150,9 +163,10 @@ void ContentCache::ClearCache(Utf8StringCR rulesetId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 SpecificationContentProviderPtr ContentCache::GetProvider(ContentProviderKey const& key) const
     {
+    BeMutexHolder lock(m_mutex);
     auto iter = m_providers.find(key);
     if (m_providers.end() != iter)
-        return iter->second;
+        return GetProviderOrClone(*iter->second);
     return nullptr;
     }
 
@@ -161,12 +175,13 @@ SpecificationContentProviderPtr ContentCache::GetProvider(ContentProviderKey con
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<SpecificationContentProviderPtr> ContentCache::GetProviders(IConnectionCR connection) const
     {
+    BeMutexHolder lock(m_mutex);
     bvector<SpecificationContentProviderPtr> providers;
     for (auto pair : m_providers)
         {
         ContentProviderKey const& key = pair.first;
         if (key.GetConnectionId().Equals(connection.GetId()))
-            providers.push_back(pair.second);
+            providers.push_back(GetProviderOrClone(*pair.second));
         }
     return providers;
     }
@@ -190,12 +205,13 @@ static bool HasRelatedSetting(ContentProviderCR provider, Utf8CP settingId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<SpecificationContentProviderPtr> ContentCache::GetProviders(Utf8CP rulesetId, Utf8CP settingId) const
     {
+    BeMutexHolder lock(m_mutex);
     bvector<SpecificationContentProviderPtr> providers;
     for (auto pair : m_providers)
         {
         ContentProviderKey const& key = pair.first;
         if (key.GetRulesetId().Equals(rulesetId) && HasRelatedSetting(*pair.second, settingId))
-            providers.push_back(pair.second);
+            providers.push_back(GetProviderOrClone(*pair.second));
         }
     return providers;
     }
@@ -231,6 +247,7 @@ static void RemoveSimilarProviders(bmap<ContentProviderKey, SpecificationContent
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ContentCache::CacheProvider(ContentProviderKey key, SpecificationContentProviderR provider)
     {
+    BeMutexHolder lock(m_mutex);
     RemoveSimilarProviders(m_providers, key);
     m_providers[key] = &provider;
     }

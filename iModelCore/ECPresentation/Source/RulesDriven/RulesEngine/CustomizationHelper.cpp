@@ -33,7 +33,7 @@ bool NavNodeCustomizer::ApplyLabelAndDescriptionOverride(bool customizeLabel)
     {
     bool didOverride = false;
     RulesPreprocessor preprocessor(m_context.GetConnections(), m_context.GetConnection(), m_context.GetRuleset(), m_context.GetLocale(),
-        m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache(), m_context.GetStatementCache());
+        m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache());
     RulesPreprocessor::CustomizationRuleParameters params(m_node, m_parentNode);
     LabelOverrideCP labelOverride = preprocessor.GetLabelOverride(params);
     if (nullptr != labelOverride)
@@ -65,7 +65,7 @@ bool NavNodeCustomizer::ApplyStyleOverride()
     {
     bool didOverride = false;
     RulesPreprocessor preprocessor(m_context.GetConnections(), m_context.GetConnection(), m_context.GetRuleset(), m_context.GetLocale(),
-        m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache(), m_context.GetStatementCache());
+        m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache());
     RulesPreprocessor::CustomizationRuleParameters params(m_node, m_parentNode);
     StyleOverrideCP styleOverride = preprocessor.GetStyleOverride(params);
     if (nullptr != styleOverride)
@@ -104,7 +104,7 @@ bool NavNodeCustomizer::ApplyImageIdOverride()
     {
     bool didOverride = false;
     RulesPreprocessor preprocessor(m_context.GetConnections(), m_context.GetConnection(), m_context.GetRuleset(), m_context.GetLocale(),
-        m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache(), m_context.GetStatementCache());
+        m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache());
     RulesPreprocessor::CustomizationRuleParameters params(m_node, m_parentNode);
     ImageIdOverrideCP imageIdOverride = preprocessor.GetImageIdOverride(params);
     if (nullptr != imageIdOverride)
@@ -158,7 +158,7 @@ bool NavNodeCustomizer::ApplyLocalization()
 bool NavNodeCustomizer::ApplyCheckboxRules()
     {
     RulesPreprocessor preprocessor(m_context.GetConnections(), m_context.GetConnection(), m_context.GetRuleset(), m_context.GetLocale(),
-        m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache(), m_context.GetStatementCache());
+        m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache());
     RulesPreprocessor::CustomizationRuleParameters params(m_node, m_parentNode);
     CheckBoxRuleCP rule = preprocessor.GetCheckboxRule(params);
     if (nullptr == rule)
@@ -180,7 +180,8 @@ bool NavNodeCustomizer::ApplyCheckboxRules()
             BeAssert(false);
             return false;
             }
-        ECValue boundValue = ECInstancesHelper::GetValue(m_context.GetConnection(), *boundPropertyClass, m_node.GetKey()->AsECInstanceNodeKey()->GetInstanceId(), *boundProperty);
+        ECValue boundValue = ECInstancesHelper::GetValue(m_context.GetConnection(),
+            *boundPropertyClass, m_node.GetKey()->AsECInstanceNodeKey()->GetInstanceId(), *boundProperty);
         if (!boundValue.IsBoolean())
             {
             BeAssert(false);
@@ -217,7 +218,7 @@ bool NavNodeCustomizer::ApplyCheckboxRules()
 bool NavNodeCustomizer::ApplyExtendedDataRules()
     {
     RulesPreprocessor preprocessor(m_context.GetConnections(), m_context.GetConnection(), m_context.GetRuleset(), m_context.GetLocale(),
-        m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache(), m_context.GetStatementCache());
+        m_context.GetUserSettings(), &m_context.GetUsedSettingsListener(), m_context.GetECExpressionsCache());
     RulesPreprocessor::CustomizationRuleParameters params(m_node, m_parentNode);
     bvector<ExtendedDataRuleCP> rules = preprocessor.GetExtendedDataRules(params);
     bool didAddExtendedData = false;
@@ -242,10 +243,8 @@ bool NavNodeCustomizer::ApplyExtendedDataRules()
 * @bsimethod                                    Grigas.Petraitis                07/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 NavNodeCustomizer::NavNodeCustomizer(RulesDrivenProviderContextCR context, JsonNavNodeCR node, JsonNavNodeCP parentNode, ICustomizablePropertiesSetter const& setter)
-    : m_context(context), m_node(node), m_parentNode(parentNode), m_setter(setter), m_ecdbSymbolsContext(nullptr)
+    : m_context(context), m_node(node), m_parentNode(parentNode), m_setter(setter)
     {
-    if (m_context.IsQueryContext())
-        m_ecdbSymbolsContext = new ECDbExpressionSymbolContext(m_context.GetConnection().GetECDb(), &m_context.GetStatementCache());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -253,7 +252,6 @@ NavNodeCustomizer::NavNodeCustomizer(RulesDrivenProviderContextCR context, JsonN
 +---------------+---------------+---------------+---------------+---------------+------*/
 NavNodeCustomizer::~NavNodeCustomizer()
     {
-    DELETE_AND_CLEAR(m_ecdbSymbolsContext);
     }
 
 /*=================================================================================**//**
@@ -338,7 +336,7 @@ void CustomizationHelper::Customize(ContentProviderContextCR context, ContentDes
     ContentSetItemExtendedData extendedData(item);
     if (extendedData.IsCustomized())
         return;
-    
+
     if (item.GetKeys().empty())
         {
         // note: the record has no keys when we're selecting distinct values. Multiple
@@ -377,9 +375,9 @@ NodeArtifacts CustomizationHelper::EvaluateArtifacts(NavNodesProviderContextCR c
     JsonNavNodeCPtr parentNode = context.GetVirtualParentNode();
 
     RulesPreprocessor preprocessor(context.GetConnections(), context.GetConnection(), context.GetRuleset(), context.GetLocale(),
-        context.GetUserSettings(), &context.GetUsedSettingsListener(), context.GetECExpressionsCache(), context.GetStatementCache());
+        context.GetUserSettings(), &context.GetUsedSettingsListener(), context.GetECExpressionsCache());
     bvector<NodeArtifactsRuleCP> rules = preprocessor.GetNodeArtifactRules(RulesPreprocessor::CustomizationRuleParameters(node, parentNode.get()));
-    
+
     ECExpressionContextsProvider::CustomizationRulesContextParameters evaluationParams(node, parentNode.get(),
         context.GetConnection(), context.GetLocale(), context.GetUserSettings(), &context.GetUsedSettingsListener());
     ExpressionContextPtr evaluationContext = ECExpressionContextsProvider::GetCustomizationRulesContext(evaluationParams);
@@ -397,39 +395,4 @@ NodeArtifacts CustomizationHelper::EvaluateArtifacts(NavNodesProviderContextCR c
             }
         }
     return artifacts;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                12/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void CustomizationHelper::NotifyCheckedStateChanged(IConnectionCR connection, JsonNavNodeCR node, bool isChecked)
-    {
-    NavNodeExtendedData extendedData(node);
-    if (extendedData.HasCheckboxBoundPropertyName())
-        {
-        if (extendedData.IsCheckboxBoundPropertyInversed())
-            isChecked = !isChecked;
-
-        ECClassCP boundPropertyClass = connection.GetECDb().Schemas().GetClass(node.GetKey()->AsECInstanceNodeKey()->GetECClassId());
-        if (nullptr == boundPropertyClass || !boundPropertyClass->IsEntityClass())
-            {
-            BeAssert(false);
-            return;
-            }
-        ECPropertyCP boundProperty = boundPropertyClass->GetPropertyP(extendedData.GetCheckboxBoundPropertyName());
-        if (nullptr == boundProperty || !boundProperty->GetIsPrimitive())
-            {
-            BeAssert(false);
-            return;
-            }
-
-        BeAssert(!boundProperty->GetIsReadOnly());
-        BeAssert(!connection.IsReadOnly());
-        BeAssert(!connection.GetECDb().GetECDbSettings().RequiresECCrudWriteToken());
-
-        ECInstancesHelper::SetValue(connection, *boundPropertyClass, node.GetKey()->AsECInstanceNodeKey()->GetInstanceId(),
-            *boundProperty, ECValue(isChecked));
-
-        connection.GetECDb().SaveChanges();
-        }
     }

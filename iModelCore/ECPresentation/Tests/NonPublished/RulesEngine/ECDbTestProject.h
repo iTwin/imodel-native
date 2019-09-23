@@ -42,6 +42,7 @@ public:
     ECDb& Create (Utf8CP ecdbFileName);
     ECDb& Create (Utf8CP ecdbFileName, Utf8CP testSchemaXmlFileName);
     DbResult Open (Utf8CP ecdbFileName, ECDb::OpenParams openParams = ECDb::OpenParams (ECDb::OpenMode::Readonly));
+    DbResult ReOpen();
     BentleyStatus GetInstances (bvector<IECInstancePtr>& instances, Utf8CP schemaName, Utf8CP className, bool polymorphic = false);
     BentleyStatus InsertECInstance (ECInstanceKey& ecInstanceKey, IECInstancePtr ecInstance);
     IECInstancePtr CreateECInstance(ECClassCR ecClass);

@@ -63,12 +63,12 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeBuildCommandLine>bb -r ECPresentation -f ECPresentation -p ECPresentation-Gtest-Performance build</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>bb -r imodel02 -f iModelCore/ECPresentation/ECPresentation -p ECPresentation-Gtest-Performance build</NMakeBuildCommandLine>
     <NMakeOutput>$(OutRoot)Winx64\Product\ECPresentation-Gtest-Performance\ECPresentationTest-Performance.exe</NMakeOutput>
-    <NMakeCleanCommandLine>bb -r ECPresentation -f ECPresentation -p ECPresentation-Gtest-Performance clean ECPresentation:Test* ECPresentation:BackdoorForUnitTests ECPresentation:UnitTests-Performance ECPresentation:Gtest-Performance</NMakeCleanCommandLine>
-    <NMakeReBuildCommandLine>bb -r ECPresentation -f ECPresentation -p ECPresentation-Gtest-Performance rebuild ECPresentation:Test* ECPresentation:BackdoorForUnitTests ECPresentation:UnitTests-Performance ECPresentation:Gtest-Performance</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -r imodel02 -f iModelCore/ECPresentation/ECPresentation -p ECPresentation-Gtest-Performance rebuild ECPresentation:Test* ECPresentation:BackdoorForUnitTests ECPresentation:UnitTests-Performance ECPresentation:Gtest-Performance -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>bb -r imodel02 -f iModelCore/ECPresentation/ECPresentation -p ECPresentation-Gtest-Performance rebuild ECPresentation:Test* ECPresentation:BackdoorForUnitTests ECPresentation:UnitTests-Performance ECPresentation:Gtest-Performance</NMakeReBuildCommandLine>
     <NMakePreprocessorDefinitions>_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeIncludeSearchPath>$(SrcRoot)Bentley\PublicAPI\;$(SrcRoot)libsrc\jsoncpp\PublicAPI;$(SrcRoot)libsrc\jsoncpp\include;$(SrcRoot)libsrc\libxml2\BeXml\PublicApi;$(SrcRoot)libsrc\libxml2\include;$(SrcRoot)libsrc\rapidjson\include\;$(SrcRoot)libsrc\facebook\VendorApi\;$(SrcRoot)BeGTest\PublicAPI\;$(SrcRoot)util\gtest\include;$(SrcRoot)BeSQLite\PublicAPI;$(SrcRoot)ecobjects\PublicApi;$(SrcRoot)GeomLibs\PublicAPI;$(SrcRoot)ECDb\PublicAPI\;$(SrcRoot)ECPresentation\PublicAPI;$(OutRoot)Winx64\BuildContexts\ECPresentation\SubParts\UnitTests\include;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>$(SrcRoot)imodel02\iModelCore\Bentley\PublicAPI\;$(SrcRoot)imodel02\iModelCore\Bentley\BeRapidJson\PublicAPI\;$(SrcRoot)imodel02\iModelCore\BeHttp\PublicAPI\;$(SrcRoot)imodel02\iModelCore\BeSecurity\PublicAPI\;$(SrcRoot)imodel02\iModelCore\BeSQLite\PublicAPI\;$(SrcRoot)imodel02\iModelCore\DgnPlatform\PublicAPI\;$(SrcRoot)imodel02\iModelCore\ECPresentation\PublicAPI\;$(SrcRoot)imodel02\iModelCore\ECPresentation\Source\;$(SrcRoot)imodel02\iModelCore\ECDb\PublicAPI\;$(SrcRoot)imodel02\iModelCore\ECObjects\PublicAPI\;$(SrcRoot)imodel02\iModelCore\GeomLibs\PublicAPI\;$(SrcRoot)imodel02\iModelCore\libsrc\facebook\VendorAPI\;$(SrcRoot)imodel02\iModelCore\libsrc\jsoncpp\include\;$(SrcRoot)imodel02\iModelCore\libsrc\jsoncpp\PublicAPI\;$(SrcRoot)imodel02\iModelCore\Units\PublicAPI\;$(SrcRoot)imodel02\iModelCore\WSClient\PublicAPI\;$(SrcRoot)imodel02\iModelJsNodeAddon\;$(SrcRoot)imodel02\node-addon-api\;$(SrcRoot)nuget\RapidJsonNuget_x64.2.0.2.114\native\include\;$(OutRoot)Winx64\BuildContexts\ECPresentation\SubParts\UnitTests\include\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <NMakeBuildCommandLine>bb -r imodel02 -f iModelCore/ECPresentation/ECPresentation -p ECPresentation-Gtest-Performance build</NMakeBuildCommandLine>
@@ -97,13 +97,17 @@
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Performance\RulesEngine\ContentPerformanceTests.cpp" />
-    <ClCompile Include="Performance\RulesEngine\HierarchyPerformanceAnalysis.cpp" />
-    <ClCompile Include="Performance\RulesEngine\HierarchyPerformanceTests.cpp" />
-    <ClCompile Include="Performance\RulesEngine\RulesEnginePerformanceTests.cpp" />
+    <ClCompile Include="Performance\Analysis\HierarchyPerformanceAnalysis.cpp" />
+    <ClCompile Include="Performance\Analysis\MultiThreadAnalysis.cpp" />
+    <ClCompile Include="Performance\PerformanceTests.cpp" />
+    <ClCompile Include="Performance\Regression\ContentPerformanceTests.cpp" />
+    <ClCompile Include="Performance\Regression\HierarchyPerformanceTests.cpp" />
+    <ClCompile Include="Performance\Stress\StressTests.cpp" />
+    <ClCompile Include="Performance\TestsHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Performance\RulesEngine\RulesEnginePerformanceTests.h" />
+    <ClInclude Include="Performance\PerformanceTests.h" />
+    <ClInclude Include="Performance\TestsHelper.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -25,6 +25,9 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //!   - GetRelatedValue("RelationshipSchemaName:RelationshipName", "Forward|Backward", 
 //!     "RelatedClassSchemaName:RelatedClassName", "PropertyName") - Returns the specified 
 //!     property value of the specified related instance. Returns NULL if there're no related instances.
+//!
+//! Warning: This class registers the symbols provider into a static list and thus is not thread
+//! safe. If thread safety is needed, use `ECDbExpressionSymbolProvider`.
 // @bsiclass                                      Grigas.Petraitis              02/2016
 //+===============+===============+===============+===============+===============+======
 struct ECDbExpressionSymbolContext final
@@ -42,6 +45,35 @@ public:
 
     //! Unregisters the registered symbol provider.
     ECDB_EXPORT void LeaveContext();
+};
+
+//=======================================================================================
+// Note: The provider must stay valid for the lifetime of the symbol expression contexts
+// it published symbols to.
+// @bsiclass                                      Grigas.Petraitis              02/2016
+//+===============+===============+===============+===============+===============+======
+struct ECDbExpressionSymbolProvider final : ECN::IECSymbolProvider
+{
+    struct ECDbExpressionEvaluationContext;
+
+private:
+    ECDbExpressionEvaluationContext* m_context;
+
+    static ECN::ExpressionStatus GetRelatedInstanceQueryFormatOld(Utf8StringR, ECN::ECEntityClassCP&, ECDbCR, ECN::ECInstanceListCR, ECN::EvaluationResult const&);
+    static ECN::ExpressionStatus GetRelatedInstanceQueryFormatNew(Utf8StringR, ECDbCR, ECN::ECInstanceListCR, ECN::EvaluationResultVector& args);
+    static ECN::ExpressionStatus HasRelatedInstance(ECN::EvaluationResult& evalResult, void* context, ECN::ECInstanceListCR instanceData, ECN::EvaluationResultVector& args);
+    static ECN::ExpressionStatus GetRelatedInstancesCount(ECN::EvaluationResult& evalResult, void* context, ECN::ECInstanceListCR instanceData, ECN::EvaluationResultVector& args);
+    static ECN::ExpressionStatus GetRelatedInstance(ECN::EvaluationResult& evalResult, void* context, ECN::ECInstanceListCR instanceData, ECN::EvaluationResultVector& args);
+    static ECN::ExpressionStatus GetRelatedValue(ECN::EvaluationResult& evalResult, void* context, ECN::ECInstanceListCR instanceData, ECN::EvaluationResultVector& args);
+    static ECN::ExpressionStatus GetClassId(ECN::EvaluationResult& evalResult, void* context, ECN::EvaluationResultVector& args);
+    static BentleyStatus FindRelationshipAndClassInfo(ECDbCR, ECN::ECRelationshipClassCP&, Utf8CP relationshipName, ECN::ECEntityClassCP&, Utf8CP className);
+
+    Utf8CP _GetName() const override {return "ECDbExpressionSymbolProvider";}
+    void _PublishSymbols(ECN::SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const override;
+
+public:
+    ECDB_EXPORT ECDbExpressionSymbolProvider(ECDbCR db, ECSqlStatementCache const& statementCache);
+    ECDB_EXPORT ~ECDbExpressionSymbolProvider();
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

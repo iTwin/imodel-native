@@ -12,7 +12,7 @@ _o =% $(o)
 o = $(RulesEngineOutputDirectory)
 always:
     !~@mkdir $(o)
-    
+
 %include MultiCppCompileRule.mki
 
 $(o)ECExpressionContextsProvider$(oext): $(RulesEngineSourceDirectory)ECExpressionContextsProvider.cpp $(RulesEngineDependencies)
@@ -51,6 +51,8 @@ $(o)NavNodesDataSource$(oext):           $(RulesEngineSourceDirectory)NavNodesDa
 
 $(o)NavNodesCache$(oext):                $(RulesEngineSourceDirectory)NavNodesCache.cpp $(RulesEngineDependencies)
 
+$(o)NodePathsHelper$(oext):              $(RulesEngineSourceDirectory)NodePathsHelper.cpp $(RulesEngineDependencies)
+
 $(o)LoggingHelper$(oext):                $(RulesEngineSourceDirectory)LoggingHelper.cpp $(RulesEngineDependencies)
 
 $(o)ImageHelper$(oext):                  $(RulesEngineSourceDirectory)ImageHelper.cpp $(RulesEngineDependencies)
@@ -63,8 +65,6 @@ $(o)QueryBuilderHelpers$(oext):          $(RulesEngineSourceDirectory)QueryBuild
 
 $(o)ECInstanceChangeEvents$(oext):       $(RulesEngineSourceDirectory)ECInstanceChangeEvents.cpp $(RulesEngineDependencies)
 
-$(o)ECInstanceChangeHandlers$(oext):     $(RulesEngineSourceDirectory)ECInstanceChangeHandlers.cpp $(RulesEngineDependencies)
-
 $(o)UpdateHandler$(oext):                $(RulesEngineSourceDirectory)UpdateHandler.cpp $(RulesEngineDependencies)
 
 $(o)ContentProviders$(oext):             $(RulesEngineSourceDirectory)ContentProviders.cpp $(RulesEngineDependencies)
@@ -72,8 +72,6 @@ $(o)ContentProviders$(oext):             $(RulesEngineSourceDirectory)ContentPro
 $(o)RulesDrivenProviderContext$(oext):   $(RulesEngineSourceDirectory)RulesDrivenProviderContext.cpp $(RulesEngineDependencies)
 
 $(o)ContentCache$(oext):                 $(RulesEngineSourceDirectory)ContentCache.cpp $(RulesEngineDependencies)
-
-$(o)SelectionSyncHandler$(oext):         $(RulesEngineSourceDirectory)SelectionSyncHandler.cpp $(RulesEngineDependencies)
 
 $(o)ECExpressionOptimizer$(oext):        $(RulesEngineSourceDirectory)ECExpressionOptimizer.cpp $(RulesEngineDependencies)
 
@@ -87,11 +85,9 @@ $(o)PropertyInfoStore$(oext):            $(RulesEngineSourceDirectory)PropertyIn
 
 $(o)RuleSetEmbedder$(oext):              $(RulesEngineSourceDirectory)RuleSetEmbedder.cpp $(RulesEngineDependencies)
 
-$(o)SingleThreadQueueExecutor$(oext):    $(RulesEngineSourceDirectory)SingleThreadQueueExecutor.cpp $(RulesEngineDependencies)
-
 $(o)PresentationManagerImpl$(oext):      $(RulesEngineSourceDirectory)PresentationManagerImpl.cpp $(RulesEngineDependencies)
 
-$(o)SelectionUpdateRecordsHandler$(oext):$(RulesEngineSourceDirectory)SelectionUpdateRecordsHandler.cpp $(RulesEngineDependencies)
+$(o)TaskScheduler$(oext):                $(RulesEngineSourceDirectory)TaskScheduler.cpp $(RulesEngineDependencies)
 
 %include MultiCppCompileGo.mki
 

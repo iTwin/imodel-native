@@ -5,6 +5,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECPresentationTest.h"
 #include <ECPresentation/IECPresentationManager.h>
+#include "TestConnectionCache.h"
 
 BEGIN_ECPRESENTATIONTESTS_NAMESPACE
 
@@ -15,7 +16,7 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 /*=================================================================================**//**
 * @bsiclass                                     Aidas.Vaiksnoras                08/2017
 +===============+===============+===============+===============+===============+======*/
-struct TestDataSource : IDataSource<ContentSetItemCPtr> 
+struct TestContentDataSource : IDataSource<ContentSetItemCPtr>
 {
 private:
     bvector<ContentSetItemCPtr> m_vector;
@@ -31,55 +32,37 @@ protected:
         return m_vector[index];
         }
 public:
-    static RefCountedPtr<TestDataSource> Create() {return new TestDataSource();}
+    static RefCountedPtr<TestContentDataSource> Create() {return new TestContentDataSource();}
     void AddContentSetItem(ContentSetItemCPtr item) {m_vector.push_back(item);}
 };
 
 /*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                12/2016
+* @bsiclass                                     Aidas.Vaiksnoras                08/2017
 +===============+===============+===============+===============+===============+======*/
-struct NodesVectorDataSource : IDataSource<NavNodeCPtr>
+struct TestNodesDataSource : IDataSource<NavNodeCPtr>
 {
 private:
     bvector<NavNodeCPtr> m_vec;
-    NodesVectorDataSource(bvector<NavNodeCPtr> vec) : m_vec(vec) {}
+    TestNodesDataSource(bvector<NavNodeCPtr> vec) : m_vec(vec) {}
 protected:
-    NavNodeCPtr _Get(size_t index) const override {return m_vec[index];}
-    size_t _GetSize() const override {return m_vec.size();}
+    NavNodeCPtr _Get(size_t index) const override { return m_vec[index]; }
+    size_t _GetSize() const override { return m_vec.size(); }
 public:
-    static RefCountedPtr<NodesVectorDataSource> Create(bvector<NavNodeCPtr> vec) {return new NodesVectorDataSource(vec);}
+    static RefCountedPtr<TestNodesDataSource> Create(bvector<NavNodeCPtr> vec) { return new TestNodesDataSource(vec); }
 };
 
-/*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                12/2016
-+===============+===============+===============+===============+===============+======*/
-struct NavNodePtrComparer
-    {
-    bool operator()(NavNodeCPtr const& lhs, NavNodeCPtr const& rhs) const
-        {
-        return (lhs.get() < rhs.get());
-        }
-    };
-
-typedef bmap<NavNodeCPtr, bvector<NavNodeCPtr>, NavNodePtrComparer> Hierarchy;
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                12/2016
 +===============+===============+===============+===============+===============+======*/
 struct TestECPresentationManager : IECPresentationManager
 {
+    typedef bmap<NavNodeCPtr, bvector<NavNodeCPtr>> Hierarchy;
 private:
     Hierarchy m_hierarchy; // parent -> children
     bmap<NavNodeCP, NavNodeCP> m_parentship; // child -> parent
-    std::function<bool(IConnectionCR, NavNodeCR parentNode, ECInstanceKeyCR childNodeKey, JsonValueCR)> m_hasChildHandler;
-    std::function<bvector<NavNodeCPtr>(IConnectionCR, Utf8CP, JsonValueCR)> m_getFilteredNodesPathsHandler;
-    std::function<bvector<ECInstanceChangeResult>(IConnectionCR, bvector<ChangedECInstanceInfo> const&, Utf8CP, ECValueCR, JsonValueCR)> m_saveValueChangeHandler;
-    std::function<ContentDescriptorCPtr(IConnectionCR, Utf8CP, int, KeySetCR, SelectionInfo const*, JsonValueCR)> m_contentDescriptorHandler;
+    std::function<bvector<NavNodeCPtr>(ECDbCR, Utf8CP, JsonValueCR)> m_getFilteredNodesPathsHandler;
+    std::function<ContentDescriptorCPtr(ECDbCR, Utf8CP, int, KeySetCR, SelectionInfo const*, JsonValueCR)> m_contentDescriptorHandler;
     std::function<ContentCPtr(ContentDescriptorCR, PageOptionsCR)> m_contentHandler;
-    std::function<void(IConnectionCR, NavNodeKeyCR, JsonValueCR)> m_onNodeCheckedHandler;
-    std::function<void(IConnectionCR, NavNodeKeyCR, JsonValueCR)> m_onNodeUncheckedHandler;
-    std::function<void(IConnectionCR, NavNodeKeyCR, JsonValueCR)> m_onNodeExpandedHandler;
-    std::function<void(IConnectionCR, NavNodeKeyCR, JsonValueCR)> m_onNodeCollapsedHandler;
-    std::function<void(IConnectionCR, JsonValueCR)> m_onAllNodesCollapseHandler;
 
 private:
     DataContainer<NavNodeCPtr> GetNodes(NavNodeCP parent)
@@ -92,7 +75,7 @@ private:
         for (NavNodeCPtr node : pair.second)
             nodes.push_back(node.get()->Clone());
 
-        return DataContainer<NavNodeCPtr>(*NodesVectorDataSource::Create(nodes));
+        return DataContainer<NavNodeCPtr>(*TestNodesDataSource::Create(nodes));
         }
     size_t GetNodesCount(NavNodeCP parent)
         {
@@ -115,19 +98,19 @@ private:
             }
         return false;
         }
-    
+
 protected:
     // Navigation
-    folly::Future<DataContainer<NavNodeCPtr>> _GetRootNodes(IConnectionCR, PageOptionsCR, JsonValueCR, PresentationTaskNotificationsContextCR) override {return GetNodes(nullptr);}
-    folly::Future<size_t> _GetRootNodesCount(IConnectionCR, JsonValueCR, PresentationTaskNotificationsContextCR) override {return GetNodesCount(nullptr);}
-    folly::Future<DataContainer<NavNodeCPtr>> _GetChildren(IConnectionCR, NavNodeCR parent, PageOptionsCR, JsonValueCR, PresentationTaskNotificationsContextCR) override {return GetNodes(&parent);}
-    folly::Future<size_t> _GetChildrenCount(IConnectionCR, NavNodeCR parent, JsonValueCR, PresentationTaskNotificationsContextCR) override {return GetNodesCount(&parent);}
-    folly::Future<NavNodeCPtr> _GetParent(IConnectionCR, NavNodeCR node, JsonValueCR, PresentationTaskNotificationsContextCR) override
+    folly::Future<DataContainer<NavNodeCPtr>> _GetRootNodes(ECDbCR, PageOptionsCR, JsonValueCR, PresentationRequestContextCR) override {return GetNodes(nullptr);}
+    folly::Future<size_t> _GetRootNodesCount(ECDbCR, JsonValueCR, PresentationRequestContextCR) override {return GetNodesCount(nullptr);}
+    folly::Future<DataContainer<NavNodeCPtr>> _GetChildren(ECDbCR, NavNodeCR parent, PageOptionsCR, JsonValueCR, PresentationRequestContextCR) override {return GetNodes(&parent);}
+    folly::Future<size_t> _GetChildrenCount(ECDbCR, NavNodeCR parent, JsonValueCR, PresentationRequestContextCR) override {return GetNodesCount(&parent);}
+    folly::Future<NavNodeCPtr> _GetParent(ECDbCR, NavNodeCR node, JsonValueCR, PresentationRequestContextCR) override
         {
         auto iter = m_parentship.find(&node);
         return (m_parentship.end() != iter) ? iter->second : nullptr;
         }
-    folly::Future<NavNodeCPtr> _GetNode(IConnectionCR, NavNodeKeyCR nodeKey, JsonValueCR, PresentationTaskNotificationsContextCR) override
+    folly::Future<NavNodeCPtr> _GetNode(ECDbCR, NavNodeKeyCR nodeKey, JsonValueCR, PresentationRequestContextCR) override
         {
         for (auto pair : m_hierarchy)
             {
@@ -137,95 +120,40 @@ protected:
             }
         return NavNodeCPtr(nullptr);
         }
-    folly::Future<bool> _HasChild(IConnectionCR db, NavNodeCR parentNode, ECInstanceKeyCR childKey, JsonValueCR options, PresentationTaskNotificationsContextCR) override
-        {
-        if (nullptr != m_hasChildHandler)
-            return m_hasChildHandler(db, parentNode, childKey, options);
-
-        auto iter = m_hierarchy.find(&parentNode);
-        if (m_hierarchy.end() == iter)
-            return false;
-
-        bvector<NavNodeCPtr> const& children = iter->second;
-        return children.end() != std::find_if(children.begin(), children.end(), [&childKey](NavNodeCPtr const& child)
-            {
-            return (child->GetKey()->AsECInstanceNodeKey() && child->GetKey()->AsECInstanceNodeKey()->GetInstanceKey() == childKey);
-            });
-        }
-    folly::Future<bvector<NavNodeCPtr>> _GetFilteredNodes(IConnectionCR connection, Utf8CP filterText, JsonValueCR options, PresentationTaskNotificationsContextCR) override 
+    folly::Future<bvector<NavNodeCPtr>> _GetFilteredNodes(ECDbCR db, Utf8CP filterText, JsonValueCR options, PresentationRequestContextCR) override
         {
         if (nullptr != m_getFilteredNodesPathsHandler)
-            return m_getFilteredNodesPathsHandler(connection, filterText, options);
+            return m_getFilteredNodesPathsHandler(db, filterText, options);
         return bvector<NavNodeCPtr>();
-        }
-    folly::Future<folly::Unit> _OnNodeChecked(IConnectionCR db, NavNodeKeyCR nodeKey, JsonValueCR options, PresentationTaskNotificationsContextCR) override
-        {
-        if (nullptr != m_onNodeCheckedHandler) 
-            m_onNodeCheckedHandler(db, nodeKey, options);
-        return folly::unit;
-        }
-    folly::Future<folly::Unit> _OnNodeUnchecked(IConnectionCR db, NavNodeKeyCR nodeKey, JsonValueCR options, PresentationTaskNotificationsContextCR) override
-        {
-        if (nullptr != m_onNodeUncheckedHandler) 
-            m_onNodeUncheckedHandler(db, nodeKey, options);
-        return folly::unit;
-        }
-    folly::Future<folly::Unit> _OnNodeExpanded(IConnectionCR db, NavNodeKeyCR nodeKey, JsonValueCR options, PresentationTaskNotificationsContextCR) override
-        {
-        if (nullptr != m_onNodeExpandedHandler) 
-            m_onNodeExpandedHandler(db, nodeKey, options);
-        return folly::unit;
-        }
-    folly::Future<folly::Unit> _OnNodeCollapsed(IConnectionCR db, NavNodeKeyCR nodeKey, JsonValueCR options, PresentationTaskNotificationsContextCR) override
-        {
-        if (nullptr != m_onNodeCollapsedHandler) 
-            m_onNodeCollapsedHandler(db, nodeKey, options);
-        return folly::unit;
-        }
-    folly::Future<folly::Unit> _OnAllNodesCollapsed(IConnectionCR connection, JsonValueCR options, PresentationTaskNotificationsContextCR) override
-        {
-        if (nullptr != m_onAllNodesCollapseHandler) 
-            m_onAllNodesCollapseHandler(connection, options);
-        return folly::unit;
         }
 
     // Content
-    folly::Future<bvector<SelectClassInfo>> _GetContentClasses(IConnectionCR db, Utf8CP preferredDisplayType, int contentFlags, bvector<ECClassCP> const& classes, JsonValueCR options, PresentationTaskNotificationsContextCR) override
+    folly::Future<bvector<SelectClassInfo>> _GetContentClasses(ECDbCR db, Utf8CP preferredDisplayType, int contentFlags, bvector<ECClassCP> const& classes, JsonValueCR options, PresentationRequestContextCR) override
         {
         return bvector<SelectClassInfo>();
         }
-    folly::Future<ContentDescriptorCPtr> _GetContentDescriptor(IConnectionCR db, Utf8CP preferredDisplayType, int contentFlags, KeySetCR input, SelectionInfo const* selectionInfo, JsonValueCR options, PresentationTaskNotificationsContextCR) override
+    folly::Future<ContentDescriptorCPtr> _GetContentDescriptor(ECDbCR db, Utf8CP preferredDisplayType, int contentFlags, KeySetCR input, SelectionInfo const* selectionInfo, JsonValueCR options, PresentationRequestContextCR) override
         {
         if (nullptr != m_contentDescriptorHandler)
             return m_contentDescriptorHandler(db, preferredDisplayType, contentFlags, input, selectionInfo, options);
-        return ContentDescriptor::Create(db, options, *NavNodeKeyListContainer::Create());
+        return ContentDescriptor::Create(*new TestConnection(const_cast<ECDbR>(db)), options, *NavNodeKeyListContainer::Create());
         }
-    folly::Future<ContentCPtr> _GetContent(ContentDescriptorCR descriptor, PageOptionsCR pageOptions, PresentationTaskNotificationsContextCR) override
+    folly::Future<ContentCPtr> _GetContent(ContentDescriptorCR descriptor, PageOptionsCR pageOptions, PresentationRequestContextCR) override
         {
         if (nullptr != m_contentHandler)
             return m_contentHandler(descriptor, pageOptions);
-        return Content::Create(descriptor, *TestDataSource::Create());
+        return Content::Create(descriptor, *TestContentDataSource::Create());
         }
-    folly::Future<size_t> _GetContentSetSize(ContentDescriptorCR, PresentationTaskNotificationsContextCR) override
+    folly::Future<size_t> _GetContentSetSize(ContentDescriptorCR, PresentationRequestContextCR) override
         {
         return 0;
         }
-    folly::Future<Utf8String> _GetDisplayLabel(IConnectionCR, KeySetCR, PresentationTaskNotificationsContextCR) override
+    folly::Future<Utf8String> _GetDisplayLabel(ECDbCR, KeySetCR, JsonValueCR, PresentationRequestContextCR) override
         {
         return "";
         }
 
-    // Updating
-    folly::Future<bvector<ECInstanceChangeResult>> _SaveValueChange(IConnectionCR db, bvector<ChangedECInstanceInfo> const& instancesInfo, Utf8CP propertyAccessor, ECValueCR value, JsonValueCR options, PresentationTaskNotificationsContextCR) override
-        {
-        if (nullptr != m_saveValueChangeHandler)
-            return m_saveValueChangeHandler(db, instancesInfo, propertyAccessor, value, options);
-        return bvector<ECInstanceChangeResult>();
-        }
-
 public:
-    TestECPresentationManager(IConnectionManagerR connections) : IECPresentationManager(connections) {}
-
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                06/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
@@ -239,17 +167,10 @@ public:
                 m_parentship[child.get()] = parent;
             }
         }
-    
-    void SetHasChildHandler(std::function<bool(IConnectionCR, NavNodeCR, ECInstanceKeyCR, JsonValueCR)> handler) {m_hasChildHandler = handler;}
-    void SetGetFilteredNodesPathsHandler(std::function<bvector<NavNodeCPtr>(IConnectionCR, Utf8CP, JsonValueCR)> handler) {m_getFilteredNodesPathsHandler = handler;}
-    void SetSaveValueChangeHandler(std::function<bvector<ECInstanceChangeResult>(IConnectionCR, bvector<ChangedECInstanceInfo> const&, Utf8CP, ECValueCR, JsonValueCR)> handler) {m_saveValueChangeHandler = handler;}
-    void SetContentDescriptorHandler(std::function<ContentDescriptorCPtr(IConnectionCR, Utf8CP, int, KeySetCR, SelectionInfo const*, JsonValueCR)> handler){m_contentDescriptorHandler = handler;}
+
+    void SetGetFilteredNodesPathsHandler(std::function<bvector<NavNodeCPtr>(ECDbCR, Utf8CP, JsonValueCR)> handler) {m_getFilteredNodesPathsHandler = handler;}
+    void SetContentDescriptorHandler(std::function<ContentDescriptorCPtr(ECDbCR, Utf8CP, int, KeySetCR, SelectionInfo const*, JsonValueCR)> handler){m_contentDescriptorHandler = handler;}
     void SetContentHandler(std::function<ContentCPtr(ContentDescriptorCR, PageOptionsCR)> handler){m_contentHandler = handler;}
-    void SetOnNodeCheckedHandler(std::function<void(IConnectionCR, NavNodeKeyCR, JsonValueCR)> handler) {m_onNodeCheckedHandler = handler;}
-    void SetOnNodeUncheckedHandler(std::function<void(IConnectionCR, NavNodeKeyCR, JsonValueCR)> handler) {m_onNodeUncheckedHandler = handler;}
-    void SetOnNodeExpandedHandler(std::function<void(IConnectionCR, NavNodeKeyCR, JsonValueCR)> handler) {m_onNodeExpandedHandler = handler;}
-    void SetOnNodeCollapsedHandler(std::function<void(IConnectionCR, NavNodeKeyCR, JsonValueCR)> handler) {m_onNodeCollapsedHandler = handler;}
-    void SetOnCollapseAllNodesHandler(std::function<void(IConnectionCR, JsonValueCR)> handler) {m_onAllNodesCollapseHandler = handler;}
     };
 
 END_ECPRESENTATIONTESTS_NAMESPACE

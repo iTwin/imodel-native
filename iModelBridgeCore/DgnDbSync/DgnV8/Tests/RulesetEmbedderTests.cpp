@@ -14,7 +14,7 @@ struct RulesetEmbedderTests : public ConverterTestBaseFixture
     DEFINE_T_SUPER(ConverterTestBaseFixture);
 
     DgnDbPtr m_db;
-    BentleyApi::ECPresentation::ConnectionManager m_connections;
+    BentleyApi::ECPresentation::SQLangLocalizationProvider m_localizationProvider;
     BentleyApi::ECPresentation::RulesDrivenECPresentationManager* m_presentationManager;
     BentleyApi::Utf8CP RuleSetJsonString1 = R"(
         {
@@ -85,8 +85,9 @@ void RulesetEmbedderTests::SetUp()
     LineUpFiles(L"Design3dSelfReference.bim", L"Test3d.dgn", false);
 
     m_db = OpenExistingDgnDb(m_dgnDbFileName);
-    m_presentationManager = new BentleyApi::ECPresentation::RulesDrivenECPresentationManager(m_connections, GetPaths(BentleyApi::BeTest::GetHost()));
-    m_presentationManager->SetLocalizationProvider(new BentleyApi::ECPresentation::SQLangLocalizationProvider());
+    BentleyApi::ECPresentation::RulesDrivenECPresentationManager::Params params(GetPaths(BentleyApi::BeTest::GetHost()));
+    params.SetLocalizationProvider(&m_localizationProvider);
+    m_presentationManager = new BentleyApi::ECPresentation::RulesDrivenECPresentationManager(params);
     ASSERT_TRUE(m_db.IsValid());
     ASSERT_TRUE(m_db->IsDbOpen());
     }
@@ -130,7 +131,7 @@ TEST_F(RulesetEmbedderTests, RulesetIsEmbeddedAndLocatedFromPresentationManager)
     {
     RulesetEmbedder embedder = RulesetEmbedder(*m_db);
     
-    BentleyApi::ECPresentation::IConnectionPtr connection = m_presentationManager->Connections().CreateConnection(*m_db);
+    BentleyApi::ECPresentation::IConnectionPtr connection = m_presentationManager->GetConnections().CreateConnection(*m_db);
     BentleyApi::bvector<BentleyApi::ECPresentation::PresentationRuleSetPtr> rulesets = m_presentationManager->GetLocaters().LocateRuleSets(*connection, nullptr);
     int countBefore = rulesets.size();
 

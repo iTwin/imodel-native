@@ -17,30 +17,6 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 USING_NAMESPACE_ECPRESENTATIONTESTS
 
 /*=================================================================================**//**
-* @bsiclass                                     Saulius.Skliutas                10/2017
-+===============+===============+===============+===============+===============+======*/
-struct TestECSqlStatementsCacheProvider : IECSqlStatementCacheProvider
-    {
-    private:
-        bmap<Utf8String, ECSqlStatementCache*> m_cache;
-    protected:
-        ECSqlStatementCache& _GetECSqlStatementCache(IConnectionCR connection) override
-            {
-            auto iter = m_cache.find(connection.GetId());
-            if (m_cache.end() == iter)
-                iter = m_cache.Insert(connection.GetId(), new ECSqlStatementCache(10)).first;
-            return *iter->second;
-            }
-    public:
-        TestECSqlStatementsCacheProvider() {}
-        ~TestECSqlStatementsCacheProvider()
-            {
-            for (auto iter : m_cache)
-                delete iter.second;
-            }
-    };
-
-/*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                04/2017
 +===============+===============+===============+===============+===============+======*/
 struct NodesCacheTests : ECPresentationTest
@@ -52,7 +28,6 @@ struct NodesCacheTests : ECPresentationTest
     JsonNavNodesFactory m_nodesFactory;
     TestNodesProviderContextFactory m_nodesProviderContextFactory;
     IConnectionPtr m_connection;
-    TestECSqlStatementsCacheProvider m_ecsqlStatements;
     NodesCache* m_cache;
 
     NodesCacheTests() : m_nodesProviderContextFactory(m_connections) {}
@@ -107,7 +82,7 @@ struct NodesCacheTests : ECPresentationTest
 
     virtual NodesCache* _CreateNodesCache(BeFileName tempDir)
         {
-        return new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, m_ecsqlStatements, NodesCacheType::Memory);
+        return new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Memory);
         }
 
     void InitNode(JsonNavNodeR, HierarchyLevelInfo const&);
@@ -290,11 +265,13 @@ TEST_F(NodesCacheTests, ClearsQuickCacheWhenConnectionCloses)
     auto info = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale");
     auto nodes = FillWithNodes(info, 1);
     auto cachedNode = m_cache->GetNode(nodes[0]->GetNodeId());
+    ASSERT_EQ(2, cachedNode->GetRefCount());
+    cachedNode->Release();
     EXPECT_EQ(cachedNode.get(), m_cache->GetNode(nodes[0]->GetNodeId()).get())
         << "Expecting subsequent requests for the same node to return the same node from quick cache";
+    cachedNode->AddRef();
     ReCreateProject();
-    EXPECT_NE(cachedNode.get(), m_cache->GetNode(nodes[0]->GetNodeId()).get())
-        << "Expecting a request after connection close to fail to find the node in quick cache and load a new one from db";
+    ASSERT_EQ(1, cachedNode->GetRefCount());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -495,63 +472,6 @@ TEST_F(NodesCacheTests, UpdateNode)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Aidas.Vaiksnoras                05/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(NodesCacheTests, UpdateNode_IsExpandedFlag)
-    {
-    // cache root data source
-    auto rootInfo = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale");
-    auto nodes = FillWithNodes(rootInfo, 1);
-    uint64_t nodeId = nodes[0]->GetNodeId();
-    ASSERT_TRUE(m_cache->IsNodeCached(nodeId));
-
-    NavNodeCPtr cachedNode = m_cache->GetNode(nodeId);
-    ASSERT_TRUE(cachedNode.IsValid());
-    EXPECT_FALSE(cachedNode->IsExpanded());
-
-    nodes[0]->SetIsExpanded(true);
-    m_cache->Update(nodeId, *nodes[0]);
-    cachedNode = m_cache->GetNode(nodeId);
-    ASSERT_TRUE(cachedNode.IsValid());
-    EXPECT_TRUE(cachedNode->IsExpanded());
-
-    nodes[0]->SetIsExpanded(false);
-    m_cache->Update(nodes[0]->GetNodeId(), *nodes[0]);
-    cachedNode = m_cache->GetNode(nodeId);
-    ASSERT_TRUE(cachedNode.IsValid());
-    EXPECT_FALSE(cachedNode->IsExpanded());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Aidas.Vaiksnoras                10/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(NodesCacheTests, ResetExpandedNodes)
-    {
-    // create root data source
-    auto info = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0);
-
-    // create the root nodes
-    bvector<JsonNavNodePtr> nodes = {
-        TestNodesHelper::CreateCustomNode(*m_connection, "test type", "test_A_test", "test descr"),
-        TestNodesHelper::CreateCustomNode(*m_connection, "test type", "test_B_test", "test descr")
-        };
-    for (JsonNavNodePtr node : nodes)
-        node->SetIsExpanded(true);
-    FillWithNodes(info, nodes);
-
-    // expect all nodes to be expanded
-    EXPECT_TRUE(m_cache->GetNode(nodes[0]->GetNodeId())->IsExpanded());
-    EXPECT_TRUE(m_cache->GetNode(nodes[1]->GetNodeId())->IsExpanded());
-
-    // reset
-    m_cache->ResetExpandedNodes(m_connection->GetId().c_str(), info.first.GetRulesetId().c_str());
-
-    // verify
-    EXPECT_FALSE(m_cache->GetNode(nodes[0]->GetNodeId())->IsExpanded());
-    EXPECT_FALSE(m_cache->GetNode(nodes[1]->GetNodeId())->IsExpanded());
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * note: the test uses GetRelatedHierarchyLevels function to test the Update
 * @bsitest                                      Grigas.Petraitis                04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -573,7 +493,7 @@ TEST_F(NodesCacheTests, UpdateDataSource_UpdatesFilter)
     // verify the filter is not applied and we find related hierarchy level
     bset<ECInstanceKey> keys;
     keys.insert(ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)1)));
-    bvector<HierarchyLevelInfo> related = m_cache->GetRelatedHierarchyLevels(hlInfo.GetConnectionId(), keys);
+    bvector<HierarchyLevelInfo> related = m_cache->GetRelatedHierarchyLevels(*m_connection, keys);
     EXPECT_EQ(1, related.size());
 
     // update the datasource with new filter
@@ -583,7 +503,7 @@ TEST_F(NodesCacheTests, UpdateDataSource_UpdatesFilter)
     m_cache->Update(dsInfo, &filter, nullptr, nullptr);
 
     // verify the filter is applied and we dont find related hierarchy level anymore
-    related = m_cache->GetRelatedHierarchyLevels(hlInfo.GetConnectionId(), keys);
+    related = m_cache->GetRelatedHierarchyLevels(*m_connection, keys);
     EXPECT_EQ(0, related.size());
     }
 
@@ -605,7 +525,7 @@ TEST_F(NodesCacheTests, UpdateDataSource_UpdatesRelatedClassIds)
     // verify we don't find related hierarchy level as the key is not related to the data source
     bset<ECInstanceKey> keys;
     keys.insert(ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)1)));
-    bvector<HierarchyLevelInfo> related = m_cache->GetRelatedHierarchyLevels(hlInfo.GetConnectionId(), keys);
+    bvector<HierarchyLevelInfo> related = m_cache->GetRelatedHierarchyLevels(*m_connection, keys);
     EXPECT_EQ(0, related.size());
 
     // update the datasource related class ids
@@ -614,7 +534,7 @@ TEST_F(NodesCacheTests, UpdateDataSource_UpdatesRelatedClassIds)
     m_cache->Update(dsInfo, nullptr, &relatedClassIds, nullptr);
 
     // verify we do find related hierarchy level this time as the data source is now related to the lookup keys
-    related = m_cache->GetRelatedHierarchyLevels(hlInfo.GetConnectionId(), keys);
+    related = m_cache->GetRelatedHierarchyLevels(*m_connection, keys);
     EXPECT_EQ(1, related.size());
     }
 
@@ -1451,8 +1371,11 @@ TEST_F(NodesCacheTests, Quick_AddsToQuickCacheWhenDataSourceReachesRequiredSize)
     m_cache->CacheHierarchyLevel(childrenInfo2.first, *datasource2);
 
     // verify only the second one got cached
+    ASSERT_EQ(2, datasource2->GetRefCount());
+    datasource2->Release();
     EXPECT_NE(datasource1.get(), m_cache->GetCombinedHierarchyLevel(childrenInfo1.first).get());
     EXPECT_EQ(datasource2.get(), m_cache->GetCombinedHierarchyLevel(childrenInfo2.first).get());
+    datasource2->AddRef();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1477,15 +1400,21 @@ TEST_F(NodesCacheTests, Quick_RemovesPreviousDataSourceIfNewOneIsAddedForTheSame
     m_cache->CacheHierarchyLevel(childrenInfo.first, *datasource1);
 
     // verify 1st provider is in the quick cache, but not the 2nd one
+    ASSERT_EQ(2, datasource1->GetRefCount());
+    datasource1->Release();
     EXPECT_EQ(datasource1.get(), m_cache->GetCombinedHierarchyLevel(childrenInfo.first).get());
     EXPECT_NE(datasource2.get(), m_cache->GetCombinedHierarchyLevel(childrenInfo.first).get());
+    datasource1->AddRef();
 
     // add the 2nd provider to quick cache
     m_cache->CacheHierarchyLevel(childrenInfo.first, *datasource2);
 
     // verify 2nd provider is in the quick cache, and the 1st one is removed
+    ASSERT_EQ(2, datasource2->GetRefCount());
+    datasource2->Release();
     EXPECT_NE(datasource1.get(), m_cache->GetCombinedHierarchyLevel(childrenInfo.first).get());
     EXPECT_EQ(datasource2.get(), m_cache->GetCombinedHierarchyLevel(childrenInfo.first).get());
+    datasource2->AddRef();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1514,8 +1443,11 @@ TEST_F(NodesCacheTests, Quick_RemovesLastUsedProvidersWhenMaxSizeIsReached)
     // verify all providers are in the quick cache
     for (size_t i = 0; i < providers.size(); ++i)
         {
+        ASSERT_EQ(2, providers[i]->GetRefCount());
+        providers[i]->Release();
         CombinedHierarchyLevelInfo providerInfo(info.first.GetConnectionId(), info.first.GetRulesetId(), info.first.GetLocale(), rootNodeIds[i]);
         EXPECT_EQ(providers[i].get(), m_cache->GetCombinedHierarchyLevel(providerInfo).get());
+        providers[i]->AddRef();
         }
 
     // add a new provider
@@ -1527,8 +1459,17 @@ TEST_F(NodesCacheTests, Quick_RemovesLastUsedProvidersWhenMaxSizeIsReached)
     // verify the first cached provider is now removed from cache and the new one is inserted
     EXPECT_NE(providers[0].get(), m_cache->GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo(info.first.GetConnectionId(), info.first.GetRulesetId(), info.first.GetLocale(), rootNodeIds[0])).get());
     for (size_t i = 1; i < providers.size(); ++i)
+        {
+        ASSERT_EQ(2, providers[i]->GetRefCount());
+        providers[i]->Release();
         EXPECT_EQ(providers[i].get(), m_cache->GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo(info.first.GetConnectionId(), info.first.GetRulesetId(), info.first.GetLocale(), rootNodeIds[i])).get());
+        providers[i]->AddRef();
+        }
+
+    ASSERT_EQ(2, provider->GetRefCount());
+    provider->Release();
     EXPECT_EQ(provider.get(), m_cache->GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo(info.first.GetConnectionId(), info.first.GetRulesetId(), info.first.GetLocale(), rootNodeIds[NODESCACHE_QUICK_Size])).get());
+    provider->AddRef();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1582,7 +1523,7 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsEmptyListWhen
 
     bset<ECInstanceKey> keys;
     keys.insert(ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)1)));
-    bvector<HierarchyLevelInfo> related = m_cache->GetRelatedHierarchyLevels(info.first.GetConnectionId(), keys);
+    bvector<HierarchyLevelInfo> related = m_cache->GetRelatedHierarchyLevels(*m_connection, keys);
     EXPECT_TRUE(related.empty());
     }
 
@@ -1591,7 +1532,12 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsEmptyListWhen
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsEmptyListWhenConnectionsAreDifferent)
     {
-    // cache the data source
+    // create a secondary connection
+    ECDbTestProject project2;
+    project2.Create(BeTest::GetNameOfCurrentTest());
+    IConnectionPtr connection2 = m_connections.NotifyConnectionOpened(project2.GetECDb());
+
+    // cache the data source in primary connection
     auto info = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0);
     bmap<ECClassId, bool> usedClassIds;
     usedClassIds[ECClassId((uint64_t)1)] = false;
@@ -1599,10 +1545,17 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsEmptyListWhen
     EXPECT_TRUE(m_cache->IsHierarchyLevelCached(info.first.GetConnectionId(),
         info.first.GetRulesetId().c_str(), info.first.GetLocale().c_str()));
 
+    // cache the data source in secondary connection
+    auto info2 = CacheDataSource(connection2->GetId(), "ruleset_id", "locale", 0);
+    EXPECT_TRUE(m_cache->IsHierarchyLevelCached(info2.first.GetConnectionId(),
+        info2.first.GetRulesetId().c_str(), info2.first.GetLocale().c_str()));
+
     bset<ECInstanceKey> keys;
     keys.insert(ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)1)));
-    bvector<HierarchyLevelInfo> related = m_cache->GetRelatedHierarchyLevels("does not exist", keys);
+    bvector<HierarchyLevelInfo> related = m_cache->GetRelatedHierarchyLevels(*connection2, keys);
     EXPECT_TRUE(related.empty());
+
+    m_connections.NotifyConnectionClosed(*connection2);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1620,7 +1573,7 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsDataSourceWhe
 
     bset<ECInstanceKey> keys;
     keys.insert(ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)1)));
-    bvector<HierarchyLevelInfo> related = m_cache->GetRelatedHierarchyLevels(info.first.GetConnectionId(), keys);
+    bvector<HierarchyLevelInfo> related = m_cache->GetRelatedHierarchyLevels(*m_connection, keys);
     ASSERT_EQ(1, related.size());
     EXPECT_EQ(related[0], info.first);
     }
@@ -1643,7 +1596,7 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsEmptyListWhen
 
     bset<ECInstanceKey> keys;
     keys.insert(ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)1)));
-    bvector<HierarchyLevelInfo> related = m_cache->GetRelatedHierarchyLevels(info.first.GetConnectionId(), keys);
+    bvector<HierarchyLevelInfo> related = m_cache->GetRelatedHierarchyLevels(*m_connection, keys);
     EXPECT_TRUE(related.empty());
     }
 
@@ -1668,7 +1621,7 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsDataSourceWhe
 
     bset<ECInstanceKey> keys;
     keys.insert(ECInstanceKey(gadgetClass->GetId(), filter.GetRelatedInstanceInfo()->m_instanceId));
-    bvector<HierarchyLevelInfo> related = m_cache->GetRelatedHierarchyLevels(info.first.GetConnectionId(), keys);
+    bvector<HierarchyLevelInfo> related = m_cache->GetRelatedHierarchyLevels(*m_connection, keys);
     ASSERT_EQ(1, related.size());
     EXPECT_EQ(related[0], info.first);
     }
@@ -1703,7 +1656,7 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsDataSourceWhe
 
     bset<ECInstanceKey> keys;
     keys.insert(ECInstanceKey(gadgetClass->GetId(), gadgetId));
-    bvector<HierarchyLevelInfo> related = m_cache->GetRelatedHierarchyLevels(info.first.GetConnectionId(), keys);
+    bvector<HierarchyLevelInfo> related = m_cache->GetRelatedHierarchyLevels(*m_connection, keys);
     ASSERT_EQ(1, related.size());
     EXPECT_EQ(related[0], info.first);
     }
@@ -1738,7 +1691,7 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsDataSourceWhe
 
     bset<ECInstanceKey> keys;
     keys.insert(ECInstanceKey(widgetClass->GetId(), widgetId));
-    bvector<HierarchyLevelInfo> related = m_cache->GetRelatedHierarchyLevels(info.first.GetConnectionId(), keys);
+    bvector<HierarchyLevelInfo> related = m_cache->GetRelatedHierarchyLevels(*m_connection, keys);
     ASSERT_EQ(1, related.size());
     EXPECT_EQ(related[0], info.first);
     }
@@ -1773,7 +1726,7 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsDataSourceWhe
 
     bset<ECInstanceKey> keys;
     keys.insert(ECInstanceKey(widgetClass->GetId(), widgetId));
-    bvector<HierarchyLevelInfo> related = m_cache->GetRelatedHierarchyLevels(info.first.GetConnectionId(), keys);
+    bvector<HierarchyLevelInfo> related = m_cache->GetRelatedHierarchyLevels(*m_connection, keys);
     ASSERT_EQ(1, related.size());
     EXPECT_EQ(related[0], info.first);
     }
@@ -1810,7 +1763,7 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsDataSourceWhe
 
     bset<ECInstanceKey> keys;
     keys.insert(ECInstanceKey(widgetClass->GetId(), widgetId));
-    bvector<HierarchyLevelInfo> related = m_cache->GetRelatedHierarchyLevels(info.first.GetConnectionId(), keys);
+    bvector<HierarchyLevelInfo> related = m_cache->GetRelatedHierarchyLevels(*m_connection, keys);
     ASSERT_EQ(1, related.size());
     EXPECT_EQ(related[0], info.first);
     }
@@ -1832,7 +1785,7 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsEmptyListWhen
 
     bset<ECInstanceKey> keys;
     keys.insert(ECInstanceKey(ECClassId((uint64_t)2), ECInstanceId((uint64_t)2)));
-    bvector<HierarchyLevelInfo> related = m_cache->GetRelatedHierarchyLevels(info.first.GetConnectionId(), keys);
+    bvector<HierarchyLevelInfo> related = m_cache->GetRelatedHierarchyLevels(*m_connection, keys);
     EXPECT_TRUE(related.empty());
     }
 
@@ -1853,7 +1806,7 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsEmptyListWhen
 
     bset<ECInstanceKey> keys;
     keys.insert(ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)1)));
-    bvector<HierarchyLevelInfo> related = m_cache->GetRelatedHierarchyLevels(info.first.GetConnectionId(), keys);
+    bvector<HierarchyLevelInfo> related = m_cache->GetRelatedHierarchyLevels(*m_connection, keys);
     EXPECT_TRUE(related.empty());
     }
 
@@ -1874,7 +1827,7 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsDataSourceWhe
 
     bset<ECInstanceKey> keys;
     keys.insert(ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)2)));
-    bvector<HierarchyLevelInfo> related = m_cache->GetRelatedHierarchyLevels(info.first.GetConnectionId(), keys);
+    bvector<HierarchyLevelInfo> related = m_cache->GetRelatedHierarchyLevels(*m_connection, keys);
     ASSERT_EQ(1, related.size());
     EXPECT_EQ(related[0], info.first);
     }
@@ -1904,7 +1857,7 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsDataSourceWhe
 
     bset<ECInstanceKey> keys;
     keys.insert(ECInstanceKey(ECClassId((uint64_t)1), ECInstanceId((uint64_t)2)));
-    bvector<HierarchyLevelInfo> related = m_cache->GetRelatedHierarchyLevels(info.first.GetConnectionId(), keys);
+    bvector<HierarchyLevelInfo> related = m_cache->GetRelatedHierarchyLevels(*m_connection, keys);
     ASSERT_EQ(1, related.size());
     EXPECT_EQ(related[0], info.first);
     }
@@ -2182,7 +2135,7 @@ struct DiskNodesCacheTests : NodesCacheTests
 
     virtual NodesCache* _CreateNodesCache(BeFileName tempDir) override
         {
-        return new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, m_ecsqlStatements, NodesCacheType::Disk);
+        return new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk);
         }
     };
 
@@ -2193,7 +2146,7 @@ TEST_F(DiskNodesCacheTests, CreatesNewDbFileIfCacheIsAlreadyInUse)
     {
     BeFileName tempDir;
     BeTest::GetHost().GetTempDir(tempDir);
-    NodesCache secondCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, m_ecsqlStatements, NodesCacheType::Disk);
+    NodesCache secondCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk);
 
     Utf8CP firstCacheName = m_cache->GetDb().GetDbFileName();
     Utf8CP secondCacheName = secondCache.GetDb().GetDbFileName();
@@ -2223,7 +2176,8 @@ TEST_F(DiskNodesCacheTests, ShareCachedHierarchiesBetweenSessions)
     // open cache
     BeFileName tempDir;
     BeTest::GetHost().GetTempDir(tempDir);
-    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, m_ecsqlStatements, NodesCacheType::Disk);
+    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk);
+    m_nodesProviderContextFactory.SetNodesCache(m_cache);
 
     // mock connection re-opening
     ReCreateProject();
@@ -2266,7 +2220,8 @@ TEST_F(DiskNodesCacheTests, ClearSharedCacheIfHierarchyWasModified)
     // open cache
     BeFileName tempDir;
     BeTest::GetHost().GetTempDir(tempDir);
-    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, m_ecsqlStatements, NodesCacheType::Disk);
+    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk);
+    m_nodesProviderContextFactory.SetNodesCache(m_cache);
 
     // mock connection re-opening
     ReCreateProject();
@@ -2333,7 +2288,8 @@ TEST_F(DiskNodesCacheTests, ClearsCacheIfCacheFileSizeExceedsLimit)
     // open cache
     BeFileName tempDir;
     BeTest::GetHost().GetTempDir(tempDir);
-    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, m_ecsqlStatements, NodesCacheType::Disk);
+    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk);
+    m_nodesProviderContextFactory.SetNodesCache(m_cache);
 
     // verify cache is cleared
     EXPECT_FALSE(m_cache->GetCombinedHierarchyLevel(info.first).IsValid());
@@ -2375,7 +2331,8 @@ TEST_F(DiskNodesCacheTests, ClearsOldestConnectionCacheWhenCacheFileSizeExceedsL
     // open cache
     BeFileName tempDir;
     BeTest::GetHost().GetTempDir(tempDir);
-    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, m_ecsqlStatements, NodesCacheType::Disk);
+    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk);
+    m_nodesProviderContextFactory.SetNodesCache(m_cache);
 
     // verify first connection cache was deleted
     m_connection = m_connections.NotifyConnectionOpened(GetDb());
@@ -2413,7 +2370,8 @@ TEST_F(DiskNodesCacheTests, DoesntClearCacheWhenCacheFileSizeAndLimitAreEqual)
     // open cache
     BeFileName tempDir;
     BeTest::GetHost().GetTempDir(tempDir);
-    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, m_ecsqlStatements, NodesCacheType::Disk);
+    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk);
+    m_nodesProviderContextFactory.SetNodesCache(m_cache);
 
     // verify the cache is still valid
     m_connection = m_connections.NotifyConnectionOpened(GetDb());
@@ -2429,7 +2387,6 @@ struct DiskNodesCacheLocationTests : ECPresentationTest
     TestUserSettingsManager m_userSettings;
     JsonNavNodesFactory m_nodesFactory;
     TestNodesProviderContextFactory m_nodesProviderContextFactory;
-    TestECSqlStatementsCacheProvider m_ecsqlStatements;
     BeFileName m_directory;
     DiskNodesCacheLocationTests() : m_nodesProviderContextFactory(m_connections) {}
     void SetUp() override
@@ -2449,7 +2406,7 @@ TEST_F(DiskNodesCacheLocationTests, CreatesCacheInSpecifiedDirectory)
     BeFileName expectedPath = m_directory;
     expectedPath.AppendToPath(L"HierarchyCache.db");
 
-    NodesCache cache(m_directory, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, m_ecsqlStatements, NodesCacheType::Disk);
+    NodesCache cache(m_directory, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk);
     EXPECT_STREQ(expectedPath.GetNameUtf8().c_str(), cache.GetDb().GetDbFileName());
     }
 
@@ -2462,11 +2419,11 @@ TEST_F(DiskNodesCacheLocationTests, ReusesExistingCache)
     expectedPath.AppendToPath(L"HierarchyCache.db");
 
     {
-    NodesCache cache(m_directory, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, m_ecsqlStatements, NodesCacheType::Disk);
+    NodesCache cache(m_directory, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk);
     }
     EXPECT_TRUE(expectedPath.DoesPathExist());
 
-    NodesCache cache(m_directory, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, m_ecsqlStatements, NodesCacheType::Disk);
+    NodesCache cache(m_directory, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk);
     EXPECT_STREQ(expectedPath.GetNameUtf8().c_str(), cache.GetDb().GetDbFileName());
     }
 
@@ -2477,12 +2434,12 @@ TEST_F(DiskNodesCacheLocationTests, CreatesSeparateCacheWhenExistingIsLocked)
     {
     BeFileName expectedPath1 = m_directory;
     expectedPath1.AppendToPath(L"HierarchyCache.db");
-    NodesCache cache1(m_directory, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, m_ecsqlStatements, NodesCacheType::Disk);
+    NodesCache cache1(m_directory, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk);
     EXPECT_STREQ(expectedPath1.GetNameUtf8().c_str(), cache1.GetDb().GetDbFileName());
 
     BeFileName cache2Path;
     {
-    NodesCache cache2(m_directory, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, m_ecsqlStatements, NodesCacheType::Disk);
+    NodesCache cache2(m_directory, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk);
     cache2Path = BeFileName(cache2.GetDb().GetDbFileName());
     BeFileName expectedDirectory2 = BeFileName(m_directory).AppendSeparator();
     EXPECT_STREQ(expectedDirectory2.c_str(), cache2Path.GetDirectoryName().c_str());

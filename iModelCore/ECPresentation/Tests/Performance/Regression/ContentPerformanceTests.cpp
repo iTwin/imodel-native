@@ -1,0 +1,311 @@
+﻿/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
+#include <ECPresentation/Content.h>
+#include "../PerformanceTests.h"
+
+USING_NAMESPACE_BENTLEY_EC
+USING_NAMESPACE_BENTLEY_SQLITE_EC
+USING_NAMESPACE_BENTLEY_ECPRESENTATION
+USING_NAMESPACE_ECPRESENTATIONTESTS
+
+/*=================================================================================**//**
+* Contains content-specific tests that may be run regularly to detect performance regressions
+* @bsiclass                                     Grigas.Petraitis                10/2017
++===============+===============+===============+===============+===============+======*/
+struct ContentPerformanceTests : RulesEngineSingleProjectTests
+    {
+    BeFileName _SupplyProjectPath() const override
+        {
+        BeFileName path;
+        BeTest::GetHost().GetDocumentsRoot(path);
+        path.AppendToPath(L"Performance");
+        path.AppendToPath(L"Oakland.ibim");
+        return path;
+        }
+
+    PresentationRuleSetPtr _SupplyRuleset() const override
+        {
+        // taken from Gist
+        PresentationRuleSetPtr ruleset = PresentationRuleSet::ReadFromXmlString(R"ruleset(
+            <PresentationRuleSet RuleSetId="Items" VersionMajor="1" VersionMinor="3" SupportedSchemas="Generic,BisCore"
+                                 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+                <!-- Content rules -->
+                <!-- Grid / DGN view -->
+                <ContentRule Condition='(ContentDisplayType="Grid" OR ContentDisplayType="Graphics") ANDALSO SelectedNode.ECInstance.IsOfClass("Model", "BisCore")' OnlyIfNotHandled='true'>
+                    <ContentRelatedInstances RelationshipClassNames='BisCore:ModelContainsElements' RequiredDirection='Forward' />
+                </ContentRule>
+                <ContentRule Condition='(ContentDisplayType="Grid" OR ContentDisplayType="Graphics") ANDALSO SelectedNode.ECInstance.IsOfClass("Category", "BisCore")' OnlyIfNotHandled='true'>
+                    <ContentRelatedInstances RelationshipClassNames='BisCore:GeometricElement2dIsInCategory,GeometricElement3dIsInCategory' RequiredDirection='Backward' />
+                </ContentRule>
+                <ContentRule Condition='(ContentDisplayType="Grid" OR ContentDisplayType="Graphics") ANDALSO SelectedNode.ECInstance.IsOfClass("Element", "BisCore")' OnlyIfNotHandled='true'>
+                    <ContentRelatedInstances RelationshipClassNames='BisCore:ElementOwnsChildElements' RelatedClassNames='BisCore:Element' RequiredDirection='Forward' IsRecursive='true' />
+                    <SelectedNodeInstances />
+                </ContentRule>
+                <!-- Any other (property pane, list, other) -->
+                <ContentRule OnlyIfNotHandled='true'>
+                    <SelectedNodeInstances />
+                </ContentRule>
+
+                <!-- Content modifiers that apply to any content rule -->
+                <ContentModifier ClassName="Element" SchemaName="BisCore">
+                    <RelatedProperties RelationshipClassNames='BisCore:ElementOwnsUniqueAspect' RelatedClassNames='BisCore:ElementUniqueAspect'
+                                       RequiredDirection='Forward' IsPolymorphic='True' />
+                    <RelatedProperties RelationshipClassNames='BisCore:ElementOwnsMultiAspects' RelatedClassNames='BisCore:ElementMultiAspect'
+                                       RequiredDirection='Forward' IsPolymorphic='True' />
+                </ContentModifier>
+                <ContentModifier ClassName="PhysicalElement" SchemaName="BisCore">
+                    <RelatedProperties RelationshipClassNames='BisCore:PhysicalElementIsOfType' RelatedClassNames='BisCore:PhysicalType'
+                                       RequiredDirection='Forward' IsPolymorphic='True' />
+                </ContentModifier>
+                <ContentModifier ClassName="SpatialLocationElement" SchemaName="BisCore">
+                    <RelatedProperties RelationshipClassNames='BisCore:SpatialLocationIsOfType' RelatedClassNames='BisCore:SpatialLocationType'
+                                       RequiredDirection='Forward' IsPolymorphic='True' />
+                </ContentModifier>
+
+            </PresentationRuleSet>
+            )ruleset");
+        return ruleset;
+        }
+
+    void GetContent(SelectionInfo const&, KeySetCR inputKeys, Utf8CP type, int expectedContentSize, int flags, Utf8CP passName);
+    void GetContentForAllGeometricElements(Utf8CP type, int expectedContentSize, int flags);
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void ContentPerformanceTests::GetContent(SelectionInfo const& selection, KeySetCR inputKeys, Utf8CP type, int expectedContentSize, int flags, Utf8CP passName)
+    {
+    // start the timer
+    Utf8PrintfString timerName("%s: %s pass", BeTest::GetNameOfCurrentTest(), passName);
+    Timer _timer(timerName.c_str());
+
+    // get the descriptor
+    RulesDrivenECPresentationManager::ContentOptions options = CreateContentOptions();
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(m_project, type, 0, inputKeys, &selection, options.GetJson()).get();
+
+    if (descriptor->GetContentFlags() != (flags | descriptor->GetContentFlags()))
+        {
+        ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
+        modifiedDescriptor->SetContentFlags(flags | descriptor->GetContentFlags());
+        descriptor = modifiedDescriptor;
+        }
+
+    // get the content
+    ContentCPtr content = m_manager->GetContent(*descriptor, PageOptions()).get();
+    ASSERT_TRUE(content.IsValid());
+    EXPECT_EQ(expectedContentSize, content->GetContentSet().GetSize());
+    for (ContentSetItemCPtr record : content->GetContentSet())
+        EXPECT_TRUE(record.IsValid());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void ContentPerformanceTests::GetContentForAllGeometricElements(Utf8CP type, int expectedContentSize, int flags = 0)
+    {
+    // getting content for all geometric elements in the dataset
+    bvector<ECClassInstanceKey> keys;
+    ECSqlStatement stmt;
+    stmt.Prepare(m_project, "SELECT ECClassId, ECInstanceId FROM [BisCore].[GeometricElement]");
+    while (BeSQLite::DbResult::BE_SQLITE_ROW == stmt.Step())
+        keys.push_back(ECClassInstanceKey(m_project.Schemas().GetClass(stmt.GetValueId<ECClassId>(0)), stmt.GetValueId<ECInstanceId>(1)));
+    SelectionInfoCPtr selection = SelectionInfo::Create("", false);
+
+    GetContent(*selection, *KeySet::Create(keys), type, expectedContentSize, flags, "First");
+    GetContent(*selection, *KeySet::Create(keys), type, expectedContentSize, flags, "Second");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static bset<ECClassCP> GetDerivedClasses(ECDbCR db, ECClassCR base)
+    {
+    bset<ECClassCP> allDerivedClasses;
+    for (ECClassCP derivedClass : db.Schemas().GetDerivedClasses(base))
+        {
+        bset<ECClassCP> const& derivedClasses = GetDerivedClasses(db, *derivedClass);
+        allDerivedClasses.insert(derivedClasses.begin(), derivedClasses.end());
+        allDerivedClasses.insert(derivedClass);
+        }
+    return allDerivedClasses;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* The test is based on products' property selector use case where a content descriptor
+* is requested for all element subclasses classes.
+* @betest                                       Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ContentPerformanceTests, GetDescriptorForAllElementSubclasses)
+    {
+    // set up selection
+    ECClassCP elementClass = m_project.Schemas().GetClass("BisCore", "Element");
+    bset<ECClassCP> allElementClassesSet = GetDerivedClasses(m_project, *elementClass);
+    bvector<ECClassCP> allElementClasses(allElementClassesSet.begin(), allElementClassesSet.end());
+    bvector<ECClassInstanceKey> keys;
+    for (ECClassCP ecClass : allElementClasses)
+        keys.push_back(ECClassInstanceKey(m_project.Schemas().GetClass(ecClass->GetId()), ECInstanceId()));
+
+    KeySetCPtr input = KeySet::Create(keys);
+
+    // get the descriptor
+    Utf8PrintfString timerName1("%s: First pass", BeTest::GetNameOfCurrentTest());
+    Timer _timer1(timerName1.c_str());
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(m_project, ContentDisplayType::PropertyPane, 0, *input, nullptr, CreateContentOptions().GetJson()).get();
+    EXPECT_TRUE(descriptor.IsValid());
+    _timer1.Finish();
+
+    /*
+    WIP: need a way to clear content cache
+
+    // force clear content cache so descriptors aren't cached
+    m_manager->NotifyCategoriesChanged();
+
+    Utf8PrintfString timerName2("%s: Second pass", BeTest::GetNameOfCurrentTest());
+    Timer _timer2(timerName2.c_str());
+    descriptor = m_manager->GetContentDescriptor(m_project, ContentDisplayType::PropertyPane, 0, *input, nullptr, CreateContentOptions().GetJson()).get();
+    EXPECT_TRUE(descriptor.IsValid());
+    */
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* The test is based on Version Compare use case where the library requests content
+* classes for all derived classes of BisCore:Element to find property relationship
+* paths.
+* @betest                                       Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ContentPerformanceTests, GetContentClassesForBisElements)
+    {
+    ECClassCP elementClass = m_project.Schemas().GetClass("BisCore", "Element");
+
+    Utf8PrintfString timerName1("%s: First pass", BeTest::GetNameOfCurrentTest());
+    Timer _timer1(timerName1.c_str());
+    bvector<SelectClassInfo> classes = m_manager->GetContentClasses(m_project, ContentDisplayType::PropertyPane, 0, {elementClass}, CreateContentOptions().GetJson()).get();
+    EXPECT_TRUE(!classes.empty());
+    _timer1.Finish();
+
+    Utf8PrintfString timerName2("%s: Second pass", BeTest::GetNameOfCurrentTest());
+    Timer _timer2(timerName2.c_str());
+    classes = m_manager->GetContentClasses(m_project, ContentDisplayType::PropertyPane, 0, {elementClass}, CreateContentOptions().GetJson()).get();
+    EXPECT_TRUE(!classes.empty());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* The test is based on a use case where application has a list of instance keys and wants
+* to get their display labels.
+* @betest                                       Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ContentPerformanceTests, GetDisplayLabels)
+    {
+    GetContentForAllGeometricElements(ContentDisplayType::List, 7414);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* The test is based on DGN view selection use case where the user uses fence selection to
+* select a bunch of elements and the rules engine has to get content for property pane
+* @betest                                       Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ContentPerformanceTests, GetPropertyPaneContentForAllGeometricElements)
+    {
+    GetContentForAllGeometricElements(ContentDisplayType::PropertyPane, 1);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* The test is based on DGN view selection use case where the user uses fence selection to
+* select a bunch of elements and the rules engine has to get content for property pane
+* @betest                                       Aidas.Vaiksnoras                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ContentPerformanceTests, GetPropertyPaneContentWithLabelsForAllGeometricElements)
+    {
+    GetContentForAllGeometricElements(ContentDisplayType::PropertyPane, 1, (int)ContentFlags::ShowLabels);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* The test is based on DGN view selection use case where the user uses fence selection to
+* select a bunch of elements and the rules engine has to get content for grid view
+* @betest                                       Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ContentPerformanceTests, GetGridContentForAllGeometricElements)
+    {
+    GetContentForAllGeometricElements(ContentDisplayType::Grid, 7414);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* The test is based on DGN view selection use case where the user uses fence selection to
+* select a bunch of elements and the rules engine has to get content for dgn view
+* @betest                                       Saulius.Skliutas                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ContentPerformanceTests, GetGraphicsContentForAllGeometricElements)
+    {
+    GetContentForAllGeometricElements(ContentDisplayType::Graphics, 7414);
+    }
+
+/*=================================================================================**//**
+* @bsiclass                                     Aidas.Vaiksnoras                01/2018
++===============+===============+===============+===============+===============+======*/
+struct LabelOverrideContentPerformanceTests : ContentPerformanceTests
+    {
+    PresentationRuleSetPtr _SupplyRuleset() const override
+        {
+        PresentationRuleSetPtr ruleset = ContentPerformanceTests::_SupplyRuleset();
+        ruleset->AddPresentationRule(*new LabelOverride(R"(ThisNode.IsInstanceNode ANDALSO this.IsOfClass("Element", "BisCore"))", 100, R"(IIF(IsNull(this.UserLabel) OR this.UserLabel="", this.CodeValue, this.UserLabel))", ""));
+        return ruleset;
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* The test is based on DGN view selection use case where the user uses fence selection to
+* select a bunch of elements and the rules engine has to get content for dgn view
+* @betest                                       Aidas.Vaiksnoras                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(LabelOverrideContentPerformanceTests, GetGridContentForAllGeometricElements)
+    {
+    GetContentForAllGeometricElements(ContentDisplayType::Grid, 7414);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* The test is based on DGN view selection use case where the user uses fence selection to
+* select a bunch of elements and the rules engine has to get content for property pane
+* @betest                                       Aidas.Vaiksnoras                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(LabelOverrideContentPerformanceTests, GetPropertyPaneContentWithLabelsForAllGeometricElements)
+    {
+    GetContentForAllGeometricElements(ContentDisplayType::PropertyPane, 1, (int)ContentFlags::ShowLabels);
+    }
+
+/*=================================================================================**//**
+* @bsiclass                                     Aidas.Vaiksnoras                01/2018
++===============+===============+===============+===============+===============+======*/
+struct InstanceLabelOverrideContentPerformanceTests : ContentPerformanceTests
+    {
+    PresentationRuleSetPtr _SupplyRuleset() const override
+        {
+        PresentationRuleSetPtr ruleset = ContentPerformanceTests::_SupplyRuleset();
+        ruleset->AddPresentationRule(*new InstanceLabelOverride(100, true, "BisCore:Element", "CodeValue,UserLabel"));
+        return ruleset;
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* The test is based on DGN view selection use case where the user uses fence selection to
+* select a bunch of elements and the rules engine has to get content for dgn view
+* @betest                                       Aidas.Vaiksnoras                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(InstanceLabelOverrideContentPerformanceTests, GetGridContentForAllGeometricElements)
+    {
+    GetContentForAllGeometricElements(ContentDisplayType::Grid, 7414);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* The test is based on DGN view selection use case where the user uses fence selection to
+* select a bunch of elements and the rules engine has to get content for property pane
+* @betest                                       Aidas.Vaiksnoras                01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(InstanceLabelOverrideContentPerformanceTests, GetPropertyPaneContentWithLabelsForAllGeometricElements)
+    {
+    GetContentForAllGeometricElements(ContentDisplayType::PropertyPane, 1, (int)ContentFlags::ShowLabels);
+    }

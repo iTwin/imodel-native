@@ -79,7 +79,7 @@ rapidjson::Document DefaultECPresentationSerializer::_AsJson(ContentDescriptor::
     {
     rapidjson::Document json(allocator);
     json.SetObject();
-    
+
     rapidjson::Value propertyJson(rapidjson::kObjectType);
     propertyJson.AddMember("BaseClassInfo", _AsJson(property.GetProperty().GetClass(), &json.GetAllocator()), json.GetAllocator());
     propertyJson.AddMember("ActualClassInfo", _AsJson(property.GetPropertyClass(), &json.GetAllocator()), json.GetAllocator());
@@ -144,7 +144,7 @@ void DefaultECPresentationSerializer::_AsJson(ContentDescriptor::NestedContentFi
     {
     fieldBaseJson.AddMember("ContentClassInfo", _AsJson(nestedContentField.GetContentClass(), &fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
     fieldBaseJson.AddMember("PathToPrimary", _AsJson(nestedContentField.GetRelationshipPath(), fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
-    
+
     rapidjson::Value nestedFieldsJson(rapidjson::kArrayType);
     for (ContentDescriptor::Field const* nestedField : nestedContentField.GetFields())
         nestedFieldsJson.PushBack(nestedField->AsJson(&fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
@@ -227,7 +227,7 @@ void DefaultECPresentationSerializer::_AsJson(FieldEditorRangeParams const& rang
         paramsBaseJson.AddMember("Minimum", *rangeParams.GetParameters().GetMinimumValue(), paramsBaseJson.GetAllocator());
     else
         paramsBaseJson.AddMember("Minimum", rapidjson::Value(), paramsBaseJson.GetAllocator());
-    
+
     if (nullptr != rangeParams.GetParameters().GetMaximumValue())
         paramsBaseJson.AddMember("Maximum", *rangeParams.GetParameters().GetMaximumValue(), paramsBaseJson.GetAllocator());
     else
@@ -362,7 +362,7 @@ rapidjson::Document DefaultECPresentationSerializer::_AsJson(ContentDescriptor c
     json.AddMember("SortingFieldIndex", contentDescriptor.GetSortingFieldIndex(), json.GetAllocator());
     json.AddMember("SortDirection", (int)contentDescriptor.GetSortDirection(), json.GetAllocator());
     json.AddMember("ContentFlags", contentDescriptor.GetContentFlags(), json.GetAllocator());
-    json.AddMember("ConnectionId", rapidjson::StringRef(contentDescriptor.GetConnection().GetId().c_str()), json.GetAllocator());
+    json.AddMember("ConnectionId", rapidjson::StringRef(contentDescriptor.GetConnectionId().c_str()), json.GetAllocator());
     json.AddMember("FilterExpression", rapidjson::StringRef(contentDescriptor.GetFilterExpression().c_str()), json.GetAllocator());
     json.AddMember("InputKeysHash", rapidjson::Value(contentDescriptor.GetInputNodeKeys().GetHash().c_str(), json.GetAllocator()), json.GetAllocator());
     rapidjson::Document options(&json.GetAllocator());
@@ -823,7 +823,7 @@ rapidjson::Document DefaultECPresentationSerializer::_AsJson(NodesPathElement co
 rapidjson::Document DefaultECPresentationSerializer::_AsJson(KeySet const& keySet, rapidjson::Document::AllocatorType* allocator) const
     {
     rapidjson::Document json(allocator);
-    json.SetObject();  
+    json.SetObject();
     rapidjson::Value instances(rapidjson::kObjectType);
     for (auto const& pair : keySet.GetInstanceKeys())
         {
@@ -876,72 +876,6 @@ KeySetPtr DefaultECPresentationSerializer::_GetKeySetFromJson(IConnectionCR conn
         nodeKeys.insert(_GetNavNodeKeyFromJson(connection, nodeKeyJson));
 
     return KeySet::Create(instanceKeys, nodeKeys);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Mantas.Kontrimas                03/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document DefaultECPresentationSerializer::_AsJson(SelectionChangedEvent const& selectionChangedEvent,
-    rapidjson::Document::AllocatorType* allocator) const
-    {
-    rapidjson::Document json(allocator);
-    json.SetObject();
-
-    if (selectionChangedEvent.IsValid())
-        json.AddMember(rapidjson::StringRef("ConnectionId"), rapidjson::Value(selectionChangedEvent.GetConnection().GetId().c_str(), json.GetAllocator()), json.GetAllocator());
-
-    json.AddMember(rapidjson::StringRef("Source"), rapidjson::StringRef(selectionChangedEvent.GetSourceName().c_str()), json.GetAllocator());
-    json.AddMember(rapidjson::StringRef("IsSubSelection"), selectionChangedEvent.IsSubSelection(), json.GetAllocator());
-    json.AddMember(rapidjson::StringRef("ChangeType"), (int) selectionChangedEvent.GetChangeType(), json.GetAllocator());
-    json.AddMember(rapidjson::StringRef("Keys"), selectionChangedEvent.GetSelectedKeys().AsJson(&json.GetAllocator()), json.GetAllocator());
-    json.AddMember(rapidjson::StringRef("Timestamp"), rapidjson::Value(std::to_string(selectionChangedEvent.GetTimestamp()).c_str(), json.GetAllocator()), json.GetAllocator());
-    json.AddMember(rapidjson::StringRef("ExtendedData"), rapidjson::Value(selectionChangedEvent.GetExtendedData(), json.GetAllocator()), json.GetAllocator());
-
-    return json;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Mantas.Kontrimas                03/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-SelectionChangedEventPtr DefaultECPresentationSerializer::_GetSelectionChangedEventFromJson(IConnectionCacheCR connectionCache, JsonValueCR json) const
-    {
-    if (!(json.isMember("ConnectionId") && json["ConnectionId"].isString()) ||
-        !(json.isMember("Source") && json["Source"].isString()) ||
-        !(json.isMember("ChangeType") && json["ChangeType"].isInt()) ||
-        !(json.isMember("IsSubSelection") && json["IsSubSelection"].isBool()) ||
-        !(json.isMember("Timestamp") && json["Timestamp"].isString()) ||
-        !json.isMember("Keys"))
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
-    Utf8CP connectionId = json["ConnectionId"].asCString();
-    IConnectionCP connection = connectionCache.GetConnection(connectionId);
-    if (nullptr == connection)
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
-    Utf8String sourceName = json["Source"].asCString();
-    SelectionChangeType changeType = (SelectionChangeType) json["ChangeType"].asInt();
-    bool isSubSelection = json["IsSubSelection"].asBool();
-    uint64_t timestamp = BeJsonUtilities::UInt64FromValue(json["Timestamp"]);
-    JsonValueCR keysJson = json["Keys"];
-    KeySetPtr keys = KeySet::FromJson(*connection, keysJson);
-
-    SelectionChangedEventPtr evt = SelectionChangedEvent::Create(*connection, sourceName, changeType, isSubSelection, *keys, timestamp);
-
-    if (json.isMember("ExtendedData") && json["ExtendedData"].isObject() && !json["ExtendedData"].empty())
-        {
-        Utf8String serializedExtendedData = Json::FastWriter().write(json["ExtendedData"]);
-        rapidjson::Document extendedData;
-        extendedData.Parse(serializedExtendedData.c_str());
-        evt->GetExtendedDataR().CopyFrom(extendedData, evt->GetExtendedDataAllocator());
-        }
-
-    return evt;
     }
 
 /*---------------------------------------------------------------------------------**//**

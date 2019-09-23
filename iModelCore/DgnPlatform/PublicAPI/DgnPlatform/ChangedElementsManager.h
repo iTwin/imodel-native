@@ -10,6 +10,7 @@
 #include <ECDb/ECDb.h>
 #include <BeSQLite/BeSQLite.h>
 #include <ECObjects/ECObjects.h>
+#include <ECPresentation/IECPresentationManager.h>
 
 #define ECSCHEMA_ChangedElements "ChangedElements"
 #define ECSCHEMA_ALIAS_ChangedElements "chems"
@@ -21,6 +22,7 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_EC
+USING_NAMESPACE_BENTLEY_ECPRESENTATION
 
 #define OPC_INSERT 1
 #define OPC_UPDATE 2
@@ -35,6 +37,7 @@ struct ChangedElementsManager final {
         //! Briefcase
         DgnDbPtr    m_db;
         bool        m_filterSpatial;
+        IECPresentationManager* m_presentationManager;
 
         DbResult AddMetadataToChangeCacheFile(ECDb& cacheFile, ECDbCR primaryECDb) const;
         DbResult InsertEntries(ECDbR cacheDb, DgnRevisionPtr revision, bvector<DgnElementId> const& elementIds, bvector<ECClassId> const& classIds, bvector<BeSQLite::DbOpcode> const& opcodes, bvector<DgnModelId> const& modelIds, bvector<AxisAlignedBox3d> const& bboxes);
@@ -43,6 +46,8 @@ struct ChangedElementsManager final {
 
         bmap<DgnModelId, AxisAlignedBox3d> static ComputeChangedModels(ChangedElementsMap const& changedElements);
         bmap<DgnModelId, AxisAlignedBox3d> static ComputeChangedModels(bvector<DgnModelId> const& modelIds, bvector<AxisAlignedBox3d> const& bboxes);
+        DGNPLATFORM_EXPORT static IECPresentationManager* CreatePresentationManager();
+
     public:
         BE_JSON_NAME(elements);
         BE_JSON_NAME(classIds);
@@ -52,7 +57,7 @@ struct ChangedElementsManager final {
         BE_JSON_NAME(changedModels);
         BE_JSON_NAME(changedElements);
 
-        DGNPLATFORM_EXPORT ChangedElementsManager(DgnDbPtr db) : m_db(db), m_filterSpatial(false) {}
+        ChangedElementsManager(DgnDbPtr db) : m_db(db), m_filterSpatial(false), m_presentationManager(CreatePresentationManager()) {}
         DGNPLATFORM_EXPORT ~ChangedElementsManager();
 
         //! Only store changes to spatial elements

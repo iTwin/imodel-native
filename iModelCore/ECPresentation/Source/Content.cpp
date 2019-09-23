@@ -5,7 +5,6 @@
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 #include <ECPresentation/Content.h>
-#include <ECPresentation/SelectionManager.h>
 #include <Units/Units.h>
 #include <ECObjects/ECQuantityFormatting.h>
 #include "ValueHelpers.h"
@@ -98,7 +97,7 @@ Utf8String ContentDescriptor::Field::ArrayTypeDescription::CreateTypeName(TypeDe
 * @bsimethod                                    Saulius.Skliutas                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentDescriptor::ContentDescriptor(IConnectionCR connection, JsonValueCR options, INavNodeKeysContainerCR input, Utf8String preferredDisplayType)
-    : m_preferredDisplayType(preferredDisplayType), m_contentFlags(0), m_sortingFieldIndex(-1), m_sortDirection(SortDirection::Ascending), m_connection(connection),
+    : m_preferredDisplayType(preferredDisplayType), m_contentFlags(0), m_sortingFieldIndex(-1), m_sortDirection(SortDirection::Ascending), m_connectionId(connection.GetId()),
     m_inputKeys(&input), m_options(options)
     {
     }
@@ -108,7 +107,7 @@ ContentDescriptor::ContentDescriptor(IConnectionCR connection, JsonValueCR optio
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentDescriptor::ContentDescriptor(ContentDescriptorCR other) 
     : m_preferredDisplayType(other.m_preferredDisplayType), m_classes(other.m_classes), m_filterExpression(other.m_filterExpression), m_contentFlags(other.m_contentFlags),
-    m_sortingFieldIndex(other.m_sortingFieldIndex), m_sortDirection(other.m_sortDirection), m_connection(other.m_connection), m_inputKeys(other.m_inputKeys), 
+    m_sortingFieldIndex(other.m_sortingFieldIndex), m_sortDirection(other.m_sortDirection), m_connectionId(other.m_connectionId), m_inputKeys(other.m_inputKeys),
     m_options(other.m_options), m_selectionInfo(other.m_selectionInfo)
     {
     bmap<Field const*, Field const*> fieldsRemapInfo;
@@ -143,7 +142,7 @@ bool ContentDescriptor::Equals(ContentDescriptor const& other) const
         || m_filterExpression != other.m_filterExpression
         || m_classes.size() != other.m_classes.size()
         || m_fields.size() != other.m_fields.size()
-        || !m_connection.GetId().Equals(other.m_connection.GetId())
+        || !m_connectionId.Equals(other.m_connectionId)
         || !m_inputKeys->GetHash().Equals(other.m_inputKeys->GetHash())
         || m_options != other.m_options)
         {
@@ -260,7 +259,7 @@ void ContentDescriptor::MergeWith(ContentDescriptorCR other)
     BeAssert(m_contentFlags == other.m_contentFlags && "Can't merge descriptors with different content flags");
     BeAssert(m_sortDirection == other.m_sortDirection && "Can't merge descriptors with different sort directions");
     BeAssert(m_filterExpression.Equals(other.m_filterExpression) && "Can't merge descriptors with different filter expressions");
-    BeAssert(m_connection.GetId().Equals(other.m_connection.GetId()) && "Can't merge descriptors with different connections");
+    BeAssert(m_connectionId.Equals(other.m_connectionId) && "Can't merge descriptors with different connections");
     BeAssert(m_options == other.m_options && "Can't merge descriptors with different options");
     BeAssert((m_selectionInfo.IsNull() && other.m_selectionInfo.IsNull())
         || (m_selectionInfo.IsValid() && other.m_selectionInfo.IsValid() && *m_selectionInfo == *other.m_selectionInfo) 
@@ -1042,7 +1041,7 @@ bvector<ECClassInstanceKey> const& ContentSetItem::GetPropertyValueKeys(FieldPro
     auto iter = m_fieldPropertyInstanceKeys.find(fp);
     if (m_fieldPropertyInstanceKeys.end() == iter)
         {
-        static bvector<ECClassInstanceKey> s_empty;
+        static const bvector<ECClassInstanceKey> s_empty;
         return s_empty;
         }
     return iter->second;
@@ -1214,7 +1213,7 @@ BentleyStatus DefaultPropertyFormatter::_GetFormattedPropertyLabel(Utf8StringR f
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentDescriptor::Category DefaultCategorySupplier::_GetCategory(ECClassCR primaryClass, RelatedClassPathCR path, ECPropertyCR prop, RelationshipMeaning relationshipMeaning)
+ContentDescriptor::Category DefaultCategorySupplier::_GetCategory(ECClassCR primaryClass, RelatedClassPathCR path, ECPropertyCR prop, RelationshipMeaning relationshipMeaning) const
     {
     PropertyCategoryCP propertyCategory = prop.GetCategory();
     if (nullptr != propertyCategory)
@@ -1232,7 +1231,7 @@ ContentDescriptor::Category DefaultCategorySupplier::_GetCategory(ECClassCR prim
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentDescriptor::Category DefaultCategorySupplier::_GetCategory(ECClassCR, RelatedClassPathCR, ECClassCR nestedContentClass)
+ContentDescriptor::Category DefaultCategorySupplier::_GetCategory(ECClassCR, RelatedClassPathCR, ECClassCR nestedContentClass) const
     {
     return ContentDescriptor::Category(nestedContentClass.GetName(), nestedContentClass.GetDisplayLabel(), "", NESTED_CONTENT_CATEGORY_PRIORITY);
     }

@@ -49,7 +49,6 @@ struct QueryExecutor : NonCopyableClass
 {
 private:
     IConnectionCR m_connection;
-    ECSqlStatementCache const& m_statementCache;
     PresentationQueryBase const* m_query;
     mutable Utf8String m_queryString;
     bool m_readStarted;
@@ -67,8 +66,8 @@ protected:
     virtual void _ReadRecord(ECSqlStatement&) = 0;
 
 public:
-    ECPRESENTATION_EXPORT QueryExecutor(IConnectionCR, ECSqlStatementCache const&);
-    ECPRESENTATION_EXPORT QueryExecutor(IConnectionCR, ECSqlStatementCache const&, PresentationQueryBase const& query);
+    ECPRESENTATION_EXPORT QueryExecutor(IConnectionCR);
+    ECPRESENTATION_EXPORT QueryExecutor(IConnectionCR, PresentationQueryBase const& query);
     virtual ~QueryExecutor() {}
     ECPRESENTATION_EXPORT void SetQuery(PresentationQueryBase const& query);
     ECPRESENTATION_EXPORT PresentationQueryBase const* GetQuery() const;
@@ -96,8 +95,8 @@ protected:
     void _ReadRecord(ECSqlStatement&) override;
 
 public:
-    ECPRESENTATION_EXPORT NavigationQueryExecutor(JsonNavNodesFactory const&, IConnectionCR, Utf8StringCR, ECSqlStatementCache const&, NavigationQuery const&);
-    ECPRESENTATION_EXPORT NavigationQueryExecutor(JsonNavNodesFactory const&, IConnectionCR, Utf8StringCR, ECSqlStatementCache const&);
+    ECPRESENTATION_EXPORT NavigationQueryExecutor(JsonNavNodesFactory const&, IConnectionCR, Utf8StringCR, NavigationQuery const&);
+    ECPRESENTATION_EXPORT NavigationQueryExecutor(JsonNavNodesFactory const&, IConnectionCR, Utf8StringCR);
     ECPRESENTATION_EXPORT void SetQuery(NavigationQuery const& query, bool clearCache = true);
     ECPRESENTATION_EXPORT JsonNavNodePtr GetNode(size_t index) const;
     ECPRESENTATION_EXPORT size_t GetNodesCount() const;
@@ -120,8 +119,8 @@ protected:
     void _ReadRecord(ECSqlStatement&) override;
 
 public:
-    ECPRESENTATION_EXPORT ContentQueryExecutor(IConnectionCR, ECSqlStatementCache const&, ContentQuery const&);
-    ECPRESENTATION_EXPORT ContentQueryExecutor(IConnectionCR, ECSqlStatementCache const&);
+    ECPRESENTATION_EXPORT ContentQueryExecutor(IConnectionCR, ContentQuery const&);
+    ECPRESENTATION_EXPORT ContentQueryExecutor(IConnectionCR);
     void SetPropertyFormatter(IECPropertyFormatter const& formatter) {m_propertyFormatter = &formatter;}
     IECPropertyFormatter const* GetPropertyFormatter() const {return m_propertyFormatter;}
     ECPRESENTATION_EXPORT void SetQuery(ContentQuery const& query, bool clearCache = true);
@@ -142,11 +141,11 @@ protected:
     void _ReadRecord(ECSqlStatement&) override;
 
 public:
-    CountQueryExecutor(IConnectionCR connection, ECSqlStatementCache const& statementCache, PresentationQueryBase const& query)
-        : QueryExecutor(connection, statementCache, query), m_result(0)
+    CountQueryExecutor(IConnectionCR connection, PresentationQueryBase const& query)
+        : QueryExecutor(connection, query), m_result(0)
         {}
-    CountQueryExecutor(IConnectionCR connection, ECSqlStatementCache const& statementCache)
-        : QueryExecutor(connection, statementCache), m_result(0)
+    CountQueryExecutor(IConnectionCR connection)
+        : QueryExecutor(connection), m_result(0)
         {}
     ECPRESENTATION_EXPORT size_t GetResult() const;
 };
@@ -161,8 +160,8 @@ private:
 protected:
     void _ReadRecord(ECSqlStatement& stmt) override { m_reader(stmt); }
 public:
-    GenericQueryExecutor(IConnectionCR connection, ECSqlStatementCache const& statementCache, PresentationQueryBase const& query, std::function<void(ECSqlStatement&)> reader)
-        : QueryExecutor(connection, statementCache, query), m_reader(reader)
+    GenericQueryExecutor(IConnectionCR connection, PresentationQueryBase const& query, std::function<void(ECSqlStatement&)> reader)
+        : QueryExecutor(connection, query), m_reader(reader)
         {}
 };
 

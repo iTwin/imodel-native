@@ -4,7 +4,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include "ECDbExpressionSymbolProvider.h"
 
 USING_NAMESPACE_BENTLEY_EC
 

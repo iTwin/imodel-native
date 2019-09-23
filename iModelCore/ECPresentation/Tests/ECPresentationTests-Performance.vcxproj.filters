@@ -15,21 +15,33 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Performance\RulesEngine\ContentPerformanceTests.cpp">
+    <ClCompile Include="Performance\PerformanceTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Performance\RulesEngine\HierarchyPerformanceTests.cpp">
+    <ClCompile Include="Performance\TestsHelper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Performance\RulesEngine\RulesEnginePerformanceTests.cpp">
+    <ClCompile Include="Performance\Stress\StressTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Performance\RulesEngine\HierarchyPerformanceAnalysis.cpp">
+    <ClCompile Include="Performance\Regression\HierarchyPerformanceTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\Regression\ContentPerformanceTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\Analysis\HierarchyPerformanceAnalysis.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\Analysis\MultiThreadAnalysis.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Performance\RulesEngine\RulesEnginePerformanceTests.h">
+    <ClInclude Include="Performance\PerformanceTests.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Performance\TestsHelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

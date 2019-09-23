@@ -6,7 +6,6 @@
 #include <Bentley/BeTest.h>
 #include <ECPresentation/Connection.h>
 #include <folly/Executor.h>
-#include "../BackDoor/PublicAPI/BackDoor/ECPresentation/BackDoor.h"
 #include "../NonPublished/RulesEngine/ECDbTestProject.h"
 
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -89,6 +88,8 @@ TEST_F(ConnectionManagerTests, ReturnsProxyConnectionWhenRequestedByPrimaryECDbO
 
     std::thread([&]()
         {
+        // need to request by id first to get proxy created
+        m_manager.GetConnection(primaryConnection->GetId().c_str());
         // request a connection on a different thread
         IConnectionPtr proxyConnection = m_manager.GetConnection(s_project->GetECDb());
         ASSERT_TRUE(proxyConnection.IsValid());
@@ -108,8 +109,6 @@ TEST_F(ConnectionManagerTests, ReturnsProxyConnectionWhenRequestedByConnectionId
     m_manager.NotifyConnectionOpened(s_project->GetECDb());
     IConnectionPtr primaryConnection = m_manager.GetConnection(s_project->GetECDb());
     ASSERT_TRUE(primaryConnection.IsValid());
-    // unused - Utf8StringCR primaryConnectionId = primaryConnection->GetId();
-    // unused - ECDbCR primaryConnectionDb = primaryConnection->GetECDb();
     
     std::thread([&]()
         {
@@ -143,7 +142,7 @@ TEST_F(ConnectionManagerTests, WaitsForProxyConnectionsToCloseBeforeClosingPrima
     std::thread([&]()
         {
         // request a connection on a different thread
-        IConnectionPtr proxyConnection = m_manager.GetConnection(s_project->GetECDb());
+        IConnectionPtr proxyConnection = m_manager.GetConnection(primaryConnection->GetId().c_str());
         ASSERT_TRUE(proxyConnection.IsValid());
         didWorkerThreadStart.store(true);
 

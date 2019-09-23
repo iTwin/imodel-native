@@ -18,7 +18,7 @@ rapidjson::Document UpdateRecord::AsJson(rapidjson::Document::AllocatorType* all
     return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
     }
 
-uint64_t s_taskId = 1;
+static uint64_t s_taskId = 1;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -177,14 +177,6 @@ protected:
     uint32_t _GetPriority() const override {return TASK_PRIORITY_InvalidateContent;}
     bvector<IUpdateTaskPtr> _Perform() override
         {
-        if (1 == m_provider->GetRefCount())
-            {
-            // getting here means this task is the only one keeping a reference to the provider
-            // which in turn means the provider is already removed from content cache - no need
-            // to do anything
-            return bvector<IUpdateTaskPtr>();
-            }
-
         bvector<IUpdateTaskPtr> subTasks;
         Utf8StringCR rulesetId = m_provider->GetContext().GetRuleset().GetRuleSetId();
         if (nullptr == m_provider->GetContentDescriptor())
@@ -380,7 +372,7 @@ bvector<HierarchyLevelInfo> UpdateHandler::GetAffectedHierarchyLevels(IConnectio
     for (ECInstanceChangeEventSource::ChangedECInstance const& change : changes)
         keys.insert(ECInstanceKey(change.GetClass()->GetId(), change.GetInstanceId()));
 
-    return m_nodesCache->GetRelatedHierarchyLevels(connection.GetId(), keys);
+    return m_nodesCache->GetRelatedHierarchyLevels(connection, keys);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -401,7 +393,10 @@ bvector<IUpdateTaskPtr> UpdateHandler::CreateUpdateTasks(UpdateContext& updateCo
         {
         bvector<SpecificationContentProviderPtr> affectedContentProviders = m_contentCache->GetProviders(connection);
         for (SpecificationContentProviderPtr& provider : affectedContentProviders)
+            {
+            provider->GetContextR().AdoptToSameConnection(nullptr);
             AddTask(tasks, *m_tasksFactory.CreateContentInvalidationTask(*m_contentCache, updateContext, *provider));
+            }
         }
 
     return tasks;
@@ -424,7 +419,10 @@ bvector<IUpdateTaskPtr> UpdateHandler::CreateUpdateTasks(UpdateContext& updateCo
         {
         bvector<SpecificationContentProviderPtr> affectedContentProviders = m_contentCache->GetProviders(rulesetId, settingId);
         for (SpecificationContentProviderPtr& provider : affectedContentProviders)
+            {
+            provider->GetContextR().AdoptToSameConnection(nullptr);
             AddTask(tasks, *m_tasksFactory.CreateContentInvalidationTask(*m_contentCache, updateContext, *provider));
+            }
         }
 
     return tasks;
@@ -473,10 +471,14 @@ void UpdateHandler::AddTask(bvector<IUpdateTaskPtr>& tasks, size_t startIndex, I
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UpdateHandler::ExecuteTasks(bvector<IUpdateTaskPtr>& tasks) const
     {
+    BeMutexHolder lock(m_mutex, BeMutexHolder::Lock::No);
     LoggingHelper::LogMessage(Log::Update, Utf8PrintfString("Total initial update tasks: %u", tasks.size()).c_str());
 
     if (m_updateRecordsHandler.IsValid())
+        {
+        lock.lock();
         m_updateRecordsHandler->Start();
+        }
     
     RefCountedPtr<PerformanceLogger> _l2 = LoggingHelper::CreatePerformanceLogger(Log::Update, "Executing tasks", NativeLogging::LOG_TRACE);
 
@@ -540,8 +542,12 @@ void UpdateHandler::NotifySettingChanged(Utf8CP rulesetId, Utf8CP settingId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UpdateHandler::DoFullUpdate(Utf8CP rulesetId, bool updateHierarchies, bool updateContent) const
     {
+    BeMutexHolder lock(m_mutex, BeMutexHolder::Lock::No);
     if (m_updateRecordsHandler.IsValid())
+        {
+        lock.lock();
         m_updateRecordsHandler->Start();
+        }
 
     int updateTarget = 0;
 
@@ -815,6 +821,7 @@ void HierarchyUpdater::Update(bvector<IUpdateTaskPtr>& subTasks, UpdateContext& 
     context.GetHandledHierarchies().insert(oldInfo);
     context.GetHandledHierarchies().insert(newInfo);
 
+    BeMutexHolder lock(m_nodesCache.GetMutex());
     Savepoint txn(connection.GetDb(), "Update");
     BeAssert(txn.IsActive());
 

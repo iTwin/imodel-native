@@ -44,7 +44,7 @@ struct EXPORT_VTABLE_ATTRIBUTE JsonNavNode : NavNode
     friend struct JsonNavNodesFactory;
 
 private:
-    rapidjson::MemoryPoolAllocator<> m_allocator;
+    rapidjson::MemoryPoolAllocator<>* m_allocator;
     mutable rapidjson::Document m_json;
     NavNodeKeyCPtr m_nodeKey;
 
@@ -100,6 +100,7 @@ protected:
 
 public:
     ECPRESENTATION_EXPORT JsonNavNode();
+    ECPRESENTATION_EXPORT ~JsonNavNode();
     static JsonNavNodePtr Create() {return new JsonNavNode();}
 
     ECPRESENTATION_EXPORT RapidJsonValueCR GetJson() const;
@@ -132,7 +133,7 @@ public:
     ECPRESENTATION_EXPORT void InitECPropertyGroupingNode(JsonNavNodeR, Utf8StringCR, Utf8StringCR, ECClassCR, ECPropertyCR, Utf8CP label, Utf8CP imageId, RapidJsonValueCR groupingValue, bool isRangeGrouping, GroupedInstanceKeysListCR) const;
     ECPRESENTATION_EXPORT void InitDisplayLabelGroupingNode(JsonNavNodeR, Utf8StringCR, Utf8StringCR, Utf8CP label, GroupedInstanceKeysListCR) const;
     ECPRESENTATION_EXPORT void InitCustomNode(JsonNavNodeR, Utf8StringCR, Utf8StringCR, Utf8CP label, Utf8CP description, Utf8CP imageId, Utf8CP type) const;
-    ECPRESENTATION_EXPORT void InitFromJson(JsonNavNodeR, IConnectionCR, rapidjson::Document&&) const;
+    ECPRESENTATION_EXPORT void InitFromJson(JsonNavNodeR, IConnectionCR, rapidjson::Document, rapidjson::MemoryPoolAllocator<>* = nullptr) const;
 
     ECPRESENTATION_EXPORT JsonNavNodePtr CreateECInstanceNode(IConnectionCR, Utf8StringCR, ECClassId, ECInstanceId, Utf8CP label) const;
     ECPRESENTATION_EXPORT JsonNavNodePtr CreateECInstanceNode(Utf8StringCR, Utf8StringCR, IECInstanceCR, Utf8CP label) const;
@@ -141,7 +142,7 @@ public:
     ECPRESENTATION_EXPORT JsonNavNodePtr CreateECPropertyGroupingNode(Utf8StringCR, Utf8StringCR, ECClassCR, ECPropertyCR, Utf8CP label, Utf8CP imageId, RapidJsonValueCR groupingValue, bool isRangeGrouping, GroupedInstanceKeysListCR) const;
     ECPRESENTATION_EXPORT JsonNavNodePtr CreateDisplayLabelGroupingNode(Utf8StringCR, Utf8StringCR, Utf8CP label, GroupedInstanceKeysListCR) const;
     ECPRESENTATION_EXPORT JsonNavNodePtr CreateCustomNode(Utf8StringCR, Utf8StringCR, Utf8CP label, Utf8CP description, Utf8CP imageId, Utf8CP type) const;
-    ECPRESENTATION_EXPORT JsonNavNodePtr CreateFromJson(IConnectionCR, rapidjson::Document&&) const;
+    ECPRESENTATION_EXPORT JsonNavNodePtr CreateFromJson(IConnectionCR, rapidjson::Document, rapidjson::MemoryPoolAllocator<>* = nullptr) const;
 };
 typedef JsonNavNodesFactory const& JsonNavNodesFactoryCR;
 
@@ -160,7 +161,7 @@ public:
     static bool IsGroupingNode(NavNodeCR);
     static bool IsCustomNode(NavNodeCR node);
     ECPRESENTATION_EXPORT static NavNodeKeyPtr CreateNodeKey(IConnectionCR, JsonNavNodeCR node, bvector<Utf8String> const& path);
-    ECPRESENTATION_EXPORT static NavNodeKeyPtr CreateNodeKey(IConnectionCR, JsonNavNodeCR node, Utf8CP pathFromRootJsonString);
+    ECPRESENTATION_EXPORT static NavNodeKeyPtr CreateNodeKey(IConnectionCR, JsonNavNodeCR node, Utf8CP pathFromRootString);
     ECPRESENTATION_EXPORT static NavNodeKeyPtr CreateNodeKey(IConnectionCR, JsonNavNodeCR node, NavNodeKeyCP parentNodeKey);
 };
 

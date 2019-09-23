@@ -21,6 +21,7 @@ void ECInstanceChangeEventSource::NotifyECInstanceChanged(ECDbCR db, ChangedECIn
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECInstanceChangeEventSource::NotifyECInstancesChanged(ECDbCR db, bvector<ChangedECInstance> changes) const
     {
+    BeMutexHolder lock(m_mutex);
     for (IEventHandler* handler : m_eventHandlers)
         handler->_OnECInstancesChanged(db, changes);
     }

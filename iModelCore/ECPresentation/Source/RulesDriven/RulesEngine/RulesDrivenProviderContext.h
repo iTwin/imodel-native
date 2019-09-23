@@ -18,8 +18,6 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
 struct UsedUserSettingsListener;
 
-struct UsedUserSettingsListener;
-
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                04/2016
 +===============+===============+===============+===============+===============+======*/
@@ -27,8 +25,7 @@ struct RulesDrivenProviderContext : RefCountedBase
 {
 private:
     // common
-    PresentationRuleSetCR m_ruleset;
-    bool m_holdsRuleset;
+    PresentationRuleSetCPtr m_ruleset;
     Utf8String m_locale;
     IJsonLocalState const* m_localState;
     IUserSettings const& m_userSettings;
@@ -37,7 +34,7 @@ private:
     PolymorphicallyRelatedClassesCache& m_polymorphicallyRelatedClassesCache;
     ECExpressionsCache& m_ecexpressionsCache;
     JsonNavNodesFactory const& m_nodesFactory;
-    ICancelationTokenCP m_cancelationToken;
+    ICancelationTokenCPtr m_cancelationToken;
     
     // localization context
     bool m_isLocalizationContext;
@@ -47,25 +44,24 @@ private:
     bool m_isQueryContext;
     IConnectionManagerCP m_connections;
     IConnectionCP m_connection;
-    ECSqlStatementCache const* m_statementCache;
     ECSchemaHelper* m_schemaHelper;
 
 private:
     void Init();
 
 protected:
-    ECPRESENTATION_EXPORT RulesDrivenProviderContext(PresentationRuleSetCR, bool holdRuleset, Utf8String locale, IUserSettings const&, ECExpressionsCache&, 
+    ECPRESENTATION_EXPORT RulesDrivenProviderContext(PresentationRuleSetCR, Utf8String locale, IUserSettings const&, ECExpressionsCache&, 
         RelatedPathsCache&, PolymorphicallyRelatedClassesCache&, JsonNavNodesFactory const&, IJsonLocalState const*);
     ECPRESENTATION_EXPORT RulesDrivenProviderContext(RulesDrivenProviderContextCR other);
     
-    ECPRESENTATION_EXPORT void SetQueryContext(IConnectionManagerCR, IConnectionCR, ECSqlStatementCache const&, CustomFunctionsInjector&);
+    ECPRESENTATION_EXPORT void SetQueryContext(IConnectionManagerCR, IConnectionCR);
     ECPRESENTATION_EXPORT void SetQueryContext(RulesDrivenProviderContextCR other);
 
 public:
     ECPRESENTATION_EXPORT ~RulesDrivenProviderContext();
 
     // common
-    PresentationRuleSetCR GetRuleset() const {return m_ruleset;}
+    PresentationRuleSetCR GetRuleset() const {return *m_ruleset;}
     JsonNavNodesFactory const& GetNodesFactory() const {return m_nodesFactory;}
     IUserSettings const& GetUserSettings() const {return m_userSettings;}
     ECPRESENTATION_EXPORT IUsedUserSettingsListener& GetUsedSettingsListener() const;
@@ -76,6 +72,9 @@ public:
     ECPRESENTATION_EXPORT ICancelationTokenCR GetCancelationToken() const;
     void SetCancelationToken(ICancelationTokenCP token) {m_cancelationToken = token;}
     Utf8StringCR GetLocale() const {return m_locale;}
+    ECPRESENTATION_EXPORT void Adopt(IConnectionCR, ICancelationTokenCP);
+    ECPRESENTATION_EXPORT void Adopt(RulesDrivenProviderContextCR);
+    ECPRESENTATION_EXPORT void AdoptToSameConnection(ICancelationTokenCP);
     
     // localization context
     ECPRESENTATION_EXPORT void SetLocalizationContext(ILocalizationProvider const& provider);
@@ -87,7 +86,6 @@ public:
     bool IsQueryContext() const {return m_isQueryContext;}
     IConnectionManagerCR GetConnections() const {BeAssert(IsQueryContext()); return *m_connections;}
     IConnectionCR GetConnection() const {BeAssert(IsQueryContext()); return *m_connection;}
-    ECSqlStatementCache const& GetStatementCache() const {BeAssert(IsQueryContext()); return *m_statementCache;}
     ECSchemaHelper const& GetSchemaHelper() const {BeAssert(IsQueryContext()); return *m_schemaHelper;}
 };
 

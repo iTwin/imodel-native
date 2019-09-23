@@ -26,6 +26,7 @@ protected:
     virtual bool _IsOpen() const = 0;
     virtual bool _IsReadOnly() const = 0;
     virtual void _InterruptRequests() const = 0;
+    virtual ECSqlStatementCache const& _GetStatementCache() const = 0;
 public:
     Utf8StringCR GetId() const {return _GetId();}
     ECDbR GetECDb() const {return _GetECDb();}
@@ -33,6 +34,7 @@ public:
     bool IsOpen() const {return _IsOpen();}
     bool IsReadOnly() const {return _IsReadOnly();}
     void InterruptRequests() const {_InterruptRequests();}
+    ECSqlStatementCache const& GetStatementCache() const {return _GetStatementCache();}
 };
 
 //=======================================================================================
@@ -66,6 +68,7 @@ enum class ConnectionEventType
     {
     Opened,
     Closed,
+    ProxyCreated,
     };
 
 //=======================================================================================
@@ -96,9 +99,12 @@ struct IConnectionsListener
 {
 protected:
     virtual void _OnConnectionEvent(ConnectionEvent const&) = 0;
+    // note: higher priority listeners are called later
+    virtual int _GetPriority() const {return 1000;}
 public:
     virtual ~IConnectionsListener() {}
     void NotifyConnectionEvent(ConnectionEvent const& evt) {_OnConnectionEvent(evt);}
+    int GetPriority() const {return _GetPriority();}
 };
 
 //=======================================================================================
@@ -146,7 +152,7 @@ private:
     mutable BeMutex m_connectionsMutex;
     ConnectionsStore* m_activeConnections;
     mutable BeMutex m_listenersMutex;
-    mutable bvector<IConnectionsListener*> m_listeners;
+    mutable bmap<int, bset<IConnectionsListener*>> m_listeners;
 
 private:
     void BroadcastEvent(ConnectionEvent const&) const;
@@ -167,6 +173,7 @@ public:
 //__PUBLISH_SECTION_END__
 public:
     ECPRESENTATION_EXPORT void NotifyPrimaryConnectionOpened(ECDbR);
+    ECPRESENTATION_EXPORT void NotifyProxyConnectionOpened(IConnectionCR);
     void NotifyConnectionClosed(Utf8StringCR connectionId);
 //__PUBLISH_SECTION_START__
 };

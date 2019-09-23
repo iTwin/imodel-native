@@ -153,8 +153,10 @@ private:
     IJsonLocalState* m_localState;
     ILocalizationProvider const* m_localizationProvider;
     IUserSettingsChangeListener* m_changeListener;
+    mutable BeMutex m_mutex;
 
 protected:
+    BeMutex& GetMutex() const {return m_mutex;}
     virtual IUserSettings& _GetSettings(Utf8StringCR) const = 0;
     virtual void _OnLocalizationProviderChanged() {}
     virtual void _OnLocalStateChanged() {}
@@ -188,7 +190,6 @@ struct UserSettingsManager : NonCopyableClass, IUserSettingsManager, IRulesetCal
 {
 private:
     mutable bmap<Utf8String, UserSettings*> m_settings;
-    mutable BeMutex m_mutex;
 
 protected:
     // IUserSettingsManager

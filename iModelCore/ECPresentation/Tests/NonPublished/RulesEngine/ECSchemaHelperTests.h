@@ -227,6 +227,7 @@ struct SupportedClassNamesParserTests : ECSchemaHelperTests
 struct ECInstancesHelperTests : ECPresentationTest
     {
     ECDbTestProject m_project;
-    IConnectionPtr m_connection;
+    RefCountedPtr<TestConnection> m_connection;
     void SetUp() override;
+    void TearDown() override;
     };

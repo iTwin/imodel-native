@@ -653,7 +653,7 @@ Utf8String ECPropertyGroupingNodesQueryContract::GetGroupingValueClause(ECProper
 static Utf8String GetPointAsJsonStringClause(Utf8StringCR propertyName, Utf8CP prefix, int dimensions)
     {
     BeAssert(2 == dimensions || 3 == dimensions);
-    static char axis[] = {'x', 'y', 'z'};
+    static const char axis[] = {'x', 'y', 'z'};
 
     Utf8String prefixAndProperty;
     if (nullptr != prefix && 0 != *prefix)

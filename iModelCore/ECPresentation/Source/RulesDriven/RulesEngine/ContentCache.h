@@ -50,9 +50,10 @@ struct ContentCache : NonCopyableClass
 {
 private:
     bmap<ContentProviderKey, SpecificationContentProviderPtr> m_providers;
+    mutable BeMutex m_mutex;
 
 public:
-    void ClearCache() {m_providers.clear();}
+    void ClearCache() {BeMutexHolder lock(m_mutex); m_providers.clear();}
     ECPRESENTATION_EXPORT void ClearCache(IConnectionCR connection);
     ECPRESENTATION_EXPORT void ClearCache(Utf8StringCR rulesetId);
     ECPRESENTATION_EXPORT SpecificationContentProviderPtr GetProvider(ContentProviderKey const& key) const;

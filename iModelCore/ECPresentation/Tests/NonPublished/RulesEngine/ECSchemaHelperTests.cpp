@@ -47,7 +47,7 @@ void ECSchemaHelperTests::SetUp()
     {
     ECPresentationTest::SetUp();
     m_connection = new TestConnection(s_project->GetECDb());
-    m_helper = new ECSchemaHelper(*m_connection, nullptr, nullptr, nullptr, nullptr);
+    m_helper = new ECSchemaHelper(*m_connection, nullptr, nullptr, nullptr);
     }
 
 //---------------------------------------------------------------------------------------
@@ -870,6 +870,14 @@ void ECInstancesHelperTests::SetUp()
     m_connection = new TestConnection(m_project.GetECDb());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Grigas.Petraitis                12/2018
+//---------------------------------------------------------------------------------------
+void ECInstancesHelperTests::TearDown()
+    {
+    ECPresentationTest::TearDown();
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                12/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -888,6 +896,7 @@ TEST_F(ECInstancesHelperTests, LoadInstance_LoadsInstanceAfterSchemaImport)
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, SCHEMA_BASIC_1, *schemaReadContext));
     BentleyStatus status = m_project.GetECDb().Schemas().ImportSchemas({ schema.get() });
     ASSERT_EQ(SUCCESS, status);
+    m_connection->NotifyConnectionReset();
 
     result = ECInstancesHelper::LoadInstance(instance, *m_connection, key);
     EXPECT_EQ(BE_SQLITE_ROW, result);
@@ -897,6 +906,7 @@ TEST_F(ECInstancesHelperTests, LoadInstance_LoadsInstanceAfterSchemaImport)
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, SCHEMA_BASIC_2, *schemaReadContext));
     status = m_project.GetECDb().Schemas().ImportSchemas({ schema.get() });
     ASSERT_EQ(SUCCESS, status);
+    m_connection->NotifyConnectionReset();
 
     result = ECInstancesHelper::LoadInstance(instance, *m_connection, key);
     EXPECT_EQ(BE_SQLITE_ROW, result);
@@ -909,7 +919,7 @@ TEST_F(ECInstancesHelperTests, LoadInstance_LoadsInstanceAfterSchemaImport)
 TEST_F(ECInstancesHelperTests, CachesPreparedStatementsThatRequireLoadingECInstances)
     {
     ConnectionManager manager;
-    manager.NotifyConnectionOpened(m_project.GetECDb());
+    IConnectionCPtr primaryConnection = manager.CreateConnection(m_project.GetECDb());
 
     ECClassCP ecClass = m_project.GetECDb().Schemas().GetClass("RulesEngineTest", "Widget");
     IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(m_project.GetECDb(), *ecClass, [](IECInstanceR instance) {instance.SetValue("IntProperty", ECValue(12)); }, true);
@@ -919,12 +929,12 @@ TEST_F(ECInstancesHelperTests, CachesPreparedStatementsThatRequireLoadingECInsta
     ECInstanceKey key2(m_project.GetECDb().Schemas().GetClassId("RulesEngineTest", "Widget"), ECInstanceId((uint64_t)2));
 
     IECInstancePtr instance;
-    std::thread([&instance, &manager, &key1, &key2, this]()
+    std::thread([&]()
         {
-        EXPECT_EQ(BE_SQLITE_ROW, ECInstancesHelper::LoadInstance(instance, *manager.GetConnection(m_project.GetECDb()), key1));
+        EXPECT_EQ(BE_SQLITE_ROW, ECInstancesHelper::LoadInstance(instance, *manager.GetConnection(primaryConnection->GetId().c_str()), key1));
         EXPECT_TRUE(instance.IsValid());
 
-        EXPECT_EQ(BE_SQLITE_ROW, ECInstancesHelper::LoadInstance(instance, *manager.GetConnection(m_project.GetECDb()), key2));
+        EXPECT_EQ(BE_SQLITE_ROW, ECInstancesHelper::LoadInstance(instance, *manager.GetConnection(primaryConnection->GetId().c_str()), key2));
         EXPECT_TRUE(instance.IsValid());
         }).join();
     }

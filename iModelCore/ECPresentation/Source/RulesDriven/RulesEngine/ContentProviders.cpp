@@ -15,11 +15,11 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentProviderContext::ContentProviderContext(PresentationRuleSetCR ruleset, bool holdRuleset, Utf8String locale, Utf8String preferredDisplayType, int contentFlags,
-    INavNodeKeysContainerCR inputKeys, INavNodeLocaterCR nodesLocater, IPropertyCategorySupplierR categorySupplier, 
+ContentProviderContext::ContentProviderContext(PresentationRuleSetCR ruleset, Utf8String locale, Utf8String preferredDisplayType, int contentFlags,
+    INavNodeKeysContainerCR inputKeys, INavNodeLocaterCR nodesLocater, IPropertyCategorySupplierCR categorySupplier,
     IUserSettings const& userSettings, ECExpressionsCache& ecexpressionsCache, RelatedPathsCache& relatedPathsCache, PolymorphicallyRelatedClassesCache& polymorphicallyRelatedClassesCache, 
     JsonNavNodesFactory const& nodesFactory, IJsonLocalState const* localState) 
-    : RulesDrivenProviderContext(ruleset, holdRuleset, locale, userSettings, ecexpressionsCache, relatedPathsCache, polymorphicallyRelatedClassesCache, nodesFactory, localState), 
+    : RulesDrivenProviderContext(ruleset, locale, userSettings, ecexpressionsCache, relatedPathsCache, polymorphicallyRelatedClassesCache, nodesFactory, localState), 
     m_preferredDisplayType(preferredDisplayType), m_contentFlags(contentFlags), m_nodesLocater(nodesLocater), m_categorySupplier(categorySupplier), m_inputNodeKeys(&inputKeys)
     {
     Init();
@@ -33,6 +33,7 @@ ContentProviderContext::ContentProviderContext(ContentProviderContextCR other)
     m_categorySupplier(other.m_categorySupplier), m_inputNodeKeys(other.m_inputNodeKeys), m_contentFlags(other.m_contentFlags)
     {
     Init();
+    SetUsedSettingsListener(other);
 
     if (other.IsSelectionContext())
         SetSelectionInfo(other);
@@ -784,7 +785,7 @@ ContentProvider::ContentProvider(ContentProviderContextR context)
     m_contentSetSize(0), m_fullContentSetSizeDetermined(false)
     {
     if (GetContext().IsQueryContext())
-        m_executor = new ContentQueryExecutor(context.GetConnection(), context.GetStatementCache());
+        m_executor = new ContentQueryExecutor(context.GetConnection());
     if (nullptr != m_executor && GetContext().IsPropertyFormattingContext())
         m_executor->SetPropertyFormatter(GetContext().GetECPropertyFormatter());
     }
@@ -793,11 +794,13 @@ ContentProvider::ContentProvider(ContentProviderContextR context)
 * @bsimethod                                    Grigas.Petraitis                05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentProvider::ContentProvider(ContentProviderCR other)
-    : m_context(other.m_context), m_executor(nullptr), m_initialized(false), 
+    : m_executor(nullptr), m_initialized(false), 
     m_contentSetSize(0), m_fullContentSetSizeDetermined(false)
     {
+    m_context = ContentProviderContext::Create(*other.m_context);
+    m_context->SetCancelationToken(&other.GetContext().GetCancelationToken());
     if (GetContext().IsQueryContext())
-        m_executor = new ContentQueryExecutor(m_context->GetConnection(), m_context->GetStatementCache());
+        m_executor = new ContentQueryExecutor(m_context->GetConnection());
     if (nullptr != m_executor && GetContext().IsPropertyFormattingContext())
         m_executor->SetPropertyFormatter(GetContext().GetECPropertyFormatter());
     }
@@ -983,7 +986,7 @@ size_t ContentProvider::GetFullContentSetSize() const
             countQuery->From(*StringGenericQuery::Create(queryNotSorted->ToString(), queryNotSorted->GetBoundValues()));
 
             // execute
-            CountQueryExecutor executor(GetContext().GetConnection(), GetContext().GetStatementCache(), *countQuery);
+            CountQueryExecutor executor(GetContext().GetConnection(), *countQuery);
             executor.ReadRecords(&GetContext().GetCancelationToken());
             if (!GetContext().GetCancelationToken().IsCanceled())
                 m_contentSetSize = executor.GetResult();

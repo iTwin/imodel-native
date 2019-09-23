@@ -16,6 +16,7 @@ struct OptimizedExpressionsEvaluationTests : ECPresentationTest
     static ECDbTestProject* s_project;
     TestConnectionManager m_connections;
     IConnectionPtr m_connection;
+    BeMutex m_mutex;
 
     ECClassCP m_widgetClass;
     ECClassCP m_gadgetClass;
@@ -46,7 +47,7 @@ ECDbTestProject* OptimizedExpressionsEvaluationTests::s_project = nullptr;
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(OptimizedExpressionsEvaluationTests, EvaluateClassNameOptimizedExpressionWithECPropertyGroupingNodeKey)
     {
-    OptimizedExpressionPtr expression = ClassNameOptimizedExpression::Create("Widget");
+    OptimizedExpressionPtr expression = ClassNameOptimizedExpression::Create("Widget", m_mutex);
 
     NavNodeKeyPtr widgetKey = ECPropertyGroupingNodeKey::Create(*m_widgetClass, "W", nullptr, {"1"}, 1);
     NavNodeKeyPtr gadgetKey = ECPropertyGroupingNodeKey::Create(*m_gadgetClass, "G", nullptr, {"2"}, 1);
@@ -62,7 +63,7 @@ TEST_F(OptimizedExpressionsEvaluationTests, EvaluateClassNameOptimizedExpression
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(OptimizedExpressionsEvaluationTests, EvaluateIsOfClassOptimizedExpressionWithECPropertyGroupingNodeKey)
     {
-    OptimizedExpressionPtr expression = IsOfClassOptimizedExpression::Create("RulesEngineTest", "Widget");
+    OptimizedExpressionPtr expression = IsOfClassOptimizedExpression::Create("RulesEngineTest", "Widget", m_mutex);
 
     NavNodeKeyPtr widgetKey = ECPropertyGroupingNodeKey::Create(*m_widgetClass, "W", nullptr, {"1"}, 1);
     NavNodeKeyPtr gadgetKey = ECPropertyGroupingNodeKey::Create(*m_gadgetClass, "G", nullptr, {"2"}, 1);

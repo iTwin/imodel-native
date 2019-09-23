@@ -55,7 +55,7 @@ bvector<ECInstanceId> const& ParsedInput::_GetInstanceIds(ECClassCR selectClass)
     if (m_classInput.end() != iter)
         return iter->second;
         
-    static bvector<ECInstanceId> s_empty;
+    static const bvector<ECInstanceId> s_empty;
     return s_empty;
     }
 

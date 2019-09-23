@@ -56,7 +56,7 @@ void VersionCompareChangeSummary::CleanUp()
         delete m_statementCache;
         m_statementCache = nullptr;
         }
-    
+
     m_changedInstances.clear();
     m_changedElements.clear();
     }
@@ -92,7 +92,7 @@ void    VersionCompareChangeSummary::FindChangedRelationshipEndIds (DgnChangeSum
             }
         else /* if (dbOpcode == DbOpcode::Update) */
             {
-            // The end instance id may not be part of the update record - look in the current database if it's not present. 
+            // The end instance id may not be part of the update record - look in the current database if it's not present.
             if (relInstance.ContainsValue(endInstanceIdAccessStr))
                 {
                 newEndInstanceId = relInstance.GetNewValue(endInstanceIdAccessStr).GetValueId<ECInstanceId>();
@@ -249,7 +249,7 @@ StatusInt   VersionCompareChangeSummary::GetInstancesWithAspectUpdates(DgnChange
         }
 
     // AspectRelationship (e.g., ElementOwnsGeom)
-    // Find the source end (i.e., Element end) of all the changed relationship instances of type ElementOwnsGeom. 
+    // Find the source end (i.e., Element end) of all the changed relationship instances of type ElementOwnsGeom.
     ECInstanceIdSet changedAspectRelEnds;
     // TODO: Change ECRelationshipEnd_Source/Target based on the direction of the relationship!
     FindChangedRelationshipEndIds(changeSummary, changedAspectRelEnds, aspectRelationshipSchemaName.c_str(), aspectRelationshipClassName.c_str(), ECRelationshipEnd_Source, ChangeSummary::QueryDbOpcode::Update);
@@ -289,7 +289,7 @@ StatusInt   VersionCompareChangeSummary::GetAppliableChangesets(bvector<bvector<
 * C1, C2, C3(SC), C4, C5, C6(SC), C7(SC)
 * Consider that (SC) means the changeset contains schema changes
 * The change summary API does not let us merge changesets that contain those schema changes
-* so we must separate them into different change summaries that contain a progression of 
+* so we must separate them into different change summaries that contain a progression of
 * changesets without schema changes
 * This method would generate 5 change-summaries based on the 7 provided changesets, each
 * containing the following collections of changesets:
@@ -313,11 +313,8 @@ StatusInt    VersionCompareChangeSummary::ProcessChangesets()
         return ERROR;
         }
 
-    if (IECPresentationManager::IsActive())
-        {
-        // Presentation rules need to know about the db
-        IECPresentationManager::GetManager().Connections().CreateConnection(*m_targetDb);
-        }
+    // Presentation rules need to know about the db
+    m_presentationManager.GetConnections().CreateConnection(*m_targetDb);
 
     // Construct change summaries
     for (DgnRevisionPtr changeset : m_changesets)
@@ -382,7 +379,7 @@ DgnDbPtr    VersionCompareChangeSummary::CloneDb(DgnDbR db)
 
     BeFileName tempFilename;
     T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectory(tempFilename, L"VersionCompareTemp");
-    
+
     WString name = WString(L"Temp_") + db.GetFileName().GetFileNameWithoutExtension();
     tempFilename.AppendToPath(name.c_str());
     tempFilename.AppendExtension(L"bim");
@@ -409,16 +406,16 @@ DgnDbPtr    VersionCompareChangeSummary::CloneDb(DgnDbR db)
 bvector<SelectClassInfo> VersionCompareChangeSummary::GetContentClasses(Utf8String schemaName, Utf8String className)
     {
     DgnDbR db = *m_targetDb;
-    
+
     // Make sure this is the right element class
     ECClassCP cls = db.Schemas().GetClass(schemaName, className);
     BeAssert(nullptr != cls);
     if (nullptr == cls)
         return bvector<SelectClassInfo>();
-    
+
     // TODO: Pass presentation rules as part of Generate call
     RulesDrivenECPresentationManager::ContentOptions options(Utf8String::IsNullOrEmpty(m_rulesetId.c_str()) ? "Items" : m_rulesetId);
-    return IECPresentationManager::GetManager().GetContentClasses(db, ContentDisplayType::PropertyPane, 0, {cls}, options.GetJson()).get();
+    return m_presentationManager.GetContentClasses(db, ContentDisplayType::PropertyPane, 0, {cls}, options.GetJson()).get();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -433,7 +430,7 @@ DgnElementCPtr  VersionCompareChangeSummary::GetElement(DgnElementId elementId, 
 
         return m_db.Elements().GetElement(elementId);
         }
-    
+
     if (opcode == DbOpcode::Insert)
         return m_targetDb->Elements().GetElement(elementId);
 
@@ -490,8 +487,8 @@ StatusInt   VersionCompareChangeSummary::RollTargetDb(bvector<DgnRevisionPtr> co
     BeAssert(result == BeSQLite::BE_SQLITE_OK && m_targetDb.IsValid());
 
     // Presentation rules need to know about the reopened Db
-    if (m_targetDb.IsValid() && IECPresentationManager::IsActive())
-        IECPresentationManager::GetManager().Connections().CreateConnection(*m_targetDb);
+    if (m_targetDb.IsValid())
+        m_presentationManager.GetConnections().CreateConnection(*m_targetDb);
 
     BeAssert(m_targetDb.IsValid() && !m_targetDb->IsReadonly());
 
@@ -526,16 +523,13 @@ void    VersionCompareChangeSummary::CacheRelatedPaths(Utf8String schemaName, Ut
 //-------------------------------------------------------------------------------------------
 void    VersionCompareChangeSummary::AddInstancesWithPresentationRulesUpdates(ECInstanceKeySet& updatedInstances, Utf8String schemaName, Utf8String className, DgnChangeSummary* changeSummary, ECInstanceKeySet const& inserted, ECInstanceKeySet const& deleted)
     {
-    if (!IECPresentationManager::IsActive())
-        return;
-
     Utf8String fullName = schemaName + Utf8String(":") + className;
     if (m_relatedClassCache.find(fullName) == m_relatedClassCache.end())
         CacheRelatedPaths(schemaName, className);
 
     for (RelatedPathCache::PathNames const& path : m_relatedClassCache[fullName].Paths())
         GetInstancesWithAspectUpdates(changeSummary, updatedInstances, path.m_sourceClassName.c_str(), path.m_relationshipClassName.c_str(), path.m_targetClassName.c_str());
-    
+
     // Filter out modified elements that are contained in both inserted or deleted element lists, as those take precedence
     // e.g. If an element got inserted, and an aspect of that element also got inserted, we mark the insertion of an aspect
     // as an update, but in reality the element got inserted. To handle this, just give more important to insertion/deletions
@@ -601,7 +595,7 @@ void    VersionCompareChangeSummary::GetChangedInstances(ECInstanceKeySet& insta
         }
 
     for (bmap<ECInstanceId, ChangeSummary::Instance>::const_iterator iter = changes.begin(); iter != changes.end(); iter++)
-        instanceIds.insert(ECInstanceKey(iter->second.GetClassId(), iter->second.GetInstanceId()));  
+        instanceIds.insert(ECInstanceKey(iter->second.GetClassId(), iter->second.GetInstanceId()));
     }
 
 //-------------------------------------------------------------------------------------------
@@ -741,7 +735,7 @@ StatusInt   VersionCompareChangeSummary::GetChangedElementsOfClass(bvector<DgnEl
             bboxes.push_back(it->second.m_bbox);
             }
         }
-    
+
     return SUCCESS;
     }
 
@@ -791,7 +785,7 @@ StatusInt   VersionCompareChangeSummary::GetElement(DgnElementCPtr& element, Dgn
         if ((iter->first.GetInstanceId().GetValue() == elementId.GetValue()) && (SUCCESS == GetElement(element, elementId, iter->first.GetClassId(), targetState)))
             return SUCCESS;
         }
-    
+
     return ERROR;
     }
 
@@ -832,7 +826,7 @@ StatusInt    VersionCompareChangeSummary::GetTopAssembly(ECInstanceId& topInstan
     DgnElementId topElementId = ElementAssemblyUtil::GetAssemblyParentId(*el);
     if (!topElementId.IsValid())
         return ERROR;
-    
+
     // Get ECClassId of the top assembly
     CachedECSqlStatementPtr stmt = GetCachedStatement(*db, "SELECT el.ECClassId FROM Bis.Element el WHERE el.ECInstanceId=?");
     stmt->BindId(1, topElementId);
@@ -849,12 +843,6 @@ StatusInt    VersionCompareChangeSummary::GetTopAssembly(ECInstanceId& topInstan
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt   VersionCompareChangeSummary::GetElementContent(DgnDbPtr db, DgnElementId elementId, ECClassId ecclassId, JsonValueR contentJson)
     {
-    if (!IECPresentationManager::IsActive())
-        {
-        BeAssert(false && "Cannot get properties without PresentationManager being registered.");
-        return ERROR;
-        }
-
     // TFS#767958: Provide presentation rules with the top assembly ECInstance ID instead of the element ID to show all desired properties
     ECClassId topClassId = ecclassId;
     ECInstanceId topElementId = ECInstanceId(elementId.GetValue());
@@ -862,15 +850,15 @@ StatusInt   VersionCompareChangeSummary::GetElementContent(DgnDbPtr db, DgnEleme
 
     KeySetPtr inputKeys = KeySet::Create({ECClassInstanceKey(db->Schemas().GetClass(topClassId), topElementId)});
     RulesDrivenECPresentationManager::ContentOptions options (Utf8String::IsNullOrEmpty(m_rulesetId.c_str()) ? "Items" : m_rulesetId);
-    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(*db, ContentDisplayType::PropertyPane, 0, *inputKeys, nullptr, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = m_presentationManager.GetContentDescriptor(*db, ContentDisplayType::PropertyPane, 0, *inputKeys, nullptr, options.GetJson()).get();
     if (descriptor.IsNull())
         return ERROR;
-    
+
     PageOptions pageOptions;
     pageOptions.SetPageStart(0);
     pageOptions.SetPageSize(0);
 
-    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, pageOptions).get();
+    ContentCPtr content = m_presentationManager.GetContent(*descriptor, pageOptions).get();
     if (content.IsNull())
         {
         BeAssert(false);
@@ -934,7 +922,7 @@ void    FlattenProperties (JsonValueR output, bool changedOnly, JsonValueCR desc
 
         return;
         }
-    
+
     Utf8String accessor         = descriptorField["Name"].asString();
     Utf8String displayLabel     = descriptorField["DisplayLabel"].asString();
     Json::Value currentValue    = currentValues[accessor];
@@ -969,12 +957,12 @@ StatusInt   VersionCompareChangeSummary::GetPropertyComparison(DgnElementId elem
         return ERROR;
 
     SummaryElementInfo info = m_changedElements[key];
-    
+
     Json::Value currentContent, targetContent;
     if (SUCCESS != GetElementContent(&m_db, elementId, ecclassId, currentContent) ||
         SUCCESS != GetElementContent(m_targetDb, elementId, ecclassId, targetContent))
         return ERROR;
-    
+
     // Merge data together, use any of the contents to create the "template"
     Json::Value currentValues = currentContent["ContentSet"][0]["Values"];
     Json::Value targetValues = targetContent["ContentSet"][0]["Values"];
@@ -983,7 +971,7 @@ StatusInt   VersionCompareChangeSummary::GetPropertyComparison(DgnElementId elem
 
     // Use newer in case of schema changes
     Json::Value descriptorFields = m_backwardsComparison ? currentContent["Descriptor"]["Fields"] : targetContent["Descriptor"]["Fields"];
-    
+
     for (size_t index = 0; index < descriptorFields.size(); ++index)
         FlattenProperties(content, changedOnly, descriptorFields[(int)index], currentValues, targetValues, currentDisplays, targetDisplays);
 
@@ -1130,10 +1118,10 @@ StatusInt   VersionCompareChangeSummary::GetPropertyContentComparison(DgnElement
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    09/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-VersionCompareChangeSummaryPtr  VersionCompareChangeSummary::Generate(DgnDbR db, bvector<DgnRevisionPtr>& changesets, Utf8String rulesetId, bool backwardsComparison)
+VersionCompareChangeSummaryPtr  VersionCompareChangeSummary::Generate(DgnDbR db, bvector<DgnRevisionPtr>& changesets, IECPresentationManagerR presentationManager, Utf8String rulesetId, bool backwardsComparison)
     {
     // Create the change summary
-    VersionCompareChangeSummaryPtr changeSummary = new VersionCompareChangeSummary(db, backwardsComparison);
+    VersionCompareChangeSummaryPtr changeSummary = new VersionCompareChangeSummary(db, presentationManager, backwardsComparison);
     changeSummary->m_rulesetId = rulesetId;
     // Set changesets and store all changed elements
     if (SUCCESS != changeSummary->SetChangesets(changesets))
@@ -1145,10 +1133,10 @@ VersionCompareChangeSummaryPtr  VersionCompareChangeSummary::Generate(DgnDbR db,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    09/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-VersionCompareChangeSummaryPtr  VersionCompareChangeSummary::Generate(DgnDbR db, bvector<DgnRevisionPtr>& changesets, Utf8String rulesetId, bool backwardsComparison, bool filterSpatial, bool filterLastMod)
+VersionCompareChangeSummaryPtr  VersionCompareChangeSummary::Generate(DgnDbR db, bvector<DgnRevisionPtr>& changesets, IECPresentationManagerR presentationManager, Utf8String rulesetId, bool backwardsComparison, bool filterSpatial, bool filterLastMod)
     {
     // Create the change summary
-    VersionCompareChangeSummaryPtr changeSummary = new VersionCompareChangeSummary(db, backwardsComparison);
+    VersionCompareChangeSummaryPtr changeSummary = new VersionCompareChangeSummary(db, presentationManager, backwardsComparison);
     changeSummary->m_filterSpatial = filterSpatial;
     changeSummary->m_filterLastMod = filterLastMod;
     changeSummary->m_rulesetId = rulesetId;

@@ -111,7 +111,8 @@ struct ECInstanceChangeEventSource : RefCountedBase, IECDbUsedClassesListener
 
 private:
     bset<IEventHandler*> m_eventHandlers;
-    
+    mutable BeMutex m_mutex;
+
 protected:
     //! @see IECDbUsedClassesListener::_OnClassUsed
     virtual void _OnClassUsed(ECDbCR, ECClassCR, bool polymorphically) override {}
@@ -126,10 +127,10 @@ protected:
 
 public:
     //! Registers an event handler.
-    void RegisterEventHandler(IEventHandler& handler) {m_eventHandlers.insert(&handler);}
+    void RegisterEventHandler(IEventHandler& handler) {BeMutexHolder lock(m_mutex); m_eventHandlers.insert(&handler);}
 
     //! Unregisters an event handler.
-    void UnregisterEventHandler(IEventHandler& handler) {m_eventHandlers.erase(&handler);}
+    void UnregisterEventHandler(IEventHandler& handler) {BeMutexHolder lock(m_mutex); m_eventHandlers.erase(&handler);}
 };
 typedef RefCountedPtr<ECInstanceChangeEventSource> ECInstanceChangeEventSourcePtr;
 
