@@ -229,10 +229,17 @@ BentleyStatus iModelBridgeSacAdapter::CreateOrUpdateBim(iModelBridge& bridge, Pa
             callCloseOnReturn.CallOpenFunctions(*db);
             }
 
+        db->BriefcaseManager().GetChannelPropsR().channelType = IBriefcaseManager::ChannelType::Shared;
+        db->BriefcaseManager().GetChannelPropsR().channelParentId = db->Elements().GetRootSubjectId();
+
         SubjectCPtr jobsubj;
         BentleyStatus bstatus = bridge.DoMakeDefinitionChanges(jobsubj, *db);
         if (BSISUCCESS == bstatus)
+            {
+            db->BriefcaseManager().GetChannelPropsR().channelType = IBriefcaseManager::ChannelType::Normal;
+
             bstatus = bridge.DoConvertToExistingBim(*db, *jobsubj, saparams.GetDetectDeletedFiles());
+            }
         
         if (BSISUCCESS != bstatus)
             {

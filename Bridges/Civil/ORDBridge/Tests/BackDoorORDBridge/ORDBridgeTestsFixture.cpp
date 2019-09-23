@@ -256,6 +256,9 @@ bool CiviliModelBridgesORDBridgeTestsFixture::RunTestApp(WCharCP input, WCharCP 
     BeFileName outputPath = m_host->GetOutputDirectory();
     outputPath.AppendString(WCharCP(bimFileName));
 
+    if (!updateMode && outputPath.DoesPathExist())
+        outputPath.BeDeleteFile();
+
     WCharCP testAppPathArgument = testAppPath;
     auto inputArgument = m_host->GetInputFileArgument(inputPath, input);
     auto outputArgument = m_host->GetOutputFileArgument(outputPath, bimFileName);
@@ -850,9 +853,9 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometryElement
     }
 
 /*---------------------------------------------------------------------------------**//**
-// JGATODO Spiral Types ... Need later or newer Geomlib NOT bim02
+// JGATODO Spiral Types ... Need later or newer Geomlib Something weird with lengths in geomLib ?
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool checkCurveVectorSpiralTypesAndLengths(BentleyM0200::CurveVectorCR curves, bool isVertical, double tolerance)
+static bool checkCurveVectorSpiralTypesAndLengths(BentleyM0200::CurveVectorCR curves, int spiralType, double spiralLength, double tolerance)
     {
     if (curves.empty())
         return false;
@@ -875,8 +878,24 @@ static bool checkCurveVectorSpiralTypesAndLengths(BentleyM0200::CurveVectorCR cu
                 BentleyM0200::DSpiral2dPlacementCP spiralData = (BentleyM0200::DSpiral2dPlacementCP) curve->GetSpiralPlacementCP();
                 double length = spiralData->SpiralLengthActiveInterval();
 
-                if (fabs(length) < tolerance)
+                if (spiralType != spiralData->spiral->GetTransitionTypeCode())
                     return false;
+
+                if (spiralType == DSpiral2dBase::TransitionType_WesternAustralian ||
+                    spiralType == DSpiral2dBase::TransitionType_MXCubicAlongArc ||
+                    spiralType == DSpiral2dBase::TransitionType_ChineseCubic)
+                    {
+                    // Need to ask Claude or Earlin but length do not match very well?
+                    double length01 = spiralData->SpiralLength01();
+                    double lengthMap = spiralData->MappedSpiralLengthActiveInterval(RotMatrix::FromIdentity());
+                    if (fabs(length - spiralLength) > 0.1)
+                        return false;
+                    }
+                else
+                    {
+                    if (fabs(length - spiralLength) > tolerance)
+                        return false;
+                    }
                 break;
                 }
                 //case BentleyM0200::ICurvePrimitive::CURVE_PRIMITIVE_TYPE_BsplineCurve:
@@ -888,7 +907,7 @@ static bool checkCurveVectorSpiralTypesAndLengths(BentleyM0200::CurveVectorCR cu
             case BentleyM0200::ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector:
                 {
                 /// Nested curve vector can occur with BOUNDARY_TYPE_None and not just union/parity regions...
-                return checkCurveVectorSpiralTypesAndLengths(*curve->GetChildCurveVectorCP(), isVertical, tolerance);
+                return checkCurveVectorSpiralTypesAndLengths(*curve->GetChildCurveVectorCP(), spiralType, spiralLength, tolerance);
                 }
 
             default:
@@ -903,9 +922,9 @@ static bool checkCurveVectorSpiralTypesAndLengths(BentleyM0200::CurveVectorCR cu
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Greg.Ashe       08/2019
-// JGATODO Spiral Types ... Need later or newer Geomlib NOT bim02
+// JGATODO Spiral Types ... Need later or newer Geomlib Something weird with lengths in geomLib ?
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometrySpiralTypesAndLengths(Utf8CP bimFileName, Utf8CP alignmentName)
+DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometrySpiralTypesAndLengths(Utf8CP bimFileName, Utf8CP alignmentName, int spiralType, double spiralLength)
     {
     const double tolerance = 1.0E-8;
 
@@ -926,26 +945,8 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedGeometrySpiralT
         if (horizontalAlignmentCPtr.IsValid())
             {
             auto curveVectorCR = horizontalAlignmentCPtr->GetGeometry();
-            double length = curveVectorCR.Length();
 
-            //Clothoid
-            //Biquadratic
-            //Bloss
-            //Sinusoid
-            //Cosine
-            //Chinese Cubic
-            //Czech Cubic
-            //Japanese Sine
-            //Italian Cubic
-            //Polish Cubic
-            //Arema
-            //NSW Cubic
-            //WA Cubic
-            //MX Cubic
-
-            // All Lengths are 200 ... verify type and length of each
-
-            bool verified = checkCurveVectorSpiralTypesAndLengths(curveVectorCR, false, tolerance);
+            bool verified = checkCurveVectorSpiralTypesAndLengths(curveVectorCR, spiralType, spiralLength, tolerance);
 
             if (!verified)
                 BeAssert(verified && "Horizontal Spiral Type and Length Verification failed.");

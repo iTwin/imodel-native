@@ -72,11 +72,11 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeBuildCommandLine>bb -p ORDBridge -f CiviliModelBridges -r Civil-iModelBridges -N0 r ORDBridgeLibrary</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>$(NMakeCleanCommandLine)%26$(NMakeBuildCommandLine)</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>bb -p ORDBridge -f CiviliModelBridges -r Civil-iModelBridges -ax64 re ORDBridgeLibrary -c</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>bb -ax64 re CiviliModelBridges:ORDBridgeLibrary</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -ax64 re CiviliModelBridges:ORDBridgeLibrary</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -ax64 re CiviliModelBridges:ORDBridgeLibrary -c</NMakeCleanCommandLine>
     <NMakePreprocessorDefinitions>__ORDBRIDGE_BUILD__</NMakePreprocessorDefinitions>
-    <NMakeIncludeSearchPath>$(SrcRoot)Civil\iModelBridges\ORDBridge\;$(OutRoot)Winx64\BuildContexts\CiviliModelBridges\PublicAPI\;$(OutRoot)Winx64\BuildContexts\CiviliModelBridges\VendorAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>$(SrcRoot)imodel02\Bridges\Civil\;$(SrcRoot)imodel02\Bridges\Civil\ORDBridge\;$(OutRoot)Winx64\BuildContexts\CiviliModelBridges\PublicAPI\;$(OutRoot)Winx64\BuildContexts\CiviliModelBridges\VendorAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <IncludePath>$(OutRoot)Winx64\BuildContexts\CivilIModelBridges\PublicAPI\;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
