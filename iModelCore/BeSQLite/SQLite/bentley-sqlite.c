@@ -20,6 +20,7 @@
 #define SQLITE_OMIT_COMPLETE 1
 #define SQLITE_OMIT_PROGRESS_CALLBACK 1
 #define SQLITE_HAS_CODEC 1
+#define SQLITE_MAX_EXPR_DEPTH 2000
 //Alocate around 16Mb instead of 2Mb for page cache
 #define SQLITE_DEFAULT_CACHE_SIZE 4000
 
