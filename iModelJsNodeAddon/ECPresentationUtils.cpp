@@ -85,7 +85,7 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
         json.SetObject();
 
         rapidjson::Value propertyJson(rapidjson::kObjectType);
-        propertyJson.AddMember("classInfo", _AsJson(property.GetPropertyClass(), &json.GetAllocator()), json.GetAllocator());
+        propertyJson.AddMember("classInfo", _AsJson(property.GetProperty().GetClass(), &json.GetAllocator()), json.GetAllocator());
         propertyJson.AddMember("name", rapidjson::Value(property.GetProperty().GetName().c_str(), json.GetAllocator()), json.GetAllocator());
 
         if (property.GetProperty().GetIsPrimitive() && nullptr != property.GetProperty().GetAsPrimitiveProperty()->GetEnumeration())
