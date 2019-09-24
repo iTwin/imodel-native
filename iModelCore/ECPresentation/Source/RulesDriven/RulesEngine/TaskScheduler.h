@@ -394,7 +394,7 @@ public:
     folly::Future<folly::Unit> CreateAndExecute(std::function<void(IECPresentationTaskCR)> func,
         TaskDependencies deps = TaskDependencies(), bool isCancelable = true, int priority = 1000)
         {
-        auto task = new ECPresentationTask(GetMutex(), func);
+        RefCountedPtr<ECPresentationTask> task = new ECPresentationTask(GetMutex(), func);
         task->SetDependencies(deps);
         task->SetIsCancelable(isCancelable);
         task->SetPriority(priority);
@@ -408,7 +408,7 @@ public:
     template<typename TResult> folly::Future<TResult> CreateAndExecute(std::function<TResult(IECPresentationTaskWithResult<TResult> const&)> func, 
         TaskDependencies deps = TaskDependencies(), bool isCancelable = true, int priority = 1000)
         {
-        auto task = new ECPresentationTaskWithResult<TResult>(GetMutex(), func);
+        RefCountedPtr<ECPresentationTaskWithResult<TResult>> task = new ECPresentationTaskWithResult<TResult>(GetMutex(), func);
         task->SetDependencies(deps);
         task->SetIsCancelable(isCancelable);
         task->SetPriority(priority);
