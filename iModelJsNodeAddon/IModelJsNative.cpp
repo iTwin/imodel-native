@@ -5263,9 +5263,12 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
                 {
                 responseSender->SetResult(std::move(result));
                 })
-            .onError([responseSender](folly::exception_wrapper)
+            .onError([responseSender](folly::exception_wrapper e)
                 {
-                responseSender->SetResult(ECPresentationResult(ECPresentationStatus::Error, "Unknown error handling request"));
+                if (e.is_compatible_with<folly::FutureCancellation>())
+                    responseSender->SetResult(ECPresentationResult(ECPresentationStatus::Canceled, "Request was canceled"));
+                else
+                    responseSender->SetResult(ECPresentationResult(ECPresentationStatus::Error, Utf8PrintfString("Error handling request: %s", e.what().c_str())));
                 });
             }
         catch (...)

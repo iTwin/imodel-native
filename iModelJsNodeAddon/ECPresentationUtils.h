@@ -22,6 +22,7 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 enum class ECPresentationStatus
     {
     Success = 0,
+    Canceled = 1,                           /** Request was canceled */
     Error = 0x10000,                        /** Base error */
     InvalidArgument = Error + 1,            /** Argument is invalid */
     };

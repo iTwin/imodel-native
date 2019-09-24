@@ -454,7 +454,8 @@ export declare namespace IModelJsNative {
 
   const enum ECPresentationStatus {
     Success = 0,
-    Error = 1,
+    Canceled = 1,
+    Error = 0x10000,
     InvalidArgument = Error + 1,
   }
 
