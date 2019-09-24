@@ -192,6 +192,27 @@ static bvector<uint64_t> IndexFromBlob(void const* blob, int size)
         index.push_back(arr[i]);
     return index;
     }
+/*---------------------------------------------------------------------------------**//**
+* note: need to use little-endian for binary index concatenation to work
+* @bsimethod                                    Grigas.Petraitis                07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static uint64_t SwapEndian(uint64_t number)
+    {
+    union
+        {
+        uint64_t n;
+        unsigned char u8[sizeof(uint64_t)];
+        } res;
+    res.n = number;
+    size_t len = sizeof(uint64_t);
+    for (size_t i = 0; i < len / 2; i++)
+        {
+        unsigned char t = res.u8[i];
+        res.u8[i] = res.u8[len - i - 1];
+        res.u8[len - i - 1] = t;
+        }
+    return res.n;
+    }
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                07/2019
 +===============+===============+===============+===============+===============+======*/
@@ -206,9 +227,9 @@ struct ConcatBinaryIndexScalar : BeSQLite::ScalarFunction
         bvector<uint64_t> result;
         result.reserve(lhsCount + rhsCount);
         for (int i = 0; i < lhsCount; ++i)
-            result.push_back(lhsArr[i]);
+            result.push_back(SwapEndian(lhsArr[i]));
         for (int i = 0; i < rhsCount; ++i)
-            result.push_back(rhsArr[i]);
+            result.push_back(SwapEndian(rhsArr[i]));
         ctx.SetResultBlob(reinterpret_cast<void const*>(&result.front()), result.size() * sizeof(uint64_t), DbFunction::Context::CopyData::Yes);
         }
     ConcatBinaryIndexScalar()
@@ -1066,7 +1087,7 @@ void NodesCache::CacheNode(DataSourceInfo const& datasourceInfo, NavNodeR node, 
 
     CacheNodeKey(node);
     CacheNodeInstanceKeys(node);
-    
+
     LoggingHelper::LogMessage(Log::NavigationCache, GetNodeDebugString("Cached", node, (int)(isVirtual ? NodeVisibility::Virtual : NodeVisibility::Physical)).c_str());
 
 #ifdef NAVNODES_CACHE_DEBUG
@@ -1777,7 +1798,7 @@ void NodesCache::_Update(uint64_t nodeId, JsonNavNodeCR node)
         CacheNodeKey(node);
         CacheNodeInstanceKeys(node);
         }
-    
+
 #ifdef NAVNODES_CACHE_DEBUG
     Persist();
 #endif
@@ -1894,7 +1915,7 @@ BeGuid NodesCache::CreateRemovalId(CombinedHierarchyLevelInfo const& info)
     if (info.GetPhysicalParentNodeId())
         stmt->BindUInt64(5, *info.GetPhysicalParentNodeId());
     stmt->Step();
-    
+
 #ifdef NAVNODES_CACHE_DEBUG
     Persist();
 #endif
@@ -2079,7 +2100,7 @@ void NodesCache::ChangeVisibility(uint64_t nodeId, bool isVirtual, bool updateCh
             }
         LoggingHelper::LogMessage(Log::NavigationCache, Utf8PrintfString("    Affected child data sources: %d", m_db.GetModifiedRowCount()).c_str());
         }
-    
+
 #ifdef NAVNODES_CACHE_DEBUG
     Persist();
 #endif

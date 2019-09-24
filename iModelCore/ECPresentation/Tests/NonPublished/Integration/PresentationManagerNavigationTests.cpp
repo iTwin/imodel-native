@@ -3473,6 +3473,45 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingByEnu
     }
 
 /*---------------------------------------------------------------------------------**//**
+* VSTS#176463
+* @bsitest                                      Grigas.Petraitis                09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(SortsLargeNumbersOfNodesAtTheSameHierarchyLevelCorrectly, R"*(
+    <ECEntityClass typeName="SpatialIndex" modifier="Sealed" displayLabel="Spatial Index">
+        <ECProperty propertyName="MinX" typeName="long" readOnly="True" displayLabel="Min X" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortsLargeNumbersOfNodesAtTheSameHierarchyLevelCorrectly)
+    {
+    // set up dataset
+    ECClassCP elementClass = GetClass("SpatialIndex");
+    size_t instancesCount = 257; // need at least 257 instances to reproduce the issue
+    for (size_t i = 0; i < instancesCount; ++i)
+        {
+        RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass, [i](IECInstanceR instance)
+            {
+            instance.SetValue("MinX", ECValue((int64_t)i));
+            });
+        }
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rule = new RootNodeRule();
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", elementClass->GetFullName(), true));
+    rules->AddPresentationRule(*rule);
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, true, elementClass->GetFullName(), "MinX"));
+
+    //make sure we have all nodes in correct order
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
+    ASSERT_EQ(instancesCount, rootNodes.GetSize());
+    for (size_t i = 0; i < instancesCount; ++i)
+        EXPECT_STREQ(std::to_string(i).c_str(), rootNodes[i]->GetLabel().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @betest                                       Pranciskus.Ambrazas               02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_GroupsByBaseClass)
