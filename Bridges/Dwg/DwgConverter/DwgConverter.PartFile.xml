@@ -9,7 +9,7 @@
         <!-- DWG importer using RealDwg -->
         <SubProduct ProductName="RealDwgImporter" />
         <!-- Build unit tests -->
-        <SubProduct ProductName="DwgImporterTests" />
+        <SubProduct ProductName="RealDwgImporterTests" />
         <!-- Run unit tests -->
         <SubPart PartName="RunRealDwgImporterTests" />
         <SubPart PartName="RunOpenDwgImporterTests" />
