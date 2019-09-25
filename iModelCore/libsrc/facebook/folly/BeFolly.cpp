@@ -17,30 +17,29 @@ using namespace BeFolly;
 void ThreadPool::Worker::Work()
     {
     // This keeps this object alive until we return from this method. Otherwise this object may be deleted when its pool
-    // is deleted and this method may access members of a deleted object. 
+    // is deleted and this method may access members of a deleted object.
     // On some systems (Windows, optimized) the worker threads are stopped before the static pool object is destroyed.
-    // In that case we'll release this reference when this thread is terminated, because C++ guarantees destructors 
+    // In that case we'll release this reference when this thread is terminated, because C++ guarantees destructors
     // are called when the callstack is unwound. This object will then be deleted in the pool destructor
     // since this refcount will be dropped, even though this thread is gone.
     // On other systems (Linux) the threads are not stopped until after static destructors are called. In that
     // case this object will get freed when the thread reacts to the "stop" message, which may happen after the
     // pool is deleted.
     RefCountedPtr<Worker> me(this);
-
-    // this keeps the condition variable alive until we return
-    std::shared_ptr<BeConditionVariable> cv(m_pool.m_cv);
-
+    // This releases the ref count that was increased in Worker::Start method - the worker is kept alive by the above RefCountedPtr
+    Release();
+    
     SetName();
 
     for (;;)
         {
         folly::Function<void()> task;
             {
-            BeMutexHolder lock(cv->GetMutex());
+            BeMutexHolder lock(m_cv->GetMutex());
             while (!m_stopped && !m_pool.HasWork())
-                cv->InfiniteWait(lock);
+                m_cv->InfiniteWait(lock);
 
-            if (m_stopped) 
+            if (m_stopped)
                 return; // if this flag is on, the pool object has been freed and we can't access it
 
             task = std::move(m_pool.m_tasks.front());
@@ -48,7 +47,7 @@ void ThreadPool::Worker::Work()
             }
 
         task();
-        cv->notify_one();
+        m_cv->notify_one();
         }
     }
 
@@ -57,7 +56,12 @@ void ThreadPool::Worker::Work()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ThreadPool::Worker::SetName()
     {
-    BeThreadUtilities::SetCurrentThreadName(Utf8PrintfString("%s worker %d", m_pool.GetName(), m_id).c_str());
+    BeMutexHolder lock(m_cv->GetMutex());
+    if (!m_stopped)
+        {
+        // Can't use m_pool is m_stopped = true - the pool may already be destroyed
+        BeThreadUtilities::SetCurrentThreadName(Utf8PrintfString("%s worker %d", m_pool.GetName(), m_id).c_str());
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -74,6 +78,10 @@ THREAD_MAIN_IMPL ThreadPool::Worker::Main(void* arg)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ThreadPool::Worker::Start()
     {
+    // Increase ref count to prevent the object from being destroyed in case the threadpool
+    // is destroyed (and releases its workers) before the Worker::Work is called - we want
+    // the object to stay valid until we get there.
+    AddRef();
     BeThreadUtilities::StartNewThread(Main, this);
     }
 

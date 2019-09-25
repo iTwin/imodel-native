@@ -28,8 +28,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ThreadPool : folly::Executor
         int m_id;
         bool m_stopped = false;
         ThreadPool& m_pool;
+        std::shared_ptr<BentleyApi::BeConditionVariable> m_cv;
 
-        Worker(ThreadPool& pool, int id) noexcept : m_pool(pool), m_id(id) {}
+        Worker(ThreadPool& pool, int id) noexcept : m_pool(pool), m_cv(m_pool.m_cv), m_id(id) {}
         Worker(Worker const&) = delete;
         void Work();
         void Start();
