@@ -292,7 +292,27 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
         else
             {
             static double   s_leafTolerance = 0.0;      // Use the tolerance of the input tileset.
-            Cesium::ICesiumPublisher::WriteCesiumTileset(rootJsonFile, modelDir, *geometricModel, dbToEcefTransform, s_leafTolerance);
+            Dgn::Tile::IO::WriteStatus status = Cesium::ICesiumPublisher::WriteCesiumTileset(rootJsonFile, modelDir, *geometricModel, dbToEcefTransform, s_leafTolerance);
+            if (Dgn::Tile::IO::WriteStatus::Success != status)
+                {
+                ReportIssueV(Converter::IssueSeverity::Error, IssueCategory::DiskIO(), Issue::TileSetCreationFailure(), "", model->GetName().c_str(), status);
+                continue;
+                }
+            }
+
+        BeFileName entryName;
+        bool isDir;
+        bool isEmpty = true;
+        BeDirectoryIterator dirs(modelDir);
+        while (dirs.GetCurrentEntry(entryName, isDir) == SUCCESS && isEmpty)
+            {
+            isEmpty = false;
+            dirs.ToNext();
+            }
+        if (isEmpty)
+            {
+            ReportIssueV(Converter::IssueSeverity::Error, IssueCategory::DiskIO(), Issue::TileSetCreationFailure(), "", model->GetName().c_str(), -1);
+            continue;
             }
 
         Utf8String url;
@@ -339,7 +359,7 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
 
             if (!response.simpleSuccess)
                 {
-                ReportIssue(Converter::IssueSeverity::Error, IssueCategory::DiskIO(), Issue::RDSUploadFailed(), "");
+                ReportIssueV(Converter::IssueSeverity::Error, IssueCategory::DiskIO(), Issue::RDSUploadFailed(), "", model->GetName().c_str());
                 continue;
                 }
 

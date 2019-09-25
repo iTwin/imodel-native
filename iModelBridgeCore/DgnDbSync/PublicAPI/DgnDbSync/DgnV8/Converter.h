@@ -820,7 +820,8 @@ struct Converter
         L10N_STRING(MissingFileIOImplementer)    // =="File handler %s missing V8 file type implementation"==
         L10N_STRING(TemporaryDirectoryNotFound)  // =="Failed to find/create temporary directory %s"==
         L10N_STRING(RDSUninitialized)            // =="Failed to initialize RDSRequestManager"==
-        L10N_STRING(RDSUploadFailed)             // =="Failed to upload tileset to Reality Data Server"==
+        L10N_STRING(TileSetCreationFailure)      // =="Failed to create tiles for %s (Status: %d)."==
+        L10N_STRING(RDSUploadFailed)             // =="Failed to upload tileset %s to Reality Data Server"==
         L10N_STRING(GCSHardConversionError)      // =="Geographic Coordinate System conversion error"==
         L10N_STRING(GCSDatumConversionFailure)   // =="Geographic Coordinate System conversion failure: probably datum transformation issue. Are grid shift files missing?"==
         L10N_STRING(GCSRangeConversionWarning)   // =="Geographic Coordinate System conversion: coordinates outside the normal useful range of system."==
