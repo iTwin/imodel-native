@@ -12,7 +12,7 @@
 #include <ProjectWise_InternalSDK/Include/aadmsapi.fdf>
 
 #include <VersionedDgnV8Api/DgnPlatform/DgnDocumentManager.h>
-
+#include <BeXml/BeXml.h>
 
 struct PWMoniker :  public Bentley::DgnPlatform::DgnDocumentMoniker
     {};
@@ -98,15 +98,46 @@ DgnDocumentMonikerPtr PWDocumentManager::_CreateMonikerFromRawData(WCharCP porta
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static StatusInt   ExtractMonikerFromXml (BentleyApi::WString& dmsMoniker, WCharCP customXMLString)
+    {
+    if (NULL == customXMLString)
+        return ERROR;
+
+    //<DmsMoniker>pw://ewr-pw.bentley.com:EWR2/Documents/D{57597070-9378-4d8f-b551-cbc938dcb216}</DmsMoniker>
+    BentleyApi::BeXmlStatus xmlStatus;
+    BentleyApi::BeXmlDomPtr xmlDom = BentleyApi::BeXmlDom::CreateAndReadFromString(xmlStatus, customXMLString);
+    if (!xmlDom.IsValid())
+        return ERROR;
+        
+    BentleyApi::BeXmlNodeP root = xmlDom->GetRootElement();
+    if (nullptr == root)
+        return ERROR;
+
+    if (0 != strcmp(root->GetName(), "DmsMoniker"))
+        return ERROR;
+
+    return BentleyApi::BEXML_Success == root->GetContent(dmsMoniker) ? SUCCESS : ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                  Jonathan.DeCarlo                  07/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDocumentMonikerPtr PWDocumentManager::_CreateMonikerImpl(WCharCP portableName, WCharCP fullPathIn, WCharCP providerId, WCharCP searchPathIn, bool findFullPathFirst, WCharCP customXMLString, CREATEMONIKERIMPLFUNC parentFunction)
     {
-    if (NULL == providerId)
-        return parentFunction(portableName, fullPathIn, providerId, searchPathIn, findFullPathFirst, customXMLString);
+    BentleyApi::WString dmsMoniker;
+    if (NULL != providerId)
+        dmsMoniker = providerId;
+
+    if (dmsMoniker.empty())//Look at customXMLstring to resolve it
+        {
+        if (SUCCESS != ExtractMonikerFromXml (dmsMoniker, customXMLString))
+            return parentFunction(portableName, fullPathIn, providerId, searchPathIn, findFullPathFirst, customXMLString);
+        }
 
     int folderId, documentId;
-    if (SUCCESS != m_helper.GetFolderIdFromMoniker(folderId, documentId, providerId))
+    if (SUCCESS != m_helper.GetFolderIdFromMoniker(folderId, documentId, dmsMoniker.c_str()))
         return parentFunction(portableName, fullPathIn, providerId, searchPathIn, findFullPathFirst, customXMLString);
 
     WString refFolderName;
