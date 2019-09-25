@@ -51,12 +51,14 @@
     ### a hack to bypass the line #pragma comment(lib, "acpal.lib") in PAL\api\def.h!  Remove it when RealDWG-Future has it fixed!
     %if $(VendorVersion) <= 2018
         CCompOpts   + -D_ADESK_STATIC_LINKING_
-    %else
+    %elif $(VendorVersion) == 2019
         CCompOpts   + -DACFABRIC_WINRT
+    %else
+        CCompOpts   + -DACPAL_SUPPRESS_LIB_DIRECTIVE
     %endif
 
     ## RealDWG appends a version suffix to its core lib names:
-    %if $(VendorVersion) == 2019
+    %if $(VendorVersion) == 2019 || $(VendorVersion) == 2020
         ToolkitLibSuffix = 23
     %elif $(VendorVersion) == 2018
         ToolkitLibSuffix = 22
@@ -108,6 +110,3 @@ always:
         |  Compiler options: $(cDefs) $(CCompOpts) $(cIncs)
         |  -------- -------- --------- -------- -------- ---------
 %endif
-
-
-

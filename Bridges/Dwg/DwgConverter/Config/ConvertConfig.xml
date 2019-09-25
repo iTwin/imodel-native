@@ -112,7 +112,12 @@
         <AecPropertySet FromPropertyName="ClassId" FromPropertyValue="MLCR" ToClassName="Central Reserve" ElementLabelFrom="ACBOS_ObjectId" />
         <AecPropertySet FromPropertyName="ClassId" FromPropertyValue="GTVE" ToClassName="Verge" ElementLabelFrom="ACBOS_ObjectId" />
         <AecPropertySet FromPropertyName="ClassId" FromPropertyValue="GTEM" ToClassName="Embankment" ElementLabelFrom="ACBOS_ObjectId" />
+        <AecPropertySet FromPropertyName="ClassId" FromPropertyValue="RRVC" ToClassName="Safety Barrier (Concrete)" ElementLabelFrom="ACBOS_ObjectId" />
+        <AecPropertySet FromPropertyName="ClassId" FromPropertyValue="RRVS" ToClassName="Safety Barrier (Steel)" ElementLabelFrom="ACBOS_ObjectId" />
+        <AecPropertySet FromPropertyName="ClassId" FromPropertyValue="RRVR_RRET" ToClassName="End Terminal" ElementLabelFrom="ACBOS_ObjectId" />
+        <AecPropertySet FromPropertyName="ClassId" FromPropertyValue="DGCH" ToClassName="Surface Water Channel" ElementLabelFrom="ACBOS_ObjectId" />
         <AecPropertySet FromPropertyName="ClassId" FromPropertyValue="PVPV" ToClassName="Pavement Section" ElementLabelFrom="ACBOS_ObjectId" />
+        <AecPropertySet FromPropertyName="ClassId" FromPropertyValue="NMFW" ToClassName="Footway" ElementLabelFrom="ACBOS_ObjectId" />
         <AecPropertySet FromPropertyName="ClassId" FromPropertyValue="KFKB" ToClassName="Kerb" ElementLabelFrom="ACBOS_ObjectId" />
     </ElementClassMapping>
     <Options>

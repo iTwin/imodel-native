@@ -636,6 +636,10 @@ bool            DwgDbTextStyleTableRecord::IsVertical () const { return DWGDB_Is
 bool            DwgDbTextStyleTableRecord::IsShapeFile () const { return DWGDB_IsTrue(T_Super::isShapeFile()); }
 bool            DwgDbTextStyleTableRecord::IsActiveTextStyle () const { return T_Super::objectId() == DWGDB_CALLSDKMETHOD(T_Super::database()->getTEXTSTYLE(), T_Super::database()->textstyle()); }
 
+#if DWGTOOLKIT_RealDwg && VendorVersion > 2019
+// workaround a RealDWG bug: R2020 has added a new override method, AcDbTextStyleTableRecord::drawable(), but not exported in any dll, resulting in a link error!
+AcGiDrawable*   AcDbTextStyleTableRecord::drawable() { return nullptr; }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          1/16

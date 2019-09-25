@@ -9,7 +9,7 @@ ImporterTestsDir = $(baseDir)../DwgConverter/Tests/
 
 #-- Only test RealDwgBridge
 DWGTOOLKIT = RealDwg
-VendorVersion = 2019
+VendorVersion = 2020
 
 %include mdl.mki
 

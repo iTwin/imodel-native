@@ -1224,7 +1224,10 @@ explicit DwgGiViewport (DVec3dCR viewDir, DVec3dCR cameraUp, DPoint3dCR cameraLo
     m_viewDirection = Util::GeVector3dFrom (viewDir);
     m_cameraUpDirection = Util::GeVector3dFrom (cameraUp);
     m_cameraLocation = Util::GePoint3dFrom (cameraLoc);
-    m_cameraTarget.setToSum (m_cameraLocation, m_viewDirection);
+    if (m_viewDirection == DWGGE_Type(Vector3d)::kZAxis)
+        m_cameraTarget.set (0.0, 0.0, 0.0);
+    else
+        m_cameraTarget.setToSum (m_cameraLocation, m_viewDirection);
     m_lowerleftCorner.set (0.0, 0.0);
     m_upperrightCorner.set (0.0, 0.0);
     m_worldToEye = DWGGE_Type(Matrix3d)::worldToPlane (m_viewDirection);

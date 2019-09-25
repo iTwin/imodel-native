@@ -18,7 +18,7 @@
 
 %if $(DWGTOOLKIT) == "RealDwg"
     %if !defined (VendorVersion)
-        VendorVersion = 2019
+        %error Must define VendorVersion for RealDWG!
     %endif
 
     ## RealDWG appends a version suffix to its core lib names:
@@ -28,7 +28,7 @@
         ToolkitLibSuffix = 21
     %elif $(VendorVersion) == 2018
         ToolkitLibSuffix = 22
-    %elif $(VendorVersion) == 2019
+    %elif $(VendorVersion) == 2019 || $(VendorVersion) == 2020
         ToolkitLibSuffix = 23
     %else
         %error Missing ToolkitLibSuffix for a newer version of RealDWG?
@@ -46,7 +46,7 @@
 %elif $(DWGTOOLKIT) == "OpenDwg"
 
     %if !defined (VendorVersion)
-        VendorVersion = 190815
+        %error Must define VendorVersion for OpenDWG!
     %endif
 
     ## OpenDWG does not have a suffix in its core lib names:

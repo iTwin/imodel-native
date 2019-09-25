@@ -37,7 +37,7 @@ CCompOpts + -DDWGTOOLKIT_$(DWGTOOLKIT) -I$(DwgVendorAPI)
         RealDwgSuffix = 21
     %elif $(VendorVersion) == 2018
         RealDwgSuffix = 22
-    %elif $(VendorVersion) == 2019
+    %elif $(VendorVersion) == 2019 || $(VendorVersion) == 2020
         RealDwgSuffix = 23
     %else
         %error RealDwgSuffix not defined (a newer release of RealDWG?)!!

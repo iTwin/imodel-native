@@ -658,6 +658,14 @@ DgnCategoryId   DwgImporter::GetSpatialCategory (DgnSubCategoryId& subCategoryId
         layerId = xresolver.ResolveEntityLayer (entityLayer);
         }
 
+#ifdef DEBUG_LAYER
+    DwgDbLayerTableRecordPtr layer(layerId, DwgDbOpenMode::ForRead);
+    if (layer.OpenStatus() == DwgDbStatus::Success)
+        LOG.debugv ("Looking up category/subCategory for layer %ls, handle=%ls", layer->GetName().c_str(), layerId.ToAscii().c_str());
+    else
+        LOG.debugv ("Looking up category/subCategory for layer handle=%ls (failed opened for read!)", layer->GetName().c_str(), layerId.ToAscii().c_str());
+#endif
+
     // retieve layer from the cache
     auto found = m_layersInSync.find (layerId);
     if (found != m_layersInSync.end())
