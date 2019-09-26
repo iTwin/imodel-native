@@ -99,8 +99,6 @@ WString* ORDBridgeTestsHost::GetInputFileArgument(BeFileName inputPath, WCharCP 
 
 WString* ORDBridgeTestsHost::GetOutputFileArgument(BeFileName outputPath1, WCharCP bimFileName)
     {
-    char* outPath = getenv("OutRoot");
-
     BeFileName outputPath = GetOutputDirectory();
     outputPath.AppendString(WCharCP(bimFileName));
     WCharCP outputArgument(WString(WCharCP(L"--output=\"")).append(outputPath.c_str()).append(WCharCP(L"\"")).c_str());
@@ -287,7 +285,6 @@ bool CiviliModelBridgesORDBridgeTestsFixture::RunTestApp(WCharCP input, WCharCP 
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool CiviliModelBridgesORDBridgeTestsFixture::RunTestAppFullLocalPath(WCharCP inputFullLocalPath, WCharCP bimFileName, bool updateMode)
     {
-    char* outPath = getenv("OutRoot");
     BeFileName testAppPath = m_host->GetTestAppProductDirectory();
     testAppPath.AppendA("PublishORDToBim.exe");
 
@@ -970,8 +967,8 @@ static bool checkCurveVectorSpiralTypesAndLengths(BentleyM0200::CurveVectorCR cu
                     spiralType == DSpiral2dBase::TransitionType_ChineseCubic)
                     {
                     // Need to ask Claude or Earlin but length do not match very well?
-                    double length01 = spiralData->SpiralLength01();
-                    double lengthMap = spiralData->MappedSpiralLengthActiveInterval(RotMatrix::FromIdentity());
+                    /*double length01 = */spiralData->SpiralLength01();
+                    /*double lengthMap = */spiralData->MappedSpiralLengthActiveInterval(RotMatrix::FromIdentity());
                     if (fabs(length - spiralLength) > 0.1)
                         return false;
                     }

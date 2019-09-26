@@ -45,7 +45,8 @@ int PublishORDToBimDLL::RunBridge(int argc, WCharCP argv[])
         saparams.SetLoggingConfigFile(logFilePath);
         }
 
-    bool shouldTryUpdate = saparams.ShouldTryUpdate();
+    // <Jdec> Should the below line be used to test for update?
+    // bool shouldTryUpdate = saparams.ShouldTryUpdate();
     saparams.SetShouldTryUpdate(true);
 
     if (!s_hostInitialized)
