@@ -4,6 +4,7 @@
 #
 #--------------------------------------------------------------------------------------
 NOSTRICT=1
+GCC_DEFAULT_VISIBILITY=default
 %include mdl.mki
 
 nameToDefine = __IMODELJS_BUILD__
@@ -72,18 +73,23 @@ iModelJsHostObjs + $(o)IModelJsHost$(oext)
 #--------------------------------------------------------------------------------------
 #   Pull in the addon's object files
 #--------------------------------------------------------------------------------------
-addonObjs = $[@wildcard $(BuildContext)SubParts/Libs/*$(stlibext)]
-addonObjs + $[@wildcard $(BuildContext)SubParts/imodeljs-addon-objs/*.o]
+addonLibs = $[@wildcard $(BuildContext)SubParts/StaticLibs/*$(stlibext)]
+addonLibs + $[@wildcard $(BuildContext)SubParts/Assemblies/*$(stlibext)]
+addonObjs = $[@wildcard $(BuildContext)SubParts/imodeljs-addon-objs/*.o]
 
 DLM_NAME = $(appName)
-DLM_OBJECT_FILES            = $(iModelJsHostObjs) $(addonObjs) 
+DLM_OBJECT_FILES            = $(iModelJsHostObjs) $(addonObjs) $(addonLibs)
 DLM_OBJECT_DEST             = $(o)
 DLM_DEST                    = $(o)
 DLM_EXPORT_DEST             = $(o)
 DLM_NOENTRY                 = 1
-
-
-%include $(sharedMki)linkLibrary.mki
+LinkOptions + -lc++
+LinkOptions + -framework Foundation
+LinkOptions + -framework JavaScriptCore
+LinkOptions + -framework CFNetwork
+LinkOptions + -framework Security
+LinkOptions + -framework UIKit
+%include dlmlink.mki
 #----------------------------------------------------------------------
 # Deliver System JavaScript library required by runtime
 #----------------------------------------------------------------------

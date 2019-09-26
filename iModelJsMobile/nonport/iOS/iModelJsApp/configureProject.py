@@ -14,7 +14,7 @@ assetRoot   = os.environ['AssetRoot']
 iosarch = "arm64"
 
 configPaths = [
-    srcRoot + "iModelJs/nonport/iOS/iModelJsApp/iModelJsApp.xcconfig",
+    srcRoot + "imodel02/iModelJsMobile/nonport/iOS/iModelJsApp/iModelJsApp.xcconfig",
 ]
 
 print(configPaths)

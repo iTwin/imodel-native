@@ -64,7 +64,9 @@
     else if ([request isEqualToString:@"IModelJsFs"]
              || [request isEqualToString:@"./IModelJsFs"]
              || [request isEqualToString:@"../IModelJsFs"]
+             || [request isEqualToString:@"./lib/IModelJsFs.js"]
              || [request isEqualToString:@"../../IModelJsFs"])
+             
         return _ctx[@"IModelJsFsModule"];
     else if ([request isEqualToString:@"util_ex"])
         return _ctx[@"util_ex"];

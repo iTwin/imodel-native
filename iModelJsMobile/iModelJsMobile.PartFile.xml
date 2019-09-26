@@ -40,7 +40,6 @@
         <SubPart PartName="iModelJs" LibType="Static" />
         <Bindings>
             <PublicAPI ProductDirectoryName="iModelJsHostPublicAPI" Domain="iModelJsHost" />
-            <Libs ProductDirectoryName="iModelJsHostLibs" >Delivery/$(libprefix)iModelJsHost$(libext)</Libs>
             <Assemblies ProductDirectoryName="iModelJsHostLibs">Delivery/$(shlibprefix)iModelJsHost$(ApiNumber)$(shlibext)</Assemblies>
             <Directory ProductDirectoryName="Assets" ProductSubDirectory="system" SourceName="Delivery/system"/>
         </Bindings>
@@ -55,8 +54,8 @@
         Our highest-order dependency is iModelJsNodeAddon, but we can't run that directly on iOS...
     -->
     <Part Name="iModelJsHostPakage.Dev">
-        <SubPart PartName="iModelCorePRG" PartFile="iModelCore/iModelCore"/>
-        <SubPart PartName="MakePackages"/>
+       <SubPart PartName="iModelCorePRG" PartFile="iModelCore/iModelCore"/>
+       <SubPart PartName="MakePackages"/>
     </Part>
 
     <Part Name="iModelJsHostPakage" PrgOutputDir="iModelJsMobile">
@@ -64,7 +63,7 @@
     </Part>
 
     <Product Name="iModelJsHost">
-        <SubPart PartName="iModelJsHostLib" LibType="Static" />
+        <SubPart PartName="iModelJsHostLib" LibType="Dynamic" />
         <Directories DirectoryListName="iModelJsHost" />
     </Product>
 

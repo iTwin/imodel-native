@@ -176,9 +176,11 @@ void BootstrapBackend(JSContext* ctx, NSURL* backendUrl, NSArray<NSString*>* sea
     ctx[@"process"][@"argv"] = NSProcessInfo.processInfo.arguments;
     ctx[@"process"][@"title"] = NSProcessInfo.processInfo.processName;
     ctx[@"process"][@"platform"] =  @"iOS";
+    ctx[@"process"][@"browser"] =  @(YES);
     ctx[@"process"][@"versions"] =  [NSArray new];
     ctx[@"process"][@"version"] =  @"1.0.0";
     ctx[@"process"][@"cwd"] = ^(){ return [NSFileManager.defaultManager currentDirectoryPath]; };
+    ctx[@"process"][@"exit"] = ^() { exit(0); };
     ctx[@"process"][@"ext"] = [JSValue valueWithNewObjectInContext:ctx];
     ctx[@"process"][@"chdir"] = ^(NSString* newFolder){
         NSFileManager *filemgr = [NSFileManager defaultManager];

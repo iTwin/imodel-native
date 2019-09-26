@@ -3614,7 +3614,7 @@ public:
 
     Napi::Value Reset(Napi::CallbackInfo const& info)
         {
-        if (!m_stmt->IsPrepared())
+        if (!m_stmt || !m_stmt->IsPrepared())
             THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlStatement is not prepared.", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
 
         ECSqlStatus status = m_stmt->Reset();
@@ -6142,6 +6142,12 @@ void JsInterop::LogMessageInContext(Utf8StringCR category, NativeLogging::SEVERI
     doDeferredLogging();
 
     auto env = s_logger.Env();
+    if (!env)
+        {
+        // know issue in iOS with JSC
+        return;
+        }
+        
     Napi::HandleScope scope(env);
 
     auto wasCtx = callGetCurrentClientRequestContext(env);

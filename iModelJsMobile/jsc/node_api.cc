@@ -8,6 +8,7 @@
 #include <vector>
 #include <Napi/node_api.h>
 #include "../node_internals.h"
+#include <string>
 #include <Bentley/BeAssert.h>
 #undef min
 
@@ -60,13 +61,14 @@ const char* error_messages[] = {nullptr,
 //=======================================================================================
 struct JSCCallbackData {
 public:
-    JSCCallbackData(napi_env environment, napi_callback callback)
-    : _env(environment), _callback(callback) {}
-    JSValueRef Callback(napi_callback_info info) {return _callback(_env,info);}
+    explicit JSCCallbackData(napi_env environment, void* callbackData)
+    : _env(environment), _data(callbackData) {}
     napi_env Env() {return _env;}
-private:
+    void* Data() { return _data; }
+protected:
     napi_env _env;
-    napi_callback _callback;
+     void* _data;
+
 };
 
 //=======================================================================================
@@ -75,10 +77,11 @@ private:
 struct JSCFunctionCallbackData : JSCCallbackData {
 public:
     JSCFunctionCallbackData(napi_env environment, napi_callback callback, void* callbackData)
-    : JSCCallbackData(environment, callback), _data(callbackData) {}
-    void* Data() { return _data; }
+    : JSCCallbackData(environment, callbackData), _callback(callback) {}
+
+    JSValueRef Callback(napi_callback_info info) {return _callback(_env,info);}
 private:
-    void* _data;
+    napi_callback _callback;
 };
 
 //=======================================================================================
@@ -95,30 +98,19 @@ private:
     JSObjectRef _prototype;
 };
 
-struct wrapped_object {
-    napi_env env;
-    void* native_object;
-    napi_finalize finalize_cb;
-    void* finalize_hint;
-};
-
 //=======================================================================================
-// @bsiclass                                    Satyakam.Khadilkar    03/2018
+// @bsiclass                                    Affan.Khan                   06/2019
 //=======================================================================================
-struct JSCFunctionCallbackWrapper {
-public:
-    JSCFunctionCallbackWrapper(JSContextRef context, JSCFunctionCallbackData* data, JSObjectRef thisObj, size_t argC, const JSValueRef argV[], bool isConstructor)
-    : _context(context), _data(data), _this(thisObj), _args_length(argC), _argv(argV), _isConstructor(isConstructor) {}
-    
-    JSValueRef InvokeCallback() {
-        return _data->Callback((napi_callback_info)this);
-    }
+struct JSCCallbackWrapper {
+    JSCCallbackWrapper(JSContextRef context, JSCCallbackData* data, JSObjectRef thisObj, size_t argC, const JSValueRef argV[])
+    :_context(context), _data(data), _this(thisObj), _argn(argC), _argv(argV){}
     
     void* Data() { return _data ? _data->Data() : nullptr; }
-    size_t ArgsLength() { return _args_length;}
+    size_t ArgsLength() { return _argn;}
+    JSObjectRef This() { return _this;}
     void Args(napi_value* buffer, size_t buffer_length) {
         size_t i = 0;
-        size_t min = std::min(buffer_length, _args_length);
+        size_t min = std::min(buffer_length, _argn);
         
         for (; i < min; i += 1) {
             buffer[i] = _argv[i];
@@ -131,9 +123,120 @@ public:
             }
         }
     }
+    JSContextRef GetContext() const {return _context;}
+    template<class T>
+    T* GetCbData() const {return reinterpret_cast<T*>(_data);}
+private:
+    JSContextRef _context;
+    size_t _argn;
+    const JSValueRef* _argv;
+    JSObjectRef _this;
+    JSCCallbackData* _data;
+};
+//=======================================================================================
+// @bsiclass                                    Affan.Khan                   06/2019
+//=======================================================================================
+struct wrapped_object {
+    napi_env env;
+    void* native_object;
+    napi_finalize finalize_cb;
+    void* finalize_hint;
+};
+
+//=======================================================================================
+// @bsiclass                                    Affan.Khan                   06/2019
+//=======================================================================================
+struct JSCAccessorCallbackData : JSCCallbackData {
+public:
+    JSCAccessorCallbackData(napi_env environment, napi_callback getCb, napi_callback setCb, void* callbackData)
+    : JSCCallbackData(environment, callbackData), _getCb(getCb), _setCb(setCb) {}
+    JSValueRef CallbackGet(napi_callback_info info) {return _getCb(_env,info);}
+    void CallbackSet(napi_callback_info info) { _setCb(_env,info); }
+private:
+    napi_callback _getCb;
+    napi_callback _setCb;
+};
+
+//=======================================================================================
+// @bsiclass                                    Affan.Khan                   06/2019
+//=======================================================================================
+struct JSCAccessorCallbackWrapper : JSCCallbackWrapper {
+public:
+    JSCAccessorCallbackWrapper(JSContextRef context, JSCAccessorCallbackData* data, JSObjectRef thisObj, JSValueRef* value)
+    :JSCCallbackWrapper(context, data, thisObj, value ? 1 : 0, value) {}
+    JSValueRef InvokeCallbackGet() {
+        return GetCbData<JSCAccessorCallbackData>()->CallbackGet((napi_callback_info)this);
+
+    }
+    void InvokeCallbackSet() {
+        GetCbData<JSCAccessorCallbackData>()->CallbackSet((napi_callback_info)this);
+    }
+
+    static JSStringRef CreateNativeAccessorName(JSStringRef orignalProperty) {
+        std::string str = "___ios_accessor_native_" + ToUtf8(orignalProperty);
+        return FromUtf8(str);
+    }
+    static JSStringRef CreateNativeAccessorNameUtf8(Utf8CP orignalProperty) {
+        std::string str = "___ios_accessor_native_" + std::string(orignalProperty);
+        return FromUtf8(str);
+    }
     
-    JSObjectRef This() { return _this;}
+    static bool HasPropertyCallback(JSContextRef ctx, JSObjectRef object, JSStringRef propertyName){
+        printf("here");
+        return true;
+    }
+    static void GetPropertyNamesCallback(JSContextRef ctx, JSObjectRef object, JSPropertyNameAccumulatorRef propertyNames) {
+        printf("to");
+    }
+    // (JSContextRef ctx, JSObjectRef object, JSStringRef propertyName, JSValueRef *exception);
+    static JSValueRef CallAsGetProperty (JSContextRef ctx, JSObjectRef thisObject, JSStringRef propertyName, JSValueRef* exception){
+
+        JSStringRef sysProp = CreateNativeAccessorName(propertyName);
+        JSValueRef sysPropVal = JSObjectGetProperty(ctx, thisObject, sysProp, nullptr);
+        JSObjectRef sysPropObj = JSValueToObject(ctx, sysPropVal, nullptr);
+        auto funcCBData = reinterpret_cast<JSCAccessorCallbackData*>(JSObjectGetPrivate(sysPropObj));
+        JSStringRelease(sysProp);
+        JSCAccessorCallbackWrapper cbwrapper(ctx, funcCBData, thisObject, nullptr);
+        return cbwrapper.InvokeCallbackGet();
+    }
+    // (JSContextRef ctx, JSObjectRef object, JSStringRef propertyName, JSValueRef value, JSValueRef *exception);
+    static bool CallAsSetProperty (JSContextRef ctx, JSObjectRef thisObject, JSStringRef propertyName, JSValueRef value, JSValueRef* exception) {
+     
+        JSStringRef sysProp = CreateNativeAccessorName(propertyName);
+        JSValueRef sysPropVal = JSObjectGetProperty(ctx, thisObject, sysProp, nullptr);
+        JSObjectRef sysPropObj = JSValueToObject(ctx, sysPropVal, nullptr);
+        auto funcCBData = reinterpret_cast<JSCAccessorCallbackData*>(JSObjectGetPrivate(sysPropObj));
+        JSStringRelease(sysProp);
+        JSCAccessorCallbackWrapper cbwrapper(ctx, funcCBData, thisObject, &value);
+        cbwrapper.InvokeCallbackSet();
+        return true;
+    }
+private:
+    static JSStringRef FromUtf8(std::string string) {
+        return JSStringCreateWithUTF8CString(string.c_str());
+    }
+    static std::string ToUtf8(JSStringRef string) {
+        const size_t sz = JSStringGetMaximumUTF8CStringSize(string);
+        std::string str;
+        str.resize (sz);
+        JSStringGetUTF8CString(string, const_cast<char*>(str.c_str()), sz);
+        return str;
+    }
+};
+
+//=======================================================================================
+// @bsiclass                                    Satyakam.Khadilkar    03/2018
+//=======================================================================================
+struct JSCFunctionCallbackWrapper : JSCCallbackWrapper{
+public:
+    JSCFunctionCallbackWrapper(JSContextRef context, JSCFunctionCallbackData* data, JSObjectRef thisObj, size_t argC, const JSValueRef argV[], bool isConstructor)
+    : JSCCallbackWrapper(context, data, thisObj, argC, argV), _isConstructor(isConstructor) {}
     
+    JSValueRef InvokeCallback() {
+        return GetCbData<JSCFunctionCallbackData>()->Callback((napi_callback_info)this);
+    }
+    
+
     bool IsConstructor() { return _isConstructor; }
     
     static JSValueRef CallAsFunction (JSContextRef ctx, JSObjectRef function, JSObjectRef thisObject,
@@ -173,11 +276,6 @@ public:
     }
     
 private:
-    JSContextRef _context;
-    size_t _args_length;
-    const JSValueRef* _argv;
-    JSObjectRef _this;
-    JSCFunctionCallbackData* _data;
     bool _isConstructor;
 };
 
@@ -261,7 +359,7 @@ NAPI_NO_RETURN void napi_fatal_error(const char* location,
 }
 
 void FinalizeFunctionCallback(JSObjectRef function) {
-    auto funcCBData = (JSCFunctionCallbackData*)JSObjectGetPrivate(function);
+    auto funcCBData = (JSCCallbackData*)JSObjectGetPrivate(function);
     if (funcCBData) {
         delete funcCBData;
     }
@@ -380,13 +478,14 @@ napi_status napi_get_property_names(napi_env env,
     JSContextRef ctx = env->GetContext();
     JSPropertyNameArrayRef properties = JSObjectCopyPropertyNames(ctx, (JSObjectRef)object);
     size_t count = JSPropertyNameArrayGetCount(properties);
-    
+    JSObjectRef rs = JSObjectMakeArray(ctx, 0, nullptr, nullptr);
     for (size_t i = 0; i < count; i++) {
-        JSStringRef propertyString = JSPropertyNameArrayGetNameAtIndex(properties,i);
-        result[i] = JSValueMakeString(ctx, propertyString);
+        JSStringRef propertyString = JSPropertyNameArrayGetNameAtIndex(properties, i);
+        JSValueRef val = JSValueMakeString(ctx, propertyString);
+        JSObjectSetPropertyAtIndex(ctx, rs, i, val, nullptr);
         JSStringRelease(propertyString);
     }
-
+    *result = rs;
     return GET_RETURN_STATUS(env);
 }
 
@@ -627,7 +726,26 @@ napi_status napi_define_properties(napi_env env,
         const napi_property_descriptor* p = properties + i;
         if (p->utf8name != nullptr) {
             if (p->getter != nullptr || p->setter != nullptr) {
-                // TODO
+                
+                JSClassDefinition accessorDef = kJSClassDefinitionEmpty;
+                accessorDef.className = p->utf8name;
+                accessorDef.getProperty = JSCAccessorCallbackWrapper::CallAsGetProperty;
+                accessorDef.setProperty = JSCAccessorCallbackWrapper::CallAsSetProperty;
+                accessorDef.hasProperty = JSCAccessorCallbackWrapper::HasPropertyCallback;
+                accessorDef.getPropertyNames = JSCAccessorCallbackWrapper::GetPropertyNamesCallback;
+                accessorDef.finalize = FinalizeFunctionCallback;
+                JSClassRef accessorRef = JSClassCreate(&accessorDef);
+                auto funcCBData = new JSCAccessorCallbackData(env, p->getter, p->setter, p->data);
+                JSObjectRef nativeObj = JSObjectMake(ctx, accessorRef, funcCBData);
+                /*
+                JSStringRef accessorNativeContainerName = JSCAccessorCallbackWrapper::CreateNativeAccessorNameUtf8(p->utf8name);
+                JSObjectSetProperty(ctx, (JSObjectRef)object, accessorNativeContainerName, nativeObj, kJSPropertyAttributeNone, nullptr);
+                JSStringRelease(accessorNativeContainerName);
+                JSClassRelease(accessorRef);
+                */
+                JSObjectSetPrototype(ctx, (JSObjectRef)object, nativeObj);
+                
+                
             } else if (p->method != nullptr) {
                 JSClassDefinition methodDef = kJSClassDefinitionEmpty;
                 methodDef.className = p->utf8name;
@@ -893,11 +1011,20 @@ napi_status napi_get_boolean(napi_env env, bool value, napi_value* result) {
 napi_status napi_create_symbol(napi_env env,
                                napi_value description,
                                napi_value* result) {
-  CHECK_ENV(env);
-  CHECK_ARG(env, result);
-
-//  JSContextRef ctx = env->GetContext();
-  // TODO
+    CHECK_ENV(env);
+    CHECK_ARG(env, result);
+    JSContextRef ctx = env->GetContext();
+    JSStringRef valueString = JSValueToStringCopy(ctx, description, NULL);
+    size_t requestedLength = JSStringGetMaximumUTF8CStringSize(valueString);
+    char* buff = (char*)malloc(requestedLength);
+    memset(buff, 0, requestedLength);
+    JSStringGetUTF8CString(valueString, buff, requestedLength);
+    free(buff);
+    // create string value for now as symbol api is avaliable in ios 13 (beta)
+    JSStringRelease(valueString);
+    JSStringRef strString = JSStringCreateWithUTF8CString(buff);
+    *result = JSValueMakeString(ctx, strString);
+    JSStringRelease(strString);
 
   return napi_clear_last_error(env);
 }
@@ -1034,7 +1161,7 @@ napi_status napi_get_cb_info(
     CHECK_ENV(env);
     CHECK_ARG(env, cbinfo);
 
-    JSCFunctionCallbackWrapper* info = reinterpret_cast<JSCFunctionCallbackWrapper*>(cbinfo);
+    JSCCallbackWrapper* info = reinterpret_cast<JSCCallbackWrapper*>(cbinfo);
     
     if (argv != nullptr) {
         CHECK_ARG(env, argc);
