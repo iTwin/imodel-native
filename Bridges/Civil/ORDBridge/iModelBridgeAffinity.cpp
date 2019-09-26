@@ -90,7 +90,6 @@ extern "C" void iModelBridge_getAffinity(WCharP buffer, const size_t bufferSize,
         if (nullptr == threadHost)
             DgnV8Api::DgnPlatformLib::Initialize(host, false);
 
-        DgnFileStatus status;
         DgnDocumentPtr doc = DgnDocument::CreateForLocalFile(sourceFileName);
         if (doc.IsNull())
             return;

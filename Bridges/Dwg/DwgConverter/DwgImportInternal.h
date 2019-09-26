@@ -18,7 +18,7 @@
 #include <Bentley/BeDirectoryIterator.h>
 #include <Bentley/BeFileListIterator.h>
 #include <Bentley/Desktop/FileSystem.h>
-
+#include <BeHttp/HttpClient.h>
 #include <BeSQLite/BeSQLite.h>
 #include <DgnPlatform/DgnPlatform.h>
 #include <DgnPlatform/DgnDb.h>

@@ -8,7 +8,6 @@
 
 #include <Bentley/Bentley.h>
 #include <Bentley/SHA1.h>
-#include <BeHttp/HttpClient.h>
 #include <Logging/bentleylogging.h>
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/DgnDb.h>
@@ -22,6 +21,11 @@ typedef std::shared_ptr<struct ClientInfo> ClientInfoPtr;
 typedef std::shared_ptr<struct IConnectSignInManager> IConnectSignInManagerPtr;
 typedef std::shared_ptr<struct ISecurityToken> ISecurityTokenPtr;
 } END_BENTLEY_NAMESPACE
+
+BEGIN_BENTLEY_NAMESPACE namespace Http {
+    typedef std::shared_ptr<struct IHttpHeaderProvider> IHttpHeaderProviderPtr;
+} END_BENTLEY_NAMESPACE
+
 
 #ifdef __IMODEL_BRIDGE_BUILD__
     #define IMODEL_BRIDGE_EXPORT EXPORT_ATTRIBUTE

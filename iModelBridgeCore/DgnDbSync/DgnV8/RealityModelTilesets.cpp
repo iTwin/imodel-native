@@ -359,7 +359,7 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
 
             if (!response.simpleSuccess)
                 {
-                ReportIssueV(Converter::IssueSeverity::Error, IssueCategory::DiskIO(), Issue::RDSUploadFailed(), "", model->GetName().c_str());
+                ReportIssueV(Converter::IssueSeverity::Error, IssueCategory::DiskIO(), Issue::RDSUploadFailed(), response.GetSimpleMessage().c_str(), model->GetName().c_str());
                 continue;
                 }
 

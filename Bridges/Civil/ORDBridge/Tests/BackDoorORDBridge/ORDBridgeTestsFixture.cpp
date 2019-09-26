@@ -1148,7 +1148,7 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedElementItemType
 
     BentleyApi::ECN::ECClassCP ecClass = dynSchema->GetClassCP(typeClassName);
     BeAssert(ecClass != NULL);
-    int classPropCount = ecClass->GetPropertyCount();
+    size_t classPropCount = ecClass->GetPropertyCount();
     BeAssert(typePropCount == classPropCount);
 
     ECSqlStatement stmt;

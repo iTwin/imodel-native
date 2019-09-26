@@ -311,6 +311,12 @@ BentleyStatus       iModelBridgeRegistryBase::ComputeBridgeAffinityInParentConte
         return SUCCESS;
         }
     
+    //We have a ifc bridge file. But parent is not ifc bridge. Lets ignore its affinity
+    if (0 == bridgeAffinity.m_bridgeRegSubKey.CompareToI(L"IFCBridge"))
+        {
+        bridgeAffinity.m_bridgeRegSubKey = parent;
+        return SUCCESS;
+        }
     //We have a revit bridge file. But parent is not revit bridge. Lets ignore its affinity
     if (0 == bridgeAffinity.m_bridgeRegSubKey.CompareToI(L"RevitBridge"))
         {
