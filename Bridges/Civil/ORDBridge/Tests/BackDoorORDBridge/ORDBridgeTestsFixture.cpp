@@ -283,6 +283,48 @@ bool CiviliModelBridgesORDBridgeTestsFixture::RunTestApp(WCharCP input, WCharCP 
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Greg.Ashe       09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool CiviliModelBridgesORDBridgeTestsFixture::RunTestAppFullLocalPath(WCharCP inputFullLocalPath, WCharCP bimFileName, bool updateMode)
+    {
+    char* outPath = getenv("OutRoot");
+    BeFileName testAppPath = m_host->GetTestAppProductDirectory();
+    testAppPath.AppendA("PublishORDToBim.exe");
+
+    BeFileName inputPath(inputFullLocalPath);
+
+    BeFileName outputPath = m_host->GetOutputDirectory();
+    outputPath.AppendString(WCharCP(bimFileName));
+
+    if (!updateMode && outputPath.DoesPathExist())
+        outputPath.BeDeleteFile();
+
+    WCharCP testAppPathArgument = testAppPath;
+
+    WString inputArgument(WString(WCharCP(L"--input=\"")).append(inputPath.c_str()).append(WCharCP(L"\"")).c_str());
+    //auto inputArgument = m_host->GetInputFileArgument(inputPath, input);
+    auto outputArgument = m_host->GetOutputFileArgument(outputPath, bimFileName);
+    WCharCP noAssertDialoguesArgument = WCharCP(L"--no-assert-dialogs");
+    WCharCP command[4] = {testAppPathArgument, WCharCP((inputArgument).c_str()), WCharCP((*outputArgument).c_str()), noAssertDialoguesArgument};
+
+    int errcode = PublishORDToBimDLL::RunBridge(4, command);
+
+    //had to store the arguments on the heap to prevent the strings from colliding
+    //delete inputArgument;
+    delete outputArgument;
+
+    bool retVal = (0 == errcode);
+
+    if (retVal)
+        {
+        if (!outputPath.DoesPathExist())
+            BeAssert(false);
+        }
+
+    return retVal;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 +---------------+---------------+---------------+---------------+---------------+------*/
 AlignmentCPtr getRoadRailAlignmentByName(DgnDbP dgnDbPtr, Utf8CP alignmentName)
     {
@@ -325,7 +367,7 @@ AlignmentCPtr getRoadRailAlignmentByName(DgnDbP dgnDbPtr, Utf8CP alignmentName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Greg.Ashe       09/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedBimFileSchemas(Utf8CP bimFileName)
+DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedBimFileSchemasAndCategories(Utf8CP bimFileName, bvector<Utf8String> const& requiredSubCatNames)
     {
     BeFileName outputPath = m_host->GetOutputDirectory();
     outputPath.AppendA(bimFileName);
@@ -337,6 +379,7 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedBimFileSchemas(
     if (dgnDbPtr.IsNull())
         return nullptr;
 
+    // Schemas
     BentleyApi::ECN::ECSchemaCP schema = dgnDbPtr->Schemas().GetSchema(Utf8String("DgnV8OpenRoadsDesigner"));
     BeAssert(NULL != schema);
     BeAssert(false == schema->IsDynamicSchema());
@@ -347,10 +390,51 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedBimFileSchemas(
     BeAssert(true == dynSchema->IsDynamicSchema());
     BeAssert(dynSchema->GetClassCount() > 0);
 
-    //BentleyApi::ECN::ECClassCP ecClass = dynSchema->GetClassCP(typeClassName);
-    //BeAssert(ecClass != NULL);
-    //int classPropCount = ecClass->GetPropertyCount();
-    //BeAssert(typePropCount == classPropCount);
+    // Categories
+    Utf8String plannarCategoryName("2D (Plan-View)"); // PlannarCategoryName
+    auto& dictionaryModelR = dgnDbPtr->GetDictionaryModel();
+    Dgn::DgnCategoryId plannarCatId = Dgn::SpatialCategory::QueryCategoryId(dictionaryModelR, plannarCategoryName);
+    if (!plannarCatId.IsValid())
+        BeAssert(false && "Did not find plannar category");
+
+    Utf8String defaultSubCatName("Default"); // CATEGORY_NAME_Uncategorized
+    Dgn::DgnSubCategoryId defaultSubCatId = Dgn::DgnSubCategory::QuerySubCategoryId(*dgnDbPtr.get(), DgnSubCategory::CreateCode(*dgnDbPtr.get(), plannarCatId, defaultSubCatName)); 
+    if (!defaultSubCatId.IsValid())
+        BeAssert(false && "Did not find default sub category");
+
+    BeSQLite::EC::ECSqlStatement stmt;
+    stmt.Prepare(*dgnDbPtr, "SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_SpatialCategory) " WHERE Model.Id = ? AND Rank = ? ORDER BY CodeValue;");
+    BeAssert(stmt.IsPrepared());
+
+    stmt.BindId(1, dictionaryModelR.GetModelId());
+    stmt.BindInt(2, static_cast<int32_t>(Dgn::DgnCategory::Rank::User));
+
+    bvector<Dgn::DgnCategoryId> convertedCatIds;
+    while (BeSQLite::DbResult::BE_SQLITE_ROW == stmt.Step())
+        convertedCatIds.push_back(stmt.GetValueId<Dgn::DgnCategoryId>(0));
+
+    stmt.Finalize();
+
+    if (convertedCatIds.empty())
+        BeAssert(false && "Failed to find any 2d converted categories");
+
+    bmap<Utf8String, Dgn::DgnSubCategoryId> subCategoryNameMap;   
+    for (auto catId : convertedCatIds)
+        {
+        auto convertedCategoryCPtr = Dgn::SpatialCategory::Get(*dgnDbPtr, catId);
+        auto subCatName = convertedCategoryCPtr->GetCategoryName();
+        Dgn::DgnSubCategoryId subCatId = Dgn::DgnSubCategory::QuerySubCategoryId(*dgnDbPtr, DgnSubCategory::CreateCode(*dgnDbPtr, plannarCatId, subCatName));
+        if (!subCatId.IsValid())
+            BeAssert(false && "Failed to find converted plannar sub category");
+        subCategoryNameMap.insert({ subCatName, subCatId });
+        }
+
+    for (auto subCatName : requiredSubCatNames)
+        {
+        auto subCatIter = subCategoryNameMap.find(subCatName);
+        if (subCategoryNameMap.end() == subCatIter)
+            BeAssert(false && "Failed to find required sub category");
+        }
 
     return dgnDbPtr;
     }

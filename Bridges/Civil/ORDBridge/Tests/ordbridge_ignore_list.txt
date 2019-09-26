@@ -1,4 +1,6 @@
 # Tests that should not be run
+CiviliModelBridgesORDBridgeTests.ORDDebugTest
+CiviliModelBridgesORDBridgeTests.ORDFullLocalPathTest
 
 # The following tests can be returned to the active set of tests once iModel02 upgrades to using PP 10.13.
 

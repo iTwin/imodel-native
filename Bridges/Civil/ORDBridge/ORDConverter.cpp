@@ -13,6 +13,7 @@
 #define DefaultDesignAlignmentsName     "Road/Rail Design Alignments"
 #define DefaultCorridorSegmentName      "Corridor Overall Range"
 #define QuantityTakeoffsSchemaName      "QuantityTakeoffsAspects"
+#define PlannarCategoryName             "2D (Plan-View)"
 
 BEGIN_ORDBRIDGE_NAMESPACE
 
@@ -81,6 +82,14 @@ private:
     void Initialize();
     BentleyStatus SetupSchema(BeFileNameCR assetsDir);
     BentleyStatus AddQuantityTakeOffAspectClasses();
+
+    ///////////////////////////////////////////////////////////////////////////////////////
+    // TEMP PROOFOFCONCEPT FOR SCHEMA FROM PLUGIN PROVIDERS
+    //ECN::ECSchemaPtr m_PROOFOFCONCEPTSchema;
+    //BentleyStatus SetupPROOFOFCONCEPTSchema(BeFileNameCR assetsDir);
+    //BentleyStatus AddPROOFOFCONCEPTClasses(BeFileNameCR assetsDir);
+    ///////////////////////////////////////////////////////////////////////////////////////
+
     void AddClass(Utf8StringCR name);
     void AddClasses(ConsensusConnectionR cifConn);
     bool RequireSchemaUpdate();
@@ -88,14 +97,6 @@ private:
 
 public:
     BentleyStatus Generate(Dgn::DgnDbR dgnDb, BeFileNameCR assetsDir, ConsensusConnectionR cifConn);
-
-    ///////////////////////////////////////////////////////////////////////////////////////
-    // TEMP PROOF OF CONCEPT FOR SCHEMA FROM PLUGIN PROVIDERS
-    // GABEDIEGOGREG -- Just placed in ORDDynamicSchemaGenerator for updates?, not sure where will need to call it from
-    ///////////////////////////////////////////////////////////////////////////////////////
-    //BentleyStatus GenerateNewDiegoSchema(Dgn::DgnDbR dgnDb, BeFileNameCR assetsDir, ConsensusConnectionR cifConn);
-    ///////////////////////////////////////////////////////////////////////////////////////
-
 }; // ORDDynamicSchemaGenerator
 
 /*---------------------------------------------------------------------------------**//**
@@ -122,6 +123,7 @@ BentleyStatus ORDDynamicSchemaGenerator::SetupSchema(BeFileNameCR assetsDir)
     if (ECN::ECObjectsStatus::Success != ECN::ECSchema::CreateSchema(m_dynamicSchema, GetTargetSchemaName(), "orddgndyn", 1, 0, 0))
         {
         BeAssert(false);
+        ORDBRIDGE_LOGE("Error creating dynamic schema.");
         return BentleyStatus::ERROR;
         }
 
@@ -130,7 +132,9 @@ BentleyStatus ORDDynamicSchemaGenerator::SetupSchema(BeFileNameCR assetsDir)
         {
         ECN::ECObjectsStatus stat = m_dynamicSchema->AddReferencedSchema(*coreSchema);
         if (ECN::ECObjectsStatus::Success != stat && ECN::ECObjectsStatus::NamedItemAlreadyExists != stat)
-            ORDBRIDGE_LOG.warning("Error adding a reference to the core custom attributes schema.");
+            {
+            ORDBRIDGE_LOGE("Error adding a reference to the core custom attributes schema.");
+            }
         else
             {
             ECN::IECInstancePtr dynamicInstance = ECN::CoreCustomAttributeHelper::CreateCustomAttributeInstance("DynamicSchema");
@@ -165,7 +169,10 @@ BentleyStatus ORDDynamicSchemaGenerator::SetupSchema(BeFileNameCR assetsDir)
     ECN::SchemaKey qtoSchemaKey(QuantityTakeoffsSchemaName, 1, 0);
     m_qtoSchema = schemaReadContextPtr->LocateSchema(qtoSchemaKey, ECN::SchemaMatchType::Latest);
     if (m_qtoSchema.IsNull())
+        {
+        ORDBRIDGE_LOGE("Failed to locate QTO schema.");
         return BentleyStatus::ERROR;
+        }
 
     m_dynamicSchema->AddReferencedSchema(*m_qtoSchema);
 
@@ -286,6 +293,185 @@ BentleyStatus ORDDynamicSchemaGenerator::AddQuantityTakeOffAspectClasses()
     return BentleyStatus::SUCCESS;
     }
 
+
+///////////////////////////////////////////////////////////////////////////////////////
+// TEMP PROOFOFCONCEPT FOR SCHEMA FROM PLUGIN PROVIDERS
+//BentleyStatus ORDDynamicSchemaGenerator::SetupPROOFOFCONCEPTSchema(BeFileNameCR assetsDir)
+//    {
+//    WString schemaPath(L"C:\\Temp");
+//    WString xmlFileName(L"\\CivilSchema_Published.02.00.ecschema.xml");
+//
+//    WString schemaRefPath(assetsDir.c_str());
+//    schemaRefPath.append(L"\\ECSchemas\\Standard");
+//
+//    //m_newDiegoSchema = GETFROMGABE cifConn.GetNewDiegoSchema(schemaPath, xmlFileName, schemaRefPath);
+//
+//    WString ecSchemaXmlFile = schemaPath;
+//    ecSchemaXmlFile.append(xmlFileName);
+//
+//    BeFileName sourcePath(ecSchemaXmlFile.c_str());
+//    if (sourcePath.DoesPathExist(ecSchemaXmlFile.c_str()))
+//        {
+//        auto schemaReadContextPtr = ECN::ECSchemaReadContext::CreateContext(false, true);
+//
+//        //BeFileName ecdbDir = assetsDir;
+//        //ecdbDir.AppendToPath(L"ECSchemas");
+//        //ecdbDir.AppendToPath(L"ECDb");
+//        //schemaReadContextPtr->AddSchemaPath(ecdbDir);
+//
+//        //BeFileName dgnDir = assetsDir;
+//        //dgnDir.AppendToPath(L"ECSchemas");
+//        //dgnDir.AppendToPath(L"Dgn");
+//        //schemaReadContextPtr->AddSchemaPath(dgnDir);
+//
+//        //BeFileName domainDir = assetsDir;
+//        //domainDir.AppendToPath(L"ECSchemas");
+//        //domainDir.AppendToPath(L"Domain");
+//        //schemaReadContextPtr->AddSchemaPath(domainDir);
+//
+//        //schemaContext->AddSchemaLocater(ConsensusSchemaManager::GetManager());
+//        schemaReadContextPtr->AddSchemaPath(schemaPath.c_str());
+//        schemaReadContextPtr->AddSchemaPath(schemaRefPath.c_str());
+//        schemaReadContextPtr->SetSkipValidation(true);
+//
+//        ECN::SchemaReadStatus status = ECN::ECSchema::ReadFromXmlFile(m_PROOFOFCONCEPTSchema, ecSchemaXmlFile.c_str(), *schemaReadContextPtr);
+//        BeAssert(ECN::SchemaReadStatus::Success == status);
+//        }
+//
+//    if (m_PROOFOFCONCEPTSchema.IsValid())
+//        {
+//        // Dont reference it, just rework it in AddNewDiegoClasses into dynamic schema
+//        //m_dynamicSchema->AddReferencedSchema(*m_newDiegoSchema);
+//        return BentleyStatus::SUCCESS;
+//        }
+//    return BentleyStatus::ERROR;
+//    }
+///////////////////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+// TEMP PROOFOFCONCEPT FOR SCHEMA FROM PLUGIN PROVIDERS
+//BentleyStatus ORDDynamicSchemaGenerator::AddPROOFOFCONCEPTClasses(BeFileNameCR assetsDir)
+//    {
+//    //Utf8String name("CantStationPoint_Presentation");
+//
+//    bmap<Utf8String, Utf8String>mapNames;
+//    mapNames.insert({Utf8String("CantStationPoint_Presentation"), Utf8String("CantStationPoint")});
+//
+//    for (ECN::ECClassP ecClass : m_PROOFOFCONCEPTSchema->GetClasses())
+//        {
+//        auto pubName = ecClass->GetName();
+//        auto iter = mapNames.find(pubName);
+//        if (iter != mapNames.end())
+//            {
+//            auto name = iter->second;
+//            Utf8String className = FeatureNameToClassName(name);
+//            if (m_dynamicSchema->GetClassCP(className.c_str()))
+//                continue;
+//
+//            // Add new dyn class
+//            ECN::ECEntityClassP newClassP;
+//            if (ECN::ECObjectsStatus::Success != m_dynamicSchema->CreateEntityClass(newClassP, className))
+//                {
+//                ORDBRIDGE_LOGW(Utf8PrintfString("Error creating dynamic class for published '%s' as '%s'.", name.c_str(), className.c_str()).c_str());
+//                continue;
+//                }
+//
+//            newClassP->AddBaseClass(*m_graphicalElement3dClassCP);
+//            newClassP->SetDisplayLabel(name);
+//            //newClassP->SetCustomAttribute(*customClassAttribute);
+//
+//            ECN::StandaloneECEnablerPtr enabler = ecClass->GetDefaultStandaloneEnabler();
+//            ECN::IECInstancePtr instance = enabler->CreateInstance().get();
+//
+//            // Add new dyn props
+//            for (ECN::ECPropertyP prop : ecClass->GetProperties())
+//                {
+//                ECN::ECValue v;
+//                instance->GetValue(v, prop->GetName().c_str());
+//
+//                ECN::ECObjectsStatus status = ECN::ECObjectsStatus::Error;
+//
+//                ECN::PrimitiveECPropertyP ecPropertyP = nullptr;
+//                if (v.IsBoolean())
+//                    status = newClassP->CreatePrimitiveProperty(ecPropertyP, prop->GetName(), ECN::PrimitiveType::PRIMITIVETYPE_Boolean);
+//                else if (v.IsInteger())
+//                    status = newClassP->CreatePrimitiveProperty(ecPropertyP, prop->GetName(), ECN::PrimitiveType::PRIMITIVETYPE_Integer);
+//                else if (v.IsLong())
+//                    status = newClassP->CreatePrimitiveProperty(ecPropertyP, prop->GetName(), ECN::PrimitiveType::PRIMITIVETYPE_Long);
+//                else if (v.IsDouble())
+//                    status = newClassP->CreatePrimitiveProperty(ecPropertyP, prop->GetName(), ECN::PrimitiveType::PRIMITIVETYPE_Double);
+//                else if (v.IsString())
+//                    status = newClassP->CreatePrimitiveProperty(ecPropertyP, prop->GetName(), ECN::PrimitiveType::PRIMITIVETYPE_String);
+//
+//                if (status != ECN::ECObjectsStatus::Success || nullptr == ecPropertyP)
+//                    continue;
+//
+//                ECN::IECInstancePtr extendedType = prop->GetCustomAttribute("EditorCustomAttributes", "ExtendType");
+//                if (extendedType != nullptr)
+//                    {
+//                    ECN::ECValue standardValue;
+//                    if (ECN::ECObjectsStatus::Success == extendedType->GetValue(standardValue, "Standard"))
+//                        {
+//                        Utf8String koqName("");
+//                        int standard = standardValue.GetInteger();
+//                        switch (standard)
+//                            {
+//                            // Ask Gabe which are which
+//                            //case 8:  koqName = Utf8String(BRRA_KOQ_BEARING); break;
+//                            //case 8:  koqName = Utf8String(BRRA_KOQ_SLOPE); break;
+//
+//                            //case 7:  koqName = Utf8String("COORDINATE"); break;     // "COORDINATE"
+//                            case 8:  koqName = Utf8String(BRRA_KOQ_LENGTH); break;  // "DISTANCE"
+//                            case 9:  koqName = Utf8String(BRRA_KOQ_AREA);  break;   // "AREA"
+//                            case 10: koqName = Utf8String("VOLUME"); break;         // "VOLUME"
+//                            case 11: koqName = Utf8String(BRRA_KOQ_ANGLE); break;   // "ANGLE"
+//                            case 65: koqName = Utf8String(BRRA_KOQ_STATION); break; // "DISTANCE"
+//                            default:
+//                                break;
+//                            }
+//
+//                        if (koqName.length() > 0)
+//                            {
+//                            ECN::KindOfQuantityCP koq = m_dgnDbPtr->Schemas().GetKindOfQuantity(BRRA_SCHEMA_NAME, koqName.c_str());
+//                            //ECN::KindOfQuantityP koq = m_dynamicSchema->GetKindOfQuantityP(koqName.c_str());
+//
+//                            if (nullptr == koq)
+//                                {
+//                                ORDBRIDGE_LOGW(Utf8PrintfString("Warning KindOfQuantity '%s' not found. Creating one.", koqName.c_str()).c_str());
+//                                //m_dynamicSchema->CreateKindOfQuantity(koq, koqName.c_str());
+//
+//                                //const auto unitLookerUpper = [&] (Utf8StringCR alias, Utf8StringCR name)
+//                                //    {
+//                                //    return koq->GetSchema().GetUnitsContext().LookupUnit((alias + ":" + name).c_str());
+//                                //    };
+//                                ////koq->AddPersistenceUnitByName(koqUnits, unitLookerUpper);
+//
+//                                //auto unitCP = m_dgnDbPtr->Schemas().GetUnit("Units", "M");
+//                                //koq->SetPersistenceUnit(*unitCP);
+//
+//                                //koq->AddPresentationFormatSingleUnitOverride(*format, nullptr, presUnit);
+//                                //koq->SetRelativeError(1e-4);
+//                                //koq->SetDisplayLabel(displayLabel);
+//                                //koq->SetDescription(description);
+//                                }
+//
+//                            if (nullptr != koq)
+//                                ecPropertyP->SetKindOfQuantity(koq);
+//                            }
+//                        }
+//                    }
+//                }
+//
+//            newClassP->SetClassModifier(ECN::ECClassModifier::Sealed);
+//            }
+//        }
+//
+//    return BentleyStatus::SUCCESS;
+//    }
+///////////////////////////////////////////////////////////////////////////////////////
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      07/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -358,7 +544,10 @@ BentleyStatus ORDDynamicSchemaGenerator::Finish()
 
     auto status = m_dgnDbPtr->ImportSchemas(schemas);
     if (status != Dgn::SchemaStatus::Success)
+        {
+        ORDBRIDGE_LOGE("Failed to import dynamic schemas.");
         return BentleyStatus::ERROR;
+        }
 
     return BentleyStatus::SUCCESS;
     }
@@ -370,52 +559,29 @@ BentleyStatus ORDDynamicSchemaGenerator::Generate(DgnDbR dgnDb, BeFileNameCR ass
     {
     m_dgnDbPtr = &dgnDb;
 
-    ///////////////////////////////////////////////////////////////////////////////////////
-    // TEMP PROOF OF CONCEPT FOR SCHEMA FROM PLUGIN PROVIDERS
-    // GABEDIEGOGREG -- Just placed in ORDDynamicSchemaGenerator for updates?, not sure where will need to call it from
-    ///////////////////////////////////////////////////////////////////////////////////////
-    //GenerateNewDiegoSchema(dgnDb, assetsDir, cifConn);
-    ///////////////////////////////////////////////////////////////////////////////////////
-
     Initialize();
     BentleyStatus status = SetupSchema(assetsDir);
     if (status != BentleyStatus::SUCCESS)
         return status;
 
     if (BentleyStatus::SUCCESS != (status = AddQuantityTakeOffAspectClasses()))
+        {
+        ORDBRIDGE_LOGE("Failed to add QTO classes.");
         return status;
+        }
+
+
+    ///////////////////////////////////////////////////////////////////////////////////////
+    // TEMP PROOFOFCONCEPT FOR SCHEMA FROM PLUGIN PROVIDERS
+    //if (BentleyStatus::SUCCESS == SetupPROOFOFCONCEPTSchema(assetsDir))
+    //    AddPROOFOFCONCEPTClasses(assetsDir);
+    ///////////////////////////////////////////////////////////////////////////////////////  
+
 
     AddClasses(cifConn);
 
     return Finish();
     }
-
-
-///////////////////////////////////////////////////////////////////////////////////////
-// TEMP PROOF OF CONCEPT FOR SCHEMA FROM PLUGIN PROVIDERS
-// GABEDIEGOGREG -- Just placed in ORDDynamicSchemaGenerator for updates?, not sure where will need to call it from
-///////////////////////////////////////////////////////////////////////////////////////
-//BentleyStatus ORDDynamicSchemaGenerator::GenerateNewDiegoSchema(Dgn::DgnDbR dgnDb, BeFileNameCR assetsDir, ConsensusConnectionR cifConn)
-//    {
-//    // Will not need to pass locations once we decide how to do this, will pass back whatever is needed
-//    Bentley::WString schemaPath(L"C:\\Temp\\");
-//    Bentley::WString xmlFileName(L"CivilSchema_Published.02.00.ecschema.xml");
-//
-//    // Need schemaRefPath to where EditorCustomAttributes 01.03 beca is located
-//    Bentley::WString schemaRefPath(assetsDir.c_str());
-//    schemaRefPath.append(L"\\ECSchemas\\Standard");
-//
-//    Bentley::ECN::ECSchemaCP newPublishedDynamicSchema = cifConn.GetNewDiegoSchema(schemaPath, xmlFileName, schemaRefPath);
-//
-//    //// I assume this is for an update ??? 
-//    //// Put Diego stuff here for new Published Dynamic schema ???
-//
-//    return newPublishedDynamicSchema != nullptr ? BentleyStatus::SUCCESS : BentleyStatus::ERROR;
-//    }
-///////////////////////////////////////////////////////////////////////////////////////
-
-
-
 
 struct ConsensusSourceItem : iModelBridgeSyncInfoFile::ISourceItem
 {
@@ -880,8 +1046,8 @@ void ORDAlignmentsConverter::AssignGeomStream(ConsensusItemCR consensusItem, Dgn
 
         if (targetSubCatId.IsValid())
             {
-            geomParams.SetCategoryId(bimTargetCategoryId);
-            geomParams.SetSubCategoryId(targetSubCatId);
+            geomParams.SetCategoryId(bimTargetCategoryId, false);
+            geomParams.SetSubCategoryId(targetSubCatId, false);
             if (!geomBuilderPtr->Append(geomParams))
                 BeAssert(false);
             }
@@ -985,11 +1151,17 @@ BentleyStatus ORDAlignmentsConverter::CreateNewBimAlignment(AlignmentCR cifAlign
     iModelBridgeSyncInfoFile::ConversionResults results;
     results.m_element = bimAlignmentPtr;
     if (BentleyStatus::SUCCESS != params.changeDetectorP->_UpdateBimAndSyncInfo(results, change)) 
+        {
+        ORDBRIDGE_LOGE("CreateNewBimAlignment '%s' - failed update and sync.", userLabel.c_str());
         return BentleyStatus::ERROR;
+        }
 
     CurveVectorPtr bimHorizGeometryPtr;
     if (BentleyStatus::SUCCESS != Marshal(bimHorizGeometryPtr, *horizGeometryPtr))
+        {
+        ORDBRIDGE_LOGE("CreateNewBimAlignment '%s' - failed to marshal curve vector.", userLabel.c_str());
         return BentleyStatus::ERROR;
+        }
 
     // Create Horizontal Alignment
     auto bimHorizAlignmPtr = AlignmentBim::HorizontalAlignment::Create(*bimAlignmentPtr, *bimHorizGeometryPtr);
@@ -1002,7 +1174,10 @@ BentleyStatus ORDAlignmentsConverter::CreateNewBimAlignment(AlignmentCR cifAlign
         AssignGeomStream(cifAlignment, *bimHorizAlignmPtr);
 
         if (bimHorizAlignmPtr->Insert().IsNull())
+            {
+            ORDBRIDGE_LOGE("CreateNewBimAlignment '%s' - failed to insert horizontal alignment.", userLabel.c_str());
             return BentleyStatus::ERROR;
+            }
         }
 
     bimAlignment = AlignmentBim::Alignment::Get(m_ordConverter.GetDgnDb(), bimAlignmentPtr->GetElementId());
@@ -1041,19 +1216,28 @@ BentleyStatus ORDAlignmentsConverter::CreateNewBimVerticalAlignment(ProfileCR ci
 
     Bentley::CurveVectorPtr vertGeometryPtr;
     if (SUCCESS != vLinearGeomPtr->GetCurveVector(vertGeometryPtr))
+        {
+        ORDBRIDGE_LOGE("CreateNewBimVerticalAlignment '%s' - failed to get curve vector.", Utf8String(cifProfile.GetName().c_str()).c_str());
         return BentleyStatus::ERROR;
+        }
 
     CurveVectorPtr bimVertGeometryPtr;
     if (BentleyStatus::SUCCESS != MarshalVertical(bimVertGeometryPtr, *vertGeometryPtr))
+        {
+        ORDBRIDGE_LOGE("CreateNewBimVerticalAlignment '%s' - failed to marshal curve vector.", Utf8String(cifProfile.GetName().c_str()).c_str());
         return BentleyStatus::ERROR;
-    
+        }
+
     auto verticalModelId = alignment.QueryVerticalAlignmentSubModelId();    
     if (!verticalModelId.IsValid())
         {
         auto verticalModelPtr = AlignmentBim::VerticalAlignmentModel::Create(
             AlignmentBim::VerticalAlignmentModel::CreateParams(GetDesignAlignmentModel().GetDgnDb(), alignment.GetElementId()));
         if (DgnDbStatus::Success != verticalModelPtr->Insert())
+            {
+            ORDBRIDGE_LOGE("CreateNewBimVerticalAlignment '%s' - failed to insert vertical model.", Utf8String(cifProfile.GetName().c_str()).c_str());
             return BentleyStatus::ERROR;
+            }
 
         verticalModelId = verticalModelPtr->GetModelId();
         }
@@ -1065,7 +1249,10 @@ BentleyStatus ORDAlignmentsConverter::CreateNewBimVerticalAlignment(ProfileCR ci
     iModelBridgeSyncInfoFile::ConversionResults verticalResults;
     verticalResults.m_element = verticalAlignmPtr;
     if (BentleyStatus::SUCCESS != changeDetector._UpdateBimAndSyncInfo(verticalResults, change))
+        {
+        ORDBRIDGE_LOGE("CreateNewBimVerticalAlignment '%s' - failed to update and sync.", Utf8String(cifProfile.GetName().c_str()).c_str());
         return BentleyStatus::ERROR;
+        }
 
     verticalAlignment = verticalAlignmPtr.get();
 
@@ -1090,12 +1277,18 @@ BentleyStatus ORDAlignmentsConverter::UpdateBimAlignment(AlignmentCR cifAlignmen
         linearGeomPtr->GetCurveVector(horizGeometryPtr);
 
     if (BentleyStatus::SUCCESS != Marshal(bimHorizGeometryPtr, *horizGeometryPtr))
+        {
+        ORDBRIDGE_LOGE("UpdateBimAlignment '%s' - failed to marshal curve vector.", Utf8String(cifAlignment.GetName().c_str()).c_str());
         return BentleyStatus::ERROR;
+        }
 
     horizAlignmentPtr->SetGeometry(*bimHorizGeometryPtr);
     horizAlignmentPtr->GenerateElementGeom();
     if (horizAlignmentPtr->Update().IsNull())
+        {
+        ORDBRIDGE_LOGE("UpdateBimAlignment '%s' - failed to update.", Utf8String(cifAlignment.GetName().c_str()).c_str());
         return BentleyStatus::ERROR;
+        }
 
     auto alignmentPtr = AlignmentBim::Alignment::GetForEdit(alignmentCPtr->GetDgnDb(), alignmentCPtr->GetElementId());
     alignmentPtr->GenerateAprox3dGeom();
@@ -1114,16 +1307,25 @@ BentleyStatus ORDAlignmentsConverter::UpdateBimVerticalAlignment(ProfileCR cifPr
 
     Bentley::CurveVectorPtr vertGeometryPtr;
     if (SUCCESS != vLinearGeomPtr->GetCurveVector(vertGeometryPtr))
+        {
+        ORDBRIDGE_LOGE("UpdateBimVerticalAlignment '%s' - failed to get curve vector.", Utf8String(cifProfile.GetName().c_str()).c_str());
         return BentleyStatus::ERROR;
+        }
 
     CurveVectorPtr bimVertGeometryPtr;
     if (BentleyStatus::SUCCESS != MarshalVertical(bimVertGeometryPtr, *vertGeometryPtr))
+        {
+        ORDBRIDGE_LOGE("UpdateBimVerticalAlignment '%s' - failed to marshal curve vector.", Utf8String(cifProfile.GetName().c_str()).c_str());
         return BentleyStatus::ERROR;
+        }
 
     auto verticalAlignmentPtr = AlignmentBim::VerticalAlignment::GetForEdit(changeDetector.GetDgnDb(), change.GetSyncInfoRecord().GetDgnElementId());
     verticalAlignmentPtr->SetGeometry(*bimVertGeometryPtr);
     if (verticalAlignmentPtr->Update().IsNull())
+        {
+        ORDBRIDGE_LOGE("UpdateBimVerticalAlignment '%s' - failed to update.", Utf8String(cifProfile.GetName().c_str()).c_str());
         return BentleyStatus::ERROR;
+        }
 
     return BentleyStatus::SUCCESS;
     }
@@ -1305,8 +1507,8 @@ BentleyStatus ORDCorridorsConverter::AssignCorridorGeomStream(CorridorCR cifCorr
 
             if (targetSubCatId.IsValid())
                 {
-                geomParams.SetCategoryId(corridorCategoryCPtr->GetCategoryId());
-                geomParams.SetSubCategoryId(targetSubCatId);
+                geomParams.SetCategoryId(corridorCategoryCPtr->GetCategoryId(), false);
+                geomParams.SetSubCategoryId(targetSubCatId, false);
                 if (!geomBuilderPtr->Append(geomParams, GeometryBuilder::CoordSystem::World))
                     BeAssert(false);
                 }
@@ -1319,7 +1521,10 @@ BentleyStatus ORDCorridorsConverter::AssignCorridorGeomStream(CorridorCR cifCorr
         }
 
     if (BentleyStatus::SUCCESS != geomBuilderPtr->Finish(corridor))
+        {
+        ORDBRIDGE_LOGE("AssignCorridorGeomStream '%s' - failed to finish.", Utf8String(cifCorridor.GetName().c_str()).c_str());
         return BentleyStatus::ERROR;
+        }
 
     return BentleyStatus::SUCCESS;
     }
@@ -1441,7 +1646,21 @@ BentleyStatus ORDCorridorsConverter::CreateNewCorridor(
         {
         Utf8String corridorName(cifCorridor.GetName().c_str());
         corridorPtr->SetUserLabel(corridorName.c_str());
-        corridorPtr->SetCode(RoadRailBim::Corridor::CreateCode(*m_converter.GetRoadRailNetwork(), corridorName));
+
+        auto bimCode = RoadRailBim::Corridor::CreateCode(*m_converter.GetRoadRailNetwork(), corridorName);
+
+        uint32_t corSuffix = 0;
+        // Addressing corridors with the same name
+        do
+            {
+            if (!m_converter.GetDgnDb().Elements().QueryElementIdByCode(bimCode).IsValid())
+                break;
+
+            Utf8String bimCorridorNameDup = Utf8PrintfString("%s_%d", corridorName.c_str(), ++corSuffix);
+            bimCode = RoadRailBim::Corridor::CreateCode(*m_converter.GetRoadRailNetwork(), bimCorridorNameDup);
+            } while (true);
+
+        corridorPtr->SetCode(bimCode);
         }
     
     AssignCorridorGeomStream(cifCorridor, *corridorPtr);
@@ -1449,14 +1668,20 @@ BentleyStatus ORDCorridorsConverter::CreateNewCorridor(
     iModelBridgeSyncInfoFile::ConversionResults results;
     results.m_element = corridorPtr;
     if (BentleyStatus::SUCCESS != params.changeDetectorP->_UpdateBimAndSyncInfo(results, change))
+        {
+        ORDBRIDGE_LOGE("CreateNewCorridor '%s' - failed update and sync.", Utf8String(cifCorridor.GetName().c_str()).c_str());
         return BentleyStatus::ERROR;
+        }
 
     bimCorridorCPtr = RoadRailBim::Corridor::Get(corridorPtr->GetDgnDb(), corridorPtr->GetElementId());
     auto corridorModelPtr = PhysicalModel::Create(*bimCorridorCPtr);
     corridorModelPtr->SetIsPrivate(params.domainModelsPrivate);
 
     if (DgnDbStatus::Success != corridorModelPtr->Insert())
+        {
+        ORDBRIDGE_LOGE("CreateNewCorridor '%s' - failed PhysicalModel insert.", Utf8String(cifCorridor.GetName().c_str()).c_str());
         return BentleyStatus::ERROR;
+        }
 
     auto corridorSegmentCPtr = RoadRailBim::CorridorSegment::Insert(*bimCorridorCPtr, DefaultCorridorSegmentName);
     if (params.domainModelsPrivate)
@@ -1476,7 +1701,10 @@ BentleyStatus ORDCorridorsConverter::CreateNewCorridor(
         pathwayPtr = RoadRailBim::Roadway::Create(*corridorSegmentCPtr, RoadRailBim::PathwayElement::Order::LeftMost);
 
     if (pathwayPtr->Insert().IsNull())
-        return BentleyStatus::ERROR;    
+        {
+        ORDBRIDGE_LOGE("CreateNewCorridor '%s' - failed pathway insert.", Utf8String(cifCorridor.GetName().c_str()).c_str());
+        return BentleyStatus::ERROR;
+        }
 
     return BentleyStatus::SUCCESS;
     }
@@ -1490,12 +1718,18 @@ BentleyStatus ORDCorridorsConverter::UpdateCorridor(CorridorCR cifCorridor,
     auto corridorPtr = RoadRailBim::Corridor::GetForEdit(changeDetector.GetDgnDb(), change.GetSyncInfoRecord().GetDgnElementId());
 
     if (BentleyStatus::SUCCESS != AssignCorridorGeomStream(cifCorridor, *corridorPtr))
+        {
+        ORDBRIDGE_LOGE("UpdateCorridor '%s' - failed geom stream.", Utf8String(cifCorridor.GetName().c_str()).c_str());
         return BentleyStatus::ERROR;
+        }
 
     iModelBridgeSyncInfoFile::ConversionResults results;
     results.m_element = corridorPtr;
     if (BentleyStatus::SUCCESS != changeDetector._UpdateBimAndSyncInfo(results, change))
+        {
+        ORDBRIDGE_LOGE("UpdateCorridor '%s' - failed update and sync.", Utf8String(cifCorridor.GetName().c_str()).c_str());
         return BentleyStatus::ERROR;
+        }
 
     return BentleyStatus::SUCCESS;
     }
@@ -1588,13 +1822,7 @@ ConvertORDElementXDomain::ConvertORDElementXDomain(ORDConverter& converter): m_c
     {
     m_cifConsensusConnection = ConsensusConnection::Create(*m_converter.GetRootModelRefP());
     m_graphic3dClassId = converter.GetDgnDb().Schemas().GetClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_Graphic3d);    
-
-    ///////////////////////////////////////////////////////////////////////////////////////
-    // TEMP PROOF OF CONCEPT FOR SCHEMA FROM PLUGIN PROVIDERS
-    // GABEDIEGOGREG -- Just placed in ConvertORDElementXDomain for element instance, not sure where will need to call it from
-    ///////////////////////////////////////////////////////////////////////////////////////
-    //GetNewDiegoSchema();
-    ///////////////////////////////////////////////////////////////////////////////////////
+    m_plannarCategoryId = Dgn::SpatialCategory::QueryCategoryId(converter.GetDgnDb().GetDictionaryModel(), PlannarCategoryName);
 
     m_aspectAssignFuncs.push_back(&ConvertORDElementXDomain::AssignAlignmentAspect);
     m_aspectAssignFuncs.push_back(&ConvertORDElementXDomain::AssignLinear3dAspect);
@@ -1603,31 +1831,6 @@ ConvertORDElementXDomain::ConvertORDElementXDomain(ORDConverter& converter): m_c
     m_aspectAssignFuncs.push_back(&ConvertORDElementXDomain::AssignTemplateDropAspect);
     m_aspectAssignFuncs.push_back(&ConvertORDElementXDomain::AssignSuperelevationAspect);
     }
-
-
-///////////////////////////////////////////////////////////////////////////////////////
-// TEMP PROOF OF CONCEPT FOR SCHEMA FROM PLUGIN PROVIDERS
-// GABEDIEGOGREG -- Just placed in ConvertORDElementXDomain for element instance, not sure where will need to call it from
-///////////////////////////////////////////////////////////////////////////////////////
-//BentleyStatus ConvertORDElementXDomain::GetNewDiegoSchema()
-//    {
-//    // Will not need to pass locations once we decide how to do this, will pass back whatever is needed
-//    Bentley::WString schemaPath(L"C:\\Temp\\");
-//    Bentley::WString xmlFileName(L"CivilSchema_Published.02.00.ecschema.xml");
-//
-//    // Need schemaRefPath to where EditorCustomAttributes 01.03 beca is located
-//    BeFileNameCR assetsDir = m_converter.GetParams().GetAssetsDir();
-//    Bentley::WString schemaRefPath(assetsDir.c_str());
-//    schemaRefPath.append(L"\\ECSchemas\\Standard");
-//
-//    Bentley::ECN::ECSchemaCP newPublishedDynamicSchema = m_cifConsensusConnection->GetNewDiegoSchema(schemaPath, xmlFileName, schemaRefPath);
-//
-//    // Do something ?
-//
-//    return newPublishedDynamicSchema != nullptr ? BentleyStatus::SUCCESS : BentleyStatus::ERROR;
-//    }
-///////////////////////////////////////////////////////////////////////////////////////
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      01/2018
@@ -1639,13 +1842,6 @@ ConvertORDElementXDomain::Result ConvertORDElementXDomain::_PreConvertElement(Dg
         return Result::Proceed;
 
     m_elementsSeen.insert(v8el.GetElementRef());
-
-    ///////////////////////////////////////////////////////////////////////////////////////
-    // TEMP PROOF OF CONCEPT FOR SCHEMA FROM PLUGIN PROVIDERS
-    // GABEDIEGOGREG -- Called from PreConvertElement just to debug element instance calls, not sure where will need to call it from
-    ///////////////////////////////////////////////////////////////////////////////////////
-    //Bentley::ECN::IECInstanceP instance = m_cifConsensusConnection->GetNewDiegoECInstance(v8el);
-    ///////////////////////////////////////////////////////////////////////////////////////
 
     auto cifAlignmentPtr = Alignment::CreateFromElementHandle(*m_cifConsensusConnection, v8el);
     Bentley::Cif::CorridorPtr cifCorridorPtr;
@@ -1764,7 +1960,7 @@ void ConvertORDElementXDomain::_DetermineElementParams(DgnClassId& classId, DgnC
                 if (classId != existingElmCPtr->GetElementClassId())
                     {
                     existingElmCPtr->Delete();
-                    ORDBRIDGE_LOG.infov("Deleting elementId %lld because its classId changed.", existingElementId.GetValue());
+                    ORDBRIDGE_LOGI("Deleting elementId %lld because its classId changed.", existingElementId.GetValue());
                     }
                 }
             }*/
@@ -1955,7 +2151,7 @@ void assignCorridorSurfaceAspect(Dgn::DgnElementR element, Cif::CorridorSurfaceC
     else
         {
         auto name = Utf8String(cifCorridorSurface.GetName().c_str());
-        ORDBRIDGE_LOGI(Utf8PrintfString("CIF CorridorSurface '%s' '%s' - related corridor not found.", name.c_str(), description.c_str()).c_str());
+        ORDBRIDGE_LOGW(Utf8PrintfString("CIF CorridorSurface '%s' '%s' - related corridor not found.", name.c_str(), description.c_str()).c_str());
         }
 
     if (auto corridorSurfaceAspectP = DgnV8ORDBim::CorridorSurfaceAspect::GetP(element))
@@ -2233,6 +2429,61 @@ bool ConvertORDElementXDomain::AssignFeatureAspect(Dgn::DgnElementR element, Dgn
     return false;
     }
 
+
+///////////////////////////////////////////////////////////////////////////////////////
+// TEMP PROOFOFCONCEPT FOR SCHEMA FROM PLUGIN PROVIDERS
+//void assignPROOFOFCONCEPTInstanceAspect(Dgn::DgnElementR element, DgnV8EhCR v8el)
+//    {
+//    //bmap<Utf8String, Utf8String>mapNames;
+//    //mapNames.insert({Utf8String("CantStationPoint_Presentation"), Utf8String("CantStationPoint")});
+//
+//    //ECN::IECInstancePtr v8Instance = GETFROMGABE & v8el for prop values below
+//
+//    Utf8String className(L"CantStationPoint"); // Randomly picked one
+//
+//    auto ecClass = element.GetDgnDb().Schemas().GetClass(ORDDynamicSchemaGenerator::GetTargetSchemaName(), className);
+//    ECN::StandaloneECEnablerPtr enabler = ecClass->GetDefaultStandaloneEnabler();
+//    ECN::IECInstancePtr instance = enabler->CreateInstance().get();
+//
+//    BeAssert(instance.IsValid());
+//    if (instance.IsNull())
+//        return;
+//
+//    for (ECN::ECPropertyP prop : ecClass->GetProperties())
+//        {
+//        ECN::ECValue v;
+//        instance->GetValue(v, prop->GetName().c_str());
+//        //v8Instance->GetValue(v8v, prop->GetName().c_str());
+//        if (v.IsBoolean())
+//            v.SetBoolean(true);
+//        else if (v.IsInteger())
+//            v.SetInteger(123);
+//        else if (v.IsLong())
+//            v.SetLong(123456789);
+//        else if (v.IsDouble())
+//            v.SetDouble(987654321.123);
+//        else if (v.IsString())
+//            v.SetUtf8CP("String123");
+//        else
+//            continue;
+//
+//        if (auto aspectP = Dgn::DgnElement::GenericUniqueAspect::GetAspectP(element, *ecClass))
+//            {
+//            aspectP->SetValue(prop->GetName().c_str(), v);
+//            }
+//        else
+//            {
+//            auto enablerP = ecClass->GetDefaultStandaloneEnabler();
+//            auto instancePtr = enablerP->CreateInstance();
+//            instancePtr->SetValue(prop->GetName().c_str(), v);
+//            Dgn::DgnElement::GenericUniqueAspect::SetAspect(element, *instancePtr);
+//            }
+//        }
+//    }
+///////////////////////////////////////////////////////////////////////////////////////
+
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      07/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2245,6 +2496,14 @@ bool ConvertORDElementXDomain::AssignAlignmentAspect(Dgn::DgnElementR element, D
         {
         assignORDAlignmentAspect(element, *alignmentPtr, m_currentFeatureDefName);
         assignQuantityAspect(element, *alignmentPtr);
+
+
+        ///////////////////////////////////////////////////////////////////////////////////////
+        // TEMP PROOFOFCONCEPT FOR SCHEMA FROM PLUGIN PROVIDERS
+        //assignPROOFOFCONCEPTInstanceAspect(element, v8el);
+        ///////////////////////////////////////////////////////////////////////////////////////
+
+
         return true;
         }
 
@@ -2277,6 +2536,49 @@ bool ConvertORDElementXDomain::AssignCorridorSurfaceAspect(Dgn::DgnElementR elem
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void switchElementCategory(Dgn::GeometricElement3dR element, Dgn::DgnCategoryId const& targetCategoryId, 
+                           bmap<Dgn::DgnSubCategoryId, Dgn::DgnSubCategoryId> const& subCategoryMap)
+    {
+    GeometryCollection oldGeomColl(element);
+
+    if (oldGeomColl.begin() == oldGeomColl.end())
+        return; // no geom ?
+
+    auto oldCategoryId = element.GetCategoryId();
+    element.SetCategoryId(targetCategoryId);
+
+    auto geomBuilderPtr = GeometryBuilder::Create(element);
+    for (auto& iter : oldGeomColl)
+        {
+        auto geomParams = iter.GetGeometryParams(); // Intentionally copied
+
+        auto subCatId = geomParams.GetSubCategoryId();
+        auto subCatIter = subCategoryMap.find(subCatId);
+
+        DgnSubCategoryId targetSubCatId;
+        if (subCategoryMap.end() != subCatIter)
+            targetSubCatId = subCatIter->second;
+        else
+            {
+            element.SetCategoryId(oldCategoryId);
+            return;
+            }
+
+        geomParams.SetCategoryId(targetCategoryId, false);
+        geomParams.SetSubCategoryId(targetSubCatId, false);
+        if (!geomBuilderPtr->Append(geomParams))
+            BeAssert(false);
+
+        if (!geomBuilderPtr->Append(*iter.GetGeometryPtr()))
+            BeAssert(false);
+        }
+
+    geomBuilderPtr->Finish(element);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConvertORDElementXDomain::_ProcessResults(DgnDbSync::DgnV8::ElementConversionResults& elRes, DgnV8EhCR v8el, DgnDbSync::DgnV8::ResolvedModelMapping const& v8mm, DgnDbSync::DgnV8::Converter&)
@@ -2294,6 +2596,10 @@ void ConvertORDElementXDomain::_ProcessResults(DgnDbSync::DgnV8::ElementConversi
         }
 
     m_converter.m_v8ToBimElmMap.insert({ v8el.GetElementRef(), elRes.m_element.get() });
+
+    // Is it a plannar/2D model?
+    if (!v8mm.GetV8Model().Is3D() && v8mm.GetDgnModel().Is3dModel())
+        switchElementCategory(*dynamic_cast<Dgn::GeometricElement3dP>(elRes.m_element.get()), m_plannarCategoryId, m_converter.m_2dSubCategoryMap);
 
     auto bimModelId = v8mm.GetDgnModel().GetModelId();
     if (v8mm.GetV8Model().Is3D())
@@ -2371,7 +2677,7 @@ Bentley::DgnPlatform::ModelId ORDConverter::_GetRootModelId()
         }
     else
         {
-        ORDBRIDGE_LOGW("Specified root-model could not be loaded.");
+        ORDBRIDGE_LOGE("Specified root-model could not be loaded.");
         }
 
     return rootModelId;
@@ -2937,10 +3243,107 @@ BentleyStatus ORDConverter::AddDynamicSchema()
     auto cifConsensusConnectionPtr = ConsensusConnection::Create(*GetRootModelRefP());
 
     ORDDynamicSchemaGenerator dynSchemaGen;
-
-
     return dynSchemaGen.Generate(GetDgnDb(), GetParams().GetAssetsDir(), *cifConsensusConnectionPtr);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Greg.Ashe       09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus add2dCategory(Dgn::DgnDbR dgnDbR, DgnCategoryId dgnCatId, Dgn::DictionaryModelR dictionaryModelR, DgnCategoryId& plannarCatId, 
+    bmap<Dgn::DgnSubCategoryId, Dgn::DgnSubCategoryId>& subCategoryMap)
+    {
+    if (dgnCatId.IsValid())
+        {
+        auto convertedCategoryCPtr = Dgn::SpatialCategory::Get(dgnDbR, dgnCatId);
+        auto subCategoryCPtr = Dgn::DgnSubCategory::Get(dgnDbR, convertedCategoryCPtr->GetDefaultSubCategoryId());
+        auto& subCategoryAppearanceCR = subCategoryCPtr->GetAppearance();
+
+        if (!plannarCatId.IsValid())
+            {
+            Dgn::SpatialCategory plannarCat(dictionaryModelR, PlannarCategoryName, Dgn::DgnCategory::Rank::Application);
+            auto plannarCatCPtr = plannarCat.Insert(subCategoryAppearanceCR);
+            if (plannarCatCPtr.IsNull())
+                return BentleyStatus::ERROR;
+
+            plannarCatId = plannarCatCPtr->GetCategoryId();
+            }
+
+        Dgn::DgnSubCategoryId plannarSubCatId = Dgn::DgnSubCategory::QuerySubCategoryId(dgnDbR, DgnSubCategory::CreateCode(dgnDbR, plannarCatId, convertedCategoryCPtr->GetCategoryName()));
+        if (!plannarSubCatId.IsValid())
+            {
+            Dgn::DgnSubCategory plannarSubCat(Dgn::DgnSubCategory::CreateParams(dgnDbR, plannarCatId, convertedCategoryCPtr->GetCategoryName(), subCategoryAppearanceCR));
+            if (plannarSubCat.Insert().IsNull())
+                return BentleyStatus::ERROR;
+
+            plannarSubCatId = plannarSubCat.GetSubCategoryId();
+            }
+
+        subCategoryMap.insert({subCategoryCPtr->GetSubCategoryId(), plannarSubCatId});
+        }
+
+    return BentleyStatus::SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ORDConverter::Add2dCategory()
+    {
+    auto& dictionaryModelR = GetDgnDb().GetDictionaryModel();
+
+    DgnCategoryId plannarCatId = Dgn::SpatialCategory::QueryCategoryId(dictionaryModelR, PlannarCategoryName);
+
+    if (plannarCatId.IsValid() && m_2dSubCategoryMapIsFilled)
+        return BentleyStatus::SUCCESS;
+
+    // Default cat
+    DefinitionModelPtr definitionModel = GetJobDefinitionModel();
+    if (definitionModel.IsValid())
+        {
+        DgnCategoryId uncategorizedCategoryId = Dgn::SpatialCategory::QueryCategoryId(*definitionModel, CATEGORY_NAME_Uncategorized);
+
+        if (BentleyStatus::SUCCESS != add2dCategory(GetDgnDb(), uncategorizedCategoryId, dictionaryModelR, plannarCatId, m_2dSubCategoryMap))
+            {
+            BeAssert(false);
+            ORDBRIDGE_LOGE("Failed to add 2d default category.");
+            return BentleyStatus::ERROR;
+            }
+        }
+
+    // Converted cat ... TODO Get only used ones ???
+    BeSQLite::EC::ECSqlStatement stmt;
+    stmt.Prepare(GetDgnDb(), "SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_SpatialCategory) " WHERE Model.Id = ? AND Rank = ? ORDER BY CodeValue;");
+    BeAssert(stmt.IsPrepared());
+
+    stmt.BindId(1, dictionaryModelR.GetModelId());
+    stmt.BindInt(2, static_cast<int32_t>(Dgn::DgnCategory::Rank::User));
+    
+    bvector<DgnCategoryId> convertedCatIds;
+    while (BeSQLite::DbResult::BE_SQLITE_ROW == stmt.Step())
+        convertedCatIds.push_back(stmt.GetValueId<DgnCategoryId>(0));
+
+    stmt.Finalize();
+
+    if (convertedCatIds.empty())
+        {
+        BeAssert(false);
+        ORDBRIDGE_LOGE("Failed to find any 2d converted categories.");
+        return BentleyStatus::ERROR;
+        }
+
+    for (auto catId : convertedCatIds)
+        {
+        if (BentleyStatus::SUCCESS != add2dCategory(GetDgnDb(), catId, dictionaryModelR, plannarCatId, m_2dSubCategoryMap))
+            {
+            BeAssert(false);
+            ORDBRIDGE_LOGE("Failed to add 2d converted category.");
+            return BentleyStatus::ERROR;
+            }
+        }
+
+    m_2dSubCategoryMapIsFilled = true;
+
+    return BentleyStatus::SUCCESS;
+    }
 
 END_ORDBRIDGE_NAMESPACE

@@ -11,4 +11,5 @@ struct PublishORDToBimDLL
 public:
     PUBLISHORDTOBIMDLL_EXPORT static int RunBridge(int argc, WCharCP argv[]);
     static WCharCP* AddUnitTestingParameter(int& argc, WCharCP argv[]);
+    static WCharCP* AddLoggingConfigParameter(int& argc, WCharCP argv[]);
 };

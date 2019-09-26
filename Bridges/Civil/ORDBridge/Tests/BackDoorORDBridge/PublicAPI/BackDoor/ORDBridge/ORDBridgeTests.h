@@ -63,7 +63,8 @@ struct CiviliModelBridgesORDBridgeTestsFixture : ::testing::Test
         static bool TestFileName(Utf8CP source);
         static bool CopyTestFile(Utf8CP source, Utf8CP target);
         static bool RunTestApp(WCharCP input, WCharCP bimFileName, bool updateMode);
-        static Dgn::DgnDbPtr VerifyConvertedBimFileSchemas(Utf8CP bimFileName);
+        static bool RunTestAppFullLocalPath(WCharCP inputFullLocalPath, WCharCP bimFileName, bool updateMode);
+        static Dgn::DgnDbPtr VerifyConvertedBimFileSchemasAndCategories(Utf8CP bimFileName, bvector<Utf8String> const& requiredSubCatNames);
         static Dgn::DgnDbPtr VerifyConvertedElementCount(Utf8CP bimFileName, size_t alignmentCount, size_t corridorCount);
         static Dgn::DgnDbPtr VerifyConvertedGeometryUniqueAlignmentNameExists(Utf8CP bimFileName, Utf8CP alignmentName);
         static Dgn::DgnDbPtr VerifyConvertedGeometryTurnoutBranchCount(Utf8CP bimFileName, Utf8CP branchName, size_t branchCount);

@@ -53,6 +53,8 @@ private:
     Params* m_ordParams;
     RoadRailPhysical::RoadRailNetworkCPtr m_roadRailNetworkCPtr;
     bmap<Bentley::ElementRefP, Dgn::DgnElementPtr> m_v8ToBimElmMap;
+    bmap<Dgn::DgnSubCategoryId, Dgn::DgnSubCategoryId> m_2dSubCategoryMap;
+    bool m_2dSubCategoryMapIsFilled = false;
 
     bvector<Bentley::RefCountedPtr<Bentley::Cif::GeometryModel::SDK::Corridor>> m_cifCorridors;
     bvector<Bentley::RefCountedPtr<Bentley::Cif::GeometryModel::SDK::Alignment>> m_cifAlignments;    
@@ -112,6 +114,7 @@ public:
     void SetUpModelFormatters();
     Dgn::UnitSystem GetRootModelUnitSystem();
     BentleyStatus AddDynamicSchema();
+    BentleyStatus Add2dCategory();
 }; // ORDConverter
 
 struct ConvertORDElementXDomain : Dgn::DgnDbSync::DgnV8::XDomain
@@ -119,18 +122,12 @@ struct ConvertORDElementXDomain : Dgn::DgnDbSync::DgnV8::XDomain
 private:
     ORDConverter& m_converter;
     Dgn::DgnClassId m_graphic3dClassId;
+    Dgn::DgnCategoryId m_plannarCategoryId;
     bset<Bentley::ElementRefP> m_elementsSeen;    
     bset<Bentley::ElementRefP> m_alignmentV8RefSet;
     bset<Bentley::ElementRefP> m_corridorV8RefSet;
     Bentley::Cif::ConsensusConnectionPtr m_cifConsensusConnection;
     Utf8String m_currentFeatureName, m_currentFeatureDefName, m_currentFeatureDescription;
-
-    ///////////////////////////////////////////////////////////////////////////////////////
-    // TEMP PROOF OF CONCEPT FOR SCHEMA FROM PLUGIN PROVIDERS
-    // GABEDIEGOGREG
-    ///////////////////////////////////////////////////////////////////////////////////////
-    //BentleyStatus GetNewDiegoSchema();
-    ///////////////////////////////////////////////////////////////////////////////////////
 
     typedef bool (ConvertORDElementXDomain::*AspectAssignmentFunc)(Dgn::DgnElementR, DgnV8EhCR) const;
     bvector<AspectAssignmentFunc> m_aspectAssignFuncs;

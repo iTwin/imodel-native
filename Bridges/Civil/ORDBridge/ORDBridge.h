@@ -51,6 +51,7 @@ public:
     virtual Dgn::SubjectCPtr _FindJob() override;
     virtual void _OnDocumentDeleted(Utf8StringCR documentId, Dgn::iModelBridgeSyncInfoFile::ROWID documentSyncId) override;
 
+    virtual BentleyStatus _MakeDefinitionChanges(Dgn::SubjectCR jobSubject) override;
     virtual BentleyStatus _MakeSchemaChanges(bool& hasMoreChanges) override;
     virtual BentleyStatus _OnOpenBim(Dgn::DgnDbR db) override;
     void _OnCloseBim(BentleyStatus, ClosePurpose) override;

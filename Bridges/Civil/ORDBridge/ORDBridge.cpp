@@ -45,6 +45,8 @@ iModelBridge::CmdLineArgStatus ORDBridge::_ParseCommandLineArg(int iArg, int arg
             return iModelBridge::CmdLineArgStatus::Success;
         }
 
+    ORDBRIDGE_LOGI(L"%ls - not recognized.", GetArgValue(argv[iArg]).c_str());
+
     return iModelBridge::CmdLineArgStatus::NotRecognized;
     }
 
@@ -257,6 +259,8 @@ SubjectCPtr ORDBridge::_InitializeJob()
 //---------------------------------------------------------------------------------------
 BentleyStatus ORDBridge::_ConvertToBim(SubjectCR jobSubject)
     {
+    ORDBRIDGE_LOGI("ORDConverter ConvertToBim called.");
+
     // This if statement's work is also done in _InitializeJob(), but when the bridge goes off for a second time (an update),
     // _InitializeJob() is not called. It's possible that this work can (should?) be just done here and NOT in _InitializeJob(),
     // but I'm not sure yet.
@@ -301,10 +305,13 @@ BentleyStatus ORDBridge::_ConvertToBim(SubjectCR jobSubject)
     ConvertORDElementXDomain convertORDXDomain(*m_converter);
     Dgn::DgnDbSync::DgnV8::XDomain::Register(convertORDXDomain);
 
-    m_converter->SetIsProcessing(true);
-    m_converter->MakeDefinitionChanges();
+    ORDBRIDGE_LOGI("ORDConverter ConvertData started.");
+
+    m_converter->SetIsProcessing(true);    
     m_converter->ConvertData();
     m_converter->SetIsProcessing(false);
+
+    ORDBRIDGE_LOGI("ORDConverter ConvertData stopped.");
 
     Dgn::DgnDbSync::DgnV8::XDomain::UnRegister(convertORDXDomain);
     return m_converter->WasAborted() ? BSIERROR : BSISUCCESS;
@@ -326,17 +333,17 @@ void ORDBridge::AppendCifSdkToDllSearchPath(BeFileNameCR libraryDir)
     }
 
 bool ORDBridge::CheckIfUnitTesting(int argc, WCharCP argv[])
-{
+    {
     //check argv[] for '--unit-testing' parameter
     for (int i = 0; i < argc; i++)
-    {
-        if (argv[i] == wcsstr(argv[i], L"--unit-testing"))
         {
+        if (argv[i] == wcsstr(argv[i], L"--unit-testing"))
+            {
             return true;
+            }
         }
-    }
     return false;
-}
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    diego.diaz                      07/2017
@@ -344,6 +351,32 @@ bool ORDBridge::CheckIfUnitTesting(int argc, WCharCP argv[])
 void ORDBridge::_OnDocumentDeleted(Utf8StringCR documentId, Dgn::iModelBridgeSyncInfoFile::ROWID documentSyncId)
     {
     // TODO
+    ORDBRIDGE_LOGI(L"TODO OnDocumentDeleted %ls", documentId.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ORDBridge::_MakeDefinitionChanges(SubjectCR jobSubject)
+    {
+    BentleyStatus status = T_Super::_MakeDefinitionChanges(jobSubject);
+    if (BentleyStatus::SUCCESS == status)
+        {
+        if (BentleyStatus::SUCCESS != (status = m_converter->MakeDefinitionChanges()))
+            {
+            ORDBRIDGE_LOGE("ORDConverter MakeDefinitionChanges failed.");
+            return status;
+            }
+
+        if (BentleyStatus::SUCCESS != (status = m_converter->Add2dCategory()))
+            ORDBRIDGE_LOGE("ORDConverter Add2dCategory failed.");
+        }
+    else
+        {
+        ORDBRIDGE_LOGE("iModelBridge MakeDefinitionChanges failed.");
+        }
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -354,12 +387,14 @@ BentleyStatus ORDBridge::_MakeSchemaChanges(bool& hasMoreChanges)
     BentleyStatus status = SUCCESS;
     if (m_schemaImportPhase == SchemaImportPhase::Base)
         {
+        ORDBRIDGE_LOGI("ORDConverter MakeSchemaChanges Import Base.");
         status = m_converter->MakeSchemaChanges();
         m_schemaImportPhase = SchemaImportPhase::Dynamic;
         hasMoreChanges = true;
         }
     else if (m_schemaImportPhase == SchemaImportPhase::Dynamic)
         {
+        ORDBRIDGE_LOGI("ORDConverter MakeSchemaChanges Import Dynamic.");
         status = m_converter->AddDynamicSchema();
         GetDgnDbR().Schemas().CreateClassViewsInDb(); // For debugging purposes
         m_schemaImportPhase = SchemaImportPhase::Done;
@@ -367,7 +402,8 @@ BentleyStatus ORDBridge::_MakeSchemaChanges(bool& hasMoreChanges)
         }
     else
         {
-        BeAssert(false && "Too many calls to _MakeSchemaChanges");
+        BeAssert(false);
+        ORDBRIDGE_LOGE("Too many calls to _MakeSchemaChanges.");
         }
 
     return ((BSISUCCESS != status) || m_converter->WasAborted()) ? BSIERROR : BSISUCCESS;
@@ -386,7 +422,10 @@ BentleyStatus ORDBridge::_OnOpenBim(DgnDbR db)
         }
     m_converter->SetDgnDb(db);
     if (BentleyStatus::SUCCESS != m_converter->AttachSyncInfo())
+        {
+        ORDBRIDGE_LOGE("ORDConverter AttachSyncInfo failed.");
         return BentleyStatus::ERROR;
+        }
 
     return T_Super::_OnOpenBim(db);
     }

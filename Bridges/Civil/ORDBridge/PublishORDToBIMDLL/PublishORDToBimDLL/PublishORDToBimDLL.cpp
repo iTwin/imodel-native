@@ -29,9 +29,21 @@ int PublishORDToBimDLL::RunBridge(int argc, WCharCP argv[])
 
     auto* iModelBridgeP = iModelBridge_getInstance(iModelBridge_getRegistrySubKey());
 
+
     iModelBridgeSacAdapter::Params saparams;
     if (BentleyStatus::SUCCESS != iModelBridgeSacAdapter::ParseCommandLine(*iModelBridgeP, saparams, argc, argv))
         return RESULT_ERROR_FAILED_TO_PARSE_COMMANDLINE;
+
+    // Need to add the '--logging-config-file' parameter since 
+    // is not done by caller and we are unit testing and the default is not good enough
+    // Not able to pass as args in ParseCommandLine ... strings get killed
+    char* logFile = getenv("BEGTEST_LOGGING_CONFIG");
+    BeFileName logFilePath(logFile);
+    if (logFilePath.DoesPathExist())
+        {
+        argv = AddLoggingConfigParameter(argc, argv);
+        saparams.SetLoggingConfigFile(logFilePath);
+        }
 
     bool shouldTryUpdate = saparams.ShouldTryUpdate();
     saparams.SetShouldTryUpdate(true);
@@ -92,3 +104,25 @@ WCharCP* PublishORDToBimDLL::AddUnitTestingParameter(int& argc, WCharCP argv[])
     argc++;
     return argvWithArgument;
     }
+
+WCharCP* PublishORDToBimDLL::AddLoggingConfigParameter(int& argc, WCharCP argv[])
+    {
+    char* logFile = getenv("BEGTEST_LOGGING_CONFIG");
+
+    BeFileName filePath(logFile);
+    if (filePath.DoesPathExist())
+        {
+        WCharCP inputArgument(WString(WCharCP(L"--logging-config-file=\"")).append(filePath.c_str()).append(WCharCP(L"\"")).c_str());
+
+        WCharCP* argvWithArgument = new WCharCP[argc+1];
+        for (int i = 0; i < argc; i++)
+            argvWithArgument[i] = argv[i];
+
+        argvWithArgument[argc] = inputArgument;
+        argc++;
+
+        return argvWithArgument;
+        }
+    return argv;
+    }
+

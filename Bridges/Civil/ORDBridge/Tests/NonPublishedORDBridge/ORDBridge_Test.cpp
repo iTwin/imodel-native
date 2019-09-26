@@ -347,14 +347,33 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDItemTypesTest)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Greg.Ashe       08/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CiviliModelBridgesORDBridgeTests, ORDAlignment2dPlanViewTest)
+    {
+    WCharCP wDgnFileName = WCharCP(L"Alignment2dPlanView.dgn");
+    WCharCP wFileName = WCharCP(L"ORDAlignment2dPlanView.bim");
+    ASSERT_TRUE(RunTestApp(wDgnFileName, wFileName, false));
+
+    Utf8String bimFile;
+    BeStringUtilities::WCharToUtf8(bimFile, wFileName);
+    Utf8CP bim = bimFile.c_str();
+
+    bvector<Utf8String> requiredSubCatNames;
+    requiredSubCatNames.push_back(Utf8String("_CIVIL_CONSTRUCTION")); // DataAccess ECInstanceBinder ?
+    requiredSubCatNames.push_back(Utf8String("Level2d"));
+    requiredSubCatNames.push_back(Utf8String("Level3d"));
+
+    VerifyConvertedBimFileSchemasAndCategories(bim, requiredSubCatNames);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Greg.Ashe       09/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CiviliModelBridgesORDBridgeTests, ORDDebugTest)
     {
-    //WString name = L"Debug";
-    //WString name = L"superelevation";
-    //WString name = L"signing_pavt markings_2019-R3_v28";
-    WString name = L"PointItemType";
+    WString name = L"Debug";
+    //WString name = L"ItemTypesPoint";
 
     WString dgn = name + L".dgn";
     WString sql = L"ORD" + name + L".bim";
@@ -370,5 +389,29 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDDebugTest)
     BeStringUtilities::WCharToUtf8(bimFile, sql.c_str());
     Utf8CP bim = bimFile.c_str();
 
-    VerifyConvertedBimFileSchemas(bim);
+    bvector<Utf8String> requiredSubCatNames;
+    VerifyConvertedBimFileSchemasAndCategories(bim, requiredSubCatNames);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Greg.Ashe       09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CiviliModelBridgesORDBridgeTests, ORDFullLocalPathTest)
+    {
+    WString dgn = L"";// L"D:\\Scratch\\Coffs Harbour Bypass\\Detail Design\\Corridor\\Master Corridor1.dgn";
+    WString sql = L"";// L"ORDCoffsHarbour.bim";
+
+    BeFileName sourcePath(dgn);
+    if (!sourcePath.DoesPathExist())
+        return;
+
+    ASSERT_TRUE(RunTestAppFullLocalPath(dgn.c_str(), sql.c_str(), false));
+
+    Utf8String bimFile;
+    BeStringUtilities::WCharToUtf8(bimFile, sql.c_str());
+    Utf8CP bim = bimFile.c_str();
+
+    bvector<Utf8String> requiredSubCatNames;
+    VerifyConvertedBimFileSchemasAndCategories(bim, requiredSubCatNames);
+    }
+

@@ -54,7 +54,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     <NMakeBuildCommandLine>bb -ax64 -p PublishORDToBIM -r Civil-iModelBridges -f CiviliModelBridges build</NMakeBuildCommandLine>
-    <NMakeIncludeSearchPath>$(OutRoot)BuildContexts\CivilIModelBridges\PublicAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>$(OutRoot)Winx64\BuildContexts\CivilIModelBridges\PublicAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <NMakeReBuildCommandLine>bb -ax64 -p PublishORDToBIM -r Civil-iModelBridges -f CiviliModelBridges rebuild PublishORDToBimExe PublishORDToBim</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>bb -ax64 -p PublishORDToBIM -r Civil-iModelBridges -f CiviliModelBridges clean PublishORDToBimExe PublishORDToBim</NMakeCleanCommandLine>
   </PropertyGroup>
