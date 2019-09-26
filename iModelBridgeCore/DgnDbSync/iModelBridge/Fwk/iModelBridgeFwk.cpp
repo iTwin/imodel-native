@@ -1582,7 +1582,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
         {
         GetProgressMeter().SetCurrentStepName("Releasing locks");
 
-        Briefcase_ReleaseAllPublicLocks();  // regardless of the success or failure of the bridge, we must not hold onto any locks that are not the private property of the bridge
+        Briefcase_ReleaseAllPublicLocks(SUCCESS != status);  // regardless of the success or failure of the bridge, we must not hold onto any locks that are not the private property of the bridge
 
         if (BSISUCCESS != status)
             m_briefcaseDgnDb->AbandonChanges();
@@ -1933,7 +1933,7 @@ int iModelBridgeFwk::UpdateExistingBimWithExceptionHandling()
 void iModelBridgeFwk::OnUnhandledException(Utf8CP phase)
     {
     fprintf(stderr, "Unhandled exception in %s. Releasing public locks and doing other cleanup\n", phase);
-    Briefcase_ReleaseAllPublicLocks();
+    Briefcase_ReleaseAllPublicLocks(true);
     }
 
 /*---------------------------------------------------------------------------------**//**
