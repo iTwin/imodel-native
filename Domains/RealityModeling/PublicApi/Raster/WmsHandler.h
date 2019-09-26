@@ -89,7 +89,7 @@ protected:
 
     bool _IsParallelToGround() const override { return true; }
 
-    Dgn::Cesium::RootPtr _CreateCesiumTileTree(Dgn::Cesium::OutputR) override { return nullptr; } // publishing not permitted...
+    Dgn::Cesium::RootPtr _CreateCesiumTileTree(Dgn::Cesium::OutputR, Utf8StringCR) override { return nullptr; } // publishing not permitted...
 
     //! Create a WmsModel object, in preparation for loading it from the DgnDb. Called by MODELHANDLER_DECLARE_MEMBERS. 
     WmsModel(CreateParams const& params);

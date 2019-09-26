@@ -292,7 +292,7 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
         else
             {
             static double   s_leafTolerance = 0.0;      // Use the tolerance of the input tileset.
-            Dgn::Tile::IO::WriteStatus status = Cesium::ICesiumPublisher::WriteCesiumTileset(rootJsonFile, modelDir, *geometricModel, dbToEcefTransform, s_leafTolerance);
+            Dgn::Tile::IO::WriteStatus status = Cesium::ICesiumPublisher::WriteCesiumTileset(fileName, rootJsonFile, modelDir, *geometricModel, dbToEcefTransform, s_leafTolerance);
             if (Dgn::Tile::IO::WriteStatus::Success != status)
                 {
                 ReportIssueV(Converter::IssueSeverity::Error, IssueCategory::DiskIO(), Issue::TileSetCreationFailure(), "", model->GetName().c_str(), status);

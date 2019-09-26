@@ -401,6 +401,7 @@ struct ICesiumPublisher
 {
     //! Returns directory for tileset.
     virtual BeFileName  _GetOutputDirectory(GeometricModelCR model) const = 0;
+    virtual Utf8String  _GetInputFileName() const = 0;
 
     //! Invoked before a model is processed.
     virtual Dgn::Tile::IO::WriteStatus _BeginProcessModel(GeometricModelCR model) { return Dgn::Tile::IO::WriteStatus::Success; }
@@ -410,7 +411,7 @@ struct ICesiumPublisher
 
     //! Write cesium tileset for a GeometricModel
     DGNPLATFORM_EXPORT static Dgn::Tile::IO::WriteStatus PublishCesiumTileset(ICesiumPublisher& publisher, GeometricModelCR model, TransformCR transformFromDgn, double leafTolerance);
-    DGNPLATFORM_EXPORT static Dgn::Tile::IO::WriteStatus WriteCesiumTileset(BeFileName outputFileName, BeFileNameCR tileOutputDirectory, GeometricModelCR model, TransformCR transformFromDgn, double leafTolerance);
+    DGNPLATFORM_EXPORT static Dgn::Tile::IO::WriteStatus WriteCesiumTileset(Utf8StringCR inputFileName, BeFileName outputFileName, BeFileNameCR tileOutputDirectory, GeometricModelCR model, TransformCR transformFromDgn, double leafTolerance);
 };
 
 END_DGN_CESIUM_NAMESPACE

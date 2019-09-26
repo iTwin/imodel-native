@@ -106,7 +106,7 @@ protected:
     void _OnLoadedJsonProperties() override;
     AxisAlignedBox3d _QueryNonElementModelRange() const override { return _QueryElementsRange(); }
 
-    POINTCLOUD_EXPORT Dgn::Cesium::RootPtr _CreateCesiumTileTree(Dgn::Cesium::OutputR) override;
+    POINTCLOUD_EXPORT Dgn::Cesium::RootPtr _CreateCesiumTileTree(Dgn::Cesium::OutputR, Utf8StringCR) override;
 
 public:
     //! Create a new PointCloudModel object, in preparation for loading it from the DgnDb.

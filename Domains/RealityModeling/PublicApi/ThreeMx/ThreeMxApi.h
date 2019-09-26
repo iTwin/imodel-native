@@ -175,7 +175,7 @@ public:
     ThreeMxModel(CreateParams const& params) : T_Super(params) {m_location = Transform::FromIdentity();}
     ~ThreeMxModel() {}
 
-    Dgn::Cesium::RootPtr _CreateCesiumTileTree(Dgn::Cesium::OutputR) override;
+    Dgn::Cesium::RootPtr _CreateCesiumTileTree(Dgn::Cesium::OutputR, Utf8StringCR) override;
     THREEMX_EXPORT void _OnSaveJsonProperties() override;
     THREEMX_EXPORT void _OnLoadedJsonProperties() override;
     AxisAlignedBox3d _QueryNonElementModelRange() const override { return _QueryElementsRange(); }

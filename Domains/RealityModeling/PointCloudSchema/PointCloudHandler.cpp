@@ -242,7 +242,7 @@ void PointCloudModel::_OnLoadedJsonProperties()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::Cesium::RootPtr PointCloudModel::_CreateCesiumTileTree(Dgn::Cesium::OutputR output)
+Dgn::Cesium::RootPtr PointCloudModel::_CreateCesiumTileTree(Dgn::Cesium::OutputR output, Utf8StringCR)
     {
     return PointCloudTileTree::Root::Create(*this, output);
     }

@@ -195,7 +195,7 @@ RasterFileModel::~RasterFileModel()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  9/2016
 //----------------------------------------------------------------------------------------
-Dgn::Cesium::RootPtr RasterFileModel::_CreateCesiumTileTree(Dgn::Cesium::OutputR output)
+Dgn::Cesium::RootPtr RasterFileModel::_CreateCesiumTileTree(Dgn::Cesium::OutputR output, Utf8StringCR inputFileName)
     {
     if (m_loadFileFailed)   // We already tried and failed to open the file. do not try again.
         return nullptr;
@@ -203,24 +203,18 @@ Dgn::Cesium::RootPtr RasterFileModel::_CreateCesiumTileTree(Dgn::Cesium::OutputR
     RefCountedCPtr<RepositoryLink> pLink = ILinkElementBase<RepositoryLink>::Get(GetDgnDb(), GetModeledElementId());
     if (!pLink.IsValid())
         {
-        m_loadFileFailed = false;
+        m_loadFileFailed = true;
         return nullptr;
         }
 
-    // // Resolve raster name
-    // BeFileName fileName;
-    // BentleyStatus status = T_HOST.GetRasterAttachmentAdmin()._ResolveFileUri(fileName, pLink->GetUrl(), GetDgnDb());
-    // if (status != SUCCESS)
-    //     {
-    //     m_loadFileFailed = true;
-    //     return nullptr;
-    //     }
-
-    // RasterRootPtr rasterRoot = RasterFileSource::Create(fileName.GetNameUtf8(), const_cast<RasterFileModel&>(*this));
-    // if (rasterRoot.IsNull())
-    //     m_loadFileFailed = true;
+     RasterRootPtr rasterRoot = RasterFileSource::Create(inputFileName, const_cast<RasterFileModel&>(*this));
+     if (rasterRoot.IsNull())
+         {
+         m_loadFileFailed = true;
+         return nullptr;
+         }
          
-    return nullptr;
+    return rasterRoot.get();
     }
 
 //----------------------------------------------------------------------------------------

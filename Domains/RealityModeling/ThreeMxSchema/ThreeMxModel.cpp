@@ -157,7 +157,7 @@ void ThreeMxModel::SetClip(Dgn::ClipVectorCP clip)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Cesium::RootPtr ThreeMxModel::_CreateCesiumTileTree(Cesium::OutputR output)
+Cesium::RootPtr ThreeMxModel::_CreateCesiumTileTree(Cesium::OutputR output, Utf8StringCR)
     {
     ScenePtr scene = new Scene(*this, m_location, m_sceneFile.c_str());
     if (SUCCESS != scene->LoadScene(output))

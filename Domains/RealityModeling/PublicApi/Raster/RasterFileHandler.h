@@ -75,7 +75,7 @@ protected:
 
     void _OnSaveJsonProperties() override;
     void _OnLoadedJsonProperties() override;
-    Dgn::Cesium::RootPtr _CreateCesiumTileTree(Dgn::Cesium::OutputR) override;
+    Dgn::Cesium::RootPtr _CreateCesiumTileTree(Dgn::Cesium::OutputR, Utf8StringCR inputFileName) override;
 
     bool _IsParallelToGround() const override;
     

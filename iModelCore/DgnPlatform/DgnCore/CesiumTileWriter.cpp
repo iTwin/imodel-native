@@ -280,12 +280,12 @@ static FutureWriteStatus generateChildTiles (WriteStatus parentStatus, Context c
 
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bewntley    08/2017
+* @bsimethod                                                    Ray.Bentley    08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 FutureWriteStatus writeCesiumTileset(Cesium::ICesiumPublisher* publisher, GeometricModelP model, double leafTolerance)
     {
     auto output = CesiumTileOutput::Create(*model);
-    auto tileRoot = model->_CreateCesiumTileTree(*output);
+    auto tileRoot = model->_CreateCesiumTileTree(*output, publisher->_GetInputFileName());
     if (tileRoot.IsNull())
         return folly::makeFuture(WriteStatus::NoGeometry);
 
@@ -318,11 +318,12 @@ FutureWriteStatus writeCesiumTileset(Cesium::ICesiumPublisher* publisher, Geomet
 struct CesiumTilesetPublisher: Cesium::ICesiumPublisher
 {
 public:
-    CesiumTilesetPublisher(BeFileName outputFileName, BeFileNameCR outputDirectory, TransformCR dbToEcef) : m_outputFileName(outputFileName), m_outputDirectory(outputDirectory), m_dbToEcef(dbToEcef) { }
+    CesiumTilesetPublisher(Utf8StringCR inputFileName, BeFileName outputFileName, BeFileNameCR outputDirectory, TransformCR dbToEcef) : m_inputFileName(inputFileName), m_outputFileName(outputFileName), m_outputDirectory(outputDirectory), m_dbToEcef(dbToEcef) { }
 protected:
     BeFileName      m_outputDirectory;
     BeFileName      m_outputFileName;
     Transform       m_dbToEcef;
+    Utf8String      m_inputFileName;
 
     static void AppendPoint(Json::Value& val, DPoint3dCR pt) { val.append(pt.x); val.append(pt.y); val.append(pt.z); }
     static Json::Value TransformToJson(TransformCR tf);
@@ -337,6 +338,7 @@ protected:
         }
 
     BeFileName  _GetOutputDirectory(GeometricModelCR model) const override { return m_outputDirectory; }
+    Utf8String  _GetInputFileName() const override { return m_inputFileName; }
     WriteStatus _BeginProcessModel(GeometricModelCR model) override
         {
         return (BeFileNameStatus::Success == InitializeDirectories()) ? WriteStatus::Success : WriteStatus::UnableToOpenFile;
@@ -1033,9 +1035,9 @@ WriteStatus ICesiumPublisher::PublishCesiumTileset(ICesiumPublisher& publisher, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/2017 
 +---------------+---------------+---------------+---------------+---------------+------*/
-WriteStatus ICesiumPublisher::WriteCesiumTileset(BeFileName outputFileName, BeFileNameCR tileOutputDirectory, GeometricModelCR model, TransformCR dbToEcef, double leafTolerance)
+WriteStatus ICesiumPublisher::WriteCesiumTileset(Utf8StringCR inputFileName, BeFileName outputFileName, BeFileNameCR tileOutputDirectory, GeometricModelCR model, TransformCR dbToEcef, double leafTolerance)
     {
-    CesiumTilesetPublisher publisher(outputFileName, tileOutputDirectory, dbToEcef);
+    CesiumTilesetPublisher publisher(inputFileName, outputFileName, tileOutputDirectory, dbToEcef);
     return ICesiumPublisher::PublishCesiumTileset(publisher, model, dbToEcef, leafTolerance);
     }
 

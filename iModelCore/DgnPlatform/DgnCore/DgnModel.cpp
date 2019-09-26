@@ -2072,7 +2072,7 @@ ElementIterator DgnModel::MakeIterator(Utf8CP whereClause, Utf8CP orderByClause)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Cesium::RootPtr GeometricModel::_CreateCesiumTileTree(Cesium::OutputR)
+Cesium::RootPtr GeometricModel::_CreateCesiumTileTree(Cesium::OutputR, Utf8StringCR inputFileName)
     {
     return nullptr;
     }

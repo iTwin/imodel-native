@@ -965,7 +965,7 @@ public:
 
     //! If this model supports producing Cesium 3D tiles, return a root of such a tile tree. The default implementation returns nullptr.
     //! The rootTileOutput is supplied for loading the root tile. It should not be stored and reused.
-    DGNPLATFORM_EXPORT virtual Cesium::RootPtr _CreateCesiumTileTree(Cesium::OutputR rootTileOutput);
+    DGNPLATFORM_EXPORT virtual Cesium::RootPtr _CreateCesiumTileTree(Cesium::OutputR rootTileOutput, Utf8StringCR inputFileName);
 };
 
 //=======================================================================================
