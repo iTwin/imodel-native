@@ -101,6 +101,10 @@ struct SyncInfo
     //! Aspect stored on a RepositoryLink to capture additional info about the source file
     struct RepositoryLinkExternalSourceAspect : ExternalSourceAspect
         {
+        protected:
+            Utf8CP _myName() override { return Kind::RepositoryLink; }
+
+        public:
         RepositoryLinkExternalSourceAspect(ECN::IECInstance* i) : ExternalSourceAspect(i) {} 
         DGNDBSYNC_EXPORT static RepositoryLinkExternalSourceAspect CreateAspect(DgnDbR, V8FileInfo const&, StableIdPolicy);
         DGNDBSYNC_EXPORT bool Update(V8FileInfo const&);
@@ -131,6 +135,9 @@ struct SyncInfo
         {
         private:
         UriExternalSourceAspect(ECN::IECInstance* i) : ExternalSourceAspect(i) {}
+        protected:
+            Utf8CP _myName() override { return Kind::URI; }
+
         public:
         static UriExternalSourceAspect CreateAspect(DgnElementId repositoryLinkId, Utf8CP filename, UriContentInfo const&, Utf8CP rdsId, Converter&);
         static UriExternalSourceAspect GetAspect(DgnElementCR);
@@ -153,7 +160,10 @@ struct SyncInfo
 
       private:
         V8ModelExternalSourceAspect(ECN::IECInstance* i) : ExternalSourceAspect(i) {}
-      public:
+        protected:
+            Utf8CP _myName() override { return Kind::Model; }
+
+        public:
         V8ModelExternalSourceAspect() : ExternalSourceAspect(nullptr) {}
 
         static Utf8String FormatSourceId(DgnV8Api::ModelId v8Id) {return FormatV8ModelId(v8Id);}
@@ -232,7 +242,10 @@ struct SyncInfo
         friend struct V8ElementExternalSourceAspectIterator;
       private:
         V8ElementExternalSourceAspect(ECN::IECInstance* i) : ExternalSourceAspect(i) {}
-      public:
+        protected:
+            Utf8CP _myName() override { return Kind::Element; }
+
+        public:
         V8ElementExternalSourceAspect() : ExternalSourceAspect(nullptr) {}
         static Utf8String FormatSourceId(DgnV8Api::ElementId v8Id) {return FormatV8ElementId(v8Id);}
         static Utf8String FormatSourceId(DgnV8EhCR el) {return FormatSourceId(el.GetElementId());}
@@ -297,6 +310,9 @@ struct SyncInfo
         LevelExternalSourceAspect(ECN::IECInstance* i) : ExternalSourceAspect(i) {}
         DGNDBSYNC_EXPORT static LevelExternalSourceAspect CreateAspect(DgnElementId scopeId, DgnV8Api::LevelHandle const&, DgnV8ModelCR, Type, Converter&);
 
+        protected:
+            Utf8CP _myName() override { return Kind::Level; }
+
         public:
         //! Create a new aspect in memory. The scope will be the RepositoryLink element that stands for the source file. Caller must call AddAspect, passing in the Category element.
         DGNDBSYNC_EXPORT static LevelExternalSourceAspect CreateAspect(DgnV8Api::LevelHandle const&, DgnV8ModelCR, Type, Converter&);
@@ -310,6 +326,9 @@ struct SyncInfo
         {
         private:
         ProxyGraphicExternalSourceAspect(ECN::IECInstance* i) : ExternalSourceAspect(i) {}
+        protected:
+            Utf8CP _myName() override { return Kind::ProxyGraphic; }
+
         public:
         static Utf8String FormatSourceId(DgnV8Api::ElementId v8Id) {return FormatV8ElementId(v8Id);}
         DGNDBSYNC_EXPORT static ProxyGraphicExternalSourceAspect CreateAspect(DgnModelCR bimDrawingModel, Utf8StringCR idPath, Utf8StringCR propsJson, DgnDbR db);
@@ -322,6 +341,9 @@ struct SyncInfo
         {
         private:
         static Utf8String FormatSourceId(DgnV8Api::ElementId v8Id) {return FormatV8ElementId(v8Id);}
+
+        protected:
+            Utf8CP _myName() override { return Kind::ViewDefinition; }
 
         public:
         static constexpr Utf8CP json_v8ViewName = "v8ViewName";
@@ -359,6 +381,9 @@ struct SyncInfo
         {
         private:
         GeomPartExternalSourceAspect(ECN::IECInstance* i) : ExternalSourceAspect(i) {}
+        protected:
+            Utf8CP _myName() override { return Kind::GeomPart; }
+
         public:
         //! Create a new aspect in memory. scopeId should be the bridge's job definition model. Caller must call AddAspect, passing in the DgnGeometryPart element.
         DGNDBSYNC_EXPORT static GeomPartExternalSourceAspect CreateAspect(DgnElementId scopeId, Utf8StringCR tag, DgnDbR);

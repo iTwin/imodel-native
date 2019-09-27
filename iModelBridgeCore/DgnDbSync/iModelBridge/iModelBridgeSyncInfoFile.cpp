@@ -542,7 +542,7 @@ void iModelExternalSourceAspect::SetProperties(rapidjson::Document const& json)
     ECN::ECValue props(buffer.GetString());
     BeAssert(m_instance.IsValid());
     if (m_instance.IsNull())
-        LOG.fatal(L"iModelExternalSourceAspect::m_instance==nullptr in iModelExternalSourceAspect::SetProperties");
+        LOG.fatalv(L"iModelExternalSourceAspect::m_instance==nullptr in iModelExternalSourceAspect::SetProperties from %s", _myName());
     m_instance->SetValue(XTRN_SRC_ASPCT_JsonProperties, props);
     }
 

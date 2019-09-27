@@ -2157,7 +2157,8 @@ SyncInfo::V8ElementExternalSourceAspect  Converter::AddOrUpdateV8ElementExternal
         {
         BeAssert(!elprov.m_v8IdPath.empty() || aspect.GetV8ElementId() == elprov.m_v8Id);
         aspect.Update(elprov.m_prov);
-        return SyncInfo::V8ElementExternalSourceAspect();
+        LOG.tracev("Converter::AddOrUpdateV8ElementExternalSourceAspect - found aspect for %" PRIu64, el.GetElementId().GetValueUnchecked());
+        return aspect;
         }
 
     aspect = SyncInfo::V8ElementExternalSourceAspect::CreateAspect(elprov, GetDgnDb());
@@ -2176,6 +2177,10 @@ SyncInfo::V8ElementExternalSourceAspect Converter::WriteV8ElementExternalSourceA
     Utf8String sourceIdPath = !sourceIdPathIn.empty()? sourceIdPathIn: SyncInfo::V8ElementExternalSourceAspect::FormatSourceId(v8eh);
     SyncInfo::V8ElementExternalSourceAspectData elprov(scope, sourceIdPath, newProv, propsJson);
     auto aspect = AddOrUpdateV8ElementExternalSourceAspect(*el, elprov);
+    if (!aspect.IsValid())
+        {
+        LOG.debugv("Converter::WriteV8ElementExternalSourceAspect aspect is invalid for element %lld and sourceId %s", bimElementId.GetValueUnchecked(), sourceIdPath.c_str());
+        }
     el->Update();
     return aspect;
     }
@@ -2343,6 +2348,12 @@ BentleyStatus Converter::ConvertElement(ElementConversionResults& results, DgnV8
         rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
         propsData.Accept(writer);
         results.m_jsonProps = buffer.GetString();
+        }
+    else
+        {
+        Bentley::WString desc;
+        v8eh.GetHandler().GetDescription(v8eh, desc, 256);
+        results.m_element->SetUserLabel(Utf8String(desc.c_str()).c_str());
         }
     //item or aspects only if there was an ECInstance on the element at all
     if (hasSecondaryInstances)
@@ -2596,8 +2607,15 @@ void Converter::AnnounceConversionResults(ElementConversionResults& results, Dgn
 
     if (!results.m_v8SecondaryInstanceMappings.empty())
         {
-        aspect.SetProperties(propData);
-        element.Update();
+        if (aspect.IsValid())
+            {
+            aspect.SetProperties(propData);
+            element.Update();
+            }
+        else
+            {
+            LOG.errorv("Converter::AnnounceConversionResults: V8ElementExternalSourceAspect is invalid therefore cannot update property information on it");
+            }
         }
     _OnElementConverted(elementId, &v8eh, changeOperation);
     }
@@ -2614,6 +2632,10 @@ DgnDbStatus Converter::InsertResults(ElementConversionResults& results, SyncInfo
     DgnCode code = results.m_element->GetCode();
 
     results.m_mapping = AddOrUpdateV8ElementExternalSourceAspect(*results.m_element, elprov);
+    if (!results.m_mapping.IsValid())
+        {
+        LOG.debugv("Converter::InsertResults V8ElementExternalSourceAspect is invalid for %" PRIu64, results.m_element->GetElementId().GetValueUnchecked());
+        }
 
     auto result = m_dgndb->Elements().Insert(*results.m_element, &stat);
 

@@ -325,6 +325,9 @@ struct iModelExternalSourceAspect
 
     RefCountedPtr<ECN::IECInstance> m_instance;
 
+    protected:
+        virtual Utf8CP _myName() { return "iModelExternalSourceAspect"; }
+
     public:
 
     iModelExternalSourceAspect(ECN::IECInstance* i = nullptr) :m_instance(i) {}

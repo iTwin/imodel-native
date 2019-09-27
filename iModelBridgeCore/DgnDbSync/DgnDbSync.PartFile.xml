@@ -15,6 +15,7 @@
             <Directory SourceName="Delivery/DgnPlatformV8Sdk/Dlls/schema" ProductDirectoryName="DgnV8Dlls" ProductSubDirectory="schema" SubPartDirectory="DgnPlatformV8Sdk/Dlls/schema" Required="true"/>
             <Directory SourceName="Delivery/DgnPlatformV8Sdk/Dlls/Seed" ProductDirectoryName="DgnV8Dlls" ProductSubDirectory="Seed" SubPartDirectory="DgnPlatformV8Sdk/Dlls/Seed" Required="true"/>
             <Directory SourceName="Delivery/DgnPlatformV8Sdk/Dlls/Symb" ProductDirectoryName="DgnV8Dlls" ProductSubDirectory="Symb" SubPartDirectory="DgnPlatformV8Sdk/Dlls/Symb" Required="true"/>
+            <Directory SourceName="Delivery/DgnPlatformV8Sdk/Dlls/en" ProductDirectoryName="DgnV8Dlls" ProductSubDirectory="en" SubPartDirectory="DgnPlatformV8Sdk/Dlls/en" Required="true"/>
             <Directory SourceName="Delivery/DgnPlatformV8Sdk/Libs" Required="false" SubPartDirectory="VersionedDgnV8Libs" />
         </Bindings>
     </Part>

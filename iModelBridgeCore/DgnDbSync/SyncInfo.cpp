@@ -557,7 +557,10 @@ SyncInfo::V8ElementExternalSourceAspect SyncInfo::V8ElementExternalSourceAspect:
     {
     auto ids = SyncInfo::GetExternalSourceAspectIds(el, Kind::Element, sourceId);
     if (ids.size() == 0)
+        {
+        LOG.tracev("No V8ElementExternalSourceAspect found for element %lld with sourceId %s.  Creating a new one with null instance ptr.", el.GetElementId().GetValueUnchecked(), sourceId.c_str());
         return V8ElementExternalSourceAspect(nullptr);
+        }
     BeAssert(ids.size() == 1 && "Not supporting multiple element kind aspects on a single bim element from a given sourceId");
     return V8ElementExternalSourceAspect(ExternalSourceAspect::GetAspectForEdit(el, ids.front()).m_instance.get());
     }
@@ -569,7 +572,10 @@ SyncInfo::V8ElementExternalSourceAspect SyncInfo::V8ElementExternalSourceAspect:
     {
     auto ids = SyncInfo::GetExternalSourceAspectIds(el, Kind::Element, sourceId);
     if (ids.size() == 0)
+        {
+        LOG.tracev("No V8ElementExternalSourceAspect found for element %lld with sourceId %s.  Creating a new one with null instance ptr.", el.GetElementId().GetValueUnchecked(), sourceId.c_str());
         return V8ElementExternalSourceAspect(nullptr);
+        }
     BeAssert(ids.size() == 1 && "Not supporting multiple element kind aspects on a single bim element from a given sourceId");
     return V8ElementExternalSourceAspect(ExternalSourceAspect::GetAspect(el, ids.front()).m_instance.get());
     }
