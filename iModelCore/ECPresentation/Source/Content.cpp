@@ -577,6 +577,18 @@ ContentDescriptor::Field::TypeDescription const& ContentDescriptor::Field::GetTy
 
 const Utf8CP ContentDescriptor::DisplayLabelField::NAME = "/DisplayLabel/";
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentDescriptor::DisplayLabelField::~DisplayLabelField()
+    {
+    for (auto const& entry : m_labelOverrideValueSpecs)
+        {
+        for (InstanceLabelOverrideValueSpecification const* classSpec : entry.second)
+            delete classSpec;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentDescriptor::Field::TypeDescriptionPtr ContentDescriptor::DisplayLabelField::_CreateTypeDescription() const
@@ -590,6 +602,22 @@ ContentDescriptor::Field::TypeDescriptionPtr ContentDescriptor::DisplayLabelFiel
 rapidjson::Document ContentDescriptor::DisplayLabelField::_AsJson(rapidjson::Document::AllocatorType* allocator) const
     {
     return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bmap<ECClassCP, bvector<InstanceLabelOverrideValueSpecification const*>> ContentDescriptor::DisplayLabelField::CloneLabelOverrideValueSpecs(bmap<ECClassCP, bvector<InstanceLabelOverrideValueSpecification const*>> const& specs)
+    {
+    bmap<ECClassCP, bvector<InstanceLabelOverrideValueSpecification const*>> result;
+    for (auto const& entry : specs)
+        {
+        bvector<InstanceLabelOverrideValueSpecification const*> classSpecs;
+        for (InstanceLabelOverrideValueSpecification const* classSpec : entry.second)
+            classSpecs.push_back(classSpec->Clone());
+        result.Insert(entry.first, classSpecs);
+        }
+    return result;
     }
 
 /*---------------------------------------------------------------------------------**//**

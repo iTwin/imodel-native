@@ -619,6 +619,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         int m_priority;
         bmap<ECClassCP, bvector<InstanceLabelOverrideValueSpecification const*>> m_labelOverrideValueSpecs;
 
+    private:
+        ECPRESENTATION_EXPORT static bmap<ECClassCP, bvector<InstanceLabelOverrideValueSpecification const*>> CloneLabelOverrideValueSpecs(bmap<ECClassCP, bvector<InstanceLabelOverrideValueSpecification const*>> const&);
+
     protected:
         DisplayLabelField* _AsDisplayLabelField() override {return this;}
         DisplayLabelField const* _AsDisplayLabelField() const override {return this;}
@@ -635,6 +638,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         DisplayLabelField(Utf8String label, int priority = Property::DEFAULT_PRIORITY) 
             : Field(Category::GetDefaultCategory(), NAME, label), m_priority(priority)
             {}
+        DisplayLabelField(DisplayLabelField const& other) : Field(other), m_priority(other.m_priority), m_labelOverrideValueSpecs(CloneLabelOverrideValueSpecs(other.m_labelOverrideValueSpecs)) {}
+        DisplayLabelField(DisplayLabelField&& other) : Field(other), m_priority(other.m_priority) {m_labelOverrideValueSpecs.swap(other.m_labelOverrideValueSpecs);}
+        ECPRESENTATION_EXPORT ~DisplayLabelField();
 
         //! Set the priority for this field.
         void SetPriority(int priority) {m_priority = priority;}
@@ -643,7 +649,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         bmap<ECClassCP, bvector<InstanceLabelOverrideValueSpecification const*>> const& GetOverrideValueSpecs() const {return m_labelOverrideValueSpecs;}
 
         //! Set label override value specifications' map
-        void SetOverrideValueSpecs(bmap<ECClassCP, bvector<InstanceLabelOverrideValueSpecification const*>> specs) {m_labelOverrideValueSpecs = specs;}
+        void SetOverrideValueSpecs(bmap<ECClassCP, bvector<InstanceLabelOverrideValueSpecification const*>> const& specs) {m_labelOverrideValueSpecs = CloneLabelOverrideValueSpecs(specs);}
     };
 
     //===================================================================================
