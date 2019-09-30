@@ -2389,7 +2389,7 @@ protected:
             return data;
             }
 
-        void Clear() { m_map.clear(); }
+        void Clear() { BeMutexHolder lock(m_mutex); m_map.clear(); }
     };
 
     DbFile* m_dbFile;
