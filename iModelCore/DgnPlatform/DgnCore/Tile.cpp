@@ -3071,22 +3071,29 @@ bool GeometryLoader::GenerateGeometry()
         // Collect geometry from this element
         geometryList.clear();
         auto const& entry = *elementIter;
-        tileContext.ProcessElement(entry.second, entry.first);
-        if (tileContext.GetGeometryCount() >= elementCollector.GetMaxElements())
+        try
             {
-            tileContext.TruncateGeometryList(elementCollector.GetMaxElements());
-            break;
+            tileContext.ProcessElement(entry.second, entry.first);
+            if (tileContext.GetGeometryCount() >= elementCollector.GetMaxElements())
+                {
+                tileContext.TruncateGeometryList(elementCollector.GetMaxElements());
+                break;
+                }
+
+            // Convert this element's geometry to meshes
+            for (auto const& geom : geometryList)
+                meshGenerator.AddMeshes(*geom, true);
+
+            if (IsCanceled())
+                return false;
+
+            if (meshGenerator.DidDecimation())
+                geometryList.MarkIncomplete();
             }
-
-        // Convert this element's geometry to meshes
-        for (auto const& geom : geometryList)
-            meshGenerator.AddMeshes(*geom, true);
-
-        if (IsCanceled())
-            return false;
-
-        if (meshGenerator.DidDecimation())
-            geometryList.MarkIncomplete();
+        catch (...)
+            {
+            // The only observed exceptions stem from severe Parasolid errors. Whatever went wrong, ignore this element and continue with next.
+            }
         }
 
     meshGenerator.AddDeferredGlyphMeshes(GetRenderSystem());
@@ -4059,16 +4066,9 @@ GraphicPtr TileContext::FinishSubGraphic(GeometryAccumulatorR accum, TileSubGrap
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TileContext::ProcessElement(DgnElementId elemId, double rangeDiagonalSquared)
     {
-    try
-        {
-        m_curElemId = elemId;
-        m_curRangeDiagonalSquared = rangeDiagonalSquared;
-        VisitElement(elemId, false);
-        }
-    catch (...)
-        {
-        // This shouldn't be necessary - but an uncaught exception will cause the processing to continue forever. (OpenCascade error in LargeHatchPlant.)
-        }
+    m_curElemId = elemId;
+    m_curRangeDiagonalSquared = rangeDiagonalSquared;
+    VisitElement(elemId, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
