@@ -65,6 +65,7 @@
     <Product Name="iModelJsHost">
         <SubPart PartName="iModelJsHostLib" LibType="Dynamic" />
         <Directories DirectoryListName="iModelJsHost" />
+        <FeatureExclude>GeoCoordAssetsLarge</FeatureExclude>
     </Product>
 
     <ProductDirectoryList ListName="iModelJsHost">
