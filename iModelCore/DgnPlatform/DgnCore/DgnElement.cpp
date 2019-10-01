@@ -4072,7 +4072,14 @@ void GeometricElement3d::_BindWriteParams(ECSqlStatement& stmt, ForInsert forIns
     {
     T_Super::_BindWriteParams(stmt, forInsert);
 
-    stmt.BindInt(stmt.GetParameterIndex(prop_InSpatialIndex()), GetModel()->IsTemplate() ? 0 : 1); // elements in a template model do not belong in the SpatialIndex
+    GeometricModel3dCP model3d = GetModel()->ToGeometricModel3d();
+    if (nullptr == model3d)
+        {
+        BeAssert(false && "GeometricElement3d elements must reside in a GeometricModel3d."); // should have been avoided by checks in GeometricElement3d::_OnInsert
+        return;
+        }
+
+    stmt.BindInt(stmt.GetParameterIndex(prop_InSpatialIndex()), model3d->IsSpatiallyLocated() ? 1 : 0);
     stmt.BindNavigationValue(stmt.GetParameterIndex(prop_TypeDefinition()), m_typeDefinition.m_id, m_typeDefinition.m_relClassId);
 
     if (!m_placement.IsValid())

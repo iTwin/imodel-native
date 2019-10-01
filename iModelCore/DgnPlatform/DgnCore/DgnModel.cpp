@@ -773,6 +773,24 @@ void DgnModel::_BindWriteParams(BeSQLite::EC::ECSqlStatement& statement, ForInse
 }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    09/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricModel3d::_BindWriteParams(BeSQLite::EC::ECSqlStatement& statement, ForInsert forInsert)
+    {
+    T_Super::_BindWriteParams(statement, forInsert);
+
+    // The IsNotSpatiallyLocated property was added after the initial BisCore release, so may not be there in all iModels
+    int isNotSpatiallyLocatedIndex = statement.GetParameterIndex(prop_IsNotSpatiallyLocated());
+    if (isNotSpatiallyLocatedIndex >= 0)
+        statement.BindBoolean(isNotSpatiallyLocatedIndex, IsNotSpatiallyLocated());
+
+    // The IsPlanProjection property was added after the initial BisCore release, so may not be there in all iModels
+    int isPlanProjectionIndex = statement.GetParameterIndex(prop_IsPlanProjection());
+    if (isPlanProjectionIndex >= 0)
+        statement.BindBoolean(isPlanProjectionIndex, IsPlanProjection());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModel::_ToJson(JsonValueR val, JsonValueCR opts) const
@@ -815,6 +833,19 @@ void GeometricModel::_ToJson(JsonValueR val, JsonValueCR opts) const {
 }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    09/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricModel3d::_ToJson(JsonValueR val, JsonValueCR opts) const
+    {
+    T_Super::_ToJson(val, opts);
+    if (IsPlanProjection())
+        val[json_isPlanProjection()] = true;
+
+    if (IsNotSpatiallyLocated())
+        val[json_isNotSpatiallyLocated()] = true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModel::_FromJson(JsonValueR val)
@@ -825,6 +856,18 @@ void DgnModel::_FromJson(JsonValueR val)
         m_isPrivate = val[json_isPrivate()].asBool();
     if (val.isMember(json_isTemplate()))
         m_isTemplate = val[json_isTemplate()].asBool();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    09/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricModel3d::_FromJson(JsonValueR val)
+    {
+    T_Super::_FromJson(val);
+    if (val.isMember(json_isNotSpatiallyLocated()))
+        m_isNotSpatiallyLocated = val[json_isNotSpatiallyLocated()].asBool();
+    if (val.isMember(json_isPlanProjection()))
+        m_isPlanProjection = val[json_isPlanProjection()].asBool();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1479,6 +1522,16 @@ void dgn_ModelHandler::Model::_GetClassParams(ECSqlClassParamsR params)
     params.Add(DgnModel::prop_IsPrivate(), ECSqlClassParams::StatementType::All);
     params.Add(DgnModel::prop_JsonProperties(), ECSqlClassParams::StatementType::All);
     params.Add(DgnModel::prop_IsTemplate(), ECSqlClassParams::StatementType::All);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    09/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_ModelHandler::Geometric3d::_GetClassParams(ECSqlClassParamsR params)
+    {
+    T_Super::_GetClassParams(params);
+    params.Add(GeometricModel3d::prop_IsNotSpatiallyLocated(), ECSqlClassParams::StatementType::All, 2); // Property added in BisCore 1.0.8
+    params.Add(GeometricModel3d::prop_IsPlanProjection(), ECSqlClassParams::StatementType::All, 2); // Property added in BisCore 1.0.8
     }
 
 //---------------------------------------------------------------------------------------

@@ -8,7 +8,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECSqlClassParams::Add(Utf8StringCR name, StatementType type)
+void ECSqlClassParams::Add(Utf8StringCR name, StatementType type, uint16_t sortPriority)
     {
     if (name.empty())
         {
@@ -17,16 +17,13 @@ void ECSqlClassParams::Add(Utf8StringCR name, StatementType type)
         }
 
     BeAssert(m_entries.end() == std::find_if(m_entries.begin(), m_entries.end(), [&](Entry const& arg) { return name.Equals(arg.m_name); }));
-    Entry entry(name, type);
-    if (StatementType::Select == (type & StatementType::Select) && 0 < m_entries.size())
-        {
-        // We want to be able to quickly look up the index for a name for SELECT query results...so group them together at the front of the list.
-        m_entries.insert(m_entries.begin(), entry);
-        }
-    else
-        {
-        m_entries.push_back(entry);
-        }
+
+    // We want to be able to quickly look up the index for a name for SELECT query results...so group them together at the front of the list.
+    if (StatementType::Select != (type & StatementType::Select))
+        sortPriority = 1024; // Pick a sortPriority that will sort non-SELECT to end
+
+    Entry entry(name, type, sortPriority);
+    m_entries.push_back(entry);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -61,22 +58,16 @@ int ECSqlClassParams::GetSelectIndex(Utf8CP name) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECSqlClassParams::RemoveAllButSelect()
-    {
-    // Once we've constructed the handler info, we need only retain those property names which are used in SELECT statements.
-    auto removeAt = std::remove_if(m_entries.begin(), m_entries.end(), [&](Entry const& arg) { return StatementType::Select != (arg.m_type & StatementType::Select); });
-    m_entries.erase(removeAt, m_entries.end());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T> static uint16_t buildParamString(Utf8StringR str, ECSqlClassParams::Entries const& entries, ECSqlClassParams::StatementType type, T func)
+template<typename T> static uint16_t buildParamString(Utf8StringR str, ECClassCR ecclass, ECSqlClassParams::Entries const& entries, ECSqlClassParams::StatementType type, T func)
     {
     uint16_t count = 0;
     for (auto const& entry : entries)
         {
         if (type != (entry.m_type & type))
+            continue;
+
+        // the handler may know about an ECProperty from a newer version of the schema than is imported into the iModel, so skip any properties that are not part of the ECClass
+        if (nullptr == ecclass.GetPropertyP(entry.m_name.c_str()) && (0 != strcmp(entry.m_name.c_str(), "ECInstanceId")))
             continue;
 
         if (0 < count)
@@ -92,81 +83,98 @@ template<typename T> static uint16_t buildParamString(Utf8StringR str, ECSqlClas
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECSqlClassParams::AppendClassName(Utf8StringR classname, DgnDbCR db, DgnClassId classId)
+void ECSqlClassParams::AppendClassName(Utf8StringR classname, DgnDbCR db, ECClassCR ecclass)
     {
-    ECClassCP ecclass = db.Schemas().GetClass(classId);
-    BeAssert(nullptr != ecclass);
-    if (nullptr == ecclass)
-        return false;
-
     classname.append(1, '[');
-    classname.append(ecclass->GetSchema().GetName());
+    classname.append(ecclass.GetSchema().GetName());
     classname.append("].[");
-    classname.append(ecclass->GetName());
+    classname.append(ecclass.GetName());
     classname.append(1, ']');
-
-    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECSqlClassParams::BuildInsertECSql(Utf8StringR ecsql, DgnDbCR dgndb, DgnClassId classId) const
+uint16_t ECSqlClassParams::BuildInsertECSql(Utf8StringR ecsql, DgnDbCR dgndb, ECClassCR ecclass) const
     {
     ecsql.clear();
-    if (m_insertTemplate.empty())
-        return true;
-
     ecsql.append("INSERT INTO ");
-    if (!AppendClassName(ecsql, dgndb, classId))
+    AppendClassName(ecsql, dgndb, ecclass);
+    ecsql.append(1, '(');
+
+    auto const& entries = GetEntries();
+    Utf8String insertValues;
+    uint16_t numInsertParams = buildParamString(ecsql, ecclass, entries, ECSqlClassParams::StatementType::Insert,
+                                                [&] (Utf8StringCR name, uint16_t count)
+        {
+        ecsql.append(1, '[').append(name).append(1, ']');
+        if (0 < count)
+            insertValues.append(1, ',');
+
+        insertValues.append(":[").append(name).append(1, ']');
+        });
+
+    if (0 == numInsertParams)
         {
         ecsql.clear();
-        return false;
+        return 0;
         }
 
-    ecsql.append(m_insertTemplate);
-    return true;
+    ecsql.append(")VALUES(").append(insertValues).append(1, ')');
+    return numInsertParams;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECSqlClassParams::BuildSelectECSql(Utf8StringR ecsql, DgnDbCR dgndb, DgnClassId classId) const
+uint16_t ECSqlClassParams::BuildSelectECSql(Utf8StringR ecsql, DgnDbCR dgndb, ECClassCR ecclass) const
     {
     ecsql.clear();
-    if (m_selectTemplate.empty())
-        return true;
+    ecsql.append("SELECT ");
+    auto const& entries = GetEntries();
+    uint16_t numSelectParams = buildParamString(ecsql, ecclass, entries, ECSqlClassParams::StatementType::Select,
+                                                [&] (Utf8StringCR name, uint16_t count)
+        {
+        ecsql.append(1, '[').append(name).append(1, ']');
+        });
 
-    ecsql.append(m_selectTemplate);
+    if (0 == numSelectParams)
+        {
+        ecsql.clear();
+        return 0;
+        }
+
     ecsql.append(" FROM ONLY ");
-    if (!AppendClassName(ecsql, dgndb, classId))
-        {
-        ecsql.clear();
-        return false;
-        }
-
+    AppendClassName(ecsql, dgndb, ecclass);
     ecsql.append(" WHERE ECInstanceId=? ECSQLOPTIONS NoECClassIdFilter");
-    return true;
+    return numSelectParams;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECSqlClassParams::BuildUpdateECSql(Utf8StringR ecsql, DgnDbCR dgndb, DgnClassId classId) const
+uint16_t ECSqlClassParams::BuildUpdateECSql(Utf8StringR ecsql, DgnDbCR dgndb, ECClassCR ecclass) const
     {
     ecsql.clear();
-    if (m_updateTemplate.empty())
-        return true;
-
     ecsql.append("UPDATE ONLY ");
-    if (!AppendClassName(ecsql, dgndb, classId))
+    AppendClassName(ecsql, dgndb, ecclass);
+    ecsql.append(" SET ");
+
+    auto const& entries = GetEntries();
+    uint16_t numUpdateParams = buildParamString(ecsql, ecclass, entries, ECSqlClassParams::StatementType::Update,
+                                                     [&] (Utf8StringCR name, uint16_t count)
+        {
+        ecsql.append(1, '[').append(name).append("]=:[").append(name).append(1, ']');
+        });
+
+    if (0 == numUpdateParams)
         {
         ecsql.clear();
-        return false;
+        return 0;
         }
 
-    ecsql.append(m_updateTemplate);
-    return true;
+    ecsql.append(" WHERE ECInstanceId=?");
+    return numUpdateParams;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -175,10 +183,16 @@ bool ECSqlClassParams::BuildUpdateECSql(Utf8StringR ecsql, DgnDbCR dgndb, DgnCla
 bool ECSqlClassParams::BuildClassInfo(ECSqlClassInfo& info, DgnDbCR dgndb, DgnClassId classId) const
     {
     Utf8String select, insert, update;
-    if (!BuildSelectECSql(select, dgndb, classId) || !BuildInsertECSql(insert, dgndb, classId) || !BuildUpdateECSql(update, dgndb, classId))
+    ECClassCP ecclass = dgndb.Schemas().GetClass(classId);
+    BeAssert(nullptr != ecclass);
+    if (nullptr == ecclass)
         return false;
 
-    info.m_updateParameterIndex = m_numUpdateParams + 1;
+    BuildSelectECSql(select, dgndb, *ecclass);
+    BuildInsertECSql(insert, dgndb, *ecclass);
+    uint16_t numUpdateParams = BuildUpdateECSql(update, dgndb, *ecclass);
+
+    info.m_updateParameterIndex = numUpdateParams + 1;
     info.m_select = select;
     info.m_insert = insert;
     info.m_update = update;
@@ -187,7 +201,6 @@ bool ECSqlClassParams::BuildClassInfo(ECSqlClassInfo& info, DgnDbCR dgndb, DgnCl
     if (nullptr != ehandler)
         {
         // Elements:
-        auto ecclass = dgndb.Schemas().GetClass(ECClassId(classId.GetValue()));
         auto& layout = ecclass->GetDefaultStandaloneEnabler()->GetClassLayout();
 
         // Tell handler to register its custom-handled property accessors
@@ -241,51 +254,8 @@ void ECSqlClassParams::Initialize(IECSqlClassParamsProvider& provider)
     if (m_initialized)
         return;
     
-    provider._GetClassParams(*this);
-    auto const& entries = GetEntries();
-
-    // Build SELECT statement
-    m_selectTemplate = "SELECT ";
-    uint16_t numSelectParams = buildParamString(m_selectTemplate, entries, ECSqlClassParams::StatementType::Select,
-                                                [&] (Utf8StringCR name, uint16_t count) { m_selectTemplate.append(1, '[').append(name).append(1, ']'); });
-
-    if (0 == numSelectParams)
-        m_selectTemplate.clear();
-
-    // Build INSERT statement
-    m_insertTemplate.append(1, '(');
-    Utf8String insertValues;
-    uint16_t numInsertParams = buildParamString(m_insertTemplate, entries, ECSqlClassParams::StatementType::Insert,
-                                                [&] (Utf8StringCR name, uint16_t count)
-        {
-        m_insertTemplate.append(1, '[').append(name).append(1, ']');
-        if (0 < count)
-            insertValues.append(1, ',');
-
-        insertValues.append(":[").append(name).append(1, ']');
-        });
-
-    if (0 < numInsertParams)
-        m_insertTemplate.append(")VALUES(").append(insertValues).append(1, ')');
-    else
-        m_insertTemplate.clear();
-
-    // Build UPDATE statement
-    m_updateTemplate.append(" SET ");
-    m_numUpdateParams = buildParamString(m_updateTemplate, entries, ECSqlClassParams::StatementType::Update,
-                                                     [&] (Utf8StringCR name, uint16_t count)
-        {
-        m_updateTemplate.append(1, '[').append(name).append("]=:[").append(name).append(1, ']');
-        });
-
-    if (0 < m_numUpdateParams)
-        m_updateTemplate.append("WHERE ECInstanceId=?");
-    else
-        m_updateTemplate.clear();
-    
-    // We no longer need any param names except those used in SELECT.
-    RemoveAllButSelect();
-
+    provider._GetClassParams(*this); // populate param entries
+    std::sort(m_entries.begin(), m_entries.end(), [&](Entry const& a, Entry const& b) {return a.m_sortPriority < b.m_sortPriority;}); // sort SELECT entries to front in ascending "version" order
     m_initialized = true;
     }
 

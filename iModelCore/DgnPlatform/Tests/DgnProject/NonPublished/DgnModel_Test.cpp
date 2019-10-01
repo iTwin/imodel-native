@@ -429,8 +429,16 @@ TEST_F(DgnModelTests, ModelIterator)
     PhysicalModelPtr physicalModel3 = DgnDbTestUtils::InsertPhysicalModel(*m_db, "PhysicalModel3");
     DgnClassId physicalModelClassId = m_db->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalModel);
 
+    ASSERT_TRUE(physicalModel1->IsSpatiallyLocated());
+    ASSERT_FALSE(physicalModel1->IsNotSpatiallyLocated());
+    ASSERT_FALSE(physicalModel1->IsPlanProjection());
+
     SpatialLocationModelPtr spatialLocationModel1 = DgnDbTestUtils::InsertSpatialLocationModel(*m_db, "SpatialLocationModel1");
     SpatialLocationModelPtr spatialLocationModel2 = DgnDbTestUtils::InsertSpatialLocationModel(*m_db, "SpatialLocationModel2");
+
+    ASSERT_TRUE(spatialLocationModel1->IsSpatiallyLocated());
+    ASSERT_FALSE(spatialLocationModel1->IsNotSpatiallyLocated());
+    ASSERT_FALSE(spatialLocationModel1->IsPlanProjection());
 
     DocumentListModelPtr documentListModel1 = DgnDbTestUtils::InsertDocumentListModel(*m_db, "DocumentListModel1");
 

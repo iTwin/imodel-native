@@ -979,11 +979,32 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricModel3d : GeometricModel
     friend struct dgn_ModelHandler::Geometric3d;
 
 protected:
+    BE_JSON_NAME(isNotSpatiallyLocated)
+    BE_JSON_NAME(isPlanProjection)
+
+    BE_PROP_NAME(IsNotSpatiallyLocated)
+    BE_PROP_NAME(IsPlanProjection)
+
+    bool m_isNotSpatiallyLocated = false;
+    bool m_isPlanProjection = false;
+
     DGNPLATFORM_EXPORT DgnDbStatus _FillRangeIndex() override;
     DGNPLATFORM_EXPORT AxisAlignedBox3d _QueryElementsRange() const override;
     GeometricModel3dCP _ToGeometricModel3d() const override final {return this;}
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
+    DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement& statement, ForInsert forInsert) override;
+    DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
+    DGNPLATFORM_EXPORT void _FromJson(JsonValueR props) override;
     explicit GeometricModel3d(CreateParams const& params) : T_Super(params) {}
+
+public:
+    //! Test whether this GeometricModel3d is spatially located. Note that template models are not in the spatial index.
+    bool IsSpatiallyLocated() const {return !IsNotSpatiallyLocated();}
+    bool IsNotSpatiallyLocated() const {return m_isNotSpatiallyLocated || IsTemplate();}
+    void SetNotSpatiallyLocated() {m_isNotSpatiallyLocated = true;}
+    // If true, then the elements in this GeometricModel3d are expected to be in an XY plane.
+    bool IsPlanProjection() const {return m_isPlanProjection;}
+    void SetIsPlanProjection(bool isPlanProjection) {m_isPlanProjection = isPlanProjection;}
 };
 
 //=======================================================================================
@@ -1358,6 +1379,7 @@ namespace dgn_ModelHandler
     struct EXPORT_VTABLE_ATTRIBUTE Geometric3d : Model
     {
         MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_GeometricModel3d, GeometricModel3d, Geometric3d, Model, DGNPLATFORM_EXPORT)
+        DGNPLATFORM_EXPORT void _GetClassParams(ECSqlClassParamsR params) override;
     };
 
     //! The ModelHandler for SpatialModel

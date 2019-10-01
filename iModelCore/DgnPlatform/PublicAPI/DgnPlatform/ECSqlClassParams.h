@@ -109,47 +109,40 @@ public:
         {
         Utf8String      m_name;
         StatementType   m_type;
+        uint16_t        m_sortPriority;
 
-        Entry() : m_type(StatementType::All) {}
-        Entry(Utf8StringCR name, StatementType type) : m_name(name), m_type(type) {}
+        Entry(Utf8StringCR name, StatementType type, uint16_t sortPriority) : m_name(name), m_type(type), m_sortPriority(sortPriority) {}
         };
 
     typedef bvector<Entry> Entries;
 
 private:
     Entries     m_entries;
-    Utf8String  m_selectTemplate;
-    Utf8String  m_insertTemplate;
-    Utf8String  m_updateTemplate;
-    uint16_t    m_numUpdateParams;
     bool        m_initialized;
 
     Entries const& GetEntries() const { return m_entries; }
+    uint16_t BuildInsertECSql(Utf8StringR ecsql, DgnDbCR dgndb, ECN::ECClassCR ecclass) const; // Build INSERT ECSql returning the number of INSERT params
+    uint16_t BuildUpdateECSql(Utf8StringR ecsql, DgnDbCR dgndb, ECN::ECClassCR ecclass) const; // Build UPDATE ECSql returning the number of UPDATE params
+    uint16_t BuildSelectECSql(Utf8StringR ecsql, DgnDbCR dgndb, ECN::ECClassCR ecclass) const; // BUILD SELECT ECSql returning the number of SELECT params
 
-    void RemoveAllButSelect();
-    static bool AppendClassName(Utf8StringR className, DgnDbCR db, DgnClassId classId);
+    static void AppendClassName(Utf8StringR className, DgnDbCR db, ECN::ECClassCR ecclass);
 public:
-    ECSqlClassParams() : m_numUpdateParams(0), m_initialized(false) { }
+    ECSqlClassParams() : m_initialized(false) { }
 
     bool IsInitialized() const { return m_initialized; }
     void Initialize(IECSqlClassParamsProvider& paramsProvider);
-    uint16_t GetNumUpdateParams() const { return m_numUpdateParams; }
-
-    bool BuildInsertECSql(Utf8StringR ecsql, DgnDbCR dgndb, DgnClassId classId) const;
-    bool BuildUpdateECSql(Utf8StringR ecsql, DgnDbCR dgndb, DgnClassId classId) const;
-    bool BuildSelectECSql(Utf8StringR ecsql, DgnDbCR dgndb, DgnClassId classId) const;
     bool BuildClassInfo(ECSqlClassInfo& info, DgnDbCR dgndb, DgnClassId classId) const;
 
     //! Adds a parameter to the list
-    //! @param[in]      parameterName The name of the parameter.
-    //! @param[in]      type          The type(s) of statements in which this parameter is used.
-    DGNPLATFORM_EXPORT void Add(Utf8StringCR parameterName, StatementType type = StatementType::All);
+    //! @param[in] parameterName The name of the parameter.
+    //! @param[in] type The type(s) of statements in which this parameter is used.
+    //! @param[in] sortPriority Use to sort SELECT properties according to when they were added to schemas. Newer properties must be higher than older properties.
+    DGNPLATFORM_EXPORT void Add(Utf8StringCR parameterName, StatementType type = StatementType::All, uint16_t sortPriority = 0);
 
     //! Returns an index usable for accessing the columns with the specified name in the results of an ECSql SELECT query.
     //! @param[in]      parameterName The name of the parameter
     //! @return The index of the corresponding column in the query results, or -1 if no such column exists
     DGNPLATFORM_EXPORT int GetSelectIndex(Utf8CP parameterName) const;
-
 };
 
 ENUM_IS_FLAGS(ECSqlClassParams::StatementType);

@@ -168,7 +168,7 @@ int SingleECSqlPreparedStatement::_GetParameterIndex(Utf8CP parameterName) const
     {
     int index = m_parameterMap.GetIndexForName(parameterName);
     if (index <= 0)
-        LOG.errorv("No parameter index found for parameter name :%s.", parameterName);
+        LOG.errorv("No parameter index found for parameter name: %s.", parameterName);
 
     return index;
     }
@@ -261,7 +261,7 @@ int CompoundECSqlPreparedStatement::_GetParameterIndex(Utf8CP parameterName) con
     auto it = m_parameterNameMap.find(parameterName);
     if (it == m_parameterNameMap.end())
         {
-        LOG.errorv("No parameter index found for parameter name :%s.", parameterName);
+        LOG.errorv("No parameter index found for parameter name: %s.", parameterName);
         return -1;
         }
 
