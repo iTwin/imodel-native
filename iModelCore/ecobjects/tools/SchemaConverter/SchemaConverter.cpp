@@ -28,7 +28,7 @@ static void ShowUsage(char* str)
     {
     fprintf(stderr, "\n%s -i <inputSchemaPath> -o <outputDirectory> [-x exmlVersion] [-r directories] [-c directory] [-a] [-s] [-u] [-v version]\n\n%s\n\n%s\n\n%s\t\t%s\n%s\t%s\n%s\t%s\n%s\t\t%s\n%s\t\t%s\n%s\t\t%s\n%s\t\t%s\n%s\t\t%s\n\n%s\t%s\n\t%s\n\n",
             str, "Tool to convert ECSchemas between different versions of ECXml", "options:",
-            " -x --xml 2|3", "convert to the specified ecxmlversion",
+            " -x --xml 2|3|3.[x]", "convert to the specified ecxmlversion.  3 defaults to 3.2, use 3.[x] to specify a specific version of EC 3 to target.  e.g. 3.1.",
             " -r --ref DIR0 [DIR1 ... DIRN]", "other directories for reference schemas",
             " -c --conversion DIR", "looks for the conversion schema file in this directory",
             " -u --include", "include the standard schemas in the converted schemas",
@@ -52,7 +52,7 @@ struct ConversionOptions
     BeFileName          ConversionDirectory;
 
     int                 TargetECXmlVersionMajor = 3;
-    int                 TargetECXmlVersionMinor = 1;
+    int                 TargetECXmlVersionMinor = 2;
 
     bool                IncludeSupplementals = false;
     bool                IncludeAll = false;
@@ -310,17 +310,23 @@ static bool TryParseInput(int argc, char** argv, ConversionOptions& options)
                 return false;
 
             ++i;
-            options.TargetECXmlVersionMajor = atoi(argv[i]);
+            bvector<Utf8String> tokens;
+            BeStringUtilities::Split((Utf8CP)argv[i], ".", tokens);
+            options.TargetECXmlVersionMajor = atoi(tokens[0].c_str());
             if (2 != options.TargetECXmlVersionMajor && 3 != options.TargetECXmlVersionMajor)
                 {
-                fprintf(stderr, "-x/--xml should be followed by '2' or '3'");
+                fprintf(stderr, "-x/--xml should be followed by '2', '3' (defaults to 3.2) or '3.x' where x is the minor xml version");
                 return false;
                 }
 
-            if (2 == options.TargetECXmlVersionMajor)
+            if (tokens.size() >= 2)
+                {
+                options.TargetECXmlVersionMinor = atoi(tokens[1].c_str());
+                }
+            else if (2 == options.TargetECXmlVersionMajor)
                 options.TargetECXmlVersionMinor = 0;
             else if (3 == options.TargetECXmlVersionMajor)
-                options.TargetECXmlVersionMinor = 1;
+                options.TargetECXmlVersionMinor = 2;
             }
         else if (0 == strcmp(argv[i], "-r") || 0 == strcmp(argv[i], "--ref"))
             {
