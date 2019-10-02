@@ -2022,6 +2022,17 @@ TEST_F(DgnElementTests, PhysicalTypeCRUD)
         physicalTypeId[i] = physicalType->GetElementId();
         }
 
+    // Insert a PhysicalType without an explicit handler
+        {
+        DgnClassId physicalTypeClassId = m_db->Schemas().GetClassId(DPTEST_SCHEMA_NAME, DPTEST_CLASS_TestPhysicalTypeNoHandler);
+        ASSERT_TRUE(physicalTypeClassId.IsValid());
+        PhysicalType::CreateParams createParams(*m_db, typeModel->GetModelId(), physicalTypeClassId, PhysicalType::CreateCode(*typeModel, "TestPhysicalTypeNoHandler"));
+        PhysicalTypePtr physicalType = PhysicalType::Create(createParams);
+        ASSERT_TRUE(physicalType.IsValid());
+        DgnElementId physicalTypeId = physicalType->Insert()->GetElementId();
+        ASSERT_TRUE(physicalTypeId.IsValid());
+        }
+
     // flush cache to make sure PhysicalTypes were inserted properly
         {
         m_db->Elements().ClearCache();

@@ -2836,6 +2836,10 @@ protected:
     explicit PhysicalType(CreateParams const& params) : T_Super(params) {}
 
 public:
+    //! Create a PhysicalType from CreateParams.
+    //! @note The bis:PhysicalType ECClass is abstract, so an instantiable subclass must be specified.
+    static PhysicalTypePtr Create(CreateParams const& params) {return new PhysicalType(params);}
+
     //! Create a DgnCode for a PhysicalType element within the scope of the specified model
     DGNPLATFORM_EXPORT static DgnCode CreateCode(DefinitionModelCR, Utf8StringCR);
 };
@@ -2855,6 +2859,10 @@ protected:
     explicit SpatialLocationType(CreateParams const& params) : T_Super(params) {}
 
 public:
+    //! Create a SpatialLocationType from CreateParams.
+    //! @note The bis:SpatialLocationType ECClass is abstract, so an instantiable subclass must be specified.
+    static SpatialLocationTypePtr Create(CreateParams const& params) {return new SpatialLocationType(params);}
+
     //! Create a DgnCode for a SpatialLocationType element within the scope of the specified model
     DGNPLATFORM_EXPORT static DgnCode CreateCode(DefinitionModelCR, Utf8StringCR);
 };

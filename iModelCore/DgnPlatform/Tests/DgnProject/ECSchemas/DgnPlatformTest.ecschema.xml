@@ -304,6 +304,10 @@
         <ECProperty propertyName="StringProperty" typeName="string"/>
         <ECProperty propertyName="IntProperty" typeName="int"/>
     </ECEntityClass>
+    <ECEntityClass typeName="TestPhysicalTypeNoHandler">
+        <BaseClass>bis:PhysicalType</BaseClass>
+        <ECProperty propertyName="DoubleProperty" typeName="double"/>
+    </ECEntityClass>
     <ECEntityClass typeName="TestGraphicalType2d">
         <BaseClass>bis:GraphicalType2d</BaseClass>
         <ECCustomAttributes>

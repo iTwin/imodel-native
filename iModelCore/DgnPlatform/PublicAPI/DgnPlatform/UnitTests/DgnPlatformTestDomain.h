@@ -40,6 +40,7 @@
 
 #define DPTEST_CLASS_TestSpatialLocation "TestSpatialLocation"
 #define DPTEST_CLASS_TestPhysicalType "TestPhysicalType"
+#define DPTEST_CLASS_TestPhysicalTypeNoHandler "TestPhysicalTypeNoHandler"
 #define DPTEST_CLASS_TestGraphicalType2d "TestGraphicalType2d"
 #define DPTEST_CLASS_TestInformationRecord "TestInformationRecord"
 #define DPTEST_CLASS_TestUniqueAspectNoHandler "TestUniqueAspectNoHandler"
