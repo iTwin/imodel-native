@@ -16,6 +16,10 @@
 #include <BRepCore/PSolidUtil.h>
 #endif
 
+#include <DgnPlatform/MeasureGeom.h>
+#include <QuantityTakeoffsAspects/Elements/VolumeAspect.h>
+#include <QuantityTakeoffsAspects/Elements/DimensionsAspect.h>
+#include <QuantityTakeoffsAspects/Elements/SurfaceAreaAspect.h>
 #undef min
 #undef max
 
@@ -2287,6 +2291,30 @@ BentleyStatus Converter::ConvertElement(ElementConversionResults& results, DgnV8
                 {
                 LOG.debugv("Failed to create element and geom after 3d mismatch for %s %s", Converter::IssueReporter::FmtElement(v8eh).c_str(), Converter::IssueReporter::FmtModel(*v8eh.GetDgnModelP()).c_str());
                 return BSIERROR;
+                }
+            }
+        auto gs = results.m_element->ToGeometrySource();
+        if (nullptr != gs)
+            {
+            AxisAlignedBox3d box = gs->CalculateRange3d();
+            MeasureGeomCollectorPtr measure = MeasureGeomCollector::Create(Dgn::MeasureGeomCollector::AccumulateLengths);
+            if (BentleyStatus::SUCCESS == measure->Process(*gs))
+                {
+                QuantityTakeoffsAspects::DimensionsAspectPtr dimensions = QuantityTakeoffsAspects::DimensionsAspect::Create(measure->GetIXY(), measure->GetIXY(), measure->GetIYZ());
+                //DgnElement::UniqueAspect::SetAspect(*results.m_element, *dimensions);
+                }
+
+            MeasureGeomCollectorPtr volumes = MeasureGeomCollector::Create(Dgn::MeasureGeomCollector::AccumulateVolumes);
+            if (BentleyStatus::SUCCESS == volumes->Process(*gs))
+                {
+                QuantityTakeoffsAspects::VolumeAspectPtr volAsp = QuantityTakeoffsAspects::VolumeAspect::Create(volumes->GetVolume(), 0);
+                DgnElement::UniqueAspect::SetAspect(*results.m_element, *volAsp);
+                }
+            MeasureGeomCollectorPtr areas = MeasureGeomCollector::Create(Dgn::MeasureGeomCollector::AccumulateAreas);
+            if (BentleyStatus::SUCCESS == areas->Process(*gs))
+                {
+                QuantityTakeoffsAspects::SurfaceAreaAspectPtr area = QuantityTakeoffsAspects::SurfaceAreaAspect::Create(areas->GetArea(), 0);
+                DgnElement::UniqueAspect::SetAspect(*results.m_element, *area);
                 }
             }
         }

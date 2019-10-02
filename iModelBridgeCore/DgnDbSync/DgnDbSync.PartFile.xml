@@ -37,12 +37,14 @@
         <SubPart PartName="BeJpeg" PartFile="iModelCore/Bentley/Bentley"/>
         <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"     />
         <!-- The following subparts produce libraries that define optional domains. If you intend to use these domains and if you do not depend on the DgnClientSDK, then you must depend on these subcategories directly. -->
-        <SubPart PartName="Raster"              PartFile="Domains/RealityModeling/RealityModeling"  />
-        <SubPart PartName="PointCloud"          PartFile="Domains/RealityModeling/RealityModeling"  />
-        <SubPart PartName="ThreeMx"             PartFile="Domains/RealityModeling/RealityModeling"  />
-        <SubPart PartName="ScalableMeshSchema"  PartFile="Domains/RealityModeling/RealityModeling"  />
-        <SubPart PartName="RealityPlatformTools"             PartFile="iModelBridgeCore/RealityModFramework/RealityModFramework" />
-        <SubPart PartName="ECPresentation"      PartFile="iModelCore/ECPresentation/ECPresentation"  />
+        <SubPart PartName="Raster"                          PartFile="Domains/RealityModeling/RealityModeling"  />
+        <SubPart PartName="PointCloud"                      PartFile="Domains/RealityModeling/RealityModeling"  />
+        <SubPart PartName="ThreeMx"                         PartFile="Domains/RealityModeling/RealityModeling"  />
+        <SubPart PartName="ScalableMeshSchema"              PartFile="Domains/RealityModeling/RealityModeling"  />
+        <SubPart PartName="RealityPlatformTools"            PartFile="iModelBridgeCore/RealityModFramework/RealityModFramework" />
+        <SubPart PartName="ECPresentation"                  PartFile="iModelCore/ECPresentation/ECPresentation"  />
+        <SubPart PartName="QuantityTakeoffsAspectsDomain"   PartFile="Domains/QuantityTakeoffsAspects/QuantityTakeoffsAspects"/>
+        <SubPart PartName="AecUnitsDomain"                  PartFile="Domains/AecUnits/AecUnits"/>
         <Bindings>
             <Libs ProductDirectoryName="DgnV8ConverterLibs" Required="false">Delivery/$(libprefix)DgnV8Converter$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)DgnV8Converter$(ApiNumber)$(shlibext)</Assemblies>

@@ -17,14 +17,15 @@
 
 #include <VersionedDgnV8Api/VisEdgesLib/VisEdgeslib.h>
 #include <VersionedDgnV8Api/DgnPlatform/CveHandler.h>
-
+#include <VersionedDgnV8Api/TerrainModel/ElementHandler/DTMElementHandlerManager.h>
 
 #include <ScalableMesh/ScalableMeshLib.h>
 #include <RealityPlatformTools/RealityDataService.h>
+#include <AecUnits/AecUnitsDomain.h>
+#include <QuantityTakeoffsAspects/Domain/QuantityTakeoffsAspectsDomain.h>
 #include <Bentley/Desktop/FileSystem.h>
 #include <Bentley/BeGetProcAddress.h>
 #include "RulesetEmbedder.h"
-#include <VersionedDgnV8Api/TerrainModel/ElementHandler/DTMElementHandlerManager.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
@@ -671,6 +672,8 @@ void Converter::Initialize(BentleyApi::BeFileNameCR bridgeLibraryDir, BentleyApi
     DgnDomains::RegisterDomain(PointCloud::PointCloudDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No, &bridgeAssetsDir);
     DgnDomains::RegisterDomain(ThreeMx::ThreeMxDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No, &bridgeAssetsDir);
     DgnDomains::RegisterDomain(ScalableMeshSchema::ScalableMeshDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No, &bridgeAssetsDir);
+    DgnDomains::RegisterDomain(AecUnits::AecUnitsDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No, &bridgeAssetsDir);
+    DgnDomains::RegisterDomain(QuantityTakeoffsAspects::QuantityTakeoffsAspectsDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No, &bridgeAssetsDir);
 
     DgnDomainP domain = new PresentationRulesDomain();
     DgnDomains::RegisterDomain(*domain, DgnDomain::Required::Yes, DgnDomain::Readonly::No, &bridgeAssetsDir);
