@@ -782,7 +782,7 @@ TEST_F(DefaultECPresentationSerializerTests, CalculatedPropertyFieldSerializatio
 TEST_F(DefaultECPresentationSerializerTests, ECPropertiesFieldSerialization)
     {
     ECClassCP testClass = GetClass("PropertyTestClassA");
-    ContentDescriptor::ECPropertiesField field(*testClass, ContentDescriptor::Property("this", *testClass, *testClass->GetPropertyP("String")));
+    ContentDescriptor::ECPropertiesField field(ContentDescriptor::Category(), ContentDescriptor::Property("this", *testClass, *testClass->GetPropertyP("String")));
     rapidjson::Document actual = field.AsJson();
 
     rapidjson::Document expected;
@@ -836,7 +836,7 @@ TEST_F(DefaultECPresentationSerializerTests, ECPropertiesFieldSerialization)
 TEST_F(DefaultECPresentationSerializerTests, ECPropertiesFieldSerializationWithMoreThanOneProperty)
     {
     ECClassCP testClass = GetClass("PropertyTestClassA");
-    ContentDescriptor::ECPropertiesField field(*testClass, ContentDescriptor::Property("this", *testClass, *testClass->GetPropertyP("String")));
+    ContentDescriptor::ECPropertiesField field(ContentDescriptor::Category(), ContentDescriptor::Property("this", *testClass, *testClass->GetPropertyP("String")));
     field.AddProperty(ContentDescriptor::Property("this", *testClass, *testClass->GetPropertyP("Int")));
     rapidjson::Document actual = field.AsJson();
 
@@ -942,7 +942,7 @@ TEST_F(DefaultECPresentationSerializerTests, ECInstanceKeyFieldSerialization)
 TEST_F(DefaultECPresentationSerializerTests, ECNavigationInstanceIdFieldSerialization)
     {
     ECClassCP testClass = GetClass("PropertyTestClassA");
-    ContentDescriptor::ECPropertiesField propertiesField(*testClass, ContentDescriptor::Property("this", *testClass, *testClass->GetPropertyP("String")));
+    ContentDescriptor::ECPropertiesField propertiesField(ContentDescriptor::Category(), ContentDescriptor::Property("this", *testClass, *testClass->GetPropertyP("String")));
     ContentDescriptor::ECNavigationInstanceIdField navigationInstanceIdField(propertiesField);
     rapidjson::Document actual = navigationInstanceIdField.AsJson();
 
@@ -983,7 +983,7 @@ TEST_F(DefaultECPresentationSerializerTests, NestedContentFieldSerialization)
         {RelatedClass(*testClassA, *testClassB, *relClassAClassB, false, "primary_instance", "rel")},
         {
         new ContentDescriptor::DisplayLabelField("NestedLabel", 10),
-        new ContentDescriptor::ECPropertiesField(*testClassB, ContentDescriptor::Property("rel_RET_PropertyTestClassA_0", *testClassA, *testClassA->GetPropertyP("String")))
+        new ContentDescriptor::ECPropertiesField(ContentDescriptor::Category(), ContentDescriptor::Property("rel_RET_PropertyTestClassA_0", *testClassA, *testClassA->GetPropertyP("String")))
         });
     rapidjson::Document actual = field.AsJson();
 
@@ -1357,7 +1357,7 @@ TEST_F(DefaultECPresentationSerializerTests, NestedContentTypeDescriptionSeriali
         {RelatedClass(*testClassA, *testClassB, *relClassAClassB, false, "primary_instance", "rel")},
         {
         new ContentDescriptor::DisplayLabelField("NestedLabel", 10),
-        new ContentDescriptor::ECPropertiesField(*testClassB, ContentDescriptor::Property("rel_RET_PropertyTestClassA_0", *testClassA, *testClassA->GetPropertyP("String")))
+        new ContentDescriptor::ECPropertiesField(ContentDescriptor::Category(), ContentDescriptor::Property("rel_RET_PropertyTestClassA_0", *testClassA, *testClassA->GetPropertyP("String")))
         });
     ContentDescriptor::Field::TypeDescriptionPtr typeDescription = new ContentDescriptor::Field::NestedContentTypeDescription(field);
     rapidjson::Document actual = typeDescription->AsJson();
@@ -2040,7 +2040,7 @@ TEST_F(DefaultECPresentationSerializerTests, ContentDescriptorSerializationWithS
 TEST_F(DefaultECPresentationSerializerTests, ContentSetSerializationItemWithClassSet)
     {
     ECClassCP testClass = GetClass("PropertyTestClassA");
-    ContentDescriptor::ECPropertiesField field(*testClass, ContentDescriptor::Property("this", *testClass, *testClass->GetPropertyP("String")));
+    ContentDescriptor::ECPropertiesField field(ContentDescriptor::Category(), ContentDescriptor::Property("this", *testClass, *testClass->GetPropertyP("String")));
     bvector<ECClassInstanceKey> keys {
         ECClassInstanceKey(*GetClassA(), ECInstanceId((uint64_t)1)),
         ECClassInstanceKey(*GetClassB(), ECInstanceId((uint64_t)2))
@@ -2050,8 +2050,8 @@ TEST_F(DefaultECPresentationSerializerTests, ContentSetSerializationItemWithClas
     rapidjson::Document displayValues(rapidjson::kObjectType);
     displayValues.AddMember("FieldName", "FieldDisplayValue", values.GetAllocator());
     bvector<Utf8String> mergedFieldNames {"MergedField1", "MergedField2"};
-    ContentDescriptor::ECPropertiesField ecPropertiesField(*testClass, ContentDescriptor::Property("this", *testClass, *testClass->GetPropertyP("String")));
-    ContentDescriptor::ECPropertiesField ecPropertiesField1(*testClass, ContentDescriptor::Property("this", *testClass, *testClass->GetPropertyP("Int")));
+    ContentDescriptor::ECPropertiesField ecPropertiesField(ContentDescriptor::Category(), ContentDescriptor::Property("this", *testClass, *testClass->GetPropertyP("String")));
+    ContentDescriptor::ECPropertiesField ecPropertiesField1(ContentDescriptor::Category(), ContentDescriptor::Property("this", *testClass, *testClass->GetPropertyP("Int")));
     ContentSetItem::FieldPropertyInstanceKeyMap fieldPropertyInstanceKeys;
     fieldPropertyInstanceKeys.Insert(ContentSetItem::FieldProperty(ecPropertiesField, 0), keys);
     fieldPropertyInstanceKeys.Insert(ContentSetItem::FieldProperty(ecPropertiesField1, 1), keys);

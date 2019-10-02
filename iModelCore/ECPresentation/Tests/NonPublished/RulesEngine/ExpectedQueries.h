@@ -158,7 +158,7 @@ private:
     void PrepareSchemaContext();
     void RegisterExpectedQueries();
     void RegisterForDelete(PropertyGroupCR spec) {m_propertyGroupsToDelete.push_back(&spec);}
-    ContentDescriptor::Field& AddField(ContentDescriptorR, ECClassCR, ContentDescriptor::Property);
+    ContentDescriptor::Field& AddField(ContentDescriptorR, ContentDescriptor::Category, ContentDescriptor::Property);
     
 public:
     static ExpectedQueries& GetInstance(BeTest::Host&);

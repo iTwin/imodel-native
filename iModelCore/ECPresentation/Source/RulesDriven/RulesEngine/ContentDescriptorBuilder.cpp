@@ -165,8 +165,7 @@ private:
                 m_descriptor.AddField(m_keyField);
                 }
 
-            ECClassCR primaryClass = m_relatedClassPath.empty() ? m_actualClass : *m_relatedClassPath.front().GetTargetClass();
-            ContentDescriptor::Category fieldCategory = m_context.GetCategorySupplier().GetCategory(primaryClass, m_relatedClassPath, ecProperty, m_relationshipMeaning);
+            ContentDescriptor::Category fieldCategory = m_context.GetCategorySupplier().CreateCategory(m_actualClass, ecProperty, m_relationshipMeaning);
             ContentFieldEditor const* editor = m_propertyInfos.GetPropertyEditor(ecProperty, m_actualClass);
             field = new ContentDescriptor::ECPropertiesField(fieldCategory, "", CreateFieldDisplayLabel(ecProperty), editor ? new ContentFieldEditor(*editor) : nullptr);
             ApplyFieldLocalization(*field, m_context);
@@ -341,8 +340,7 @@ private:
                 }
 
             // create the field
-            ECClassCR primaryClass = *m_relatedClassPath.front().GetTargetClass();
-            ContentDescriptor::Category fieldCategory = m_context.GetCategorySupplier().GetCategory(primaryClass, relationshipPath, m_actualClass);
+            ContentDescriptor::Category fieldCategory = m_context.GetCategorySupplier().GetRelatedECClassCategory(m_actualClass, m_relationshipMeaning);
             m_nestedContentField = new ContentDescriptor::NestedContentField(fieldCategory, CreateNestedContentFieldName(relationshipPath), 
                 m_actualClass.GetDisplayLabel(), m_actualClass, classAlias, relationshipPath, bvector<ContentDescriptor::Field*>(), m_expandNestedFields);
             ApplyFieldLocalization(*m_nestedContentField, m_context);
@@ -416,7 +414,9 @@ private:
         if (nullptr == field)
             return false;
 
-        ContentDescriptor::ECPropertiesField propertyField(m_actualClass, ContentDescriptor::Property(propertyClassAlias, m_actualClass, p));
+        ContentDescriptor::Property property(propertyClassAlias, m_actualClass, p);
+        ContentDescriptor::Category category = m_context.GetCategorySupplier().GetPropertyCategory(p);
+        ContentDescriptor::ECPropertiesField propertyField(category, property);
         for (ContentDescriptor::Field* nestedField : field->GetFields())
             {
             if (*nestedField == propertyField)

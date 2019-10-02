@@ -353,22 +353,25 @@
     <ClCompile Include="NonPublished\PresentationRules\NodeArtifactsRuleTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="NonPublished\Integration\PresentationManagerContentTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="NonPublished\Integration\PresentationManagerNavigationTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="NonPublished\Integration\UpdateTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="NonPublished\Integration\PresentationManagerIntegrationTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="NonPublished\Integration\Content_LocatingClasses.cpp">
+    <ClCompile Include="NonPublished\RulesEngine\TasksSchedulerTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="NonPublished\RulesEngine\TasksSchedulerTests.cpp">
+    <ClCompile Include="NonPublished\Integration\Content\ContentIntegrationTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Integration\Content\ContentUpdateTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Integration\Content\LocatingClasses.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Integration\Hierarchies\HierarchyIntegrationTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\Integration\Hierarchies\HierarchyUpdateTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -18,8 +18,8 @@ TEST_F (ContentQueryBuilderTests, NestedContentField_WithSingleStepRelationshipP
     ContentDescriptor::NestedContentField field(category, "field_name", "field_label", *sprocketClass, "sprocket", 
         {RelatedClass(*sprocketClass, *gadgetClass, *rel, false, "primary_instance", "rel")}, 
         {
-        new ContentDescriptor::ECPropertiesField(*gadgetClass, ContentDescriptor::Property("rel_RET_Sprocket_0", *sprocketClass, *sprocketClass->GetPropertyP("MyID"))),
-        new ContentDescriptor::ECPropertiesField(*gadgetClass, ContentDescriptor::Property("rel_RET_Sprocket_0", *sprocketClass, *sprocketClass->GetPropertyP("Description")))
+        new ContentDescriptor::ECPropertiesField(ContentDescriptor::Category(), ContentDescriptor::Property("rel_RET_Sprocket_0", *sprocketClass, *sprocketClass->GetPropertyP("MyID"))),
+        new ContentDescriptor::ECPropertiesField(ContentDescriptor::Category(), ContentDescriptor::Property("rel_RET_Sprocket_0", *sprocketClass, *sprocketClass->GetPropertyP("Description")))
         });
 
     ContentQueryPtr query = GetQueryBuilder().CreateQuery(field);
@@ -51,8 +51,8 @@ TEST_F (ContentQueryBuilderTests, NestedContentField_WithMultiStepRelationshipPa
     ContentDescriptor::NestedContentField field(category, "field_name", "field_label", 
         *sprocketClass, "sprocket", path,
         {
-        new ContentDescriptor::ECPropertiesField(*widgetClass, ContentDescriptor::Property("rel_RET_Sprocket_0", *sprocketClass, *sprocketClass->GetPropertyP("MyID"))),
-        new ContentDescriptor::ECPropertiesField(*widgetClass, ContentDescriptor::Property("rel_RET_Sprocket_0", *sprocketClass, *sprocketClass->GetPropertyP("Description")))
+        new ContentDescriptor::ECPropertiesField(ContentDescriptor::Category(), ContentDescriptor::Property("rel_RET_Sprocket_0", *sprocketClass, *sprocketClass->GetPropertyP("MyID"))),
+        new ContentDescriptor::ECPropertiesField(ContentDescriptor::Category(), ContentDescriptor::Property("rel_RET_Sprocket_0", *sprocketClass, *sprocketClass->GetPropertyP("Description")))
         });
 
     ContentQueryPtr query = GetQueryBuilder().CreateQuery(field);
@@ -82,13 +82,13 @@ TEST_F (ContentQueryBuilderTests, NestedContentField_WithNestedContentFields)
         *gadgetClass, "gadget",
         {RelatedClass(*gadgetClass, *widgetClass, *relWG, false, "widget_instance", "rel_wg")},
         {
-        new ContentDescriptor::ECPropertiesField(*gadgetClass, ContentDescriptor::Property("rel_RET_Gadget_0", *gadgetClass, *gadgetClass->GetPropertyP("MyID"))),
-        new ContentDescriptor::ECPropertiesField(*gadgetClass, ContentDescriptor::Property("rel_RET_Gadget_0", *gadgetClass, *gadgetClass->GetPropertyP("Description"))),
+        new ContentDescriptor::ECPropertiesField(ContentDescriptor::Category(), ContentDescriptor::Property("rel_RET_Gadget_0", *gadgetClass, *gadgetClass->GetPropertyP("MyID"))),
+        new ContentDescriptor::ECPropertiesField(ContentDescriptor::Category(), ContentDescriptor::Property("rel_RET_Gadget_0", *gadgetClass, *gadgetClass->GetPropertyP("Description"))),
         new ContentDescriptor::NestedContentField(category, "sprocket_field_name", "sprocket_field_label", 
             *sprocketClass, "sprocket",
             {RelatedClass(*sprocketClass, *gadgetClass, *relGS, false, "gadget_instance", "rel_gs")},
             {
-            new ContentDescriptor::ECPropertiesField(*sprocketClass, ContentDescriptor::Property("sprocket_instance", *sprocketClass, *sprocketClass->GetPropertyP("MyID"))),
+            new ContentDescriptor::ECPropertiesField(ContentDescriptor::Category(), ContentDescriptor::Property("sprocket_instance", *sprocketClass, *sprocketClass->GetPropertyP("MyID"))),
             })
         });
 

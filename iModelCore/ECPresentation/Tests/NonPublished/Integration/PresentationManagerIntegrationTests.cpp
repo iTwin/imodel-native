@@ -4,7 +4,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "PresentationManagerIntegrationTests.h"
-#include "../RulesEngine/TestHelpers.h"
 
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -72,6 +71,14 @@ void PresentationManagerIntegrationTests::RegisterSchemaXml(Utf8String name, Utf
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
+IConnectionManager* PresentationManagerIntegrationTests::_CreateConnectionManager()
+    {
+    return new TestConnectionManager();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 void PresentationManagerIntegrationTests::_ConfigureManagerParams(RulesDrivenECPresentationManager::Params& params)
     {
     RulesDrivenECPresentationManager::Params::CachingParams cachingParams;
@@ -85,18 +92,27 @@ void PresentationManagerIntegrationTests::_ConfigureManagerParams(RulesDrivenECP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
+ECDbR PresentationManagerIntegrationTests::_GetProject()
+    {
+    return s_project->GetECDb();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 void PresentationManagerIntegrationTests::SetUp()
     {
     ECPresentationTest::SetUp();
     Localization::Init();
 
-    m_connections = new TestConnectionManager();
+    m_localState.GetValues().clear();
+    m_connections = _CreateConnectionManager();
 
     RulesDrivenECPresentationManager::Params params(RulesEngineTestHelpers::GetPaths(BeTest::GetHost()));
     _ConfigureManagerParams(params);
 
     m_manager = new RulesDrivenECPresentationManager(params);
-    m_manager->GetConnections().CreateConnection(s_project->GetECDb());
+    m_manager->GetConnections().CreateConnection(_GetProject());
 
     m_locater = DelayLoadingRuleSetLocater::Create();
     m_manager->GetLocaters().RegisterLocater(*m_locater);
@@ -213,7 +229,6 @@ Utf8String PresentationManagerIntegrationTests::GetDisplayLabel(IECInstanceCR in
     return instance.GetClass().GetDisplayLabel();
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -262,4 +277,68 @@ TEST_F(PresentationManagerIntegrationTests, InitializesUserSettings)
     locater->AddRuleSet(*ruleset);
 
     ASSERT_STREQ("DefaultValue", m_manager->GetUserSettings("MyRulesetId").GetSettingValue("TestSetting").c_str());
+    }
+
+BeFileName UpdateTests::s_seedProjectPath;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void UpdateTests::SetUpTestCase()
+    {
+    PresentationManagerIntegrationTests::SetUpTestCase();
+    s_seedProjectPath = BeFileName(s_project->GetECDbPath());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void UpdateTests::SetUp()
+    {
+    m_updateRecordsHandler = TestUpdateRecordsHandler::Create();
+    m_eventsSource = TestECInstanceChangeEventsSource::Create();
+
+    PresentationManagerIntegrationTests::SetUp();
+    
+    m_schema = m_db.Schemas().GetSchema("RulesEngineTest");
+    m_widgetClass = m_schema->GetClassCP("Widget");
+    m_gadgetClass = m_schema->GetClassCP("Gadget");
+    m_sprocketClass = m_schema->GetClassCP("Sprocket");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+IConnectionManager* UpdateTests::_CreateConnectionManager()
+    {
+    // return no manager to use default
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+ECDbR UpdateTests::_GetProject()
+    {
+    if (!m_db.IsDbOpen())
+        {
+        BeAssert(s_seedProjectPath.DoesPathExist());
+        BeFileName projectPath = BeFileName(s_seedProjectPath)
+            .PopDir()
+            .AppendToPath(WString(Utf8PrintfString("%s_%s", Utf8String(s_seedProjectPath.GetFileNameWithoutExtension()).c_str(), BeTest::GetNameOfCurrentTest()).c_str(), BentleyCharEncoding::Utf8).c_str())
+            .AppendExtension(s_seedProjectPath.GetExtension().c_str());
+        projectPath.BeDeleteFile();
+        BeFileName::BeCopyFile(s_seedProjectPath, projectPath, true);
+        m_db.OpenBeSQLiteDb(projectPath, Db::OpenParams(Db::OpenMode::ReadWrite));
+        }
+    return m_db;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void UpdateTests::_ConfigureManagerParams(RulesDrivenECPresentationManager::Params& params)
+    {
+    PresentationManagerIntegrationTests::_ConfigureManagerParams(params);
+    params.SetECInstanceChangeEventSources({ m_eventsSource });
+    params.SetUpdateRecordsHandlers({ m_updateRecordsHandler });
     }

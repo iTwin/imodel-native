@@ -3,9 +3,9 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include "PresentationManagerIntegrationTests.h"
-#include "../../../Source/RulesDriven/RulesEngine/LocalizationHelper.h"
-#include "../RulesEngine/ECDbTestProject.h"
+#include "../PresentationManagerIntegrationTests.h"
+#include "../../../../Source/RulesDriven/RulesEngine/LocalizationHelper.h"
+#include "../../RulesEngine/ECDbTestProject.h"
 
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE

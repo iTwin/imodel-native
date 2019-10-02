@@ -14,6 +14,7 @@
 #include "../../BackDoor/PublicAPI/BackDoor/ECPresentation/Localization.h"
 #include <UnitTests/BackDoor/ECPresentation/TestConnectionCache.h>
 #include <UnitTests/BackDoor/ECPresentation/TestUserSettings.h>
+#include <UnitTests/BackDoor/ECPresentation/TestRuleSetLocater.h>
 #include "ECDbTestProject.h"
 #include "TestNavNode.h"
 #include "TestNodesProvider.h"
@@ -590,7 +591,7 @@ public:
 struct TestCategorySupplier : IPropertyCategorySupplier
     {
     ContentDescriptor::Category m_category;
-    TestCategorySupplier( )
+    TestCategorySupplier()
         : m_category(ContentDescriptor::Category::GetDefaultCategory())
         {
         }
@@ -598,8 +599,10 @@ struct TestCategorySupplier : IPropertyCategorySupplier
         : m_category(category)
         {
         }
-    ContentDescriptor::Category _GetCategory(ECClassCR, RelatedClassPathCR, ECPropertyCR, RelationshipMeaning) const override {return m_category;}
-    ContentDescriptor::Category _GetCategory(ECClassCR, RelatedClassPathCR, ECClassCR) const override {return m_category;}
+    virtual ContentDescriptor::Category _GetECClassCategory(ECClassCR) const override { return m_category; }
+    virtual ContentDescriptor::Category _GetRelatedECClassCategory(ECClassCR, RelationshipMeaning) const override { return m_category; }
+    virtual ContentDescriptor::Category _GetPropertyCategory(ECPropertyCR) const override { return m_category; }
+    virtual ContentDescriptor::Category _CreateCategory(ECClassCR, ECPropertyCR, RelationshipMeaning) const override { return m_category; }
     ContentDescriptor::Category GetUsedCategory() const {return m_category;}
     void SetUsedCategory(ContentDescriptor::Category category)
         {

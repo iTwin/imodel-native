@@ -3,10 +3,10 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include "PresentationManagerIntegrationTests.h"
-#include "../../../Source/RulesDriven/RulesEngine/LocalizationHelper.h"
-#include "../../../Localization/Xliffs/ECPresentation.xliff.h"
-#include "../RulesEngine/ECDbTestProject.h"
+#include "../PresentationManagerIntegrationTests.h"
+#include "../../../../Source/RulesDriven/RulesEngine/LocalizationHelper.h"
+#include "../../../../Localization/Xliffs/ECPresentation.xliff.h"
+#include "../../RulesEngine/ECDbTestProject.h"
 
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -33,6 +33,11 @@ struct RulesDrivenECPresentationManagerContentTests : PresentationManagerIntegra
         m_widgetClass = m_schema->GetClassCP("Widget");
         m_gadgetClass = m_schema->GetClassCP("Gadget");
         m_sprocketClass = m_schema->GetClassCP("Sprocket");
+        }
+
+    void CloseConnection(IConnectionCR connection)
+        {
+        static_cast<TestConnectionManager*>(m_connections)->NotifyConnectionClosed(connection);
         }
 };
 
@@ -3129,7 +3134,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCache
     // verify the two objects are equal
     EXPECT_NE(descriptor1, descriptor2);
 
-    m_connections->NotifyConnectionClosed(*connection2);
+    CloseConnection(*connection2);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3291,7 +3296,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsRemovedF
     ContentDescriptorCPtr descriptor1 = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
 
     // simulate re-opening
-    m_connections->NotifyConnectionClosed(*m_connections->GetConnection(s_project->GetECDb()));
+    CloseConnection(*m_connections->GetConnection(s_project->GetECDb()));
     m_manager->GetConnections().CreateConnection(s_project->GetECDb());
 
     // request again
@@ -13486,6 +13491,76 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CreatesAutoExpandedNestedFi
 
     ASSERT_TRUE(fields[0]->IsNestedContentField());
     EXPECT_TRUE(fields[0]->AsNestedContentField()->ShouldAutoExpand());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* VSTS#177537
+* @bsitest                                      Grigas.Petraitis                09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(CategorizesNestedContentFields,
+    R"*(
+    <PropertyCategory typeName="GeometryAttributes" />
+    <ECEntityClass typeName="Element">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="Aspect">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="CategorizedProp" typeName="double" category="GeometryAttributes" />
+        <ECProperty propertyName="UncategorizedProp" typeName="double" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementHasAspect" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="Aspect" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, CategorizesNestedContentFields)
+    {
+    // set up data set
+    ECClassCP elementClass = GetClass("Element");
+    ECClassCP aspectClass = GetClass("Aspect");
+    ECRelationshipClassCP elementHasAspectRel = dynamic_cast<ECRelationshipClass const *>(GetSchema()->GetClassCP("ElementHasAspect"));
+
+    IECInstancePtr element = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
+    IECInstancePtr aspect = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *aspectClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *elementHasAspectRel, *element, *aspect, nullptr, true);
+
+    // set up ruleset
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRule* rule = new ContentRule();
+    rules->AddPresentationRule(*rule);
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", elementClass->GetFullName(), true));
+
+    ContentModifierP modifier = new ContentModifier(elementClass->GetSchema().GetName(), elementClass->GetName());
+    rules->AddPresentationRule(*modifier);
+    modifier->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, elementHasAspectRel->GetFullName(), 
+        aspectClass->GetFullName(), "", RelationshipMeaning::RelatedInstance));
+
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
+
+    bvector<ContentDescriptor::Field*> fields = descriptor->GetVisibleFields();
+    ASSERT_EQ(1, fields.size());
+    ASSERT_TRUE(fields[0]->IsNestedContentField());
+    EXPECT_STREQ(aspectClass->GetName().c_str(), fields[0]->GetCategory().GetName().c_str());
+    ASSERT_EQ(2, fields[0]->AsNestedContentField()->GetFields().size());
+    EXPECT_STREQ("Aspect_CategorizedProp", fields[0]->AsNestedContentField()->GetFields()[0]->GetName().c_str());
+    EXPECT_STREQ("GeometryAttributes", fields[0]->AsNestedContentField()->GetFields()[0]->GetCategory().GetName().c_str());
+    EXPECT_STREQ("Aspect_UncategorizedProp", fields[0]->AsNestedContentField()->GetFields()[1]->GetName().c_str());
+    EXPECT_STREQ("", fields[0]->AsNestedContentField()->GetFields()[1]->GetCategory().GetName().c_str());
     }
 
 //=======================================================================================

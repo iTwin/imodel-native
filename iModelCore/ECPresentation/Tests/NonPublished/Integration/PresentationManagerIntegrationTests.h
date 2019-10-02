@@ -5,7 +5,6 @@
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
 #include <ECPresentation/RulesDriven/PresentationManager.h>
-#include <UnitTests/BackDoor/ECPresentation/TestRuleSetLocater.h>
 #include "../RulesEngine/TestHelpers.h"
 
 BEGIN_ECPRESENTATIONTESTS_NAMESPACE
@@ -18,7 +17,7 @@ struct PresentationManagerIntegrationTests : ECPresentationTest
     static ECDbTestProject* s_project;
 
     RulesDrivenECPresentationManager* m_manager;
-    TestConnectionManager* m_connections;
+    IConnectionManager* m_connections;
     DelayLoadingRuleSetLocaterPtr m_locater;
     SQLangLocalizationProvider m_localizationProvider;
     RuntimeJsonLocalState m_localState;
@@ -30,7 +29,9 @@ struct PresentationManagerIntegrationTests : ECPresentationTest
     static void RegisterSchemaXml(Utf8String name, Utf8String schemaXml);
 
     PresentationManagerIntegrationTests() : m_manager(nullptr) {}
+    virtual IConnectionManager* _CreateConnectionManager();
     virtual void _ConfigureManagerParams(RulesDrivenECPresentationManager::Params&);
+    virtual ECDbR _GetProject();
     virtual void SetUp() override;
     virtual void TearDown() override;
 
@@ -45,6 +46,50 @@ struct PresentationManagerIntegrationTests : ECPresentationTest
     Utf8String GetDisplayLabel(IECInstanceCR instance);
 
     Utf8String GetDefaultDisplayLabel(IECInstanceCR instance);
+    };
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                02/2016
++===============+===============+===============+===============+===============+======*/
+struct TestUpdateRecordsHandler : IUpdateRecordsHandler
+    {
+    private:
+        bvector<UpdateRecord> m_records;
+        bvector<FullUpdateRecord> m_fullUpdateRecords;
+    protected:
+        void _Start() override { m_records.clear(); m_fullUpdateRecords.clear(); }
+        void _Accept(UpdateRecord const& record) override { m_records.push_back(record); }
+        void _Accept(FullUpdateRecord const& record) override { m_fullUpdateRecords.push_back(record); }
+        void _Finish() override {}
+    public:
+        static RefCountedPtr<TestUpdateRecordsHandler> Create() { return new TestUpdateRecordsHandler(); }
+        bvector<UpdateRecord> const& GetRecords() const { return m_records; }
+        bvector<FullUpdateRecord> const& GetFullUpdateRecords() const { return m_fullUpdateRecords; }
+    };
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                02/2016
++===============+===============+===============+===============+===============+======*/
+struct UpdateTests : PresentationManagerIntegrationTests
+    {
+    static BeFileName s_seedProjectPath;
+
+    ECDb m_db;
+    RefCountedPtr<TestECInstanceChangeEventsSource> m_eventsSource;
+    RefCountedPtr<TestUpdateRecordsHandler> m_updateRecordsHandler;
+
+    ECSchemaCP m_schema;
+    ECClassCP m_widgetClass;
+    ECClassCP m_gadgetClass;
+    ECClassCP m_sprocketClass;
+
+    static void SetUpTestCase();
+    virtual void SetUp() override;
+    virtual ECDbR _GetProject() override;
+    virtual void _ConfigureManagerParams(RulesDrivenECPresentationManager::Params&) override;
+    virtual IConnectionManager* _CreateConnectionManager() override;
+
+    void Sync() { m_manager->GetTasksCompletion().wait(); }
     };
 
 #define DEFINE_SCHEMA(name, schema_xml) DEFINE_REGISTRY_SCHEMA(PresentationManagerIntegrationTests, name, schema_xml)

@@ -131,11 +131,12 @@
     <ClCompile Include="NonPublished\DefaultCategorySupplierTests.cpp" />
     <ClCompile Include="NonPublished\DefaultECPresentationSerializerTests.cpp" />
     <ClCompile Include="NonPublished\DefaultPropertyFormatterTests.cpp" />
-    <ClCompile Include="NonPublished\Integration\Content_LocatingClasses.cpp" />
-    <ClCompile Include="NonPublished\Integration\PresentationManagerContentTests.cpp" />
+    <ClCompile Include="NonPublished\Integration\Content\ContentIntegrationTests.cpp" />
+    <ClCompile Include="NonPublished\Integration\Content\ContentUpdateTests.cpp" />
+    <ClCompile Include="NonPublished\Integration\Content\LocatingClasses.cpp" />
+    <ClCompile Include="NonPublished\Integration\Hierarchies\HierarchyIntegrationTests.cpp" />
+    <ClCompile Include="NonPublished\Integration\Hierarchies\HierarchyUpdateTests.cpp" />
     <ClCompile Include="NonPublished\Integration\PresentationManagerIntegrationTests.cpp" />
-    <ClCompile Include="NonPublished\Integration\PresentationManagerNavigationTests.cpp" />
-    <ClCompile Include="NonPublished\Integration\UpdateTests.cpp" />
     <ClCompile Include="NonPublished\PresentationRulesetTesterTests.cpp" />
     <ClCompile Include="NonPublished\PresentationRules\AllInstanceNodesSpecificationTests.cpp" />
     <ClCompile Include="NonPublished\PresentationRules\AllRelatedInstanceNodesSpecificationTests.cpp" />

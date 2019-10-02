@@ -12,8 +12,6 @@
 
 const int ContentDescriptor::Property::DEFAULT_PRIORITY = 0;
 
-const int DefaultCategorySupplier::NESTED_CONTENT_CATEGORY_PRIORITY = 400000; // matches Standard::General
-
 const Utf8CP ContentDisplayType::Undefined = "Undefined";
 const Utf8CP ContentDisplayType::Grid = "Grid";
 const Utf8CP ContentDisplayType::PropertyPane = "PropertyPane";
@@ -30,7 +28,7 @@ ContentDescriptor::Field::TypeDescriptionPtr ContentDescriptor::Field::TypeDescr
 
     if (prop.GetIsNavigation())
         return new PrimitiveTypeDescription("navigation");
-    
+
     if (prop.GetIsPrimitiveArray())
         return new ArrayTypeDescription(*new PrimitiveTypeDescription(prop.GetTypeName()));
 
@@ -105,7 +103,7 @@ ContentDescriptor::ContentDescriptor(IConnectionCR connection, JsonValueCR optio
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentDescriptor::ContentDescriptor(ContentDescriptorCR other) 
+ContentDescriptor::ContentDescriptor(ContentDescriptorCR other)
     : m_preferredDisplayType(other.m_preferredDisplayType), m_classes(other.m_classes), m_filterExpression(other.m_filterExpression), m_contentFlags(other.m_contentFlags),
     m_sortingFieldIndex(other.m_sortingFieldIndex), m_sortDirection(other.m_sortDirection), m_connectionId(other.m_connectionId), m_inputKeys(other.m_inputKeys),
     m_options(other.m_options), m_selectionInfo(other.m_selectionInfo)
@@ -187,7 +185,7 @@ int ContentDescriptor::GetFieldIndex(Utf8CP name) const
 bvector<ContentDescriptor::Field*> ContentDescriptor::GetVisibleFields() const
     {
     bvector<Field*> fields;
-    std::copy_if(m_fields.begin(), m_fields.end(), std::back_inserter(fields), [this](Field const* f) 
+    std::copy_if(m_fields.begin(), m_fields.end(), std::back_inserter(fields), [this](Field const* f)
         {
         bool isHidden = (f->IsSystemField() || (f->IsDisplayLabelField() && !ShowLabels()));
         return !isHidden;
@@ -262,7 +260,7 @@ void ContentDescriptor::MergeWith(ContentDescriptorCR other)
     BeAssert(m_connectionId.Equals(other.m_connectionId) && "Can't merge descriptors with different connections");
     BeAssert(m_options == other.m_options && "Can't merge descriptors with different options");
     BeAssert((m_selectionInfo.IsNull() && other.m_selectionInfo.IsNull())
-        || (m_selectionInfo.IsValid() && other.m_selectionInfo.IsValid() && *m_selectionInfo == *other.m_selectionInfo) 
+        || (m_selectionInfo.IsValid() && other.m_selectionInfo.IsValid() && *m_selectionInfo == *other.m_selectionInfo)
         && "Can't merge descriptors with different selection info");
 
     for (SelectClassInfo const& sourceClassInfo : other.m_classes)
@@ -411,7 +409,7 @@ void ContentDescriptor::AddField(Field* field)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentDescriptor::ECPropertiesField* ContentDescriptor::FindECPropertiesField(ECPropertyCR prop, ECClassCR propClass, 
+ContentDescriptor::ECPropertiesField* ContentDescriptor::FindECPropertiesField(ECPropertyCR prop, ECClassCR propClass,
     RelatedClassPathCR relatedPath, ContentFieldEditor const* editor)
     {
     auto iter = m_fieldsMap.find(ECPropertiesFieldKey(prop, propClass, relatedPath, editor));
@@ -479,8 +477,8 @@ ContentDescriptor::Category ContentDescriptor::Category::GetFavoriteCategory()
 bool ContentDescriptor::Property::operator==(Property const& other) const
     {
     return m_propertyClass == other.m_propertyClass
-        && m_property == other.m_property 
-        && m_prefix.Equals(other.m_prefix) 
+        && m_property == other.m_property
+        && m_prefix.Equals(other.m_prefix)
         && m_relatedClassPath == other.m_relatedClassPath;
     }
 /*---------------------------------------------------------------------------------**//**
@@ -541,7 +539,7 @@ bool ContentFieldEditor::Equals(ContentFieldEditor const& other) const
     {
     if (!m_name.Equals(other.m_name))
         return false;
-    
+
     if (m_params.size() != other.m_params.size())
         return false;
     for (size_t i = 0; i < m_params.size(); ++i)
@@ -637,6 +635,17 @@ rapidjson::Document ContentDescriptor::CalculatedPropertyField::_AsJson(rapidjso
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentDescriptor::ECPropertiesField::ECPropertiesField(Category category, Property const& prop)
+    {
+    SetCategory(category);
+    SetName(Utf8String(prop.GetPropertyClass().GetName()).append("_").append(prop.GetProperty().GetName()));
+    SetLabel(prop.GetProperty().GetDisplayLabel());
+    m_properties.push_back(prop);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 rapidjson::Document ContentDescriptor::ECPropertiesField::_AsJson(rapidjson::Document::AllocatorType* allocator) const
@@ -697,19 +706,6 @@ bool ContentDescriptor::ECPropertiesField::_IsReadOnly() const
         return true;
 
     return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ContentDescriptor::ECPropertiesField::InitFromProperty(ECClassCR primaryClass, ContentDescriptor::Property const& prop, 
-    IPropertyCategorySupplierP categorySupplier)
-    {
-    if (nullptr != categorySupplier)
-        SetCategory(categorySupplier->GetCategory(primaryClass, prop.GetRelatedClassPath(), prop.GetProperty(), prop.GetRelationshipMeaning()));
-    SetName(Utf8String(prop.GetPropertyClass().GetName()).append("_").append(prop.GetProperty().GetName()));
-    SetLabel(prop.GetProperty().GetDisplayLabel());
-    m_properties.push_back(prop);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -978,7 +974,7 @@ ContentDescriptor::Field::TypeDescriptionPtr ContentDescriptor::ECNavigationInst
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR ContentDescriptor::ECNavigationInstanceIdField::_GetName() const 
+Utf8StringCR ContentDescriptor::ECNavigationInstanceIdField::_GetName() const
     {
     if (SystemField::_GetName().empty())
         {
@@ -1165,7 +1161,7 @@ bool SelectionInfo::operator<(SelectionInfo const& other) const
     int selectionProviderNameCmp = m_selectionProviderName.CompareTo(other.m_selectionProviderName);
     if (selectionProviderNameCmp < 0)
         return true;
-    return false;    
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1184,11 +1180,11 @@ BentleyStatus DefaultPropertyFormatter::_ApplyKoqFormatting(Utf8StringR formatte
     KindOfQuantityCP koq = ecProperty.GetKindOfQuantity();
     if (nullptr == koq)
         return ERROR;
-        
+
     // currently only doubles are supported
     if (!ecValue.IsDouble())
         return ERROR;
-    
+
     // determine the presentation unit
     NamedFormatCP format = koq->GetDefaultPresentationFormat();
     if (nullptr == format || nullptr == format->GetCompositeMajorUnit())
@@ -1239,27 +1235,57 @@ BentleyStatus DefaultPropertyFormatter::_GetFormattedPropertyLabel(Utf8StringR f
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                10/2016
+* @bsimethod                                    Grigas.Petraitis                09/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentDescriptor::Category DefaultCategorySupplier::_GetCategory(ECClassCR primaryClass, RelatedClassPathCR path, ECPropertyCR prop, RelationshipMeaning relationshipMeaning) const
+ContentDescriptor::Category DefaultCategorySupplier::_GetECClassCategory(ECClassCR ecClass) const
     {
-    PropertyCategoryCP propertyCategory = prop.GetCategory();
+    return ContentDescriptor::Category(ecClass.GetName(), ecClass.GetDisplayLabel(), ecClass.GetDescription(), 1000);
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentDescriptor::Category DefaultCategorySupplier::_GetRelatedECClassCategory(ECClassCR ecClass, RelationshipMeaning relationshipMeaning) const
+    {
+    // if relationship meaning is RelatedInstance, return category of the ECClass so all it's properties get into a separate group
+    if (RelationshipMeaning::RelatedInstance == relationshipMeaning)
+        return GetECClassCategory(ecClass);
+
+    // otherwise return invalid category so parent field's category is used
+    return ContentDescriptor::Category();
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentDescriptor::Category DefaultCategorySupplier::_GetPropertyCategory(ECPropertyCR ecProperty) const
+    {
+    PropertyCategoryCP propertyCategory = ecProperty.GetCategory();
     if (nullptr != propertyCategory)
         {
-        return ContentDescriptor::Category(propertyCategory->GetName(), propertyCategory->GetDisplayLabel(), 
+        return ContentDescriptor::Category(propertyCategory->GetName(), propertyCategory->GetDisplayLabel(),
             propertyCategory->GetDescription(), propertyCategory->GetPriority());
         }
-
-    if (RelationshipMeaning::RelatedInstance == relationshipMeaning)
-        return GetCategory(primaryClass, path, *path.back().GetSourceClass());
-
-    return ContentDescriptor::Category::GetDefaultCategory();
+    return ContentDescriptor::Category();
     }
-
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                07/2017
+* @bsimethod                                    Grigas.Petraitis                09/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentDescriptor::Category DefaultCategorySupplier::_GetCategory(ECClassCR, RelatedClassPathCR, ECClassCR nestedContentClass) const
+ContentDescriptor::Category DefaultCategorySupplier::_CreateCategory(ECClassCR actualClass, ECPropertyCR ecProperty, RelationshipMeaning relationshipMeaning) const
     {
-    return ContentDescriptor::Category(nestedContentClass.GetName(), nestedContentClass.GetDisplayLabel(), "", NESTED_CONTENT_CATEGORY_PRIORITY);
+    // if property has a category - that's always what we want
+    ContentDescriptor::Category category = GetPropertyCategory(ecProperty);
+    if (category.IsValid())
+        return category;
+
+    // if relationship meaning is SameInstance and property doesn't have a category,
+    // just return the default category
+    if (RelationshipMeaning::SameInstance == relationshipMeaning)
+        return ContentDescriptor::Category::GetDefaultCategory();
+
+    // if relationship meaning is RelatedInstance and property doesn't have a category,
+    // return category of the ECClass the property belongs to
+    if (RelationshipMeaning::RelatedInstance == relationshipMeaning)
+        return GetECClassCategory(actualClass);
+
+    // should never get here - return an invalid category
+    return ContentDescriptor::Category();
     }

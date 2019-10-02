@@ -67,7 +67,7 @@ struct DefaultCategorySupplierTests : ECPresentationTest
 TEST_F(DefaultCategorySupplierTests, ReturnsCustomCategoryWhenItIsSet)
     {
     ECPropertyCP prop = m_class->GetPropertyP("Prop2");
-    ContentDescriptor::Category category = m_supplier.GetCategory(*m_class, RelatedClassPath(), *prop, RelationshipMeaning::SameInstance);
+    ContentDescriptor::Category category = m_supplier.CreateCategory(*m_class, *prop, RelationshipMeaning::SameInstance);
     EXPECT_STREQ("Custom", category.GetName().c_str());
     EXPECT_STREQ("Custom", category.GetLabel().c_str());
     EXPECT_STREQ("Custom category", category.GetDescription().c_str());
@@ -80,12 +80,10 @@ TEST_F(DefaultCategorySupplierTests, ReturnsCustomCategoryWhenItIsSet)
 TEST_F(DefaultCategorySupplierTests, ReturnsPropertyClassCategoryWhenThereIsNoCustomCategoryAndPropertyIsRelated)
     {
     ECPropertyCP prop = m_class->GetPropertyP("Prop1");
-    ContentDescriptor::Category category = m_supplier.GetCategory(*m_class, {RelatedClass(*m_class, *m_class, *m_relationship, true)}, 
-        *prop, RelationshipMeaning::RelatedInstance);
+    ContentDescriptor::Category category = m_supplier.CreateCategory(*m_class, *prop, RelationshipMeaning::RelatedInstance);
     EXPECT_STREQ(m_class->GetName().c_str(), category.GetName().c_str());
     EXPECT_STREQ(m_class->GetDisplayLabel().c_str(), category.GetLabel().c_str());
     EXPECT_STREQ(m_class->GetDescription().c_str(), category.GetDescription().c_str());
-    EXPECT_EQ(DefaultCategorySupplier::NESTED_CONTENT_CATEGORY_PRIORITY, category.GetPriority());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -94,16 +92,6 @@ TEST_F(DefaultCategorySupplierTests, ReturnsPropertyClassCategoryWhenThereIsNoCu
 TEST_F(DefaultCategorySupplierTests, ReturnsDefaultCategoryWhenThereIsNoCustomCategoryAndPropertyIsNotRelated)
     {
     ECPropertyCP prop = m_class->GetPropertyP("Prop1");
-    ContentDescriptor::Category category = m_supplier.GetCategory(*m_class, RelatedClassPath(), *prop, RelationshipMeaning::SameInstance);
+    ContentDescriptor::Category category = m_supplier.CreateCategory(*m_class, *prop, RelationshipMeaning::SameInstance);
     EXPECT_EQ(ContentDescriptor::Category::GetDefaultCategory(), category);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                       Grigas.Petraitis                07/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DefaultCategorySupplierTests, ReturnsClassBasedCategoryWhenRequestingCategoryForNestedContent)
-    {
-    ContentDescriptor::Category expected(m_class->GetName(), m_class->GetDisplayLabel(), "", DefaultCategorySupplier::NESTED_CONTENT_CATEGORY_PRIORITY);
-    ContentDescriptor::Category actual = m_supplier.GetCategory(*m_class, RelatedClassPath(), *m_class);
-    EXPECT_EQ(expected, actual);
     }

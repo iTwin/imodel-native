@@ -510,7 +510,7 @@ void ContentProvider::LoadCompositePropertiesFieldValue(ContentSetItemR item, Co
         ContentDescriptor::Property const* matchingProperty = pair.second;
 
         // create a nested content provider for it
-        ContentDescriptor::ECPropertiesField* nestedField = new ContentDescriptor::ECPropertiesField(*itemClass, *matchingProperty);
+        ContentDescriptor::ECPropertiesField* nestedField = new ContentDescriptor::ECPropertiesField(ContentDescriptor::Category(), *matchingProperty);
         nestedField->SetName(field.GetName());
         ContentDescriptor::NestedContentField nestingField(field.GetCategory(), field.GetName(), field.GetLabel(),
             *itemClass, "this", RelatedClassPath(), {nestedField}, false, field.GetPriority());

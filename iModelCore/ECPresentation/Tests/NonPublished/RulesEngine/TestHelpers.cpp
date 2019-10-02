@@ -528,7 +528,7 @@ DataContainer<NavNodeCPtr> RulesEngineTestHelpers::GetValidatedNodes(std::functi
 ContentDescriptor::Field& RulesEngineTestHelpers::AddField(ContentDescriptorR descriptor, ECClassCR primaryClass, 
     ContentDescriptor::Property prop, IPropertyCategorySupplierR categorySupplier)
     {
-    ContentDescriptor::Field* field = new ContentDescriptor::ECPropertiesField(primaryClass, prop, categorySupplier);
+    ContentDescriptor::Field* field = new ContentDescriptor::ECPropertiesField(categorySupplier.CreateCategory(primaryClass, prop.GetProperty(), RelationshipMeaning::SameInstance), prop);
     descriptor.AddField(field);
     return *descriptor.GetAllFields().back();
     }
