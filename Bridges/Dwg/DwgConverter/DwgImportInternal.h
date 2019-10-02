@@ -30,6 +30,7 @@
 #include <DgnPlatform/DesktopTools/ConfigurationManager.h>
 #include <BRepCore/PSolidUtil.h>
 
+#include <BeRapidJson/BeRapidJson.h>
 #include <Raster/RasterApi.h>
 #include <ECPresentation/RulesDriven/RuleSetEmbedder.h>
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
@@ -770,5 +771,19 @@ public:
     BentleyStatus ImportFromDwg (DwgDbDatabaseR dwg);
     BentleyStatus CreateUserElementClasses ();
 };  // AecPsetSchemaFactory
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          08/19
++===============+===============+===============+===============+===============+======*/
+struct ExtendedImportInputs : DwgImporter::ElementImportInputs
+{
+    DEFINE_T_SUPER (DwgImporter::ElementImportInputs)
+public:
+    rapidjson::Document m_aecPropertySets;
+
+public:
+    ExtendedImportInputs(DgnModelR m, DwgDbEntityP e, ElementImportInputs const& o) : T_Super(m, e, o), m_aecPropertySets(rapidjson::kObjectType) {}
+    rapidjson::Document& GetAecPropertySetsR () { return m_aecPropertySets; }
+};  // ExtendedElementInputs
 
 END_DWG_NAMESPACE

@@ -1130,10 +1130,6 @@ protected:
     //! @name Importing schemas
     //! @see public method MakeSchemaChanges
     //! @{
-    //! Cache a PresentationRule content of a host element which must be seperated from the modelspace as a PhysicalObject and a paperspace as a DrawingGraphic.
-    DWG_EXPORT virtual BentleyStatus  _AddPresentationRuleContent (DgnElementCR hostElement, ECN::ECClassCR sourceClass);
-    //! Create and embed PresentationRules for DwgAttributeDefinitions schema:
-    DWG_EXPORT virtual BentleyStatus  _EmbedPresentationRules ();
     //! This method is called while the framework holds the schema locks for the bridge. Override this method to update your schemas. The default implementation updates DwgAttributeDefinitions schema.
     DWG_EXPORT virtual BentleyStatus  _MakeSchemaChanges ();
     //! This method is called while the framework holds the dictionary locks for the bridge. The default implementation updates shared DefinitionElements from DWG symbol tables.
@@ -1409,6 +1405,10 @@ public:
     //! Get/create the DefinitionModel that stores all other job specific definitions
     DWG_EXPORT DefinitionModelPtr GetOrCreateJobDefinitionModel ();
     T_ElementClassMapList&      GetElementClassMapR () { return m_elementClassMap; }
+    //! Cache a PresentationRule content of a host element which must be seperated from the modelspace as a PhysicalObject and a paperspace as a DrawingGraphic.
+    DWG_EXPORT virtual BentleyStatus  _AddPresentationRuleContent (DgnElementCR hostElement, ECN::ECClassCR sourceClass);
+    //! Create and embed PresentationRules for DwgAttributeDefinitions schema:
+    DWG_EXPORT virtual BentleyStatus  _EmbedPresentationRules ();
 
     //! An iModelBridge must call this method from _MakeSchemaChanges, to change schemas.
     //! The default implementation iterates DWG block table for multiple tasks:

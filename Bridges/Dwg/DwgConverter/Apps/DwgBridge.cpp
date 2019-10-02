@@ -153,7 +153,7 @@ WString DwgBridge::_SupplySqlangRelPath ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   DwgBridge::_ConvertToBim (Dgn::SubjectCR jobSubject)
     {
-    auto status = m_importer->Process ();
+    m_importer->Process ();
 
     if (m_importer->WasAborted())
         return BentleyStatus::ERROR;

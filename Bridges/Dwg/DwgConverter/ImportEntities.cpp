@@ -417,18 +417,21 @@ BentleyStatus   DwgImporter::ImportEntity (ElementImportResults& results, Elemen
     uint64_t    entityId = entity->GetObjectId().ToUInt64 ();
 #endif
 
-    // make a copy of inputs to be used only for this entity
-    ElementImportInputs inputs2(inputs.GetTargetModelR(), entity.get(), inputs);
-    this->_PreImportEntity (inputs2);
+    // use an extended inputs that carroes an AEC property json from pre-import to post-import:
+    ExtendedImportInputs* inputs2 = new ExtendedImportInputs(inputs.GetTargetModelR(), entity.get(), inputs);
+    if (inputs2 == nullptr)
+        return  BSIERROR;
+
+    this->_PreImportEntity (*inputs2);
 
     DwgProtocolExtension*   objExt = DwgProtocolExtension::Cast (entity->QueryX(DwgProtocolExtension::Desc()));
     if (nullptr != objExt)
-        status = this->_ImportEntityByProtocolExtension (results, inputs2, *objExt);
+        status = this->_ImportEntityByProtocolExtension (results, *inputs2, *objExt);
     else
-        status = this->_ImportEntity (results, inputs2);
+        status = this->_ImportEntity (results, *inputs2);
 
     if (status == BSISUCCESS)
-        this->_PostImportEntity (results, inputs2);
+        this->_PostImportEntity (results, *inputs2);
 
     return  status;
     }

@@ -4,6 +4,10 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "DwgImportInternal.h"
+// workaround rapidjson::GenericValue::GetObject resolved to GetObjectW for RealDWG (OpenDWG has Windows.h included before UNICODE is defined)!
+#if defined(DWGTOOLKIT_RealDwg) && defined(GetObject)
+    #undef GetObject
+#endif
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_DWGDB
@@ -69,7 +73,8 @@ ECPropertyP AecPsetSchemaFactory::CreateECProperty (ECEntityClassP aecpsetClass,
     auto ecName = DwgHelper::ValidateECNameFrom (displayName);
 
 #ifdef DUMP_JSON
-    LOG.debugv ("%s : %s", displayName, iter->value.GetString());
+    auto strValue = BeRapidJsonUtilities::ToString(iter->value).DropQuotes ();
+    LOG.debugv ("%s : %s", displayName, strValue);
 #endif
 
     switch (iter->value.GetType())
@@ -181,7 +186,7 @@ BentleyStatus AecPsetSchemaFactory::ImportFromDictionaries (DwgDbDictionaryItera
 #endif
 
         rapidjson::Document json(rapidjson::kObjectType);
-        if (UtilsLib::ParseAecDbPropertySetDef(json, iter.GetObjectId()) == DwgDbStatus::Success)
+        if (UtilsLib::ParseAecDbPropertySetDef(json, json.GetAllocator(), iter.GetObjectId()) == DwgDbStatus::Success)
             {
             for (rapidjson::Value::ConstMemberIterator i = json.MemberBegin(); i != json.MemberEnd(); ++i)
                 this->CreateECProperty (aecpsetClass, i);
@@ -226,7 +231,7 @@ void AecPsetSchemaFactory::TrackPropertiesForElementMapping (Utf8StringCR propNa
     if (m_userPropertyNames.find(propName) == m_userPropertyNames.end())
         return;
 
-    // only if both the property name & the default value match will user input, the user target class name will be remapped:
+    // only if both the property name & the default value match the user input, the user target class name will be remapped:
     auto defaultValue = BeRapidJsonUtilities::ToString(iter->value).DropQuotes ();
     if (defaultValue.empty())
         return;
@@ -313,7 +318,6 @@ ECSchemaPtr DwgImporter::_CreateAecPropertySetSchema ()
     {
     ECSchemaPtr aecpsetSchema;
 
-#ifdef DWGTOOLKIT_OpenDwg
     AecPsetSchemaFactory factory(aecpsetSchema, *this);
     auto status = factory.ImportFromDwg (this->GetDwgDb());
 
@@ -324,7 +328,6 @@ ECSchemaPtr DwgImporter::_CreateAecPropertySetSchema ()
         }
 
     status = factory.CreateUserElementClasses ();
-#endif
 
     return  aecpsetSchema;
     }
@@ -337,11 +340,11 @@ struct AecPsetPropertyFactory
 {
 private:
     IECInstancePtr  m_ecInstance;
-    ECClassCR       m_ecClass;
     DwgImporterR    m_importer;
+    ExtendedImportInputs& m_extendedInputs;
 
 public:
-    AecPsetPropertyFactory (ECClassCR c, DwgImporterR i) : m_ecClass(c), m_importer(i) {}
+    AecPsetPropertyFactory (DwgImporterR i, ExtendedImportInputs& e) : m_importer(i), m_extendedInputs(e) {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          08/19
@@ -385,6 +388,24 @@ void SetEcInstanceFromArray (uint32_t propIndex, rapidjson::Value& jsValue)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          08/19
 +---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ConvertTypeAndSetValue (ECValueR value, uint32_t propIndex)
+    {
+    ECValue defValue;
+    auto status = m_ecInstance->GetValue (defValue, propIndex);
+    if (status == ECObjectsStatus::Success)
+        {
+        auto defType = defValue.GetPrimitiveType();
+        if (value.ConvertToPrimitiveType(defType))
+            status = m_ecInstance->SetValue (propIndex, value);
+        else
+            status = ECObjectsStatus::DataTypeMismatch;
+        }
+    return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/19
++---------------+---------------+---------------+---------------+---------------+------*/
 bool GetPropertyValue (ECValueR value, uint32_t propIndex, rapidjson::Value& jsValue)
     {
     switch (jsValue.GetType())
@@ -415,56 +436,147 @@ bool GetPropertyValue (ECValueR value, uint32_t propIndex, rapidjson::Value& jsV
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          08/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ConvertProperties (DwgDbEntityCR entity, DwgDbObjectIdCR aecpsetId)
+ECObjectsStatus SetVolumeFromEntity (uint32_t propIndex)
     {
-    ECObjectsStatus status = ECObjectsStatus::NotFound;
-
-    m_ecInstance = m_ecClass.GetDefaultStandaloneEnabler()->CreateInstance ();
-    if (!m_ecInstance.IsValid())
-        return  status;
-
-    // extract properties from AecDbPropertySet
-    rapidjson::Document json(rapidjson::kObjectType);
-    if (UtilsLib::ParseAecDbPropertySet(json, entity.GetObjectId(), &aecpsetId) != DwgDbStatus::Success)
-        return  status;
-
-    size_t  count = 0;
-    for (rapidjson::Value::MemberIterator iter = json.MemberBegin(); iter != json.MemberEnd(); ++iter)
+    DwgDb3dSolid::MassProperties    mass;
+    auto solid3d = DwgDb3dSolid::Cast(&m_extendedInputs.GetEntity());
+    if (solid3d != nullptr && solid3d->GetMassProperties(mass) == DwgDbStatus::Success)
         {
-        auto ecName = DwgHelper::ValidateECNameFrom (iter->name.GetString());
-
-#ifdef DUMP_JSON
-        LOG.debugv ("%s : %s", iter->name.GetString(), iter->value.GetString());
-#endif
-
-        ECValue     value;
-        uint32_t    propIndex = 0;
-        status = m_ecInstance->GetEnabler().GetPropertyIndex (propIndex, ecName.c_str());
-
-        if (status == ECObjectsStatus::Success && this->GetPropertyValue(value, propIndex, iter->value))
-            status = m_ecInstance->SetValue (propIndex, value);
-        if (status == ECObjectsStatus::Success)
-            count++;
+        ECValue value(mass.GetVolume());
+        return  this->ConvertTypeAndSetValue(value, propIndex);
         }
-
-    return  count > 0 ? ECObjectsStatus::Success : ECObjectsStatus::Error;
+    return  ECObjectsStatus::PropertyValueNull;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          08/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECInstancePtr  GetEcInstance () const
+ECObjectsStatus SetLengthFromEntity (uint32_t propIndex)
     {
-    return  m_ecInstance;
+    auto line = DwgDbLine::Cast(&m_extendedInputs.GetEntity());
+    if (line != nullptr)
+        {
+        double length = line->GetStartPoint().Distance (line->GetEndPoint());
+        ECValue value(length);
+        return  this->ConvertTypeAndSetValue(value, propIndex);
+        }
+    return  ECObjectsStatus::PropertyValueNull;
     }
 
-};  // AecPsetPropertyFactory
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/19
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus SetValueForAutomaticProperty (uint32_t propIndex, Utf8CP name)
+    {
+    /*-----------------------------------------------------------------------------------
+    This is needed for RealDWG based importer: the API's provided by Autodesk do not have "automatic"
+    properties on the entity - we must obtain these from the definition.  Based on their property names
+    we try calculating the value from the input entity. Types of supported automatic properties may
+    grow as needed.
 
+    On the other hand, OpenDWG based importer would not hit here - its architectural extension extracts
+    automatic properties for the entity as string properties.
+    -----------------------------------------------------------------------------------*/
+    if (name == nullptr || name[0] == 0)
+        return  ECObjectsStatus::OperationNotSupported;
+    else if (BeStringUtilities::Stricmp(name, "Volume") == 0)
+        return this->SetVolumeFromEntity (propIndex);
+    else if (BeStringUtilities::Stricmp(name, "Length") == 0)
+        return this->SetLengthFromEntity (propIndex);
+
+    return  ECObjectsStatus::PropertyNotSupported;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/19
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus CreateEcInstance (ECClassCR ecClass, rapidjson::Value::MemberIterator& objectIter)
+    {
+    ECObjectsStatus status = ECObjectsStatus::NotFound;
+    if (!objectIter->value.IsObject())
+        return  status;
+
+    m_ecInstance = ecClass.GetDefaultStandaloneEnabler()->CreateInstance ();
+    if (!m_ecInstance.IsValid())
+        return  status;
+
+    auto json = objectIter->value.GetObject ();
+    auto& enabler = m_ecInstance->GetEnabler ();
+
+    // set these up to track "automatic" properties, which are only available in the defs using RealDWG toolkit
+    size_t  countFromInput = json.MemberCount ();
+    size_t  countFromDef = ecClass.GetPropertyCount (false);
+
+    bool    hasAutomaticProps = countFromInput < countFromDef;
+    bvector<uint32_t>   missingIndices;
+    if (hasAutomaticProps && enabler.GetPropertyIndices(missingIndices, 0) != ECObjectsStatus::Success)
+        hasAutomaticProps = false;
+
+    // the first prop is always "Element" which we do not want in our tracking list
+    if (hasAutomaticProps)
+        missingIndices.erase (missingIndices.begin());
+
+    size_t  countCreated = 0;
+    for (rapidjson::Value::MemberIterator iter = json.MemberBegin(); iter != json.MemberEnd(); ++iter)
+        {
+        auto ecName = DwgHelper::ValidateECNameFrom (iter->name.GetString());
+
+#ifdef DUMP_JSON
+        auto strValue = BeRapidJsonUtilities::ToString(iter->value).DropQuotes ();
+        LOG.debugv ("%s : %s", iter->name.GetString(), strValue);
+#endif
+
+        ECValue     value;
+        uint32_t    propIndex = 0;
+        status = enabler.GetPropertyIndex (propIndex, ecName.c_str());
+
+        if (status == ECObjectsStatus::Success)
+            {
+            // track "automatic" properties
+            if (hasAutomaticProps)
+                {
+                auto found = std::find(missingIndices.begin(), missingIndices.end(), propIndex);
+                if (found != missingIndices.end())
+                    missingIndices.erase (found);
+                }
+
+            if (this->GetPropertyValue(value, propIndex, iter->value))
+                {
+                status = m_ecInstance->SetValue (propIndex, value);
+                /*-----------------------------------------------------------------------
+                OpenDWG+Arch Extension returns us "automatic" properties, but the value types may differ
+                from that in the definition - convert these to match the definition.
+                -----------------------------------------------------------------------*/
+                if (status == ECObjectsStatus::DataTypeMismatch)
+                    status = this->ConvertTypeAndSetValue (value, propIndex);
+                }
+            }
+        if (status == ECObjectsStatus::Success)
+            countCreated++;
+        }
+
+    // set "automatic" properties
+    if (hasAutomaticProps)
+        {
+        for (auto propIndex : missingIndices)
+            {
+            Utf8CP  name = nullptr;
+            status = enabler.GetAccessString (name, propIndex);
+            if (status == ECObjectsStatus::Success)
+                status = this->SetValueForAutomaticProperty (propIndex, name);
+
+            if (status == ECObjectsStatus::Success)
+                countCreated++;
+            }
+        }
+
+    return  countCreated > 0 ? ECObjectsStatus::Success : ECObjectsStatus::Error;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          06/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DwgDbObjectId    GetPsetsDictionary (DwgDbDictionaryIteratorPtr& iter, DwgDbEntityCR entity)
+DwgDbObjectId   GetPsetsDictionary (DwgDbDictionaryIteratorPtr& iter, DwgDbEntityCR entity)
     {
     // get AecDbPropertySets dictionary ID from entity's extension dictionary
     DwgDbObjectId   dictionaryId;
@@ -490,33 +602,72 @@ static DwgDbObjectId    GetPsetsDictionary (DwgDbDictionaryIteratorPtr& iter, Dw
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          06/19
+* @bsimethod                                                    Don.Fu          08/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DwgImporter::_PostImportEntity (ElementImportResults& results, ElementImportInputs& inputs)
+BentleyStatus   CreateEcInstances (DgnElementR hostElement)
     {
-    BentleyStatus   status = BSISUCCESS;
-    if (m_aecPropertySetSchema == nullptr)
-        return  status;
+    auto entity = m_extendedInputs.GetEntityP ();
+    if (entity == nullptr)
+        return  BSIERROR;
 
-    auto element = results.GetImportedElement ();
-    auto entity = inputs.GetEntityP ();
-    if (entity == nullptr || element == nullptr)
-        return  status;
+    auto aecPropertySetSchema = m_importer.GetAecPropertySetSchema ();
+    if (aecPropertySetSchema == nullptr)
+        return  BSIERROR;
+
+    auto& json = m_extendedInputs.GetAecPropertySetsR ();
+    for (rapidjson::Value::MemberIterator iter = json.MemberBegin(); iter != json.MemberEnd(); ++iter)
+        {
+        if (!iter->value.IsObject())
+            {
+            BeAssert (false && "Top level of the json must be a json value of kObjectType");
+            continue;
+            }
+
+        auto ecclassName = DwgHelper::ValidateECNameFrom (iter->name.GetString());
+        auto ecClass = aecPropertySetSchema->GetClassCP (ecclassName.c_str());
+        if (ecClass != nullptr)
+            {
+            if (this->CreateEcInstance(*ecClass, iter) != ECObjectsStatus::Success)
+                continue;
+
+            if (m_ecInstance.IsValid() && DgnElement::GenericMultiAspect::AddAspect(hostElement, *m_ecInstance.get()) == DgnDbStatus::Success)
+                m_importer._AddPresentationRuleContent (hostElement, m_ecInstance->GetClass());
+            }
+        }
+
+    return  BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/19
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   ExtractFromEntity ()
+    {
+    auto entity = m_extendedInputs.GetEntityP ();
+    if (entity == nullptr)
+        return  BSIERROR;
+    auto entityId = entity->GetObjectId ();
+    if (!entityId.IsValid())
+        return  BSIERROR;
+
+    auto& aecPropertySets = m_extendedInputs.GetAecPropertySetsR ();
+    auto& allocator = aecPropertySets.GetAllocator ();
+    BeAssert (aecPropertySets.IsObject());
 
     DwgDbDictionaryIteratorPtr psetIter;
 
     // check & get extension dictionary AecDbPropertySets - most entitie stop here
-    auto objectId = GetPsetsDictionary (psetIter, *entity);
+    auto objectId = this->GetPsetsDictionary (psetIter, *entity);
     if (!objectId.IsValid() || !psetIter.IsValid())
-        return  status;
+        return  BSIERROR;
 
-    DwgDbDictionaryPtr mainDict(m_dwgdb->GetNamedObjectsDictionaryId(), DwgDbOpenMode::ForRead);
+    DwgDbDictionaryPtr mainDict(m_importer.GetDwgDb().GetNamedObjectsDictionaryId(), DwgDbOpenMode::ForRead);
     if (mainDict.OpenStatus() != DwgDbStatus::Success || mainDict->GetIdAt(objectId, L"AEC_PROPERTY_SET_DEFS") != DwgDbStatus::Success)
-        return  status;
+        return  BSIERROR;
 
     DwgDbDictionaryPtr psetdefsDict(objectId, DwgDbOpenMode::ForRead);
     if (psetdefsDict.OpenStatus() != DwgDbStatus::Success)
-        return  status;
+        return  BSIERROR;
 
     // check all AecDbPropertySet entries under AecDbPropertySets
     for (; !psetIter->Done(); psetIter->Next())
@@ -532,21 +683,38 @@ BentleyStatus   DwgImporter::_PostImportEntity (ElementImportResults& results, E
         if (psetdefsDict->GetNameAt(psetdefName, psetdefId) != DwgDbStatus::Success)
             continue;
 
-        auto ecclassName = DwgHelper::ValidateECNameFrom (psetdefName);
-        auto ecClass = m_aecPropertySetSchema->GetClassCP (ecclassName.c_str());
-        if (ecClass != nullptr)
+        rapidjson::Document json(rapidjson::kObjectType);
+        if (UtilsLib::ParseAecDbPropertySet(json, allocator, entityId, &psetId) == DwgDbStatus::Success)
             {
-            AecPsetPropertyFactory factory(*ecClass, *this);
-            if (factory.ConvertProperties(*entity, psetId) != ECObjectsStatus::Success)
-                continue;
-
-            auto ecInstance = factory.GetEcInstance ();
-            if (ecInstance.IsValid() && DgnElement::GenericMultiAspect::AddAspect(*element, *ecInstance.get()) == DgnDbStatus::Success)
-                this->_AddPresentationRuleContent (*element, ecInstance->GetClass());
+            Utf8String  utf8(psetdefName.c_str());
+            rapidjson::Value jsKey(rapidjson::StringRef(utf8.c_str()), (rapidjson::SizeType)utf8.size(), allocator);
+            aecPropertySets.AddMember (jsKey, json.GetObject(), allocator);
             }
         }
 
-    return  status;
+    return  aecPropertySets.IsNull() || aecPropertySets.MemberCount() == 0 ? BSIERROR : BSISUCCESS;
+    }
+
+};  // AecPsetPropertyFactory
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          06/19
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DwgImporter::_PostImportEntity (ElementImportResults& results, ElementImportInputs& inputs)
+    {
+    BentleyStatus   status = BSISUCCESS;
+    if (m_aecPropertySetSchema == nullptr || inputs.GetEntityP() == nullptr)
+        return  status;
+
+    ExtendedImportInputs* extendedInputs = static_cast<ExtendedImportInputs*> (&inputs);
+    if (extendedInputs == nullptr)
+        return  BSIERROR;
+
+    auto element = results.GetImportedElement ();
+
+    AecPsetPropertyFactory factory(*this, *extendedInputs);
+    return factory.CreateEcInstances (*element);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -557,6 +725,10 @@ BentleyStatus   DwgImporter::_PreImportEntity (ElementImportInputs& inputs)
     if (m_elementClassMap.empty() || m_aecPropertySetSchema == nullptr)
         return  BSIERROR;
 
+    ExtendedImportInputs* extendedInputs = static_cast<ExtendedImportInputs*> (&inputs);
+    if (extendedInputs == nullptr)
+        return  BSIERROR;
+
     // only remap element classes for entities in modelspace
     auto& entity = inputs.GetEntity ();
     auto dwg = entity.GetDatabase ();
@@ -565,8 +737,19 @@ BentleyStatus   DwgImporter::_PreImportEntity (ElementImportInputs& inputs)
 
     auto entityId = entity.GetObjectId ();
 
-    // prepare unique input property names for the DwgDb API:
-    T_Utf8StringVector  searchNames1, searchNames2, foundValues1, foundValues2;
+    // extract AEC property sets from the entity and convert them to the json collection in the extended inputs:
+    AecPsetPropertyFactory factory(*this, *extendedInputs);
+    auto status = factory.ExtractFromEntity ();
+    if (status != BSISUCCESS)
+        return  status;
+
+    // get back our collected json for element class remapping
+    auto& aecPropertySets = extendedInputs->GetAecPropertySetsR ();
+    if (aecPropertySets.MemberCount() < 1)
+        return  status;
+
+    // prepare unique input property names
+    T_Utf8StringVector  searchNames1, searchNames2;
     for (auto map : m_elementClassMap)
         {
         auto name = map.GetAecPropertyName ();
@@ -585,48 +768,66 @@ BentleyStatus   DwgImporter::_PreImportEntity (ElementImportInputs& inputs)
         if (found == searchNames2.end())
             searchNames2.push_back (name);
         }
+    if (searchNames1.empty())
+        return  BSISUCCESS;
     
     // search all AEC properties on the entity
-    if (UtilsLib::FindAecDbPropertyValues(foundValues1, foundValues2, searchNames1, searchNames2, entityId) == DwgDbStatus::Success)
+    for (auto pset = aecPropertySets.MemberBegin(); pset != aecPropertySets.MemberEnd(); ++pset)
         {
-        // at least 1 property has been found on the entity for element class mapping
-        for (size_t i = 0; i < searchNames1.size(); i++)
+        if (!pset->value.IsObject())
+            continue;
+
+        auto json = pset->value.GetObject ();
+        if (json.ObjectEmpty())
+            continue;
+
+        for (auto iter = json.MemberBegin(); iter != json.MemberEnd(); ++iter)
             {
-            // match name & value pair from the user mapping table
-            auto found = std::find_if(m_elementClassMap.begin(), m_elementClassMap.end(), [&](ElementClassMap const& map)
+            Utf8String  name(iter->name.GetString());
+            auto foundName = std::find_if(searchNames1.begin(), searchNames1.end(), [&](Utf8StringCR n){return name.Equals(n);});
+            if (foundName != searchNames1.end())
                 {
-                auto mapName = map.GetAecPropertyName();
-                auto mapValue = map.GetAecPropertyValue();
-                return mapName.Equals(searchNames1[i]) && mapValue.EqualsI(foundValues1[i]);
-                });
-
-            if (found != m_elementClassMap.end())
-                {
-                // first match is found, use it
-                auto ecclassName = DwgHelper::ValidateECNameFrom (found->GetTargetClassName());
-                auto elementClass = m_aecPropertySetSchema->GetClassCP (ecclassName.c_str());
-                if (elementClass != nullptr)
+                // use string value
+                auto propertyValue = BeRapidJsonUtilities::ToString(iter->value).DropQuotes ();
+                
+                // match name & value pair from the user mapping table
+                auto foundMap = std::find_if(m_elementClassMap.begin(), m_elementClassMap.end(), [&](ElementClassMap const& map)
                     {
-                    // remap element class
-                    inputs.SetClassId (elementClass->GetId());
+                    auto mapName = map.GetAecPropertyName();
+                    auto mapValue = map.GetAecPropertyValue();
+                    return mapName.Equals(name) && mapValue.EqualsI(propertyValue);
+                    });
 
-                    // check if element lable is also set and the value is found:
-                    for (size_t j = 0; j < searchNames2.size(); j++)
+                if (foundMap != m_elementClassMap.end())
+                    {
+                    // first match is found, use it
+                    auto ecclassName = DwgHelper::ValidateECNameFrom (foundMap->GetTargetClassName());
+                    auto elementClass = m_aecPropertySetSchema->GetClassCP (ecclassName.c_str());
+                    if (elementClass != nullptr)
                         {
-                        found = std::find_if(m_elementClassMap.begin(), m_elementClassMap.end(), [&](ElementClassMap const& map)
+                        // remap element class
+                        inputs.SetClassId (elementClass->GetId());
+
+                        // check if element label is also set and the value is found:
+                        for (size_t j = 0; j < searchNames2.size(); j++)
                             {
-                            return map.GetTargetLabelFrom().Equals(searchNames2[j]);
-                            });
-                        if (found != m_elementClassMap.end() && !foundValues2[i].empty())
-                            {
-                            // set element display label
-                            inputs.SetElementLabel (foundValues2[i]);
-                            break;
+                            auto foundValue = std::find_if(m_elementClassMap.begin(), m_elementClassMap.end(), [&](ElementClassMap const& map)
+                                {
+                                return map.GetTargetLabelFrom().Equals(searchNames2[j]);
+                                });
+                            if (foundValue != m_elementClassMap.end() && !foundValue->GetTargetLabelFrom().empty())
+                                {
+                                // set element display label
+                                inputs.SetElementLabel (propertyValue);
+                                break;
+                                }
                             }
+
+                        return  BSISUCCESS;
                         }
-                    
-                    return  BSISUCCESS;
                     }
+                // do not want to search for more than one name match!
+                return  BSIERROR;
                 }
             }
         }

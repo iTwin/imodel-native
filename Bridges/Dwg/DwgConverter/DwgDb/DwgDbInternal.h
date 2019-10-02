@@ -124,6 +124,9 @@
 #include    <RealDwg/Brep/brsftrav.h>
 #include    <RealDwg/Brep/brvtx.h>
 
+//AEC modules
+#include    <RealDwg/Base/AecVerChk.h>
+
 #endif  // DWGTOOLKIT_
 
 #ifdef _MSC_VER
