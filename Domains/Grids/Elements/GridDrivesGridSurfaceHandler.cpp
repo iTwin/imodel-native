@@ -32,13 +32,11 @@ ElementDependency::Graph const& graph,
 ElementDependency::Edge const& edge
 )
     {
-#ifdef ELEM_DEP_REFACTOR_IMODEL02
-    GridSurfacePtr thisSurface = db.Elements ().GetForEdit<GridSurface> (target);
+    GridSurfacePtr thisSurface = graph.GetDgnDb().Elements ().GetForEdit<GridSurface> (edge.GetDependentElementId());
 
     if (thisSurface.IsNull())
-        db.Txns().ReportError(*new TxnManager::ValidationError(TxnManager::ValidationError::Severity::Fatal, "target surface is NULL"));
+        graph.GetDgnDb().Txns().ReportError(true, "", "target surface is NULL");
     thisSurface->Update();
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

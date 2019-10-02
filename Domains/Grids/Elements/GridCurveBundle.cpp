@@ -203,7 +203,7 @@ ICurvePrimitivePtr GridCurveBundle::ComputeIntersection
 (
 GridSurfaceCR firstSurface,
 GridSurfaceCR secondSurface
-)
+) const
     {
     Dgn::IBRepEntityPtr firstSurfaceBRep = getBRepFromSurface(firstSurface, secondSurface.CalculateRange3d());
     if(firstSurfaceBRep.IsNull())
@@ -238,7 +238,7 @@ Utf8String createCurveLabel(GridSurfaceCPtr surface1, GridSurfaceCPtr surface2)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                06/2018
 //---------------+---------------+---------------+---------------+---------------+------
-void GridCurveBundle::UpdateGridCurve()
+void GridCurveBundle::UpdateGridCurve() const
     {
     ElementIdIterator idIter = GridSurfaceDrivesGridCurveBundleHandler::MakeGridSurfaceIterator(*this);
     bvector<Dgn::DgnElementId> ids = idIter.BuildIdList<Dgn::DgnElementId>();
@@ -298,18 +298,12 @@ void GridCurveBundle::UpdateGridCurve()
 //---------------+---------------+---------------+---------------+---------------+------
 void GridCurveBundle::_OnAllInputsHandled(Dgn::ElementDependency::Graph const& graph, Dgn::ElementDependency::Edge const& edge) const
     {
-#ifdef ELEM_DEP_REFACTOR_IMODEL02
-// const vs. non-const this
     UpdateGridCurve();
-#endif
     }
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                06/2018
 //---------------+---------------+---------------+---------------+---------------+------
 void GridCurveBundle::_OnBeforeOutputsHandled(Dgn::ElementDependency::Graph const& graph, Dgn::ElementDependency::Edge const& edge) const
     {
-#ifdef ELEM_DEP_REFACTOR_IMODEL02
-// const vs. non-const this
     UpdateGridCurve();
-#endif
     }

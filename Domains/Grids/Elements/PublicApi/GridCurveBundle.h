@@ -19,8 +19,8 @@ struct GridCurveBundle : Dgn::DriverBundleElement
     DGNELEMENT_DECLARE_MEMBERS(GRIDS_CLASS_GridCurveBundle, Dgn::DriverBundleElement)
 
     private:
-        void UpdateGridCurve();
-        ICurvePrimitivePtr ComputeIntersection(GridSurfaceCR thisSurface, GridSurfaceCR otherSurface);
+        void UpdateGridCurve() const;
+        ICurvePrimitivePtr ComputeIntersection(GridSurfaceCR thisSurface, GridSurfaceCR otherSurface) const;
 
         static ECN::ECClassId GetCurvesSetRelClassId(Dgn::DgnDbR);
         void SetCurvesSet(GridCurvesSetCR portion);

@@ -387,7 +387,7 @@ public:
     bool HasFatalError() {return m_fatalValidationError;}
     int NumValidationErrors() {return m_txnErrors;}
     void LogError(bool fatal) { ++m_txnErrors; m_fatalValidationError |= fatal;}
-    void ReportError(bool fatal, Utf8CP errorType, Utf8CP msg);
+    DGNPLATFORM_EXPORT void ReportError(bool fatal, Utf8CP errorType, Utf8CP msg);
 
     //! Get the dgn_TxnTable::Element TxnTable for this TxnManager
     DGNPLATFORM_EXPORT dgn_TxnTable::Element& Elements() const;
