@@ -2550,6 +2550,12 @@ void switchElementCategory(Dgn::GeometricElement3dR element, Dgn::DgnCategoryId 
     element.SetCategoryId(targetCategoryId);
 
     auto geomBuilderPtr = GeometryBuilder::Create(element);
+    if (!geomBuilderPtr.IsValid())
+        {     
+        ORDBRIDGE_LOGI(Utf8PrintfString("switchElementCategory - Failed to switch element '%s'.  No Builder.", element.GetDisplayLabel().c_str()).c_str());
+        return;
+        }
+
     for (auto& iter : oldGeomColl)
         {
         auto geomParams = iter.GetGeometryParams(); // Intentionally copied
@@ -2563,15 +2569,25 @@ void switchElementCategory(Dgn::GeometricElement3dR element, Dgn::DgnCategoryId 
         else
             {
             element.SetCategoryId(oldCategoryId);
+            ORDBRIDGE_LOGI(Utf8PrintfString("switchElementCategory - Failed to switch element '%s'.  No category.", element.GetDisplayLabel().c_str()).c_str());
+            return;
+            }
+
+        auto geomPtr = iter.GetGeometryPtr();
+        if (!geomPtr.IsValid())
+            {
+            element.SetCategoryId(oldCategoryId);
+            ORDBRIDGE_LOGI(Utf8PrintfString("switchElementCategory - Failed to switch element '%s'.  Geometry iterator failed.", element.GetDisplayLabel().c_str()).c_str());
             return;
             }
 
         geomParams.SetCategoryId(targetCategoryId, false);
         geomParams.SetSubCategoryId(targetSubCatId, false);
+
         if (!geomBuilderPtr->Append(geomParams))
             BeAssert(false);
 
-        if (!geomBuilderPtr->Append(*iter.GetGeometryPtr()))
+        if (!geomBuilderPtr->Append(*geomPtr))
             BeAssert(false);
         }
 
