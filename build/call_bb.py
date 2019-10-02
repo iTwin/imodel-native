@@ -19,14 +19,20 @@ def doubleToTimeString(start, end):
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 def getBBCmd():
+    return 'python ' + os.path.join(os.environ['SRCROOT'], 'BentleyBuild', 'BentleyBuild.py')
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+def createSeedEnv():
+    seedEnv = os.environ.copy()
+    
     # VSTS pushes variables into the environment CAPITALIZED. Unix environment variables are case-sensitive; remap what we know we care about.
     if os.name != 'nt':
         if not 'SrcRoot' in os.environ:
-            os.environ['SrcRoot'] = os.environ['SRCROOT']
+            seedEnv['SrcRoot'] = os.environ['SRCROOT']
         if not 'OutRoot' in os.environ:
-            os.environ['OutRoot'] = os.environ['OUTROOT']
+            seedEnv['OutRoot'] = os.environ['OUTROOT']
 
-    return 'python ' + os.path.join(os.environ['SrcRoot'], 'BentleyBuild', 'BentleyBuild.py')
+    return seedEnv
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 def callForPull(args, config):
@@ -35,6 +41,10 @@ def callForPull(args, config):
 
     allArchs = []
     allStrats = []
+
+    # BB only pulls bsitools-signingclient when this is set. It doesn't actually use its value.
+    seedEnv = createSeedEnv()
+    seedEnv['BSI_SIGNING_TOKEN'] = '1'
 
     # If a single architecture is requested, use only it and filter (still support multiple strategies).
     # Otherwise glom the architectures together.
@@ -74,7 +84,7 @@ def callForPull(args, config):
 
     print(cmd)
     cmdStartTime = time.time()
-    status = subprocess.call(cmd, shell=True)
+    status = subprocess.call(cmd, shell=True, env=seedEnv)
     callTimes['Seed Pull'] = doubleToTimeString(cmdStartTime, time.time())
     
     # On Linux, `bash` seems to return 256 on an error, regardless of what the SH script actually returns.
@@ -89,14 +99,18 @@ def callForPull(args, config):
 def callEachStrategy(args, config, verData):
     callTimes = {}
     status = 0
-
+    
     isFirstStrategy = True
+    seedEnv = createSeedEnv()
 
     for stratConfig in config['strategies']:
         print('Processing ' + stratConfig['name'] + '...')
         
         if args.arch and not any(a for a in args.arch.split('+') if a.lower() in stratConfig['archs'].lower().split('+')):
             continue
+
+        # Reset each time instead of trying to push/pop.
+        bbEnv = seedEnv.copy()
 
         bbStrats = stratConfig['name']
         if ('augments' in stratConfig) and stratConfig['augments']:
@@ -108,24 +122,27 @@ def callEachStrategy(args, config, verData):
             print('Using version ' + version)
             
             versionSplit = version.split('.')
-            os.environ['REL_V'] = versionSplit[0].rjust(2, '0')
-            os.environ['MAJ_V'] = versionSplit[1].rjust(2, '0')
-            os.environ['MIN_V'] = versionSplit[2].rjust(2, '0')
-            os.environ['SUBMIN_V'] = versionSplit[3].rjust(2, '0')
+            bbEnv['REL_V'] = versionSplit[0].rjust(2, '0')
+            bbEnv['MAJ_V'] = versionSplit[1].rjust(2, '0')
+            bbEnv['MIN_V'] = versionSplit[2].rjust(2, '0')
+            bbEnv['SUBMIN_V'] = versionSplit[3].rjust(2, '0')
+
+            # See DEFAULT_VERSION in compute_versions.py
+            if version != '99.99.99.99' and 'SIGNING_TOKEN_VALUE' in os.environ:
+                bbEnv['BSI_SIGNING_TOKEN'] = os.environ['SIGNING_TOKEN_VALUE']
         else:
             print('Could not find a version for ' + stratConfig['name'] + ' in version data, using 99.99.99.99.')
-            os.environ['REL_V'] = '99'
-            os.environ['MAJ_V'] = '99'
-            os.environ['MIN_V'] = '99'
-            os.environ['SUBMIN_V'] = '99'
+            bbEnv['REL_V'] = '99'
+            bbEnv['MAJ_V'] = '99'
+            bbEnv['MIN_V'] = '99'
+            bbEnv['SUBMIN_V'] = '99'
 
         noArch = False
-        bbEnv = None
 
         if 'bdf' == args.action:
             # If present, associate the BDF with a PRG ID for release tracking.
             if ('prg_id' in stratConfig) and stratConfig['prg_id']:
-                os.environ['PrgProductId'] = str(stratConfig['prg_id'])
+                bbEnv['PrgProductId'] = str(stratConfig['prg_id'])
 
             # BDF names must be lower-case because BentleyBootstrap.py always lower-cases its input, which affects case-sensitive file systems.
             bdfPath = os.path.join(args.bdfdir, stratConfig['name'].lower() + '.xml')
@@ -161,7 +178,6 @@ def callEachStrategy(args, config, verData):
 
             # Build agents are non-admin services... not sure how to support WIX ICE validators yet...
             print("WARNING: SKIPPING WIX INSTALLER ICE VALIDATION")
-            bbEnv = os.environ.copy()
             bbEnv['INSTALLER_SKIP_VALIDATION'] = '1'
 
             if stratConfig['has_installers'] == 'basic':
@@ -190,7 +206,7 @@ def callEachStrategy(args, config, verData):
             cmd = getBBCmd() + ' -v {0} -s "{1}" {2} {3}'.format(args.verbosity, bbStrats, archArg, currAction)
             print(cmd)
             
-            status = subprocess.call(cmd, shell=True, env=(bbEnv if bbEnv else os.environ))
+            status = subprocess.call(cmd, shell=True, env=bbEnv)
             if status != 0:
                 break
         

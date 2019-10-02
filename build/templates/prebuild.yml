@@ -1,0 +1,78 @@
+steps:
+  - task: DeleteFiles@1
+    displayName: Purge teamConfig/*.cache
+    inputs:
+      SourceFolder: $(BB_SRC_ROOT)/teamConfig
+      Contents: '*.cache'
+
+  - task: setenv@0
+    displayName: Windows Environment
+    condition: and(succeeded(), eq('windows_nt', variables['Agent.OS']))
+    inputs:
+      envVars: |
+        IS_WINDOWS=1
+
+        # Make PY scripts like BB flush output for immediate feedback in build logs.
+        PYTHONUNBUFFERED=1
+        
+        # Shared shell config
+        BSISRC=$(BB_SRC_ROOT)/
+        BSIOUT=$(Build.BinariesDirectory)/
+
+        # Use a unique mspdbsrv.exe per-job to alleviate PDB write issues when an existing instance is killed based on uptime.
+        _MSPDBSRV_ENDPOINT_=$(Build.BuildId)
+
+  - task: setenv@0
+    displayName: Linux Environment
+    condition: and(succeeded(), eq('linux', variables['Agent.OS']))
+    inputs:
+      envVars: |
+        IS_LINUX=1
+
+        # Make PY scripts like BB flush output for immediate feedback in build logs.
+        PYTHONUNBUFFERED=1
+        
+        # Shared shell config
+        SRCROOT=$(BB_SRC_ROOT)/
+        OUTROOT=$(Build.BinariesDirectory)/
+        BMAKE_OPT=-I$(BB_SRC_ROOT)/bsicommon/PublicSDK/
+        BMAKE_PYTHON_SCRIPTS_DIR=$(BB_SRC_ROOT)/bsicommon/build/
+        BSI=1
+
+  - task: setenv@0
+    displayName: MacOS Environment
+    condition: and(succeeded(), eq('darwin', variables['Agent.OS']))
+    inputs:
+      envVars: |
+        IS_MACOS=1
+        
+        # Make PY scripts like BB flush output for immediate feedback in build logs.
+        PYTHONUNBUFFERED=1
+        
+        # Shared shell config
+        SRCROOT=$(BB_SRC_ROOT)/
+        OUTROOT=$(Build.BinariesDirectory)/
+        BMAKE_OPT=-I$(BB_SRC_ROOT)/bsicommon/PublicSDK/
+        BMAKE_PYTHON_SCRIPTS_DIR=$(BB_SRC_ROOT)/bsicommon/build/
+        BSI=1
+
+  - task: bentleybootstrap@0
+    displayName: BentleyBootstrap
+    inputs:
+      streamname: imodel02
+      srcroot: $(BB_SRC_ROOT)
+
+  - task: createsymlink@0
+    displayName: Link imodel02 Repository
+    inputs:
+      linkPath: $(BB_SRC_ROOT)/imodel02
+      linkTarget: $(Build.SourcesDirectory)
+
+  - task: PythonScript@0
+    displayName: Windows Shared Shell
+    condition: and(succeeded(), variables['IS_WINDOWS'])
+    inputs:
+      scriptSource: filePath
+      scriptPath: $(BB_SRC_ROOT)/imodel02/build/capture_env.py
+      arguments: $(BB_SRC_ROOT)/bsicommon/shell/SharedShellEnv.bat
+  

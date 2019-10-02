@@ -1,0 +1,24 @@
+steps:
+  - download: current
+    displayName: Download BDFs
+    artifact: bdf
+  
+  - template: ./prebuild.yml
+
+  - script: python $(BB_SRC_ROOT)/imodel02/build/call_bb.py pull $(BB_V) -a $(BB_ARCH) -b $(BDF_DIR)
+    displayName: Pull
+
+  - script: python $(BB_SRC_ROOT)/imodel02/build/call_bb.py build $(BB_V) -a $(BB_ARCH) -r $(VERSIONS_FILE)
+    displayName: Build
+    env:
+      SIGNING_TOKEN_VALUE: $(SIGNING_TOKEN_VALUE)
+
+  - script: python $(BB_SRC_ROOT)/imodel02/build/call_bb.py createnugets $(BB_V) -a $(BB_ARCH) -r $(VERSIONS_FILE)
+    displayName: Create Nugets
+    condition: and(succeeded(), variables['STRATS_TO_RELEASE'])
+  
+  - script: python $(BB_SRC_ROOT)/imodel02/build/call_bb.py createinstallers $(BB_V) -a $(BB_ARCH) -r $(VERSIONS_FILE)
+    displayName: Create Installers
+    condition: and(succeeded(), variables['STRATS_TO_RELEASE'])
+    env:
+      SIGNING_TOKEN_VALUE: $(SIGNING_TOKEN_VALUE)

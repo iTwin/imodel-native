@@ -1,0 +1,395 @@
+# https://aka.ms/yaml
+
+name: imodel02-yaml-$(Date:yyyy.MM.dd)$(Rev:.r)
+trigger: none
+variables:
+  BB_SRC_ROOT: $(Agent.BuildDirectory)/bbsrc
+  SENTRY_ORG_SLUG: bentley-systems-inc
+  SENTRY_PROJECT_SLUG: imodeljsnodeaddon
+
+jobs:
+  # ================================================================================================
+  - job: create_bdf
+    displayName: Create BDF
+    timeoutInMinutes: 60
+    pool:
+      name: iModelTechCI
+      demands: 'Agent.OS -equals Windows_NT'
+    variables:
+      BDF_DIR: $(Build.ArtifactStagingDirectory)/bdf
+      VERSIONS_FILE: $(BDF_DIR)/versions.json
+    
+    steps:
+      - template: ./templates/prebuild.yml
+
+      - script: python $(BB_SRC_ROOT)/imodel02/build/call_bb.py pull $(BB_V)
+        displayName: Pull
+
+      - script: python $(BB_SRC_ROOT)/imodel02/build/call_bb.py clean $(BB_V)
+        displayName: Clean
+
+      - script: python $(BB_SRC_ROOT)/imodel02/build/compute_versions.py $(BB_V) -o $(VERSIONS_FILE) --reserve $(STRATS_TO_RELEASE)
+        displayName: Compute Versions
+      
+      - script: python $(BB_SRC_ROOT)/imodel02/build/call_bb.py checkunused $(BB_V) -r $(VERSIONS_FILE)
+        displayName: Validate Versions
+      
+      - script: python $(BB_SRC_ROOT)/imodel02/build/call_bb.py bdf $(BB_V) -b $(BDF_DIR) -r $(VERSIONS_FILE)
+        displayName: Create BDFs
+
+      - publish: $(BDF_DIR)
+        displayName: Save BDFs
+        artifact: bdf
+      
+      - task: PythonScript@0
+        displayName: Tag Release Builds
+        inputs:
+          scriptSource: inline
+          script: |
+            import os, urllib2
+            tags = [s + 'Release' for s in os.environ.get('STRATS_TO_RELEASE', '').split()]
+            if tags:
+                url = '{0}{1}/_apis/build/builds/{2}/tags?api-version=5.1'.format(os.environ['SYSTEM_TEAMFOUNDATIONCOLLECTIONURI'], os.environ['SYSTEM_TEAMPROJECT'], os.environ['BUILD_BUILDID'])
+                data = "['" + "', '".join(tags) + "']"
+                headers = {
+                  'Authorization': 'Bearer $(System.AccessToken)',
+                  'Content-Type': 'application/json'
+                }
+                print('POST ' + data + '\nTO ' + url)
+                response = urllib2.urlopen(urllib2.Request(url, data, headers))
+                print('Response: ' + str(response.getcode()))
+  
+  # ================================================================================================
+  - job: build_winx64
+    displayName: Build Windows Desktop x64
+    timeoutInMinutes: 120
+    dependsOn: create_bdf
+    pool:
+      name: iModelTechCI
+      demands: 'Agent.OS -equals Windows_NT'
+    variables:
+      BB_ARCH: x64
+      BDF_DIR: $(Pipeline.Workspace)/bdf
+      VERSIONS_FILE: $(BDF_DIR)/versions.json
+
+    steps:
+      - template: ./templates/build.yml
+      
+      - script: bb -s "MstnBridge;PRG" diffreport --usePrevious $(BDF_DIR)/mstnbridge.xml $(BDF_DIR)/mstnbridge.xml --outputPath $(BDF_DIR)/difflog
+        displayName: Compute MstnBridge Change Logs
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'MstnBridge'))
+
+      - script: bb -s "DwgBridge;PRG" diffreport --usePrevious $(BDF_DIR)/dwgbridge.xml $(BDF_DIR)/dwgbridge.xml --outputPath $(BDF_DIR)/difflog
+        displayName: Compute DwgBridge Change Logs
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'DwgBridge'))
+      
+      - publish: $(BDF_DIR)/difflog
+        displayName: Save BBChangeLogs
+        condition: and(succeeded(), or(contains(variables['STRATS_TO_RELEASE'], 'MstnBridge'), contains(variables['STRATS_TO_RELEASE'], 'DwgBridge')))
+        artifact: BBChangeLogs
+
+      - task: EmbedPdbSourceInfo@0
+        displayName: Embed Source URLs in PDBs
+        condition: and(succeeded(), variables['STRATS_TO_RELEASE'])
+        inputs:
+          GitRoot: '$(Build.SourcesDirectory)'
+          OutRoot: '$(Build.BinariesDirectory)/Winx64/build'
+          SearchPattern: |
+            **/*.pdb
+            !**/objects.pdb
+            !**/*Test*/**/*
+          DestinationPath: '$(Build.ArtifactStagingDirectory)/Symbols-Winx64'
+      
+      - task: PublishSymbols@2
+        displayName: 'Publish PDBs'
+        condition: and(succeeded(), variables['STRATS_TO_RELEASE'])
+        inputs:
+          SymbolsFolder: '$(Build.ArtifactStagingDirectory)/Symbols-Winx64'
+          SearchPattern: '**/*.pdb'
+          IndexSources: false
+          SymbolServerType: TeamServices
+          SymbolsProduct: imodel02
+          SymbolsArtifactName: 'imodel02_Symbols_Winx64'
+
+      - publish: $(Build.BinariesDirectory)/Winx64/Nugetpkg/iModelCoreNuget
+        displayName: Save iModelCoreNuget_x64
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'iModelCore'))
+        artifact: iModelCoreNuget_x64
+
+      - publish: $(Build.BinariesDirectory)/Winx64/Nugetpkg/iModelCoreTestingNuget
+        displayName: Save iModelCoreTestingNuget_Winx64
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'iModelCore'))
+        artifact: iModelCoreTestingNuget_Winx64
+
+      - task: archiveandpublishartifact@0
+        displayName: Save imodeljs-win32-x64
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'iModelJsNodeAddon'))
+        inputs:
+          rootFolderOrFile: $(Build.BinariesDirectory)/Winx64/imodeljsnodeaddon_pkgs/imodeljs-win32-x64
+          artifactName: imodeljs-win32-x64
+
+      - task: archiveandpublishartifact@0
+        displayName: Save imodeljs-native
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'iModelJsNodeAddon'))
+        inputs:
+          rootFolderOrFile: $(Build.BinariesDirectory)/Winx64/imodeljsnodeaddon_pkgs/imodeljs-native
+          artifactName: imodeljs-native
+        
+      - task: archiveandpublishartifact@0
+        displayName: Save imodel-bank-win32-x64
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'iModelBankAddon'))
+        inputs:
+          rootFolderOrFile: $(Build.BinariesDirectory)/Winx64/imodelbankaddon_pkgs/imodel-bank-win32-x64
+          artifactName: imodel-bank-win32-x64
+        
+      - task: archiveandpublishartifact@0
+        displayName: Save imodel-bank
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'iModelBankAddon'))
+        inputs:
+          rootFolderOrFile: $(Build.BinariesDirectory)/Winx64/imodelbankaddon_pkgs/imodel-bank
+          artifactName: imodel-bank
+
+      - publish: $(Build.BinariesDirectory)/Winx64/Nugetpkg/DgnV8ConverterNuget
+        displayName: Save DgnV8ConverterNuget
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'iModelBridgeCore'))
+        artifact: DgnV8ConverterNuget
+
+      - publish: $(Build.BinariesDirectory)/Winx64/Nugetpkg/iModelBridgeFwkNuget
+        displayName: Save iModelBridgeFwkNuget
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'iModelBridgeCore'))
+        artifact: iModelBridgeFwkNuget
+
+      - publish: $(Build.BinariesDirectory)/Winx64/Nugetpkg/iModelFwkForPPNuget
+        displayName: Save iModelFwkForPPNuget
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'iModelBridgeCore'))
+        artifact: iModelFwkForPPNuget
+
+      - publish: $(Build.BinariesDirectory)/Winx64/Nugetpkg/DesignModelingSDKNuget
+        displayName: Save DesignModelingSDKNuget
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'BuildingDomain'))
+        artifact: DesignModelingSDKNuget
+
+      - publish: $(Build.BinariesDirectory)/Winx64/InstallSetContext/MstnBridge/iModelBridgeMstnx64.msi
+        displayName: Save iModelBridgeMstnx64
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'MstnBridge'))
+        artifact: iModelBridgeMstnx64
+
+      - publish: $(Build.BinariesDirectory)/Winx64/imodelbridgeaddon_pkgs
+        displayName: Save iModelBridgeAddonPackagesx64
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'MstnBridge'))
+        artifact: iModelBridgeAddonPackagesx64
+      
+      - powershell: |
+          $installerSearch = [System.IO.Path]::Combine($env:OutRoot, "Winx64", "build", "WixBundleBuild", "RealDwgBridge", "build", "*RealDwgImporterx64*.exe")
+          $installerPath = (Get-ChildItem $installerSearch).FullName
+          Write-Host ([System.String]::Format("{0} = {1}`n##vso[task.setvariable variable={0}]{1}", "REALDWGIMPORTERX64_PATH", $installerPath))
+        displayName: Compute REALDWGIMPORTERX64_PATH
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'DwgBridge'))
+
+      - publish: $(REALDWGIMPORTERX64_PATH)
+        displayName: Save [Real]DwgBridge
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'DwgBridge'))
+        artifact: DwgBridge
+
+      - powershell: |
+          $installerSearch = [System.IO.Path]::Combine($env:OutRoot, "Winx64", "build", "WixBundleBuild", "OpenDwgBridge", "build", "*OpenDwgImporterx64*.exe")
+          $installerPath = (Get-ChildItem $installerSearch).FullName
+          Write-Host ([System.String]::Format("{0} = {1}`n##vso[task.setvariable variable={0}]{1}", "OPENDWGIMPORTERX64_PATH", $installerPath))
+        displayName: Compute OPENDWGIMPORTERX64_PATH
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'DwgBridge'))
+      
+      - publish: $(OPENDWGIMPORTERX64_PATH)
+        displayName: Save OpenDwgBridge
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'DwgBridge'))
+        artifact: OpenDwgBridge
+
+      - task: archiveandpublishartifact@0
+        displayName: Save [Real]DwgBridgeTests
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'DwgBridge'))
+        inputs:
+          rootFolderOrFile: $(Build.BinariesDirectory)/Winx64/Product/RealDwgBridgeTests
+          artifactName: DwgBridgeTests
+
+      - task: archiveandpublishartifact@0
+        displayName: Save [RealDwg]Test2dImporter
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'DwgBridge'))
+        inputs:
+          rootFolderOrFile: $(Build.BinariesDirectory)/Winx64/Product/RealDwgImporterTests/Test2dImporter.exe
+          artifactName: Test2dImporter
+
+      - publish: $(Build.BinariesDirectory)/Winx64/Nugetpkg/RealDwgBridgeSdkNuget
+        displayName: Save RealDwgBridgeSdkNuget_x64
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'DwgBridge'))
+        artifact: RealDwgBridgeSdkNuget_x64
+
+  # ================================================================================================
+  - job: build_linuxx64
+    displayName: Build Linux x64
+    timeoutInMinutes: 120
+    dependsOn: create_bdf
+    pool:
+      name: iModelTechCI
+      demands: 'Agent.OS -equals Linux'
+    variables:
+      BB_ARCH: linuxx64
+      BDF_DIR: $(Pipeline.Workspace)/bdf
+      VERSIONS_FILE: $(BDF_DIR)/versions.json
+
+    steps:
+      - template: ./templates/build.yml
+
+      - script: python $(BB_SRC_ROOT)/imodel02/build/linux_process_all_symbols.py
+        displayName: Process Linux Symbols
+        env:
+          SENTRY_AUTH_TOKEN: $(SENTRY_AUTH_TOKEN)
+
+      - publish: $(Build.BinariesDirectory)/LinuxX64/Nugetpkg/iModelCoreNuget
+        displayName: Save iModelCoreNuget_LinuxX64
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'iModelCore'))
+        artifact: iModelCoreNuget_LinuxX64
+
+      - publish: $(Build.BinariesDirectory)/LinuxX64/Nugetpkg/iModelCoreTestingNuget
+        displayName: Save iModelCoreTestingNuget_LinuxX64
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'iModelCore'))
+        artifact: iModelCoreTestingNuget_LinuxX64
+
+      - task: archiveandpublishartifact@0
+        displayName: Save imodeljs-linux-x64
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'iModelJsNodeAddon'))
+        inputs:
+          rootFolderOrFile: $(Build.BinariesDirectory)/LinuxX64/imodeljsnodeaddon_pkgs/imodeljs-linux-x64
+          artifactName: imodeljs-linux-x64
+
+      - task: archiveandpublishartifact@0
+        displayName: Save imodel-bank-linux-x64
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'iModelBankAddon'))
+        inputs:
+          rootFolderOrFile: $(Build.BinariesDirectory)/LinuxX64/imodeljsnodeaddon_pkgs/imodeljs-linux-x64
+          artifactName: imodel-bank-linux-x64
+
+  # ================================================================================================
+  - job: build_macosx64
+    displayName: Build MacOS x64
+    timeoutInMinutes: 120
+    dependsOn: create_bdf
+    pool:
+      name: iModelTechCI
+      demands: 'Agent.OS -equals Darwin'
+    variables:
+      BB_ARCH: macosx64
+      BDF_DIR: $(Pipeline.Workspace)/bdf
+      VERSIONS_FILE: $(BDF_DIR)/versions.json
+      BB_DEFAULT_NUM_BUILD_THREADS: 6
+
+    steps:
+      - template: ./templates/build.yml
+
+      - publish: $(Build.BinariesDirectory)/MacOSX64/Nugetpkg/iModelCoreNuget
+        displayName: Save iModelCoreNuget_MacOSX64
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'iModelCore'))
+        artifact: iModelCoreNuget_MacOSX64
+
+      - publish: $(Build.BinariesDirectory)/MacOSX64/Nugetpkg/iModelCoreTestingNuget
+        displayName: Save iModelCoreTestingNuget_MacOSX64
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'iModelCore'))
+        artifact: iModelCoreTestingNuget_MacOSX64
+
+      - task: archiveandpublishartifact@0
+        displayName: Save imodeljs-darwin-x64
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'iModelJsNodeAddon'))
+        inputs:
+          rootFolderOrFile: $(Build.BinariesDirectory)/MacOSX64/imodeljsnodeaddon_pkgs/imodeljs-darwin-x64
+          artifactName: imodeljs-darwin-x64
+  
+  # ================================================================================================
+  - job: build_iosarm64
+    displayName: Build iOS ARM64
+    timeoutInMinutes: 120
+    dependsOn: create_bdf
+    pool:
+      name: iModelTechCI
+      demands: 'Agent.OS -equals Darwin'
+    variables:
+      BB_ARCH: iosarm64
+      BDF_DIR: $(Pipeline.Workspace)/bdf
+      VERSIONS_FILE: $(BDF_DIR)/versions.json
+      BB_DEFAULT_NUM_BUILD_THREADS: 6
+
+    steps:
+      - template: ./templates/build.yml
+
+      - publish: $(Build.BinariesDirectory)/iosarm64/Nugetpkg/iModelCoreNuget
+        displayName: Save iModelCoreNuget_iosarm64
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'iModelCore'))
+        artifact: iModelCoreNuget_iosarm64
+
+      - task: archiveandpublishartifact@0
+        displayName: Save imodeljs-ios-arm64
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'iModelJsMobile'))
+        inputs:
+          rootFolderOrFile: $(Build.BinariesDirectory)/iOSARM64/imodeljsnodeaddon_pkgs/imodeljs-ios-arm64
+          artifactName: imodeljs-ios-arm64
+  
+  # ================================================================================================
+  - job: build_iosx64
+    displayName: Build iOS x64
+    condition: and(succeeded(), eq('Schedule', variables['Build.Reason']))
+    timeoutInMinutes: 120
+    dependsOn: create_bdf
+    pool:
+      name: iModelTechCI
+      demands: 'Agent.OS -equals Darwin'
+    variables:
+      BB_ARCH: iosx64
+      BDF_DIR: $(Pipeline.Workspace)/bdf
+      VERSIONS_FILE: $(BDF_DIR)/versions.json
+      BB_DEFAULT_NUM_BUILD_THREADS: 6
+
+    steps:
+      - template: ./templates/build.yml
+
+      - publish: $(Build.BinariesDirectory)/iosx64/Nugetpkg/iModelCoreNuget
+        displayName: Save iModelCoreNuget_iosx64
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'iModelCore'))
+        artifact: iModelCoreNuget_iosx64
+
+      - task: archiveandpublishartifact@0
+        displayName: Save imodeljs-ios-x64
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'iModelJsMobile'))
+        inputs:
+          rootFolderOrFile: $(Build.BinariesDirectory)/iOSX64/imodeljsnodeaddon_pkgs/imodeljs-ios-x64
+          artifactName: imodeljs-ios-x64
+  
+  # ================================================================================================
+  - job: build_androidarm64
+    displayName: Build Android ARM64
+    condition: and(succeeded(), eq('Schedule', variables['Build.Reason']))
+    timeoutInMinutes: 120
+    dependsOn: create_bdf
+    pool:
+      name: iModelTechCI
+      demands: 'Agent.OS -equals Windows_NT'
+    variables:
+      BB_ARCH: androidarm64
+      BDF_DIR: $(Pipeline.Workspace)/bdf
+      VERSIONS_FILE: $(BDF_DIR)/versions.json
+
+    steps:
+      - template: ./templates/build.yml
+  
+  # ================================================================================================
+  - job: build_winrtx64
+    displayName: Build UWP x64
+    condition: and(succeeded(), eq('Schedule', variables['Build.Reason']))
+    timeoutInMinutes: 120
+    dependsOn: create_bdf
+    pool:
+      name: iModelTechCI
+      demands: 'Agent.OS -equals Windows_NT'
+    variables:
+      BB_ARCH: winrtx64
+      BDF_DIR: $(Pipeline.Workspace)/bdf
+      VERSIONS_FILE: $(BDF_DIR)/versions.json
+
+    steps:
+      - template: ./templates/build.yml
