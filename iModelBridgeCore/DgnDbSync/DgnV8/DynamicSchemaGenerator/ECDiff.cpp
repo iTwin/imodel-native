@@ -1927,7 +1927,7 @@ MergeStatus ECSchemaMergeTool::MergeSchema (ECN::ECSchemaPtr& mergedSchema)
     if ((v = GetMergeValue (r, DiffNodeId::DisplayLabel)) == NULL)
         {
         if (GetDefault().GetIsDisplayLabelDefined())
-            GetMerged().SetDisplayLabel(GetDefault().GetDescription());
+            GetMerged().SetDisplayLabel(GetDefault().GetDisplayLabel());
         }
     else
         GetMerged().SetDisplayLabel (v->GetValueString());
@@ -2582,8 +2582,8 @@ MergeStatus ECSchemaMergeTool::MergeProperty (ECDiffNodeP diff, ECN::ECClassR me
     PRECONDITION(mergedProperty != nullptr, MergeStatus::Failed);
     if ((v = GetMergeValue (*diff, DiffNodeId::DisplayLabel)) == NULL)
         {
-        if (mergedProperty->GetIsDisplayLabelDefined())
-            mergedProperty->SetDisplayLabel(defaultProperty->GetDescription());
+        if (defaultProperty->GetIsDisplayLabelDefined())
+            mergedProperty->SetDisplayLabel(defaultProperty->GetDisplayLabel());
         }
     else
         mergedProperty->SetDisplayLabel (v->GetValueString());
@@ -2601,7 +2601,7 @@ MergeStatus ECSchemaMergeTool::MergeProperty (ECDiffNodeP diff, ECN::ECClassR me
     ECDiffNodeP customAttributes = diff->ImplGetChildById (DiffNodeId::CustomAttributes);
     if (customAttributes == NULL)
         {
-        if ((status = AppendCustomAttributesToMerge(GetMerged(), GetDefault()))!= MergeStatus::Success)
+        if ((status = AppendCustomAttributesToMerge(*mergedProperty, *defaultProperty))!= MergeStatus::Success)
             return status;
         }
     else
