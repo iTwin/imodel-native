@@ -833,7 +833,7 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
     DisplayStylePtr existingStyle;
     if (v8displayStyle)
         {
-        Utf8String styleName = Utf8String(v8displayStyle->GetName().c_str());   
+        Utf8String styleName = Utf8String(v8displayStyle->GetName().c_str());
         existingStyle = m_dgndb->Elements().GetForEdit<DisplayStyle>(m_dgndb->Elements().QueryElementIdByCode(DisplayStyle::CreateCode(*definitionModel, styleName)));
         // Need to ensure that the json value holds a uint, not an int
         if (existingStyle.IsValid())
@@ -1195,7 +1195,7 @@ void RootModelConverter::_ConvertDynamicViews(DgnFileR file)
 
         if (NULL == supportDetailingSymbol)
             continue;
-        
+
         ConvertDynamicView(*namedView, m_rootTrans, *supportDetailingSymbol);
         }
 
@@ -1209,9 +1209,7 @@ void RootModelConverter::_ConvertDynamicViews()
     if (!EnableDynamicViewConversion())
         return;
 
-    _ConvertDynamicViews(*GetRootV8File());
-
-    for (auto& file : m_filesKeepAlive)
+    for (auto& file : m_v8Files)
         _ConvertDynamicViews(*file);
     }
 
@@ -1299,7 +1297,7 @@ StatusInt   DynamicViewMapper::GetCalloutPlacementFromIClip(DPoint3d& origin, Be
     viewClipObject->GetPoints (points, 0, numPoints);
 
     origin = (DPoint3dCR)points[0];
-    
+
     rotMatrix = (BentleyApi::RotMatrixCR) viewClipObject->GetRotationMatrix();
 
     return SUCCESS;
@@ -1343,13 +1341,14 @@ BentleyStatus   DynamicViewMapper::UpdateGeometryStream(DgnElementR element, Ele
     unitTransform.Multiply(origin);
     YawPitchRollAngles  angles;
     YawPitchRollAngles::TryFromRotMatrix(angles, rotMatrix);
-    
+
     auto geomEl = element.ToGeometrySource3dP();
     if (nullptr != geomEl)
         {
         Placement3d placement;
         placement.SetOrigin(origin);
         placement.SetAngles(angles);
+        placement.GetElementBoxR().InitFrom(DPoint3d::FromZero());
         geomEl->SetPlacement(placement);
         geomEl->SetCategoryId(categoryId);
         }
@@ -1398,7 +1397,7 @@ BentleyStatus DynamicViewMapper::CreateSectionLocation(DgnElementPtr& element, U
         }
 
     DgnModelId targetModelId = GetDgnModel().GetModelId();
-    
+
     //TODO: Generate a code for a dynamic view.
 
     DgnElement::CreateParams params(m_converter.GetDgnDb(), targetModelId, sectionLocationId);
@@ -1408,7 +1407,7 @@ BentleyStatus DynamicViewMapper::CreateSectionLocation(DgnElementPtr& element, U
         LOG.debugv("Failed to create element from element handler for %s %s", Converter::IssueReporter::FmtElement(namedViewElement).c_str(), Converter::IssueReporter::FmtModel(*namedViewElement.GetDgnModelP()).c_str());
         return BSIERROR;
         }
-    
+
     if (SUCCESS != UpdateProperties(*element))
         return BSIERROR;
 
@@ -1463,7 +1462,7 @@ BentleyStatus Converter::ConvertDynamicView(DgnV8Api::NamedView& namedView, Tran
         if (element->Insert().IsNull())
             return BSIERROR;
         }
-    
+
     return SUCCESS;
     }
 
