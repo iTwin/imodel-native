@@ -179,6 +179,7 @@ enum class BisConversionRule
     ToGenericGroup, // This is used when the named group element has no primary ECClass and so is created using the Generic:Group class
     ToDefaultBisBaseClass,
     ToDefaultBisClass,
+    ToPhysicalType
 };
 
 //=======================================================================================
@@ -354,6 +355,7 @@ struct ElementConversionResults
     DgnElementPtr m_element;  //!< The DgnDb element created to represent the V8 element -- optional
     V8ECInstanceKey m_v8PrimaryInstance; //!< The primary ECInstance found on the V8 element
     bvector<bpair<V8ECInstanceKey,ECN::IECInstancePtr>> m_v8SecondaryInstanceMappings; //!< The secondary ECInstances found on the v8 element plus their converted IECInstance
+    DgnElementPtr m_typeElement;        //!< For Revit schemas, each input instance gets divided into a PhysicalElement and a TypeDefinitionElement.  
     /* ********************************* */
 
     bvector<ElementConversionResults> m_childElements; //!< Child elements
@@ -3305,15 +3307,17 @@ struct SchemaRemapper : ECN::IECSchemaRemapper
         Converter& m_converter;
         mutable ECN::ECSchemaPtr m_convSchema;
         bool m_remapAsAspect;
+        bool m_remapAsType;
         mutable T_ClassPropertiesMap m_renamedClassProperties;
 
         virtual bool _ResolvePropertyName(Utf8StringR serializedPropertyName, ECN::ECClassCR ecClass) const override;
         virtual bool _ResolveClassName(Utf8StringR serializedClassName, ECN::ECSchemaCR ecSchema) const override;
 
     public:
-        explicit SchemaRemapper(Converter& converter) : m_converter(converter), m_remapAsAspect(false) {}
+        explicit SchemaRemapper(Converter& converter) : m_converter(converter), m_remapAsAspect(false), m_remapAsType(false) {}
         ~SchemaRemapper() {}
         void SetRemapAsAspect(bool remapAsAspect) { m_remapAsAspect = remapAsAspect; }
+        void SetRemapAsType(bool remapAsType) { m_remapAsType = remapAsType; }
     };
 
 //---------------------------------------------------------------------------------------
@@ -3327,7 +3331,7 @@ struct ElementConverter
         ECN::ECInstanceReadContextPtr LocateInstanceReadContext(ECN::ECSchemaCR schema) const;
 
     protected:
-        ECN::IECInstancePtr Transform(ECObjectsV8::IECInstance const& v8Instance, ECN::ECClassCR dgnDbClass, bool transformAsAspect = false) const;
+        ECN::IECInstancePtr Transform(ECObjectsV8::IECInstance const& v8Instance, ECN::ECClassCR dgnDbClass, bool transformAsAspect = false, bool transformAsType = false) const;
         struct UnitResolver : ECN::ECInstanceReadContext::IUnitResolver
             {
             private:

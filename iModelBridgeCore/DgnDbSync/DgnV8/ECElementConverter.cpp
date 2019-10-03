@@ -41,7 +41,48 @@ BentleyStatus ElementConverter::ConvertToElementItem(ElementConversionResults& r
         return BSIERROR;
         }
     results.m_v8PrimaryInstance = V8ECInstanceKey(ECClassName(v8Instance->GetClass()), v8Instance->GetInstanceId().c_str());
-    return (DgnDbStatus::Success == results.m_element->SetPropertyValues(*targetInstance))? BSISUCCESS: BSIERROR;
+    
+    if (DgnDbStatus::Success != results.m_element->SetPropertyValues(*targetInstance))
+        return BSIERROR;
+
+    if (!dgnDbClass->GetSchema().GetName().Contains("_rvt_"))
+        return BSISUCCESS;
+
+    Utf8PrintfString typeName("%sType", dgnDbClass->GetName().c_str());
+    ECN::ECClassCP typeClass = dgnDbClass->GetSchema().GetClassCP(typeName.c_str());
+    if (nullptr == typeClass)
+        return BSISUCCESS;
+
+    ECN::IECInstancePtr typeInstance = Transform(*v8Instance, *typeClass, false, true);
+    if (typeInstance == nullptr)
+        {
+        Utf8String error;
+        error.Sprintf("Failed to create the PhysicalType class instance for %s.", ToInstanceLabel(*v8Instance).c_str());
+        m_converter.ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::Sync(), Converter::Issue::Error(), error.c_str());
+        return BSIERROR;
+        }
+
+    DgnCode existing = results.m_element->GetCode();
+    DgnCode newCode;
+    if (existing.IsValid())
+        {
+        Utf8PrintfString newValue("%s-TYPE", existing.GetValueUtf8CP());
+        auto codeSpec = m_converter.GetDgnDb().CodeSpecs().GetCodeSpec(existing.GetCodeSpecId());
+        auto scopeElement = m_converter.GetDgnDb().Elements().GetElement(existing.GetScopeElementId(m_converter.GetDgnDb()));
+        auto typeCode = codeSpec->CreateCode(*scopeElement, newValue);
+        newCode = typeCode;
+        }
+
+    Dgn::DgnElement::CreateParams params(results.m_element->GetDgnDb(), m_converter.GetJobDefinitionModel()->GetModelId(), typeClass->GetId(), newCode);
+    Dgn::PhysicalTypePtr typeElement = PhysicalType::Create(params);
+    if (DgnDbStatus::Success != typeElement->SetPropertyValues(*typeInstance))
+        {
+        LOG.warningv("Failed to set type element properties on element %" PRIu64, results.m_element->GetElementId().GetValueUnchecked());
+        return ERROR;
+        }
+
+    results.m_typeElement = typeElement;
+    return BSISUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -61,7 +102,7 @@ BECN::ECInstanceReadContextPtr ElementConverter::LocateInstanceReadContext(BECN:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Krischan.Eberle     02/2015
 //---------------------------------------------------------------------------------------
-BECN::IECInstancePtr ElementConverter::Transform(ECObjectsV8::IECInstance const& v8Instance, BECN::ECClassCR dgnDbClass, bool transformAsAspect) const
+BECN::IECInstancePtr ElementConverter::Transform(ECObjectsV8::IECInstance const& v8Instance, BECN::ECClassCR dgnDbClass, bool transformAsAspect, bool transformAsType) const
     {
     Bentley::Utf8String ecInstanceXml;
     const ECObjectsV8::InstanceWriteStatus writeStat = const_cast<ECObjectsV8::IECInstance&> (v8Instance).WriteToXmlString(ecInstanceXml, true,
@@ -73,6 +114,7 @@ BECN::IECInstancePtr ElementConverter::Transform(ECObjectsV8::IECInstance const&
     context->SetUnitResolver(&m_unitResolver);
     context->SetSchemaRemapper(&m_schemaRemapper);
     m_schemaRemapper.SetRemapAsAspect(transformAsAspect);
+    m_schemaRemapper.SetRemapAsType(transformAsType);
 
     BECN::IECInstancePtr dgnDbECInstance = nullptr;
     const BECN::InstanceReadStatus readStat = BECN::IECInstance::ReadFromXmlString(dgnDbECInstance, (Utf8CP) ecInstanceXml.c_str(), *context);
@@ -130,11 +172,16 @@ bool SchemaRemapper::_ResolveClassName(Utf8StringR serializedClassName, BECN::EC
         return false;
         }
 
-    if (hasSecondary && m_remapAsAspect)
-        conversionRule = BisConversionRule::ToAspectOnly;
-    Utf8CP suffix = BisConversionRuleHelper::GetAspectClassSuffix(conversionRule);
-    if (!Utf8String::IsNullOrEmpty(suffix))
-        serializedClassName.append(suffix);
+    if (m_remapAsAspect)
+        {
+        if (hasSecondary)
+            conversionRule = BisConversionRule::ToAspectOnly;
+        Utf8CP suffix = BisConversionRuleHelper::GetAspectClassSuffix(conversionRule);
+        if (!Utf8String::IsNullOrEmpty(suffix))
+            serializedClassName.append(suffix);
+        }
+    else if (m_remapAsType)
+        serializedClassName.append("Type");
     return true;
     }
 

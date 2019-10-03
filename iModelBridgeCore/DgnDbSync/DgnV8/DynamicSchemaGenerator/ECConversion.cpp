@@ -532,6 +532,7 @@ bool BisConversionRuleHelper::ClassNeedsBisification(BisConversionRule conversio
             case BisConversionRule::ToPhysicalObject:
             case BisConversionRule::ToDefaultBisClass:
             case BisConversionRule::ToDefaultBisBaseClass:
+            case BisConversionRule::ToPhysicalType:
                 return true;
 
             default:
@@ -569,6 +570,8 @@ Utf8CP BisConversionRuleHelper::ToString(BisConversionRule rule)
                 return "ToDefaultBisBaseClass";
             case BisConversionRule::ToDefaultBisClass:
                 return "ToDefaultBisClass";
+            case BisConversionRule::ToPhysicalType:
+                return "ToPhysicalType";
             default:
                 BeAssert(false && "Please update V8ECClassInfo::ToString for new value of the BisConversionRule enum.");
                 return "";
@@ -1402,6 +1405,8 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
              needsFlattening = true;
              break;
              }
+         else if (schema->GetName().ContainsI("_rvt_"))
+             ProcessRevitSchema(schema);
          }
 
      if (needsFlattening)
@@ -2344,6 +2349,46 @@ void DynamicSchemaGenerator::ProcessSP3DSchema(ECN::ECSchemaP schema, ECN::ECCla
     //        schema->SetCustomAttribute(*flattenedInstance);
     //        }
     //    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+void DynamicSchemaGenerator::ProcessRevitSchema(ECN::ECSchemaP schema)
+    {
+
+    bvector<ECN::ECClassP> types;
+    for (BECN::ECClassP ecClass : schema->GetClasses())
+        {
+        if (!ecClass->HasBaseClasses())
+            continue;
+
+        types.push_back(ecClass);
+        }
+
+    for (ECN::ECClassP type : types)
+        {
+        ECN::ECEntityClassP newTypeClass;
+        Utf8PrintfString newName("%sType", type->GetName().c_str());
+
+        if (ECN::ECObjectsStatus::Success != schema->CreateEntityClass(newTypeClass, newName))
+            {
+            continue;
+            }
+
+        bvector<ECN::ECPropertyP> toRemove;
+        for (BECN::ECPropertyP prop : type->GetProperties())
+            {
+            Utf8String propName(prop->GetName());
+            if (!propName.EndsWith("_TYPE"))
+                continue;
+            ECN::ECPropertyP destProperty;
+            newTypeClass->CopyProperty(destProperty, prop, true);
+            toRemove.push_back(prop);
+            }
+        for (BECN::ECPropertyP prop : toRemove)
+            type->RemoveProperty(prop->GetName());
+        }
     }
 
 //---------------------------------------------------------------------------------------

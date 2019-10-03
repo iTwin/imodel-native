@@ -37,6 +37,8 @@ ECClassName BisConversionRuleHelper::GetElementBisBaseClassName(BisConversionRul
             return ECClassName(BIS_ECSCHEMA_NAME, BIS_CLASS_GroupInformationElement);
         case BisConversionRule::ToGenericGroup:
             return ECClassName(GENERIC_DOMAIN_NAME, GENERIC_CLASS_Group);
+        case BisConversionRule::ToPhysicalType:
+            return ECClassName(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalType);
         default:
             BeAssert(false);
             return ECClassName();
@@ -226,6 +228,11 @@ BentleyStatus BisClassConverter::PreprocessConversion(SchemaConversionContext& c
             BisConversionRule rule;
             if (BSISUCCESS != BisConversionRuleHelper::ConvertToBisConversionRule(rule, *v8Class))
                 return BSIERROR;
+
+            if (Utf8String(v8ClassName.GetClassName()).EndsWith("Type") && Utf8String(v8ClassName.GetSchemaName()).Contains("_rvt_"))
+                {
+                rule = BisConversionRule::ToPhysicalType;
+                }
 
             if (alreadyExists && (rule == existingRule || BisConversionRuleHelper::ClassNeedsBisification(rule)))
                 continue; //no update or further actions needed

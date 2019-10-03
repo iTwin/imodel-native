@@ -2657,6 +2657,25 @@ DgnDbStatus Converter::InsertResults(ElementConversionResults& results, SyncInfo
         return DgnDbStatus::Success;
 
     DgnDbStatus stat;
+
+    if (results.m_typeElement.IsValid())
+        {
+        m_dgndb->Elements().Insert(*results.m_typeElement, &stat);
+        if (DgnDbStatus::Success != stat)
+            {
+            BeAssert((DgnDbStatus::LockNotHeld != stat) && "Failed to get or retain necessary locks");
+            BeAssert(false);
+            ReportIssue(IssueSeverity::Warning, IssueCategory::Unsupported(), Issue::ConvertFailure(), IssueReporter::FmtElement(*results.m_element).c_str());
+            return stat;
+            }
+
+        ECN::ECClassCP relClass = m_dgndb->Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_REL_PhysicalElementIsOfType);
+        ECN::ECPropertyP prop = nullptr;
+        prop = results.m_element->GetElementClass()->GetPropertyP("TypeDefinition");
+        ECN::ECValue val;
+        val.SetNavigationInfo((BeInt64Id) results.m_typeElement->GetECInstanceKey().GetInstanceId().GetValue(), relClass->GetRelationshipClassCP());
+        }
+
     DgnCode code = results.m_element->GetCode();
 
     results.m_mapping = AddOrUpdateV8ElementExternalSourceAspect(*results.m_element, elprov);
