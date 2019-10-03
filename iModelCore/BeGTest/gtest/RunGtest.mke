@@ -153,9 +153,9 @@ always:
 
 %message See $(ResultsCapture)
 
-BreakOnFailure = 0
-%if defined (BEGTEST_BREAK_ON_FAILURE)
-	BreakOnFailure = 1
+BreakOnFailure = 1
+%if defined (BEGTEST_IGNORE_FAILURE)
+	BreakOnFailure = 0
 %endif
 
 always:
