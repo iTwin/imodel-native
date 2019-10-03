@@ -533,8 +533,11 @@ void Graph::LogDependencyFound(Statement& stmt, Edge const& edge)
 void Graph::InvokeHandler(Edge const& edge) {
     size_t errorCount = m_txnMgr.NumValidationErrors();
     if (!m_nodes->AnyOutputsProcessed(edge.m_ein) && m_nodes->GetInDegree(edge.m_ein) == 0) {
-        getDriver(*this, edge.m_ein)->_OnBeforeOutputsHandled(*this, edge);
-        callJsDriverFunc(*this, edge.m_ein, "_onBeforeOutputsHandled");
+        auto driver = getDriver(*this, edge.m_ein);
+        if (driver.IsValid()) {
+            driver->_OnBeforeOutputsHandled(*this, edge);
+            callJsDriverFunc(*this, edge.m_ein, "_onBeforeOutputsHandled");
+        }
     }
 
     if (!edge.IsDeleted()) {
@@ -548,8 +551,11 @@ void Graph::InvokeHandler(Edge const& edge) {
     m_nodes->IncrementInputsProcessed(edge.m_eout);
 
     if (m_nodes->AllInputsProcessed(edge.m_eout)) {
-        getDriver(*this, edge.m_eout)->_OnAllInputsHandled(*this, edge);
-        callJsDriverFunc(*this, edge.m_eout, "_onAllInputsHandled");
+        auto driver = getDriver(*this, edge.m_eout);
+        if (driver.IsValid()) {
+            driver->_OnAllInputsHandled(*this, edge);
+            callJsDriverFunc(*this, edge.m_eout, "_onAllInputsHandled");
+        }
     }
 
     SetFailedEdgeStatusInDb(edge, (m_txnMgr.NumValidationErrors() > errorCount));
