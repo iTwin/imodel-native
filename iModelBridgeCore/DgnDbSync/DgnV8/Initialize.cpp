@@ -21,8 +21,8 @@
 
 #include <ScalableMesh/ScalableMeshLib.h>
 #include <RealityPlatformTools/RealityDataService.h>
-#include <AecUnits/AecUnitsDomain.h>
-#include <QuantityTakeoffsAspects/Domain/QuantityTakeoffsAspectsDomain.h>
+//#include <AecUnits/AecUnitsDomain.h>
+//#include <QuantityTakeoffsAspects/Domain/QuantityTakeoffsAspectsDomain.h>
 #include <Bentley/Desktop/FileSystem.h>
 #include <Bentley/BeGetProcAddress.h>
 #include "RulesetEmbedder.h"
@@ -672,8 +672,8 @@ void Converter::Initialize(BentleyApi::BeFileNameCR bridgeLibraryDir, BentleyApi
     DgnDomains::RegisterDomain(PointCloud::PointCloudDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No, &bridgeAssetsDir);
     DgnDomains::RegisterDomain(ThreeMx::ThreeMxDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No, &bridgeAssetsDir);
     DgnDomains::RegisterDomain(ScalableMeshSchema::ScalableMeshDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No, &bridgeAssetsDir);
-    DgnDomains::RegisterDomain(AecUnits::AecUnitsDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No, &bridgeAssetsDir);
-    DgnDomains::RegisterDomain(QuantityTakeoffsAspects::QuantityTakeoffsAspectsDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No, &bridgeAssetsDir);
+    //DgnDomains::RegisterDomain(AecUnits::AecUnitsDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No, &bridgeAssetsDir);
+    //DgnDomains::RegisterDomain(QuantityTakeoffsAspects::QuantityTakeoffsAspectsDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No, &bridgeAssetsDir);
 
     DgnDomainP domain = new PresentationRulesDomain();
     DgnDomains::RegisterDomain(*domain, DgnDomain::Required::Yes, DgnDomain::Readonly::No, &bridgeAssetsDir);

@@ -216,9 +216,9 @@ LINKER_LIBRARIES        + $(ContextSubpartsLibs)ScalableMesh.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)RealityPlatform.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)RealityPlatformTools.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)ECPresentation.lib
-LINKER_LIBRARIES        + $(ContextSubpartsLibs)AecUnits.lib
-LINKER_LIBRARIES        + $(ContextSubpartsLibs)QuantityTakeoffsAspectsDomain.lib
-LINKER_LIBRARIES        + $(ContextSubpartsLibs)QuantityTakeoffsAspectsElements.lib
+#LINKER_LIBRARIES        + $(ContextSubpartsLibs)AecUnits.lib
+#LINKER_LIBRARIES        + $(ContextSubpartsLibs)QuantityTakeoffsAspectsDomain.lib
+#LINKER_LIBRARIES        + $(ContextSubpartsLibs)QuantityTakeoffsAspectsElements.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext)
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)$(libprefix)BeHttp$(libext)
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)$(libprefix)BRepCore$(libext)

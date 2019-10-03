@@ -16,10 +16,10 @@
 #include <BRepCore/PSolidUtil.h>
 #endif
 
-#include <DgnPlatform/MeasureGeom.h>
-#include <QuantityTakeoffsAspects/Elements/VolumeAspect.h>
-#include <QuantityTakeoffsAspects/Elements/DimensionsAspect.h>
-#include <QuantityTakeoffsAspects/Elements/SurfaceAreaAspect.h>
+//#include <DgnPlatform/MeasureGeom.h>
+//#include <QuantityTakeoffsAspects/Elements/VolumeAspect.h>
+//#include <QuantityTakeoffsAspects/Elements/DimensionsAspect.h>
+//#include <QuantityTakeoffsAspects/Elements/SurfaceAreaAspect.h>
 #undef min
 #undef max
 
@@ -2293,30 +2293,31 @@ BentleyStatus Converter::ConvertElement(ElementConversionResults& results, DgnV8
                 return BSIERROR;
                 }
             }
-        auto gs = results.m_element->ToGeometrySource();
-        if (nullptr != gs)
-            {
-            AxisAlignedBox3d box = gs->CalculateRange3d();
-            MeasureGeomCollectorPtr measure = MeasureGeomCollector::Create(Dgn::MeasureGeomCollector::AccumulateLengths);
-            if (BentleyStatus::SUCCESS == measure->Process(*gs))
-                {
-                QuantityTakeoffsAspects::DimensionsAspectPtr dimensions = QuantityTakeoffsAspects::DimensionsAspect::Create(measure->GetIXY(), measure->GetIXY(), measure->GetIYZ());
-                //DgnElement::UniqueAspect::SetAspect(*results.m_element, *dimensions);
-                }
+        // Commenting out until VSTS#185446 is fixed
+        //auto gs = results.m_element->ToGeometrySource();
+        //if (nullptr != gs)
+        //    {
+        //    AxisAlignedBox3d box = gs->CalculateRange3d();
+        //    MeasureGeomCollectorPtr measure = MeasureGeomCollector::Create(Dgn::MeasureGeomCollector::AccumulateLengths);
+        //    if (BentleyStatus::SUCCESS == measure->Process(*gs))
+        //        {
+        //        QuantityTakeoffsAspects::DimensionsAspectPtr dimensions = QuantityTakeoffsAspects::DimensionsAspect::Create(measure->GetIXY(), measure->GetIXY(), measure->GetIYZ());
+        //        //DgnElement::UniqueAspect::SetAspect(*results.m_element, *dimensions);
+        //        }
 
-            MeasureGeomCollectorPtr volumes = MeasureGeomCollector::Create(Dgn::MeasureGeomCollector::AccumulateVolumes);
-            if (BentleyStatus::SUCCESS == volumes->Process(*gs))
-                {
-                QuantityTakeoffsAspects::VolumeAspectPtr volAsp = QuantityTakeoffsAspects::VolumeAspect::Create(volumes->GetVolume(), 0);
-                DgnElement::UniqueAspect::SetAspect(*results.m_element, *volAsp);
-                }
-            MeasureGeomCollectorPtr areas = MeasureGeomCollector::Create(Dgn::MeasureGeomCollector::AccumulateAreas);
-            if (BentleyStatus::SUCCESS == areas->Process(*gs))
-                {
-                QuantityTakeoffsAspects::SurfaceAreaAspectPtr area = QuantityTakeoffsAspects::SurfaceAreaAspect::Create(areas->GetArea(), 0);
-                DgnElement::UniqueAspect::SetAspect(*results.m_element, *area);
-                }
-            }
+        //    MeasureGeomCollectorPtr volumes = MeasureGeomCollector::Create(Dgn::MeasureGeomCollector::AccumulateVolumes);
+        //    if (BentleyStatus::SUCCESS == volumes->Process(*gs))
+        //        {
+        //        QuantityTakeoffsAspects::VolumeAspectPtr volAsp = QuantityTakeoffsAspects::VolumeAspect::Create(volumes->GetVolume(), 0);
+        //        DgnElement::UniqueAspect::SetAspect(*results.m_element, *volAsp);
+        //        }
+        //    MeasureGeomCollectorPtr areas = MeasureGeomCollector::Create(Dgn::MeasureGeomCollector::AccumulateAreas);
+        //    if (BentleyStatus::SUCCESS == areas->Process(*gs))
+        //        {
+        //        QuantityTakeoffsAspects::SurfaceAreaAspectPtr area = QuantityTakeoffsAspects::SurfaceAreaAspect::Create(areas->GetArea(), 0);
+        //        DgnElement::UniqueAspect::SetAspect(*results.m_element, *area);
+        //        }
+        //    }
         }
     else
         {
