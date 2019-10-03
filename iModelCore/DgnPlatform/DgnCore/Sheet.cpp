@@ -438,11 +438,7 @@ DRange2d Sheet::Border::GetRange() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Sheet::ViewController::_DrawView(ViewContextR context)
     {
-    auto model = GetViewedModel();
-    if (nullptr == model)
-        return;
-
-    context.VisitDgnModel(*model);
+    // ###TODO Delete ViewController
     }
 
 /*---------------------------------------------------------------------------------**//**

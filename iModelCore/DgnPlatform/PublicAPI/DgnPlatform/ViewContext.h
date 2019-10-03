@@ -10,7 +10,7 @@
 #include "Render.h"
 #include "ClipVector.h"
 #include "TransformClipStack.h"
-#include "ScanCriteria.h"
+#include "DgnModel.h"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -84,7 +84,7 @@ struct IElemTopology : IRefCounted
 //! @ingroup GROUP_ViewContext
 // @bsiclass                                                     KeithBentley    04/01
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ViewContext : ScanCriteria, NonCopyableClass, CheckStop
+struct EXPORT_VTABLE_ATTRIBUTE ViewContext : NonCopyableClass, CheckStop
 {
     friend struct ViewController;
     friend struct SimplifyGraphic;
@@ -107,7 +107,6 @@ protected:
     bool m_wantMaterials = false;
     bool m_useNpcSubRange = false;
     bool m_ignoreViewRange = false;
-    bool m_scanRangeValid = false;
     bool m_stopAfterTimeout = false;
     BeTimePoint m_endTime;     // abort after this time.
     Render::ViewFlags m_viewflags;
@@ -121,7 +120,6 @@ protected:
     ClipVectorCPtr m_volume;
     Utf8String m_auxChannel;
 
-    void InvalidateScanRange() {m_scanRangeValid = false;}
     DGNPLATFORM_EXPORT virtual StatusInt _OutputGeometry(GeometrySourceCR);
     DGNPLATFORM_EXPORT virtual void _AddSubGraphic(Render::GraphicBuilderR, DgnGeometryPartId, TransformCR, Render::GeometryParamsR);
     virtual void _OutputGraphic(Render::GraphicR, GeometrySourceCP) {}
@@ -135,19 +133,12 @@ protected:
     DGNPLATFORM_EXPORT virtual StatusInt _VisitGeometry(GeometrySourceCR);
     DGNPLATFORM_EXPORT virtual bool _AnyPointVisible(DPoint3dCP worldPoints, int nPts, double tolerance);
     DGNPLATFORM_EXPORT virtual bool _IsSubCategoryVisible(DgnSubCategoryId subCategoryId);
-    DGNPLATFORM_EXPORT virtual void _InitScanRangeAndPolyhedron();
     DGNPLATFORM_EXPORT virtual bool _VisitAllModelElements();
-    DGNPLATFORM_EXPORT virtual StatusInt _VisitDgnModel(GeometricModelR);
     virtual Render::GraphicBuilderPtr _CreateGraphic(Render::GraphicBuilder::CreateParams const& params) = 0;
     virtual Render::GraphicPtr _CreateBranch(Render::GraphicBranch&, DgnDbR db, TransformCR tf, ClipVectorCP clips) = 0;
-    DGNPLATFORM_EXPORT virtual void _SetupScanCriteria();
     virtual bool _WantUndisplayed() {return false;}
     DGNPLATFORM_EXPORT virtual void _CookGeometryParams(Render::GeometryParamsR, Render::GraphicParamsR);
-    DGNPLATFORM_EXPORT virtual StatusInt _ScanDgnModel(GeometricModelR model);
-    DGNPLATFORM_EXPORT virtual bool _ScanRangeFromPolyhedron();
     DGNPLATFORM_EXPORT virtual void _SetDgnDb(DgnDbR);
-    DGNPLATFORM_EXPORT RangeIndex::Traverser::Accept _CheckRangeTreeNode(RangeIndex::FBoxCR, bool) const override;
-    DGNPLATFORM_EXPORT ScanCriteria::Stop _OnRangeElementFound(DgnElementId) override;
     DGNPLATFORM_EXPORT virtual StatusInt _VisitElement(DgnElementId elementId, bool allowLoad);
     DGNPLATFORM_EXPORT virtual Render::MaterialPtr _GetMaterial(RenderMaterialId id) const;
     DGNPLATFORM_EXPORT virtual Render::TexturePtr _CreateTexture(Render::ImageCR image) const;
@@ -167,7 +158,6 @@ public:
     DGNPLATFORM_EXPORT void SetSubRectNpc(DRange3dCR subRect);
     void SetWantMaterials(bool wantMaterials) {m_wantMaterials = wantMaterials;}
     bool IsUndisplayed(GeometrySourceCR source);
-    bool ValidateScanRange() {return m_scanRangeValid ? true : _ScanRangeFromPolyhedron();}
     DGNPLATFORM_EXPORT StatusInt Attach(DgnViewportP vp, DrawPurpose purpose);
     bool VisitAllModelElements() {return _VisitAllModelElements();}
     DGNPLATFORM_EXPORT bool VisitAllViewElements(BSIRectCP updateRect=nullptr);
@@ -178,8 +168,6 @@ public:
     DGNPLATFORM_EXPORT bool IsPointVisible(DPoint3dCR worldPoint, WantBoresite boresite, double tolerance=1.0e-8);
     DGNPLATFORM_EXPORT Frustum GetFrustum();
     Render::FrustumPlanes const& GetFrustumPlanes() const {return m_frustumPlanes;}
-    void InitScanRangeAndPolyhedron() {_InitScanRangeAndPolyhedron();}
-    StatusInt VisitDgnModel(GeometricModelR model){return _VisitDgnModel(model);}
     void OutputGraphic(Render::GraphicR graphic, GeometrySourceCP source) {_OutputGraphic(graphic, source);}
     void SetActiveVolume(ClipVectorCR volume) {m_volume=&volume;}
     ClipVectorCPtr GetActiveVolume() const {return m_volume;}

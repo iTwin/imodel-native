@@ -164,12 +164,7 @@ static DgnModelPtr fillModel(DgnDbR project, DgnModelId mid)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SectioningViewController::DrawViewInternal(ViewContextR context)
     {
-    for (auto modelId : m_viewedModels)
-        {
-        auto model = fillModel(context.GetDgnDb(), modelId);
-        if (model != NULL)
-            context.VisitDgnModel(model.get());
-        }
+    // ###TODO Delete ViewController
     }
 
 /*---------------------------------------------------------------------------------**//**

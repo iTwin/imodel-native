@@ -940,25 +940,26 @@ DgnDbStatus GeometricModel3d::_FillRangeIndex()
         return DgnDbStatus::Success;
 
     m_rangeIndex.reset(new RangeIndex::Tree(true, 20));
-    auto stmt = m_dgndb.GetPreparedECSqlStatement("SELECT ECInstanceId,Category.Id,Origin,Yaw,Pitch,Roll,BBoxLow,BBoxHigh FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " WHERE Model.Id=?");
+    auto stmt = m_dgndb.GetPreparedECSqlStatement("SELECT ECInstanceId,Origin,Yaw,Pitch,Roll,BBoxLow,BBoxHigh FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " WHERE Model.Id=?");
     stmt->BindId(1, GetModelId());
     while (BE_SQLITE_ROW == stmt->Step())
         {
         if (stmt->IsValueNull(2)) // has no placement
             continue;
 
-        double yaw   = stmt->GetValueDouble(3);
-        double pitch = stmt->GetValueDouble(4);
-        double roll  = stmt->GetValueDouble(5);
+        double yaw   = stmt->GetValueDouble(2);
+        double pitch = stmt->GetValueDouble(3);
+        double roll  = stmt->GetValueDouble(4);
 
-        DPoint3d low = stmt->GetValuePoint3d(6);
-        DPoint3d high = stmt->GetValuePoint3d(7);
+        DPoint3d low = stmt->GetValuePoint3d(5);
+        DPoint3d high = stmt->GetValuePoint3d(6);
 
-        Placement3d placement(stmt->GetValuePoint3d(2),
+        Placement3d placement(stmt->GetValuePoint3d(1),
                               YawPitchRollAngles(Angle::FromDegrees(yaw), Angle::FromDegrees(pitch), Angle::FromDegrees(roll)),
                               ElementAlignedBox3d(low.x, low.y, low.z, high.x, high.y, high.z));
 
-        m_rangeIndex->AddEntry(RangeIndex::Entry(placement.CalculateRange(), stmt->GetValueId<DgnElementId>(0), stmt->GetValueId<DgnCategoryId>(1)));
+        RangeIndex::FBox fbox(placement.CalculateRange(), false);
+        m_rangeIndex->AddEntry(RangeIndex::Entry(fbox, stmt->GetValueId<DgnElementId>(0)));
         }
 
     return DgnDbStatus::Success;
@@ -975,7 +976,7 @@ DgnDbStatus GeometricModel2d::_FillRangeIndex()
 
     m_rangeIndex.reset(new RangeIndex::Tree(false, 20));
 
-    auto stmt = m_dgndb.GetPreparedECSqlStatement("SELECT ECInstanceId,Category.Id,Origin,Rotation,BBoxLow,BBoxHigh FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement2d) " WHERE Model.Id=?");
+    auto stmt = m_dgndb.GetPreparedECSqlStatement("SELECT ECInstanceId,Origin,Rotation,BBoxLow,BBoxHigh FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement2d) " WHERE Model.Id=?");
     stmt->BindId(1, GetModelId());
 
     while (BE_SQLITE_ROW == stmt->Step())
@@ -983,14 +984,15 @@ DgnDbStatus GeometricModel2d::_FillRangeIndex()
         if (stmt->IsValueNull(2)) // has no placement
             continue;
 
-        DPoint2d low  = stmt->GetValuePoint2d(4);
-        DPoint2d high = stmt->GetValuePoint2d(5);
+        DPoint2d low  = stmt->GetValuePoint2d(3);
+        DPoint2d high = stmt->GetValuePoint2d(4);
 
-        Placement2d placement(stmt->GetValuePoint2d(2),
-                              AngleInDegrees::FromDegrees(stmt->GetValueDouble(3)),
+        Placement2d placement(stmt->GetValuePoint2d(1),
+                              AngleInDegrees::FromDegrees(stmt->GetValueDouble(2)),
                               ElementAlignedBox2d(low.x, low.y, high.x, high.y));
 
-        m_rangeIndex->AddEntry(RangeIndex::Entry(placement.CalculateRange(), stmt->GetValueId<DgnElementId>(0), stmt->GetValueId<DgnCategoryId>(1)));
+        RangeIndex::FBox fbox(placement.CalculateRange(), true);
+        m_rangeIndex->AddEntry(RangeIndex::Entry(fbox, stmt->GetValueId<DgnElementId>(0)));
         }
 
     return DgnDbStatus::Success;
@@ -1062,7 +1064,7 @@ void GeometricModel::UpdateRangeIndex(DgnElementCR modified, DgnElementCR origin
     if (!origBox.IsEqual(newBox)) // many changes don't affect range
         {
         m_rangeIndex->RemoveElement(id);
-        m_rangeIndex->AddEntry(RangeIndex::Entry(newBox, id, origGeom->GetCategoryId()));
+        m_rangeIndex->AddEntry(RangeIndex::Entry(RangeIndex::FBox(newBox, Is2d()), id));
         }
 
     /* ###TODO_IMODELCORE notify app data

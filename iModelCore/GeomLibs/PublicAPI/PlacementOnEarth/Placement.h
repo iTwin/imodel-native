@@ -222,6 +222,7 @@ public:
   }
 
   GEOMDLLIMPEXP static bool IsMinimumRange(FPoint3dCR low, FPoint3dCR high, bool is2d); //!< @private
+  GEOMDLLIMPEXP static bool IsMinimumRange(DPoint3dCR low, DPoint3dCR high, bool is2d); //!< @private
 };
 
 //=======================================================================================

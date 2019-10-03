@@ -678,11 +678,7 @@ ViewController::CloseMe ViewController2d::_OnModelsDeleted(bset<DgnModelId> cons
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController2d::_DrawView(ViewContextR context)
     {
-    auto model = GetViewedModel();
-    if (nullptr == model)
-        return;
-
-    context.VisitDgnModel(*model);
+    // ###TODO Delete ViewController
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -703,9 +699,7 @@ void ViewController::AddAppData(AppData::Key const& key, AppData* obj) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TemplateViewController3d::_DrawView(ViewContextR context)
     {
-    GeometricModelP model = GetViewedModel();
-    if (nullptr != model)
-        context.VisitDgnModel(*model);
+    // ###TODO Delete ViewController
     }
 
 /*---------------------------------------------------------------------------------**//**

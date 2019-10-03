@@ -290,7 +290,6 @@ private:
     SubRangesR          m_subRanges;
     Transform           m_transformFromDgn;
     bool                m_aborted = false;
-    bool                m_is2d;
 
     bool CheckStop() { return m_aborted || (m_aborted = m_loader.IsCanceled()); }
 
@@ -319,13 +318,9 @@ private:
         else if (!entry.m_range.IntersectsWith(m_range))
             return Stop::No; // why do we need to check the range again here? _CheckRangeTreeNode() should have handled it, but doesn't...
 
-        double sizeSq;
-        if (Placement3d::IsMinimumRange(entry.m_range.m_low, entry.m_range.m_high, m_is2d))
+        double sizeSq = entry.m_range.IsMinimal() ? 0.0 : entry.m_range.DistanceSquared();
+        if (entry.m_range.IsMinimal())
             sizeSq = 0.0;
-        else if (m_is2d)
-            sizeSq = entry.m_range.m_low.DistanceSquaredXY(entry.m_range.m_high);
-        else
-            sizeSq = entry.m_range.m_low.DistanceSquared(entry.m_range.m_high);
 
         if (0.0 == sizeSq || sizeSq >= m_minRangeDiagonalSquared)
             {
@@ -345,7 +340,7 @@ private:
         }
 public:
     ElementCollector(DRange3dCR range, RangeIndex::Tree& rangeIndex, double minRangeDiagonalSquared, LoaderCR loader, uint32_t maxElements, TransformCR transformFromDgn, SubRangesR subRanges)
-        : m_range(range), m_minRangeDiagonalSquared(minRangeDiagonalSquared), m_maxElements(maxElements), m_loader(loader), m_is2d(!rangeIndex.Is3d()), m_transformFromDgn(transformFromDgn), m_subRanges(subRanges)
+        : m_range(range, !rangeIndex.Is3d()), m_minRangeDiagonalSquared(minRangeDiagonalSquared), m_maxElements(maxElements), m_loader(loader), m_transformFromDgn(transformFromDgn), m_subRanges(subRanges)
         {
         // ###TODO: Do not traverse if tile is not expired (only deletions may have occurred)...
         rangeIndex.Traverse(*this);

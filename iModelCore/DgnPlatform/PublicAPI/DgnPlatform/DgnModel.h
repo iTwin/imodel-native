@@ -10,6 +10,7 @@
 #include "DgnElement.h"
 #include "CodeSpec.h"
 #include "ECSqlClassParams.h"
+#include "RangeIndex.h"
 #include <Bentley/ValueFormat.h>
 #include <DgnPlatform/DgnProperties.h>
 
@@ -966,6 +967,9 @@ public:
     //! If this model supports producing Cesium 3D tiles, return a root of such a tile tree. The default implementation returns nullptr.
     //! The rootTileOutput is supplied for loading the root tile. It should not be stored and reused.
     DGNPLATFORM_EXPORT virtual Cesium::RootPtr _CreateCesiumTileTree(Cesium::OutputR rootTileOutput, Utf8StringCR inputFileName);
+
+    virtual bool Is3d() const = 0;
+    bool Is2d() const { return !Is3d(); }
 };
 
 //=======================================================================================
@@ -1005,6 +1009,8 @@ public:
     // If true, then the elements in this GeometricModel3d are expected to be in an XY plane.
     bool IsPlanProjection() const {return m_isPlanProjection;}
     void SetIsPlanProjection(bool isPlanProjection) {m_isPlanProjection = isPlanProjection;}
+
+    bool Is3d() const final { return true; }
 };
 
 //=======================================================================================
@@ -1023,6 +1029,8 @@ protected:
     DGNPLATFORM_EXPORT AxisAlignedBox3d _QueryElementsRange() const override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
     explicit GeometricModel2d(CreateParams const& params, DPoint2dCR origin=DPoint2d::FromZero()) : T_Super(params) {}
+
+    bool Is3d() const final { return false; }
 };
 
 //=======================================================================================

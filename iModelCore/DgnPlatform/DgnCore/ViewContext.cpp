@@ -80,7 +80,6 @@ StatusInt ViewContext::_InitContextForView()
     BeAssert(nullptr != m_viewport);
     m_worldToNpc  = *m_viewport->GetWorldToNpcMap();
     m_worldToView = *m_viewport->GetWorldToViewMap();
-    m_scanRangeValid = false;
 
     m_frustumPlanes.Init(GetFrustum());
 
@@ -115,31 +114,11 @@ Frustum ViewContext::GetFrustum()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    11/02
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_InitScanRangeAndPolyhedron()
-    {
-    // set up scanner search criteria
-    _ScanRangeFromPolyhedron();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_SetDgnDb(DgnDbR dgnDb)
     {
     m_dgndb = &dgnDb;
-    _SetupScanCriteria();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Brien.Bastings                  02/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_SetupScanCriteria()
-    {
-    DgnViewportP vp = GetViewport();
-    if (nullptr != vp)
-        SetCategoryTest(vp->GetViewController().GetViewedCategories());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -238,49 +217,6 @@ void ViewContext::ViewToWorld(DPoint3dP worldPts, DPoint4dCP viewPts, int nPts) 
 void ViewContext::ViewToWorld(DPoint3dP worldPts, DPoint3dCP viewPts, int nPts) const
     {
     m_worldToView.M1.MultiplyAndRenormalize(worldPts, viewPts, nPts);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* convert the view context polyhedron to scan parameters in the scanCriteria.
-* @bsimethod                                                    KeithBentley    05/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewContext::_ScanRangeFromPolyhedron()
-    {
-    Frustum polyhedron = GetFrustum();
-
-    // get enclosing bounding box around polyhedron (outside scan range).
-    RangeIndex::FBox scanRange(polyhedron.ToRange());
-
-    if (!Is3dView())
-        {
-        scanRange.m_low.z = -1;
-        scanRange.m_high.z = 1;
-        }
-
-    SetRangeTest(scanRange);
-
-    // if we're doing a skew scan, get the skew parameters
-    if (Is3dView())
-        {
-        DRange3d skewRange;
-
-        // get bounding range of front plane of polyhedron
-        skewRange.InitFrom(polyhedron.GetPts(), 4);
-
-        // get unit bvector from front plane to back plane
-        DVec3d  skewVec = DVec3d::FromStartEndNormalize(polyhedron.GetCorner(0), polyhedron.GetCorner(4));
-
-        // check to see if it's worthwhile using skew scan (skew bvector not along one of the three major axes */
-        int alongAxes = (fabs(skewVec.x) < 1e-8);
-        alongAxes += (fabs(skewVec.y) < 1e-8);
-        alongAxes += (fabs(skewVec.z) < 1e-8);
-
-        if (alongAxes < 2)
-            SetSkewRangeTest(scanRange, RangeIndex::FBox(skewRange), skewVec);
-        }
-
-    m_scanRangeValid = true;
-    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -426,28 +362,6 @@ StatusInt ViewContext::_VisitGeometry(GeometrySourceCR source)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-ScanCriteria::Stop ViewContext::_OnRangeElementFound(DgnElementId id)
-    {
-    auto el = GetDgnDb().Elements().GetElement(id);
-    GeometrySourceCP geomElement = el->ToGeometrySource();
-    if (nullptr != geomElement)
-        _VisitGeometry(*geomElement);
-
-    return WasAborted() ? ScanCriteria::Stop::Yes : ScanCriteria::Stop::No;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      01/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-RangeIndex::Traverser::Accept ViewContext::_CheckRangeTreeNode(RangeIndex::FBoxCR testRange, bool is3d) const
-    {
-    Frustum box(testRange.ToRange3d());
-    return (m_frustumPlanes.Contains(box.m_pts, 8) != FrustumPlanes::Contained::Outside) ? RangeIndex::Traverser::Accept::Yes : RangeIndex::Traverser::Accept::No;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ViewContext::_AnyPointVisible(DPoint3dCP worldPoints, int nPts, double tolerance)
@@ -496,7 +410,7 @@ bool ViewContext::IsPointVisible(DPoint3dCR worldPoint, WantBoresite boresite, d
     DVec3d worldZVec;
     if (IsCameraOn())
         {
-        worldZVec.NormalizedDifference(worldPoint, m_viewport->GetCamera().GetEyePoint());              
+        worldZVec.NormalizedDifference(worldPoint, m_viewport->GetCamera().GetEyePoint());
         }
     else
         {
@@ -508,26 +422,6 @@ bool ViewContext::IsPointVisible(DPoint3dCR worldPoint, WantBoresite boresite, d
         }
 
     return m_frustumPlanes.IntersectsRay(worldPoint, worldZVec);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   06/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ViewContext::_ScanDgnModel(GeometricModelR model)
-    {
-    if (!ValidateScanRange())
-        return ERROR;
-
-    SetDgnModel(model);
-    return Scan();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ViewContext::_VisitDgnModel(GeometricModelR model)
-    {
-    return CheckStop() ? ERROR : _ScanDgnModel(model);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -573,8 +467,6 @@ bool ViewContext::VisitAllViewElements(BSIRectCP updateRect)
 
     if (nullptr != updateRect)
         SetSubRectFromViewRect(updateRect);
-
-    _InitScanRangeAndPolyhedron();
 
     _VisitAllModelElements();
 

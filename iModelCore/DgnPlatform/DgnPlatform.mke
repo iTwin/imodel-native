@@ -136,7 +136,7 @@ $(CoreObjs)DgnElement$(oext) :                      $(DgnCoreDir)DgnElement.cpp 
 
 $(CoreObjs)DgnElementProperties$(oext) :            $(DgnCoreDir)DgnElementProperties.cpp $(PropertyDepends) ${MultiCompileDepends} $(toolsHeaders)
 
-$(CoreObjs)DgnModel$(oext) :                        $(DgnCoreDir)DgnModel.cpp ${MultiCompileDepends} $(DgnFileIOPubH) $(DgnPlatformAPISrc)ScanCriteria.h
+$(CoreObjs)DgnModel$(oext) :                        $(DgnCoreDir)DgnModel.cpp ${MultiCompileDepends} $(DgnFileIOPubH)
 
 $(CoreObjs)UnitDefinition$(oext) :                  $(DgnCoreDir)UnitDefinition.cpp ${MultiCompileDepends} $(DgnFileIOPubH)
 
@@ -173,8 +173,6 @@ $(CoreObjs)LsPointComponent$(oext) :                $(lineStyleDir)LsPointCompon
 $(CoreObjs)StrokePattern$(oext) :                   $(lineStyleDir)StrokePattern.cpp $(LsLocalDepends) ${MultiCompileDepends}
 
 $(CoreObjs)RasterLineStyle$(oext) :                 $(lineStyleDir)RasterLineStyle.cpp $(LsLocalDepends) ${MultiCompileDepends}
-
-$(CoreObjs)DgnScan$(oext) :                         $(DgnCoreDir)DgnScan.cpp $(DgnPlatformAPISrc)ScanCriteria.h $(DgnFileIOPubH) $(HandlerDepends) ${MultiCompileDepends}
 
 $(CoreObjs)RangeIndex$(oext) :                      $(DgnCoreDir)RangeIndex.cpp $(DgnPlatformAPISrc)RangeIndex.h ${MultiCompileDepends}
 
@@ -214,7 +212,7 @@ $(CoreObjs)MeasureGeom$(oext) :                     $(DgnCoreDir)MeasureGeom.cpp
 
 $(CoreObjs)DgnCore$(oext) :                         $(DgnCoreDir)DgnCore.cpp $(DgnCoreDir)DgnCoreDLLInlines.h $(DgnPlatformAPISrc)DgnPlatformLib.h  ${MultiCompileDepends}
 
-$(CoreObjs)ViewContext$(oext) :                     $(DgnCoreDir)ViewContext.cpp $(contextDepends) $(HandlerDepends) $(DgnPlatformAPISrc)DgnModel.h $(DgnPlatformAPISrc)ScanCriteria.h ${MultiCompileDepends}
+$(CoreObjs)ViewContext$(oext) :                     $(DgnCoreDir)ViewContext.cpp $(contextDepends) $(HandlerDepends) $(DgnPlatformAPISrc)DgnModel.h ${MultiCompileDepends}
 
 $(CoreObjs)SnapContext$(oext) :                     $(DgnCoreDir)SnapContext.cpp $(HandlerDepends) ${MultiCompileDepends}
 

@@ -335,23 +335,23 @@ static void testRangeIndex()
         {
         double v = ((double)(i) - 5000.) * 10.0 * fuzz;
         DRange3d range = DRange3d::From(v, v+1.0, v+2, v+3, v+4, v+5);
-        RangeIndex::FBox box(range);
-        ASSERT_TRUE(box.m_low.x <= range.low.x);
-        ASSERT_TRUE(box.m_low.y <= range.low.y);
-        ASSERT_TRUE(box.m_low.y <= range.low.y);
-        ASSERT_TRUE(box.m_high.x >= range.high.x);
-        ASSERT_TRUE(box.m_high.y >= range.high.y);
-        ASSERT_TRUE(box.m_high.y >= range.high.y);
+        RangeIndex::FBox box(range, true);
+        ASSERT_TRUE(box.Low().x <= range.low.x);
+        ASSERT_TRUE(box.Low().y <= range.low.y);
+        ASSERT_TRUE(box.Low().y <= range.low.y);
+        ASSERT_TRUE(box.High().x >= range.high.x);
+        ASSERT_TRUE(box.High().y >= range.high.y);
+        ASSERT_TRUE(box.High().y >= range.high.y);
 
         DRange3d range2 = box.ToRange3d();
-        ASSERT_TRUE(box.m_low.x == range2.low.x);
-        ASSERT_TRUE(box.m_low.y == range2.low.y);
-        ASSERT_TRUE(box.m_low.y == range2.low.y);
-        ASSERT_TRUE(box.m_high.x == range2.high.x);
-        ASSERT_TRUE(box.m_high.y == range2.high.y);
-        ASSERT_TRUE(box.m_high.y == range2.high.y);
+        ASSERT_TRUE(box.Low().x == range2.low.x);
+        ASSERT_TRUE(box.Low().y == range2.low.y);
+        ASSERT_TRUE(box.Low().y == range2.low.y);
+        ASSERT_TRUE(box.High().x == range2.high.x);
+        ASSERT_TRUE(box.High().y == range2.high.y);
+        ASSERT_TRUE(box.High().y == range2.high.y);
 
-        entries.push_back(RangeIndex::Entry(box, DgnElementId((uint64_t)i+1), DgnCategoryId((uint64_t)i+10023)));
+        entries.push_back(RangeIndex::Entry(box, DgnElementId((uint64_t)i+1)));
         }
 
     RangeIndex::Tree tree(true, 20);
@@ -367,8 +367,7 @@ static void testRangeIndex()
         auto found = tree.FindElement(entry.m_id);
         ASSERT_TRUE(found != nullptr);
         ASSERT_TRUE(found->m_id == entry.m_id);
-        ASSERT_TRUE(found->m_category == entry.m_category);
-        ASSERT_TRUE(0==memcmp(&found->m_range, &entry.m_range, sizeof(entry.m_range)));
+        ASSERT_TRUE(found->m_range.IsBitwiseEqual(entry.m_range));
         }
 
     for (auto& entry : entries)

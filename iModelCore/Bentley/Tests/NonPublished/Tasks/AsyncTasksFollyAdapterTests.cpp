@@ -198,13 +198,15 @@ TEST_F(AsyncTasksFollyAdapterTests, FromFolly_FutureNotYetCompletedAndCalledFrom
 
     AsyncTaskPtr<int> convertedTask;
 
+    AsyncTestCheckpoint checkpoint;
     WorkerThreadPtr workerThread = WorkerThread::Create();
     auto parentTask = workerThread->ExecuteAsync([&]
         {
         convertedTask = AsyncTaskFollyAdapter::FromFolly(std::move(future));
+        checkpoint.Checkin();
         });
 
-    BeThreadUtilities::BeSleep(10);
+    checkpoint.WaitUntilReached();
 
     EXPECT_FALSE(convertedTask->IsCompleted());
     EXPECT_FALSE(parentTask->IsCompleted());
@@ -214,6 +216,8 @@ TEST_F(AsyncTasksFollyAdapterTests, FromFolly_FutureNotYetCompletedAndCalledFrom
     ASSERT_TRUE(convertedTask->IsCompleted());
     ASSERT_TRUE(parentTask->IsCompleted());
     EXPECT_EQ(42, convertedTask->GetResult());
+
+    workerThread->OnEmpty()->Wait();
     }
 
 //---------------------------------------------------------------------------------------
@@ -226,13 +230,15 @@ TEST_F(AsyncTasksFollyAdapterTests, FromFolly_UnitFutureNotYetCompletedAndCalled
 
     AsyncTaskPtr<void> convertedTask;
 
+    AsyncTestCheckpoint checkpoint;
     WorkerThreadPtr workerThread = WorkerThread::Create();
     auto parentTask = workerThread->ExecuteAsync([&]
         {
         convertedTask = AsyncTaskFollyAdapter::FromFolly(std::move(future));
+        checkpoint.Checkin();
         });
 
-    BeThreadUtilities::BeSleep(10);
+    checkpoint.WaitUntilReached();
 
     EXPECT_FALSE(convertedTask->IsCompleted());
     EXPECT_FALSE(parentTask->IsCompleted());

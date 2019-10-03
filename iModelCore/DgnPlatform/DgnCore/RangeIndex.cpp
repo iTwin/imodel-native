@@ -12,49 +12,6 @@ BEGIN_UNNAMED_NAMESPACE
 typedef Tree::LeafNode*     LeafNodeP;
 typedef Tree::InternalNode* InternalNodeP;
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool rangeIsValid(FBoxCR range, bool is3d)
-    {
-    return (range.m_low.x <= range.m_high.x) && (range.m_low.y <= range.m_high.y) && (!is3d || (range.m_low.z <= range.m_high.z));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-static double rangeExtentSquared(FBoxCR range)
-    {
-    double extentX = (double) range.m_high.x - range.m_low.x;
-    double extentY = (double) range.m_high.y - range.m_low.y;
-    double extentZ = (double) range.m_high.z - range.m_low.z;
-    return extentX * extentX + extentY * extentY + extentZ * extentZ;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void extendRange(FBoxR thisRange, FBoxCR range)
-    {
-    if (range.m_low.x < thisRange.m_low.x)
-        thisRange.m_low.x = range.m_low.x;
-
-    if (range.m_low.y < thisRange.m_low.y)
-        thisRange.m_low.y = range.m_low.y;
-
-    if (range.m_low.z < thisRange.m_low.z)
-        thisRange.m_low.z = range.m_low.z;
-
-    if (range.m_high.x > thisRange.m_high.x)
-        thisRange.m_high.x = range.m_high.x;
-
-    if (range.m_high.y > thisRange.m_high.y)
-        thisRange.m_high.y = range.m_high.y;
-
-    if (range.m_high.z > thisRange.m_high.z)
-        thisRange.m_high.z = range.m_high.z;
-    }
-
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
@@ -62,7 +19,6 @@ struct SplitEntry
 {
     FBox m_range;
     DgnElementId m_id; 
-    DgnCategoryId m_category; 
     void* m_vp;
     int m_groupNumber[3];
 };
@@ -71,9 +27,9 @@ typedef SplitEntry* SplitEntryP;
 typedef SplitEntry const * SplitEntryCP;
 typedef SplitEntry const& SplitEntryCR;
 
-static inline bool compareX(SplitEntryCR entry1, SplitEntryCR entry2) {return entry1.m_range.m_low.x < entry2.m_range.m_low.x;}
-static inline bool compareY(SplitEntryCR entry1, SplitEntryCR entry2) {return entry1.m_range.m_low.y < entry2.m_range.m_low.y;}
-static inline bool compareZ(SplitEntryCR entry1, SplitEntryCR entry2) {return entry1.m_range.m_low.z < entry2.m_range.m_low.z;}
+static inline bool compareX(SplitEntryCR entry1, SplitEntryCR entry2) {return entry1.m_range.Low().x < entry2.m_range.Low().x;}
+static inline bool compareY(SplitEntryCR entry1, SplitEntryCR entry2) {return entry1.m_range.Low().y < entry2.m_range.Low().y;}
+static inline bool compareZ(SplitEntryCR entry1, SplitEntryCR entry2) {return entry1.m_range.Low().z < entry2.m_range.Low().z;}
 typedef bool (*PF_CompareFunc)(SplitEntryCR, SplitEntryCR);
 
 enum SplitAxis {X_AXIS=0, Y_AXIS=1, Z_AXIS=2};
@@ -102,9 +58,9 @@ static double checkSeparation(SplitEntryP entries, size_t count, SplitAxis axis)
                 {
                 SplitEntryCP nextEntry = currEntry + 1;
 
-                if (currEntry->m_range.m_high.x < nextEntry->m_range.m_low.x)
+                if (currEntry->m_range.High().x < nextEntry->m_range.Low().x)
                     {
-                    if ((separation = (nextEntry->m_range.m_low.x - currEntry->m_range.m_high.x)) > maxSeparation)
+                    if ((separation = (nextEntry->m_range.Low().x - currEntry->m_range.High().x)) > maxSeparation)
                         {
                         maxSeparation = separation;
                         sepEntry = nextEntry;
@@ -112,7 +68,7 @@ static double checkSeparation(SplitEntryP entries, size_t count, SplitAxis axis)
                     }
                 else
                     {
-                    if ((minDist = (nextEntry->m_range.m_low.x - currEntry->m_range.m_low.x)) > maxMinDist)
+                    if ((minDist = (nextEntry->m_range.Low().x - currEntry->m_range.Low().x)) > maxMinDist)
                         {
                         maxMinDist    = minDist;
                         minDistEntry = nextEntry;
@@ -126,9 +82,9 @@ static double checkSeparation(SplitEntryP entries, size_t count, SplitAxis axis)
                 {
                 SplitEntryCP nextEntry = currEntry + 1;
 
-                if (currEntry->m_range.m_high.y < nextEntry->m_range.m_low.y)
+                if (currEntry->m_range.High().y < nextEntry->m_range.Low().y)
                     {
-                    if ((separation = (nextEntry->m_range.m_low.y - currEntry->m_range.m_high.y)) > maxSeparation)
+                    if ((separation = (nextEntry->m_range.Low().y - currEntry->m_range.High().y)) > maxSeparation)
                         {
                         maxSeparation = separation;
                         sepEntry = nextEntry;
@@ -136,7 +92,7 @@ static double checkSeparation(SplitEntryP entries, size_t count, SplitAxis axis)
                     }
                 else
                     {
-                    if ((minDist = (nextEntry->m_range.m_low.y - currEntry->m_range.m_low.y)) > maxMinDist)
+                    if ((minDist = (nextEntry->m_range.Low().y - currEntry->m_range.Low().y)) > maxMinDist)
                         {
                         maxMinDist = minDist;
                         minDistEntry = nextEntry;
@@ -150,9 +106,9 @@ static double checkSeparation(SplitEntryP entries, size_t count, SplitAxis axis)
                 {
                 SplitEntryCP nextEntry = currEntry + 1;
 
-                if (currEntry->m_range.m_high.z < nextEntry->m_range.m_low.z)
+                if (currEntry->m_range.High().z < nextEntry->m_range.Low().z)
                     {
-                    if ((separation = (nextEntry->m_range.m_low.z - currEntry->m_range.m_high.z)) > maxSeparation)
+                    if ((separation = (nextEntry->m_range.Low().z - currEntry->m_range.High().z)) > maxSeparation)
                         {
                         maxSeparation = separation;
                         sepEntry = nextEntry;
@@ -161,7 +117,7 @@ static double checkSeparation(SplitEntryP entries, size_t count, SplitAxis axis)
 
                 else
                     {
-                    if ((minDist = (nextEntry->m_range.m_low.z - currEntry->m_range.m_low.z)) > maxMinDist)
+                    if ((minDist = (nextEntry->m_range.Low().z - currEntry->m_range.Low().z)) > maxMinDist)
                         {
                         maxMinDist = minDist;
                         minDistEntry = nextEntry;
@@ -207,7 +163,7 @@ inline void Tree::InternalNode::ValidateInternalRange()
     {
     ClearRange();
     for (auto curr = &m_firstChild[0]; curr < m_endChild; ++curr)
-        extendRange(m_nodeRange, (*curr)->GetRange());
+        m_nodeRange.Extend((*curr)->GetRange());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -217,7 +173,7 @@ inline void Tree::LeafNode::ValidateLeafRange()
     {
     ClearRange();
     for (Entry* curr = &m_firstChild[0]; curr < m_endChild; ++curr)
-        extendRange(m_nodeRange, curr->m_range);
+        m_nodeRange.Extend(curr->m_range);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -225,11 +181,11 @@ inline void Tree::LeafNode::ValidateLeafRange()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Tree::Node::Overlaps(FBoxCR range) const
     {
-    if (m_nodeRange.m_low.x > range.m_high.x || m_nodeRange.m_high.x < range.m_low.x ||
-        m_nodeRange.m_low.y > range.m_high.y || m_nodeRange.m_high.y < range.m_low.y)
+    if (m_nodeRange.Low().x > range.High().x || m_nodeRange.High().x < range.Low().x ||
+        m_nodeRange.Low().y > range.High().y || m_nodeRange.High().y < range.Low().y)
         return  false;
 
-    return !m_is3d ? true : (m_nodeRange.m_low.z <= range.m_high.z && m_nodeRange.m_high.z >= range.m_low.z);
+    return !m_is3d ? true : (m_nodeRange.Low().z <= range.High().z && m_nodeRange.High().z >= range.Low().z);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -237,11 +193,11 @@ bool Tree::Node::Overlaps(FBoxCR range) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Tree::Node::CompletelyContains(FBoxCR range) const
     {
-    if (m_nodeRange.m_low.x >= range.m_low.x || m_nodeRange.m_high.x <= range.m_high.x ||
-        m_nodeRange.m_low.y >= range.m_low.y || m_nodeRange.m_high.y <= range.m_high.y)
+    if (m_nodeRange.Low().x >= range.Low().x || m_nodeRange.High().x <= range.High().x ||
+        m_nodeRange.Low().y >= range.Low().y || m_nodeRange.High().y <= range.High().y)
         return  false;
 
-    return !m_is3d ? true : (m_nodeRange.m_low.z < range.m_low.z && m_nodeRange.m_high.z > range.m_high.z);
+    return !m_is3d ? true : (m_nodeRange.Low().z < range.Low().z && m_nodeRange.High().z > range.High().z);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -316,15 +272,15 @@ Tree::Node* Tree::InternalNode::ChooseBestNode(FBoxCP pRange, TreeR root)
         FBox newRange;
 
         newRange = thisRange;
-        extendRange(newRange, *pRange);
-        double newExtent = rangeExtentSquared(newRange);
+        newRange.Extend(*pRange);
+        double newExtent = newRange.ExtentSquared();
         if (isValid && (bestFit < newExtent))
             continue;
 
         // "thisFit" is a somewhat arbitrary measure of how well the range fits into this
         // node, taking into account the total size ("new extent") of this node plus this range,
         // plus a penalty for increasing it from its existing size.
-        double thisFit = newExtent + ((newExtent - rangeExtentSquared(thisRange)) * 10.0);
+        double thisFit = newExtent + ((newExtent - thisRange.ExtentSquared()) * 10.0);
 
         if (!isValid || (thisFit < bestFit))
             {
@@ -343,7 +299,7 @@ Tree::Node* Tree::InternalNode::ChooseBestNode(FBoxCP pRange, TreeR root)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Tree::InternalNode::AddEntry(Entry const& entry, TreeR root)
     {
-    extendRange(m_nodeRange, entry.m_range);
+    m_nodeRange.Extend(entry.m_range);
     auto* node = ChooseBestNode(&entry.m_range, root);
 
     LeafNodeP leaf = node->ToLeaf();
@@ -409,7 +365,7 @@ void Tree::InternalNode::AddInternalNode(Node* child, TreeR root)
     {
     child->SetParent(this);
     ValidateInternalRange();
-    extendRange(m_nodeRange, child->GetRange());
+    m_nodeRange.Extend(child->GetRange());
 
     *m_endChild++ = child;
     if (GetEntryCount() > (root.m_internalNodeSize))
@@ -454,7 +410,7 @@ Traverser::Stop Tree::InternalNode::Traverse(Traverser& traverser, TreeCR tree, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Tree::LeafNode::AddEntryToLeaf(Entry const& entry, TreeR root)
     {
-    extendRange(m_nodeRange, entry.m_range);
+    m_nodeRange.Extend(entry.m_range);
 
     *m_endChild = entry;
     ++m_endChild;
@@ -537,7 +493,6 @@ void Tree::LeafNode::SplitLeafNode(TreeR root)
     for (Entry* curr = &m_firstChild[0]; curr < m_endChild; ++curr, ++currEntry)
         {
         currEntry->m_id = curr->m_id;
-        currEntry->m_category = curr->m_category;
         currEntry->m_range = curr->m_range;
         }
 
@@ -560,9 +515,9 @@ void Tree::LeafNode::SplitLeafNode(TreeR root)
     for (currEntry = splitEntries; currEntry < endEntry; ++currEntry)
         {
         if (0 == currEntry->m_groupNumber[optimalSplit])
-            newNode1->AddEntryToLeaf(Entry(currEntry->m_range, currEntry->m_id, currEntry->m_category), root);
+            newNode1->AddEntryToLeaf(Entry(currEntry->m_range, currEntry->m_id), root);
         else
-            newNode2->AddEntryToLeaf(Entry(currEntry->m_range, currEntry->m_id, currEntry->m_category), root);
+            newNode2->AddEntryToLeaf(Entry(currEntry->m_range, currEntry->m_id), root);
         }
 
     // if parent is nullptr, this node is currently the root of the tree (the only node in the tree). We need to allocate an InternalNode to
@@ -618,13 +573,13 @@ Tree::Tree(bool is3d, size_t leafSize) : m_is3d(is3d)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Tree::AddEntry(Entry const& entry)
     {
-    if (!rangeIsValid(entry.m_range, m_is3d))
+    if (!entry.m_range.IsValid())
         return;
 
     WriteLock lock(*this);
     if (nullptr == m_root)
         m_root = AllocateLeafNode();
-    
+
     BeAssert(m_leafIdx.find(entry.m_id) == m_leafIdx.end());
 
     LeafNodeP leaf = m_root->ToLeaf();

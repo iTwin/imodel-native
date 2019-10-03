@@ -11,7 +11,8 @@
 #include <DgnPlatform/DgnPlatform.h>
 #include <DgnPlatform/DgnDb.h>
 #include <DgnPlatform/UnitDefinition.h>
-#include <DgnPlatform/ScanCriteria.h>
+#include <DgnPlatform/DgnModel.h>
+#include <DgnPlatform/RangeIndex.h>
 #include <Bentley/bvector.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 

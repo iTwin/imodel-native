@@ -6,6 +6,8 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
+#include <PlacementOnEarth/Placement.h>
+
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 namespace RangeIndex
@@ -23,16 +25,20 @@ static const double ROUND_AWAY =    (1.0 + 1.0/8388608.0);  // Round away from z
 //=======================================================================================
 struct FBox
 {
+private:
+    FPoint3d m_low;
+    FPoint3d m_high;
+    bool m_isMinimal;
+    bool m_is2d;
+public:
     //! convert a double to a float, ensuring that the float value is equal or lower than the double value
     static float RoundDown(double d) {float f = (float) d; return (f<d) ? f : (float) (d * (d<0 ? ROUND_AWAY : ROUND_TOWARDS));}
 
     //! convert a double to a float, ensuring that the float value is equal or higher than the double value
     static float RoundUp(double d) {float f = (float) d; return (f>d) ? f : (float) (d * (d<0 ? ROUND_TOWARDS : ROUND_AWAY));}
 
-    FPoint3d m_low;
-    FPoint3d m_high;
-
-    FBox(DRange3dCR box)
+    FBox() {Invalidate();}
+    FBox(DRange3dCR box, bool is2d)
         {
         m_low.x  = RoundDown(box.low.x);
         m_low.y  = RoundDown(box.low.y);
@@ -40,18 +46,58 @@ struct FBox
         m_high.y = RoundUp(box.high.y);
         m_high.x = RoundUp(box.high.x);
         m_high.z = RoundUp(box.high.z);
+        m_isMinimal = Placement3d::IsMinimumRange(box.low, box.high, is2d);
         }
 
-    void Invalidate() {m_low.x = m_low.y = m_low.z = std::numeric_limits<float>::max(); m_high.x = m_high.y = m_high.z = -std::numeric_limits<float>::max();}
-    FBox(FPoint3d low, FPoint3d high) : m_low(low), m_high(high) {}
-    FBox(float xlow, float ylow, float zlow, float xhigh, float yhigh, float zhigh) {m_low.x=xlow; m_low.y=ylow; m_low.z=zlow; m_high.x=xhigh; m_high.y=yhigh; m_high.z=zhigh;}
-    FBox() {Invalidate();}
-    bool IsNull() const {return m_low.x>m_high.x || m_low.y>m_high.y || m_low.z>m_high.z;}
+    void Invalidate()
+        {
+        m_low.x = m_low.y = m_low.z = std::numeric_limits<float>::max();
+        m_high.x = m_high.y = m_high.z = -std::numeric_limits<float>::max();
+        m_isMinimal = false;
+        }
+
+    bool IsNull() const {return m_low.x>m_high.x || m_low.y>m_high.y || (!m_is2d && m_low.z>m_high.z);}
+    bool IsValid() const {return !IsNull();}
+    bool IsMinimal() const {return m_isMinimal;}
+
+    FPoint3d const& Low() const {return m_low;}
+    FPoint3d const& High() const {return m_high;}
+
+    double DistanceSquared() const
+        {
+        return m_is2d ? m_low.DistanceSquaredXY(m_high) : m_low.DistanceSquared(m_high);
+        }
+
+    double ExtentSquared() const
+        {
+        double extentX = (double) m_high.x - m_low.x;
+        double extentY = (double) m_high.y - m_low.y;
+        double extentZ = (double) m_high.z - m_low.z;
+        return extentX * extentX + extentY * extentY + extentZ * extentZ;
+        }
+
+    void Extend(FBox const& range)
+        {
+        if (range.m_low.x < m_low.x) m_low.x = range.m_low.x;
+        if (range.m_low.y < m_low.y) m_low.y = range.m_low.y;
+        if (range.m_low.z < m_low.z) m_low.z = range.m_low.z;
+        if (range.m_high.x > m_high.x) m_high.x = range.m_high.x;
+        if (range.m_high.y > m_high.y) m_high.y = range.m_high.y;
+        if (range.m_high.z > m_high.z) m_high.z = range.m_high.z;
+        m_isMinimal = false;
+        }
+
     DRange3d ToRange3d() const {return DRange3d::From(m_low.x, m_low.y, m_low.z, m_high.x, m_high.y, m_high.z);}
     bool IntersectsWith(FBox const& rhs) const
         {
         return m_low.x <= rhs.m_high.x && m_low.y <= rhs.m_high.y && m_low.z <= rhs.m_high.z
             && rhs.m_low.x <= m_high.x && rhs.m_low.y <= m_high.y && rhs.m_low.z <= m_high.z;
+        }
+
+    // For tests.
+    bool IsBitwiseEqual(FBox const& other) const
+        {
+        return 0 == memcmp(&m_low, &other.m_low, 2 * sizeof(m_low)) && m_isMinimal == other.m_isMinimal && m_is2d == other.m_is2d;
         }
 };
 
@@ -60,15 +106,14 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(Entry);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Tree);
 
 //=======================================================================================
-//! An entry in a range index. 
+//! An entry in a range index.
 // @bsiclass                                                    Keith.Bentley   11/16
 //=======================================================================================
 struct Entry
 {
     DgnElementId m_id;
-    DgnCategoryId m_category;
     FBox m_range;
-    Entry(FBoxCR range, DgnElementId id, DgnCategoryId category) : m_range(range), m_id(id), m_category(category) {}
+    Entry(FBoxCR range, DgnElementId id) : m_range(range), m_id(id) {}
     Entry() {}
 };
 
@@ -243,7 +288,14 @@ public:
 
     //! Add a new geometric element into the range index.
     //! @param[in] geom the element to add to the range index.
-    DGNPLATFORM_EXPORT void AddElement(GeometrySourceCR geom) {if (geom.HasGeometry()) AddEntry(Entry(geom.CalculateRange3d(), geom.ToElement()->GetElementId(), geom.GetCategoryId()));}
+    DGNPLATFORM_EXPORT void AddElement(GeometrySourceCR geom)
+        {
+        if (geom.HasGeometry())
+            {
+            FBox fbox(geom.CalculateRange3d(), geom.Is2d());
+            AddEntry(Entry(fbox, geom.ToElement()->GetElementId()));
+            }
+        }
 
     //! Remove an element from the range index.
     //! @param[in] id The id of the element to remove
