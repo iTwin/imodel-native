@@ -14,6 +14,7 @@ USING_NAMESPACE_POINTCLOUD_TILETREE
 
 
 static int  s_nominalTileSize = 512;
+static int s_pointCountLimit = 125000;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
@@ -124,7 +125,11 @@ BentleyStatus DoGetFromSource()
     auto&                       tile = static_cast<TileR>(*m_tile);
     auto&                       root = static_cast<RootCR>(m_tile->GetRoot());
     static const size_t         s_maxTileBatchCount = 500000;
+#ifdef DO_VIEWPORT_QUERY
     static size_t               s_maxLeafPointCount = 20000;
+#else   
+    static size_t               s_maxLeafPointCount =  s_pointCountLimit * .9;    
+#endif    
     bool                        colorsPresent;
 
     static   BeMutex            s_queryMutex;
@@ -416,7 +421,7 @@ PointCloudQueryHandlePtr  Root::InitQuery (bool& colorsPresent, DRange3dCR tileR
     colorsPresent = pointCloudScene->_HasRGBChannel();
     worldToScene.InverseOf (m_model.GetSceneToWorld());
     Transform::FromProduct (worldToScene, GetLocation()).Multiply (sceneRange, tileRange);
-
+#ifdef DO_VIEWPORT_QUERY
     DVec3d              diagonalVector = sceneRange.DiagonalVector();
     Transform           eyeTransform = Transform::FromProduct (Transform::From(-1.0, -1.0, -1.0), 
                                                                Transform::FromScaleFactors(2.0 / diagonalVector.x, 2.0/diagonalVector.y, 2.0/diagonalVector.z), 
@@ -441,6 +446,9 @@ PointCloudQueryHandlePtr  Root::InitQuery (bool& colorsPresent, DRange3dCR tileR
         BeDuration::FromMilliseconds(10).Sleep();
 
     return queryHandle;
+#else
+    return createBoundingBoxQuery (pointCloudScene, sceneRange, s_pointCountLimit);
+#endif    
     }
 
 /*---------------------------------------------------------------------------------**//**
