@@ -287,12 +287,23 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
         if (smModel != nullptr)
             {
             doUpload = smModel->AllowPublishing();
-            if(doUpload) smModel->WriteCesiumTileset(rootJsonFile, modelDir, dbToEcefTransform);
+            if (doUpload)
+                {
+                LOG.tracev("Begin write cesium tileset for %s", model->GetName().c_str());
+                StopWatch timer(true);
+                smModel->WriteCesiumTileset(rootJsonFile, modelDir, dbToEcefTransform);
+                LOG.tracev("End write cesium tileset for %s", model->GetName().c_str());
+                ConverterLogging::LogPerformance(timer, "RealityModelTilesets> Write tilesets");
+                }
             }
         else
             {
+            LOG.tracev("Begin write cesium tileset for %s", model->GetName().c_str());
+            StopWatch timer(true);
             static double   s_leafTolerance = 0.0;      // Use the tolerance of the input tileset.
             Dgn::Tile::IO::WriteStatus status = Cesium::ICesiumPublisher::WriteCesiumTileset(fileName, rootJsonFile, modelDir, *geometricModel, dbToEcefTransform, s_leafTolerance);
+            LOG.tracev("End write cesium tileset for %s", model->GetName().c_str());
+            ConverterLogging::LogPerformance(timer, "RealityModelTilesets> Write tilesets");
             if (Dgn::Tile::IO::WriteStatus::Success != status)
                 {
                 ReportIssueV(Converter::IssueSeverity::Error, IssueCategory::DiskIO(), Issue::TileSetCreationFailure(), "", model->GetName().c_str(), status);
@@ -355,7 +366,11 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
             RealityDataService::SetProjectId(projectId); 
                                               
             Utf8String empty = "";
+            LOG.tracev("Begin upload reality data for %s", model->GetName().c_str());
+            StopWatch timer(true);
             ConnectedResponse response = crd.Upload(modelDir, empty);
+            LOG.tracev("End upload reality data for %s", model->GetName().c_str());
+            ConverterLogging::LogPerformance(timer, "RealityModelTilesets> Upload tilesets");
 
             if (!response.simpleSuccess)
                 {

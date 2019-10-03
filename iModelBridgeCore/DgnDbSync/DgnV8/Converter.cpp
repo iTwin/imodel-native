@@ -2377,7 +2377,7 @@ BentleyStatus Converter::ConvertElement(ElementConversionResults& results, DgnV8
         propsData.Accept(writer);
         results.m_jsonProps = buffer.GetString();
         }
-    else
+    else if (Utf8String::IsNullOrEmpty(results.m_element->GetUserLabel()))
         {
         Bentley::WString desc;
         v8eh.GetHandler().GetDescription(v8eh, desc, 256);
