@@ -68,6 +68,7 @@
     </Part>
 
     <Part Name="ORDBridgeInstallerFiles" BMakeFile="ORDBridge/installer/installer.prewire.mke">
+        <SubPart PartName="Eula" PartFile="Eula" Repository="Miscdev-Eula"/>
         <SubPart PartName="InstallFrameworkBase" PartFile="InstallFramework" Repository="InstallFramework"/>
         <Bindings>
             <Files BindToWixBuild="true">
@@ -92,6 +93,7 @@
         <!-- <SubPart PartName="ORDBridgeGUI" /> -->
                 
         <InstallerWixFile SourceFile="ORDBridge\Installer\ORDBridgeInstaller"/>
+        <Directories DirectoryListName="DgnDbSyncAppCommonDirList" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync" Repository="imodel02"/>
         <Directories DirectoryListName="ORDBridgeDirectoryList" />
     </Product>
 
