@@ -5611,14 +5611,17 @@ TEST_F(ECSqlStatementTestFixture, GetParameterIndex)
 
     int actualParamIndex = statement.GetParameterIndex("i");
     EXPECT_EQ(1, actualParamIndex);
+    EXPECT_EQ(1, statement.TryGetParameterIndex("i"));
     statement.BindInt(actualParamIndex, 123);
 
     actualParamIndex = statement.GetParameterIndex("s");
     EXPECT_EQ(2, actualParamIndex);
+    EXPECT_EQ(2, statement.TryGetParameterIndex("s"));
     statement.BindText(actualParamIndex, "Sample string", IECSqlBinder::MakeCopy::Yes);
 
     actualParamIndex = statement.GetParameterIndex("garbage");
     EXPECT_EQ(-1, actualParamIndex);
+    EXPECT_EQ(-1, statement.TryGetParameterIndex("garbage"));
 
     ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
     }
@@ -5632,10 +5635,12 @@ TEST_F(ECSqlStatementTestFixture, GetParameterIndex)
 
     int actualParamIndex = statement.GetParameterIndex("s");
     EXPECT_EQ(2, actualParamIndex);
+    EXPECT_EQ(2, statement.TryGetParameterIndex("s"));
     statement.BindText(actualParamIndex, "Sample string", IECSqlBinder::MakeCopy::Yes);
 
     actualParamIndex = statement.GetParameterIndex("l");
     EXPECT_EQ(3, actualParamIndex);
+    EXPECT_EQ(3, statement.TryGetParameterIndex("l"));
     statement.BindInt64(actualParamIndex, 123456789);
 
     ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
@@ -5650,6 +5655,7 @@ TEST_F(ECSqlStatementTestFixture, GetParameterIndex)
 
     int actualParamIndex = statement.GetParameterIndex("s");
     EXPECT_EQ(2, actualParamIndex);
+    EXPECT_EQ(2, statement.TryGetParameterIndex("s"));
     statement.BindText(actualParamIndex, "Sample string", IECSqlBinder::MakeCopy::Yes);
 
     statement.BindInt64(3, 123456789);
@@ -5668,6 +5674,7 @@ TEST_F(ECSqlStatementTestFixture, GetParameterIndex)
 
     int actualParamIndex = statement.GetParameterIndex("value");
     ASSERT_EQ(3, actualParamIndex);
+    ASSERT_EQ(3, statement.TryGetParameterIndex("value"));
     ASSERT_EQ(ECSqlStatus::Success, statement.BindInt(actualParamIndex, 300471));
 
     ECInstanceKey newKey;
@@ -5678,6 +5685,7 @@ TEST_F(ECSqlStatementTestFixture, GetParameterIndex)
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT ECInstanceId FROM ecsql.PSA WHERE ECInstanceId = :[id]"));
     actualParamIndex = statement.GetParameterIndex("id");
     ASSERT_EQ(1, actualParamIndex);
+    ASSERT_EQ(1, statement.TryGetParameterIndex("id"));
     ASSERT_EQ(ECSqlStatus::Success, statement.BindId(actualParamIndex, newKey.GetInstanceId()));
 
     ASSERT_EQ(BE_SQLITE_ROW, statement.Step());

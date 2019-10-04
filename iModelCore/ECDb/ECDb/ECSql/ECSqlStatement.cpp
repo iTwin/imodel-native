@@ -84,6 +84,11 @@ IECSqlBinder& ECSqlStatement::GetBinder(int parameterIndex) { return m_pimpl->Ge
 int ECSqlStatement::GetParameterIndex(Utf8CP parameterName) const { return m_pimpl->GetParameterIndex(parameterName); }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                Shaun.Sewall   10/2019
+//---------------------------------------------------------------------------------------
+int ECSqlStatement::TryGetParameterIndex(Utf8CP parameterName) const { return m_pimpl->TryGetParameterIndex(parameterName); }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      06/2013
 //---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlStatement::ClearBindings() { return m_pimpl->ClearBindings(); }

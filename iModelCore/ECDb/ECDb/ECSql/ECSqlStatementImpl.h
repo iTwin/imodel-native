@@ -72,6 +72,7 @@ struct ECSqlStatement::Impl final
 
         IECSqlBinder& GetBinder(int parameterIndex) const;
         int GetParameterIndex(Utf8CP parameterName) const;
+        int TryGetParameterIndex(Utf8CP parameterName) const;
         ECSqlStatus ClearBindings();
 
         DbResult Step();

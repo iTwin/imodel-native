@@ -53,6 +53,16 @@ int IECSqlPreparedStatement::GetParameterIndex(Utf8CP parameterName) const
     return _GetParameterIndex(parameterName);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Shaun.Sewall           10/19
+//---------------------------------------------------------------------------------------
+int IECSqlPreparedStatement::TryGetParameterIndex(Utf8CP parameterName) const
+    {
+    if (SUCCESS != AssertIsValid())
+        return -1;
+
+    return _TryGetParameterIndex(parameterName);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        03/17
@@ -174,6 +184,14 @@ int SingleECSqlPreparedStatement::_GetParameterIndex(Utf8CP parameterName) const
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                Shaun.Sewall           10/19
+//---------------------------------------------------------------------------------------
+int SingleECSqlPreparedStatement::_TryGetParameterIndex(Utf8CP parameterName) const
+    {
+    return m_parameterMap.GetIndexForName(parameterName); // do not log an error on a missing parameter
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        03/17
 //---------------------------------------------------------------------------------------
 DbResult SingleECSqlPreparedStatement::DoStep()
@@ -266,6 +284,15 @@ int CompoundECSqlPreparedStatement::_GetParameterIndex(Utf8CP parameterName) con
         }
 
     return it->second;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Shaun.Sewall           10/19
+//---------------------------------------------------------------------------------------
+int CompoundECSqlPreparedStatement::_TryGetParameterIndex(Utf8CP parameterName) const
+    {
+    auto it = m_parameterNameMap.find(parameterName);
+    return (it == m_parameterNameMap.end()) ? -1 : it->second;
     }
 
 //---------------------------------------------------------------------------------------

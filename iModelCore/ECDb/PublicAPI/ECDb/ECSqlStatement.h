@@ -250,7 +250,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         //! @return Parameter binder
         ECDB_EXPORT IECSqlBinder& GetBinder(int parameterIndex);
 
-        //! Gets the parameter index for a named parameter
+        //! Gets the parameter index for a named parameter. Will log an error if parameter not found.
         //!
         //! @e Example
         //!  ECSqlStatement statement;
@@ -259,7 +259,14 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         //!
         //! @param[in] parameterName Name of the binding parameter
         //! @return Parameter index
+        //! @see TryGetParameterIndex
         ECDB_EXPORT int GetParameterIndex(Utf8CP parameterName) const;
+
+        //! Gets the parameter index for a named parameter. Will not log an error if parameter not found.
+        //! @param[in] parameterName Name of the binding parameter
+        //! @return Parameter index
+        //! @see GetParameterIndex
+        ECDB_EXPORT int TryGetParameterIndex(Utf8CP parameterName) const;
 
         //! Resets all parameter bindings
         //! @return ECSqlStatus::Success or error codes

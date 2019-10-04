@@ -36,6 +36,7 @@ struct IECSqlPreparedStatement
         virtual ECSqlStatus _Prepare(ECSqlPrepareContext&, Exp const&) = 0;
         virtual IECSqlBinder& _GetBinder(int parameterIndex) const = 0;
         virtual int _GetParameterIndex(Utf8CP parameterName) const = 0;
+        virtual int _TryGetParameterIndex(Utf8CP parameterName) const = 0;
         virtual ECSqlStatus _Reset() = 0;
         virtual ECSqlStatus _ClearBindings() = 0;
         virtual Utf8CP _GetNativeSql() const = 0;
@@ -51,6 +52,7 @@ struct IECSqlPreparedStatement
         ECSqlStatus Prepare(ECSqlPrepareContext&, Exp const&, Utf8CP ecsql);
         IECSqlBinder& GetBinder(int parameterIndex) const;
         int GetParameterIndex(Utf8CP parameterName) const;
+        int TryGetParameterIndex(Utf8CP parameterName) const;
 
         ECSqlStatus ClearBindings();
         ECSqlStatus Reset();
@@ -77,6 +79,7 @@ private:
 
     IECSqlBinder& _GetBinder(int parameterIndex) const override;
     int _GetParameterIndex(Utf8CP parameterName) const override;
+    int _TryGetParameterIndex(Utf8CP parameterName) const override;
     ECSqlStatus _ClearBindings() override;
     Utf8CP _GetNativeSql() const override { return m_sqliteStatement.GetSql(); }
 
@@ -214,6 +217,7 @@ struct CompoundECSqlPreparedStatement : IECSqlPreparedStatement
 
         IECSqlBinder& _GetBinder(int parameterIndex) const override;
         int _GetParameterIndex(Utf8CP parameterName) const override;
+        int _TryGetParameterIndex(Utf8CP parameterName) const override;
         ECSqlStatus _Reset() override;
         ECSqlStatus _ClearBindings() override;
         Utf8CP _GetNativeSql() const override;

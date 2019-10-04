@@ -134,6 +134,15 @@ int ECSqlStatement::Impl::GetParameterIndex(Utf8CP parameterName) const
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                Shaun.Sewall           10/19
+//---------------------------------------------------------------------------------------
+int ECSqlStatement::Impl::TryGetParameterIndex(Utf8CP parameterName) const
+    {
+    ECSqlStatus stat = FailIfNotPrepared("Cannot call binding API on an unprepared ECSqlStatement.");
+    return stat.IsSuccess() ? GetPreparedStatementP()->TryGetParameterIndex(parameterName) : -1;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        10/13
 //---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlStatement::Impl::ClearBindings()

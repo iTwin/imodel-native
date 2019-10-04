@@ -780,12 +780,12 @@ void GeometricModel3d::_BindWriteParams(BeSQLite::EC::ECSqlStatement& statement,
     T_Super::_BindWriteParams(statement, forInsert);
 
     // The IsNotSpatiallyLocated property was added after the initial BisCore release, so may not be there in all iModels
-    int isNotSpatiallyLocatedIndex = statement.GetParameterIndex(prop_IsNotSpatiallyLocated());
+    int isNotSpatiallyLocatedIndex = statement.TryGetParameterIndex(prop_IsNotSpatiallyLocated());
     if (isNotSpatiallyLocatedIndex >= 0)
         statement.BindBoolean(isNotSpatiallyLocatedIndex, IsNotSpatiallyLocated());
 
     // The IsPlanProjection property was added after the initial BisCore release, so may not be there in all iModels
-    int isPlanProjectionIndex = statement.GetParameterIndex(prop_IsPlanProjection());
+    int isPlanProjectionIndex = statement.TryGetParameterIndex(prop_IsPlanProjection());
     if (isPlanProjectionIndex >= 0)
         statement.BindBoolean(isPlanProjectionIndex, IsPlanProjection());
     }
