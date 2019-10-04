@@ -68,6 +68,8 @@ public:
     bool operator<(NavNodeKey const& other) const {return Compare(other) < 0;}
     //! Is this node equal to the supplied one.
     bool operator==(NavNodeKey const& other) const {return 0 == Compare(other);}
+    //! Is this node different from the supplied one.
+    bool operator!=(NavNodeKey const& other) const {return 0 != Compare(other);}
     //! Is this node similar to the supplied one.
     //! @note Similar nodes can be unequal, e.g. label grouping node keys are similar if labels match, but they're not
     //! equal because they represent different nodes.

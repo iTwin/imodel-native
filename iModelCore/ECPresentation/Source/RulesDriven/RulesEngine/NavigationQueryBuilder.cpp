@@ -2827,10 +2827,9 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
             }
 
         // find all applying relationship paths
-        bmap<ECRelationshipClassCP, int> relationshipCounter;
         ECSchemaHelper::RelationshipClassPathOptions options(*rootClass, relationshipDirection, specification.GetSkipRelatedLevel(),
             supportedSchemas.c_str(), specification.GetRelationshipClassNames().c_str(), specification.GetRelatedClassNames().c_str(),
-            relationshipCounter, groupingResolver.GetGroupingClass());
+            queryContext->GetRelationshipUseCounter(), groupingResolver.GetGroupingClass());
         bvector<bpair<RelatedClassPath, bool>> relationshipClassPaths = m_params.GetSchemaHelper().GetRelationshipClassPaths(options);
 
         // create a select info for each path

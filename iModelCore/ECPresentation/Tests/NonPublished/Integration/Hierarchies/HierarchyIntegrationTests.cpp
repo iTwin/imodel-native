@@ -4916,6 +4916,61 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupingChildrenByRelate
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(UsingRelatedInstanceOfTheSameClassAsInRelatedInstancesSpecification, R"*(
+    <ECEntityClass typeName="ClassA" />
+    <ECEntityClass typeName="ClassB" />
+    <ECRelationshipClass typeName="A_Has_Bs" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="owns child" polymorphic="false">
+            <Class class="ClassA"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by parent" polymorphic="false">
+            <Class class="ClassB"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, UsingRelatedInstanceOfTheSameClassAsInRelatedInstancesSpecification)
+    {
+    ECClassCP classA = GetClass("ClassA");
+    ECClassCP classB = GetClass("ClassB");
+    ECRelationshipClassCP rel = GetClass("A_Has_Bs")->GetRelationshipClassCP();
+
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr b1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    IECInstancePtr b2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *a, *b1);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *a, *b2);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rule = new RootNodeRule();
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", classB->GetFullName(), false));
+    rules->AddPresentationRule(*rule);
+
+    ChildNodeRule* childNodeRule = new ChildNodeRule();
+    RelatedInstanceNodesSpecificationP childSpec = new RelatedInstanceNodesSpecification(1, ChildrenHint::Unknown, false, false, false, false, 0,
+        "b.ECInstanceId <> parent.ECInstanceId", RequiredRelationDirection_Backward, "", rel->GetFullName(), classA->GetFullName());
+    childSpec->AddRelatedInstance(*new RelatedInstanceSpecification(RequiredRelationDirection_Forward, rel->GetFullName(), classB->GetFullName(), "b"));
+    childNodeRule->AddSpecification(*childSpec);
+    rules->AddPresentationRule(*childNodeRule);
+
+    // make sure we have 2 instances of ClassB
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
+    ASSERT_EQ(2, rootNodes.GetSize());
+    EXPECT_EQ(classB, &rootNodes[0]->GetKey()->AsECInstanceNodeKey()->GetECClass());
+    EXPECT_EQ(classB, &rootNodes[1]->GetKey()->AsECInstanceNodeKey()->GetECClass());
+
+    // each node should have 1 ClassA child node
+    DataContainer<NavNodeCPtr> childNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
+    ASSERT_EQ(1, childNodes.GetSize());
+    EXPECT_EQ(classA, &childNodes[0]->GetKey()->AsECInstanceNodeKey()->GetECClass());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (RulesDrivenECPresentationManagerNavigationTests, ReturnsChildNodesWhenTheresOnlyOneLabelGroupingNode)
