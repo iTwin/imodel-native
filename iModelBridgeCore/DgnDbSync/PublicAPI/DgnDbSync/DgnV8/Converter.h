@@ -844,7 +844,9 @@ struct Converter
         L10N_STRING(ProjectExtentsAdjusted)      // =="Project Extents have been adjusted to exclude outlying elements"==
         L10N_STRING(FailedToCreatePresentationRules)    // =="Failed to create presentation rules"==
         L10N_STRING(InconsistentTransformsForEmbeddedReference)    // =="Inconsistent transform used for embedded reference %s. It was first seen with a different transform in %s"==
-            
+        L10N_STRING(RootAlreadyProcessedAsRef)      // =="This file has already been mapped into this iModel, not as a masterfile but as a reference attachment."==
+        L10N_STRING(RootBelongsToAnotherJob)        // =="This file has already been mapped into this iModel as a masterfile by another iModel bridge job (%s)."==
+
         IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
     //! Progress messages for the conversion process
@@ -2317,6 +2319,8 @@ protected:
 
     DgnV8Api::ModelInfo const& _GetModelInfo(DgnV8ModelCR v8Model) override { return m_rootModelRef->GetDgnModelP()->GetModelInfo(); }
 
+    DGNDBSYNC_EXPORT Utf8String GetJobName(SubjectCR sourceMasterModelSubject);
+
 public:
     virtual SpatialParams const& _GetSpatialParams() const = 0;
 
@@ -2377,6 +2381,9 @@ public:
 
     //! If the current bridge was ever run with this master model, find and return the Job Subject that was recorded.
     ResolvedImportJob FindSoleJobSubjectForSourceMasterModel(SubjectCR masterModelSubject);
+
+    //! This function checks that the CodeValue of the specified Job Subject matches the result of calling GetJobName. 
+    BentleyStatus CheckJobBelongsToMe(SubjectCR jobSubject, SubjectCR masterModelSubject);
 
     //! Find an existing "source master model subject", if it exists, for the specified V8 model. If you just want to find the first (or only) one, pass
     //! the dictionary model of the V8 file.

@@ -165,6 +165,9 @@ SpatialConverterBase::ImportJobLoadStatus SpatialConverterBase::FindJob()
     if (!m_importJob.IsValid())
         return ImportJobLoadStatus::FailedNotFound;
 
+    if (BSISUCCESS != CheckJobBelongsToMe(m_importJob.GetSubject(), *sourceMasterModelSubject))
+        return ImportJobLoadStatus::FailedNotFound;
+
     // *** TRICKY: If this is called by the framework as a check *after* it calls _IntializeJob, then don't change the change detector!
     if (!_HaveChangeDetector() || IsUpdating())
         _SetChangeDetector(true);
@@ -309,6 +312,29 @@ void SpatialConverterBase::ComputeDefaultImportJobName(SubjectCR sourceMasterMod
     */
     Utf8String jobName = _GetParams().GetBridgeRegSubKeyUtf8();
     _GetParamsR().SetBridgeJobName(jobName);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String SpatialConverterBase::GetJobName(SubjectCR sourceMasterModelSubject)
+    {
+    Utf8String jobName = _GetParams().GetBridgeJobName();
+    if (jobName.empty())
+        {
+        ComputeDefaultImportJobName(sourceMasterModelSubject);
+        jobName = _GetParams().GetBridgeJobName();
+        }
+    else
+        {
+        if (!jobName.StartsWithI(_GetParams().GetBridgeRegSubKeyUtf8().c_str()))
+            {
+            jobName = _GetParams().GetBridgeRegSubKeyUtf8();
+            jobName.append(":");
+            jobName.append(_GetParams().GetBridgeJobName());
+            }
+        }
+    return jobName;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -576,21 +602,7 @@ SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(
         sourceMasterModelSubject = CreateAndInsertSourceMasterModelSubject(*GetRootModelP());
 
     // Create a BridgeJob Subject as a child of the sourceMasterModel Subject
-    Utf8String jobName = _GetParams().GetBridgeJobName();
-    if (jobName.empty())
-        {
-        ComputeDefaultImportJobName(*sourceMasterModelSubject);
-        jobName = _GetParams().GetBridgeJobName();
-        }
-    else
-        {
-        if (!jobName.StartsWithI(_GetParams().GetBridgeRegSubKeyUtf8().c_str()))
-            {
-            jobName = _GetParams().GetBridgeRegSubKeyUtf8();
-            jobName.append(":");
-            jobName.append(_GetParams().GetBridgeJobName());
-            }
-        }
+    Utf8String jobName = GetJobName(*sourceMasterModelSubject);
 
     BeAssert(!jobName.empty());
 
@@ -732,6 +744,16 @@ ResolvedImportJob SpatialConverterBase::FindSoleJobSubjectForSourceMasterModel(S
     auto jtype = (ResolvedImportJob::ConverterType)(JobSubjectUtils::GetProperty(*jobSubject, "Properties")["ConverterType"].asInt());
 
     return ResolvedImportJob(*jobSubject, jtype);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus SpatialConverterBase::CheckJobBelongsToMe(SubjectCR jobSubject, SubjectCR masterModelSubject)
+    {
+    auto thisJobName = GetJobName(masterModelSubject);
+    auto foundJobName = jobSubject.GetCode().GetValueUtf8();
+    return (foundJobName.Equals(thisJobName))? BentleyStatus::SUCCESS: BentleyStatus::ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**

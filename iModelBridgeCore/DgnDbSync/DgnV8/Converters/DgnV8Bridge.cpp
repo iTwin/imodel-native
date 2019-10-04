@@ -607,26 +607,27 @@ SubjectCPtr DgnV8Bridge::_FindJob()
 +---------------+---------------+---------------+---------------+---------------+------*/
 SubjectCPtr DgnV8Bridge::_InitializeJob()
     {
-//    BeAssert(m_converter->IsFileAssignedToBridge(*m_converter->GetRootV8File()) && "The bridge assigned to the root file/model must be the bridge that creates the root subject");
+    // Note that the "root" file (i.e., masterfile) may not be assigned to this bridge. This bridge may only be handling reference files. 
+    // It must nevertheless create its own job subject, which points to this masterfile.
 
     auto status = m_converter->InitializeJob();
 
-    //  Make sure that we really should be converting this model as our root
-    if (RootModelConverter::ImportJobCreateStatus::Success != status)
-        {
-        if (RootModelConverter::ImportJobCreateStatus::FailedExistingNonRootModel == status)
-            {
-            // This model was converted by some other job and not as its root.
-            // This is probably a user error. If we were to use this as a root, we could end up creating duplicates of it and its references, possibly
-            //  using different transforms. That would probably only cause confusion.
-            LOG.fatalv(L"%ls - error - the selected root model [%ls] was previously converted, not as a root but as a reference attachment.", _GetParams().GetBriefcaseName().GetName(), m_converter->GetRootModelP()->GetModelName());
-            return nullptr;
-            }
+    if (RootModelConverter::ImportJobCreateStatus::Success == status)
+        return &m_converter->GetImportJob().GetSubject();
 
-        BeAssert(RootModelConverter::ImportJobCreateStatus::FailedExistingRoot != status); // If the root was previously converted, then we should be doing an update!
+    // Can't initialize this job. Report the error.
+    LOG.fatalv("DgnV8Bridge::_InitializeJob failed with status %lx", status);
+
+    if (RootModelConverter::ImportJobCreateStatus::FailedExistingNonRootModel == status)
+        {
+        m_converter->ReportIssue(Converter::IssueSeverity::Fatal, Converter::IssueCategory::Unsupported(), Converter::Issue::RootAlreadyProcessedAsRef(), "", BentleyApi::Utf8String(_GetParams().GetInputFileName()).c_str());
+        }
+    else if (RootModelConverter::ImportJobCreateStatus::FailedExistingRoot == status)
+        {
+        m_converter->ReportIssue(Converter::IssueSeverity::Fatal, Converter::IssueCategory::Unsupported(), Converter::Issue::RootBelongsToAnotherJob(), "", BentleyApi::Utf8String(_GetParams().GetInputFileName()).c_str());
         }
 
-    return (RootModelConverter::ImportJobCreateStatus::Success == status)? &m_converter->GetImportJob().GetSubject(): nullptr;
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**

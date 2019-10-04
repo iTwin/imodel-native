@@ -48,7 +48,7 @@
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${env:OutRoot}/Winx64/Product/DgnV8ConverterTests/DgnV8ConverterTests.exe",
-            "args": ["--gtest_break_on_failure", "--gtest_filter=ConverterTests.CrashAndRerun"],
+            "args": ["--gtest_break_on_failure", "--gtest_filter=ConverterTests.MappingErrors"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],

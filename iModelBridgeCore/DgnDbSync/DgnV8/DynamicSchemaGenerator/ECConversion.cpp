@@ -3608,7 +3608,16 @@ BentleyStatus SpatialConverterBase::MakeSchemaChanges(bvector<DgnFileP> const& f
         {
         auto jobsubj = FindSoleJobSubjectForSourceMasterModel(*mmsubj);
         if (jobsubj.IsValid())
+            {
+            if (BSISUCCESS != CheckJobBelongsToMe(jobsubj.GetSubject(), *mmsubj))
+                {
+                // Write out an issue, so that the caller knows the real reason why MakeSchemaChanges failed.
+                ReportIssue(IssueSeverity::Fatal, IssueCategory::Unsupported(), Issue::RootBelongsToAnotherJob(), jobsubj.GetSubject().GetCode().GetValueUtf8CP(), BentleyApi::Utf8String(_GetParams().GetInputFileName()).c_str());
+                _OnFatalError();
+                return BSIERROR;
+                }
             _GetParamsR().SetIsUpdating(true);
+            }
         }
 
     // Bis-ify the V8 schemas

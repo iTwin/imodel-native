@@ -657,7 +657,8 @@ BentleyStatus iModelBridgeFwk::Briefcase_ReleaseAllPublicLocks(bool isCrash)
         {
         // Must abandon current/pending request. Otherwise, DemoteLocks will just update an in-memory cache and Relinquish will throw an exception.
         IBriefcaseManager::Request abandonedRequest;
-        m_briefcaseDgnDb->BriefcaseManager().ExtractRequestFromBulkOperation(abandonedRequest, true, true);
+        m_briefcaseDgnDb->BriefcaseManager().ExtractRequestFromBulkOperation(abandonedRequest, true, true); // clear all pending resource requests
+        m_briefcaseDgnDb->BriefcaseManager().EndBulkOperation();
         }
 
     if (!m_briefcaseDgnDb->BriefcaseManager().GetChannelPropsR().oneBriefcaseOwnsChannel)

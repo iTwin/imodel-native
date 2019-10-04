@@ -1796,3 +1796,74 @@ TEST_F(ConverterTests, CrashAndRerun)
         countElements(*model2Found[0], 1);  // this time, model2 should have been converted
         }
     }
+
+TEST_F(ConverterTests, MappingErrors)
+    {
+    LineUpFiles(L"MappingErrors.bim", L"Test3d.dgn", false);
+
+    // Convert 
+        {
+        RootModelConverter::RootModelSpatialParams params(m_params); // *** TRICKY: the converter takes a reference to and will MODIFY its Params. Make a copy, so that it does not pollute m_params.
+        params.SetKeepHostAlive(true);
+        params.SetIsUpdating(false);
+        params.SetInputFileName(m_v8FileName);
+        params.SetBridgeRegSubKey(RootModelConverter::GetRegistrySubKey());
+        params.SetBridgeJobName("first job");
+
+        RootModelConverter creator(params);
+        auto db = OpenExistingDgnDb(m_dgnDbFileName);
+        ASSERT_TRUE(db.IsValid());
+        creator.SetDgnDb(*db);
+        creator.AttachSyncInfo();
+        ASSERT_EQ(BentleyApi::SUCCESS, creator.InitRootModel());
+        creator.MakeSchemaChanges();
+        ASSERT_FALSE(creator.WasAborted());
+        ASSERT_EQ(RootModelConverter::ImportJobLoadStatus::FailedNotFound, creator.FindJob()) << "Should not find the job -- it's new";
+        ASSERT_EQ(RootModelConverter::ImportJobCreateStatus::Success, creator.InitializeJob());
+        creator.MakeDefinitionChanges();
+        creator.ConvertData();
+        ASSERT_FALSE(creator.WasAborted());
+        db->SaveChanges();
+        }
+
+    //  Verify that we cannot *initialize* the *same* job a second time. (The bridge framework never tries to do this.)
+        {
+        RootModelConverter::RootModelSpatialParams params(m_params); // *** TRICKY: the converter takes a reference to and will MODIFY its Params. Make a copy, so that it does not pollute m_params.
+        params.SetKeepHostAlive(true);
+        params.SetIsUpdating(false);
+        params.SetInputFileName(m_v8FileName);
+        params.SetBridgeRegSubKey(RootModelConverter::GetRegistrySubKey());
+        params.SetBridgeJobName("first job");
+
+        RootModelConverter creator(params);
+        auto db = OpenExistingDgnDb(m_dgnDbFileName);
+        ASSERT_TRUE(db.IsValid());
+        creator.SetDgnDb(*db);
+        creator.AttachSyncInfo();
+        ASSERT_EQ(BentleyApi::SUCCESS, creator.InitRootModel());
+        BentleyApi::BeTest::SetFailOnAssert(false);
+        ASSERT_EQ(BentleyApi::SUCCESS, creator.MakeSchemaChanges());
+        ASSERT_EQ(RootModelConverter::ImportJobCreateStatus::FailedExistingRoot, creator.InitializeJob()) << "Should not create a new job when one exists for this root";
+        ASSERT_EQ(RootModelConverter::ImportJobLoadStatus::Success, creator.FindJob()) << "Should find the existing job";
+        BentleyApi::BeTest::SetFailOnAssert(true);
+        }
+
+    //  Verify that we cannot initialize a *different* job with the *same* masterfile as the first job. The bridge framework may try to do this.
+        {
+        RootModelConverter::RootModelSpatialParams params(m_params); // *** TRICKY: the converter takes a reference to and will MODIFY its Params. Make a copy, so that it does not pollute m_params.
+        params.SetKeepHostAlive(true);
+        params.SetIsUpdating(false);
+        params.SetInputFileName(m_v8FileName);
+        params.SetBridgeRegSubKey(RootModelConverter::GetRegistrySubKey());
+        params.SetBridgeJobName("second job");
+
+        RootModelConverter creator(params);
+        auto db = OpenExistingDgnDb(m_dgnDbFileName);
+        ASSERT_TRUE(db.IsValid());
+        creator.SetDgnDb(*db);
+        creator.AttachSyncInfo();
+        ASSERT_EQ(BentleyApi::SUCCESS, creator.InitRootModel());
+        ASSERT_NE(BentleyApi::SUCCESS, creator.MakeSchemaChanges() );
+        ASSERT_EQ(RootModelConverter::ImportJobCreateStatus::FailedExistingRoot, creator.InitializeJob()) << "Should not create a new job when one exists for this root";
+        }
+    }

@@ -493,6 +493,7 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
         if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-job-subject-name="))
             {
             m_jobSubjectName = getArgValue(argv[iArg]);
+            m_jobSubjectName.DropQuotes();
             continue;
             }
         if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-no-mergeDefinitions"))
@@ -2592,6 +2593,16 @@ int iModelBridgeFwk::Run(int argc, WCharCP argv[])
         return -1;
         }
 #endif
+
+    if (getenv("IMODEL_BRIDGE_FWK_PAUSE_ON_START"))
+        {
+        static int s_loop = 1;
+        while (s_loop)
+            {
+            printf("Waiting...\n");
+            BeThreadUtilities::BeSleep(1000);
+            }
+        }
 
     int res = RETURN_STATUS_UNHANDLED_EXCEPTION;
 
