@@ -2009,6 +2009,7 @@ public:
         switch (m_type)
             {
             case PRIMITIVETYPE_Double:
+            case PRIMITIVETYPE_DateTime:
                 jsonValue.SetDouble(vals[0].GetValueDouble());               
                 break;
             case PRIMITIVETYPE_Integer:

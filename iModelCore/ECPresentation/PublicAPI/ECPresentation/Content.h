@@ -1389,6 +1389,10 @@ struct DefaultPropertyFormatter : IECPropertyFormatter
 protected:
     ECPRESENTATION_EXPORT virtual BentleyStatus _ApplyEnumFormatting(Utf8StringR, ECPropertyCR, ECValueCR) const;
     ECPRESENTATION_EXPORT virtual BentleyStatus _ApplyKoqFormatting(Utf8StringR, ECPropertyCR, ECValueCR) const;
+    ECPRESENTATION_EXPORT virtual BentleyStatus _ApplyPoint3dFormatting(Utf8StringR, DPoint3dCR) const;
+    ECPRESENTATION_EXPORT virtual BentleyStatus _ApplyPoint2dFormatting(Utf8StringR, DPoint2dCR) const;
+    ECPRESENTATION_EXPORT virtual BentleyStatus _ApplyDoubleFormatting(Utf8StringR, double) const;
+    ECPRESENTATION_EXPORT virtual BentleyStatus _ApplyDateTimeFormatting(Utf8StringR, DateTimeCR) const;
 protected:
     ECPRESENTATION_EXPORT virtual BentleyStatus _GetFormattedPropertyValue(Utf8StringR, ECPropertyCR, ECValueCR) const override;
     ECPRESENTATION_EXPORT virtual BentleyStatus _GetFormattedPropertyLabel(Utf8StringR, ECPropertyCR, ECClassCR, RelatedClassPath const&, RelationshipMeaning) const override;

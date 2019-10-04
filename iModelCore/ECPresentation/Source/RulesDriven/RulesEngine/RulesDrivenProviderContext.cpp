@@ -44,6 +44,9 @@ RulesDrivenProviderContext::RulesDrivenProviderContext(RulesDrivenProviderContex
     {
     Init();
 
+    if (other.IsPropertyFormattingContext())
+        SetPropertyFormattingContext(other);
+
     if (other.IsLocalizationContext())
         SetLocalizationContext(other);
     }
@@ -61,12 +64,31 @@ RulesDrivenProviderContext::~RulesDrivenProviderContext()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RulesDrivenProviderContext::Init()
     {
+    m_propertyFormatter = nullptr;
     m_isLocalizationContext = false;
     m_localizationProvider = nullptr;
     m_isQueryContext = false;
     m_connections = nullptr;
     m_connection = nullptr;
     m_schemaHelper = nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void RulesDrivenProviderContext::SetPropertyFormattingContext(IECPropertyFormatter const& formatter)
+    {
+    BeAssert(!IsPropertyFormattingContext());
+    m_propertyFormatter = &formatter;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void RulesDrivenProviderContext::SetPropertyFormattingContext(RulesDrivenProviderContextCR other)
+    {
+    BeAssert(!IsPropertyFormattingContext());
+    m_propertyFormatter = other.m_propertyFormatter;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -19,6 +19,10 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
                             <ECProperty propertyName="Prop2" typeName="TestIntEnum" />
                             <ECProperty propertyName="Prop3" typeName="TestStringEnum" />
                             <ECProperty propertyName="Prop4" typeName="double" kindOfQuantity="Length" />
+                            <ECProperty propertyName="Prop5" typeName="double" />
+                            <ECProperty propertyName="Prop6" typeName="point2d" />
+                            <ECProperty propertyName="Prop7" typeName="point3d" />
+                            <ECProperty propertyName="Prop7" typeName="DateTime" />
                         </ECClass>
                         <ECEnumeration typeName="TestIntEnum" backingTypeName="int" isStrict="true">
                             <ECEnumerator value="0" displayLabel="Zero"/>
@@ -124,4 +128,52 @@ TEST_F(DefaultPropertyFormatterTests, GetFormattedPropertyValueHandlesNullValues
     Utf8String formattedValue;
     EXPECT_EQ(SUCCESS, m_formatter.GetFormattedPropertyValue(formattedValue, *prop, value));
     EXPECT_STREQ("", formattedValue.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DefaultPropertyFormatterTests, GetFormattedPropertyValueHandlesDoubleValues)
+    {
+    ECPropertyCP prop = m_class->GetPropertyP("Prop5");
+    ECValue value(2.0);
+    Utf8String formattedValue;
+    EXPECT_EQ(SUCCESS, m_formatter.GetFormattedPropertyValue(formattedValue, *prop, value));
+    EXPECT_STREQ("2.00", formattedValue.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DefaultPropertyFormatterTests, GetFormattedPropertyValueHandlesPoint2dValues)
+    {
+    ECPropertyCP prop = m_class->GetPropertyP("Prop6");
+    ECValue value(DPoint2d::From(1, 2));
+    Utf8String formattedValue;
+    EXPECT_EQ(SUCCESS, m_formatter.GetFormattedPropertyValue(formattedValue, *prop, value));
+    EXPECT_STREQ("X: 1.00 Y: 2.00", formattedValue.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DefaultPropertyFormatterTests, GetFormattedPropertyValueHandlesPoint3dValues)
+    {
+    ECPropertyCP prop = m_class->GetPropertyP("Prop7");
+    ECValue value(DPoint3d::From(1, 2, 3));
+    Utf8String formattedValue;
+    EXPECT_EQ(SUCCESS, m_formatter.GetFormattedPropertyValue(formattedValue, *prop, value));
+    EXPECT_STREQ("X: 1.00 Y: 2.00 Z: 3.00", formattedValue.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DefaultPropertyFormatterTests, GetFormattedPropertyValueHandlesDateTimeValues)
+    {
+    ECPropertyCP prop = m_class->GetPropertyP("Prop7");
+    ECValue value(DateTime(2019, 10, 03));
+    Utf8String formattedValue;
+    EXPECT_EQ(SUCCESS, m_formatter.GetFormattedPropertyValue(formattedValue, *prop, value));
+    EXPECT_STREQ("2019-10-03", formattedValue.c_str());
     }

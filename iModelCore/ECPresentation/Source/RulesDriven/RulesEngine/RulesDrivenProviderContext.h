@@ -35,6 +35,9 @@ private:
     ECExpressionsCache& m_ecexpressionsCache;
     JsonNavNodesFactory const& m_nodesFactory;
     ICancelationTokenCPtr m_cancelationToken;
+
+    // Property formatting context
+    IECPropertyFormatter const* m_propertyFormatter;
     
     // localization context
     bool m_isLocalizationContext;
@@ -75,6 +78,12 @@ public:
     ECPRESENTATION_EXPORT void Adopt(IConnectionCR, ICancelationTokenCP);
     ECPRESENTATION_EXPORT void Adopt(RulesDrivenProviderContextCR);
     ECPRESENTATION_EXPORT void AdoptToSameConnection(ICancelationTokenCP);
+
+    // Property formatting context
+    ECPRESENTATION_EXPORT void SetPropertyFormattingContext(IECPropertyFormatter const&);
+    ECPRESENTATION_EXPORT void SetPropertyFormattingContext(RulesDrivenProviderContextCR);
+    bool IsPropertyFormattingContext() const {return nullptr != m_propertyFormatter;}
+    IECPropertyFormatter const& GetECPropertyFormatter() const {BeAssert(IsPropertyFormattingContext()); return *m_propertyFormatter;}
     
     // localization context
     ECPRESENTATION_EXPORT void SetLocalizationContext(ILocalizationProvider const& provider);

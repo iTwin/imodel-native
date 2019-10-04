@@ -2924,7 +2924,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ReturnsPointPropertyContent
     rapidjson::Document expectedDisplayValues;
     expectedDisplayValues.Parse(R"(
         {
-        "ClassH_PointProperty": "1,2,3"
+        "ClassH_PointProperty": "X: 1.00 Y: 2.00 Z: 3.00"
         })");
     EXPECT_EQ(expectedDisplayValues, recordJson["DisplayValues"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedDisplayValues) << "\r\n"
@@ -5374,7 +5374,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPointsArrayPropertyVal
     rapidjson::Document expectedDisplayValues1;
     expectedDisplayValues1.Parse(R"(
         {
-        "MyClass_PointsArrayProperty": ["0,0,0", "1,1,1"]
+        "MyClass_PointsArrayProperty": ["X: 0.00 Y: 0.00 Z: 0.00", "X: 1.00 Y: 1.00 Z: 1.00"]
         })");
     EXPECT_EQ(expectedDisplayValues1, recordJson1["DisplayValues"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedDisplayValues1) << "\r\n"
@@ -5395,7 +5395,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPointsArrayPropertyVal
     rapidjson::Document expectedDisplayValues2;
     expectedDisplayValues2.Parse(R"(
         {
-        "MyClass_PointsArrayProperty": ["3,3,3", "4,4,4", "5,5,5"]
+        "MyClass_PointsArrayProperty": ["X: 3.00 Y: 3.00 Z: 3.00", "X: 4.00 Y: 4.00 Z: 4.00", "X: 5.00 Y: 5.00 Z: 5.00"]
         })");
     EXPECT_EQ(expectedDisplayValues2, recordJson2["DisplayValues"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedDisplayValues2) << "\r\n"

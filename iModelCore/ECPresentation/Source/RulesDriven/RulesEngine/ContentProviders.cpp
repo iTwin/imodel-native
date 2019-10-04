@@ -37,9 +37,6 @@ ContentProviderContext::ContentProviderContext(ContentProviderContextCR other)
 
     if (other.IsSelectionContext())
         SetSelectionInfo(other);
-
-    if (other.IsPropertyFormattingContext())
-        SetPropertyFormattingContext(other);
     
     if (other.IsQueryContext())
         SetQueryContext(other);    
@@ -53,7 +50,6 @@ ContentProviderContext::ContentProviderContext(ContentProviderContextCR other)
 void ContentProviderContext::Init()
     {
     m_isSelectionContext = false;
-    m_propertyFormatter = nullptr;
     m_isNestedContent = false;
     }
 
@@ -82,24 +78,6 @@ void ContentProviderContext::SetSelectionInfo(ContentProviderContextCR other)
     BeAssert(!IsSelectionContext());
     m_isSelectionContext = true;
     m_selectionInfo = other.m_selectionInfo;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ContentProviderContext::SetPropertyFormattingContext(IECPropertyFormatter const& formatter)
-    {
-    BeAssert(!IsPropertyFormattingContext());
-    m_propertyFormatter = &formatter;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                07/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ContentProviderContext::SetPropertyFormattingContext(ContentProviderContextCR other)
-    {
-    BeAssert(!IsPropertyFormattingContext());
-    m_propertyFormatter = other.m_propertyFormatter;
     }
 
 /*---------------------------------------------------------------------------------**//**

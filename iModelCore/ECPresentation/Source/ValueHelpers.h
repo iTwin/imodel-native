@@ -42,6 +42,7 @@ public:
     static rapidjson::Document GetJsonFromString(ECN::PrimitiveType, Utf8StringCR, rapidjson::MemoryPoolAllocator<>*);
     static rapidjson::Document GetJsonFromECValue(ECN::ECValueCR, rapidjson::MemoryPoolAllocator<>*);
 
+    static ECN::ECValue GetECValueFromSqlValue(ECN::PrimitiveType, BeSQLite::DbValue const&);
     static ECN::ECValue GetECValueFromSqlValue(ECN::PrimitiveType, BeSQLite::EC::IECSqlValue const&);
     static ECN::ECValue GetECValueFromString(ECN::PrimitiveType, Utf8StringCR);
     static ECN::ECValue GetECValueFromJson(ECN::PrimitiveType, RapidJsonValueCR);

@@ -287,14 +287,28 @@ TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_UsesLabelOverride)
 TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_UsesPropertyValue)
     {
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_locale, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
-
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetECPropertyDisplayLabel(?, ?, ECInstanceId, ?, 0) FROM RET.Widget"));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, s_widgetClass->GetId()));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(2, "DoubleProperty", IECSqlBinder::MakeCopy::No));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindDouble(3, 9.99));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    ASSERT_STREQ("9.99", stmt.GetValueText(0));
+    ASSERT_STREQ(ECValue(9.99).ToString().c_str(), stmt.GetValueText(0));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_Formats)
+    {
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_locale, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr, m_propertyFormatter);
+    ECSqlStatement stmt;
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetECPropertyDisplayLabel(?, ?, ECInstanceId, ?, 0) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, s_widgetClass->GetId()));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(2, "BoolProperty", IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindBoolean(3, false));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    ASSERT_STREQ("_False_", stmt.GetValueText(0));
     }
 
 /*---------------------------------------------------------------------------------**//**

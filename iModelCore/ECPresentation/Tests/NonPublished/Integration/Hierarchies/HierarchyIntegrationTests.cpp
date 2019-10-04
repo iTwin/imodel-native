@@ -5769,6 +5769,42 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByPointProper
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, GroupsNodesByDateTimeProperty)
+    {
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("DateProperty", ECValue(DateTime(2019, 10, 03))); });
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("DateProperty", ECValue(DateTime(2019, 10, 03))); });
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+    SetUpDefaultLabelRule(*rules);
+
+    GroupingRuleP groupingRule = new GroupingRule("", 0, "", "RulesEngineTest", "Widget", "", "", "");
+    PropertyGroupP groupByPoint = new PropertyGroup("", "", true, "DateProperty", "");
+    groupingRule->AddGroup(*groupByPoint);
+    rules->AddPresentationRule(*groupingRule);
+
+    RootNodeRule* rule = new RootNodeRule();
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, true, false, "", m_widgetClass->GetFullName(), true));
+    rules->AddPresentationRule(*rule);
+
+    // make sure we have 1 grouping node
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options).get(); });
+    ASSERT_EQ(1, rootNodes.GetSize());
+    EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
+    EXPECT_STREQ("2019-10-03T00:00:00.000Z", rootNodes[0]->GetLabel().c_str());
+
+    // make sure it has 2 children nodes
+    DataContainer<NavNodeCPtr> childrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDb(), *rootNodes[0], PageOptions(), options).get(); });
+    ASSERT_EQ(2, childrenNodes.GetSize());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*instance1).c_str(), childrenNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ(GetDefaultDisplayLabel(*instance2).c_str(), childrenNodes[1]->GetLabel().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @betest                                       Aidas.Vaiksnoras               10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, ReturnsFilteredNodesFromNotExpandedHierarchy)

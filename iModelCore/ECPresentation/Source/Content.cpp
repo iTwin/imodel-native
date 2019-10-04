@@ -1206,21 +1206,84 @@ BentleyStatus DefaultPropertyFormatter::_ApplyKoqFormatting(Utf8StringR formatte
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DefaultPropertyFormatter::_ApplyDoubleFormatting(Utf8StringR formattedValue, double value) const
+    {
+    formattedValue.Sprintf("%.2f", value);
+    if (formattedValue.Equals("-0.00"))
+        formattedValue = "0.00";
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DefaultPropertyFormatter::_ApplyPoint3dFormatting(Utf8StringR formattedValue, DPoint3dCR point) const
+    {
+    Utf8String xValue, yValue, zValue;
+    if (SUCCESS != _ApplyDoubleFormatting(xValue, point.x) || SUCCESS != _ApplyDoubleFormatting(yValue, point.y) || SUCCESS != _ApplyDoubleFormatting(zValue, point.z))
+        return ERROR;
+
+    formattedValue.clear();
+    formattedValue.append("X: ").append(xValue).append(" ");
+    formattedValue.append("Y: ").append(yValue).append(" ");
+    formattedValue.append("Z: ").append(zValue);
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DefaultPropertyFormatter::_ApplyPoint2dFormatting(Utf8StringR formattedValue, DPoint2dCR point) const
+    {
+    Utf8String xValue, yValue;
+    if (SUCCESS != _ApplyDoubleFormatting(xValue, point.x) || SUCCESS != _ApplyDoubleFormatting(yValue, point.y))
+        return ERROR;
+
+    formattedValue.clear();
+    formattedValue.append("X: ").append(xValue).append(" ");
+    formattedValue.append("Y: ").append(yValue);
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DefaultPropertyFormatter::_ApplyDateTimeFormatting(Utf8StringR formattedValue, DateTimeCR dt) const
+    {
+    formattedValue = dt.ToString();
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DefaultPropertyFormatter::_GetFormattedPropertyValue(Utf8StringR formattedValue, ECPropertyCR ecProperty, ECValueCR ecValue) const
     {
+    if (ecValue.IsNull())
+        {
+        formattedValue.clear();
+        return SUCCESS;
+        }
+
     if (SUCCESS == _ApplyEnumFormatting(formattedValue, ecProperty, ecValue))
         return SUCCESS;
 
     if (SUCCESS == _ApplyKoqFormatting(formattedValue, ecProperty, ecValue))
         return SUCCESS;
 
-    if (ecValue.IsNull())
-        {
-        formattedValue.clear();
+    if (ecValue.IsDouble() && SUCCESS == _ApplyDoubleFormatting(formattedValue, ecValue.GetDouble()))
         return SUCCESS;
-        }
+
+    if (ecValue.IsPoint3d() && SUCCESS == _ApplyPoint3dFormatting(formattedValue, ecValue.GetPoint3d()))
+        return SUCCESS;
+
+    if (ecValue.IsPoint2d() && SUCCESS == _ApplyPoint2dFormatting(formattedValue, ecValue.GetPoint2d()))
+        return SUCCESS;
+
+    if (ecValue.IsDateTime() && SUCCESS == _ApplyDateTimeFormatting(formattedValue, ecValue.GetDateTime()))
+        return SUCCESS;
 
     return ERROR;
     }

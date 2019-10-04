@@ -304,9 +304,8 @@ private:
         switch (primitive.GetType())
             {
             case PRIMITIVETYPE_Boolean:
-                doc.SetBool(0 == BeStringUtilities::Stricmp("true", valueStr));
+                doc.SetBool(0 == BeStringUtilities::Stricmp("true", valueStr) || 0 == BeStringUtilities::Stricmp("1", valueStr));
                 return doc;
-            case PRIMITIVETYPE_DateTime:
             case PRIMITIVETYPE_String:
                 doc.CopyFrom(rapidjson::Value(valueStr, doc.GetAllocator()).Move(), doc.GetAllocator());
                 return doc;
@@ -314,6 +313,7 @@ private:
             case PRIMITIVETYPE_Point3d:
                 return GetPointAsJsonFromString(valueStr);
             case PRIMITIVETYPE_Double:
+            case PRIMITIVETYPE_DateTime:
                 return DoubleValueParser().GetValueAsJson(valueStr, true);
             case PRIMITIVETYPE_Integer:
                 return IntValueParser().GetValueAsJson(valueStr);

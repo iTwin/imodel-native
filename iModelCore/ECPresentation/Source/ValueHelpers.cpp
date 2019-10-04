@@ -399,6 +399,58 @@ rapidjson::Document ValueHelpers::GetJsonFromString(PrimitiveType primitiveType,
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
+ECValue ValueHelpers::GetECValueFromSqlValue(PrimitiveType primitiveType, DbValue const& sqlValue)
+    {
+    ECValue value;
+    if (sqlValue.IsNull())
+        value.SetIsNull(true);
+    switch (primitiveType)
+        {
+        case PRIMITIVETYPE_Boolean:
+            value.SetBoolean(0 != sqlValue.GetValueInt());
+            break;
+        case PRIMITIVETYPE_DateTime:
+            {
+            double julianDay;
+            if (DbValueType::TextVal == sqlValue.GetValueType())
+                julianDay = std::stod(sqlValue.GetValueText());
+            else
+                julianDay = sqlValue.GetValueDouble();
+            DateTime dt;
+            DateTime::FromJulianDay(dt, julianDay, DateTime::Info::CreateForDateTime(DateTime::Kind::Utc));
+            value.SetDateTime(dt);
+            break;
+            }
+        case PRIMITIVETYPE_Double:
+            value.SetDouble(sqlValue.GetValueDouble());
+            break;
+        case PRIMITIVETYPE_Integer:
+            value.SetInteger(sqlValue.GetValueInt());
+            break;
+        case PRIMITIVETYPE_Long:
+            value.SetLong(sqlValue.GetValueInt64());
+            break;
+        case PRIMITIVETYPE_String:
+            value.SetUtf8CP(sqlValue.GetValueText());
+            break;
+        case PRIMITIVETYPE_Point2d:
+            value.SetPoint2d(GetPoint2dFromJsonString(sqlValue.GetValueText()));
+            break;
+        case PRIMITIVETYPE_Point3d:
+            value.SetPoint3d(GetPoint3dFromJsonString(sqlValue.GetValueText()));
+            break;
+        case PRIMITIVETYPE_Binary:
+        case PRIMITIVETYPE_IGeometry:
+            break;
+        default:
+            BeAssert(false);
+        }
+    return value;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod                                    Grigas.Petraitis                09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 ECValue ValueHelpers::GetECValueFromSqlValue(PrimitiveType primitiveType, IECSqlValue const& sqlValue)
     {
     ECValue value;
@@ -408,7 +460,8 @@ ECValue ValueHelpers::GetECValueFromSqlValue(PrimitiveType primitiveType, IECSql
         value.SetIsNull(true);
         return value;
         }
-
+    if (sqlValue.IsNull())
+        value.SetIsNull(true);
     switch (primitiveType)
         {
         case PRIMITIVETYPE_Boolean:
@@ -450,8 +503,6 @@ ECValue ValueHelpers::GetECValueFromSqlValue(PrimitiveType primitiveType, IECSql
         default:
             BeAssert(false);
         }
-    if (sqlValue.IsNull())
-        value.SetIsNull(true);
     return value;
     }
 
@@ -460,6 +511,13 @@ ECValue ValueHelpers::GetECValueFromSqlValue(PrimitiveType primitiveType, IECSql
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECValue ValueHelpers::GetECValueFromString(PrimitiveType valueType, Utf8StringCR str)
     {
+    if (str.empty())
+        {
+        ECValue nullValue;
+        nullValue.SetToNull();
+        return nullValue;
+        }
+
     switch (valueType)
         {
         case PRIMITIVETYPE_Boolean:

@@ -434,6 +434,7 @@ protected:
         if (nullptr != localizationProvider)
             context->SetLocalizationContext(*localizationProvider);
 
+        context->SetPropertyFormattingContext(m_manager.GetECPropertyFormatter());
         context->SetIsUpdatesDisabled(disableUpdates);
         context->SetCancelationToken(cancelationToken);
         _l2 = nullptr;

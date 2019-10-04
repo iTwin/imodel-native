@@ -29,9 +29,6 @@ private:
     bool m_isSelectionContext;
     SelectionInfoCPtr m_selectionInfo;
 
-    // Property formatting context
-    IECPropertyFormatter const* m_propertyFormatter;
-
 private:
     void Init();
     ECPRESENTATION_EXPORT ContentProviderContext(PresentationRuleSetCR, Utf8String, Utf8String, int, INavNodeKeysContainerCR, INavNodeLocaterCR, IPropertyCategorySupplierCR, IUserSettings const&,
@@ -65,12 +62,6 @@ public:
     ECPRESENTATION_EXPORT void SetSelectionInfo(ContentProviderContextCR);
     bool IsSelectionContext() const {return m_isSelectionContext;}
     SelectionInfo const* GetSelectionInfo() const {return m_selectionInfo.get();}
-    
-    // Property formatting context
-    ECPRESENTATION_EXPORT void SetPropertyFormattingContext(IECPropertyFormatter const&);
-    ECPRESENTATION_EXPORT void SetPropertyFormattingContext(ContentProviderContextCR);
-    bool IsPropertyFormattingContext() const {return nullptr != m_propertyFormatter;}
-    IECPropertyFormatter const& GetECPropertyFormatter() const {BeAssert(IsPropertyFormattingContext()); return *m_propertyFormatter;}
 
     // ECDb context
     void SetQueryContext(IConnectionManagerCR connections, IConnectionCR connection)

@@ -378,6 +378,20 @@ struct EvaluateECExpressionScalar : CachingScalarFunction<bmap<ECExpressionScala
         }
    };
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static Utf8String GetFormattedPropertyValue(PrimitiveECPropertyCR property, DbValue const& sqlValue, IECPropertyFormatter const* formatter)
+    {
+    if (sqlValue.IsNull())
+        return "";
+    ECValue value = ValueHelpers::GetECValueFromSqlValue(property.GetType(), sqlValue);
+    Utf8String formattedValue;
+    if (nullptr != formatter && SUCCESS == formatter->GetFormattedPropertyValue(formattedValue, property, value))
+        return formattedValue;
+    return value.ToString();
+    }
+
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                07/2015
 +===============+===============+===============+===============+===============+======*/
@@ -415,16 +429,6 @@ struct ECPropertyDisplayLabelScalarCacheKey
 +===============+===============+===============+===============+===============+======*/
 struct GetECPropertyDisplayLabelScalar : CachingScalarFunction<bmap<ECPropertyDisplayLabelScalarCacheKey, Utf8String>>
 {
-private:
-    static Utf8String GetValueAsString(double value)
-        {
-        Utf8String str;
-        str.Sprintf("%.2f", value);
-        if (str.Equals("-0.00"))
-            str = "0.00";
-        return str;
-        }
-public:
     GetECPropertyDisplayLabelScalar(CustomFunctionsManager const& manager)
         : CachingScalarFunction(FUNCTION_NAME_GetECPropertyDisplayLabel, 5, DbValueType::TextVal, manager)
         {}
@@ -511,34 +515,11 @@ public:
                 if (SUCCESS != ValueHelpers::GetEnumPropertyDisplayValue(label, *ecProperty, args[3]))
                     {
                     if (ecProperty->GetIsPrimitive())
-                        {
-                        switch (ecProperty->GetAsPrimitiveProperty()->GetType())
-                            {
-                            case PRIMITIVETYPE_Double:
-                                label = GetValueAsString(args[3].GetValueDouble());
-                                break;
-                            case PRIMITIVETYPE_Point2d:
-                            case PRIMITIVETYPE_Point3d:
-                                {
-                                rapidjson::Document json;
-                                json.Parse(args[3].GetValueText());
-                                label.append("X: ").append(GetValueAsString(json["x"].GetDouble()));
-                                label.append(" Y: ").append(GetValueAsString(json["y"].GetDouble()));
-                                if (json.HasMember("z"))
-                                    label.append(" Z: ").append(GetValueAsString(json["z"].GetDouble()));
-                                break;
-                                }
-                            default:
-                                label = args[3].GetValueText();
-                            }
-                        }
+                        label = GetFormattedPropertyValue(*ecProperty->GetAsPrimitiveProperty(), args[3], GetContext().GetPropertyFormatter());
                     else
-                        {
-                        label = args[3].GetValueText();
-                        }
+                        label = defaultLabel;
                     }
                 }
-
             if (label.empty())
                 label = RULESENGINE_LOCALIZEDSTRING_NotSpecified;
 
@@ -608,32 +589,7 @@ struct GetPropertyDisplayValueScalar : ECPresentation::ScalarFunction
             }
         ECClassCP ecClass = GetContext().GetSchemaHelper().GetConnection().GetECDb().Schemas().GetClass(args[0].GetValueText(), args[1].GetValueText());
         ECPropertyP ecProperty = ecClass->GetPropertyP(args[2].GetValueText());
-        ECValue value;
-
-        switch (ecProperty->GetAsPrimitiveProperty()->GetType())
-            {
-            case PRIMITIVETYPE_Point2d:
-                {
-                value.SetPoint2d(ValueHelpers::GetPoint2dFromJsonString(args[3].GetValueText()));
-                break;
-                }
-            case PRIMITIVETYPE_Point3d:
-                {
-                value.SetPoint3d(ValueHelpers::GetPoint3dFromJsonString(args[3].GetValueText()));
-                break;
-                }
-            case PRIMITIVETYPE_Double:
-                {
-                value.SetDouble(args[3].GetValueDouble());
-                break;
-                }
-            default:
-                value = ValueHelpers::GetECValueFromString(ecProperty->GetAsPrimitiveProperty()->GetType(), args[3].GetValueText());
-            }
-
-        Utf8String formattedValue(value.ToString());
-        if (nullptr != GetContext().GetPropertyFormatter())
-            GetContext().GetPropertyFormatter()->GetFormattedPropertyValue(formattedValue, *ecProperty, value);
+        Utf8String formattedValue = GetFormattedPropertyValue(*ecProperty->GetAsPrimitiveProperty(), args[3], GetContext().GetPropertyFormatter());
         ctx.SetResultText(formattedValue.c_str(), (int)formattedValue.size(), DbFunction::Context::CopyData::Yes);
         }
     };

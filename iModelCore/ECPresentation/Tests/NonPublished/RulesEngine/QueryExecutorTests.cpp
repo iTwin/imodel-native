@@ -595,7 +595,45 @@ TEST_F (NavigationQueryExecutorTests, ClassGroupingNodesSortedByLabel)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (NavigationQueryExecutorTests, PropertyGrouping)
+TEST_F(NavigationQueryExecutorTests, PropertyGroupingByBooleanProperty)
+    {
+    // create our own instances
+    ECInstanceInserter inserter(s_project->GetECDb(), *m_widgetClass, nullptr);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("BoolProperty", ECValue(true)); });
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("BoolProperty", ECValue(false)); });
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), inserter, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("BoolProperty", ECValue(false)); });
+
+    PropertyGroup propertyGroup("", "TestImageId", false, "BoolProperty", "");
+
+    NavigationQueryContractPtr contract = ECPropertyGroupingNodesQueryContract::Create(*m_widgetClass, *m_widgetClass->GetPropertyP("BoolProperty"), nullptr, propertyGroup, nullptr);
+    ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
+    nested->SelectContract(*contract);
+    nested->From(*m_widgetClass, false);
+    ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
+    grouped->SelectAll().From(*nested).GroupByContract(*contract).OrderBy(Utf8String("[").append(ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName).append("]").c_str());
+    grouped->GetResultParametersR().SetResultType(NavigationQueryResultType::PropertyGroupingNodes);
+    grouped->GetResultParametersR().GetNavNodeExtendedDataR().SetGroupingType((int)GroupingType::Property);
+
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, "locale", m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &grouped->GetExtendedData());
+    NavigationQueryExecutor executor(m_nodesFactory, *m_connection, "locale", *grouped);
+    executor.ReadRecords();
+    ASSERT_EQ(2, executor.GetNodesCount());
+
+    JsonNavNodePtr node0 = executor.GetNode(0);
+    EXPECT_STREQ("False", node0->GetLabel().c_str());
+    ASSERT_TRUE(NavNodeExtendedData(*node0).HasPropertyValue());
+    EXPECT_EQ(false, NavNodeExtendedData(*node0).GetPropertyValue()->GetBool());
+
+    JsonNavNodePtr node1 = executor.GetNode(1);
+    EXPECT_STREQ("True", node1->GetLabel().c_str());
+    ASSERT_TRUE(NavNodeExtendedData(*node1).HasPropertyValue());
+    EXPECT_EQ(true, NavNodeExtendedData(*node1).GetPropertyValue()->GetBool());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                07/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (NavigationQueryExecutorTests, PropertyGroupingByIntProperty)
     {
     // create our own instances
     ECInstanceInserter inserter(s_project->GetECDb(), *m_widgetClass, nullptr);
