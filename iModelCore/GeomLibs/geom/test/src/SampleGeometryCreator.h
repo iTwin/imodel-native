@@ -164,19 +164,22 @@ static void AddSimplestSolidPrimitives (bvector<IGeometryPtr> &data, bool capped
 
 
     // ====================
-    for (double sweep : sweeps)
-        for (double sZ : signs)
-            for (double sX : signs)
-                for (double sY : signs)
-                {
-                DgnSphereDetail sphere (DPoint3d::From (0,0,0), 6);
-                sphere.m_startLatitude = 0.0;
-                sphere.m_latitudeSweep = sweep;
-                sphere.m_localToWorld.ScaleMatrixColumns (sX, sY, sZ);
-                sphere.m_capped = capped;
-                data.push_back (IGeometry::Create (ISolidPrimitive::CreateDgnSphere (sphere)));
-                }
-
+    // !!! Don't create capped spheres -- not valid in microstation !!!
+    // if (!capped)
+    static bool s_allowCapped = false;
+        {
+        for (double sweep : sweeps)
+            for (double sZ : signs)
+                for (double sX : signs)
+                    {
+                    DgnSphereDetail sphere (
+                        DPoint3d::From (0,0,0), 
+                        DVec3d::From (sX,0,0), 
+                        DVec3d::From (0,0,sZ),
+                        6.0, 6.0, 0.0, sweep, s_allowCapped && capped);
+                    data.push_back (IGeometry::Create (ISolidPrimitive::CreateDgnSphere (sphere)));
+                    }
+        }
 
     AddCones (data, 1.0, 1.0, capped);
     AddCones (data, 1.0, 0.5, capped);

@@ -1276,6 +1276,8 @@ DgnSphereDetail::DgnSphereDetail (
     vectorX.Scale (radius);
     vectorY.Scale (radius);
     vectorZ.Scale (radius);
+    if (vectorX.TripleProduct (vectorY, vectorZ) < 0.0)
+        vectorY.Scale (-1.0);
     m_localToWorld.InitFromOriginAndVectors (center, vectorX, vectorY, vectorZ);     
     m_startLatitude = -Angle::PiOver2 ();
     m_latitudeSweep = Angle::Pi ();

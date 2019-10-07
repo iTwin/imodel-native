@@ -2138,15 +2138,17 @@ int  orientationSelect
         {
         // NORMALS
         pointIndex.clear ();
+        double sign = phiSweep > 0.0 ? 1.0 : -1.0;
+		// sign is the jacobian of the transform from the parameter rectangle (with possibly negative sweep) to the (always outward) reference unit sphere.
         for (size_t j = 0; j < numPhi; j++)
             {
             for (size_t i = 0; i < numTheta; i++)
                 {
                 DVec3d normal;
-                normal.x = theta[i].x * phi[j].x;
-                normal.y = theta[i].y * phi[j].x;
-                normal.z = phi[j].y;
-                pointIndex.push_back (FindOrAddNormal (normal));
+                normal.x = sign * theta[i].x * phi[j].x;
+                normal.y = sign * theta[i].y * phi[j].x;
+                normal.z = sign * phi[j].y;
+                pointIndex.push_back(FindOrAddNormal(normal));
                 }
             }
 

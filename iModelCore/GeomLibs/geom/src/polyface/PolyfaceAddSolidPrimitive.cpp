@@ -210,6 +210,9 @@ bool IPolyfaceConstruction::Add (DgnSphereDetailCR sphere)
     if (sphere.GetNonUniformTransforms (localToWorld, worldToLocal))
         {
         bool reversed = sphere.ParameterizationSign () < 0.0;
+        static bool s_applyReverse = false;
+        if (!s_applyReverse)
+            reversed = false;
         bool closed = sphere.IsClosedVolume ();
         PushState (false);
         ApplyLocalToWorld (localToWorld);

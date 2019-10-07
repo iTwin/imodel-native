@@ -248,7 +248,6 @@ void CheckSphere (ISolidPrimitivePtr primitive)
         }
     }
 
-
 struct DPoint3dBilinear
 {
 DPoint3d xyz[4];
@@ -2165,6 +2164,93 @@ TEST(TwoSidedMesh,Test1)
         TestTwoSidedMeshConstruction (*geometry[i]);
     Check::ClearGeometry ("SolidPrimitive.TwoSidedMesh");
     }
+
+void SaveFacets(ISolidPrimitivePtr &primitive)
+    {
+    IFacetOptionsPtr options = IFacetOptions::Create();
+    options->SetNormalsRequired (true);
+    IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create(*options);
+    builder->AddSolidPrimitive(*primitive);
+    Check::SaveTransformed(*builder->GetClientMeshPtr());
+
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(SolidPrimitive, MirrorTransforms)
+    {
+    Check::QuietFailureScope scoper;
+
+    bvector<IGeometryPtr> geometry;
+    SampleGeometryCreator::AddSimplestSolidPrimitives(geometry, true);
+    SampleGeometryCreator::AddAllSolidTypes(geometry);
+#ifdef TEST1SPHERE
+    geometry.clear ();
+    geometry.push_back (IGeometry::Create(ISolidPrimitive::CreateDgnSphere(
+        DgnSphereDetail(DPoint3d::From(0, 0, 0),
+        DVec3d::From (1,0,0),
+        DVec3d::From (0,0,1),
+        1.0, 1.0,
+        0, 0.7, false))));
+#endif
+    auto mirrorYMatrix = RotMatrix::FromRowValues(1, 0, 0, 0, -1, 0, 0, 0, 1);
+    auto mirrorXMatrix = RotMatrix::FromRowValues(-1, 0, 0, 0, 1, 0, 0, 0, 1);
+    auto mirrorZMatrix = RotMatrix::FromRowValues(1, 0, 0, 0, 1, 0, 0, 0, -1);
+    auto vectorQ = DVec3d::From (1,0.4,0.5);
+    vectorQ.Normalize ();
+    for (size_t i = 0; i < geometry.size(); i++)
+        {
+        auto g = geometry[i]->GetAsISolidPrimitive();
+        if (g.IsValid ())
+            {
+            DRange3d range;
+            g->GetRange(range);
+            auto dy = range.high.y - range.low.y;
+            SaveAndRestoreCheckTransform shifter(5.0 * (range.high.x - range.low.x), 0, 0);
+            auto mirrorY = Transform::FromMatrixAndFixedPoint(mirrorYMatrix, range.high);
+            auto mirrorZ = Transform::FromMatrixAndFixedPoint(mirrorZMatrix, range.high);
+            auto mirrorX = Transform::FromMatrixAndFixedPoint(mirrorXMatrix, range.high);
+            Check::SaveTransformed (*g);
+
+            auto gMirrorY = g->Clone ();
+            gMirrorY->TransformInPlace (mirrorY);
+            Check::SaveTransformed(*gMirrorY);
+            auto rotateX = Transform::FromMatrixAndFixedPoint(
+                    RotMatrix::FromVectorAndRotationAngle (
+                                DVec3d::From (1,0,0),
+                                Angle::DegreesToRadians (-80)),
+                    range.low);
+
+            auto gMirrorX = g->Clone ();
+            gMirrorX->TransformInPlace(mirrorX);
+            Check::SaveTransformed(*gMirrorX);
+
+            auto gMirrorZ = g->Clone();
+            gMirrorZ->TransformInPlace(mirrorZ);
+            Check::SaveTransformed(*gMirrorZ);
+
+            Transform mirrorQ;
+            mirrorQ.InitFromMirrorPlane(range.high, vectorQ);
+            auto gMirrorQ = g->Clone();
+            gMirrorQ->TransformInPlace(mirrorQ);
+            Check::SaveTransformed(*gMirrorQ);
+
+
+            auto gRotate = g->Clone ();
+            gRotate->TransformInPlace (rotateX);
+            Check::SaveTransformed(*gRotate);
+            Check::Shift (0, 4.0 * dy, 0);
+            SaveFacets(g);
+            SaveFacets(gMirrorY);
+            SaveFacets(gMirrorX);
+            SaveFacets(gMirrorZ);
+            SaveFacets(gRotate);
+            SaveFacets (gMirrorQ);
+            }
+        }
+    Check::ClearGeometry("SolidPrimitive.MirrorTransforms");
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  10/17

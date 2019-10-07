@@ -118,13 +118,29 @@ bool DgnTorusPipeDetail::TransformInPlace (TransformCR transform)
     return false;
     }
 
+void CorrectSoDeterminantIsPositive(DgnSphereDetailR detail)
+    {
+    if (detail.m_localToWorld.Determinant() < 0.0)
+        {
+        static bool s_flipSweep = false;
+        // force the determinant positive by flipping y.
+        // flip signs of latitude range to compensate.
+        detail.m_localToWorld = Transform::FromProduct(detail.m_localToWorld, RotMatrix::FromScaleFactors(1.0, -1.0, 1.0));
+        if (s_flipSweep)
+            {
+            detail.m_startLatitude *= -1.0;
+            detail.m_latitudeSweep *= -1.0;
+            }
+        }
 
+    }
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
 bool DgnSphereDetail::TransformInPlace (TransformCR transform)
     {
     m_localToWorld.InitProduct (transform, m_localToWorld);
+    CorrectSoDeterminantIsPositive (*this);
     return true;
     }
 
