@@ -31,7 +31,17 @@ extern "C" int main(int argc, char** argv)                                      
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-
+//=======================================================================================
+// @bsiclass                                                    Wouter.Rombouts 10/19
+//=======================================================================================
+struct RegistryBusyHandler : public BeSQLite::BusyRetry
+{
+    //! Called when SQLite is blocked by another connection to a database. The default implementation performs 5 retries
+    //! with a 1 second delay. This subclasses changes the timeout period and interacts with the user.
+    //! @param[in] count the number of times this method has been called for this busy event.
+    //! @returns 0 to stop retrying and return a BE_SQLITE_BUSY error. Any non-zero value will attempt another retry.
+    virtual int _OnBusy(int count) const;
+};
 
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson   02/15
@@ -51,6 +61,7 @@ struct iModelBridgeRegistryBase : RefCounted<IModelBridgeRegistry>
 
 protected:
     BeSQLite::Db m_stateDb;
+    RefCountedPtr<RegistryBusyHandler> m_retry;
     IMODEL_BRIDGE_FWK_EXPORT BeSQLite::DbResult OpenOrCreateStateDb();
 private:
     BeFileName m_stateFileName;

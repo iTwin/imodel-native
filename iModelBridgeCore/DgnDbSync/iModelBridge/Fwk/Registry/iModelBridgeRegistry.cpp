@@ -50,6 +50,35 @@ static ProfileVersion s_schemaVer(1,0,0,0);
 static BeSQLite::PropertySpec s_schemaVerPropSpec("SchemaVersion", "be_iModelBridgeFwk", BeSQLite::PropertySpec::Mode::Normal, BeSQLite::PropertySpec::Compress::No);
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Wouter.Rombouts                 10/19
++---------------+---------------+---------------+---------------+---------------+------*/
+int RegistryBusyHandler::_OnBusy(int count) const
+    {
+    //VSTS#184256. On some slow BAS machines the 5 sec default treshold is not enough.
+
+    if ((count < 5) || !(count % 5))
+        {
+        if (count > 15)
+            {
+            LOG.errorv(L"Waiting for SQLITE_BUSY to yield. (t=%d s)", count);
+            }
+        else
+            { 
+            LOG.tracev(L"Waiting for SQLITE_BUSY to yield. (t=%d s)", count);
+            }
+        }
+
+    if (count > 600)
+        {
+        return 0;
+        }
+
+    BeThreadUtilities::BeSleep(1000);
+
+    return 1;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeSQLite::DbResult iModelBridgeRegistryBase::OpenOrCreateStateDb()
@@ -58,10 +87,12 @@ BeSQLite::DbResult iModelBridgeRegistryBase::OpenOrCreateStateDb()
     Desktop::FileSystem::BeGetTempPath(tempDir);
     BeSQLiteLib::Initialize(tempDir);
 
+    m_retry = new RegistryBusyHandler();
+
     if (m_stateFileName.DoesPathExist())
         {
         LOG.infov(L"Opening registry file %ls", m_stateFileName.c_str());
-        MUSTBEOK(m_stateDb.OpenBeSQLiteDb(m_stateFileName, Db::OpenParams(Db::OpenMode::ReadWrite)));
+        MUSTBEOK(m_stateDb.OpenBeSQLiteDb(m_stateFileName, Db::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Yes, m_retry.get())));
 
         // Double-check that this really is a fwk registry db
         Utf8String propStr;
@@ -76,7 +107,7 @@ BeSQLite::DbResult iModelBridgeRegistryBase::OpenOrCreateStateDb()
     if (!m_stateFileName.DoesPathExist())
         {
         LOG.infov(L"Creating registry file %ls", m_stateFileName.c_str());
-        MUSTBEOK(m_stateDb.CreateNewDb(m_stateFileName));
+        MUSTBEOK(m_stateDb.CreateNewDb(m_stateFileName, BeGuid(), BeSQLite::Db::CreateParams (BeSQLite::Db::PageSize::PAGESIZE_4K, BeSQLite::Db::Encoding::Utf8, true, DefaultTxn::Yes, m_retry.get())));
         MUSTBEOK(m_stateDb.CreateTable("fwk_InstalledBridges", "Name TEXT NOT NULL UNIQUE COLLATE NoCase, \
                                                                 BridgeLibraryPath TEXT UNIQUE COLLATE NoCase, \
                                                                 AffinityLibraryPath TEXT UNIQUE COLLATE NoCase, \
