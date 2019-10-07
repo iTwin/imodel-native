@@ -2745,6 +2745,81 @@ static void BuildDependencyOrderedSchemaList(bvector<ECN::ECSchemaP>& schemas, E
         BuildDependencyOrderedSchemaList(schemas, &referencedSchema);
         }
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            10/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+static void CopyKOQ(ECN::ECSchemaPtr mergedBDG, ECN::ECSchemaCP schema)
+    {
+    for (ECN::KindOfQuantityCP koq : schema->GetKindOfQuantities())
+        {
+        ECN::KindOfQuantityP destKoq = nullptr;
+        mergedBDG->CopyKindOfQuantity(destKoq, *koq);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            10/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+static void CopyPropertyCategories(ECN::ECSchemaPtr mergedBDG, ECN::ECSchemaCP schema)
+    {
+    for (auto prop : schema->GetPropertyCategories())
+        {
+        ECN::PropertyCategoryP destProp = nullptr;
+        mergedBDG->CopyPropertyCategory(destProp, *prop);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            10/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+static void CopyEnumerations(ECN::ECSchemaPtr mergedBDG, ECN::ECSchemaCP schema)
+    {
+    for (auto sourceEnum : schema->GetEnumerations())
+        {
+        ECN::ECEnumerationP destEnum = nullptr;
+        mergedBDG->CopyEnumeration(destEnum, *sourceEnum);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            10/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+static void CopyProperties(ECN::ECSchemaPtr mergedBDG, ECN::ECSchemaCP schema)
+    {
+    for (auto ecClass : schema->GetClasses())
+        {
+        ECN::ECClassP mergedClass = mergedBDG->GetClassP(ecClass->GetName().c_str());
+        for (auto ecProp : ecClass->GetProperties())
+            {
+            ECN::ECPropertyP mergedProp = mergedClass->GetPropertyP(ecProp->GetName().c_str());
+            auto KOQ = ecProp->GetKindOfQuantity();
+            if (nullptr != KOQ)
+                mergedProp->SetKindOfQuantity(mergedBDG->GetKindOfQuantityCP(KOQ->GetName().c_str()));
+
+            auto propCat = ecProp->GetCategory();
+            if (nullptr != propCat)
+                mergedProp->SetCategory(mergedBDG->GetPropertyCategoryCP(propCat->GetName().c_str()));
+
+            if (!ecProp->GetIsPrimitive() && !ecProp->GetIsPrimitiveArray())
+                continue;
+            auto prim = ecProp->GetAsPrimitiveProperty();
+            if (nullptr != prim)
+                {
+                if (nullptr == prim->GetEnumeration())
+                    continue;
+                auto mergedPrim = mergedProp->GetAsPrimitivePropertyP();
+                mergedPrim->SetType(*mergedBDG->GetEnumerationCP(prim->GetName().c_str()));
+                continue;
+                }
+            auto primArray = ecProp->GetAsPrimitiveArrayProperty();
+            if (nullptr == primArray->GetEnumeration())
+                continue;
+            auto mergedPrim = mergedProp->GetAsPrimitiveArrayPropertyP();
+            mergedPrim->SetType(*mergedBDG->GetEnumerationCP(primArray->GetName().c_str()));
+            }
+        }
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   10/2014
 //---------------------------------------------------------------------------------------
@@ -2844,38 +2919,17 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ImportTargetECSchemas()
                 mergedBDG->SetVersionMinor(existing->GetVersionMinor() + 1);
 
                 // Current merge tool does not handle KoQ, PropertyCategories, or Enumerations
-                for (ECN::KindOfQuantityCP koq : existing->GetKindOfQuantities())
-                    {
-                    ECN::KindOfQuantityP destKoq = nullptr;
-                    mergedBDG->CopyKindOfQuantity(destKoq, *koq);
-                    }
-                for (ECN::KindOfQuantityCP koq : schema->GetKindOfQuantities())
-                    {
-                    ECN::KindOfQuantityP destKoq = nullptr;
-                    mergedBDG->CopyKindOfQuantity(destKoq, *koq);
-                    }
+                CopyKOQ(mergedBDG, existing);
+                CopyKOQ(mergedBDG, schema);
 
-                for (auto prop : existing->GetPropertyCategories())
-                    {
-                    ECN::PropertyCategoryP destProp = nullptr;
-                    mergedBDG->CopyPropertyCategory(destProp, *prop);
-                    }
-                for (auto prop : schema->GetPropertyCategories())
-                    {
-                    ECN::PropertyCategoryP destProp = nullptr;
-                    mergedBDG->CopyPropertyCategory(destProp, *prop);
-                    }
+                CopyPropertyCategories(mergedBDG, existing);
+                CopyPropertyCategories(mergedBDG, schema);
 
-                for (auto sourceEnum : existing->GetEnumerations())
-                    {
-                    ECN::ECEnumerationP destEnum = nullptr;
-                    mergedBDG->CopyEnumeration(destEnum, *sourceEnum);
-                    }
-                for (auto sourceEnum : schema->GetEnumerations())
-                    {
-                    ECN::ECEnumerationP destEnum = nullptr;
-                    mergedBDG->CopyEnumeration(destEnum, *sourceEnum);
-                    }
+                CopyEnumerations(mergedBDG, existing);
+                CopyEnumerations(mergedBDG, schema);
+
+                CopyProperties(mergedBDG, existing);
+                CopyProperties(mergedBDG, schema);
                 }
             }
         else
