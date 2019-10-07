@@ -187,7 +187,7 @@ static void FindValuesFrom (T_Utf8StringVectorR values, T_Utf8StringVectorCR nam
     }
 #endif  // FIND_AECPROPERTIES
 
-#elif DWGTOOLKIT_RealDwg
+#elif DWGTOOLKIT_RealDwg && VendorVersion > 2019
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          09/19
@@ -363,7 +363,7 @@ DwgDbStatus UtilsLib::ParseAecDbPropertySet (rapidjson::Document& json, rapidjso
 
     status = json.ObjectEmpty() ? DwgDbStatus::InvalidInput : DwgDbStatus::Success;
 
-#elif DWGTOOLKIT_RealDwg
+#elif DWGTOOLKIT_RealDwg && VendorVersion > 2019
 
     AcStringArray   nameArray;
     AcVariantArray  valueArray;
@@ -444,7 +444,7 @@ DwgDbStatus UtilsLib::ParseAecDbPropertySetDef (rapidjson::Document& json, rapid
 
     status = json.ObjectEmpty() ? DwgDbStatus::InvalidInput : DwgDbStatus::Success;
 
-#elif DWGTOOLKIT_RealDwg
+#elif DWGTOOLKIT_RealDwg && VendorVersion > 2019
 
     AcStringArray   nameArray;
     AcVariantArray  valueArray;
@@ -518,7 +518,7 @@ DwgDbStatus UtilsLib::FindAecDbPropertyValues (T_Utf8StringVectorR values1, T_Ut
     // treat the second property list as optional
     status = foundCount1 == 0 ? DwgDbStatus::NotFound : DwgDbStatus::Success;
 
-#elif DWGTOOLKIT_RealDwg
+#elif DWGTOOLKIT_RealDwg && VendorVersion > 2019
 
     AcDbDictionaryIterator* iter = nullptr;
     status = ToDwgDbStatus (CreateAecPsetsIterator(iter, entityId));
@@ -666,7 +666,7 @@ DwgDbObjectId UtilsLib::GetAecDbPropertySetDef (DwgDbObjectId propsetId)
     if (!propertySet.isNull())
         defId = propertySet->GetPropertySetDef();
 
-#elif DWGTOOLKIT_RealDwg
+#elif DWGTOOLKIT_RealDwg && VendorVersion > 2019
 
     return ::getAecDbPropertySetDef(propsetId);
     

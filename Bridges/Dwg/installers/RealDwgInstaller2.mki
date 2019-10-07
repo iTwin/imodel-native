@@ -11,12 +11,8 @@ INSTALLER_COMPILER_OPT  + -dLANGUAGE_CULTURE=$(BENTLEYLANGUAGE)
 
 BB_INSTALLER_SKIP_WIXBUNDLE_INSIGNIA=1
 
+# We may use DwgRegistryFrag2.wxs next time when the msm files differ by a suffix between two releases
 INSTALLER_SOURCE_LIST       + $(BBInstallerWixSourceFileDir)DwgRegistryFrag.wxs
-INSTALLER_SOURCE_LIST       + $(BBInstallerWixSourceFileDir)DwgMergeModuleFrag.wxs
+INSTALLER_SOURCE_LIST       + $(BBInstallerWixSourceFileDir)DwgMergeModuleFrag2.wxs
 
-#
-# I'd like to keep this validation, but when I build two RealDWG bridges, one of them results in 
-# 'dpa2usy_.dll|xerces-ad-c_3.dll' with 2 different components on an LFN system! The error seems in
-# the built RealDwgImporterx64.msi only, as opposed to be in the source xerces.msm file!
-#
 INSTALLER_VALIDATOR_OPT     + -sice:ICE30

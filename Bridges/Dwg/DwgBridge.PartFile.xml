@@ -3,12 +3,17 @@
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
   
     <Part Name="DwgBridgePRG" PrgOutputDir="DwgBridge">
+        <!-- The default DwgBridge and tests -->
         <SubProduct ProductName="RealDwgBridge"/>
         <SubNuGetProduct NuGetProductName="RealDwgBridgeSdkNuget"/>
         <SubPart PartName="RunRealDwgImporterTests" PartFile="Bridges/Dwg/DwgConverter/DwgConverter"/>
         <SubProduct ProductName="RealDwgBridgeTests"/>
+        <!-- OpenDwgBridge -->
         <SubProduct ProductName="OpenDwgBridge"/>
         <SubNuGetProduct NuGetProductName="OpenDwgBridgeSdkNuget"/>
+        <!-- Another DwgBridge using an older release of RealDWG -->
+        <SubProduct ProductName="RealDwg2019Bridge"/>
+        <SubNuGetProduct NuGetProductName="RealDwg2019BridgeSdkNuget"/>
     </Part>
 
     <Part Name="DwgBridge.Dev" PrgOutputDir="DwgBridge">
@@ -20,7 +25,9 @@
     </Part>
 
 
+    <!-- -->
     <!-- A product installer for DwgBridge using OpenDWG -->
+    <!-- -->
     <Product Name="OpenDwgBridge" SaveProduct="true" BuildInstallSet="true">
         <SubPart PartName="OpenDwgImportExe" PartFile="Bridges/Dwg/DwgConverter/DwgConverter"/>
         <SubPart PartName="iModelBridgeFwkExe" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"/>
@@ -77,7 +84,9 @@
     </ProductDirectoryList>
 
 
+    <!-- -->
     <!-- A product installer for DwgBridge using RealDWG -->
+    <!-- -->
     <Product Name="RealDwgBridge" SaveProduct="true" BuildInstallSet="true">
         <SubPart PartName="RealDwgImportExe" PartFile="Bridges/Dwg/DwgConverter/DwgConverter"/>
         <SubPart PartName="iModelBridgeFwkExe" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"/>
@@ -108,7 +117,7 @@
     </Part>
 
 
-    <!-- An SDK zip delivery for DwgBridge using RealDWG -->
+    <!-- An SDK zip delivery for vertical bridges extending from DwgBridge using RealDWG -->
     <NuGetProduct Name="RealDwgBridgeSdkNuget" OnlyPlatforms="x64" Description="An iModelBridge-DWG extension SDK based on RealDWG toolkit">
         <SubPart PartName="RealDwgImportDLL" PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
         <SubPart PartName="RealDwgBridgeDLL" PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
@@ -194,7 +203,9 @@
     </ProductDirectoryList>
 
 
+    <!-- -->
     <!-- iModelBridge tests for RealDWG bridge -->
+    <!-- -->
     <Product Name="RealDwgBridgeTests">
         <SubProduct ProductName="iModelBridgeFwk" Repository="imodel02" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"/>
         <SubPart PartName="RealDwgBridgeTestsExe"/>
@@ -237,6 +248,67 @@
         <ProductDirectory Name="BridgeTestData"         RelativeTo="ApplicationRoot" Path="TestData" LibType="static"/>
         <ProductDirectory Name="UnitTests-Objects"      Deliver="false"/>
         <ProductDirectory Name="UnitTests-IgnoreList"   Deliver="false"/>
+    </ProductDirectoryList>
+
+
+
+    <!-- -->
+    <!-- Another product installer for DwgBridge using an older release of RealDWG -->
+    <!-- -->
+    <Product Name="RealDwg2019Bridge" SaveProduct="true" BuildInstallSet="true">
+        <SubPart PartName="RealDwg2019ImportExe" PartFile="Bridges/Dwg/DwgConverter/DwgConverter"/>
+        <SubPart PartName="iModelBridgeFwkExe" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"/>
+        <SubPart PartName="MakePackages" PartFile="iModelBridgeCore/DgnDbSync/bridge-addon"/>
+        <SubPart PartName="Redistribute2019" PartFile="${SrcRoot}bsicommon/CvsPartFiles/realdwg" Repository="bin-realdwg2019"/>
+        <SubPart PartName="Eula" PartFile="Eula" Repository="Miscdev-Eula"/>
+        <SubPart PartName="InstallFrameworkBase" PartFile="InstallFramework" Repository="InstallFramework"/>
+        <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
+        <SubPart PartName="RealDwgInstallFiles2"/>
+
+        <Directories DirectoryListName="RealDwg2019ConverterDirList"  PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
+        <Directories DirectoryListName="DwgAppCommonDirList"  PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
+
+        <InstallerWixFile SourceFile="installers\RealDwgImporter2"/>
+    </Product>
+
+    <Part Name="RealDwgInstallFiles2" BMakeFile="installers/RealDwgInstallerFiles.prewire.mke" BentleyBuildMakeOptions="+dInstallerSuffix=2">
+        <Bindings>
+            <Files BindToWixBuild="true">
+                RealDwgInstallerFiles2\DwgMergeModuleFrag2.wxs
+                RealDwgInstallerFiles2\DwgRegistryFrag.wxs
+                RealDwgInstallerFiles2\RealDwgInstaller2.mki
+            </Files>
+        </Bindings>
+    </Part>
+
+    <!-- An SDK zip delivery for vertical bridges extending from DwgBridge using an older release of RealDWG -->
+    <NuGetProduct Name="RealDwg2019BridgeSdkNuget" OnlyPlatforms="x64" Description="An iModelBridge-DWG extension SDK based on RealDWG toolkit">
+        <SubPart PartName="RealDwg2019ImportDLL" PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
+        <SubPart PartName="RealDwg2019BridgeDLL" PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
+        <SubPart PartName="RealDwg2019Db" PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
+        <SubPart PartName="Docs" PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
+        <SubPart PartName="Docs" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
+        <SubPart PartName="CodeSamples" PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
+        <SubPart PartName="DwgResources" PartFile="Bridges/Dwg/DwgConverter/DwgConverter" Repository="imodel02"/>
+        <SubPart PartName="iModelBridgeFwkExe" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
+        <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api" Repository="imodel02"/>
+        <SubPart PartName="DwgImporterHeaderDelivery"/>
+        <SubPart PartName="SelectedVendorHeaderDelivery"/>
+        <Directories DirectoryListName="RealDwg2019BridgeSdkDirList"/>
+        <Directories DirectoryListName="DwgSdkCommonDirList"/>
+    </NuGetProduct>
+
+    <ProductDirectoryList ListName="RealDwg2019BridgeSdkDirList">
+        <ProductDirectory Name="ApplicationRoot"            Path="DwgImporterSDK"/>
+        <ProductDirectory Name="RealDwg2019DbLibs"          RelativeTo="ApplicationRoot"    Path="Libs"/>
+        <ProductDirectory Name="RealDwg2019DbAssemblies"    RelativeTo="ApplicationRoot"    Path="Dlls"/>
+        <ProductDirectory Name="RealDwg2019ImportAssemblies" RelativeTo="ApplicationRoot"   Path="Dlls"/>
+        <!-- exclude list -->
+        <ProductDirectory Name="RealDwg2019Assemblies"      Deliver="false"/>
+        <ProductDirectory Name="RealDwg2019AssembliesEnUS"  Deliver="false"/>
+        <ProductDirectory Name="ShxFonts2019"               Deliver="false"/>
+        <ProductDirectory Name="RealDwgDbAssemblies"        Deliver="false"/>
+        <ProductDirectory Name="RealDwgImportAssemblies"    Deliver="false"/>
     </ProductDirectoryList>
 
 </BuildContext>

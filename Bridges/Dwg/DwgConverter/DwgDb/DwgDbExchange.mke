@@ -200,7 +200,9 @@ LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)acgex$(ToolkitLibSuffix)$(libext
 LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)AcDbPointCloudObj$(libext)
 LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)acModelDocObj$(libext)
 LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)acSceneOE$(libext)
+%if $(VendorVersion) >= 2020
 LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)AecVerChk.lib
+%endif
 
 # Need UuidCreate, _variant_t
 LINKER_LIBRARIES_DELAYLOADED    + Rpcrt4.lib comsuppw.lib

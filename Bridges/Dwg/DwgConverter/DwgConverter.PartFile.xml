@@ -203,6 +203,67 @@
     </ProductDirectoryList>
 
 
+    <!-- Build another DwgImporter using an older release of RealDWG Toolkit -->
+    <Part Name="RealDwg2019ImportExe" BentleyBuildMakeFile="Apps/DwgImportExe.mke" BentleyBuildMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2019" OnlyPlatforms="x64" ExcludeLibType="Static" >
+        <SubPart PartName="BentleyDll"  PartFile="iModelCore/Bentley/Bentley"/>
+        <SubPart PartName="iModelBridgeFwkExe"  PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"/>
+        <SubPart PartName="DwgResources" />
+        <SubPart PartName="RealDwg2019BridgeDLL" />
+        <SubPart PartName="RealDwg2019ImportDLL" />
+        <Bindings>
+            <Files ProductDirectoryName="RealDwg2019ImportAssemblies" SubPartDirectory="Files\RealDwg2019">Delivery/RealDwg2019Importer/DwgImporter.exe</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="RealDwg2019BridgeDLL" BentleyBuildMakeFile="Apps/DwgBridge.mke" BentleyBuildMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2019" ApiNumber="M02" OnlyPlatforms="x64" ExcludeLibType="Static" >
+        <SubPart PartName="BentleyDll"          PartFile="iModelCore/Bentley/Bentley"/>
+        <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"/>
+        <SubPart PartName="iModelBridgeFwk-en"  PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"/>
+        <SubPart PartName="RealDwg2019ImportDLL"/>
+        <Bindings>
+            <Files ProductDirectoryName="RealDwg2019ImportAssemblies" SubPartDirectory="Files\RealDwg2019">Delivery/RealDwg2019Importer/$(shlibprefix)DwgBridge$(ApiNumber)$(shlibext)</Files>
+            <Files ProductDirectoryName="RealDwg2019DbLibs" SubPartDirectory="Files\RealDwg2019" Required="false">Delivery/RealDwg2019Importer/$(libprefix)DwgBridge$(libext)</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="RealDwg2019ImportDLL" BentleyBuildMakeFile="DwgImporter.mke" BentleyBuildMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2019" ApiNumber="2019M02" OnlyPlatforms="x64" ExcludeLibType="Static" >
+        <SubPart PartName="PublicAPI"/>
+        <SubPart PartName="BentleyDll"          PartFile="iModelCore/Bentley/Bentley"/>
+        <SubPart PartName="DgnPlatformDLL"      PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
+        <SubPart PartName="ImagePP"             PartFile="iModelBridgeCore/Imagepp/ImagePP"/>
+        <SubPart PartName="Raster"              PartFile="Domains/RealityModeling/RealityModeling"/>
+        <SubPart PartName="ECPresentation"      PartFile="iModelCore/ECPresentation/ECPresentation"/>
+        <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"/>
+        <SubPart PartName="RealDwg2019Db"/>
+        <Bindings>
+            <Files ProductDirectoryName="RealDwg2019ImportAssemblies" SubPartDirectory="Files\RealDwg2019">Delivery/RealDwg2019Importer/$(shlibprefix)DwgImporter$(ApiNumber)$(shlibext)</Files>
+            <Files ProductDirectoryName="RealDwg2019DbLibs" SubPartDirectory="Files\RealDwg2019" Required="false">Delivery/RealDwg2019Importer/$(libprefix)DwgImporter$(libext)</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="RealDwg2019Db" BentleyBuildMakeFile="DwgDb/DwgDbExchange.mke" BentleyBuildMakeOptions="+dDWGTOOLKIT=RealDwg +dVendorVersion=2019 +dBUILD_DWGDB" ApiNumber="2019M02" OnlyPlatforms="x64" ExcludeLibType="Static">
+        <SubPart PartName="PublicAPI"/>
+        <SubPart PartName="BentleyDll"      PartFile="iModelCore/Bentley/Bentley"/>
+        <SubPart PartName="RealDwg2019"     PartFile="${SrcRoot}bsicommon/CvsPartFiles/realdwg" Repository="bin-realdwg2019"/>
+        <SubPart PartName="PsolidShim_x64"  PartFile="iModelCore/BRepCore/BRepCore"/>
+        <SubPart PartName="GeomDlls"        PartFile="iModelCore/GeomLibs/Geomlibs"/>
+        <Bindings>
+            <Files ProductDirectoryName="RealDwg2019DbLibs" SubPartDirectory="Libs\RealDwg2019" Required="false">Delivery/RealDwg2019Importer/$(libprefix)RealDwgDbExchange$(libext)</Files>
+            <Assemblies ProductDirectoryName="RealDwg2019DbAssemblies" SubPartDirectory="RealDwg2019">Delivery/RealDwg2019Importer/$(shlibprefix)RealDwgDbExchange$(ApiNumber)$(shlibext)</Assemblies>
+            <Files ProductDirectoryName="VendorNotices">Delivery/RealDwg2019Importer/realdwg-notice.txt</Files>
+        </Bindings>
+    </Part>
+
+    <ProductDirectoryList ListName="RealDwg2019ConverterDirList">
+        <ProductDirectory Name="ApplicationRoot"                Path=""/>
+        <ProductDirectory Name="RealDwg2019ImportAssemblies"    Deliver="true"                  RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="RealDwg2019DbAssemblies"        Deliver="true"                  RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="RealDwg2019Assemblies"          Deliver="true"                  RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="RealDwg2019AssembliesEnUS"      Deliver="true"  Path="en-US"    RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="ShxFonts2019"                   Deliver="true"  Path="Fonts"    RelativeTo="ApplicationRoot"/>
+    </ProductDirectoryList>
+
+
     <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
     <!-- Sample codes -->
     <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->

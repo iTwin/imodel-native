@@ -8,7 +8,11 @@ PolicyFile = $(SrcBsicommon)sharedmki/AssertCommonCompileLinkPolicy.mki
 
 %include mdl.mki
 
-RealDwgInstallFiles = $(BuildContext)RealDwgInstallerFiles/
+%ifdef InstallerSuffix
+    %message |----- Building another installer for RealDwgBridge using an old release of RealDWG ------|
+%endif
+
+RealDwgInstallFiles = $(BuildContext)RealDwgInstallerFiles$(InstallerSuffix)/
                 
 #----------------------------------------------------------------------*/
 # Symlink files needed for powerproduct build in BuildContext
@@ -16,9 +20,9 @@ RealDwgInstallFiles = $(BuildContext)RealDwgInstallerFiles/
 always:
     ~linkfile "$(RealDwgInstallFiles)RealDwgBundle.bundle.wxs=$(_MakeFilePath)RealDwgBundle.bundle.wxs"
     ~linkfile "$(RealDwgInstallFiles)DwgRegistryFrag.wxs=$(_MakeFilePath)DwgRegistryFrag.wxs"
-    ~linkfile "$(RealDwgInstallFiles)DwgMergeModuleFrag.wxs=$(_MakeFilePath)DwgMergeModuleFrag.wxs"
+    ~linkfile "$(RealDwgInstallFiles)DwgMergeModuleFrag$(InstallerSuffix).wxs=$(_MakeFilePath)DwgMergeModuleFrag$(InstallerSuffix).wxs"
 
-$(RealDwgInstallFiles)RealDwgInstaller.mki : $(_MakeFilePath)RealDwgInstaller.mki
+$(RealDwgInstallFiles)RealDwgInstaller$(InstallerSuffix).mki : $(_MakeFilePath)RealDwgInstaller$(InstallerSuffix).mki
     $(LinkFirstDepToFirstTarget)
 
 $(RealDwgInstallFiles)BundleRealDwgInstaller.mki : $(_MakeFilePath)BundleRealDwgInstaller.mki
