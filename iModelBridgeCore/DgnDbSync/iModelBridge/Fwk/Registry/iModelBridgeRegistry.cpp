@@ -764,7 +764,7 @@ BentleyStatus iModelBridgeRegistry::_FindBridgeInRegistry(BeFileNameR bridgeLibr
     bridgePath.append(bridgeName.c_str());
 
     HKEY iModelBridgeKey;
-    long result = RegOpenKeyExW(HKEY_LOCAL_MACHINE, bridgePath.c_str(), 0, KEY_ENUMERATE_SUB_KEYS | KEY_QUERY_VALUE | KEY_SET_VALUE, &iModelBridgeKey);
+    long result = RegOpenKeyExW(HKEY_LOCAL_MACHINE, bridgePath.c_str(), 0, KEY_ENUMERATE_SUB_KEYS | KEY_QUERY_VALUE, &iModelBridgeKey);
     if (result != ERROR_SUCCESS)
         return BSIERROR;
 

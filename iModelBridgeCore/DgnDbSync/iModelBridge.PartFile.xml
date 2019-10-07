@@ -316,6 +316,7 @@
         <SubPart PartName="iModelBridgeFwkLib"/>
         <SubPart PartName="DgnPlatformUnitTestHelpers" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
         <SubPart PartName="DgnDbTestUtils" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02" />
+        <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
         <Bindings>
             <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="iModelBridge" SubPartDirectory="UnitTests/iModelBridge">Delivery/UnitTests/ignore_list.txt</Files>
         </Bindings>
