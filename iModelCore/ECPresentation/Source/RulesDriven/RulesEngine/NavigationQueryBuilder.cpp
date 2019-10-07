@@ -557,6 +557,14 @@ protected:
     GroupingType _GetType() const override {return GroupingType::BaseClass;}
     NavigationQueryContractPtr _GetContract(SelectQueryInfo const& selectInfo) const override {return GetContract();}
     bool _ApplyClassGrouping(ComplexNavigationQueryPtr& query, SelectQueryInfo const&) override {return true;}
+    bool _IsAppliedTo(NavNodeCR node) const override
+        {
+        if (!T_Super::_IsAppliedTo(node))
+            return false;
+
+        NavNodeExtendedData extendedData(node);
+        return GetBaseECClassId() == extendedData.GetECClassId();
+        }
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                06/2015

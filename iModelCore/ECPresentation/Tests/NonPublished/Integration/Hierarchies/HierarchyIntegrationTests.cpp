@@ -6887,3 +6887,68 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CorrectHasChildrenFlagWh
     NavNodeCPtr rootNode = rootNodes[0];
     EXPECT_FALSE(rootNode->HasChildren());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Saulius.Skliutas                09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(Grouping_ClassGroup_GroupsByMultipleBaseClasses, R"*(
+    <ECEntityClass typeName="Element" />
+    <ECEntityClass typeName="GeometricElement">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="PhysicalElement">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_GroupsByMultipleBaseClasses)
+    {
+    ECClassCP base = GetClass("Element");
+    ECClassCP geometricClass = GetClass("GeometricElement");
+    ECClassCP physicalClass = GetClass("PhysicalElement");
+    IECInstancePtr geometric1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *geometricClass);
+    IECInstancePtr geometric2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *geometricClass);
+    IECInstancePtr physical1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *physicalClass);
+    IECInstancePtr physical2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *physicalClass);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rootRule = new RootNodeRule("", 1000, false, TargetTree_Both, true);
+    rules->AddPresentationRule(*rootRule);
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false,
+        "", base->GetFullName(), true));
+
+    GroupingRuleP geometricGroup = new GroupingRule("", 1, false, geometricClass->GetSchema().GetName(), geometricClass->GetName(), "", "", "");
+    geometricGroup->AddGroup(*new ClassGroup("", true, "", ""));
+
+    GroupingRuleP physicalGroup = new GroupingRule("", 1, false, physicalClass->GetSchema().GetName(), physicalClass->GetName(), "", "", "");
+    physicalGroup->AddGroup(*new ClassGroup("", true, "", ""));
+
+    rootRule->AddCustomizationRule(*geometricGroup);
+    rootRule->AddCustomizationRule(*physicalGroup);
+
+    // request for nodes
+    RulesDrivenECPresentationManager::NavigationOptions options(BeTest::GetNameOfCurrentTest(), TargetTree_MainTree);
+    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get(); });
+    ASSERT_EQ(2, rootNodes.GetSize());
+
+    NavNodeCPtr geometricGroupingNode = rootNodes[0];
+    NavNodeCPtr physicalGroupingNode = rootNodes[1];
+    EXPECT_TRUE(nullptr != geometricGroupingNode->GetKey()->AsECClassGroupingNodeKey());
+    EXPECT_TRUE(nullptr != physicalGroupingNode->GetKey()->AsECClassGroupingNodeKey());
+
+    DataContainer<NavNodeCPtr> geometricNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDbCR(), *geometricGroupingNode, PageOptions(), options.GetJson()).get(); });
+    ASSERT_EQ(2, geometricNodes.GetSize());
+    ASSERT_TRUE(nullptr != geometricNodes[0]->GetKey()->AsECInstanceNodeKey());
+    EXPECT_EQ(geometricClass->GetId(), geometricNodes[0]->GetKey()->AsECInstanceNodeKey()->GetECClass().GetId());
+    ASSERT_TRUE(nullptr != geometricNodes[1]->GetKey()->AsECInstanceNodeKey());
+    EXPECT_EQ(geometricClass->GetId(), geometricNodes[1]->GetKey()->AsECInstanceNodeKey()->GetECClass().GetId());
+
+    DataContainer<NavNodeCPtr> physicalNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetChildren(s_project->GetECDbCR(), *physicalGroupingNode, PageOptions(), options.GetJson()).get(); });
+    ASSERT_EQ(2, physicalNodes.GetSize());
+    ASSERT_TRUE(nullptr != physicalNodes[0]->GetKey()->AsECInstanceNodeKey());
+    EXPECT_EQ(physicalClass->GetId(), physicalNodes[0]->GetKey()->AsECInstanceNodeKey()->GetECClass().GetId());
+    ASSERT_TRUE(nullptr != physicalNodes[1]->GetKey()->AsECInstanceNodeKey());
+    EXPECT_EQ(physicalClass->GetId(), physicalNodes[1]->GetKey()->AsECInstanceNodeKey()->GetECClass().GetId());
+    }
