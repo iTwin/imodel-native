@@ -1752,10 +1752,10 @@ void DgnElement::RemapAutoHandledNavigationproperties(DgnImportContext& importer
         if (v.IsNull())
             continue;
 
-        DgnElementId id((uint64_t)v.GetLong());
-        id = importer.FindElementId(id);
-        if (id.IsValid())
-            SetPropertyValue(prop->GetName().c_str(), v);
+        DgnElementId sourceElementId = v.GetNavigationInfo().GetId<DgnElementId>();
+        DgnElementId targetElementId = importer.FindElementId(sourceElementId);
+        v.SetNavigationInfo(targetElementId, importer.RemapClassId(v.GetNavigationInfo().GetRelationshipClassId()));
+        SetPropertyValue(prop->GetName().c_str(), v);
         }
     }
 
