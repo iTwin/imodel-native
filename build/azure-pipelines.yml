@@ -224,6 +224,18 @@ jobs:
         condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'DwgBridge'))
         artifact: RealDwg2019BridgeSdkNuget_x64
 
+      - powershell: |
+          $installerSearch = [System.IO.Path]::Combine($env:OutRoot, "Winx64", "InstallSetContext", "CiviliModelBridges", "*Setup_CiviliModelBridgex64*.msi")
+          $installerPath = (Get-ChildItem $installerSearch).FullName
+          Write-Host ([System.String]::Format("{0} = {1}`n##vso[task.setvariable variable={0}]{1}", "ORDBRIDGEX64_PATH", $installerPath))
+        displayName: Compute ORDBRIDGEX64_PATH (installer path)
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'ORDBridge'))
+
+      - publish: $(ORDBRIDGEX64_PATH)
+        displayName: 'Save ORDBridge Installer'
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'ORDBridge'))
+        artifact: OrdBridge
+
   # ================================================================================================
   - job: build_linuxx64
     displayName: Build Linux x64
