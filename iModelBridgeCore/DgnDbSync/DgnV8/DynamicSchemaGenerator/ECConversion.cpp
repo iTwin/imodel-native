@@ -2749,57 +2749,81 @@ static void BuildDependencyOrderedSchemaList(bvector<ECN::ECSchemaP>& schemas, E
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2019
 //---------------+---------------+---------------+---------------+---------------+-------
-static void CopyKOQ(ECN::ECSchemaPtr mergedBDG, ECN::ECSchemaCP schema)
+static void CopyKOQ(ECN::ECSchemaPtr mergedSchema, ECN::ECSchemaCP schema)
     {
     for (ECN::KindOfQuantityCP koq : schema->GetKindOfQuantities())
         {
         ECN::KindOfQuantityP destKoq = nullptr;
-        mergedBDG->CopyKindOfQuantity(destKoq, *koq);
+        mergedSchema->CopyKindOfQuantity(destKoq, *koq);
         }
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2019
 //---------------+---------------+---------------+---------------+---------------+-------
-static void CopyPropertyCategories(ECN::ECSchemaPtr mergedBDG, ECN::ECSchemaCP schema)
+static void CopyPropertyCategories(ECN::ECSchemaPtr mergedSchema, ECN::ECSchemaCP schema)
     {
     for (auto prop : schema->GetPropertyCategories())
         {
         ECN::PropertyCategoryP destProp = nullptr;
-        mergedBDG->CopyPropertyCategory(destProp, *prop);
+        mergedSchema->CopyPropertyCategory(destProp, *prop);
         }
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2019
 //---------------+---------------+---------------+---------------+---------------+-------
-static void CopyEnumerations(ECN::ECSchemaPtr mergedBDG, ECN::ECSchemaCP schema)
+static void CopyEnumerations(ECN::ECSchemaPtr mergedSchema, ECN::ECSchemaCP schema)
     {
     for (auto sourceEnum : schema->GetEnumerations())
         {
         ECN::ECEnumerationP destEnum = nullptr;
-        mergedBDG->CopyEnumeration(destEnum, *sourceEnum);
+        mergedSchema->CopyEnumeration(destEnum, *sourceEnum);
         }
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2019
 //---------------+---------------+---------------+---------------+---------------+-------
-static void CopyProperties(ECN::ECSchemaPtr mergedBDG, ECN::ECSchemaCP schema)
+static void CopyProperties(ECN::ECSchemaPtr mergedSchema, ECN::ECSchemaCP schema)
     {
     for (auto ecClass : schema->GetClasses())
         {
-        ECN::ECClassP mergedClass = mergedBDG->GetClassP(ecClass->GetName().c_str());
+        ECN::ECClassP mergedClass = mergedSchema->GetClassP(ecClass->GetName().c_str());
         for (auto ecProp : ecClass->GetProperties())
             {
             ECN::ECPropertyP mergedProp = mergedClass->GetPropertyP(ecProp->GetName().c_str());
             auto KOQ = ecProp->GetKindOfQuantity();
             if (nullptr != KOQ)
-                mergedProp->SetKindOfQuantity(mergedBDG->GetKindOfQuantityCP(KOQ->GetName().c_str()));
+                {
+                auto mergedKOQ = mergedSchema->GetKindOfQuantityCP(KOQ->GetName().c_str());
+                if (nullptr == mergedKOQ)
+                    {
+                    ECN::KindOfQuantityP dest;
+                    if (ECN::ECObjectsStatus::Success != mergedSchema->CopyKindOfQuantity(dest, *KOQ))
+                        LOG.warningv("Failed to copy KOQ %s for %s.%s", KOQ->GetName().c_str(), mergedProp->GetClass().GetFullName(), mergedProp->GetName().c_str());
+                    else
+                        mergedProp->SetKindOfQuantity(dest);
+                    }
+                else
+                    mergedProp->SetKindOfQuantity(mergedKOQ);
+                }
 
             auto propCat = ecProp->GetCategory();
             if (nullptr != propCat)
-                mergedProp->SetCategory(mergedBDG->GetPropertyCategoryCP(propCat->GetName().c_str()));
+                {
+                auto mergedCat = mergedSchema->GetPropertyCategoryCP(propCat->GetName().c_str());
+                if (nullptr == mergedCat)
+                    {
+                    ECN::PropertyCategoryP dest;
+                    if (ECN::ECObjectsStatus::Success != mergedSchema->CopyPropertyCategory(dest, *propCat))
+                        LOG.warningv("Failed to copy PropertyCategory %s for %s.%s", propCat->GetName().c_str(), mergedProp->GetClass().GetFullName(), mergedProp->GetName().c_str());
+                    else
+                        mergedProp->SetCategory(dest);
+                    }
+                else
+                    mergedProp->SetCategory(mergedCat);
+                }
 
             if (!ecProp->GetIsPrimitive() && !ecProp->GetIsPrimitiveArray())
                 continue;
@@ -2809,14 +2833,41 @@ static void CopyProperties(ECN::ECSchemaPtr mergedBDG, ECN::ECSchemaCP schema)
                 if (nullptr == prim->GetEnumeration())
                     continue;
                 auto mergedPrim = mergedProp->GetAsPrimitivePropertyP();
-                mergedPrim->SetType(*mergedBDG->GetEnumerationCP(prim->GetName().c_str()));
+                auto mergedEnum = mergedSchema->GetEnumerationCP(prim->GetEnumeration()->GetName().c_str());
+                if (nullptr == mergedEnum)
+                    {
+                    ECN::ECEnumerationP dest;
+                    if (ECN::ECObjectsStatus::Success != mergedSchema->CopyEnumeration(dest, *prim->GetEnumeration()))
+                        LOG.warningv("Failed to copy Enumeration %s for %s.%s", prim->GetEnumeration()->GetName().c_str(), mergedProp->GetClass().GetFullName(), mergedProp->GetName().c_str());
+                    else
+                        mergedPrim->SetType(*dest);
+                    }
+                else
+                    mergedPrim->SetType(*mergedEnum);
                 continue;
                 }
             auto primArray = ecProp->GetAsPrimitiveArrayProperty();
             if (nullptr == primArray->GetEnumeration())
                 continue;
             auto mergedPrim = mergedProp->GetAsPrimitiveArrayPropertyP();
-            mergedPrim->SetType(*mergedBDG->GetEnumerationCP(primArray->GetName().c_str()));
+            if (nullptr == mergedPrim)
+                {
+                LOG.warningv("Source property %s is a primitive array but incoming property is not.  Cannot copy enumeration %s",
+                             mergedProp->GetClass().GetFullName(), mergedProp->GetName().c_str(), primArray->GetEnumeration()->GetName().c_str());
+                continue;
+                }
+            auto mergedEnum = mergedSchema->GetEnumerationCP(primArray->GetEnumeration()->GetName().c_str());
+            if (nullptr == mergedEnum)
+                {
+                ECN::ECEnumerationP dest;
+                if (ECN::ECObjectsStatus::Success != mergedSchema->CopyEnumeration(dest, *primArray->GetEnumeration()))
+                    LOG.warningv("Failed to copy Enumeration %s for %s.%s", primArray->GetEnumeration()->GetName().c_str(), mergedProp->GetClass().GetFullName(), mergedProp->GetName().c_str());
+                else
+                    mergedPrim->SetType(*dest);
+                }
+            else
+
+            mergedPrim->SetType(*mergedSchema->GetEnumerationCP(primArray->GetName().c_str()));
             }
         }
     }
@@ -2895,7 +2946,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ImportTargetECSchemas()
     }
 #endif
     // If we're either updating or mapping a new file, need to see if this schema already exists in the db and if so, increment the minor version
-    ECN::ECSchemaPtr mergedBDG;
+    bvector<ECN::ECSchemaPtr> mergedSchemas;
     for (BECN::ECSchemaCP schema : constSchemas)
         {
         BECN::ECSchemaCP existing = GetDgnDb().Schemas().GetSchema(schema->GetName());
@@ -2905,79 +2956,46 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ImportTargetECSchemas()
         if (ExcludeSchemaFromBisification(*schema))
             continue;
 
-        // The BuildingDataGroup schema is different with every project.  Therefore, if one already exists, we need to merge it with the new one.  Otherwise, ECDb treats it as
-        // an upgrade and tries to delete or rename things.  So merge them, using the existing schema as the conflict resultion
-        if (existing->GetName().EqualsIAscii("BuildingDataGroup"))
+        ECN::ECSchemaPtr merged;
+        auto diff = ECDiff::Diff(*existing, *schema);
+        if (diff->IsEmpty())
             {
-            auto diff = ECDiff::Diff(*existing, *schema);
-            if (diff->IsEmpty())
-                continue;
-            if (diff->Merge(mergedBDG, CONFLICTRULE_TakeLeft) == MergeStatus::Success)
-                {
-                mergedBDG->SetVersionRead(existing->GetVersionRead());
-                mergedBDG->SetVersionWrite(existing->GetVersionWrite());
-                mergedBDG->SetVersionMinor(existing->GetVersionMinor() + 1);
-
-                // Current merge tool does not handle KoQ, PropertyCategories, or Enumerations
-                CopyKOQ(mergedBDG, existing);
-                CopyKOQ(mergedBDG, schema);
-
-                CopyPropertyCategories(mergedBDG, existing);
-                CopyPropertyCategories(mergedBDG, schema);
-
-                CopyEnumerations(mergedBDG, existing);
-                CopyEnumerations(mergedBDG, schema);
-
-                CopyProperties(mergedBDG, existing);
-                CopyProperties(mergedBDG, schema);
-                }
-            }
-        else
-            {
-            if (InternalComparer::IsChanged(existing, schema))
-                {
-                ECN::ECSchemaP nonConst = const_cast<ECN::ECSchemaP>(schema);
-                nonConst->SetVersionRead(existing->GetVersionRead());
-                nonConst->SetVersionWrite(existing->GetVersionWrite());
-                nonConst->SetVersionMinor(existing->GetVersionMinor() + 1);
-                }
-            else if (existing->GetVersionRead() != schema->GetVersionRead() || existing->GetVersionWrite() != schema->GetVersionWrite() || existing->GetVersionMinor() != schema->GetVersionMinor())
+            if (existing->GetVersionRead() != schema->GetVersionRead() || existing->GetVersionWrite() != schema->GetVersionWrite() || existing->GetVersionMinor() != schema->GetVersionMinor())
                 {
                 ECN::ECSchemaP nonConst = const_cast<ECN::ECSchemaP>(schema);
                 nonConst->SetVersionRead(existing->GetVersionRead());
                 nonConst->SetVersionWrite(existing->GetVersionWrite());
                 nonConst->SetVersionMinor(existing->GetVersionMinor());
                 }
-            }
-        /*
-        ** Include SchemaComparer causes compiler errors related to the template in the comparer and DPoint3d
-        BECN::SchemaComparer comparer;
-        //We do not require detail if schema is added or deleted. the name and version suffices.
-        ECN::SchemaComparer::Options options = ECN::SchemaComparer::Options(ECN::SchemaComparer::DetailLevel::NoSchemaElements, ECN::SchemaComparer::DetailLevel::NoSchemaElements);
-        bvector<ECN::ECSchemaCP> existingSet = {existing};
-        bvector<ECN::ECSchemaCP> newSet = {schema};
-        ECN::SchemaDiff diff;
-        if (SUCCESS == comparer.Compare(diff, existingSet, newSet, options))
-            {
-            if (diff.Changes().IsChanged())
-                {
-                ECN::ECSchemaP nonConst = const_cast<ECN::ECSchemaP>(schema);
-                nonConst->SetVersionMinor(nonConst->GetVersionMinor() + 1);
-                }
-            }
-        auto diff = ECDiff::Diff(*existing, *schema);
-        if (diff->GetStatus() == DiffStatus::Success && diff->IsEmpty())
             continue;
-        ECN::ECSchemaP nonConst = const_cast<ECN::ECSchemaP>(schema);
-        nonConst->SetVersionMinor(existing->GetVersionMinor() + 1);
-        */
+            }
+        if (diff->Merge(merged, CONFLICTRULE_TakeLeft) == MergeStatus::Success)
+            {
+            merged->SetVersionRead(existing->GetVersionRead());
+            merged->SetVersionWrite(existing->GetVersionWrite());
+            merged->SetVersionMinor(existing->GetVersionMinor() + 1);
+
+            // Current merge tool does not handle KoQ, PropertyCategories, or Enumerations
+            CopyKOQ(merged, existing);
+            CopyKOQ(merged, schema);
+
+            CopyPropertyCategories(merged, existing);
+            CopyPropertyCategories(merged, schema);
+
+            CopyEnumerations(merged, existing);
+            CopyEnumerations(merged, schema);
+
+            CopyProperties(merged, existing);
+            CopyProperties(merged, schema);
+            mergedSchemas.push_back(merged);
+            }
         }
 
-    if (mergedBDG.IsValid())
+    for (ECN::ECSchemaPtr merged : mergedSchemas)
         {
-        auto removeAt = std::remove_if(constSchemas.begin(), constSchemas.end(), [&] (BECN::ECSchemaCP const& arg) { return arg->GetName().EqualsIAscii("BuildingDataGroup"); });
+        auto removeAt = std::remove_if(constSchemas.begin(), constSchemas.end(), [&merged] (BECN::ECSchemaCP const& arg) { return arg->GetName().EqualsIAscii(merged->GetName().c_str()); });
         constSchemas.erase(removeAt, constSchemas.end());
-        constSchemas.push_back(mergedBDG.get());
+        constSchemas.push_back(merged.get());
         }
     auto importStatus = GetDgnDb().ImportV8LegacySchemas(constSchemas);
     if (SchemaStatus::Success != importStatus)
