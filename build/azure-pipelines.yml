@@ -195,17 +195,10 @@ jobs:
         condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'DwgBridge'))
         artifact: DwgBridge
 
-      - powershell: |
-          $installerSearch = [System.IO.Path]::Combine($env:OutRoot, "Winx64", "build", "WixBundleBuild", "OpenDwgBridge", "build", "*OpenDwgImporterx64*.exe")
-          $installerPath = (Get-ChildItem $installerSearch).FullName
-          Write-Host ([System.String]::Format("{0} = {1}`n##vso[task.setvariable variable={0}]{1}", "OPENDWGIMPORTERX64_PATH", $installerPath))
-        displayName: Compute OPENDWGIMPORTERX64_PATH
+      - publish: $(Build.BinariesDirectory)/Winx64/InstallSetContext/DwgBridge/RealDwgImporter2x64.msi
+        displayName: Save [Real]DwgBridge[OlderVersion]
         condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'DwgBridge'))
-      
-      - publish: $(OPENDWGIMPORTERX64_PATH)
-        displayName: Save OpenDwgBridge
-        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'DwgBridge'))
-        artifact: OpenDwgBridge
+        artifact: REALDWGIMPORTER2X64
 
       - task: archiveandpublishartifact@0
         displayName: Save [Real]DwgBridgeTests
@@ -225,6 +218,11 @@ jobs:
         displayName: Save RealDwgBridgeSdkNuget_x64
         condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'DwgBridge'))
         artifact: RealDwgBridgeSdkNuget_x64
+
+      - publish: $(Build.BinariesDirectory)/Winx64/Nugetpkg/RealDwg2019BridgeSdkNuget
+        displayName: Save RealDwg2019BridgeSdkNuget_x64
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'DwgBridge'))
+        artifact: RealDwg2019BridgeSdkNuget_x64
 
   # ================================================================================================
   - job: build_linuxx64
