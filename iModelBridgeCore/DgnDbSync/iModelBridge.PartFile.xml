@@ -54,6 +54,12 @@
         </Bindings>
     </Part>
 
+    <Part Name="Domains">
+        <SubPart PartName="LinearReferencing"               PartFile="Domains/LinearReferencing/LinearReferencing" />
+        <SubPart PartName="RoadRailAlignment"               PartFile="Domains/RoadRailAlignment/RoadRailAlignment" />
+        <SubPart PartName="RoadRailPhysical"                PartFile="Domains/RoadRailPhysical/RoadRailPhysical" />
+    </Part>
+    
     <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
     <!-- iModelBridgeFwk - Loads and runs iModelBridges connected to iModelHub -->
     <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
@@ -108,6 +114,7 @@
         <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
         <SubPart PartName="iModelBridgeAssignExeShim"/>
         <SubPart PartName="__iModelBridgeGetAffinityHostForFwk"/>
+        <SubPart PartName="Domains" />
 
         <Directories DirectoryListName="iModelBridgeAppCommonDirList"/>
         <Directories DirectoryListName="iModelBridgeFwkDirList"/>
