@@ -128,7 +128,7 @@ BentleyStatus DoGetFromSource()
 #ifdef DO_VIEWPORT_QUERY
     static size_t               s_maxLeafPointCount = 20000;
 #else   
-    static size_t               s_maxLeafPointCount =  s_pointCountLimit * .9;    
+    static size_t               s_maxLeafPointCount = s_pointCountLimit * .9;
 #endif    
     bool                        colorsPresent;
 
@@ -151,35 +151,34 @@ BentleyStatus DoGetFromSource()
     dgnToTile.InverseOf(root.GetLocation());
     cloudToTile = Transform::FromProduct(dgnToTile, root.GetPointCloudModel().GetSceneToWorld());
 
-    while (0 != (nBatchPoints = (size_t) ptGetQueryPointsf (queryHandle->GetHandle(), s_maxTileBatchCount, &batchPoints.front().x, colorsPresent ? (PTubyte*) batchColors.data() : nullptr, nullptr, nullptr, nullptr)))
+    nBatchPoints = (size_t) ptGetQueryPointsf(queryHandle->GetHandle(), s_maxTileBatchCount, &batchPoints.front().x,
+                                              colorsPresent ? (PTubyte*) batchColors.data() : nullptr, nullptr, nullptr, nullptr);
+    for (size_t i = 0; i < nBatchPoints; i++)
         {
-        for(size_t i=0; i<nBatchPoints; i++)                                                                                                                                                                                      
+        DPoint3d        tmpPoint = {batchPoints[i].x, batchPoints[i].y, batchPoints[i].z};
+
+        cloudToTile.Multiply(tmpPoint);
+
+        if (tileRange.IsContained(tmpPoint))
             {
-            DPoint3d        tmpPoint = {batchPoints[i].x, batchPoints[i].y, batchPoints[i].z};
+            QPoint3d    qPoint(tmpPoint, points.GetParams());
 
-            cloudToTile.Multiply(tmpPoint);
-
-            if (tileRange.IsContained(tmpPoint))
+            auto        inserted = qPointSet.insert(qPoint);
+            if (inserted.second)
                 {
-                QPoint3d    qPoint(tmpPoint, points.GetParams());
-
-                auto        inserted = qPointSet.insert(qPoint);
-                if (inserted.second)
-                    {
-                    points.push_back(qPoint);
-                    if (colorsPresent)
-                        colors.push_back(batchColors[i]);
-                    }
+                points.push_back(qPoint);
+                if (colorsPresent)
+                    colors.push_back(batchColors[i]);
                 }
             }
         }
-                 
+
     if (points.size() < s_maxLeafPointCount && tile.GetParent() != nullptr)         // TFS 173793 - Children are required at root.
         tile.SetIsLeaf();
 
     // TODO - Add technique for monochrome point clouds...
     if (!colorsPresent)
-        colors = bvector<PointCloudColorDef> (points.size(), PointCloudColorDef(0, 0xff, 0));
+        colors = bvector<PointCloudColorDef>(points.size(), PointCloudColorDef(0, 0xff, 0));
 
     Json::Value     featureTable;
     bool            rgbPresent = colors.size() == points.size();
@@ -198,7 +197,7 @@ BentleyStatus DoGetFromSource()
     if (rgbPresent)
         featureTable["RGB"]["byteOffset"] = static_cast<uint32_t>(points.size() * sizeof(QPoint3d));
 
-    Utf8String      featureTableStr =  Json::FastWriter().write(featureTable);
+    Utf8String      featureTableStr = Json::FastWriter().write(featureTable);
     uint32_t        featureTableStrLen = featureTableStr.size();
 
     m_tileBytes.Append((uint8_t const*) &featureTableStrLen, sizeof(featureTableStrLen));
