@@ -1309,7 +1309,7 @@ StatusInt   DynamicViewMapper::GetCalloutPlacementFromIClip(DPoint3d& origin, Be
 BentleyStatus   DynamicViewMapper::GetClipData(Utf8StringR clipdata, ElementHandleCR clipElement)
     {
     Transform unitTransform = m_modelMapping.GetTransform();
-    auto clipVector = m_converter.ConvertClip(DgnV8Api::ClipVector::CreateFromElement(clipElement, m_v8Model), &unitTransform); // got one, turn it into a ClipVector
+    auto clipVector = m_converter.ConvertClip(DgnV8Api::ClipVector::CreateFromElement(clipElement, m_v8Model, nullptr, DgnV8Api::ClipVolumePass::InsideForward), &unitTransform); // got one, turn it into a ClipVector
     if (clipVector.IsNull())
         return BSIERROR;
 
