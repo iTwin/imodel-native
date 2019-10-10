@@ -225,27 +225,50 @@
     <!-- iModelBridgeAssign - Writes to a database of bridge->file assignments -->
     <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
     <Product Name="iModelBridgeAssign" SaveProduct="true">
-      <SubPart PartName="iModelBridgeAssignExeShim" />
-      <SubPart PartName="iModelBridgeGetAffinityHostExe" LibType="Static"/>
+        <SubPart PartName="iModelBridgeAssignExeShim" />
+        <SubPart PartName="iModelBridgeGetAffinityHostExe" LibType="Static"/>
         <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
-      <Directories DirectoryListName="iModelBridgeAssignDirList" />
+        <Directories DirectoryListName="iModelBridgeAssignDirList" />
     </Product>
 
     <ProductDirectoryList ListName="iModelBridgeAssignDirList">
-      <ProductDirectory Name="Assemblies"                Deliver="true" Path="" LibType="Static"/>
-      <ProductDirectory Name="Assemblies"                Deliver="true"  Path="" LibType="dynamic"/>
-      <ProductDirectory Name="Libs"                      Deliver="false" LibType="static"/>
-      <ProductDirectory Name="Libs"                      Deliver="false" LibType="dynamic"/>
-      <ProductDirectory Name="PublicApi"                 Deliver="false" LibType="static"/>
-      <ProductDirectory Name="PublicApi"                 Deliver="false" LibType="dynamic"/>
-      <ProductDirectory Name="VendorApi"                 Deliver="false" LibType="static"/>
-      <ProductDirectory Name="VendorApi"                 Deliver="false" LibType="dynamic"/>
-      <ProductDirectory Name="Assets"                    Deliver="false" LibType="dynamic"/>
-      <ProductDirectory Name="Assets"                    Path="assets" LibType="static"/>
-      <ProductDirectory Name="VendorNotices"             Deliver="false" LibType="dynamic"/>
-      <ProductDirectory Name="VendorNotices"             Path="notices" LibType="static" />
-      <ProductDirectory Name="DgnV8Dlls"                 Deliver="false" LibType="dynamic" />
-      <ProductDirectory Name="DgnV8Dlls"                 Deliver="false" LibType="static" />
+        <ProductDirectory Name="Root"                               Path=""/>
+        <ProductDirectory Name="Root"           LibType="Static"    Path=""/>
+        <ProductDirectory Name="Bin"                                Path="" RelativeTo="Root"/>
+        <ProductDirectory Name="Bin"            LibType="Static"    Path="" RelativeTo="Root"/>
+      
+        <ProductDirectory Name="Assemblies"     LibType="Static"    Path="" RelativeTo="Bin"/>
+        <ProductDirectory Name="Assemblies"     LibType="dynamic"   Path="" RelativeTo="Bin"/>
+        <ProductDirectory Name="Assets"         LibType="static"    Path="assets" RelativeTo="Root"/>
+        <ProductDirectory Name="VendorNotices"  LibType="static"    Path="notices" RelativeTo="Root"/>
+      
+        <ProductDirectory Name="Libs"           Deliver="false" LibType="static"/>
+        <ProductDirectory Name="Libs"           Deliver="false" LibType="dynamic"/>
+        <ProductDirectory Name="PublicApi"      Deliver="false" LibType="static"/>
+        <ProductDirectory Name="PublicApi"      Deliver="false" LibType="dynamic"/>
+        <ProductDirectory Name="VendorApi"      Deliver="false" LibType="static"/>
+        <ProductDirectory Name="VendorApi"      Deliver="false" LibType="dynamic"/>
+        <ProductDirectory Name="Assets"         Deliver="false" LibType="dynamic"/>
+        <ProductDirectory Name="VendorNotices"  Deliver="false" LibType="dynamic"/>
+        <ProductDirectory Name="DgnV8Dlls"      Deliver="false" LibType="dynamic" />
+        <ProductDirectory Name="DgnV8Dlls"      Deliver="false" LibType="static" />
+    </ProductDirectoryList>
+    
+    <NuGetProduct Name="iModelBridgeAssignNuget" Description="iModel Bridge Assign">
+        <SubPart PartName="iModelBridgeAssignExeShim"/>
+        <SubPart PartName="iModelBridgeGetAffinityHostExeStatic"/>
+        <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
+        <Directories DirectoryListName="iModelBridgeAssignDirList"/>
+        <Directories DirectoryListName="iModelBridgeAssignNugetDirList"/>
+    </NuGetProduct>
+
+    <ProductDirectoryList ListName="iModelBridgeAssignNugetDirList">
+        <ProductDirectory Name="Root"                           Path="native"/>
+        <ProductDirectory Name="Root"       LibType="Static"    Path="native"/>
+        <ProductDirectory Name="Bin"                            Path="bin" RelativeTo="Root"/>
+        <ProductDirectory Name="Bin"        LibType="Static"    Path="bin" RelativeTo="Root"/>
+        
+        <ProductDirectory Name="Assemblies" LibType="Static"    Deliver="false"/>
     </ProductDirectoryList>
 
     <Part Name="iModelBridgeAssignExeShim_Dynamic" OnlyPlatforms="x64">
@@ -284,6 +307,14 @@
     <Part Name="iModelBridgeGetAffinityHostExe" BentleyBuildMakeFile="iModelBridge/Fwk/Registry/iModelBridgeGetAffinityHost.mke">
         <SubPart PartName="BentleyDll" PartFile="iModelCore/Bentley/Bentley" Repository="imodel02" />
         <SubPart PartName="PublicApi"/>
+        <Bindings>
+            <Files ProductDirectoryName="Assemblies" ProductSubDirectory="iModelBridgeGetAffinityHost">Delivery/exe/iModelBridgeGetAffinityHost$(exeext)</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="iModelBridgeGetAffinityHostExeStatic" BentleyBuildMakeFile="iModelBridge/Fwk/Registry/iModelBridgeGetAffinityHost.mke">
+        <SubPart LibType="Static" PartName="BentleyDll" PartFile="iModelCore/Bentley/Bentley"/>
+        <SubPart LibType="Static" PartName="PublicApi"/>
         <Bindings>
             <Files ProductDirectoryName="Assemblies" ProductSubDirectory="iModelBridgeGetAffinityHost">Delivery/exe/iModelBridgeGetAffinityHost$(exeext)</Files>
         </Bindings>

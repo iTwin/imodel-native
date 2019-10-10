@@ -12,6 +12,7 @@
         <SubProduct ProductName="DgnV8Bridge" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync" Repository="imodel02"/>
         <SubProduct ProductName="iModelBridgeFwk" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
         <SubNuGetProduct NuGetProductName="iModelBridgeFwkNuget" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
+        <SubNuGetProduct NuGetProductName="iModelBridgeAssignNuget" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
         <SubNuGetProduct NuGetProductName="DgnV8ConverterNuget" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync" Repository="imodel02"/>
         <SubNuGetProduct NuGetProductName="iModelFwkForPPNuget" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync" Repository="imodel02"/>
         <SubProduct ProductName="iModelBridgeAssign" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
