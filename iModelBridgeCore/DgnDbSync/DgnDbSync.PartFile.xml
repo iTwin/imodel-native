@@ -193,7 +193,8 @@
         <SubPart PartName="DgnV8ConverterSqlang" />
         <SubPart PartName="iModelBridgeFwkLib"            PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"/>
         <SubPart PartName="DgnPlatformSqlang"             PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
-        <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
+        <SubPart PartName="napi-stub"                     PartFile="node-addon-api/node-addon-api"/>
+        <SubPart PartName="Domains"                       PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"/>
         <Directories DirectoryListName="iModelFwkDirList"/>
     </NuGetProduct>
     
