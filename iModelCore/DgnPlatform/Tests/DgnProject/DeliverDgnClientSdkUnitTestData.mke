@@ -9,4 +9,4 @@ ProductRoot = $(OutRoot)$(TARGET_PROCESSOR_DIRECTORY)/Product/
 
 always:
     ~mkdir $(BuildContext)Delivery/UnitTests/Documents
-    $(SrcRoot)bsicommon/build/CopyWithSymlinks.py ${UNIT_TESTS_DOCUMENTS_DIR} $(BuildContext)Delivery/UnitTests/Documents --excludePattern=[\\\\\/].hg --excludePattern=^^\\.hg
+    python $(SrcRoot)bsicommon/build/CopyWithSymlinks.py ${UNIT_TESTS_DOCUMENTS_DIR} $(BuildContext)Delivery/UnitTests/Documents --excludePattern=[\\\\\/].hg --excludePattern=^^\\.hg

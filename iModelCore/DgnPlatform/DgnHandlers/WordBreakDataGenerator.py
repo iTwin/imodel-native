@@ -13,8 +13,8 @@ import sys
 # Print usage
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 def printUsageAndExit ():
-    print """
-Usage: WordBreakDataGenerator [-i|--input=]INPUT [-o|--output=]OUTPUT
+    message = """
+    Usage: WordBreakDataGenerator [-i|--input=]INPUT [-o|--output=]OUTPUT
     
     Arguments:
     INPUT   path to input word break property data file (see http://www.unicode.org/Public/UNIDATA/auxiliary/WordBreakProperty.txt)
@@ -25,7 +25,8 @@ Usage: WordBreakDataGenerator [-i|--input=]INPUT [-o|--output=]OUTPUT
     a header file containing hard-coded data structures that represent said
     data. This is deemed preferrable to embedding the plain text file and
     parsing it during runtime.
-"""
+    """
+    print(message)
     sys.exit(-1)
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------

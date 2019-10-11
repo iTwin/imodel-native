@@ -39,4 +39,4 @@ $(BuildContext)Delivery/IntegrationTests/Objects/$(TestDir) : ${o}
 %endif
 
 always:
-    CreateSymLinks.py -d $(OutRoot)$(arch)/Product/Licensing-IntegrationTests/Assets/TestAssets=$(SrcRoot)imodel02/iModelCore/LicensingCrossPlatform/Tests/IntegrationTests/Assets
+    ~linkdir $(OutRoot)$(arch)/Product/Licensing-IntegrationTests/Assets/TestAssets=$(SrcRoot)imodel02/iModelCore/LicensingCrossPlatform/Tests/IntegrationTests/Assets

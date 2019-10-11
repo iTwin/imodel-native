@@ -10,7 +10,10 @@ import getopt, sys, os, codecs, re
 #  @bsimethod                                  Bentley.Systems
 #---------------------------------------------------------------------------------------
 def readSourceFile (path):
-    return open (path).read().replace (codecs.BOM_UTF8, '')
+    if sys.version_info[0] > 2:
+        return open (path).read().replace (codecs.BOM_UTF8.decode('utf-8'), '')
+    else:
+        return open (path).read().replace (codecs.BOM_UTF8, '')
 
 #---------------------------------------------------------------------------------------
 #  @bsimethod                                  Bentley.Systems
@@ -22,7 +25,7 @@ def main():
     try:
         opts, args = getopt.getopt (sys.argv [1:], shortArgs, longArgs)
     except getopt.GetoptError as err:
-        print err
+        print (err)
         sys.exit (2)
 
     jsSourceFiles = ""
@@ -46,9 +49,13 @@ def main():
         jsSources [identifier] = '{' + ',\n    '.join (chunks) + (',', '')[len (chunks) == 0] + '\'\\0\'}'
 
     nativeSource = readSourceFile (nativeSourceFile)
-
-    for identifier, jsSource in jsSources.iteritems():
-        nativeSource = nativeSource.replace (identifier, jsSource)
+    
+    if sys.version_info[0] > 2:
+        for identifier, jsSource in jsSources.items():
+            nativeSource = nativeSource.replace (identifier, jsSource)
+    else:
+        for identifier, jsSource in jsSources.iteritems():
+            nativeSource = nativeSource.replace (identifier, jsSource)
     
     if os.path.isfile (outputPath):
         o = open (outputPath, 'r')

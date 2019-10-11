@@ -9,7 +9,7 @@ import re
 
 if __name__ == '__main__':
     if len(sys.argv) < 3:
-        print "Syntax: ", sys.argv[0], " filename packageversionfile"
+        print ("Syntax: " + sys.argv[0] + " filename packageversionfile")
         exit(1)
 
     filename = sys.argv[1]

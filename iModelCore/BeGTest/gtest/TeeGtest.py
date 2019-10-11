@@ -20,7 +20,7 @@ import os, glob, sys, string, stat, re, subprocess
 #-------------------------------------------------------------------------------------------
 def main():
     if (len (sys.argv) < 2):
-        print "Syntax: ", sys.argv[0], " [-q] outputfilename"
+        print ("Syntax: " + sys.argv[0] + " [-q] outputfilename")
         exit(1)
 
     logfilename = ''
@@ -42,7 +42,10 @@ def main():
     with open (logfilename, 'a+') as logfile:
         try:
             while True:
-                line = raw_input ('')
+                if sys.version_info[0] > 2:
+                    line = input ('')
+                else:
+                    line = raw_input ('') 
 
 
                 if totalcount == 0:
@@ -57,7 +60,7 @@ def main():
                 if not quiet:
                     progress = '{0}/{1}'.format(currentcount, totalcount)
                     #print bcolors.BOLD + progress.ljust(10) + bcolors.ENDC + line
-                    print progress.ljust(10) + line
+                    print (progress.ljust(10) + line)
 
         except EOFError:
             exit (0)

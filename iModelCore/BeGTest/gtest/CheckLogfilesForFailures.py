@@ -122,9 +122,9 @@ def checkLogFileForFailures(logfilename):
     if anyFailures or not foundSummary:
         # When we detect failing or crashing tests, print the whole log. That will then go into bb's build log.
         # The user will want to scroll up to see complete details.
-        print '************ ' + logfilename + ' ******************'
+        print ('************ ' + logfilename + ' ******************')
         printLogFile(logfilename, hasErrors=True)
-        print '*********************************************************************************'
+        print ('*********************************************************************************')
    
     return advicestr,summarystr,failedTestsList
 
@@ -135,7 +135,7 @@ if __name__ == '__main__':
     checkedCount = 0
 
     if len(sys.argv) < 2:
-        print 'Syntax: ' + sys.argv[0] + ' logfilesdir [breakonfailureflag]'
+        print ('Syntax: ' + sys.argv[0] + ' logfilesdir [breakonfailureflag]')
         exit(1)
 
     dir = sys.argv[1]
@@ -167,18 +167,18 @@ if __name__ == '__main__':
                     temp = temp +":"+failedTestsList
      
     if checkedCount == 0:
-        print 'no logfiles found in ' + dir
+        print ('no logfiles found in ' + dir)
         exit(0)
 
-    print '{0} test product logs found'.format(checkedCount)
+    print ('{0} test product logs found'.format(checkedCount))
 
-    print summarystr
+    print (summarystr)
 
     if 0 == len(advicestr):
-        print "All tests passed."
+        print ("All tests passed.")
         exit (0)
 
     failedTestsList=temp.split(":")
      
-    print advicestr
+    print (advicestr)
     exit(breakonfailure)

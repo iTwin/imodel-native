@@ -18,7 +18,7 @@ import subprocess
 def publishPackage(packagedir, doPublish, tag):
 
     if not doPublish:
-        print packagedir
+        print (packagedir)
         return
 
     pubcmd = 'npm publish '
@@ -128,7 +128,7 @@ def generate_imodeljs_native_platform_api(outdirParent, parentSourceDir, package
 #
 if __name__ == '__main__':
     if len(sys.argv) < 8:
-        print "Syntax: ", sys.argv[0], " inputproductdir outputpackageparentdir nodeOS nodeCPU packageversionfilename sourceDir {publish|print} [tag]"
+        print ("Syntax: " + sys.argv[0] + " inputproductdir outputpackageparentdir nodeOS nodeCPU packageversionfilename sourceDir {publish|print} [tag]")
         exit(1)
 
     productdir = sys.argv[1]
@@ -155,7 +155,7 @@ if __name__ == '__main__':
     packageVersion = packageVersion.strip()
 
     if os.path.exists(outdirParent):
-        print '*** ' + outdirParent + ' already exists. Remove output directory before calling this script'
+        print ('*** ' + outdirParent + ' already exists. Remove output directory before calling this script')
         exit(1)
 
     os.makedirs(outdirParent)

@@ -18,7 +18,7 @@ import subprocess
 def publishPackage(packagedir, doPublish, tag):
 
     if not doPublish:
-        print packagedir;
+        print (packagedir);
         return;
 
     pubcmd = 'npm publish ' + packagedir;
@@ -96,12 +96,12 @@ def generate_addon_for_platform(outdirParent, inputProductdir, versionsubdir, no
     srcpackagefile = os.path.join(sourceDir, "package.json.template")
 
     if not os.path.exists(srcnodefile) or not os.path.exists(srcsupportdir) or not os.path.exists(srcpackagefile):
-        print '***'
+        print ('***')
         print('*** ' + inputProductdir + ' -- invalid or incomplete bridge-addon Product.')
         if not os.path.exists(srcnodefile):
-            print ' ***   not found: ' + srcnodefile
+            print (' ***   not found: ' + srcnodefile)
         if not os.path.exists(srcsupportdir):
-            print ' ***   not found: ' + srcsupportdir
+            print (' ***   not found: ' + srcsupportdir)
         print('***')
         exit(1)
 
@@ -161,7 +161,7 @@ def generate_imodel_bank_native_platform_api(outdirParent, parentSourceDir, pack
 #
 if __name__ == '__main__':
     if len(sys.argv) < 8:
-        print "Syntax: ", sys.argv[0], " inputproductdir outputpackageparentdir nodeOS nodeCPU packageversionfilename sourceDir {publish|print} [tag]"
+        print ("Syntax: " + sys.argv[0] + " inputproductdir outputpackageparentdir nodeOS nodeCPU packageversionfilename sourceDir {publish|print} [tag]")
         exit(1)
 
     productdir = sys.argv[1]
@@ -189,11 +189,11 @@ if __name__ == '__main__':
 
     addonDir = os.path.join(productdir, 'Addon')
     if not os.path.basename(productdir).startswith('bridge-addon') or not os.path.exists(addonDir):
-        print '*** ' + productdir + ' does not appear to be the path to an bridge-addon product directory';
+        print ('*** ' + productdir + ' does not appear to be the path to an bridge-addon product directory');
         exit(1)
 
     if os.path.exists(outdirParent):
-        print '*** ' + outdirParent + ' already exists. Remove output directory before calling this script';
+        print ('*** ' + outdirParent + ' already exists. Remove output directory before calling this script');
         exit(1)
 
     os.makedirs(outdirParent)
@@ -202,7 +202,7 @@ if __name__ == '__main__':
     for versionsubdir in os.listdir(addonDir):
         # We are looking for the version-specific addon subdirectories. They tell us the names of the addons
         # if (re.match(r'^([a-z])_(\d+)_(\d+)_(\d+)$', versionsubdir) is None and re.match(r'^([a-z])_(\d+)_(\d+)$', versionsubdir) is None and re.match(r'^([a-z])_(\d+)$', versionsubdir) is None):
-        #     print '*** ' + versionsubdir + ' is unexpected. Only version-specific subdirectories should appear under addon.';
+        #     print ('*** ' + versionsubdir + ' is unexpected. Only version-specific subdirectories should appear under addon.');
         #     continue
 
         publishPackage(generate_addon_for_platform(outdirParent, productdir, versionsubdir, nodeOS, nodeCPU, packageVersion, sourceDir), doPublish, tag);

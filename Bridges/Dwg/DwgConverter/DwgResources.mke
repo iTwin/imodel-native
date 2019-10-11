@@ -30,11 +30,11 @@ SQLANG_XliffWildcard = $(BuildContext)SubParts/xliffs/*.xliff
 %include $(SrcRoot)bsicommon\sqlang\mki\XliffsToDb.mke
 
 $(ContextDeliveryDir)ConvertConfig.xsd : $(baseDir)Config/ConvertConfig.xsd
-    LinkADeepCopy.py -s "$<" -d "$(o)ConvertConfig.xsd" -l "$@"
+    python $(SrcRoot)bsicommon/build/LinkADeepCopy.py -s "$<" -d "$(o)ConvertConfig.xsd" -l "$@"
 
 $(ContextDeliveryDir)ConvertConfig.xml : $(baseDir)Config/ConvertConfig.xml
-    LinkADeepCopy.py -s "$<" -d "$(o)ConvertConfig.xml" -l "$@"
+    python $(SrcRoot)bsicommon/build/LinkADeepCopy.py -s "$<" -d "$(o)ConvertConfig.xml" -l "$@"
 
 $(ContextDeliveryDir)DwgImporter.logging.config.xml : $(baseDir)Apps/logging.config.xml
-    LinkADeepCopy.py -s "$<" -d "$(o)logging.config.xml" -l "$@"
+    python $(SrcRoot)bsicommon/build/LinkADeepCopy.py -s "$<" -d "$(o)logging.config.xml" -l "$@"
 

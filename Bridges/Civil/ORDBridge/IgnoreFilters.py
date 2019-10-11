@@ -39,6 +39,6 @@ def PreventAutoIgnoreTests(FailingTestsList):
             pattern=re.compile(filters)
             testobj=re.search(pattern,failingtest)
             if testobj != None:
-                print "*** compatibility test failed",failingtest
+                print ("*** compatibility test failed " +failingtest)
                 return 1
     return 0
