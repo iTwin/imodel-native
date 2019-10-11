@@ -225,7 +225,7 @@ TEST_F(RulesDrivenECPresentationManagerMultithreadingRealConnectionTests, Handle
 
     // attempt to get some data (don't expect to get any, but make sure request succeeds)
     NavNodeKeyCPtr key = LabelGroupingNodeKey::Create("label", {"a", "b", "c"}, 1);
-    RulesDrivenECPresentationManager::NavigationOptions options(ruleset->GetRuleSetId().c_str(), RuleTargetTree::TargetTree_MainTree);
+    RulesDrivenECPresentationManager::NavigationOptions options(ruleset->GetRuleSetId().c_str());
     folly::Future<size_t> count = m_manager->GetRootNodesCount(m_db, options.GetJson());
 
     // verify we don't get any result for 1 second
@@ -394,7 +394,7 @@ TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsRootN
         return 0;
         });
 
-    RulesDrivenECPresentationManager::NavigationOptions options("doesnt matter", TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options("doesnt matter");
     m_manager->GetRootNodesCount(s_project->GetECDb(), options.GetJson()).wait();
     EXPECT_TRUE(wasCalled.load());
     }
@@ -414,7 +414,7 @@ TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsRootN
         });
 
     // request and verify
-    RulesDrivenECPresentationManager::NavigationOptions options("doesnt matter", TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options("doesnt matter");
     m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).wait();
     EXPECT_TRUE(wasCalled.load());
     }
@@ -435,7 +435,7 @@ TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsChild
 
     // request and verify
     TestNavNodePtr parentNode = TestNavNode::Create(*m_connection);
-    RulesDrivenECPresentationManager::NavigationOptions options("doesnt matter", TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options("doesnt matter");
     m_manager->GetChildrenCount(s_project->GetECDb(), *parentNode, options.GetJson()).wait();
     EXPECT_TRUE(wasCalled.load());
     }
@@ -456,7 +456,7 @@ TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsChild
 
     // request and verify
     TestNavNodePtr parentNode = TestNavNode::Create(*m_connection);
-    RulesDrivenECPresentationManager::NavigationOptions options("doesnt matter", TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options("doesnt matter");
     m_manager->GetChildren(s_project->GetECDb(), *parentNode, PageOptions(), options.GetJson()).wait();
     EXPECT_TRUE(wasCalled.load());
     }
@@ -476,7 +476,7 @@ TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsNodeR
         });
 
     // request and verify
-    RulesDrivenECPresentationManager::NavigationOptions options("doesnt matter", TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options("doesnt matter");
     m_manager->GetNode(s_project->GetECDb(), *NavNodeKey::Create("type", {"1"}), options.GetJson()).wait();
     EXPECT_TRUE(wasCalled.load());
     }
@@ -497,7 +497,7 @@ TEST_F(RulesDrivenECPresentationManagerCustomImplMultithreadingTests, CallsParen
 
     // request and verify
     TestNavNodePtr childNode = TestNavNode::Create(*m_connection);
-    RulesDrivenECPresentationManager::NavigationOptions options("doesnt matter", TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options("doesnt matter");
     m_manager->GetParent(s_project->GetECDb(), *childNode, options.GetJson()).wait();
     EXPECT_TRUE(wasCalled.load());
     }
@@ -761,7 +761,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsRootNodes
             });
 
         // request and verify
-        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
+        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId);
         if (!started)
             BlockECPresentationThreads();
         DoRequest(m_manager->GetRootNodesCount(s_project->GetECDb(), options.GetJson()));
@@ -791,7 +791,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsRootNodes
             });
 
         // request and verify
-        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
+        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId);
         if (!started)
             BlockECPresentationThreads();
         DoRequest(m_manager->GetRootNodesCount(s_project->GetECDb(), options.GetJson()));
@@ -821,7 +821,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsRootNodes
             });
 
         // request and verify
-        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
+        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId);
         if (!started)
             BlockECPresentationThreads();
         DoRequest(m_manager->GetRootNodesCount(s_project->GetECDb(), options.GetJson()));
@@ -851,7 +851,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsRootNodes
             });
 
         // request and verify
-        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
+        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId);
         if (!started)
             BlockECPresentationThreads();
         DoRequest(m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()));
@@ -881,7 +881,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsRootNodes
             });
 
         // request and verify
-        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
+        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId);
         if (!started)
             BlockECPresentationThreads();
         DoRequest(m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()));
@@ -911,7 +911,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsRootNodes
             });
 
         // request and verify
-        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
+        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId);
         if (!started)
             BlockECPresentationThreads();
         DoRequest(m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()));
@@ -942,7 +942,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsChildNode
 
         // request and verify
         TestNavNodePtr parentNode = TestNavNode::Create(*m_connection);
-        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
+        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId);
         if (!started)
             BlockECPresentationThreads();
         DoRequest(m_manager->GetChildrenCount(s_project->GetECDb(), *parentNode, options.GetJson()));
@@ -973,7 +973,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsChildNode
 
         // request and verify
         TestNavNodePtr parentNode = TestNavNode::Create(*m_connection);
-        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
+        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId);
         if (!started)
             BlockECPresentationThreads();
         DoRequest(m_manager->GetChildrenCount(s_project->GetECDb(), *parentNode, options.GetJson()));
@@ -1004,7 +1004,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsChildNode
 
         // request and verify
         TestNavNodePtr parentNode = TestNavNode::Create(*m_connection);
-        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
+        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId);
         if (!started)
             BlockECPresentationThreads();
         DoRequest(m_manager->GetChildrenCount(s_project->GetECDb(), *parentNode, options.GetJson()));
@@ -1035,7 +1035,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsChildNode
 
         // request and verify
         TestNavNodePtr parentNode = TestNavNode::Create(*m_connection);
-        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
+        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId);
         if (!started)
             BlockECPresentationThreads();
         DoRequest(m_manager->GetChildren(s_project->GetECDb(), *parentNode, PageOptions(), options.GetJson()));
@@ -1066,7 +1066,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsChildNode
 
         // request and verify
         TestNavNodePtr parentNode = TestNavNode::Create(*m_connection);
-        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
+        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId);
         if (!started)
             BlockECPresentationThreads();
         DoRequest(m_manager->GetChildren(s_project->GetECDb(), *parentNode, PageOptions(), options.GetJson()));
@@ -1097,7 +1097,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsChildNode
 
         // request and verify
         TestNavNodePtr parentNode = TestNavNode::Create(*m_connection);
-        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
+        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId);
         if (!started)
             BlockECPresentationThreads();
         DoRequest(m_manager->GetChildren(s_project->GetECDb(), *parentNode, PageOptions(), options.GetJson()));
@@ -1127,7 +1127,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsNodeReque
             });
 
         // request and verify
-        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
+        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId);
         if (!started)
             BlockECPresentationThreads();
         DoRequest(m_manager->GetNode(s_project->GetECDb(), *NavNodeKey::Create("type", {"1"}), options.GetJson()));
@@ -1157,7 +1157,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsNodeReque
             });
 
         // request and verify
-        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
+        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId);
         if (!started)
             BlockECPresentationThreads();
         DoRequest(m_manager->GetNode(s_project->GetECDb(), *NavNodeKey::Create("type", {"1"}), options.GetJson()));
@@ -1188,7 +1188,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsParentNod
 
         // request and verify
         TestNavNodePtr childNode = TestNavNode::Create(*m_connection);
-        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
+        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId);
         if (!started)
             BlockECPresentationThreads();
         DoRequest(m_manager->GetParent(s_project->GetECDb(), *childNode, options.GetJson()));
@@ -1219,7 +1219,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsParentNod
 
         // request and verify
         TestNavNodePtr childNode = TestNavNode::Create(*m_connection);
-        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
+        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId);
         if (!started)
             BlockECPresentationThreads();
         DoRequest(m_manager->GetParent(s_project->GetECDb(), *childNode, options.GetJson()));
@@ -1250,7 +1250,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsParentNod
 
         // request and verify
         TestNavNodePtr childNode = TestNavNode::Create(*m_connection);
-        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
+        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId);
         if (!started)
             BlockECPresentationThreads();
         DoRequest(m_manager->GetParent(s_project->GetECDb(), *childNode, options.GetJson()));
@@ -1281,7 +1281,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsFilteredN
 
         // request and verify
         TestNavNodePtr childNode = TestNavNode::Create(*m_connection);
-        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
+        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId);
         if (!started)
             BlockECPresentationThreads();
         DoRequest(m_manager->GetFilteredNodePaths(s_project->GetECDb(), "", options.GetJson()));
@@ -1312,7 +1312,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsFilteredN
 
         // request and verify
         TestNavNodePtr childNode = TestNavNode::Create(*m_connection);
-        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
+        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId);
         if (!started)
             BlockECPresentationThreads();
         DoRequest(m_manager->GetFilteredNodePaths(s_project->GetECDb(), "", options.GetJson()));
@@ -1343,7 +1343,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsFilteredN
 
         // request and verify
         TestNavNodePtr childNode = TestNavNode::Create(*m_connection);
-        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId, TargetTree_Both);
+        RulesDrivenECPresentationManager::NavigationOptions options(s_rulesetId);
         if (!started)
             BlockECPresentationThreads();
         DoRequest(m_manager->GetFilteredNodePaths(s_project->GetECDb(), "", options.GetJson()));

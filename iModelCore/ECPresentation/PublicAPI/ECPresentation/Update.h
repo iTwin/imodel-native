@@ -42,6 +42,39 @@ public:
         m_newValue = rapidjson::Value(newValue, m_allocator);
         }
 
+    //! Constructor.
+    //! @param[in] name     The name of the property that changed.
+    //! @param[in] oldValue Value before the change.
+    //! @param[in] newValue Value after the change.
+    JsonChange(Utf8CP name, bool oldValue, bool newValue)
+        : m_name(name), m_allocator(128)
+        {
+        m_oldValue = rapidjson::Value(oldValue);
+        m_newValue = rapidjson::Value(newValue);
+        }
+
+    //! Constructor.
+    //! @param[in] name     The name of the property that changed.
+    //! @param[in] oldValue Value before the change.
+    //! @param[in] newValue Value after the change.
+    JsonChange(Utf8CP name, uint64_t oldValue, uint64_t newValue)
+        : m_name(name), m_allocator(128)
+        {
+        m_oldValue = rapidjson::Value(oldValue);
+        m_newValue = rapidjson::Value(newValue);
+        }
+
+    //! Constructor.
+    //! @param[in] name     The name of the property that changed.
+    //! @param[in] oldValue Value before the change.
+    //! @param[in] newValue Value after the change.
+    JsonChange(Utf8CP name, Utf8StringCR oldValue, Utf8StringCR newValue)
+        : m_name(name), m_allocator(128)
+        {
+        m_oldValue = rapidjson::Value(oldValue.c_str(), m_allocator);
+        m_newValue = rapidjson::Value(newValue.c_str(), m_allocator);
+        }
+
     //! Copy constructor.
     JsonChange(const JsonChange& obj)
         {

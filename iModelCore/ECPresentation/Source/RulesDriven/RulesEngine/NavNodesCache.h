@@ -85,7 +85,7 @@ protected:
     virtual NavNodesProviderPtr _GetDataSource(uint64_t nodeId, bool, bool) const = 0;
 
     virtual void _Cache(HierarchyLevelInfo&) = 0;
-    virtual void _Cache(DataSourceInfo&, DataSourceFilter const&, bmap<ECClassId, bool> const&, bvector<UserSettingEntry> const&, bool) = 0;
+    virtual void _Cache(DataSourceInfo&, DataSourceFilter const&, bmap<ECClassId, bool> const&, bvector<UserSettingEntry> const&) = 0;
     virtual void _Cache(JsonNavNodeR, DataSourceInfo const&, uint64_t, bool) = 0;
 
     virtual void _Update(uint64_t, JsonNavNodeCR) = 0;
@@ -127,10 +127,9 @@ public:
     NavNodesProviderPtr GetDataSource(uint64_t nodeId, bool removeIfInvalid = true, bool onlyInitialized = true) const {return _GetDataSource(nodeId, removeIfInvalid, onlyInitialized);}
 
     void Cache(HierarchyLevelInfo& info) {_Cache(info);}
-    void Cache(DataSourceInfo& info, DataSourceFilter const& filter, bmap<ECClassId, bool> const& relatedClassIds, bvector<UserSettingEntry> const& relatedSettings,
-        bool disableUpdates = false)
+    void Cache(DataSourceInfo& info, DataSourceFilter const& filter, bmap<ECClassId, bool> const& relatedClassIds, bvector<UserSettingEntry> const& relatedSettings)
         {
-        _Cache(info, filter, relatedClassIds, relatedSettings, disableUpdates);
+        _Cache(info, filter, relatedClassIds, relatedSettings);
         }
     void Cache(JsonNavNodeR node, DataSourceInfo const& dsInfo, uint64_t index, bool isVirtual) {_Cache(node, dsInfo, index, isVirtual);}
 
@@ -188,6 +187,7 @@ private:
     IConnectionManagerCR m_connections;
     IUserSettingsManager const& m_userSettings;
     NodesCacheType m_type;
+    bool m_cacheUpdateData;
     bool m_tempCache;
     mutable BeSQLite::Db m_db;
     mutable BeSQLite::StatementCache m_statements;
@@ -203,14 +203,13 @@ private:
 
     void CacheNode(DataSourceInfo const&, NavNodeR, uint64_t, bool isVirtual);
     void CacheEmptyHierarchyLevel(HierarchyLevelInfo& info);
-    void CacheEmptyDataSource(DataSourceInfo&, DataSourceFilter const&, bool);
+    void CacheEmptyDataSource(DataSourceInfo&, DataSourceFilter const&);
     void CacheRelatedClassIds(uint64_t datasourceId, bmap<ECClassId, bool> const&);
     void CacheRelatedSettings(uint64_t datasourceId, bvector<UserSettingEntry> const& settings);
     bool HasRelatedSettingsChanged(uint64_t datasourceId, Utf8StringCR rulesetId) const;
     void CacheNodeKey(NavNodeCR);
     void CacheNodeInstanceKeys(NavNodeCR);
     void ChangeVisibility(uint64_t nodeId, bool isVirtual, bool updateChildDatasources);
-    bool IsUpdatesDisabled(CombinedHierarchyLevelInfo const& info) const;
     void LimitCacheSize();
     void ResetDataSource(DataSourceInfo const&);
     bvector<DataSourceInfo> GetDataSourcesWithChangedUserSettings(CombinedHierarchyLevelInfo const&) const;
@@ -241,7 +240,7 @@ protected:
     ECPRESENTATION_EXPORT NavNodesProviderPtr _GetDataSource(DataSourceInfo const&, bool, bool) const override;
     ECPRESENTATION_EXPORT NavNodesProviderPtr _GetDataSource(uint64_t nodeId, bool, bool) const override;
     ECPRESENTATION_EXPORT void _Cache(HierarchyLevelInfo&) override;
-    ECPRESENTATION_EXPORT void _Cache(DataSourceInfo&, DataSourceFilter const&, bmap<ECClassId, bool> const&, bvector<UserSettingEntry> const&, bool) override;
+    ECPRESENTATION_EXPORT void _Cache(DataSourceInfo&, DataSourceFilter const&, bmap<ECClassId, bool> const&, bvector<UserSettingEntry> const&) override;
     ECPRESENTATION_EXPORT void _Cache(JsonNavNodeR, DataSourceInfo const&, uint64_t, bool) override;
     ECPRESENTATION_EXPORT void _Update(uint64_t nodeId, JsonNavNodeCR) override;
     ECPRESENTATION_EXPORT void _Update(DataSourceInfo const&, DataSourceFilter const*, bmap<ECClassId, bool> const*, bvector<UserSettingEntry> const*) override;
@@ -261,7 +260,8 @@ protected:
     ECPRESENTATION_EXPORT void _OnConnectionEvent(ConnectionEvent const&) override;
 
 public:
-    ECPRESENTATION_EXPORT NodesCache(BeFileNameCR tempDirectory, JsonNavNodesFactoryCR, INodesProviderContextFactoryCR, IConnectionManagerCR, IUserSettingsManager const&, NodesCacheType);
+    ECPRESENTATION_EXPORT NodesCache(BeFileNameCR tempDirectory, JsonNavNodesFactoryCR, INodesProviderContextFactoryCR, 
+        IConnectionManagerCR, IUserSettingsManager const&, NodesCacheType, bool cacheUpdateData);
     ECPRESENTATION_EXPORT ~NodesCache();
 
     ECPRESENTATION_EXPORT void CacheHierarchyLevel(CombinedHierarchyLevelInfo const&, NavNodesProviderR);
@@ -288,7 +288,7 @@ public:
     BeSQLite::Db const& GetDb() const {return m_db;}
     void SetCacheFileSizeLimit(uint64_t size) {m_sizeLimit = size;}
 
-    ECPRESENTATION_EXPORT NavNodesProviderPtr GetUndeterminedNodesProvider(IConnectionCR connection, Utf8CP ruleSetId, Utf8CP locale, bool isUpdatesDisabled) const;
+    ECPRESENTATION_EXPORT NavNodesProviderPtr GetUndeterminedNodesProvider(IConnectionCR connection, Utf8CP ruleSetId, Utf8CP locale) const;
     ECPRESENTATION_EXPORT NavNodesProviderPtr GetFilteredNodesProvider(Utf8CP filter, IConnectionCR connection, Utf8CP ruleSetId, Utf8CP locale) const;
 };
 

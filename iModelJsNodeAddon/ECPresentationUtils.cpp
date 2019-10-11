@@ -1170,7 +1170,7 @@ static IModelJsECPresentationStaticSetupHelper s_staticSetup;
 * @bsimethod                                    Grigas.Petraitis                12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 RulesDrivenECPresentationManager* ECPresentationUtils::CreatePresentationManager(Dgn::DgnPlatformLib::Host::IKnownLocationsAdmin& locations, 
-    IJsonLocalState& localState, Utf8StringCR id, bvector<Utf8String> const& localeDirectories, bmap<int, unsigned> taskAllocationSlots)
+    IJsonLocalState& localState, Utf8StringCR id, bvector<Utf8String> const& localeDirectories, bmap<int, unsigned> taskAllocationSlots, Utf8StringCR mode)
     {
     BeFileName assetsDir = locations.GetDgnPlatformAssetsDirectory();
     BeFileName tempDir = locations.GetLocalTempDirectoryBaseName();
@@ -1190,11 +1190,12 @@ RulesDrivenECPresentationManager* ECPresentationUtils::CreatePresentationManager
     bvector<BeFileName> localeDirectoryPaths;
     for (Utf8StringCR dir : localeDirectories)
         localeDirectoryPaths.push_back(BeFileName(dir).AppendSeparator());
-
+    
     RulesDrivenECPresentationManager::Params params(pathParams);
     params.SetMultiThreadingParams(threadingParams);
     params.SetLocalizationProvider(new IModelJsECPresentationLocalizationProvider(localeDirectoryPaths));
     params.SetLocalState(&localState);
+    params.SetMode(mode.Equals("ro") ? RulesDrivenECPresentationManager::Mode::ReadOnly : RulesDrivenECPresentationManager::Mode::ReadWrite);
     return new RulesDrivenECPresentationManager(params);
     }
 
@@ -1297,7 +1298,6 @@ static Json::Value GetCommonOptions(JsonValueCR params)
 static RulesDrivenECPresentationManager::NavigationOptions GetNavigationOptions(JsonValueCR params)
     {
     RulesDrivenECPresentationManager::NavigationOptions options(GetCommonOptions(params));
-    options.SetDisableUpdates(params.isMember("disableUpdates") && params["disableUpdates"].asBool());
     return options;
     }
 

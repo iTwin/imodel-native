@@ -136,6 +136,9 @@ NavNodesProviderContext::NavNodesProviderContext(NavNodesProviderContextCR other
 
     if (other.IsUpdatesDisabled())
         SetIsUpdatesDisabled(true);
+
+    if (other.HasPageSize())
+        SetPageSize(other.GetPageSize());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -166,6 +169,8 @@ void NavNodesProviderContext::Init()
     m_isUpdateContext = false;
     m_isUpdatesDisabled = false;
     m_isCheckingChildren = false;
+    m_hasPageSize = false;
+    m_pageSize = 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -401,8 +406,7 @@ DataSourceInfo const& NavNodesProviderContext::GetDataSourceInfo() const
         if (!m_dataSourceInfo.IsValid())
             {
             m_dataSourceInfo = DataSourceInfo(GetHierarchyLevelInfo().GetId(), index);
-            GetNodesCache().Cache(m_dataSourceInfo, DataSourceFilter(), bmap<ECClassId, bool>(),
-                GetRelatedSettings(), IsUpdatesDisabled());
+            GetNodesCache().Cache(m_dataSourceInfo, DataSourceFilter(), bmap<ECClassId, bool>(), GetRelatedSettings());
             }
         }
     BeAssert(m_dataSourceInfo.IsValid());
@@ -1321,7 +1325,8 @@ bool QueryBasedNodesProvider::_InitializeNodes()
 
     InitializeDataSource();
 
-    if (NodesCountMightChange(GetContext().GetNodesCache(), GetContext().GetVirtualParentNode().get(),  *m_query) || GetNodesCount() <= PAGED_QUERY_THRESHOLD)
+    bool isRequestingAllNodes = (GetContext().HasPageSize() && 0 == GetContext().GetPageSize());
+    if (isRequestingAllNodes || NodesCountMightChange(GetContext().GetNodesCache(), GetContext().GetVirtualParentNode().get(),  *m_query) || GetNodesCount() <= PAGED_QUERY_THRESHOLD)
         return InitializeProvidersForAllNodes();
 
     return InitializeProvidersForPagedQueries(GetNodesCount(), PAGED_QUERY_THRESHOLD);
@@ -1444,7 +1449,8 @@ size_t QueryBasedNodesProvider::_GetNodesCount() const
     const_cast<QueryBasedNodesProvider*>(this)->InitializeDataSource();
     JsonNavNodeCPtr virtualParent = GetContext().GetVirtualParentNode();
 
-    if (NodesCountMightChange(GetContext().GetNodesCache(), virtualParent.get(), *m_query))
+    bool isRequestingAllNodes = (GetContext().HasPageSize() && 0 == GetContext().GetPageSize());
+    if (isRequestingAllNodes || NodesCountMightChange(GetContext().GetNodesCache(), virtualParent.get(), *m_query))
         {
         const_cast<QueryBasedNodesProvider*>(this)->InitializeProvidersForAllNodes();
         return MultiNavNodesProvider::_GetNodesCount();
@@ -1915,6 +1921,7 @@ void SQLiteCacheNodesProvider::InitializeNodes()
     if (!statement.IsValid())
         return;
 
+    rapidjson::Document json;
     while (BE_SQLITE_ROW == statement->Step())
         {
         Utf8CP serializedNode = statement->GetValueText(0);
@@ -1924,10 +1931,10 @@ void SQLiteCacheNodesProvider::InitializeNodes()
             continue;
             }
 
-        rapidjson::MemoryPoolAllocator<>* allocator = new rapidjson::MemoryPoolAllocator<>(NAVNODE_JSON_CHUNK_SIZE);
-        rapidjson::Document json(allocator);
+        json.GetAllocator().Clear();
+        json.SetNull();
         json.Parse(serializedNode);
-        JsonNavNodePtr node = GetContext().GetNodesFactory().CreateFromJson(GetContext().GetConnection(), std::move(json), allocator);
+        JsonNavNodePtr node = GetContext().GetNodesFactory().CreateFromJson(GetContext().GetConnection(), json);
         if (node.IsNull())
             continue;
 

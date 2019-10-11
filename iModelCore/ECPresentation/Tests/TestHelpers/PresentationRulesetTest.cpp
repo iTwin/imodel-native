@@ -204,7 +204,7 @@ int PresentationRulesetTester::ValidateTree(Utf8CP rulesetId, BeFileNameCR expec
 //---------------------------------------------------------------------------------------
 int PresentationRulesetTester::ValidateTree(Utf8CP rulesetId, JsonValueCR treeFile)
     {
-    RulesDrivenECPresentationManager::NavigationOptions options(rulesetId, RuleTargetTree::TargetTree_MainTree);
+    RulesDrivenECPresentationManager::NavigationOptions options(rulesetId);
     JsonValueCR jsonNodes = treeFile.get("nodes", Json::Value::GetNull());
 
     StopWatch timer(nullptr, true);
@@ -311,7 +311,7 @@ Json::Value PresentationRulesetTester::ExportJson(Utf8CP rulesetId)
     {
     Json::Value outputJson(Json::objectValue);
     outputJson["nodes"] = Json::Value(Json::arrayValue);
-    RulesDrivenECPresentationManager::NavigationOptions options(rulesetId, RuleTargetTree::TargetTree_MainTree);
+    RulesDrivenECPresentationManager::NavigationOptions options(rulesetId);
     auto roots = m_presentationManager->GetRootNodes(GetDb(), PageOptions(), options.GetJson()).get();
     for (auto rootNode : roots)
         {

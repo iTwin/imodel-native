@@ -109,16 +109,16 @@ TEST_F(RulesDrivenECPresentationManagerImplTests, LocatesChildNodeWhoseGrandPare
     ruleset->AddPresentationRule(*new RootNodeRule());
     ruleset->GetRootNodesRules().back()->AddSpecification(*new CustomNodeSpecification(1, false, "T_ROOT", "root", "descr", "imageid"));
     ruleset->GetRootNodesRules().back()->GetSpecifications().back()->SetHideNodesInHierarchy(true);
-    ruleset->AddPresentationRule(*new ChildNodeRule("ParentNode.Type=\"T_ROOT\"", 1, false, TargetTree_Both));
+    ruleset->AddPresentationRule(*new ChildNodeRule("ParentNode.Type=\"T_ROOT\"", 1, false));
     ruleset->GetChildNodesRules().back()->AddSpecification(*new CustomNodeSpecification(1, false, "T_CHILD1", "child1", "descr", "imageid"));
     ruleset->GetChildNodesRules().back()->AddSpecification(*new CustomNodeSpecification(1, false, "T_CHILD2", "child2", "descr", "imageid"));
-    ruleset->AddPresentationRule(*new ChildNodeRule("ParentNode.Type=\"T_CHILD2\"", 1, false, TargetTree_Both));
+    ruleset->AddPresentationRule(*new ChildNodeRule("ParentNode.Type=\"T_CHILD2\"", 1, false));
     ruleset->GetChildNodesRules().back()->AddSpecification(*new CustomNodeSpecification(1, false, "T_CHILD2.1", "child2.1", "descr", "imageid"));
     m_locater->AddRuleSet(*ruleset);
 
     // request and verify
     auto cancelationToken = NeverCanceledToken::Create();
-    RulesDrivenECPresentationManager::NavigationOptions options(ruleset->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(ruleset->GetRuleSetId().c_str());
     INavNodesDataSourcePtr rootNodes = m_impl->GetRootNodes(*m_connection, PageOptions(), options, *cancelationToken);
     ASSERT_EQ(2, rootNodes->GetSize());
     EXPECT_STREQ("child1", rootNodes->GetNode(0)->GetLabel().c_str());
@@ -146,11 +146,11 @@ struct RulesDrivenECPresentationManagerImplRequestCancelationTests : RulesDriven
         {
         PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance("RulesDrivenECPresentationManagerImplTests", 1, 0, false, "", "", "", false);
 
-        RootNodeRuleP rootNodeRule = new RootNodeRule("", 1, false, TargetTree_Both, false);
+        RootNodeRuleP rootNodeRule = new RootNodeRule("", 1, false);
         rootNodeRule->AddSpecification(*new CustomNodeSpecification(1, false, "root_type", "label", "descr", "imageid"));
         ruleset->AddPresentationRule(*rootNodeRule);
 
-        ChildNodeRuleP childNodeRule = new ChildNodeRule("", 1, false, TargetTree_Both);
+        ChildNodeRuleP childNodeRule = new ChildNodeRule("", 1, false);
         childNodeRule->AddSpecification(*new CustomNodeSpecification(1, false, "child_type", "label", "descr", "imageid"));
         ruleset->AddPresentationRule(*childNodeRule);
 
@@ -185,7 +185,7 @@ TEST_F(RulesDrivenECPresentationManagerImplRequestCancelationTests, AbortsRootNo
         });
 
     // request and verify
-    RulesDrivenECPresentationManager::NavigationOptions options(m_ruleset->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(m_ruleset->GetRuleSetId().c_str());
     size_t count = m_impl->GetRootNodesCount(*m_connection, options, *token);
     EXPECT_EQ(0, count);
     }
@@ -206,7 +206,7 @@ TEST_F(RulesDrivenECPresentationManagerImplRequestCancelationTests, AbortsRootNo
         });
 
     // request and verify
-    RulesDrivenECPresentationManager::NavigationOptions options(m_ruleset->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(m_ruleset->GetRuleSetId().c_str());
     INavNodesDataSourceCPtr nodes = m_impl->GetRootNodes(*m_connection, PageOptions(), options, *token);
     EXPECT_EQ(0, nodes->GetSize());
     }
@@ -219,7 +219,7 @@ TEST_F(RulesDrivenECPresentationManagerImplRequestCancelationTests, AbortsChildN
     SimpleCancelationTokenPtr token = SimpleCancelationToken::Create();
 
     // get the parent node
-    RulesDrivenECPresentationManager::NavigationOptions options(m_ruleset->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(m_ruleset->GetRuleSetId().c_str());
     INavNodesDataSourceCPtr rootNodes = m_impl->GetRootNodes(*m_connection, PageOptions(), options, *token);
     NavNodeCPtr rootNode = rootNodes->GetNode(0);
     ASSERT_TRUE(rootNode.IsValid());
@@ -246,7 +246,7 @@ TEST_F(RulesDrivenECPresentationManagerImplRequestCancelationTests, AbortsChildN
     SimpleCancelationTokenPtr token = SimpleCancelationToken::Create();
 
     // get the parent node
-    RulesDrivenECPresentationManager::NavigationOptions options(m_ruleset->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(m_ruleset->GetRuleSetId().c_str());
     INavNodesDataSourceCPtr rootNodes = m_impl->GetRootNodes(*m_connection, PageOptions(), options, *token);
     NavNodeCPtr rootNode = rootNodes->GetNode(0);
     ASSERT_TRUE(rootNode.IsValid());

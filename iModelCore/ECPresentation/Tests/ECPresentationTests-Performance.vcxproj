@@ -97,6 +97,7 @@
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Performance\Analysis\Reporters.cpp" />
     <ClCompile Include="Performance\Analysis\HierarchyPerformanceAnalysis.cpp" />
     <ClCompile Include="Performance\Analysis\MultiThreadAnalysis.cpp" />
     <ClCompile Include="Performance\PerformanceTests.cpp" />
@@ -106,6 +107,7 @@
     <ClCompile Include="Performance\TestsHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Performance\Analysis\Reporters.h" />
     <ClInclude Include="Performance\PerformanceTests.h" />
     <ClInclude Include="Performance\TestsHelper.h" />
   </ItemGroup>

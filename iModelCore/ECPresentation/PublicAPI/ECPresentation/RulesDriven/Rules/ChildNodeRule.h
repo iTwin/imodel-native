@@ -108,7 +108,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeRule : public ConditionalPresentationRul
         ECPRESENTATION_EXPORT ChildNodeRule ();
 
         //! Constructor.
-        ECPRESENTATION_EXPORT ChildNodeRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled, RuleTargetTree targetTree);
+        ECPRESENTATION_EXPORT ChildNodeRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled, RuleTargetTree targetTree = TargetTree_Both);
 
         //! Copy constructor.
         ECPRESENTATION_EXPORT ChildNodeRule(ChildNodeRuleCR);
@@ -176,7 +176,8 @@ struct EXPORT_VTABLE_ATTRIBUTE RootNodeRule : public ChildNodeRule
         ECPRESENTATION_EXPORT RootNodeRule ();
 
         //! Constructor.
-        ECPRESENTATION_EXPORT RootNodeRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled, RuleTargetTree targetTree, bool autoExpand);
+        ECPRESENTATION_EXPORT RootNodeRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled, 
+            RuleTargetTree targetTree = TargetTree_Both, bool autoExpand = false);
 
         //! Returns flag which determines if nodes have to be automatically expanded.
         ECPRESENTATION_EXPORT bool                           GetAutoExpand (void) const;

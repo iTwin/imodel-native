@@ -30,6 +30,7 @@ public:
     static RefCountedPtr<TestNavNode> Create(IConnectionCR connection, Utf8CP type = nullptr) {return new TestNavNode(connection, type);}
     Utf8CP GetRulesetId() const {return NavNodeExtendedData(*this).GetRulesetId();}
     Utf8CP GetConnectionId() const {return NavNodeExtendedData(*this).GetConnectionId();}
+    void SetParentNodeId(uint64_t id) {JsonNavNode::SetParentNodeId(id); NavNodeExtendedData(*this).SetVirtualParentId(id);}
 };
 typedef RefCountedPtr<TestNavNode> TestNavNodePtr;
 

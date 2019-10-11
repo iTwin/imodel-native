@@ -9026,7 +9026,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysForSelectedECClassGr
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, true, false, false, "", "RulesEngineTest:Widget", false));
 
     // cache hierarchy
-    RulesDrivenECPresentationManager::NavigationOptions navOptions(ruleSet->GetRuleSetId().c_str(), RuleTargetTree::TargetTree_MainTree);
+    RulesDrivenECPresentationManager::NavigationOptions navOptions(ruleSet->GetRuleSetId().c_str());
     NavNodesContainer rootNodes = m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), navOptions.GetJson()).get();
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, rootNodes[0]->GetType().c_str());
@@ -9080,7 +9080,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysForSelectedECClassGr
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, true, false, false, "", "RulesEngineTest:Widget", false));
 
     // cache hierarchy
-    RulesDrivenECPresentationManager::NavigationOptions navOptions(ruleSet->GetRuleSetId().c_str(), RuleTargetTree::TargetTree_MainTree);
+    RulesDrivenECPresentationManager::NavigationOptions navOptions(ruleSet->GetRuleSetId().c_str());
     NavNodesContainer rootNodes = m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), navOptions.GetJson()).get();
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, rootNodes[0]->GetType().c_str());
@@ -9159,7 +9159,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysForSelectedECClassGr
 
     // cache hierarchy
     // get gadget node
-    RulesDrivenECPresentationManager::NavigationOptions navOptions(ruleSet->GetRuleSetId().c_str(), RuleTargetTree::TargetTree_MainTree);
+    RulesDrivenECPresentationManager::NavigationOptions navOptions(ruleSet->GetRuleSetId().c_str());
     NavNodesContainer rootNodes = m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), navOptions.GetJson()).get();
     ASSERT_EQ(1, rootNodes.GetSize());
 
@@ -9219,7 +9219,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysForSelectedECClassGr
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, true, false, false, "", "RulesEngineTest:Widget", false));
 
     // cache hierarchy
-    RulesDrivenECPresentationManager::NavigationOptions navOptions(ruleSet->GetRuleSetId().c_str(), RuleTargetTree::TargetTree_MainTree);
+    RulesDrivenECPresentationManager::NavigationOptions navOptions(ruleSet->GetRuleSetId().c_str());
     NavNodesContainer rootNodes = m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), navOptions.GetJson()).get();
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, rootNodes[0]->GetType().c_str());
@@ -9279,7 +9279,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysForSelectedECClassGr
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, true, false, false, "", "RulesEngineTest:Widget", false));
 
     // cache hierarchy
-    RulesDrivenECPresentationManager::NavigationOptions navOptions(ruleSet->GetRuleSetId().c_str(), RuleTargetTree::TargetTree_MainTree);
+    RulesDrivenECPresentationManager::NavigationOptions navOptions(ruleSet->GetRuleSetId().c_str());
     NavNodesContainer rootNodes = m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), navOptions.GetJson()).get();
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, rootNodes[0]->GetType().c_str());
@@ -9339,7 +9339,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysForSelectedDisplayLa
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, true, false, "", "RulesEngineTest:Widget,Gadget", false));
 
     // cache hierarchy
-    RulesDrivenECPresentationManager::NavigationOptions navOptions(ruleSet->GetRuleSetId().c_str(), RuleTargetTree::TargetTree_MainTree);
+    RulesDrivenECPresentationManager::NavigationOptions navOptions(ruleSet->GetRuleSetId().c_str());
     NavNodesContainer rootNodes = m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), navOptions.GetJson()).get();
     ASSERT_EQ(2, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, rootNodes[0]->GetType().c_str()); // gadget instance
@@ -9397,7 +9397,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysForSelectedDisplayLa
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, true, false, "", "RulesEngineTest:Widget,Gadget", false));
 
     // cache hierarchy
-    RulesDrivenECPresentationManager::NavigationOptions navOptions(ruleSet->GetRuleSetId().c_str(), RuleTargetTree::TargetTree_MainTree);
+    RulesDrivenECPresentationManager::NavigationOptions navOptions(ruleSet->GetRuleSetId().c_str());
     NavNodesContainer rootNodes = m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), navOptions.GetJson()).get();
     ASSERT_EQ(2, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, rootNodes[0]->GetType().c_str()); // gadget instance
@@ -9457,7 +9457,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysWhenDisplayLabelGrou
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, true, false, "", "RulesEngineTest:Widget,Gadget", false));
 
     // cache hierarchy
-    RulesDrivenECPresentationManager::NavigationOptions navOptions(ruleSet->GetRuleSetId().c_str(), RuleTargetTree::TargetTree_MainTree);
+    RulesDrivenECPresentationManager::NavigationOptions navOptions(ruleSet->GetRuleSetId().c_str());
     NavNodesContainer rootNodes = m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), navOptions.GetJson()).get();
     ASSERT_EQ(2, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, rootNodes[0]->GetType().c_str()); // gadget instance
@@ -9516,7 +9516,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysWhenDisplayLabelGrou
     rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, true, false, "", "RulesEngineTest:Widget,Gadget", false));
 
     // cache hierarchy
-    RulesDrivenECPresentationManager::NavigationOptions navOptions(ruleSet->GetRuleSetId().c_str(), RuleTargetTree::TargetTree_MainTree);
+    RulesDrivenECPresentationManager::NavigationOptions navOptions(ruleSet->GetRuleSetId().c_str());
     NavNodesContainer rootNodes = m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), navOptions.GetJson()).get();
     ASSERT_EQ(2, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, rootNodes[0]->GetType().c_str()); // gadget instance
@@ -9580,7 +9580,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysForSelectedECPropert
     groupingRule->AddGroup(*new PropertyGroup("", "", false, "IntProperty"));
 
     // cache hierarchy
-    RulesDrivenECPresentationManager::NavigationOptions navOptions(ruleSet->GetRuleSetId().c_str(), RuleTargetTree::TargetTree_MainTree);
+    RulesDrivenECPresentationManager::NavigationOptions navOptions(ruleSet->GetRuleSetId().c_str());
     NavNodesContainer rootNodes = m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), navOptions.GetJson()).get();
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
@@ -9638,7 +9638,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysForSelectedECPropert
     groupingRule->AddGroup(*new PropertyGroup("", "", false, "IntProperty"));
 
     // cache hierarchy
-    RulesDrivenECPresentationManager::NavigationOptions navOptions(ruleSet->GetRuleSetId().c_str(), RuleTargetTree::TargetTree_MainTree);
+    RulesDrivenECPresentationManager::NavigationOptions navOptions(ruleSet->GetRuleSetId().c_str());
     NavNodesContainer rootNodes = m_manager->GetRootNodes(s_project->GetECDb(), PageOptions(), navOptions.GetJson()).get();
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());

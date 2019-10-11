@@ -16,8 +16,6 @@
 const Utf8CP RulesDrivenECPresentationManager::CommonOptions::OPTION_NAME_RulesetId = "RulesetId";
 const Utf8CP RulesDrivenECPresentationManager::CommonOptions::OPTION_NAME_Locale = "Locale";
 const Utf8CP RulesDrivenECPresentationManager::CommonOptions::OPTION_NAME_Priority = "Priority";
-const Utf8CP RulesDrivenECPresentationManager::NavigationOptions::OPTION_NAME_RuleTargetTree = "RuleTargetTree";
-const Utf8CP RulesDrivenECPresentationManager::NavigationOptions::OPTION_NAME_DisableUpdates = "DisableUpdates";
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                11/2017

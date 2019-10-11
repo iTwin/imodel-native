@@ -192,6 +192,7 @@
             <Files SubPartDirectory="UnitTests/include/UnitTests/BackDoor/ECPresentation">Delivery/UnitTests/PresentationRulesetTest.h</Files>
             <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="ECPresentation" SubPartDirectory="UnitTests/ECPresentation">Delivery/UnitTests/ignore_list.txt</Files>
             <Directory ProductDirectoryName="UnitTests-Assets" ProductSubDirectory="Documents/ECPresentationTestData" SourceName="Delivery/UnitTests/ECPresentationTestData" />
+            <Directory ProductDirectoryName="UnitTests-Assets" ProductSubDirectory="Documents/Rulesets" SourceName="Delivery/UnitTests/ECPresentationTestData/PerformanceAnalysis/Rulesets" />
             <Files Required="false" ProductDirectoryName="UnitTests-Assets" SubPartDirectory="ECPresentationJsonSchema">Delivery/ExpectedNavNodes.jsd</Files>
         </Bindings>
     </Part>

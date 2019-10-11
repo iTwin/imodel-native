@@ -400,7 +400,7 @@ private:
     RulesDrivenECPresentationManagerImpl& m_manager;
 
 protected:
-    NavNodesProviderContextPtr _Create(IConnectionCR connection, Utf8CP rulesetId, Utf8CP locale, uint64_t const* parentNodeId, ICancelationTokenCP cancelationToken, bool disableUpdates) const override
+    NavNodesProviderContextPtr _Create(IConnectionCR connection, Utf8CP rulesetId, Utf8CP locale, uint64_t const* parentNodeId, ICancelationTokenCP cancelationToken, size_t pageSize) const override
         {
         // get the ruleset
         RefCountedPtr<PerformanceLogger> _l2 = LoggingHelper::CreatePerformanceLogger(Log::Navigation, "[NodesProviderContextFactory::Create] Get ruleset", NativeLogging::LOG_TRACE);
@@ -434,8 +434,11 @@ protected:
         if (nullptr != localizationProvider)
             context->SetLocalizationContext(*localizationProvider);
 
+        if (-1 != pageSize)
+            context->SetPageSize(pageSize);
+
         context->SetPropertyFormattingContext(m_manager.GetECPropertyFormatter());
-        context->SetIsUpdatesDisabled(disableUpdates);
+        context->SetIsUpdatesDisabled(m_manager.m_mode == Mode::ReadOnly);
         context->SetCancelationToken(cancelationToken);
         _l2 = nullptr;
 
@@ -451,6 +454,7 @@ public:
 RulesDrivenECPresentationManagerImpl::RulesDrivenECPresentationManagerImpl(Params const& params)
     : m_connections(params.GetConnections() ? *params.GetConnections() : *new ConnectionManager())
     {
+    m_mode = params.GetMode();
     m_localState = params.GetLocalState();
     m_ecPropertyFormatter = params.GetECPropertyFormatter();
     m_categorySupplier = params.GetCategorySupplier();
@@ -480,7 +484,8 @@ RulesDrivenECPresentationManagerImpl::RulesDrivenECPresentationManagerImpl(Param
     m_usedClassesListener = new UsedClassesListener(*this);
     m_nodesFactory = new JsonNavNodesFactory();
     m_nodesCache = new NodesCache(params.GetPaths().GetTemporaryDirectory(), *m_nodesFactory, *m_nodesProviderContextFactory,
-        m_connections, GetUserSettingsManager(), params.GetCachingParams().ShouldDisableDiskCache() ? NodesCacheType::Memory : NodesCacheType::Disk);
+        m_connections, GetUserSettingsManager(), params.GetCachingParams().ShouldDisableDiskCache() ? NodesCacheType::Memory : NodesCacheType::Disk,
+        params.GetMode() == Mode::ReadWrite);
     m_nodesCache->SetCacheFileSizeLimit(params.GetCachingParams().GetDiskCacheFileSizeLimit());
     m_contentCache = new ContentCache();
 
@@ -607,6 +612,12 @@ void RulesDrivenECPresentationManagerImpl::_OnConnectionEvent(ConnectionEvent co
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RulesDrivenECPresentationManagerImpl::_OnECInstancesChanged(ECDbCR db, bvector<ECInstanceChangeEventSource::ChangedECInstance> changes)
     {
+    if (m_mode == Mode::ReadOnly)
+        {
+        BeAssert(false && "Should never get an 'ECInstance Changed' event in read-only mode");
+        return;
+        }
+
     IConnectionPtr connection = m_connections.GetConnection(db);
     if (connection.IsNull())
         {
@@ -623,11 +634,11 @@ void RulesDrivenECPresentationManagerImpl::_OnECInstancesChanged(ECDbCR db, bvec
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-INavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::GetCachedDataSource(IConnectionCR connection, ICancelationTokenCR cancelationToken, NavigationOptions const& options)
+INavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::GetCachedDataSource(IConnectionCR connection, ICancelationTokenCR cancelationToken, NavigationOptions const& options, size_t pageSize)
     {
     // create the nodes provider context
     NavNodesProviderContextPtr context = m_nodesProviderContextFactory->Create(connection, options.GetRulesetId(), options.GetLocale(),
-        nullptr, &cancelationToken, options.GetDisableUpdates());
+        nullptr, &cancelationToken, pageSize);
     if (context.IsNull())
         return nullptr;
 
@@ -649,7 +660,7 @@ INavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::GetCachedDataSource
 +---------------+---------------+---------------+---------------+---------------+------*/
 INavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::_GetRootNodes(IConnectionCR connection, PageOptionsCR pageOpts, NavigationOptions const& options, ICancelationTokenCR cancelationToken)
     {
-    INavNodesDataSourcePtr source = GetCachedDataSource(connection, cancelationToken, options);
+    INavNodesDataSourcePtr source = GetCachedDataSource(connection, cancelationToken, options, pageOpts.GetPageSize());
     if (source.IsNull())
         source = EmptyNavNodesDataSource::Create();
     source = PagingDataSource::Create(*source, pageOpts.GetPageStart(), pageOpts.GetPageSize());
@@ -672,12 +683,12 @@ size_t RulesDrivenECPresentationManagerImpl::_GetRootNodesCount(IConnectionCR co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-INavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::GetCachedDataSource(IConnectionCR connection, ICancelationTokenCR cancelationToken, NavNodeCR parent, NavigationOptions const& options)
+INavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::GetCachedDataSource(IConnectionCR connection, ICancelationTokenCR cancelationToken, NavNodeCR parent, NavigationOptions const& options, size_t pageSize)
     {
     // create the nodes provider context
     uint64_t parentNodeId = parent.GetNodeId();
     NavNodesProviderContextPtr context = m_nodesProviderContextFactory->Create(connection, options.GetRulesetId(), options.GetLocale(),
-        &parentNodeId, &cancelationToken, options.GetDisableUpdates());
+        &parentNodeId, &cancelationToken, pageSize);
     if (context.IsNull())
         return nullptr;
 
@@ -700,7 +711,7 @@ INavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::GetCachedDataSource
 +---------------+---------------+---------------+---------------+---------------+------*/
 INavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::_GetChildren(IConnectionCR connection, NavNodeCR parent, PageOptionsCR pageOpts, NavigationOptions const& options, ICancelationTokenCR cancelationToken)
     {
-    INavNodesDataSourcePtr source = GetCachedDataSource(connection, cancelationToken, parent, options);
+    INavNodesDataSourcePtr source = GetCachedDataSource(connection, cancelationToken, parent, options, pageOpts.GetPageSize());
     if (source.IsNull())
         source = EmptyNavNodesDataSource::Create();
     source = PagingDataSource::Create(*source, pageOpts.GetPageStart(), pageOpts.GetPageSize());
@@ -730,7 +741,7 @@ NavNodeCPtr RulesDrivenECPresentationManagerImpl::_GetParent(IConnectionCR conne
         return nullptr;
 
     NavNodesProviderContextPtr context = m_nodesProviderContextFactory->Create(connection, options.GetRulesetId(), options.GetLocale(),
-        nullptr, &cancelationToken, options.GetDisableUpdates());
+        nullptr, &cancelationToken, m_mode == Mode::ReadOnly);
     if (context.IsNull())
         return nullptr;
 
@@ -782,8 +793,7 @@ bvector<NavNodeCPtr> RulesDrivenECPresentationManagerImpl::_GetFilteredNodes(ICo
         GetRootNodes(connection, PageOptions(), options, cancelationToken);
 
     // first we need to make sure the hierarchy is fully traversed so we can search in cache
-    NavNodesProviderPtr provider = m_nodesCache->GetUndeterminedNodesProvider(connection, options.GetRulesetId(),
-        options.GetLocale(), options.GetDisableUpdates());
+    NavNodesProviderPtr provider = m_nodesCache->GetUndeterminedNodesProvider(connection, options.GetRulesetId(), options.GetLocale());
     if (provider.IsNull())
         return bvector<NavNodeCPtr>();
 
@@ -854,7 +864,7 @@ private:
     +---------------+---------------+---------------+---------------+---------------+------*/
     static RulesDrivenECPresentationManager::NavigationOptions ToNavigationOptions(RulesDrivenECPresentationManager::ContentOptions const& contentOptions)
         {
-        return RulesDrivenECPresentationManager::NavigationOptions(contentOptions.GetRulesetId(), TargetTree_Both, false, contentOptions.GetLocale());
+        return RulesDrivenECPresentationManager::NavigationOptions(contentOptions.GetRulesetId(), contentOptions.GetLocale());
         }
 
 public:

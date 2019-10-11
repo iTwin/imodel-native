@@ -63,6 +63,15 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
 //__PUBLISH_SECTION_START__
 
     //===================================================================================
+    // @bsiclass                                    Grigas.Petraitis            07/2018
+    //===================================================================================
+    enum class Mode
+        {
+        ReadOnly,
+        ReadWrite,
+        };
+
+    //===================================================================================
     //! An object that stores paths used by RulesDrivenECPresentationManager
     // @bsiclass                                    Grigas.Petraitis            08/2017
     //===================================================================================
@@ -127,10 +136,11 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
                 }
             bmap<int, unsigned> const& GetBackgroundThreadAllocations() const {return m_backgroundThreadAllocations;}
         };
-
+        
     private:
         IConnectionManagerP m_connections;
         Paths m_paths;
+        Mode m_mode;
         CachingParams m_cachingParams;
         MultiThreadingParams m_multiThreadingParams;
         IJsonLocalState* m_localState;
@@ -147,12 +157,17 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
         Params(Paths paths)
             : m_paths(paths), m_connections(nullptr), m_localState(nullptr), m_localizationProvider(nullptr),
             m_propertyFormatter(nullptr), m_categorySupplier(nullptr), m_rulesetLocaters(nullptr),
-            m_userSettings(nullptr)
+            m_userSettings(nullptr), m_mode(Mode::ReadWrite)
             {}
 
         Paths const& GetPaths() const {return m_paths;}
+
+        Mode GetMode() const {return m_mode;}
+        void SetMode(Mode mode) {m_mode = mode;}
+
         CachingParams const& GetCachingParams() const { return m_cachingParams; }
         void SetCachingParams(CachingParams params) { m_cachingParams = params; }
+
         MultiThreadingParams const& GetMultiThreadingParams() const { return m_multiThreadingParams; }
         void SetMultiThreadingParams(MultiThreadingParams params) { m_multiThreadingParams = params; }
 
@@ -229,9 +244,6 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
     //===================================================================================
     struct NavigationOptions : CommonOptions
         {
-        ECPRESENTATION_EXPORT static const Utf8CP OPTION_NAME_RuleTargetTree;
-        ECPRESENTATION_EXPORT static const Utf8CP OPTION_NAME_DisableUpdates;
-
         //! Constructor. Creates a read-only accessor.
         NavigationOptions(JsonValueCR data) : CommonOptions(data) {}
         //! Constructor. Creates a read-write accessor.
@@ -242,30 +254,12 @@ struct EXPORT_VTABLE_ATTRIBUTE RulesDrivenECPresentationManager : IECPresentatio
         NavigationOptions(NavigationOptions const& other) : CommonOptions(other) {}
         //! Constructor.
         //! @param[in] rulesetId The ID of the ruleset to use for requesting nodes.
-        //! @param[in] ruleTargetTree The target tree.
-        //! @param[in] disableUpdates True if hierarchy should not be auto-updating. (User knows that hierarchy won't change)
         //! @param[in] locale Locale identifier
-        NavigationOptions(Utf8CP rulesetId, RuleTargetTree ruleTargetTree = TargetTree_Both, bool disableUpdates = false, Utf8CP locale = nullptr)
-            : CommonOptions(rulesetId, locale) {SetRuleTargetTree(ruleTargetTree); SetDisableUpdates(disableUpdates);}
+        NavigationOptions(Utf8CP rulesetId, Utf8CP locale = nullptr) : CommonOptions(rulesetId, locale) {}
         //! Constructor.
         //! @param[in] rulesetId The ID of the ruleset to use for requesting nodes.
-        //! @param[in] ruleTargetTree The target tree.
-        //! @param[in] disableUpdates True if hierarchy should not be auto-updating. (User knows that hierarchy won't change)
         //! @param[in] locale Locale identifier
-        NavigationOptions(Utf8StringCR rulesetId, RuleTargetTree ruleTargetTree = TargetTree_Both, bool disableUpdates = false, Utf8CP locale = nullptr)
-            : NavigationOptions(rulesetId.c_str(), ruleTargetTree, disableUpdates, locale) {}
-
-        //! Get disable updates.
-        bool GetDisableUpdates() const {return GetJson().isMember(OPTION_NAME_DisableUpdates) ? GetJson()[OPTION_NAME_DisableUpdates].asBool() : false;}
-        //! Set disable updates.
-        void SetDisableUpdates(bool disableUpdates) {AddMember(OPTION_NAME_DisableUpdates, disableUpdates);}
-
-        //! Is rule target tree defined.
-        bool HasRuleTargetTree() const {return GetJson().isMember(OPTION_NAME_RuleTargetTree);}
-        //! Get the rule target tree.
-        RuleTargetTree GetRuleTargetTree() const {return GetJson().isMember(OPTION_NAME_RuleTargetTree) ? (RuleTargetTree)GetJson()[OPTION_NAME_RuleTargetTree].asInt() : RuleTargetTree::TargetTree_MainTree;}
-        //! Set the rule target tree.
-        void SetRuleTargetTree(RuleTargetTree ruleTargetTree) {AddMember(OPTION_NAME_RuleTargetTree, (int)ruleTargetTree);}
+        NavigationOptions(Utf8StringCR rulesetId, Utf8StringCR locale = "") : CommonOptions(rulesetId.c_str(), locale.empty() ? nullptr : locale.c_str()) {}
         };
 
     //===================================================================================

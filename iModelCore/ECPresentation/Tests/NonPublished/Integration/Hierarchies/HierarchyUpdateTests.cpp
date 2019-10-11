@@ -42,7 +42,7 @@ TEST_F (HierarchyUpdateTests, RemovesECInstanceNodeAfterECInstanceDelete)
     rules->AddPresentationRule(*rule);
 
     // request for nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
 
     // expect 2 nodes
@@ -89,7 +89,7 @@ TEST_F (HierarchyUpdateTests, UpdatesECClassGroupingNodeChildrenAfterECInstanceD
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
 
     // expect 1 class grouping node
@@ -162,7 +162,7 @@ TEST_F (HierarchyUpdateTests, RemovesECClassGroupingNodeAfterECInstanceDeleteWhe
     bvector<NavNodeCPtr> removedChildNodes;
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
 
     // expect 1 class grouping node
@@ -225,7 +225,7 @@ TEST_F (HierarchyUpdateTests, RemovesECClassGroupingNodeAfterECInstanceDeleteWhe
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
 
     // expect 1 class grouping node
@@ -277,7 +277,7 @@ TEST_F (HierarchyUpdateTests, RemovesDisplayLabelGroupingNodeChildrenAfterECInst
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
 
     // expect 1 display label grouping node & 1 ECInstance node
@@ -353,7 +353,7 @@ TEST_F (HierarchyUpdateTests, RemovesDisplayLabelGroupingNodeAfterECInstanceDele
     bvector<NavNodeCPtr> removedInstanceNodes;
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
 
     // expect 1 display label grouping node & 1 ECInstance node
@@ -428,7 +428,7 @@ TEST_F (HierarchyUpdateTests, RemovesDisplayLabelGroupingNodeAfterECInstanceDele
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
 
     // expect 1 display label grouping node & 1 ECInstance node
@@ -486,7 +486,7 @@ TEST_F (HierarchyUpdateTests, RemovesDisplayLabelGroupingNodeAfterECInstanceLabe
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
 
     // expect 1 display label grouping node & 1 ECInstance node
@@ -559,7 +559,7 @@ TEST_F (HierarchyUpdateTests, SetsCorrectInsertPositionWhenMultipleSpecification
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
 
     // expect no nodes
@@ -604,7 +604,7 @@ TEST_F (HierarchyUpdateTests, SetsCorrectInsertPositionWhenMultipleSpecification
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
 
     // expect 2 gadget nodes
@@ -656,7 +656,7 @@ TEST_F (HierarchyUpdateTests, CreatesDisplayLabelGroupingNodeAfterECInstanceLabe
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
 
     // expect 3 ECInstance nodes
@@ -725,7 +725,7 @@ TEST_F (HierarchyUpdateTests, CreatesDisplayLabelGroupingNodeAfterECInstanceInse
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
 
     // expect 2 ECInstance nodes
@@ -787,7 +787,7 @@ TEST_F (HierarchyUpdateTests, UpdatesDisplayLabelGroupingNodeAfterECInstanceInse
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(2, rootNodes.GetSize());
 
@@ -857,7 +857,7 @@ TEST_F (HierarchyUpdateTests, UpdatesVirtualDisplayLabelGroupingNodeAfterECInsta
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(2, rootNodes.GetSize());
     for (NavNodeCPtr const& node : rootNodes)
@@ -915,7 +915,7 @@ TEST_F (HierarchyUpdateTests, UpdatesVirtualDisplayLabelGroupingNodeAfterECInsta
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(3, rootNodes.GetSize());
     for (NavNodeCPtr const& node : rootNodes)
@@ -970,7 +970,7 @@ TEST_F (HierarchyUpdateTests, UpdatesECInstanceNodeAfterECInstanceChange)
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
 
     // expect 1 ECInstance node
@@ -1020,7 +1020,7 @@ TEST_F (HierarchyUpdateTests, UpdatesRootDataSourceAfterECInstanceInsert_AllInst
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
 
     // expect 1 ECInstance node
@@ -1070,7 +1070,7 @@ TEST_F (HierarchyUpdateTests, UpdatesRootDataSourceAfterECInstanceInsert_Instanc
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
 
     // expect 1 ECInstance node
@@ -1121,7 +1121,7 @@ TEST_F (HierarchyUpdateTests, UpdatesRootDataSourceAfterECInstanceInsert_Instanc
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
 
     // expect 1 ECInstance node
@@ -1161,7 +1161,7 @@ TEST_F (HierarchyUpdateTests, UpdatesRootDataSourceAfterECInstanceInsert_Instanc
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
 
     // expect 1 ECInstance node
@@ -1203,7 +1203,7 @@ TEST_F (HierarchyUpdateTests, DoesntUpdateRootDataSourceAfterECInstanceInsertIfC
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
 
     // expect 1 ECInstance node
@@ -1248,7 +1248,7 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterECInstanceInsert_RelatedInst
     rules->AddPresentationRule(*childRule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
 
     // expect 1 ECInstance node
@@ -1305,7 +1305,7 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterECInstanceInsert_SearchResul
     rule->AddSpecification(*spec);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
 
     // expect 2 ECInstance nodes
@@ -1358,7 +1358,7 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterECInstanceInsert_SearchResul
     rule->AddSpecification(*spec);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
 
     // expect 2 ECInstance nodes
@@ -1410,7 +1410,7 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterECInstanceInsert_SearchResul
     rule->AddSpecification(*spec);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
 
     // expect 1 ECInstance node
@@ -1475,7 +1475,7 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterParentECInstanceUpdate_Searc
     childRule->AddSpecification(*spec);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
 
     // expect 1 ECInstance node
@@ -1544,7 +1544,7 @@ TEST_F (HierarchyUpdateTests, CreatesNodeAfterECInstanceInsertWhenPreviouslyNotC
     childRule->AddSpecification(*childSpec);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
 
     // expect 0 nodes
@@ -1591,7 +1591,7 @@ TEST_F (HierarchyUpdateTests, SameLabelInstanceGroupIsCreatedWhenAdditionalInsta
     rules->AddPresentationRule(*groupingRule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
 
     // expect 1 widget
@@ -1640,7 +1640,7 @@ TEST_F (HierarchyUpdateTests, BaseClassGroupIsUpdatedWhenAdditionalInstancesAreI
     rules->AddPresentationRule(*groupingRule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
 
     // expect 1 instance
@@ -1703,7 +1703,7 @@ TEST_F (HierarchyUpdateTests, ValuePropertyGroupIsUpdatedWhenAdditionalInstances
     rules->AddPresentationRule(*groupingRule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
 
     // expect 1 property grouping node
@@ -1769,7 +1769,7 @@ TEST_F (HierarchyUpdateTests, RangePropertyGroupIsUpdatedWhenAdditionalInstances
     groupingRule->AddGroup(*groupingSpec);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
 
     // expect 1 property grouping node
@@ -1833,7 +1833,7 @@ TEST_F (HierarchyUpdateTests, PropertyGroupIsCreatedWhenInstanceValuesChange)
     rules->AddPresentationRule(*groupingRule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
 
     // expect 1 property grouping node
@@ -1909,7 +1909,7 @@ TEST_F (HierarchyUpdateTests, PropertyGroupIsCreatedWhenInstanceValuesChangeWith
     rules->AddPresentationRule(*groupingRule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
 
     // expect 2 ECInstance nodes
@@ -1967,7 +1967,7 @@ TEST_F (HierarchyUpdateTests, UpdatesCustomNodeWithHideIfNoChildrenFlagWhenNothi
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(0, rootNodes.GetSize());
 
@@ -2012,7 +2012,7 @@ TEST_F (HierarchyUpdateTests, UpdatesCustomNodeWithHideIfNoChildrenFlagWhenChild
     rules->AddPresentationRule(*childRule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(0, rootNodes.GetSize());
 
@@ -2064,7 +2064,7 @@ TEST_F (HierarchyUpdateTests, UpdatesCustomNodeWithHideIfNoChildrenFlagWhenChild
     rules->AddPresentationRule(*childRule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(2, rootNodes.GetSize());
     bvector<NavNodeCPtr> deletedNodes = {rootNodes[0], rootNodes[1]};
@@ -2113,7 +2113,7 @@ TEST_F (HierarchyUpdateTests, HidesDisplayLabelGroupingNodeWhenSiblingIsRemovedF
     rules->AddPresentationRule(*childRule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("MyCustomType", rootNodes[0]->GetType().c_str());
@@ -2195,7 +2195,7 @@ TEST_F (HierarchyUpdateTests, HidesDisplayLabelGroupingNodeWhenSiblingIsRemovedF
     rules->AddPresentationRule(*groupingRule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
@@ -2281,7 +2281,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterOneToManyForwar
     rules->AddPresentationRule(*childrenRule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
@@ -2342,7 +2342,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterOneToManyBackwa
     rules->AddPresentationRule(*childrenRule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("GadgetID", rootNodes[0]->GetLabel().c_str());
@@ -2404,7 +2404,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterOneToManyForwar
     rules->AddPresentationRule(*childrenRule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
@@ -2466,7 +2466,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterOneToManyBackwa
     rules->AddPresentationRule(*childrenRule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("GadgetID", rootNodes[0]->GetLabel().c_str());
@@ -2527,7 +2527,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterManyToManyForwa
     rules->AddPresentationRule(*childrenRule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
@@ -2591,7 +2591,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterManyToManyBackw
     rules->AddPresentationRule(*childrenRule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("GadgetID", rootNodes[0]->GetLabel().c_str());
@@ -2656,7 +2656,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterManyToManyForwa
     rules->AddPresentationRule(*childrenRule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
@@ -2721,7 +2721,7 @@ TEST_F (HierarchyUpdateTests, RelatedInstanceNodesAreUpdatedAfterManyToManyBackw
     rules->AddPresentationRule(*childrenRule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("GadgetID", rootNodes[0]->GetLabel().c_str());
@@ -2780,7 +2780,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipInsertWhenBackwar
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(0, rootNodes.GetSize());
 
@@ -2829,7 +2829,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipInsertWhenForward
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(0, rootNodes.GetSize());
 
@@ -2879,7 +2879,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipDeleteWhenBackwar
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, rootNodes[0]->GetType().c_str());
@@ -2928,7 +2928,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipDeleteWhenForward
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, rootNodes[0]->GetType().c_str());
@@ -2976,7 +2976,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipInsertWhenBackward
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(0, rootNodes.GetSize());
 
@@ -3022,7 +3022,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipInsertWhenForwardH
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(0, rootNodes.GetSize());
 
@@ -3069,7 +3069,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipDeleteWhenBackward
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, rootNodes[0]->GetType().c_str());
@@ -3115,7 +3115,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipDeleteWhenForwardH
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, rootNodes[0]->GetType().c_str());
@@ -3160,7 +3160,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipInsertWhenBackwar
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(0, rootNodes.GetSize());
 
@@ -3209,7 +3209,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipInsertWhenForward
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(0, rootNodes.GetSize());
 
@@ -3259,7 +3259,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipDeleteWhenBackwar
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, rootNodes[0]->GetType().c_str());
@@ -3308,7 +3308,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipDeleteWhenForward
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, rootNodes[0]->GetType().c_str());
@@ -3356,7 +3356,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipInsertWhenBackward
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(0, rootNodes.GetSize());
 
@@ -3402,7 +3402,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipInsertWhenForwardG
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(0, rootNodes.GetSize());
 
@@ -3449,7 +3449,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipDeleteWhenBackward
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, rootNodes[0]->GetType().c_str());
@@ -3495,7 +3495,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterOneToManyRelationshipDeleteWhenForwardG
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECInstanceNode, rootNodes[0]->GetType().c_str());
@@ -3546,7 +3546,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterManyToManyRelationshipRelatedInstanceUp
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(0, rootNodes.GetSize());
 
@@ -3601,7 +3601,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterSkippedOneToManyRelationshipInsert)
     rules->AddPresentationRule(*childRule);
 
     // request for nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
 
@@ -3665,7 +3665,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterSkippedOneToManyRelationshipDelete)
     rules->AddPresentationRule(*childRule);
 
     // request for nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
 
@@ -3725,7 +3725,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterSkippedManyToManyRelationshipInsert)
     rules->AddPresentationRule(*childRule);
 
     // request for nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(widget1->GetInstanceId().c_str(), rootNodes[0]->GetKey()->AsECInstanceNodeKey()->GetInstanceId().ToString().c_str());
@@ -3783,7 +3783,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterRelatedInstanceInsert)
     rules->AddPresentationRule(*new LabelOverride("", 1, "\"Gadget_\" & IIF(NOT IsNull(widget.IntProperty), widget.IntProperty, \"No_Widget\")", ""));
 
     // request for nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
 
@@ -3835,7 +3835,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterRelatedInstanceDelete)
     rules->AddPresentationRule(*new LabelOverride("", 1, "\"Gadget_\" & IIF(NOT IsNull(widget.IntProperty), widget.IntProperty, \"No_Widget\")", ""));
 
     // request for nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
 
@@ -3887,7 +3887,7 @@ TEST_F (HierarchyUpdateTests, UpdateAfterRelatedInstanceUpdate)
     rules->AddPresentationRule(*new LabelOverride("", 1, "\"Gadget_\" & IIF(NOT IsNull(widget.IntProperty), widget.IntProperty, \"No_Widget\")", ""));
 
     // request for nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
 
@@ -3944,9 +3944,9 @@ TEST_F (HierarchyUpdateTests, UpdatesAllAffectedRootHierarchies)
     rules3->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes1 = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetRootNodes(m_db, PageOptions(), RulesDrivenECPresentationManager::NavigationOptions(rules1->GetRuleSetId().c_str(), TargetTree_Both).GetJson()).get(); });
-    DataContainer<NavNodeCPtr> rootNodes2 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), RulesDrivenECPresentationManager::NavigationOptions(rules2->GetRuleSetId().c_str(), TargetTree_Both).GetJson()).get(); });
-    DataContainer<NavNodeCPtr> rootNodes3 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), RulesDrivenECPresentationManager::NavigationOptions(rules3->GetRuleSetId().c_str(), TargetTree_Both).GetJson()).get(); });
+    DataContainer<NavNodeCPtr> rootNodes1 = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetRootNodes(m_db, PageOptions(), RulesDrivenECPresentationManager::NavigationOptions(rules1->GetRuleSetId().c_str()).GetJson()).get(); });
+    DataContainer<NavNodeCPtr> rootNodes2 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), RulesDrivenECPresentationManager::NavigationOptions(rules2->GetRuleSetId().c_str()).GetJson()).get(); });
+    DataContainer<NavNodeCPtr> rootNodes3 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), RulesDrivenECPresentationManager::NavigationOptions(rules3->GetRuleSetId().c_str()).GetJson()).get(); });
 
     // verify expected results
     ASSERT_EQ(1, rootNodes1.GetSize());
@@ -3963,9 +3963,9 @@ TEST_F (HierarchyUpdateTests, UpdatesAllAffectedRootHierarchies)
     m_eventsSource->NotifyECInstanceUpdated(m_db, *widget);
 
     // verify expected results
-    rootNodes1 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), RulesDrivenECPresentationManager::NavigationOptions(rules1->GetRuleSetId().c_str(), TargetTree_Both).GetJson()).get(); });
-    rootNodes2 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), RulesDrivenECPresentationManager::NavigationOptions(rules2->GetRuleSetId().c_str(), TargetTree_Both).GetJson()).get(); });
-    rootNodes3 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), RulesDrivenECPresentationManager::NavigationOptions(rules3->GetRuleSetId().c_str(), TargetTree_Both).GetJson()).get(); });
+    rootNodes1 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), RulesDrivenECPresentationManager::NavigationOptions(rules1->GetRuleSetId().c_str()).GetJson()).get(); });
+    rootNodes2 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), RulesDrivenECPresentationManager::NavigationOptions(rules2->GetRuleSetId().c_str()).GetJson()).get(); });
+    rootNodes3 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), RulesDrivenECPresentationManager::NavigationOptions(rules3->GetRuleSetId().c_str()).GetJson()).get(); });
     ASSERT_EQ(1, rootNodes1.GetSize());
     EXPECT_STREQ("456", rootNodes1[0]->GetLabel().c_str());
     ASSERT_EQ(1, rootNodes2.GetSize());
@@ -4024,16 +4024,16 @@ TEST_F (HierarchyUpdateTests, UpdatesAllAffectedChildHierarchies)
     rules3->AddPresentationRule(*childRule3);
 
     // request for root nodes
-    DataContainer<NavNodeCPtr> rootNodes1 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), RulesDrivenECPresentationManager::NavigationOptions(rules1->GetRuleSetId().c_str(), TargetTree_Both).GetJson()).get(); });
-    DataContainer<NavNodeCPtr> rootNodes2 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), RulesDrivenECPresentationManager::NavigationOptions(rules2->GetRuleSetId().c_str(), TargetTree_Both).GetJson()).get(); });
-    DataContainer<NavNodeCPtr> rootNodes3 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), RulesDrivenECPresentationManager::NavigationOptions(rules3->GetRuleSetId().c_str(), TargetTree_Both).GetJson()).get(); });
+    DataContainer<NavNodeCPtr> rootNodes1 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), RulesDrivenECPresentationManager::NavigationOptions(rules1->GetRuleSetId().c_str()).GetJson()).get(); });
+    DataContainer<NavNodeCPtr> rootNodes2 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), RulesDrivenECPresentationManager::NavigationOptions(rules2->GetRuleSetId().c_str()).GetJson()).get(); });
+    DataContainer<NavNodeCPtr> rootNodes3 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), RulesDrivenECPresentationManager::NavigationOptions(rules3->GetRuleSetId().c_str()).GetJson()).get(); });
 
     // verify expected results
     ASSERT_EQ(1, rootNodes1.GetSize());
     EXPECT_STREQ("Root", rootNodes1[0]->GetLabel().c_str());
     // expand node
     SetNodeExpanded(*rootNodes1[0]);
-    DataContainer<NavNodeCPtr> childNodes1 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes1[0], PageOptions(), RulesDrivenECPresentationManager::NavigationOptions(rules1->GetRuleSetId().c_str(), TargetTree_Both).GetJson()).get(); });
+    DataContainer<NavNodeCPtr> childNodes1 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes1[0], PageOptions(), RulesDrivenECPresentationManager::NavigationOptions(rules1->GetRuleSetId().c_str()).GetJson()).get(); });
     ASSERT_EQ(1, rootNodes1.GetSize());
     EXPECT_STREQ("123", childNodes1[0]->GetLabel().c_str());
 
@@ -4041,7 +4041,7 @@ TEST_F (HierarchyUpdateTests, UpdatesAllAffectedChildHierarchies)
     EXPECT_STREQ("Root", rootNodes2[0]->GetLabel().c_str());
     // expand node
     SetNodeExpanded(*rootNodes2[0]);
-    DataContainer<NavNodeCPtr> childNodes2 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes2[0], PageOptions(), RulesDrivenECPresentationManager::NavigationOptions(rules2->GetRuleSetId().c_str(), TargetTree_Both).GetJson()).get(); });
+    DataContainer<NavNodeCPtr> childNodes2 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes2[0], PageOptions(), RulesDrivenECPresentationManager::NavigationOptions(rules2->GetRuleSetId().c_str()).GetJson()).get(); });
     ASSERT_EQ(1, childNodes2.GetSize());
     EXPECT_STREQ("123", childNodes2[0]->GetLabel().c_str());
 
@@ -4049,7 +4049,7 @@ TEST_F (HierarchyUpdateTests, UpdatesAllAffectedChildHierarchies)
     EXPECT_STREQ("Root", rootNodes3[0]->GetLabel().c_str());
     // expand node
     SetNodeExpanded(*rootNodes3[0]);
-    DataContainer<NavNodeCPtr> childNodes3 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes3[0], PageOptions(), RulesDrivenECPresentationManager::NavigationOptions(rules3->GetRuleSetId().c_str(), TargetTree_Both).GetJson()).get(); });
+    DataContainer<NavNodeCPtr> childNodes3 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes3[0], PageOptions(), RulesDrivenECPresentationManager::NavigationOptions(rules3->GetRuleSetId().c_str()).GetJson()).get(); });
     ASSERT_EQ(0, childNodes3.GetSize());
 
     // update the widget
@@ -4060,12 +4060,12 @@ TEST_F (HierarchyUpdateTests, UpdatesAllAffectedChildHierarchies)
     m_eventsSource->NotifyECInstanceUpdated(m_db, *widget);
 
     // verify expected results
-    rootNodes1 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), RulesDrivenECPresentationManager::NavigationOptions(rules1->GetRuleSetId().c_str(), TargetTree_Both).GetJson()).get(); });
-    childNodes1 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes1[0], PageOptions(), RulesDrivenECPresentationManager::NavigationOptions(rules1->GetRuleSetId().c_str(), TargetTree_Both).GetJson()).get(); });
-    rootNodes2 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), RulesDrivenECPresentationManager::NavigationOptions(rules2->GetRuleSetId().c_str(), TargetTree_Both).GetJson()).get(); });
-    childNodes2 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes2[0], PageOptions(), RulesDrivenECPresentationManager::NavigationOptions(rules2->GetRuleSetId().c_str(), TargetTree_Both).GetJson()).get(); });
-    rootNodes3 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), RulesDrivenECPresentationManager::NavigationOptions(rules3->GetRuleSetId().c_str(), TargetTree_Both).GetJson()).get(); });
-    childNodes3 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes3[0], PageOptions(), RulesDrivenECPresentationManager::NavigationOptions(rules3->GetRuleSetId().c_str(), TargetTree_Both).GetJson()).get(); });
+    rootNodes1 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), RulesDrivenECPresentationManager::NavigationOptions(rules1->GetRuleSetId().c_str()).GetJson()).get(); });
+    childNodes1 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes1[0], PageOptions(), RulesDrivenECPresentationManager::NavigationOptions(rules1->GetRuleSetId().c_str()).GetJson()).get(); });
+    rootNodes2 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), RulesDrivenECPresentationManager::NavigationOptions(rules2->GetRuleSetId().c_str()).GetJson()).get(); });
+    childNodes2 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes2[0], PageOptions(), RulesDrivenECPresentationManager::NavigationOptions(rules2->GetRuleSetId().c_str()).GetJson()).get(); });
+    rootNodes3 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), RulesDrivenECPresentationManager::NavigationOptions(rules3->GetRuleSetId().c_str()).GetJson()).get(); });
+    childNodes3 = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes3[0], PageOptions(), RulesDrivenECPresentationManager::NavigationOptions(rules3->GetRuleSetId().c_str()).GetJson()).get(); });
     ASSERT_EQ(1, childNodes1.GetSize());
     EXPECT_STREQ("456", childNodes1[0]->GetLabel().c_str());
     ASSERT_EQ(1, childNodes2.GetSize());
@@ -4105,7 +4105,7 @@ TEST_F (HierarchyUpdateTests, UpdatesParentsHasChildrenFlagWhenChildNodeIsInsert
     rules->AddPresentationRule(*childRule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_FALSE(rootNodes[0]->HasChildren());
@@ -4166,7 +4166,7 @@ TEST_F (HierarchyUpdateTests, UpdatesParentsHasChildrenFlagWhenChildNodeIsInsert
     childRule1->GetSpecifications().front()->AddNestedRule(*childRule2);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_TRUE(rootNodes[0]->HasChildren());
@@ -4230,7 +4230,7 @@ TEST_F (HierarchyUpdateTests, UpdatesParentsHasChildrenFlagWhenChildNodeIsDelete
     rules->AddPresentationRule(*childRule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_TRUE(rootNodes[0]->HasChildren());
@@ -4282,7 +4282,7 @@ TEST_F (HierarchyUpdateTests, ShowsParentNodeWithHideIfNoChildrenFlagWhenChildNo
     rules->AddPresentationRule(*childRule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(0, rootNodes.GetSize());
 
@@ -4327,7 +4327,7 @@ TEST_F (HierarchyUpdateTests, RemovesParentNodeWithHideIfNoChildrenFlagWhenTheLa
     rules->AddPresentationRule(*childRule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_TRUE(rootNodes[0]->HasChildren());
@@ -4384,7 +4384,7 @@ TEST_F (HierarchyUpdateTests, DoesNotUpdateChildHierarchyIfParentIsRemoved)
     rules->AddPresentationRule(*grandchildRule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
 
     // verify expected results
@@ -4435,7 +4435,7 @@ TEST_F (HierarchyUpdateTests, CustomizesInsertedNodes)
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(0, rootNodes.GetSize());
 
@@ -4475,7 +4475,7 @@ TEST_F (HierarchyUpdateTests, UpdatesAffectedBranchesWhenUserSettingChanges_Used
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(0, rootNodes.GetSize());
 
@@ -4515,7 +4515,7 @@ TEST_F (HierarchyUpdateTests, UpdatesAffectedBranchesWhenUserSettingChanges_Used
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(0, rootNodes.GetSize());
 
@@ -4555,7 +4555,7 @@ TEST_F (HierarchyUpdateTests, UpdatesAffectedBranchesWhenUserSettingChanges_Used
     rules->AddPresentationRule(*new LabelOverride("1 = GetSettingIntValue(\"test\")", 1, "\"test\"", "\"test\""));
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_NotSpecified()).c_str(), rootNodes[0]->GetLabel().c_str());
@@ -4601,7 +4601,7 @@ TEST_F (HierarchyUpdateTests, UpdatesAffectedBranchesWhenUserSettingChanges_Used
     rules->AddPresentationRule(*new LabelOverride("", 1, "\"test\" & GetSettingIntValue(\"test\")", "\"test\""));
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("test0", rootNodes[0]->GetLabel().c_str());
@@ -4646,7 +4646,7 @@ TEST_F (HierarchyUpdateTests, UpdatesAffectedBranchesWhenUserSettingChanges_Used
     rules->AddPresentationRule(*new StyleOverride("1 = GetSettingIntValue(\"test\")", 1, "\"test\"", "\"test\"", "\"test\""));
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("", rootNodes[0]->GetForeColor().c_str());
@@ -4692,7 +4692,7 @@ TEST_F (HierarchyUpdateTests, UpdatesAffectedBranchesWhenUserSettingChanges_Used
     rules->AddPresentationRule(*new StyleOverride("", 1, "\"test\" & GetSettingIntValue(\"test\")", "\"test\"", "\"test\""));
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("test0", rootNodes[0]->GetForeColor().c_str());
@@ -4756,7 +4756,7 @@ TEST_F (HierarchyUpdateTests, UpdatesGroupingBranchesUnderHiddenLevelsWhenUserSe
     */
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("Gadget", rootNodes[0]->GetLabel().c_str());
@@ -4817,7 +4817,7 @@ TEST_F (HierarchyUpdateTests, UpdatesLocalizedCustomNodesOnUserSettingChange)
         Utf8PrintfString("\"%s\"", RULESENGINE_LOCALIZEDSTRING_Other.c_str()), "GetSettingIntValue(\"counter\")"));
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("0", rootNodes[0]->GetDescription().c_str());
@@ -4854,7 +4854,7 @@ TEST_F (HierarchyUpdateTests, DoesntUpdateHierarchiesOfClosedConnectionsOnUserSe
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("Label", rootNodes[0]->GetLabel().c_str());
@@ -4887,7 +4887,7 @@ TEST_F (HierarchyUpdateTests, UpdatesAffectedBranchesWhenUserSettingChangesSever
     rules->AddPresentationRule(*rule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&]() { return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(0, rootNodes.GetSize());
 
@@ -4952,7 +4952,7 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateHierarchyWhenNodeRemovedFromCollapsedH
     rules->AddPresentationRule(*childRule);
 
     // make sure we have 1 root node
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
@@ -5013,7 +5013,7 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateHierarchyWhenNodeInsertedIntoCollapsed
     rules->AddPresentationRule(*childRule);
 
     // make sure we have 1 root node
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
@@ -5074,7 +5074,7 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateHierarchyWhenNodeUpdatedInCollapsedHie
     rules->AddPresentationRule(*childRule);
 
     // make sure we have 1 root node
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("Gadget_Label", rootNodes[0]->GetLabel().c_str());
@@ -5148,7 +5148,7 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateHierarchyWhenAnyParentUpTheHierarchyIs
     rules->AddPresentationRule(*childRule2);
 
     // make sure we have 1 root node
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
@@ -5222,7 +5222,7 @@ TEST_F(HierarchyUpdateTests, UpdateHierarchyWhenLastNodeRemovedFromCollapsedHier
     rules->AddPresentationRule(*childRule);
 
     // make sure we have 1 root node
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
@@ -5283,7 +5283,7 @@ TEST_F(HierarchyUpdateTests, UpdateHierarchyWhenNodeInsertedIntoEmptyCollapsedHi
     rules->AddPresentationRule(*childRule);
 
     // make sure we have 1 root node
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
@@ -5345,7 +5345,7 @@ TEST_F(HierarchyUpdateTests, UpdateHierarchyWhenLastGroupedNodeDeletedFromCollap
     rules->AddPresentationRule(*childRule);
 
     // make sure we have 1 root node
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
@@ -5404,7 +5404,7 @@ TEST_F(HierarchyUpdateTests, DoesNotCollapseParentNodeAfterChildNodeIsInserted)
     rules->AddPresentationRule(*rootRule);
 
     // make sure we have 1 root node
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     EXPECT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, rootNodes[0]->GetType().c_str());
@@ -5451,166 +5451,6 @@ TEST_F(HierarchyUpdateTests, DoesNotCollapseParentNodeAfterChildNodeIsInserted)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @betest                                       Saulius.Skliutas                07/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(HierarchyUpdateTests, DoesNotUpdateFixedHierarchyWhenNodeIsInserted)
-    {
-    // insert widget
-    RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("WidgetID"));}, true);
-
-    // create the rule set
-    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
-    m_locater->AddRuleSet(*rules);
-
-    rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
-
-    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
-    rules->AddPresentationRule(*rootRule);
-
-    // make sure we have 1 root node and disable updates
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both, true);
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
-    ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
-
-    // insert second widget
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, nullptr, true);
-    m_eventsSource->NotifyECInstanceInserted(m_db, *widget);
-
-    // expect no updates
-    EXPECT_EQ(0, m_updateRecordsHandler->GetRecords().size());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                       Saulius.Skliutas                07/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(HierarchyUpdateTests, DoesNotUpdateFixedHierarchyWhenNodeIsUpdated)
-    {
-    // insert widget
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("WidgetID"));}, true);
-
-    // create the rule set
-    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
-    m_locater->AddRuleSet(*rules);
-    rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
-
-    rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
-
-    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
-    rules->AddPresentationRule(*rootRule);
-
-    // make sure we have 1 root node and disable updates
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both, true);
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
-    ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
-
-    // update widget
-    widget->SetValue("MyID", ECValue("New label"));
-    ECInstanceUpdater updater(m_db, *widget, nullptr);
-    updater.Update(*widget);
-    m_db.SaveChanges();
-    m_eventsSource->NotifyECInstanceUpdated(m_db, *widget);
-
-    // expect no updates
-    EXPECT_EQ(0, m_updateRecordsHandler->GetRecords().size());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                       Saulius.Skliutas                07/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(HierarchyUpdateTests, DoesNotUpdateFixedHierarchyWhenChildIsInserted)
-    {
-    // insert widget
-    ECRelationshipClassCP widgetHasGadgetsClass = m_db.Schemas().GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("WidgetID"));}, true);
-
-    // create the rule set
-    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
-    m_locater->AddRuleSet(*rules);
-
-    rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
-
-    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
-    rules->AddPresentationRule(*rootRule);
-
-    ChildNodeRule* childRule = new ChildNodeRule("ParentNode.ClassName=\"Widget\"", 1, false, TargetTree_Both);
-    childRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0,
-        "", RequiredRelationDirection_Forward, "", "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Gadget"));
-    rules->AddPresentationRule(*childRule);
-
-    // make sure we have 1 root node and disable updates
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both, true);
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
-    ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
-
-    // make sure it has 0 children
-    DataContainer<NavNodeCPtr> childrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get(); });
-    ASSERT_EQ(0, childrenNodes.GetSize());
-
-    // relate gadget to widget
-    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(m_db, *m_gadgetClass);
-    RulesEngineTestHelpers::InsertRelationship(m_db, *widgetHasGadgetsClass, *widget, *gadget, nullptr, true);
-    m_eventsSource->NotifyECInstanceInserted(m_db, *gadget);
-
-    // expect no updates
-    EXPECT_EQ(0, m_updateRecordsHandler->GetRecords().size());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                       Saulius.Skliutas                07/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(HierarchyUpdateTests, DoesNotUpdateFixedHierarchyWhenChildIsDeleted)
-    {
-    // insert some instances
-    ECRelationshipClassCP widgetHasGadgetsClass = m_db.Schemas().GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("WidgetID"));});
-    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(m_db, *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("GadgetID"));});
-    RulesEngineTestHelpers::InsertRelationship(m_db, *widgetHasGadgetsClass, *widget, *gadget, nullptr, true);
-
-    // create the rule set
-    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
-    m_locater->AddRuleSet(*rules);
-
-    rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
-    rules->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Gadget", "MyID"));
-
-    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
-    rules->AddPresentationRule(*rootRule);
-
-    ChildNodeRule* childRule = new ChildNodeRule("ParentNode.ClassName=\"Widget\"", 1, false, TargetTree_Both);
-    childRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0,
-        "", RequiredRelationDirection_Forward, "", "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Gadget"));
-    rules->AddPresentationRule(*childRule);
-
-    // make sure we have 1 root node and disable updates
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both, true);
-    DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
-    ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ("WidgetID", rootNodes[0]->GetLabel().c_str());
-
-    // expand root node
-    SetNodeExpanded(*rootNodes[0]);
-
-    // make sure it has 1 child
-    DataContainer<NavNodeCPtr> childrenNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get(); });
-    ASSERT_EQ(1, childrenNodes.GetSize());
-    EXPECT_STREQ("GadgetID", childrenNodes[0]->GetLabel().c_str());
-
-    // delete gadget
-    RulesEngineTestHelpers::DeleteInstance(m_db, *gadget, true);
-    m_eventsSource->NotifyECInstanceDeleted(m_db, *gadget);
-
-    // expect no updates
-    EXPECT_EQ(0, m_updateRecordsHandler->GetRecords().size());
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @betest                                       Saulius.Skliutas                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HierarchyUpdateTests, DoesNotCollapseNodeIfItWasExpandedAndLastChildrenWasRemoved)
@@ -5631,7 +5471,7 @@ TEST_F (HierarchyUpdateTests, DoesNotCollapseNodeIfItWasExpandedAndLastChildrenW
     rules->AddPresentationRule(*childRule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
 
     // expect 1 root node which has children
@@ -5693,7 +5533,7 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterInsertWhenItAlreadyHasManyTo
     rules->AddPresentationRule(*childRule);
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
 
     // expect 1 root node
@@ -5790,7 +5630,7 @@ TEST_F(HierarchyUpdateTests, UserSettingsTrackedWhenCustomizingChildNodesDuringH
     rules->AddPresentationRule(*new StyleOverride("ThisNode.ClassName=\"ElementB\"", 1, "GetSettingIntValue(\"custom\")", "", ""));
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     NavNodeCPtr rootNode = rootNodes[0];
@@ -5888,7 +5728,7 @@ TEST_F(HierarchyUpdateTests, UserSettingsTrackedWhenCustomizingChildNodesWithVir
     rules->AddPresentationRule(*new StyleOverride("ThisNode.ClassName=\"ElementC\"", 1, "GetSettingIntValue(\"custom\")", "", ""));
 
     // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str());
     DataContainer<NavNodeCPtr> rootNodes = RulesEngineTestHelpers::GetValidatedNodes([&](){ return m_manager->GetRootNodes(m_db, PageOptions(), options.GetJson()).get(); });
     ASSERT_EQ(1, rootNodes.GetSize());
     NavNodeCPtr rootNode = rootNodes[0];

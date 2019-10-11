@@ -200,7 +200,7 @@ struct TestNodesCache : IHierarchyCache, INavNodeLocater
     typedef std::function<NavNodesProviderPtr(DataSourceInfo const&)> GetVirtualDataSourceHandler;
     typedef std::function<NavNodesProviderPtr(uint64_t)> GetParentNodeDataSourceHandler;
     typedef std::function<void(HierarchyLevelInfo&)> CacheHierarchyLevelHandler;
-    typedef std::function<void(DataSourceInfo&, DataSourceFilter const&, bmap<ECClassId, bool> const&, bvector<UserSettingEntry> const&, bool)> CacheDataSourceHandler;
+    typedef std::function<void(DataSourceInfo&, DataSourceFilter const&, bmap<ECClassId, bool> const&, bvector<UserSettingEntry> const&)> CacheDataSourceHandler;
     typedef std::function<void(JsonNavNodeR, bool)> CacheNodeHandler;
     typedef std::function<void(JsonNavNodeCR)> MakePhysicalHandler;
     typedef std::function<void(JsonNavNodeCR)> MakeVirtualHandler;
@@ -448,7 +448,7 @@ protected:
         if (m_cacheHierarchyLevelHandler)
             m_cacheHierarchyLevelHandler(info);
         }
-    void _Cache(DataSourceInfo& info, DataSourceFilter const& filter, bmap<ECClassId, bool> const& relatedClassIds, bvector<UserSettingEntry> const& relatedSettings, bool updatesDisabled) override
+    void _Cache(DataSourceInfo& info, DataSourceFilter const& filter, bmap<ECClassId, bool> const& relatedClassIds, bvector<UserSettingEntry> const& relatedSettings) override
         {
         BeMutexHolder lock(m_mutex);
         info.SetId(++m_datasourceIds);
@@ -459,7 +459,7 @@ protected:
         virtualHierarchy.insert(virtualHierarchy.begin() + info.GetIndex().back(), info);
 
         if (m_cacheDataSourceHandler)
-            m_cacheDataSourceHandler(info, filter, relatedClassIds, relatedSettings, updatesDisabled);
+            m_cacheDataSourceHandler(info, filter, relatedClassIds, relatedSettings);
         }
     void _Cache(JsonNavNodeR node, DataSourceInfo const& dsInfo, uint64_t index, bool isVirtual) override
         {
@@ -757,7 +757,7 @@ private:
 
 protected:
     NavNodesProviderContextPtr _Create(IConnectionCR connection, Utf8CP rulesetId, Utf8CP locale, 
-        uint64_t const* parentNodeId, ICancelationTokenCP cancelationToken, bool disableUpdates) const override
+        uint64_t const* parentNodeId, ICancelationTokenCP cancelationToken, size_t pageSize) const override
         {
         PresentationRuleSetCPtr ruleset = m_ruleset;
         if (ruleset.IsNull())
@@ -766,8 +766,9 @@ protected:
             m_settings, m_ecexpressionsCache, m_relatedPathsCache, m_polymorphicallyRelatedClassesCache, m_nodesFactory, 
             GetNodesCache(), m_providerFactory, nullptr);
         context->SetQueryContext(m_connections, connection, m_usedClassesListener);
-        context->SetIsUpdatesDisabled(disableUpdates);
         context->SetCancelationToken(cancelationToken);
+        if (-1 != pageSize)
+            context->SetPageSize(pageSize);
         return context;
         }
 

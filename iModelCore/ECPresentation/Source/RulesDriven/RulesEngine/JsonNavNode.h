@@ -44,71 +44,94 @@ struct EXPORT_VTABLE_ATTRIBUTE JsonNavNode : NavNode
     friend struct JsonNavNodesFactory;
 
 private:
-    rapidjson::MemoryPoolAllocator<>* m_allocator;
-    mutable rapidjson::Document m_json;
+    mutable rapidjson::MemoryPoolAllocator<> m_allocator;
+    mutable rapidjson::Document m_internalExtendedData;
+    rapidjson::Document* m_usersExtendedData;
+    uint64_t m_nodeId;
+    uint64_t m_parentNodeId;
+    uint64_t m_instanceId;
     NavNodeKeyCPtr m_nodeKey;
+    Utf8String m_label;
+    Utf8String m_description;
+    Utf8String m_imageId;
+    Utf8String m_foreColor;
+    Utf8String m_backColor;
+    Utf8String m_fontStyle;
+    Utf8String m_type;
+    bool m_determinedChildren;
+    bool m_hasChildren;
+    bool m_isSelectable;
+    bool m_isEditable;
+    bool m_isChecked;
+    bool m_isCheckboxVisible;
+    bool m_isCheckboxEnabled;
+    bool m_isExpanded;
 
 private:
-    ECPRESENTATION_EXPORT void AddMember(Utf8CP name, rapidjson::Value& value);
-
+    void InitUsersExtendedData(rapidjson::Value const* source = nullptr);
+    
 protected:
-    ECPRESENTATION_EXPORT uint64_t _GetInstanceId() const override;
-    ECPRESENTATION_EXPORT uint64_t _GetNodeId() const override;
-    ECPRESENTATION_EXPORT uint64_t _GetParentNodeId() const override;
-    ECPRESENTATION_EXPORT Utf8String _GetLabel() const override;
-    ECPRESENTATION_EXPORT Utf8String _GetDescription() const override;
-    ECPRESENTATION_EXPORT NavNodeKeyCPtr _GetNodeKey() const override;
-    ECPRESENTATION_EXPORT Utf8String _GetExpandedImageId() const override;
-    ECPRESENTATION_EXPORT Utf8String _GetCollapsedImageId() const override;
-    ECPRESENTATION_EXPORT Utf8String _GetForeColor() const override;
-    ECPRESENTATION_EXPORT Utf8String _GetBackColor() const override;
-    ECPRESENTATION_EXPORT Utf8String _GetFontStyle() const override;
-    ECPRESENTATION_EXPORT Utf8String _GetType() const override;
-    ECPRESENTATION_EXPORT bool _HasChildren() const override;
-    ECPRESENTATION_EXPORT bool _IsSelectable() const override;
-    ECPRESENTATION_EXPORT bool _IsEditable() const override;
-    ECPRESENTATION_EXPORT bool _IsChecked() const override;
-    ECPRESENTATION_EXPORT bool _IsCheckboxVisible() const override;
-    ECPRESENTATION_EXPORT bool _IsCheckboxEnabled() const override;
-    ECPRESENTATION_EXPORT bool _IsExpanded() const override;
-    ECPRESENTATION_EXPORT rapidjson::Value const* _GetUsersExtendedData() const override;
+    ECPRESENTATION_EXPORT JsonNavNode();
+    ECPRESENTATION_EXPORT JsonNavNode(JsonNavNode const&);
 
-    ECPRESENTATION_EXPORT void _SetInstanceId(uint64_t instanceId) override;
-    ECPRESENTATION_EXPORT void _SetLabel(Utf8CP label) override;
-    ECPRESENTATION_EXPORT void _SetType(Utf8CP type) override;
-    ECPRESENTATION_EXPORT void _SetExpandedImageId(Utf8CP imageId) override;
-    ECPRESENTATION_EXPORT void _SetCollapsedImageId(Utf8CP imageId) override;
-    ECPRESENTATION_EXPORT void _SetDescription(Utf8CP description) override;
-    ECPRESENTATION_EXPORT void _SetForeColor(Utf8CP color) override;
-    ECPRESENTATION_EXPORT void _SetBackColor(Utf8CP color) override;
-    ECPRESENTATION_EXPORT void _SetFontStyle(Utf8CP style) override;
-    ECPRESENTATION_EXPORT void _SetHasChildren(bool value) override;
-    ECPRESENTATION_EXPORT void _SetIsChecked(bool value) override;
-    ECPRESENTATION_EXPORT void _SetIsCheckboxVisible(bool value) override;
-    ECPRESENTATION_EXPORT void _SetIsCheckboxEnabled(bool value) override;
-    ECPRESENTATION_EXPORT void _SetNodeId(uint64_t) override;
-    ECPRESENTATION_EXPORT void _SetParentNodeId(uint64_t) override;
-    ECPRESENTATION_EXPORT void _SetIsExpanded(bool value) override;
-    ECPRESENTATION_EXPORT void _SetIsSelectable(bool value) override;
-    ECPRESENTATION_EXPORT void _SetIsEditable(bool value) override;
-    ECPRESENTATION_EXPORT void _SetNodeKey(NavNodeKeyCR nodeKey) override {m_nodeKey = &nodeKey;}
+    rapidjson::MemoryPoolAllocator<>& _GetExtendedDataAllocator() const override {return m_allocator;}
+    RapidJsonValueR _GetExtendedData() const override {return m_internalExtendedData;}
+    rapidjson::Value const* _GetUsersExtendedData() const override {return m_usersExtendedData;}
 
-    ECPRESENTATION_EXPORT NavNodePtr _Clone() const override;
+    NavNodePtr _Clone() const override {return new JsonNavNode(*this);}
 
-    ECPRESENTATION_EXPORT RapidJsonValueR _GetExtendedData() const override;
-    ECPRESENTATION_EXPORT rapidjson::MemoryPoolAllocator<>& _GetExtendedDataAllocator() const override;
+    uint64_t _GetNodeId() const override {return m_nodeId;}
+    uint64_t _GetParentNodeId() const override {return m_parentNodeId;}
+    uint64_t _GetInstanceId() const override {return m_instanceId;}
+    NavNodeKeyCPtr _GetNodeKey() const override {return m_nodeKey;}
+    Utf8String _GetLabel() const override {return m_label;}
+    Utf8String _GetDescription() const override {return m_description;}
+    Utf8String _GetExpandedImageId() const override {return m_imageId;}
+    Utf8String _GetCollapsedImageId() const override {return m_imageId;}
+    Utf8String _GetForeColor() const override {return m_foreColor;}
+    Utf8String _GetBackColor() const override {return m_backColor;}
+    Utf8String _GetFontStyle() const override {return m_fontStyle;}
+    Utf8String _GetType() const override {return m_type;}
+    bool _HasChildren() const override {return m_hasChildren;}
+    bool _IsSelectable() const override {return m_isSelectable;}
+    bool _IsEditable() const override {return m_isEditable;}
+    bool _IsChecked() const override {return m_isChecked;}
+    bool _IsCheckboxVisible() const override {return m_isCheckboxVisible;}
+    bool _IsCheckboxEnabled() const override {return m_isCheckboxEnabled;}
+    bool _IsExpanded() const override {return m_isExpanded;}
+
+    void _SetInstanceId(uint64_t instanceId) override {m_instanceId = instanceId;}
+    void _SetLabel(Utf8CP label) override {m_label = label;}
+    void _SetType(Utf8CP type) override {m_type = type;}
+    void _SetExpandedImageId(Utf8CP imageId) override {m_imageId = imageId;}
+    void _SetCollapsedImageId(Utf8CP imageId) override {m_imageId = imageId;}
+    void _SetDescription(Utf8CP description) override {m_description = description;}
+    void _SetForeColor(Utf8CP color) override {m_foreColor = color;}
+    void _SetBackColor(Utf8CP color) override {m_backColor = color;}
+    void _SetFontStyle(Utf8CP style) override {m_fontStyle = style;}
+    void _SetHasChildren(bool value) override {m_hasChildren = value; m_determinedChildren = true;}
+    void _SetIsChecked(bool value) override {m_isChecked = value;}
+    void _SetIsCheckboxVisible(bool value) override {m_isCheckboxVisible = value;}
+    void _SetIsCheckboxEnabled(bool value) override {m_isCheckboxEnabled = value;}
+    void _SetNodeId(uint64_t id) override {m_nodeId = id;}
+    void _SetParentNodeId(uint64_t id) override {m_parentNodeId = id;}
+    void _SetIsExpanded(bool value) override {m_isExpanded = value;}
+    void _SetIsSelectable(bool value) override {m_isSelectable = value;}
+    void _SetIsEditable(bool value) override {m_isEditable = value;}
+    void _SetNodeKey(NavNodeKeyCR nodeKey) override {m_nodeKey = &nodeKey;}
 
 public:
-    ECPRESENTATION_EXPORT JsonNavNode();
     ECPRESENTATION_EXPORT ~JsonNavNode();
     static JsonNavNodePtr Create() {return new JsonNavNode();}
 
-    ECPRESENTATION_EXPORT RapidJsonValueCR GetJson() const;
-    bool DeterminedChildren() const {return m_json.HasMember(NAVNODE_HasChildren);}
-    ECPRESENTATION_EXPORT void SetImageId(Utf8CP imageId);
+    ECPRESENTATION_EXPORT rapidjson::Document GetJson() const;
+    ECPRESENTATION_EXPORT void InitFromJson(RapidJsonValueCR);
+
+    bool DeterminedChildren() const {return m_determinedChildren;}
+    void SetImageId(Utf8CP imageId) {SetExpandedImageId(imageId);}
     void AddUsersExtendedData(Utf8CP key, ECValueCR value);
     void SetParentNode(NavNodeCR node) {SetParentNodeId(node.GetNodeId());}
-    bool HasKey() const { return m_nodeKey.IsValid(); }
+    bool HasKey() const {return m_nodeKey.IsValid();}
 };
 
 /*=================================================================================**//**
@@ -133,7 +156,7 @@ public:
     ECPRESENTATION_EXPORT void InitECPropertyGroupingNode(JsonNavNodeR, Utf8StringCR, Utf8StringCR, ECClassCR, ECPropertyCR, Utf8CP label, Utf8CP imageId, RapidJsonValueCR groupingValue, bool isRangeGrouping, GroupedInstanceKeysListCR) const;
     ECPRESENTATION_EXPORT void InitDisplayLabelGroupingNode(JsonNavNodeR, Utf8StringCR, Utf8StringCR, Utf8CP label, GroupedInstanceKeysListCR) const;
     ECPRESENTATION_EXPORT void InitCustomNode(JsonNavNodeR, Utf8StringCR, Utf8StringCR, Utf8CP label, Utf8CP description, Utf8CP imageId, Utf8CP type) const;
-    ECPRESENTATION_EXPORT void InitFromJson(JsonNavNodeR, IConnectionCR, rapidjson::Document, rapidjson::MemoryPoolAllocator<>* = nullptr) const;
+    ECPRESENTATION_EXPORT void InitFromJson(JsonNavNodeR, IConnectionCR, RapidJsonValueCR) const;
 
     ECPRESENTATION_EXPORT JsonNavNodePtr CreateECInstanceNode(IConnectionCR, Utf8StringCR, ECClassId, ECInstanceId, Utf8CP label) const;
     ECPRESENTATION_EXPORT JsonNavNodePtr CreateECInstanceNode(Utf8StringCR, Utf8StringCR, IECInstanceCR, Utf8CP label) const;
@@ -142,7 +165,7 @@ public:
     ECPRESENTATION_EXPORT JsonNavNodePtr CreateECPropertyGroupingNode(Utf8StringCR, Utf8StringCR, ECClassCR, ECPropertyCR, Utf8CP label, Utf8CP imageId, RapidJsonValueCR groupingValue, bool isRangeGrouping, GroupedInstanceKeysListCR) const;
     ECPRESENTATION_EXPORT JsonNavNodePtr CreateDisplayLabelGroupingNode(Utf8StringCR, Utf8StringCR, Utf8CP label, GroupedInstanceKeysListCR) const;
     ECPRESENTATION_EXPORT JsonNavNodePtr CreateCustomNode(Utf8StringCR, Utf8StringCR, Utf8CP label, Utf8CP description, Utf8CP imageId, Utf8CP type) const;
-    ECPRESENTATION_EXPORT JsonNavNodePtr CreateFromJson(IConnectionCR, rapidjson::Document, rapidjson::MemoryPoolAllocator<>* = nullptr) const;
+    ECPRESENTATION_EXPORT JsonNavNodePtr CreateFromJson(IConnectionCR, RapidJsonValueCR) const;
 };
 typedef JsonNavNodesFactory const& JsonNavNodesFactoryCR;
 
@@ -157,7 +180,6 @@ public:
     static void AddRelatedInstanceInfo(NavNodeR node, Utf8CP serializedJson);
     static void SetSkippedInstanceKeys(NavNodeR node, Utf8CP serializedJson);
     ECPRESENTATION_EXPORT static bvector<JsonChange> GetChanges(JsonNavNode const& oldNode, JsonNavNode const& newNode);
-    ECPRESENTATION_EXPORT static void SwapData(JsonNavNode& lhs, JsonNavNode& rhs);
     static bool IsGroupingNode(NavNodeCR);
     static bool IsCustomNode(NavNodeCR node);
     ECPRESENTATION_EXPORT static NavNodeKeyPtr CreateNodeKey(IConnectionCR, JsonNavNodeCR node, bvector<Utf8String> const& path);

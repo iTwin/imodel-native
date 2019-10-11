@@ -30,7 +30,7 @@ struct NodesCacheTests : ECPresentationTest
     IConnectionPtr m_connection;
     NodesCache* m_cache;
 
-    NodesCacheTests() : m_nodesProviderContextFactory(m_connections) {}
+    NodesCacheTests() : m_nodesProviderContextFactory(m_connections), m_cache(nullptr) {}
 
     void SetUp() override
         {
@@ -38,12 +38,7 @@ struct NodesCacheTests : ECPresentationTest
         if (!s_project->GetECDb().IsDbOpen())
             s_project->Open("NodesCacheTests", Db::OpenParams(Db::OpenMode::ReadWrite));
 
-        BeFileName temporaryDirectory;
-        BeTest::GetHost().GetTempDir(temporaryDirectory);
-        m_cache = _CreateNodesCache(temporaryDirectory);
-        m_connection = m_connections.NotifyConnectionOpened(s_project->GetECDb());
-        m_cache->OnRulesetCreated(*PresentationRuleSet::CreateInstance("ruleset_id", 1, 0, false, "", "", "", false));
-        m_nodesProviderContextFactory.SetNodesCache(m_cache);
+        ReCreateNodesCache();
         }
 
     virtual void TearDown() override
@@ -80,9 +75,20 @@ struct NodesCacheTests : ECPresentationTest
         m_connection = m_connections.NotifyConnectionOpened(s_project->GetECDb());
         }
 
-    virtual NodesCache* _CreateNodesCache(BeFileName tempDir)
+    virtual NodesCache* _CreateNodesCache(BeFileNameCR tempDirectory)
         {
-        return new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Memory);
+        return new NodesCache(tempDirectory, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Memory, true);
+        }
+
+    void ReCreateNodesCache()
+        {
+        DELETE_AND_CLEAR(m_cache);
+        BeFileName temporaryDirectory;
+        BeTest::GetHost().GetTempDir(temporaryDirectory);
+        m_cache = _CreateNodesCache(temporaryDirectory);
+        m_connection = m_connections.NotifyConnectionOpened(s_project->GetECDb());
+        m_cache->OnRulesetCreated(*PresentationRuleSet::CreateInstance("ruleset_id", 1, 0, false, "", "", "", false));
+        m_nodesProviderContextFactory.SetNodesCache(m_cache);
         }
 
     void InitNode(JsonNavNodeR, HierarchyLevelInfo const&);
@@ -679,7 +685,7 @@ TEST_F(NodesCacheTests, GetUndeterminedNodesProvider_ReturnsNodeWhichDoesntHaveC
 
     // expect provider to contain the node
     NavNodesProviderPtr provider = m_cache->GetUndeterminedNodesProvider(*m_connection,
-        info.first.GetRulesetId().c_str(), info.first.GetLocale().c_str(), false);
+        info.first.GetRulesetId().c_str(), info.first.GetLocale().c_str());
     ASSERT_TRUE(provider.IsValid());
     EXPECT_EQ(1, provider->GetNodesCount());
 
@@ -703,7 +709,7 @@ TEST_F(NodesCacheTests, GetUndeterminedNodesProvider_ReturnsNodeWhichHasUnitiali
     EXPECT_FALSE(m_cache->GetNode(nodes[0]->GetNodeId())->DeterminedChildren());
 
     // expect provider to contain the node
-    NavNodesProviderPtr provider = m_cache->GetUndeterminedNodesProvider(*m_connection, info.first.GetRulesetId().c_str(), info.first.GetLocale().c_str(), false);
+    NavNodesProviderPtr provider = m_cache->GetUndeterminedNodesProvider(*m_connection, info.first.GetRulesetId().c_str(), info.first.GetLocale().c_str());
     ASSERT_TRUE(provider.IsValid());
     ASSERT_EQ(1, provider->GetNodesCount());
 
@@ -724,7 +730,7 @@ TEST_F(NodesCacheTests, GetUndeterminedNodesProvider_DoesNotReturnNodeThatHasIni
 
     // expect provider to be empty
     NavNodesProviderPtr provider = m_cache->GetUndeterminedNodesProvider(*m_connection,
-        info.first.GetRulesetId().c_str(), info.first.GetLocale().c_str(), false);
+        info.first.GetRulesetId().c_str(), info.first.GetLocale().c_str());
     ASSERT_TRUE(provider.IsValid());
     EXPECT_EQ(0, provider->GetNodesCount());
     }
@@ -2125,17 +2131,18 @@ TEST_F(NodesCacheTests, Savepoint_DoesntDiscardChangesWhenNotCanceled)
 +===============+===============+===============+===============+===============+======*/
 struct DiskNodesCacheTests : NodesCacheTests
     {
+    bool m_cacheUpdateData = true;
+
     void TearDown() override
         {
         BeFileName cacheDb(m_cache->GetDb().GetDbFileName());
         NodesCacheTests::TearDown();
-
         cacheDb.BeDeleteFile();
         }
 
-    virtual NodesCache* _CreateNodesCache(BeFileName tempDir) override
+    virtual NodesCache* _CreateNodesCache(BeFileNameCR tempDir) override
         {
-        return new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk);
+        return new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk, m_cacheUpdateData);
         }
     };
 
@@ -2146,7 +2153,7 @@ TEST_F(DiskNodesCacheTests, CreatesNewDbFileIfCacheIsAlreadyInUse)
     {
     BeFileName tempDir;
     BeTest::GetHost().GetTempDir(tempDir);
-    NodesCache secondCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk);
+    NodesCache secondCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk, true);
 
     Utf8CP firstCacheName = m_cache->GetDb().GetDbFileName();
     Utf8CP secondCacheName = secondCache.GetDb().GetDbFileName();
@@ -2176,7 +2183,7 @@ TEST_F(DiskNodesCacheTests, ShareCachedHierarchiesBetweenSessions)
     // open cache
     BeFileName tempDir;
     BeTest::GetHost().GetTempDir(tempDir);
-    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk);
+    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk, true);
     m_nodesProviderContextFactory.SetNodesCache(m_cache);
 
     // mock connection re-opening
@@ -2190,6 +2197,46 @@ TEST_F(DiskNodesCacheTests, ShareCachedHierarchiesBetweenSessions)
     EXPECT_TRUE(m_cache->IsHierarchyLevelCached(nodes[1]->GetNodeId()));
     }
 #endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DiskNodesCacheTests, RecreatesCacheIfExistingCacheDoesntHaveUpdateData)
+    {
+    // create the cache in read-only mode
+    m_cacheUpdateData = false;
+    ReCreateNodesCache();
+    
+    // cache something
+    auto info = CacheDataSource(m_connection->GetId(), "ruleset_id", "locale", 0);
+    EXPECT_TRUE(m_cache->GetCombinedHierarchyLevel(info.first).IsValid());
+
+    // re-create the cache in read-write mode
+    m_cacheUpdateData = true;
+    ReCreateNodesCache();
+
+    // expect the data to be gone
+    EXPECT_FALSE(m_cache->GetCombinedHierarchyLevel(info.first).IsValid());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DiskNodesCacheTests, DowngradesReadWriteCacheToReadOnly)
+    {
+    // verify this is a read write cache (gets created by default for these tests because m_cacheUpdateData = true)
+    Utf8String value;
+    EXPECT_EQ(BE_SQLITE_ROW, m_cache->GetDb().QueryProperty(value, PropertySpec("CachesUpdateData", "HierarchyCache")));
+    EXPECT_STREQ("1", value.c_str());
+
+    // re-open in read-only mode
+    m_cacheUpdateData = false;
+    ReCreateNodesCache();
+
+    // expect the db to be downgraded
+    EXPECT_EQ(BE_SQLITE_ROW, m_cache->GetDb().QueryProperty(value, PropertySpec("CachesUpdateData", "HierarchyCache")));
+    EXPECT_STREQ("0", value.c_str());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Saulius.Skliutas                10/2017
@@ -2220,7 +2267,7 @@ TEST_F(DiskNodesCacheTests, ClearSharedCacheIfHierarchyWasModified)
     // open cache
     BeFileName tempDir;
     BeTest::GetHost().GetTempDir(tempDir);
-    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk);
+    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk, true);
     m_nodesProviderContextFactory.SetNodesCache(m_cache);
 
     // mock connection re-opening
@@ -2288,7 +2335,7 @@ TEST_F(DiskNodesCacheTests, ClearsCacheIfCacheFileSizeExceedsLimit)
     // open cache
     BeFileName tempDir;
     BeTest::GetHost().GetTempDir(tempDir);
-    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk);
+    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk, true);
     m_nodesProviderContextFactory.SetNodesCache(m_cache);
 
     // verify cache is cleared
@@ -2331,7 +2378,7 @@ TEST_F(DiskNodesCacheTests, ClearsOldestConnectionCacheWhenCacheFileSizeExceedsL
     // open cache
     BeFileName tempDir;
     BeTest::GetHost().GetTempDir(tempDir);
-    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk);
+    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk, true);
     m_nodesProviderContextFactory.SetNodesCache(m_cache);
 
     // verify first connection cache was deleted
@@ -2370,7 +2417,7 @@ TEST_F(DiskNodesCacheTests, DoesntClearCacheWhenCacheFileSizeAndLimitAreEqual)
     // open cache
     BeFileName tempDir;
     BeTest::GetHost().GetTempDir(tempDir);
-    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk);
+    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk, true);
     m_nodesProviderContextFactory.SetNodesCache(m_cache);
 
     // verify the cache is still valid
@@ -2406,7 +2453,7 @@ TEST_F(DiskNodesCacheLocationTests, CreatesCacheInSpecifiedDirectory)
     BeFileName expectedPath = m_directory;
     expectedPath.AppendToPath(L"HierarchyCache.db");
 
-    NodesCache cache(m_directory, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk);
+    NodesCache cache(m_directory, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk, true);
     EXPECT_STREQ(expectedPath.GetNameUtf8().c_str(), cache.GetDb().GetDbFileName());
     }
 
@@ -2419,11 +2466,11 @@ TEST_F(DiskNodesCacheLocationTests, ReusesExistingCache)
     expectedPath.AppendToPath(L"HierarchyCache.db");
 
     {
-    NodesCache cache(m_directory, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk);
+    NodesCache cache(m_directory, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk, true);
     }
     EXPECT_TRUE(expectedPath.DoesPathExist());
 
-    NodesCache cache(m_directory, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk);
+    NodesCache cache(m_directory, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk, true);
     EXPECT_STREQ(expectedPath.GetNameUtf8().c_str(), cache.GetDb().GetDbFileName());
     }
 
@@ -2434,12 +2481,12 @@ TEST_F(DiskNodesCacheLocationTests, CreatesSeparateCacheWhenExistingIsLocked)
     {
     BeFileName expectedPath1 = m_directory;
     expectedPath1.AppendToPath(L"HierarchyCache.db");
-    NodesCache cache1(m_directory, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk);
+    NodesCache cache1(m_directory, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk, true);
     EXPECT_STREQ(expectedPath1.GetNameUtf8().c_str(), cache1.GetDb().GetDbFileName());
 
     BeFileName cache2Path;
     {
-    NodesCache cache2(m_directory, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk);
+    NodesCache cache2(m_directory, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, NodesCacheType::Disk, true);
     cache2Path = BeFileName(cache2.GetDb().GetDbFileName());
     BeFileName expectedDirectory2 = BeFileName(m_directory).AppendSeparator();
     EXPECT_STREQ(expectedDirectory2.c_str(), cache2Path.GetDirectoryName().c_str());
@@ -2453,3 +2500,4 @@ TEST_F(DiskNodesCacheLocationTests, CreatesSeparateCacheWhenExistingIsLocked)
     }
     EXPECT_FALSE(cache2Path.DoesPathExist());
     }
+

@@ -459,8 +459,13 @@ export declare namespace IModelJsNative {
     InvalidArgument = Error + 1,
   }
 
+  const enum ECPresentationManagerMode {
+    ReadOnly = "ro",
+    ReadWrite = "rw",
+  }
+
   class ECPresentationManager implements IDisposable {
-    constructor(id: string, localeDirectories: string[], taskAllocationsMap: {[priority: number]: number});
+    constructor(id: string, localeDirectories: string[], taskAllocationsMap: {[priority: number]: number}, mode: ECPresentationManagerMode);
     public forceLoadSchemas(db: DgnDb, callback: (result: ECPresentationStatus) => void): void;
     public setupRulesetDirectories(directories: string[]): ErrorStatusOrResult<ECPresentationStatus, void>;
     public setupSupplementalRulesetDirectories(directories: string[]): ErrorStatusOrResult<ECPresentationStatus, void>;

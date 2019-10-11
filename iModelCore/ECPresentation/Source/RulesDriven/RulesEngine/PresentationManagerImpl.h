@@ -24,6 +24,7 @@ typedef RefCountedPtr<struct SpecificationContentProvider const> SpecificationCo
 //=======================================================================================
 struct RulesDrivenECPresentationManager::Impl
 {
+    typedef RulesDrivenECPresentationManager::Mode Mode;
     typedef RulesDrivenECPresentationManager::Paths Paths;
     typedef RulesDrivenECPresentationManager::Params Params;
     typedef RulesDrivenECPresentationManager::NavigationOptions NavigationOptions;
@@ -108,6 +109,7 @@ struct RulesDrivenECPresentationManagerImpl : RulesDrivenECPresentationManager::
     struct NodesProviderFactory;
 
 private:
+    Mode m_mode;
     IConnectionManagerR m_connections;
     JsonNavNodesFactory const* m_nodesFactory;
     NodesProviderContextFactory const* m_nodesProviderContextFactory;
@@ -130,8 +132,8 @@ private:
     mutable BeMutex m_mutex;
 
 private:
-    INavNodesDataSourcePtr GetCachedDataSource(IConnectionCR, ICancelationTokenCR, NavigationOptions const&);
-    INavNodesDataSourcePtr GetCachedDataSource(IConnectionCR, ICancelationTokenCR, NavNodeCR parent, NavigationOptions const&);
+    INavNodesDataSourcePtr GetCachedDataSource(IConnectionCR, ICancelationTokenCR, NavigationOptions const&, size_t pageSize = -1);
+    INavNodesDataSourcePtr GetCachedDataSource(IConnectionCR, ICancelationTokenCR, NavNodeCR parent, NavigationOptions const&, size_t pageSize = -1);
     SpecificationContentProviderCPtr GetContentProvider(IConnectionCR, ICancelationTokenCR, ContentProviderKey const&, INavNodeKeysContainerCR, SelectionInfo const*, ContentOptions const&);
     SpecificationContentProviderPtr GetContentProvider(IConnectionCR, ICancelationTokenCR, ContentDescriptorCR, INavNodeKeysContainerCR, SelectionInfo const*, ContentOptions const&);
 

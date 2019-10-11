@@ -67,6 +67,8 @@ private:
     bool m_isFullLoadDisabled;
     bool m_isUpdatesDisabled;
     bool m_isCheckingChildren;
+    bool m_hasPageSize;
+    size_t m_pageSize;
 
     // root nodes context
     bool m_isRootNodeContext;
@@ -128,6 +130,9 @@ public:
     bool NeedsFullLoad() const {return !IsFullNodesLoadDisabled();}
     bool IsCheckingChildren() const {return m_isCheckingChildren;}
     void SetIsCheckingChildren(bool value) {m_isCheckingChildren = value;}
+    void SetPageSize(size_t value) {m_pageSize = value; m_hasPageSize = true;}
+    bool HasPageSize() const {return m_hasPageSize;}
+    size_t GetPageSize() const {return m_pageSize;}
     
     // root nodes context
     ECPRESENTATION_EXPORT void SetRootNodeContext(RootNodeRuleCR);
@@ -160,13 +165,13 @@ struct INodesProviderContextFactory
 {
 protected:
     virtual NavNodesProviderContextPtr _Create(IConnectionCR, Utf8CP rulesetId, Utf8CP locale, uint64_t const* parentNodeId, 
-        ICancelationTokenCP, bool disableUpdates) const = 0;
+        ICancelationTokenCP, size_t pageSize) const = 0;
 public:
     virtual ~INodesProviderContextFactory() {}
     NavNodesProviderContextPtr Create(IConnectionCR connection, Utf8CP rulesetId, Utf8CP locale, uint64_t const* parentNodeId, 
-        ICancelationTokenCP cancelationToken = nullptr, bool disableUpdates = false) const 
+        ICancelationTokenCP cancelationToken = nullptr, size_t pageSize = -1) const
         {
-        return _Create(connection, rulesetId, locale, parentNodeId, cancelationToken, disableUpdates);
+        return _Create(connection, rulesetId, locale, parentNodeId, cancelationToken, pageSize);
         }
 };
 

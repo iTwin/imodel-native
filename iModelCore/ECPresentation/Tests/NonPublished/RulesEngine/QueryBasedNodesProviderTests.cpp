@@ -79,7 +79,7 @@ TEST_F(QueryBasedNodesProviderTests, AbortsInitializationWhenCanceled)
         {
         cachedHierarchyLevel = &hl;
         });
-    m_nodesCache.SetCacheDataSourceHandler([&](DataSourceInfo& ds, DataSourceFilter const&, bmap<ECClassId, bool> const&, bvector<UserSettingEntry> const&, bool)
+    m_nodesCache.SetCacheDataSourceHandler([&](DataSourceInfo& ds, DataSourceFilter const&, bmap<ECClassId, bool> const&, bvector<UserSettingEntry> const&)
         {
         cachedDataSource = &ds;
         });

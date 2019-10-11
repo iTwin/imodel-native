@@ -350,7 +350,7 @@ static folly::Future<bvector<NavNodeCPtr>> GetNodesPathInternal(RulesDrivenECPre
 folly::Future<bvector<NavNodeCPtr>> PresentationManagerTestsHelper::GetNodesPath(RulesDrivenECPresentationManager& manager, ECDbCR project, Utf8CP rulesetId,
     int numOfLevels)
     {
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rulesetId, TargetTree_MainTree).GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rulesetId).GetJson();
     return GetNodesPathInternal(manager, project, nullptr, options, numOfLevels);
     }
 
@@ -370,7 +370,7 @@ folly::Future<NavNodesContainer> PresentationManagerTestsHelper::GetNodes(RulesD
 +---------------+---------------+---------------+---------------+---------------+------*/
 static folly::Future<size_t> IncrementallyGetNodes(RulesDrivenECPresentationManager& manager, ECDbCR project, Utf8CP rulesetId, NavNodeCP parentNode)
     {
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rulesetId, TargetTree_MainTree).GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rulesetId).GetJson();
     return PresentationManagerTestsHelper::GetNodes(manager, project, PageOptions(), options, parentNode).then([&, rulesetId = Utf8String(rulesetId)](NavNodesContainer container)
         {
         size_t count = container.GetSize();
@@ -409,7 +409,7 @@ folly::Future<folly::Unit> PresentationManagerTestsHelper::GetFullHierarchy(Rule
 folly::Future<folly::Unit> PresentationManagerTestsHelper::FilterNodes(RulesDrivenECPresentationManager& manager, ECDbCR project, Utf8CP rulesetId, 
     Utf8CP filterText, int expectedNodesPathsCount)
     {
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rulesetId, TargetTree_MainTree).GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rulesetId).GetJson();
     return manager.GetFilteredNodePaths(project, filterText, options)
         .then([expectedNodesPathsCount](bvector<NodesPathElement> paths)
         {
@@ -425,7 +425,7 @@ folly::Future<folly::Unit> PresentationManagerTestsHelper::FilterNodes(RulesDriv
 folly::Future<folly::Unit> PresentationManagerTestsHelper::GetNodesCount(RulesDrivenECPresentationManager& manager, ECDbCR project,
     bvector<NavNodeCPtr> const& nodesPath, Utf8CP rulesetId, int expectedNodesCount)
     {
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rulesetId, TargetTree_MainTree).GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rulesetId).GetJson();
     std::vector<folly::Future<size_t>> futures;
     futures.push_back(manager.GetRootNodesCount(project, options));
     for (NavNodeCPtr node: nodesPath)

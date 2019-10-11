@@ -5165,8 +5165,9 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         REQUIRE_ARGUMENT_STRING(0, id, );
         REQUIRE_ARGUMENT_STRING_ARRAY(1, localeDirectories, );
         REQUIRE_ARGUMENT_ANY_OBJ(2, taskAllocationSlots, );
+        REQUIRE_ARGUMENT_STRING(3, mode, );
         m_presentationManager = std::unique_ptr<RulesDrivenECPresentationManager>(ECPresentationUtils::CreatePresentationManager(T_HOST.GetIKnownLocationsAdmin(),
-            m_localState, id, localeDirectories, CreateTaskAllocationSlotsMap(taskAllocationSlots)));
+            m_localState, id, localeDirectories, CreateTaskAllocationSlotsMap(taskAllocationSlots), mode));
         m_ruleSetLocater = SimpleRuleSetLocater::Create();
         m_presentationManager->GetLocaters().RegisterLocater(*m_ruleSetLocater);
         }

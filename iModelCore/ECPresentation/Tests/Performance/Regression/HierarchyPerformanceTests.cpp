@@ -218,7 +218,7 @@ NavNodesContainer HierarchyPerformanceTests::GetNodes(PageOptions const& pageOpt
 +---------------+---------------+---------------+---------------+---------------+------*/
 void HierarchyPerformanceTests::IncrementallyGetNodes(Utf8CP rulesetId, NavNodeCP parentNode, bool usePaging)
     {
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rulesetId, TargetTree_MainTree).GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rulesetId).GetJson();
 
     size_t pageCount = 1;
     if (usePaging)
@@ -275,7 +275,7 @@ TEST_F(HierarchyPerformanceTests, CreateFullHierarchyWithoutPaging)
 TEST_F(HierarchyPerformanceTests, FilterNodesFromNotExpandedHierarchy)
     {
     Timer t_hierarchy;
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Items", TargetTree_MainTree).GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Items").GetJson();
     bvector<NodesPathElement> paths = m_manager->GetFilteredNodePaths(m_project, "ist", options).get();
     EXPECT_EQ(1, paths.size());
     }
@@ -287,7 +287,7 @@ TEST_F(HierarchyPerformanceTests, FilterNodesFromExpandedHierarchy)
     {
     IncrementallyGetNodes("Items", nullptr, false);
     Timer t_hierarchy;
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Items", TargetTree_MainTree).GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Items").GetJson();
     bvector<NodesPathElement> paths = m_manager->GetFilteredNodePaths(m_project, "ist", options).get();
     EXPECT_EQ(1, paths.size());
     }
@@ -357,7 +357,7 @@ struct NavigatorClassificationHierarchyPerformanceTests : HierarchyPerformanceTe
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(NavigatorClassificationHierarchyPerformanceTests, GetChildNodes_VSTS38248)
     {
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Classification", TargetTree_MainTree).GetJson();
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Classification").GetJson();
     NavNodesContainer rootNodes = GetNodes(PageOptions(), options, nullptr);
     ASSERT_EQ(2, rootNodes.GetSize());
 
