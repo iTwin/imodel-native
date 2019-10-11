@@ -300,7 +300,7 @@ void QueryTask::Run(JsonAdaptorCache& cache, QueryInterruptor& interruptor)
         rc = pstmt->Step();
         }
 
-    if (rc == BE_SQLITE_INTERRUPT)
+    if (rc == BE_SQLITE_INTERRUPT || rc == BE_SQLITE_BUSY)
         {
         SetPartial();
         return;
