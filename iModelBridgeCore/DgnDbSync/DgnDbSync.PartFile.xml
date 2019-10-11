@@ -449,7 +449,6 @@
     <Part Name="BimFromJsonLib" BentleyBuildMakeFile="BimFromDgnDb/BimImporter/lib/BimFromJson.mke" OnlyPlatforms="x64,iOSARM64,AndroidARM64" ApiNumber="M02">
         <SubPart PartName="DgnPlatformDLL"  PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
         <SubPart PartName="ECPresentation"  PartFile="iModelCore/ECPresentation/ECPresentation"/>
-        <SubPart PartName="Planning"        PartFile="Planning"         Repository="DgnDomains-Planning"/>
         <SubPart PartName="Raster"              PartFile="Domains/RealityModeling/RealityModeling"/>
         <SubPart PartName="PointCloud"          PartFile="Domains/RealityModeling/RealityModeling"/>
         <SubPart PartName="ScalableMeshSchema"  PartFile="Domains/RealityModeling/RealityModeling"/>

@@ -9,7 +9,6 @@
 #include <DgnPlatform/GenericDomain.h>
 #include <DgnPlatform/FunctionalDomain.h>
 #include <Logging/bentleylogging.h>
-#include <Planning/PlanningApi.h>
 #include <Raster/RasterApi.h>
 #include <PointCloud/PointCloudApi.h>
 #include <ThreeMx/ThreeMxApi.h>
@@ -22,7 +21,6 @@ USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_EC
-USING_NAMESPACE_BENTLEY_PLANNING
 USING_NAMESPACE_BENTLEY_RASTER
 USING_NAMESPACE_BENTLEY_POINTCLOUD
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_SCHEMA
@@ -66,7 +64,6 @@ BimFromJson::BimFromJson(const wchar_t* bimPath) : m_outputPath(bimPath), m_impo
     {
     m_queue = new PCQueue();
 
-    DgnDomains::RegisterDomain(Planning::PlanningDomain::GetDomain(), DgnDomain::Required::No);
     DgnDomains::RegisterDomain(FunctionalDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
     DgnDomains::RegisterDomain(Raster::RasterDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
     DgnDomains::RegisterDomain(PointCloud::PointCloudDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);

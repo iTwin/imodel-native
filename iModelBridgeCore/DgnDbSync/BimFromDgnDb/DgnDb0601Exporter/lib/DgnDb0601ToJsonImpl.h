@@ -68,12 +68,6 @@ struct DgnDb0601ToJsonImpl : DgnPlatformLib::Host
         ECN::ECClassCP      m_linkModelClass;
         ECN::ECClassCP      m_annotationTextStyle;
         ECN::ECClassCP      m_textureClass;
-        ECN::ECClassCP      m_planningModelClass;
-        ECN::ECClassCP      m_planningElementClass;
-        ECN::ECClassCP      m_workbreakDownClass;
-        ECN::ECClassCP      m_activityClass;
-        ECN::ECClassCP      m_timeSpanClass;
-        ECN::ECClassCP      m_cameraKeyFrameClass;
         ECN::ECClassCP      m_elementAspectClass;
         ECN::ECClassCP      m_elementUniqueAspectClass;
         ECN::ECClassCP      m_elementMultiAspectClass;
@@ -155,9 +149,6 @@ struct DgnDb0601ToJsonImpl : DgnPlatformLib::Host
         BentleyStatus InitJobDefinitionModel();
         Utf8String RemapResourceAuthority(ECN::ECClassCP elementClass);
         void HandleAnnotationTextStyle(Json::Value& obj, DgnElementId id);
-        
-        // Planning schema specific exports
-        BentleyStatus ExportTimelines();
 
         //! Report progress and detect if user has indicated that he wants to cancel.
         void ReportProgress() const;

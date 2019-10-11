@@ -10,7 +10,6 @@
 #include <DgnDb06Api/DgnPlatform/WebMercator.h>
 #include <DgnDb06Api/DgnPlatform/DgnIModel.h>
 #include <DgnDb06Api/DgnPlatform/DgnGeoCoord.h>
-#include <DgnDb06Api/Planning/PlanningApi.h>
 #include <DgnDb06Api/ECObjects/ECJsonUtilities.h>
 #include <DgnDb06Api/PointCloudSchema/PointCloudSchemaApi.h>
 #include <DgnDb06Api/ThreeMx/ThreeMxApi.h>
@@ -23,7 +22,6 @@ DGNDB06_USING_NAMESPACE_BENTLEY_SQLITE
 DGNDB06_USING_NAMESPACE_BENTLEY_SQLITE_EC
 DGNDB06_USING_NAMESPACE_BENTLEY_EC
 DGNDB06_USING_NAMESPACE_BENTLEY_DGN
-DGNDB06_USING_NAMESPACE_BENTLEY_PLANNING
 
 static Utf8CP const JSON_TYPE_KEY = "Type";
 static Utf8CP const JSON_OBJECT_KEY = "Object";
@@ -318,7 +316,6 @@ void DgnDb0601ToJsonImpl::SendToQueue(Json::Value& json, bool doReplace)
 bool DgnDb0601ToJsonImpl::OpenDgnDb()
     {
     DgnPlatformLib::Initialize(*this, false);
-    DgnDomains::RegisterDomain(Planning::PlanningDomain::GetDomain());
     DbResult dbStatus;
     DgnDb::OpenParams openParams(DgnDb::OpenMode::Readonly);
     BeFileName dgndbFileName;
@@ -389,12 +386,6 @@ bool DgnDb0601ToJsonImpl::OpenDgnDb()
     m_linkModelClass = m_dgndb->Schemas().GetECClass(DGN_ECSCHEMA_NAME, "LinkModel");
     m_annotationTextStyle = m_dgndb->Schemas().GetECClass(DGN_ECSCHEMA_NAME, "AnnotationTextStyle");
     m_textureClass = m_dgndb->Schemas().GetECClass(DGN_ECSCHEMA_NAME, "Texture");
-    m_planningModelClass = m_dgndb->Schemas().GetECClass("Planning", "PlanningModel");
-    m_planningElementClass = m_dgndb->Schemas().GetECClass("Planning", "PlanningElement");
-    m_workbreakDownClass = m_dgndb->Schemas().GetECClass("Planning", "WorkBreakdown");
-    m_activityClass = m_dgndb->Schemas().GetECClass("Planning", "Activity");
-    m_timeSpanClass = m_dgndb->Schemas().GetECClass("Planning", "TimeSpan");
-    m_cameraKeyFrameClass = m_dgndb->Schemas().GetECClass("Planning", "CameraKeyFrame");
     m_pointCloudModelClass = m_dgndb->Schemas().GetECClass("PointCloud", "PointCloudModel");
     m_threeMxModelClass = m_dgndb->Schemas().GetECClass("ThreeMx", "ThreeMxModel");
     m_rasterFileModelClass = m_dgndb->Schemas().GetECClass("Raster", "RasterFileModel");
@@ -467,12 +458,6 @@ bool DgnDb0601ToJsonImpl::ExportDgnDb()
         return false;
     LogPerformanceMessage(timer, "Export Textures");
 
-    //if (m_dgndb->Schemas().ContainsECSchema("Planning"))
-    //    {
-    //    if (SUCCESS != (stat = ExportTimelines()))
-    //        return false;
-    //    }
-
     if (SUCCESS != (stat = ExportExtraTables("rv", "VisualizationRuleSet")))
         return false;
 
@@ -506,18 +491,6 @@ bool DgnDb0601ToJsonImpl::ExportDgnDb()
     if (SUCCESS != (stat = ExportLinkTables("generic", "ElementRefersToElement")))
         return false;
 
-    if (m_dgndb->Schemas().ContainsECSchema("Planning"))
-        {
-        if (SUCCESS != (stat = ExportLinkTables("Planning", "ActivityAffectsElements")))
-            return false;
-        if (SUCCESS != (stat = ExportLinkTables("Planning", "ActivityHasConstraint")))
-            return false;
-        //if (SUCCESS != (stat = ExportLinkTables("Planning", "WorkBreakdownHasTimeSpans", "WorkBreakdownOwnsTimeSpans")))
-        //    return false;
-        //if (SUCCESS != (stat = ExportLinkTables("Planning", "ActivityHasTimeSpans", "ActivityOwnsTimeSpans")))
-        //    return false;
-        }
-
     LogPerformanceMessage(timer, "Export EC Relationships");
 
     ExportPropertyData();
@@ -545,8 +518,6 @@ void DgnDb0601ToJsonImpl::CalculateEntities()
     sql.append("UNION ALL SELECT count(*) as rows FROM dgn_ElementGroupsMembers ");
     sql.append("UNION ALL SELECT count(*) as rows FROM dgn_TextAnnotationData ");
     sql.append("UNION ALL SELECT count(*) as rows FROM _dgn_ElementAspect ");
-    if (m_dgndb->Schemas().ContainsECSchema("Planning"))
-        sql.append("UNION ALL SELECT count(*) as rows FROM bp_ActivityAffectsElements ");
     sql.append(") u");
     
     Statement stmt;
@@ -1996,33 +1967,6 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportElements(Json::Value& entry, Utf8CP sch
             obj["Width"] = texture->GetWidth();
             obj["Format"] = (uint32_t) data.GetFormat();
             }
-        else if (element->GetElementClass()->Is(m_planningElementClass))
-            {
-            if (obj.isMember("PlanId"))
-                {
-                MakeNavigationProperty(obj, "Plan", IdToString(obj["PlanId"].asCString()).c_str());
-                obj.removeMember("PlanId");
-                if (obj["Plan"]["id"] == obj["id"])
-                    obj.removeMember("Plan");
-                }
-            if (element->GetElementClass()->Is(m_workbreakDownClass))
-                entry[JSON_TYPE_KEY] = JSON_TYPE_WorkBreakdown;
-            else if (element->GetElementClass()->Is(m_activityClass))
-                entry[JSON_TYPE_KEY] = JSON_TYPE_Activity;
-            }
-        else if (element->GetElementClass()->Is(m_timeSpanClass))
-            {
-            if (obj.isMember("TimelineId"))
-                {
-                MakeNavigationProperty(obj, "Baseline", IdToString(obj["TimelineId"].asCString()).c_str());
-                obj.removeMember("Baseline");
-                }
-            }
-        else if (element->GetElementClass()->Is(m_cameraKeyFrameClass))
-            {
-            if (obj.isMember("AnimationId"))
-                obj.removeMember("AnimationId");
-            }
 
         if (element->GetCodeAuthority()->GetName().Equals("DgnResources"))
             {
@@ -2097,46 +2041,6 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportElements(Json::Value& entry, Utf8CP sch
         m_insertedElements[element->GetElementId()] = 1;
         if (sendToQueue)
             SendToQueue(entry, true);
-        }
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            03/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus DgnDb0601ToJsonImpl::ExportTimelines()
-    {
-    CachedECSqlStatementPtr statement = m_dgndb->GetPreparedECSqlStatement("select Label, PlanId from only [bp].[Timeline];");
-    if (!statement.IsValid())
-        {
-        LogMessage(BimFromDgnDbLoggingSeverity::LOG_FATAL, "DgnDb0601ToJson: (Export Timelines) Unable to get cached statement ptr.");
-        return ERROR;
-        }
-
-    JsonECSqlSelectAdapter jsonAdapter(*statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
-    jsonAdapter.SetStructArrayAsString(true);
-
-    while (BE_SQLITE_ROW == statement->Step())
-        {
-        DgnElementId planId = statement->GetValueId<DgnElementId>(1);
-        if (m_insertedElements.end() == m_insertedElements.find(planId))
-            {
-            DgnElementCPtr planEl = m_dgndb->Elements().GetElement(planId);
-            Utf8PrintfString whereClause(" AND ECInstanceId=%" PRIu64, planId.GetValue());
-            auto elem = Json::Value(Json::ValueType::objectValue);
-            if (SUCCESS != ExportElements(elem, planEl->GetElementClass()->GetSchema().GetName().c_str(), planEl->GetElementClass()->GetName().c_str(), planEl->GetModelId(), whereClause.c_str()))
-                return ERROR;
-            }
-
-        auto baseline = Json::Value(Json::ValueType::objectValue);
-        baseline[JSON_TYPE_KEY] = JSON_TYPE_Baseline;
-        baseline[JSON_OBJECT_KEY] = Json::Value(Json::ValueType::objectValue);
-        baseline[JSON_ACTION_KEY] = JSON_ACTION_INSERT;
-        auto& obj = baseline[JSON_OBJECT_KEY];
-        obj.clear();
-        obj["Label"] = statement->GetValueText(0);
-        MakeNavigationProperty(obj, "Plan", planId);
-        SendToQueue(baseline);
         }
     return SUCCESS;
     }
@@ -2279,33 +2183,6 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportElementAspects(ECClassId classId, ECIns
             MakeNavigationProperty(obj, "Element", IdToString(obj["$ECInstanceId"].asCString()).c_str());
             }
 
-
-        if (obj[JSON_CLASSNAME].asString().Equals("Planning.TimeSpan"))
-            {
-            MakeNavigationProperty(obj, "Baseline", IdToString(obj["TimelineId"].asCString()).c_str());
-            obj.removeMember("TimelineId");
-            MakeNavigationProperty(obj, "Element", IdToString(obj["ParentId"].asCString()).c_str());
-            uint64_t elementId;
-            BeStringUtilities::ParseUInt64(elementId, obj["ParentId"].asCString());
-
-            obj.removeMember("ParentId");
-            ECClassCP ecClass = m_dgndb->Elements().GetElement(DgnElementId(elementId))->GetElementClass();
-            if (ecClass->Is(m_activityClass))
-                obj["Element"]["relClassName"] = "Planning.ActivityOwnsTimeSpans";
-            else
-                obj["Element"]["relClassName"] = "Planning.WorkBreakdownOwnsTimeSpans";
-
-            entry[JSON_TYPE_KEY] = JSON_TYPE_ElementMultiAspect;
-            }
-        else if (ecClass->GetName().Equals("Timeline"))
-            {
-            obj[JSON_CLASSNAME] = "Planning.Baseline";
-            MakeNavigationProperty(obj, "Element", IdToString(obj["PlanId"].asCString()).c_str());
-            obj.removeMember("PlanId");
-            obj["Element"]["relClassName"] = "Planning.PlanOwnsBaselines";
-            entry[JSON_TYPE_KEY] = JSON_TYPE_ElementMultiAspect;
-            }
-
         obj.removeMember("$ECClassKey");
         obj.removeMember("$ECClassId");
         obj.removeMember("$ECClassLabel");
@@ -2415,8 +2292,6 @@ DgnElementId DgnDb0601ToJsonImpl::CreatePartitionElement(DgnModelCR model, DgnEl
         partitionType = "LinkPartition";
     else if (model.IsDefinitionModel())
         partitionType = "DefinitionPartition";
-    else if (nullptr != m_planningModelClass && m_dgndb->Schemas().GetECClass(model.GetClassId())->Is(m_planningModelClass))
-        partitionType = "PlanningPartition";
     else
         {
         LogMessage(BimFromDgnDbLoggingSeverity::LOG_WARNING, "Unknown model type %s", typeid(model).name());

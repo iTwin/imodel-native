@@ -10,7 +10,6 @@
 #include <DgnPlatform/GenericDomain.h>
 #include <Logging/bentleylogging.h>
 #include <DgnView/DgnViewLib.h>
-#include <Planning/PlanningApi.h>
 
 #include <BimFromDgnDb/BimFromDgnDb.h>
 #include "BimFromJsonImpl.h"
@@ -72,7 +71,6 @@ BentleyStatus BimFromJsonImpl::InitializeSchemas()
     m_schemaReadContext->AddSchemaLocater(m_dgndb->GetSchemaLocater());
     m_schemaReadContext->SetResolveConflicts(true);
     m_schemaReadContext->SetSkipValidation(true);
-    Planning::PlanningDomain::GetDomain().ImportSchema(*m_dgndb);
 
     bvector<ECSchemaCP> ecSchemas = m_dgndb->Schemas().GetSchemas();
     for (ECN::ECSchemaCP schema : ecSchemas)
@@ -251,10 +249,6 @@ BentleyStatus BimFromJsonImpl::ImportJson(Json::Value& entry)
         reader = new ElementGroupsMembersReader(this);
     else if (objectType.Equals(JSON_TYPE_ElementHasLinks))
         reader = new ElementHasLinksReader(this);
-    else if (objectType.Equals(JSON_TYPE_WorkBreakdown))
-        reader = new WorkbreakdownReader(this);
-    else if (objectType.Equals(JSON_TYPE_Activity))
-        reader = new ActivityReader(this);
     else if (objectType.Equals(JSON_TYPE_Plan))
         reader = new PlanReader(this);
     else if (objectType.Equals(JSON_TYPE_Baseline))

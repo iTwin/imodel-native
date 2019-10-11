@@ -14,7 +14,6 @@
 #include <DgnPlatform/Annotations/TextAnnotationElement.h>
 #include <DgnPlatform/Annotations/TextAnnotationPersistence.h>
 #include <Bentley/Base64Utilities.h>
-#include <Planning/PlanningApi.h>
 #include <PointCloud/PointCloudApi.h>
 #include <PointCloud/PointCloudHandler.h>
 #include <Raster/RasterApi.h>
@@ -792,16 +791,6 @@ BentleyStatus PartitionReader::_Read(Json::Value& partition)
             return ERROR;
             }
         newId = dp->GetElementId();
-        }
-    else if (partitionType.Equals("PlanningPartition"))
-        {
-        Planning::PlanningPartitionCPtr pp = Planning::PlanningPartition::CreateAndInsert(*subject, label.c_str(), partition["Descr"].isNull() ? nullptr : partition["Descr"].asCString());
-        if (!pp.IsValid())
-            {
-            GetLogger().errorv("Failed to create PlanningPartition for %s", oldInstanceId.ToString().c_str());
-            return ERROR;
-            }
-        newId = pp->GetElementId();
         }
     else
         {
@@ -1794,18 +1783,6 @@ BentleyStatus TextureReader::_Read(Json::Value& texture)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            03/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus PlanReader::_OnInstanceCreated(ECN::IECInstanceR instance)
-    {
-    // remap the Plan id
-    if (ERROR == RemapPropertyElementId(instance, "Plan"))
-        return ERROR;
-
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            04/2018
 //---------------+---------------+---------------+---------------+---------------+-------
 void createNavigationPropertyOnConstraints(ECN::ECRelationshipClassP relClass)
@@ -2430,8 +2407,6 @@ BentleyStatus SchemaReader::_Read(Json::Value& schemas)
             BimImportSchemaLocater locater;
             SchemaKey schemaKey;
             SchemaKey::ParseSchemaFullName(schemaKey, schemaName);
-            if (0 == strcmp("Planning", schemaKey.GetName().c_str()))
-                continue;
 
             locater.AddSchemaXmlR(schemaKey, schema.asString());
             ECN::ECSchemaPtr ecSchema = locater.DeserializeSchema(*m_importer->m_schemaReadContext, ECN::SchemaMatchType::Exact);
@@ -2931,189 +2906,6 @@ BentleyStatus ElementHasLinksReader::_Read(Json::Value& link)
         return SUCCESS;
         }
     linkElement->AddToSource(mappedSource);
-    m_importer->ShowProgress();
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            03/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus BaselineReader::_Read(Json::Value& baseline)
-    {
-    Planning::PlanId id = ECJsonUtilities::JsonToId<Planning::PlanId>(baseline["Plan"]["id"]);
-    DgnElementId mappedPlan = GetSyncInfo()->LookupElement(DgnElementId(id.GetValue()));
-    if (!mappedPlan.IsValid())
-        {
-        Utf8PrintfString error("Failed to map PlanId for Baseline aspect %s.", id.ToString().c_str());
-        GetLogger().warning(error.c_str());
-        return ERROR;
-        }
-    
-    Planning::PlanPtr plan = Planning::Plan::GetForEdit(*GetDgnDb(), mappedPlan);
-    if (!plan.IsValid())
-        {
-        Utf8PrintfString error("Failed to get Plan for mapped id %s.", mappedPlan.ToString().c_str());
-        GetLogger().warning(error.c_str());
-        return ERROR;
-        }
-    if (nullptr == plan->CreateBaseline(baseline["Label"].asCString()))
-        {
-        Utf8PrintfString error("Failed to set baseline label '%s' on Plan %s.", baseline["Label"].asCString(), mappedPlan.ToString().c_str());
-        GetLogger().warning(error.c_str());
-        return ERROR;
-        }
-    plan->Update();
-    GetDgnDb()->SaveChanges();
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            01/2019
-//---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus TimeSpanReader::_Read(Json::Value& entry)
-    {
-    BeSQLite::EC::ECInstanceId oldId = ECJsonUtilities::JsonToId<BeSQLite::EC::ECInstanceId>(entry[ECJsonSystemNames::Id()]);
-
-    Planning::BaselineId id = ECJsonUtilities::JsonToId<Planning::BaselineId>(entry["Baseline"]["id"]);
-    Planning::BaselineId mappedBaseline = Planning::BaselineId(GetSyncInfo()->LookupElement(DgnElementId(id.GetValue())).GetValue());
-    if (!mappedBaseline.IsValid())
-        {
-        Utf8PrintfString error("Failed to map BaselineId for TimeSpan aspect %s.", id.ToString().c_str());
-        GetLogger().warning(error.c_str());
-        return ERROR;
-        }
-
-    DgnElementId planElementId = ECJsonUtilities::JsonToId<DgnElementId>(entry["Element"]["id"]);
-    DgnElementId mappedElementId = GetSyncInfo()->LookupElement(planElementId);
-
-    if (!mappedElementId.IsValid())
-        {
-        Utf8PrintfString error("Failed to map ParentId for TimeSpan aspect %s.", id.ToString().c_str());
-        GetLogger().warning(error.c_str());
-        return ERROR;
-        }
-
-    Planning::PlanningElementPtr planningElement = GetDgnDb()->Elements().GetForEdit<Planning::PlanningElement>(mappedElementId);
-    if (!planningElement.IsValid())
-        {
-        Utf8PrintfString error("Failed to get Plan for mapped id %s.", mappedElementId.ToString().c_str());
-        GetLogger().warning(error.c_str());
-        return ERROR;
-        }
-
-    Planning::TimeSpanP timeSpan = planningElement->GetTimeSpanP(mappedBaseline);
-    if (nullptr == timeSpan)
-        {
-        Utf8PrintfString error("Failed to create TimeSpan\n");
-        GetLogger().warning(error.c_str());
-        return ERROR;
-        }
-
-    if (entry.isMember("PlannedStart") && !entry["PlannedStart"].isNull())
-        {
-        DateTime dateTime;
-        if (SUCCESS == ECJsonUtilities::JsonToDateTime(dateTime, entry["PlannedStart"]))
-            timeSpan->SetPlannedStart(dateTime);
-        }
-
-    if (entry.isMember("PlannedFinish") && !entry["PlannedFinish"].isNull())
-        {
-        DateTime dateTime;
-        if (SUCCESS == ECJsonUtilities::JsonToDateTime(dateTime, entry["PlannedFinish"]))
-            timeSpan->SetPlannedFinish(dateTime);
-        }
-
-    if (entry.isMember("PlannedDuration") && !entry["PlannedDuration"].isNull())
-        {
-        Json::Value plannedDuration = entry["PlannedDuration"];
-        if (plannedDuration.isMember("Format") && !plannedDuration["Format"].isNull() &&
-            plannedDuration.isMember("Value") && !plannedDuration["Value"].isNull())
-            {
-            Planning::Duration duration(plannedDuration["Value"].asDouble(), (Planning::Duration::Format) plannedDuration["Format"].asInt());
-            timeSpan->SetPlannedDuration(duration);
-            }
-        }
-
-    if (entry.isMember("ActualStart") && !entry["ActualStart"].isNull())
-        {
-        DateTime dateTime;
-        if (SUCCESS == ECJsonUtilities::JsonToDateTime(dateTime, entry["ActualStart"]))
-            timeSpan->SetActualStart(dateTime);
-        }
-
-    if (entry.isMember("ActualFinish") && !entry["ActualFinish"].isNull())
-        {
-        DateTime dateTime;
-        if (SUCCESS == ECJsonUtilities::JsonToDateTime(dateTime, entry["ActualFinish"]))
-            timeSpan->SetActualFinish(dateTime);
-        }
-
-    if (entry.isMember("RemainingDuration") && !entry["RemainingDuration"].isNull())
-        {
-        Json::Value remainingDuration = entry["RemainingDuration"];
-        if (remainingDuration.isMember("Format") && !remainingDuration["Format"].isNull() &&
-            remainingDuration.isMember("Value") && !remainingDuration["Value"].isNull())
-            {
-            Planning::Duration duration(remainingDuration["Value"].asDouble(), (Planning::Duration::Format) remainingDuration["Format"].asInt());
-            timeSpan->SetRemainingDuration(duration);
-            }
-        }
-
-    if (entry.isMember("EarlyStart") && !entry["EarlyStart"].isNull())
-        {
-        DateTime dateTime;
-        if (SUCCESS == ECJsonUtilities::JsonToDateTime(dateTime, entry["EarlyStart"]))
-            timeSpan->SetEarlyStart(dateTime);
-        }
-
-    if (entry.isMember("EarlyFinish") && !entry["EarlyFinish"].isNull())
-        {
-        DateTime dateTime;
-        if (SUCCESS == ECJsonUtilities::JsonToDateTime(dateTime, entry["EarlyFinish"]))
-            timeSpan->SetEarlyFinish(dateTime);
-        }
-
-    if (entry.isMember("LateStart") && !entry["LateStart"].isNull())
-        {
-        DateTime dateTime;
-        if (SUCCESS == ECJsonUtilities::JsonToDateTime(dateTime, entry["LateStart"]))
-            timeSpan->SetLateStart(dateTime);
-        }
-
-    if (entry.isMember("LateFinish") && !entry["LateFinish"].isNull())
-        {
-        DateTime dateTime;
-        if (SUCCESS == ECJsonUtilities::JsonToDateTime(dateTime, entry["LateFinish"]))
-            timeSpan->SetLateFinish(dateTime);
-        }
-
-    if (entry.isMember("TotalFloat") && !entry["TotalFloat"].isNull())
-        {
-        Json::Value totalFloat = entry["TotalFloat"];
-        if (totalFloat.isMember("Format") && !totalFloat["Format"].isNull() &&
-            totalFloat.isMember("Value") && !totalFloat["Value"].isNull())
-            {
-            Planning::Duration duration(totalFloat["Value"].asDouble(), (Planning::Duration::Format) totalFloat["Format"].asInt());
-            timeSpan->SetTotalFloat(duration);
-            }
-        }
-
-    if (entry.isMember("FreeFloat") && !entry["FreeFloat"].isNull())
-        {
-        Json::Value freeFloat = entry["FreeFloat"];
-        if (freeFloat.isMember("Format") && !freeFloat["Format"].isNull() &&
-            freeFloat.isMember("Value") && !freeFloat["Value"].isNull())
-            {
-            Planning::Duration duration(freeFloat["Value"].asDouble(), (Planning::Duration::Format) freeFloat["Format"].asInt());
-            timeSpan->SetFreeFloat(duration);
-            }
-        }
-
-    DgnDbStatus stat;
-    planningElement->Update(&stat);
-    if (DgnDbStatus::Success == stat)
-        GetSyncInfo()->InsertAspect(oldId, timeSpan->GetAspectInstanceId());
-
     m_importer->ShowProgress();
     return SUCCESS;
     }

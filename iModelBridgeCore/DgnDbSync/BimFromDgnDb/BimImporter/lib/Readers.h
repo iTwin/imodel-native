@@ -484,40 +484,6 @@ struct TextureReader : ElementReader
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-struct PlanReader : ElementReader
-    {
-    protected:
-        BentleyStatus _OnInstanceCreated(ECN::IECInstanceR instance) override;
-
-    public:
-        using ElementReader::ElementReader;
-
-    };
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            03/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-struct WorkbreakdownReader : PlanReader
-    {
-    protected:
-        Utf8String _GetRelationshipClassName() override { return PLANNING_SCHEMA(BP_REL_WorkBreakdownOwnsWorkBreakdowns); }
-    public:
-        using PlanReader::PlanReader;
-    };
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            03/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-struct ActivityReader : PlanReader
-    {
-    protected:
-        Utf8String _GetRelationshipClassName() override { return PLANNING_SCHEMA(BP_REL_WorkBreakdownOwnsActivities); }
-    public:
-        using PlanReader::PlanReader;
-    };
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            03/2018
-//---------------+---------------+---------------+---------------+---------------+-------
 struct BaselineReader : Reader
     {
     protected:
