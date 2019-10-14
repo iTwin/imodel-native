@@ -104,7 +104,7 @@ protected:
 
     void _OnSaveJsonProperties() override;
     void _OnLoadedJsonProperties() override;
-    AxisAlignedBox3d _QueryNonElementModelRange() const override { return _QueryElementsRange(); }
+    AxisAlignedBox3d _QueryNonElementModelRange() const override; 
 
     POINTCLOUD_EXPORT Dgn::Cesium::RootPtr _CreateCesiumTileTree(Dgn::Cesium::OutputR, Utf8StringCR) override;
 

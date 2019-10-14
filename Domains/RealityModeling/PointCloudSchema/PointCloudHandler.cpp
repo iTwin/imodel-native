@@ -171,6 +171,18 @@ bool PointCloudModel::GetRange(DRange3dR range, PointCloudModel::Unit const& uni
     }
 
 //----------------------------------------------------------------------------------------
+// @bsimethod                                                       Ray.Bentley     10/2019
+//----------------------------------------------------------------------------------------
+AxisAlignedBox3d PointCloudModel::_QueryNonElementModelRange() const 
+    {
+    AxisAlignedBox3d   range;
+    
+    GetRange(range, PointCloudModel::Unit::World);
+    return range;
+    }
+
+
+//----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2016
 //----------------------------------------------------------------------------------------
 PointCloudModel::Properties::Properties()
