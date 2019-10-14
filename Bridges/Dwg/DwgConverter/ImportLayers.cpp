@@ -699,7 +699,11 @@ DgnCategoryId   DwgImporter::GetSpatialCategory (DgnSubCategoryId& subCategoryId
         XRefLayerResolver   resolver(*this, xrefDwg);
         if (!resolver.SearchMasterLayerFromXrefLayer(masterLayerId, layerId))
             {
-            BeAssert (false && "Xref layer does not exist in master file");
+            Utf8String  layerName("???");
+            DwgDbLayerTableRecordPtr    layer(layerId, DwgDbOpenMode::ForRead);
+            if (layer.OpenStatus() == DwgDbStatus::Success)
+                layerName.Assign (layer->GetName().c_str());
+            this->ReportIssueV (IssueSeverity::Warning, IssueCategory::InconsistentData(), Issue::MissingCategory(), "Xref layer", layerName.c_str());
             masterLayerId = m_dwgdb->GetLayer0Id ();
             }
         }

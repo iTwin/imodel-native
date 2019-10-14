@@ -36,13 +36,13 @@ TestDeliveryDir = $(BuildContext)Delivery/$(DWGTOOLKIT)ImporterTests/
 GUNITTEST_NOEXEC = 1
 
 BEGTEST_NAME=$(programName)
-BEGTEST_OUTPUT=$(OutputRootDir)build/$(BEGTEST_NAME)/
+BEGTEST_OUTPUT=$(OutputRootDir)build/$(DWGTOOLKIT)ImporterTests/
 %include $(SrcRoot)bsicommon/sharedmki/BeTestSelectHarness.mki
 
 TestsHeaders = $(baseDir)Tests.h $(baseDir)ImporterBaseFixture.h $(baseDir)ImporterTests.h $(baseDir)ImportConfigeditor.h $(baseDir)ImporterCommandBuilder.h
 
 # Let all stand-alone tests share the same gtestmain and TestFixture objects.
-o = $(OutputRootDir)build/$(DWGTOOLKIT)ImporterTests/
+o = $(BEGTEST_OUTPUT)
 
 always:
     !~@mkdir $(o)

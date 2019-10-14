@@ -2,26 +2,24 @@
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
   
+    <!-- Build by the default strategy, DwgBridge -->
     <Part Name="DwgBridgePRG" PrgOutputDir="DwgBridge">
         <!-- The default DwgBridge and tests -->
         <SubProduct ProductName="RealDwgBridge"/>
         <SubNuGetProduct NuGetProductName="RealDwgBridgeSdkNuget"/>
         <SubPart PartName="RunRealDwgImporterTests" PartFile="Bridges/Dwg/DwgConverter/DwgConverter"/>
         <SubProduct ProductName="RealDwgBridgeTests"/>
-        <!-- OpenDwgBridge -->
-        <SubProduct ProductName="OpenDwgBridge"/>
-        <SubNuGetProduct NuGetProductName="OpenDwgBridgeSdkNuget"/>
         <!-- Another DwgBridge using an older release of RealDWG -->
         <SubProduct ProductName="RealDwg2019Bridge"/>
         <SubNuGetProduct NuGetProductName="RealDwg2019BridgeSdkNuget"/>
     </Part>
 
+    <!-- Build by the developer strategy, DwgBridge.Dev -->
     <Part Name="DwgBridge.Dev" PrgOutputDir="DwgBridge">
         <SubPart PartName="DwgBridgePRG"/>
-        <!-- Before we get RealDWG to support AEC property sets, deliver both OpenDwg and RealDWG bridges
+        <!-- OpenDwgBridge -->
         <SubProduct ProductName="OpenDwgBridge"/>
         <SubNuGetProduct NuGetProductName="OpenDwgBridgeSdkNuget"/>
-        -->
     </Part>
 
 
@@ -271,7 +269,7 @@
         <InstallerWixFile SourceFile="installers\RealDwgImporter2"/>
     </Product>
 
-    <Part Name="RealDwgInstallFiles2" BMakeFile="installers/RealDwgInstallerFiles.prewire.mke" BentleyBuildMakeOptions="+dInstallerSuffix=2">
+    <Part Name="RealDwgInstallFiles2" BMakeFile="installers/RealDwgInstallerFiles.prewire.mke" BMakeOptions="+dInstallerSuffix=2">
         <Bindings>
             <Files BindToWixBuild="true">
                 RealDwgInstallerFiles2\DwgMergeModuleFrag2.wxs

@@ -21,6 +21,7 @@ struct BeGTestHost : RefCounted<BeTest::Host>
     {
     BeFileName m_programPath;
     WString    m_programName;
+    WString    m_testSubDir;
 
     BeGTestHost (char const* argv0)
         {
@@ -33,6 +34,11 @@ struct BeGTestHost : RefCounted<BeTest::Host>
             }
         m_programPath.BeGetFullPathName ();
         m_programName = BeFileName::GetFileNameWithoutExtension (programFullPath.c_str());
+        size_t  found = m_programPath.rfind (L'\\', m_programPath.size() - 2);
+        if (found != WString::npos)
+            m_testSubDir = m_programPath.substr (found);
+        else
+            m_testSubDir = m_programName;
         }
     void GetRunRoot (char const* argv0, BeFileName& path)
         {
@@ -61,7 +67,7 @@ struct BeGTestHost : RefCounted<BeTest::Host>
         path.SetName(WString(getenv("tmp")).c_str());
         path.AppendSeparator();
 #endif
-        path.AppendToPath(m_programName.c_str());
+        path.AppendToPath(m_testSubDir.c_str());
         path.AppendSeparator();
         }
 
