@@ -2161,7 +2161,6 @@ SyncInfo::V8ElementExternalSourceAspect  Converter::AddOrUpdateV8ElementExternal
         {
         BeAssert(!elprov.m_v8IdPath.empty() || aspect.GetV8ElementId() == elprov.m_v8Id);
         aspect.Update(elprov.m_prov);
-        LOG.tracev("Converter::AddOrUpdateV8ElementExternalSourceAspect - found aspect for %" PRIu64, el.GetElementId().GetValueUnchecked());
         return aspect;
         }
 
@@ -2181,10 +2180,6 @@ SyncInfo::V8ElementExternalSourceAspect Converter::WriteV8ElementExternalSourceA
     Utf8String sourceIdPath = !sourceIdPathIn.empty()? sourceIdPathIn: SyncInfo::V8ElementExternalSourceAspect::FormatSourceId(v8eh);
     SyncInfo::V8ElementExternalSourceAspectData elprov(scope, sourceIdPath, newProv, propsJson);
     auto aspect = AddOrUpdateV8ElementExternalSourceAspect(*el, elprov);
-    if (!aspect.IsValid())
-        {
-        LOG.debugv("Converter::WriteV8ElementExternalSourceAspect aspect is invalid for element %lld and sourceId %s", bimElementId.GetValueUnchecked(), sourceIdPath.c_str());
-        }
     el->Update();
     return aspect;
     }
@@ -2680,10 +2675,6 @@ DgnDbStatus Converter::InsertResults(ElementConversionResults& results, SyncInfo
     DgnCode code = results.m_element->GetCode();
 
     results.m_mapping = AddOrUpdateV8ElementExternalSourceAspect(*results.m_element, elprov);
-    if (!results.m_mapping.IsValid())
-        {
-        LOG.debugv("Converter::InsertResults V8ElementExternalSourceAspect is invalid for %" PRIu64, results.m_element->GetElementId().GetValueUnchecked());
-        }
 
     auto result = m_dgndb->Elements().Insert(*results.m_element, &stat);
 
@@ -3651,7 +3642,6 @@ void Converter::PopulateRangePartIdMap()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Converter::EmbedSpecifiedFiles()
     {
-    LOG.trace("Begin Converter::EmbedSpecifiedFiles");
     SetStepName(ProgressMessage::STEP_EMBEDDING_FILES());
 
     bvector<BeFileName> embedFiles = _GetParams().GetEmbedFiles();
@@ -3694,7 +3684,6 @@ void Converter::EmbedSpecifiedFiles()
             continue;
             }
         }
-    LOG.trace("End Converter::EmbedSpecifiedFiles");
     }
 
 //---------------------------------------------------------------------------------------

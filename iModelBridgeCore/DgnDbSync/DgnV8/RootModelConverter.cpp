@@ -1274,7 +1274,6 @@ void RootModelConverter::DoConvertSpatialElements()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RootModelConverter::ConvertNamedGroupsAndECRelationships()
     {
-    LOG.trace("Begin RootModelConverter::ConvertNamedGroupsAndECRelationships");
     StopWatch timer(true);
     uint32_t start = GetElementsConverted();
 
@@ -1319,7 +1318,6 @@ void RootModelConverter::ConvertNamedGroupsAndECRelationships()
     ConvertECRelationships();
     ConverterLogging::LogPerformance(timer, "Convert Elements> ECRelationships (total)");
     RecreateElementRefersToElementsIndices(indexDdlList);
-    LOG.trace("End RootModelConverter::ConvertNamedGroupsAndECRelationships");
 
     }
 
@@ -1851,7 +1849,6 @@ void RootModelConverter::UnmapModelsNotAssignedToBridge()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RootModelConverter::_FinishConversion()
     {
-    LOG.trace("Begin RootModelConverter::_FinishConversion");
     if (!m_beginConversionCalled)
         {
         LOG.error ("_FinishConversion called without _BeginConversion");
@@ -1927,7 +1924,6 @@ void RootModelConverter::_FinishConversion()
         {
         if (!IsFileAssignedToBridge(*v8File))
             continue;
-        LOG.tracev("Updating repository link for %s", BeFileName(BeFileName::NameAndExt, v8File->GetFileName().c_str()).GetNameUtf8().c_str());
         // Note: Bridges do not retain their locks on RepositoryLink elements. So, even if another job created this element,
         // it is safe for this bridge job to update it.
         auto rlinkEd = GetDgnDb().Elements().GetForEdit<RepositoryLink>(GetRepositoryLinkId(*v8File));
@@ -1943,7 +1939,6 @@ void RootModelConverter::_FinishConversion()
     CopyExpirationDate(*m_rootFile);
 
     ValidateJob();
-    LOG.trace("End RootModelConverter::_FinishConversion");
     }
 
 /*=================================================================================**//**

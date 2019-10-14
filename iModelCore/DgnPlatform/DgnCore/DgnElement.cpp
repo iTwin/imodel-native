@@ -2349,7 +2349,6 @@ RefCountedPtr<DgnElement::MultiAspect> DgnElement::MultiAspect::CreateAspect(Dgn
 DgnElement::MultiAspect const* DgnElement::MultiAspect::GetAspect(DgnElementCR el, ECClassCR cls, ECInstanceId id)
     {
     //  First, see if we already have this particular MultiAspect cached
-    LOG.tracev("DgnElement::MultiAspect::GetAspect for %lld (%s) with id %lld", el.GetElementId().GetValueUnchecked(), cls.GetName().c_str(), id.GetValueUnchecked());
     MultiAspectMux* mux = MultiAspectMux::Find(el,cls);
     if (nullptr != mux)
         {
@@ -2374,18 +2373,12 @@ DgnElement::MultiAspect const* DgnElement::MultiAspect::GetAspect(DgnElementCR e
         aspect = dynamic_cast<MultiAspect*>(handler->_CreateInstance().get());
 
     if (!aspect.IsValid())
-        {
-        LOG.trace("DgnElement::MultiAspect::GetAspect - failed to create a new MultiAspect");
         return nullptr;
-        }
 
     aspect->m_instanceId = id;
 
     if (DgnDbStatus::Success != aspect->_LoadProperties(el))
-        {
-        LOG.debug("DgnElement::MultiAspect::GetAspect - failed to load properties into aspect");
         return nullptr;
-        }
 
     MultiAspectMux::Get(el,cls).m_instances.push_back(aspect);
 
@@ -4368,7 +4361,6 @@ DgnDbStatus DgnElement::GenericMultiAspect::_LoadProperties(Dgn::DgnElementCR el
             LOG.debugv("DgnElement::GenericMultiAspect::_LoadProperties: Failed to get CachedECSqlStatementPtr for %s", sql.c_str());
             return DgnDbStatus::BadSchema;
             }
-        LOG.tracev("DgnElement::GenericMultiAspect::_LoadProperties: %s", sql.c_str());
         stmt->BindId(1, m_instanceId);
         }
     else
@@ -4381,14 +4373,10 @@ DgnDbStatus DgnElement::GenericMultiAspect::_LoadProperties(Dgn::DgnElementCR el
             LOG.debugv("DgnElement::GenericMultiAspect::_LoadProperties: Failed to get CachedECSqlStatementPtr for %s", sql.c_str());
             return DgnDbStatus::BadSchema;
             }
-        LOG.tracev("DgnElement::GenericMultiAspect::_LoadProperties: %s", sql.c_str());
         stmt->BindId(1, el.GetElementId());
         }
     if (BE_SQLITE_ROW != stmt->Step())
-        {
-        LOG.trace("DgnElement::GenericMultiAspect::_LoadProperties - no results");
         return DgnDbStatus::NotFound;
-        }
     ECInstanceECSqlSelectAdapter adapter(*stmt);
     m_instance = adapter.GetInstance();
     adapter.GetInstanceId(m_instanceId);
