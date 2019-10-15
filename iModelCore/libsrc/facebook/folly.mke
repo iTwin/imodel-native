@@ -9,6 +9,8 @@ IS_THIRD_PARTY_LIBRARY = 1
 
 %include mdl.mki
 
+CCompPDBName = BeFolly
+
 FollyDir = $(SrcRoot)imodel02/iModelCore/libsrc/facebook/folly/
 FollyVendorAPISrc = $(_MakeFilePath)VendorApi/folly/
 
