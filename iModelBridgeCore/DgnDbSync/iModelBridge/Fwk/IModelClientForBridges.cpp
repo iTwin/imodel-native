@@ -299,7 +299,7 @@ StatusInt IModelClientBase::PullMergeAndPush(Utf8CP descr)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool IModelClientBase::SleepBeforeRetry()
     {
-    int sleepTime = rand() % 5000;
+    int sleepTime = rand() % (30*1000);
     BeThreadUtilities::BeSleep(sleepTime);
     return true;
     }
