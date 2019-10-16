@@ -125,7 +125,7 @@ bool SchemaValidator::ValidBaseClassesRule::Validate(SchemaImportContext const& 
                 continue;
                 }
 
-            issueReporter.ReportV("ECClass '%s' has multiple base classes. Multi-inheritance is not supported. Use mixins instead.",
+            issueReporter.ReportV("ECClass '%s' has multiple base classes. Order is important, only the first base class can be an entity, additional ones must use mixins instead.",
                           ecClass.GetFullName());
             return false;
             }
