@@ -1599,7 +1599,7 @@ private:
         {
         if (nullptr == m_sortingRules)
             {
-            RulesPreprocessor preprocessor(GetConnections(), GetConnection(), GetRuleset(), GetLocale(), m_userSettings, 
+            RulesPreprocessor preprocessor(GetConnections(), GetConnection(), GetRuleset(), GetLocale(), m_userSettings,
                 m_usedSettingsListener, m_ecexpressionsCache);
             RulesPreprocessor::AggregateCustomizationRuleParameters params(GetParentInstanceNode(), m_specificationHash);
             m_sortingRules = new bvector<SortingRuleCP>(preprocessor.GetSortingRules(params));
@@ -2179,7 +2179,7 @@ static MultiQueryContextPtr CreateQueryContext(GroupingResolver const& resolver,
     IQueryContextPtr context = ECInstanceSortingQueryContext::Create(resolver.GetSchemaHelper(), resolver.GetQueryBuilderParams().GetConnections(),
         resolver.GetQueryBuilderParams().GetConnection(), resolver.GetQueryBuilderParams().GetRuleset(), resolver.GetQueryBuilderParams().GetLocale(),
         resolver.GetQueryBuilderParams().GetUserSettings(), resolver.GetQueryBuilderParams().GetUsedSettingsListener(),
-        resolver.GetQueryBuilderParams().GetECExpressionsCache(), 
+        resolver.GetQueryBuilderParams().GetECExpressionsCache(),
         resolver.GetParentNode(), resolver.GetParentInstanceNode(), resolver.GetSpecification().GetDoNotSort(), resolver.GetSpecificationHash());
     context = PostProcessQueryContext::Create(*context, resolver.GetSpecification());
     return MultiQueryContext::Create(*context, resolver, isSearchContext);
@@ -2212,20 +2212,6 @@ public:
     bool IsRulePolymorphic() const {return m_isRulePolymorphic;}
 };
 
-#define COMPARE_VEC(lhs, rhs)   if (lhs.size() < rhs.size()) \
-                                    return true; \
-                                if (lhs.size() > rhs.size()) \
-                                    return false; \
-                                for (auto const& lhsMember : lhs) \
-                                    { \
-                                    for (auto const& rhsMember : rhs) \
-                                        { \
-                                        if (lhsMember < rhsMember) \
-                                            return true; \
-                                        if (rhsMember < lhsMember) \
-                                            return false; \
-                                        } \
-                                    }
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                11/2016
 +===============+===============+===============+===============+===============+======*/
@@ -3092,7 +3078,7 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
         // derived classes.
         bvector<SelectQueryInfo> selectInfos;
         selectInfos.push_back(std::move(selectInfo));
-        ProcessQueryClassesBasedOnCustomizationRules(selectInfos, groupingResolver, GetMapKeys(labelOverridingProperties), 
+        ProcessQueryClassesBasedOnCustomizationRules(selectInfos, groupingResolver, GetMapKeys(labelOverridingProperties),
             groupingResolver.GetParentInstanceNode(), m_params);
 
         for (SelectQueryInfo& info : selectInfos)

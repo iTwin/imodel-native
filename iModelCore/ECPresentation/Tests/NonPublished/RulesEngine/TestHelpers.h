@@ -32,11 +32,24 @@ BEGIN_ECPRESENTATIONTESTS_NAMESPACE
 +===============+===============+===============+===============+===============+======*/
 template<typename TRegistry> struct RegisterSchemaHelper
     {
-    RegisterSchemaHelper(Utf8String name, Utf8String schemaXml)
-        {
-        TRegistry::RegisterSchemaXml(name, schemaXml);
-        }
+    RegisterSchemaHelper(Utf8String name, Utf8String schemaXml) {TRegistry::RegisterSchemaXml(name, schemaXml);}
     };
+// add this to class declaration
+#define DECLARE_SCHEMA_REGISTRY(registry) \
+    static bmap<Utf8String, Utf8String>& GetRegisteredSchemaXmls(); \
+    static void RegisterSchemaXml(Utf8String name, Utf8String schemaXml);
+// add this to source file (registry = test class name)
+#define DEFINE_SCHEMA_REGISTRY(registry) \
+    bmap<Utf8String, Utf8String>& registry::GetRegisteredSchemaXmls() \
+        { \
+        static bmap<Utf8String, Utf8String> s_registeredSchemaXmls; \
+        return s_registeredSchemaXmls; \
+        } \
+    void registry::RegisterSchemaXml(Utf8String name, Utf8String schemaXml) {GetRegisteredSchemaXmls()[name] = schemaXml;}
+// add this to test setup
+#define INIT_SCHEMA_REGISTRY(ecdb) \
+    RulesEngineTestHelpers::InitSchemaRegistry(ecdb, GetRegisteredSchemaXmls());
+// use this to create and register a schema
 #define DEFINE_REGISTRY_SCHEMA(registry, name, schema_xml) \
     static RegisterSchemaHelper<registry> _register_schema_##name(#name, \
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
@@ -52,6 +65,8 @@ template<typename TRegistry> struct RegisterSchemaHelper
 struct RulesEngineTestHelpers
     {
     typedef std::function<void(ComplexNavigationQueryR)> ComplexQueryHandler;
+
+    static void InitSchemaRegistry(ECDbR ecdb, bmap<Utf8String, Utf8String> const& schemas);
 
     static RulesDrivenECPresentationManager::Paths GetPaths(BeTest::Host&);
 

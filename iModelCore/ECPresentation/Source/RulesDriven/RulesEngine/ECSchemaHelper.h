@@ -207,6 +207,7 @@ struct PolymorphicallyRelatedClassesCache
         ECClassCP m_source;
         ECRelatedInstanceDirection m_direction;
         bvector<ECRelationshipClassCP> m_rels;
+        bvector<ECEntityClassCP> m_baseClasses;
         bool operator<(Key const&) const;
         };
 

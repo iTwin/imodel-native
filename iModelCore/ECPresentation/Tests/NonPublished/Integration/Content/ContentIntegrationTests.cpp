@@ -13563,6 +13563,151 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CategorizesNestedContentFie
     EXPECT_STREQ("", fields[0]->AsNestedContentField()->GetFields()[1]->GetCategory().GetName().c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(DoesNotIncludeHiddenProperties,
+    R"*(
+    <ECEntityClass typeName="Element">
+        <ECProperty propertyName="RegularProperty" typeName="string" />
+        <ECProperty propertyName="HiddenProperty" typeName="string">
+            <ECCustomAttributes>
+                <HiddenProperty xmlns="CoreCustomAttributes.01.00" />
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, DoesNotIncludeHiddenProperties)
+    {
+    // set up data set
+    ECClassCP elementClass = GetClass("Element");
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
+
+    // set up ruleset
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRule* rule = new ContentRule();
+    rules->AddPresentationRule(*rule);
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", elementClass->GetFullName(), true));
+
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
+
+    bvector<ContentDescriptor::Field*> fields = descriptor->GetVisibleFields();
+    ASSERT_EQ(1, fields.size());
+    ASSERT_TRUE(fields[0]->IsPropertiesField());
+    ASSERT_EQ(1, fields[0]->AsPropertiesField()->GetProperties().size());
+    EXPECT_EQ(elementClass->GetPropertyP("RegularProperty"), &fields[0]->AsPropertiesField()->GetProperties()[0].GetProperty());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* VSTS#202530
+* @bsitest                                      Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(DoesNotIncludeHiddenRelatedClassPropertiesUnlessSpecificallyAskedFor,
+    R"*(
+    <ECEntityClass typeName="Element">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="Aspect">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="HiddenAspect1">
+        <BaseClass>Aspect</BaseClass>
+        <ECCustomAttributes>
+            <HiddenClass xmlns="CoreCustomAttributes.01.00" />
+        </ECCustomAttributes>
+        <ECProperty propertyName="Prop1" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="HiddenAspect2">
+        <BaseClass>Aspect</BaseClass>
+        <ECCustomAttributes>
+            <HiddenClass xmlns="CoreCustomAttributes.01.00" />
+        </ECCustomAttributes>
+        <ECProperty propertyName="Prop2" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="HiddenAspect3">
+        <BaseClass>Aspect</BaseClass>
+        <ECCustomAttributes>
+            <HiddenClass xmlns="CoreCustomAttributes.01.00" />
+        </ECCustomAttributes>
+        <ECProperty propertyName="Prop3" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="Aspect4">
+        <BaseClass>Aspect</BaseClass>
+        <ECProperty propertyName="Prop4" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementHasAspect" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="Aspect" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, DoesNotIncludeHiddenRelatedClassPropertiesUnlessSpecificallyAskedFor)
+    {
+    // set up data set
+    ECClassCP elementClass = GetClass("Element");
+    ECClassCP aspectBaseClass = GetClass("Aspect");
+    ECClassCP aspectClass1 = GetClass("HiddenAspect1");
+    ECClassCP aspectClass2 = GetClass("HiddenAspect2");
+    ECClassCP aspectClass3 = GetClass("HiddenAspect3");
+    ECClassCP aspectClass4 = GetClass("Aspect4");
+    ECRelationshipClassCP elementHasAspectRel = dynamic_cast<ECRelationshipClass const *>(GetSchema()->GetClassCP("ElementHasAspect"));
+
+    IECInstancePtr element = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
+    IECInstancePtr aspect1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *aspectClass1);
+    IECInstancePtr aspect2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *aspectClass2);
+    IECInstancePtr aspect3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *aspectClass3);
+    IECInstancePtr aspect4 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *aspectClass4);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *elementHasAspectRel, *element, *aspect1, nullptr);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *elementHasAspectRel, *element, *aspect2, nullptr);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *elementHasAspectRel, *element, *aspect3, nullptr);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *elementHasAspectRel, *element, *aspect4, nullptr, true);
+
+    // set up ruleset
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRule* rule = new ContentRule();
+    rules->AddPresentationRule(*rule);
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", elementClass->GetFullName(), true));
+
+    ContentModifierP modifier = new ContentModifier(elementClass->GetSchema().GetName(), elementClass->GetName());
+    rules->AddPresentationRule(*modifier);
+    modifier->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, elementHasAspectRel->GetFullName(),
+        aspectBaseClass->GetFullName(), "", RelationshipMeaning::RelatedInstance, true));
+    modifier->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, elementHasAspectRel->GetFullName(),
+        aspectClass2->GetFullName(), "", RelationshipMeaning::RelatedInstance, true));
+    modifier->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, elementHasAspectRel->GetFullName(),
+        aspectClass3->GetFullName(), "", RelationshipMeaning::RelatedInstance, false));
+
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
+
+    bvector<ContentDescriptor::Field*> fields = descriptor->GetVisibleFields();
+    ASSERT_EQ(3, fields.size());
+
+    // HiddenAspect1.Prop1 is _not_ included because it's hidden and we're including it's base class - not it specifically
+    // HiddenAspect2.Prop2 is included because we have a rule that specifically requests it polymorphically
+    EXPECT_TRUE(fields.end() != std::find_if(fields.begin(), fields.end(), [&](ContentDescriptor::Field const* f){return f->GetName().Equals("Element_HiddenAspect2");}));
+    // HiddenAspect3.Prop3 is included because we have a rule that specifically requests it non-polymorphically
+    EXPECT_TRUE(fields.end() != std::find_if(fields.begin(), fields.end(), [&](ContentDescriptor::Field const* f){return f->GetName().Equals("Element_HiddenAspect3");}));
+    // Aspect4.Prop4 is included because it's not hidden
+    EXPECT_TRUE(fields.end() != std::find_if(fields.begin(), fields.end(), [&](ContentDescriptor::Field const* f){return f->GetName().Equals("Element_Aspect4");}));
+    }
+
 //=======================================================================================
 // @bsiclass                                     Grigas.Petraitis                04/2015
 //=======================================================================================

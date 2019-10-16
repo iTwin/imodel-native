@@ -196,11 +196,15 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
                         "   </ECEntityClass>"                                                                                                               \
                         "</ECSchema>"
 
+#define DEFINE_SCHEMA(name, schema_xml) DEFINE_REGISTRY_SCHEMA(ECSchemaHelperTests, name, schema_xml)
+
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                06/2015
 +===============+===============+===============+===============+===============+======*/
 struct ECSchemaHelperTests : ECPresentationTest
     {
+    DECLARE_SCHEMA_REGISTRY(ECSchemaHelperTests)
+
     static ECDbTestProject* s_project;
     IConnectionPtr m_connection;
     ECSchemaHelper* m_helper;

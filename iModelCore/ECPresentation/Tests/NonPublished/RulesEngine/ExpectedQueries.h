@@ -138,6 +138,8 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 +===============+===============+===============+===============+===============+======*/
 struct ExpectedQueries
 {
+    DECLARE_SCHEMA_REGISTRY(ExpectedQueries)
+
 private:
     bmap<Utf8String, NavigationQueryCPtr> m_navigationQueries;
     bmap<Utf8String, ContentQueryCPtr> m_contentQueries;
@@ -162,8 +164,6 @@ private:
     
 public:
     static ExpectedQueries& GetInstance(BeTest::Host&);
-
-    static void RegisterSchemaXml(Utf8String name, Utf8String schemaXml);
 
     void RegisterQuery(Utf8CP name, NavigationQuery const&);
     void RegisterQuery(Utf8CP name, ContentQuery const&);

@@ -11,15 +11,7 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 USING_NAMESPACE_ECPRESENTATIONTESTS
 
 ECDbTestProject* PresentationManagerIntegrationTests::s_project = nullptr;
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                08/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bmap<Utf8String, Utf8String>& GetRegisteredSchemaXmls()
-    {
-    static bmap<Utf8String, Utf8String> s_registeredSchemaXmls;
-    return s_registeredSchemaXmls;
-    }
+DEFINE_SCHEMA_REGISTRY(PresentationManagerIntegrationTests);
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                11/2017
@@ -28,31 +20,7 @@ void PresentationManagerIntegrationTests::SetUpTestCase()
     {
     s_project = new ECDbTestProject();
     s_project->Create("PresentationManagerIntegrationTests", "RulesEngineTest.01.00.ecschema.xml");
-
-    bvector<ECSchemaPtr> schemas;
-    ECSchemaReadContextPtr schemaReadContext = ECSchemaReadContext::CreateContext();
-    schemaReadContext->AddSchemaLocater(s_project->GetECDb().GetSchemaLocater());
-    for (auto pair : GetRegisteredSchemaXmls())
-        {
-        ECSchemaPtr schema;
-        ECSchema::ReadFromXmlString(schema, pair.second.c_str(), *schemaReadContext);
-        if (!schema.IsValid())
-            {
-            BeAssert(false);
-            continue;
-            }
-        schemas.push_back(schema);
-        }
-
-    if (!schemas.empty())
-        {
-        bvector<ECSchemaCP> importSchemas;
-        importSchemas.resize(schemas.size());
-        std::transform(schemas.begin(), schemas.end(), importSchemas.begin(), [](ECSchemaPtr const& schema) { return schema.get(); });
-
-        ASSERT_TRUE(SUCCESS == s_project->GetECDb().Schemas().ImportSchemas(importSchemas));
-        s_project->GetECDb().SaveChanges();
-        }
+    INIT_SCHEMA_REGISTRY(s_project->GetECDb());    
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -62,11 +30,6 @@ void PresentationManagerIntegrationTests::TearDownTestCase()
     {
     DELETE_AND_CLEAR(s_project);
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                08/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PresentationManagerIntegrationTests::RegisterSchemaXml(Utf8String name, Utf8String schemaXml) {GetRegisteredSchemaXmls()[name] = schemaXml;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015

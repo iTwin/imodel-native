@@ -14,6 +14,7 @@ BEGIN_ECPRESENTATIONTESTS_NAMESPACE
 +===============+===============+===============+===============+===============+======*/
 struct PresentationManagerIntegrationTests : ECPresentationTest
     {
+    DECLARE_SCHEMA_REGISTRY(PresentationManagerIntegrationTests);
     static ECDbTestProject* s_project;
 
     RulesDrivenECPresentationManager* m_manager;
@@ -26,7 +27,6 @@ struct PresentationManagerIntegrationTests : ECPresentationTest
     static void TearDownTestCase();
     static void InitTestL10N();
     static void ShutDownTestL10N();
-    static void RegisterSchemaXml(Utf8String name, Utf8String schemaXml);
 
     PresentationManagerIntegrationTests() : m_manager(nullptr) {}
     virtual IConnectionManager* _CreateConnectionManager();

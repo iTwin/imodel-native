@@ -11,6 +11,8 @@
 #include "../../../Source/RulesDriven/RulesEngine/QueryBuilder.h"
 #include <Logging/bentleylogging.h>
 
+DEFINE_SCHEMA_REGISTRY(ExpectedQueries)
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -21,19 +23,6 @@ ExpectedQueries& ExpectedQueries::GetInstance(BeTest::Host& host)
         s_instance = new ExpectedQueries(host);
     return *s_instance;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                08/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bmap<Utf8String, Utf8String>& GetRegisteredSchemaXmls()
-    {
-    static bmap<Utf8String, Utf8String> s_registeredSchemaXmls;
-    return s_registeredSchemaXmls;
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                08/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ExpectedQueries::RegisterSchemaXml(Utf8String name, Utf8String schemaXml) {GetRegisteredSchemaXmls()[name] = schemaXml;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
@@ -197,6 +186,8 @@ void ExpectedQueries::PrepareSchemaContext()
     m_project.Create("ExpectedQueries", "RulesEngineTest.01.00.ecschema.xml");
     m_connection = m_connections.NotifyConnectionOpened(m_project.GetECDb());
 
+    INIT_SCHEMA_REGISTRY(m_project.GetECDb());
+
     bvector<ECSchemaPtr> schemas;
     schemas.resize(6);
     ECSchemaReadContextPtr schemaReadContext = ECSchemaReadContext::CreateContext();
@@ -207,19 +198,7 @@ void ExpectedQueries::PrepareSchemaContext()
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schemas[3], SCHEMA_BASIC_4, *schemaReadContext));
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schemas[4], SCHEMA_COMPLEX_1, *schemaReadContext));
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schemas[5], SCHEMA_COMPLEX_3, *schemaReadContext));
-
-    for (auto pair : GetRegisteredSchemaXmls())
-        {
-        ECSchemaPtr schema;
-        ECSchema::ReadFromXmlString(schema, pair.second.c_str(), *schemaReadContext);
-        if (!schema.IsValid())
-            {
-            BeAssert(false);
-            continue;
-            }
-        schemas.push_back(schema);
-        }
-
+    
     bvector<ECSchemaCP> importSchemas;
     importSchemas.resize(schemas.size());
     std::transform(schemas.begin(), schemas.end(), importSchemas.begin(), [](ECSchemaPtr const& schema){return schema.get();});

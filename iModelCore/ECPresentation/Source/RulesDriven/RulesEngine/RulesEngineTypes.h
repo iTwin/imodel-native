@@ -120,3 +120,19 @@ template<typename T> struct Holder
     T& operator*() const {return *m_obj;}
     bool IsValid() const {return nullptr != m_obj;}
     };
+
+#define COMPARE_VEC(lhs, rhs) \
+    if (lhs.size() < rhs.size()) \
+        return true; \
+    if (lhs.size() > rhs.size()) \
+        return false; \
+    for (auto const& lhsMember : lhs) \
+        { \
+        for (auto const& rhsMember : rhs) \
+            { \
+            if (lhsMember < rhsMember) \
+                return true; \
+            if (rhsMember < lhsMember) \
+                return false; \
+            } \
+        }

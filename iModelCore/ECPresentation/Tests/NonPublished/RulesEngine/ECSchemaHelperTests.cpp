@@ -6,6 +6,7 @@
 #include "ECSchemaHelperTests.h"
 
 ECDbTestProject* ECSchemaHelperTests::s_project = nullptr;
+DEFINE_SCHEMA_REGISTRY(ECSchemaHelperTests)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
@@ -14,6 +15,8 @@ void ECSchemaHelperTests::SetUpTestCase()
     {
     s_project = new ECDbTestProject();
     s_project->Create("ECSchemaHelperTests", "RulesEngineTest.01.00.ecschema.xml");
+
+    INIT_SCHEMA_REGISTRY(s_project->GetECDb())
 
     ECSchemaPtr schema;
     ECSchemaReadContextPtr schemaReadContext = ECSchemaReadContext::CreateContext();
@@ -73,7 +76,7 @@ static SupportedClassInfo<ECClass> const* Find(SupportedClassInfos const& classI
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (SupportedClassNamesParserTests, Parse_IncludedclassInfosFromSingleSchema)
+TEST_F (SupportedClassNamesParserTests, Parse_IncludedClassInfosFromSingleSchema)
     {
     SupportedClassNamesParser parser(*m_helper, "Basic2:Class2", true);
     SupportedClassInfos const& classInfos = parser.GetClassInfos();
@@ -88,7 +91,7 @@ TEST_F (SupportedClassNamesParserTests, Parse_IncludedclassInfosFromSingleSchema
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (SupportedClassNamesParserTests, Parse_IncludedclassInfosFromMultipleSchemas)
+TEST_F (SupportedClassNamesParserTests, Parse_IncludedClassInfosFromMultipleSchemas)
     {
     SupportedClassNamesParser parser(*m_helper, "Basic2:Class2;Basic3:Class3", true);
     SupportedClassInfos const& classInfos = parser.GetClassInfos();
@@ -108,7 +111,7 @@ TEST_F (SupportedClassNamesParserTests, Parse_IncludedclassInfosFromMultipleSche
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (SupportedClassNamesParserTests, Parse_ExcludedclassInfosFromSingleSchema)
+TEST_F (SupportedClassNamesParserTests, Parse_ExcludedClassInfosFromSingleSchema)
     {
     SupportedClassNamesParser parser(*m_helper, "E:Basic2:Class2", true);
     SupportedClassInfos const& classInfos = parser.GetClassInfos();
@@ -122,7 +125,7 @@ TEST_F (SupportedClassNamesParserTests, Parse_ExcludedclassInfosFromSingleSchema
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (SupportedClassNamesParserTests, Parse_ExcludedclassInfosFromMultipleSchemas)
+TEST_F (SupportedClassNamesParserTests, Parse_ExcludedClassInfosFromMultipleSchemas)
     {
     SupportedClassNamesParser parser(*m_helper, "E:Basic2:Class2;Basic3:Class3", true);
     SupportedClassInfos const& classInfos = parser.GetClassInfos();
@@ -140,7 +143,7 @@ TEST_F (SupportedClassNamesParserTests, Parse_ExcludedclassInfosFromMultipleSche
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (SupportedClassNamesParserTests, Parse_PolymorphicallyExcludedclassInfosFromSingleSchema)
+TEST_F (SupportedClassNamesParserTests, Parse_PolymorphicallyExcludedClassInfosFromSingleSchema)
     {
     SupportedClassNamesParser parser(*m_helper, "PE:Basic2:Class2", true);
     SupportedClassInfos const& classInfos = parser.GetClassInfos();
@@ -155,7 +158,7 @@ TEST_F (SupportedClassNamesParserTests, Parse_PolymorphicallyExcludedclassInfosF
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (SupportedClassNamesParserTests, Parse_PolymorphicallyExcludedclassInfosFromMultipleSchemas)
+TEST_F (SupportedClassNamesParserTests, Parse_PolymorphicallyExcludedClassInfosFromMultipleSchemas)
     {
     SupportedClassNamesParser parser(*m_helper, "PE:Basic2:Class2;Basic3:Class3", true);
     SupportedClassInfos const& classInfos = parser.GetClassInfos();
@@ -199,7 +202,7 @@ TEST_F (SupportedClassNamesParserTests, Parse_IncludedAndExcluded)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (SupportedClassNamesParserTests, GetECclassInfosFromClassList_IncludedAndExcluded)
+TEST_F (SupportedClassNamesParserTests, GetECClassInfosFromClassList_IncludedAndExcluded)
     {
     SupportedClassNamesParser parser(*m_helper, "Basic1:Class1;E:Basic1:Class1", true);
     SupportedClassInfos const& classInfos = parser.GetClassInfos();
@@ -673,7 +676,6 @@ TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_Retur
 TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_ReturnsRelatedInstanceClasses_WhenRelatedClassIsNotSpecified)
     {
     ECEntityClassCP class1 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class1")->GetEntityClassCP();
-    // ECEntityClassCP baseof2and3 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "BaseOf2and3")->GetEntityClassCP();
     ECEntityClassCP class2 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class2")->GetEntityClassCP();
     ECEntityClassCP class3 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class3")->GetEntityClassCP();
     ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class1HasClass2And3")->GetRelationshipClassCP();
@@ -734,6 +736,111 @@ TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_Retur
     ASSERT_EQ(1, result.size());
     ASSERT_EQ(1, result[0].size());
     EXPECT_EQ(class2, result[0][0].GetTargetClass());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* VSTS#202530
+* @bsitest                                      Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(GetPolymorphicallyRelatedClassesWithInstances_DoesntReturnHiddenClasses,
+    R"*(
+    <ECEntityClass typeName="Element">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="Aspect">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="HiddenAspect">
+        <BaseClass>Aspect</BaseClass>
+        <ECCustomAttributes>
+            <HiddenClass xmlns="CoreCustomAttributes.01.00" />
+        </ECCustomAttributes>
+        <ECProperty propertyName="Prop1" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementHasAspect" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="Aspect" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_DoesntReturnHiddenClasses)
+    {
+    ECEntityClassCP elementClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Element")->GetEntityClassCP();
+    ECEntityClassCP baseAspectClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Aspect")->GetEntityClassCP();
+    ECEntityClassCP hiddenAspectClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "HiddenAspect")->GetEntityClassCP();
+    ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ElementHasAspect")->GetRelationshipClassCP();
+
+    IECInstancePtr element = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
+    IECInstancePtr aspect = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *hiddenAspectClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *element, *aspect);
+
+    bvector<RelatedClassPath> result = m_helper->GetPolymorphicallyRelatedClassesWithInstances(*elementClass,
+        rel->GetFullName(), ECRelatedInstanceDirection::Forward, baseAspectClass->GetFullName(), RelatedClassPath(), nullptr);
+    ASSERT_EQ(0, result.size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* VSTS#202530
+* @bsitest                                      Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(GetPolymorphicallyRelatedClassesWithInstances_ReturnsHiddenClassesIfSpecificallyAskedFor,
+    R"*(
+    <ECEntityClass typeName="Element">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="Aspect">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="HiddenAspect">
+        <BaseClass>Aspect</BaseClass>
+        <ECCustomAttributes>
+            <HiddenClass xmlns="CoreCustomAttributes.01.00" />
+        </ECCustomAttributes>
+        <ECProperty propertyName="Prop1" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementHasAspect" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="Aspect" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_ReturnsHiddenClassesIfSpecificallyAskedFor)
+    {
+    ECEntityClassCP elementClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "Element")->GetEntityClassCP();
+    ECEntityClassCP hiddenAspectClass = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "HiddenAspect")->GetEntityClassCP();
+    ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass(BeTest::GetNameOfCurrentTest(), "ElementHasAspect")->GetRelationshipClassCP();
+
+    IECInstancePtr element = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
+    IECInstancePtr aspect = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *hiddenAspectClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *element, *aspect);
+
+    bvector<RelatedClassPath> result = m_helper->GetPolymorphicallyRelatedClassesWithInstances(*elementClass,
+        rel->GetFullName(), ECRelatedInstanceDirection::Forward, hiddenAspectClass->GetFullName(), RelatedClassPath(), nullptr);
+    ASSERT_EQ(1, result.size());
+    ASSERT_EQ(1, result[0].size());
+    EXPECT_EQ(hiddenAspectClass, result[0][0].GetTargetClass());
     }
 
 /*---------------------------------------------------------------------------------**//**

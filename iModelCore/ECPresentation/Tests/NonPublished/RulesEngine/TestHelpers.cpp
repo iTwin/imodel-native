@@ -10,6 +10,37 @@ USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void RulesEngineTestHelpers::InitSchemaRegistry(ECDbR ecdb, bmap<Utf8String, Utf8String> const& schemaXmls)
+    {
+    bvector<ECSchemaPtr> schemas;
+    ECSchemaReadContextPtr schemaReadContext = ECSchemaReadContext::CreateContext();
+    schemaReadContext->AddSchemaLocater(ecdb.GetSchemaLocater());
+    for (auto pair : schemaXmls)
+        {
+        ECSchemaPtr schema;
+        ECSchema::ReadFromXmlString(schema, pair.second.c_str(), *schemaReadContext);
+        if (!schema.IsValid())
+            {
+            BeAssert(false);
+            continue;
+            }
+        schemas.push_back(schema);
+        }
+
+    if (!schemas.empty())
+        {
+        bvector<ECSchemaCP> importSchemas;
+        importSchemas.resize(schemas.size());
+        std::transform(schemas.begin(), schemas.end(), importSchemas.begin(), [](ECSchemaPtr const& schema) { return schema.get(); });
+
+        ASSERT_TRUE(SUCCESS == ecdb.Schemas().ImportSchemas(importSchemas));
+        ecdb.SaveChanges();
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 RulesDrivenECPresentationManager::Paths RulesEngineTestHelpers::GetPaths(BeTest::Host& host)

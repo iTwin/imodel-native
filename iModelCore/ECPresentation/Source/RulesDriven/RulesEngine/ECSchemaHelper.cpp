@@ -69,17 +69,8 @@ bool PolymorphicallyRelatedClassesCache::Key::operator<(PolymorphicallyRelatedCl
     if (m_direction > other.m_direction)
         return false;
 
-    if (m_rels.size() < other.m_rels.size())
-        return true;
-    if (m_rels.size() > other.m_rels.size())
-        return false;
-    for (size_t i = 0; i < m_rels.size(); ++i)
-        {
-        if (m_rels[i] < other.m_rels[i])
-            return true;
-        if (m_rels[i] > other.m_rels[i])
-            return false;
-        }
+    COMPARE_VEC(m_rels, other.m_rels);
+    COMPARE_VEC(m_baseClasses, other.m_baseClasses);
     return false;
     }
 
@@ -1288,6 +1279,8 @@ bvector<RelatedClassPath> ECSchemaHelper::GetPolymorphicallyRelatedClassesWithIn
         }
 
     SupportedEntityClassInfos baseClassInfos = GetECClassesFromClassList(baseClassNames, false);
+    bvector<ECEntityClassCP> baseClasses;
+    std::transform(baseClassInfos.begin(), baseClassInfos.end(), std::back_inserter(baseClasses), [](SupportedEntityClassInfo const& i){return &i.GetClass();});
     bvector<ECRelationshipClassCP> relationships;
     if (relationshipNames.empty())
         {
@@ -1317,7 +1310,7 @@ bvector<RelatedClassPath> ECSchemaHelper::GetPolymorphicallyRelatedClassesWithIn
             [](SupportedRelationshipClassInfo const& info) { return &info.GetClass(); });
         }
 
-    PolymorphicallyRelatedClassesCache::Key key = {&sourceClass, direction, relationships};
+    PolymorphicallyRelatedClassesCache::Key key = {&sourceClass, direction, relationships, baseClasses};
     BeMutexHolder lock(m_polymorphicallyRelatedClassesCache->GetMutex());
     bvector<RelatedClass> const* polymorphicallyRelatedClasses = m_polymorphicallyRelatedClassesCache->Get(key);
     if (!polymorphicallyRelatedClasses)
@@ -1355,7 +1348,11 @@ bvector<RelatedClassPath> ECSchemaHelper::GetPolymorphicallyRelatedClassesWithIn
             ECClassId relationshipId = stmt->GetValueId<ECClassId>(0);
             ECRelationshipClassCP relationship = GetECClass(relationshipId)->GetRelationshipClassCP();
             ECClassId targetClassId = stmt->GetValueId<ECClassId>(1);
-            ECClassCP targetClass = GetECClass(targetClassId);
+            ECEntityClassCP targetClass = GetECClass(targetClassId)->GetEntityClassCP();
+
+            if (IsClassHidden(*targetClass) && baseClassInfos.end() == baseClassInfos.find(*targetClass))
+                continue;
+
             vec.push_back(RelatedClass(sourceClass, *targetClass, *relationship,
                 ECRelatedInstanceDirection::Forward == direction,
                 Utf8String("target_").append(std::to_string(vec.size()).c_str()).c_str(),
@@ -1405,15 +1402,15 @@ bvector<RelatedClassPath> ECSchemaHelper::GetPolymorphicallyRelatedClassesWithIn
             ECClassCP derivedClass = GetECClass(derivedClassId);
 
             bool derivesFromBase = false;
-            for (SupportedEntityClassInfo const& baseClassInfo : baseClassInfos)
+            for (ECEntityClassCP baseClass : baseClasses)
                 {
-                if (derivedClass->Is(&baseClassInfo.GetClass()))
+                if (derivedClass->Is(baseClass))
                     {
                     derivesFromBase = true;
                     break;
                     }
                 }
-            if (!derivesFromBase && !baseClassInfos.empty())
+            if (!derivesFromBase && !baseClasses.empty())
                 continue;
 
             RelatedClass derivedPath(sourceClass, *derivedClass, *relationships[0], true);
