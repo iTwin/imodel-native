@@ -2848,6 +2848,22 @@ TEST_F(DgnElementTests, ToJson)
     m_db->CloseDb();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Robert.Schili                      10/1
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnElementTests, SetParentIdValidation)
+    {
+    SetupSeedProject();
+    PhysicalModelPtr model = GetDefaultPhysicalModel();
+    DgnModelId modelId = model->GetModelId();
+
+    DgnElementCPtr parent = TestElement::Create(*m_db, modelId, m_defaultCategoryId)->Insert();
+    TestElementPtr child = TestElement::Create(*m_db, parent->GetModelId(), m_defaultCategoryId);
+    ASSERT_EQ(DgnDbStatus::Success, child->SetParentId(parent->GetElementId(), m_db->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements)));
+
+    ASSERT_EQ(DgnDbStatus::WrongClass, child->SetParentId(parent->GetElementId(), m_db->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_Document)));
+    }
+
 //----------------------------------------------------------------------------------------
 // @bsiclass                                                    Sam.Wilson      10/17
 //----------------------------------------------------------------------------------------

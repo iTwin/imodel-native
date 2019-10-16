@@ -861,6 +861,10 @@ DgnDbStatus DgnElement::_SetParentId(DgnElementId parentId, DgnClassId parentRel
     if (GetElementHandler()._IsRestrictedAction(RestrictedAction::SetParent))
         return DgnDbStatus::MissingHandler;
 
+    ECClassCP relClass = GetDgnDb().Schemas().GetClass(parentRelClassId);
+    if (relClass == nullptr || !relClass->IsRelationshipClass())
+        return DgnDbStatus::WrongClass;
+
     m_parent.m_id = parentId;
     m_parent.m_relClassId = parentRelClassId;
     return DgnDbStatus::Success;
