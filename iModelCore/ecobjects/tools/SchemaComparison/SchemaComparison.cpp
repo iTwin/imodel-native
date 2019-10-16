@@ -153,6 +153,7 @@ int CompareSchemas(SchemaComparisonOptions& options, BeFileName& assetsDir)
         contexts[i] = ECN::ECSchemaReadContext::CreateContext(true, true);
         contexts[i]->SetPreserveElementOrder(false);
         contexts[i]->SetPreserveXmlComments(false);
+        contexts[i]->SetSkipValidation(true);
 
         bvector<WString> searchPaths;
         for (auto const& refDir : options.ReferenceDirectories[i])
