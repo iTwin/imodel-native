@@ -13,6 +13,16 @@
 #include <Bentley/Desktop/FileSystem.h>
 #endif
 
+#ifndef WIN32
+#include <locale>
+#include <codecvt>
+#include <sys/types.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <limits.h>
+#include <stdio.h>
+#endif
+
 using namespace ScalableMeshGTestUtil;
 
 /*---------------------------------------------------------------------------------**//**
@@ -140,23 +150,51 @@ bool ScalableMeshGTestUtil::FilterEntry(BeFileName& entry, bool isDir, bool want
     return false;
     }
 
+#ifdef WIN32
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Richard.Bois                   10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeFileName ScalableMeshGTestUtil::GetModuleFilePath()
     {
-    WCHAR wccwd[FILENAME_MAX];
+    wchar_t wccwd[FILENAME_MAX];
     GetModuleFileNameW(nullptr, &wccwd[0], (DWORD)FILENAME_MAX);
     return BeFileName(wccwd);
     }
+
+#else
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Nicolas.Beland                   07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileName ScalableMeshGTestUtil::GetModuleFilePath()
+{
+    char path[PATH_MAX + 1];
+    char dest[PATH_MAX + 1];
+    memset(dest,0,sizeof(dest)); // readlink does not null terminate!
+    struct stat info;
+    pid_t pid = getpid();
+    sprintf(path, "/proc/%d/exe", pid);
+    size_t num_bytes = readlink(path, dest, PATH_MAX);
+    if (num_bytes == -1 || num_bytes == 0 || num_bytes > PATH_MAX)
+    {
+        std::cout << "num_bytes == 0" << std::endl;
+        return BeFileName(L"");
+    }
+    else 
+    {
+        std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> conv;
+        std::wstring path_str = conv.from_bytes(dest);
+        return BeFileName(path_str.c_str());
+    }
+}
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Richard.Bois                   10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeFileName ScalableMeshGTestUtil::GetModuleFileDirectory()
-    {
+{
     return BeFileName(BeFileName::GetDirectoryName(GetModuleFilePath()).c_str());
-    }
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Richard.Bois                   10/2017
@@ -207,7 +245,14 @@ bvector<std::tuple<BeFileName, DMatrix4d, bvector<DPoint3d>, bvector<DPoint3d>>>
     bvector<std::tuple<BeFileName, DMatrix4d, bvector<DPoint3d>, bvector<DPoint3d>>> resultList;
     if (!ScalableMeshGTestUtil::GetDataPath(listingFile))
         return resultList;
+    #ifndef WIN32
+    using convert_type = std::codecvt_utf8<wchar_t>;
+    std::wstring_convert<convert_type, wchar_t> converter;
+    std::string converted_str = converter.to_bytes( listingFile );
+    f.open(converted_str.c_str());
+    #else
     f.open(listingFile.c_str());
+    #endif
     if (f.fail())
         return resultList;
     while (!f.eof())
@@ -290,7 +335,14 @@ bvector<std::tuple<BeFileName, DMatrix4d, bvector<DPoint4d>, bvector<double>>> S
     bvector<std::tuple<BeFileName, DMatrix4d, bvector<DPoint4d>, bvector<double>>> resultList;
     if (!ScalableMeshGTestUtil::GetDataPath(listingFile))
         return resultList;
+    #ifndef WIN32
+    using convert_type = std::codecvt_utf8<wchar_t>;
+    std::wstring_convert<convert_type, wchar_t> converter;
+    std::string converted_str = converter.to_bytes( listingFile );
+    f.open(converted_str.c_str());
+    #else
     f.open(listingFile.c_str());
+    #endif
     if (f.fail())
         return resultList;
     while (!f.eof())
@@ -355,7 +407,14 @@ bvector<std::tuple<BeFileName, bvector<DPoint3d>, uint64_t>> ScalableMeshGTestUt
     bvector<std::tuple<BeFileName, bvector<DPoint3d>, uint64_t>> resultList;
     if (!ScalableMeshGTestUtil::GetDataPath(listingFile))
         return resultList;
+    #ifndef WIN32
+    using convert_type = std::codecvt_utf8<wchar_t>;
+    std::wstring_convert<convert_type, wchar_t> converter;
+    std::string converted_str = converter.to_bytes( listingFile );
+    f.open(converted_str.c_str());
+    #else
     f.open(listingFile.c_str());
+    #endif
     if (f.fail())
         return resultList;
     while (!f.eof())
@@ -474,7 +533,7 @@ BentleyStatus ScalableMeshModule::Initialize()
 #ifdef VANCOUVER_API
     DgnViewLib::Initialize(*this, true); // this initializes the DgnDb libraries
 #else
-    DgnPlatformLib::Initialize(*this, true);
+    DgnPlatformLib::Initialize(*this);
 #endif	
     SMHost* smHost = new SMHost();
     ScalableMesh::ScalableMeshLib::Initialize(*smHost);

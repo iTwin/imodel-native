@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
+
+    <!-- ======================================================================================================================================== -->
+    <!-- == PUBLIC ============================================================================================================================== -->
+    <!-- ======================================================================================================================================== -->
+
+    <Part Name="RealityCorePRG" PrgOutputDir="RealityCore">
+        <SubPart PartName="__RealityCorePRG-Dynamic"/>
+        <SubPart PartName="__RealityCorePRG-Static"/>
+        <SubPart PartName="iModelCorePRG" PartFile="iModelCore/iModelCore" Repository="imodel02" />
+    </Part>
+
+    <ProductDirectoryList ListName="iModelCoreTestingNugetDirs">
+        <ProductDirectory Name="Root" Path="native"/>
+
+        <ProductDirectory Name="Assemblies"                         RelativeTo="Root" Path="bin"/>
+        <ProductDirectory Name="Assemblies"     LibType="Static"    Deliver="false"/>
+        <ProductDirectory Name="Assets"                             RelativeTo="Root" Path="assets"/>
+        <ProductDirectory Name="Assets"         LibType="Static"    RelativeTo="Root" Path="assets"/>
+        <ProductDirectory Name="Libs"                               RelativeTo="Root" Path="lib"/>
+        <ProductDirectory Name="Libs"           LibType="Static"    RelativeTo="Root" Path="lib"/>
+        <ProductDirectory Name="PublicApi"                          RelativeTo="Root" Path="include"/>
+        <ProductDirectory Name="PublicApi"      LibType="Static"    RelativeTo="Root" Path="include"/>
+        <ProductDirectory Name="UnitTestAssets"                     RelativeTo="Root" Path="data"/>
+        <ProductDirectory Name="UnitTestAssets" LibType="Static"    RelativeTo="Root" Path="data"/>
+        <ProductDirectory Name="UnitTestLibs"                       RelativeTo="Root" Path="lib"/>
+        <ProductDirectory Name="UnitTestLibs"   LibType="Static"    RelativeTo="Root" Path="lib"/>
+        <ProductDirectory Name="VendorApi"                          RelativeTo="Root" Path="include"/>
+        <ProductDirectory Name="VendorApi"      LibType="Static"    RelativeTo="Root" Path="include"/>
+        <ProductDirectory Name="VendorNotices"                      RelativeTo="Root" Path="notices"/>
+        <ProductDirectory Name="VendorNotices"  LibType="Static"    RelativeTo="Root" Path="notices"/>
+    </ProductDirectoryList>-->
+
+    <!-- ======================================================================================================================================== -->
+    <!-- == PRIVATE ============================================================================================================================= -->
+    <!-- ======================================================================================================================================== -->
+
+    <Part Name="__RealityCorePRG-Dynamic" OnlyPlatforms="x64,winrt*">
+        <SubPart PartName="ScalableMeshCreatorLib" PartFile="iModelBridgeCore/ScalableMesh/ScalableMesh" Repository="imodel02"  LibType="Dynamic"/>
+        <SubPart PartName="ScalableMesh-Tested" PartFile="iModelBridgeCore/ScalableMesh/ScalableMeshUnitTests" Repository="imodel02" LibType="Dynamic"/>
+    </Part>
+
+    <Part Name="__RealityCorePRG-Static" OnlyPlatforms="linux*">
+        <SubPart PartName="ScalableMeshCreatorLib" PartFile="iModelBridgeCore/ScalableMesh/ScalableMesh" Repository="imodel02"  LibType="Static"/>
+        <SubPart PartName="MatrixFromTiePtsLib" PartFile="iModelBridgeCore/Imagepp/ImagePP" Repository="imodel02" LibType="Static"/> 
+        <SubPart PartName="ScalableMesh-Tested" PartFile="iModelBridgeCore/ScalableMesh/ScalableMeshUnitTests" Repository="imodel02" LibType="Static"/>
+    </Part>
+
+    <!--
+        These are "parasites" because they aren't strictly required for the this library
+        library itself. However, they may be required for its non-library parts of the build (e.g.
+        testing, which we'd normally exclude from our build), or for other downstream builds
+        pulling LKGs.
+    -->
+    <Part Name="__ParasiteSubParts">
+        <!-- Testing -->
+        <!-- .................................................................................. -->
+        <SubPart PartName="__ParasiteSubParts_Gtest"/>
+        <SubPart PartName="__ParasiteSubParts_JUnit"/>
+        <SubPart PartName="__ParasiteSubParts_XCTest"/>
+        <SubPart PartName="__ParasiteSubParts_CppTest"/>
+
+        <SubPart PartName="__ParasiteSubParts_DcsX64Parts"/>
+    </Part>
+
+    <Part Name="__ParasiteSubParts_Gtest" OnlyPlatforms="x64,macos*,linux*">
+        <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest" Repository="imodel02"/>
+        <SubPart PartName="google_gmock_lib" PartFile="iModelCore/util/gmock/gmock" Repository="imodel02"/>
+        <SubPart PartName="google_gtest_lib" PartFile="iModelCore/util/gtest/gtest" Repository="imodel02"/>
+    </Part>
+
+    <Part Name="__ParasiteSubParts_JUnit" OnlyPlatforms="android*">
+        <SubPart PartName="AndroidJUnitTest-Tools" PartFile="iModelCore/BeGTest/BeGTest" Repository="imodel02"/>
+    </Part>
+
+    <Part Name="__ParasiteSubParts_XCTest" OnlyPlatforms="ios*">
+        <SubPart PartName="iOSXCTest-Tools" PartFile="iModelCore/BeGTest/BeGTest" Repository="imodel02"/>
+    </Part>
+
+    <Part Name="__ParasiteSubParts_CppTest" OnlyPlatforms="winrt*">
+        <SubPart PartName="UwpTest-Tools" PartFile="iModelCore/BeGTest/BeGTest" Repository="imodel02"/>
+    </Part>
+
+    <Part Name="__ParasiteSubParts_DcsX64Parts" OnlyPlatforms="x64">
+        <SubProduct ProductName="IModelExtractor" PartFile="iModelCore/BeSQLite/IModelExtractor" Repository="imodel02"/>
+        <SubProduct ProductName="iModelConsole" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
+    </Part>
+
+</BuildContext>

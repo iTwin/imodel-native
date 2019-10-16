@@ -256,11 +256,11 @@ class GenericLinearStorageEditor : public Import::BackInserter
          m_Features.EditHeaders().Wrap((const headerType *)m_headerPacket.Get(), m_headerPacket.GetSize());
          m_Features.EditPoints().Wrap(m_pointPacket.Get(), m_pointPacket.GetSize());
 
-         for (ArrayType::const_iterator myFeature = m_Features.Begin(); myFeature != m_Features.End(); myFeature++)
+         for (typename ArrayType::const_iterator myFeature = m_Features.Begin(); myFeature != m_Features.End(); myFeature++)
              {
              bvector<DPoint3d> newFeature;
              DRange3d featureExtent;
-             for (ArrayType::value_type::const_iterator myPoint = myFeature->Begin(); myPoint != myFeature->End(); myPoint++)
+             for (typename ArrayType::value_type::const_iterator myPoint = myFeature->Begin(); myPoint != myFeature->End(); myPoint++)
                  {
                  newFeature.push_back(DPoint3d::From(PointOp<PtType>::GetX(*myPoint),
                      PointOp<PtType>::GetY(*myPoint),
@@ -398,11 +398,11 @@ class GenericLinearStorageEditor : public Import::BackInserter
          this->m_Features.EditHeaders().Wrap((const headerType *) this->m_headerPacket.Get(), this->m_headerPacket.GetSize());
          this->m_Features.EditPoints().Wrap(this->m_pointPacket.Get(), this->m_pointPacket.GetSize());
 
-         for (super_class::ArrayType::const_iterator myFeature = this->m_Features.Begin(); myFeature != this->m_Features.End(); myFeature++)
+         for (typename super_class::ArrayType::const_iterator myFeature = this->m_Features.Begin(); myFeature != this->m_Features.End(); myFeature++)
              {
              bvector<DPoint3d> newFeature;
              DRange3d featureExtent;
-             for (super_class::ArrayType::value_type::const_iterator myPoint = myFeature->Begin(); myPoint != myFeature->End(); myPoint++)
+             for (typename super_class::ArrayType::value_type::const_iterator myPoint = myFeature->Begin(); myPoint != myFeature->End(); myPoint++)
                  {
                  newFeature.push_back(DPoint3d::From(PointOp<PtType>::GetX(*myPoint),
                      PointOp<PtType>::GetY(*myPoint),
@@ -524,9 +524,9 @@ class ScalableMeshNonDestructiveEditStorage : public ScalableMeshStorage<PtType>
 
         //TDORAY: Ensure that type can be found in layer before returning
 
-        if (super_class::PointTypeFactory().Create() == type)
+        if (typename super_class::PointTypeFactory().Create() == type)
             return (0 != this->m_pPointIndex) ? new ScalableMeshPointNonDestructiveStorageEditor<PtType>(*this->m_pPointIndex) : 0;
-        if (super_class::LinearTypeFactory().Create() == type)
+        if (typename super_class::LinearTypeFactory().Create() == type)
             return (0 != this->m_pPointIndex) ? new ScalableMeshNonDestructiveLinearStorageEditor<PtType>(*this->m_pPointIndex) : 0;
 
         return 0;

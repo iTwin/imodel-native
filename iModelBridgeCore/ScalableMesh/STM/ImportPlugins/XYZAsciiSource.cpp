@@ -5,12 +5,12 @@
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
 #include "../ImagePPHeaders.h"
-#include <ScalableMesh\Import\DataType.h>
-#include <ScalableMesh\Import\DataTypeDescription.h>
-#include <ScalableMesh\Import\Metadata.h>
-#include <ScalableMesh\Import\Plugin\InputExtractorV0.h>
-#include <ScalableMesh\Import\Plugin\SourceV0.h>
-#include <ScalableMesh\Type\IScalableMeshPoint.h>
+#include <ScalableMesh/Import/DataType.h>
+#include <ScalableMesh/Import/DataTypeDescription.h>
+#include <ScalableMesh/Import/Metadata.h>
+#include <ScalableMesh/Import/Plugin/InputExtractorV0.h>
+#include <ScalableMesh/Import/Plugin/SourceV0.h>
+#include <ScalableMesh/Type/IScalableMeshPoint.h>
 
 /*
  * Header that were originally brought by the PCH.

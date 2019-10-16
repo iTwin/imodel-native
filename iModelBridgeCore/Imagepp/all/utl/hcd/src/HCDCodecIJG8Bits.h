@@ -92,7 +92,7 @@ public:
     void            SetSubsamplingMode(HCDCodecIJG::SubsamplingModes pi_Mode);
 
     size_t  GetSubsetMaxCompressedSize() const override;
-
+    
     static void HCDJpegErrorExit(void* cinfo);
 
     // This structure is used by the error handling functions
@@ -101,6 +101,7 @@ public:
         {
         Byte* pub;
         } HCDJpegFileErrorManager;
+
 
     size_t MergeDQT_DHT(const Byte* pi_pInData,
                                               size_t pi_InDataSize,

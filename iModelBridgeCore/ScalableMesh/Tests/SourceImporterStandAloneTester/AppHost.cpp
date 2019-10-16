@@ -9,18 +9,18 @@
 using namespace std;
 
 #include "AppHost.h"
-#include <DgnPlatform\IAuxCoordSys.h>
-#include <DgnGeoCoord\DgnGeoCoord.h>
-#include <PointCloud\PointCloud.h>
-#include <PointCloud\PointCloudDisplayHandler.h>
-#include <RasterCore\RasterCoreLib.h>
-#include <RmgrTools\Tools\RscFileManager.h>
-#include <ScalableMesh\IScalableMeshMoniker.h>
-#include <ScalableMesh\IScalableMeshStream.h>
-#include <ScalableMesh\IScalableMeshURL.h>
-#include <TerrainModel\ElementHandler\DTMElementHandlerManager.h>
-#include <TerrainModel\ElementHandler\IMrDTMHostAdmin.h>
-#include <TerrainModel\ElementHandler\TerrainModelElementHandler.h>
+#include <DgnPlatform/IAuxCoordSys.h>
+#include <DgnGeoCoord/DgnGeoCoord.h>
+#include <PointCloud/PointCloud.h>
+#include <PointCloud/PointCloudDisplayHandler.h>
+#include <RasterCore/RasterCoreLib.h>
+#include <RmgrTools/Tools/RscFileManager.h>
+#include <ScalableMesh/IScalableMeshMoniker.h>
+#include <ScalableMesh/IScalableMeshStream.h>
+#include <ScalableMesh/IScalableMeshURL.h>
+#include <TerrainModel/ElementHandler/DTMElementHandlerManager.h>
+#include <TerrainModel/ElementHandler/IMrDTMHostAdmin.h>
+#include <TerrainModel/ElementHandler/TerrainModelElementHandler.h>
 
 #if defined(VANCOUVER_API) || defined(DGNDB06_API)
     USING_NAMESPACE_BENTLEY_DGNPLATFORM

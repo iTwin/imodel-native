@@ -9,27 +9,27 @@
 #include <wtypes.h>
 
 using namespace std;
-#include <DgnPlatform\IAuxCoordSys.h>
-#include <TerrainModel\TerrainModel.h>
-#include <ScalableMesh\ScalableMeshDefs.h>
-#include <ScalableMesh\IScalableMeshMoniker.h>
-#include <ScalableMesh\IScalableMeshURL.h>
+#include <DgnPlatform/IAuxCoordSys.h>
+#include <TerrainModel/TerrainModel.h>
+#include <ScalableMesh/ScalableMeshDefs.h>
+#include <ScalableMesh/IScalableMeshMoniker.h>
+#include <ScalableMesh/IScalableMeshURL.h>
 #include <DgnPlatform/DgnPlatform.h>
 
 #ifndef VANCOUVER_API   
 #include <DgnPlatform/DgnGeoCoord.h>
-#include <DgnPlatform\DesktopTools\KnownDesktopLocationsAdmin.h>
+#include <DgnPlatform/DesktopTools/KnownDesktopLocationsAdmin.h>
 #define VIEWMANAGER ViewManager
 #else 
 #include <DgnView/DgnViewLib.h>
 #define VIEWMANAGER IViewManager
-#include <DgnGeoCoord\DgnGeoCoord.h>
+#include <DgnGeoCoord/DgnGeoCoord.h>
 #endif
 
 
 
-#include <ScalableMesh\ScalableMeshAdmin.h>
-#include <ScalableMesh\ScalableMeshLib.h>
+#include <ScalableMesh/ScalableMeshAdmin.h>
+#include <ScalableMesh/ScalableMeshLib.h>
 
 
 

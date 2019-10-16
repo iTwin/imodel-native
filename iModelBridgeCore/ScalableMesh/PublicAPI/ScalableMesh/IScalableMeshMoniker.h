@@ -204,7 +204,6 @@ private :
 
     
 protected:
-    typedef IMoniker                    IMoniker; // Avoid name ambiguities
 
     BENTLEY_SM_EXPORT explicit                IMonikerBinStreamCreator       ();
 public :         

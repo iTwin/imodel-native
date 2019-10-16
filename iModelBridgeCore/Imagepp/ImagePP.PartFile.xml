@@ -111,8 +111,8 @@
         <SubPart PartName="GdalData" />
         <SubPart PartName="MatrixFromTiePtsLib" />
         <Bindings>
-            <Libs>Delivery/$(shlibprefix)Imagepp$(libext)</Libs>
-            <Assemblies>Delivery/$(shlibprefix)Imagepp$(ApiNumber)$(shlibext)
+            <Libs>Delivery/$(shlibprefix)ImagePP$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)ImagePP$(ApiNumber)$(shlibext)
                 <!--TransKit SourceDirectory="Delivery/ImagePP/Transkit" /-->
             </Assemblies>
             <Files ProductDirectoryName="xliffs" Required="false" SubPartDirectory="xliffs">

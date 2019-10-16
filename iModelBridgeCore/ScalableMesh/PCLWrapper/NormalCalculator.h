@@ -5,7 +5,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <PCLWrapper\INormalCalculator.h>
+#include <PCLWrapper/INormalCalculator.h>
 
 BEGIN_PCLWRAPPER_NAMESPACE
 

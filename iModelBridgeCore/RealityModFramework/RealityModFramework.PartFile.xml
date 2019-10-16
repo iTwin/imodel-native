@@ -11,7 +11,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="RealityPlatform" BentleyBuildMakeFile="RealityPlatform/RealityPlatform.mke" OnlyPlatforms="x86,x64, androidarm7a, AndroidArm64, iOSArm64" ApiNumber="M02">
+    <Part Name="RealityPlatform" BentleyBuildMakeFile="RealityPlatform/RealityPlatform.mke" OnlyPlatforms="x86,x64, androidarm7a, AndroidArm64, iOSArm64, linux*" ApiNumber="M02">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BentleyDll"  PartFile="iModelCore/Bentley/Bentley"      Repository="imodel02" />
         <SubPart PartName="BeXml" PartFile="iModelCore/Bentley/Bentley" Repository="imodel02"/>
@@ -48,15 +48,17 @@
         </Bindings>
     </Part>
     
-    <Part Name="RealityPlatformToolsNoCC" BentleyBuildMakeFile="RealityPlatformToolsNoCC/RealityPlatformToolsNoCC.mke" OnlyPlatforms="x64, androidarm7a, AndroidArm64, iOSArm64" ApiNumber="M02">
+    <Part Name="RealityPlatformToolsNoCC" BentleyBuildMakeFile="RealityPlatformToolsNoCC/RealityPlatformToolsNoCC.mke" OnlyPlatforms="x*,android*,iOS*,linux*" ApiNumber="M02">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="RealityPlatform" />
         <SubPart PartName="Curl"                       PartFile="Libsrc-Nugets"             Repository="bsicommon"/>
         <SubPart PartName="BeHttp"                     PartFile="iModelCore/BeHttp/BeHttp"                    Repository="imodel02"/>
         <SubPart PartName="BeJsonCpp"                  PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp"                 Repository="imodel02"/>
+        <SubPart PartName="BeXml" PartFile="iModelCore/Bentley/Bentley"/>
+        <SubPart PartName="GeomDlls" PartFile="iModelCore/GeomLibs/geomlibs"/>
         <Bindings>
             <Libs>Delivery/$(stlibprefix)RealityPlatformToolsNoCC$(stlibext)</Libs>
-            <Assemblies>delivery/$(shlibprefix)RealityPlatformToolsNoCC$(ApiNumber)$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(shlibprefix)RealityPlatformToolsNoCC$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
     

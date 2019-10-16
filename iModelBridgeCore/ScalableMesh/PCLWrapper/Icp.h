@@ -6,7 +6,7 @@
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 #include <pcl/registration/icp.h>
-#include <PCLWrapper\IIcp.h>
+#include <PCLWrapper/IIcp.h>
 BEGIN_PCLWRAPPER_NAMESPACE
 
 struct Icp : public IIcp

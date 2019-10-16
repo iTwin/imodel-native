@@ -12,11 +12,11 @@
 #include "ATPGeneration.h"
 #include "ATPFileFinder.h"
 #include <ScalableMesh/IScalableMeshSourceImportConfig.h>
-#include <ScalableMesh\IScalableMeshPolicy.h>
+#include <ScalableMesh/IScalableMeshPolicy.h>
 
 #if defined(VANCOUVER_API) || defined(DGNDB06_API)
-    #include <DgnPlatform\DgnPlatformErrors.r.h>
-    #include <DgnPlatform\DgnPlatformBaseType.r.h>
+    #include <DgnPlatform/DgnPlatformErrors.r.h>
+    #include <DgnPlatform/DgnPlatformBaseType.r.h>
 
     USING_NAMESPACE_BENTLEY_DGNPLATFORM
 #else

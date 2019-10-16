@@ -6,7 +6,7 @@ using namespace std;
 class SMNodeGroup;
 class SMNodeGroupMasterHeader;
 #include <stdlib.h>
-#include <Bentley\Bentley.h>
+#include <Bentley/Bentley.h>
 #include <ImagePP/h/ImageppAPI.h>
 #undef static_assert
 #include <DgnPlatform/DgnPlatformApi.h>
@@ -21,11 +21,11 @@ class SMNodeGroupMasterHeader;
 #endif
 
 #include <TerrainModel/Core/bcdtmClass.h>
-#include <ScalableMesh\IScalableMesh.h>
+#include <ScalableMesh/IScalableMesh.h>
 #undef static_assert
 #include <mutex>
-#include <ScalableMesh\IScalableMeshSourceCreator.h>
-#include <ScalableMesh\ScalableMeshLib.h>
+#include <ScalableMesh/IScalableMeshSourceCreator.h>
+#include <ScalableMesh/ScalableMeshLib.h>
 
 #include <ConceptDataAccess/ConceptDataAccessApi.h>
 #include <ConceptDataAccess/MultiRampIntersection.h>

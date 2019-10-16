@@ -487,7 +487,7 @@ size_t DataSourceAccountCURL::CURLHandle::CURLWriteHeaderCallback(void * content
                 header->data.insert(std::make_pair(line.substr(0, index), line.substr(index + 1)));
                 }
             else //When doing proxy connection multiple http statements are sent, keep the last one.
-#if defined(__APPLE__) || ANDROID
+#if defined(__APPLE__) || ANDROID || defined(__linux__)
             if (strcasecmp(findIter->first.c_str(), "http") == 0)
 #else
             if (stricmp(findIter->first.c_str(), "http") == 0)

@@ -5,14 +5,14 @@
 +--------------------------------------------------------------------------------------*/
 #include "ScalableMeshPCH.h"
 
-#include <DgnPlatform\Tools\MdlCnv.h>
-#include <ScalableMesh\AutomaticGroundDetection\GroundDetectionManager.h>
+#include <DgnPlatform/Tools/MdlCnv.h>
+#include <ScalableMesh/AutomaticGroundDetection/GroundDetectionManager.h>
 
 #include "PointCloudEditGroundDetection.h"
 #include "PointCloudQuadTree.h"
 #include "PointCloudClassification.h"
-#include <ScalableMesh\ScalableMeshLib.h>
-#include <ScalableMesh\ScalableMeshAdmin.h>
+#include <ScalableMesh/ScalableMeshLib.h>
+#include <ScalableMesh/ScalableMeshAdmin.h>
 #include "AutomaticGroundDetectionInternalConfig.h"
 #ifdef SCALABLE_MESH_ATP
 #include <ScalableMesh/IScalableMeshATP.h>

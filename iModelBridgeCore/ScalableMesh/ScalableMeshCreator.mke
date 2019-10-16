@@ -11,7 +11,8 @@ baseDir         = $(_MakeFilePath)
 %include  mdl.mki
 %include $(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/mki/ScalableMeshCommonDefine.mki
 %include $(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/mki/ScalableMeshPolicy_BimCreator.mki
-
+IS_THIRD_PARTY_LIBRARY = 1
+%if $(BUILD_TOOLSET) != "LINUX_CLANG"
 
 #this means we can use CGAL with the modules that were licensed to us
 %include $(BuildContext)SubParts/Files/LicensedComponents.mki
@@ -19,6 +20,11 @@ baseDir         = $(_MakeFilePath)
 
 dirToSearch=$(BuildContext)VendorAPI/Boost_1_5_7_0
 %include cincapnd.mki
+%else
+    %warn HACK: Too many clang-specific warnings!
+    %warn NO_DEFAULT_CLANG_WARNINGS = 1
+    NO_DEFAULT_CLANG_WARNINGS = 1
+%endif
 
 #----------------------------------------------------------------------
 #       Create output directories
@@ -68,29 +74,55 @@ CCompOpts + -wd4002
 
 CCompOpts + -wd4091
 
+%if $(BUILD_TOOLSET) == "ANDROID_CLANG"
+    %message "Android clang toolset"
+    ClangCppCompOpts + -Wno-error=pragma-once-outside-header -DLINUX_SCALABLEMESH_BUILD -Wno-error=unknown-pragmas -Wno-error=unused-private-field -Wno-error=unused-value -fdelayed-template-parsing -Wno-error=inconsistent-missing-override -Wno-error=format -Wno-error=delete-non-virtual-dtor -Wno-error=bool-conversion -Wno-error=microsoft-unqualified-friend -Wno-error=microsoft-pure-definition -Wno-error=microsoft-template -Wno-error=enum-compare -Wno-error=unused-variable -Wno-error=microsoft-default-arg-redefinition -Wno-error=typename-missing -Wno-error=dynamic-class-memaccess -D__CLANG__ -Wno-error=invalid-noreturn
+    ClangCppPchOpts + -Wno-error=pragma-once-outside-header -DLINUX_SCALABLEMESH_BUILD -Wno-error=unknown-pragmas -Wno-error=unused-private-field -Wno-error=unused-value -fdelayed-template-parsing -Wno-error=inconsistent-missing-override -Wno-error=format -Wno-error=delete-non-virtual-dtor  -Wno-error=bool-conversion -Wno-error=microsoft-unqualified-friend -Wno-error=microsoft-pure-definition -Wno-error=microsoft-template -Wno-error=enum-compare -Wno-error=unused-variable -Wno-error=microsoft-default-arg-redefinition -Wno-error=typename-missing -Wno-error=dynamic-class-memaccess -D__CLANG__ -Wno-error=invalid-noreturn
+    CCompOpts +  -Wno-error=pragma-once-outside-header -DLINUX_SCALABLEMESH_BUILD -Wno-error=unknown-pragmas -Wno-error=unused-private-field -Wno-error=unused-value -fdelayed-template-parsing -Wno-error=inconsistent-missing-override -Wno-error=format -Wno-error=delete-non-virtual-dtor  -Wno-error=bool-conversion -Wno-error=microsoft-unqualified-friend -Wno-error=microsoft-pure-definition -Wno-error=microsoft-template -Wno-error=enum-compare -Wno-error=unused-variable -Wno-error=microsoft-default-arg-redefinition -Wno-error=typename-missing -Wno-error=dynamic-class-memaccess -D__CLANG__ -Wno-error=invalid-noreturn
+    cuser + -Wno-error=pragma-once-outside-header -DLINUX_SCALABLEMESH_BUILD -Wno-error=unknown-pragmas -Wno-error=unused-private-field -Wno-error=unused-value -fdelayed-template-parsing -Wno-error=inconsistent-missing-override -Wno-error=format -Wno-error=delete-non-virtual-dtor -Wno-error=bool-conversion -Wno-error=microsoft-unqualified-friend -Wno-error=microsoft-pure-definition -Wno-error=microsoft-template -Wno-error=enum-compare -Wno-error=unused-variable -Wno-error=microsoft-default-arg-redefinition -Wno-error=typename-missing -Wno-error=dynamic-class-memaccess -D__CLANG__ -Wno-error=invalid-noreturn
+%elif $(BUILD_TOOLSET) == "LINUX_CLANG" || $(BUILD_TOOLSET) == "APPLE_CLANG"
+    %message "Linux Apple clang toolset"
+    #Linux options
+
+    cUser + -DLINUX_SCALABLEMESH_BUILD -D__BENTLEYSTM_BUILD__
+
+    cUser + -fdelayed-template-parsing
+
+    %if $(BUILD_TOOLSET) == "LINUX_CLANG"
+        cUser + -fopenmp=libomp -w
+    %endif
+%endif
+
 #----------------------------------------------------------------------
 #   Build precompiled header
 #----------------------------------------------------------------------
-PchCompiland = $(stmDir)ScalableMeshPCH.cpp
-PchOutputDir = $(o)
-PchExtraOptions    = -Zm180 -openmp $(PublicApiIncludes) -D__BENTLEYSTMIMPORT_BUILD__ -DSCALABLE_MESH_DGN -DNOMINMAX -Zc:twoPhase-
-CompileOptionsMki =  $(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/mki/ScalableMeshPolicy_BimCreator.mki
-%include $(SharedMki)PreCompileHeader.mki
+%if $(BUILD_TOOLSET) == "LINUX_CLANG"
+    %warn HACK: Something is wrong with the compile options sent into the PCH system, which causes libstdc++ header cmopile errors on Linux+clang!
+    %warn NOT USING PCH
+    
+    dirToSearch = $(stmDir)
+    %include cincapnd.mki
+%else
+    PchCompiland = $(stmDir)ScalableMeshPCH.cpp
+    PchOutputDir = $(o)
+    PchExtraOptions    = -Zm180 -openmp $(PublicApiIncludes) -D__BENTLEYSTMIMPORT_BUILD__ -DSCALABLE_MESH_DGN -DNOMINMAX -Zc:twoPhase-
+    CompileOptionsMki =  $(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/mki/ScalableMeshPolicy_BimCreator.mki
+    %include $(SharedMki)PreCompileHeader.mki
 
-# UsePrecompiledHeaderOptions is defined for us by PreCompileHeader.mki
-#CCPchOpts = $(UsePrecompiledHeaderOptions) -DSCALABLE_TERRAIN_MODEL_PRIVATE_SECTION -DWIP_MESH_IMPORT
-CCPchOpts = $(UsePrecompiledHeaderOptions) -DSCALABLE_TERRAIN_MODEL_PRIVATE_SECTION
+    # UsePrecompiledHeaderOptions is defined for us by PreCompileHeader.mki
+    #CCPchOpts = $(UsePrecompiledHeaderOptions) -DSCALABLE_TERRAIN_MODEL_PRIVATE_SECTION -DWIP_MESH_IMPORT
+    CCPchOpts = $(UsePrecompiledHeaderOptions) -DSCALABLE_TERRAIN_MODEL_PRIVATE_SECTION
 
-%if !defined (3DMesh)
-CCPchOpts + -DNO_3D_MESH
+    %if !defined (3DMesh)
+        CCPchOpts + -DNO_3D_MESH
+    %endif
+
+    PCHHeaderDepends = $(o)ScalableMeshPCH$(oext)
 %endif
 
-PCHHeaderDepends=$(o)ScalableMeshPCH$(oext)
 MultiCompileDepends=$(_MakeFileSpec) 
 #DisableMultiCompile=1
 %include MultiCppCompileRule.mki
-
-
 #----------------------------------------------------------------------
 #   Build Fondations
 #----------------------------------------------------------------------
@@ -215,7 +247,9 @@ $(o)CGALEdgeCollapse$(oext) : $(stmDir)CGALEdgeCollapse.cpp $(PCHHeaderDepends) 
 
 $(o)ScalableMeshSourceCreator$(oext) : $(stmDir)ScalableMeshSourceCreator.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
+%if $(BUILD_TOOLSET) != "LINUX_CLANG"
 $(o)ScalableMeshSourceCreatorWorker$(oext) : $(stmDir)ScalableMeshSourceCreatorWorker.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+%endif
 
 $(o)ScalableMeshNodeCreator$(oext) : $(stmDir)ScalableMeshNodeCreator.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
@@ -327,7 +361,9 @@ $(o)ScalableMeshQuadTreeBCLIBFilters$(oext) : $(stmDir)ScalableMeshQuadTreeBCLIB
 
 #$(o)ScalableMeshGroup$(oext) : $(stmDir)ScalableMeshGroup.cpp $(stmDir)ScalableMeshGroup.h ${MultiCompileDepends}
 
+%if $(BUILD_TOOLSET) != "LINUX_CLANG"
 $(o)ScalableMeshFrom3MX$(oext) : $(stmDir)ScalableMeshFrom3MX.cpp $(SCMPublicAPISrc)ScalableMesh\ScalableMeshFrom3MX.h ${MultiCompileDepends}
+%endif
 
 #$(o)ScalableMeshClippingOptions$(oext) : $(stmDir)ScalableMeshClippingOptions.cpp $(stmDir)ScalableMeshClippingOptions.h ${MultiCompileDepends}
 
@@ -371,14 +407,16 @@ $(o)ScalableMeshDetectGround$(oext) : $(stmDir)ScalableMeshDetectGround.cpp $(PC
 #-----------------------------------------------------------------------
 #   Build Compile Automatic Ground Detection 
 #-----------------------------------------------------------------------
-
+%if $(BUILD_TOOLSET) != "LINUX_CLANG"
 $(o)ScalableMeshGroundExtractor$(oext) : $(automaticGroundDetectionDir)ScalableMeshGroundExtractor.cpp $(automaticGroundDetectionDir)ScalableMeshGroundExtractor.h  ${MultiCompileDepends}
 
 $(o)ScalableMeshPointsProvider$(oext) : $(automaticGroundDetectionDir)ScalableMeshPointsProvider.cpp $(automaticGroundDetectionDir)ScalableMeshPointsProvider.h  ${MultiCompileDepends}
+%endif
 
 #-----------------------------------------------------------------------
 #   Build Compile Importer plugins
 #-----------------------------------------------------------------------
+%if $(BUILD_TOOLSET) != "LINUX_CLANG"
 $(o)CivilDTMHelpers$(oext) : $(importerPluginsDir)CivilDTMHelpers.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)CivilDTMFileImporter$(oext) : $(importerPluginsDir)CivilDTMFileImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
@@ -396,11 +434,13 @@ $(o)XYZAsciiFileImporter$(oext) : $(importerPluginsDir)XYZAsciiFileImporter.cpp 
 #$(o)DGNdbImporter$(oext) : $(importerPluginsDir)DGNdbImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)TextureImporter$(oext) : $(importerPluginsDir)TextureImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
-
+%endif
 
 
 #   Importer from DcStmCore
+%if $(BUILD_TOOLSET) != "LINUX_CLANG"
 $(o)DEMRasterImporter_dgndb$(oext) : $(importerPluginsDir)DEMRasterImporter_dgndb.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+%endif
 
 # DGN importers will require using dgnv8 internal SDK on BIM02
 #$(o)DGNLevelImporter$(oext) : $(importerPluginsDir)DGNLevelImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
@@ -418,7 +458,9 @@ $(o)DEMRasterImporter_dgndb$(oext) : $(importerPluginsDir)DEMRasterImporter_dgnd
 
 #$(o)STMSource$(oext) : $(importerPluginsDir)STMSource.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
+%if $(BUILD_TOOLSET) != "LINUX_CLANG"
 $(o)XYZAsciiSource$(oext) : $(importerPluginsDir)XYZAsciiSource.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+%endif
 
 #$(o)CivilElemSource$(oext) : $(importerPluginsDir)CivilElemSource.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
@@ -497,5 +539,5 @@ LINKER_LIBRARIES            = \
     $(ContextSubpartsLibs)ThreeMxReaderLegacy.lib \
     $(ContextSubpartsLibs)freeimage.lib
 
-%include $(sharedMki)LinkLibrary.mki
+%include $(sharedMki)linkLibrary.mki
 

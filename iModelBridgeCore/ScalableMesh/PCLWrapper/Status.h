@@ -5,7 +5,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <PCLWrapper\IStatus.h>
+#include <PCLWrapper/IStatus.h>
 
 BEGIN_PCLWRAPPER_NAMESPACE
 

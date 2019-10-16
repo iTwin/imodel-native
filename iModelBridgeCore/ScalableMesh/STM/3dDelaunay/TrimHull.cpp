@@ -1,6 +1,6 @@
 #include <ScalableMeshPCH.h>
 using namespace std;
-#include "tetGen\tetgen.h"
+#include "tetGen/tetgen.h"
 #undef REAL
 #include <iomanip>
 #include <queue>
@@ -20,7 +20,7 @@ using namespace std;
 //#undef SCALABLE_MESH_ATP
 #ifdef SCALABLE_MESH_ATP
 #include <ScalableMesh/IScalableMeshATP.h>
-#include <DgnPlatform\Tools\ConfigurationManager.h>
+#include <DgnPlatform/Tools/ConfigurationManager.h>
 #endif
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 #ifdef DHDEBUG

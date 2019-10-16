@@ -3,7 +3,7 @@
 
 #include <DgnPlatform/DesktopTools/ConfigurationManager.h>
 #include <ImagePP/all/h/HFCMacros.h>
-#include <ImagePP\all\h\HRFFileFormats.h>
+#include <ImagePP/all/h/HRFFileFormats.h>
 #include <ImagePP/all/h/HRFRasterFileFactory.h>
 #include "Initialize.h"
 #include "SMWorkerDefinitions.h"

@@ -967,7 +967,7 @@ struct BcDTMAppData
     virtual ~BcDTMAppData () {}
 
     //! A unique Key to identify each subclass of BcDTMAppData.
-    struct Key : DTMAppDataKey {};
+    struct Key : DTMAppDataKey { Key(){} };
 
     //! Override this method to be notified when host DgnAttachment DgnAttachmentAppData is about to be deleted from memory.
     virtual void _OnCleanup (BC_DTM_OBJ& host)

@@ -27,7 +27,7 @@
 
 
 #include "CivilDTMHelpers.h"
-#include "..\Stores\SMStoreUtils.h"
+#include "../Stores/SMStoreUtils.h"
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_VERSION(0)
 USING_NAMESPACE_BENTLEY_TERRAINMODEL

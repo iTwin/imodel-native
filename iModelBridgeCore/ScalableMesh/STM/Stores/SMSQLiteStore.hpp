@@ -429,7 +429,7 @@ template <class EXTENT> void SMSQLiteStore<EXTENT>::EraseClipFile() const
      
     const_cast<SMSQLiteStore<EXTENT>*>(this)->CloseSisterFile(SMStoreDataType::DiffSet);
     
-#if defined(__APPLE__) || ANDROID
+#if defined(__APPLE__) || defined(ANDROID) || defined(__linux__)
     Utf8String slqFileNameUtf8(sqlFileName.c_str());
     remove(slqFileNameUtf8.c_str());
 #else

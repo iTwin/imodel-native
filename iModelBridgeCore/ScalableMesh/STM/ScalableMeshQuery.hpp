@@ -1270,10 +1270,10 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
 
             if (m_meshNode->IsFromCesium())
             {
-                CreateGraphFromIndexBuffer(graph, (const long*)myMeshPtr->GetFaceIndexes(), (int)myMeshPtr->GetNbFaceIndexes(), (int)myMeshPtr->GetNbPoints(), componentPointsId, myMeshPtr->GetPoints());
+                CreateGraphFromIndexBuffer(graph, myMeshPtr->GetFaceIndexes(), (int)myMeshPtr->GetNbFaceIndexes(), (int)myMeshPtr->GetNbPoints(), componentPointsId, myMeshPtr->GetPoints());
             }
             else
-                CreateGraphFromIndexBuffer(graph, (const long*)&(*ptIndices)[0], (int)ptIndices->size(), (int)pointsPtr->size(), componentPointsId, (&pointsPtr->operator[](0)));
+                CreateGraphFromIndexBuffer(graph, &(*ptIndices)[0], (int)ptIndices->size(), (int)pointsPtr->size(), componentPointsId, (&pointsPtr->operator[](0)));
 
             meshPtr = ScalableMeshMeshWithGraph::Create(graph, ArePoints3d());
             }
@@ -1507,10 +1507,10 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshUnd
             bvector<int> componentPointsId;
             if (m_meshNode->IsFromCesium())
             {
-                CreateGraphFromIndexBuffer(graph, (const long*)myMeshPtr->GetFaceIndexes(), (int)myMeshPtr->GetNbFaceIndexes(), (int)myMeshPtr->GetNbPoints(), componentPointsId, myMeshPtr->GetPoints());
+                CreateGraphFromIndexBuffer(graph, myMeshPtr->GetFaceIndexes(), (int)myMeshPtr->GetNbFaceIndexes(), (int)myMeshPtr->GetNbPoints(), componentPointsId, myMeshPtr->GetPoints());
             }
             else
-                CreateGraphFromIndexBuffer(graph, (const long*)&(*ptIndices)[0], (int)ptIndices->size(), (int)pointsPtr->size(), componentPointsId, (&pointsPtr->operator[](0)));
+                CreateGraphFromIndexBuffer(graph, &(*ptIndices)[0], (int)ptIndices->size(), (int)pointsPtr->size(), componentPointsId, (&pointsPtr->operator[](0)));
 
             meshPtr = ScalableMeshMeshWithGraph::Create(graph, ArePoints3d());
             }
@@ -3374,7 +3374,7 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddMesh(DPoint3d*
     {
         RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphPtr(m_meshNode->GetGraphPtr());
         MTGGraph* newGraphP = new MTGGraph();
-        CreateGraphFromIndexBuffer(newGraphP, (const long*)&indicesVec[0], (int)nIndices, (int)nodePts.size(), componentPointsId, &nodePts[0]);
+        CreateGraphFromIndexBuffer(newGraphP, &indicesVec[0], (int)nIndices, (int)nodePts.size(), componentPointsId, &nodePts[0]);
         graphPtr->SetData(newGraphP);
         graphPtr->SetDirty();
     }

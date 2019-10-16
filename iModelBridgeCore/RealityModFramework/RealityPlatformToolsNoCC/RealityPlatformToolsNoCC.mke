@@ -81,6 +81,9 @@ $(o)SimpleGCSApi$(oext) : $(curlDir)SimpleGCSApi.cpp $(PublicApiDir)SimpleGCSApi
 DLM_NAME            = $(appName)
 DLM_OBJECT_FILES    = $(MultiCompileObjectList)
 DLM_NO_SIGN         = 1
+DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
 
 
 LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \

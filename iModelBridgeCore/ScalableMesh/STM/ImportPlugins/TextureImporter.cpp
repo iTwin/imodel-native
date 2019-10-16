@@ -6,14 +6,14 @@
 
 #include <ScalableMeshPCH.h>
 #include "../ImagePPHeaders.h"
-#include <ScalableMesh\GeoCoords\DGNModelGeoref.h>
-#include <ScalableMesh\GeoCoords\Reprojection.h>
-#include <ScalableMesh\Import\Plugin\InputExtractorV0.h>
-#include <ScalableMesh\Import\Plugin\SourceV0.h>
-#include <ScalableMesh\Import\ScalableMeshData.h>
-#include <ScalableMesh\IScalableMeshPolicy.h>
-#include <ScalableMesh\Memory\PacketAccess.h>
-#include <ScalableMesh\Type\IScalableMeshPoint.h>
+#include <ScalableMesh/GeoCoords/DGNModelGeoref.h>
+#include <ScalableMesh/GeoCoords/Reprojection.h>
+#include <ScalableMesh/Import/Plugin/InputExtractorV0.h>
+#include <ScalableMesh/Import/Plugin/SourceV0.h>
+#include <ScalableMesh/Import/ScalableMeshData.h>
+#include <ScalableMesh/IScalableMeshPolicy.h>
+#include <ScalableMesh/Memory/PacketAccess.h>
+#include <ScalableMesh/Type/IScalableMeshPoint.h>
 
 #include "..\InternalUtilityFunctions.h"
 

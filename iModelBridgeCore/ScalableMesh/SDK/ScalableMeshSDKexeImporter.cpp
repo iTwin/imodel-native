@@ -1,6 +1,6 @@
 #include "ScalableMeshSDKexeImporter.h"
 
-#include <ScalableTerrainModel\IMrDTMSources.h>
+#include <ScalableTerrainModel/IMrDTMSources.h>
 
 
 #include <windows.h>   

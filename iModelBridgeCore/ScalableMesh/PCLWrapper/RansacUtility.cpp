@@ -5,7 +5,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "PCLWrapperPch.h"
 
-#include <PCLWrapper\IRansacUtility.h>
+#include <PCLWrapper/IRansacUtility.h>
 #include "Status.h"
 
 BEGIN_PCLWRAPPER_NAMESPACE

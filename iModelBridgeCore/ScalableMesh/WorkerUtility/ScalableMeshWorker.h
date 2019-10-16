@@ -7,19 +7,19 @@
 #include <TerrainModel/TerrainModel.h>
 #include <ScalableMesh/ScalableMeshDefs.h>
 #include <ScalableMesh/IScalableMesh.h>
-#include <ImagePP\h\ImageppAPI.h>
+#include <ImagePP/h/ImageppAPI.h>
 #include <Bentley/BeFileListIterator.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 
 #ifndef VANCOUVER_API   
 #include <DgnPlatform/DgnGeoCoord.h>
-#include <DgnPlatform\DesktopTools\KnownDesktopLocationsAdmin.h>
+#include <DgnPlatform/DesktopTools/KnownDesktopLocationsAdmin.h>
 #define VIEWMANAGER ViewManager
 #else
 #define VIEWMANAGER IViewManager
-#include <DgnView\IViewManager.h>
+#include <DgnView/IViewManager.h>
 #include <DgnGeoCoord/DgnGeoCoord.h>
-#include <DgnView\DgnViewLib.h>
+#include <DgnView/DgnViewLib.h>
 
 using namespace Bentley::GeoCoordinates;
 #endif

@@ -2,19 +2,19 @@
 #include <mutex>
 #include <thread> 
 
-#include <Bentley\BentleyAllocator.h>
-#include <Bentley\Bentley.r.h>
-#include <Bentley\bmap.h>
-#include <Bentley\bvector.h>
-#include <Bentley\RefCounted.h>
+#include <Bentley/BentleyAllocator.h>
+#include <Bentley/Bentley.r.h>
+#include <Bentley/bmap.h>
+#include <Bentley/bvector.h>
+#include <Bentley/RefCounted.h>
 
-#include <Geom\msgeomstructs.h>
-#include <Geom\DPoint2d.h>
-#include <Geom\DPoint3d.h>
+#include <Geom/msgeomstructs.h>
+#include <Geom/DPoint2d.h>
+#include <Geom/DPoint3d.h>
 
-#include <ImagePP\h\HmrMacro.h>
-#include <ImagePP\all\h\HFCPtr.h>
-#include <ImagePP\all\h\HPMDataStore.h>
+#include <ImagePP/h/HmrMacro.h>
+#include <ImagePP/all/h/HFCPtr.h>
+#include <ImagePP/all/h/HPMDataStore.h>
 
 
 

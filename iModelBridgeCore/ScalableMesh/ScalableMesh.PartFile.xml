@@ -111,23 +111,17 @@
 
     <Part Name="ScalableMeshCore" BentleyBuildMakeFile="ScalableMeshCore.mke" ApiNumber="M02">
         
-        
-        <SubPart PartName="DgnPlatformDll"   PartFile="iModelCore/DgnPlatform/DgnPlatform"                         Repository="imodel02" />
-        <!--<SubPart PartName="TilePublisherLib" PartFile="iModelCore/DgnPlatform/DgnPlatform"                          Repository="imodel02"/>-->
-        <!--<SubPart PartName="PCLWrapper" />
-        <SubPart PartName="EigenAPI"        PartFile="pcl"                                  Repository="Libsrc-Pcl"/>   -->
-        <SubPart PartName="GeomDlls"        PartFile="iModelCore/GeomLibs/geomlibs"                             Repository="imodel02"/>
-        <SubPart PartName="ImagePP"         PartFile="iModelBridgeCore/Imagepp/ImagePP"                              Repository="imodel02" />
-        <!--<SubPart PartName="GdalLib"         PartFile="iModelBridgeCore/Imagepp/ImagePP"                                  Repository="imodel02"/>-->        
-        <SubPart PartName="Core"            PartFile="iModelBridgeCore/TerrainModel/TerrainModelDgnDb"                         Repository="imodel02"/>
-        <SubPart PartName="Formats"         PartFile="iModelBridgeCore/TerrainModel/TerrainModelDgnDb"                         Repository="imodel02"/>
-        <!--<SubPart PartName="PointCloud"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>-->
-        <SubPart PartName="CloudDataSource" PartFile="iModelBridgeCore/ScalableMesh/CloudDataSource" Repository="imodel02" />
-        <SubPart PartName="GeoCoord"        PartFile="iModelCore/GeoCoord/GeoCoord" Repository="imodel02"/>
-        <SubPart PartName="GeoCoordData"    PartFile="iModelCore/libsrc/csmap/csmap"        Repository="imodel02" />
-        <SubPart PartName="BeSQLite" PartFile="iModelCore/BeSQLite/BeSQLite" Repository="imodel02" />
-        <SubPart PartName="BePointCloud" PartFile="iModelBridgeCore/Pointools/BePointCloud/BePointCloud" Repository="imodel02" />        
-        <SubPart PartName="FreeImage"           PartFile="${SrcRoot}bsicommon/CvsPartfiles/freeimage" Repository="Bin-FreeImage"/>
+        <SubPart PartName="DgnPlatformDll"  PartFile="iModelCore/DgnPlatform/DgnPlatform"                   Repository="imodel02" />
+        <SubPart PartName="GeomDlls"        PartFile="iModelCore/GeomLibs/geomlibs"                         Repository="imodel02"/>
+        <SubPart PartName="ImagePP"         PartFile="iModelBridgeCore/Imagepp/ImagePP"                     Repository="imodel02" />
+        <SubPart PartName="Core"            PartFile="iModelBridgeCore/TerrainModel/TerrainModelDgnDb"      Repository="imodel02"/>
+        <SubPart PartName="Formats"         PartFile="iModelBridgeCore/TerrainModel/TerrainModelDgnDb"      Repository="imodel02"/>
+        <SubPart PartName="CloudDataSource" PartFile="iModelBridgeCore/ScalableMesh/CloudDataSource"        Repository="imodel02" />
+        <SubPart PartName="GeoCoord"        PartFile="iModelCore/GeoCoord/GeoCoord"                         Repository="imodel02"/>
+        <SubPart PartName="GeoCoordData"    PartFile="iModelCore/libsrc/csmap/csmap"                        Repository="imodel02" />
+        <SubPart PartName="BeSQLite"        PartFile="iModelCore/BeSQLite/BeSQLite"                         Repository="imodel02" />
+        <SubPart PartName="BePointCloud"    PartFile="iModelBridgeCore/Pointools/BePointCloud/BePointCloud" Repository="imodel02" />        
+        <SubPart PartName="FreeImage"       PartFile="${SrcRoot}bsicommon/CvsPartfiles/freeimage"           Repository="Bin-FreeImage"/>
         <SubPart PartName="ScalableMeshRDSDependencies"/>
         
         <!--Not required until we support importing .dgn element as terrain data-->
@@ -138,44 +132,96 @@
         <!--<SubPart PartName="ElementHandler"         PartFile="iModelBridgeCore/TerrainModel/TerrainModelElement"                         Repository="imodel02"/>    -->
         <Bindings>
             <!--<Directory SourceName="SdkSources/V8_InternalSDK/Dlls" ProductDirectoryName="ScalableMeshV8SDK" Required="true" />-->
-            <Libs ProductDirectoryName="ScalableMeshLibs">delivery/$(shlibprefix)ScalableMeshCore$(libext)</Libs>
+            <Libs ProductDirectoryName="ScalableMeshLibs">Delivery/$(shlibprefix)ScalableMeshCore$(libext)</Libs>
             <Assemblies>delivery/$(shlibprefix)ScalableMeshCore$(ApiNumber)$(shlibext)</Assemblies>
-            <Files ProductDirectoryName="Assemblies" Required="true">delivery/ScalableMeshCacert.pem</Files>
-            <Files ProductDirectoryName="Assemblies" Required="true">delivery/ScalableMeshLogging.config.xml</Files>
+            <Files ProductDirectoryName="Assemblies" Required="true">Delivery/ScalableMeshCacert.pem</Files>
+            <Files ProductDirectoryName="Assemblies" Required="true">Delivery/ScalableMeshLogging.config.xml</Files>
           <PublicAPI Domain="ScalableMesh" />
         </Bindings>
     </Part>
 
+    <Part Name="ScalableMeshCreatorLib">
+        <SubPart PartName="ScalableMeshCreatorWindows"/>
+        <SubPart PartName="ScalableMeshCreatorLinux"/>
+    </Part>
 
-    <Part Name="ScalableMeshCreator" BMakeFile="ScalableMeshCreator.mke" ApiNumber="M02">
+    <Part Name="ScalableMeshCreator" BMakeFile="ScalableMeshCreator.mke" ApiNumber="M02" ExcludePlatforms="Linux*">
         <SubPart PartName="AutomaticGroundDetection" PartFile="iModelBridgeCore/TerrainModel/TerrainModelDgnDb" Repository="imodel02"/>
         <SubPart PartName="ThreeMxReaderLegacy" PartFile="Domains/RealityModeling/RealityModeling" Repository="imodel02" />
         <SubPart PartName="Cgal" PartFile="Libsrc-Nugets" Repository="bsicommon"/>                
         <SubPart PartName="ScalableMeshCore"/>
         <Bindings>
-            <Libs ProductDirectoryName="ScalableMeshLibs" Required="false">delivery/$(shlibprefix)ScalableMeshCreator$(libext)</Libs>
-            <Assemblies>delivery/$(shlibprefix)ScalableMeshCreator$(ApiNumber)$(shlibext)</Assemblies>            
+            <Libs ProductDirectoryName="ScalableMeshLibs" Required="false">Delivery/$(shlibprefix)ScalableMeshCreator$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)ScalableMeshCreator$(ApiNumber)$(shlibext)</Assemblies>            
             <PublicAPI Domain="ScalableMesh" />
         </Bindings>
     </Part>
-
-    <Part Name="ScalableMeshCoreStaticLinux" BentleyBuildMakeFile="ScalableMeshCoreLinux.mke" ApiNumber="M02" BentleyBuildMakeOptions="-dUSE_STATIC_LIBRARIES=1 -dCREATE_STATIC_LIBRARIES=1" >
-        <SubPart PartName="DgnPlatformDll"   PartFile="iModelCore/DgnPlatform/DgnPlatform"                          Repository="imodel02" LibType="Static" />
-        <SubPart PartName="GeomDlls"        PartFile="iModelCore/GeomLibs/geomlibs"                             Repository="imodel02"  LibType="Static" />
-        <SubPart PartName="ImagePP"         PartFile="iModelBridgeCore/Imagepp/ImagePP"                              Repository="imodel02"  LibType="Static" />
-        <SubPart PartName="CoreStatic"            PartFile="iModelBridgeCore/TerrainModel/TerrainModelDgnDb"                         Repository="imodel02" LibType="Static" />      
-        <SubPart PartName="BeSQLite" PartFile="iModelCore/BeSQLite/BeSQLite" Repository="imodel02" LibType="Static" />
-        <SubPart PartName="CloudDataSource"  PartFile="iModelBridgeCore/ScalableMesh/CloudDataSource"                      Repository="imodel02" LibType="Static" />
-        <SubPart PartName="Cgal"             PartFile="Libsrc-Nugets"                        Repository="bsicommon" LibType="Static"/>
-        <SubPart PartName="RealityPlatformToolsNoCC"    PartFile="iModelBridgeCore/RealityModFramework/RealityModFramework"  Repository="imodel02" LibType="Static"/>
-        
     
+    <Part Name="ScalableMeshCreatorWindows" BMakeFile="ScalableMeshCreator.mke" ApiNumber="M02" ExcludePlatforms="Linux*">
+        <SubPart PartName="AutomaticGroundDetection" PartFile="iModelBridgeCore/TerrainModel/TerrainModelDgnDb" Repository="imodel02"/>
+        <SubPart PartName="ThreeMxReaderLegacy" PartFile="Domains/RealityModeling/RealityModeling" Repository="imodel02" />
+        <SubPart PartName="Cgal" PartFile="Libsrc-Nugets" Repository="bsicommon"/>                
+        <SubPart PartName="ScalableMeshCoreLibDynamic"/>
         <Bindings>
-            <Libs ProductDirectoryName="ScalableMeshLibs">delivery/$(shlibprefix)ScalableMeshCore$(stlibext)</Libs>
+            <Libs ProductDirectoryName="ScalableMeshLibs" Required="false">Delivery/$(shlibprefix)ScalableMeshCreator$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)ScalableMeshCreator$(ApiNumber)$(shlibext)</Assemblies>            
+            <PublicAPI Domain="ScalableMesh" />
+        </Bindings>
+    </Part>
+    
+    <Part Name="ScalableMeshCreatorLinux" BentleyBuildMakeFile="ScalableMeshCreator.mke" ApiNumber="M02" OnlyPlatforms="Linux*">
+        <SubPart PartName="ScalableMeshCoreLinux"/>
+        <Bindings>
+            <Libs ProductDirectoryName="ScalableMeshLibs" Required="false">Delivery/$(shlibprefix)ScalableMeshCreator$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)ScalableMeshCreator$(ApiNumber)$(shlibext)</Assemblies>            
             <PublicAPI Domain="ScalableMesh" />
         </Bindings>
     </Part>
 
+    <Part Name="ScalableMeshCoreLinux" BentleyBuildMakeFile="ScalableMeshCore.mke" ApiNumber="M02" BentleyBuildMakeOptions="-dUSE_STATIC_LIBRARIES=1 -dCREATE_STATIC_LIBRARIES=1" OnlyPlatforms="Linux*">
+        <SubPart PartName="ScalableMeshCoreLib" LibType="Static"/>
+        <Bindings>
+            <Libs ProductDirectoryName="ScalableMeshLibs">Delivery/$(shlibprefix)ScalableMeshCore$(stlibext)</Libs>
+            <PublicAPI Domain="ScalableMesh" />
+        </Bindings>
+    </Part>
+
+    <Part Name="ScalableMeshCoreLibDynamic" BentleyBuildMakeFile="ScalableMeshCore.mke" ApiNumber="M02">
+        <SubPart PartName="RealityPlatformToolsLight"    PartFile="iModelBridgeCore/RealityModFramework/RealityModFramework"  Repository="imodel02" />
+        <SubPart PartName="ScalableMeshCore" LibType="Dynamic" />
+        <Bindings>
+            <Libs ProductDirectoryName="ScalableMeshLibs">Delivery/$(shlibprefix)ScalableMeshCore$(stlibext)</Libs>
+            <PublicAPI Domain="ScalableMesh" />
+        </Bindings>
+    </Part>
+
+    <Part Name="ScalableMeshCoreLibPlatformDependencies">
+        <SubPart PartName="ScalableMeshCoreLibLinuxDependencies"/>
+        <SubPart PartName="ScalableMeshCoreLibWindowsDependencies"/>
+    </Part>
+    
+    <Part Name="ScalableMeshCoreLibLinuxDependencies" OnlyPlatforms="Linux*">
+        <SubPart PartName="RealityPlatformToolsNoCC"    PartFile="iModelBridgeCore/RealityModFramework/RealityModFramework"  Repository="imodel02" />
+    </Part>
+    
+    <Part Name="ScalableMeshCoreLibWindowsDependencies" OnlyPlatforms="x64">
+        <SubPart PartName="RealityPlatformToolsLight"    PartFile="iModelBridgeCore/RealityModFramework/RealityModFramework"  Repository="imodel02" />
+        <SubPart PartName="BentleyDesktopClientCCApi"  PartFile="SdkSources"        Repository="bsicommon" />
+        <SubPart PartName="AutomaticGroundDetection" PartFile="iModelBridgeCore/TerrainModel/TerrainModelDgnDb"                         Repository="imodel02"/>
+        <SubPart PartName="BeXml"                      PartFile="iModelCore/Bentley/Bentley"                   Repository="imodel02"/>
+        <SubPart PartName="BeHttp"                     PartFile="iModelCore/BeHttp/BeHttp"                    Repository="imodel02"/>
+    </Part>
+
+    <Part Name="ScalableMeshCoreLib" >
+        <SubPart PartName="DgnPlatformDll"  PartFile="iModelCore/DgnPlatform/DgnPlatform"                   Repository="imodel02" />
+        <SubPart PartName="GeomDlls"        PartFile="iModelCore/GeomLibs/geomlibs"                         Repository="imodel02" />
+        <SubPart PartName="ImagePP"         PartFile="iModelBridgeCore/Imagepp/ImagePP"                     Repository="imodel02" />
+        <SubPart PartName="CoreStatic"      PartFile="iModelBridgeCore/TerrainModel/TerrainModelDgnDb"      Repository="imodel02" />
+        <SubPart PartName="BeSQLite"        PartFile="iModelCore/BeSQLite/BeSQLite"                         Repository="imodel02" />
+        <SubPart PartName="CloudDataSource" PartFile="iModelBridgeCore/ScalableMesh/CloudDataSource"        Repository="imodel02" />
+        <SubPart PartName="Cgal"            PartFile="Libsrc-Nugets"                                        Repository="bsicommon" />
+        <SubPart PartName="ScalableMeshCoreLibPlatformDependencies"/>
+    </Part>
     
     <Part Name="ScalableMeshSDKexe" BentleyBuildMakeFile="SDK/ScalableMeshSDKexe.mke" OnlyPlatforms="x64,x86" ExcludeLibType="Static">
         <SubPart PartName="ScalableMesh" PartFile="iModelBridgeCore/ScalableMesh/ScalableMeshCore" Repository="imodel02" />   
@@ -194,8 +240,8 @@
         <SubPart PartName="GeomDlls" PartFile="iModelCore/GeomLibs/geomlibs" Repository="imodel02"/>
         <SubPart PartName="GeomlibsSerialization" PartFile="iModelCore/GeomLibs/geomlibs" Repository="imodel02"/>
         <Bindings>
-            <Libs ProductDirectoryName="ScalableMeshLibs" Required="false">delivery/$(shlibprefix)ScalableMeshAtpUtilities$(libext)</Libs>
-            <Assemblies ProductDirectoryName="ScalableMeshAssemblies" Required="false">delivery/$(shlibprefix)ScalableMeshAtpUtilities$(shlibext)</Assemblies>       
+            <Libs ProductDirectoryName="ScalableMeshLibs" Required="false">Delivery/$(shlibprefix)ScalableMeshAtpUtilities$(libext)</Libs>
+            <Assemblies ProductDirectoryName="ScalableMeshAssemblies" Required="false">Delivery/$(shlibprefix)ScalableMeshAtpUtilities$(shlibext)</Assemblies>       
             <PublicAPI Domain="ScalableMeshATPUtilities" />
         </Bindings>
     </Part>

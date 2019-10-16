@@ -172,7 +172,7 @@ size_t IJG12BITS(HCDCodecIJG)::CompressSubset(const void* pi_pInData,
     HPRECONDITION(pi_InDataSize < INT_MAX);
     HPRECONDITION(po_OutBufferSize < INT_MAX);
 
-    ((my_destination_mgr*)(cinfocomp->dest))->pub.next_output_byte = (Byte*)po_pOutBuffer;
+    ((my_destination_mgr*)(cinfocomp->dest))->pub.next_output_byte = (JOCTET*)po_pOutBuffer;
     ((my_destination_mgr*)(cinfocomp->dest))->pub.free_in_buffer = po_OutBufferSize;
     ((my_destination_mgr*)(cinfocomp->dest))->m_pData = (Byte*)po_pOutBuffer;
     ((my_destination_mgr*)(cinfocomp->dest))->m_DataSize = po_OutBufferSize;
@@ -237,7 +237,7 @@ uint32_t IJG12BITS(HCDCodecIJG)::CreateTables(void* po_pOutBuffer, uint32_t pi_O
     if(!m_ExternalQuantizationTablesUse && m_HeaderSize == 0)
         SetQuality(m_Quality);
 
-    ((my_destination_mgr*)(cinfocomp->dest))->pub.next_output_byte = (Byte*)po_pOutBuffer;
+    ((my_destination_mgr*)(cinfocomp->dest))->pub.next_output_byte = (JOCTET*)po_pOutBuffer;
     ((my_destination_mgr*)(cinfocomp->dest))->pub.free_in_buffer = pi_OutBufferSize;
     ((my_destination_mgr*)(cinfocomp->dest))->m_pData = (Byte*)po_pOutBuffer;
     ((my_destination_mgr*)(cinfocomp->dest))->m_DataSize = pi_OutBufferSize;
@@ -260,7 +260,7 @@ size_t IJG12BITS(HCDCodecIJG)::DecompressSubset(const void*  pi_pInData,
     HPRECONDITION(pi_OutBufferSize < INT_MAX);
     
     ((my_source_mgr*)(cinfodec->src))->pub.bytes_in_buffer = pi_InDataSize;
-    ((my_source_mgr*)(cinfodec->src))->pub.next_input_byte = (Byte*)pi_pInData;
+    ((my_source_mgr*)(cinfodec->src))->pub.next_input_byte = (JOCTET*)pi_pInData;
     ((my_source_mgr*)(cinfodec->src))->m_DataSize = pi_InDataSize;
     ((my_source_mgr*)(cinfodec->src))->m_pData = (Byte*)pi_pInData;
 
@@ -324,9 +324,9 @@ size_t IJG12BITS(HCDCodecIJG)::DecompressSubset(const void*  pi_pInData,
             {
             for(uint32_t i=0; i < ((my_source_mgr*)(cinfodec->src))->pub.bytes_in_buffer && found == false; i++)
                 {
-                if(pCheck->pub.next_input_byte[0] == 0xFF)
+                if(pCheck->pub.next_input_byte[0] == static_cast<JOCTET>(0xFF))
                     {
-                    if(pCheck->pub.next_input_byte[1] == 0xD9)
+                    if(pCheck->pub.next_input_byte[1] == static_cast<JOCTET>(0xD9))
                         {
                         jpeg_finish_decompress(cinfodec);
                         found = true;
@@ -718,7 +718,7 @@ void IJG12BITS(HCDCodecIJG)::ReadHeader(const void* pi_pInData, size_t pi_InData
     HPRECONDITION(pi_InDataSize < INT_MAX);
 
     ((my_source_mgr*)(cinfodec->src))->pub.bytes_in_buffer = pi_InDataSize;
-    ((my_source_mgr*)(cinfodec->src))->pub.next_input_byte = (Byte*)pi_pInData;
+    ((my_source_mgr*)(cinfodec->src))->pub.next_input_byte = (JOCTET*)pi_pInData;
     ((my_source_mgr*)(cinfodec->src))->m_DataSize = pi_InDataSize;
     ((my_source_mgr*)(cinfodec->src))->m_pData = (Byte*)pi_pInData;
 
@@ -1061,7 +1061,7 @@ init_destination (j_compress_ptr cinfo)
     {
     my_dest_ptr dest = (my_dest_ptr) cinfo->dest;
 
-    dest->pub.next_output_byte = dest->m_pData;
+    dest->pub.next_output_byte = (JOCTET*)dest->m_pData;
     dest->pub.free_in_buffer = dest->m_DataSize;
     }
 
@@ -1096,7 +1096,7 @@ empty_output_buffer (j_compress_ptr cinfo)
 
     HASSERT(!"Increase the number of the define MAX_COMPRESSED_SIZE_SAFETY_OFFSET");
 
-    dest->pub.next_output_byte = dest->m_pData;
+    dest->pub.next_output_byte = (JOCTET*)dest->m_pData;
     dest->pub.free_in_buffer = dest->m_DataSize;
 
     return true;
@@ -1226,9 +1226,9 @@ METHODDEF (boolean)
 fill_input_buffer (j_decompress_ptr cinfo)
     {
     my_src_ptr src = (my_src_ptr) cinfo->src;
-
-    src->pub.next_input_byte = src->m_pData;
-    src->pub.bytes_in_buffer = src->m_DataSize;
+    
+    src->pub.next_input_byte = (JOCTET*)src->m_pData;
+    src->pub.bytes_in_buffer = (size_t)src->m_DataSize;
 
     return true;
     }
@@ -1328,7 +1328,7 @@ s_jpeg_mem_src (j_decompress_ptr cinfo, Byte* pi_pData, size_t pi_DataSize)
     src->pub.resync_to_restart = jpeg_resync_to_restart; /* use default method */
     src->pub.term_source = term_source;
     src->pub.bytes_in_buffer = pi_DataSize; /* forces fill_input_buffer on first read */
-    src->pub.next_input_byte = pi_pData; /* until buffer loaded */
+    src->pub.next_input_byte = (JOCTET*)pi_pData; /* until buffer loaded */
     }
 
 

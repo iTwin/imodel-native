@@ -5,11 +5,11 @@
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
 
-#include <ScalableMesh\Foundations\Exception.h>
-#include <ScalableMesh\GeoCoords\DGNModelGeoref.h>
-#include <ScalableMesh\GeoCoords\GCS.h>
-#include <ScalableMesh\IScalableMeshPolicy.h>
-#include <ScalableMesh\GeoCoords\Reprojection.h>
+#include <ScalableMesh/Foundations/Exception.h>
+#include <ScalableMesh/GeoCoords/DGNModelGeoref.h>
+#include <ScalableMesh/GeoCoords/GCS.h>
+#include <ScalableMesh/IScalableMeshPolicy.h>
+#include <ScalableMesh/GeoCoords/Reprojection.h>
 
                
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_GEOCOORDINATES

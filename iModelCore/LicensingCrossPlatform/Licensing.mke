@@ -18,6 +18,7 @@ BuildContextLibsDirectory   = $(BuildContext)SubParts/Libs/
 o = $(OutputRootDir)build/Licensing/
 always:
     !~@mkdir $(o)
+    %include CopyTestingAssets.mki
 
 #----------------------------------------------------------------------
 # Use multi-compile

@@ -11,17 +11,17 @@
 
 
 #include <ImagePP/all/h/HFCException.h>
-#include <ScalableMesh\ScalableMeshUtilityFunctions.h>
-#include <ScalableMesh\IScalableMeshQuery.h>
+#include <ScalableMesh/ScalableMeshUtilityFunctions.h>
+#include <ScalableMesh/IScalableMeshQuery.h>
 //#include <eigen\Eigen\Dense>
 //#include <PCLWrapper\IDefines.h>
 //#include <PCLWrapper\INormalCalculator.h>
 #include "ScalableMeshQuery.h"
 //#include "MeshingFunctions.h"
-#include <ScalableMesh\ScalableMeshUtilityFunctions.h>
+#include <ScalableMesh/ScalableMeshUtilityFunctions.h>
 #include <Mtg/MtgStructs.h>
 //#include <Geom/bsp/bspbound.fdf>
-#include "ScalableMesh\ScalableMeshGraph.h"
+#include "ScalableMesh/ScalableMeshGraph.h"
 #include <string>
 #include <queue>
 #include <ctime>
@@ -64,7 +64,7 @@ bcdtmWrite_toFileDtmObject(dtmObjP, dtmFileName.c_str());                       
 #endif
 
 
-template<class POINT, class EXTENT> void ScalableMesh2DDelaunayMesher<POINT, EXTENT>::CreateGraph(HFCPtr<SMMeshIndexNode<POINT, EXTENT>>& node, const DPoint3d* points, int nbPoints, const long* ptsIndice, int nbPtsIndice) const
+template<class POINT, class EXTENT> void ScalableMesh2DDelaunayMesher<POINT, EXTENT>::CreateGraph(HFCPtr<SMMeshIndexNode<POINT, EXTENT>>& node, const DPoint3d* points, int nbPoints, const int32_t* ptsIndice, int nbPtsIndice) const
     {
     bvector<int> componentPointsId;
 
@@ -142,7 +142,7 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
         
         RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptsIndicePtr(node->GetPtsIndicePtr());
 
-        CreateGraph(node, &(*pointsPtr)[0], (int)pointsPtr->size(), (const long*)&(*ptsIndicePtr)[0], (int)ptsIndicePtr->size());                
+        CreateGraph(node, &(*pointsPtr)[0], (int)pointsPtr->size(), &(*ptsIndicePtr)[0], (int)ptsIndicePtr->size());                
         return true;
         }
     
@@ -188,7 +188,7 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
         
         for (size_t i = 0; i < pointsPtr->size(); ++i)
             {
-            if ((*pointsPtr)[i].x < 1e15 && (*pointsPtr)[i].y < 1e15 && !_isnan((*pointsPtr)[i].y) && !_isnan((*pointsPtr)[i].x))
+            if ((*pointsPtr)[i].x < 1e15 && (*pointsPtr)[i].y < 1e15 && !std::isnan((*pointsPtr)[i].y) && !std::isnan((*pointsPtr)[i].x))
                 {
                 points.push_back((*pointsPtr)[i]);
                 if (fabs(points.back().x) < 1e-8) points.back().x =0;
@@ -536,7 +536,7 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
                 
                 pointsPtr->push_back(&nodePts[0], nodePts.size());
 
-                CreateGraph(node, &pts[0], (int)nodePts.size(), (const long*)&faceIndexes[0], (int)faceIndexes.size());
+                CreateGraph(node, &pts[0], (int)nodePts.size(), &faceIndexes[0], (int)faceIndexes.size());
 
                 if (faceIndexes.size() > 0)
                     node->PushPtsIndices(/*meshP->GetFaceIndexes()*/&faceIndexes[0], faceIndexes.size());
@@ -808,7 +808,7 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
     RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphPtr(node->GetGraphPtr());
     bvector<int> componentPointsId;
     MTGGraph* newGraphP = new MTGGraph();
-    CreateGraphFromIndexBuffer(newGraphP, (const long*)&faceIndices[0], (int)faceIndices.size(), (int)geomData.size(), componentPointsId, &geomData[0]);
+    CreateGraphFromIndexBuffer(newGraphP, &faceIndices[0], (int)faceIndices.size(), (int)geomData.size(), componentPointsId, &geomData[0]);
     //node->SetGraphDirty();
     graphPtr->SetData(newGraphP);    
     assert(faceIndices.size() % 3 == 0);
@@ -989,7 +989,7 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
     MTGGraph* graphP = new MTGGraph();
     bvector<int> componentPointsId;
     if (faceIndices.size() > 0 && geometryData.size() > 0)
-        CreateGraphFromIndexBuffer(graphP, (const long*)&faceIndices[0], (int)faceIndices.size(), (int)geomData.size(), componentPointsId, &geomData[0]);
+        CreateGraphFromIndexBuffer(graphP, &faceIndices[0], (int)faceIndices.size(), (int)geomData.size(), componentPointsId, &geomData[0]);
 
     graphPtr->SetData(graphP);
     graphPtr->SetDirty();    
@@ -1297,7 +1297,7 @@ ISMMTGGraphDataStorePtr graphStore(node->GetGraphStore());
     bvector<int> componentPointsId;
 
     if (faceIndices.size() >= 3 && geomData.size() > 0)
-    CreateGraphFromIndexBuffer(tempGraph, (const long*)&faceIndices[0], (int)faceIndices.size(), (int)geomData.size(), componentPointsId, &geomData[0]);
+    CreateGraphFromIndexBuffer(tempGraph, &faceIndices[0], (int)faceIndices.size(), (int)geomData.size(), componentPointsId, &geomData[0]);
     TRACEPOINT(THREAD_ID(), EventType::GRAPH_STORE, node->GetBlockID().m_integerID, (uint64_t)-1, -1, -1, memPoolItemPtr->GetSize(),  0)
     storedMemoryPoolItem->SetData(tempGraph);
     storedMemoryPoolItem->SetDirty();
@@ -2226,7 +2226,7 @@ return true;
                 *node->GetGraphPtr() = MTGGraph();
                 }
             MTGGraph* newGraphP = new MTGGraph();
-            CreateGraphFromIndexBuffer(/*node->GetGraphPtr()*/newGraphP, (const long*)meshP->GetFaceIndexes(), (int)meshP->GetNbFaceIndexes(), (int)nodePts.size(), componentPointsId, meshP->GetPoints());
+            CreateGraphFromIndexBuffer(/*node->GetGraphPtr()*/newGraphP, meshP->GetFaceIndexes(), (int)meshP->GetNbFaceIndexes(), (int)nodePts.size(), componentPointsId, meshP->GetPoints());
             graphPtr->SetData(newGraphP);
             graphPtr->SetDirty();
 
@@ -2625,7 +2625,7 @@ template<class POINT, class EXTENT> bool ScalableMesh3DDelaunayMesher<POINT, EXT
     ScalableMeshMesh* meshP((ScalableMeshMesh*)meshPtr.get());
     assert(meshP != 0);
     bvector<int> contourPointsId;
-    CreateGraphFromIndexBuffer(&meshGraphStitched, (const long*)meshP->GetFaceIndexes(), (int)meshP->GetNbFaceIndexes(), (int)meshP->GetNbPoints(), contourPointsId, meshP->GetPoints());
+    CreateGraphFromIndexBuffer(&meshGraphStitched, meshP->GetFaceIndexes(), (int)meshP->GetNbFaceIndexes(), (int)meshP->GetNbPoints(), contourPointsId, meshP->GetPoints());
 #ifndef NDEBUG
   /*  MTGARRAY_SET_LOOP(edgeID, (&meshGraphStitched))
         {

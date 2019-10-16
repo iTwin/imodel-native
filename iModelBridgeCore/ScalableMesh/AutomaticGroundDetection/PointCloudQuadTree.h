@@ -5,21 +5,21 @@
 +--------------------------------------------------------------------------------------*/
 #pragma  once
 
-#include <DgnPlatform\DgnPlatform.r.h>
-#include <DgnPlatform\ElementHandle.h>
-#include <DgnPlatform\XAttributeHandler.h>
-#include <RmgrTools\Tools\DataExternalizer.h>
+#include <DgnPlatform/DgnPlatform.r.h>
+#include <DgnPlatform/ElementHandle.h>
+#include <DgnPlatform/XAttributeHandler.h>
+#include <RmgrTools/Tools/DataExternalizer.h>
 
-#include <DgnPlatform\IPointCloud.h>
-#include <DgnPlatform\ITransactionHandler.h>
-#include <DgnPlatform\XAttributeHandler.h>
+#include <DgnPlatform/IPointCloud.h>
+#include <DgnPlatform/ITransactionHandler.h>
+#include <DgnPlatform/XAttributeHandler.h>
 
-#include <PointCloud\PointCloud.h>
-#include <PointCloud\PointCloudChannel.h>
-#include <DgnPlatform\PointCloudClipHandler.h>
+#include <PointCloud/PointCloud.h>
+#include <PointCloud/PointCloudChannel.h>
+#include <DgnPlatform/PointCloudClipHandler.h>
 USING_NAMESPACE_BENTLEY_POINTCLOUD
-#include <PointCloud\PointCloudDataQuery.h>
-#include <ScalableMesh\AutomaticGroundDetection\GroundDetectionManager.h>
+#include <PointCloud/PointCloudDataQuery.h>
+#include <ScalableMesh/AutomaticGroundDetection/GroundDetectionManager.h>
 
 
 USING_NAMESPACE_BENTLEY

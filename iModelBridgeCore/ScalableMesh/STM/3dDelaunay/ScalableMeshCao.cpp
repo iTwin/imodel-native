@@ -5,7 +5,7 @@
 using namespace std;
 #include <iomanip>
 
-#include "tetGen\tetgen.h"
+#include "tetGen/tetgen.h"
 
 //#pragma intrinsic
 #ifdef DHDEBUG

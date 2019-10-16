@@ -1024,9 +1024,11 @@ bool ScalableMeshMesh::_FindTriangleForProjectedPoint(int* outTriangle, DPoint3d
     volatile bool canContinue = true;
 
     // disable static analyzer warning : Code analysis ignores OpenMP constructs; analyzing single-threaded code.
+#ifdef WIN32
     #pragma warning (push)
     #pragma warning (disable: 6993)
     #pragma omp parallel for firstprivate(use2d)
+#endif
     for (int i = 0; i < m_nbFaceIndexes; i += 3)
         {
         if (canContinue)
@@ -1075,7 +1077,9 @@ bool ScalableMeshMesh::_FindTriangleForProjectedPoint(int* outTriangle, DPoint3d
             }
         //if (maxParam > -DBL_MAX) return true;
         }
+#ifdef WIN32
     #pragma warning (pop)
+#endif
 
     if (maxParam > -DBL_MAX) return true;
     return false;

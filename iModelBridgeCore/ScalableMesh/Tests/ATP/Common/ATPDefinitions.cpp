@@ -14,7 +14,7 @@
 #include <string>
 
 #ifdef VANCOUVER_API
-#include <ImagePP\h\hstdcpp.h>
+#include <ImagePP/h/hstdcpp.h>
 #endif
 
 #include <ScalableMesh/Foundations/Definitions.h>
@@ -22,12 +22,12 @@
 
 #include "ATPUtils.h"
 #include "ATPGeneration.h"
-#include "..\TiledTriangulation\MrDTMUtil.h"
-#include "..\Tool\DrapeLineTool.h"
-#include "..\Tool\VolumeCalculationTool.h"
-#include "..\Initialize.h"
-#include "..\TiledTriangulation\ITiledTriangulatorValidator.h"
-#include "..\..\..\STM\SMNodeGroup.h"
+#include "../TiledTriangulation\MrDTMUtil.h"
+#include "../Tool/DrapeLineTool.h"
+#include "../Tool/VolumeCalculationTool.h"
+#include "../Initialize.h"
+#include "../TiledTriangulation/ITiledTriangulatorValidator.h"
+#include "../../../STM/SMNodeGroup.h"
 
 
 using namespace std;
@@ -39,14 +39,14 @@ using namespace std;
 #include <ScalableMesh/IScalableMeshSourceCreator.h>
 #include <ScalableMesh/IScalableMeshSources.h>
 #include <ScalableMesh/Import/ScalableMeshData.h>
-#include <ScalableMesh\IScalableMeshSourceImportConfig.h>
+#include <ScalableMesh/IScalableMeshSourceImportConfig.h>
 #include <ScalableMesh/GeoCoords/GCS.h>
 #include <ScalableMesh/ScalableMeshUtilityFunctions.h>
 #include <ScalableMesh/IScalableMeshProgress.h>
 #include <ScalableMesh/ScalableMeshFrom3MX.h>
 #include <ScalableMesh/IScalableMeshDetectGround.h>
 
-#include <GeomSerialization\GeomLibsFlatBufferApi.h>
+#include <GeomSerialization/GeomLibsFlatBufferApi.h>
 
 #include <TerrainModel/Core/DTMDefs.h>
 #include <TerrainModel/TerrainModel.h>
@@ -64,15 +64,15 @@ using namespace std;
 
 #include <ImagePP/h/ImageppAPI.h>
 
-#include <ImagePP\all\h\HFCURLFile.h>
-#include <ImagePP\all\h\HRFRasterFileFactory.h>
-#include <ImagePP\all\h\HCDCodec.h>
-#include <ImagePP\all\h\HRPPixelTypeV24R8G8B8.h>
-#include <ImagePP\all\h\HRPPixelTypeV32R8G8B8A8.h>
-#include <ImagePP\all\h\HCDCodecIdentity.h>
-#include <ImagePP\all\h\HRAClearOptions.h>
-#include <ImagePP\all\h\HRACopyFromOptions.h>
-#include <ImagePP\all\h\HGFHMRStdWorldCluster.h>
+#include <ImagePP/all/h/HFCURLFile.h>
+#include <ImagePP/all/h/HRFRasterFileFactory.h>
+#include <ImagePP/all/h/HCDCodec.h>
+#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
+#include <ImagePP/all/h/HCDCodecIdentity.h>
+#include <ImagePP/all/h/HRAClearOptions.h>
+#include <ImagePP/all/h/HRACopyFromOptions.h>
+#include <ImagePP/all/h/HGFHMRStdWorldCluster.h>
 
 #include <ImagePP/all/h/HIMOnDemandMosaic.h>
 #include <ImagePP/all/h/HIMMosaic.h>

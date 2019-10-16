@@ -1,7 +1,7 @@
 #pragma once
 
 #pragma region "Geometry Helpers"
-#include <geom\geomapi.h>
+#include <geom/geomapi.h>
 #include <vector>
 
 const double SmallValue = 1.0e-150;

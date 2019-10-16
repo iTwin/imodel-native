@@ -7,9 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <ScalableMesh\IScalableMesh.h>
-#include <ScalableMesh\IScalableMeshProgress.h>
-#include <ScalableMesh\IScalableMeshPublisher.h>
+#include <ScalableMesh/IScalableMesh.h>
+#include <ScalableMesh/IScalableMeshProgress.h>
+#include <ScalableMesh/IScalableMeshPublisher.h>
 #include "../SMNodeGroup.h"
 #include "../ScalableMeshNodeCreator.h"
 

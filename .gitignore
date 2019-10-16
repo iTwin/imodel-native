@@ -7,9 +7,11 @@
 xcuserdata
 iModelJsApp.xcconfig
 ipch
+.vscode
 .gradle/
 gradle.properties
 local.properties
+.project
 *.vcxproj
 *.sln
 .vs

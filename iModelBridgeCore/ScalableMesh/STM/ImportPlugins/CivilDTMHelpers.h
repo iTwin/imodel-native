@@ -10,8 +10,8 @@
 #pragma once
 
 #ifndef VANCOUVER_API
-#include "..\IDTMFeatureArray.h"
-#include "..\HPUArray.h"
+#include "../IDTMFeatureArray.h"
+#include "../HPUArray.h"
 #else
 #include <ImagePP/all/h/IDTMFeatureArray.h>
 #include <ImagePP/all/h/HPUArray.h>

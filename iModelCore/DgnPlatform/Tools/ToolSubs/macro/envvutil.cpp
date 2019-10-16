@@ -31,16 +31,17 @@ BentleyStatus   util_putenv (WCharCP varName, WCharCP value)
     if ( (NULL == varName) || (0 == *varName) )
         return BSIERROR;
 
-    WString     formatted = varName;
-    formatted.append (L"=");
-    formatted.append (value);
+    WString     varNameStr = varName;
+    WString     valueStr = value;
+    size_t localeVarNameSize = varNameStr.GetMaxLocaleCharBytes(); //nbr of bytes including null terminator
+    size_t localeValueSize = valueStr.GetMaxLocaleCharBytes();
+    auto localeVarName = std::make_unique<char[]>(localeVarNameSize);
+    auto localeValue = std::make_unique<char[]>(localeValueSize);
+    
+    varNameStr.ConvertToLocaleChars(localeVarName.get(), localeVarNameSize);
+    valueStr.ConvertToLocaleChars(localeValue.get(), localeValueSize);
 
-    size_t  maxLocaleBytes = formatted.GetMaxLocaleCharBytes();
-    char*   localeString = (char*) _alloca (maxLocaleBytes);
-    // *** WIP_NONPORT: Convert to UTF-8 or to locale?
-    formatted.ConvertToLocaleChars (localeString, maxLocaleBytes);
-
-    putenv (localeString);
+    setenv (localeVarName.get(), localeValue.get(), 1); //overwrite if exist, and setenv creates a copy of the strings we give it
 
     return BSISUCCESS;
     }

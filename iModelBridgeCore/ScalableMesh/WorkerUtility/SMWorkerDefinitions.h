@@ -12,7 +12,7 @@
 #pragma once
 
 #include <Bentley/Bentley.h>
-#include <ScalableMesh\ScalableMeshDefs.h>
+#include <ScalableMesh/ScalableMeshDefs.h>
 
 #define BEGIN_BENTLEY_SCALABLEMESH_WORKER_NAMESPACE    BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE namespace Worker {
 #define END_BENTLEY_SCALABLEMESH_WORKER_NAMESPACE     }}}

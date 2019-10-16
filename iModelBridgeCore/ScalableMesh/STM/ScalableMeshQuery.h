@@ -566,9 +566,9 @@ class ScalableMeshMesh : public IScalableMeshMesh
 
         virtual DPoint3d* _EditPoints() override;
 
-        virtual DTMStatusInt _GetAsBcDTM(BcDTMPtr& bcdtm)override;
+        virtual DTMStatusInt _GetAsBcDTM(TerrainModel::BcDTMPtr& bcdtm)override;
 
-        virtual DTMStatusInt _GetAsBcDTM(BcDTMPtr& bcdtm, bool pointsOnly)override;
+        virtual DTMStatusInt _GetAsBcDTM(TerrainModel::BcDTMPtr& bcdtm, bool pointsOnly)override;
 
         virtual DTMStatusInt _GetBoundary(bvector<DPoint3d>& boundary) override;
 
@@ -589,7 +589,7 @@ class ScalableMeshMesh : public IScalableMeshMesh
         virtual bool _CutWithPlane(bvector<DSegment3d>& segmentList, DPlane3d& cuttingPlane) const override;
 
         virtual bool _IntersectRay(DPoint3d& pt, const DRay3d& ray) const override;
-        virtual bool _IntersectRay(bvector<DTMRayIntersection>& pts, const DRay3d& ray) const override;
+        virtual bool _IntersectRay(bvector<TerrainModel::DTMRayIntersection>& pts, const DRay3d& ray) const override;
 
         virtual void _WriteToFile(WString& filePath) override;
 
@@ -1402,7 +1402,7 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
 
         bool ComputeDiffSet(DifferenceSet& diffs, const bset<uint64_t>& clipsToShow, bool shouldInvertClips =false) const;
 
-        virtual BcDTMPtr   _GetBcDTM() const override;
+        virtual TerrainModel::BcDTMPtr   _GetBcDTM() const override;
 
         virtual bool    _ArePoints3d() const override;
 
@@ -1509,7 +1509,7 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
 template<class POINT> class ScalableMeshCachedMeshNode : public virtual IScalableMeshCachedDisplayNode, 
                                                          public virtual ScalableMeshNode<POINT>
     {    
-#if ANDROID
+#if defined(ANDROID) || defined(__linux__)
     typedef ScalableMeshNode<POINT> __super;
 #endif
     private: 
@@ -1574,7 +1574,7 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
     {    
 
     private: 
-#if ANDROID    
+#if defined(ANDROID) || defined(__linux__)    
     typedef ScalableMeshNode<POINT> __super;
 #endif
             mutable RefCountedPtr<SMMemoryPoolGenericVectorItem<SmCachedDisplayMeshData>> m_cachedDisplayMeshData;
@@ -1713,7 +1713,7 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
 
     template<class POINT> class ScalableMeshContourCachedDisplayNode : public virtual ScalableMeshCachedDisplayNode<POINT>
     {
-#if ANDROID
+#if defined(ANDROID) || defined(__linux__)
     typedef ScalableMeshCachedDisplayNode<POINT> __super;
 #endif
     private:

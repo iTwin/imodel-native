@@ -7,12 +7,12 @@
 #undef static_assert
 #include "ScalableMeshPointsProvider.h"
 #ifdef VANCOUVER_API
-#include <DgnGeoCoord\DgnGeoCoord.h>
+#include <DgnGeoCoord/DgnGeoCoord.h>
 #else
-#include <DgnPlatform\DgnGeoCoord.h>
+#include <DgnPlatform/DgnGeoCoord.h>
 #endif
 
-#include "..\GeoCoords\ReprojectionUtils.h"
+#include "../GeoCoords/ReprojectionUtils.h"
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_TERRAINMODEL

@@ -56,9 +56,9 @@ struct MockListenerWithCancel : IScalableMeshProgressListener
 template <int NIterations>
 struct MockWorker
     {
-    std::future<bool> DoWorkAsync(IScalableMeshProgress* progress)
+    std::future<bool> DoWorkAsync(IScalableMeshProgressPtr progress)
         {
-        return std::async(std::launch::async, [this, &progress] 
+        return std::async(std::launch::async, [this, progress] 
             {
             return DoWork(progress);
             });
@@ -120,10 +120,10 @@ struct MockMultiStepWorker : MockWorker<NIterations>
 template <int NProcess, int NIterations>
 struct MockMultiProcessWorker : MockWorker<NIterations>
     {
-    std::future<bool> DoWorkAsync(IScalableMeshProgress* progress)
+    std::future<bool> DoWorkAsync(IScalableMeshProgressPtr progress)
         {
         progress->ProgressStepProcess() = ScalableMeshStepProcess::PROCESS_INACTIVE;
-        return std::async(std::launch::async, [this, &progress]
+        return std::async(std::launch::async, [this, progress]
             {
             ScalableMeshStepProcess processes[NProcess];
             switch (NProcess)
@@ -200,7 +200,7 @@ TEST_F(ScalableMeshProgressTest, Run)
     ASSERT_TRUE(progress != nullptr);
 
     MockWorker<NUMITERATIONS> worker;
-    bool isDone = worker.DoWorkAsync(progress.get()).get();
+    bool isDone = worker.DoWorkAsync(progress).get();
 
     EXPECT_TRUE(isDone);
     EXPECT_FALSE(progress->IsCanceled());
@@ -218,7 +218,7 @@ TEST_F(ScalableMeshProgressTest, RunWithListener)
     ASSERT_TRUE(progress->AddListener(listener));
 
     MockWorker<NUMITERATIONS> worker;
-    bool isDone = worker.DoWorkAsync(progress.get()).get();
+    bool isDone = worker.DoWorkAsync(progress).get();
 
     EXPECT_GT(listener.m_numCheckContinueOnProgressCalls, 0);
     EXPECT_TRUE(isDone);
@@ -237,7 +237,7 @@ TEST_F(ScalableMeshProgressTest, RunThenCancel)
     ASSERT_TRUE(progress->AddListener(listener));
 
     MockWorker<NUMITERATIONS> worker;
-    bool isDone = worker.DoWorkAsync(progress.get()).get();
+    bool isDone = worker.DoWorkAsync(progress).get();
 
     EXPECT_FALSE(isDone); // Work is being canceled, should never get to finish
     EXPECT_TRUE(progress->IsCanceled());
@@ -255,7 +255,7 @@ TEST_F(ScalableMeshProgressTest, RunMultiStep)
     ASSERT_TRUE(progress->AddListener(listener));
 
     MockMultiStepWorker<NUMSTEPS, NUMITERATIONS> worker;
-    auto workFuture = worker.DoWorkAsync(progress.get());
+    auto workFuture = worker.DoWorkAsync(progress);
 
     ASSERT_TRUE(progress->GetTotalNumberOfSteps() == 3);
 
@@ -303,7 +303,7 @@ TEST_F(ScalableMeshProgressTest, RunMultiProcess)
     ASSERT_TRUE(progress->AddListener(listener));
 
     MockMultiProcessWorker<NUMPROCESS, NUMITERATIONS> worker;
-    auto workFuture = worker.DoWorkAsync(progress.get());
+    auto workFuture = worker.DoWorkAsync(progress);
     bool isDone = workFuture.get();
 
     EXPECT_TRUE(isDone);

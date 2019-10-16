@@ -7,8 +7,8 @@
 #include <ScalableMeshPCH.h>
 #include "../ImagePPHeaders.h"
 #include "ElementType.h"
-#include <DgnPlatform\ElementGeometry.h>
-#include <DgnPlatform\MeshHeaderHandler.h>
+#include <DgnPlatform/ElementGeometry.h>
+#include <DgnPlatform/MeshHeaderHandler.h>
 
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE

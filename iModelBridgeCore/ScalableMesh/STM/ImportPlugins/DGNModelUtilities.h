@@ -5,7 +5,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <ScalableMesh\ScalableMeshLib.h>
+#include <ScalableMesh/ScalableMeshLib.h>
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 

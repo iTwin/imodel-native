@@ -171,7 +171,7 @@ DataSourceStatus DataSourceFile::read(Buffer *dest, DataSize destSize, DataSize 
         //getStream().seekg(originalPosition);
         //
         //DataSize sizeToRead = fileSize - originalPosition;
-        DataSize sizeToRead = 0;
+        uint64_t sizeToRead = 0;
         getStream().GetSize(sizeToRead);
 
         if(sizeToRead > destSize)
@@ -195,7 +195,7 @@ DataSourceStatus DataSourceFile::read(Buffer *dest, DataSize destSize, DataSize 
 
 DataSourceStatus DataSourceFile::read(std::vector<Buffer>& dest)
     {
-    DataSize sizeToRead = 0;
+    uint64_t sizeToRead = 0;
     getStream().GetSize(sizeToRead);
 
     dest.resize(sizeToRead);

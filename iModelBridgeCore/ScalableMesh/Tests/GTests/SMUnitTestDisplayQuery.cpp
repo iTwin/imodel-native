@@ -5,8 +5,8 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "SMUnitTestDisplayQuery.h"
-#include <Bentley\BeThread.h>
-#include <ScalableMesh\IScalableMeshProgressiveQuery.h>
+#include <Bentley/BeThread.h>
+#include <ScalableMesh/IScalableMeshProgressiveQuery.h>
 
 
 

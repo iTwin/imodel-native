@@ -1,7 +1,7 @@
 #include "ScalableMeshPCH.h"
-#include <eigen\Eigen\Dense>
-#include <PCLWrapper\IDefines.h>
-#include <PCLWrapper\INormalCalculator.h>
+#include <eigen/Eigen/Dense>
+#include <PCLWrapper/IDefines.h>
+#include <PCLWrapper/INormalCalculator.h>
 #include "MeshingFunctions.h"
 
 #pragma warning(disable: 4714) //thanks to Eigen: https://forum.kde.org/viewtopic.php?f=74&t=120746

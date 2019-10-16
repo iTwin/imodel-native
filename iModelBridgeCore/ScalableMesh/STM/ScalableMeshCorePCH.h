@@ -20,53 +20,53 @@
 #include <map>
 
 
-#include <Bentley\BeStringUtilities.h>
-#include <DgnPlatform\DgnPlatform.h>
+#include <Bentley/BeStringUtilities.h>
+#include <DgnPlatform/DgnPlatform.h>
 #include <Geom/GeomApi.h>
 #include <Mtg/MtgStructs.h>
 #include <GeoCoord/BaseGeoCoord.h>
 
 #ifdef VANCOUVER_API
-#include <DgnGeoCoord\DgnGeoCoord.h>
-#include <DgnPlatform\DgnAttachment.h>
-#include <DgnPlatform\DgnPlatform.h>
-#include <DgnPlatform\DgnFileIO\ModelInfo.h>
-#include <DgnPlatform\DgnFileIO\UnitDefinition.h>
-#include <DgnPlatform\ElementHandlerManager.h>
-#include <DgnPlatform\ScanCriteria.h>
+#include <DgnGeoCoord/DgnGeoCoord.h>
+#include <DgnPlatform/DgnAttachment.h>
+#include <DgnPlatform/DgnPlatform.h>
+#include <DgnPlatform/DgnFileIO\ModelInfo.h>
+#include <DgnPlatform/DgnFileIO\UnitDefinition.h>
+#include <DgnPlatform/ElementHandlerManager.h>
+#include <DgnPlatform/ScanCriteria.h>
 #endif
 
 #ifndef VANCOUVER_API
-#include <DgnPlatform\ImageUtilities.h>
+#include <DgnPlatform/ImageUtilities.h>
 #endif
 
 
-#include <DgnPlatform\DgnPlatform.r.h>
+#include <DgnPlatform/DgnPlatform.r.h>
 #ifdef VANCOUVER_API
-#include <DgnPlatform\ElementHandle.h>
-#include <DgnPlatform\XAttributeHandler.h>
-#include <RmgrTools\Tools\DataExternalizer.h>
+#include <DgnPlatform/ElementHandle.h>
+#include <DgnPlatform/XAttributeHandler.h>
+#include <RmgrTools/Tools/DataExternalizer.h>
 
-#include <DgnPlatform\IPointCloud.h>
-#include <DgnPlatform\ITransactionHandler.h>
-#include <DgnPlatform\XAttributeHandler.h>
-#include <DgnPlatform\DelegatedElementECEnabler.h>
+#include <DgnPlatform/IPointCloud.h>
+#include <DgnPlatform/ITransactionHandler.h>
+#include <DgnPlatform/XAttributeHandler.h>
+#include <DgnPlatform/DelegatedElementECEnabler.h>
 
-#include <DgnPlatform\ExtendedElementHandler.h>
-#include <DgnPlatform\TerrainModel\TMElementHandler.h>
+#include <DgnPlatform/ExtendedElementHandler.h>
+#include <DgnPlatform/TerrainModel/TMElementHandler.h>
 #endif
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 #ifdef VANCOUVER_API
-#include <DgnPlatform\PointCloudHandler.h>
+#include <DgnPlatform/PointCloudHandler.h>
 
-#include <PointCloud\PointCloud.h>
-#include <PointCloud\PointCloudChannel.h>
-#include <PointCloud\PointCloudFileEdit.h>
-#include <DgnPlatform\PointCloudClipHandler.h>    
+#include <PointCloud/PointCloud.h>
+#include <PointCloud/PointCloudChannel.h>
+#include <PointCloud/PointCloudFileEdit.h>
+#include <DgnPlatform/PointCloudClipHandler.h>    
 USING_NAMESPACE_BENTLEY_POINTCLOUD
-#include <PointCloud\PointCloudDataQuery.h>
+#include <PointCloud/PointCloudDataQuery.h>
 #endif
 
 
@@ -77,7 +77,7 @@ USING_NAMESPACE_BENTLEY_POINTCLOUD
 #include <TerrainModel/Core/bcDTMBaseDef.h>
 #include <TerrainModel/Core/bcDTMClass.h>
 #include <TerrainModel/Core/bcdtminlines.h>
-#include <TerrainModel\Formats\InroadsImporter.h>
+#include <TerrainModel/Formats/InroadsImporter.h>
 
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 

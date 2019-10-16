@@ -7,16 +7,16 @@ using namespace std;
 #include <TerrainModel/TerrainModel.h>
 
 
-#include <ScalableMesh\ScalableMeshDefs.h>
+#include <ScalableMesh/ScalableMeshDefs.h>
 //#include <ScalableMesh\IScalableMeshMoniker.h>
-#include <ScalableMesh\IScalableMeshStream.h>
-#include <ScalableMesh\IScalableMeshURL.h>
-#include <ScalableMesh\Import\ScalableMeshData.h>
-#include <ScalableMesh\IScalableMeshSources.h>
-#include <ScalableMesh\IScalableMeshSourceImportConfig.h>
-#include <ScalableMesh\IScalableMeshSourceCollection.h>
+#include <ScalableMesh/IScalableMeshStream.h>
+#include <ScalableMesh/IScalableMeshURL.h>
+#include <ScalableMesh/Import/ScalableMeshData.h>
+#include <ScalableMesh/IScalableMeshSources.h>
+#include <ScalableMesh/IScalableMeshSourceImportConfig.h>
+#include <ScalableMesh/IScalableMeshSourceCollection.h>
 
-#include <ScalableTerrainModel\IMrDTMSourceCollection.h>
+#include <ScalableTerrainModel/IMrDTMSourceCollection.h>
 
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH

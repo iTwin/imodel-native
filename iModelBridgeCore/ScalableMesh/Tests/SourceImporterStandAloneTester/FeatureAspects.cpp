@@ -8,9 +8,9 @@
 //#include    <UStationInternal.h>
 #include    <windows.h>
 #define winNT
-#include    "Bentley\Bentley.h"
-#include    "DgnPlatform\DgnPlatform.h"
-#include    "DgnPlatform\Tools\ConfigurationManager.h"
+#include    "Bentley/Bentley.h"
+#include    "DgnPlatform/DgnPlatform.h"
+#include    "DgnPlatform/Tools/ConfigurationManager.h"
 
 
 USING_NAMESPACE_BENTLEY

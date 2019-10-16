@@ -25,8 +25,8 @@
 #include "ScalableMeshQuadTreeBCLIBFilters.h"
 #include "ScalableMeshMesher.h"
 #include "ScalableMeshMesher.hpp"
-#include <ScalableMesh\IScalableMeshQuery.h>
-#include "Edits\ClipUtilities.hpp"
+#include <ScalableMesh/IScalableMeshQuery.h>
+#include "Edits/ClipUtilities.hpp"
 using namespace BENTLEY_NAMESPACE_NAME::TerrainModel;
          
 //template class ScalableMesh2DDelaunayMesher<DPoint3d, ISMStore::Extent3d64f>;
@@ -248,13 +248,13 @@ void circumcircle(DPoint3d& center, double& radius, const DPoint3d* triangle)
     }
 
 #ifndef __BENTLEYSTM_BUILD__ 
-template<typename T> size_t GetSizeInMemory(T* item)
+template<typename T> inline size_t GetSizeInMemory(T* item)
 {
     return sizeof(T);
 }
 
 
-template<> size_t GetSizeInMemory<MTGGraph>(MTGGraph* item)
+template<> inline size_t GetSizeInMemory<MTGGraph>(MTGGraph* item)
 {
     size_t count = 0;
     count += sizeof(*item);
@@ -264,7 +264,7 @@ template<> size_t GetSizeInMemory<MTGGraph>(MTGGraph* item)
     return count;
 }
 
-template<> size_t GetSizeInMemory<DifferenceSet>(DifferenceSet* item)
+template<> inline size_t GetSizeInMemory<DifferenceSet>(DifferenceSet* item)
 {
     size_t count = sizeof(item) + item->addedFaces.size() * sizeof(DPoint3d) + item->addedVertices.size() * sizeof(int32_t) +
         item->removedFaces.size() * sizeof(int32_t) + item->removedVertices.size() * sizeof(int32_t) + item->addedUvIndices.size() * sizeof(int32_t) +
@@ -272,7 +272,7 @@ template<> size_t GetSizeInMemory<DifferenceSet>(DifferenceSet* item)
     return count;
 }
 
-template<> size_t GetSizeInMemory<BcDTMPtr>(BcDTMPtr* item)
+template<> inline size_t GetSizeInMemory<BcDTMPtr>(BcDTMPtr* item)
 {
     size_t count = (item->get() == nullptr ? 0 : ((*item)->GetTinHandle() == nullptr ? 0 : sizeof(BC_DTM_OBJ) + (*item)->GetPointCount() *(sizeof(DPoint3d) + sizeof(DTM_TIN_NODE) + sizeof(DTM_CIR_LIST) * 6)));
     return count;

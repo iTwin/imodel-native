@@ -1,11 +1,11 @@
 #include "ScalableMeshPCH.h"
-#include "..\ImagePPHeaders.h"
+#include "../ImagePPHeaders.h"
 #include "SMCesiumPublisher.h"
-#include "TilePublisher\MeshTile.h"
-#include "TilePublisher\TilePublisher.h"
-#include "..\ScalableMeshQuery.h"
+#include "TilePublisher/MeshTile.h"
+#include "TilePublisher/TilePublisher.h"
+#include "../ScalableMeshQuery.h"
 #include "SMStreamingDataStore.h"
-#include "..\ScalableMesh.h"
+#include "../ScalableMesh.h"
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 

@@ -1,7 +1,7 @@
 #pragma once
 #include <BeSQLite/BeSQLite.h>
 #include <Bentley/Bentley.h>
-#include <Bentley\BeStringUtilities.h>
+#include <Bentley/BeStringUtilities.h>
 #include <Bentley/WString.h>
 #include <Bentley/BeFileName.h>
 #include <Bentley/bvector.h>

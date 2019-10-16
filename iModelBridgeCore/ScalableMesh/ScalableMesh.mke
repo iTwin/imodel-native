@@ -545,7 +545,7 @@ LINKER_LIBRARIES            = \
     $(ContextSubpartsLibs)freeimage.lib
 
 
-%include $(sharedMki)LinkLibrary.mki
+%include $(sharedMki)linkLibrary.mki
 
 #----------------------------------------------------------------------------------------
 # Copy the cacert.pem file for securely talk to the RealityDataS-1 server for 

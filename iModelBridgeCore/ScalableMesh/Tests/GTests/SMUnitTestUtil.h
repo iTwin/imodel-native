@@ -7,8 +7,12 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
+#ifdef WIN32
 #include <Windows.h>
+#ifdef VANCOUVER_API
 #include <DgnView/DgnViewLib.h>
+#endif
+#endif
 #include <DgnPlatform/DgnPlatform.h>
 #include <ScalableMesh/ScalableMeshLib.h>
 
@@ -37,8 +41,7 @@
 #endif
 
 //#define VANCOUVER_API
-#ifndef VANCOUVER_API   
-#include <DgnView/ViewManager.h>
+#ifndef VANCOUVER_API 
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <DgnPlatform/DesktopTools/KnownDesktopLocationsAdmin.h>
 #define VIEWMANAGER ViewManager

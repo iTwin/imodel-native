@@ -1,8 +1,8 @@
 #pragma once
-#include <Bentley\Bentley.h>
-#include <Bentley\WString.h>
-#include <Bentley\WString.h>
-#include <Geom\GeomApi.h>
+#include <Bentley/Bentley.h>
+#include <Bentley/WString.h>
+#include <Bentley/WString.h>
+#include <Geom/GeomApi.h>
 
 #ifdef __BENTLEYSMATPUTIL_BUILD__ 
     #define BENTLEY_SM_ATPUTIL_EXPORT __declspec(dllexport)

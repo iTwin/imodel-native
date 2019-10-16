@@ -1,5 +1,7 @@
 #include "ScalableMeshPCH.h"
 
+#include <set>
+
 #ifdef VANCOUVER_API
 
 #undef static_assert //needed because boost uses static_assert and apparently one of the headers we include redefines it

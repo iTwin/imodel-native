@@ -8,6 +8,9 @@
 TestDir = ScalableMesh
 baseDir = $(_MakeFilePath)
 
+#disable warnings on clang
+ClangCppCompOpts + -w
+
 # Compile and Link the unit tests
 BEGTEST_NAME  = $(TestDir)
 BEGTEST_INPUT = $(baseDir)

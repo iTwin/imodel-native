@@ -11,9 +11,9 @@
 #pragma once
 
 #ifdef VANCOUVER_API
-#include <DgnGeoCoord\DgnGeoCoord.h>
+#include <DgnGeoCoord/DgnGeoCoord.h>
 #else
-#include <DgnPlatform\DgnGeoCoord.h>
+#include <DgnPlatform/DgnGeoCoord.h>
 #endif
 
 using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;

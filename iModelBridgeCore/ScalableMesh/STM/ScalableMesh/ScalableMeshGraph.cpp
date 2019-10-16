@@ -574,7 +574,7 @@ void AddFacesToGraph(MTGGraph* destGraphP, std::vector<int>& faces, std::vector<
     }
 
 
-void CreateGraphFromIndexBuffer(MTGGraph* graphP, const long* meshFaces, int count, int pointCount, bvector<int>& componentContours, const DPoint3d* points)
+void CreateGraphFromIndexBuffer(MTGGraph* graphP, const int32_t* meshFaces, int count, int pointCount, bvector<int>& componentContours, const DPoint3d* points)
     {
     std::ofstream log;
     int nFrem = 0;

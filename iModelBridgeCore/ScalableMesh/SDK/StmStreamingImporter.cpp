@@ -11,14 +11,14 @@
 #include "DataPipe.h"
 
 #include <ImagePP/h/hstdcpp.h>
-#include <ImagePP\all\h\IDTMTypes.h>
-#include <ImagePP\all\h\IDTMFileDirectories\FeatureHeaderTypes.h>
-#include <ImagePP\all\h\IDTMFeatureArray.h>
-#include <ImagePP\all\h\HPUArray.h>
-#include <GeoCoord\BaseGeoCoord.h>
-#include <TerrainModel\TerrainModel.h>
+#include <ImagePP/all/h/IDTMTypes.h>
+#include <ImagePP/all/h/IDTMFileDirectories/FeatureHeaderTypes.h>
+#include <ImagePP/all/h/IDTMFeatureArray.h>
+#include <ImagePP/all/h/HPUArray.h>
+#include <GeoCoord/BaseGeoCoord.h>
+#include <TerrainModel/TerrainModel.h>
 
-#include <ScalableTerrainModel\MrDTMDefs.h>
+#include <ScalableTerrainModel/MrDTMDefs.h>
 #include <ScalableTerrainModel/Import/Plugin/SourceV0.h>
 #include <ScalableTerrainModel/Type/IMrDTMPoint.h>
 #include <ScalableTerrainModel/Import/Plugin/InputExtractorV0.h>

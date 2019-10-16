@@ -2,8 +2,8 @@
 #include "ScalableMeshPCH.h"
 #include "SMCesiumPublisher.h"
 #include "SMPublisher.h"
-#include "..\ScalableMeshProgress.h"
-#include "..\ScalableMeshQuery.h"
+#include "../ScalableMeshProgress.h"
+#include "../ScalableMeshQuery.h"
 #include <ScalableMesh/IScalableMeshPolicy.h>
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH

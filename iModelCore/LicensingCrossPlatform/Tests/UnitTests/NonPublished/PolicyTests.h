@@ -10,4 +10,6 @@
 #include "TestsHelper.h"
 class PolicyTests : public ::testing::Test
 {
+    public:
+        static void SetUpTestCase();
 };

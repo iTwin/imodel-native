@@ -6,9 +6,9 @@
 
 #include <ScalableMeshPCH.h>
 #include "../ImagePPHeaders.h"
-#include <ScalableMesh\Import\SourceReference.h>
-#include <ScalableMesh\Import\Plugin\SourceReferenceV0.h>
-#include <ScalableMesh\ScalableMeshLib.h>
+#include <ScalableMesh/Import/SourceReference.h>
+#include <ScalableMesh/Import/Plugin/SourceReferenceV0.h>
+#include <ScalableMesh/ScalableMeshLib.h>
 
 #include "ElemSourceRef.h"
 #include "DGNModelUtilities.h"

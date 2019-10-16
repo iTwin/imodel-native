@@ -12,9 +12,11 @@
 //    #endif
 //#endif
 
+#ifdef WIN32
 #if _MSC_VER > 1800
     #pragma warning (suppress: 5031) // likely mismatch, popping warning state pushed in different file
     #pragma warning (pop)
 #else
     #pragma warning (pop)
+#endif
 #endif

@@ -8,17 +8,17 @@
 
 #define winNT
 
-#include "Bentley\Bentley.h"
-#include "Bentley\Bentley.r.h"
-#include "Bentley\BeCriticalSection.h"
+#include "Bentley/Bentley.h"
+#include "Bentley/Bentley.r.h"
+#include "Bentley/BeCriticalSection.h"
 
-#include "DgnPlatform\DgnPlatform.h"
-#include "DgnPlatform\DgnPlatformLib.h"
-#include "DgnPlatform\DgnFileIO\DgnFileIOLib.h"
-#include "DgnPlatform\NotificationManager.h"
-#include "DgnPlatform\SolidKernel.h"
-#include "DgnView\DgnViewLib.h"
-#include "DgnView\HUDManager.h"
+#include "DgnPlatform/DgnPlatform.h"
+#include "DgnPlatform/DgnPlatformLib.h"
+#include "DgnPlatform/DgnFileIO/DgnFileIOLib.h"
+#include "DgnPlatform/NotificationManager.h"
+#include "DgnPlatform/SolidKernel.h"
+#include "DgnView/DgnViewLib.h"
+#include "DgnView/HUDManager.h"
 
 #define _AMD64_
 #include <windef.h>

@@ -11,10 +11,20 @@
 
 #include <Licensing/Utils/JWToken.h>
 #include "../../../Licensing/Policy.h"
+#include <BeSQLite/BeSQLite.h>
 
 USING_NAMESPACE_BENTLEY_LICENSING
 
 USING_NAMESPACE_BENTLEY_LICENSING_UNIT_TESTS
+
+USING_NAMESPACE_BENTLEY_SQLITE
+
+void PolicyTests::SetUpTestCase()
+{
+    BeFileName tmpDir;
+    BeTest::GetHost().GetTempDir(tmpDir);
+    BeSQLiteLib::Initialize(tmpDir);
+}
 
 TEST_F(PolicyTests, Create_JWtokenWithoutPolicyClaim_ReturnsError)
 {

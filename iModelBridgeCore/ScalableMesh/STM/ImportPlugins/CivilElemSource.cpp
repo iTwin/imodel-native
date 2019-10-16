@@ -6,35 +6,35 @@
 
 #include <ScalableMeshPCH.h>
 
-#include <GeoCoord\BaseGeoCoord.h>
-#include <DgnPlatform\DgnPlatformAPI.h>
-#include <DgnView\IViewManager.h>
-#include <DgnView\IRedraw.h>
-#include <DgnView\AccuSnap.h>
-#include <DgnPlatform\DgnECProviderBase.h>
-#include <DgnPlatform\ElementProperties.h>
-#include <DgnPlatform\TerrainModel\TMElementHandler.h>
-#include <DgnPlatform\TerrainModel\TMElementSubHandler.h>
+#include <GeoCoord/BaseGeoCoord.h>
+#include <DgnPlatform/DgnPlatformAPI.h>
+#include <DgnView/IViewManager.h>
+#include <DgnView/IRedraw.h>
+#include <DgnView/AccuSnap.h>
+#include <DgnPlatform/DgnECProviderBase.h>
+#include <DgnPlatform/ElementProperties.h>
+#include <DgnPlatform/TerrainModel/TMElementHandler.h>
+#include <DgnPlatform/TerrainModel/TMElementSubHandler.h>
 
 
 
-#include <TerrainModel\ElementHandler\TerrainModelElementHandler.h>
-#include <TerrainModel\ElementHandler\TMHandlersResources.h>
-#include <TerrainModel\ElementHandler\TMHandlersResources.r.h>
-#include <TerrainModel\Core\bcDTMClass.h>
-#include <TerrainModel\Core\IDTM.h>
-#include <TerrainModel\Core\bcDTMElement.h>
-#include <TerrainModel\TerrainModel.h>                        
-#include <ScalableMesh\GeoCoords\DGNModelGeoref.h>
-#include <ScalableMesh\Import\ContentConfig.h>
-#include <ScalableMesh\Import\Config\Content\GCS.h>
-#include <ScalableMesh\Import\Plugin\InputExtractorV0.h>
-#include <ScalableMesh\Import\Plugin\SourceV0.h>
-#include <ScalableMesh\IScalableMeshPolicy.h>
-#include <ScalableMesh\Plugin\IScalableMeshCivilDTMSource.h>
-#include <TerrainModel\ElementHandler\DTMElementHandlerManager.h>
-#include <DgnPlatform\TerrainModel\TMElementHandler.h>
-#include <DgnPlatform\TerrainModel\TMPersistentAppIDs.h>   
+#include <TerrainModel/ElementHandler/TerrainModelElementHandler.h>
+#include <TerrainModel/ElementHandler/TMHandlersResources.h>
+#include <TerrainModel/ElementHandler/TMHandlersResources.r.h>
+#include <TerrainModel/Core/bcDTMClass.h>
+#include <TerrainModel/Core/IDTM.h>
+#include <TerrainModel/Core/bcDTMElement.h>
+#include <TerrainModel/TerrainModel.h>                        
+#include <ScalableMesh/GeoCoords/DGNModelGeoref.h>
+#include <ScalableMesh/Import/ContentConfig.h>
+#include <ScalableMesh/Import/Config/Content/GCS.h>
+#include <ScalableMesh/Import/Plugin/InputExtractorV0.h>
+#include <ScalableMesh/Import/Plugin/SourceV0.h>
+#include <ScalableMesh/IScalableMeshPolicy.h>
+#include <ScalableMesh/Plugin/IScalableMeshCivilDTMSource.h>
+#include <TerrainModel/ElementHandler/DTMElementHandlerManager.h>
+#include <DgnPlatform/TerrainModel/TMElementHandler.h>
+#include <DgnPlatform/TerrainModel/TMPersistentAppIDs.h>   
 
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 USING_NAMESPACE_BENTLEY_TERRAINMODEL_ELEMENT

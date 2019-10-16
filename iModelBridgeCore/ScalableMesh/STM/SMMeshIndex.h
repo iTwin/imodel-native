@@ -128,7 +128,7 @@ template<class POINT, class EXTENT> class SMMeshIndex;
 
 template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndexNode < POINT, EXTENT >
     {
-#if ANDROID
+#if defined(ANDROID) || defined(__linux__)
     typedef SMPointIndexNode < POINT, EXTENT > __super;
 #endif
     friend class ISMPointIndexMesher<POINT, EXTENT>;
@@ -230,7 +230,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     virtual RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> GetDiffSetPtr() const;
         
-    virtual RefCountedPtr<SMMemoryPoolGenericBlobItem<BcDTMPtr>> GetTileDTM();
+    virtual RefCountedPtr<SMMemoryPoolGenericBlobItem<TerrainModel::BcDTMPtr>> GetTileDTM();
         
     /**----------------------------------------------------------------------------
     Returns the 2.5d mesher used for meshing the points
@@ -925,7 +925,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     template<class POINT, class EXTENT> class SMMeshIndex : public SMPointIndex < POINT, EXTENT >
     {
-#if ANDROID
+#if defined(ANDROID) || defined(__linux__)
     typedef SMPointIndex < POINT, EXTENT > __super;
 #endif
     friend class SMMeshIndexNode < POINT, EXTENT > ;
@@ -1050,7 +1050,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         template <class POINT, class EXTENT> class SMIndexNodeVirtual<POINT, EXTENT, SMMeshIndexNode<POINT, EXTENT>> : public SMMeshIndexNode<POINT, EXTENT>
         {
-#if ANDROID
+#if defined(ANDROID) || defined(__linux__)
         typedef SMMeshIndexNode<POINT, EXTENT> __super;
 #endif
         public:

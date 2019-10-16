@@ -1,17 +1,17 @@
 #include "ScalableMeshPCH.h"
-#include <ScalableMesh\IScalableMeshTextureGenerator.h>
+#include <ScalableMesh/IScalableMeshTextureGenerator.h>
 #include "GeneratorTextureProvider.h"
 #include "MosaicTextureProvider.h"
 #include "ImagePPHeaders.h"
-#include <ImagePP\all\h\HRPPixelTypeV32R8G8B8A8.h>
+#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
 #include <ImagePP/all/h/HRARaster.h>
 #include <ImagePP/all/h/HRSObjectStore.h>
 #include <ImagePP/all/h/HIMMosaic.h>
 #include <ImagePP/all/h/HGF2DCoordSys.h>
-#include <ImagePP\all\h\HRFiTiffCacheFileCreator.h>
-#include <ImagePP\all\h\HRFUtility.h>
-#include <ImagePP\all\h\HCDPacket.h>
-#include <Bentley\BeDirectoryIterator.h>
+#include <ImagePP/all/h/HRFiTiffCacheFileCreator.h>
+#include <ImagePP/all/h/HRFUtility.h>
+#include <ImagePP/all/h/HCDPacket.h>
+#include <Bentley/BeDirectoryIterator.h>
 
 static HPMPool* s_rasterGenMemPool = nullptr;
 

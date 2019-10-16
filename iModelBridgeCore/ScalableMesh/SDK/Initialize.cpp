@@ -4,33 +4,33 @@
 #include "Initialize.h"
 
 using namespace std;
-#include <Bentley\BeFileListIterator.h>
-#include <DgnPlatform\IAuxCoordSys.h>
+#include <Bentley/BeFileListIterator.h>
+#include <DgnPlatform/IAuxCoordSys.h>
 #include <DgnPlatform/DelegatedElementECEnabler.h>
-#include <DgnPlatform\ITransactionHandler.h>
-#include <DgnPlatform\IPointCloud.h>
-#include <DgnPlatform\PointCloudHandler.h>
-#include <DgnGeoCoord\DgnGeoCoord.h>
-#include <GeoCoord\GCSLibrary.h>
-#include <PointCloud\PointCloud.h>
-#include <PointCloud\PointCloudDisplayHandler.h>
-#include <RasterCore\RasterCoreLib.h>
-#include <RmgrTools\Tools\RscFileManager.h>
+#include <DgnPlatform/ITransactionHandler.h>
+#include <DgnPlatform/IPointCloud.h>
+#include <DgnPlatform/PointCloudHandler.h>
+#include <DgnGeoCoord/DgnGeoCoord.h>
+#include <GeoCoord/GCSLibrary.h>
+#include <PointCloud/PointCloud.h>
+#include <PointCloud/PointCloudDisplayHandler.h>
+#include <RasterCore/RasterCoreLib.h>
+#include <RmgrTools/Tools/RscFileManager.h>
 #undef LAT
-#include <TerrainModel\TerrainModel.h>
-#include <ScalableMesh\ScalableMeshDefs.h>
-#include <ScalableMesh\IScalableMeshMoniker.h>
-#include <ScalableMesh\IScalableMeshStream.h>
-#include <ScalableMesh\IScalableMeshURL.h>
+#include <TerrainModel/TerrainModel.h>
+#include <ScalableMesh/ScalableMeshDefs.h>
+#include <ScalableMesh/IScalableMeshMoniker.h>
+#include <ScalableMesh/IScalableMeshStream.h>
+#include <ScalableMesh/IScalableMeshURL.h>
 #include <DgnPlatform/DgnPlatform.h>
 #include <DgnPlatform/DgnHost.h>
 #include <DgnView/DgnViewAPI.h>
-#include <ScalableMesh\ScalableMeshAdmin.h>
-#include <ScalableMesh\ScalableMeshLib.h>
+#include <ScalableMesh/ScalableMeshAdmin.h>
+#include <ScalableMesh/ScalableMeshLib.h>
 #include <RmgrTools/Tools/RscFileManager.h>
-#include <ScalableTerrainModel\IMrDTMMoniker.h>
-#include <ScalableTerrainModel\IMrDTMStream.h>
-#include <ScalableTerrainModel\IMrDTMURL.h>
+#include <ScalableTerrainModel/IMrDTMMoniker.h>
+#include <ScalableTerrainModel/IMrDTMStream.h>
+#include <ScalableTerrainModel/IMrDTMURL.h>
 
 
 //USING_NAMESPACE_BENTLEY_SCALABLEMESH

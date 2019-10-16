@@ -8,12 +8,14 @@
 //:>  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 //:>
 //:>+--------------------------------------------------------------------------------------
+#ifdef WIN32
 #include <windows.h> //for showing info.
+#endif
 #include <ImagePP/all/h/HFCException.h>
 
-#include "ScalableMesh\ScalableMeshGraph.h"
-#include "CGALEdgeCollapse.h"
+#include "ScalableMesh/ScalableMeshGraph.h"
 #include "ScalableMeshMesher.h"
+#include "CGALEdgeCollapse.h"
 #include "LogUtils.h"
 
 //=====================================================================================================================

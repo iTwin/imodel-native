@@ -1,18 +1,18 @@
 #include "ScalableMeshPCH.h"
 #include <ScalableMesh/IScalableMeshSaveAs.h>
-#include "Stores\SMPublisher.h"
+#include "Stores/SMPublisher.h"
 #include "ScalableMeshQuery.h"
 #include "SMMeshIndex.h"
 
 #include "ScalableMesh.h"
 #include "ScalableMeshProgress.h"
 #include "SMNodeGroup.h"
-#include "Stores\SMStreamingDataStore.h"
+#include "Stores/SMStreamingDataStore.h"
 
 #ifndef VANCOUVER_API
-#include <DgnPlatform\DesktopTools\ConfigurationManager.h>
+#include <DgnPlatform/DesktopTools/ConfigurationManager.h>
 #else
-#include <DgnPlatform\Tools\ConfigurationManager.h>
+#include <DgnPlatform/Tools/ConfigurationManager.h>
 #endif
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
@@ -118,11 +118,11 @@ bool Publish3DTile(IScalableMeshNodePtr& node, ISMDataStoreTypePtr<DRange3d>& pi
     assert(pi_pDataStore != nullptr);
 
     static double startTime = clock();
-    static std::atomic<uint64_t> loadDataTime = 0;
-    static std::atomic<uint64_t> convertTime = 0;
-    static std::atomic<uint64_t> storeTime = 0;
-    static std::atomic<uint64_t> nbProcessedNodes = 0;
-    static std::atomic<uint64_t> nbNodes = 0;
+    static std::atomic<uint64_t> loadDataTime(0);
+    static std::atomic<uint64_t> convertTime(0);
+    static std::atomic<uint64_t> storeTime(0);
+    static std::atomic<uint64_t> nbProcessedNodes(0);
+    static std::atomic<uint64_t> nbNodes(0);
 
     if (progress != nullptr && progress->IsCanceled()) return false;
 
@@ -505,7 +505,7 @@ StatusInt IScalableMeshSaveAs::Generate3DTiles(const IScalableMeshPtr& meshP, co
 
     StatusInt status;
 
-    auto mesh = static_cast<ScalableMesh<POINT>*>(meshP.get());
+    auto mesh = static_cast<ScalableMesh<DPoint3d>*>(meshP.get());
     WString path;
     if (server == SMCloudServerType::Azure)
         {
@@ -573,7 +573,7 @@ StatusInt IScalableMeshSaveAs::Generate3DTiles(const IScalableMeshPtr& meshP, co
                     return status;
                     }
 
-                auto coverageMesh = static_cast<ScalableMesh<POINT>*>(coverageMeshPtr.get());
+                auto coverageMesh = static_cast<ScalableMesh<DPoint3d>*>(coverageMeshPtr.get());
 
                 // Create directory for coverage tileset output
                 BeFileName coverageOutDir(path.c_str());

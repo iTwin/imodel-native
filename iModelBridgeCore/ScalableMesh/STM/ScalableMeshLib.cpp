@@ -762,6 +762,8 @@ void ScalableMeshLib::Initialize(ScalableMeshLib::Host& host)
     DgnPlatformLib::Host::IKnownLocationsAdmin& locationAdmin(DgnPlatformLib::QueryHost()->GetIKnownLocationsAdmin());
     tempDir = locationAdmin.GetLocalTempDirectoryBaseName();
     assert(!tempDir.IsEmpty());
+#else
+    tempDir = BeFileName(L"/tmp");
 #endif
 #endif
 

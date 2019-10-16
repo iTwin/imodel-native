@@ -16,10 +16,10 @@
 
 typedef RgbColorDef* RgbColorDefP;
 
-#include <RmgrTools\Tools\rscdefs.r.h>
-#include <DgnView\IViewManager.h>
-#include <PCLWrapper\IDefines.h>
-#include <PCLWrapper\IRansacUtility.h>
+#include <RmgrTools/Tools/rscdefs.r.h>
+#include <DgnView/IViewManager.h>
+#include <PCLWrapper/IDefines.h>
+#include <PCLWrapper/IRansacUtility.h>
 #define GROUND_CHANNEL_NUMBER 2
 
 USING_NAMESPACE_BENTLEY

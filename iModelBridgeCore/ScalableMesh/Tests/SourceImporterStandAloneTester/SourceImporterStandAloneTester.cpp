@@ -12,27 +12,27 @@
 
 using namespace std;
 
-#include <Bentley\BeFileName.h>
-#include <Bentley\WString.h>
-#include <Bentley\WString.h>
+#include <Bentley/BeFileName.h>
+#include <Bentley/WString.h>
+#include <Bentley/WString.h>
 
-#include <DgnPlatform\DgnDocumentManager.h>
-#include <DgnPlatform\DgnPlatformErrors.r.h>
-#include <GeoCoord\BaseGeoCoord.h>
+#include <DgnPlatform/DgnDocumentManager.h>
+#include <DgnPlatform/DgnPlatformErrors.r.h>
+#include <GeoCoord/BaseGeoCoord.h>
 
-#include <ImagePP\h\ExportMacros.h>
-#include <ImagePP\h\HTypes.h>
-#include <ImagePP\h\ImagePPClassId.h>
+#include <ImagePP/h/ExportMacros.h>
+#include <ImagePP/h/HTypes.h>
+#include <ImagePP/h/ImagePPClassId.h>
  
-#include <ScalableMesh\IScalableMeshMoniker.h>
-#include <ScalableMesh\IScalableMeshSources.h>
-#include <ScalableMesh\IScalableMeshSourceImporter.h>
+#include <ScalableMesh/IScalableMeshMoniker.h>
+#include <ScalableMesh/IScalableMeshSources.h>
+#include <ScalableMesh/IScalableMeshSourceImporter.h>
 
 
 
-#include <ScalableMesh\ScalableMeshDefs.h>
-#include <ScalableMesh\IScalableMeshStream.h>
-#include <TerrainModel\ElementHandler\TMElementDisplayHandler.h>
+#include <ScalableMesh/ScalableMeshDefs.h>
+#include <ScalableMesh/IScalableMeshStream.h>
+#include <TerrainModel/ElementHandler/TMElementDisplayHandler.h>
 
 
 #undef fclose

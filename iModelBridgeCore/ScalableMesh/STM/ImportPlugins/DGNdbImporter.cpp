@@ -20,14 +20,14 @@
 
 #include <ScalableMesh/Type/IScalableMeshLinear.h>
 #include <ScalableMesh/Type/IScalableMeshMesh.h>
-#include "..\ScalableMesh\ScalableMeshGraph.h"
+#include "../ScalableMesh/ScalableMeshGraph.h"
 //#include "..\CGALEdgeCollapse.h"
 #undef static_assert
 #include <DgnPlatform/DgnPlatformApi.h>
 #ifdef VANCOUVER_API
-#include <DgnGeoCoord\DgnGeoCoord.h>
+#include <DgnGeoCoord/DgnGeoCoord.h>
 #else
-#include <DgnPlatform\DgnGeoCoord.h>
+#include <DgnPlatform/DgnGeoCoord.h>
 #endif
 #include <json/json.h>
 #undef MAX
@@ -542,7 +542,7 @@ private:
                                 {
                                 MTGGraph g;
                                 bvector<int> componentPointsId;
-                                CreateGraphFromIndexBuffer(&g, (const long*)&indices[0], (int)indices.size(), (int)pts.size(), componentPointsId, &pts[0]);
+                                CreateGraphFromIndexBuffer(&g, &indices[0], (int)indices.size(), (int)pts.size(), componentPointsId, &pts[0]);
                                 std::vector<DPoint3d> newPts;
                                 newPts.insert(newPts.end(), pts.begin(), pts.end());
                                 //CGALEdgeCollapse(&g, newPts, elem->GetElementId().GetValue());

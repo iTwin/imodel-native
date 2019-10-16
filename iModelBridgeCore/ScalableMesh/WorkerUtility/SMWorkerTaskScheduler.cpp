@@ -6,22 +6,22 @@
 #include <process.h>
 #include <string.h>
 
-#include <Bentley\BeDirectoryIterator.h>
-#include <BeXml\BeXml.h>
+#include <Bentley/BeDirectoryIterator.h>
+#include <BeXml/BeXml.h>
 
 #include <ImagePP/all/h/HFCMacros.h>
-#include <ImagePP\all\h\HRFFileFormats.h>
+#include <ImagePP/all/h/HRFFileFormats.h>
 #include <ImagePP/all/h/HRFRasterFileFactory.h>
 #include "Initialize.h"
 
-#include <ScalableMesh\IScalableMeshCreator.h>
-#include <ScalableMesh\IScalableMeshSources.h>
-#include <ScalableMesh\IScalableMeshSourceCollection.h>
-#include <ScalableMesh\Import\ScalableMeshData.h>
-#include <ScalableMesh\IScalableMeshSourceImportConfig.h>
-#include <ScalableMesh\IScalableMeshPolicy.h>
-#include <ScalableMesh\IScalableMeshSourceCreator.h>
-#include <ScalableMesh\IScalableMeshSourceCreatorWorker.h>
+#include <ScalableMesh/IScalableMeshCreator.h>
+#include <ScalableMesh/IScalableMeshSources.h>
+#include <ScalableMesh/IScalableMeshSourceCollection.h>
+#include <ScalableMesh/Import/ScalableMeshData.h>
+#include <ScalableMesh/IScalableMeshSourceImportConfig.h>
+#include <ScalableMesh/IScalableMeshPolicy.h>
+#include <ScalableMesh/IScalableMeshSourceCreator.h>
+#include <ScalableMesh/IScalableMeshSourceCreatorWorker.h>
 #include "SMWorkerDefinitions.h"
 
 

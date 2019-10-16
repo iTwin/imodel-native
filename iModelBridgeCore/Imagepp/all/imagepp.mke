@@ -12,6 +12,10 @@ BUILD_NO_STACK_CHECK        = 1
     LLVMCppCompOpts + -Wno-cast-qual
 %endif
 
+%if $(BUILD_TOOLSET) == "LINUX_CLANG")
+    cDefs + -DHAVE_PROTOTYPES
+%endif
+
 #----------------------------------------------------------
 # Set and then include the CompileOptionsMki file.
 # It is needed and also %included by PreCompileHeader.mki

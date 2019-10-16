@@ -11,35 +11,35 @@
 #include <ScalableMeshPCH.h>
 #include "ScalableMeshGroundExtractor.h"
 #include "ScalableMeshPointsProvider.h"
-#include "..\STM\ScalableMesh.h"
+#include "../STM/ScalableMesh.h"
 
-#include <TerrainModel\AutomaticGroundDetection\GroundDetectionMacros.h>
-#include <TerrainModel\AutomaticGroundDetection\GroundDetectionManager.h>
-#include <TerrainModel\AutomaticGroundDetection\IGroundDetectionServices.h>
-#include <TerrainModel\AutomaticGroundDetection\IPointsAccumulator.h>
+#include <TerrainModel/AutomaticGroundDetection/GroundDetectionMacros.h>
+#include <TerrainModel/AutomaticGroundDetection/GroundDetectionManager.h>
+#include <TerrainModel/AutomaticGroundDetection/IGroundDetectionServices.h>
+#include <TerrainModel/AutomaticGroundDetection/IPointsAccumulator.h>
 
-#include <ScalableMesh\IScalableMeshSourceCreator.h>
-#include <ScalableMesh\IScalableMeshSources.h>
+#include <ScalableMesh/IScalableMeshSourceCreator.h>
+#include <ScalableMesh/IScalableMeshSources.h>
 #include <ScalableMesh/IScalableMeshSourceImportConfig.h>
 #include <ScalableMesh/IScalableMeshTextureGenerator.h>
 #include <ScalableMesh/ScalableMeshLib.h>
 #include <ScalableMesh/IScalableMeshPolicy.h>
 
-#include "..\GeoCoords\ReprojectionUtils.h"
+#include "../GeoCoords/ReprojectionUtils.h"
 
 
-#include "..\STM\GeneratorTextureProvider.h"
+#include "../STM/GeneratorTextureProvider.h"
 
-#include <Bentley\BeDirectoryIterator.h>
-#include <Bentley\BeConsole.h>
+#include <Bentley/BeDirectoryIterator.h>
+#include <Bentley/BeConsole.h>
 
 #ifdef VANCOUVER_API
-#include <DgnGeoCoord\DgnGeoCoord.h>
+#include <DgnGeoCoord/DgnGeoCoord.h>
 #else
-#include <DgnPlatform\DgnGeoCoord.h>
+#include <DgnPlatform/DgnGeoCoord.h>
 #endif
 
-#include <DgnPlatform\DgnPlatformLib.h>
+#include <DgnPlatform/DgnPlatformLib.h>
 
 USING_NAMESPACE_GROUND_DETECTION
 

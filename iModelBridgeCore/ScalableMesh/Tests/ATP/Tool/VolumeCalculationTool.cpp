@@ -1,5 +1,5 @@
 #include "VolumeCalculationTool.h"
-#include <ScalableMesh\IScalableMeshATP.h>
+#include <ScalableMesh/IScalableMeshATP.h>
 
 StatusInt ComputeVolumeForAgenda(PolyfaceHeaderPtr meshData, IScalableMeshPtr smPtr, double& cut, double& fill, double& volume)
     {

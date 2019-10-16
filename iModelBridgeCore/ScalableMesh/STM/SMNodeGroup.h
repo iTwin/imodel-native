@@ -49,7 +49,7 @@
 //#endif
 
 #ifdef DEBUG_AZURE
-#include <Bentley\BeConsole.h>
+#include <Bentley/BeConsole.h>
 #endif
 
 class DataSourceAccount;
@@ -337,7 +337,7 @@ SMNodeDistributor(Function function
         bool areThreadsFinished = false;
         auto startSize = Queue::size();
         size_t speed = Queue::size();
-        auto startTime = clock();
+        auto startTime = std::chrono::high_resolution_clock::now();
         while (true)
             {
             for (auto state : m_threadStates)
@@ -352,8 +352,8 @@ SMNodeDistributor(Function function
                 std::this_thread::sleep_for(std::chrono::seconds(1));
                 lock.lock();
                 speed = size_before - Queue::size();
-                auto elapsedTime = (float)((clock() - startTime) / CLOCKS_PER_SEC);
-                SMNODEGROUP_LOG.infov("nodes/sec: %f    avg: %f    remaining: %d", (float)speed, (float)(startSize - Queue::size()) / elapsedTime, Queue::size());
+                std::chrono::duration<float> elapsedTime = std::chrono::high_resolution_clock::now() - startTime;
+                SMNODEGROUP_LOG.infov("nodes/sec: %f    avg: %f    remaining: %d", (float)speed, (float)(startSize - Queue::size()) / elapsedTime.count(), Queue::size());
                 }
             else
                 {
@@ -1414,12 +1414,13 @@ void SMCesium3DTileStrategy<EXTENT>::_SaveNodeGroup(SMNodeGroupPtr pi_Group) con
 
     auto utf8TileTree = Json::FastWriter().write(tileSet);
 
-    WString path(pi_Group->m_outputDirPath + L"\\n_");
     wchar_t buffer[10000];
 #if _WIN32
+    WString path(pi_Group->m_outputDirPath + L"\\n_");
     swprintf(buffer, L"%s%lu.json", path.c_str(), pi_Group->GetID());
 #else
-    swprintf(buffer, 10000, L"%s%lu.json", path.c_str(), pi_Group->GetID());
+    WString path(pi_Group->m_outputDirPath + L"n_");
+    swprintf(buffer, 10000, L"%S%lu.json", path.c_str(), pi_Group->GetID());
 #endif
     std::wstring group_filename(buffer);
 

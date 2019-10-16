@@ -10,7 +10,7 @@
 /*__PUBLISH_SECTION_START__*/
 
 #include "IStatus.h"
-#include <eigen\Eigen\Dense>
+#include <eigen/Eigen/Dense>
 BEGIN_PCLWRAPPER_NAMESPACE
 
 struct INormalCalculator;

@@ -5,7 +5,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #pragma  once
-#include <ScalableMesh\AutomaticGroundDetection\GroundDetectionManager.h>
+#include <ScalableMesh/AutomaticGroundDetection\GroundDetectionManager.h>
 #include "PointCloudQuadTree.h"
 
 

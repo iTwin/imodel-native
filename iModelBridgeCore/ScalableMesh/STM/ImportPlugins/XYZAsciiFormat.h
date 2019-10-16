@@ -7,7 +7,7 @@
     
 #include <algorithm>
 
-#include <ScalableMesh\Plugin\IScalableMeshFileUtilities.h>
+#include <ScalableMesh/Plugin/IScalableMeshFileUtilities.h>
 
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE

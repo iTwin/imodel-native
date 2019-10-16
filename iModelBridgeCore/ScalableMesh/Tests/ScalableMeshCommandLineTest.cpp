@@ -5,12 +5,12 @@ using namespace std;
 class SMNodeGroup;
 class SMNodeGroupMasterHeader;
 
-#include <Bentley\Bentley.h>
+#include <Bentley/Bentley.h>
 #include <ImagePP/h/ImageppAPI.h>
 #include <TerrainModel/Core/bcdtmClass.h>
-#include <ScalableMesh\IScalableMesh.h>
-#include <ScalableMesh\IScalableMeshNodeCreator.h>
-#include <ScalableMesh\ScalableMeshLib.h>
+#include <ScalableMesh/IScalableMesh.h>
+#include <ScalableMesh/IScalableMeshNodeCreator.h>
+#include <ScalableMesh/ScalableMeshLib.h>
 /*#undef static_assert
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include <ImagePP\all\h\HCDPacket.h>
@@ -19,11 +19,11 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #undef static_assert*/
 #include <iostream>
 #include <TerrainModel/Core/DTMIterators.h>
-#include "..\STM\LogUtils.h"
+#include "../STM/LogUtils.h"
 #include <random>
 #include <queue>
-#include "..\STM\ScalableMesh\ScalableMeshGraph.h"
-#include "..\STM\Edits\ClipUtilities.h"
+#include "../STM/ScalableMesh/ScalableMeshGraph.h"
+#include "../STM/Edits/ClipUtilities.h"
 #include <json/json.h>
 #undef static_assert
 #include <DgnPlatform/DgnPlatformApi.h>
@@ -38,7 +38,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include <DgnPlatform/TileTree.h>
 #include <DgnPlatform/MeshTile.h>
 #include <ScalableMeshSchema/ScalableMeshHandler.h>
-#include <ScalableMeshSchema\ScalableMeshDomain.h>
+#include <ScalableMeshSchema/ScalableMeshDomain.h>
 //#include <DgnPlatform/DesktopTools/WindowsKnownLocationsAdmin.h>
 #include <ImagePP/h/HStlStuff.h>
 #include <ImagePP/h/HTraits.h>
@@ -51,7 +51,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include <ImagePP/all/h/HVE2DHoledShape.h>
 #include <ImagePP/all/h/HVE2DComplexShape.h>
 #include <ImagePP/all/h/HVE2DVoidShape.h>
-#include "..\STM\VuPolygonClassifier.h"
+#include "../STM/VuPolygonClassifier.h"
 
 using namespace BENTLEY_NAMESPACE_NAME::ImagePP;
 
@@ -1500,7 +1500,7 @@ void RunSelectPointsTest()
     DRange3d range2 = DRange3d::From(allVerts2);
     MTGGraph g;
     bvector<int> componentPointsId;
-    ScalableMesh::CreateGraphFromIndexBuffer(&g, (const long*)&allIndices1[0], (int)allIndices1.size(), (int)allVerts1.size(), componentPointsId, &allVerts1[0]);
+    ScalableMesh::CreateGraphFromIndexBuffer(&g, &allIndices1[0], (int)allIndices1.size(), (int)allVerts1.size(), componentPointsId, &allVerts1[0]);
 
     bvector<DPoint3d> stitchedPts;
     SelectPointsToStitch(stitchedPts,&g, range2, allVerts1);

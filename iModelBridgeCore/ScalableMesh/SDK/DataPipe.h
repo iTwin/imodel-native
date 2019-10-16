@@ -9,16 +9,16 @@
 #include <Geom\GeomApi.r.h>
 */
 
-#include <Bentley\Bentley.h>
-#include <Bentley\Bentley.r.h>
-#include <Geom\msgeomstructs_typedefs.h>
-#include <Bentley\stdcxx\bvector.h>
+#include <Bentley/Bentley.h>
+#include <Bentley/Bentley.r.h>
+#include <Geom/msgeomstructs_typedefs.h>
+#include <Bentley/stdcxx/bvector.h>
 
 using namespace BENTLEY_NAMESPACE_NAME::Bstdcxx;
 
-#include <Geom\dpoint3d.h>
+#include <Geom/dpoint3d.h>
 
-#include <TerrainModel\TerrainModel.h>
+#include <TerrainModel/TerrainModel.h>
 
  class DataPipe
         {

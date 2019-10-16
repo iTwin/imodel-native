@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <ScalableMesh\IScalableMeshPublisher.h>
+#include <ScalableMesh/IScalableMeshPublisher.h>
 #include "SMPublisher.h"
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE

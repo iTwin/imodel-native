@@ -12,19 +12,19 @@
 #ifdef VANCOUVER_API
 
 #include "../ImagePPHeaders.h"
-#include <ScalableMesh\ScalableMeshLib.h>
+#include <ScalableMesh/ScalableMeshLib.h>
 #include <ScalableMesh/Import/ScalableMeshData.h>
-#include <ScalableMesh\Import\Plugin\TypeConversionFilterV0.h>
-#include <ScalableMesh\GeoCoords\DGNModelGeoref.h>
-#include <ScalableMesh\Type\IScalableMeshPoint.h>
-#include <ScalableMesh\ScalableMeshUtilityFunctions.h>
-#include <ScalableMesh\AutomaticGroundDetection\GroundDetectionManager.h>
+#include <ScalableMesh/Import/Plugin/TypeConversionFilterV0.h>
+#include <ScalableMesh/GeoCoords/DGNModelGeoref.h>
+#include <ScalableMesh/Type/IScalableMeshPoint.h>
+#include <ScalableMesh/ScalableMeshUtilityFunctions.h>
+#include <ScalableMesh/AutomaticGroundDetection/GroundDetectionManager.h>
 
 #include "PluginUtils.h"
 
-#include <ScalableMesh\Import\Plugin\InputExtractorV0.h>
-#include <ScalableMesh\Import\Plugin\SourceV0.h>
-#include <ScalableMesh\IScalableMeshPolicy.h>
+#include <ScalableMesh/Import/Plugin/InputExtractorV0.h>
+#include <ScalableMesh/Import/Plugin/SourceV0.h>
+#include <ScalableMesh/IScalableMeshPolicy.h>
 
 #include <STMInternal/GeoCoords/WKTUtils.h>
 

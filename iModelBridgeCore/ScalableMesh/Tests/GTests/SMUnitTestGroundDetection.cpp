@@ -3,11 +3,12 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
+#ifdef WIN32
 
 #include "SMUnitTestGroundDetection.h"
-#include <Bentley\BeThread.h>
-#include <ScalableMesh\IScalableMeshGroundExtractor.h>
-#include <ScalableMesh\IScalableMeshDetectGround.h>
+#include <Bentley/BeThread.h>
+#include <ScalableMesh/IScalableMeshGroundExtractor.h>
+#include <ScalableMesh/IScalableMeshDetectGround.h>
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
@@ -226,3 +227,5 @@ TEST_P(ScalableMeshTestGroundDetection, ExtractGround)
 
 
 INSTANTIATE_TEST_CASE_P(ScalableMesh, ScalableMeshTestGroundDetection, ::testing::ValuesIn(ScalableMeshGTestUtil::GetListOfGroundDetectionValues(BeFileName(SM_GROUND_DETECTION_TEST_CASES))));
+
+#endif

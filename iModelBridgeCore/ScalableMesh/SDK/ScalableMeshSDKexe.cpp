@@ -4,16 +4,16 @@
 #include "ScalableMeshSDKexe.h"
 #include "ScalableMeshSDKexeImporter.h"
 
-#include <TerrainModel\Core\bcDTMClass.h>
-#include <TerrainModel\Core\IDTM.h>
-#include <ScalableTerrainModel\IMrDTM.h>
-#include <ScalableTerrainModel\IMrDTMCreator.h>
-#include <ScalableTerrainModel\IMrDTMQuery.h>
+#include <TerrainModel/Core/bcDTMClass.h>
+#include <TerrainModel/Core/IDTM.h>
+#include <ScalableTerrainModel/IMrDTM.h>
+#include <ScalableTerrainModel/IMrDTMCreator.h>
+#include <ScalableTerrainModel/IMrDTMQuery.h>
 
 
 
-#include <ImagePP\all\h\HFCPtr.h>
-#include <ImagePP\all\h\HVEShape.h>
+#include <ImagePP/all/h/HFCPtr.h>
+#include <ImagePP/all/h/HVEShape.h>
 
 USING_NAMESPACE_BENTLEY_MRDTM
 USING_NAMESPACE_BENTLEY_TERRAINMODEL    

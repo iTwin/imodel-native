@@ -42,16 +42,16 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include "Plugins/ScalableMeshClipMaskFilterFactory.h"
 #include <ImagePP/all/h/HIMOnDemandMosaic.h>
 #include <ImagePP/all/h/HIMMosaic.h>
-#include <Imagepp/all/h/HRSObjectStore.h>
+#include <ImagePP/all/h/HRSObjectStore.h>
 #include "ScalableMeshQuery.h"
 #include "Edits/ClipUtilities.hpp"
 #include "ScalableMeshQuadTreeBCLIBFilters.h"
 #ifdef MAPBOX_PROTOTYPE
-    #include <ImagePP\all\h\HRFMapboxFile.h>
+    #include <ImagePP/all/h/HRFMapboxFile.h>
 #endif
 
-#include <ImagePP\all\h\HRFiTiffCacheFileCreator.h>
-#include <ImagePP\all\h\HRFUtility.h>
+#include <ImagePP/all/h/HRFiTiffCacheFileCreator.h>
+#include <ImagePP/all/h/HRFUtility.h>
 #include "MosaicTextureProvider.h"
 #include "RasterUtilities.h"
 #include "CGALEdgeCollapse.h"
@@ -80,15 +80,18 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 bool canCreateFile(const WChar* fileName)
 {
-	std::ofstream of;
-	of.open(fileName);
-	if (of.fail()) return false;
-	else
-	{
-		of.close();
-		_wremove(fileName);
-	}
-	return true;
+    BeFile file;
+    BeFileStatus status = file.Create(fileName);
+    if(status == BeFileStatus::Success)
+    {
+        file.Close();
+        BeFileName::BeDeleteFile(fileName);
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }
 
 // TDORAY: This is a duplicate of version in ScalableMesh.cpp. Find a way to use the same fn.
@@ -455,7 +458,7 @@ void IScalableMeshSourceCreator::Impl::SetupFileForCreation(bool doPartialUpdate
 
         if (bAllRemoved)
             {
-            _wremove(m_scmFileName.c_str());
+            BeFileName::BeDeleteFile(m_scmFileName.c_str());
             // Remove sources.
             m_sources.Clear();
             return;
@@ -466,7 +469,7 @@ void IScalableMeshSourceCreator::Impl::SetupFileForCreation(bool doPartialUpdate
         m_scmPtr = nullptr;
         m_smSQLitePtr = nullptr;
 
-        if (FileExist() && 0 != _wremove(m_scmFileName.c_str()))
+        if (FileExist() && BeFileName::BeDeleteFile(m_scmFileName.c_str()) != BeFileNameStatus::Success)
             return ;        
 
         m_smSQLitePtr = IScalableMeshCreator::Impl::GetFile(false);

@@ -6,23 +6,23 @@
 
 #include <ScalableMeshPCH.h>
 #include "../ImagePPHeaders.h"                         
-#include <ScalableMesh\ScalableMeshLib.h>
-#include <ScalableMesh\ScalableMeshAdmin.h>
-#include <ScalableMesh\GeoCoords\DGNModelGeoref.h>
-#include <ScalableMesh\Import\Attachment.h>
-#include <ScalableMesh\Import\ContentDescriptor.h>
-#include <ScalableMesh\Import\DataType.h>
-#include <ScalableMesh\Import\SourceReference.h>
-#include <ScalableMesh\Import\SourceReferenceVisitor.h>
-#include <ScalableMesh\Import\Plugin\InputExtractorV0.h>
-#include <ScalableMesh\Import\Plugin\SourceReferenceV0.h>
-#include <ScalableMesh\Import\Plugin\SourceV0.h>
-#include <ScalableMesh\Memory\PacketAccess.h>
-#include <ScalableMesh\Memory\Packet.h>
-#include <ScalableMesh\Type\IScalableMeshLinear.h>
-#include <ScalableMesh\Type\IScalableMeshPoint.h>
-#include <ScalableMesh\Type\IScalableMeshMesh.h>
-#include "..\Stores\SMStoreUtils.h"
+#include <ScalableMesh/ScalableMeshLib.h>
+#include <ScalableMesh/ScalableMeshAdmin.h>
+#include <ScalableMesh/GeoCoords/DGNModelGeoref.h>
+#include <ScalableMesh/Import/Attachment.h>
+#include <ScalableMesh/Import/ContentDescriptor.h>
+#include <ScalableMesh/Import/DataType.h>
+#include <ScalableMesh/Import/SourceReference.h>
+#include <ScalableMesh/Import/SourceReferenceVisitor.h>
+#include <ScalableMesh/Import/Plugin/InputExtractorV0.h>
+#include <ScalableMesh/Import/Plugin/SourceReferenceV0.h>
+#include <ScalableMesh/Import/Plugin/SourceV0.h>
+#include <ScalableMesh/Memory/PacketAccess.h>
+#include <ScalableMesh/Memory/Packet.h>
+#include <ScalableMesh/Type/IScalableMeshLinear.h>
+#include <ScalableMesh/Type/IScalableMeshPoint.h>
+#include <ScalableMesh/Type/IScalableMeshMesh.h>
+#include "../Stores/SMStoreUtils.h"
 
 
 

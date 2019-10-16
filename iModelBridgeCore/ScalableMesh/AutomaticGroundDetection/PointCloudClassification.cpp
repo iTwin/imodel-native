@@ -9,11 +9,11 @@
 //#include "PointCloudEditChannelUndoRedoManager.h"
 //#include "PointCloudEditRasterColoringTool.h"
 
-#include <DgnPlatform\ModelAccess.h>
-#include <DgnPlatform\DelegatedElementECEnabler.h>
+#include <DgnPlatform/ModelAccess.h>
+#include <DgnPlatform/DelegatedElementECEnabler.h>
 
 
-#include <DgnPlatform\PointCloudHandler.h>
+#include <DgnPlatform/PointCloudHandler.h>
 
 USING_NAMESPACE_BENTLEY
 

@@ -11,7 +11,7 @@
 #include <ScalableMeshPCH.h>
 
 #include <process.h>
-#include <Bentley\BeDirectoryIterator.h>
+#include <Bentley/BeDirectoryIterator.h>
 #include <BeXml/BeXml.h>
 #include "ImagePPHeaders.h"
 #include "ScalableMeshSourceCreatorWorker.h"

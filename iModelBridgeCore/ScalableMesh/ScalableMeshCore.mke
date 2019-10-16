@@ -4,11 +4,17 @@
 #
 #----------------------------------------------------------------------------------------
 
-baseDir         = $(_MakeFilePath)
+baseDir = $(_MakeFilePath)
 
 %include  mdl.mki
 %include $(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/mki/ScalableMeshCommonDefine.mki
 %include $(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/mki/ScalableMeshPolicy_BimCore.mki
+
+%if $(BUILD_TOOLSET) == "LINUX_CLANG"
+%warn HACK: Too many clang-specific warnings!
+%warn NO_DEFAULT_CLANG_WARNINGS = 1
+NO_DEFAULT_CLANG_WARNINGS = 1
+%endif
 
 #----------------------------------------------------------------------
 #       Create output directories
@@ -58,28 +64,56 @@ CCompOpts + -wd4002
 
 CCompOpts + -wd4091
 
+%if $(BUILD_TOOLSET) == "ANDROID_CLANG"
+    %message "Android clang toolset"
+    ClangCppCompOpts + -Wno-error=pragma-once-outside-header -DLINUX_SCALABLEMESH_BUILD -Wno-error=unknown-pragmas -Wno-error=unused-private-field -Wno-error=unused-value -fdelayed-template-parsing -Wno-error=inconsistent-missing-override -Wno-error=format -Wno-error=delete-non-virtual-dtor -Wno-error=bool-conversion -Wno-error=microsoft-unqualified-friend -Wno-error=microsoft-pure-definition -Wno-error=microsoft-template -Wno-error=enum-compare -Wno-error=unused-variable -Wno-error=microsoft-default-arg-redefinition -Wno-error=typename-missing -Wno-error=dynamic-class-memaccess -D__CLANG__ -Wno-error=invalid-noreturn
+    ClangCppPchOpts + -Wno-error=pragma-once-outside-header -DLINUX_SCALABLEMESH_BUILD -Wno-error=unknown-pragmas -Wno-error=unused-private-field -Wno-error=unused-value -fdelayed-template-parsing -Wno-error=inconsistent-missing-override -Wno-error=format -Wno-error=delete-non-virtual-dtor  -Wno-error=bool-conversion -Wno-error=microsoft-unqualified-friend -Wno-error=microsoft-pure-definition -Wno-error=microsoft-template -Wno-error=enum-compare -Wno-error=unused-variable -Wno-error=microsoft-default-arg-redefinition -Wno-error=typename-missing -Wno-error=dynamic-class-memaccess -D__CLANG__ -Wno-error=invalid-noreturn
+    CCompOpts +  -Wno-error=pragma-once-outside-header -DLINUX_SCALABLEMESH_BUILD -Wno-error=unknown-pragmas -Wno-error=unused-private-field -Wno-error=unused-value -fdelayed-template-parsing -Wno-error=inconsistent-missing-override -Wno-error=format -Wno-error=delete-non-virtual-dtor  -Wno-error=bool-conversion -Wno-error=microsoft-unqualified-friend -Wno-error=microsoft-pure-definition -Wno-error=microsoft-template -Wno-error=enum-compare -Wno-error=unused-variable -Wno-error=microsoft-default-arg-redefinition -Wno-error=typename-missing -Wno-error=dynamic-class-memaccess -D__CLANG__ -Wno-error=invalid-noreturn
+    cuser + -Wno-error=pragma-once-outside-header -DLINUX_SCALABLEMESH_BUILD -Wno-error=unknown-pragmas -Wno-error=unused-private-field -Wno-error=unused-value -fdelayed-template-parsing -Wno-error=inconsistent-missing-override -Wno-error=format -Wno-error=delete-non-virtual-dtor -Wno-error=bool-conversion -Wno-error=microsoft-unqualified-friend -Wno-error=microsoft-pure-definition -Wno-error=microsoft-template -Wno-error=enum-compare -Wno-error=unused-variable -Wno-error=microsoft-default-arg-redefinition -Wno-error=typename-missing -Wno-error=dynamic-class-memaccess -D__CLANG__ -Wno-error=invalid-noreturn
+%elif $(BUILD_TOOLSET) == "LINUX_CLANG" || $(BUILD_TOOLSET) == "APPLE_CLANG"
+    %message "Linux Apple clang toolset"
+    #Linux options
+
+    cUser + -DLINUX_SCALABLEMESH_BUILD
+
+    cUser + -fdelayed-template-parsing
+
+    %if $(BUILD_TOOLSET) == "LINUX_CLANG"
+        cUser + -fopenmp=libomp -w
+    %endif
+%endif
+
 #----------------------------------------------------------------------
 #   Build precompiled header
 #----------------------------------------------------------------------
-PchCompiland = $(stmDir)ScalableMeshPCH.cpp
-PchOutputDir = $(o)
-PchExtraOptions    = -Zm180 -openmp $(PublicApiIncludes) -D__BENTLEYSTM_BUILD__ -DSCALABLE_MESH_DGN -DNOMINMAX -Zc:twoPhase-
-CompileOptionsMki =  $(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/mki/ScalableMeshPolicy_BimCore.mki
-%include $(SharedMki)PreCompileHeader.mki
+%if $(BUILD_TOOLSET) == "LINUX_CLANG"
+    %warn HACK: Something is wrong with the compile options sent into the PCH system, which causes libstdc++ header cmopile errors on Linux+clang!
+    %warn NOT USING PCH
+    
+    dirToSearch = $(stmDir)
+    %include cincapnd.mki
+%else
+    PchCompiland = $(stmDir)ScalableMeshPCH.cpp
+    PchOutputDir = $(o)
 
-# UsePrecompiledHeaderOptions is defined for us by PreCompileHeader.mki
-#CCPchOpts = $(UsePrecompiledHeaderOptions) -DSCALABLE_TERRAIN_MODEL_PRIVATE_SECTION -DWIP_MESH_IMPORT
-CCPchOpts = $(UsePrecompiledHeaderOptions) -DSCALABLE_TERRAIN_MODEL_PRIVATE_SECTION
+    PchExtraOptions    = -Zm180 -openmp $(PublicApiIncludes) -D__BENTLEYSTM_BUILD__ -DSCALABLE_MESH_DGN -DNOMINMAX -Zc:twoPhase-
+    CompileOptionsMki =  $(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/mki/ScalableMeshPolicy_BimCore.mki
 
-%if !defined (3DMesh)
-CCPchOpts + -DNO_3D_MESH
+    %include $(SharedMki)PreCompileHeader.mki
+
+    # UsePrecompiledHeaderOptions is defined for us by PreCompileHeader.mki
+    CCPchOpts = $(UsePrecompiledHeaderOptions) -DSCALABLE_TERRAIN_MODEL_PRIVATE_SECTION
+
+    %if !defined (3DMesh)
+        CCPchOpts + -DNO_3D_MESH
+    %endif
+
+    PCHHeaderDepends = $(o)ScalableMeshPCH$(oext)
 %endif
 
-PCHHeaderDepends=$(o)ScalableMeshPCH$(oext)
 MultiCompileDepends=$(_MakeFileSpec) 
 #DisableMultiCompile=1
 %include MultiCppCompileRule.mki
-
 
 #----------------------------------------------------------------------
 #   Build Fondations
@@ -105,7 +139,7 @@ $(o)Reprojection$(oext) : $(geocoordsDir)Reprojection.cpp $(SCMPublicAPISrc)Scal
 
 $(o)GCS$(oext) : $(geocoordsDir)GCS.cpp $(SCMPublicAPISrc)ScalableMesh/GeoCoords/Definitions.h $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)WktUtils$(oext) : $(geocoordsDir)WktUtils.cpp $(SCMPublicAPISrc)ScalableMesh/GeoCoords/Definitions.h $(PCHHeaderDepends)  ${MultiCompileDepends}
+$(o)WKTUtils$(oext) : $(geocoordsDir)WKTUtils.cpp $(SCMPublicAPISrc)ScalableMesh/GeoCoords/Definitions.h $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)GCSWktParsing$(oext) : $(geocoordsDir)GCSWktParsing.cpp $(SCMPublicAPISrc)ScalableMesh/GeoCoords/Definitions.h $(PCHHeaderDepends)  ${MultiCompileDepends}
 
@@ -389,17 +423,18 @@ LINKER_LIBRARIES_DELAYLOADED  = \
 #	    $(ContextSubpartsLibs)wastorage.lib \
 
 LINKER_LIBRARIES            = \
-    $(ContextSubpartsLibs)Imagepp.lib \
+    $(ContextSubpartsLibs)$(libprefix)ImagePP$(libext) \
     $(ContextSubpartsLibs)$(BeJsonCppLib) \
-    $(ContextSubpartsLibs)$(BentleyGeomLib) \
-    $(ContextSubpartsStaticLibs)BeLibJpegTurbo.lib \
-    $(ContextSubpartsLibs)BeJpeg.lib \
-    $(ContextSubpartsLibs)DgnPlatform.lib \
-    $(ContextSubpartsLibs)CloudDataSource.lib \
-    $(ContextSubpartsLibs)ECObjects.lib
+    $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext) \
+    $(ContextSubpartsStaticLibs)BeLibJpegTurbo$(libext) \
+    $(ContextSubpartsLibs)BeJpeg$(libext) \
+    $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext) \
+    $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext) \
+    $(ContextSubpartsLibs)RealityPlatform.lib \
+    $(ContextSubpartsLibs)RealityPlatformToolsLight.lib \
+    $(ContextSubpartsLibs)CloudDataSource.lib 
 
-
-%include $(sharedMki)LinkLibrary.mki
+%include $(sharedMki)linkLibrary.mki
 
 #----------------------------------------------------------------------------------------
 # Copy the cacert.pem file for securely talk to the RealityDataS-1 server for 
@@ -409,11 +444,11 @@ $(o)ScalableMeshCacert.pem: $(baseDir)ScalableMeshCacert.pem
     $(CopyFirstDepToFirstTarget)
 
 $(ContextDeliveryDir)ScalableMeshCacert.pem : $(o)ScalableMeshCacert.pem
-        $(LinkFirstDepToFirstTarget)
-
+    $(LinkFirstDepToFirstTarget)
 
 #----------------------------------------------------------------------------------------
 # Symlink the loggging configuration file to enable ScalableMesh logging
 #----------------------------------------------------------------------------------------
 $(ContextDeliveryDir)ScalableMeshLogging.config.xml : $(baseDir)Logging/ScalableMeshLogging.config.xml
-        $(LinkFirstDepToFirstTarget)
+    $(LinkFirstDepToFirstTarget)
+

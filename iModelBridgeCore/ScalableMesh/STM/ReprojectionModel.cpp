@@ -12,7 +12,7 @@
 #include <ImagePP/all/h/HGF2DIdentity.h>
 #include <ImagePP/all/h/HCPGCoordUtility.h>
 #ifndef VANCOUVER_API
-#include <Imagepp/all/h/HCPGCoordLatLongModel.h>
+#include <ImagePP/all/h/HCPGCoordLatLongModel.h>
 #endif
 #include <ImagePP/all/h/HVE2DShape.h>
 #include <ImagePP/all/h/HVE2DPolygonOfSegments.h>

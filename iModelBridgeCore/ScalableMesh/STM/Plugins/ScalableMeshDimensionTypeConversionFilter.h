@@ -21,7 +21,7 @@
 #include <ScalableMesh/Import/DataTypeDescription.h>
 
 //#include <ImagePP/all/h/IDTMFileDirectories/PointTypes.h>
-//#include "..\PointTypeDPoint3d.h"
+//#include "../PointTypeDPoint3d.h"
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 

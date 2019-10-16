@@ -8,16 +8,16 @@
 #include "../STM/ImagePPHeaders.h"
 #include "PointCloudSisterFileManager.h"
 
-#include <DgnPlatform\DelegatedElementECEnabler.h>
-#include <DgnPlatform\ModelAccess.h>
+#include <DgnPlatform/DelegatedElementECEnabler.h>
+#include <DgnPlatform/ModelAccess.h>
 
-#include <ScalableMesh\ScalableMeshLib.h>
-#include <ScalableMesh\ScalableMeshAdmin.h>
-
-
+#include <ScalableMesh/ScalableMeshLib.h>
+#include <ScalableMesh/ScalableMeshAdmin.h>
 
 
-#include <DgnPlatform\PointCloudHandler.h>
+
+
+#include <DgnPlatform/PointCloudHandler.h>
 
 
 

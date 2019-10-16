@@ -7,16 +7,16 @@ using namespace concurrency;
 //#include "PointCloudEditChannelUndoRedoManager.h"
 #include "PointCloudEditGroundDetection.h"
 #include "TileLoaderQueue.h"
-#include <DgnPlatform\DelegatedElementECEnabler.h>
-#include <DgnPlatform\ECQuery.h>
+#include <DgnPlatform/DelegatedElementECEnabler.h>
+#include <DgnPlatform/ECQuery.h>
 
 
 
-#include <DgnPlatform\DgnPlatformLib.h>
-#include <DgnPlatform\PointCloudHandler.h>
-#include <DgnPlatform\Tools\ConfigurationManager.h>
-#include <PCLWrapper\INormalCalculator.h>
-#include <eigen\Eigen\Dense>
+#include <DgnPlatform/DgnPlatformLib.h>
+#include <DgnPlatform/PointCloudHandler.h>
+#include <DgnPlatform/Tools/ConfigurationManager.h>
+#include <PCLWrapper/INormalCalculator.h>
+#include <eigen/Eigen/Dense>
 #include <TerrainModel/Core/DTMIterators.h>
 
 

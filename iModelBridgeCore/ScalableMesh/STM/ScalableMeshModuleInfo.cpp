@@ -33,9 +33,6 @@ StatusInt InitializeModuleHandle(ScalableMeshModuleInfo* moduleInfo)
         (void)ret;
         return ERROR;
         }
-#else
-    BeAssert(!"Not yet implemented for non-Windows platforms");
-    return ERROR;
 #endif
     return SUCCESS;
     }
@@ -106,7 +103,11 @@ ScalableMeshModuleInfo::ScalableMeshModuleInfo()
             }
         }
 #else
-    BeAssert(!"Not yet implemented for non-Windows platforms");
+    auto productInfo = ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetProductInfo();
+    m_productName = productInfo.m_productName;
+    m_productVersion = productInfo.m_productVersion;
+    m_publisherName = productInfo.m_productName;
+    m_publisherVersion = m_productVersion;
 #endif
     }
 

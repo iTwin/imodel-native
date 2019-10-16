@@ -28,8 +28,8 @@
 #include <DgnV8Api/DgnPlatform/DgnFileIO/BentleyDgn.h>
 #include <DgnV8Api/DgnPlatform/DgnECManager.h>
 #include <DgnV8Api/DgnPlatform/DelegatedElementECEnabler.h>
-#include <DgnV8Api/DgnPlatform\ElementGeometry.h>
-#include <DgnV8Api/DgnPlatform\MeshHeaderHandler.h>
+#include <DgnV8Api/DgnPlatform/ElementGeometry.h>
+#include <DgnV8Api/DgnPlatform/MeshHeaderHandler.h>
 
 #include <vector>
 #include <functional>

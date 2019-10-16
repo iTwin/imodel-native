@@ -10,8 +10,8 @@
 #pragma once
 
 #include <ScalableMesh/IScalableMeshGroundExtractor.h>
-#include <ScalableMesh\IScalableMesh.h>
-#include <TerrainModel\AutomaticGroundDetection\IGroundDetectionServices.h>
+#include <ScalableMesh/IScalableMesh.h>
+#include <TerrainModel/AutomaticGroundDetection/IGroundDetectionServices.h>
 
 #include "../STM/ImagePPHeaders.h"
 #include "../STM/ScalableMeshCreator.h"

@@ -18,7 +18,7 @@
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
-struct ScalableMeshDraping : IDTMDraping
+struct ScalableMeshDraping : TerrainModel::IDTMDraping
     {
     private:
         IScalableMesh* m_scmPtr;
@@ -44,14 +44,14 @@ struct ScalableMeshDraping : IDTMDraping
         virtual DTMStatusInt _DrapePoint(double* elevationP, double* slopeP, double* aspectP, DPoint3d triangle[3], int& drapedTypeP, DPoint3dCR point) override;
 
 
-        virtual DTMStatusInt _DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints) override;
+        virtual DTMStatusInt _DrapeLinear(TerrainModel::DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints) override;
 
         virtual bool _DrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector) override;
        
         virtual bool _ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint) override;
 
         virtual bool _IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint) override;
-        virtual bool _IntersectRay(bvector<DTMRayIntersection>& pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint) override;
+        virtual bool _IntersectRay(bvector<TerrainModel::DTMRayIntersection>& pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint) override;
 
     public:
         ScalableMeshDraping(IScalableMeshPtr scMesh);
@@ -179,7 +179,7 @@ struct MeshTraversalQueue
 
     };
 
-struct Tile3dTM :public RefCounted<BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM>, IDTMDraping
+struct Tile3dTM : public RefCounted<BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM>, TerrainModel::IDTMDraping
     {
     private:
         const IScalableMeshNodePtr m_node;
@@ -198,7 +198,7 @@ struct Tile3dTM :public RefCounted<BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM>, 
             }
 #endif*/
 
-        virtual DTMStatusInt _DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints) override;
+        virtual DTMStatusInt _DrapeLinear(TerrainModel::DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints) override;
 
         virtual bool _DrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector) override
             {
@@ -215,22 +215,22 @@ struct Tile3dTM :public RefCounted<BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM>, 
             return DTM_ERROR;
             }
 
-        virtual bool _IntersectRay(bvector<DTMRayIntersection>& pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint) override
+        virtual bool _IntersectRay(bvector<TerrainModel::DTMRayIntersection>& pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint) override
             {
             return DTM_ERROR;
             }
 
-        virtual IDTMDrapingP     _GetDTMDraping() override
+        virtual TerrainModel::IDTMDraping*     _GetDTMDraping() override
             {
             return this;
             }
 
-        virtual IDTMDrainageP    _GetDTMDrainage() override
+        virtual TerrainModel::IDTMDrainage*    _GetDTMDrainage() override
             {
             return nullptr;
             }
 
-        virtual IDTMContouringP  _GetDTMContouring() override
+        virtual TerrainModel::IDTMContouring*  _GetDTMContouring() override
             {
             return nullptr;
             }
@@ -246,12 +246,12 @@ struct Tile3dTM :public RefCounted<BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM>, 
             return DTM_SUCCESS;
             }
 
-        virtual BcDTMP _GetBcDTM() override
+        virtual TerrainModel::BcDTM* _GetBcDTM() override
             {
             return nullptr;
             }
 
-        virtual DTMStatusInt _GetBoundary(DTMPointArray& ret) override
+        virtual DTMStatusInt _GetBoundary(TerrainModel::DTMPointArray& ret) override
             {
             return DTM_ERROR;
             }
@@ -261,12 +261,12 @@ struct Tile3dTM :public RefCounted<BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM>, 
             return DTM_ERROR;
             }
 
-        virtual DTMStatusInt _CalculateSlopeArea(double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints, DTMAreaValuesCallback progressiveCallback, DTMCancelProcessCallback isCancelledCallback) override
+        virtual DTMStatusInt _CalculateSlopeArea(double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints, TerrainModel::DTMAreaValuesCallback progressiveCallback, TerrainModel::DTMCancelProcessCallback isCancelledCallback) override
             {
             return DTM_ERROR;
             }
 
-        virtual DTMStatusInt _GetTransformDTM(DTMPtr& transformedDTM, TransformCR transformation) override
+        virtual DTMStatusInt _GetTransformDTM(TerrainModel::DTMPtr& transformedDTM, TransformCR transformation) override
             {
             return DTM_ERROR;
             }
@@ -276,7 +276,7 @@ struct Tile3dTM :public RefCounted<BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM>, 
             return false;
             }
 
-        virtual IDTMVolumeP _GetDTMVolume() override
+        virtual TerrainModel::IDTMVolume* _GetDTMVolume() override
             {
             return nullptr;
             }
@@ -290,7 +290,7 @@ struct Tile3dTM :public RefCounted<BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM>, 
         Tile3dTM(IScalableMeshNodePtr node): m_node(node)
             {}
 
-        static DTMPtr Create(IScalableMeshNodePtr node)
+        static TerrainModel::DTMPtr Create(IScalableMeshNodePtr node)
             {
             return new Tile3dTM(node);
             }
