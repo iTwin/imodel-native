@@ -52,6 +52,7 @@ public:
 private:
     Params* m_ordParams;
     RoadRailPhysical::RoadRailNetworkCPtr m_roadRailNetworkCPtr;
+    Dgn::DgnModelId m_clippingsModelId;
     bmap<Bentley::ElementRefP, Dgn::DgnElementPtr> m_v8ToBimElmMap;
     bmap<Dgn::DgnSubCategoryId, Dgn::DgnSubCategoryId> m_2dSubCategoryMap;
     bool m_2dSubCategoryMapIsFilled = false;
@@ -70,7 +71,7 @@ private:
     void SetCorridorDesignAlignments();
     void AssociateGeneratedAlignments();
     void CreateDefaultSavedViews();
-
+    
     typedef Dgn::iModelBridge iModelBridge;
 
     //! Progress messages for the conversion process
@@ -111,6 +112,8 @@ public:
 
     RoadRailPhysical::RoadRailNetworkCP GetRoadRailNetwork() const { return m_roadRailNetworkCPtr.get(); }
     void SetRoadRailNetwork(RoadRailPhysical::RoadRailNetworkCR network) { m_roadRailNetworkCPtr = &network; }
+    Dgn::DgnModelId GetClippingsModelId() const { return m_clippingsModelId; }
+    void SetClippingsModelId(Dgn::DgnModelId clippingsModelId) { m_clippingsModelId = clippingsModelId; }
     void SetUpModelFormatters();
     Dgn::UnitSystem GetRootModelUnitSystem();
     BentleyStatus AddDynamicSchema();

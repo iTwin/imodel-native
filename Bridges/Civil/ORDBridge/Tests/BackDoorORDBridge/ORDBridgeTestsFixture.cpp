@@ -263,6 +263,8 @@ bool CiviliModelBridgesORDBridgeTestsFixture::RunTestApp(WCharCP input, WCharCP 
     WCharCP noAssertDialoguesArgument = WCharCP(L"--no-assert-dialogs");
     WCharCP command[4] = {testAppPathArgument, WCharCP((*inputArgument).c_str()), WCharCP((*outputArgument).c_str()), noAssertDialoguesArgument};
 
+    _wputenv(L"ORDBRIDGE_TESTING=1");
+
     int errcode = PublishORDToBimDLL::RunBridge(4, command);
 
     //had to store the arguments on the heap to prevent the strings from colliding

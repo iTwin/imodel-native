@@ -16,6 +16,7 @@
     <ClInclude Include="ORDBridgeInternal.h" />
     <ClInclude Include="ORDConverter.h" />
     <ClInclude Include="PublicAPI\ORDBridge\ORDBridgeApi.h" />
+    <ClInclude Include="ScalableMeshWrapper.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DynamicSchemaComparer.cpp" />
@@ -23,6 +24,7 @@
     <ClCompile Include="ORDBridge.cpp" />
     <ClCompile Include="ORDBridgeInternal.cpp" />
     <ClCompile Include="ORDConverter.cpp" />
+    <ClCompile Include="ScalableMeshWrapper.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Cif.Prewire.mke" />

@@ -9,6 +9,7 @@
 #include <windows.h>
 #include <VersionedDgnV8Api/GeomSerialization/GeomLibsFlatBufferApi.h>
 #include "DynamicSchemaComparer.h"
+#include "ScalableMeshWrapper.h"
 
 #define DefaultDesignAlignmentsName     "Road/Rail Design Alignments"
 #define DefaultCorridorSegmentName      "Corridor Overall Range"
@@ -2497,17 +2498,89 @@ bool ConvertORDElementXDomain::AssignAlignmentAspect(Dgn::DgnElementR element, D
         assignORDAlignmentAspect(element, *alignmentPtr, m_currentFeatureDefName);
         assignQuantityAspect(element, *alignmentPtr);
 
-
-        ///////////////////////////////////////////////////////////////////////////////////////
-        // TEMP PROOFOFCONCEPT FOR SCHEMA FROM PLUGIN PROVIDERS
-        //assignPROOFOFCONCEPTInstanceAspect(element, v8el);
-        ///////////////////////////////////////////////////////////////////////////////////////
-
-
         return true;
         }
 
     return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void insertClippingElement(CorridorSurfaceCR corridorSurface, DgnDbR dgnDb, 
+                           DgnModelId const& clippingsModelId, Dgn::DgnCategoryId const& categoryId)
+    {
+    auto v8MeshPtr = corridorSurface.GetMesh();
+    if (v8MeshPtr.IsNull())
+        return;
+
+    PolyfaceHeaderPtr bimMeshPtr;
+    DgnDbSync::DgnV8::Converter::ConvertPolyface(bimMeshPtr, *v8MeshPtr);
+    if (bimMeshPtr.IsNull())
+        return;
+
+    bvector<bvector<ptrdiff_t>> readIndices;
+    if (!bimMeshPtr->PartitionReadIndicesByNormal(DVec3d::UnitZ(), readIndices))
+        return;
+
+    bvector<PolyfaceHeaderPtr> subMeshes;
+    if (!bimMeshPtr->CopyPartitions(readIndices, subMeshes) || subMeshes.empty())
+        return;
+
+    PolyfaceHeaderPtr subMeshTopPtr = subMeshes[0];
+    if (subMeshTopPtr->GetPointCount() == 0)
+        return;
+
+    Transform projectToXYTransf;
+    projectToXYTransf.InitFromProjectionToPlane(DPoint3d(), DVec3d::UnitZ());
+
+    auto dgnModelP = corridorSurface.GetDgnModelP();
+    auto& v8OriginCR = dgnModelP->GetModelInfo().GetGlobalOrigin();
+    double toMetersFactor = 1.0 / DgnV8Api::ModelInfo::GetUorPerMeter(dgnModelP->GetModelInfoCP());
+    auto toMetersTransform = Transform::FromFixedPointAndScaleFactors(DPoint3d::From(0.0, 0.0, 0.0), toMetersFactor, toMetersFactor, 1.0);
+    toMetersTransform.SetTranslation({v8OriginCR.x, v8OriginCR.y, v8OriginCR.z});
+
+    subMeshTopPtr->Transform(toMetersTransform);
+    subMeshTopPtr->Transform(projectToXYTransf);
+
+    auto genSpatialLocClassCP = dgnDb.Schemas().GetClass("Generic", "SpatialLocation");
+    auto genSpatialLocEnablerP = genSpatialLocClassCP->GetDefaultStandaloneEnabler();
+    DgnCode emptyCode = DgnCode::CreateEmpty();
+
+    auto ecInstancePtr = genSpatialLocEnablerP->CreateInstance();
+    ecInstancePtr->SetValue("Model", ECN::ECValue(clippingsModelId));
+    ecInstancePtr->SetValue("Category", ECN::ECValue(categoryId));
+    ecInstancePtr->SetValue("CodeSpec", ECN::ECValue(emptyCode.GetCodeSpecId()));
+    ecInstancePtr->SetValue("CodeScope", ECN::ECValue(emptyCode.GetScopeElementId(dgnDb)));
+
+    auto clippingElmPtr = dgnDb.Elements().CreateElement(*ecInstancePtr);
+    BeAssert(clippingElmPtr.IsValid());
+
+    auto geomBuilderPtr = GeometryBuilder::Create(*clippingElmPtr->GetModel(), categoryId, DPoint3d::From(0, 0, 0));
+    BeAssert(geomBuilderPtr.IsValid());
+
+    Dgn::Render::GeometryParams geomParams(categoryId);
+    geomParams.SetLineColor(Dgn::ColorDef::Black());
+    geomParams.SetFillColor(Dgn::ColorDef::Black());
+    if (!geomBuilderPtr->Append(geomParams))
+        {
+        BeAssert(false);
+        }
+
+    if (!geomBuilderPtr->Append(*subMeshTopPtr))
+        {
+        BeAssert(false);
+        }
+
+    if (BentleyStatus::SUCCESS != geomBuilderPtr->Finish(*clippingElmPtr->ToGeometrySourceP()))
+        {
+        BeAssert(false);
+        }
+
+    if (clippingElmPtr->Insert().IsNull())
+        {
+        BeAssert(false);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2527,6 +2600,9 @@ bool ConvertORDElementXDomain::AssignCorridorSurfaceAspect(Dgn::DgnElementR elem
                 assignCorridorSurfaceAspect(element, *cifCorridorSurfaceCP);
                 assignStationRangeAspect(element, *cifCorridorSurfaceCP);
                 assignQuantityAspect(element, *cifCorridorSurfaceCP);
+                
+                insertClippingElement(*cifCorridorSurfaceCP, m_converter.GetDgnDb(), m_converter.m_clippingsModelId, 
+                                      element.ToGeometrySource()->GetCategoryId());
                 return true;
                 }
             }
@@ -3137,7 +3213,10 @@ void ORDConverter::_OnConversionComplete()
         CreateRoadRailElements();
 
         if (!IsUpdating())
+            {
+            ScalableMeshWrapper::AddTerrainClassifiers(GetDgnDb(), m_clippingsModelId);
             CreateDefaultSavedViews();
+            }
         }
 
     T_Super::_OnConversionComplete();

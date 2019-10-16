@@ -29,9 +29,13 @@ always:
 
 $(o)DynamicSchemaComparer$(oext) : $(_MakeFilePath)DynamicSchemaComparer.cpp ${MultiCompileDepends} $(_MakeFilePath)DynamicSchemaComparer.h
 
+$(o)ScalableMeshWrapper$(oext) : $(_MakeFilePath)ScalableMeshWrapper.cpp ${MultiCompileDepends} $(_MakeFilePath)ScalableMeshWrapper.h
+
 %include MultiCppCompileGo.mki
 
 ORDObjectList = $(o)DynamicSchemaComparer$(oext)
+
+ORDObjectList + $(o)ScalableMeshWrapper$(oext)
 
 #----------------------------------------------------------------------
 #   Pre-compiled header
@@ -94,6 +98,7 @@ LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)Units$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)DgnV8Converter$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BRepCore$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)iModelBridge$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)ScalableMeshSchema$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)LinearReferencing$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)RoadRailAlignment$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)RoadRailPhysical$(libext)

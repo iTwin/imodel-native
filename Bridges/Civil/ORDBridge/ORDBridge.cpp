@@ -8,6 +8,7 @@
 #include "ORDBridgeInternal.h"
 #include <windows.h>
 #include <BRepCore/PSolidUtil.h>
+#include "ScalableMeshWrapper.h"
 
 #define DefaultPhysicalPartitionName    "Physical"
 #define DefaultDesignAlignmentsName     "Road/Rail Design Alignments"
@@ -89,6 +90,7 @@ BentleyStatus ORDBridge::_Initialize(int argc, WCharCP argv[])
     m_isUnitTesting = CheckIfUnitTesting(argc, argv);
 
     // The call to iModelBridge::_Initialize is the time to register domains.
+    ScalableMeshWrapper::RegisterDomain();
     DgnDomains::RegisterDomain(LinearReferencingDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
     DgnDomains::RegisterDomain(AlignmentBim::RoadRailAlignmentDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
     DgnDomains::RegisterDomain(RoadRailBim::RoadRailPhysicalDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
@@ -115,6 +117,12 @@ BentleyStatus ORDBridge::_Initialize(int argc, WCharCP argv[])
     m_params.SetConsiderNormal2dModelsSpatial(true);
     m_params.SetProcessAffected(true);
     m_params.SetConvertViewsOfAllDrawings(true);
+
+    if (!_wgetenv(L"ORDBRIDGE_TESTING"))
+        {
+        m_params.SetDoTerrainModelConversion(true);
+        m_params.SetDoRealityDataUpload(true);
+        }
 
     m_params.SetWantThumbnails(true);
 
@@ -208,6 +216,21 @@ SubjectCPtr ORDBridge::_InitializeJob()
 
         RoadRailBim::RoadRailPhysicalDomain::GetDomain().SetUpDefinitionPartitions(subjectCR);
 
+        auto clippingsPartitionPtr = SpatialLocationPartition::Create(subjectCR, "TerrainClippings");
+        auto clippingsPartitionCPtr = clippingsPartitionPtr->Insert();
+        if (clippingsPartitionCPtr.IsNull())
+            return nullptr;
+
+        auto& spatialLocationModelHandlerR = dgn_ModelHandler::SpatialLocation::GetHandler();
+        auto clippingsModelPtr = spatialLocationModelHandlerR.Create(
+            Dgn::DgnModel::CreateParams(subjectCR.GetDgnDb(), subjectCR.GetDgnDb().Domains().GetClassId(spatialLocationModelHandlerR),
+                                        clippingsPartitionCPtr->GetElementId()));
+        clippingsModelPtr->SetIsPrivate(true);
+        if (DgnDbStatus::Success != clippingsModelPtr->Insert())
+            return nullptr;
+
+        m_converter->SetClippingsModelId(clippingsModelPtr->GetModelId());
+
         auto physicalPartitionCPtr = RoadRailBim::PhysicalModelUtilities::CreateAndInsertPhysicalPartitionAndModel(
             *physicalSubjectCPtr, DefaultPhysicalPartitionName);
         BeAssert(physicalPartitionCPtr.IsValid());
@@ -284,6 +307,10 @@ BentleyStatus ORDBridge::_ConvertToBim(SubjectCR jobSubject)
         auto physicalNetworkModelPtr = RoadRailBim::PhysicalModelUtilities::QueryPhysicalNetworkModel(*physicalSubjectCPtr,
             DefaultPhysicalPartitionName, DefaultRoadRailNetworkName);
         m_converter->SetRoadRailNetwork(*dynamic_cast<RoadRailBim::RoadRailNetworkCP>(physicalNetworkModelPtr->GetModeledElement().get()));
+
+        auto terrainClippingsPartitionCode = SpatialLocationPartition::CreateCode(jobSubject, "TerrainClippings");
+        auto clippingsModelId = jobSubject.GetDgnDb().Models().QuerySubModelId(terrainClippingsPartitionCode);
+        m_converter->SetClippingsModelId(clippingsModelId);
         }
 
     auto changeDetectorPtr = GetSyncInfo().GetChangeDetectorFor(*this);

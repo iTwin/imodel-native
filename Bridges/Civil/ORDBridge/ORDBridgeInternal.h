@@ -9,11 +9,20 @@
 #ifndef __ORDBRIDGEINTERNAL_H__
 #define __ORDBRIDGEINTERNAL_H__
 
+#include <DgnDbSync/DgnV8/DgnV8.h> // NB: Must include this first!
+
+#include <CifApi/Cif/SDK/Bentley.Cif.SDK.h>
+#include <CifApi/Cif/SDK/ConsensusConnection.h>
+#include <CifApi/Cif/SDK/CIFGeometryModelSDK.h>
+#include <CifApi/Cif/SDK/GeometryModelDgnECDataBinder.h>
+#include <CifApi/Cif/SDK/ConsensusDgnECProvider.h>
+#include <CifApi/Cif/SDK/CIFGeometryModelECSchema.h>
+#include <CifApi/Cif/SDK/PersistentPathBackPointerBuilder.h>
+
 //  The Vancouver header files will not compile unless the there is a "using namespace Bentley".  Therefore we
 //  have to disallow "using namespace BentleyB0200".
 #define NO_USING_NAMESPACE_BENTLEY 1
 
-#include <DgnDbSync/DgnV8/DgnV8.h>
 #include <Bentley/SHA1.h>
 #include <ECDb/ECDbTypes.h>
 #include <ECDb/ECDbApi.h>
@@ -29,13 +38,6 @@
 #include <RoadRailAlignment/RoadRailAlignmentApi.h>
 #include <RoadRailPhysical/RoadRailPhysicalApi.h>
 #include <DgnV8OpenRoadsDesigner/DgnV8OpenRoadsDesignerApi.h>
-#include <CifApi/Cif/SDK/Bentley.Cif.SDK.h>
-#include <CifApi/Cif/SDK/ConsensusConnection.h>
-#include <CifApi/Cif/SDK/CIFGeometryModelSDK.h>
-#include <CifApi/Cif/SDK/GeometryModelDgnECDataBinder.h>
-#include <CifApi/Cif/SDK/ConsensusDgnECProvider.h>
-#include <CifApi/Cif/SDK/CIFGeometryModelECSchema.h>
-#include <CifApi/Cif/SDK/PersistentPathBackPointerBuilder.h>
 #include <ORDBridge/ORDBridgeApi.h>
 
 /** @namespace DgnDbSync Contains types defined by %Bentley Systems that are used to synchronize between DgnDb and foreign data formats. */
