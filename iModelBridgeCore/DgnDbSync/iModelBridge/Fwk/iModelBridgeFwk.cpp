@@ -27,6 +27,8 @@
 #include <regex>
 #include "../iModelBridgeSettings.h"
 #include <WebServices/iModelHub/Client/Error.h>
+#include "OidcSignInManager.h"
+
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -705,9 +707,7 @@ BentleyStatus iModelBridgeFwk::ParseCommandLine(int argc, WCharCP argv[])
         m_maxRetryCount = m_iModelHubArgs->m_maxRetryCount;
         dmsCredentialsAreEncrypted = m_iModelHubArgs->m_isEncrypted;
         }
-
-    InitLogging();
-       
+      
     // Parse --dms args and push all unrecognized args to m_bargptrs
     if ((BSISUCCESS != m_dmsServerArgs.ParseCommandLine(m_bargptrs, (int) unparsedArgPtrs.size(), unparsedArgPtrs.data(), dmsCredentialsAreEncrypted)) || (BSISUCCESS != m_dmsServerArgs.Validate((int) unparsedArgPtrs.size(), unparsedArgPtrs.data())))
         {
@@ -1408,12 +1408,33 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     iModelBridgeError errorContext;
     iModelBridgeSacAdapter::InitCrt(false);
 
+    // Initialize the launch darkly client;
+    if (m_useIModelHub && NULL != m_iModelHubArgs)
+        {
+        iModelBridgeLdClient& client = iModelBridgeLdClient::GetInstance(m_iModelHubArgs->m_environment);
+
+        if(!m_iModelHubArgs->m_callBackurl.empty()) 
+            {
+            OidcSignInManagerPtr oidcMgr = OidcSignInManagerPtr(new OidcSignInManager(m_iModelHubArgs->m_callBackurl));
+            client.SetUserName(oidcMgr->GetUserInfo().userId.c_str());
+            }
+        else 
+            {
+            client.SetUserName(m_iModelHubArgs->m_credentials.GetUsername().c_str());  
+            }
+
+        client.SetProjectDetails(m_iModelHubArgs->m_repositoryName.c_str(), m_iModelHubArgs->m_bcsProjectId.c_str());
+        if (SUCCESS != client.InitClient())
+            LOG.errorv(L"Error initializing launch darkly.");
+        }
+
+    InitLogging();
+
     Briefcase_MakeBriefcaseName();
     BeFileName::BeDeleteFile(ComputeReportFileName(m_briefcaseName));  // delete any old issues file hanging round from the previous run
     BeFileName errorFile(m_briefcaseName);
     errorFile.append(L"-errors.json");
     BeFileName::BeDeleteFile(errorFile);  // delete any old error file hanging round from the previous run
-
 
     //  Open our state db.
     dbres = OpenOrCreateStateDb(errorContext);
@@ -1455,15 +1476,6 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
         return errorContext.GetIntErrorId();
         }
 
-    //Initialize the launch darkly client;
-    if (m_useIModelHub)
-        {
-        iModelBridgeLdClient& client = iModelBridgeLdClient::GetInstance(m_iModelHubArgs->m_environment);
-        client.SetUserName(m_iModelHubArgs->m_credentials.GetUsername().c_str());
-        client.SetProjectDetails(m_iModelHubArgs->m_repositoryName.c_str(), m_iModelHubArgs->m_bcsProjectId.c_str());
-        if (SUCCESS != client.InitClient())
-            LOG.errorv(L"Error initializing launch darkly.");
-        }
     // Initialize the DgnViewLib Host.
     m_repoAdmin = new FwkRepoAdmin(*this);  // TRICKY: This is ultimately passed to the host as a host variable, and host terimation will delete it.
     iModelBridge::Params params;
