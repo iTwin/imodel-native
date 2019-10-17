@@ -238,6 +238,7 @@ struct TestRepositoryAdmin : IRepositoryManager
 
 struct TestIModelHubClientForBridges : IModelHubClientForBridges
     {
+    iModel::Hub::iModelInfoPtr m_iModelInfo;
     bool anyTxnsInFile(DgnDbR db)
         {
         BeSQLite::Statement stmt;
@@ -253,7 +254,9 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
     BeSQLite::BeBriefcaseId m_currentBriefcaseId;
     TestRepositoryAdmin m_admin;
     TestIModelHubClientForBridges(BeFileNameCR testWorkDir) : m_testWorkDir(testWorkDir), m_currentBriefcaseId(BeSQLite::BeBriefcaseId::Standalone())
-        {}
+        {
+        m_iModelInfo = new iModel::Hub::iModelInfo();
+        }
     
     static BeFileName MakeFakeRepoPath(BeFileNameCR testWorkDir, Utf8CP repoName)
         {
@@ -263,7 +266,7 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
         return repoPath;
         }
 
-    iModel::Hub::iModelInfoPtr GetIModelInfo() override {return nullptr;}
+    iModel::Hub::iModelInfoPtr GetIModelInfo() override {return m_iModelInfo;}
     
     bvector<DgnRevisionPtr> GetDgnRevisions(size_t start = 0, size_t end = -1)
         {

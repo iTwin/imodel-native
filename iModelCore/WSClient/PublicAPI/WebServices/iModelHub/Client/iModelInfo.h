@@ -12,6 +12,10 @@
 #include <WebServices/iModelHub/Client/UserInfo.h>
 #include <WebServices/iModelHub/Client/iModelBaseInfo.h>
 
+BEGIN_BENTLEY_DGN_NAMESPACE
+struct TestIModelHubClientForBridges;
+END_BENTLEY_DGN_NAMESPACE
+
 BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
@@ -27,6 +31,7 @@ DEFINE_TASK_TYPEDEFS(iModelInfoPtr, iModel);
 struct iModelInfo : iModelBaseInfo
 {
 friend struct Client;
+friend struct BentleyApi::Dgn::TestIModelHubClientForBridges;
 private:
     Utf8String m_serverUrl;
     Utf8String m_id;

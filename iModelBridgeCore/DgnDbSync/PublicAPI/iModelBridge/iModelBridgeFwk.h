@@ -51,10 +51,11 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
 
     struct FwkContext
         {
+        iModel::Hub::iModelInfoPtr m_iModelInfo;
         iModelBridgeSettings& m_settings;
         iModelBridgeError& m_error;
-        FwkContext (iModelBridgeSettings& settings, iModelBridgeError& error)
-            :m_settings(settings), m_error(error)
+        FwkContext (iModelBridgeSettings& settings, iModelBridgeError& error, iModel::Hub::iModelInfoPtr info)
+            :m_settings(settings), m_error(error), m_iModelInfo(info)
         {}
         
         };
@@ -229,6 +230,7 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         bvector<WString>    m_bargs;
         BeFileName          m_applicationWorkspace;
         bvector<WString>    m_additionalFilePatterns;
+        Utf8String          m_documentGuid;
         iModelDmsSupport::SessionType  m_dmsType;
         static void PrintUsage();
         Utf8String          GetDocumentGuid();
@@ -335,8 +337,8 @@ protected:
     BentleyStatus  TryOpenBimWithOptions(DgnDb::OpenParams& oparams);
     BentleyStatus  TryOpenBimWithBimProfileUpgrade();
     BentleyStatus  TryOpenBimWithBisSchemaUpgrade();
-    int UpdateExistingBim();
-    int UpdateExistingBimWithExceptionHandling();
+    int UpdateExistingBim(FwkContext& context);
+    int UpdateExistingBimWithExceptionHandling(FwkContext& context);
     int MakeSchemaChanges(iModelBridgeCallOpenCloseFunctions&);
     int MakeDefinitionChanges(SubjectCPtr& jobsubj, iModelBridgeCallOpenCloseFunctions&);
     int DoNormalUpdate();
@@ -362,6 +364,12 @@ protected:
     bool EnableECProfileUpgrade() const;
 
     void WriteErrorDocument();
+
+    int UpdateProjectExtents(FwkContext& context);
+    int PushDataChanges();
+    BentleyStatus GetUserProvidedExtents(AxisAlignedBox3d& extents, FwkContext& context);
+
+    BentleyStatus SetUpECEFLocation(FwkContext& context);
 
 public:
 

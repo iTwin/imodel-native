@@ -3,7 +3,7 @@
 |  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 |
 +--------------------------------------------------------------------------------------*/
-#include "iModelBridgeLdClient.h"
+#include <iModelBridge/iModelBridgeLdClient.h>
 #include <LaunchDarkly/ldapi.h>
 #include <mutex>
 #include <rapidjson/document.h>

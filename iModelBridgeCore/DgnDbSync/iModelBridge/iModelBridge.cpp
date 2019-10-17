@@ -10,7 +10,7 @@
 #include <GeomJsonWireFormat/JsonUtils.h>
 #include <Bentley/BeNumerical.h>
 #include "iModelBridgeHelpers.h"
-#include "iModelBridgeLdClient.h"
+#include <iModelBridge/iModelBridgeLdClient.h>
 #include <Licensing/SaasClient.h>
 #include <WebServices/Configuration/UrlProvider.h>
 #include "Fwk/OidcToken.h"

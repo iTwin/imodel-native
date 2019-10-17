@@ -33,6 +33,7 @@ iModelBridgeError::iModelBridgeError(Error const& hubError)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void iModelBridgeError::WriteErrorMessage(BeFileNameCR errorFileName)
     {
+    //TODO: Add this error message to the log.
     Utf8String fileNameutf8(errorFileName);
     rapidjson::Document document;
     document.SetObject();

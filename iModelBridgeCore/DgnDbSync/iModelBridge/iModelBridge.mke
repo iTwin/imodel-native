@@ -15,6 +15,10 @@ always:
     ~mkdir $(o)
 
 iModelBridgeAPISrc     = $(SrcRoot)imodel02/iModelBridgeCore/DgnDbSync/PublicAPI/iModelBridge/
+iModelBridgePrivateAPISrc     = $(SrcRoot)imodel02/iModelBridgeCore/DgnDbSync/PrivateApi/
+
+dirToSearch  = $(iModelBridgePrivateAPISrc)
+%include cincapnd.mki
 
 #--------------------------------------------------------------------------------------
 #   Compile the source
@@ -39,7 +43,7 @@ $(o)iModelBridgeSyncInfoFileChangeDetector$(oext) : $(_MakeFilePath)iModelBridge
 
 %if $(TARGET_PLATFORM)=="Windows"
 
-$(o)iModelBridgeLdClient$(oext) : $(_MakeFilePath)iModelBridgeLdClient.cpp $(_MakeFilePath)iModelBridgeLdClient.h ${MultiCompileDepends}
+$(o)iModelBridgeLdClient$(oext) : $(_MakeFilePath)iModelBridgeLdClient.cpp $(iModelBridgePrivateAPISrc)iModelBridge/iModelBridgeLdClient.h ${MultiCompileDepends}
 
 %endif
 

@@ -159,7 +159,11 @@ BentleyStatus iModelBridgeWithSyncInfoBase::DetectDeletedDocuments(Utf8CP kind, 
     if (!_GetParams().IsUpdating())
         return BSISUCCESS;
 
-    ExternalSourceAspectIterator<iModelExternalSourceAspect> files(GetDgnDbR(), GetDgnDbR().Elements().GetRootSubjectId(), kind, "");
+    SubjectCPtr subject = GetJobSubject();
+    if (subject.IsNull())
+        return ERROR;
+
+    ExternalSourceAspectIterator<iModelExternalSourceAspect> files(GetDgnDbR(), subject->GetElementId(), kind, "");
     for (auto file = files.begin(); file != files.end(); ++file)
         {
         Utf8String docId = file->GetIdentifier();

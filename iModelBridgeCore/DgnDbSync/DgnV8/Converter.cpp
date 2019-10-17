@@ -1783,22 +1783,25 @@ void Converter::OnUpdateComplete()
     if (m_modelsRequiringRealityTiles.size() != 0)
         GenerateRealityModelTilesets();
 
-    auto extents = m_dgndb->GeoLocation().GetProjectExtents();
-
-    size_t      outlierCount;
-    DRange3d    rangeWithOutliers;
-
-    bvector<BeInt64Id> elementOutliers;
-    auto calculated = m_dgndb->GeoLocation().ComputeProjectExtents(&rangeWithOutliers, &elementOutliers);
-
-    if (!extents.IsEqual(calculated))
+    if (NULL == GetParams().GetBridgeInstance())//In the imodel bridge case set up project extents in the fwk.
         {
-        m_dgndb->GeoLocation().SetProjectExtents(calculated);
-        if (elementOutliers.size () > 0)
+        auto extents = m_dgndb->GeoLocation().GetProjectExtents();
+
+        size_t      outlierCount;
+        DRange3d    rangeWithOutliers;
+
+        bvector<BeInt64Id> elementOutliers;
+        auto calculated = m_dgndb->GeoLocation().ComputeProjectExtents(&rangeWithOutliers, &elementOutliers);
+
+        if (!extents.IsEqual(calculated))
             {
-            Utf8String message;
-            getOutlierElementInfo (elementOutliers, m_dgndb.get (), message, this);
-            ReportAdjustedProjectExtents (elementOutliers.size (), m_dgndb->GeoLocation ().GetProjectExtents (), rangeWithOutliers, message);
+            m_dgndb->GeoLocation().SetProjectExtents(calculated);
+            if (elementOutliers.size () > 0)
+                {
+                Utf8String message;
+                getOutlierElementInfo (elementOutliers, m_dgndb.get (), message, this);
+                ReportAdjustedProjectExtents (elementOutliers.size (), m_dgndb->GeoLocation ().GetProjectExtents (), rangeWithOutliers, message);
+                }
             }
         }
     }

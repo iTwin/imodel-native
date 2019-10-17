@@ -21,13 +21,17 @@
 #include "../iModelBridgeHelpers.h"
 #include <iModelBridge/IModelClientForBridges.h>
 #include <BentleyLog4cxx/log4cxx.h>
-#include "../iModelBridgeLdClient.h"
+#include <iModelBridge/iModelBridgeLdClient.h>
 #include "iModelCrashProcessor.h"
 #include "iModelBridgeErrorHandling.h"
 #include <regex>
 #include "../iModelBridgeSettings.h"
 #include <WebServices/iModelHub/Client/Error.h>
+
 #include "OidcSignInManager.h"
+#include <DgnPlatform/DgnGeoCoord.h>
+#include <DgnPlatform/IGeoCoordServices.h>
+#include <iModelBridge/iModelBridgeSyncInfoFile.h>
 
 
 USING_NAMESPACE_BENTLEY_DGN
@@ -936,9 +940,9 @@ BentleyStatus iModelBridgeFwk::IModelHub_DoCreatedLocalDb(iModelBridgeFwk::FwkCo
     if (BSISUCCESS != Briefcase_IModelHub_CreateRepository())
         return BSIERROR;
 
-    auto iModelInfo = m_client->GetIModelInfo();
-    if (iModelInfo.IsValid())
-        context.m_settings.SetiModelId(iModelInfo->GetId());
+    if (context.m_iModelInfo.IsValid())
+        context.m_settings.SetiModelId(context.m_iModelInfo->GetId());
+
     SetState(BootstrappingState::CreatedRepository);
     return BSISUCCESS;
     }
@@ -1536,7 +1540,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
 
 
     iModelBridgeSettings settings(m_client->GetConnectSignInManager(), m_jobEnvArgs.m_jobRunCorrelationId, iModelGuid.c_str(), connectProjectId.c_str());
-    FwkContext context(settings, errorContext);
+    FwkContext context(settings, errorContext, iModelInfo);
     // Stage the workspace and input file if  necessary.
     LOG.tracev(L"Setting up workspace for standalone bridges");
     GetProgressMeter().SetCurrentStepName("Setting up workspace for standalone bridges");
@@ -1578,7 +1582,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     try
         {
         StopWatch updateExistingBim(true);
-        status = UpdateExistingBimWithExceptionHandling();
+        status = UpdateExistingBimWithExceptionHandling(context);
         iModelBridge::LogPerformance(updateExistingBim, "Updating Existing Bim file.");
         }
     catch (...)
@@ -1930,11 +1934,11 @@ BentleyStatus iModelBridgeFwk::MustHoldJobSubjectLock()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-int iModelBridgeFwk::UpdateExistingBimWithExceptionHandling()
+int iModelBridgeFwk::UpdateExistingBimWithExceptionHandling(iModelBridgeFwk::FwkContext& context)
     {
     IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
         {
-        return UpdateExistingBim();
+        return UpdateExistingBim(context);
         }
     IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(OnUnhandledException("UpdateExistingBim"))
     return RETURN_STATUS_UNHANDLED_EXCEPTION;
@@ -2276,13 +2280,44 @@ int iModelBridgeFwk::OnAllDocsProcessed()
                                                                                                         // ==== CHANNEL LOCKS
     BeAssert(!iModelBridge::HoldsSchemaLock(*m_briefcaseDgnDb));                                        // ==== CHANNEL LOCKS
                                                                                                         // ==== CHANNEL LOCKS
-    return RETURN_STATUS_SUCCESS;                                                                       // ==== CHANNEL LOCKS
+	return RETURN_STATUS_SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+int   iModelBridgeFwk::PushDataChanges()
+    {
+     //Move this into a function. Need to call at  normal update and all docs processed.
+    if (!iModelBridge::AnyTxns(*m_briefcaseDgnDb) && (SyncState::Initial == GetSyncState()))
+        {
+        Briefcase_ReleaseAllPublicLocks();
+        GetLogger().info("No changes were detected and there are no Txns waiting to be pushed.");
+        PostStatusMessage("No changes were detected");
+        return SUCCESS;
+        }
+    
+    BeAssert(!m_briefcaseDgnDb->Txns().HasChanges());
+
+    GetLogger().infov("bridge:%s iModel:%s - Pushing Data Changeset.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
+    GetProgressMeter().SetCurrentStepName("Pushing Changes");
+
+    if (BSISUCCESS != Briefcase_PullMergePush(GetRevisionComment().c_str()))
+        return RETURN_STATUS_SERVER_ERROR; // (Retain shared locks, so that we can re-try our push later.)
+
+    BeAssert(!iModelBridge::AnyTxns(*m_briefcaseDgnDb));
+
+    GetProgressMeter().SetCurrentStepName("Releasing Locks");
+    if (BSISUCCESS != Briefcase_ReleaseAllPublicLocks())
+        return RETURN_STATUS_SERVER_ERROR;
+
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-int iModelBridgeFwk::UpdateExistingBim()
+int iModelBridgeFwk::UpdateExistingBim(iModelBridgeFwk::FwkContext& context)
     {
     // PRE-CONDITIONS
     BeAssert(nullptr != m_bridge);
@@ -2362,7 +2397,8 @@ int iModelBridgeFwk::UpdateExistingBim()
     // Now initialize the bridge.
     if (BSISUCCESS != InitBridge())
         return BentleyStatus::ERROR;
-
+    
+    bool hadBridgeChanges = false;
     if (true)
         {
         iModelBridgeCallTerminate callTerminate(*m_bridge);
@@ -2372,7 +2408,6 @@ int iModelBridgeFwk::UpdateExistingBim()
         ReportFeatureFlags();
 
         // Open the briefcase in the normal way, allowing domain schema changes to be pulled in.
-        bool madeSchemaChanges = false;
         m_briefcaseDgnDb = nullptr; // close the current connection to the briefcase db before attempting to reopen it!
 
         // *** NEEDS WORK: There is a race condition here. See the comment in MstnBridgeTests.MultiBridgeSequencing.
@@ -2385,6 +2420,7 @@ int iModelBridgeFwk::UpdateExistingBim()
 
         BeAssert(!iModelBridge::AnyTxns(*m_briefcaseDgnDb));
 
+        
         int res;
         if (!m_jobEnvArgs.m_allDocsProcessed)
             {
@@ -2398,16 +2434,32 @@ int iModelBridgeFwk::UpdateExistingBim()
         if (0 != res)
             return res;
 
+        hadBridgeChanges = m_bridge->HadAnyChanges();
         callTerminate.m_status = BSISUCCESS;
         }
 
-    // Running ANALYZE allows SQLite to create optimize execution plans when running queries. It should be be included in changeset that bridges post.
-    if (iModelBridge::AnyChangesToPush(*m_briefcaseDgnDb))
-        m_briefcaseDgnDb->ExecuteSql("ANALYZE");
+    PushDataChanges();
+    SetCurrentPhaseName("Finalizing Changes");
+    GetProgressMeter().AddSteps(2);
+    if (BSISUCCESS != GetSchemaLock())  // must get schema lock preemptively. This ensures that only one bridge at a time can make schema and definition changes. That then allows me to pull/merge/push between the definition and data steps without closing and reopening
+        {
+        LOG.fatalv("Bridge cannot obtain schema lock.");
+        return RETURN_STATUS_SERVER_ERROR;
+        }
 
+    if (!m_jobEnvArgs.m_allDocsProcessed)
+        {
+        UpdateProjectExtents(context);
+        SetUpECEFLocation(context);
+        }
+
+    // Running ANALYZE allows SQLite to create optimize execution plans when running queries. It should be be included in changeset that bridges post.
+    if (hadBridgeChanges)
+        m_briefcaseDgnDb->ExecuteSql("ANALYZE");
+   
     dbres = m_briefcaseDgnDb->SaveChanges();
 
-    //                                       *** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
+    //*** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
 
     if (BeSQLite::BE_SQLITE_OK != dbres)
         {
@@ -2416,34 +2468,10 @@ int iModelBridgeFwk::UpdateExistingBim()
         }
 
     //  Done. Make sure that all changes are pushed and all shared locks are released.
-
-    SetCurrentPhaseName("Finalizing Changes");
-    GetProgressMeter().AddSteps(2);
-
-    if (!iModelBridge::AnyTxns(*m_briefcaseDgnDb) && (SyncState::Initial == GetSyncState()))
-        {
-        Briefcase_ReleaseAllPublicLocks();
-        GetLogger().info("No changes were detected and there are no Txns waiting to be pushed.");
-        PostStatusMessage("No changes were detected");
-        }
-    else
-        {
-        BeAssert(!m_briefcaseDgnDb->Txns().HasChanges());
-
-        GetLogger().infov("bridge:%s iModel:%s - Pushing Data Changeset.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
-        GetProgressMeter().SetCurrentStepName("Pushing Changes");
-
-        if (BSISUCCESS != Briefcase_PullMergePush(GetRevisionComment().c_str()))
-            return RETURN_STATUS_SERVER_ERROR; // (Retain shared locks, so that we can re-try our push later.)
-
-        BeAssert(!iModelBridge::AnyTxns(*m_briefcaseDgnDb));
-
-        GetProgressMeter().SetCurrentStepName("Releasing Locks");
-        if (BSISUCCESS != Briefcase_ReleaseAllPublicLocks())
-            return RETURN_STATUS_SERVER_ERROR;
-        }
-
-    //                                       *** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
+    PushDataChanges();
+        
+    
+    // *** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
 
     // Set this value as a report of the Bridge/BriefcaseManager's policy, so that callers can find out afterwards.
     m_areCodesInLockedModelsReported = m_briefcaseDgnDb->BriefcaseManager().ShouldIncludeUsedLocksInChangeSet();
@@ -2843,4 +2871,289 @@ void iModelBridgeFwk::SetLastError(IBriefcaseManager::Response const& response, 
     response.ToJson(err.m_extendedData);
 
     SetLastError(err);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas               07/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnModelPtr getElementPartitionSubModel(DgnDbCR db, DgnElementCR outlierElement)
+    {
+    bvector<iModelExternalSourceAspect> aspects = iModelExternalSourceAspect::GetAllByKind(outlierElement, "Element", NULL);// SyncInfo::V8ElementExternalSourceAspect::Kind::Element
+    if (aspects.empty())
+        return outlierElement.GetModel();
+
+    PhysicalPartitionCPtr physicalPartition = db.Elements().Get<PhysicalPartition>(aspects[0].GetScope());
+    return physicalPartition.IsValid() ? physicalPartition->GetSubModel() : outlierElement.GetModel();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mayuresh.Kanade                 04/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static void getOutlierElementInfo(const bvector<BeInt64Id>& elementOutliers, DgnDbCP db, Utf8String& message)
+    {
+    for (auto eid : elementOutliers)
+        {
+        auto outlierElement = db->Elements().GetElement((DgnElementId)eid.GetValue());
+        if (outlierElement.IsValid())
+            {
+            BentleyApi::BeSQLite::EC::ECSqlStatement estmt;
+            auto status = estmt.Prepare(*db, "SELECT Identifier FROM " BIS_SCHEMA(BIS_CLASS_ExternalSourceAspect) " AS xsa WHERE (xsa.Element.Id=?)");
+
+            estmt.BindInt64(1, eid.GetValue());
+            int64_t v8ElementId = 0;
+
+            if (BentleyApi::BeSQLite::BE_SQLITE_ROW == estmt.Step())
+                v8ElementId = estmt.GetValueInt64(0);
+
+            DgnModelPtr partitionsubModel = getElementPartitionSubModel(*db, *outlierElement);
+            if (partitionsubModel.IsNull())
+                {
+                BeAssert(false);
+                continue;
+                }
+
+            auto el = partitionsubModel->GetModeledElement();
+            if (el.IsNull())
+                {
+                BeAssert(false);
+                continue;
+                }
+
+            Utf8String sourceModelName = "<unknown>";
+            Utf8String sourceFileName = "<unknown>";
+            bvector<iModelExternalSourceAspect> aspects = iModelExternalSourceAspect::GetAllByKind(*el, "Model", NULL); // SyncInfo::V8ElementExternalSourceAspect::Kind::Model
+            if (aspects.size()>1)
+                {
+                //sourceModelName = v8ModelInfo.GetV8ModelName();
+                RepositoryLinkId id = RepositoryLinkId(aspects[0].GetScope().GetValueUnchecked());
+                auto repositoryLinkElement = db->Elements().Get<RepositoryLink>(id);
+                if (repositoryLinkElement.IsValid())
+                    {
+                    bvector<iModelExternalSourceAspect> raspects = iModelExternalSourceAspect::GetAllByKind(*el, "DocumentWithBeGuid", NULL); // SyncInfo::V8ElementExternalSourceAspect::Kind::RepositoryLink
+                    if (raspects.size() > 1)
+                        {
+                        auto json = raspects[0].GetProperties();
+                        if (json.IsObject() && json.HasMember("fileName"))
+                            sourceFileName = json["fileName"].GetString();
+                        }
+                    }
+                }
+            Utf8PrintfString elementDetails("\nElement Name:%s, Id: %lld, Model Name: %s, File Name: %s", outlierElement->GetDisplayLabel().c_str(), v8ElementId, sourceModelName.c_str(), sourceFileName.c_str());
+            message.append(elementDetails.c_str());
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static  BentleyStatus        GetLatLongFromUserExtents(GeoPoint& low, GeoPoint& high, iModelBridgeFwk::FwkContext& context)
+    {
+    auto iModelInfo = context.m_iModelInfo;
+    if (!iModelInfo.IsValid())
+        return ERROR;
+    
+    auto extentValues = iModelInfo->GetExtent();
+    if (extentValues.size() < 4)
+        return ERROR;
+    
+    low.Init(extentValues[1], extentValues[0], 0);
+    high.Init(extentValues[3], extentValues[2],0);
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   iModelBridgeFwk::GetUserProvidedExtents(AxisAlignedBox3d& extents, iModelBridgeFwk::FwkContext& context)
+    {
+    GeoPoint low, high;
+    if (SUCCESS != GetLatLongFromUserExtents(low, high, context))
+        return ERROR;
+
+    LOG.tracev(L"iModel extent values from hub %f, %f x %f,  %f", low.latitude, low.longitude, high.latitude, high.longitude);
+    
+
+    DgnGCS* gcs = m_briefcaseDgnDb->GeoLocation().GetDgnGCS();
+    if (NULL != gcs)//Use the GCS from the db if available.
+        {
+        m_briefcaseDgnDb->GeoLocation().XyzFromLatLongWGS84(extents.low, low);
+        m_briefcaseDgnDb->GeoLocation().XyzFromLatLongWGS84(extents.high, high);
+        return SUCCESS;
+        }
+
+    WString warningMsg;
+    StatusInt warning;
+    auto wsg84 = GeoCoordinates::BaseGCS::CreateGCS();        // WGS84 - used to convert Long/Latitude to ECEF.
+    wsg84->InitFromEPSGCode(&warning, &warningMsg, 4326); // We do not care about warnings. This GCS exists in the dictionary
+    wsg84->XYZFromLatLong(extents.low, low);
+    wsg84->XYZFromLatLong(extents.high, high);
+    
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void            GetElementOutLiers(bvector<BeInt64Id> elementOutliers, DgnDbR db, AxisAlignedBox3d const& range)
+    {
+    auto stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId,Origin,Yaw,Pitch,Roll,BBoxLow,BBoxHigh FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement3d));
+    
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        if (stmt->IsValueNull(1)) // has no placement
+            continue;
+
+        double yaw = stmt->GetValueDouble(2);
+        double pitch = stmt->GetValueDouble(3);
+        double roll = stmt->GetValueDouble(4);
+
+        DPoint3d low = stmt->GetValuePoint3d(5);
+        DPoint3d high = stmt->GetValuePoint3d(6);
+
+        Placement3d placement(stmt->GetValuePoint3d(1),
+            YawPitchRollAngles(Angle::FromDegrees(yaw), Angle::FromDegrees(pitch), Angle::FromDegrees(roll)),
+            ElementAlignedBox3d(low.x, low.y, low.z, high.x, high.y, high.z));
+
+        AxisAlignedBox3d elementRange = placement.CalculateRange();
+        if (!elementRange.IsContained(range))
+            elementOutliers.push_back(stmt->GetValueId<DgnElementId>(0));
+        }
+
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+int             iModelBridgeFwk::UpdateProjectExtents(iModelBridgeFwk::FwkContext& context)
+    {
+    //For Bridges the rule is on every update
+    // 1. We calculate the project extents based on input data
+    // 2. We set the x-y to the value provided by iModelHub. (Need to check whether computed value is better and clamp it down by imodelhub values in real world cases)
+    // 3. We set the z value to be actual z as computed without outliers with a maximum clamp down value of Mt.Everest
+    // 4. Do not increase project  extents if there is no change so that we do not have empty changesets.
+    //We need a push-pull these changes and also do it under a schema lock
+    AxisAlignedBox3d extents = m_briefcaseDgnDb->GeoLocation().GetProjectExtents();
+
+    size_t      outlierCount;
+    DRange3d    rangeWithOutliers;
+
+    bvector<BeInt64Id> elementOutliers;
+    AxisAlignedBox3d calculated = m_briefcaseDgnDb->GeoLocation().ComputeProjectExtents(&rangeWithOutliers, &elementOutliers);
+
+    AxisAlignedBox3d userProvided = calculated;
+    bool useiModelHubExtents = false; 
+    TestFeatureFlag("allow-imodelhub-projectextents", useiModelHubExtents);
+
+    bool modifiedCalculatedRange = false;
+    if (useiModelHubExtents && SUCCESS == GetUserProvidedExtents(userProvided, context))
+        {
+        static const double MaxHeight = 8848.0392; //Clamp down z by Mt. everest height
+        userProvided.low.z = MIN (calculated.low.z, MaxHeight);
+        userProvided.high.z = MIN(calculated.high.z, MaxHeight);
+        if (NULL == m_briefcaseDgnDb->GeoLocation().GetDgnGCS())
+            {
+            //If the iModel does not have a GCS assume the center of calculated range matches the center of user provided extents
+			//Draw a picture.
+            DPoint3d calcCenter = calculated.GetCenter();
+            DPoint3d userProvidedCenter = userProvided.GetCenter();
+            DPoint3d diff;
+            diff.DifferenceOf(calcCenter, userProvidedCenter);
+            userProvided.low.Add(diff);
+            userProvided.high.Add(diff);
+            }
+
+        //Now use the user provided extents to clamp down the calculated extents
+        AxisAlignedBox3d clampedDownRange;
+        clampedDownRange.IntersectionOf(userProvided, calculated);
+        if (clampedDownRange.IsNull())
+            clampedDownRange = userProvided;
+
+        if (!calculated.IsContained(clampedDownRange))
+            modifiedCalculatedRange = true;
+        calculated = clampedDownRange;
+        }
+    
+    if (!extents.IsEqual(calculated))
+        {
+        m_briefcaseDgnDb->GeoLocation().SetProjectExtents(calculated);
+        if (modifiedCalculatedRange) //Recompute element outliers since they might have changed as a result of the clamp down.
+            {
+            elementOutliers.clear();
+            GetElementOutLiers(elementOutliers, *m_briefcaseDgnDb, calculated);
+            }
+
+        if (elementOutliers.size() > 0)
+            {
+            Utf8String elementDetails;
+            getOutlierElementInfo(elementOutliers, m_briefcaseDgnDb.get(), elementDetails);
+
+            Utf8PrintfString message("Elements out of range : %s", elementDetails.c_str());
+            ReportIssue(message);
+            }
+        }
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   iModelBridgeFwk::SetUpECEFLocation(FwkContext& context)
+    {
+    DgnGCS* gcs = m_briefcaseDgnDb->GeoLocation().GetDgnGCS();
+    if (NULL != gcs)//Do nothing if the iModel is already set up correctly by the bridge.
+        return SUCCESS;
+
+    //!Use the center of the user provided extents as the origin.
+    EcefLocation currentEcefLocation = m_briefcaseDgnDb->GeoLocation().GetEcefLocation();
+    if (currentEcefLocation.m_isValid)
+        return SUCCESS;//TODO: Store a syncinfo and update the map location if it was created by this function.
+
+    GeoPoint low, high;
+    if (SUCCESS != GetLatLongFromUserExtents(low, high, context))
+        return ERROR;
+
+    GeoPoint originLatLong;
+    originLatLong.latitude = 0.5*(low.latitude + high.latitude);
+    originLatLong.longitude = 0.5*(low.longitude + high.longitude);
+    originLatLong.elevation = 0;
+
+    WString warningMsg;
+    StatusInt warning;
+    auto wsg84 = GeoCoordinates::BaseGCS::CreateGCS();        // WGS84 - used to convert Long/Latitude to ECEF.
+    wsg84->InitFromEPSGCode(&warning, &warningMsg, 4326); // We do not care about warnings. This GCS exists in the dictionary
+    
+    DPoint3d origin, originEcef;
+    wsg84->CartesianFromLatLong(origin, originLatLong);
+    wsg84->XYZFromLatLong(originEcef, originLatLong);
+
+    DPoint3d yLocation = DPoint3d::FromSumOf(origin, DPoint3d::From(0.0, 10.0, 0.0));
+    GeoPoint yGeoLocation;
+    wsg84->LatLongFromCartesian(yGeoLocation, yLocation);
+    DPoint3d ecefY;
+    wsg84->XYZFromLatLong(ecefY, yGeoLocation);
+
+    RotMatrix rMatrix = RotMatrix::FromIdentity();
+    DVec3d zVector, yVector;
+    zVector.Normalize((DVec3dCR)originEcef);
+    yVector.NormalizedDifference(ecefY, originEcef);
+
+    rMatrix.SetColumn(yVector, 1);
+    rMatrix.SetColumn(zVector, 2);
+    rMatrix.SquareAndNormalizeColumns(rMatrix, 1, 2);
+
+    auto ecefTrans = Transform::From(rMatrix, originEcef);
+    ecefTrans.TranslateInLocalCoordinates(ecefTrans, -origin.x, -origin.y, -origin.z);
+
+    EcefLocation ecefLocation;
+    ecefLocation.m_origin = ecefTrans.Origin();
+    YawPitchRollAngles::TryFromRotMatrix(ecefLocation.m_angles, rMatrix);
+    ecefLocation.m_isValid = true;
+   
+    if (currentEcefLocation.m_isValid && currentEcefLocation.m_origin.AlmostEqualXY(ecefLocation.m_origin))
+        return SUCCESS;
+
+    m_briefcaseDgnDb->GeoLocation().SetEcefLocation(ecefLocation);
+    m_briefcaseDgnDb->GeoLocation().Save();
+    return SUCCESS;
     }

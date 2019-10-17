@@ -185,7 +185,9 @@ void iModelBridgeFwk::DmsServerArgs::PrintUsage()
     --dms-appWorkspace=     (optional)  Reference application workspace if the default fallback is not usable.\n\
     --dms-retries=          (optional)  The number of times to retry\n\
     --dms-type=             (optional)  Supports the following values 1 ( PW (default)), 2 (PWShare), 3 (Azure SAS Url)\n\
-    --dms-additionalFiles=  (optional)  Applicable only for PW. Supports staging files specified by the pattern. (eg *.xml ). Can be specified more than once."
+    --dms-additionalFiles=  (optional)  Applicable only for PW. Supports staging files specified by the pattern. (eg *.xml ). Can be specified more than once. \n\
+    --dms-documentGuid=     (optional)  Document identifier in the system. In case of PW this is obtained from inputFileUrn"
+
     );
     }
 
@@ -300,6 +302,11 @@ BentleyStatus iModelBridgeFwk::DmsServerArgs::ParseCommandLine(bvector<WCharCP>&
             m_dmsType = static_cast<iModelDmsSupport::SessionType>(atoi(getArgValue(argv[iArg]).c_str()));
             continue;
             }
+        if (argv[iArg] == wcsstr(argv[iArg], L"--dms-documentGuid="))
+            {
+            m_documentGuid = getArgValue(argv[iArg]);
+            continue;
+            }
         if (argv[iArg] == wcsstr(argv[iArg], L"--dms-additionalFiles="))
             {
             m_additionalFilePatterns.push_back(WString(getArgValueW(argv[iArg])));
@@ -380,6 +387,9 @@ iModelBridgeFwk::DmsServerArgs::DmsServerArgs()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String iModelBridgeFwk::DmsServerArgs::GetDocumentGuid()
     {
+    if (!m_documentGuid.empty())
+        return m_documentGuid;
+
     if (m_inputFileUrn.empty())
         return Utf8String();
     std::string fileStr(Utf8String(m_inputFileUrn.c_str()).c_str());
