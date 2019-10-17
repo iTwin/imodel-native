@@ -516,7 +516,14 @@ Bentley::RefCountedPtr<DgnV8Api::DgnModel> Converter::CopyAndChangeAnnotationSca
 
     v8file->CopyModelContents(*newModel, *v8Model, NULL);
 
-    CopyEffectiveModelType(*newModel, *v8Model);
+    // Bug#29156:
+    // Commit c2caa47cbca85d3836e62699646c8693572210cd on 8/22/2107 changed this logic to always call CopyEffectiveModelType.
+    // That is incorrect in the case where the attached model is a sheet, since a sheet cannot be an attachment in an iModel.
+    // The copy must become a drawing in that case. I cannot fathom when the copy should ever be anything but a drawing!?
+    if (v8Model->IsSheet())
+        SetEffectiveModelType(*newModel, DgnV8Api::DgnModelType::Drawing);
+    else
+        CopyEffectiveModelType(*newModel, *v8Model);
 
     //  Change the annotation scale of the new model
     DgnV8Api::ChangeAnnotationScale changeContext (newModel);

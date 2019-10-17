@@ -37,11 +37,11 @@
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${env:OutRoot}/Winx64/Product/DgnV8Converter/DgnV8Converter.exe",
-            "args": ["--input=d:/dgn/079_Main.i.dgn", "--output=d:/tmp/079_Main.i.bim", "--update"],
+            "args": ["--input=d:/dgn/problem/29156/dgn/Interoperability_OPM.dgn", "--drawings-dirs=d:/dgn/problem/29156/dgn", "--output=d:/tmp"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
-            "externalConsole": false
+            "externalConsole": true
         },
         {
             "name": "(Windows) DgnV8ConverterTests",
