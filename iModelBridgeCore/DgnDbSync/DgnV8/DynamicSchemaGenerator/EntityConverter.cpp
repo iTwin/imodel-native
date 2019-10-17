@@ -985,6 +985,66 @@ void BisClassConverter::GetBisBaseClasses(BECN::ECClassCP& elementBaseClass, BEC
 
     }
 
+struct CompareIUtf8Ascii
+    {
+    bool operator()(Utf8CP s1, Utf8CP s2) const { return BeStringUtilities::StricmpAscii(s1, s2) < 0; }
+    bool operator()(Utf8StringCR s1, Utf8StringCR s2) const { return BeStringUtilities::StricmpAscii(s1.c_str(), s2.c_str()) < 0; }
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            10/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+// static
+ECObjectsStatus CheckReservedPropertyNames(ECN::ECClassR targetClass, ECN::ECClassCR baseClass)
+    {
+    IECInstancePtr ca = baseClass.GetPrimaryCustomAttribute("BisCore", "ReservedPropertyNames");
+    if (ca.IsValid())
+        {
+        ECValue propertyNamesVal;
+        uint32_t arrayCount = 0;
+        if (ca->GetValue(propertyNamesVal, "PropertyNames") == ECObjectsStatus::Success && !propertyNamesVal.IsNull())
+            arrayCount = propertyNamesVal.GetArrayInfo().GetCount();
+
+        if (arrayCount != 0)
+            {
+            std::set<Utf8String, CompareIUtf8Ascii> reservedProps;
+            ECValue propertyNameVal;
+            for (uint32_t i = 0; i < arrayCount; ++i)
+                {
+                if (ECObjectsStatus::Success != ca->GetValue(propertyNameVal, "PropertyNames", i) && propertyNameVal.IsNull())
+                    continue;
+
+                if (!ECNameValidation::IsValidName(propertyNameVal.GetUtf8CP()))
+                    continue;
+
+                reservedProps.insert(propertyNameVal.GetUtf8CP());
+                }
+
+            for (auto const prop : targetClass.GetProperties(false))
+                {
+                if (reservedProps.find(prop->GetName()) != reservedProps.end())
+                    {
+                    ECClassP conflictClass = const_cast<ECClassP> (&prop->GetClass());
+                    ECPropertyP renamedProperty = nullptr;
+                    ECObjectsStatus status = conflictClass->RenameConflictProperty(prop, true, renamedProperty);
+                    if (ECObjectsStatus::Success != status)
+                        {
+                        LOG.errorv("Unable to rename property %s:%s that conflicts with the reserved property on %s", conflictClass->GetFullName(), prop->GetName().c_str(), targetClass.GetFullName());
+                        return status;
+                        }
+                    }
+                }
+            }
+        }
+
+    for (ECClassCP superBaseClass : baseClass.GetBaseClasses())
+        {
+        ECObjectsStatus status = CheckReservedPropertyNames(targetClass, *superBaseClass);
+        if (ECObjectsStatus::Success != status)
+            return status;
+        }
+    return ECObjectsStatus::Success;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Krischan.Eberle     02/2015
 //---------------------------------------------------------------------------------------
@@ -1005,6 +1065,9 @@ BentleyStatus BisClassConverter::AddBaseClass(BECN::ECClassR targetClass, BECN::
 
         return false;
         };
+
+    if (ECObjectsStatus::Success != CheckReservedPropertyNames(targetClass, baseClass))
+        return BSIERROR;
 
     if (!isAlreadyBaseClass(targetClass, baseClass))
         {

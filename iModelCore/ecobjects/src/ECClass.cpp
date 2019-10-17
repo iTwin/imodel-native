@@ -247,13 +247,16 @@ ECObjectsStatus ECClass::RenameConflictProperty(ECPropertyP prop, bool renameDer
         return status;
         }
 
+    if (!renamedProperty->GetIsDisplayLabelDefined())
+        renamedProperty->SetDisplayLabel(originalName);
+
     LOG.infov("Renamed conflict property %s:%s to %s\n", GetFullName(), originalName.c_str(), newName.c_str());
 
     // If newProperty was successfully added we need to add a CustomAttribute. To help identify the property when doing instance data conversion.
     AddPropertyMapping(originalName.c_str(), newName.c_str());
 
     if (renameDerivedProperties)
-        RenameDerivedProperties(newName);
+        RenameDerivedProperties(originalName, newName);
 
     return ECObjectsStatus::Success;
     }
@@ -261,25 +264,26 @@ ECObjectsStatus ECClass::RenameConflictProperty(ECPropertyP prop, bool renameDer
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-void ECClass::RenameDerivedProperties(Utf8String newName)
+void ECClass::RenameDerivedProperties(Utf8StringCR originalName, Utf8StringCR newName)
     {
+    ECPropertyP newBaseProp = GetPropertyP(newName.c_str());
     for (ECClassP derivedClass : m_derivedClasses)
         {
         ECPropertyP fromDerived = derivedClass->GetPropertyP(newName.c_str(), false);
-        if (nullptr != fromDerived && !fromDerived->GetName().Equals(newName))
+        if (nullptr != fromDerived)
             {
             ECPropertyP renamedProperty = nullptr;
-            derivedClass->RenameConflictProperty(fromDerived, true, renamedProperty, newName);
+            derivedClass->RenameConflictProperty(fromDerived, true, renamedProperty);
             }
-        for (ECClassP derivedClassBaseClass : derivedClass->GetBaseClasses())
+        ECPropertyP fromDerivedOld = derivedClass->GetPropertyP(originalName.c_str(), false);
+        if (nullptr != fromDerivedOld)
             {
-            ECPropertyP fromBaseDerived = derivedClassBaseClass->GetPropertyP(newName.c_str(), true);
-            if (nullptr == fromBaseDerived || fromBaseDerived->GetName().Equals(newName))
-                continue;
             ECPropertyP renamedProperty = nullptr;
-            derivedClassBaseClass->RenameConflictProperty(fromBaseDerived, true, renamedProperty, newName);
+            derivedClass->RenameConflictProperty(fromDerivedOld, true, renamedProperty, newName);
+            renamedProperty->SetBaseProperty(newBaseProp);
             }
-        derivedClass->RenameDerivedProperties(newName);
+
+        derivedClass->RenameDerivedProperties(originalName, newName);
         }
     }
 
@@ -303,9 +307,28 @@ void ECClass::AddPropertyMapping(Utf8CP originalName, Utf8CP newName)
     renameInstance->GetValue(v, "PropertyMapping");
     Utf8String remapping("");
     if (!v.IsNull())
-        remapping = Utf8String(v.GetUtf8CP()).append(";");
-
-    remapping.append(originalName).append("|").append(newName);
+        {
+        Utf8String existing(v.GetUtf8CP());
+        Utf8String search("|");
+        search.append(originalName);
+        size_t index = existing.find(search);
+        if (index != std::string::npos)
+            {
+            index++;
+            size_t index2 = existing.find(";", index);
+            if (index2 == std::string::npos)
+                index2 = existing.length();
+            size_t length = index2 - index;
+            remapping = existing.replace(index, length, newName);
+            }
+        else
+            {
+            remapping = Utf8String(v.GetUtf8CP()).append(";");
+            remapping.append(originalName).append("|").append(newName);
+            }
+        }
+    else
+        remapping.append(originalName).append("|").append(newName);
 
     v.SetUtf8CP(remapping.c_str());
     if (ECObjectsStatus::Success != renameInstance->SetValue("PropertyMapping", v))
@@ -522,6 +545,8 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConfli
                 FindUniquePropertyName(newName, pProperty->GetClass().GetSchema().GetAlias().c_str(), pProperty->GetName().c_str());
                 pProperty->SetName(newName);
 
+                // remove baseproperty as it doesn't make sense for it to exist anymore
+                pProperty->SetBaseProperty(nullptr);
                 // If newProperty was successfully added we need to add a CustomAttribute. To help identify the property when doing instance data conversion.
                 AddPropertyMapping(originalName.c_str(), newName.c_str());
                 }
@@ -547,8 +572,8 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConfli
             LOG.infov("%s already has a base primitive property %s of the same name.  As no differences were noted, new property will not be added.", pProperty->GetClass().GetFullName(), pProperty->GetName().c_str());
             return ECObjectsStatus::Success;
             }
-
-        pProperty->SetBaseProperty(baseProperty);
+        else
+            pProperty->SetBaseProperty(baseProperty);
         }
 
     m_propertyMap.insert (bpair<Utf8CP, ECPropertyP> (pProperty->GetName().c_str(), pProperty));
@@ -1470,7 +1495,7 @@ ECObjectsStatus ECClass::_AddBaseClass(ECClassCR baseClass, bool insertAtBeginni
         {
         ECPropertyP thisProperty;
         // This is a case-insensitive search
-        if (NULL != (thisProperty = this->GetPropertyP(prop->GetName())))
+        if (NULL != (thisProperty = this->GetPropertyP(prop->GetName(), false)))
             {
             Utf8String errMsg;
             status = ECClass::CanPropertyBeOverridden(*prop, *thisProperty, errMsg);

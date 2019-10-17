@@ -677,6 +677,7 @@ TEST_F(ECSchemaTests, RemapSerializedInstance)
         "        <BaseClass>Foo</BaseClass>"      
         "        <ECProperty propertyName=\"code\" typeName=\"int\" />"
         "        <ECProperty propertyName=\"status\" typeName=\"int\" />"
+        "        <ECProperty propertyName=\"ClassFullName\" typeName=\"string\" />"
         "    </ECClass>"
         "</ECSchema>";
 
@@ -1082,9 +1083,20 @@ TEST_F(ECSchemaTests, RemapReservedPropertyNames) // TFS#670031
     {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" nameSpacePrefix="test" version="01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECSchemaReference name="EditorCustomAttributes" version="01.03" prefix="beca" />
             <ECClass typeName="Foo" isDomainClass="True">
                 <ECProperty propertyName="ECInstanceId" typeName="string" />
-                <ECProperty propertyName="Id" typeName="string" />
+                <ECProperty propertyName="Id" typeName="string" >
+                    <ECCustomAttributes>
+                        <Category xmlns="EditorCustomAttributes.01.03">
+                            <Name>FooProp</Name>
+                            <DisplayLabel>FooProp</DisplayLabel>
+                            <Description>Properties for Foo</Description>
+                            <Priority>199999</Priority>
+                            <Expand>True</Expand>
+                        </Category>
+                    </ECCustomAttributes>
+                </ECProperty>
                 <ECProperty propertyName="ECClassId" typeName="string" />
                 <ECProperty propertyName="SourceECInstanceId" typeName="string" />
                 <ECProperty propertyName="SourceId" typeName="string" />
@@ -1092,6 +1104,26 @@ TEST_F(ECSchemaTests, RemapReservedPropertyNames) // TFS#670031
                 <ECProperty propertyName="TargetECInstanceId" typeName="string" />
                 <ECProperty propertyName="TargetId" typeName="string" />
                 <ECProperty propertyName="TargetECClassId" typeName="string" />
+                <ECProperty propertyName="ClassFullName" typeName="string" />
+                <ECProperty propertyName="Codex" typeName="string" />
+                <ECProperty propertyName="Code" typeName="string" />
+            </ECClass>
+            <ECClass typeName="Goo" isDomainClass="True">
+                <BaseClass>Foo</BaseClass>
+                <ECProperty propertyName="Id" typeName="string" >
+                    <ECCustomAttributes>
+                        <Category xmlns="EditorCustomAttributes.01.03">
+                            <Name>GooProp</Name>
+                            <DisplayLabel>GooProp</DisplayLabel>
+                            <Description>Properties for Goo</Description>
+                            <Priority>199999</Priority>
+                            <Expand>True</Expand>
+                        </Category>
+                    </ECCustomAttributes>
+                </ECProperty>
+                <ECProperty propertyName="Placement" typeName="string" />
+                <ECProperty propertyName="codex" typeName="int" />
+                <ECProperty propertyName="code" typeName="int" />
             </ECClass>
         </ECSchema>)xml";
 
@@ -1102,6 +1134,7 @@ TEST_F(ECSchemaTests, RemapReservedPropertyNames) // TFS#670031
     ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
     ECObjectsV8::ECSchemaPtr schema;
     EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext));
+    ASSERT_TRUE(schema.IsValid());
     EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema, *(v8editor.m_file)));
 
     DgnV8Api::ElementId eid;
@@ -1138,6 +1171,26 @@ TEST_F(ECSchemaTests, RemapReservedPropertyNames) // TFS#670031
     createdDgnECInstance->SetValue(L"TargetECClassId", v);
 
     createdDgnECInstance->WriteChanges();
+
+    DgnV8Api::ElementId eid2;
+    v8editor.AddLine(&eid2);
+    DgnV8Api::ElementHandle eh2(eid2, v8editor.m_defaultModel);
+    DgnV8Api::DgnElementECInstancePtr createdDgnECInstance2;
+    EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, v8editor.CreateInstanceOnElement(createdDgnECInstance2, *((DgnV8Api::ElementHandle*)&eh2), v8editor.m_defaultModel, L"TestSchema", L"Goo"));
+
+    v.SetUtf8CP("GooId");
+    createdDgnECInstance2->SetValue(L"Id", v);
+
+    v.SetUtf8CP("GooPlace");
+    createdDgnECInstance2->SetValue(L"Placement", v);
+
+    v.SetInteger(12);
+    createdDgnECInstance2->SetValue(L"code", v);
+
+    v.SetUtf8CP("GooName");
+    createdDgnECInstance2->SetValue(L"ClassFullName", v);
+
+    createdDgnECInstance2->WriteChanges();
     v8editor.Save();
 
     DoConvert(m_dgnDbFileName, m_v8FileName);
@@ -1184,6 +1237,27 @@ TEST_F(ECSchemaTests, RemapReservedPropertyNames) // TFS#670031
         ASSERT_TRUE(nullptr == fooClass->GetPropertyP("TargetECInstanceId"));
         ASSERT_TRUE(nullptr == fooClass->GetPropertyP("TargetId"));
         ASSERT_TRUE(nullptr == fooClass->GetPropertyP("TargetECClassId"));
+
+        DgnElementId dgnDbElementId2;
+        syncInfo.MustFindElementByV8ElementId(dgnDbElementId2, editModelId, eid2);
+
+        auto dgnDbElement2 = db->Elements().GetElement(dgnDbElementId2);
+        ASSERT_TRUE(dgnDbElement2.IsValid());
+
+        Utf8String selEcSql2;
+        selEcSql2.append("SELECT test_Placement_, test_Id_, test_test_code__, test_ClassFullName_ FROM ").append(dgnDbElement2->GetElementClass()->GetECSqlName().c_str()).append("WHERE ECInstanceId=?");
+        EC::ECSqlStatement stmt2;
+        stmt2.Prepare(*db, selEcSql2.c_str());
+        stmt2.BindId(1, dgnDbElementId2);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt2.Step());
+        ASSERT_TRUE(0 == strcmp("GooPlace", stmt2.GetValueText(0)));
+        ASSERT_TRUE(0 == strcmp("GooId", stmt2.GetValueText(1)));
+        ASSERT_EQ(12, stmt2.GetValueInt(2));
+        ASSERT_TRUE(0 == strcmp("GooName", stmt2.GetValueText(3)));
+
+        BentleyApi::ECN::ECClassCP goo = db->Schemas().GetClass("TestSchema", "Goo");
+        BentleyApi::ECN::ECPropertyP placement = goo->GetPropertyP("test_Placement_");
+        ASSERT_EQ(0, strcmp("Placement", placement->GetDisplayLabel().c_str()));
         }
 
     }
