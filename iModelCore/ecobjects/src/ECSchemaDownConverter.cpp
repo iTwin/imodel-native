@@ -21,8 +21,8 @@ static Utf8CP const OLD_PERSISTENCE_UNIT            = "OldPersistenceUnit";
 
 bool tryCreateCA(ECSchemaR schema, Utf8CP origClassName, Utf8CP className, IECInstancePtr& caInstance)
     {
-    ECClassCP ecClass = nullptr;
-    if (!CustomAttributeDeserializerManager::CreateAttrClassVersion(&schema, origClassName, className, ecClass))
+    ECClassCP ecClass = schema.GetClassCP(className);
+    if (nullptr == ecClass && !CustomAttributeDeserializerManager::CreateAttrClassVersion(&schema, origClassName, className, ecClass))
         {
         LOG.errorv("Failed to find '%s' class in '%s' schema", className, schema.GetName().c_str());
         return false;
@@ -127,13 +127,13 @@ bool ECSchemaDownConverter::Convert(ECSchemaR schema)
     auto formatsSchema = schema.FindSchema(formatsKey, SchemaMatchType::LatestReadCompatible);
     if(nullptr != unitsSchema && schema.IsSchemaReferenced(schema, *unitsSchema))
         {
-        LOG.warningv("Force removing reference to schema %s even though it may be used by KoQs. They are not available in EC2", unitsSchema->GetFullSchemaName().c_str());
+        LOG.infov("Force removing reference to schema %s because units are not supported in EC2.  All units that could be were converted, see errors in log for failed conversions.", unitsSchema->GetFullSchemaName().c_str());
         schema.m_refSchemaList.erase(schema.m_refSchemaList.find(unitsSchema->GetSchemaKey()));
         }
 
     if(nullptr != formatsSchema && schema.IsSchemaReferenced(schema, *formatsSchema))
         {
-        LOG.warningv("Force removing reference to schema %s even though it may be used by KoQs. They are not available in EC2", formatsSchema->GetFullSchemaName().c_str());
+        LOG.infov("Force removing reference to schema %s because format defintions are not supported in EC2. All formats that could be were converted into display units, see errors in log for failed conversions.", formatsSchema->GetFullSchemaName().c_str());
         schema.m_refSchemaList.erase(schema.m_refSchemaList.find(formatsSchema->GetSchemaKey()));
         }
 

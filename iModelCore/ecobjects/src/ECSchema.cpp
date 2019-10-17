@@ -1905,14 +1905,6 @@ ECObjectsStatus ECSchema::CopySchema(ECSchemaPtr& schemaOut) const
     for (ECSchemaReferenceList::const_iterator iter = referencedSchemas.begin(); iter != referencedSchemas.end(); ++iter)
         schemaOut->AddReferencedSchema(*iter->second.get());
 
-    for (ECClassP ecClass: m_classContainer)
-        {
-        ECClassP copyClass;
-        status = schemaOut->CopyClass(copyClass, *ecClass, ecClass->GetName(), true);
-        if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
-            return status;
-        }
-
     for (auto ecEnumeration : m_enumerationContainer)
         {
         ECEnumerationP copyEnumeration;
@@ -1965,6 +1957,14 @@ ECObjectsStatus ECSchema::CopySchema(ECSchemaPtr& schemaOut) const
         {
         KindOfQuantityP copyKOQ;
         status = schemaOut->CopyKindOfQuantity(copyKOQ, *koq, false);
+        if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
+            return status;
+        }
+
+    for (ECClassP ecClass : m_classContainer)
+        {
+        ECClassP copyClass;
+        status = schemaOut->CopyClass(copyClass, *ecClass, ecClass->GetName(), true);
         if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
             return status;
         }
