@@ -2288,12 +2288,9 @@ int iModelBridgeFwk::OnAllDocsProcessed()
 +---------------+---------------+---------------+---------------+---------------+------*/
 int   iModelBridgeFwk::PushDataChanges()
     {
-     //Move this into a function. Need to call at  normal update and all docs processed.
     if (!iModelBridge::AnyTxns(*m_briefcaseDgnDb) && (SyncState::Initial == GetSyncState()))
         {
         Briefcase_ReleaseAllPublicLocks();
-        GetLogger().info("No changes were detected and there are no Txns waiting to be pushed.");
-        PostStatusMessage("No changes were detected");
         return SUCCESS;
         }
     
@@ -2439,8 +2436,14 @@ int iModelBridgeFwk::UpdateExistingBim(iModelBridgeFwk::FwkContext& context)
         }
 
     PushDataChanges();
+
+    //  Finalize changes in the shared channel
     SetCurrentPhaseName("Finalizing Changes");
     GetProgressMeter().AddSteps(2);
+
+    m_briefcaseDgnDb->BriefcaseManager().GetChannelPropsR().channelType = IBriefcaseManager::ChannelType::Shared;
+    m_briefcaseDgnDb->BriefcaseManager().GetChannelPropsR().channelParentId = m_briefcaseDgnDb->Elements().GetRootSubjectId();
+
     if (BSISUCCESS != GetSchemaLock())  // must get schema lock preemptively. This ensures that only one bridge at a time can make schema and definition changes. That then allows me to pull/merge/push between the definition and data steps without closing and reopening
         {
         LOG.fatalv("Bridge cannot obtain schema lock.");
