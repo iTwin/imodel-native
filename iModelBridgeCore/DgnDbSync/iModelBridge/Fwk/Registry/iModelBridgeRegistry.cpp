@@ -929,7 +929,13 @@ int iModelBridgeRegistryBase::AssignCmdLineArgs::ParseCommandLine(int argc, WCha
         Utf8String contents;
         BeFileName optionsFileName;
         AssignCxxOptsResult(result, "options-file", optionsFileName);
-        readEntireFile(contents, optionsFileName);
+        
+        if (BSISUCCESS != readEntireFile(contents, optionsFileName))
+            {
+            WString escapedName = optionsFileName;
+            escapedName.ReplaceAll(L"\\", L"\\\\");
+            std::wcerr << L"Cannot open or read options file '" << escapedName.c_str() << L"'" << std::endl;
+            }
 
         if (!contents.empty())
         {
@@ -1002,7 +1008,7 @@ int iModelBridgeRegistryBase::AssignMain(int argc, WCharCP argv[])
 
     if (args.m_stagingDir.empty() || !args.m_stagingDir.DoesPathExist())
         {
-        LOG.fatal(L"Staging directory specified must exist.");
+        LOG.fatal(WPrintfString(L"Staging directory '%ls' specified must exist.", args.m_stagingDir.c_str()).c_str());
         fprintf(stderr, GetCmdLineOptions().help({ "" }).c_str());
         return -1;
         }
