@@ -44,19 +44,19 @@ struct MultiThreadingAnalysisTests : RulesEngineSingleProjectTests
     void ExecuteMultipleRequests()
         {
         bvector<folly::Future<folly::Unit>> futures;
-        futures.push_back(std::move(PresentationManagerTestsHelper::GetContentForAllGeometricElements(*m_manager, m_project, "Items", ContentDisplayType::List)));
-        futures.push_back(std::move(PresentationManagerTestsHelper::GetContentForAllGeometricElements(*m_manager, m_project, "Items", ContentDisplayType::PropertyPane)));
-        futures.push_back(std::move(PresentationManagerTestsHelper::GetContentForAllGeometricElements(*m_manager, m_project, "Items", ContentDisplayType::Grid)));
-        futures.push_back(std::move(PresentationManagerTestsHelper::GetContentForAllGeometricElements(*m_manager, m_project, "Items", ContentDisplayType::Graphics)));
-        futures.push_back(std::move(PresentationManagerTestsHelper::GetContentForAllGeometricElements(*m_manager, m_project, "Items", ContentDisplayType::PropertyPane, (int)ContentFlags::ShowLabels)));
-        futures.push_back(std::move(PresentationManagerTestsHelper::GetFullHierarchy(*m_manager, m_project, "Items", 13426)));
+        futures.push_back(PresentationManagerTestsHelper::GetContentForAllGeometricElements(*m_manager, m_project, "Items", ContentDisplayType::List));
+        futures.push_back(PresentationManagerTestsHelper::GetContentForAllGeometricElements(*m_manager, m_project, "Items", ContentDisplayType::PropertyPane));
+        futures.push_back(PresentationManagerTestsHelper::GetContentForAllGeometricElements(*m_manager, m_project, "Items", ContentDisplayType::Grid));
+        futures.push_back(PresentationManagerTestsHelper::GetContentForAllGeometricElements(*m_manager, m_project, "Items", ContentDisplayType::Graphics));
+        futures.push_back(PresentationManagerTestsHelper::GetContentForAllGeometricElements(*m_manager, m_project, "Items", ContentDisplayType::PropertyPane, (int)ContentFlags::ShowLabels));
+        futures.push_back(PresentationManagerTestsHelper::GetFullHierarchy(*m_manager, m_project, "Items", 13426));
         PresentationManagerTestsHelper::WaitForAllFutures(futures);
         }
 
     void GetFullHierarchy()
         {
         bvector<folly::Future<folly::Unit>> futures;
-        futures.push_back(std::move(PresentationManagerTestsHelper::GetFullHierarchy(*m_manager, m_project, "Items", 13426)));
+        futures.push_back(PresentationManagerTestsHelper::GetFullHierarchy(*m_manager, m_project, "Items", 13426));
         PresentationManagerTestsHelper::WaitForAllFutures(futures);
         }
 };

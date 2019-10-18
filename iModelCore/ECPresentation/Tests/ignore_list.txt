@@ -1,11 +1,6 @@
 #----------------------------------------------------------------------------------------
 #   Tests that are ignored on purpose
 #----------------------------------------------------------------------------------------
-PresentationManagerStressTests.*
-HierarchyPerformanceAnalysis.*
-PresentationManagerSingleThreadPerformanceTests.*
-PresentationManagerFourThreadsPerformanceTests.*
-PresentationManagerEightThreadsPerformanceTests.*
 
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
@@ -14,5 +9,3 @@ PresentationManagerEightThreadsPerformanceTests.*
 #----------------------------------------------------------------------------------------
 #   Performance Tests
 #----------------------------------------------------------------------------------------
-HierarchyPerformanceTests.FilterNodesFromNotExpandedHierarchy
-HierarchyPerformanceTests.FilterNodesFromExpandedHierarchy

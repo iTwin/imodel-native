@@ -326,7 +326,6 @@ static folly::Future<bvector<NavNodeCPtr>> GetNodesPathInternal(RulesDrivenECPre
 
     return PresentationManagerTestsHelper::GetNodes(manager, project, PageOptions(), options, parent).then([&manager, &project, options, numOfLevels](NavNodesContainer container)
         {
-        bool foundChild = false;
         for (size_t nodeIndex = 0; nodeIndex < container.GetSize(); ++nodeIndex)
             {
             if (container[nodeIndex]->HasChildren())

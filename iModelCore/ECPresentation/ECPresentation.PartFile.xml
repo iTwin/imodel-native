@@ -256,6 +256,18 @@
         <Directories DirectoryListName="GtestProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
     </Product>
 
+    <Part Name="iOSXCTest-Performance" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/iOS//MakeXCTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECPresentation-Performance -dTEST_COLLECTION_PRODUCT=ECPresentation-Tests-Performance -dTEST_FRAMEWORK_SQLANG=ECPresentation_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOS*">
+        <SubProduct ProductName="ECPresentation-Tests-Performance"/>
+        <SubPart PartName="iOSXCTest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="iOSXCTestProject" SourceName="Delivery/iOSXCTest/ECPresentation-Performance/Project" />
+        </Bindings>
+    </Part>
+    <Product Name="ECPresentation-iOSXCTest-Performance">
+        <SubPart PartName="iOSXCTest-Performance" LibType="Static"/>
+        <Directories DirectoryListName="iOSXCTestProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
+    </Product>
+
     <!-- Memory leak testing -->
     <Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=ECPresentation-Gtest -dGTEST_NAME=ECPresentationTest" OnlyPlatforms="x64">
         <SubPart PartFile="DgnDbTestingScripts" Repository="DgnDbTestingScripts" PartName="MemLeakTests" />

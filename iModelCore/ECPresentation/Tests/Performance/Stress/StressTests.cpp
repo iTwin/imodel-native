@@ -394,7 +394,7 @@ TEST_F(StressTests, ExecutingMultipleRequests)
         {
         int functionIndex = functionIndexes[i];
         NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->infov("Future %d (function index %d) scheduled.", i, functionIndex);
-        futures.push_back(std::move(RunFuture(m_functions[functionIndex], i)));
+        futures.push_back(RunFuture(m_functions[functionIndex], i));
         }
     PresentationManagerTestsHelper::WaitForAllFutures(futures, false);
     }
