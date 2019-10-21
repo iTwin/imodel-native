@@ -108,6 +108,8 @@ void QueryExecutor::ReadRecords(ICancelationTokenCP cancelationToken)
             LoggingHelper::LogMessage(Log::Default, "[QueryExecutor] Records read canceled while preparing statement", NativeLogging::LOG_TRACE);
             return;
             }
+        LoggingHelper::LogMessage(Log::Default, Utf8PrintfString("[QueryExecutor] Failed to prepare query (%s): '%s'", 
+            m_connection.GetDb().GetLastError().c_str(), m_queryString.c_str()).c_str(), NativeLogging::LOG_ERROR);
         BeAssert(false);
         return;
         }

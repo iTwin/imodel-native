@@ -65,6 +65,7 @@ private:
     static void ProcessQueryClassesBasedOnCustomizationRules(ECClassSet& classes, bmap<ECClassCP, bool> const& customizationClasses);
 
 public:
+    template<typename T> static Utf8String GetOrderByClause(T const& query);
     template<typename T> static void SetOrUnion(RefCountedPtr<T>& target, T& source);
     template<typename T> static void Where(RefCountedPtr<T>& query, Utf8CP clause, BoundQueryValuesListCR bindings);
     template<typename T> static void Order(T& query, Utf8CP clause);

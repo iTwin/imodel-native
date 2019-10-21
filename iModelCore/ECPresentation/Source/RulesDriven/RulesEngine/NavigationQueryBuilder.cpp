@@ -2050,7 +2050,24 @@ private:
             {
             if (queryInList->GetResultParameters().GetResultType() == query.GetResultParameters().GetResultType())
                 {
-                queryInList = UnionNavigationQuery::Create(*queryInList, query);
+                Utf8String lhsOrderByClause = QueryBuilderHelpers::GetOrderByClause(*queryInList);
+                NavigationQueryPtr rhsQuery = &query;
+                Utf8String rhsOrderByClause = QueryBuilderHelpers::GetOrderByClause(*rhsQuery);
+                if (lhsOrderByClause.Equals(rhsOrderByClause))
+                    {
+                    // if the two queries have similar order by clauses, just remove them and move the clause to union
+                    QueryBuilderHelpers::Order(*queryInList, "");
+                    QueryBuilderHelpers::Order(*rhsQuery, "");
+                    }
+                else
+                    {
+                    // if the clauses are different, need to nest the queries..
+                    if (!lhsOrderByClause.empty())
+                        queryInList = QueryBuilderHelpers::CreateNestedQuery(*queryInList);
+                    if (!rhsOrderByClause.empty())
+                        rhsQuery = QueryBuilderHelpers::CreateNestedQuery(*rhsQuery);
+                    }
+                queryInList = &UnionNavigationQuery::Create(*queryInList, *rhsQuery)->OrderBy(lhsOrderByClause.c_str());
                 unioned = true;
                 break;
                 }

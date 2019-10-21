@@ -69,6 +69,24 @@ template void QueryBuilderHelpers::Order<NavigationQuery>(NavigationQuery&, Utf8
 template void QueryBuilderHelpers::Order<GenericQuery>(GenericQuery&, Utf8CP);
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T>
+Utf8String QueryBuilderHelpers::GetOrderByClause(T const& query)
+    {
+    if (nullptr != query.AsComplexQuery())
+        return query.AsComplexQuery()->GetClause(CLAUSE_OrderBy);
+    if (nullptr != query.AsUnionQuery())
+        return query.AsUnionQuery()->GetOrderByClause();
+    if (nullptr != query.AsExceptQuery())
+        return query.AsExceptQuery()->GetOrderByClause();
+    return "";
+    }
+template Utf8String QueryBuilderHelpers::GetOrderByClause<ContentQuery>(ContentQuery const&);
+template Utf8String QueryBuilderHelpers::GetOrderByClause<NavigationQuery>(NavigationQuery const&);
+template Utf8String QueryBuilderHelpers::GetOrderByClause<GenericQuery>(GenericQuery const&);
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T>

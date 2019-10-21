@@ -475,6 +475,7 @@ protected:
 
 public:
     static RefCountedPtr<UnionPresentationQuery<TBase>> Create(TBase& first, TBase& second) {return new UnionPresentationQuery(first, second);}
+    Utf8StringCR GetOrderByClause() const {return m_orderByClause;}
     ECPRESENTATION_EXPORT ThisType& OrderBy(Utf8CP orderByClause);
     ECPRESENTATION_EXPORT ThisType& Limit(uint64_t limit, uint64_t offset = 0);
     RefCountedPtr<TBase> GetFirst() const {return m_first;}
@@ -532,6 +533,7 @@ protected:
 
 public:
     static RefCountedPtr<ExceptPresentationQuery<TBase>> Create(TBase& base, TBase& except) {return new ExceptPresentationQuery(base, except);}
+    Utf8StringCR GetOrderByClause() const {return m_orderByClause;}
     ECPRESENTATION_EXPORT ThisType& OrderBy(Utf8CP orderByClause);
     ECPRESENTATION_EXPORT ThisType& Limit(uint64_t limit, uint64_t offset = 0);
     RefCountedPtr<TBase> GetBase() const {return m_base;}
