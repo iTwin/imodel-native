@@ -5980,6 +5980,45 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, DoesNotReturnFilteredNod
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @betest                                       Saulius.Skliutas               10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, ReturnsFilteredNodesUnderSameParent)
+    {
+    // insert widget & 2 gadget instances with relationship
+    ECRelationshipClassCR relationshipWidgetHasGadget = *m_schema->GetClassCP("WidgetHasGadget")->GetRelationshipClassCP();
+    IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    IECInstancePtr gadgetInstance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("Gadget")); });
+    IECInstancePtr gadgetInstance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("Gadget")); });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), relationshipWidgetHasGadget, *widgetInstance, *gadgetInstance1);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), relationshipWidgetHasGadget, *widgetInstance, *gadgetInstance2);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rootRule = new RootNodeRule();
+    InstanceNodesOfSpecificClassesSpecificationP widgetSpec = new InstanceNodesOfSpecificClassesSpecification(1000, ChildrenHint::Unknown, false, false, false, false, "", m_widgetClass->GetFullName(), false);
+    rootRule->AddSpecification(*widgetSpec);
+    rules->AddPresentationRule(*rootRule);
+
+    ChildNodeRule* childRule = new ChildNodeRule();
+    childRule->AddSpecification(*new RelatedInstanceNodesSpecification(1000, ChildrenHint::Always, false, false, false, false, 0, "",
+        RequiredRelationDirection_Forward, "", relationshipWidgetHasGadget.GetFullName(), m_gadgetClass->GetFullName()));
+    widgetSpec->AddNestedRule(*childRule);
+
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, false, m_gadgetClass->GetFullName(), { new InstanceLabelOverridePropertyValueSpecification("MyID") }));
+
+    // request for filtered nodes paths
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str()).GetJson();
+    bvector<NodesPathElement> nodes = m_manager->GetFilteredNodePaths(s_project->GetECDb(), "Gadget", options).get();
+
+    // make sure we have 1 root node
+    ASSERT_EQ(1, nodes.size());
+    // make sure we have 2 child nodes
+    EXPECT_EQ(2, nodes[0].GetChildren().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @betest                                       Aidas.Vaiksnoras               01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceLabelOverride_OverridesInstanceLabelAsFirstNotEmptyParameter)

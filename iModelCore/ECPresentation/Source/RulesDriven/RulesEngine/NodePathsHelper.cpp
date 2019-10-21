@@ -41,8 +41,12 @@ static folly::Future<bmap<uint64_t, bvector<NavNodeCPtr>>::iterator> CreateHiera
     auto parentIterFuture = folly::makeFuture(hierarchy->children.end());
     if (0 == node.GetParentNodeId())
         {
-        // this node has no parent
-        hierarchy->roots.push_back(&node);
+        auto rootsIter = std::find_if(hierarchy->roots.begin(), hierarchy->roots.end(), [node = NavNodeCPtr(&node)](NavNodeCPtr rootNode) {return rootNode->GetNodeId() == node->GetNodeId(); });
+        if (hierarchy->roots.end() == rootsIter) 
+            {
+            // this node has no parent and is not already added to hierarchy
+            hierarchy->roots.push_back(&node);
+            }
         }
     else
         {
