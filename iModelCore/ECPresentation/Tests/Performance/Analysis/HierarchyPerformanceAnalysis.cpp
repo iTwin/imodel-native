@@ -20,7 +20,6 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 #define HIERARCHY_REQUEST_PAGE_SIZE                 20
 #define PAGE_LOAD_THRESHOLD                         0.5
 
-#define REPORT_FORMAT_JSON
 #define REPORT_FIELD_Dataset                        "Dataset"
 #define REPORT_FIELD_RulesetId                      "RulesetId"
 #define REPORT_FIELD_TimeToLoadAllSchemas           "Time to load all schemas"
@@ -381,6 +380,8 @@ TEST_F(HierarchyPerformanceAnalysis, AnalyseAllCases)
             if (isDirectory)
                 continue;
 
+            Reset(&project);
+
             // load ruleset
             NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE)->infov(L"  Ruleset: %s", rulesetPath.GetFileNameAndExtension().c_str());
             PresentationRuleSetPtr ruleset;
@@ -408,11 +409,6 @@ TEST_F(HierarchyPerformanceAnalysis, AnalyseAllCases)
     if (!reportPath.DoesPathExist())
         BeFileName::CreateNewDirectory(reportPath.GetName());
     reportPath.AppendToPath(L"HierarchyPerformanceReport");
-#ifdef REPORT_FORMAT_JSON
-    reportPath.AppendExtension(L"json");
-    reporter.ToJsonFile(reportPath, { REPORT_FIELD_Dataset, REPORT_FIELD_RulesetId });
-#else
-    reportPath.AppendExtension(L"csv");
-    reporter.ToCsvFile(reportPath);
-#endif
+    reporter.ToCsvFile(BeFileName(reportPath).AppendExtension(L"csv"));
+    reporter.ToJsonFile(BeFileName(reportPath).AppendExtension(L"json"), { REPORT_FIELD_Dataset, REPORT_FIELD_RulesetId });
     }

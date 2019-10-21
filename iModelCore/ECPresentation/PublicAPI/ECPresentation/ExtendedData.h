@@ -64,6 +64,7 @@ private:
 private:
     void InitWritable(RapidJsonValueCR json)
         {
+        Cleanup();
         m_allocator = new rapidjson::MemoryPoolAllocator<>(EXTENDEDDATA_RAPIDJSON_CHUNK_SIZE);
         m_writableData = new rapidjson::Value(json, *m_allocator);
         if (!m_writableData->IsObject())
@@ -103,8 +104,8 @@ protected:
         }
 
 public:
-    //! Initializes an empty read-write accessor. 
-    RapidJsonAccessor() {InitWritable(rapidjson::Value(rapidjson::kObjectType));}
+    //! Initializes an empty read-write accessor.
+    RapidJsonAccessor() : m_ownsData(false), m_allocator(nullptr), m_writableData(nullptr) {InitWritable(rapidjson::Value(rapidjson::kObjectType));}
 
     //! Copy constructor.
     RapidJsonAccessor(RapidJsonAccessor const& other)
@@ -130,7 +131,7 @@ public:
 
     //! Initializes a read-only accessor with the specified JSON. Does not copy the supplied JSON.
     RapidJsonAccessor(RapidJsonValueCR data) : m_ownsData(false), m_allocator(nullptr), m_writableData(nullptr), m_readonlyData(&data) {}
-    
+
     //! Initializes a read-only accessor with the JSON contained in the specified IRapidJsonExtendedDataHolder. Does not copy the supplied JSON.
     RapidJsonAccessor(IRapidJsonExtendedDataHolder const& holder) : m_ownsData(false), m_allocator(nullptr), m_writableData(nullptr), m_readonlyData(&holder.GetExtendedData()) {}
 
@@ -141,9 +142,9 @@ public:
         if (!m_writableData->IsObject())
             m_writableData->SetObject();
         }
-    
+
     //! Initializes a read-write accessor with the JSON contained in the specified IRapidJsonExtendedDataHolder. Does not copy the supplied JSON.
-    RapidJsonAccessor(IRapidJsonExtendedDataHolder& holder) 
+    RapidJsonAccessor(IRapidJsonExtendedDataHolder& holder)
         : m_ownsData(false), m_allocator(&holder.GetExtendedDataAllocator()), m_writableData(&holder.GetExtendedDataR()), m_readonlyData(m_writableData)
         {
         if (!m_writableData->IsObject())
@@ -272,12 +273,12 @@ protected:
     void AddMember(Utf8CP name, Json::Value value) {GetJsonR()[name] = value;}
 
 public:
-    //! Initializes an empty read-write accessor. 
+    //! Initializes an empty read-write accessor.
     JsonCppAccessor() {InitWritable(Json::Value(Json::objectValue));}
 
     //! Initializes a read-only accessor with the specified JSON. Does not copy the supplied JSON.
     JsonCppAccessor(JsonValueCR data) : m_ownsData(false),m_writableData(nullptr), m_readonlyData(&data) {}
-    
+
     //! Initializes a read-only accessor with the JSON contained in the specified IJsonCppExtendedDataHolder. Does not copy the supplied JSON.
     JsonCppAccessor(IJsonCppExtendedDataHolder const& holder) : m_ownsData(false), m_writableData(nullptr), m_readonlyData(&holder.GetExtendedData()) {}
 
