@@ -55,9 +55,18 @@
     </Part>
 
     <Part Name="Domains">
+        <SubPart PartName="AecUnitsDomain"                  PartFile="Domains/AecUnits/AecUnits" />
+        <SubPart PartName="BuildingSpatialDomain"           PartFile="Domains/BuildingSpatial/BuildingSpatial" />
+        <SubPart PartName="ClassificationSystemsDomain"     PartFile="Domains/ClassificationSystems/ClassificationSystems" />
+        <SubPart PartName="FormsDomainDLL"                  PartFile="Domains/Forms/FormsDomain" />
+        <SubPart PartName="GeometryManipulationStrategies"  PartFile="Domains/BuildingShared/BuildingShared" />
+        <SubPart PartName="Grids"                           PartFile="Domains/Grids/Grids" />
         <SubPart PartName="LinearReferencing"               PartFile="Domains/LinearReferencing/LinearReferencing" />
+        <SubPart PartName="QuantityTakeoffsAspectsDomain"   PartFile="Domains/QuantityTakeoffsAspects/QuantityTakeoffsAspects" />
+        <SubPart PartName="ProfilesDomainDLL"               PartFile="Domains/Profiles/ProfilesDomain" />
         <SubPart PartName="RoadRailAlignment"               PartFile="Domains/RoadRailAlignment/RoadRailAlignment" />
         <SubPart PartName="RoadRailPhysical"                PartFile="Domains/RoadRailPhysical/RoadRailPhysical" />
+        <SubPart PartName="SpatialCompositionDomain"        PartFile="Domains/SpatialComposition/SpatialComposition" />
         <SubPart PartName="StructuralDomainDLL"             PartFile="Domains/Structural/StructuralDomains"/>
     </Part>
     

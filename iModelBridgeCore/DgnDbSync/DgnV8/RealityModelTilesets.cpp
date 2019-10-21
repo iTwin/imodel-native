@@ -149,6 +149,9 @@ BentleyStatus Converter::ComputeRealityModelFootprint(bvector<GeoPoint2d>& footp
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Converter::GenerateRealityModelTilesets()
     {
+    if (m_modelsRequiringRealityTiles.size() == 0)
+        return SUCCESS;
+
     bool doUpload = false, doLocal = false;
     Bentley::WString serverConfigVar;
     Utf8String      localUrlPrefix("http://localhost:8080/");
