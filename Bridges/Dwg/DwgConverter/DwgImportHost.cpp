@@ -253,51 +253,9 @@ bool            DwgImportHost::FindXrefFile (WStringR outFile, WCharCP inFile, D
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            DwgImportHost::FindFontFile (WStringR outFile, WCharCP inFont, AcadFileType hint)
+bool            DwgImportHost::GetDefaultFontFile (WStringR outFile, WStringCR fontName, DgnFontType fontType)
     {
-    // if the full path exists, this is it!
-    if (BeFileName::DoesPathExist(inFont))
-        {
-        outFile = inFont;
-        return  true;
-        }
-
-    DgnFontType fontType = AcadFileType::CompiledShapeFile == hint ? DgnFontType::Shx : DgnFontType::TrueType;
-    WString     fontName (inFont);
-    fontName.Trim ();
-
-    size_t      dot= fontName.find_last_of (L'.');
-    if (WString::npos != dot)
-        {
-        if (AcadFileType::FontFile == hint)
-            {
-            // This font could be either an shx or a ttf - check for file extension.
-            WString ext = fontName.substr (dot + 1, fontName.length() - dot - 1);
-            fontType = 0 == ext.CompareToI(L"shx") ? DgnFontType::Shx : DgnFontType::TrueType;
-            }
-        fontName.erase (dot);
-        }
-
-    BeFileName  foundPath;
-    if (m_importer->GetLoadedFonts().FindFontPath(foundPath, fontType, Utf8String(fontName.c_str())) && foundPath.DoesPathExist())
-        {
-        outFile.assign (foundPath.c_str());
-        return  true;
-        }
-
-    // if input font name contains a path that does not exist, remove the path and try it again:
-    size_t      backSlash = fontName.find_last_of (L'\\');
-    if (WString::npos != backSlash)
-        {
-        fontName = fontName.substr (backSlash + 1, fontName.length() - backSlash - 1);
-        if (m_importer->GetLoadedFonts().FindFontPath(foundPath, fontType, Utf8String(fontName.c_str())) && foundPath.DoesPathExist())
-            {
-            outFile.assign (foundPath.c_str());
-            return  true;
-            }
-        }
-
-    // if we get here, we cannot find the font - use an appropriate default font:
+    BeFileName  fallbackPath;
     if (DgnFontType::Shx == fontType && m_lastShxFontName.EqualsI(fontName.c_str()))
         {
         /*-------------------------------------------------------------------------------
@@ -319,23 +277,96 @@ bool            DwgImportHost::FindFontFile (WStringR outFile, WCharCP inFont, A
         stopped RealDWG's infinite loop of calling this method.  Ltypeshp.shx is the only
         shx file for shape delivered with ACAD and RealDWG.
         -------------------------------------------------------------------------------*/
-        if (m_importer->GetFallbackFontPathForShape(foundPath))
+        if (m_importer->GetFallbackFontPathForShape(fallbackPath))
             {
-            outFile.assign (foundPath.c_str());
+            outFile.assign (fallbackPath.c_str());
             m_lastShxFontName.clear ();
             return  true;
             }
         }
-    else if (m_importer->GetFallbackFontPathForText(foundPath, fontType))
+    else if (m_importer->GetFallbackFontPathForText(fallbackPath, fontType))
         {
         // use fallback font
-        outFile.assign (foundPath.c_str());
+        outFile.assign (fallbackPath.c_str());
 
         if (DgnFontType::Shx == fontType)
             m_lastShxFontName = fontName;
 
         return  true;
         }
+    return  false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            DwgImportHost::FindFontFile (WStringR outFile, WStringR fontName, DgnFontType fontType) const
+    {
+    BeFileName  foundPath;
+    if (m_importer->GetLoadedFonts().FindFontPath(foundPath, fontType, Utf8String(fontName.c_str())) && foundPath.DoesPathExist())
+        {
+        outFile.assign (foundPath.c_str());
+        return  true;
+        }
+
+    // if input font name contains a path that does not exist, remove the path and try it again:
+    size_t      backSlash = fontName.find_last_of (L'\\');
+    if (WString::npos != backSlash)
+        {
+        fontName = fontName.substr (backSlash + 1, fontName.length() - backSlash - 1);
+        if (m_importer->GetLoadedFonts().FindFontPath(foundPath, fontType, Utf8String(fontName.c_str())) && foundPath.DoesPathExist())
+            {
+            outFile.assign (foundPath.c_str());
+            return  true;
+            }
+        }
+
+    return  false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            DwgImportHost::FindFontFile (WStringR outFile, WCharCP inFont, AcadFileType hint)
+    {
+    // if the full path exists, this is it!
+    if (BeFileName::DoesPathExist(inFont))
+        {
+        outFile = inFont;
+        return  true;
+        }
+
+    DgnFontType fontType = AcadFileType::CompiledShapeFile == hint ? DgnFontType::Shx : DgnFontType::TrueType;
+    WString     fontName (inFont);
+    fontName.Trim ();
+
+    bool        checkedExtension = false;
+    size_t      dot= fontName.find_last_of (L'.');
+    if (WString::npos != dot)
+        {
+        if (AcadFileType::FontFile == hint)
+            {
+            // This font could be either an shx or a ttf - check for file extension.
+            WString ext = fontName.substr (dot + 1, fontName.length() - dot - 1);
+            fontType = 0 == ext.CompareToI(L"shx") ? DgnFontType::Shx : DgnFontType::TrueType;
+            checkedExtension = true;
+            }
+        fontName.erase (dot);
+        }
+
+    if (this->FindFontFile(outFile, fontName, fontType))
+        return  true;
+
+    // if the input font type can be either SHX or TTF, and the input font name has no extension, try the other font type:
+    if (AcadFileType::FontFile == hint && !checkedExtension)
+        {
+        DgnFontType otherType = fontType == DgnFontType::TrueType ? DgnFontType::Shx : DgnFontType::TrueType;
+        if (this->FindFontFile(outFile, fontName, otherType))
+            return  true;
+        }
+
+    // if we get here, we cannot find the font - use an appropriate default font:
+    this->GetDefaultFontFile (outFile, fontName, fontType);
 
     m_importer->ReportError (IssueCategory::ToolkitError(), Issue::FileNotFound(), inFont);
 

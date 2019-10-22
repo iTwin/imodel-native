@@ -135,6 +135,8 @@ private:
     WString                 m_lastShxFontName;
     WString                 m_registryRootKey;
 
+    bool                    GetDefaultFontFile (WStringR outPath, WStringCR fontName, DgnFontType fontType);
+    bool                    FindFontFile (WStringR outPath, WStringR fontName, DgnFontType fontType) const;
     bool                    FindFontFile (WStringR outPath, WCharCP fontName, AcadFileType hint);
     bool                    FindXrefFile (WStringR outPath, WCharCP fileName, DwgDbDatabaseP dwg = nullptr);
 

@@ -282,15 +282,19 @@ END_DWGDB_NAMESPACE
 #ifdef DWGTOOLKIT_OpenDwg
 
 // implement DwgDbXxxxPtr:OpenObject method
-#define IMPLEMENT_SMARTPTR_OPENOBJECT(_id_,_mode_,_openErased_,_openLocked_)                                            \
+#define IMPLEMENT_SMARTPTR_OPENOBJECT(_id_,_mode_,_openErased_,_openLocked_,_classSuffix_)                              \
     try {                                                                                                               \
     OdDbObjectPtr odObject;                                                                                             \
     OdResult rs = ##_id_##.openObject(odObject, static_cast<OdDb::OpenMode>(##_mode_##),##_openErased_##);              \
     if (OdResult::eOk == rs)                                                                                            \
         {                                                                                                               \
-        this->attach (odObject.detach());                                                                               \
-        if (nullptr == this->get())                                                                                     \
-            rs = OdResult::eNullObjectPointer;                                                                          \
+        if (odObject->isKindOf(DwgDb##_classSuffix_##::desc())) {                                                       \
+            this->attach (odObject.detach());                                                                           \
+            if (nullptr == this->get())                                                                                 \
+                rs = OdResult::eNullObjectPointer;                                                                      \
+            } else {                                                                                                    \
+                rs = OdResult::eNotThatKindOfClass;                                                                     \
+            }                                                                                                           \
         }                                                                                                               \
     m_openStatus = ToDwgDbStatus(rs);                                                                                   \
     } catch (...) { m_openStatus = DwgDbStatus::UnknownError; }
@@ -443,7 +447,7 @@ END_DWGDB_NAMESPACE
 
 
 // implement DwgDbXxxxPtr:OpenObject method
-#define IMPLEMENT_SMARTPTR_OPENOBJECT(_id_,_mode_,_openErased_,_openLocked_)                                            \
+#define IMPLEMENT_SMARTPTR_OPENOBJECT(_id_,_mode_,_openErased_,_openLocked_,_classSuffix_)                              \
         m_openStatus = ToDwgDbStatus(this->open(static_cast<AcDbObjectId>(##_id_##),                                    \
                         static_cast<AcDb::OpenMode>(##_mode_##),##_openErased_##,##_openLocked_##));
 
@@ -606,7 +610,7 @@ END_DWGDB_NAMESPACE
 #define DWGDB_DEFINE_SMARTPTR_OPENOBJECT_CONSTRUCTOR(_classSuffix_)                                                         \
     DwgDb##_classSuffix_##Ptr::DwgDb##_classSuffix_##Ptr(DwgDbObjectId id, DwgDbOpenMode mode, bool openErased, bool openLocked)    \
         {                                                                                                                           \
-        IMPLEMENT_SMARTPTR_OPENOBJECT(id, mode, openErased, openLocked);                                                            \
+        IMPLEMENT_SMARTPTR_OPENOBJECT(id, mode, openErased, openLocked, _classSuffix_);                                             \
         }
 
 // implement IDwgDbSmartPtr methods and define non-virtual methods to call them
@@ -622,7 +626,7 @@ END_DWGDB_NAMESPACE
         }                                                                                                                       \
     DwgDbStatus DwgDb##_classSuffix_##Ptr::_OpenObject(DwgDbObjectId id, DwgDbOpenMode mode, bool openErased, bool openLocked)  \
         {                                                                                                                       \
-        IMPLEMENT_SMARTPTR_OPENOBJECT(id, mode, openErased, openLocked);                                                        \
+        IMPLEMENT_SMARTPTR_OPENOBJECT(id, mode, openErased, openLocked, _classSuffix_);                                         \
         return  m_openStatus;                                                                                                   \
         }                                                                                                                       \
     DwgDbStatus DwgDb##_classSuffix_##Ptr::_CreateObject ()                                                                     \
@@ -691,7 +695,7 @@ END_DWGDB_NAMESPACE
     DwgDbStatus        DwgDb##_classSuffix_##::UpgradeOpen () { DWGDB_CALLSDKMETHOD(upgradeOpen(); return DwgDbStatus::Success;, return ToDwgDbStatus(upgradeOpen());) }        \
     DwgDbStatus        DwgDb##_classSuffix_##::DowngradeOpen () { DWGDB_CALLSDKMETHOD(downgradeOpen(); return DwgDbStatus::Success;, return ToDwgDbStatus(downgradeOpen());) }  \
     DwgDbStatus        DwgDb##_classSuffix_##::Close () { DWGDB_CALLSDKMETHOD(T_Super::release(); return DwgDbStatus::Success;, return ToDwgDbStatus(T_Super::close());) }      \
-    DwgDbStatus        DwgDb##_classSuffix_##::Erase () { DWGDB_CALLSDKMETHOD(T_Super::release(); return DwgDbStatus::Success;, return ToDwgDbStatus(T_Super::erase());) }      \
+    DwgDbStatus        DwgDb##_classSuffix_##::Erase () { return ToDwgDbStatus(T_Super::erase()); }                                                                             \
     DwgString          DwgDb##_classSuffix_##::GetDxfName () const { return isA()->dxfName(); }                                                                                 \
     DwgString          DwgDb##_classSuffix_##::GetDwgClassName () const { return isA()->name(); }                                                                               \
     DwgDbObjectId      DwgDb##_classSuffix_##::GetExtensionDictionary () const { return T_Super::extensionDictionary(); }                                                       \

@@ -22,8 +22,15 @@ StatusInt ImporterAppTests::RunCMD(BentleyApi::WString cmd)
     wprintf(L"Command to Run = %ls \n" , cmd.c_str());
     char *cmdLocal = new char[cmd.GetMaxLocaleCharBytes()];
     cmd.ConvertToLocaleChars (cmdLocal);
-    int status = system(cmdLocal);
-    printf("status = %d \n" , status);
+    int status = ::system (cmdLocal);
+    ::printf("status returned from system = %d" , status);
+    if (status != ::SUCCESS)
+        {
+        char msg[500] = {0};
+        ::strerror_s (msg, sizeof(msg)-1, status);
+        ::printf (", %s", msg);
+        }
+    ::printf ("\n");
     delete cmdLocal;
     return status == 0 ? SUCCESS: ERROR ;
     }

@@ -180,7 +180,7 @@ LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)AcDbPointCloudObj$(libext)
 LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)AcModelDocObj$(libext)
 LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)AecBase$(libext)
 LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)AecExtensions$(libext)
-LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)AecScheduleData.lib
+LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)AecScheduleData$(libext)
 
 %elif $(DWGTOOLKIT) == "RealDwg"
 

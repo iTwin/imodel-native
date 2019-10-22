@@ -54,7 +54,7 @@ bool        DwgString::EqualsI (WCharCP o) const { return DWGDB_CALLSDKMETHOD(0=
 void        DwgString::Empty ()             { DWGDB_CALLSDKMETHOD(empty, setEmpty) (); }
 WCharCP     DwgString::GetWCharCP () const  { return reinterpret_cast<WCharCP>(DWGDB_CALLSDKMETHOD(T_Super::c_str(), T_Super::kwszPtr())); }
 WCharCP     DwgString::c_str () const       { return reinterpret_cast<WCharCP>(DWGDB_CALLSDKMETHOD(T_Super::c_str(), T_Super::kwszPtr())); }
-void        DwgString::Assign (WCharCP chars) { DWGDB_CALLSDKMETHOD(T_Super::insert(0,chars), T_Super::assign(chars)); }
+void        DwgString::Assign (WCharCP chars) { DWGDB_CALLSDKMETHOD(T_Super::empty();T_Super::insert(0,chars), T_Super::assign(chars)); }
 void        DwgString::Append (WChar c)     { DWGDB_CALLSDKMETHOD(T_Super::operator+=(c), T_Super::append(c)); }
 int         DwgString::Insert (int i, WCharCP chars) { return DWGDB_CALLSDKMETHOD(T_Super::insert(i, chars), T_Super::insert(i, chars).length()); }
 int         DwgString::Find (WCharCP s) const { return T_Super::find(s); }

@@ -68,6 +68,7 @@ public:
     void    RenameAndActivateLayout (DwgStringCR oldName, DwgStringCR newName);
     void    CreateGroup (Utf8StringCR name, DwgDbObjectIdArrayCR members);
     void    UpdateGroup (Utf8StringCR name, DwgDbObjectIdArrayCR members);
+    void    UpdateGroup (Utf8StringCR name, DwgDbHandleArrayCR members);
 
     DwgDbObjectIdCR GetCurrentObjectId () const;
     DwgDbObjectId   GetModelspaceId () const;

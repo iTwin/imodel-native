@@ -586,8 +586,7 @@ DwgDbStatus     DwgDbLayout::GetPlotOrigin (DPoint2dR origin) const
     double      x = 0.0, y = 0.0;
 #ifdef DWGTOOLKIT_OpenDwg
     T_Super::getPlotOrigin (x, y);
-    if (x = 0.0 || y == 0.0)
-        status = ToDwgDbStatus (OdResult::eInvalidPlotArea);
+
 #elif DWGTOOLKIT_RealDwg
     status = ToDwgDbStatus (T_Super::getPlotOrigin(x, y));
 #endif
@@ -619,8 +618,8 @@ DwgDbStatus     DwgDbLayout::GetPaperImageOrigin (DPoint2dR origin) const
     // get DXF groud codes 148 and 149 in negative so they are read the same as in ACAD:
     origin.Zero ();
 #ifdef DWGTOOLKIT_OpenDwg
-    BeAssert (false && "DwgDbLayout::GetPaperImageOrigin not implemented for Teigha!");
-    return  DwgDbStatus::NotSupported;
+    origin = Util::DPoint2dFrom (T_Super::getPaperImageOrigin());
+    return  DwgDbStatus::Success;
 
 #elif DWGTOOLKIT_RealDwg
     // need to call unpublished API acdbGetPaperImageOrigin, in acdbxx.dll.

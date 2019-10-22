@@ -54,7 +54,7 @@
 
 %if defined(MSVC_VERSION)
 
-    %if exists($(DEBUG_TEIGHA_SOURCE)) || exists($(DEBUG_TEIGHA_DLL))
+    %if defined(DEBUG) && (exists($(DEBUG_TEIGHA_SOURCE)) || exists($(DEBUG_TEIGHA_DLL)))
         CCompOpts + -D_DEBUG
     %endif
 

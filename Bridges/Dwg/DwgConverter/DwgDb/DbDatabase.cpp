@@ -407,14 +407,8 @@ DwgString       DwgDbDatabase::GetVersionGuid () const
     {
     DwgString   versionGuid;
 #if DWGTOOLKIT_OpenDwg
-    OdFileDependencyManagerPtr  filedep = this->fileDependencyManager ();
-    if (filedep->countEntries() > 0)
-        {
-        // extract the first entry
-        OdFileDependencyInfoPtr fileinfo;
-        if (OdResult::eOk == filedep->getEntry(0, fileinfo))
-            versionGuid = fileinfo->m_VersionGuid;
-        }
+    versionGuid = this->getVERSIONGUID ();
+
 #elif DWGTOOLKIT_RealDwg
     ACHAR*      guidValue = nullptr;
     if (Acad::eOk == this->getVersionGuid(guidValue))
@@ -581,8 +575,53 @@ DwgDbObjectId   DwgDbDatabase::CreateXrefBlock (DwgStringCR xrefPath, DwgStringC
     DwgDbObjectId   blockId;
 #if DWGTOOLKIT_OpenDwg
     OdDbBlockTableRecordPtr block = OdDbXRefManExt::addNewXRefDefBlock (this, xrefPath, blockName, false);
-    if (!block.isNull())
-        blockId = block->objectId ();
+    if (block.isNull())
+        return  blockId;
+
+    blockId = block->objectId ();
+
+    // read nested xRef blocks and add their ID's to the new block
+    OdDbDatabasePtr xrefDwg;
+    try
+        {
+        xrefDwg = DwgToolkitHost::GetHost().readFile (xrefPath);
+        }
+    catch (OdError& odError)
+	{
+        DwgToolkitHost::GetHost().warning (odError.description());
+        return  blockId;
+        }
+    catch (...)
+        {
+        DwgToolkitHost::GetHost().warning (L"Failed reading xref file...\n");
+        return  blockId;
+        }
+    if (xrefDwg.isNull())
+        return  blockId;
+
+    OdDbBlockTablePtr   xBlockTable = xrefDwg->getBlockTableId().openObject ();
+    if (!xBlockTable.isNull())
+        {
+        auto iter = xBlockTable->newIterator ();
+        if (iter.isNull())
+            return  blockId;
+
+        for (iter->start(); !iter->done(); iter->step())
+            {
+            OdDbBlockTableRecordPtr xBlock = iter->getRecordId().openObject ();
+            if (!xBlock.isNull() && xBlock->isFromExternalReference())
+                {
+                DwgString   nestXrefPath = xBlock->pathName ();
+                if (BeFileName::DoesPathExist(nestXrefPath.c_str()))
+                    {
+                    auto nestBlockName = BeFileName::GetFileNameWithoutExtension (nestXrefPath.c_str());
+                    auto nestXrefBlockId = this->CreateXrefBlock (nestXrefPath, DwgString(nestBlockName.c_str()));
+                    if (nestXrefBlockId.isValid())
+                        OdDbXRefManExt::addNestedXRefId (block, nestXrefBlockId);
+                    }
+                }
+            }
+        }
 
 #elif DWGTOOLKIT_RealDwg
     Acad::ErrorStatus es = ::acdbAttachXref (this, xrefPath.c_str(), blockName.c_str(), blockId);

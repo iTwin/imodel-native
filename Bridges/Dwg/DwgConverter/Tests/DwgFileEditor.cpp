@@ -523,7 +523,24 @@ void    DwgFileEditor::UpdateGroup (Utf8StringCR name, DwgDbObjectIdArrayCR memb
     // empty the group, then add the input members to it:
     ASSERT_DWGDBSUCCESS(group->Clear());
     for (auto member : members)
+        {
+        EXPECT_TRUE(member.IsValid()) << "Invalid DWG group member object ID!";
         ASSERT_DWGDBSUCCESS(group->Append(member));
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void    DwgFileEditor::UpdateGroup (Utf8StringCR name, DwgDbHandleArrayCR handles)
+    {
+    DwgDbObjectIdArray  ids;
+    for (auto handle : handles)
+        {
+        EXPECT_FALSE(handle.IsNull()) << "Invalid DWG group member handle value!";
+        ids.push_back (m_dwgdb->GetObjectId(handle));
+        }
+    this->UpdateGroup (name, ids);
     }
 
 /*---------------------------------------------------------------------------------**//**

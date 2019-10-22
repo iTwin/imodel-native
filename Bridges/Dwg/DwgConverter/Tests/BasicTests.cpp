@@ -251,7 +251,7 @@ void CheckDefaultView (Utf8StringCR expectedName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          08/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CheckGenericGroup (Utf8StringCR expectedName, DwgDbObjectIdArrayCR expectedEntities, DwgDbObjectIdCR blockId)
+void CheckGenericGroup (Utf8StringCR expectedName, DwgDbHandleArrayCR expectedEntities, DwgDbHandleCR blockHandle)
     {
     auto db = OpenExistingDgnDb (m_dgnDbFileName, Db::OpenMode::Readonly);
     ASSERT_TRUE (db.IsValid());
@@ -262,9 +262,9 @@ void CheckGenericGroup (Utf8StringCR expectedName, DwgDbObjectIdArrayCR expected
     DgnElementIdSet expectedElements;
 
     // expect spatial elements exist in db
-    for (auto entityId : expectedEntities)
+    for (auto entityHandle : expectedEntities)
         {
-        auto elementId = FindElement (entityId.GetHandle(), blockId.ToUInt64(), *db, true);
+        auto elementId = FindElement (entityHandle, blockHandle.AsUInt64(), *db, true);
         EXPECT_TRUE (elementId.IsValid()) << "DgnElement is not found for a DWG group's memeber entity!";
         expectedElements.insert (elementId);
         }
@@ -292,6 +292,54 @@ void CheckGenericGroup (Utf8StringCR expectedName, DwgDbObjectIdArrayCR expected
         }
     EXPECT_TRUE(groupId.IsValid()) << "A GenericGroup for the given name is not found in DgnDb!";
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void CreateGroupOfAllModelspaceEntities (DwgDbHandleR modelspaceId, DwgDbHandleArrayR members, Utf8StringCR groupName)
+    {
+    ScopedDwgHost   host(m_options);
+    DwgFileEditor   editor(m_dwgFileName);
+
+    DwgDbObjectIdArray  ids;
+    editor.GetModelspaceEntities (ids);
+
+    editor.CreateGroup (groupName, ids);
+
+    modelspaceId = editor.GetModelspaceId().GetHandle ();
+    EXPECT_FALSE(modelspaceId.IsNull()) << "The modelspace block table record ID is invalid!";
+
+    for (auto id : ids)
+        members.push_back (id.GetHandle());
+    
+    editor.SaveFile ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void RemoveMembersFromDwgGroup (DwgDbHandleR modelspaceId, DwgDbHandleArrayR members, Utf8StringCR groupName, size_t numRemove)
+    {
+    ScopedDwgHost   host(m_options);
+    DwgFileEditor   editor(m_dwgFileName);
+
+    DwgDbObjectIdArray  ids;
+    editor.GetModelspaceEntities (ids);
+
+    ids.erase (ids.begin(), ids.begin() + numRemove);
+
+    editor.UpdateGroup (groupName, ids);
+
+    modelspaceId = editor.GetModelspaceId().GetHandle ();
+    EXPECT_FALSE(modelspaceId.IsNull()) << "The modelspace block table record ID is invalid!";
+
+    members.clear ();
+    for (auto id : ids)
+        members.push_back (id.GetHandle());
+
+    editor.SaveFile ();
+    }
+
 };  // BasicTests
 
 /*--------------------------------------------------------------------------------**//**
@@ -527,16 +575,11 @@ TEST_F (BasicTests, AddAndUpdateGroup)
     {
     LineUpFiles(L"groupTests.bim", L"basictype.dwg", true); 
 
-    DwgDbObjectId       modelspaceId;
-    DwgDbObjectIdArray  members;
+    DwgDbHandle     modelspaceId;
+    DwgDbHandleArray    members;
 
     // create a group dictionary named "TestGroup" in file basictype.dwg, adding all modelspace entities as members:
-    ScopedDwgHost   host(m_options);
-    DwgFileEditor   editor (m_dwgFileName);
-    editor.GetModelspaceEntities (members);
-    editor.CreateGroup ("TestGroup", members);
-    modelspaceId = editor.GetModelspaceId ();
-    editor.SaveFile ();
+    CreateGroupOfAllModelspaceEntities (modelspaceId, members, "TestGroup");
     
     EXPECT_GT(members.size(), 0) << "Empty modelspace in seed DWG file!";
 
@@ -546,14 +589,8 @@ TEST_F (BasicTests, AddAndUpdateGroup)
     // check the GenericGroup imported against entities expected:
     CheckGenericGroup ("TestGroup", members, modelspaceId);
 
-    editor.OpenFile (m_dwgFileName);
-    editor.GetModelspaceEntities (members);
-
     // remove two members from the DWG group:
-    members.erase (members.begin(), members.begin() + 3);
-    editor.UpdateGroup ("TestGroup", members);
-    modelspaceId = editor.GetModelspaceId ();
-    editor.SaveFile ();
+    RemoveMembersFromDwgGroup (modelspaceId, members, "TestGroup", 3);
 
     EXPECT_GT(members.size(), 0) << "Empty modelspace in seed DWG file!";
 

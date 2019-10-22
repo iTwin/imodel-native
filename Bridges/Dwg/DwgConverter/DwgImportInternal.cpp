@@ -179,6 +179,24 @@ void        DwgImporter::RegisterProtocolExtensions ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void        DwgImporter::UnRegisterProtocolExtensions ()
     {
+    DWG_TypeP(RxClass) protocolClass = DwgProtocolExtension::Desc ();
+    DwgRxClass::DeleteProtocolExtension (DwgDbRasterImage::SuperDesc(), protocolClass);
+    DwgRxClass::DeleteProtocolExtension (DwgDbPointCloudEx::SuperDesc(), protocolClass);
+    DwgRxClass::DeleteProtocolExtension (DwgDbViewport::SuperDesc(), protocolClass);
+    DwgRxClass::DeleteProtocolExtension (DwgDbLight::SuperDesc(), protocolClass);
+    DwgRxClass::DeleteProtocolExtension (DwgDb3dSolid::SuperDesc(), protocolClass);
+    DwgRxClass::DeleteProtocolExtension (DwgDbRegion::SuperDesc(), protocolClass);
+    DwgRxClass::DeleteProtocolExtension (DwgDbBody::SuperDesc(), protocolClass);
+    DwgRxClass::DeleteProtocolExtension (DwgDbSurface::SuperDesc(), protocolClass);
+    DwgRxClass::DeleteProtocolExtension (DwgDbExtrudedSurface::SuperDesc(), protocolClass);
+    DwgRxClass::DeleteProtocolExtension (DwgDbLoftedSurface::SuperDesc(), protocolClass);
+    DwgRxClass::DeleteProtocolExtension (DwgDbNurbSurface::SuperDesc(), protocolClass);
+    DwgRxClass::DeleteProtocolExtension (DwgDbRevolvedSurface::SuperDesc(), protocolClass);
+    DwgRxClass::DeleteProtocolExtension (DwgDbPlaneSurface::SuperDesc(), protocolClass);
+    DwgRxClass::DeleteProtocolExtension (DwgDbSweptSurface::SuperDesc(), protocolClass);
+    DwgRxClass::DeleteProtocolExtension (DwgDbBlockReference::SuperDesc(), protocolClass);
+    DwgRxClass::DeleteProtocolExtension (DwgDbHatch::SuperDesc(), protocolClass);
+
     DwgProtocolExtension::RxUnInit ();
     DwgRasterImageExt::RxUnInit ();
     DwgPointCloudExExt::RxUnInit ();
