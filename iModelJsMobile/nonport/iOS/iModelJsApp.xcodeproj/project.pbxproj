@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1F08844E2357A23700EE5A6C /* libiModelJsHostM02.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1F08844D2357A23700EE5A6C /* libiModelJsHostM02.dylib */; };
+		1F08844F2357A24500EE5A6C /* libiModelJsHostM02.dylib in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 1F08844D2357A23700EE5A6C /* libiModelJsHostM02.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		2699BBA220779DAF00F763EE /* CFNetwork.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBA120779DAF00F763EE /* CFNetwork.framework */; };
 		2699BBA420779DB500F763EE /* JavaScriptCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBA320779DB500F763EE /* JavaScriptCore.framework */; };
 		2699BBA620779DBF00F763EE /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBA520779DBE00F763EE /* CoreFoundation.framework */; };
@@ -18,7 +20,6 @@
 		26E6C0C12076B63F0031769D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 26E6C0BF2076B63F0031769D /* LaunchScreen.storyboard */; };
 		26E6C0C42076B63F0031769D /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 26E6C0C32076B63F0031769D /* main.m */; };
 		26E6C0CC2076B8200031769D /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 26E6C0CB2076B8200031769D /* WebKit.framework */; };
-		4122C1BF21ED31920073674D /* libiModelJsHost.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4122C1BE21ED31920073674D /* libiModelJsHost.a */; };
 		41876CBB21CBEDBF00A62096 /* AssetHandler.m in Sources */ = {isa = PBXBuildFile; fileRef = 41876CBA21CBEDBF00A62096 /* AssetHandler.m */; };
 		41B023E021CD8F16009FF9CB /* AppAuth.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 41B023CF21CD8EFF009FF9CB /* AppAuth.framework */; };
 		41B023E221DD080B009FF9CB /* AppAuth.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 41B023CF21CD8EFF009FF9CB /* AppAuth.framework */; };
@@ -164,6 +165,7 @@
 			dstSubfolderSpec = 10;
 			files = (
 				41B023E321DD080B009FF9CB /* AppAuth.framework in Embed Frameworks */,
+				1F08844F2357A24500EE5A6C /* libiModelJsHostM02.dylib in Embed Frameworks */,
 				41B023E821DD0818009FF9CB /* AppAuthCore.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
@@ -172,6 +174,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		1F08844D2357A23700EE5A6C /* libiModelJsHostM02.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libiModelJsHostM02.dylib; path = "$(OutRoot)$(BuildArchitecture)/build/iModelJsHost/libiModelJsHostM02.dylib"; sourceTree = "<absolute>"; };
 		2699BBA120779DAF00F763EE /* CFNetwork.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CFNetwork.framework; path = System/Library/Frameworks/CFNetwork.framework; sourceTree = SDKROOT; };
 		2699BBA320779DB500F763EE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		2699BBA520779DBE00F763EE /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
@@ -193,7 +196,6 @@
 		4122C1B921E7EA1E0073674D /* Bindings */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Bindings; path = ../Native/Bindings; sourceTree = "<group>"; };
 		4122C1BA21E7EA1E0073674D /* system */ = {isa = PBXFileReference; lastKnownFileType = folder; name = system; path = ../Native/system; sourceTree = "<group>"; };
 		4122C1BB21E7EA1E0073674D /* PublicAPI */ = {isa = PBXFileReference; lastKnownFileType = folder; name = PublicAPI; path = ../Native/PublicAPI; sourceTree = "<group>"; };
-		4122C1BE21ED31920073674D /* libiModelJsHost.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libiModelJsHost.a; path = ../../../../../out/debug/iOSARM64/static/build/iModelJsHost/libiModelJsHost.a; sourceTree = "<group>"; };
 		41876CB921CBEDBF00A62096 /* AssetHandler.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AssetHandler.h; sourceTree = "<group>"; };
 		41876CBA21CBEDBF00A62096 /* AssetHandler.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AssetHandler.m; sourceTree = "<group>"; };
 		41A8E0982112444000B3FB1E /* iModelJsApp.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = iModelJsApp.xcconfig; sourceTree = "<group>"; };
@@ -239,11 +241,11 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1F08844E2357A23700EE5A6C /* libiModelJsHostM02.dylib in Frameworks */,
 				41B023E221DD080B009FF9CB /* AppAuth.framework in Frameworks */,
 				41B023E021CD8F16009FF9CB /* AppAuth.framework in Frameworks */,
 				2699BBA620779DBF00F763EE /* CoreFoundation.framework in Frameworks */,
 				2699BBA420779DB500F763EE /* JavaScriptCore.framework in Frameworks */,
-				4122C1BF21ED31920073674D /* libiModelJsHost.a in Frameworks */,
 				41B023E721DD0818009FF9CB /* AppAuthCore.framework in Frameworks */,
 				2699BBA220779DAF00F763EE /* CFNetwork.framework in Frameworks */,
 				26E6C0CC2076B8200031769D /* WebKit.framework in Frameworks */,
@@ -299,7 +301,7 @@
 		26E6C0CA2076B8200031769D /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				4122C1BE21ED31920073674D /* libiModelJsHost.a */,
+				1F08844D2357A23700EE5A6C /* libiModelJsHostM02.dylib */,
 				2699BBA520779DBE00F763EE /* CoreFoundation.framework */,
 				2699BBA320779DB500F763EE /* JavaScriptCore.framework */,
 				2699BBA120779DAF00F763EE /* CFNetwork.framework */,
@@ -783,7 +785,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = WLDT6Q3PUY;
 				ENABLE_BITCODE = NO;
-				HEADER_SEARCH_PATHS = "$(OutRoot)iOSARM64/Product/iModelJsHost/includes/";
+				HEADER_SEARCH_PATHS = "$(OutRoot)$(BuildArchitecture)/Product/iModelJsHost/includes/";
 				INFOPLIST_FILE = iModelJsApp/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -793,7 +795,7 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(PROJECT_DIR)",
 					"$(PROJECT_DIR)/Libs",
-					"$(OutRoot)iOSARM64/Product/iModelJsHost/libs",
+					"$(OutRoot)$(BuildArchitecture)/Product/iModelJsHost/libs",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.bentley.imodeljsapp.iModelJsApp;
 				PRODUCT_MODULE_NAME = "$(PRODUCT_NAME:c99extidentifier)1";
@@ -814,7 +816,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = WLDT6Q3PUY;
 				ENABLE_BITCODE = NO;
-				HEADER_SEARCH_PATHS = "$(OutRoot)iOSARM64/Product/iModelJsHost/includes/";
+				HEADER_SEARCH_PATHS = "$(OutRoot)$(BuildArchitecture)/Product/iModelJsHost/includes/";
 				INFOPLIST_FILE = iModelJsApp/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -824,7 +826,7 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(PROJECT_DIR)",
 					"$(PROJECT_DIR)/Libs",
-					"$(OutRoot)iOSARM64/Product/iModelJsHost/libs",
+					"$(OutRoot)$(BuildArchitecture)/Product/iModelJsHost/libs",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.bentley.imodeljsapp.iModelJsApp;
 				PRODUCT_MODULE_NAME = "$(PRODUCT_NAME:c99extidentifier)2";
