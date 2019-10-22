@@ -441,7 +441,7 @@ DgnDbStatus JsInterop::InsertElementAspect(DgnDbR db, JsonValueCR aspectProps)
 
     std::function<bool(Utf8CP)> shouldConvertProperty = [aspectClass](Utf8CP propName)
         {
-        if ((0 == strcmp(propName, DgnElement::json_classFullName())) || (0 == strcmp(propName, json_element()))) return false;
+        if (0 == strcmp(propName, DgnElement::json_classFullName())) return false;
         return nullptr != aspectClass->GetPropertyP(propName);
         };
     if (BentleyStatus::SUCCESS != ECN::JsonECInstanceConverter::JsonToECInstance(*aspect, aspectProps, db.GetClassLocater(), shouldConvertProperty))
