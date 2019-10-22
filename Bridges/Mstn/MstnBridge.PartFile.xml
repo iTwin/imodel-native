@@ -18,7 +18,8 @@
         <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
         
         <InstallerWixFile SourceFile="Installer/MstnBridgeInstaller"/>
-        
+        <WixBundleFile    SourceFile="Installer/MstnBridgeBundle"/>
+       
         <Directories DirectoryListName="DgnDbSyncAppCommonDirList" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync" Repository="imodel02"/>
         <Directories DirectoryListName="MstnBridgeDirList"/>
     </Product>
