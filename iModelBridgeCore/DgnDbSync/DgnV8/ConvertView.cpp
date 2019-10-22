@@ -1233,15 +1233,15 @@ struct DynamicViewMapper
 
     DgnModelR GetDgnModel() { return m_modelMapping.GetDgnModel(); }
 
-    int GetSectionLocationType();
+    DetailingSymbolType GetSectionLocationType();
 
-    static StatusInt   GetCalloutPlacementFromIClip(DPoint3d& origin, BentleyApi::RotMatrixR rotMatrix, ElementHandleCR clipEH);
+    static StatusInt GetCalloutPlacementFromIClip(BentleyApi::DPoint3d& origin, BentleyApi::RotMatrix& rotMatrix, ElementHandleCR clipEH, DetailingSymbolType sectionType);
 
-    BentleyStatus GetClipData(Utf8StringR clipdata, ElementHandleCR clipElement);
+    BentleyStatus GetClipData(Utf8StringR clipdata, ElementHandleCR clipElement, BentleyApi::Transform const& placementTrans);
 
     BentleyStatus CreateSectionLocation(DgnElementPtr& element, Utf8StringCR name);
 
-    BentleyStatus UpdateGeometryStream(DgnElementR element, ElementHandleCR clipElement);
+    BentleyStatus UpdatePlacementAndCategory(DgnElementR element, ElementHandleCR clipElement, DetailingSymbolType sectionType);
 
     BentleyStatus UpdateProperties(DgnElementR element);
 
@@ -1250,11 +1250,10 @@ struct DynamicViewMapper
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  07/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-int DynamicViewMapper::GetSectionLocationType()
+DetailingSymbolType DynamicViewMapper::GetSectionLocationType()
     {
     DgnV8Api::ElementHandle namedViewElement(m_namedView.GetElementRef(), NULL);
-    Bentley::DetailingSymbolType type = m_calloutSupport.GetCalloutType(namedViewElement);
-    return static_cast<int> (type);
+    return m_calloutSupport.GetCalloutType(namedViewElement);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1282,7 +1281,7 @@ BentleyStatus   DynamicViewMapper::Init ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    SunandSandurkar 03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt   DynamicViewMapper::GetCalloutPlacementFromIClip(DPoint3d& origin, BentleyApi::RotMatrixR rotMatrix, ElementHandleCR clipEH)
+StatusInt   DynamicViewMapper::GetCalloutPlacementFromIClip(BentleyApi::DPoint3d& origin, BentleyApi::RotMatrix& rotMatrix, ElementHandleCR clipEH, DetailingSymbolType sectionType)
     {
     DgnV8Api::IHasViewClipObject* hasViewClipObject = dynamic_cast <DgnV8Api::IHasViewClipObject*> (&clipEH.GetHandler ());
     if (!hasViewClipObject)
@@ -1292,13 +1291,16 @@ StatusInt   DynamicViewMapper::GetCalloutPlacementFromIClip(DPoint3d& origin, Be
     if (viewClipObject.IsNull ())
         return ERROR;
 
-    size_t         numPoints = viewClipObject->GetNumPoints ();
-    DgnV8Api::DPoint3dVector  points;
+    size_t numPoints = viewClipObject->GetNumPoints ();
+    if (numPoints < 2)
+        return ERROR;
+
+    DgnV8Api::DPoint3dVector points;
     viewClipObject->GetPoints (points, 0, numPoints);
 
-    origin = (DPoint3dCR)points[0];
-
-    rotMatrix = (BentleyApi::RotMatrixCR) viewClipObject->GetRotationMatrix();
+    // NOTE: Position of elevation callout marker is segment midpoint unlike other callouts that use start point...
+    origin = (DetailingSymbolType::ElevationCallout == sectionType ? DPoint3d::FromInterpolate((DPoint3dCR)points[0], 0.5, (DPoint3dCR)points[1]) : (DPoint3dCR)points[0]);
+    rotMatrix = (BentleyApi::RotMatrix&) viewClipObject->GetRotationMatrix();
 
     return SUCCESS;
     }
@@ -1306,10 +1308,15 @@ StatusInt   DynamicViewMapper::GetCalloutPlacementFromIClip(DPoint3d& origin, Be
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  07/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DynamicViewMapper::GetClipData(Utf8StringR clipdata, ElementHandleCR clipElement)
+BentleyStatus   DynamicViewMapper::GetClipData(Utf8StringR clipdata, ElementHandleCR clipElement, BentleyApi::Transform const& placementTrans)
     {
-    Transform unitTransform = m_modelMapping.GetTransform();
-    auto clipVector = m_converter.ConvertClip(DgnV8Api::ClipVector::CreateFromElement(clipElement, m_v8Model, nullptr, DgnV8Api::ClipVolumePass::InsideForward), &unitTransform); // got one, turn it into a ClipVector
+    BentleyApi::Transform unitTransform = m_modelMapping.GetTransform();
+    BentleyApi::Transform invPlacementTrans, clipToLocalTrans;
+
+    invPlacementTrans.InverseOf(placementTrans);
+    clipToLocalTrans = Transform::FromProduct(invPlacementTrans, unitTransform);
+
+    auto clipVector = m_converter.ConvertClip(DgnV8Api::ClipVector::CreateFromElement(clipElement, m_v8Model, nullptr, DgnV8Api::ClipVolumePass::InsideForward), &clipToLocalTrans); // got one, turn it into a ClipVector
     if (clipVector.IsNull())
         return BSIERROR;
 
@@ -1324,22 +1331,22 @@ BentleyStatus   DynamicViewMapper::GetClipData(Utf8StringR clipdata, ElementHand
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  09/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DynamicViewMapper::UpdateGeometryStream(DgnElementR element, ElementHandleCR clipElement)
+BentleyStatus   DynamicViewMapper::UpdatePlacementAndCategory(DgnElementR element, ElementHandleCR clipElement, DetailingSymbolType sectionType)
     {
     DgnV8Api::ElementHandle namedViewElement(m_namedView.GetElementRef(), NULL);
     auto categoryId = m_converter.GetSyncInfo().GetCategory(namedViewElement, m_modelMapping);
 
-    DPoint3d origin = DPoint3d::From(0.0, 0.0, 0.0);
+    DPoint3d origin = BentleyApi::DPoint3d::From(0.0, 0.0, 0.0);
     BentleyApi::RotMatrix rotMatrix = BentleyApi::RotMatrix::FromIdentity();
 
-    if (SUCCESS != GetCalloutPlacementFromIClip(origin, rotMatrix, clipElement))
+    if (SUCCESS != GetCalloutPlacementFromIClip(origin, rotMatrix, clipElement, sectionType))
         {
         LOG.error("Unable to get callout origin.");
         }
 
-    Transform unitTransform = m_modelMapping.GetTransform();
+    BentleyApi::Transform unitTransform = m_modelMapping.GetTransform();
     unitTransform.Multiply(origin);
-    YawPitchRollAngles  angles;
+    YawPitchRollAngles angles;
     YawPitchRollAngles::TryFromRotMatrix(angles, rotMatrix);
 
     auto geomEl = element.ToGeometrySource3dP();
@@ -1353,7 +1360,6 @@ BentleyStatus   DynamicViewMapper::UpdateGeometryStream(DgnElementR element, Ele
         geomEl->SetCategoryId(categoryId);
         }
 
-
     return SUCCESS;
     }
 
@@ -1366,18 +1372,19 @@ BentleyStatus   DynamicViewMapper::UpdateProperties(DgnElementR element)
     if (SUCCESS != m_namedView.GetClipElement(clipElement))
         return BSIERROR;
 
-    if (SUCCESS != UpdateGeometryStream(element, clipElement))
+    DetailingSymbolType sectionType = GetSectionLocationType();
+    if (SUCCESS != UpdatePlacementAndCategory(element, clipElement, sectionType))
         return BSIERROR;
 
     Utf8String clipdata;
-    if (SUCCESS != GetClipData(clipdata, clipElement))
+    if (SUCCESS != GetClipData(clipdata, clipElement, element.ToGeometrySource3dP()->GetPlacementTransform()))
         {
         LOG.error("Unable to get clip information");
         return BSIERROR;
         }
 
     element.SetPropertyValue("ClipGeometry", clipdata.c_str());
-    element.SetPropertyValue("SectionType", GetSectionLocationType());
+    element.SetPropertyValue("SectionType", static_cast<int> (sectionType));
     return SUCCESS;
     }
 
