@@ -68,6 +68,16 @@
         <SubPart PartName="RoadRailPhysical"                PartFile="Domains/RoadRailPhysical/RoadRailPhysical" />
         <SubPart PartName="SpatialCompositionDomain"        PartFile="Domains/SpatialComposition/SpatialComposition" />
         <SubPart PartName="StructuralDomainDLL"             PartFile="Domains/Structural/StructuralDomains"/>
+
+        <!--
+            Apps like to include parts like BisSchemas:BuildingSchemas, which in turn depend on AecUnitsSchema.
+            Since the above domain list includes AecUnitsSchema, we need to also include select other
+            code-less schemas so that adding a <SubPart> does not conflict between our nuget and bisschemas source
+            (e.g. they should only need the nuget).
+        -->
+        <SubPart PartName="BuildingSchemas" PartFile="BisSchemasIModelCore" Repository="BisSchemas"/>
+        <SubPart PartName="BuildingSpatialSchema" PartFile="BisSchemasIModelCore" Repository="BisSchemas"/>
+        <SubPart PartName="QuantityTakeoffsAspectsSchema" PartFile="BisSchemasIModelCore" Repository="BisSchemas"/>
     </Part>
     
     <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
