@@ -1047,9 +1047,14 @@ bool isRelativePath(WCharCP path)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool hasExtendedPathPrefix(WCharCP path)
+bool canAddExtendedPathPrefix(WCharCP path)
     {
-    return (0 == wcsncmp(path, WINDOWS_EXTENDED_PATH_PREFIX, wcslen(WINDOWS_EXTENDED_PATH_PREFIX)));
+    // Can add the NT extended path prefix if it's not there already, and not a UNC path.
+    // Documentation claims you can use \\?\ with UNC paths, but it doesn't "just work" for us.
+    if (0 == wcsncmp(path, L"\\\\", 2))
+        return false;
+
+    return (0 != wcsncmp(path, WINDOWS_EXTENDED_PATH_PREFIX, wcslen(WINDOWS_EXTENDED_PATH_PREFIX)));
     }
 #endif
 
@@ -1079,7 +1084,7 @@ BeFileNameStatus BeFileName::FixPathName(WStringR path, WCharCP src, bool keepTr
         {
         // Need the "extended path prefix" if name would be too long and if prefix is not already there
         // MAX_PATH - 12 is the maximum length for a directory name (keeping room for an 8.3 filename)
-        if ((wcslen(src) >= (MAX_PATH - 12)) && !hasExtendedPathPrefix(src))
+        if ((wcslen(src) >= (MAX_PATH - 12)) && canAddExtendedPathPrefix(src))
             extendedPathPrefixNeeded = true;
         }
 
