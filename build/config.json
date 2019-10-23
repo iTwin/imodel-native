@@ -69,7 +69,7 @@
             "archs": "x64",
             "prg_id": "2370",
             "version_seed": "2.1.0",
-            "has_installers": "basic",
+            "has_installers": "bundle",
             "depends" : [
                 "iModelBridgeCore"
             ]
