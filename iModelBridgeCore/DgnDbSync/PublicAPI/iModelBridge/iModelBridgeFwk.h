@@ -36,8 +36,12 @@ struct iModelBridgeFwkPush;
 // TRICKY: Must use BENTLEY_TRANSLATABLE_STRINGS macros, and NOT IMODELBRIDGEFX_TRANSLATABLE_STRINGS macros. That is because
 // the fwk plays the role of the platform here. The bridge is the "app". The bridge-specific L10 db is layered
 // on top of the base BeSQLite::L10N db.
-BENTLEY_TRANSLATABLE_STRINGS_START(iModelBridgeFwkErrors, iModelBridgeFwkErrors)
+BENTLEY_TRANSLATABLE_STRINGS_START(iModelBridgeFwkMessages, iModelBridgeFwkMessages)
     L10N_STRING(STATUS_TBD)                    // =="TBD"==
+    L10N_STRING(EXTENT_CHANGES)                // =="Extent Changes"==
+    L10N_STRING(DOMAIN_SCHEMA_UPGRADE)         // =="Domain schema upgrade"==
+    L10N_STRING(INITIALIZATION_CHANGES)        // =="Initialization changes"==
+    L10N_STRING(DEFINITIONS)                   // =="Definitions"==
 BENTLEY_TRANSLATABLE_STRINGS_END
 
 //=======================================================================================
@@ -366,7 +370,7 @@ protected:
     void WriteErrorDocument();
 
     int UpdateProjectExtents(FwkContext& context);
-    int PushDataChanges();
+    int PushDataChanges(Utf8StringCR pushComment);
     BentleyStatus GetUserProvidedExtents(AxisAlignedBox3d& extents, FwkContext& context);
 
     BentleyStatus SetUpECEFLocation(FwkContext& context);

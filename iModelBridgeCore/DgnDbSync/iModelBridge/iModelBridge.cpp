@@ -1104,14 +1104,27 @@ Utf8String iModelBridge::_FormatPushComment(DgnDbR db, Utf8CP commitComment)
     if (nullptr != params.GetDocumentPropertiesAccessor())
         params.GetDocumentPropertiesAccessor()->_GetDocumentProperties(docProps, localFileName);
 
-    Utf8PrintfString comment("%s - %s (%s)", key.c_str(), Utf8String(localFileName.GetBaseName()).c_str(), docProps.m_docGuid.c_str());
+    Utf8String comment = key;
+    if (!comment.empty() && !localFileName.GetBaseName().empty())
+        comment.append(" - ");
 
+    comment.append(Utf8String(localFileName.GetBaseName()).c_str());
+
+    if (!comment.empty() && !docProps.m_docGuid.empty())
+        comment.append(" - ");
+
+    comment.append(Utf8String(docProps.m_docGuid.c_str()));
     auto const& rcomment = params.GetRevisionComment();
-    if (!rcomment.empty())
-        comment.append(" - ").append(rcomment);
+    if (!comment.empty() && !rcomment.empty())
+        comment.append(" - ");
+    
+    comment.append(rcomment);
 
-    if (commitComment)
-        comment.append(" - ").append(commitComment);
+    if (!comment.empty() && NULL != commitComment)
+        comment.append(" - ");
+
+    if (NULL != commitComment)
+        comment.append(commitComment);
 
     return comment;
     }

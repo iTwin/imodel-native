@@ -228,6 +228,7 @@ BentleyStatus iModelBridgeFwk::DmsServerArgs::ParseCommandLine(bvector<WCharCP>&
             int n = atoi(getArgValue(argv[iArg]).c_str());
             if (n < 0 || 256 <= n)
                 {
+                BeAssert(false);
                 fprintf(stderr, "%s - invalid retries value. Must be a value between 0 and 255\n", getArgValue(argv[iArg]).c_str());
                 return BSIERROR;
                 }
@@ -268,6 +269,7 @@ BentleyStatus iModelBridgeFwk::DmsServerArgs::ParseCommandLine(bvector<WCharCP>&
             {
             if (!m_inputFileUrn.empty())
                 {
+                BeAssert(false);
                 fwprintf(stderr, L"The --dms-inputFileUrn= option may appear only once.\n");
                 return BSIERROR;
                 }
@@ -289,6 +291,7 @@ BentleyStatus iModelBridgeFwk::DmsServerArgs::ParseCommandLine(bvector<WCharCP>&
             {
             if (!m_dmsLibraryName.empty())
                 {
+                BeAssert(false);
                 fwprintf(stderr, L"The --dms-library= option may appear only once.\n");
                 return BSIERROR;
                 }

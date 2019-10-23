@@ -19,6 +19,9 @@ bool   PWWorkspaceHelper::_Initialize()
     {
     if (m_initDone)
         return true;
+    
+    if (!InitPwApi())
+        return false;
 
     BOOL status =  workspace_Initialize();
     if (status)

@@ -73,6 +73,9 @@ bool            AzureBlobStorageHelper::_UnInitializeSession()
 bool            AzureBlobStorageHelper::_StageInputFile(BeFileNameCR fileLocation)
     {
     _Initialize();
+    if (m_sasUrl.empty())
+        return false;
+
     auto result = m_client->SendGetFileRequest(m_sasUrl, fileLocation)->GetResult();
     if (result.IsSuccess())
         {

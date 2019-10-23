@@ -1753,7 +1753,7 @@ BentleyStatus   iModelBridgeFwk::TryOpenBimWithOptions(DgnDb::OpenParams& oparam
     //                                       *** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
     if (madeSchemaChanges || iModelBridge::AnyChangesToPush(*m_briefcaseDgnDb))
         {
-        if (0 != PullMergeAndPushChange("domain schema upgrade", true, oparams.GetProfileUpgradeOptions() != EC::ECDb::ProfileUpgradeOptions::Upgrade))  // pullmergepush + re-open
+        if (0 != PullMergeAndPushChange(iModelBridgeFwkMessages::GetString(iModelBridgeFwkMessages::DOMAIN_SCHEMA_UPGRADE()), true, oparams.GetProfileUpgradeOptions() != EC::ECDb::ProfileUpgradeOptions::Upgrade))  // pullmergepush + re-open
             return BSIERROR;
         }
 
@@ -2071,7 +2071,7 @@ int iModelBridgeFwk::MakeDefinitionChanges(SubjectCPtr& jobsubj, iModelBridgeCal
         // We also know that bridge's private (exclusively locked) models cannot have been changed. So, the only
         // changes that we might get would be to other bridges� models and irrelevant changes to the public models,
         // such as new job subjects from other bridges.
-        if (BSISUCCESS != Briefcase_PullMergePush("definitions"))
+        if (BSISUCCESS != Briefcase_PullMergePush(iModelBridgeFwkMessages::GetString(iModelBridgeFwkMessages::DEFINITIONS()).c_str()))
             return BSIERROR;
         }
 
@@ -2123,7 +2123,7 @@ int iModelBridgeFwk::DoNormalUpdate()
         }                                                                                    // === SCHEMA LOCK
     if (iModelBridge::AnyChangesToPush(*m_briefcaseDgnDb)) // if bridge made any changes, they must be pushed and cleared out before we can make schema changes
         {                                                                                    // === SCHEMA LOCK
-        if (BSISUCCESS != Briefcase_PullMergePush("initialization changes"))                 // === SCHEMA LOCK
+        if (BSISUCCESS != Briefcase_PullMergePush(iModelBridgeFwkMessages::GetString(iModelBridgeFwkMessages::INITIALIZATION_CHANGES()).c_str()))                 // === SCHEMA LOCK
             return RETURN_STATUS_SERVER_ERROR;                                               // === SCHEMA LOCK
         }                                                                                    // === SCHEMA LOCK
                        
@@ -2286,7 +2286,7 @@ int iModelBridgeFwk::OnAllDocsProcessed()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  09/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-int   iModelBridgeFwk::PushDataChanges()
+int   iModelBridgeFwk::PushDataChanges(Utf8StringCR pushCommentIn)
     {
     if (!iModelBridge::AnyTxns(*m_briefcaseDgnDb) && (SyncState::Initial == GetSyncState()))
         {
@@ -2298,8 +2298,12 @@ int   iModelBridgeFwk::PushDataChanges()
 
     GetLogger().infov("bridge:%s iModel:%s - Pushing Data Changeset.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
     GetProgressMeter().SetCurrentStepName("Pushing Changes");
+    Utf8String comment = GetRevisionComment().c_str();
+    if (!comment.empty() && !pushCommentIn.empty())
+        comment.append(" - ");
 
-    if (BSISUCCESS != Briefcase_PullMergePush(GetRevisionComment().c_str()))
+    comment.append(pushCommentIn);
+    if (BSISUCCESS != Briefcase_PullMergePush(comment.c_str()))
         return RETURN_STATUS_SERVER_ERROR; // (Retain shared locks, so that we can re-try our push later.)
 
     BeAssert(!iModelBridge::AnyTxns(*m_briefcaseDgnDb));
@@ -2435,7 +2439,7 @@ int iModelBridgeFwk::UpdateExistingBim(iModelBridgeFwk::FwkContext& context)
         callTerminate.m_status = BSISUCCESS;
         }
 
-    PushDataChanges();
+    PushDataChanges("");
 
     //  Finalize changes in the shared channel
     SetCurrentPhaseName("Finalizing Changes");
@@ -2471,7 +2475,7 @@ int iModelBridgeFwk::UpdateExistingBim(iModelBridgeFwk::FwkContext& context)
         }
 
     //  Done. Make sure that all changes are pushed and all shared locks are released.
-    PushDataChanges();
+    PushDataChanges(iModelBridgeFwkMessages::GetString(iModelBridgeFwkMessages::EXTENT_CHANGES()));
         
     
     // *** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
