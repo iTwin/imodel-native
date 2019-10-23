@@ -19,7 +19,132 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicesNotIncludedByDefault)
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("SchemaPolicesNotIncludedByDefault.ecdb"));
     ASSERT_FALSE(m_ecdb.Schemas().ContainsSchema("ECDbSchemaPolicies"));
     }
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                      Affan.Khan                    10/19
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaPolicyTestFixture, ReservedPropertyNames_Inheritance)
+    {
+    auto bisCore = SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="BisCore" alias="bis" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+            <!-- Applied to an ECClass to reserve list properties that cannot be used by that class or its dervied classes. -->
+            <ECCustomAttributeClass typeName="ReservedPropertyNames" modifier="Sealed" appliesTo="EntityClass, RelationshipClass"
+                                    description="Declare a list of properties as reserved. The property name listed would be forbidden from use in that class context.">
+                <ECArrayProperty propertyName="PropertyNames" typeName="string" minOccurs="0" maxOccurs="unbounded" 
+                                description="Name of the property. System will do case insensitive comparison."/>
+            </ECCustomAttributeClass>
+        </ECSchema>)xml");
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport({bisCore, SchemaItem(
+                                                               R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="OptingInSchema" alias="master" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+            <ECSchemaReference name="BisCore" version="01.00.01" alias="bis"/>
+            <ECEntityClass typeName="ClassA" modifier="None" >
+                <ECCustomAttributes>
+                    <ReservedPropertyNames xmlns="BisCore.01.00.01">
+                        <PropertyNames>
+                            <string>P1</string>
+                        </PropertyNames>
+                    </ReservedPropertyNames>
+                </ECCustomAttributes>            
+            </ECEntityClass>
+            <ECEntityClass typeName="ClassB" modifier="None" >
+                <BaseClass>ClassA</BaseClass>
+                <ECCustomAttributes>
+                    <ReservedPropertyNames xmlns="BisCore.01.00.01">
+                        <PropertyNames>
+                            <string>P2</string>
+                        </PropertyNames>
+                    </ReservedPropertyNames>
+                </ECCustomAttributes>            
+            </ECEntityClass>
+            <ECEntityClass typeName="ClassC" modifier="None" >
+                <BaseClass>ClassB</BaseClass>
+                <ECCustomAttributes>
+                    <ReservedPropertyNames xmlns="BisCore.01.00.01">
+                        <PropertyNames>
+                            <string>P4</string>
+                        </PropertyNames>
+                    </ReservedPropertyNames>
+                </ECCustomAttributes>       
+                <ECProperty propertyName="P1" typeName="int" />     
+                <ECProperty propertyName="P5" typeName="int" />     
+            </ECEntityClass>
 
+        </ECSchema>)xml")}))
+        << "Class with ReservedPropertyNames reject its on properties";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport({bisCore, SchemaItem(
+                                                               R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="OptingInSchema" alias="master" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+            <ECSchemaReference name="BisCore" version="01.00.01" alias="bis"/>
+            <ECEntityClass typeName="ClassA" modifier="None" >
+                <ECCustomAttributes>
+                    <ReservedPropertyNames xmlns="BisCore.01.00.01">
+                        <PropertyNames>
+                            <string>P1</string>
+                        </PropertyNames>
+                    </ReservedPropertyNames>
+                </ECCustomAttributes>            
+            </ECEntityClass>
+            <ECEntityClass typeName="ClassB" modifier="None" >
+                <BaseClass>ClassA</BaseClass>
+                <ECCustomAttributes>
+                    <ReservedPropertyNames xmlns="BisCore.01.00.01">
+                        <PropertyNames>
+                            <string>P2</string>
+                        </PropertyNames>
+                    </ReservedPropertyNames>
+                </ECCustomAttributes>            
+            </ECEntityClass>
+            <ECEntityClass typeName="ClassC" modifier="None" >
+                <BaseClass>ClassB</BaseClass>
+                <ECCustomAttributes>
+                    <ReservedPropertyNames xmlns="BisCore.01.00.01">
+                        <PropertyNames>
+                            <string>P4</string>
+                        </PropertyNames>
+                    </ReservedPropertyNames>
+                </ECCustomAttributes>       
+                <ECProperty propertyName="P2" typeName="int" />     
+                <ECProperty propertyName="P5" typeName="int" />     
+            </ECEntityClass>
+
+        </ECSchema>)xml")}))
+        << "Class with ReservedPropertyNames reject its on properties";
+
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport({bisCore, SchemaItem(
+                                                               R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="OptingInSchema" alias="master" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+            <ECSchemaReference name="BisCore" version="01.00.01" alias="bis"/>
+            <ECEntityClass typeName="ClassA" modifier="None" >
+                <ECCustomAttributes>
+                    <ReservedPropertyNames xmlns="BisCore.01.00.01">
+                        <PropertyNames>
+                            <string>P1</string>
+                        </PropertyNames>
+                    </ReservedPropertyNames>
+                </ECCustomAttributes>            
+            </ECEntityClass>
+            <ECEntityClass typeName="ClassB" modifier="None" >
+                <BaseClass>ClassA</BaseClass>
+                <ECCustomAttributes>
+                    <ReservedPropertyNames xmlns="BisCore.01.00.01">
+                        <PropertyNames>
+                            <string>P2</string>
+                        </PropertyNames>
+                    </ReservedPropertyNames>
+                </ECCustomAttributes>            
+            </ECEntityClass>
+            <ECEntityClass typeName="ClassC" modifier="None" >
+                <BaseClass>ClassB</BaseClass>
+                <ECProperty propertyName="P1" typeName="int" />     
+                <ECProperty propertyName="P2" typeName="int" />     
+                <ECProperty propertyName="P3" typeName="int" />     
+            </ECEntityClass>
+
+        </ECSchema>)xml")}))
+        << "Class with ReservedPropertyNames reject its on properties";
+    }
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Affan.Khan                    09/19
 //+---------------+---------------+---------------+---------------+---------------+------

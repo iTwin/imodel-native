@@ -75,11 +75,13 @@ struct SchemaWriter final
             //! Implement reserved property name policy
             struct ReservedPropertyNamesPolicy
                 {
-                private:
-                    typedef std::map<ECN::IECInstanceCP, std::pair<ECN::ECClassCP, std::set<Utf8String, CompareIUtf8Ascii>>> PolicyCacheMap;
+                private:                   
+                    typedef std::map<Utf8String, ECN::ECClassCP, CompareIUtf8Ascii> PolicyCacheEntry;
+                    typedef std::map<ECN::IECInstanceCP, PolicyCacheEntry> PolicyCacheMap;
                     mutable PolicyCacheMap m_reservedProperties;
                     static ECN::ECClassCP FindCustomAttributeOwner(ECN::ECClassCP entityClass, ECN::IECInstanceCP ca);
-                    PolicyCacheMap::iterator RegisterPolicy(IssueReporter const& issues, ECN::ECClassCR entityClass, ECN::IECInstanceCP policyCA) const;
+                    PolicyCacheMap::iterator RegisterPolicy(IssueReporter const& issues, ECN::ECClassCR entityClass) const;
+                    static void FindInhertiedPolicyCustomAttribute(std::vector<std::pair<ECN::ECClassCP, ECN::IECInstanceCP>>& policyAttributes, ECN::ECClassCP entityClass);
                 public:
                     //! return true if policy voilation occure else false
                     bool Evaluate(IssueReporter const& issues, ECN::ECClassCR entityClass, ECN::ECPropertyCP property = nullptr) const;

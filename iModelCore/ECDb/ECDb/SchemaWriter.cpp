@@ -8,7 +8,9 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-
+#define RESERVED_PROPERTY_SchemaName "BisCore"
+#define RESERVED_PROPERTY_ClassName "ReservedPropertyNames"
+#define RESERVED_PROPERTY_Name "PropertyNames"
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -4602,10 +4604,14 @@ ECClassCP SchemaWriter::Context::ReservedPropertyNamesPolicy::FindCustomAttribut
     if (entityClass->GetCustomAttributeLocal(ca->GetClass().GetName()).get() == ca)
         return entityClass;
 
-    for (ECClassCP baseClass : entityClass->GetBaseClasses())
+    // ignore mixin. Only traverse base class hierarchy 
+    if (entityClass->HasBaseClasses())
         {
-        if (ECClassCP result = FindCustomAttributeOwner(baseClass, ca))
-            return result;
+        if (ECClassCP baseClass = entityClass->GetBaseClasses()[0])
+            {
+            if (ECClassCP result = FindCustomAttributeOwner(baseClass, ca))
+                return result;
+            }
         }
 
     return nullptr;
@@ -4614,43 +4620,71 @@ ECClassCP SchemaWriter::Context::ReservedPropertyNamesPolicy::FindCustomAttribut
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        09/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriter::Context::ReservedPropertyNamesPolicy::PolicyCacheMap::iterator SchemaWriter::Context::ReservedPropertyNamesPolicy::RegisterPolicy(IssueReporter const& issues, ECN::ECClassCR entityClass, ECN::IECInstanceCP ca) const
+//static
+void SchemaWriter::Context::ReservedPropertyNamesPolicy::FindInhertiedPolicyCustomAttribute(std::vector<std::pair<ECN::ECClassCP, ECN::IECInstanceCP>>& policyAttributes,  ECN::ECClassCP entityClass)
     {
-    ECClassCP ownerClass = FindCustomAttributeOwner(&entityClass, ca);
-    BeAssert(ownerClass != nullptr);
-
-    uint32_t propertyNamesIdx = 0;
-    if (ca->GetEnablerR().GetPropertyIndex(propertyNamesIdx, "PropertyNames") != ECObjectsStatus::Success)
+    IECInstancePtr ca = entityClass->GetPrimaryCustomAttribute(RESERVED_PROPERTY_SchemaName, RESERVED_PROPERTY_ClassName);
+    if (ca.IsValid())
         {
-        BeAssert(false && "Expecting property 'PropertyNames'");
+        if (ECN::ECClassCP owner = FindCustomAttributeOwner(entityClass, ca.get()))
+            {
+            policyAttributes.push_back(std::make_pair(owner, ca.get()));
+            if (owner->HasBaseClasses())
+                {
+                if (ECClassCP baseClass = owner->GetBaseClasses()[0])
+                    FindInhertiedPolicyCustomAttribute(policyAttributes, baseClass);
+                }
+            }
         }
-
-    ECValue propertyNamesVal;
-    uint32_t arrayCount = 0;
-    if (ca->GetValue(propertyNamesVal, propertyNamesIdx) == ECObjectsStatus::Success && !propertyNamesVal.IsNull())
-        arrayCount = propertyNamesVal.GetArrayInfo().GetCount();
-
-    if (arrayCount == 0)
-        {
-        issues.ReportV("ECDbSchemaPolicies:ReservedPropertyNames customAttribute defined on ECClass '%s' is invalid. It must have atleast one reserved property name declared."
-                   , entityClass.GetFullName());
+    }
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        09/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaWriter::Context::ReservedPropertyNamesPolicy::PolicyCacheMap::iterator SchemaWriter::Context::ReservedPropertyNamesPolicy::RegisterPolicy(IssueReporter const& issues, ECN::ECClassCR entityClass) const
+    {
+    std::vector<std::pair<ECN::ECClassCP, ECN::IECInstanceCP>> policyAttributes;
+    FindInhertiedPolicyCustomAttribute(policyAttributes, &entityClass);
+    if (policyAttributes.empty())
         return m_reservedProperties.end();
-        }
 
-    auto it = m_reservedProperties.insert(std::make_pair(ca, std::make_pair(ownerClass, std::set<Utf8String, CompareIUtf8Ascii>()))).first;
-    std::set<Utf8String, CompareIUtf8Ascii>& reservedProps = it->second.second;
-    ECValue propertyNameVal;
-    for (uint32_t i = 0; i < arrayCount; ++i)
+    ECN::IECInstanceCP ownerPolicyCA = policyAttributes[0].second;
+    auto it = m_reservedProperties.insert(std::make_pair(ownerPolicyCA, PolicyCacheEntry())).first;
+    PolicyCacheEntry& reservedProps = it->second;
+
+    for (auto const& entry : policyAttributes)
         {
-        if (ECObjectsStatus::Success != ca->GetValue(propertyNameVal, propertyNamesIdx, i) && propertyNameVal.IsNull())
-            continue;
+        ECN::IECInstanceCP ca = entry.second;
+        ECClassCP ownerClass = entry.first;
+        uint32_t propertyNamesIdx = 0;
+        if (ca->GetEnablerR().GetPropertyIndex(propertyNamesIdx, RESERVED_PROPERTY_Name) != ECObjectsStatus::Success)
+            {
+            BeAssert(false && "Expecting property 'PropertyNames'");
+            }
 
-        if (!ECNameValidation::IsValidName(propertyNameVal.GetUtf8CP()))
-            continue;
+        ECValue propertyNamesVal;
+        uint32_t arrayCount = 0;
+        if (ca->GetValue(propertyNamesVal, propertyNamesIdx) == ECObjectsStatus::Success && !propertyNamesVal.IsNull())
+            arrayCount = propertyNamesVal.GetArrayInfo().GetCount();
 
-        reservedProps.insert(propertyNameVal.GetUtf8CP());
+        if (arrayCount == 0)
+            {
+            issues.ReportV("ECDbSchemaPolicies:ReservedPropertyNames customAttribute defined on ECClass '%s' is invalid. It must have atleast one reserved property name declared."
+                           , ownerClass->GetFullName());
+            return m_reservedProperties.end();
+            }
+
+        ECValue propertyNameVal;
+        for (uint32_t i = 0; i < arrayCount; ++i)
+            {
+            if (ECObjectsStatus::Success != ca->GetValue(propertyNameVal, propertyNamesIdx, i) && propertyNameVal.IsNull())
+                continue;
+
+            if (!ECNameValidation::IsValidName(propertyNameVal.GetUtf8CP()))
+                continue;
+
+            reservedProps.insert(std::make_pair(propertyNameVal.GetUtf8CP(), ownerClass));
+            }
         }
-
     return it;
     }
 
@@ -4667,23 +4701,24 @@ bool SchemaWriter::Context::AssertReservedPropertyPolicy(ECN::ECClassCR entityCl
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SchemaWriter::Context::ReservedPropertyNamesPolicy::Evaluate(IssueReporter const& issues, ECN::ECClassCR entityClass, ECN::ECPropertyCP property) const
     {
-    IECInstancePtr ca = entityClass.GetPrimaryCustomAttribute("BisCore", "ReservedPropertyNames");
+    IECInstancePtr ca = entityClass.GetPrimaryCustomAttribute(RESERVED_PROPERTY_SchemaName, RESERVED_PROPERTY_ClassName);
     if (ca.IsValid())
         {
         auto it = m_reservedProperties.find(ca.get());
         if (it == m_reservedProperties.end())
             {
-            it = RegisterPolicy(issues, entityClass, ca.get());
+            it = RegisterPolicy(issues, entityClass);
             if (it == m_reservedProperties.end())
                 return true;
             }
 
-        std::set<Utf8String, CompareIUtf8Ascii>& reservedProps = it->second.second;
+        PolicyCacheEntry& reservedProps = it->second;
         if (property)
             {
-            if (reservedProps.find(property->GetName()) != reservedProps.end())
+            auto itor = reservedProps.find(property->GetName());
+            if (itor != reservedProps.end())
                 {
-                ECClassCP ownerClass = it->second.first;
+                ECClassCP ownerClass = itor->second;
                 issues.ReportV("ECDbSchemaPolicies:ReservedPropertyNames policy defined on '%s' class prohibit use of property with name '%s' (origin: %s) in its dervied hierarchy. Reserved property policy failed for class %s. The property could have been inherited.",
                                ownerClass->GetFullName(), property->GetName().c_str(), property->GetClass().GetFullName());
                 return true;
@@ -4694,10 +4729,10 @@ bool SchemaWriter::Context::ReservedPropertyNamesPolicy::Evaluate(IssueReporter 
         bool reservedPropFound = false;
         for (auto const prop : entityClass.GetProperties())
             {
-
-            if (reservedProps.find(prop->GetName()) != reservedProps.end())
+            auto itor = reservedProps.find(prop->GetName());
+            if (itor != reservedProps.end())
                 {
-                ECClassCP ownerClass = it->second.first;
+                ECClassCP ownerClass = itor->second;
                 issues.ReportV("ECDbSchemaPolicies:ReservedPropertyNames policy defined on '%s' class prohibit use of property with name '%s' (origin: %s) in its dervied hierarchy. Reserved property policy failed for class %s. The property could have been inherited.",
                                ownerClass->GetFullName(), prop->GetName().c_str(), prop->GetClass().GetFullName(), entityClass.GetFullName());
                 reservedPropFound = true;
