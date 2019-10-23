@@ -84,6 +84,7 @@
     if (err) {
         [_jsContext setException:[JSValue valueWithNewErrorFromMessage:err.description inContext:_jsContext]];
     }
+     NSLog(@"[FS] unlinkSync (%@) -> %@", path, !err?@"YES" : @"NO");
 }
 // delte file and folders
 - (void) removeSync: (NSString*)path {
@@ -92,6 +93,7 @@
     if (err) {
        [_jsContext setException:[JSValue valueWithNewErrorFromMessage:err.description inContext:_jsContext]];
     }
+    NSLog(@"[FS] removeSync (%@) -> %@", path, !err?@"YES" : @"NO");
 }
 // delte file and folders
 - (void) mkdirSync: (NSString*)path {
@@ -106,7 +108,7 @@
 // delte file and folders
 - (void) rmdirSync: (NSString*)path {
     NSError *err;
-    [_fileManager createDirectoryAtPath:path withIntermediateDirectories:true attributes:nil error:&err];
+    [_fileManager removeItemAtPath:path error:&err];
     if (err) {
         [_jsContext setException:[JSValue valueWithNewErrorFromMessage:err.description inContext:_jsContext]];
     }
@@ -130,6 +132,7 @@
     if (err) {
         [_jsContext setException:[JSValue valueWithNewErrorFromMessage:err.description inContext:_jsContext]];
     }
+    NSLog(@"[FS] writeFileSync (%@) -> %@", path, !err?@"YES" : @"NO");
 }
 - (void) copySync: (NSString*)fromPath :(NSString*)toPath {
     NSError *err;
@@ -137,10 +140,12 @@
     if (err) {
         [_jsContext setException:[JSValue valueWithNewErrorFromMessage:err.description inContext:_jsContext]];
     }
+    NSLog(@"[FS] copySync (%@) -> %@", fromPath, !err?@"YES" : @"NO");
 }
 - (NSString*) realpathSync: (JSValue*)path :(JSValue*)options {
     NSError *err;
     NSString* str = [_fileManager destinationOfSymbolicLinkAtPath:path.toString error:&err];
+    NSLog(@"[FS] realpathSync (%@) -> %@", path, !err?@"YES" : @"NO");
     if (err || str == nil)
         return path.toString;
     
@@ -153,11 +158,11 @@
         return [JSValue valueWithUndefinedInContext:path.context];
     }
     JSValue* ret = [JSValue valueWithNewObjectInContext:path.context ];
-    ret[@"IsDirectory"] = [JSValue valueWithBool:isDir inContext:path.context];
-    ret[@"IsFile"] = [JSValue valueWithBool:!isDir inContext:path.context];
+    ret[@"isDirectory"] = [JSValue valueWithBool:isDir inContext:path.context];
+    ret[@"isFile"] = [JSValue valueWithBool:!isDir inContext:path.context];
     bool isSymbolicLink = [_fileManager destinationOfSymbolicLinkAtPath:strPath error:nil] != nil;
-    ret[@"IsSymbolicLink"] = [JSValue valueWithBool:isSymbolicLink inContext:path.context];
-    ret[@"IsSocket"] = [JSValue valueWithBool:false inContext:path.context];
+    ret[@"isSymbolicLink"] = [JSValue valueWithBool:isSymbolicLink inContext:path.context];
+    ret[@"isSocket"] = [JSValue valueWithBool:false inContext:path.context];
     NSDictionary<NSFileAttributeKey,id>* attributes = [_fileManager attributesOfItemAtPath:strPath error:nil];
     if (attributes != nil) {
         double birthTimeMs = (double)[[attributes fileCreationDate] timeIntervalSinceReferenceDate]*1000;
@@ -165,6 +170,8 @@
         ret[@"birthTimeMs"] = [JSValue valueWithDouble:birthTimeMs inContext:path.context];
         ret[@"mtimeMs"] = [JSValue valueWithDouble:mtimeMs inContext:path.context];
         ret[@"atimeMs"] = [JSValue valueWithDouble:mtimeMs inContext:path.context];
+        ret[@"size"]  = [JSValue valueWithUInt32:[attributes fileSize] inContext:path.context];
+        ret[@"isReadonly"] = [JSValue valueWithBool:[_fileManager isWritableFileAtPath:strPath] inContext:path.context];
     }
     return ret;
 }
@@ -179,7 +186,7 @@
 }
 - (JSValue*) readFileSync: (JSValue*)path :(JSValue*)options {
     if (!options.isString) {
-        @throw @"Error";
+        //@throw @"Error";
     }
     NSURL* file = [NSURL fileURLWithPath:path.toString];
     NSString* content = [[NSString alloc] initWithContentsOfURL:file encoding:NSUTF8StringEncoding error:nil];

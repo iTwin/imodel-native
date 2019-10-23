@@ -44,6 +44,7 @@ typedef NS_ENUM(NSUInteger , ReadyState) {
 @property (nonatomic) NSNumber*  timeout;
 // Is an EventHandler that is called whenever the request times out.
 @property (nonatomic) JSValue* ontimeout;
+@property (nonatomic) JSValue* withCredentials;
 // Aborts the request if it has already been sent.
 - (void) abort;
 // Returns all the response headers, separated by CRLF, as a string, or null if no response has been received.
@@ -64,6 +65,9 @@ typedef NS_ENUM(NSUInteger , ReadyState) {
                           :(NSString*)value;
 //Url file
 - (void)downloadFile :(NSString*)fileName;
+- (void)uploadChunk:(NSString*)fileName
+                   :(JSValue*)blkNo
+                   :(JSValue*)blkSize;
 - (NSString *)getAllResponseHeaders;
 @end
 

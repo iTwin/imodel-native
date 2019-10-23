@@ -31,8 +31,8 @@ def generatePackageForPlatform(packageDir, productDir, nodeOS, nodeCPU, packageV
     # The real name of the package is inside the package.json file.
     outputpackagename = 'imodeljs-' + nodeOS + '-' + nodeCPU
     outputpackagedir = os.path.join(packageDir, outputpackagename)
-
-    srcpackagefile = os.path.join(sourceDir, "package.json.template")
+    pkgtemplatedir = os.path.dirname(os.path.abspath(__file__))
+    srcpackagefile = os.path.join(pkgtemplatedir, "package.json.template")
     dstpackagefile = os.path.join(outputpackagedir, 'package.json')
     dstaddondir = os.path.join(outputpackagedir, 'addon')
 

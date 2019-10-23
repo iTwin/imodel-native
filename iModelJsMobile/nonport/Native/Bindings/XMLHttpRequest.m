@@ -22,21 +22,50 @@
     NSURLSessionTask *_task;
     bool _aborted;
     NSString* _downloadFile;
+    NSString* _uploadFile;
     NSError *_error;
+    
+    JSManagedValue* _onload;
+    JSManagedValue* _onerror;
+    JSManagedValue* _onreadystatechange;
+    JSManagedValue* _withCredentials;
+
 };
+-(void)setWithCredentials:(JSValue *)withCredentials {
+    _withCredentials = [JSManagedValue managedValueWithValue:withCredentials];
+    [[[JSContext currentContext] virtualMachine] addManagedReference:_withCredentials withOwner:self];
+}
+-(JSValue*)withCredentials { return _withCredentials.value; }
+
+
+-(void)setOnload:(JSValue *)onload {
+    _onload = [JSManagedValue managedValueWithValue:onload];
+    [[[JSContext currentContext] virtualMachine] addManagedReference:_onload withOwner:self];
+}
+-(JSValue*)onload { return _onload.value; }
+
+-(void)setOnerror:(JSValue *)onerror {
+    _onerror = [JSManagedValue managedValueWithValue:onerror];
+    [[[JSContext currentContext] virtualMachine] addManagedReference:_onerror withOwner:self];
+}
+-(JSValue*)onerror { return _onerror.value; }
+
+-(void)setOnreadystatechange:(JSValue *)onreadystatechange {
+    _onreadystatechange = [JSManagedValue managedValueWithValue:onreadystatechange];
+    [[[JSContext currentContext] virtualMachine] addManagedReference:_onreadystatechange withOwner:self];
+}
+-(JSValue*)onreadystatechange { return _onreadystatechange.value; }
 
 @synthesize response;
 @synthesize responseText;
 @synthesize responseType;
-@synthesize onreadystatechange;
 @synthesize readyState;
-@synthesize onload;
-@synthesize onerror;
 @synthesize status;
 @synthesize statusText;
 @synthesize ontimeout;
 @synthesize responseURL;
 @synthesize timeout;
+// @synthesize withCredentials;
 
 - (instancetype)init {
     // UrlCache
@@ -55,8 +84,9 @@
     [configuration setHTTPCookieStorage:cookieStorage];
     */
     NSURLSessionConfiguration* configuration = NSURLSessionConfiguration.defaultSessionConfiguration;
-    configuration.timeoutIntervalForRequest = 30.0;
-    configuration.timeoutIntervalForResource = 60.0;
+    configuration.timeoutIntervalForRequest = 500.0;
+    configuration.HTTPMaximumConnectionsPerHost = 8;
+    // configuration.timeoutIntervalForResource = 600.0;
     return [self initWithURLSession:[NSURLSession sessionWithConfiguration:configuration]];
     // return [self initWithURLSession:[NSURLSession sessionWithConfiguration:NSURLSessionConfiguration.defaultSessionConfiguration]];
 }
@@ -109,7 +139,7 @@
 }
 
 - (void) open:(JSValue*)method :(JSValue*)url :(JSValue*)async :(JSValue*)user :(JSValue*)password {
-    NSLog(@"open: %@", url.toString);
+    NSLog(@"open: %@ %@", method.toString, url.toString);
     if (_task) {
         [_ctx setException:[JSValue valueWithNewErrorFromMessage:@"there is already a send() in progress" inContext:_ctx]];
         return;
@@ -117,7 +147,8 @@
     _password =  [password isUndefined]? NULL : [password toString];
     _user =  [user isUndefined]? NULL : [user toString];
     _async =  [async isUndefined]? true : [async toBool];
-    _url =  [url isUndefined]? NULL : [NSURL URLWithString:[url toString]];
+     NSString *unescaped = [[url toString] stringByReplacingOccurrencesOfString:@" " withString:@"%20"];
+    _url =  [url isUndefined]? NULL : [NSURL URLWithString:unescaped];
     _method =  [method isUndefined]? NULL : [method toString];
     _error = NULL;
     if (!_url) {
@@ -143,14 +174,99 @@
     _responseHeaders = responseHeaders;
 }
 
+- (void)uploadChunk: (NSString*)fileName :(JSValue*)blkNo :(JSValue*)blkSize {
+    _aborted = false;
+    _error = nil;
+    _uploadFile  = fileName;
+    size_t blockNo = [blkNo toUInt32];
+    size_t blockSize = [blkSize toUInt32];
+    NSData* blockData = [self dataWithContentsOfFile:_uploadFile atOffset:blockNo*blockSize withSize:blockSize];
+    if (!blockData) {
+        self.status = [NSNumber  numberWithInt:200];
+        if (self.onerror != nil) {
+            [self.onerror callWithArguments:@[]];
+        }
+        NSLog(@"[XHR] DOES NOT EXISTS URL: %@,  PATH: %@", _url.absoluteString, _uploadFile);
+        return;
+    }
+    
+    
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:_url
+                                        cachePolicy:NSURLRequestUseProtocolCachePolicy
+                                        timeoutInterval:500.0];
+   for (NSString *name in _requestHeaders) {
+       [request setValue:_requestHeaders[name] forHTTPHeaderField:name];
+   }
+       
+   NSLog(@"[XHR] UPLOADING %@ ", _url.absoluteString);
+   [request setHTTPMethod:_method];
+   __block __weak typeof(self) weakSelf = self;
+   id completionHandler = ^(NSData *data, NSURLResponse *response, NSError *error){
+           if (error) {
+               _error = error;
+               if (weakSelf.onerror != nil) {
+                   [weakSelf.onerror callWithArguments:@[]];
+               }
+               NSLog(@"[XHR] ERROR uploadingTaskWithRequest failed: %@", error);
+               return;
+           }
+           
+       weakSelf.status = [NSNumber  numberWithInt:200];
+       if (weakSelf.onreadystatechange != nil) {
+           [weakSelf.onreadystatechange callWithArguments:@[]];
+       }
+       if (weakSelf.onload != nil) {
+           [weakSelf.onload callWithArguments:@[]];
+       }
+   };
+ 
+    _task = [_urlSession uploadTaskWithRequest:request fromData:blockData
+                        completionHandler:completionHandler];
+   [_task resume];
+}
+
+- (NSData *) dataWithContentsOfFile:(NSString *)path atOffset:(off_t)offset withSize:(size_t)bytes {
+    FILE *file = fopen([path UTF8String], "rb");
+    if(file == NULL)
+        return nil;
+
+    void *data = malloc(bytes);  // check for NULL!
+    fseeko(file, offset, SEEK_SET);
+    size_t nread = fread(data, 1, bytes, file);  // check return value, in case read was short!
+    if (nread == 0) {
+        fclose(file);
+        return nil;
+    }
+    if(nread < bytes) {
+      data = realloc(data, nread);
+    }
+    fclose(file);
+    // NSData takes ownership and will call free(data) when it's released
+    return [NSData dataWithBytesNoCopy:data length:nread];
+}
+
 - (void)downloadFile:(NSString*)fileName {
     _downloadFile  = fileName;
     _aborted = false;
     _error = nil;
-    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:_url];
+    
+    bool exists = [[NSFileManager defaultManager] fileExistsAtPath:_downloadFile];
+    if (exists) {
+        self.status = [NSNumber  numberWithInt:200];
+        if (self.onerror != nil) {
+            [self.onerror callWithArguments:@[]];
+        }
+        NSLog(@"[XHR] EXISTS URL: %@,  PATH: %@", _url.absoluteString, _downloadFile);
+        return;
+    }
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:_url
+                                     cachePolicy:NSURLRequestUseProtocolCachePolicy
+                                     timeoutInterval:500.0];
     for (NSString *name in _requestHeaders) {
         [request setValue:_requestHeaders[name] forHTTPHeaderField:name];
     }
+    
+    NSLog(@"[XHR] DOWNLOADING %@ ", _url.absoluteString);
     [request setHTTPMethod:_method];
     __block __weak typeof(self) weakSelf = self;
     __block typeof(_downloadFile) fileUrl = _downloadFile;
@@ -160,7 +276,7 @@
             if (weakSelf.onerror != nil) {
                 [weakSelf.onerror callWithArguments:@[]];
             }
-            NSLog(@"downloadTaskWithRequest failed: %@", error);
+            NSLog(@"[XHR] ERROR downloadTaskWithRequest failed: %@", error);
             return;
         }
         
@@ -172,7 +288,7 @@
             if (weakSelf.onerror != nil) {
                 [weakSelf.onerror callWithArguments:@[]];
             }
-            NSLog(@"moveItemAtURL failed: %@", moveError);
+            NSLog(@"[XHR] ERROR moveItemAtURL failed: %@", moveError);
             return;
         }
         NSLog(@"[XHR] DOWNLOADED %@ ", location.absoluteString);
@@ -193,12 +309,13 @@
 }
 - (void)completionHandlerEx:(NSData*)receivedData :(NSURLResponse*)clientResponse :(NSError*)error {
  NSLog(@"complete: %@", _url.absoluteString);
+        if (_semaphore) {
+            dispatch_semaphore_signal(_semaphore);
+        }
         if (error) {
             _error = error;
             NSLog(@"Error1: %@   %@", _url.absoluteString , error.description);
-            if (_semaphore) {              
-                dispatch_semaphore_signal(_semaphore);
-            }
+    
             return;
         }
         NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *) clientResponse;
@@ -206,9 +323,12 @@
         self.readyState = @(DONE); // TODO
         self.status = @(httpResponse.statusCode);
         self.statusText = [NSString stringWithFormat:@"%ld",httpResponse.statusCode];
-        if ([httpResponse statusCode] != 200 /*OK*/ || error != NULL) {
+        if (error != NULL) {
             if (self.onerror != nil) {
                 [self.onerror callWithArguments:@[]];
+            }
+            if (self.onreadystatechange != nil ) {
+                [self.onreadystatechange callWithArguments:@[]];
             }
             if (error) {
                 NSLog(@"Error: %@", [error description]);
@@ -259,28 +379,61 @@
             self.responseText = [[NSString alloc] initWithData:receivedData
                                                           encoding:NSUTF8StringEncoding];
         }
-        
-        // Call this before onreadystatechange or we would have deadlock
-        if (_semaphore) {
-            dispatch_semaphore_signal(_semaphore);
-        }
+
         if (self.onreadystatechange != nil && !_aborted) {
             [self.onreadystatechange callWithArguments:@[]];
         }
         if (self.onload != nil && ! !_aborted) {
             [self.onload callWithArguments:@[]];
         }
-}  
+}
+- (NSString *)base64String:(NSString *)str
+{
+    NSData *theData = [str dataUsingEncoding: NSASCIIStringEncoding];
+    const uint8_t* input = (const uint8_t*)[theData bytes];
+    NSInteger length = [theData length];
+
+    static char table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+
+    NSMutableData* data = [NSMutableData dataWithLength:((length + 2) / 3) * 4];
+    uint8_t* output = (uint8_t*)data.mutableBytes;
+
+    NSInteger i;
+    for (i=0; i < length; i += 3) {
+        NSInteger value = 0;
+        NSInteger j;
+        for (j = i; j < (i + 3); j++) {
+            value <<= 8;
+
+            if (j < length) {
+                value |= (0xFF & input[j]);
+            }
+        }
+
+        NSInteger theIndex = (i / 3) * 4;
+        output[theIndex + 0] =                    table[(value >> 18) & 0x3F];
+        output[theIndex + 1] =                    table[(value >> 12) & 0x3F];
+        output[theIndex + 2] = (i + 1) < length ? table[(value >> 6)  & 0x3F] : '=';
+        output[theIndex + 3] = (i + 2) < length ? table[(value >> 0)  & 0x3F] : '=';
+    }
+
+    return [[NSString alloc] initWithData:data encoding:NSASCIIStringEncoding];
+}
 - (void)send:(JSValue*)data {
     _aborted = false;
     _error = nil;
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:_url];
+    if (_user) {
+        NSString *authStr = [NSString stringWithFormat:@"%@:%@", _user, _password];
+        NSString *authValue = [NSString stringWithFormat:@"Basic %@", [self base64String: authStr]];
+        [request setValue:authValue forHTTPHeaderField:@"Authorization"];
+    }
     for (NSString *name in _requestHeaders) {
         [request setValue:_requestHeaders[name] forHTTPHeaderField:name];
     }
-
+    NSLog(@"DATA %@", data.toString);
     if ([data isString]) {
-        request.HTTPBody = [[data toString] dataUsingEncoding:NSUTF8StringEncoding];
+        request.HTTPBody =  [[data toString] dataUsingEncoding:NSUTF8StringEncoding];
     }
     else if ([data isUndefined]) {
 
@@ -300,7 +453,14 @@
     }
 
     [request setHTTPMethod:_method];
-
+    //debug
+    //allHTTPHeaderFields
+    /*
+    for (NSString *name in request.allHTTPHeaderFields) {
+        NSLog(@"REQ %@ : %@", name, request.allHTTPHeaderFields[name]);
+    }
+*/
+    
     // application/octet-stream arrayBuffer
     // application/json         json
     // application/xml
@@ -338,6 +498,7 @@
 }
 
 - (void)overrideMimeType:(NSString *)mimeType {
+    NSLog(@"Mime Type override : %@", mimeType);
 }
 - (NSString *)getAllResponseHeaders {
     NSMutableString *responseHeaders = [NSMutableString new];
