@@ -15,22 +15,22 @@
  * The TIFF spec specifies that encoded bit
  * strings range from 9 to 12 bits.
  */
-#define    LZW_BITS_MIN    9        // start with 9 bits
-#define    LZW_BITS_MAX    12        // max of 12 bit strings
+constexpr int32_t    LZW_BITS_MIN = 9;        // start with 9 bits
+constexpr int32_t    LZW_BITS_MAX = 12;       // max of 12 bit strings
 
-#define LZW_MAXCODE(n)    ((1L<<(n))-1)
+constexpr int32_t LZW_MAXCODE(int32_t n) { return ((1L << (n)) - 1); }
 
 // predefined codes
-#define    LZW_CODE_CLEAR    256        // code to clear string table
-#define    LZW_CODE_EOI    257        // end-of-information code
-#define LZW_CODE_FIRST    258        // first free code entry
-#define    LZW_CODE_MAX    LZW_MAXCODE(LZW_BITS_MAX)
-#define    LZW_HASH_SHIFT    (13-8)
+constexpr int32_t    LZW_CODE_CLEAR = 256;        // code to clear string table
+constexpr int32_t    LZW_CODE_EOI = 257;        // end-of-information code
+constexpr int32_t    LZW_CODE_FIRST = 258;        // first free code entry
+constexpr int32_t    LZW_CODE_MAX = LZW_MAXCODE(LZW_BITS_MAX);
+constexpr int32_t    LZW_HASH_SHIFT = 13 - 8;
 
-#define LZW_TABLE_SIZE    (LZW_MAXCODE(LZW_BITS_MAX)+1L)
+constexpr int32_t    LZW_TABLE_SIZE = LZW_MAXCODE(LZW_BITS_MAX) + 1L;
 
-#define LZW_CHECK_GAP    10000        // enc_ratio check interval
-#define    LZW_HASH_SIZE    9001L        // 91% occupancy
+constexpr int32_t    LZW_CHECK_GAP = 10000;        // enc_ratio check interval
+constexpr int32_t    LZW_HASH_SIZE = 9001L;        // 91% occupancy
 
 BEGIN_IMAGEPP_NAMESPACE
 

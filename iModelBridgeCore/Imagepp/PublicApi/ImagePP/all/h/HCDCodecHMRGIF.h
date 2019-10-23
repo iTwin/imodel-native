@@ -135,6 +135,7 @@ private:
 
     Byte m_BitsPerPixel;
 
+    bool  m_tableIsValid;
     int16_t m_BytesUnread;
     int16_t m_MaxCode;
     int16_t m_CodeSize;

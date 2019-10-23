@@ -18,8 +18,6 @@
 HCDLZWDecoder::HCDLZWDecoder()
     {
     m_pPrefixCode  = new int32_t[LZW_TABLE_SIZE * sizeof(int32_t)];
-    m_pSecondByte  = new Byte[LZW_TABLE_SIZE];
-    m_pDecodeStack = new Byte[LZW_TABLE_SIZE];
 
     m_BitCount    = 0;
     m_BitBuffer   = 0;
@@ -45,8 +43,6 @@ HCDLZWDecoder::HCDLZWDecoder()
 HCDLZWDecoder::~HCDLZWDecoder()
     {
     delete []m_pPrefixCode;
-    delete []m_pSecondByte;
-    delete []m_pDecodeStack;
 
     LZW_DEBUG_TRACE(delete m_pfile;)
     }
@@ -93,8 +89,11 @@ Byte* HCDLZWDecoder::DecodeStack(Byte* pi_pStackBottom, int32_t pi_Code)
     {
     while( pi_Code > (LZW_CODE_CLEAR - 1) )
         {
-        HASSERT(pi_Code < LZW_TABLE_SIZE);
-        HASSERT(pi_pStackBottom <= &m_pDecodeStack[LZW_TABLE_SIZE-1]);
+        if (pi_Code >= LZW_TABLE_SIZE || pi_pStackBottom > &m_pDecodeStack[LZW_TABLE_SIZE - 1])
+            {
+            return pi_pStackBottom;
+            }
+
         *pi_pStackBottom++ = m_pSecondByte[pi_Code];
 
         HASSERT(m_pPrefixCode[pi_Code] != pi_Code);     // infinite loop

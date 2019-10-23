@@ -52,8 +52,8 @@ private:
 #endif
 
     int32_t* m_pPrefixCode;
-    Byte* m_pSecondByte;
-    Byte* m_pDecodeStack;
+    Byte m_pSecondByte[LZW_TABLE_SIZE];
+    Byte m_pDecodeStack[LZW_TABLE_SIZE];
     int32_t m_NumBits;
     int32_t m_MaxCode;
 

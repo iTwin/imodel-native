@@ -63,6 +63,7 @@ HCDCodecHMRGIF::HCDCodecHMRGIF(const HCDCodecHMRGIF& pi_rObj)
     m_FirstFree    = pi_rObj.m_FirstFree;
     m_BitOffset    = pi_rObj.m_BitOffset;
     m_FreeCode     = pi_rObj.m_FreeCode;
+    m_tableIsValid = pi_rObj.m_tableIsValid;
 
     m_CodeBufferSize = pi_rObj.m_CodeBufferSize;
     if (m_CodeBufferSize != 0)
@@ -384,6 +385,8 @@ size_t HCDCodecHMRGIF::DecompressSubset(const  void* pi_pInData,
             }
         }
 
+    Status = m_tableIsValid;
+
     while(Status && OutDataBufferPos < GetSubsetWidth())
         {
         if ((m_DecompresionStruct.Code = ReadCode((Byte*)pi_pInData, InDataBufferPos, pi_InDataSize)) != m_EofCode)
@@ -531,6 +534,8 @@ void HCDCodecHMRGIF::InitTable(int16_t pi_MinCodeSize)
         for (uint16_t i = 0; i < TABLE_SIZE; i++)
             m_pCodeTableCompress[i].code_id = 0;
         }
+
+    m_tableIsValid = true;
     }
 
 
@@ -805,4 +810,6 @@ void HCDCodecHMRGIF::InitObject()
     m_BufferDataForNextBlockPos = 0;
     m_BufferDataForNextBlockSize = 0;
     m_pBufferDataForNextBlock = 0;
+
+    m_tableIsValid = false;
     }
