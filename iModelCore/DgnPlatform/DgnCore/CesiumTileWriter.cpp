@@ -319,6 +319,7 @@ struct CesiumTilesetPublisher: Cesium::ICesiumPublisher
 {
 public:
     CesiumTilesetPublisher(Utf8StringCR inputFileName, BeFileName outputFileName, BeFileNameCR outputDirectory, TransformCR dbToEcef) : m_inputFileName(inputFileName), m_outputFileName(outputFileName), m_outputDirectory(outputDirectory), m_dbToEcef(dbToEcef) { }
+    size_t GetMaxTileSetTileCount() { return 500; }
 protected:
     BeFileName      m_outputDirectory;
     BeFileName      m_outputFileName;
@@ -904,6 +905,24 @@ void CesiumTilesetPublisher::WriteBoundingVolume(Json::Value& val, DRange3dCR ra
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static size_t getPublishedTreeCount(Cesium::PublishedTileCR tile, size_t maxTreeCount) 
+    {
+    size_t  count = 1;
+
+    for (auto const& child : tile.GetChildren())
+        {
+        if (!child->GetIsEmpty() || !child->GetChildren().empty())
+            {
+            size_t  childCount = getPublishedTreeCount(*child, maxTreeCount);
+            count += childCount > maxTreeCount ? 1 : childCount;
+            }
+        }
+    return count;        
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CesiumTilesetPublisher::WriteModelMetadataTree(DRange3dR range, Json::Value& root, Cesium::PublishedTileCR tile, GeometricModelCR model)
@@ -926,18 +945,45 @@ void CesiumTilesetPublisher::WriteModelMetadataTree(DRange3dR range, Json::Value
     if (!tile.GetChildren().empty())
         {
         root[JSON_Children] = Json::arrayValue;
-
-        // Append children to this tileset.
         for (auto& childTile : tile.GetChildren())
             {
-            Json::Value         child;
-            DRange3d            childRange;
-
-            WriteModelMetadataTree (childRange, child, *childTile, model);
-            if (!childRange.IsNull())
+            if (getPublishedTreeCount(*childTile, this->GetMaxTileSetTileCount()) > this->GetMaxTileSetTileCount())
                 {
-                root[JSON_Children].append(child);
-                range.Extend (childRange);
+                Json::Value         childTileset;
+                DRange3d            childRange = DRange3d::NullRange();
+
+                childTileset["asset"]["version"] = "0.0";
+
+                auto&       childRoot = childTileset[JSON_Root];
+
+                WriteModelMetadataTree (childRange, childRoot, *childTile, model);
+                if (!childRange.IsNull())
+                    {
+                    BeFileName      tileSetName = childTile->GetTilesetName();
+                    BeFileName      relativeName(BeFileName::FileNameParts::NameAndExt, tileSetName.c_str());
+                    writeJsonToFile(tileSetName, childTileset);
+
+                    Json::Value         child;
+
+                    child[JSON_GeometricError] = childTile->GetTolerance();
+                    CesiumTilesetPublisher::WriteBoundingVolume(child, childRange);
+
+                    child[JSON_Content]["url"] = Utf8String (relativeName.c_str());
+                    root[JSON_Children].append(child);
+                    range.Extend (childRange);
+                    }
+                }
+            else                
+                {
+                Json::Value         child;
+                DRange3d            childRange;
+
+                WriteModelMetadataTree (childRange, child, *childTile, model);
+                if (!childRange.IsNull())
+                    {
+                    root[JSON_Children].append(child);
+                    range.Extend (childRange);
+                    }
                 }
             }
         }
@@ -1022,6 +1068,14 @@ BeFileName PublishedTile::GetFileName() const
     {
     BeAssert (!m_extension.empty());
     return BeFileName(nullptr, m_outputDirectory.c_str(), WString(m_name.c_str(), true).c_str(), WString(m_extension.c_str(), true).c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileName PublishedTile::GetTilesetName() const
+    {
+    return BeFileName(nullptr, m_outputDirectory.c_str(), WString(m_name.c_str(), true).c_str(), L"json");
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -390,6 +390,7 @@ public:
     void SetExtension(CharCP extension) { m_extension = extension; }
     Utf8String GetURL() const;
     BeFileName GetFileName() const;
+    BeFileName GetTilesetName() const;
 };
 
 //=======================================================================================
