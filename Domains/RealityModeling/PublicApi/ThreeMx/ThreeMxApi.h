@@ -166,7 +166,6 @@ private:
     mutable Dgn::ClipVectorCPtr             m_clip;
     mutable Dgn::ModelSpatialClassifiers    m_classifiers;
 
-    DRange3d GetSceneRange();
     SceneP Load(Dgn::Render::SystemP) const;
 
     uint32_t _GetExcessiveRefCountThreshold() const override { return 0xffff; } // tile publisher makes lots of referrents...
@@ -178,7 +177,7 @@ public:
     Dgn::Cesium::RootPtr _CreateCesiumTileTree(Dgn::Cesium::OutputR, Utf8StringCR) override;
     THREEMX_EXPORT void _OnSaveJsonProperties() override;
     THREEMX_EXPORT void _OnLoadedJsonProperties() override;
-    AxisAlignedBox3d _QueryNonElementModelRange() const override { return _QueryElementsRange(); }
+    AxisAlignedBox3d _QueryNonElementModelRange() const override; 
 
 
     //! Set the name of the scene (.3mx) file for this 3MX model. This can either be a local file name or a URL.

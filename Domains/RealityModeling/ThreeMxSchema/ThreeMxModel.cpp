@@ -213,3 +213,27 @@ void ThreeMxModel::_OnLoadedJsonProperties()
     if (!classifiers.isNull())
         m_classifiers.FromJson(classifiers);
     }
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   09/18
+//=======================================================================================
+struct NullOutput : Dgn::Cesium::Output
+{
+    virtual void _AddBatch(DRange3dCR range, Render::FeatureTable&& features) { }
+    virtual void _AddTriMesh(Render::TriMeshArgsCR) { }
+    virtual void _AddPointCloud(Render::PointCloudArgsCR) {}
+};
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                       Ray.Bentley     10/2019
+//----------------------------------------------------------------------------------------
+AxisAlignedBox3d ThreeMxModel::_QueryNonElementModelRange() const 
+    {
+    AxisAlignedBox3d    range;
+    auto                nullOutput = new NullOutput();
+
+    ScenePtr scene = new Scene(const_cast<ThreeMxModel&> (*this), m_location, m_sceneFile.c_str());
+    if (SUCCESS == scene->LoadScene(*nullOutput))
+        scene->GetLocation().Multiply(range, scene->GetRange());
+
+    return  range;
+    }
