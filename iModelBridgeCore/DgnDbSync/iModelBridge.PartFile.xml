@@ -275,19 +275,20 @@
     
     <NuGetProduct Name="iModelBridgeAssignNuget" Description="iModel Bridge Assign">
         <SubPart PartName="iModelBridgeAssignExeShim"/>
-        <SubPart PartName="iModelBridgeGetAffinityHostExeStatic"/>
-        <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
+        <SubPart PartName="__iModelBridgeGetAffinityHostForFwk"/>
         <Directories DirectoryListName="iModelBridgeAssignDirList"/>
         <Directories DirectoryListName="iModelBridgeAssignNugetDirList"/>
     </NuGetProduct>
 
     <ProductDirectoryList ListName="iModelBridgeAssignNugetDirList">
-        <ProductDirectory Name="Root"                           Path="native"/>
-        <ProductDirectory Name="Root"       LibType="Static"    Path="native"/>
-        <ProductDirectory Name="Bin"                            Path="bin" RelativeTo="Root"/>
-        <ProductDirectory Name="Bin"        LibType="Static"    Path="bin" RelativeTo="Root"/>
-        
-        <ProductDirectory Name="Assemblies" LibType="Static"    Deliver="false"/>
+        <ProductDirectory Name="Root"                                               Path="native"/>
+        <ProductDirectory Name="Root"                           LibType="Static"    Path="native"/>
+        <ProductDirectory Name="Assets"                                             Path="assets" RelativeTo="Root"/>
+        <ProductDirectory Name="Bin"                                                RelativeTo="Root"/>
+        <ProductDirectory Name="iModelBridgeGetAffinityHostExe" LibType="Static"    Path="iModelBridgeGetAffinityHost" RelativeTo="Root"/>
+        <ProductDirectory Name="VendorNotices"                                      Path="notices" RelativeTo="Root"/>
+
+        <ProductDirectory Name="Assemblies" LibType="Static" Deliver="false"/>
     </ProductDirectoryList>
 
     <Part Name="iModelBridgeAssignExeShim_Dynamic" OnlyPlatforms="x64">
@@ -333,9 +334,8 @@
 
     <Part Name="iModelBridgeGetAffinityHostExeStatic" BentleyBuildMakeFile="iModelBridge/Fwk/Registry/iModelBridgeGetAffinityHost.mke">
         <SubPart LibType="Static" PartName="BentleyDll" PartFile="iModelCore/Bentley/Bentley"/>
-        <SubPart LibType="Static" PartName="PublicApi"/>
         <Bindings>
-            <Files ProductDirectoryName="Assemblies" ProductSubDirectory="iModelBridgeGetAffinityHost">Delivery/exe/iModelBridgeGetAffinityHost$(exeext)</Files>
+            <Files ProductDirectoryName="iModelBridgeGetAffinityHostExe">Delivery/exe/iModelBridgeGetAffinityHost$(exeext)</Files>
         </Bindings>
     </Part>
 
