@@ -66,6 +66,8 @@ void            RegisterDwgDbObjectExtensions (bool beforeValidation)
     DwgDbAttributeDefinition::rxInit ();
     DwgDbBlockReference::rxInit ();
     DwgDbHatch::rxInit ();
+    DwgDb3dSolid::rxInit ();
+    DwgDbBody::rxInit ();
     DwgDbRegion::rxInit ();
     DwgDbPoint::rxInit ();
     DwgDbShape::rxInit ();
@@ -106,6 +108,7 @@ void            RegisterDwgDbObjectExtensions (bool beforeValidation)
     DwgDbXrecord::rxInit ();
 
     DwgRxObject::rxInit ();
+    DwgDbDxfFiler::rxInit ();
 
 #ifdef DWGTOOLKIT_OpenDwg
 
@@ -197,6 +200,8 @@ void            UnRegisterDwgDbObjectExtensions ()
     DwgDbBlockReference::rxUninit ();
     DwgDbHatch::rxUninit ();
     DwgDbRasterImage::rxUninit ();
+    DwgDb3dSolid::rxUninit ();
+    DwgDbBody::rxUninit ();
     DwgDbRegion::rxUninit ();
     DwgDbPoint::rxUninit ();
     DwgDbShape::rxUninit ();
@@ -238,6 +243,7 @@ void            UnRegisterDwgDbObjectExtensions ()
 
     DwgRxObject::rxUninit ();
     DwgResBuf::rxUninit ();
+    DwgDbDxfFiler::rxUninit ();
 
     DwgDbPointCloudEx::rxUninit ();
     DwgDbLight::rxUninit ();

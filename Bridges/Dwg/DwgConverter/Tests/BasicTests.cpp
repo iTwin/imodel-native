@@ -548,7 +548,7 @@ TEST_F(BasicTests, AttachXrefs)
 TEST_F(BasicTests, ChangeAndActivateLayout)
     {
     LineUpFiles(L"testlayout.bim", L"basictype.dwg", true); 
-    CheckDefaultView ("Model[basictype]");
+    CheckDefaultView (ImporterTests::BuildModelspaceModelname(m_dwgFileName));
 
     // create a host for DwgFileEditor as well as updating db:
     InitializeImporterOptions (m_dwgFileName, true);

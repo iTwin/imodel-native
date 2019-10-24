@@ -589,8 +589,7 @@ iModelBridge::CmdLineArgStatus iModelBridgeSacAdapter::ParseCommandLineArg(iMode
     if (argv[iArg] == wcsstr(argv[iArg], L"--input-gcs=") || argv[iArg] == wcsstr(argv[iArg], L"--output-gcs="))
         {
         unSupportedFwkArg(argv[iArg]);
-        Json::Value json;
-        json.From(iModelBridge::GetArgValue(argv[iArg]));
+        Json::Value json = Json::Value::From (iModelBridge::GetArgValue(argv[iArg]));
         if (json.isNull() || (BSISUCCESS != bparams.ParseJsonArgs(json, argv[iArg] == wcsstr(argv[iArg], L"--input-gcs="))))
             return iModelBridge::CmdLineArgStatus::Error;
         return iModelBridge::CmdLineArgStatus::Success;

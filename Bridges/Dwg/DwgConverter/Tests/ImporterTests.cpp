@@ -166,5 +166,6 @@ BentleyApi::WStringCR ImporterTests::GetDwgBridgeRegistryKey ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyApi::Utf8String  ImporterTests::BuildModelspaceModelname (BeFileNameCR dwgFilename)
     {
-    return Utf8PrintfString ("Model[%ls]", dwgFilename.GetFileNameWithoutExtension().c_str());
+    // apply the model naming rule from ConvertConfig.xml
+    return Utf8PrintfString ("%ls", dwgFilename.GetFileNameWithoutExtension().c_str());
     }

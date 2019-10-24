@@ -187,11 +187,11 @@ TEST_F(ImporterAppTests, BudweiserBenchmarks)
         {
         auto model = models.GetModel (entry.GetModelId());
         ASSERT_TRUE(model.IsValid());
-        if (model->GetName().EqualsI("Model[budweiser2018]"))
+        if (model->GetName().EqualsI(BuildModelspaceModelname(inFile)))
             {
             size_t  elemCount = model->MakeIterator().BuildIdList<DgnElementId>().size ();
             // PRG & firebugs do not have RealDWG registries - subtract 7 AEC objects from the total count.
-            EXPECT_GE(elemCount, 2010) << "Model[budweiser2018] should have 2010 or more elements!";
+            EXPECT_GE(elemCount, 2010) << "Model budweiser2018 should have 2010 or more elements!";
             // And each of them should have an ExternalSourceAspect
             elemCount = 0;
             for (auto aspect : DwgSourceAspects::ObjectAspectIterator(*model))
@@ -199,7 +199,7 @@ TEST_F(ImporterAppTests, BudweiserBenchmarks)
                 if (aspect.IsValid())
                     elemCount++;
                 }
-            EXPECT_GE(elemCount, 2010) << "Model[budweiser2018] should have 2010 or more ExternalSourceElements!";
+            EXPECT_GE(elemCount, 2010) << "Model budweiser2018 should have 2010 or more ExternalSourceElements!";
             }
         count++;
         }
@@ -304,5 +304,5 @@ TEST_F(ImporterAppTests, BudweiserBenchmarks)
     EXPECT_TRUE (view->IsSpatialView()) << "The default view is not a SpatialView!";
     Utf8String  name = view->GetName ();
     auto expected = BuildModelspaceModelname (inFile);
-    EXPECT_TRUE (name.EqualsI(expected.c_str())) << "The default view should be \"Model[filename]\"!";
+    EXPECT_TRUE (name.EqualsI(expected.c_str())) << "The default view should be the Model view whose comes from the filename!";
     }

@@ -65,6 +65,7 @@ public:
         static Utf8String FormatHexUInt64(uint64_t i) { return Utf8PrintfString("0x%X", i); }
         static DwgDbHandle ParseDbHandle(Utf8StringCR h) { return DwgDbHandle(BeStringUtilities::ParseHex(h.c_str())); }
         static uint64_t ParseUInt64(Utf8StringCR h) { return BeStringUtilities::ParseHex(h.c_str()); }
+        DgnElementId GetElementId () const { return iModelExternalSourceAspect::IsValid() ? iModelExternalSourceAspect::GetElementId() : DgnElementId(); }
         };  // BaseAspect
 
     //! Information about a file on disk. This struct captures the information that can be extracted from the dwg disk file itself.

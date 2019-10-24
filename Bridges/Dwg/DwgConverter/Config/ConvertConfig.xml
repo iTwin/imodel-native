@@ -9,7 +9,7 @@
         <UnspecifiedUnits units="Meters" />
         <ImportRules>
             <If name="Model">
-                <Then newName="Model[%file]"/>
+                <Then newName="%file"/>
             </If>
             <If name="Layout1">
                 <Then newName="Layout1[%file]"/>
