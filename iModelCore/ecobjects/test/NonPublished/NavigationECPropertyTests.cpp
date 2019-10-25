@@ -10,15 +10,33 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
-struct InSchemaClassLocater final : ECN::IECClassLocater
-    {
-    private:
-        ECSchemaCR m_schema;
 
-        ECClassCP _LocateClass(Utf8CP schemaName, Utf8CP className) override { return m_schema.GetClassCP(className); }
-    public:
-        explicit InSchemaClassLocater(ECSchemaCR schema) : m_schema(schema) {}
-    };
+struct ECClassLocater : IECClassLocater
+{
+    ECSchemaCR m_schema;
+    ECClassLocater(ECSchemaCR schema) : m_schema(schema) {}
+
+protected:
+    ECClassCP _LocateClass(ECClassId const& classId) override
+        {
+        auto const& ecClasses = m_schema.GetClasses();
+
+        auto const it = std::find_if(std::begin(ecClasses), std::end(ecClasses),
+            [&classId](auto const& ecClass)
+            {
+            return nullptr != ecClass && ecClass->HasId() && ecClass->GetId() == classId;
+            });
+
+        if (std::end(ecClasses) == it)
+            return nullptr;
+        return *it;
+        }
+
+    ECClassCP _LocateClass(Utf8CP schemaName, Utf8CP className) override
+        {
+        return m_schema.LookupClass(className);
+        }
+};
 
 struct NavigationECPropertyTests : ECTestFixture 
 {
@@ -918,7 +936,7 @@ void NavigationPropertyValueTests::DeserializeAndVerifyInstanceJson(ECSchemaPtr 
     {
     IECInstancePtr sourceDeserialized = sourceInstance.GetClass().GetDefaultStandaloneEnabler()->CreateInstance(0);
     ASSERT_TRUE(sourceDeserialized.IsValid());
-    InSchemaClassLocater classLocater(*schema);
+    ECClassLocater classLocater(*schema);
     BentleyStatus readStatus = JsonECInstanceConverter::JsonToECInstance(*sourceDeserialized, instanceJson, classLocater);
     ASSERT_EQ(BentleyStatus::SUCCESS, readStatus);
 
@@ -1004,7 +1022,7 @@ void NavigationPropertyValueTests::InstanceWithNavProp()
     DeserializeAndVerifyInstanceXml(schema, *sourceInstance, xmlString);
 
     Json::Value jsonValue;
-    ECClassLocatorByClassId const classLocator(schema.get());
+    ECClassLocater classLocator(*schema.get());
     StatusInt jsonWriteStatus = JsonEcInstanceWriter::WriteInstanceToJson(jsonValue, *sourceInstance, "Source", true, false, &classLocator);
     ASSERT_EQ(0, jsonWriteStatus) << "Failed to serialize an instance to Json with a nav property";
     DeserializeAndVerifyInstanceJson(schema, *sourceInstance, jsonValue["Source"]);

@@ -25,6 +25,36 @@ BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 USING_NAMESPACE_BENTLEY_EC
 
+//=======================================================================================
+// @bsistruct
+//=======================================================================================
+struct ECClassLocater : IECClassLocater
+    {
+    ECSchemaCR m_schema;
+    ECClassLocater(ECSchemaCR schema) : m_schema(schema) {}
+
+protected:
+    ECClassCP _LocateClass(ECClassId const& classId) override
+        {
+        auto const& ecClasses = m_schema.GetClasses();
+
+         auto const it = std::find_if(std::begin(ecClasses), std::end(ecClasses),
+               [&classId] (auto const& ecClass)
+                  {
+                  return nullptr != ecClass && ecClass->HasId() && ecClass->GetId() == classId;
+                  });
+
+         if (std::end(ecClasses) == it)
+               return nullptr;
+         return *it;
+        }
+
+    ECClassCP _LocateClass(Utf8CP schemaName, Utf8CP className) override
+        {
+        return m_schema.LookupClass(className);
+        }
+    };
+
 struct ECInstanceBuilder;
 
 //=======================================================================================
@@ -1249,7 +1279,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToJsonTest)
 
     // Act
 
-    ECClassLocatorByClassId classLocator(m_schema.get());
+    ECClassLocater classLocator(*m_schema.get());
 
     sourceInstance->SetValue("NavigationProperty", ECValue(BeInt64Id(13), m_relationshipClass));
 
@@ -1626,7 +1656,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToPresentationJsonTest)
 
     // Act
 
-    ECClassLocatorByClassId classLocator(m_schema.get());
+    ECClassLocater classLocator(*m_schema.get());
 
     sourceInstance->SetValue("NavigationProperty", ECValue(BeInt64Id(13), m_relationshipClass));
 
@@ -1835,7 +1865,7 @@ TEST_F(ECInstanceJsonWriterTests, WriteInstanceToSchemaJsonTest)
 
     // Act
 
-    ECClassLocatorByClassId classLocator(m_schema.get());
+    ECClassLocater classLocator(*m_schema.get());
 
     sourceInstance->SetValue("NavigationProperty", ECValue(BeInt64Id(13)));
 
