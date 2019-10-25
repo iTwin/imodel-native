@@ -32,7 +32,7 @@
 
     <!--<Part Name="ScalableMesh" BMakeFile="ScalableMesh.mke" ApiNumber="M02" BMakeOptions="+dENABLE_COMPILER_ANALYZE=1 +dSECURITY_ONLY_COMPILER_ANALYZE=1">-->
       <Part Name="ScalableMesh" BentleyBuildMakeFile="ScalableMesh.mke" ApiNumber="M02">
-        <SubPart PartName="DgnPlatformDll"   PartFile="iModelCore/DgnPlatform/DgnPlatform"                          Repository="imodel02" />
+        <SubPart PartName="DgnPlatformDLL"   PartFile="iModelCore/DgnPlatform/DgnPlatform"                          Repository="imodel02" />
         <!--<SubPart PartName="TilePublisherLib" PartFile="iModelCore/DgnPlatform/DgnPlatform"                          Repository="imodel02"/>-->
         <!--<SubPart PartName="PCLWrapper" />
         <SubPart PartName="EigenAPI"        PartFile="pcl"                                  Repository="Libsrc-Pcl"/>   -->  
@@ -72,7 +72,7 @@
 
     <!--<Part Name="ScalableMesh" BMakeFile="ScalableMesh.mke" ApiNumber="G" BMakeOptions="+dENABLE_COMPILER_ANALYZE=1 +dSECURITY_ONLY_COMPILER_ANALYZE=1">-->
     <Part Name="ScalableMesh_DgnDb06" BMakeFile="ScalableMesh_DgnDb06.mke" ApiNumber="G">
-        <SubPart PartName="DgnPlatformDll"   PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
+        <SubPart PartName="DgnPlatformDLL"   PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
         <!--<SubPart PartName="TilePublisherLib" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>-->
         <!--<SubPart PartName="PCLWrapper" />
         <SubPart PartName="EigenAPI"        PartFile="pcl"                                  Repository="Libsrc-Pcl"/>   -->
@@ -111,7 +111,7 @@
 
     <Part Name="ScalableMeshCore" BentleyBuildMakeFile="ScalableMeshCore.mke" ApiNumber="M02">
         
-        <SubPart PartName="DgnPlatformDll"  PartFile="iModelCore/DgnPlatform/DgnPlatform"                   Repository="imodel02" />
+        <SubPart PartName="DgnPlatformDLL"  PartFile="iModelCore/DgnPlatform/DgnPlatform"                   Repository="imodel02" />
         <SubPart PartName="GeomDlls"        PartFile="iModelCore/GeomLibs/geomlibs"                         Repository="imodel02"/>
         <SubPart PartName="ImagePP"         PartFile="iModelBridgeCore/Imagepp/ImagePP"                     Repository="imodel02" />
         <SubPart PartName="Core"            PartFile="iModelBridgeCore/TerrainModel/TerrainModelDgnDb"      Repository="imodel02"/>
@@ -213,7 +213,7 @@
     </Part>
 
     <Part Name="ScalableMeshCoreLib" >
-        <SubPart PartName="DgnPlatformDll"  PartFile="iModelCore/DgnPlatform/DgnPlatform"                   Repository="imodel02" />
+        <SubPart PartName="DgnPlatformDLL"  PartFile="iModelCore/DgnPlatform/DgnPlatform"                   Repository="imodel02" />
         <SubPart PartName="GeomDlls"        PartFile="iModelCore/GeomLibs/geomlibs"                         Repository="imodel02" />
         <SubPart PartName="ImagePP"         PartFile="iModelBridgeCore/Imagepp/ImagePP"                     Repository="imodel02" />
         <SubPart PartName="CoreStatic"      PartFile="iModelBridgeCore/TerrainModel/TerrainModelDgnDb"      Repository="imodel02" />
@@ -392,7 +392,7 @@
         <SubPart PartName="ScalableTerrainModel" PartFile="iModelBridgeCore/TerrainModel/TerrainModelDgnDb" Repository="imodel02" />     
         <SubPart PartName="ScalableMeshElement" PartFile="DgnDisplay" Repository="DgnDisplay"/>		
         <SubPart PartName="PublicAPI"   PartFile="iModelCore/GeomLibs/geomlibs"    Repository="imodel02"/>
-        <SubPart PartName="DgnPlatformDll" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
+        <SubPart PartName="DgnPlatformDLL" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
         <SubPart PartName="PSolidCore" PartFile="DgnDisplay" Repository="DgnDisplay" />
         <SubPart PartName="RasterCore" PartFile="DgnDisplay" Repository="DgnDisplay"/>
         <SubPart PartName="PSolidAcisInterop" PartFile="DgnDisplay" Repository="DgnDisplay" />
@@ -656,21 +656,21 @@
     
     <Product Name="ScalableMeshATP" SaveProduct="true" >
         <SubPart PartName="ScalableMeshATPexe" />
-        <SubPart PartName="DgnPlatformDll" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>        
+        <SubPart PartName="DgnPlatformDLL" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>        
         <Directories DirectoryListName="DgnPlatformDirList" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02" />        
         <Directories DirectoryListName="ScalableMeshATP" />        
     </Product>
 
     <Product Name="ScalableMeshATP_DgnDb06" SaveProduct="true" >
         <SubPart PartName="ScalableMeshATPexe_DgnDb06" />
-        <SubPart PartName="DgnPlatformDll" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
+        <SubPart PartName="DgnPlatformDLL" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
         <Directories DirectoryListName="DgnPlatformDirList" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
         <Directories DirectoryListName="ScalableMeshATP_DgnDb06" />
     </Product>
 
     <Product Name="ScalableMeshWorker" SaveProduct="true" >
         <SubPart PartName="ScalableMeshWorkerExe" />
-        <SubPart PartName="DgnPlatformDll" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
+        <SubPart PartName="DgnPlatformDLL" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
         <Directories DirectoryListName="DgnPlatformDirList" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02" />
         <Directories DirectoryListName="ScalableMeshATP" />
     </Product>
@@ -678,7 +678,7 @@
     <Product Name="ScalableMeshLumenSdk" SaveProduct="true" >        
         <SubPart PartName="ScalableMesh"  PartFile="iModelBridgeCore/ScalableMesh/ScalableMesh" Repository="imodel02" />
         <SubPart PartName="RasterSchema"            PartFile="Domains/RealityModeling/RealityModeling"          Repository="imodel02" />        
-        <SubPart PartName="DgnPlatformDll" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>        
+        <SubPart PartName="DgnPlatformDLL" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>        
         <SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
         <Directories DirectoryListName="DgnPlatform" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02" />        
         <Directories DirectoryListName="ScalableMeshLumenSdk" />        
@@ -688,7 +688,7 @@
     <Product Name="ScalableMeshLumenSdk_DgnDb06" SaveProduct="true" >
         <SubPart PartName="ScalableMesh_DgnDb06"  PartFile="iModelBridgeCore/ScalableMesh/ScalableMesh"/>
         <SubPart PartName="RasterSchema"            PartFile="Domains/RealityModeling/RealityModeling"/>
-        <SubPart PartName="DgnPlatformDll" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
+        <SubPart PartName="DgnPlatformDLL" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
         <SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
         <Directories DirectoryListName="DgnPlatform" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
         <Directories DirectoryListName="ScalableMeshLumenSdk_DgnDb06" />

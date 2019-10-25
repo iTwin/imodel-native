@@ -5,7 +5,7 @@
 <!--        <SubPart PartName="Ustation"            PartFile="PowerPlatform"     Repository="MstnPlatform" /> -->
 
     <Part Name="ElementHandler" BMakeFile="elementhandler\handler\handler.mke">
-        <SubPart PartName="DgnPlatformDll" PartFile="iModelCore/DgnPlatform/DgnPlatform"     Repository="imodel02" />
+        <SubPart PartName="DgnPlatformDLL" PartFile="iModelCore/DgnPlatform/DgnPlatform"     Repository="imodel02" />
         <SubPart PartName="DgnView"     PartFile="DgnDisplay"      Repository="DgnDisplay" />
         <SubPart PartName="Core"        PartFile="iModelBridgeCore/TerrainModel/TerrainModel" />
         <SubPart PartName="DgnGeoCoord" PartFile="iModelCore/GeoCoord/GeoCoord"        Repository="imodel02" />

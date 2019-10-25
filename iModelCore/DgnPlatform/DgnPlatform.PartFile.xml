@@ -300,7 +300,7 @@
     <Part Name="L10N-DgnPlatformXliffs-en" OnlyPlatforms="x64"
         BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/PushXliffsFromBuild.mke"
         BentleyBuildMakeOptions="-dBUILD_XLIFF_DIRECTORY=$(OutputRootDir)BuildContexts/DgnPlatform/Delivery/xliffs/ -dL10N_XLIFF_DIRECTORY=$(SrcRoot)l10n/l10n-DgnPlatform/ -dL10N_XLIFF_LANG_DIRECTORY=en">
-        <SubPart PartName="DgnPlatformDll"/>
+        <SubPart PartName="DgnPlatformDLL"/>
     </Part>
 
     <!-- Translated Xliffs are linked into the BuildContext here -->
@@ -724,7 +724,7 @@
     </Part>
 
     <Part Name="iModelConsoleExe" DeferType="BuildSamples" BentleyBuildMakeFile="iModelConsole/iModelConsole.mke" >
-        <SubPart PartName="DgnPlatformDll"/>
+        <SubPart PartName="DgnPlatformDLL"/>
         <SubPart PartName="DgnPlatformSqlang"/>
         <SubPart PartName="napi-stub"  Repository="imodel02" PartFile="node-addon-api/node-addon-api"/>
         <Bindings>

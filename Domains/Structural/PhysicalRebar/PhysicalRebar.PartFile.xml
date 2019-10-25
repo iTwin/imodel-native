@@ -4,7 +4,7 @@
 
     <Part Name="PhysicalRebar" BentleyBuildMakeFile="PhysicalRebar.mke">
         <SubPart PartName="PublicAPI" />
-        <SubPart PartName="DgnPlatformDll"  PartFile="iModelCore/DgnPlatform/DgnPlatform"  Repository="imodel02" />
+        <SubPart PartName="DgnPlatformDLL"  PartFile="iModelCore/DgnPlatform/DgnPlatform"  Repository="imodel02" />
         <Bindings>
             <Libs Required="false">Delivery/$(libprefix)PhysicalRebar$(libext)</Libs>
             <Assemblies Required="false">Delivery/$(shlibprefix)PhysicalRebar$(shlibext)</Assemblies>

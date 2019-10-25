@@ -27,7 +27,7 @@ Components = {'BeHttp':             {'dll': 'BeHttpM02.dll', 'exe': 'BeHttpTest'
                                      'product': 'BeSQLite-Gtest'},
               'DgnPlatform':        {'dll': 'DgnPlatformM02.dll', 'exe': 'DgnPlatformTest',
                                      'ignore':['iModelCore', 'DgnPlatform','Tests','DgnProject'],
-                                     'pdb': ['DgnPlatform', 'DgnPlatformDll', 'DgnPlatform'],
+                                     'pdb': ['DgnPlatform', 'DgnPlatformDLL', 'DgnPlatform'],
                                      'owner': 'Ramanujam Raman',
                                      'product': 'DgnPlatform-Gtest'},
               'ECDb':               {'dll': 'BeSQLiteECM02.dll', 'exe': 'ECDbTest',

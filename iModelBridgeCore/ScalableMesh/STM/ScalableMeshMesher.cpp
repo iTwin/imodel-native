@@ -247,37 +247,6 @@ void circumcircle(DPoint3d& center, double& radius, const DPoint3d* triangle)
     radius = sqrt(detR / det + DPoint3d::From(det1, det2, 0).MagnitudeSquaredXY() / (det*det));
     }
 
-#ifndef __BENTLEYSTM_BUILD__ 
-template<typename T> inline size_t GetSizeInMemory(T* item)
-{
-    return sizeof(T);
-}
-
-
-template<> inline size_t GetSizeInMemory<MTGGraph>(MTGGraph* item)
-{
-    size_t count = 0;
-    count += sizeof(*item);
-    count += (sizeof(MTGLabelMask) + 2 * sizeof(int))*item->GetLabelCount();
-    count += sizeof(MTG_Node)*item->GetNodeIdCount();
-    count += sizeof(int)*item->GetNodeIdCount()* item->GetLabelCount();
-    return count;
-}
-
-template<> inline size_t GetSizeInMemory<DifferenceSet>(DifferenceSet* item)
-{
-    size_t count = sizeof(item) + item->addedFaces.size() * sizeof(DPoint3d) + item->addedVertices.size() * sizeof(int32_t) +
-        item->removedFaces.size() * sizeof(int32_t) + item->removedVertices.size() * sizeof(int32_t) + item->addedUvIndices.size() * sizeof(int32_t) +
-        item->addedUvs.size() * sizeof(DPoint2d);
-    return count;
-}
-
-template<> inline size_t GetSizeInMemory<BcDTMPtr>(BcDTMPtr* item)
-{
-    size_t count = (item->get() == nullptr ? 0 : ((*item)->GetTinHandle() == nullptr ? 0 : sizeof(BC_DTM_OBJ) + (*item)->GetPointCount() *(sizeof(DPoint3d) + sizeof(DTM_TIN_NODE) + sizeof(DTM_CIR_LIST) * 6)));
-    return count;
-}
-#endif
 static bool s_passNormal = false;
 
 int draw(DTMFeatureType dtmFeatureType, int numTriangles, int numMeshPts, DPoint3d *meshPtsP, DPoint3d *meshVectorsP, int numMeshFaces, long *meshFacesP, void *userP)

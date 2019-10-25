@@ -17,7 +17,7 @@
         <SubPart PartName="ScalableMeshCoreStaticLinux" PartFile="iModelBridgeCore/ScalableMesh/ScalableMesh" LibType="Static"/>
         <SubPart PartName="ImagePP"         PartFile="iModelBridgeCore/Imagepp/ImagePP"                       LibType="Static"/>
         <SubPart PartName="Core"            PartFile="iModelBridgeCore/TerrainModel/TerrainModelDgnDb"        LibType="Static"/>
-        <SubPart PartName="DgnPlatformDll"  PartFile="iModelCore/DgnPlatform/DgnPlatform"                     LibType="Static"/>
+        <SubPart PartName="DgnPlatformDLL"  PartFile="iModelCore/DgnPlatform/DgnPlatform"                     LibType="Static"/>
         <SubPart PartName="DgnView"         PartFile="DgnDisplay"               Repository="DgnDisplay"       LibType="Static"/>
         <Bindings>
             <Assemblies>Delivery/$(shlibprefix)ScalableMeshSchema$(ApiNumber)$(shlibext)</Assemblies>
@@ -29,7 +29,7 @@
         <SubPart PartName="ScalableMeshSchemaPublicAPI"/>
         <SubPart PartName="ImagePP"         PartFile="iModelBridgeCore/Imagepp/ImagePP"      Repository="imodel02" />
         <SubPart PartName="Core"         PartFile="iModelBridgeCore/TerrainModel/TerrainModelDgnDb"      Repository="imodel02" />
-        <SubPart PartName="DgnPlatformDll"  PartFile="iModelCore/DgnPlatform/DgnPlatform"         Repository="imodel02" />
+        <SubPart PartName="DgnPlatformDLL"  PartFile="iModelCore/DgnPlatform/DgnPlatform"         Repository="imodel02" />
         <SubPart PartName="ScalableMesh"    PartFile="iModelBridgeCore/ScalableMesh/ScalableMesh"        Repository="imodel02" />
         
         <Bindings>
@@ -52,7 +52,7 @@
         <SubPart PartName="PointCloudPublicAPI"/>
         <SubPart PartName="BePointCloud" PartFile="iModelBridgeCore/Pointools/BePointCloud/BePointCloud" Repository="imodel02" />
         <SubPart PartName="BentleyDll"      PartFile="iModelCore/Bentley/Bentley"      Repository="imodel02" />
-        <SubPart PartName="DgnPlatformDll"  PartFile="iModelCore/DgnPlatform/DgnPlatform"  Repository="imodel02" />
+        <SubPart PartName="DgnPlatformDLL"  PartFile="iModelCore/DgnPlatform/DgnPlatform"  Repository="imodel02" />
         <SubPart PartName="GeomDlls"        PartFile="iModelCore/GeomLibs/geomlibs"     Repository="imodel02" />
         <!-- Need full data to decode EPSG code -->
         <SubPart PartName="GeoCoordData"    PartFile="iModelCore/libsrc/csmap/csmap"        Repository="imodel02"/>
@@ -75,7 +75,7 @@
     <Part Name="Raster" BentleyBuildMakeFile="RasterSchema/Raster.mke" ApiNumber="M02" >
         <SubPart PartName="RasterPublicAPI"/>
         <SubPart PartName="ImagePP"         PartFile="iModelBridgeCore/Imagepp/ImagePP"      Repository="imodel02" />
-        <SubPart PartName="DgnPlatformDll"  PartFile="iModelCore/DgnPlatform/DgnPlatform"  Repository="imodel02" />
+        <SubPart PartName="DgnPlatformDLL"  PartFile="iModelCore/DgnPlatform/DgnPlatform"  Repository="imodel02" />
         <!-- Need full data to decode EPSG code -->
         <SubPart PartName="GeoCoordData"    PartFile="iModelCore/libsrc/csmap/csmap"        Repository="imodel02"/>
         <Bindings>

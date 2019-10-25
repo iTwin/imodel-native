@@ -226,7 +226,7 @@
 
     <Part Name="iModelHubClient-Library" BentleyBuildMakeFile="iModelHubClientLib.mke"  ApiNumber="M02" ExcludePlatforms="Android*">
         <SubPart PartName="WebServicesClient" />
-        <SubPart PartName="DgnPlatformDll" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02" />
+        <SubPart PartName="DgnPlatformDLL" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02" />
         <Bindings>
             <Libs>Delivery/$(libprefix)iModelHubClient$(libext)</Libs>
             <Assemblies>Delivery/$(libprefix)iModelHubClient$(ApiNumber)$(shlibext)</Assemblies>
@@ -236,7 +236,7 @@
 
     <Part Name="iModelHubClient-Library-Android" BentleyBuildMakeFile="iModelHubClientLib.mke" OnlyPlatforms="Android*">
         <SubPart PartName="WebServicesClient" />
-        <SubPart PartName="DgnPlatformDll" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02" />
+        <SubPart PartName="DgnPlatformDLL" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02" />
         <Bindings>
             <Libs>Delivery/$(libprefix)iModelHubClient$(libext)</Libs>
             <Assemblies>Delivery/$(libprefix)iModelHubClient$(ApiNumber)$(shlibext)</Assemblies>

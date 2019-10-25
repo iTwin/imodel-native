@@ -6,14 +6,21 @@
     <!-- ======================================================================================================================================== -->
 
     <Part Name="RealityCorePRG" PrgOutputDir="RealityCore">
+        <SubPart PartName="iModelCorePRG" PartFile="iModelCore/iModelCore" Repository="imodel02" />
         <SubPart PartName="__RealityCorePRG-Dynamic"/>
         <SubPart PartName="__RealityCorePRG-Static"/>
-        <SubPart PartName="iModelCorePRG" PartFile="iModelCore/iModelCore" Repository="imodel02" />
+        <SubNuGetProduct NuGetProductName="RealityCoreNuget"/>
     </Part>
 
-    <ProductDirectoryList ListName="iModelCoreTestingNugetDirs">
-        <ProductDirectory Name="Root" Path="native"/>
+    <NuGetProduct Name="RealityCoreNuget" Description="RealityCore SDK">
+        <Directories DirectoryListName="RealityCoreNuget"/>
+        <SubPart PartName="iModelCorePRG" PartFile="iModelCore/iModelCore" Repository="imodel02" />
+        <SubPart PartName="__RealityCorePRG-Dynamic"/>
+        <SubPart PartName="__RealityCorePRG-Static"/>
+    </NuGetProduct>
 
+    <ProductDirectoryList ListName="RealityCoreNuget">
+        <ProductDirectory Name="Root" Path="native"/>
         <ProductDirectory Name="Assemblies"                         RelativeTo="Root" Path="bin"/>
         <ProductDirectory Name="Assemblies"     LibType="Static"    Deliver="false"/>
         <ProductDirectory Name="Assets"                             RelativeTo="Root" Path="assets"/>
@@ -22,15 +29,17 @@
         <ProductDirectory Name="Libs"           LibType="Static"    RelativeTo="Root" Path="lib"/>
         <ProductDirectory Name="PublicApi"                          RelativeTo="Root" Path="include"/>
         <ProductDirectory Name="PublicApi"      LibType="Static"    RelativeTo="Root" Path="include"/>
-        <ProductDirectory Name="UnitTestAssets"                     RelativeTo="Root" Path="data"/>
-        <ProductDirectory Name="UnitTestAssets" LibType="Static"    RelativeTo="Root" Path="data"/>
-        <ProductDirectory Name="UnitTestLibs"                       RelativeTo="Root" Path="lib"/>
-        <ProductDirectory Name="UnitTestLibs"   LibType="Static"    RelativeTo="Root" Path="lib"/>
         <ProductDirectory Name="VendorApi"                          RelativeTo="Root" Path="include"/>
         <ProductDirectory Name="VendorApi"      LibType="Static"    RelativeTo="Root" Path="include"/>
         <ProductDirectory Name="VendorNotices"                      RelativeTo="Root" Path="notices"/>
         <ProductDirectory Name="VendorNotices"  LibType="Static"    RelativeTo="Root" Path="notices"/>
-    </ProductDirectoryList>-->
+        <ProductDirectory Name="ScalableMeshLibs"                   RelativeTo="Root" Path="lib"/>
+        <ProductDirectory Name="ScalableMeshLibs" LibType="Static"  RelativeTo="Root" Path="lib"/>
+        <ProductDirectory Name="IppPrivateLibs"                   RelativeTo="Root" Path="lib"/>
+        <ProductDirectory Name="IppPrivateLibs" LibType="Static"  RelativeTo="Root" Path="lib"/>
+        <ProductDirectory Name="TerrainModelNativeCoreLibs"                   RelativeTo="Root" Path="lib"/>
+        <ProductDirectory Name="TerrainModelNativeCoreLibs" LibType="Static"  RelativeTo="Root" Path="lib"/>
+    </ProductDirectoryList>
 
     <!-- ======================================================================================================================================== -->
     <!-- == PRIVATE ============================================================================================================================= -->

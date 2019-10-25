@@ -240,6 +240,11 @@ jobs:
         displayName: 'Save ORDBridge Installer'
         condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'ORDBridge'))
         artifact: OrdBridge
+        
+      - publish: $(Build.BinariesDirectory)/Winx64/Nugetpkg/RealityCoreNuget
+        displayName: Save RealityCoreNuget
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'RealityCore'))
+        artifact: RealityCoreNuget_x64
 
   # ================================================================================================
   - job: build_linuxx64
@@ -271,6 +276,11 @@ jobs:
         displayName: Save iModelCoreTestingNuget_LinuxX64
         condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'iModelCore'))
         artifact: iModelCoreTestingNuget_LinuxX64
+        
+      - publish: $(Build.BinariesDirectory)/LinuxX64/Nugetpkg/RealityCoreNuget
+        displayName: Save RealityCoreNuget
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'RealityCore'))
+        artifact: RealityCoreNuget_LinuxX64
 
       - task: archiveandpublishartifact@0
         displayName: Save imodeljs-linux-x64

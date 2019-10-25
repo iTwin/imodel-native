@@ -65,6 +65,14 @@
             ]
         },
         {
+            "name": "RealityCore",
+            "archs": "x64+linuxx64",
+            "version_seed": "2.1.0",
+            "depends" : [
+                "iModelCore"
+            ]
+        },
+        {
             "name": "MstnBridge",
             "archs": "x64",
             "prg_id": "2370",

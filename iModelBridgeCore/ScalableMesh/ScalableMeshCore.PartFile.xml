@@ -22,7 +22,7 @@
   </Part>
 
   <Part Name="ScalableMesh" BMakeFile="ScalableMesh_Vancouver.mke">
-    <SubPart PartName="DgnPlatformDll"  PartFile="iModelCore/DgnPlatform/DgnPlatform"                          Repository="imodel02" />
+    <SubPart PartName="DgnPlatformDLL"  PartFile="iModelCore/DgnPlatform/DgnPlatform"                          Repository="imodel02" />
     <SubPart PartName="PCLWrapper" />
     <SubPart PartName="Acute3d"        PartFile="DgnDisplay"                                  Repository="DgnDisplay"/>
     <SubPart PartName="FreeImage"       PartFile="${SrcBsiCommon}CvsPartfiles/freeimage" Repository="Bin-FreeImage"/>
@@ -67,7 +67,7 @@
     </Part>-->
 
   <Part Name="ScalableMeshCore" BMakeFile="ScalableMeshCore_Vancouver.mke">
-    <SubPart PartName="DgnPlatformDll"  PartFile="iModelCore/DgnPlatform/DgnPlatform"                          Repository="imodel02" />
+    <SubPart PartName="DgnPlatformDLL"  PartFile="iModelCore/DgnPlatform/DgnPlatform"                          Repository="imodel02" />
     <SubPart PartName="Acute3d"        PartFile="DgnDisplay"                                  Repository="DgnDisplay"/>
     <SubPart PartName="PointCloud"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
     <SubPart PartName="FreeImage"       PartFile="${SrcBsiCommon}CvsPartfiles/freeimage" Repository="Bin-FreeImage"/>
@@ -234,7 +234,7 @@
     <SubPart PartName="ScalableMeshSDKexe"/>
     <SubPart PartName="ScalableMesh-Tested" PartFile="iModelBridgeCore/ScalableMesh/ScalableMeshCoreUnitTests" Repository="imodel02"/>
     <SubPart PartName="HeaderFiles"   PartFile="iModelCore/GeomLibs/geomlibs"    Repository="imodel02"/>
-    <SubPart PartName="DgnPlatformDll" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
+    <SubPart PartName="DgnPlatformDLL" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
     <SubPart PartName="PSolidCore" PartFile="DgnDisplay" Repository="DgnDisplay" />
     <SubPart PartName="RasterCore" PartFile="DgnDisplay" Repository="DgnDisplay"/>
     <SubPart PartName="PSolidAcisInterop" PartFile="DgnDisplay" Repository="DgnDisplay" />
@@ -345,7 +345,7 @@
 
   <Product Name="ScalableMeshATP" SaveProduct="true" >
     <SubPart PartName="ScalableMeshATPexe" />
-    <SubPart PartName="DgnPlatformDll" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
+    <SubPart PartName="DgnPlatformDLL" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
     <!--<SubPart PartName="PSolidCore" PartFile="DgnDisplay" Repository="DgnDisplay" />
         <SubPart PartName="RasterCore" PartFile="DgnDisplay" Repository="DgnDisplay"/>
         <SubPart PartName="PSolidAcisInterop" PartFile="DgnDisplay" Repository="DgnDisplay" />
