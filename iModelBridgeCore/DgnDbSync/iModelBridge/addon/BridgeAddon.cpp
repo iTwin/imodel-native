@@ -293,7 +293,8 @@ int BridgeNative::BridgeWorker::RunBridge(Napi::Env& env, const char* jsonString
     // Optional 
     SET_ARG("server_project_guid", L"server-project-guid"); 
     SET_ARG("server_briefcaseId", L"server-briefcaseId") 
-
+    SET_ARG("fwk_status_message_sink_url", L"fwk-status-message-sink-url");  
+    SET_ARG("fwk_status_message_interval", L"fwk-status-message-interval"); 
     SET_ARG("fwk_bridge_regsubkey", L"fwk-bridge-regsubkey");
     SET_ARG("fwk_input_sheet", L"fwk-input-sheet");
     SET_ARG("fwk_revision_comment", L"fwk-revision-comment");
