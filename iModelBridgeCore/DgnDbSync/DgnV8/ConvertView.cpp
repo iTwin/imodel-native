@@ -1298,9 +1298,16 @@ StatusInt   DynamicViewMapper::GetCalloutPlacementFromIClip(BentleyApi::DPoint3d
     DgnV8Api::DPoint3dVector points;
     viewClipObject->GetPoints (points, 0, numPoints);
 
+    // NOTE: Want placement z to represent front to back direction but clip uses y...
+    Bentley::DVec3d xDirection, yDirection, zDirection;
+    if (0.0 == xDirection.NormalizedDifference(points[1], points[0]))
+        return ERROR;
+    viewClipObject->GetRotationMatrix().GetColumn(yDirection, 2);
+    zDirection.NormalizedCrossProduct(yDirection, xDirection);
+    rotMatrix.InitFromColumnVectors((DVec3dCR)xDirection, (DVec3dCR)yDirection, (DVec3dCR)zDirection);
+
     // NOTE: Position of elevation callout marker is segment midpoint unlike other callouts that use start point...
     origin = (DetailingSymbolType::ElevationCallout == sectionType ? DPoint3d::FromInterpolate((DPoint3dCR)points[0], 0.5, (DPoint3dCR)points[1]) : (DPoint3dCR)points[0]);
-    rotMatrix = (BentleyApi::RotMatrix&) viewClipObject->GetRotationMatrix();
 
     return SUCCESS;
     }
