@@ -1481,7 +1481,17 @@ void Check::SaveTransformed(DEllipse3dCR data)
 void Check::SaveTransformed(MSBsplineSurfacePtr const &data)
     {
     SaveTransformed(IGeometry::Create (data->Clone ()));}
-
+void Check::SaveTransformedEdges(DRange3dCR range)
+    {
+    DPoint3d corners[8];
+    range.Get8Corners (corners);
+    Check::SaveTransformed (bvector<DPoint3d>{
+        corners[0], corners[1], corners[3], corners[2], corners[0],
+        corners[4], corners[5], corners[7], corners[6], corners[4]});
+    Check::SaveTransformed (DSegment3d::From (corners[1], corners[5]));
+    Check::SaveTransformed(DSegment3d::From(corners[2], corners[6]));
+    Check::SaveTransformed(DSegment3d::From(corners[3], corners[7]));
+    }
 void Check::SaveTransformed(MSBsplineCurvePtr const &data, bool savePolygon)
     {
     SaveTransformed(IGeometry::Create (
@@ -1671,7 +1681,7 @@ void Check::KeyinImport (char const *name, char const *extension)
 
 static int s_save = 1;
 static int s_noisyFiles = 0;
-static bool s_saveDGNJS = true;
+static bool s_saveDGNJS = false;
 static bool s_saveIModelJson = true;
 static bool s_checkIModelJsonRoundTrip = false;
 void Check::ClearKeyins (char const *name)

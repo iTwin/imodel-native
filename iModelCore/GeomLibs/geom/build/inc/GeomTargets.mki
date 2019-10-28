@@ -54,6 +54,8 @@ $(OUT_DIR)PolylineOffset$(OUT_EXT)     : $(geomSrcFuncs)PolylineOffset.cpp      
 
 $(OUT_DIR)PolygonOps$(OUT_EXT)     : $(geomSrcFuncs)PolygonOps.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
+$(OUT_DIR)TriangleRangeIntersection$(OUT_EXT)     : $(geomSrcFuncs)TriangleRangeIntersection.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+
 #$(OUT_DIR)dpoint3ddvec3d$(OUT_EXT)  : $(geomSrcStructs)dpoint3ddvec3d.cpp   $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)DBilinearPatch3d$(OUT_EXT)      : $(geomSrcStructs)DBilinearPatch3d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 

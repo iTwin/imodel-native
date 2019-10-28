@@ -1646,7 +1646,41 @@ bvector<CurveLocationDetail> &trueCrossings,
 bvector<CurveLocationDetail> *touchData,
 DRange1d &altitudeLimits
 );
-    
+/**
+* Use separator plane logic () to test if there is any intersection between a triangle (area) and a range.
+* @return true if any vertex, edge, or triangle interior point is within the range.
+*/
+public: static GEOMDLLIMPEXP bool TriangleIntersectsRangeBySeparatorPlanes
+(
+DRange3d const & range,
+DPoint3d const &point0,
+DPoint3d const &point1,
+DPoint3d const &point2
+);
+
+/**
+* Use plane-by-plane clipping logic to test if there is any intersection between a triangle (area) and a range.
+* @return true if any vertex, edge, or triangle interior point is within the range.
+*/
+public: static GEOMDLLIMPEXP bool TriangleIntersectsRangeByPlaneClip
+(
+DRange3d const & range,
+DPoint3d const &point0,
+DPoint3d const &point1,
+DPoint3d const &point2
+);
+
+/**
+* * Clip a convex polygon to a range.
+* * Return the clipped polygon in the same array.
+* * Return empty points array anytime points.size() is 2 or less.
+*/
+public: static GEOMDLLIMPEXP void ClipConvexPolygonToRange
+(
+DRange3d const &range,
+bvector <DPoint3d> &points,
+bvector<DPoint3d> &workPoints
+);
 };
 
 

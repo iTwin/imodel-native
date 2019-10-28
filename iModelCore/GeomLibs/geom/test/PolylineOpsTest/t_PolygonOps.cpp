@@ -250,3 +250,157 @@ TEST(PolygonOps,InOutXYPolygon)
         }
     }
 
+int countNegativePoints(DRay3d const &ray, DPoint3d const points[], int numPoints) {
+    int n = 0;
+    for (int i = 0; i < numPoints; i++) {
+        if (points[i].DotDifference (ray.origin, ray.direction) < 0.0)
+            n++;
+        }
+    return n;
+    }
+
+// If hasPointInside is false, all output is shifted by yShiftForFalse
+// (always) save the triangle edges
+// (always) run clip triangle and save the clip.
+void SaveClassifiedTriangleResult(bool hasPointInside, DRange3d const & range, DPoint3d const &pointA, DPoint3d const &pointB, DPoint3d const &pointC,
+double yShiftForFalse)
+    {
+    double yShift;
+    if (hasPointInside)
+        yShift = 0.0;
+    else
+        yShift = yShiftForFalse;
+
+    Check::Shift(0, yShift, 0);
+    bvector<DPoint3d> points{ pointA, pointB, pointC, pointA };
+    bvector<DPoint3d> workPoints;
+    Check::SaveTransformed(points);
+    points.pop_back();
+    PolygonOps::ClipConvexPolygonToRange(range, points, workPoints);
+    if (points.size() > 0)
+        {
+        Check::SaveTransformed(points, true);
+        }
+    Check::Shift(0, -yShift, 0);
+
+    }
+// ** shift by xShift ( persistent)
+// ** output range edges
+// ** output range edges again with temporary yShift
+void SaveRangeEdgesWithShifts(double xShift, DRange3dCR range, double yShift)
+    {
+    DPoint3d corners[8];
+    Check::Shift (xShift, 0, 0);
+    range.Get8Corners(corners);
+    Check::SaveTransformedEdges(range);
+    Check::Shift(0, yShift, 0);
+    Check::SaveTransformedEdges(range);
+    Check::Shift(0, -yShift, 0);
+    }
+int doTests(DRange3d const & range, DPoint3d const &pointA, DPoint3d const &pointB, DPoint3d const &pointC0, DPoint3d const &pointC1, int numPoints) {
+    int numErrors = 0;
+    SaveRangeEdgesWithShifts(20, range, 10);
+    for (int i = 0; i <= numPoints; i++) {
+        auto pointC = DPoint3d::FromInterpolate(pointC0, i / (double)numPoints, pointC1);
+        auto classifyBySeparatorPlanes = PolygonOps::TriangleIntersectsRangeBySeparatorPlanes(range, pointA, pointB, pointC);
+        auto classifyByClip = PolygonOps::TriangleIntersectsRangeByPlaneClip(range, pointA, pointB, pointC);
+        SaveClassifiedTriangleResult (classifyBySeparatorPlanes, range, pointA, pointB, pointC, 10.0);
+        if (classifyByClip != classifyBySeparatorPlanes)
+            {
+            classifyByClip = PolygonOps::TriangleIntersectsRangeByPlaneClip(range, pointA, pointB, pointC);
+            numErrors++;
+            }
+        }
+    return numErrors;
+    }
+
+TEST(PolygonOps,ClassifyTriangleRange)
+    {
+    static int s_noisy = 1;
+    auto unitRange = DRange3d::From (0, 0, 0, 1, 1, 1);
+    Check::Int (0, doTests(unitRange,
+        DPoint3d::From(2, 0, 0), DPoint3d::From(2, 1, 0),
+        DPoint3d::From(3, 0, 0.5), DPoint3d::From(1, 0, 5),
+        4), "ClassifyTriangleRange: easy all `out` cases");
+    Check::Int(0, doTests(unitRange,
+        DPoint3d::From(0.5, 0.5, 0.5), DPoint3d::From(2, 1, 0),
+        DPoint3d::From(3, 0, 0.5), DPoint3d::From(1, 0, 5),
+        4), "ClassifyTriangleRange: vertex in range cases");
+    Check::Int(0, doTests(unitRange,
+        DPoint3d::From(0.9, -0.1, -0.1), DPoint3d::From(1.1, 0.1, -0.1),
+        DPoint3d::From(0.5, 0.5, 0.5), DPoint3d::From(0.5, 0.5, 3),
+        4), "ClassifyTriangleRange: near-corner cases A");
+
+    Check::Int(0, doTests(unitRange,
+        unitRange.LocalToGlobal(0.8, -0.1, -0.1),
+        unitRange.LocalToGlobal(1.1, 0.2, -0.1),
+        unitRange.LocalToGlobal(1, 0, 0.2), unitRange.LocalToGlobal(1.1, -0.2, 2.0),
+        6), "ClassifyTriangleRange: near-corner cases B");
+
+
+    Check::Int(0, doTests(unitRange,
+        DPoint3d::From(2, 0, 0),
+        DPoint3d::From(2, 2, 2),
+        DPoint3d::From(3, 1, 1),
+        DPoint3d::From(1.1, 0.5, 0.5),
+        4), "ClassifyTriangleRange: fringe trim cases");
+    int num0 = 0;
+    int num1 = 0;
+    for (double c1u : {1.02, 0.5, 0.02, -0.5})
+        {
+        for (auto range : {
+//            DRange3d::From(0,0,0,1,1,1),
+            DRange3d::From(0,0,0,1,2,3),
+            DRange3d::From(1,2,3, 10,9,8) })
+            {
+            if (s_noisy > 2)
+                SaveRangeEdgesWithShifts(20, range, 10);
+            auto pointA0 = range.LocalToGlobal(0.8, -0.1, -0.1);
+            auto pointA1 = range.LocalToGlobal(0.8, -0.1, 1.1);
+            auto pointB0 = range.LocalToGlobal(1.1, 0.15, -0.1);
+            auto pointB1 = range.LocalToGlobal(1.1, 0.15, 1.1);
+            auto pointC0 = range.LocalToGlobal(0.95, -0.1, -0.2);
+            auto pointC1 = range.LocalToGlobal(c1u, -0.05, 1.2);
+            int nI = 4;
+            int nJ = 4;
+            int nK = 6;
+            for (int i = 0; i <= nI; i++)
+                {
+                auto pointA = DPoint3d::FromInterpolate(pointA0, i / (double)nI, pointA1);
+                for (int j = 0; j <= nJ; j++)
+                    {
+                    auto pointB = DPoint3d::FromInterpolate(pointB0, j / (double)nJ, pointB1);
+                    for (int k = 0; k <= nK; k++)
+                        {
+                        auto pointC = DPoint3d::FromInterpolate(pointC0, k / (double)nK, pointC1);
+                        auto classifyBySeparatorPlanes = PolygonOps::TriangleIntersectsRangeBySeparatorPlanes(range, pointA, pointB, pointC);
+                        auto classifyByClip = PolygonOps::TriangleIntersectsRangeByPlaneClip(range, pointA, pointB, pointC);
+                        bvector<DPoint3d> points = { pointA, pointB, pointC };
+                        bvector<DPoint3d> workPoints;
+                        PolygonOps::ClipConvexPolygonToRange(range, points, workPoints);
+                        if (s_noisy > 2)
+                            SaveClassifiedTriangleResult(classifyBySeparatorPlanes, range, pointA, pointB, pointC, 10.0);
+                        if (!Check::Bool (points.size() != 0, classifyBySeparatorPlanes, "ClassifyByPlanes vs ClassifyBySeperatorPlanes"))
+                            {
+                            bvector<DPoint3d> points1 = { pointA, pointB, pointC };
+                            PolygonOps::ClipConvexPolygonToRange(range, points1, workPoints);
+                            }
+                        if (!Check::Bool (classifyBySeparatorPlanes, classifyByClip, "ClassifyByPlanes vs ClassifyByClip"))
+                            {
+                            classifyBySeparatorPlanes = PolygonOps::TriangleIntersectsRangeBySeparatorPlanes(range, pointA, pointB, pointC);
+                            classifyByClip = PolygonOps::TriangleIntersectsRangeByPlaneClip(range, pointA, pointB, pointC);
+                            }
+                        else
+                            {
+                            if (classifyByClip == 0)
+                                num0++;
+                            else
+                                num1++;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    Check::ClearGeometry("PolygonOps.TriangleRange");
+    }
