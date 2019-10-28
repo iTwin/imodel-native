@@ -263,12 +263,13 @@ public:
     struct CachedEntry
         {
         ColorDef            color;
+        bool                isTwoSided;
         RenderMaterialId    materialId;
         DgnTextureId        textureId;
         DgnSubCategoryId    subCategoryId;
         ExportGraphicsMesh  mesh; 
-        CachedEntry(ColorDef c, RenderMaterialId matId, DgnTextureId texId, DgnSubCategoryId subCat)
-            : color(c), materialId(matId), textureId(texId), subCategoryId(subCat) { }
+        CachedEntry(ColorDef c, bool twoSided, RenderMaterialId matId, DgnTextureId texId, DgnSubCategoryId subCat)
+            : color(c), isTwoSided(twoSided), materialId(matId), textureId(texId), subCategoryId(subCat) { }
         };
     bvector<CachedEntry>            m_cachedEntries;
     struct CachedLineString
@@ -381,6 +382,7 @@ virtual bool _ProcessCurveVector(CurveVectorCR curve, bool filled, SimplifyGraph
     struct MeshDisplayProps
     {
         ColorDef                        color;
+        bool                            isTwoSided;
         RenderMaterialId                materialId;
         // Usually no pattern map, but empty Json::Value constructor shows up in profile if instantiated
         // for display props lookup. Hide behind unique_ptr to only construct if needed.
@@ -391,8 +393,9 @@ virtual bool _ProcessCurveVector(CurveVectorCR curve, bool filled, SimplifyGraph
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Matt.Gooding    02/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ResolveMeshDisplayProps(SimplifyGraphic& sg, MeshDisplayProps& result)
+void ResolveMeshDisplayProps(SimplifyGraphic& sg, PolyfaceQueryCR pf, MeshDisplayProps& result)
     {
+    result.isTwoSided = pf.GetTwoSided();
     result.subCategoryId = sg.GetCurrentGeometryParams().GetSubCategoryId();
 
     // Resolved fill color as baseline
@@ -451,7 +454,7 @@ bool _ProcessPolyface(PolyfaceQueryCR pfQuery, bool filled, SimplifyGraphic& sg)
     if (!VerifyTriangulationAndZeroBlocking(pfQuery)) { m_gotBadPolyface = true; return true; }
 
     MeshDisplayProps displayProps;
-    ResolveMeshDisplayProps(sg, displayProps);
+    ResolveMeshDisplayProps(sg, pfQuery, displayProps);
 
     uint32_t indexCount = (uint32_t)pfQuery.GetPointIndexCount();
     uint32_t indexCountWithoutBlocking = indexCount - (indexCount / 4);
@@ -510,6 +513,7 @@ bool _ProcessPolyface(PolyfaceQueryCR pfQuery, bool filled, SimplifyGraphic& sg)
     for (auto& entry : m_cachedEntries)
         {
         if (entry.color != displayProps.color ||
+            entry.isTwoSided != displayProps.isTwoSided ||
             entry.materialId != displayProps.materialId ||
             entry.textureId != textureId ||
             entry.subCategoryId != displayProps.subCategoryId)
@@ -519,7 +523,7 @@ bool _ProcessPolyface(PolyfaceQueryCR pfQuery, bool filled, SimplifyGraphic& sg)
         }
     if (exportMesh == nullptr)
         {
-        m_cachedEntries.emplace_back(displayProps.color, displayProps.materialId, textureId, displayProps.subCategoryId);
+        m_cachedEntries.emplace_back(displayProps.color, displayProps.isTwoSided, displayProps.materialId, textureId, displayProps.subCategoryId);
         exportMesh = &m_cachedEntries.back().mesh;
         }
 
@@ -639,7 +643,7 @@ static Napi::Value convertLines(Napi::Env& env, bvector<int>& exportIndices, bve
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Matt.Gooding    02/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Napi::Value convertMesh(Napi::Env& env, ExportGraphicsMesh& mesh)
+static Napi::Value convertMesh(Napi::Env& env, ExportGraphicsMesh& mesh, bool isTwoSided)
     {
     Napi::Int32Array indexArray = Napi::Int32Array::New(env, mesh.indices.size());
     memcpy (indexArray.Data(), &mesh.indices[0], mesh.indices.size() * sizeof(int32_t));
@@ -655,6 +659,7 @@ static Napi::Value convertMesh(Napi::Env& env, ExportGraphicsMesh& mesh)
     convertedMesh.Set("points", pointArray);
     convertedMesh.Set("normals", normalArray);
     convertedMesh.Set("params", paramArray);
+    convertedMesh.Set("isTwoSided", Napi::Boolean::New(env, isTwoSided));
     return convertedMesh;
     }
 
@@ -797,7 +802,7 @@ DgnDbStatus JsInterop::ExportGraphics(DgnDbR db, Napi::Object const& exportProps
             {
             Napi::Object cbArgument = Napi::Object::New(Env());
             cbArgument.Set("elementId", elementIdString);
-            cbArgument.Set("mesh", convertMesh(Env(), entry.mesh));
+            cbArgument.Set("mesh", convertMesh(Env(), entry.mesh, entry.isTwoSided));
             cbArgument.Set("color", Napi::Number::New(Env(), entry.color.GetValue()));
             cbArgument.Set("subCategory", createIdString(Env(), entry.subCategoryId));
             if (entry.materialId.IsValid())
@@ -889,7 +894,7 @@ DgnDbStatus JsInterop::ExportPartGraphics(DgnDbR db, Napi::Object const& exportP
         {
         Napi::Object cbArgument = Napi::Object::New(Env());
         cbArgument.Set("color", Napi::Number::New(Env(), entry.color.GetValue()));
-        cbArgument.Set("mesh", convertMesh(Env(), entry.mesh));
+        cbArgument.Set("mesh", convertMesh(Env(), entry.mesh, entry.isTwoSided));
         if (entry.materialId.IsValid())
             cbArgument.Set("materialId", createIdString(Env(), entry.materialId));
         if (entry.textureId.IsValid())
