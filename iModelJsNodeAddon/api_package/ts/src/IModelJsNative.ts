@@ -4,7 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 // *** OK to depend on bentleyjs-core and imodeljs-common
 import {
-  BentleyStatus, ChangeSetApplyOption, ChangeSetStatus, DbOpcode, DbResult, GuidString, Id64String,
+  BentleyStatus, ChangeSetApplyOption, ChangeSetStatus, DbOpcode, DbResult, GuidString, Id64Array, Id64String,
   IDisposable, IModelStatus, Logger, OpenMode, RepositoryStatus, StatusCodeWithMessage,
 } from "@bentley/bentleyjs-core";
 import { ElementProps, QueryLimit, QueryQuota, QueryPriority } from "@bentley/imodeljs-common";
@@ -224,6 +224,7 @@ export declare namespace IModelJsNative {
     public getTileContent(treeId: string, tileId: string, callback: (result: ErrorStatusOrResult<IModelStatus, Uint8Array>) => void): void;
     public pollTileContent(treeId: string, tileId: string): ErrorStatusOrResult<IModelStatus, TileContentState | TileContent>;
     public getTileTree(id: string, callback: (result: ErrorStatusOrResult<IModelStatus, any>) => void): void;
+    public purgeTileTrees(modelIds: Id64Array | undefined): void;
     public getTxnDescription(txnId: TxnIdString): string;
     public getUndoString(): string;
     public hasFatalTxnError(): boolean;

@@ -2097,6 +2097,14 @@ Tree::Tree(GeometricModelCR model, TransformCR location, DRange3dCR range, Rende
 +---------------+---------------+---------------+---------------+---------------+------*/
 Tree::~Tree()
     {
+    Destroy();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void Tree::Destroy()
+    {
     CancelAllTileLoads();
     WaitForAllLoads();
     BeAssert(m_activeLoads.empty());

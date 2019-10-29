@@ -430,6 +430,7 @@ protected:
     void LoadNodeMapFromAnimation();
 public:
     DGNPLATFORM_EXPORT ~Tree();
+    DGNPLATFORM_EXPORT void Destroy();
 
     DgnDbR GetDgnDb() const { return m_db; }
     std::mutex& GetDbMutex() { return m_dbMutex; }

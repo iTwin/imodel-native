@@ -527,6 +527,48 @@ struct AppData : DgnModel::AppData
         return entry.m_tree;
         }
 
+    static void PurgeTileTrees(DgnDbR db, bvector<DgnModelId> const* modelIds)
+        {
+        bvector<GeometricModelPtr> models;
+        if (nullptr == modelIds)
+            {
+            for (auto const& kvp : db.Models().GetLoadedModels())
+                {
+                auto geomModel = kvp.second->ToGeometricModelP();
+                if (nullptr != geomModel)
+                    models.push_back(geomModel);
+                }
+            }
+        else
+            {
+            for (auto modelId : *modelIds)
+                {
+                auto model = db.Models().FindModel(modelId);
+                auto geomModel = model.IsValid() ? model->ToGeometricModelP() : nullptr;
+                if (nullptr != geomModel)
+                    models.push_back(geomModel);
+                }
+            }
+
+        for (auto& model : models)
+            {
+            auto appData = Get(*model);
+            appData->PurgeTileTrees();
+            }
+        }
+
+    void PurgeTileTrees()
+        {
+        BeMutexHolder lock(m_mutex);
+        for (auto iter = m_entries.begin(); iter != m_entries.end(); ++iter)
+            {
+            auto& entry = const_cast<EntryR>(*iter); // because std::set...
+            entry.m_tree->Destroy();
+            entry.m_requests.clear();
+            iter = m_entries.erase(iter);
+            }
+        }
+
     static EntryR GetEntry(GeometricModelR model, Tree::Id const& id, bool allocateTree)
         {
         auto data = Get(model);
@@ -564,6 +606,14 @@ END_TILE_NAMESPACE
 Tile::TreePtr JsInterop::GetTileTree(GeometricModelR model, Tile::Tree::Id const& id, bool createIfNotFound)
     {
     return Tile::AppData::GetTileTree(model, id, createIfNotFound);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/19
++---------------+---------------+---------------+---------------+---------------+------*/
+void JsInterop::PurgeTileTrees(DgnDbR db, bvector<DgnModelId> const* modelIds)
+    {
+    return Tile::AppData::PurgeTileTrees(db, modelIds);
     }
 
 /*---------------------------------------------------------------------------------**//**

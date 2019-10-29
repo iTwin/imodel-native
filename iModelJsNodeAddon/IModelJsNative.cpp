@@ -1631,6 +1631,33 @@ public:
         JsInterop::GetTileContent(m_cancellationToken, GetDgnDb(), treeIdStr, tileIdStr, responseCallback);
         }
 
+    void PurgeTileTrees(Napi::CallbackInfo const& info)
+        {
+        bvector<DgnModelId> modelIds;
+        if (info.Length() == 1 && !info[0].IsUndefined())
+            {
+            if (info[0].IsArray())
+                {
+                Napi::Array arr = info[0].As<Napi::Array>();
+                for (uint32_t index = 0; index < arr.Length(); ++index)
+                    {
+                    Napi::Value value = arr[index];
+                    if (value.IsString())
+                        {
+                        auto modelId = BeInt64Id::FromString(value.As<Napi::String>().Utf8Value().c_str());
+                        if (modelId.IsValid())
+                            modelIds.push_back(DgnModelId(modelId.GetValue()));
+                        }
+                    }
+                }
+
+            if (modelIds.empty())
+                THROW_TYPE_EXCEPTION_AND_RETURN("Argument 0 must be a non-empty array of valid Id64Strings", );
+            }
+
+        JsInterop::PurgeTileTrees(GetDgnDb(), modelIds.empty() ? nullptr : &modelIds);
+        }
+
     Napi::Value PollTileContent(Napi::CallbackInfo const& info)
         {
         REQUIRE_DB_TO_BE_OPEN
@@ -2342,6 +2369,7 @@ public:
             InstanceMethod("getTileContent", &NativeDgnDb::GetTileContent),
             InstanceMethod("pollTileContent", &NativeDgnDb::PollTileContent),
             InstanceMethod("getTileTree", &NativeDgnDb::GetTileTree),
+            InstanceMethod("purgeTileTrees", &NativeDgnDb::PurgeTileTrees),
             InstanceMethod("getTxnDescription", &NativeDgnDb::GetTxnDescription),
             InstanceMethod("getUndoString", &NativeDgnDb::GetUndoString),
             InstanceMethod("hasFatalTxnError", &NativeDgnDb::HasFatalTxnError),
