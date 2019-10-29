@@ -13,9 +13,7 @@
         #include <processthreadsapi.h>
     #endif
 #elif defined (__unix__)
-    #if defined (BETHREAD_USE_PTHREAD)
-        #include <pthread.h>
-    #endif
+    #include <pthread.h>
     #include <errno.h>
     #include <unistd.h>
     #include <sys/param.h>
@@ -313,6 +311,9 @@ void BeThreadUtilities::SetCurrentThreadName(Utf8CP newName)
     __except (EXCEPTION_CONTINUE_EXECUTION){}
  #elif defined (__APPLE__)
     pthread_setname_np(newName);
+ #elif defined (__unix__)
+    pthread_t threadid = pthread_self();
+    pthread_setname_np(threadid, newName);
  #endif
 
 #endif // NDEBUG
@@ -323,9 +324,9 @@ void BeThreadUtilities::SetCurrentThreadName(Utf8CP newName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 int BeThreadUtilities::GetDefaultStackSize()
     {
-    // 50kb is too small (see crash on Android when loading elements from scene thread).
-    // 1mb too big.
-    return 300*1024;
+    //on linux, we can only use 16k, 2MB, 8MB, etc
+    //8MB is default on linux
+    return 2 * 1024 * 1024; 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -334,15 +335,16 @@ int BeThreadUtilities::GetDefaultStackSize()
 BentleyStatus BeThreadUtilities::StartNewThread(T_ThreadStart startAddr, void* arg, int stackSize)
     {
 #if defined (__unix__)
+    int result;
     pthread_attr_t  threadAttr;
-    pthread_attr_init(&threadAttr);
-    pthread_attr_setstacksize(&threadAttr, stackSize);
+    result = pthread_attr_init(&threadAttr);
+    result = pthread_attr_setstacksize(&threadAttr, stackSize);
 
     pthread_t threadHandle;
     uintptr_t retval= pthread_create(&threadHandle, &threadAttr, startAddr, arg);
     if (0 == retval)
         pthread_detach(threadHandle);
-    pthread_attr_destroy(&threadAttr);
+    result = pthread_attr_destroy(&threadAttr);
     return (0 == retval) ? SUCCESS : ERROR;
 #elif defined(BENTLEYCONFIG_OS_WINDOWS)
     uintptr_t handle = _beginthreadex(nullptr, (unsigned) stackSize, startAddr, arg, 0, nullptr);
@@ -395,7 +397,7 @@ void BeThread::RunThread(void* arg)
 void BeThread::Start()
     {
     AddRef();
-    if (SUCCESS != BeThreadUtilities::StartNewThread(1024 * 1024, RunPlatformThread, this))
+    if (SUCCESS != BeThreadUtilities::StartNewThread(2 * 1024 * 1024, RunPlatformThread, this))
         {
         BeAssert(false);
         Release();
