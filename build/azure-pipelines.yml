@@ -2,6 +2,13 @@
 
 name: imodel02-yaml-$(Date:yyyy.MM.dd)$(Rev:.r)
 trigger: none
+schedules:
+  - cron: "0 9 * * Mon-Fri"
+    displayName: Weekday 4 AM (UTC -5) daily build
+    branches:
+      include:
+        - master
+
 variables:
   BB_SRC_ROOT: $(Agent.BuildDirectory)/bbsrc
   SENTRY_ORG_SLUG: bentley-systems-inc
