@@ -37,7 +37,7 @@
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${env:OutRoot}/Winx64/Product/DgnV8Converter/DgnV8Converter.exe",
-            "args": ["--input=d:/dgn/problem/29156/dgn/Interoperability_OPM.dgn", "--drawings-dirs=d:/dgn/problem/29156/dgn", "--output=d:/tmp"],
+            "args": ["--standalone", "--input=D:/dgn/problem/174257/Levels/EWR_OSGB_Master.dgn", "--output=d:/tmp"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],

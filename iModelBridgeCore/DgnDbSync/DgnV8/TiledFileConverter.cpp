@@ -62,7 +62,7 @@ DgnV8Api::DgnFileStatus TiledFileConverter::_InitRootModel()
         return DgnV8Api::DGNFILE_STATUS_UnknownError;
         }
 
-    SetLineStyleConverterRootModel(m_rootModelRef->GetDgnModelP());
+    m_lineStyleConverter->SetUnitsDefinitionModel(m_rootModelRef->GetDgnModelP());
 
     GetRepositoryLinkId(*GetRootV8File()); // DynamicSchemaGenerator et al need to assume that all V8 files are recorded in syncinfo
 

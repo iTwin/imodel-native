@@ -1748,7 +1748,6 @@ public:
     //! @name  Converting LineStyles
     //! @{
     DGNDBSYNC_EXPORT void ConvertAllLineStyles(DgnV8Api::DgnFile&v8File);
-    DGNDBSYNC_EXPORT void SetLineStyleConverterRootModel(DgnV8ModelP);
     //! @}
 
     //! @name  Converting Materials
@@ -2829,12 +2828,12 @@ public:
     bmap<V8Location, uint32_t>      m_v8ComponentToV10Id;
     bmap<Utf8String, DgnStyleId>    m_lsDefNameToIdMap;
     Converter&                      m_converter;
-    DgnV8ModelP                     m_rootModel {};
+    DgnV8ModelP                     m_unitsDefinitionModel {};
 
     LineStyleStatus ConvertLsComponent(Dgn::LsComponentId& v10Id, DgnV8Api::DgnFile&v8File, DgnV8Api::LsCacheComponent const& component, double lsScale);
     DgnDbR GetDgnDb() {return m_converter.GetDgnDb();}
     SyncInfo& GetSyncInfo() {return m_converter.GetSyncInfo();}
-    DgnV8ModelP GetRootModel() {return m_rootModel;}
+    DgnV8ModelP GetUnitsDefinitionModel() {return m_unitsDefinitionModel;}
 
     static void SetDescription(Dgn::V10ComponentBase*v10, DgnV8Api::LsCacheComponent const& component);
     static void SetDescription(JsonValueR json, DgnV8Api::LsCacheComponent const& component);
@@ -2854,7 +2853,7 @@ public:
     static RefCountedPtr<LineStyleConverter> Create(Converter& converter);
     LineStyleStatus ConvertLineStyle(DgnStyleId& newId, double& componentScale, DgnV8Api::LsDefinition*v8ls, DgnV8Api::DgnFile&v8File);
     LineStyleStatus GetOrConvertElementLineCode(DgnStyleId& newId, uint32_t lineCode);
-    void SetRootModel(DgnV8ModelP r) {m_rootModel=r;}
+    void SetUnitsDefinitionModel(DgnV8ModelP r) {m_unitsDefinitionModel=r;}
 };
 
 typedef BisConversionTargetModelInfo const& BisConversionTargetModelInfoCR;

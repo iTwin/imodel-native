@@ -573,7 +573,7 @@ LineStyleStatus LineStyleConverter::ConvertLineStyle (DgnStyleId& newId, double&
 
     uint32_t  lineStyleAttributes = v8ls->GetAttributes();
 
-    DgnV8Api::ModelInfo const& v8ModelInfo = GetRootModel()->GetModelInfo();
+    DgnV8Api::ModelInfo const& v8ModelInfo = GetUnitsDefinitionModel()->GetModelInfo();
     double uorPerMeter = DgnV8Api::ModelInfo::GetUorPerMeter(&v8ModelInfo);
     double muPerMeter = uorPerMeter/DgnV8Api::ModelInfo::GetUorPerMaster(&v8ModelInfo);
 
@@ -762,6 +762,20 @@ void Converter::ConvertAllLineStyles(DgnV8Api::DgnFile&v8File)
     {
     if (BSISUCCESS != MustBeInSharedChannel("linestyles must be converted in the shared channel."))
         return;
+
+    /* According to Chuck:
+        * DGN & DGNLib use the units of the default model. 
+        * RSC uses the units that the linestyle is defined in: UORs, Master, or Pixels. 
+          (The default is Master and that's what is most used, but there's a flag on each style for which set of units it is.
+        * LIN files are in meters. The associated SHP files are unitless (fonts) so the scale from the LIN has to be applied.
+    */
+    auto defaultModel = v8File.LoadModelById(v8File.GetDefaultModelId());   // hold refcountedptr to keep this model alive within the scope of this function.
+    if (!defaultModel.IsValid())
+        {
+        ReportIssueV(Converter::IssueSeverity::Warning, Converter::IssueCategory::CorruptData(), Converter::Issue::CannotLoadModel(), nullptr, Utf8String(v8File.GetFileName().c_str()).c_str());
+        return;
+        }
+    m_lineStyleConverter->SetUnitsDefinitionModel(defaultModel.get());
     
     // Initialize the graphics subsystem to produce bitmaps of linestyles.
     // This was required when the line style converter converted line styles to textures
@@ -788,8 +802,8 @@ void Converter::ConvertAllLineStyles(DgnV8Api::DgnFile&v8File)
         double unitsScale;
         _RemapLineStyle(unitsScale, v8File, ls->GetStyleNumber(), false);
         }
-    }
 
-void Converter::SetLineStyleConverterRootModel(DgnV8ModelP r) {m_lineStyleConverter->SetRootModel(r);}
+    m_lineStyleConverter->SetUnitsDefinitionModel(nullptr);    
+    }
 
 END_DGNDBSYNC_DGNV8_NAMESPACE

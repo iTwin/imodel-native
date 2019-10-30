@@ -106,8 +106,6 @@ DgnV8Api::DgnFileStatus RootModelConverter::_InitRootModel()
     if (!m_isRootModelSpatial)
         ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Unsupported(), Converter::Issue::RootModelMustBePhysical(), Converter::IssueReporter::FmtModel(*GetRootModelP()).c_str());
 
-    SetLineStyleConverterRootModel(m_rootModelRef->GetDgnModelP());
-
     if (WasAborted())
         return DgnV8Api::DGNFILE_STATUS_UnknownError;
     
