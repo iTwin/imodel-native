@@ -49,7 +49,7 @@ struct ConcurrentQueryManager::Impl final
         QueryWorkerPool& GetWorkerPool() { return *m_workerPool; }
         Config const& GetConfig() const { return m_config; }
         ECDbCR GetECDb() const { return m_ecdb; }
-        PostStatus PostQuery(TaskId& taskId, Utf8CP ecsql, Utf8CP bindings, Limit limit, Quota quota, Priority priority);
+        PostStatus PostQuery(TaskId& taskId, Utf8CP ecsql, Utf8CP bindings, Limit limit, Quota quota, Priority priority, RequestContext requestContext);
         PollStatus PollQuery(Utf8StringR resultJson, int64_t& rows, TaskId taskId);
         bool IsInitalized() const;
         bool Initalize(Config config);
@@ -155,6 +155,7 @@ struct QueryTask final
         int64_t m_rows;
         Utf8String m_bindings;
         ConcurrentQueryManager::Quota m_quota;
+        ConcurrentQueryManager::RequestContext m_requestContext;
         void SetError(Utf8CP error);
         void SetPartial();
         void SetDone();
@@ -162,8 +163,8 @@ struct QueryTask final
     public:
         QueryTask(const QueryTask& rhs) = delete;
         QueryTask& operator = (const QueryTask& rhs) = delete;
-        explicit QueryTask(TaskId id, Utf8CP ecsql, Utf8CP bindings, ConcurrentQueryManager::Limit limit, ConcurrentQueryManager::Quota quota, ConcurrentQueryManager::Priority priority) :
-            m_ecsql(ecsql), m_priority(priority), m_createdOn(std::chrono::steady_clock::now()), m_state(State::Inqueue), m_id(id), m_interruptor(nullptr), m_limit(limit), m_rows(0), m_quota(quota), m_bindings(bindings) {}
+        explicit QueryTask(TaskId id, Utf8CP ecsql, Utf8CP bindings, ConcurrentQueryManager::Limit limit, ConcurrentQueryManager::Quota quota, ConcurrentQueryManager::Priority priority, ConcurrentQueryManager::RequestContext requestContext) :
+            m_ecsql(ecsql), m_priority(priority), m_createdOn(std::chrono::steady_clock::now()), m_state(State::Inqueue), m_id(id), m_interruptor(nullptr), m_limit(limit), m_rows(0), m_quota(quota), m_bindings(bindings), m_requestContext(requestContext) {}
         ~QueryTask() {}
         TaskId GetId() const { return m_id; }
         std::chrono::time_point<std::chrono::steady_clock> CreatedOn() const noexcept { return m_createdOn; }

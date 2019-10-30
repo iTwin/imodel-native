@@ -304,10 +304,19 @@ Napi::Value JsInterop::PostConcurrentQuery(ECDbCR ecdb, Napi::Env env, Utf8Strin
         if (!v.IsUndefined() && !v.IsNull())
             maxMemoryAllowed = v.Uint32Value();
         }
+        JsInterop::ObjectReferenceClaimCheck jsRequestContext = JsInterop::GetCurrentClientRequestContextForMainThread();
+        ConcurrentQueryManager::RequestContext context([jsRequestContext]()
+            {
+            if (!JsInterop::IsMainThread())
+                {
+                // WIP: Seems like on MacOS _only_ we somehow get here on the main thread. Needs investigation.
+                JsInterop::SetCurrentClientRequestContextForWorkerThread(jsRequestContext);
+                }
+            });
 
     const auto rc = ecdb.GetConcurrentQueryManager().PostQuery(taskId, ecsql.c_str(), bindings.c_str(),
                                                        ConcurrentQueryManager::Limit(maxRowAllowed, startRowOffset),
-                                                       ConcurrentQueryManager::Quota(maxTimeAllowed, maxMemoryAllowed), priority);
+                                                       ConcurrentQueryManager::Quota(maxTimeAllowed, maxMemoryAllowed), priority, context);
     auto result = Napi::Object::New(env);
     result.Set("status", (int) rc);
     result.Set("taskId", taskId);

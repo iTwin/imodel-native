@@ -202,6 +202,7 @@ void QueryTask::Run(JsonAdaptorCache& cache, QueryInterruptor& interruptor)
     if (m_state != State::Inqueue)
         return;
 
+    m_requestContext.OnTaskStart();
     m_state = State::Running;
     if (ExceededQuota())
         {
@@ -340,13 +341,6 @@ JsonAdaptorCache::CacheEntry* JsonAdaptorCache::Get(Utf8CP ecsql)
     CacheEntry entry;    
     ecdb.GetImpl().GetMutex().Enter();
     auto rc = entry.GetStatement()->Prepare(ecdb.Schemas(), workerConn, ecsql);
-    if (rc != ECSqlStatus::Success && CQLOG.isSeverityEnabled(NativeLogging::LOG_ERROR))
-        {
-        if (rc == ECSqlStatus::InvalidECSql)
-            CQLOG.errorv("Invalid ECSql : %s", ecsql);
-        if (rc.IsSQLiteError())
-            CQLOG.errorv("Failed to prepare ECSql : %s, Sqlite Error: %s", ecsql, workerConn.GetLastError().c_str());
-        }
     ecdb.GetImpl().GetMutex().Leave();
     if (rc != ECSqlStatus::Success)
         return nullptr;
@@ -620,9 +614,9 @@ ConcurrentQueryManager::~ConcurrentQueryManager()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                             Affan.Khan             05/2019
 //---------------------------------------------------------------------------------------
-ConcurrentQueryManager::PostStatus ConcurrentQueryManager::PostQuery(TaskId& taskId, Utf8CP ecsql, Utf8CP bindings, Limit limit, ConcurrentQueryManager::Quota quota,  ConcurrentQueryManager::Priority priority)
+ConcurrentQueryManager::PostStatus ConcurrentQueryManager::PostQuery(TaskId& taskId, Utf8CP ecsql, Utf8CP bindings, Limit limit, ConcurrentQueryManager::Quota quota,  ConcurrentQueryManager::Priority priority, ConcurrentQueryManager::RequestContext requestContext)
     {
-    return m_pimpl->PostQuery(taskId, ecsql, bindings, limit, quota, priority);
+    return m_pimpl->PostQuery(taskId, ecsql, bindings, limit, quota, priority, requestContext);
     }
 
 //---------------------------------------------------------------------------------------
@@ -777,7 +771,7 @@ ConcurrentQueryManager::Impl::~Impl()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                             Affan.Khan             05/2019
 //---------------------------------------------------------------------------------------
-ConcurrentQueryManager::PostStatus ConcurrentQueryManager::Impl::PostQuery(TaskId& taskId, Utf8CP ecsql, Utf8CP bindings, Limit limit, ConcurrentQueryManager::Quota quota, ConcurrentQueryManager::Priority priority)
+ConcurrentQueryManager::PostStatus ConcurrentQueryManager::Impl::PostQuery(TaskId& taskId, Utf8CP ecsql, Utf8CP bindings, Limit limit, ConcurrentQueryManager::Quota quota, ConcurrentQueryManager::Priority priority, ConcurrentQueryManager::RequestContext requestContext)
     {
     if (!m_initalized)
         return PostStatus::NotInitalized;
@@ -821,7 +815,7 @@ ConcurrentQueryManager::PostStatus ConcurrentQueryManager::Impl::PostQuery(TaskI
     std::lock_guard<std::mutex> guard(m_mutex);
     auto id = NextId();
     const Utf8String limitQuery = Utf8PrintfString("select * from (%s) limit :" LIMIT_VAR_COUNT " offset :" LIMIT_VAR_OFFSET , trimedECSql.c_str());
-    auto itor = m_tasks.insert(std::make_pair(id, std::make_unique<QueryTask>(id, limitQuery.c_str(), bindings, limit, quota, priority)));
+    auto itor = m_tasks.insert(std::make_pair(id, std::make_unique<QueryTask>(id, limitQuery.c_str(), bindings, limit, quota, priority, requestContext)));
     auto task = itor.first->second.get();
     if (m_workerPool->Enqueue(task))
         {

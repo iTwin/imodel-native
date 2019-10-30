@@ -12,6 +12,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 using namespace std::chrono_literals;
 typedef uint32_t TaskId;
 struct ECDb;
+
 //=======================================================================================
 //! @bsiclass                                                        05/2019
 //=======================================================================================
@@ -36,7 +37,7 @@ struct ConcurrentQueryManager final
     enum class PostStatus
         {
         NotInitalized = 0,
-    Done = 1,
+        Done = 1,
         QueueSizeExceded = 2,
         };
 
@@ -55,6 +56,16 @@ struct ConcurrentQueryManager final
             bool IsEmpty() const { return m_memoryLimit == 0 && m_timeLimit == std::chrono::seconds(0); }
         };
 
+    struct RequestContext final
+        {
+        private:
+            std::function<void()> m_callbackOnTaskStart;
+        public:
+            RequestContext(std::function<void()> onTaskStart = nullptr)
+                : m_callbackOnTaskStart(onTaskStart)
+                {}
+            void OnTaskStart() const {if (m_callbackOnTaskStart) {m_callbackOnTaskStart();}}
+        };
     struct Config final
         {
         private:
@@ -121,7 +132,7 @@ struct ConcurrentQueryManager final
         ECDB_EXPORT ~ConcurrentQueryManager();
         ECDB_EXPORT bool IsInitalized() const;
         ECDB_EXPORT bool Initalize(Config config = Config());
-        ECDB_EXPORT PostStatus PostQuery(TaskId& taskId, Utf8CP ecsql, Utf8CP bindings = nullptr, Limit limit = Limit(), Quota quota = Quota(), Priority priority = Priority::Normal);
+        ECDB_EXPORT PostStatus PostQuery(TaskId& taskId, Utf8CP ecsql, Utf8CP bindings = nullptr, Limit limit = Limit(), Quota quota = Quota(), Priority priority = Priority::Normal, RequestContext requestContext = RequestContext());
         ECDB_EXPORT PollStatus PollQuery(Utf8StringR resultJson, int64_t& rows, TaskId taskId);
     };
 
