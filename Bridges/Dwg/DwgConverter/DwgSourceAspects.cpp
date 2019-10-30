@@ -381,6 +381,10 @@ BentleyStatus   CreateAsmObjectHash (DwgDbObjectCR object)
     DxfOut from an ASM entity outputs the whole Brep data and is unnecessarily expensive.
     This method selects & hash essential Brep properties for the sake of performance.
     -----------------------------------------------------------------------------------*/
+#ifdef DWGTOOLKIT_OpenDwg
+    // OpenDWG does not support mass and area properties without ACIS!
+    return  BSIERROR;
+#endif
     auto entity = DwgDbEntity::Cast (&object);
     if (nullptr == entity)
         return  BSIERROR;

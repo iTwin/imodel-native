@@ -349,10 +349,10 @@
         <Directories DirectoryListName="RealDwgTestsDirList"/>
     </Product>
 
-    <Part Name="RunRealDwgImporterTests" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=RealDwgImporterTests -dGTEST_NAME=DwgImporterTests" OnlyPlatforms="x64" ExcludeLibType="Static">
+    <Part Name="RunRealDwgImporterTests" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=RealDwgImporterTests -dGTEST_NAME=DwgImporterTests +dGTEST_LOGFILE_NAME=RealDwgImporterTests.log" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SubProduct ProductName="RealDwgImporterTests" />
         <Bindings>
-          <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/DwgImporterTests.log</Files>
+          <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/RealDwgImporterTests.log</Files>
         </Bindings>
     </Part>
 
@@ -384,10 +384,10 @@
         <Directories DirectoryListName="OpenDwgTestsDirList"/>
     </Product>
 
-    <Part Name="RunOpenDwgImporterTests" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=OpenDwgImporterTests -dGTEST_NAME=DwgImporterTests" OnlyPlatforms="x64" ExcludeLibType="Static">
+    <Part Name="RunOpenDwgImporterTests" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=OpenDwgImporterTests -dGTEST_NAME=DwgImporterTests +dGTEST_LOGFILE_NAME=OpenDwgImporterTests.log" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SubProduct ProductName="OpenDwgImporterTests" />
         <Bindings>
-          <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/DwgImporterTests.log</Files>
+          <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/OpenDwgImporterTests.log</Files>
         </Bindings>
     </Part>
 

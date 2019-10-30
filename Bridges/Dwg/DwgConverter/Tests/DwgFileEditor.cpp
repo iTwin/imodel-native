@@ -395,7 +395,7 @@ void    DwgFileEditor::AttachXrefInDefaultModel (BeFileNameCR infile, DPoint3dCR
     // append the insert entity in the modelspace
     DwgDbBlockTableRecordPtr    modelspace(m_dwgdb->GetModelspaceId(), DwgDbOpenMode::ForWrite);
     ASSERT_DWGDBSUCCESS (modelspace.OpenStatus()) << "Unable to open master file's modelspace block!";
-    this->AppendEntity (DwgDbEntity::Cast(insert), modelspace, true);
+    this->AppendEntity (DwgDbEntity::Cast(insert.get()), modelspace, true);
     }
 
 /*---------------------------------------------------------------------------------**//**

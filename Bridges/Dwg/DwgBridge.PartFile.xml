@@ -20,6 +20,7 @@
         <!-- OpenDwgBridge -->
         <SubProduct ProductName="OpenDwgBridge"/>
         <SubNuGetProduct NuGetProductName="OpenDwgBridgeSdkNuget"/>
+        <SubPart PartName="RunOpenDwgImporterTests" PartFile="Bridges/Dwg/DwgConverter/DwgConverter"/>
     </Part>
 
 

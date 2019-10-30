@@ -363,7 +363,8 @@ END_DWGDB_NAMESPACE
     OdRxObjectPtr           Dwg##_classSuffix_##::CreateObject() { return Dwg##_classSuffix_##::createObject(); }   \
     Dwg##_classSuffix_##*   Dwg##_classSuffix_##::Cast(OdRxObject const* rxObj)                                     \
         {                                                                                                           \
-        return (Dwg##_classSuffix_##*)rxObj->queryX(Dwg##_classSuffix_##::desc());                                  \
+        if (rxObj == nullptr || rxObj->numRefs() < 1) return nullptr;                                               \
+        return OdSmartPtr<Dwg##_classSuffix_##>(static_cast<Dwg##_classSuffix_##*>(rxObj->queryX(Dwg##_classSuffix_##::desc())),OdRxObjMod::kOdRxObjAttach).get(); \
         }                                                                                                           \
     OdRxObject* Dwg##_classSuffix_##::QueryX (OdRxClass const* rxc) const { return this->queryX(rxc); }             \
     OdRxObject* Dwg##_classSuffix_##::GetX (OdRxClass const* rxc) const { return this->x(rxc); }                    \
@@ -442,6 +443,17 @@ END_DWGDB_NAMESPACE
                 Util::GetPointArray(points, odPoints);                                  \
             return  ToDwgDbStatus(status);                                              \
             }
+
+// create a new super DbObject which can then be later saved as a DB resident
+#define DWGDB_OBJECT_DEFINE_CREATE(_classSuffix_)                                       \
+        DwgDb##_classSuffix_##* DwgDb##_classSuffix_##::Create()                        \
+            {                                                                           \
+            auto odObj = new T_Super();                                                 \
+            if (odObj == nullptr) return nullptr;                                       \
+            odObj->addRef();                                                            \
+            return DwgDb##_classSuffix_##::Cast(odObj);                                 \
+            }
+
 
 #elif DWGTOOLKIT_RealDwg
 
@@ -604,6 +616,11 @@ END_DWGDB_NAMESPACE
             return  ToDwgDbStatus(status);                                                  \
             }
 
+// create a new super DbObject which can then be later saved as a DB resident
+#define DWGDB_OBJECT_DEFINE_CREATE(_classSuffix_)                                       \
+    DwgDb##_classSuffix_##P DwgDb##_classSuffix_##::Create()                            \
+        { return DwgDb##_classSuffix_##::Cast(new AcDb##_classSuffix_##()); }
+
 #endif  // DWGTOOLKIT_
 
 
@@ -681,11 +698,6 @@ END_DWGDB_NAMESPACE
 #define DWGDB_DEFINE_SMARTPTR_MEMBERS(_classSuffix_)                                    \
             DWGDB_DEFINE_SMARTPTR_OPENOBJECT_CONSTRUCTOR(##_classSuffix_##)             \
             DWGDB_IMPLEMENT_SMARTPTR_INTERFACE(##_classSuffix_##)
-
-// create a new super DbObject which can then be later saved as a DB resident
-#define DWGDB_OBJECT_DEFINE_CREATE(_classSuffix_)                                       \
-    DwgDb##_classSuffix_##P DwgDb##_classSuffix_##::Create()                            \
-        { return DwgDb##_classSuffix_##::Cast(new DWGDB_Type(_classSuffix_)()); }
 
 // define common methods for DbObject derivitives
 #define DWGDB_OBJECT_DEFINE_MEMBERS(_classSuffix_)                                                                                                                              \
