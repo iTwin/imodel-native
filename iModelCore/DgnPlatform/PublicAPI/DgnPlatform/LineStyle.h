@@ -1392,8 +1392,8 @@ public:
     void SetValue (LsDefinitionP v) {m_nameRec = v;}
     void SetName (Utf8CP newName);
 
-    static int64_t GetMinKey () {return INT32_MIN;}
-    static int64_t GetMaxKey () {return INT32_MAX;}
+    static int64_t GetMinKey () {return INT64_MIN;}
+    static int64_t GetMaxKey () {return INT64_MAX;}
     };
 
 //__PUBLISH_SECTION_START__
