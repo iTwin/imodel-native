@@ -1338,6 +1338,7 @@ StableIdPolicy Converter::_GetIdPolicy(DgnV8FileCR dgnFile) const
         case DgnV8Api::DgnFileFormatType::DWG:
         case DgnV8Api::DgnFileFormatType::DXF:
         case DgnV8Api::DgnFileFormatType::IFC:
+        case DgnV8Api::DgnFileFormatType::OpenNurbs:
             return StableIdPolicy::ById;
         }
 
