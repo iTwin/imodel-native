@@ -521,10 +521,26 @@ struct AppData : DgnModel::AppData
         m_entries.clear();
         }
 
+    template<typename F> static auto WithEntry(GeometricModelR model, Tree::Id const& id, bool allocateTree, F func)
+        {
+        auto data = Get(model);
+        Utf8String idString = id.GetPrefixString();
+
+        BeMutexHolder lock(data->m_mutex);
+        auto found = data->m_entries.find(idString);
+        if (data->m_entries.end() == found)
+            found = data->m_entries.insert(Entry(idString)).first;
+
+        auto& entry = const_cast<EntryR>(*found); // because std::set...
+        if (allocateTree && entry.m_tree.IsNull())
+            entry.m_tree = Tree::Create(model, s_system, id);
+
+        return func(entry);
+        }
+
     static TreePtr GetTileTree(GeometricModelR model, Tree::Id const& id, bool createIfNotFound)
         {
-        auto& entry = GetEntry(model, id, createIfNotFound);
-        return entry.m_tree;
+        return WithEntry(model, id, createIfNotFound, [&](EntryR entry) { return entry.m_tree; });
         }
 
     static void PurgeTileTrees(DgnDbR db, bvector<DgnModelId> const* modelIds)
@@ -560,30 +576,15 @@ struct AppData : DgnModel::AppData
     void PurgeTileTrees()
         {
         BeMutexHolder lock(m_mutex);
-        for (auto iter = m_entries.begin(); iter != m_entries.end(); ++iter)
+        for (auto const& cEntry : m_entries)
             {
-            auto& entry = const_cast<EntryR>(*iter); // because std::set...
+            auto& entry = const_cast<EntryR>(cEntry); // because std::set...
             entry.m_tree->Destroy();
             entry.m_requests.clear();
-            iter = m_entries.erase(iter);
+            entry.m_tree = nullptr;
             }
-        }
 
-    static EntryR GetEntry(GeometricModelR model, Tree::Id const& id, bool allocateTree)
-        {
-        auto data = Get(model);
-        Utf8String idString = id.GetPrefixString();
-
-        BeMutexHolder lock(data->m_mutex);
-        auto found = data->m_entries.find(idString);
-        if (data->m_entries.end() == found)
-            found = data->m_entries.insert(Entry(idString)).first;
-
-        auto& entry = const_cast<EntryR>(*found); // because std::set...
-        if (allocateTree && entry.m_tree.IsNull())
-            entry.m_tree = Tree::Create(model, s_system, id);
-
-        return entry;
+        m_entries.clear();
         }
 
     static PollResult PollContent(ICancellationTokenPtr cancel, GeometricModelR model, Tree::Id const& treeId, ContentIdCR contentId);
@@ -667,24 +668,26 @@ Tile::PollResult Tile::Request::Poll() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Tile::PollResult Tile::AppData::PollContent(ICancellationTokenPtr cancel, GeometricModelR model, Tree::Id const& treeId, ContentIdCR contentId)
     {
-    auto& entry = GetEntry(model, treeId, false);
-    auto found = entry.m_requests.find(contentId);
-    if (entry.m_requests.end() == found)
-        found = entry.m_requests.insert(Request::Create(cancel, model, treeId, contentId)).first;
-
-    RequestPtr request = *found;
-    auto result = request->Poll();
-    switch (result.m_state)
+    return WithEntry(model, treeId, false, [&](EntryR entry)
         {
-        case State::New:
-            request->Dispatch();
-            break;
-        case State::Completed:
-            entry.m_requests.erase(found);
-            break;
-        }
+        auto found = entry.m_requests.find(contentId);
+        if (entry.m_requests.end() == found)
+            found = entry.m_requests.insert(Request::Create(cancel, model, treeId, contentId)).first;
 
-    return result;
+        RequestPtr request = *found;
+        auto result = request->Poll();
+        switch (result.m_state)
+            {
+            case State::New:
+                request->Dispatch();
+                break;
+            case State::Completed:
+                entry.m_requests.erase(found);
+                break;
+            }
+
+        return result;
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
