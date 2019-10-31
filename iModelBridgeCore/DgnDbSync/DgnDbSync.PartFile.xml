@@ -191,7 +191,7 @@
     <NuGetProduct Name="iModelFwkForPPNuget" OnlyPlatforms="x64" Description="A complete delivery of the iModel02 stream framework, including DgnV8Bridge support">
         <SubPart PartName="DgnV8ConverterExe"/>
         <SubPart PartName="DgnV8ConverterSqlang" />
-        <SubPart PartName="iModelBridgeFwkLib"            PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"/>
+        <SubPart PartName="iModelBridgeFwkExe-Windows"    PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"  LibType="Dynamic" />
         <SubPart PartName="DgnPlatformSqlang"             PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
         <SubPart PartName="napi-stub"                     PartFile="node-addon-api/node-addon-api"/>
         <SubPart PartName="Domains"                       PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"/>
