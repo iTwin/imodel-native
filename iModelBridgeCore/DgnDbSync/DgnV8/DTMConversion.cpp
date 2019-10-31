@@ -212,8 +212,11 @@ ConvertToDgnDbElementExtension::Result ConvertDTMElement::_PreConvertElement(Dgn
     if (!converter.GetParams().DoRealityDataUpload() && !converter.GetConfig().GetOptionValueBool("DoRealityDataUpload", false))
         return Result::Proceed;
 
-    DgnPlatformLib::Host::IKnownLocationsAdmin& locationAdmin(DgnPlatformLib::QueryHost()->GetIKnownLocationsAdmin());
-    BeFileName tempPath = locationAdmin.GetLocalTempDirectoryBaseName();
+    BeFileName tempPath = converter.GetDgnDb().GetFileName().GetDirectoryName();
+    tempPath = tempPath.AppendToPath(converter.GetDgnDb().GetFileName().GetFileNameWithoutExtension().c_str());
+
+    BeFileName::CreateNewDirectory(tempPath.c_str());
+
     WString file;
     Bentley::WString name;
     Bentley::TerrainModel::Element::DTMElementHandlerManager::GetName (v8el, name);
@@ -224,8 +227,21 @@ ConvertToDgnDbElementExtension::Result ConvertDTMElement::_PreConvertElement(Dgn
     BeFileName smFile = tempPath;
     smFile.AppendExtension(L"3sm");
 
-    bool fileExists = smFile.DoesPathExist();
-    if (!fileExists)
+    bool needsUpdating = !smFile.DoesPathExist();
+    int64_t iDtmtime;
+    dtm->GetBcDTM()->GetLastModifiedTime(iDtmtime); // This is filetime.
+
+    double millsDouble = BeTimeUtilities::ConvertFiletimeToUnixMillisDouble(*(_FILETIME*)&iDtmtime);
+    time_t dtmTime = millsDouble / 1000;
+
+    if (!needsUpdating)
+        {
+        time_t smtime;
+        smFile.GetFileTime(nullptr, nullptr, &smtime);
+        if (smtime != dtmTime)
+            needsUpdating = true;
+        }
+    if (needsUpdating)
         {
         converter.GetProgressMeter().SetCurrentStepName("Converting TM to STM");
 #ifdef FROMELEMREF
@@ -251,6 +267,7 @@ ConvertToDgnDbElementExtension::Result ConvertDTMElement::_PreConvertElement(Dgn
                 }
 
             bcDTM->Save(dtmFile.c_str());
+
             BentleyM0200::ScalableMesh::IDTMSourcePtr sourceP = ScalableMesh::IDTMLocalFileSource::Create(ScalableMesh::DTMSourceDataType::DTM_SOURCE_DATA_DTM, dtmFile.c_str());
 
             scalableMeshCreatorPtr->EditSources().Add(sourceP);
@@ -258,11 +275,11 @@ ConvertToDgnDbElementExtension::Result ConvertDTMElement::_PreConvertElement(Dgn
             scalableMeshCreatorPtr->SaveToFile();
             scalableMeshCreatorPtr = nullptr;
             BeFileName::BeDeleteFile(dtmFile.c_str());
+            smFile.SetFileTime(nullptr, &dtmTime);
             }
         }
-    auto ret = DoConvert(v8el, smFile.c_str(), converter, v8mm, name.c_str());
+    DoConvert(v8el, smFile.c_str(), converter, v8mm, name.c_str());
 
-    //BeFileName::BeDeleteFile(smFile.c_str());
     return  Result::Proceed; // ret;
     }
 
