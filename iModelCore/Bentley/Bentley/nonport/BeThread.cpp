@@ -338,13 +338,20 @@ BentleyStatus BeThreadUtilities::StartNewThread(T_ThreadStart startAddr, void* a
     int result;
     pthread_attr_t  threadAttr;
     result = pthread_attr_init(&threadAttr);
+    BeAssert(0 == result);
     result = pthread_attr_setstacksize(&threadAttr, stackSize);
+    BeAssert(0 == result);
 
     pthread_t threadHandle;
-    uintptr_t retval= pthread_create(&threadHandle, &threadAttr, startAddr, arg);
+    int retval= pthread_create(&threadHandle, &threadAttr, startAddr, arg);
+    BeAssert(0 == retval);
     if (0 == retval)
-        pthread_detach(threadHandle);
+    {
+        result = pthread_detach(threadHandle);
+        BeAssert(0 == result);
+    }
     result = pthread_attr_destroy(&threadAttr);
+    BeAssert(0 == result);
     return (0 == retval) ? SUCCESS : ERROR;
 #elif defined(BENTLEYCONFIG_OS_WINDOWS)
     uintptr_t handle = _beginthreadex(nullptr, (unsigned) stackSize, startAddr, arg, 0, nullptr);
@@ -397,7 +404,7 @@ void BeThread::RunThread(void* arg)
 void BeThread::Start()
     {
     AddRef();
-    if (SUCCESS != BeThreadUtilities::StartNewThread(2 * 1024 * 1024, RunPlatformThread, this))
+    if (SUCCESS != BeThreadUtilities::StartNewThread(BeThreadUtilities::GetDefaultStackSize(), RunPlatformThread, this))
         {
         BeAssert(false);
         Release();
