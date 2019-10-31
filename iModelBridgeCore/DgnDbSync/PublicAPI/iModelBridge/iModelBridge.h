@@ -810,6 +810,8 @@ protected:
     bool m_hadAnyChanges;
 
 public:
+    iModelBridge() : m_hadAnyChanges(false) {}
+
     //! Supply the relative path to the .db3 file that contains translatable strings used by the bridge.
     //! Must be relative to the directory returned by iModelBridge::Params::GetAssetsDir.
     //! @see GetString
