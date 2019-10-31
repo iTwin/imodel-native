@@ -72,5 +72,11 @@ ChangeSetInfoPtr ChangeSetInfo::ParseRapidJson(RapidJsonValueCR properties)
 ChangeSetInfoPtr ChangeSetInfo::Parse(WSObjectsReader::Instance instance)
     {
     RapidJsonValueCR properties = instance.GetProperties();
-    return ParseRapidJson(properties);
+    ChangeSetInfoPtr changeSetInfo = ParseRapidJson(properties);
+
+    BridgePropertiesPtr bridgeProperties = BridgeProperties::ParseFromRelated(instance);
+    if (bridgeProperties.IsValid())
+        changeSetInfo->SetBridgeProperties(bridgeProperties);
+
+    return changeSetInfo;
     }

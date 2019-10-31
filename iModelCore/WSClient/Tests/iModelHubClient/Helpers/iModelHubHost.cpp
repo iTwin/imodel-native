@@ -172,7 +172,7 @@ DgnDbPtr iModelHubHost::CreateTestDb(Utf8StringCR name)
 iModelHubHostImpl::iModelHubHostImpl() : m_isInitialized(false)
     {
     BeAssert((DgnPlatformLib::QueryHost() == NULL) && L"This means an old host is still registered. You should have terminated it first before creating a new host.");
-    DgnPlatformLib::Initialize(*this, false);
+    DgnPlatformLib::Initialize(*this);
     m_isInitialized = true;
     }
 

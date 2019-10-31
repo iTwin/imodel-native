@@ -996,7 +996,9 @@ TEST_F(CodesTests, FailingCodesResponseOptions)
 
     db1.SaveChanges();
     ConflictsInfoPtr conflictsInfo = std::make_shared<ConflictsInfo>();
-    StatusResult result1 = briefcase1->Push(nullptr, false, nullptr, IBriefcaseManager::ResponseOptions::All, nullptr, conflictsInfo)->GetResult();
+    PushChangeSetArgumentsPtr pushChangeSetArguments = PushChangeSetArguments::Create(nullptr, ChangeSetInfo::ContainingChanges::NotSpecified,
+        nullptr, false, nullptr, IBriefcaseManager::ResponseOptions::All, nullptr, conflictsInfo);
+    StatusResult result1 = briefcase1->Push(pushChangeSetArguments)->GetResult();
     ASSERT_SUCCESS(result1);
     EXPECT_TRUE(conflictsInfo->Any());
     EXPECT_EQ(1, conflictsInfo->GetCodesConflicts().size());

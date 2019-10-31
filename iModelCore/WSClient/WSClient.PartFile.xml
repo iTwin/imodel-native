@@ -286,6 +286,7 @@
     </Part>
 
     <Part Name="iModelHubIntegrationTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/iModelHubClient/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Integration">
+	      <SubPart PartName="napi-stub"  Repository="imodel02" PartFile="node-addon-api/node-addon-api"/>
         <SubPart PartName="iModelHubIntegrationTestsHelpers"/>
         <SubPart PartName="FakeServer"/>
         <SubPart PartName="IMHSClientExe"/> 
@@ -320,7 +321,7 @@
 
     <Product Name="iModelHubNativeTests" DeferType="BuildUnitTests" SaveProduct="true">
         <SubPart PartName="iModelHubGtest"/>
-        <Directories DirectoryListName="iModelHubNativeTests"/>
+        <Directories DirectoryListName="GtestProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
     </Product>
 
     <Part Name="IMHSClientExe" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/iModelHubClient/IMHSClientExe/IMHSClient.mke" OnlyPlatforms="x64">
@@ -363,24 +364,6 @@
 
     <ProductDirectoryList ListName="iModelHubNativeTests">
         <ProductDirectory Name="Gtest-NativeAssemblies"    Path=""/>
-        <ProductDirectory Name="Assemblies"                Path=""/>
-        <ProductDirectory Name="Assemblies"                Path="" LibType="Static" Deliver="false"/>
-        <ProductDirectory Name="Assets"                    Path="Assets"/>
-        <ProductDirectory Name="Assets"                    Path="Assets" LibType="static"/>
-        <ProductDirectory Name="sqlang"                    Path="sqlang" RelativeTo="Assets"/>
-        <ProductDirectory Name="sqlang"                    Path="sqlang" RelativeTo="Assets" LibType="static"/>
-        <ProductDirectory Name="Gtest-Assets"              Path="Assets"/>
-        <ProductDirectory Name="VendorNotices"             Deliver="false" />
-        <ProductDirectory Name="VendorNotices"             Deliver="false" LibType="static" />
-        <ProductDirectory Name="LoggingManagedAssemblies"  Deliver="false"/>
-        <ProductDirectory Name="LoggingNativeAssemblies"   Deliver="false"/>
-        <ProductDirectory Name="UnitTests-Objects"         Path="Objects" Deliver="true"/>
-        <ProductDirectory Name="UnitTests-Objects"         Deliver="false" LibType="Static"/>
-        
-        <ProductDirectory Name="PublisherLoggingConfigXml"      Deliver="false" />
-        <ProductDirectory Name="BentleyClientSharedAssemblies"  Deliver="false" />
-        <ProductDirectory Name="BentleyDesktopClientApi"        Deliver="false"/>
-        <ProductDirectory Name="BentleyDesktopClientApi_Native" />
     </ProductDirectoryList>
 
     <!-- //////////////////////////////////////////////////////////////////////////// -->

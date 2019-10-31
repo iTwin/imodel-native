@@ -25,9 +25,11 @@ HANDLER_DEFINE_MEMBERS(TestInformationRecordHandler)
 HANDLER_DEFINE_MEMBERS(TestUniqueAspectHandler)
 HANDLER_DEFINE_MEMBERS(TestMultiAspectHandler)
 HANDLER_DEFINE_MEMBERS(TestGroupHandler)
-HANDLER_DEFINE_MEMBERS(TestElementDrivesElementHandler)
 
+#ifdef NO_IMPLEMENTATION_IN_IMODEL02_PLATFORM
+HANDLER_DEFINE_MEMBERS(TestElementDrivesElementHandler)
 bool TestElementDrivesElementHandler::s_shouldFail;
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/16
@@ -247,9 +249,9 @@ DgnDbStatus TestElement::_DeleteInDb() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TestElement::_CopyFrom(DgnElementCR el)
+void TestElement::_CopyFrom(DgnElementCR el, CopyFromOptions const& opts)
     {
-    T_Super::_CopyFrom(el);
+    T_Super::_CopyFrom(el, opts);
     auto testEl = dynamic_cast<TestElement const*>(&el);
     if (nullptr != testEl)
         {
@@ -477,6 +479,7 @@ DgnDbStatus TestMultiAspect::_SetPropertyValue(Utf8CP propertyName, ECN::ECValue
     return DgnDbStatus::BadArg;
     }
 
+#ifdef NO_IMPLEMENTATION_IN_IMODEL02_PLATFORM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -541,6 +544,7 @@ ECInstanceKey TestElementDrivesElementHandler::Insert(DgnDbR db, DgnElementId ro
     db.InsertLinkTableRelationship(rkey, (ECN::ECRelationshipClassCR)(GetECClass(db)), root, dependent);
     return rkey;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/15
@@ -557,9 +561,11 @@ DgnPlatformTestDomain::DgnPlatformTestDomain() : DgnDomain(DPTEST_SCHEMA_NAME, "
     RegisterHandler(TestInformationRecordHandler::GetHandler());
     RegisterHandler(TestUniqueAspectHandler::GetHandler());
     RegisterHandler(TestMultiAspectHandler::GetHandler());
+    #ifdef NO_IMPLEMENTATION_IN_IMODEL02_PLATFORM
     RegisterHandler(TestElementDrivesElementHandler::GetHandler());
-    
+    #endif
     }
 
+#ifdef NO_IMPLEMENTATION_IN_IMODEL02_PLATFORM
 TestElementDrivesElementHandler::Callback* TestElementDrivesElementHandler::s_callback = nullptr;
-
+#endif

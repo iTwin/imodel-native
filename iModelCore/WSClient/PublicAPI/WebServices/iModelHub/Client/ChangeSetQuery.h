@@ -1,0 +1,48 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+//__PUBLISH_SECTION_START__
+#include <WebServices/iModelHub/Common.h>
+#include <WebServices/Client/WSRepositoryClient.h>
+
+BEGIN_BENTLEY_IMODELHUB_NAMESPACE
+
+USING_NAMESPACE_BENTLEY_WEBSERVICES
+
+//=======================================================================================
+//@bsiclass                                      Algirdas.Mikoliunas             10/2019
+//=======================================================================================
+struct ChangeSetQuery
+{
+private:
+    friend struct iModelConnection;
+    WSQuery m_wsQuery;
+
+    bool FilterBySeedFileId(BeSQLite::BeGuidCR seedFileId);
+    void SelectDownloadAccessKey();
+public:
+    //! Create an instance of bridge properties.
+    IMODELHUBCLIENT_EXPORT ChangeSetQuery();
+    WSQuery GetWSQuery() { return m_wsQuery; }
+
+    //! Sets filter to get ChangeSets between two specified ChangeSets.
+    //! @param[in] firstChangeSetId If empty gets all changeSets before secondChangeSetId
+    //! @param[in] secondChangeSetId If empty gets all changeSets before firstChangeSetId.
+    IMODELHUBCLIENT_EXPORT bool FilterChangeSetsBetween(Utf8StringCR firstChangeSetId, Utf8StringCR secondChangeSetId);
+    
+    //! Sets filter to get all changeSets after the specific ChangeSetId.
+    //! @param[in] changeSetId Id of the parent ChangeSet for the first ChangeSet in the resulting collection. If empty gets all changeSets on server.
+    IMODELHUBCLIENT_EXPORT bool FilterChangeSetsAfterId(Utf8StringCR changeSetId);
+
+    //! Sets filter to get a ChangeSet for the specific ChangeSetId.
+    //! @param[in] changeSetId Id of the ChangeSet to retrieve.
+    IMODELHUBCLIENT_EXPORT bool FilterById(Utf8StringCR changeSetId);
+
+    //! Sets selector to query bridge properties
+    IMODELHUBCLIENT_EXPORT void SelectBridgeProperties();
+};
+
+END_BENTLEY_IMODELHUB_NAMESPACE

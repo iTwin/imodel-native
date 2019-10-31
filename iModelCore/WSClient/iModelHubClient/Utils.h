@@ -30,6 +30,7 @@ namespace ServerSchema
     static Utf8CP RelatedInstance = "relatedInstance";
     static Utf8CP SchemaName = "schemaName";
     static Utf8CP ClassName = "className";
+    static Utf8CP Direction = "direction";
     namespace Schema
         {
         static Utf8CP iModel = "iModelScope";
@@ -67,6 +68,7 @@ namespace ServerSchema
         static Utf8CP Statistics = "Statistics";
         static Utf8CP SmallThumbnail = "SmallThumbnail";
         static Utf8CP LargeThumbnail = "LargeThumbnail";
+        static Utf8CP BridgeProperties = "BridgeProperties";
         }
     namespace Relationship
         {
@@ -76,6 +78,11 @@ namespace ServerSchema
         static Utf8CP CumulativeChangeSet = "CumulativeChangeSet";
         static Utf8CP HasStatistics = "HasStatistics";
         static Utf8CP HasThumbnail = "HasThumbnail";
+        static Utf8CP HasBridgeProperties = "HasBridgeProperties";
+        }
+    namespace RelationshipDirection
+        {
+        static Utf8CP Forward = "forward";
         }
     namespace Property
         {
@@ -149,6 +156,9 @@ namespace ServerSchema
         static Utf8CP OwnedLocksCount = "OwnedLocksCount";
         static Utf8CP PushedChangeSetsCount = "PushedChangeSetsCount";
         static Utf8CP LastChangeSetPushDate = "LastChangeSetPushDate";
+        static Utf8CP JobId = "JobId";
+        static Utf8CP ChangedFiles = "ChangedFiles";
+        static Utf8CP Users = "Users";
         }
     namespace ExtendedParameters
         {
@@ -230,6 +240,12 @@ IBriefcaseManager::Response ConvertErrorResponse(IBriefcaseManager::Request cons
 bool ContainsSchemaChanges(ChangeSets const& changeSets, DgnDbR db);
 void ConvertToChangeSetPointersVector(ChangeSets changeSets, bvector<DgnRevisionCP>& pointersVector);
 Utf8String FormatBeInt64Id(BeInt64Id int64Value);
+
+bool TryParseStringProperty(Utf8StringR result, RapidJsonValueCR propertiesInstance, Utf8CP propertyName);
+bool TryParseStringArrayProperty(bvector<Utf8String>& result, RapidJsonValueCR propertiesInstance, Utf8CP propertyName);
+bool TryParseGuidProperty(BeSQLite::BeGuid& result, RapidJsonValueCR propertiesInstance, Utf8CP propertyName);
+bool TryGetRelatedInstance(WSObjectsReader::Instance& result, WSObjectsReader::Instance mainInstance, Utf8CP className);
+void FillArrayPropertyJson(JsonValueR propertiesJson, Utf8CP propertyName, bvector<Utf8String> arrayValues);
 
 //=======================================================================================
 //@bsiclass                                      Algirdas.Mikoliunas             10/2016

@@ -17,7 +17,10 @@ static const Utf8CP s_iModelName = "LocksTests";
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                     Karolis.Dziedzelis              11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct LocksTests : public iModelTestsBase, TestElementDrivesElementHandler::Callback
+struct LocksTests : public iModelTestsBase 
+#ifdef NO_IMPLEMENTATION_IN_IMODEL02_PLATFORM
+    , TestElementDrivesElementHandler::Callback 
+#endif
     {
     iModelInfoPtr   m_info;
     DgnElementCPtr  m_onRootChangedElement = nullptr;
@@ -48,7 +51,7 @@ struct LocksTests : public iModelTestsBase, TestElementDrivesElementHandler::Cal
         ASSERT_SUCCESS(result);
         m_info = result.GetValue();
         }
-
+#ifdef NO_IMPLEMENTATION_IN_IMODEL02_PLATFORM
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    Diego.Pinate    04/18
     +---------------+---------------+---------------+---------------+---------------+------*/
@@ -72,6 +75,7 @@ struct LocksTests : public iModelTestsBase, TestElementDrivesElementHandler::Cal
     void _ProcessDeletedDependency(DgnDbR db, dgn_TxnTable::ElementDep::DepRelData const& relData) override
         {
         }
+#endif
     };
 
 //---------------------------------------------------------------------------------------
@@ -390,7 +394,9 @@ TEST_F(LocksTests, FailingLocksResponseOptions)
     iModelHubHelpers::ExpectLocksCount(briefcase2, 2);
 
     ConflictsInfoPtr conflictsInfo = std::make_shared<ConflictsInfo>();
-    StatusResult result1 = briefcase1->Push(nullptr, false, nullptr, IBriefcaseManager::ResponseOptions::All, nullptr, conflictsInfo)->GetResult();
+    PushChangeSetArgumentsPtr pushChangeSetArguments = PushChangeSetArguments::Create(nullptr, ChangeSetInfo::ContainingChanges::NotSpecified,
+        nullptr, false, nullptr, IBriefcaseManager::ResponseOptions::All, nullptr, conflictsInfo);
+    StatusResult result1 = briefcase1->Push(pushChangeSetArguments)->GetResult();
     ASSERT_SUCCESS(result1);
     EXPECT_TRUE(conflictsInfo->Any());
     EXPECT_EQ(1, conflictsInfo->GetLocksConflicts().size());
@@ -771,6 +777,7 @@ TEST_F(LocksTests, WorkflowUpdateElementWithExclusiveModelLock)
     VerifyLocalAndServerLocks(briefcase, lockElementId, LockLevel::Exclusive, true, false);
     }
 
+#ifdef NO_IMPLEMENTATION_IN_IMODEL02_PLATFORM
 //---------------------------------------------------------------------------------------
 // In Component Modeling we have a "definition" and "instances" of the definition. 
 // A user should be able to edit the "definition" while another user moves or interacts with the placed instances.
@@ -828,3 +835,4 @@ TEST_F(LocksTests, IndirectChangesShouldNotBeExtractedAsRequiredLocks)
     TestElementDrivesElementHandler::SetCallback(nullptr);
     m_onRootChangedElement = nullptr;
     }
+#endif

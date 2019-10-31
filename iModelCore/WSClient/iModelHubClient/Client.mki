@@ -49,6 +49,7 @@ iModelHubClientMkiHeaders =	$(iModelHubClientMkiPublicApiDir)Common.h           
                                 $(iModelHubClientMkiSourceDir)Events/EventCallbackManager.h      \
                                 $(iModelHubClientMkiSourceDir)JsonFormatters/MultiLockFormatter.h \
                                 $(iModelHubClientMkiSourceDir)JsonFormatters/MultiCodeFormatter.h \
+                                $(iModelHubClientMkiSourceDir)JsonFormatters/ChangeSetFormatter.h \
                                 $(iModelHubClientMkiSourceDir)Storage/PendingChangeSetStorage.h   \
                                 $(iModelHubClientMkiPublicApiDir)Client/FileAccessKey.h          \
                                 $(iModelHubClientMkiPublicApiDir)Client/BaseFileInfo.h           \
@@ -65,7 +66,10 @@ iModelHubClientMkiHeaders =	$(iModelHubClientMkiPublicApiDir)Common.h           
                                 $(iModelHubClientMkiPublicApiDir)Client/StatisticsManager.h      \
                                 $(iModelHubClientMkiPublicApiDir)Client/ChunkedWSChangeset.h     \
                                 $(iModelHubClientMkiPublicApiDir)Client/ThumbnailsManager.h      \
-                                $(iModelHubClientMkiPublicApiDir)Client/ConflictsInfo.h
+                                $(iModelHubClientMkiPublicApiDir)Client/ConflictsInfo.h          \
+                                $(iModelHubClientMkiPublicApiDir)Client/BridgeProperties.h       \
+                                $(iModelHubClientMkiPublicApiDir)Client/ChangeSetArguments.h     \
+                                $(iModelHubClientMkiPublicApiDir)Client/ChangeSetQuery.h
 
 #----------------------------------------------------------------------------------------
 #   Compile
@@ -165,9 +169,17 @@ $(o)MultiLockFormatter$(oext)              : $(iModelHubClientMkiSourceDir)JsonF
 
 $(o)MultiCodeFormatter$(oext)              : $(iModelHubClientMkiSourceDir)JsonFormatters/MultiCodeFormatter.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
+$(o)ChangeSetFormatter$(oext)              : $(iModelHubClientMkiSourceDir)JsonFormatters/ChangeSetFormatter.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
 $(o)PendingChangeSetStorage$(oext)         : $(iModelHubClientMkiSourceDir)Storage/PendingChangeSetStorage.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)ConflictsInfo$(oext)                   : $(iModelHubClientMkiSourceDir)ConflictsInfo.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)ThumbnailsManager$(oext)               : $(iModelHubClientMkiSourceDir)ThumbnailsManager.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)ChangeSetArguments$(oext)              : $(iModelHubClientMkiSourceDir)ChangeSetArguments.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)ChangeSetQuery$(oext)                  : $(iModelHubClientMkiSourceDir)ChangeSetQuery.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)BridgeProperties$(oext)                : $(iModelHubClientMkiSourceDir)BridgeProperties.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 

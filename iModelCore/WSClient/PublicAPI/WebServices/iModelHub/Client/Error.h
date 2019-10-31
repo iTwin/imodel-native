@@ -91,6 +91,9 @@ public:
         TrackingNotEnabled,
         InvalidiModelExtentCount,
         InvalidiModelExtentCoordinate,
+        InvalidContainingChangesValue,
+        InvalidBridgePropertiesUsersValue,
+        InvalidBridgePropertiesChangedFilesValue,
 
         //Event Errors
         NoEventsFound = 300,

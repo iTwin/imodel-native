@@ -71,6 +71,93 @@ bool StringFromJson(Utf8StringR result, RapidJsonValueCR value)
     return true;
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Algirdas.Mikoliunas              10/2019
+//---------------------------------------------------------------------------------------
+bool TryParseStringProperty(Utf8StringR result, RapidJsonValueCR propertiesInstance, Utf8CP propertyName)
+    {
+    if (!propertiesInstance.HasMember(propertyName) ||
+        !propertiesInstance[propertyName].IsString())
+        return false;
+
+    result = propertiesInstance[propertyName].GetString();
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Algirdas.Mikoliunas              10/2019
+//---------------------------------------------------------------------------------------
+bool TryParseGuidProperty(BeSQLite::BeGuid& result, RapidJsonValueCR propertiesInstance, Utf8CP propertyName)
+    {
+    Utf8String resultString;
+    if (!TryParseStringProperty(resultString, propertiesInstance, propertyName))
+        return false;
+
+    return result.FromString(resultString.c_str()) == BentleyStatus::SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Algirdas.Mikoliunas              10/2019
+//---------------------------------------------------------------------------------------
+bool TryParseStringArrayProperty(bvector<Utf8String>& result, RapidJsonValueCR propertiesInstance, Utf8CP propertyName)
+    {
+    if (!propertiesInstance.HasMember(propertyName) || !propertiesInstance[propertyName].IsArray())
+        return false;
+
+    auto valuesArray = propertiesInstance[propertyName].GetArray();
+    for (auto const& value : valuesArray)
+        {
+        if (value.IsString())
+            result.push_back(value.GetString());
+        }
+
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Algirdas.Mikoliunas              10/2019
+//---------------------------------------------------------------------------------------
+bool TryGetRelatedInstance(WSObjectsReader::Instance& result, WSObjectsReader::Instance mainInstance, Utf8CP className)
+    {
+    auto relationshipInstances = mainInstance.GetRelationshipInstances();
+    if (0 == relationshipInstances.Size())
+        return false;
+
+    for (auto relationshipInstance : relationshipInstances)
+        {
+        auto relatedInstance = relationshipInstance.GetRelatedInstance();
+        if (!relatedInstance.IsValid())
+            continue;
+
+        if (relatedInstance.GetObjectId().className == className)
+            {
+            result = relatedInstance;
+            return true;
+            }
+        }
+
+    return false;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas            10/2019
+//---------------------------------------------------------------------------------------
+void FillArrayPropertyJson
+(
+JsonValueR            propertiesJson,
+Utf8CP                propertyName,
+bvector<Utf8String>   arrayValues
+)
+    {
+    if (arrayValues.empty())
+        return;
+
+    propertiesJson[propertyName] = Json::arrayValue;
+    int i = 0;
+    for (auto const& arrayValue : arrayValues)
+        propertiesJson[propertyName][i++] = arrayValue.c_str();
+    }
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                              julius.cepukenas   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -84,7 +171,6 @@ bool LockLevelFromJson(LockLevel& level, RapidJsonValueCR value)
 
     return false;
     }
-
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             julius.cepukenas   10/16

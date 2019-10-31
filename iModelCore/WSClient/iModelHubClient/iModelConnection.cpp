@@ -13,9 +13,12 @@
 #include "Events/EventCallbackManager.h"
 #include <WebServices/iModelHub/Events/ChangeSetPostPushEvent.h>
 #include <WebServices/iModelHub/Client/ChangeSetInfo.h>
+#include <WebServices/iModelHub/Client/ChangeSetArguments.h>
+#include <WebServices/iModelHub/Client/ChangeSetQuery.h>
 #include "MultiProgressCallbackHandler.h"
 #include "JsonFormatters/MultiLockFormatter.h"
 #include "JsonFormatters/MultiCodeFormatter.h"
+#include "JsonFormatters/ChangeSetFormatter.h"
 #include "Storage/PendingChangeSetStorage.h"
 #include "Events/EventManager.h"
 
@@ -1339,53 +1342,14 @@ bool                  loadAccessKey,
 ICancellationTokenPtr cancellationToken
 ) const
     {
-    auto query = CreateChangeSetsAfterIdQuery(changeSetId, fileId);
+    ChangeSetQuery changeSetQuery;
+    changeSetQuery.FilterChangeSetsAfterId(changeSetId);
+    changeSetQuery.FilterBySeedFileId(fileId);
 
     if (loadAccessKey)
-        {
-        Utf8String selectString;
-        selectString.Sprintf("%s,%s,%s,%s", ServerSchema::Property::Id, ServerSchema::Property::Index, ServerSchema::Property::ParentId, 
-                             ServerSchema::Property::SeedFileId);
-        FileAccessKey::AddDownloadAccessKeySelect(selectString);
-        query.SetSelect(selectString);
-        }
+        changeSetQuery.SelectDownloadAccessKey();
 
-    return GetChangeSetsFromQueryByChunks(query, loadAccessKey, cancellationToken);
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas             02/2017
-//---------------------------------------------------------------------------------------
-WSQuery iModelConnection::CreateChangeSetsAfterIdQuery
-(
-Utf8StringCR          changeSetId,
-BeGuidCR              fileId
-) const
-    {
-    WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::ChangeSet);
-    BeGuid id = fileId;
-    Utf8String queryFilter;
-
-    if (Utf8String::IsNullOrEmpty(changeSetId.c_str()))
-        {
-        if (id.IsValid())
-            queryFilter.Sprintf("%s+eq+'%s'", ServerSchema::Property::SeedFileId, id.ToString().c_str());
-        }
-    else
-        {
-        if (id.IsValid())
-            queryFilter.Sprintf("%s-backward-%s.%s+eq+'%s'+and+%s+eq+'%s'", ServerSchema::Relationship::FollowingChangeSet, 
-                                ServerSchema::Class::ChangeSet,
-                                ServerSchema::Property::Id, changeSetId.c_str(),
-                                ServerSchema::Property::SeedFileId, id.ToString().c_str());
-        else
-            queryFilter.Sprintf("%s-backward-%s.%s+eq+'%s'", ServerSchema::Relationship::FollowingChangeSet, ServerSchema::Class::ChangeSet,
-                ServerSchema::Property::Id, changeSetId.c_str());
-        }
-
-    query.SetFilter(queryFilter);
-
-    return query;
+    return GetChangeSetsFromQueryByChunks(changeSetQuery.GetWSQuery(), loadAccessKey, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1511,17 +1475,12 @@ ChangeSetsTaskPtr iModelConnection::DownloadChangeSetsBetween(Utf8StringCR first
     if (Utf8String::IsNullOrEmpty(firstChangeSetId.c_str()) && Utf8String::IsNullOrEmpty(secondChangeSetId.c_str()))
         return CreateCompletedAsyncTask<ChangeSetsResult>(ChangeSetsResult::Error(Error::Id::InvalidChangeSet));
 
-    auto query = CreateBetweenChangeSetsQuery(firstChangeSetId, secondChangeSetId, fileId);
-    
-    Utf8String selectString;
-    selectString.Sprintf("%s,%s,%s,%s", ServerSchema::Property::Id, ServerSchema::Property::Index, ServerSchema::Property::ParentId, 
-                         ServerSchema::Property::SeedFileId);
-    FileAccessKey::AddDownloadAccessKeySelect(selectString);
-    query.SetSelect(selectString);
+    ChangeSetQuery changeSetQuery = CreateBetweenChangeSetsQuery(firstChangeSetId, secondChangeSetId, fileId);
+    changeSetQuery.SelectDownloadAccessKey();
 
     std::shared_ptr<ChangeSetsResult> finalResult = std::make_shared<ChangeSetsResult>();
 
-    return GetChangeSetsFromQueryByChunks(query, true, cancellationToken)
+    return GetChangeSetsFromQueryByChunks(changeSetQuery.GetWSQuery(), true, cancellationToken)
         ->Then([=](ChangeSetsInfoResultCR changeSetsQueryResult) {
         if (!changeSetsQueryResult.IsSuccess())
             {
@@ -1698,46 +1657,11 @@ StatusTaskPtr iModelConnection::WaitForInitialization(ICancellationTokenPtr canc
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-Json::Value PushChangeSetJson
-(
-Dgn::DgnRevisionPtr changeSet,
-BeBriefcaseId       briefcaseId,
-bool                containsSchemaChanges
-)
-    {
-    Json::Value pushChangeSetJson = Json::objectValue;
-    JsonValueR instance = pushChangeSetJson[ServerSchema::Instance] = Json::objectValue;
-    instance[ServerSchema::SchemaName] = ServerSchema::Schema::iModel;
-    instance[ServerSchema::ClassName] = ServerSchema::Class::ChangeSet;
-    instance[ServerSchema::Properties] = Json::objectValue;
-
-    JsonValueR properties = instance[ServerSchema::Properties];
-    properties[ServerSchema::Property::Id] = changeSet->GetId();
-    properties[ServerSchema::Property::Description] = changeSet->GetSummary();
-    uint64_t size;
-    changeSet->GetRevisionChangesFile().GetFileSize(size);
-    properties[ServerSchema::Property::FileSize] = Json::Value(size);
-    properties[ServerSchema::Property::ParentId] = changeSet->GetParentId();
-    properties[ServerSchema::Property::SeedFileId] = changeSet->GetDbGuid();
-    properties[ServerSchema::Property::BriefcaseId] = briefcaseId.GetValue();
-    properties[ServerSchema::Property::IsUploaded] = false;
-    properties[ServerSchema::Property::ContainingChanges] = containsSchemaChanges ? 1 : 0;
-    return pushChangeSetJson;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             10/2015
-//---------------------------------------------------------------------------------------
 StatusTaskPtr iModelConnection::Push
 (
 Dgn::DgnRevisionPtr                 changeSet,
 Dgn::DgnDbR                         dgndb,
-bool                                relinquishCodesLocks,
-Http::Request::ProgressCallbackCR   callback,
-IBriefcaseManager::ResponseOptions  options,
-ICancellationTokenPtr               cancellationToken,
-ConflictsInfoPtr                    conflictsInfo,
-CodeCallbackFunction*               codesCallback
+PushChangeSetArgumentsPtr           pushArguments
 ) const
     {
     const Utf8String methodName = "iModelConnection::Push";
@@ -1745,13 +1669,16 @@ CodeCallbackFunction*               codesCallback
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, requestOptions, "Method called.");
     DgnDbP pDgnDb = &dgndb;
 
+    StatusResult validatePushInfoResult = pushArguments->Validate(changeSet, dgndb);
+    if (!validatePushInfoResult.IsSuccess())
+        return CreateCompletedAsyncTask(validatePushInfoResult);
+
     // Stage 1. Create changeSet.
-    std::shared_ptr<Json::Value> pushJson = std::make_shared<Json::Value>(PushChangeSetJson(changeSet, dgndb.GetBriefcaseId(), 
-                                                                                            changeSet->ContainsSchemaChanges(dgndb)));
+    std::shared_ptr<Json::Value> pushJson = std::make_shared<Json::Value>(ChangeSetFormatter::Format(changeSet, dgndb.GetBriefcaseId(), pushArguments));
     std::shared_ptr<StatusResult> finalResult = std::make_shared<StatusResult>();
     return ExecuteWithRetry<void>([=]()
         {
-        return m_wsRepositoryClient->SendCreateObjectRequestWithOptions(*pushJson, BeFileName(), nullptr, requestOptions, cancellationToken)
+        return m_wsRepositoryClient->SendCreateObjectRequestWithOptions(*pushJson, BeFileName(), nullptr, requestOptions, pushArguments->GetCancelationToken())
             ->Then([=](const WSCreateObjectResult& initializePushResult)
             {
 #if defined (ENABLE_BIM_CRASH_TESTS)
@@ -1780,7 +1707,7 @@ CodeCallbackFunction*               codesCallback
             ObjectId    changeSetObjectId = ObjectId(ServerSchema::Schema::iModel, ServerSchema::Class::ChangeSet, changeSetInstanceId);
             auto fileAccessKey = FileAccessKey::ParseFromRelated(changeSetInstance);
 
-            m_azureClient->SendUpdateFileRequest(fileAccessKey->GetUploadUrl(), changeSet->GetRevisionChangesFile(), callback, nullptr, cancellationToken)
+            m_azureClient->SendUpdateFileRequest(fileAccessKey->GetUploadUrl(), changeSet->GetRevisionChangesFile(), pushArguments->GetProgressCallback(), nullptr, pushArguments->GetCancelationToken())
                 ->Then([=] (const AzureResult& result)
                 {
 #if defined (ENABLE_BIM_CRASH_TESTS)
@@ -1794,7 +1721,7 @@ CodeCallbackFunction*               codesCallback
                     }
 
                 // Stage 3. Initialize changeSet.
-                InitializeChangeSet(changeSet, *pDgnDb, *pushJson, changeSetObjectId, relinquishCodesLocks, options, cancellationToken, conflictsInfo, codesCallback)
+                InitializeChangeSet(changeSet, *pDgnDb, *pushJson, changeSetObjectId, pushArguments)
                     ->Then([=] (StatusResultCR result)
                     {
                     if (result.IsSuccess())
@@ -2002,12 +1929,8 @@ StatusTaskPtr iModelConnection::InitializeChangeSet
 Dgn::DgnRevisionPtr                 changeSet,
 Dgn::DgnDbR                         dgndb,
 JsonValueR                          pushJson,
-ObjectId                            changeSetObjectId,
-bool                                relinquishCodesLocks,
-IBriefcaseManager::ResponseOptions  options,
-ICancellationTokenPtr               cancellationToken,
-ConflictsInfoPtr                    conflictsInfo,
-CodeCallbackFunction*               codesCallback
+ObjectId                            changeSetObjectId, 
+PushChangeSetArgumentsPtr           pushArguments
 ) const
     {
     DgnDbP pDgnDb = &dgndb;
@@ -2029,7 +1952,7 @@ CodeCallbackFunction*               codesCallback
 
     PendingChangeSetStorage::AddItem(*pDgnDb, changeSet->GetId());
 
-    return SendChangesetRequest(changeset, options, cancellationToken, requestOptions)
+    return SendChangesetRequest(changeset, pushArguments->GetResponseOptions(), pushArguments->GetCancelationToken(), requestOptions)
         ->Then([=](const StatusResult& initializeChangeSetResult)
         {
         if (!initializeChangeSetResult.IsSuccess())
@@ -2042,12 +1965,12 @@ CodeCallbackFunction*               codesCallback
 
         ChunkedWSChangeset codesLocksChangeSet;
         DgnCodeSet externalAssignedCodes, externalDiscardedCodes;
-        ExtractCodesLocksChangeset(changeSet, codesLocksChangeSet, *pDgnDb, relinquishCodesLocks, &externalAssignedCodes, &externalDiscardedCodes);
+        ExtractCodesLocksChangeset(changeSet, codesLocksChangeSet, *pDgnDb, pushArguments->GetRelinquishCodesLocks(), &externalAssignedCodes, &externalDiscardedCodes);
 
         ChangesetResponseOptions changesetOptions(IBriefcaseManager::ResponseOptions::All, ConflictStrategy::Continue);
 
         bset<std::shared_ptr<AsyncTask>> tasks;
-        auto imodelHubCodesLocksTask = SendChunkedChangesetRequest(codesLocksChangeSet, changesetOptions, cancellationToken, requestOptions, 3, conflictsInfo)
+        auto imodelHubCodesLocksTask = SendChunkedChangesetRequest(codesLocksChangeSet, changesetOptions, pushArguments->GetCancelationToken(), requestOptions, 3, pushArguments->GetConflictsInfo())
             ->Then<StatusResult>([=](const StatusResult& codesLocksResult) {
             if (codesLocksResult.IsSuccess() || codesLocksResult.GetError().GetId() == Error::Id::ConflictsAggregate)
                 PendingChangeSetStorage::RemoveItem(*pDgnDb, changeSet->GetId());
@@ -2056,6 +1979,7 @@ CodeCallbackFunction*               codesCallback
             });
         tasks.insert(imodelHubCodesLocksTask);
 
+        CodeCallbackFunction* codesCallback = pushArguments->GetCodesCallback();
         if (nullptr != codesCallback)
             {
             auto extenalCodesTask = (*codesCallback)(externalAssignedCodes, externalDiscardedCodes);
@@ -3052,6 +2976,17 @@ BriefcaseInfoTaskPtr iModelConnection::AcquireNewBriefcase(ICancellationTokenPtr
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             10/2019
+//---------------------------------------------------------------------------------------
+ChangeSetsInfoTaskPtr iModelConnection::GetChangeSets(ChangeSetQuery query, ICancellationTokenPtr cancellationToken) const
+    {
+    const Utf8String methodName = "iModelConnection::GetChangeSets";
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    
+    return GetChangeSetsFromQueryByChunks(query.GetWSQuery(), false, cancellationToken);
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     Eligijus.Mauragas              03/2016
 //---------------------------------------------------------------------------------------
 ChangeSetsInfoTaskPtr iModelConnection::GetAllChangeSets(ICancellationTokenPtr cancellationToken) const
@@ -3106,56 +3041,18 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Viktorija.Adomauskaite           08/2017
 //---------------------------------------------------------------------------------------
-WSQuery iModelConnection::CreateBetweenChangeSetsQuery
+ChangeSetQuery iModelConnection::CreateBetweenChangeSetsQuery
 (
 Utf8StringCR firstchangeSetId,
 Utf8StringCR secondChangeSetId,
 BeSQLite::BeGuidCR fileId
 ) const
     {
-    WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::ChangeSet);
-    Utf8String queryFilter;
+    ChangeSetQuery changeSetQuery;
+    changeSetQuery.FilterChangeSetsBetween(firstchangeSetId, secondChangeSetId);
+    changeSetQuery.FilterBySeedFileId(fileId);
 
-    Utf8String notNullChangeSetId = "";
-    if (Utf8String::IsNullOrEmpty(firstchangeSetId.c_str()))
-        notNullChangeSetId = secondChangeSetId;
-
-    if (Utf8String::IsNullOrEmpty(secondChangeSetId.c_str()))
-        notNullChangeSetId = firstchangeSetId;
-
-    if (!Utf8String::IsNullOrEmpty(notNullChangeSetId.c_str()))
-        {
-        if (fileId.IsValid())
-            queryFilter.Sprintf("%s-backward-%s.%s+eq+'%s'+and+%s+eq+'%s'",
-                                ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::ChangeSet, ServerSchema::Property::Id, 
-                                notNullChangeSetId.c_str(), ServerSchema::Property::SeedFileId, fileId.ToString().c_str());
-        else
-            queryFilter.Sprintf("%s-backward-%s.%s+eq+'%s'",
-                                ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::ChangeSet, ServerSchema::Property::Id, 
-                                notNullChangeSetId.c_str());
-        }
-    else
-        {
-        if (fileId.IsValid())
-            queryFilter.Sprintf
-            ("(%s-backward-%s.%s+eq+'%s'+and+%s-backward-%s.%s+eq+'%s')+or+(%s-backward-%s.%s+eq+'%s'+and+%s-backward-%s.%s+eq+'%s')+and+%s+eq+'%s'",
-             ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::ChangeSet, ServerSchema::Property::Id, firstchangeSetId.c_str(),
-             ServerSchema::Relationship::FollowingChangeSet, ServerSchema::Class::ChangeSet, ServerSchema::Property::Id, secondChangeSetId.c_str(),
-             ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::ChangeSet, ServerSchema::Property::Id, secondChangeSetId.c_str(),
-             ServerSchema::Relationship::FollowingChangeSet, ServerSchema::Class::ChangeSet, ServerSchema::Property::Id, firstchangeSetId.c_str(),
-             ServerSchema::Property::SeedFileId, fileId.ToString().c_str());
-        else
-            queryFilter.Sprintf
-            ("(%s-backward-%s.%s+eq+'%s'+and+%s-backward-%s.%s+eq+'%s')+or+(%s-backward-%s.%s+eq+'%s'+and+%s-backward-%s.%s+eq+'%s')",
-             ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::ChangeSet, ServerSchema::Property::Id, firstchangeSetId.c_str(),
-             ServerSchema::Relationship::FollowingChangeSet, ServerSchema::Class::ChangeSet, ServerSchema::Property::Id, secondChangeSetId.c_str(),
-             ServerSchema::Relationship::CumulativeChangeSet, ServerSchema::Class::ChangeSet, ServerSchema::Property::Id, secondChangeSetId.c_str(),
-             ServerSchema::Relationship::FollowingChangeSet, ServerSchema::Class::ChangeSet, ServerSchema::Property::Id, firstchangeSetId.c_str());
-        }
-
-    query.SetFilter(queryFilter);
-
-    return query;
+    return changeSetQuery;
     }
 
 //---------------------------------------------------------------------------------------
@@ -3170,7 +3067,8 @@ ChangeSetsInfoTaskPtr iModelConnection::GetChangeSetsBetween(Utf8StringCR firstC
     if (Utf8String::IsNullOrEmpty(firstChangeSetId.c_str()) && Utf8String::IsNullOrEmpty(secondChangeSetId.c_str()))
         return CreateCompletedAsyncTask(ChangeSetsInfoResult::Error(Error::Id::InvalidChangeSet));
 
-    return GetChangeSetsFromQueryByChunks(CreateBetweenChangeSetsQuery(firstChangeSetId, secondChangeSetId, fileId), false, cancellationToken);
+    ChangeSetQuery changeSetQuery = CreateBetweenChangeSetsQuery(firstChangeSetId, secondChangeSetId, fileId);
+    return GetChangeSetsFromQueryByChunks(changeSetQuery.GetWSQuery(), false, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------

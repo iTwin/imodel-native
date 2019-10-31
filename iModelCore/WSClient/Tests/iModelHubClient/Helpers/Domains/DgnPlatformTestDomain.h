@@ -118,7 +118,7 @@ protected:
     Dgn::DgnDbStatus _DeleteInDb() const override;
     Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
     void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
-    void _CopyFrom(Dgn::DgnElementCR el) override;
+    void _CopyFrom(Dgn::DgnElementCR el, CopyFromOptions const& opts) override;
 
 public:
     static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME)); }
@@ -440,6 +440,7 @@ struct TestMultiAspectHandler : Dgn::dgn_AspectHandler::Aspect
     RefCountedPtr<Dgn::DgnElement::Aspect> _CreateInstance() override {return new TestMultiAspect("");}
 };
 
+#ifdef NO_IMPLEMENTATION_IN_IMODEL02_PLATFORM
 //=======================================================================================
 //! A test IDgnElementDependencyHandler
 // @bsiclass                                                     Sam.Wilson      01/15
@@ -475,6 +476,7 @@ public:
 
     static ECInstanceKey Insert(Dgn::DgnDbR db, Dgn::DgnElementId root, Dgn::DgnElementId dependent);
     };
+#endif
 
 //=======================================================================================
 // @bsiclass                                                     Sam.Wilson      06/15

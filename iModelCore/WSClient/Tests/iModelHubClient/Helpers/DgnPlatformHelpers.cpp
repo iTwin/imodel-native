@@ -210,7 +210,7 @@ void InsertSpatialView(SpatialModelR model, Utf8CP name, bool isPrivate)
 
     viewDef->SetIsPrivate(isPrivate);
     viewDef->SetStandardViewRotation(StandardView::Iso);
-    viewDef->LookAtVolume(model.QueryModelRange());
+    viewDef->LookAtVolume(model.QueryElementsRange());
 
     if (db.IsBriefcase())
         {

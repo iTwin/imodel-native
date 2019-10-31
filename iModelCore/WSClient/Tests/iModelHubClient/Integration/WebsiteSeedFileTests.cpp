@@ -74,7 +74,7 @@ struct WebsiteSeedFileTests : public IntegrationTestsBase
 //---------------------------------------------------------------------------------------
 TEST_F(WebsiteSeedFileTests, CreateSeedFile)
     {
-    DgnPlatformLib::Initialize(*new iModelHubWebsiteHost(), false);
+    DgnPlatformLib::Initialize(*new iModelHubWebsiteHost());
 
     CreateDgnDbParams createProjectParams;
     createProjectParams.SetRootSubjectName("iModel Hub Website seed file");

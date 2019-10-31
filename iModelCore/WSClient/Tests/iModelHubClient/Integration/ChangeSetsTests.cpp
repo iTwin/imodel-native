@@ -106,6 +106,42 @@ struct ChangeSetsTests : public iModelTestsBase
         {
         return CreateModel(GetTestInfo().name(), briefcase.GetDgnDb());
         }
+
+    /*--------------------------------------------------------------------------------------+
+    * @bsimethod                                    Algirdas.Mikoliunas             10/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    BridgePropertiesPtr CreateBridgeProperties(int changedFilesCount, int usersCount)
+        {
+        bvector<Utf8String> changedFiles;
+        for(int i = 0; i < changedFilesCount; i++)
+            changedFiles.push_back(Utf8PrintfString("file%d.bim", i));
+
+        bvector<Utf8String> users;
+        for (int i = 0; i < usersCount; i++)
+            users.push_back(Utf8PrintfString("user%d", i));
+
+        return BridgeProperties::Create(BeSQLite::BeGuid(true), changedFiles, users);
+        }
+    
+    /*--------------------------------------------------------------------------------------+
+    * @bsimethod                                    Algirdas.Mikoliunas             10/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void AssertStringVectors(bvector<Utf8String> expected, bvector<Utf8String> actual)
+        {
+        EXPECT_EQ(expected.size(), actual.size());
+        for (int i = 0; i < expected.size(); i++)
+            EXPECT_EQ(expected.at(i), actual.at(i));
+        }
+
+    /*--------------------------------------------------------------------------------------+
+    * @bsimethod                                    Algirdas.Mikoliunas             10/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void AssertBridgeProperties(BridgePropertiesPtr expected, BridgePropertiesPtr actual)
+        {
+        EXPECT_EQ(expected->GetJobId(), actual->GetJobId());
+        AssertStringVectors(expected->GetUsers(), actual->GetUsers());
+        AssertStringVectors(expected->GetChangedFiles(), actual->GetChangedFiles());
+        }
     };
 BriefcasePtr ChangeSetsTests::s_briefcase = nullptr;
 
@@ -209,6 +245,45 @@ TEST_F(ChangeSetsTests, PullMergeAndPush)
     Utf8String lastChangeSetId = m_briefcase->GetDgnDb().Revisions().GetParentRevisionId();
     EXPECT_FALSE(lastChangeSetId.empty());
     EXPECT_NE(originalChangeSetId, lastChangeSetId);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              Algirdas.Mikoliunas   10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ChangeSetsTests, PushWithBridgeProperties)
+    {
+    m_briefcase = AcquireAndOpenBriefcase(true);
+    auto model = CreateTestModel(*m_briefcase);
+    CreateElement(*model, DgnCode(), false);
+
+    ChangeSetInfo::ContainingChanges containingChangesValue = ChangeSetInfo::ContainingChanges::Definition | ChangeSetInfo::ContainingChanges::ViewsAndModels;
+    BridgePropertiesPtr expectedBridgeProperties = CreateBridgeProperties(2, 3);
+    
+    // Push changeSet with bridge properties
+    PullChangeSetsArgumentsPtr pullArguments = PullChangeSetsArguments::Create();
+    PushChangeSetArgumentsPtr pushArguments = PushChangeSetArguments::Create("ChangeSet with bridge properties", containingChangesValue, expectedBridgeProperties);
+    ChangeSetsResult pushResult = iModelHubHelpers::PullMergeAndPush(*m_briefcase, pullArguments, pushArguments);
+    ASSERT_SUCCESS(pushResult);
+
+    // Query changeSets with bridge properties
+    Utf8String lastChangeSetId = m_briefcase->GetDgnDb().Revisions().GetParentRevisionId();
+    ChangeSetQuery changeSetQuery;
+    changeSetQuery.SelectBridgeProperties();
+    ChangeSetsInfoResult changeSetsResult = m_briefcase->GetiModelConnection().GetChangeSets(changeSetQuery)->GetResult();
+
+    for (auto changeSet : changeSetsResult.GetValue())
+        {
+        BridgePropertiesPtr actualBridgeProperties = changeSet->GetBridgeProperties();
+        if (changeSet->GetId().Equals(lastChangeSetId))
+            {
+            EXPECT_EQ(containingChangesValue, changeSet->GetContainingChanges());
+            AssertBridgeProperties(expectedBridgeProperties, actualBridgeProperties);
+            }
+        else
+            {
+            EXPECT_TRUE(actualBridgeProperties.IsNull());
+            }
+        }
     }
 
 /*--------------------------------------------------------------------------------------+

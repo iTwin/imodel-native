@@ -573,6 +573,16 @@ namespace iModelHubHelpers
         }
 
     /*--------------------------------------------------------------------------------------+
+    * @bsimethod                                    Algirdas.Mikoliunas             10/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    ChangeSetsResult PullMergeAndPush(BriefcaseR briefcase, PullChangeSetsArgumentsPtr pullArguments, PushChangeSetArgumentsPtr pushArguments)
+        {
+        auto pushResult = briefcase.PullMergeAndPush(pullArguments, pushArguments)->GetResult();
+        EXPECT_RESULT(pushResult, true);
+        return pushResult;
+        }
+
+    /*--------------------------------------------------------------------------------------+
     * @bsimethod                                    Karolis.Dziedzelis              01/2018
     +---------------+---------------+---------------+---------------+---------------+------*/
     ChangeSetsResult PullMergeAndPush(BriefcasePtr briefcase, bool shouldPush, bool shouldPull, bool relinquish, bool expectSuccess)

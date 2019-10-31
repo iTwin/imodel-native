@@ -37,19 +37,12 @@ private:
     //! Create an instance of a briefcase from previously downloaded briefcase file.
     static BriefcasePtr Create(Dgn::DgnDbPtr db, iModelConnectionPtr connection) { return new Briefcase(db, connection); }
 
-    ChangeSetsTaskPtr PullMergeAndPushInternal(Utf8CP description, bool relinquishCodesLocks, 
-                                               Http::Request::ProgressCallbackCR downloadCallback = nullptr, 
-                                               Http::Request::ProgressCallbackCR uploadCallback = nullptr,
-                                               IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::None,
-                                               ICancellationTokenPtr cancellationToken = nullptr, ConflictsInfoPtr conflictsInfo = nullptr,
-                                               CodeCallbackFunction* codesCallback = nullptr) const;
-    ChangeSetsTaskPtr PullMergeAndPushRepeated(Utf8CP description, bool relinquishCodesLocks, 
-                                               Http::Request::ProgressCallbackCR downloadCallback = nullptr, 
-                                               Http::Request::ProgressCallbackCR uploadCallback = nullptr,
-                                               IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::None,
-                                               ICancellationTokenPtr cancellationToken = nullptr, int attemptsCount = 1, int attempt = 1, 
-                                               int delay = 0, ConflictsInfoPtr conflictsInfo = nullptr,
-                                               CodeCallbackFunction* codesCallback = nullptr);
+    ChangeSetsTaskPtr PullMergeAndPushInternal(PullChangeSetsArgumentsPtr pullArguments,
+                                               PushChangeSetArgumentsPtr pushArguments) const;
+    ChangeSetsTaskPtr PullMergeAndPushRepeated(PullChangeSetsArgumentsPtr pullArguments,
+                                               PushChangeSetArgumentsPtr pushArguments, 
+                                               int attemptsCount = 1, int attempt = 1,
+                                               int delay = 0);
 
     RevisionStatus AddRemoveChangeSetsFromDgnDb(ChangeSets changeSets, ICancellationTokenPtr cancellationToken = nullptr) const;
     RevisionStatus MergeChangeSets(ChangeSets::iterator begin, ChangeSets::iterator end, RevisionManagerR changeSetManager, ICancellationTokenPtr cancellationToken) const;
@@ -166,6 +159,30 @@ public:
                                                               int attemptsCount = 1, 
                                                               ConflictsInfoPtr conflictsInfo = nullptr,
                                                               CodeCallbackFunction* codesCallback =  nullptr);
+
+    //! Pull incomming ChangeSets.
+    //! @param[in] pullArguments ChangeSets pull arguments.
+    //! @return Blocking task that returns success or an error and list of pulled ChangeSets.
+    IMODELHUBCLIENT_EXPORT ChangeSetsTaskPtr Pull(PullChangeSetsArgumentsPtr pullArguments) const;
+
+    //! Send the outgoing ChangeSets.
+    //! @param[in] pushArguments ChangeSet push arguments.
+    //! @return Asynchronous task that returns success or an error and pushed ChangeSet.
+    IMODELHUBCLIENT_EXPORT StatusTaskPtr Push(PushChangeSetArgumentsPtr pushArguments) const;
+
+    //! Pull and merge incomming changeSets.
+    //! @param[in] pullArguments ChangeSets pull arguments.
+    //! @return Blocking task that returns success or an error and list of pulled and merged changeSets.
+    IMODELHUBCLIENT_EXPORT ChangeSetsTaskPtr PullAndMerge(PullChangeSetsArgumentsPtr pullArguments) const;
+
+    //! Pull and merge incomming ChangeSets and then send the outgoing ChangeSets.
+    //! @param[in] pullArguments ChangeSets pull arguments.
+    //! @param[in] pushArguments ChangeSet push arguments.
+    //! @param[in] attemptsCount Maximum count of retries if fail.
+    //! @return Blocking task that returns success or an error and list of pulled and merged ChangeSet.
+    IMODELHUBCLIENT_EXPORT ChangeSetsTaskPtr PullMergeAndPush(PullChangeSetsArgumentsPtr pullArguments,
+                                                              PushChangeSetArgumentsPtr pushArguments,
+                                                              int attemptsCount = 1);
 
     //! Returns true if briefcase is up to date and there are no ChangeSets pending. This will end up sending request to the server.
     //! @param[in] cancellationToken

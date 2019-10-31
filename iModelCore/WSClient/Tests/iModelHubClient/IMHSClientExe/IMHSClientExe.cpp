@@ -33,7 +33,7 @@ IMHSClientExe::IMHSClientExe()
 BentleyStatus IMHSClientExe::Initialize(Utf8String exePath)
     {
     m_exePath = exePath;
-    DgnPlatformLib::Initialize(*this, true);
+    DgnPlatformLib::Initialize(*this);
 
     WebServices::ClientInfoPtr clientInfo = IntegrationTestsSettings::Instance().GetClientInfo();
 

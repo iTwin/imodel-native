@@ -7,6 +7,7 @@
 #include <DgnPlatform/DgnCoreAPI.h>
 #include <BeHttp/HttpClient.h>
 #include <WebServices/Client/WebServicesClient.h>
+#include <BeSQLite/L10N.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_EC

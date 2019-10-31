@@ -27,6 +27,8 @@
 #include <WebServices/iModelHub/Client/ChunkedWSChangeset.h>
 #include <WebServices/iModelHub/Client/ConflictsInfo.h>
 #include <WebServices/iModelHub/Client/GlobalRequestOptions.h>
+#include <WebServices/iModelHub/Client/ChangeSetArguments.h>
+#include <WebServices/iModelHub/Client/ChangeSetQuery.h>
 
 BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 
@@ -48,7 +50,6 @@ typedef RefCountedPtr<struct EventManager> EventManagerPtr;
 typedef RefCountedPtr<struct PredownloadManager> PredownloadManagerPtr;
 typedef RefCountedPtr<struct CodeLockSetResultInfo> CodeLockSetResultInfoPtr;
 typedef std::function<void(const WSObjectsReader::Instance& value, CodeLockSetResultInfoPtr codesLocksResult)> CodeLocksSetAddFunction;
-typedef std::function<Tasks::AsyncTaskPtr<void>(Dgn::DgnCodeSet const&, Dgn::DgnCodeSet const&)> CodeCallbackFunction;
 DEFINE_POINTER_SUFFIX_TYPEDEFS(CodeSequence);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ChangeSetCacheManager);
 
@@ -378,9 +379,8 @@ private:
     ChangeSetTaskPtr DownloadChangeSetFile(ChangeSetInfoPtr changeSet, Http::Request::ProgressCallbackCR callback = nullptr,
         ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    WSQuery CreateChangeSetsAfterIdQuery(Utf8StringCR changeSetId, BeSQLite::BeGuidCR fileId) const;
     WSQuery CreateChangeSetsByIdQuery(std::deque<ObjectId>& changeSetIds) const;
-    WSQuery CreateBetweenChangeSetsQuery(Utf8StringCR firstchangeSetId, Utf8StringCR secondChangeSetId, BeSQLite::BeGuidCR fileId) const;
+    ChangeSetQuery CreateBetweenChangeSetsQuery(Utf8StringCR firstchangeSetId, Utf8StringCR secondChangeSetId, BeSQLite::BeGuidCR fileId) const;
 
     //! Sends a request from changeset.
     StatusTaskPtr SendChangesetRequest(
@@ -420,11 +420,7 @@ private:
         Dgn::DgnDbR dgndb,
         JsonValueR pushJson,
         ObjectId changeSetObjectId,
-        bool relinquishCodesLocks,
-        IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::None,
-        ICancellationTokenPtr cancellationToken = nullptr,
-        ConflictsInfoPtr conflictsInfo = nullptr,
-        CodeCallbackFunction* codesCallback = nullptr) const;
+        PushChangeSetArgumentsPtr pushArguments) const;
 
     StatusTaskPtr PushPendingCodesLocks(Dgn::DgnDbPtr dgndb, ICancellationTokenPtr cancellationToken = nullptr) const;
 
@@ -432,15 +428,7 @@ private:
     void WaitForInitializedBIMFile(BeSQLite::BeGuid fileGuid, FileResultPtr finalResult, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Push this ChangeSet file to server.
-    StatusTaskPtr Push(
-        DgnRevisionPtr changeSet,
-        Dgn::DgnDbR dgndb,
-        bool relinquishCodesLocks, 
-        Http::Request::ProgressCallbackCR callback = nullptr,
-        IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::None,
-        ICancellationTokenPtr cancellationToken = nullptr,
-        ConflictsInfoPtr conflictsInfo = nullptr,
-        CodeCallbackFunction* codesCallback = nullptr) const;
+    StatusTaskPtr Push(DgnRevisionPtr changeSet, Dgn::DgnDbR dgndb, PushChangeSetArgumentsPtr pushArguments) const;
 
     static Json::Value CreateFileJson(FileInfoCR fileInfo);
 
@@ -653,6 +641,12 @@ public:
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has the new briefcase info as result.
     IMODELHUBCLIENT_EXPORT BriefcaseInfoTaskPtr AcquireNewBriefcase(ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Returns all changeSets matching query.
+    //! @param[in] query ChangeSet query
+    //! @param[in] cancellationToken
+    //! @return Asynchronous task that has the collection of ChangeSet information as the result.
+    IMODELHUBCLIENT_EXPORT ChangeSetsInfoTaskPtr GetChangeSets(ChangeSetQuery query, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Returns all changeSets available in the server.
     //! @param[in] cancellationToken

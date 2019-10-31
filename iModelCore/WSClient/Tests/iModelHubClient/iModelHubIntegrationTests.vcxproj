@@ -31,6 +31,7 @@
     <ClCompile Include="Integration\BriefcasePullTests.cpp" />
     <ClCompile Include="Integration\BriefcaseSchemaChangesTests.cpp" />
     <ClCompile Include="Integration\BriefcaseTests.cpp" />
+    <ClCompile Include="Integration\ChangeSetQueryTests.cpp" />
     <ClCompile Include="Integration\ChangeSetsTests.cpp" />
     <ClCompile Include="Integration\CodesLocksTests.cpp" />
     <ClCompile Include="Integration\CodeSpecLockTests.cpp" />

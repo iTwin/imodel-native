@@ -9,6 +9,7 @@
 #include <WebServices/iModelHub/Common.h>
 #include <WebServices/iModelHub/Client/Result.h>
 #include <WebServices/Client/Response/WSObjectsReader.h>
+#include <WebServices/iModelHub/Client/BridgeProperties.h>
 
 BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 typedef RefCountedPtr<struct ChangeSetInfo> ChangeSetInfoPtr;
@@ -28,8 +29,14 @@ struct ChangeSetInfo : RefCountedBase
 public:
     enum ContainingChanges
         {
-        Regular = 0,
-        Schema = 1 // ChangeSet contains minor schema changes
+        NotSpecified      = -1,
+        Regular           = 0,
+        Schema            = 1 << 0, // ChangeSet contains minor schema changes
+        Definition        = 1 << 1,
+        SpatialData       = 1 << 2,
+        SheetsAndDrawings = 1 << 3,
+        ViewsAndModels    = 1 << 4,
+        GlobalProperties  = 1 << 5
         };
 
 private:
@@ -47,6 +54,7 @@ private:
     ContainingChanges       m_containingChanges;
     FileAccessKeyPtr        m_fileAccessKey;
     bool                    m_containsFileAccessKey = false;
+    BridgePropertiesPtr     m_bridgeProperties;
 
     ChangeSetInfo(Utf8String id, Utf8String parentChangeSetId, Utf8String dbGuid, int64_t index,
                   Utf8String description, int64_t fileSize, BeSQLite::BeBriefcaseId briefcaseId, Utf8String userCreated, DateTime pushDate, 
@@ -57,6 +65,7 @@ private:
     bool GetContainsFileAccessKey() const {return m_containsFileAccessKey;}
     FileAccessKeyPtr GetFileAccessKey() const {return m_fileAccessKey;}
     void SetFileAccessKey(FileAccessKeyPtr fileAccessKey) {m_fileAccessKey = fileAccessKey; m_containsFileAccessKey = true;}
+    void SetBridgeProperties(BridgePropertiesPtr bridgeProperties) { m_bridgeProperties = bridgeProperties; }
 
     bool operator==(ChangeSetInfoCR changeSet) const {return changeSet.GetId() == GetId();}
     static ChangeSetInfoPtr ParseRapidJson(RapidJsonValueCR properties);
@@ -72,5 +81,16 @@ public:
     DateTime   GetPushDate() const {return m_pushDate;}
     ContainingChanges GetContainingChanges() const {return m_containingChanges;}
     BeSQLite::BeBriefcaseId GetBriefcaseId() const {return m_briefcaseId;}
+    const BridgePropertiesPtr GetBridgeProperties() const { return m_bridgeProperties; }
 };
+
+inline ChangeSetInfo::ContainingChanges operator| (ChangeSetInfo::ContainingChanges a, ChangeSetInfo::ContainingChanges b)
+    { return static_cast<ChangeSetInfo::ContainingChanges>(static_cast<int>(a) | static_cast<int>(b)); }
+inline ChangeSetInfo::ContainingChanges& operator|= (ChangeSetInfo::ContainingChanges& a, ChangeSetInfo::ContainingChanges b)
+    { return a = a | b; }
+inline ChangeSetInfo::ContainingChanges operator& (ChangeSetInfo::ContainingChanges a, ChangeSetInfo::ContainingChanges b)
+    { return static_cast<ChangeSetInfo::ContainingChanges>(static_cast<int>(a) & static_cast<int>(b)); }
+inline ChangeSetInfo::ContainingChanges& operator&= (ChangeSetInfo::ContainingChanges& a, ChangeSetInfo::ContainingChanges b)
+    { return a = a & b; }
+
 END_BENTLEY_IMODELHUB_NAMESPACE

@@ -28,10 +28,22 @@ Briefcase::Briefcase(Dgn::DgnDbPtr db, iModelConnectionPtr connection)
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             11/2016
+//@bsimethod                                     Algirdas.Mikoliunas            10/2019
 //---------------------------------------------------------------------------------------
 ChangeSetsTaskPtr Briefcase::Pull(Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
     {
+    PullChangeSetsArgumentsPtr pullArguments = PullChangeSetsArguments::Create(callback, cancellationToken);
+    return Pull(pullArguments);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             11/2016
+//---------------------------------------------------------------------------------------
+ChangeSetsTaskPtr Briefcase::Pull(PullChangeSetsArgumentsPtr pullArguments) const
+    {
+    if (pullArguments.IsNull())
+        pullArguments = PullChangeSetsArguments::Create();
+
     const Utf8String methodName = "Briefcase::Pull";
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
@@ -57,14 +69,15 @@ ChangeSetsTaskPtr Briefcase::Pull(Http::Request::ProgressCallbackCR callback, IC
         LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Tracking is not enabled.");
         return CreateCompletedAsyncTask<ChangeSetsResult>(ChangeSetsResult::Error(Error::Id::TrackingNotEnabled));
         }
-    CheckCreatingChangeSet(cancellationToken);
+    CheckCreatingChangeSet(pullArguments->GetCancelationToken());
 
     Utf8String lastChangeSetId = GetLastChangeSetPulled();
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "%s%s", 
                    Utf8String::IsNullOrEmpty(lastChangeSetId.c_str()) ? "No changeSets pulled yet" : "Downloading changeSets after changeSet ", 
                    lastChangeSetId.c_str());
 
-    ChangeSetsResultPtr result = ExecuteAsync(m_imodelConnection->DownloadChangeSetsAfterId(lastChangeSetId, GetDgnDb().GetDbGuid(), callback, cancellationToken));
+    ChangeSetsResultPtr result = ExecuteAsync(m_imodelConnection->DownloadChangeSetsAfterId(lastChangeSetId, GetDgnDb().GetDbGuid(), 
+                                              pullArguments->GetProgressCallback(), pullArguments->GetCancelationToken()));
     if (!result->IsSuccess())
         {
         LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result->GetError().GetMessage().c_str());
@@ -144,7 +157,7 @@ CodeCallbackFunction* codesCallback
 
 //TODO: all of the parameters must be optional
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             11/2016
+//@bsimethod                                     Algirdas.Mikoliunas            10/2019
 //---------------------------------------------------------------------------------------
 StatusTaskPtr Briefcase::Push
 (
@@ -157,6 +170,22 @@ ConflictsInfoPtr conflictsInfo,
 CodeCallbackFunction* codesCallback
 ) const
     {
+    PushChangeSetArgumentsPtr pushArguments = PushChangeSetArguments::Create(description, ChangeSetInfo::ContainingChanges::NotSpecified,
+        nullptr, relinquishCodesLocks, uploadCallback, options, cancellationToken, conflictsInfo, codesCallback);
+    return Push(pushArguments);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             11/2016
+//---------------------------------------------------------------------------------------
+StatusTaskPtr Briefcase::Push
+(
+PushChangeSetArgumentsPtr pushArguments
+) const
+    {
+    if (pushArguments.IsNull())
+        pushArguments = PushChangeSetArguments::Create();
+
     const Utf8String methodName = "Briefcase::Push";
     // unused - double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
@@ -181,7 +210,7 @@ CodeCallbackFunction* codesCallback
         LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Tracking is not enabled.");
         return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(Error::Id::TrackingNotEnabled));
         }
-    CheckCreatingChangeSet(cancellationToken);
+    CheckCreatingChangeSet(pushArguments->GetCancelationToken());
 
 #if defined (ENABLE_BIM_CRASH_TESTS)
     BreakHelper::HitBreakpoint(Breakpoints::BeforeStartCreateChangeSet);
@@ -208,7 +237,7 @@ CodeCallbackFunction* codesCallback
         return CreateCompletedAsyncTask<StatusResult>(StatusResult::Success());
         }
 
-    changeSet->SetSummary(description);
+    changeSet->SetSummary(pushArguments->GetDescription());
 
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Created changeSet with ID %s.", changeSet->GetId().c_str());
     Utf8String changeSetId = changeSet->GetId();
@@ -217,7 +246,7 @@ CodeCallbackFunction* codesCallback
 #if defined (ENABLE_BIM_CRASH_TESTS)
     BreakHelper::HitBreakpoint(Breakpoints::BeforePushChangeSetToServer);
 #endif
-    return m_imodelConnection->Push(changeSet, *m_db, relinquishCodesLocks, uploadCallback, options, cancellationToken, conflictsInfo, codesCallback)
+    return m_imodelConnection->Push(changeSet, *m_db, pushArguments)
         ->Then<StatusResult>([=](StatusResultCR pushResult)
         {
 #if defined (ENABLE_BIM_CRASH_TESTS)
@@ -255,16 +284,27 @@ CodeCallbackFunction* codesCallback
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             10/2015
+//@bsimethod                                     Algirdas.Mikoliunas            10/2019
 //---------------------------------------------------------------------------------------
 ChangeSetsTaskPtr Briefcase::PullAndMerge(Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
     {
+    PullChangeSetsArgumentsPtr pullArguments = PullChangeSetsArguments::Create(callback, cancellationToken);
+    return PullAndMerge(pullArguments);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             10/2015
+//---------------------------------------------------------------------------------------
+ChangeSetsTaskPtr Briefcase::PullAndMerge(PullChangeSetsArgumentsPtr pullArguments) const
+    {
+    if (pullArguments.IsNull())
+        pullArguments = PullChangeSetsArguments::Create();
+
     const Utf8String methodName = "Briefcase::PullAndMerge";
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
 
-    auto result = Pull(callback, cancellationToken)->GetResult();
-
+    auto result = Pull(pullArguments)->GetResult();
 
 #if defined (ENABLE_BIM_CRASH_TESTS)
     BreakHelper::HitBreakpoint(Breakpoints::AfterDownloadChangeSets);
@@ -276,7 +316,7 @@ ChangeSetsTaskPtr Briefcase::PullAndMerge(Http::Request::ProgressCallbackCR call
         }
 
     auto pulledChangeSets = result.GetValue();
-    auto mergeResult = Merge(pulledChangeSets, cancellationToken)->GetResult();
+    auto mergeResult = Merge(pulledChangeSets, pullArguments->GetCancelationToken())->GetResult();
 
     if (!mergeResult.IsSuccess())
         {
@@ -313,7 +353,7 @@ CodeCallbackFunction* codesCallback
 
 //TODO: all of the parameters must be optional
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             10/2015
+//@bsimethod                                     Algirdas.Mikoliunas            10/2019
 //---------------------------------------------------------------------------------------
 ChangeSetsTaskPtr Briefcase::PullMergeAndPush
 (
@@ -328,11 +368,25 @@ ConflictsInfoPtr conflictsInfo,
 CodeCallbackFunction* codesCallback
 )
     {
+    PullChangeSetsArgumentsPtr pullArguments = PullChangeSetsArguments::Create(downloadCallback, cancellationToken);
+    PushChangeSetArgumentsPtr pushArguments = PushChangeSetArguments::Create(description, ChangeSetInfo::ContainingChanges::NotSpecified,
+        nullptr, relinquishCodesLocks, uploadCallback, options, cancellationToken, conflictsInfo, codesCallback);
+    return PullMergeAndPush(pullArguments, pushArguments, attemptsCount);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             10/2015
+//---------------------------------------------------------------------------------------
+ChangeSetsTaskPtr Briefcase::PullMergeAndPush
+(
+PullChangeSetsArgumentsPtr pullArguments,
+PushChangeSetArgumentsPtr pushArguments,
+int attemptsCount
+)
+    {
     const Utf8String methodName = "Briefcase::PullMergeAndPush";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    return PullMergeAndPushRepeated(description, relinquishCodesLocks, downloadCallback,
-                                    uploadCallback, options, cancellationToken, attemptsCount,
-                                    1, 0, conflictsInfo, codesCallback);
+    return PullMergeAndPushRepeated(pullArguments, pushArguments, attemptsCount);
     }
 
 //---------------------------------------------------------------------------------------
@@ -400,23 +454,21 @@ void Briefcase::UnsubscribeChangeSetEvents()
 //---------------------------------------------------------------------------------------
 ChangeSetsTaskPtr Briefcase::PullMergeAndPushRepeated
 (
-Utf8CP description, bool relinquishCodesLocks, 
-Http::Request::ProgressCallbackCR downloadCallback, 
-Http::Request::ProgressCallbackCR uploadCallback,
-IBriefcaseManager::ResponseOptions options,
-ICancellationTokenPtr cancellationToken, 
+PullChangeSetsArgumentsPtr pullArguments,
+PushChangeSetArgumentsPtr pushArguments,
 int attemptsCount, 
 int attempt, 
-int delay,
-ConflictsInfoPtr conflictsInfo,
-CodeCallbackFunction* codesCallback
+int delay
 )
     {
+    if (pullArguments.IsNull())
+        pullArguments = PullChangeSetsArguments::Create();
+    if (pushArguments.IsNull())
+        pushArguments = PushChangeSetArguments::Create();
+
     const Utf8String methodName = "Briefcase::PullMergeAndPushRepeated";
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Attempt %d/%d.", attempt, attemptsCount);
-    auto result = PullMergeAndPushInternal(description, relinquishCodesLocks, downloadCallback,
-                                           uploadCallback, options, cancellationToken,
-                                           conflictsInfo, codesCallback)->GetResult();
+    auto result = PullMergeAndPushInternal(pullArguments, pushArguments)->GetResult();
 
     if (result.IsSuccess())
         {
@@ -454,7 +506,7 @@ CodeCallbackFunction* codesCallback
         }
 
     if (m_eventsAvailable)
-        WaitForChangeSetEvent(cancellationToken);
+        WaitForChangeSetEvent(pullArguments->GetCancelationToken());
     else
         {
         int sleepTime = rand() % 5000;
@@ -462,8 +514,7 @@ CodeCallbackFunction* codesCallback
         }
 
     m_lastPullMergeAndPushEvent = Event::EventType::UnknownEventType;
-    return PullMergeAndPushRepeated(description, relinquishCodesLocks, downloadCallback, uploadCallback, options, cancellationToken, attemptsCount,
-                                    attempt + 1, 0, conflictsInfo);
+    return PullMergeAndPushRepeated(pullArguments, pushArguments, attemptsCount, attempt + 1, 0);
     }
 
 //---------------------------------------------------------------------------------------
@@ -490,14 +541,8 @@ void Briefcase::CheckCreatingChangeSet(ICancellationTokenPtr cancellationToken) 
 //---------------------------------------------------------------------------------------
 ChangeSetsTaskPtr Briefcase::PullMergeAndPushInternal
 (
-Utf8CP description, 
-bool relinquishCodesLocks, 
-Http::Request::ProgressCallbackCR downloadCallback,
-Http::Request::ProgressCallbackCR uploadCallback,
-IBriefcaseManager::ResponseOptions options,
-ICancellationTokenPtr cancellationToken,
-ConflictsInfoPtr conflictsInfo,
-CodeCallbackFunction* codesCallback
+PullChangeSetsArgumentsPtr pullArguments,
+PushChangeSetArgumentsPtr pushArguments
 ) const
     {
     const Utf8String methodName = "Briefcase::PullMergeAndPushInternal";
@@ -518,7 +563,7 @@ CodeCallbackFunction* codesCallback
         return CreateCompletedAsyncTask<ChangeSetsResult>(ChangeSetsResult::Error(Error::Id::BriefcaseIsReadOnly));
         }
     std::shared_ptr<ChangeSetsResult> finalResult = std::make_shared<ChangeSetsResult>();
-    return PullAndMerge(downloadCallback, cancellationToken)->Then([=](ChangeSetsResultCR result)
+    return PullAndMerge(pullArguments)->Then([=](ChangeSetsResultCR result)
         {
         if (!result.IsSuccess())
             {
@@ -539,8 +584,7 @@ CodeCallbackFunction* codesCallback
             return;
             }
 
-        Push(description, relinquishCodesLocks, uploadCallback, options, cancellationToken,
-             conflictsInfo, codesCallback)->Then([=](StatusResultCR pushResult)
+        Push(pushArguments)->Then([=](StatusResultCR pushResult)
             {
             if (!pushResult.IsSuccess())
                 {
@@ -549,7 +593,7 @@ CodeCallbackFunction* codesCallback
                 }
             else
                 {
-                if (relinquishCodesLocks)
+                if (pushArguments->GetRelinquishCodesLocks())
                     {
                     m_db->BriefcaseManager().ClearUserHeldCodesLocks();
                     }
