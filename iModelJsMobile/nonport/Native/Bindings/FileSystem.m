@@ -125,10 +125,62 @@
     NSLog(@"[FS] readdirSync (%@) -> %@, %@", path, !err?@"YES" : @"NO", [content componentsJoinedByString:@",\n"]);
     return content;
 }
-- (void) writeFileSync: (NSString*)path :(NSString*)content {
+- (void) appendFileSync: (NSString*)path :(JSValue*)content {
+    [self touch:path];
     NSError *err;
-    [_fileManager createFileAtPath:path contents:nil attributes:nil];
-    [content writeToFile:path atomically:true encoding:NSUTF8StringEncoding error:&err];
+    if ([content isString]) {
+        NSString* textToWrite = [content toString];
+        NSFileHandle *fileHandle = [NSFileHandle fileHandleForWritingAtPath:path];
+        [fileHandle seekToEndOfFile];
+        [fileHandle writeData:[textToWrite dataUsingEncoding:NSUTF8StringEncoding]];
+        [fileHandle closeFile];
+    } else if ([content isArray]) {
+        NSArray* array = [content toArray];
+        Byte* bytes = calloc(array.count, sizeof(Byte));
+        [array enumerateObjectsUsingBlock:^(NSNumber* number, NSUInteger index, BOOL* stop){
+            bytes[index] = number.integerValue;
+            }];
+        NSData *dataToWrite = [NSData dataWithBytesNoCopy:bytes length:array.count freeWhenDone:YES];
+        [dataToWrite writeToFile:path atomically:YES];
+        NSFileHandle *fileHandle = [NSFileHandle fileHandleForWritingAtPath:path];
+        [fileHandle seekToEndOfFile];
+        [fileHandle writeData:dataToWrite];
+        [fileHandle closeFile];
+    } else {
+         [_jsContext setException:[JSValue valueWithNewErrorFromMessage:@"only string and byte array supported" inContext:_jsContext]];
+    }
+    if (err) {
+        [_jsContext setException:[JSValue valueWithNewErrorFromMessage:err.description inContext:_jsContext]];
+    }
+    NSLog(@"[FS] appendFileSync (%@) -> %@", path, !err?@"YES" : @"NO");
+}
+- (void) touch: (NSString*) path {
+    if (![_fileManager fileExistsAtPath:path]){
+        NSData *fileContents = [@"" dataUsingEncoding:NSUTF8StringEncoding];
+        [_fileManager createFileAtPath:path contents:fileContents attributes:nil];
+    }
+}
+- (void) writeFileSync: (NSString*)path :(JSValue*)content {
+    NSError *err;
+    [self touch:path];
+    if ([content isString]) {
+        NSString* textToWrite = [content toString];
+        NSFileHandle *fileHandle = [NSFileHandle fileHandleForWritingAtPath:path];
+        [fileHandle writeData:[textToWrite dataUsingEncoding:NSUTF8StringEncoding]];
+        [fileHandle closeFile];
+    } else if ([content isArray]) {
+        NSArray* array = [content toArray];
+        Byte* bytes = calloc(array.count, sizeof(Byte));
+        [array enumerateObjectsUsingBlock:^(NSNumber* number, NSUInteger index, BOOL* stop){
+            bytes[index] = number.integerValue;
+            }];
+        NSData *dataToWrite = [NSData dataWithBytesNoCopy:bytes length:array.count freeWhenDone:YES];
+        NSFileHandle *fileHandle = [NSFileHandle fileHandleForWritingAtPath:path];
+        [fileHandle writeData:dataToWrite];
+        [fileHandle closeFile];
+    } else {
+         [_jsContext setException:[JSValue valueWithNewErrorFromMessage:@"only string and byte array supported" inContext:_jsContext]];
+    }
     if (err) {
         [_jsContext setException:[JSValue valueWithNewErrorFromMessage:err.description inContext:_jsContext]];
     }
@@ -184,6 +236,7 @@
     }
     return [JSValue valueWithInt32:flags inContext:path.context];;
 }
+
 - (JSValue*) readFileSync: (JSValue*)path :(JSValue*)options {
     if (!options.isString) {
         //@throw @"Error";

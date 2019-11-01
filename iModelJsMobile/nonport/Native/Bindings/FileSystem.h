@@ -17,8 +17,9 @@ NS_ASSUME_NONNULL_BEGIN
 - (void) removeSync: (NSString*)path;
 - (void) mkdirSync: (NSString*)path;
 - (void) rmdirSync: (NSString*)path;
+- (void) appendFileSync: (NSString*)path :(JSValue*)data;
 - (NSArray<NSString*>*) readdirSync: (NSString*)path;
-- (void) writeFileSync: (NSString*)path :(NSString*)content;
+- (void) writeFileSync: (NSString*)path :(JSValue*)content;
 - (void) copySync: (NSString*)fromPath :(NSString*)toPath;
 - (JSValue*) lstatSync: (JSValue*)path;
 - (JSValue*) readFileSync: (JSValue*)path :(JSValue*)options;

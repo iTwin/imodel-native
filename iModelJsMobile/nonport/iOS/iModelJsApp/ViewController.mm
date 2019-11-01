@@ -99,7 +99,7 @@ AppInfo* _appInfo;
     [_appWebView  setNavigationDelegate:self];
     [_appWebView .scrollView.pinchGestureRecognizer setEnabled:NO];
     [_appWebView .scrollView setScrollEnabled:NO];
-    NSString* customURL = [NSString stringWithFormat:@"imodeljs://app#%u", [[IModelJsHost sharedInstance] getPort]];
+    NSString* customURL = [NSString stringWithFormat:@"imodeljs://app#port=%u&platform=ios", [[IModelJsHost sharedInstance] getPort]];
     NSURL* indexURL = [[NSURL alloc] initWithString:customURL];
     NSURLRequest* request = [NSURLRequest requestWithURL:indexURL];
     [_appWebView loadRequest:request];
