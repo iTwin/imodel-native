@@ -1763,6 +1763,55 @@ TEST_F(SchemaValidatorTests, EmbeddingRelationshipsShouldNotContainHasInClassNam
 //---------------------------------------------------------------------------------------
 // @bsimethod                             Dan.Perlman                          06/2017
 //---------------------------------------------------------------------------------------
+TEST_F(SchemaValidatorTests, KindOfQuantityShouldNotUsePercentageUnits)
+    {
+    {
+    Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='BadSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECSchemaReference name='Units' version='01.00.00' alias='u'/>"
+        "    <ECEntityClass typeName='TestClass'>"
+        "        <BaseClass>bis:Element</BaseClass>"
+        "    </ECEntityClass>"
+        "    <KindOfQuantity typeName='BadKOQ' displayLabel='OFFSET' persistenceUnit='u:DECIMAL_PERCENT' relativeError='1e-2' />"
+        "</ECSchema>";
+    InitBisContextWithSchemaXml(badSchemaXml.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_FALSE(validator.Validate(*schema)) << "Should fail validation as persistence unit is a UCUSTOM unit, 'IN', not an SI unit";
+    }
+    {
+    Utf8String exceptionSchema = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='ProcessPhysical' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECSchemaReference name='Units' version='01.00.00' alias='u'/>"
+        "    <ECEntityClass typeName='TestClass'>"
+        "        <BaseClass>bis:Element</BaseClass>"
+        "    </ECEntityClass>"
+        "    <KindOfQuantity typeName='ONE' displayLabel='LENGTH' persistenceUnit='u:DECIMAL_PERCENT' relativeError='1e-3' />"
+        "</ECSchema>";
+    InitBisContextWithSchemaXml(exceptionSchema.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(validator.Validate(*schema)) << "Should pass validation because ProcessPhysical:ONE has an exception";
+    }
+    {
+    Utf8String exceptionSchema = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='ProcessFunctional' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECSchemaReference name='Units' version='01.00.00' alias='u'/>"
+        "    <ECEntityClass typeName='TestClass'>"
+        "        <BaseClass>bis:Element</BaseClass>"
+        "    </ECEntityClass>"
+        "    <KindOfQuantity typeName='ONE' displayLabel='LENGTH' persistenceUnit='u:DECIMAL_PERCENT' relativeError='1e-3' />"
+        "</ECSchema>";
+    InitBisContextWithSchemaXml(exceptionSchema.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(validator.Validate(*schema)) << "Should pass validation because ProcessFunctional:ONE has an exception";
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                             Dan.Perlman                          06/2017
+//---------------------------------------------------------------------------------------
 TEST_F(SchemaValidatorTests, KindOfQuantityShouldUseSIPersistenceUnits)
     {
     {

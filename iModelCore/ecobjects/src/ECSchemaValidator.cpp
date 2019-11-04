@@ -1013,18 +1013,29 @@ ECObjectsStatus ECSchemaValidator::RelationshipValidator(ECClassCR ecClass)
 // static
 ECObjectsStatus ECSchemaValidator::KindOfQuantityValidator(KindOfQuantityCR koq)
     {
+    bool isProcessONE = koq.GetFullName().Equals("ProcessPhysical:ONE") || koq.GetFullName().Equals("ProcessFunctional:ONE");
     // RULE: Persistence unit of phenomenon 'PERCENTAGE' (or other unitless ratios) are not allowed.
     if (0 == strcmp(koq.GetPersistenceUnit()->GetPhenomenon()->GetName().c_str(), "PERCENTAGE"))
         {
-        LOG.errorv("KindOfQuantity %s has persistence unit of Phenomenon 'PERCENTAGE'. Unitless ratios are not allowed. Use a ratio phenomenon which includes units like VOLUME_RATIO", koq.GetFullName().c_str());
-        return ECObjectsStatus::Error;
+        if (isProcessONE)
+            LOG.warningv("KindOfQuantity %s has persistence unit of Phenomenon 'PERCENTAGE'. Unitless ratios are not allowed, but an exception has been made for this KOQ.", koq.GetFullName().c_str());
+        else
+            {
+            LOG.errorv("KindOfQuantity %s has persistence unit of Phenomenon 'PERCENTAGE'. Unitless ratios are not allowed. Use a ratio phenomenon which includes units like VOLUME_RATIO", koq.GetFullName().c_str());
+            return ECObjectsStatus::Error;
+            }
         }
 
     // RULE: KindOfQuantity must have an SI unit for its persistence unit.
     if (0 != strcmp(koq.GetPersistenceUnit()->GetUnitSystem()->GetName().c_str(), "SI"))
         {
-        LOG.errorv("KindOfQuantity has persistence unit of unit system '%s' but must have an SI unit system", koq.GetPersistenceUnit()->GetUnitSystem()->GetName().c_str());
-        return ECObjectsStatus::Error;
+        if(isProcessONE)
+            LOG.warningv("KindOfQuantity has persistence unit of unit system '%s' but must have an SI unit system, but an exception has been made for this KOQ.", koq.GetPersistenceUnit()->GetUnitSystem()->GetName().c_str());
+        else
+            {
+            LOG.errorv("KindOfQuantity has persistence unit of unit system '%s' but must have an SI unit system", koq.GetPersistenceUnit()->GetUnitSystem()->GetName().c_str());
+            return ECObjectsStatus::Error;
+            }
         }
 
     // Add an exception for the already released versions of the AecUnits schema.
