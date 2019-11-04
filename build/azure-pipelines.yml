@@ -180,6 +180,11 @@ jobs:
         condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'iModelBridgeCore'))
         artifact: iModelBridgeAssignNuget
 
+      - publish: $(Build.BinariesDirectory)/Winx64/Product/iModelHubNativeTests
+        displayName: Save iModelHubNativeTests
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'iModelBridgeCore'))
+        artifact: iModelHubNativeTests
+        
       - publish: $(Build.BinariesDirectory)/Winx64/Nugetpkg/DesignModelingSDKNuget
         displayName: Save DesignModelingSDKNuget
         condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'BuildingDomain'))
