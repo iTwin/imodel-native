@@ -306,7 +306,6 @@ jobs:
   # ================================================================================================
   - job: build_macosx64
     displayName: Build MacOS x64
-    condition: and(succeeded(), eq('Schedule', variables['Build.Reason']))
     timeoutInMinutes: 120
     dependsOn: create_bdf
     pool:
