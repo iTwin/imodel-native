@@ -260,7 +260,7 @@ void DataChannel::copy(ubyte *d)
 bool DataChannel::resize(uint sz)
 {
 	// sanity check
-	if (sz > 10e6) return false;
+//	if (sz > 10e6) return false;
 
 	// no change
 	if (sz == _count) return true;

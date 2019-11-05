@@ -12,9 +12,8 @@ USING_NAMESPACE_BENTLEY_POINTCLOUD
 USING_NAMESPACE_BENTLEY_BEPOINTCLOUD
 USING_NAMESPACE_POINTCLOUD_TILETREE
 
-
-static int  s_nominalTileSize = 512;
-static int s_pointCountLimit = 125000;
+static int  s_nominalTileSize = 256;
+static int s_pointCountLimit = 300000;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
@@ -69,9 +68,14 @@ struct Loader : Cesium::Loader
 {
     DEFINE_T_SUPER(Cesium::Loader);
 
+
 private:
     Loader(TileR tile, Cesium::LoadStateR loads, Cesium::OutputR output) : T_Super("", tile, output, loads) { }
 
+    
+~Loader()
+    {
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -98,82 +102,105 @@ folly::Future<BentleyStatus> _GetFromSource() override
         });
     }
 
-
-struct QPointComparator
-    {
-    bool operator()(QPoint3d const& lhs, QPoint3d const& rhs) const
-        {
-        if (lhs.x < rhs.x)
-            return true;
-        else if (lhs.x > rhs.x)
-            return false;
-
-        if (lhs.y < rhs.y)
-            return true;
-        else if (lhs.y > rhs.y)
-            return false;
-
-        return lhs.z < rhs.z;
-        }
-    };
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DoGetFromSource()
     {
     auto&                       tile = static_cast<TileR>(*m_tile);
-    auto&                       root = static_cast<RootCR>(m_tile->GetRoot());
+    auto&                       root = static_cast<RootR>(m_tile->GetRoot());
     static const size_t         s_maxTileBatchCount = 500000;
-#ifdef DO_VIEWPORT_QUERY
-    static size_t               s_maxLeafPointCount = 20000;
-#else   
-    static size_t               s_maxLeafPointCount = s_pointCountLimit * .9;
-#endif    
     bool                        colorsPresent;
 
     static   BeMutex            s_queryMutex;
     BeMutexHolder               lock(s_queryMutex);        // Arrgh.... Queries are not thread safe??
 
+    root.m_stopWatch.Start();
+    root.m_tileCount++;
     PointCloudQueryHandlePtr    queryHandle = root.InitQuery(colorsPresent, tile.GetRange(), s_maxTileBatchCount);
 
     if (queryHandle == nullptr)
         return ERROR;
     size_t                      nBatchPoints = 0;
-    bvector<FPoint3d>           batchPoints(s_maxTileBatchCount);
-    bvector<PointCloudColorDef> batchColors(s_maxTileBatchCount), colors;
     Transform                   dgnToTile, cloudToTile;
     DRange3d                    tileRange = tile.GetRange();
     QPoint3dList                points(tileRange);
-    bset<QPoint3d, QPointComparator> qPointSet;
 
+    static bvector<DPoint3d>	        batchPoints(s_maxTileBatchCount);   //*********** NOT THREAD SAFE ********    Fix this when we move to multithreading 
+    static bvector<PointCloudColorDef>  batchColors(s_maxTileBatchCount);   //*********** NOT THREAD SAFE ********    Fix this when we move to multithreading  
+    bvector<PointCloudColorDef> colors;
+    size_t				   	    totalPoints = 0;
+    bset<uint32_t>              uniquePointSet, downSampledPointSet;
+    DPoint3d                    cloudToTileTranslation;
 
     dgnToTile.InverseOf(root.GetLocation());
     cloudToTile = Transform::FromProduct(dgnToTile, root.GetPointCloudModel().GetSceneToWorld());
+    auto isCloudToTileTranslation = cloudToTile.IsTranslate(cloudToTileTranslation);    
+    auto qParams = points.GetParams();
+    QPoint3d qPoint;
 
-    nBatchPoints = (size_t) ptGetQueryPointsf(queryHandle->GetHandle(), s_maxTileBatchCount, &batchPoints.front().x,
-                                              colorsPresent ? (PTubyte*) batchColors.data() : nullptr, nullptr, nullptr, nullptr);
-    for (size_t i = 0; i < nBatchPoints; i++)
+    while (0 != (nBatchPoints = (size_t) ptGetQueryPointsd (queryHandle->GetHandle(), s_maxTileBatchCount, &batchPoints.front().x, colorsPresent ? (PTubyte*) batchColors.data() : nullptr, nullptr, nullptr, nullptr)))
         {
-        DPoint3d        tmpPoint = {batchPoints[i].x, batchPoints[i].y, batchPoints[i].z};
-
-        cloudToTile.Multiply(tmpPoint);
-
-        if (tileRange.IsContained(tmpPoint))
+        for(size_t i=0; i<nBatchPoints; i++, totalPoints++)                                                                                                                                                                                      
             {
-            QPoint3d    qPoint(tmpPoint, points.GetParams());
+            DPoint3d        tmpPoint = {batchPoints[i].x, batchPoints[i].y, batchPoints[i].z};
 
-            auto        inserted = qPointSet.insert(qPoint);
+            if (isCloudToTileTranslation)
+                tmpPoint.Add(cloudToTileTranslation);
+            else
+                cloudToTile.Multiply(tmpPoint);
+           
+           double quantizeX, quantizeY, quantizeZ;
+            quantizeX = .5 + (tmpPoint.x - qParams.origin.x) * qParams.scale.x;
+            quantizeY = .5 + (tmpPoint.y - qParams.origin.y) * qParams.scale.y;
+            quantizeZ = .5 + (tmpPoint.z - qParams.origin.z) * qParams.scale.z;
+
+            qPoint.x = static_cast <uint16_t> (quantizeX);
+            qPoint.y = static_cast <uint16_t> (quantizeY);
+            qPoint.z = static_cast <uint16_t> (quantizeZ);
+
+            uint32_t    q256x = qPoint.x >> 8, q256y = qPoint.y >> 8, q256z = qPoint.z >> 8;
+            uint32_t    q128x =  qPoint.x >> 7, q128y = qPoint.y >> 7, q128z = qPoint.z >> 7;
+
+            uint32_t    uniquePointKey = q256x | q256y << 10 | q256z << 20;
+            uint32_t     downSamplePointKey = q128x | q128y << 10 | q128z<< 20;
+
+            auto        inserted = uniquePointSet.insert(uniquePointKey);
             if (inserted.second)
                 {
                 points.push_back(qPoint);
                 if (colorsPresent)
                     colors.push_back(batchColors[i]);
                 }
+            downSampledPointSet.insert(downSamplePointKey);
             }
         }
 
-    if (points.size() < s_maxLeafPointCount && tile.GetParent() != nullptr)         // TFS 173793 - Children are required at root.
+    int         depth = 0;
+    static      double      s_leafThresholdRatio = 1.25;
+    for (auto parent = tile.GetParent(); nullptr != parent; parent = parent->GetParent(), depth++);
+
+    size_t      downSampledPointSize = (size_t) downSampledPointSet.size(), downSampledPointThreshold = (size_t)(s_leafThresholdRatio * (double) uniquePointSet.size());
+    bool        isLeaf = (totalPoints < 1000 || points.size() < 10 ||  (size_t) downSampledPointSet.size() < downSampledPointThreshold);
+// #define DEBUG_LEAF_CRITERIA
+#ifdef DEBUG_LEAF_CRITERIA
+    if (isLeaf)
+        {
+        root.m_leafCount++;
+        root.m_leafVolume += tile.GetRange().Volume();
+        }
+    if (0 != points.size())
+        {
+        static int i = 0;
+        if (0 == (i++  % 20) || depth > 11)
+            printf("Level: %d, Total: %zd, Included: %zd, Downsampled: %zd, Ratio: %lf, IsLeaf: %d, Range: %f, Tolerance: %f, Leaf Fraction: %.12lf, LeafCount: %zd\n", depth,  totalPoints, points.size(), downSampledPointSize, (double) downSampledPointSize/ (double) uniquePointSet.size(), isLeaf, tile.GetRange().DiagonalDistance(), 
+                                                                                                                                                                                     tile.GetRange().DiagonalDistance()/256.0, root.m_leafVolume / root.GetRange().Volume(), root.m_leafCount);
+        }
+#endif        
+
+    // Terminate when we are getting well spaced points (i.e. the points are almost all unique on the 256X256X256 grid.
+
+    if (isLeaf && tile.GetParent() != nullptr)         // TFS 173793 - Children are required at root.
         tile.SetIsLeaf();
 
     // TODO - Add technique for monochrome point clouds...
@@ -209,6 +236,7 @@ BentleyStatus DoGetFromSource()
             m_tileBytes.Append((uint8_t const*) colors.data(), colors.size() * sizeof(PointCloudColorDef));
         }
 
+    root.m_stopWatch.Stop();
     return SUCCESS;
     }
 
@@ -420,34 +448,9 @@ PointCloudQueryHandlePtr  Root::InitQuery (bool& colorsPresent, DRange3dCR tileR
     colorsPresent = pointCloudScene->_HasRGBChannel();
     worldToScene.InverseOf (m_model.GetSceneToWorld());
     Transform::FromProduct (worldToScene, GetLocation()).Multiply (sceneRange, tileRange);
-#ifdef DO_VIEWPORT_QUERY
-    DVec3d              diagonalVector = sceneRange.DiagonalVector();
-    Transform           eyeTransform = Transform::FromProduct (Transform::From(-1.0, -1.0, -1.0), 
-                                                               Transform::FromScaleFactors(2.0 / diagonalVector.x, 2.0/diagonalVector.y, 2.0/diagonalVector.z), 
-                                                               Transform::From(-sceneRange.low.x, -sceneRange.low.y, -sceneRange.low.z));
-    DMatrix4d           identityMatrix, eyeMatrix = DMatrix4d::From(eyeTransform);
 
 
-    identityMatrix.InitIdentity();
-
-    ptSetViewProjectionMatrix(&identityMatrix.coff[0][0], true);
-    ptSetViewEyeMatrix(&eyeMatrix.coff[0][0], true);
-    ptSetViewportSize(0, 0, s_nominalTileSize, s_nominalTileSize);
-
-    PointCloudQueryHandlePtr    queryHandle = PointCloudQueryHandle::Create(ptCreateFrustumPointsQuery());
-
-    ptResetQuery(queryHandle->GetHandle());
-    ptSetQueryScope(queryHandle->GetHandle(), pointCloudScene->GetSceneHandle());
-    ptSetQueryDensity (queryHandle->GetHandle(), QUERY_DENSITY_VIEW_COMPLETE, 1.0);
-
-    // Ick... the points are being loaded from the .pod file in another thread...
-    while (0 != ptPtsToLoadInViewport(pointCloudScene->GetSceneHandle(), true))
-        BeDuration::FromMilliseconds(10).Sleep();
-
-    return queryHandle;
-#else
     return createBoundingBoxQuery (pointCloudScene, sceneRange, s_pointCountLimit);
-#endif    
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -459,9 +462,18 @@ RootPtr Root::Create(PointCloudModelR model, Cesium::OutputR output)
 
     DRange3d                    dgnRange;
     model.GetRange(dgnRange, PointCloudModel::Unit::World);
+    auto    rangeDiagonal = dgnRange.DiagonalVector();
+    double  halfMax = std::max(rangeDiagonal.x, std::max(rangeDiagonal.y, rangeDiagonal.z)) / 2.0;
+    // Try forcing square range.
 
     // Translate world coordinates to center of range in order to reduce precision errors
     DPoint3d    centroid = DPoint3d::FromInterpolate(dgnRange.low, 0.5, dgnRange.high);
+    dgnRange.low.x = centroid.x - halfMax;
+    dgnRange.low.y = centroid.y - halfMax;
+    dgnRange.low.z = centroid.z - halfMax;
+    dgnRange.high.x = centroid.x + halfMax;
+    dgnRange.high.y = centroid.y + halfMax;
+    dgnRange.high.z = centroid.z + halfMax;
     Transform   transformFromTile = Transform::From(centroid), transformToTile;
 
     transformToTile.InverseOf(transformFromTile);

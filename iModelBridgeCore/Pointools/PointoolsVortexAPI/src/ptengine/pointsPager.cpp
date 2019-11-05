@@ -895,6 +895,9 @@ void PointsPager::Pager::processRequests(pointsengine::StreamManager &streamMana
 VoxelLoader::VoxelLoader(pcloud::Voxel *vox, float amount, bool pause, bool lock, bool dump, int thread, bool skipLoad)
 {
 	_buffer = 0;
+
+	_paused = false;
+
 	if (vox && (amount > vox->getCurrentLOD() || skipLoad))
 	{
 		_voxel = vox;
@@ -902,10 +905,10 @@ VoxelLoader::VoxelLoader(pcloud::Voxel *vox, float amount, bool pause, bool lock
 
 		_skipLoad = skipLoad;
 
-		_paused = pp.pointsPager->paused();
-
-		if (!_paused && pause)
+		if (pause)
 		{
+			_paused = pp.pointsPager->paused();
+
 			pp.pointsPager->pause();
 		}
 
@@ -939,7 +942,8 @@ VoxelLoader::~VoxelLoader()
 
 			unloadVoxel(_voxel, _lod, _lock);
 		}
-		if (!_paused)		pp.pointsPager->unpause();
+		if (_paused)
+			pp.pointsPager->unpause();
 	}
 };
 //---------------------------------------------------------
@@ -1177,8 +1181,10 @@ int VoxelLoader::unloadVoxel(pcloud::Voxel *vox, float amount, bool lock )
 	{
 		return 0;
 	}
-															// Do not unload if current LOD is same as LOD to unload to
-	if(vox->compareLOD(amount, vox->getCurrentLOD()) == Voxel::LODEqual)
+
+	Voxel::LODComparison lodComparison = vox->compareLOD(amount, vox->getCurrentLOD());
+															// Do not unload if current LOD is same or less than LOD to unload to
+	if(lodComparison == Voxel::LODGreater || lodComparison == Voxel::LODEqual)
 	{
 		return 0;
 	}

@@ -4587,6 +4587,13 @@ struct FrustumQuery : public Query
 
 		FrustumCondition C;
 
+
+		if (density != PT_QUERY_DENSITY_VIEW && density != PT_QUERY_DENSITY_VIEW_PROGRESSIVE)
+		{
+			thePointsPager().pause();
+		}
+
+
 		if (this->isReset())
 		{
 			GatherVoxelsVisitor<FrustumCondition> gather(&C, voxels, scope);
@@ -4610,7 +4617,7 @@ struct FrustumQuery : public Query
 
                 if (density != PT_QUERY_DENSITY_VIEW_PROGRESSIVE)
                 {
-                    density = PT_QUERY_DENSITY_VIEW;
+//                    density = PT_QUERY_DENSITY_VIEW;
                 }
 			}
 		}
@@ -4659,6 +4666,11 @@ struct FrustumQuery : public Query
 															// Note: This end() does not need to have a matching begin()
 		getStreamManager().end();
 
+
+		if (density != PT_QUERY_DENSITY_VIEW && density != PT_QUERY_DENSITY_VIEW_PROGRESSIVE)
+		{
+			thePointsPager().unpause();
+		}
 
         if (iterationCompleted && density == PT_QUERY_DENSITY_VIEW_PROGRESSIVE)
         {

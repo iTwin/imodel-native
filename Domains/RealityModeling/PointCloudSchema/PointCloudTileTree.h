@@ -55,6 +55,11 @@ struct TileId
 struct Root : Dgn::Cesium::Root
 {
     DEFINE_T_SUPER(Dgn::Cesium::Root);
+    double      m_leafCoverage = 0.0;
+    size_t      m_tileCount = 0;
+    StopWatch   m_stopWatch;
+    size_t      m_leafCount = 0;
+    double      m_leafVolume = 0.0;
 private:
     PointCloudModelR m_model;
 
@@ -62,7 +67,13 @@ private:
     void LoadRootTile(DRange3dCR tileRange, Cesium::OutputR);
 public:
     static RootPtr Create(PointCloudModelR model, Cesium::OutputR);
-    virtual ~Root() { ClearAllTiles(); }
+    virtual ~Root() 
+        { 
+        ClearAllTiles(); 
+#ifndef NDEBUG   
+        printf("Tile Count: %zd, Seconds: %lf, Seconds/Tile: %lf\n", m_tileCount, m_stopWatch.GetElapsedSeconds(), m_stopWatch.GetElapsedSeconds() / (double) m_tileCount);
+#endif        
+        }
 
     PointCloudModelCR GetPointCloudModel() const { return m_model; }
     PointCloudQueryHandlePtr InitQuery(bool& colorsPresent, DRange3dCR tileRange, size_t maxCount) const;
