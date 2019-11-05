@@ -35,15 +35,9 @@ PropertyEditorParametersSpecification* PropertyEditorParametersSpecification::Cr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertyEditorsSpecification::ReadXml(BeXmlNodeP xmlNode)
+bool PropertyEditorSpecification::ReadXml(BeXmlNodeP xmlNode)
     {
-    if (BEXML_Success != xmlNode->GetAttributeStringValue(m_propertyName, PROPERTY_EDITORS_SPECIFICATION_XML_ATTRIBUTE_PROPERTYNAME))
-        {
-        ECPRENSETATION_RULES_LOG.errorv(INVALID_XML, PROPERTY_EDITORS_SPECIFICATION_XML_NODE_NAME, PROPERTY_EDITORS_SPECIFICATION_XML_ATTRIBUTE_PROPERTYNAME);
-        return false;
-        }
-
-    if (BEXML_Success != xmlNode->GetAttributeStringValue(m_editorName, PROPERTY_EDITORS_SPECIFICATION_XML_ATTRIBUTE_EDITORNAME))
+    if (BEXML_Success != xmlNode->GetAttributeStringValue(m_name, PROPERTY_EDITORS_SPECIFICATION_XML_ATTRIBUTE_EDITORNAME))
         {
         ECPRENSETATION_RULES_LOG.errorv(INVALID_XML, PROPERTY_EDITORS_SPECIFICATION_XML_NODE_NAME, PROPERTY_EDITORS_SPECIFICATION_XML_ATTRIBUTE_EDITORNAME);
         return false;
@@ -67,29 +61,21 @@ bool PropertyEditorsSpecification::ReadXml(BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyEditorsSpecification::WriteXml(BeXmlNodeP parentXmlNode) const
+void PropertyEditorSpecification::WriteXml(BeXmlNodeP parentXmlNode) const
     {
     BeXmlNodeP editorNode = parentXmlNode->AddEmptyElement(PROPERTY_EDITORS_SPECIFICATION_XML_CHILD_NAME);
-    editorNode->AddAttributeStringValue(PROPERTY_EDITORS_SPECIFICATION_XML_ATTRIBUTE_PROPERTYNAME, m_propertyName.c_str());
-    editorNode->AddAttributeStringValue(PROPERTY_EDITORS_SPECIFICATION_XML_ATTRIBUTE_EDITORNAME, m_editorName.c_str());
+    editorNode->AddAttributeStringValue(PROPERTY_EDITORS_SPECIFICATION_XML_ATTRIBUTE_EDITORNAME, m_name.c_str());
     CommonToolsInternal::WriteRulesToXmlNode<PropertyEditorParametersSpecification, PropertyEditorParametersList>(editorNode, m_parameters);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Kilinskas                  04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PropertyEditorsSpecification::ReadJson(JsonValueCR json)
+bool PropertyEditorSpecification::ReadJson(JsonValueCR json)
     {
     //Required
-    m_propertyName = json[PROPERTY_EDITORS_SPECIFICATION_JSON_ATTRIBUTE_PROPERTYNAME].asCString("");
-    if (m_propertyName.empty())
-        {
-        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, "PropertyEditorsSpecification", PROPERTY_EDITORS_SPECIFICATION_JSON_ATTRIBUTE_PROPERTYNAME);
-        return false;
-        }
-
-    m_editorName = json[PROPERTY_EDITORS_SPECIFICATION_JSON_ATTRIBUTE_EDITORNAME].asCString("");
-    if (m_editorName.empty())
+    m_name = json[PROPERTY_EDITORS_SPECIFICATION_JSON_ATTRIBUTE_EDITORNAME].asCString("");
+    if (m_name.empty())
         {
         ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, "PropertyEditorsSpecification", PROPERTY_EDITORS_SPECIFICATION_JSON_ATTRIBUTE_EDITORNAME);
         return false;
@@ -103,11 +89,10 @@ bool PropertyEditorsSpecification::ReadJson(JsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value PropertyEditorsSpecification::WriteJson() const
+Json::Value PropertyEditorSpecification::WriteJson() const
     {
     Json::Value json(Json::objectValue);
-    json[PROPERTY_EDITORS_SPECIFICATION_JSON_ATTRIBUTE_PROPERTYNAME] = m_propertyName;
-    json[PROPERTY_EDITORS_SPECIFICATION_JSON_ATTRIBUTE_EDITORNAME] = m_editorName;    
+    json[PROPERTY_EDITORS_SPECIFICATION_JSON_ATTRIBUTE_EDITORNAME] = m_name;    
     if (!m_parameters.empty())
         {
         CommonToolsInternal::WriteRulesToJson<PropertyEditorParametersSpecification, PropertyEditorParametersList>
@@ -119,7 +104,7 @@ Json::Value PropertyEditorsSpecification::WriteJson() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyEditorsSpecification::AddParameter(PropertyEditorParametersSpecificationR specification)
+void PropertyEditorSpecification::AddParameter(PropertyEditorParametersSpecificationR specification)
     {
     InvalidateHash();
     specification.SetParent(this);
@@ -129,11 +114,10 @@ void PropertyEditorsSpecification::AddParameter(PropertyEditorParametersSpecific
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-MD5 PropertyEditorsSpecification::_ComputeHash(Utf8CP parentHash) const
+MD5 PropertyEditorSpecification::_ComputeHash(Utf8CP parentHash) const
     {
     MD5 md5;
-    md5.Add(m_propertyName.c_str(), m_propertyName.size());
-    md5.Add(m_editorName.c_str(), m_editorName.size());
+    md5.Add(m_name.c_str(), m_name.size());
     if (nullptr != parentHash)
         md5.Add(parentHash, strlen(parentHash));
 

@@ -115,6 +115,8 @@
 #define CONTENTMODIFIER_JSON_ATTRIBUTE_PROPERTYDISPLAYSPECIFICATIONS                    "propertiesDisplay"
 #define CONTENTMODIFIER_JSON_ATTRIBUTE_PROPERTYEDITORS                                  "propertyEditors"
 #define CONTENTMODIFIER_JSON_ATTRIBUTE_RELATEDPROPERTIES                                "relatedProperties"
+#define CONTENTMODIFIER_JSON_ATTRIBUTE_PROPERTYCATEGORIES                               "propertyCategories"
+#define CONTENTMODIFIER_JSON_ATTRIBUTE_PROPERTYOVERRIDES                                "propertyOverrides"
 
 #define CLASS_GROUP_JSON_TYPE                                                           "Class"
 #define CLASS_GROUP_JSON_ATTRIBUTE_BASECLASS                                            "baseClass"
@@ -195,13 +197,9 @@
 
 //ContentSpecifications
 #define CONTENT_SPECIFICATION_JSON_ATTRIBUTE_SHOWIMAGES                                 "showImages"
-#define CONTENT_SPECIFICATION_JSON_ATTRIBUTE_RELATEDPROPERTIESSPECIFICATION             "relatedProperties"
-#define CONTENT_SPECIFICATION_JSON_ATTRIBUTE_PROPERTIESDISPLAYSPECIFICATION             "propertiesDisplay"
-#define CONTENT_SPECIFICATION_JSON_ATTRIBUTE_CALCULATEDPROPERTIESSPECIFICATION          "calculatedProperties"
-#define CONTENT_SPECIFICATION_JSON_ATTRIBUTE_PROPERTYEDITORSSPECIFICATION               "propertyEditors"
 #define CONTENT_SPECIFICATION_JSON_ATTRIBUTE_RELATEDINSTANCESSPECIFICATION              "relatedInstances"
 
-
+#define RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_PROPERTIES                      "properties"
 #define RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_PROPERTYNAMES                   "propertyNames"
 #define RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_NESTEDRELATEDPROPERTIES         "nestedRelatedProperties"
 
@@ -224,6 +222,19 @@
 #define CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_LABEL                        "label"
 #define CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_PRIORITY                     "priority"
 #define CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_VALUE                        "value"
+
+#define PROPERTY_SPECIFICATION_JSON_ATTRIBUTE_NAME                                      "name"
+#define PROPERTY_SPECIFICATION_JSON_ATTRIBUTE_OVERRIDESPRIORITY                         "overridesPriority"
+#define PROPERTY_SPECIFICATION_JSON_ATTRIBUTE_LABELOVERRIDE                             "labelOverride"
+#define PROPERTY_SPECIFICATION_JSON_ATTRIBUTE_ISDISPLAYED                               "isDisplayed"
+#define PROPERTY_SPECIFICATION_JSON_ATTRIBUTE_EDITOR                                    "editor"
+#define PROPERTY_SPECIFICATION_JSON_ATTRIBUTE_CATEGORYID                                "categoryId"
+
+#define PROPERTY_CATEGORY_SPECIFICATION_JSON_ATTRIBUTE_ID                               "id"
+#define PROPERTY_CATEGORY_SPECIFICATION_JSON_ATTRIBUTE_LABEL                            "label"
+#define PROPERTY_CATEGORY_SPECIFICATION_JSON_ATTRIBUTE_DESCRIPTION                      "description"
+#define PROPERTY_CATEGORY_SPECIFICATION_JSON_ATTRIBUTE_PRIORITY                         "priority"
+#define PROPERTY_CATEGORY_SPECIFICATION_JSON_ATTRIBUTE_AUTOEXPAND                       "autoExpand"
 
 // Content: Property Editors
 #define PROPERTY_EDITORS_SPECIFICATION_JSON_ATTRIBUTE_PROPERTYNAME                      "propertyName"

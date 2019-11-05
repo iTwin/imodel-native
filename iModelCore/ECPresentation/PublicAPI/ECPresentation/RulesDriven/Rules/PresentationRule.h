@@ -32,7 +32,7 @@ struct HashableBase
 
 /*__PUBLISH_SECTION_END__*/
     public:
-        Utf8StringCR GetHash(Utf8CP parentHash);
+        Utf8StringCR GetHash(Utf8CP parentHash) const;
 /*__PUBLISH_SECTION_START__*/
 
     public:
@@ -45,6 +45,12 @@ struct HashableBase
         //! Sets parent.
         void SetParent(HashableBase* parent) {BeMutexHolder lock(m_mutex); m_parent = parent;}
     };
+
+#define ADD_HASHABLE_CHILD(container, childR) \
+    InvalidateHash(); \
+    childR.SetParent(this); \
+    container.push_back(&childR); 
+
 
 //! This enumerator contains trees for which the rule can be applied.
 enum RuleTargetTree

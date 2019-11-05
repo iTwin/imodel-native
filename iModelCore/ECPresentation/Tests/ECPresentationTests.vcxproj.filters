@@ -164,9 +164,6 @@
     <ClCompile Include="NonPublished\PresentationRules\PresentationRulesHashingTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="NonPublished\PresentationRules\PropertiesDisplaySpecificationTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="NonPublished\PresentationRules\PropertyEditorRulesTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -372,6 +369,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="NonPublished\Integration\Hierarchies\HierarchyUpdateTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\PresentationRules\PropertySpecificationTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\PresentationRules\PropertyCategorySpecificationTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

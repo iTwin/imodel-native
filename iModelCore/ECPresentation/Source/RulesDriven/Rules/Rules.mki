@@ -71,7 +71,7 @@ $(o)ContentRelatedInstancesSpecification$(oext)            : $(PresentationRules
 
 $(o)SelectedNodeInstancesSpecification$(oext)              : $(PresentationRulesSourceDirectory)SelectedNodeInstancesSpecification.cpp $(PresentationRulesDependencies)
 
-$(o)PropertiesDisplaySpecification$(oext)                  : $(PresentationRulesSourceDirectory)PropertiesDisplaySpecification.cpp $(PresentationRulesDependencies)
+$(o)PropertySpecification$(oext)                           : $(PresentationRulesSourceDirectory)PropertySpecification.cpp $(PresentationRulesDependencies)
 
 $(o)CalculatedPropertySpecification$(oext)                 : $(PresentationRulesSourceDirectory)CalculatedPropertySpecification.cpp $(PresentationRulesDependencies)
 
@@ -81,7 +81,9 @@ $(o)CommonTools$(oext)                                     : $(PresentationRules
 
 $(o)ContentModifier$(oext)                                 : $(PresentationRulesSourceDirectory)ContentModifier.cpp $(PresentationRulesDependencies)
 
-$(o)PropertyEditorsSpecification$(oext)                    : $(PresentationRulesSourceDirectory)PropertyEditorsSpecification.cpp $(PresentationRulesDependencies)
+$(o)PropertyEditorSpecification$(oext)                     : $(PresentationRulesSourceDirectory)PropertyEditorSpecification.cpp $(PresentationRulesDependencies)
+
+$(o)PropertyCategorySpecification$(oext)                   : $(PresentationRulesSourceDirectory)PropertyCategorySpecification.cpp $(PresentationRulesDependencies)
 
 %include MultiCppCompileGo.mki
 

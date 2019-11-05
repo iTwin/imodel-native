@@ -87,7 +87,7 @@ TEST_F (ContentQueryBuilderTests, FieldNamesDontCollideWhenSelectingInstanceAndR
     SelectedNodeInstancesSpecification spec(1, false, "", "", false);
     spec.AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, 
         "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Widget", "MyID", RelationshipMeaning::RelatedInstance));
-    spec.AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID", 1000, true));
+    spec.AddPropertyOverride(*new PropertySpecification("MyID", 1000, "", "", true));
 
     // get the query
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);

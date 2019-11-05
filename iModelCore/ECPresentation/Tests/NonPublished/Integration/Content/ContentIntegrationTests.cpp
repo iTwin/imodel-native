@@ -1510,22 +1510,22 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CalculatedPropertiesSpecifi
     rapidjson::Document jsonDoc = contentSet.Get(0)->AsJson();
     RapidJsonValueCR jsonValues = jsonDoc["Values"];
     EXPECT_STREQ("1000", jsonValues["CalculatedProperty_0"].GetString());
-    EXPECT_TRUE(jsonValues["ClassF_ClassH_IntProperty"].IsNull());
-    EXPECT_EQ(1000, jsonValues["ClassF_ClassH_PropertyF"].GetInt());
-    EXPECT_TRUE(jsonValues["ClassF_ClassH_LongProperty"].IsNull());
+    EXPECT_TRUE(jsonValues["ClassE_IntProperty"].IsNull());
+    EXPECT_EQ(1000, jsonValues["ClassF_PropertyF"].GetInt());
+    EXPECT_TRUE(jsonValues["ClassE_LongProperty"].IsNull());
     EXPECT_TRUE(jsonValues["ClassH_PointProperty"].IsNull());
     EXPECT_TRUE(jsonValues["ClassH_Point2dProperty"].IsNull());
-    EXPECT_TRUE(jsonValues["ClassF_ClassH_ClassD"].IsNull());
+    EXPECT_TRUE(jsonValues["ClassE_ClassD"].IsNull());
 
     rapidjson::Document jsonDoc1 = contentSet.Get(1)->AsJson();
     RapidJsonValueCR jsonValues1 = jsonDoc1["Values"];
     EXPECT_STREQ("2000", jsonValues1["CalculatedProperty_0"].GetString());
-    EXPECT_TRUE(jsonValues1["ClassF_ClassH_IntProperty"].IsNull());
-    EXPECT_EQ(2000, jsonValues1["ClassF_ClassH_PropertyF"].GetInt());
-    EXPECT_TRUE(jsonValues1["ClassF_ClassH_LongProperty"].IsNull());
+    EXPECT_TRUE(jsonValues1["ClassE_IntProperty"].IsNull());
+    EXPECT_EQ(2000, jsonValues1["ClassF_PropertyF"].GetInt());
+    EXPECT_TRUE(jsonValues1["ClassE_LongProperty"].IsNull());
     EXPECT_FALSE(jsonValues1["ClassH_PointProperty"].IsNull());
     EXPECT_TRUE(jsonValues["ClassH_Point2dProperty"].IsNull());
-    EXPECT_TRUE(jsonValues1["ClassF_ClassH_ClassD"].IsNull());
+    EXPECT_TRUE(jsonValues1["ClassE_ClassD"].IsNull());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1665,7 +1665,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, RelatedPropertyValuesAreCor
 
     SelectedNodeInstancesSpecificationP spec = new SelectedNodeInstancesSpecification(1, false, "", "", false);
     spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Widget", "MyID", RelationshipMeaning::RelatedInstance));
-    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("Description,MyID", 1000, true));
+    spec->AddPropertyOverride(*new PropertySpecification("Description", 1000, "", "", true));
+    spec->AddPropertyOverride(*new PropertySpecification("MyID", 1000, "", "", true));
     rule->AddSpecification(*spec);
 
     // options
@@ -2891,7 +2892,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ReturnsPointPropertyContent
     rules->AddPresentationRule(*rule);
 
     ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:ClassH", false);
-    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("PointProperty", 1000, true));
+    spec->AddPropertyOverride(*new PropertySpecification("PointProperty", 1000, "", "", true));
     rule->AddSpecification(*spec);
 
     // options
@@ -3309,7 +3310,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsRemovedF
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesHiddenPropertiesSpecification)
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesPropertyHidingOverride)
     {
     // set up the dataset
     IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [](IECInstanceR instance) {
@@ -3328,7 +3329,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesHidde
 
     ContentModifierP modifier = new ContentModifier("RulesEngineTest", "Gadget");
     rules->AddPresentationRule(*modifier);
-    modifier->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("Description,Widget", 1000, false));
+    modifier->AddPropertyOverride(*new PropertySpecification("Widget", 1000, "", "", false));
+    modifier->AddPropertyOverride(*new PropertySpecification("Description", 1000, "", "", false));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -3491,13 +3493,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
 
     rapidjson::Document jsonDoc = contentSet.Get(0)->AsJson();
     RapidJsonValueCR jsonValues = jsonDoc["Values"];
-    EXPECT_STREQ("B", jsonValues["ClassB_ClassC_MyID"].GetString());
+    EXPECT_STREQ("B", jsonValues["BaseOfBAndC_MyID"].GetString());
     EXPECT_TRUE(jsonValues["CalculatedProperty_0"].IsNull());
     EXPECT_TRUE(jsonValues["ClassB_ClassC_A"].IsNull());
 
     rapidjson::Document jsonDoc2 = contentSet.Get(1)->AsJson();
     RapidJsonValueCR jsonValues2 = jsonDoc2["Values"];
-    EXPECT_STREQ("C", jsonValues2["ClassB_ClassC_MyID"].GetString());
+    EXPECT_STREQ("C", jsonValues2["BaseOfBAndC_MyID"].GetString());
     EXPECT_STREQ("C", jsonValues2["CalculatedProperty_0"].GetString());
     EXPECT_TRUE(jsonValues["ClassB_ClassC_A"].IsNull());
     }
@@ -3546,13 +3548,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
 
     rapidjson::Document jsonDoc = contentSet.Get(0)->AsJson();
     RapidJsonValueCR jsonValues = jsonDoc["Values"];
-    EXPECT_STREQ("B", jsonValues["BaseOfBAndC_ClassB_ClassC_MyID"].GetString());
+    EXPECT_STREQ("B", jsonValues["BaseOfBAndC_MyID"].GetString());
     EXPECT_TRUE(jsonValues["CalculatedProperty_0"].IsNull());
     EXPECT_TRUE(jsonValues["ClassB_ClassC_A"].IsNull());
 
     rapidjson::Document jsonDoc2 = contentSet.Get(1)->AsJson();
     RapidJsonValueCR jsonValues2 = jsonDoc2["Values"];
-    EXPECT_STREQ("C", jsonValues2["BaseOfBAndC_ClassB_ClassC_MyID"].GetString());
+    EXPECT_STREQ("C", jsonValues2["BaseOfBAndC_MyID"].GetString());
     EXPECT_STREQ("C", jsonValues2["CalculatedProperty_0"].GetString());
     EXPECT_TRUE(jsonValues2["ClassB_ClassC_A"].IsNull());
     }
@@ -3721,35 +3723,35 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
     rapidjson::Document jsonDoc = contentSet.Get(0)->AsJson();
     RapidJsonValueCR jsonValues = jsonDoc["Values"];
     EXPECT_TRUE(jsonValues["CalculatedProperty_0"].IsNull());
-    EXPECT_TRUE(jsonValues["ClassE_ClassF_ClassG_ClassH_IntProperty"].IsNull());
-    EXPECT_TRUE(jsonValues["ClassF_ClassH_PropertyF"].IsNull());
-    EXPECT_TRUE(jsonValues["ClassE_ClassF_ClassG_ClassH_LongProperty"].IsNull());
+    EXPECT_TRUE(jsonValues["ClassE_IntProperty"].IsNull());
+    EXPECT_TRUE(jsonValues["ClassF_PropertyF"].IsNull());
+    EXPECT_TRUE(jsonValues["ClassE_LongProperty"].IsNull());
     EXPECT_TRUE(jsonValues["ClassG_D"].IsNull());
     EXPECT_TRUE(jsonValues["ClassH_PointProperty"].IsNull());
     EXPECT_TRUE(jsonValues["ClassH_Point2dProperty"].IsNull());
-    EXPECT_EQ(instanceDId.GetValueUnchecked(), jsonValues["ClassE_ClassF_ClassG_ClassH_ClassD"].GetInt64());
+    EXPECT_EQ(instanceDId.GetValueUnchecked(), jsonValues["ClassE_ClassD"].GetInt64());
 
     rapidjson::Document jsonDoc1 = contentSet.Get(1)->AsJson();
     RapidJsonValueCR jsonValues1 = jsonDoc1["Values"];
     EXPECT_STREQ("1000", jsonValues1["CalculatedProperty_0"].GetString());
-    EXPECT_TRUE(jsonValues1["ClassE_ClassF_ClassG_ClassH_IntProperty"].IsNull());
-    EXPECT_EQ(1000, jsonValues1["ClassF_ClassH_PropertyF"].GetInt());
-    EXPECT_TRUE(jsonValues1["ClassE_ClassF_ClassG_ClassH_LongProperty"].IsNull());
+    EXPECT_TRUE(jsonValues1["ClassE_IntProperty"].IsNull());
+    EXPECT_EQ(1000, jsonValues1["ClassF_PropertyF"].GetInt());
+    EXPECT_TRUE(jsonValues1["ClassE_LongProperty"].IsNull());
     EXPECT_TRUE(jsonValues1["ClassG_D"].IsNull());
     EXPECT_TRUE(jsonValues1["ClassH_PointProperty"].IsNull());
     EXPECT_TRUE(jsonValues1["ClassH_Point2dProperty"].IsNull());
-    EXPECT_EQ(instanceDId.GetValueUnchecked(), jsonValues1["ClassE_ClassF_ClassG_ClassH_ClassD"].GetInt64());
+    EXPECT_EQ(instanceDId.GetValueUnchecked(), jsonValues1["ClassE_ClassD"].GetInt64());
 
     rapidjson::Document jsonDoc2 = contentSet.Get(2)->AsJson();
     RapidJsonValueCR jsonValues2 = jsonDoc2["Values"];
     EXPECT_TRUE(jsonValues2["CalculatedProperty_0"].IsNull());
-    EXPECT_TRUE(jsonValues2["ClassE_ClassF_ClassG_ClassH_IntProperty"].IsNull());
-    EXPECT_TRUE(jsonValues2["ClassF_ClassH_PropertyF"].IsNull());
-    EXPECT_TRUE(jsonValues2["ClassE_ClassF_ClassG_ClassH_LongProperty"].IsNull());
+    EXPECT_TRUE(jsonValues2["ClassE_IntProperty"].IsNull());
+    EXPECT_TRUE(jsonValues2["ClassF_PropertyF"].IsNull());
+    EXPECT_TRUE(jsonValues2["ClassE_LongProperty"].IsNull());
     EXPECT_TRUE(jsonValues2["ClassG_D"].IsNull());
     EXPECT_TRUE(jsonValues2["ClassH_PointProperty"].IsNull());
     EXPECT_TRUE(jsonValues2["ClassH_Point2dProperty"].IsNull());
-    EXPECT_EQ(instanceDId.GetValueUnchecked(), jsonValues2["ClassE_ClassF_ClassG_ClassH_ClassD"].GetInt64());
+    EXPECT_EQ(instanceDId.GetValueUnchecked(), jsonValues2["ClassE_ClassD"].GetInt64());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3927,7 +3929,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsCorrectEnumValues)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Saulius.Skliutas                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificClasses_AppliesDisplayedPropertiesSpecification)
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyDisplayOverride_AppliesWithContentInstancesOfSpecificClasses)
     {
     // set up the dataset
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("TestID"));});
@@ -3941,7 +3943,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
-    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID", 1000, true));
+    spec->AddPropertyOverride(*new PropertySpecification("MyID", 1000, "", "", true));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -3967,7 +3969,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Saulius.Skliutas                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_AppliesDisplayedPropertiesSpecification)
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyDisplayOverride_AppliesWithSelectedNodeInstances)
     {
     // set up the dataset
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("TestID"));});
@@ -3984,7 +3986,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Appli
     contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
-    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID", 1000, true));
+    spec->AddPropertyOverride(*new PropertySpecification("MyID", 1000, "", "", true));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -4010,7 +4012,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Appli
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Saulius.Skliutas                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_AppliesDisplayedPropertiesSpecification)
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyDisplayOverride_AppliesWithContentRelatedInstances)
     {
     // set up the dataset
     ECRelationshipClassCR relationshipWidgetHasGadget = *m_schema->GetClassCP("WidgetHasGadget")->GetRelationshipClassCP();
@@ -4030,7 +4032,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_App
     contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
-    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID", 1000, true));
+    spec->AddPropertyOverride(*new PropertySpecification("MyID", 1000, "", "", true));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -4056,7 +4058,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_App
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Saulius.Skliutas                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerContentTests, ContentAppliesDisplayedPropertiesSpecificationWhenPriorityIsHigher)
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyDisplayOverride_Priorities_AppliesHigherPriorityDisplayOverride)
     {
     // set up the dataset
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("TestID")); });
@@ -4070,8 +4072,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentAppliesDisplayedProp
     contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
-    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID", 1000, true));
-    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID", 900, false));
+    spec->AddPropertyOverride(*new PropertySpecification("MyID", 1000, "", "", true));
+    spec->AddPropertyOverride(*new PropertySpecification("MyID", 900, "", "", false));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -4097,7 +4099,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentAppliesDisplayedProp
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Saulius.Skliutas                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerContentTests, ContentAppliesHiddenPropertiesSpecificationWhenPriorityIsHigher)
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyDisplayOverride_Priorities_AppliesHigherPriorityHideOverride)
     {
     // set up the dataset
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("TestID"));});
@@ -4111,8 +4113,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentAppliesHiddenPropert
     contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
-    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID,Description", 900, true));
-    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("Description", 1000, false));
+    spec->AddPropertyOverride(*new PropertySpecification("MyID", 900, "", "", true));
+    spec->AddPropertyOverride(*new PropertySpecification("Description", 900, "", "", true));
+    spec->AddPropertyOverride(*new PropertySpecification("Description", 1000, "", "", false));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -4138,7 +4141,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentAppliesHiddenPropert
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Saulius.Skliutas                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerContentTests, ContentAppliesHiddenPropertiesSpecificationWhenPrioritiesEqual)
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyDisplayOverride_Priorities_AppliesByOrderOfDefinitionIfPrioritiesEqual)
     {
     // set up the dataset
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("IntProperty", ECValue(1));});
@@ -4152,8 +4155,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentAppliesHiddenPropert
     contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
-    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("Description,LongProperty", 1000, false));
-    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("Description,IntProperty,LongProperty", 1000, true));
+    spec->AddPropertyOverride(*new PropertySpecification("Description", 1000, "", "", false));
+    spec->AddPropertyOverride(*new PropertySpecification("LongProperty", 1000, "", "", false));
+    spec->AddPropertyOverride(*new PropertySpecification("Description", 1000, "", "", true));
+    spec->AddPropertyOverride(*new PropertySpecification("IntProperty", 1000, "", "", true));
+    spec->AddPropertyOverride(*new PropertySpecification("LongProperty", 1000, "", "", true));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -4179,7 +4185,180 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentAppliesHiddenPropert
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Saulius.Skliutas                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerContentTests, ContentAppliesDisplayedPropertiesSpecificationFromBaseClass)
+DEFINE_SCHEMA(PropertyDisplayOverride_Priorities_AppliesSpecificationOverrideIfPrioritiesEqual, R"*(
+    <ECEntityClass typeName="ClassA">
+        <ECProperty propertyName="UserLabel" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyDisplayOverride_Priorities_AppliesSpecificationOverrideIfPrioritiesEqual)
+    {
+    // set up the dataset
+    ECClassCP classA = GetClass("ClassA");
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false);
+    spec->AddPropertyOverride(*new PropertySpecification("UserLabel", 1, "", "", false));
+    contentRule->AddSpecification(*spec);
+    rules->AddPresentationRule(*contentRule);
+
+    ContentModifierP modifier = new ContentModifier(classA->GetSchema().GetName(), classA->GetName());
+    modifier->AddPropertyOverride(*new PropertySpecification("UserLabel", 1, "", "", true));
+    rules->AddPresentationRule(*modifier);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(0, descriptor->GetVisibleFields().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(PropertyDisplayOverride_Priorities_AppliesModifierOverSpecificationOverrideIfPriorityHigher, R"*(
+    <ECEntityClass typeName="ClassA">
+        <ECProperty propertyName="UserLabel" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyDisplayOverride_Priorities_AppliesModifierOverSpecificationOverrideIfPriorityHigher)
+    {
+    // set up the dataset
+    ECClassCP classA = GetClass("ClassA");
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false);
+    spec->AddPropertyOverride(*new PropertySpecification("UserLabel", 1, "", "", false));
+    contentRule->AddSpecification(*spec);
+    rules->AddPresentationRule(*contentRule);
+
+    ContentModifierP modifier = new ContentModifier(classA->GetSchema().GetName(), classA->GetName());
+    modifier->AddPropertyOverride(*new PropertySpecification("UserLabel", 2, "", "", true));
+    rules->AddPresentationRule(*modifier);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+    ASSERT_EQ(1, descriptor->GetVisibleFields().size());
+    EXPECT_STREQ("ClassA_UserLabel", descriptor->GetVisibleFields()[0]->GetName().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(PropertyDisplayOverride_Priorities_AppliesRelatedPropertyOverrideWhenPrioritiesEqual, R"*(
+    <ECEntityClass typeName="ClassA">
+        <ECProperty propertyName="UserLabel" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="ClassB">
+        <ECProperty propertyName="UserLabel" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ClassAHasClassB" strength="referencing" strengthDirection="forward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="ClassAHasClassB" polymorphic="True">
+            <Class class="ClassA" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="ClassAHasClassB (reversed)" polymorphic="True">
+            <Class class="ClassB" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyDisplayOverride_Priorities_AppliesRelatedPropertyOverrideWhenPrioritiesEqual)
+    {
+    // set up the dataset
+    ECClassCP classA = GetClass("ClassA");
+    ECClassCP classB = GetClass("ClassB");
+    ECRelationshipClassCP rel = GetClass("ClassAHasClassB")->GetRelationshipClassCP();
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classB->GetFullName(), false);
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, rel->GetFullName(), classA->GetFullName(),
+        { new PropertySpecification("UserLabel", 1, "", "", false) }, RelationshipMeaning::RelatedInstance));
+    contentRule->AddSpecification(*spec);
+    rules->AddPresentationRule(*contentRule);
+
+    ContentModifierP modifier = new ContentModifier(classA->GetSchema().GetName(), classA->GetName());
+    modifier->AddPropertyOverride(*new PropertySpecification("UserLabel", 1, "", "", true));
+    rules->AddPresentationRule(*modifier);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+    ASSERT_EQ(1, descriptor->GetVisibleFields().size()); // ClassB_UserLabel
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(PropertyDisplayOverride_Priorities_AppliesModifierOverRelatedPropertyOverrideWhenPriorityHigher, R"*(
+    <ECEntityClass typeName="ClassA">
+        <ECProperty propertyName="UserLabel" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="ClassB">
+        <ECProperty propertyName="UserLabel" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ClassAHasClassB" strength="referencing" strengthDirection="forward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="ClassAHasClassB" polymorphic="True">
+            <Class class="ClassA" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="ClassAHasClassB (reversed)" polymorphic="True">
+            <Class class="ClassB" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyDisplayOverride_Priorities_AppliesModifierOverRelatedPropertyOverrideWhenPriorityHigher)
+    {
+    // set up the dataset
+    ECClassCP classA = GetClass("ClassA");
+    ECClassCP classB = GetClass("ClassB");
+    ECRelationshipClassCP rel = GetClass("ClassAHasClassB")->GetRelationshipClassCP();
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classB->GetFullName(), false);
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, rel->GetFullName(), classA->GetFullName(),
+        { new PropertySpecification("UserLabel", 1, "", "", false) }, RelationshipMeaning::RelatedInstance));
+    contentRule->AddSpecification(*spec);
+    rules->AddPresentationRule(*contentRule);
+
+    ContentModifierP modifier = new ContentModifier(classA->GetSchema().GetName(), classA->GetName());
+    modifier->AddPropertyOverride(*new PropertySpecification("UserLabel", 2, "", "", true));
+    rules->AddPresentationRule(*modifier);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+    ASSERT_EQ(2, descriptor->GetVisibleFields().size()); // ClassB_UserLabel, ClassB_ClassA_UserLabel
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Saulius.Skliutas                07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyDisplayOverride_Polymorphism_AppliesDisplayFromBaseClassOnDerivedClass)
     {
     // set up the dataset
     ECEntityClassCP classF = GetClass("RulesEngineTest", "ClassF")->GetEntityClassCP();
@@ -4196,8 +4375,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentAppliesDisplayedProp
     contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
-    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("IntProperty", 1500, true)); // base class specification
-    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("IntProperty,PropertyF", 1000, false));
+    spec->AddPropertyOverride(*new PropertySpecification("IntProperty", 1500, "", "", true)); // base class specification
+    spec->AddPropertyOverride(*new PropertySpecification("IntProperty", 1000, "", "", false));
+    spec->AddPropertyOverride(*new PropertySpecification("PropertyF", 1000, "", "", false));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -4223,7 +4403,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentAppliesDisplayedProp
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerContentTests, HidesBaseClassPropertiesWhenUsingDisplayedPropertiesSpecificationInContentModifierAndRequestingDerivedClass)
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyDisplayOverride_Polymorphism_AppliesHideFromBaseClassOnDerivedClass)
     {
     // set up the dataset
     ECEntityClassCP classF = GetClass("RulesEngineTest", "ClassF")->GetEntityClassCP();
@@ -4245,7 +4425,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, HidesBaseClassPropertiesWhe
 
     ContentModifierP modifier = new ContentModifier("RulesEngineTest", "ClassE");
     rules->AddPresentationRule(*modifier);
-    modifier->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("IntProperty", 1000, true));
+    modifier->AddPropertyOverride(*new PropertySpecification("IntProperty", 1000, "", "", true));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -4272,23 +4452,29 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, HidesBaseClassPropertiesWhe
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Saulius.Skliutas                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesDisplayedPropertiesSpecification)
+DEFINE_SCHEMA(PropertyEditorOverride_Priorities_AppliesSpecificationOverrideWhenPrioritiesEqual, R"*(
+    <ECEntityClass typeName="ClassA">
+        <ECProperty propertyName="UserLabel" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyEditorOverride_Priorities_AppliesSpecificationOverrideWhenPrioritiesEqual)
     {
     // set up the dataset
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("TestID"));});
+    ECClassCP classA = GetClass("ClassA");
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
-    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false);
+    spec->AddPropertyOverride(*new PropertySpecification("UserLabel", 1, "", "", nullptr, new PropertyEditorSpecification("Custom Editor 1")));
     contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
-    ContentModifierP modifier = new ContentModifier("RulesEngineTest", "Widget");
+    ContentModifierP modifier = new ContentModifier(classA->GetSchema().GetName(), classA->GetName());
+    modifier->AddPropertyOverride(*new PropertySpecification("UserLabel", 1, "", "", nullptr, new PropertyEditorSpecification("Custom Editor 2")));
     rules->AddPresentationRule(*modifier);
-    modifier->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID", 1000, true));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -4296,142 +4482,157 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesDispl
     // validate descriptor
     ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
-    EXPECT_EQ(1, descriptor->GetVisibleFields().size()); // Widget_MyID
-
-    // request for content
-    ContentCPtr content = m_manager->GetContent(*descriptor, PageOptions()).get();
-    ASSERT_TRUE(content.IsValid());
-
-    // validate content set
-    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
-    ASSERT_EQ(1, contentSet.GetSize());
-
-    rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
-    RapidJsonValueCR values1 = recordJson["Values"];
-    EXPECT_STREQ("TestID", values1[descriptor->GetVisibleFields()[0]->GetName().c_str()].GetString());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Saulius.Skliutas                07/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesDisplayPropertiesSpecificationWhenPriorityIsHigher)
-    {
-    // set up the dataset
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("TestID"));});
-
-    // create the rule set
-    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
-    m_locater->AddRuleSet(*rules);
-
-    ContentRuleP contentRule = new ContentRule("", 1, false);
-    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
-    contentRule->AddSpecification(*spec);
-    rules->AddPresentationRule(*contentRule);
-
-    ContentModifierP modifier = new ContentModifier("RulesEngineTest", "Widget");
-    rules->AddPresentationRule(*modifier);
-    modifier->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID", 1000, true));
-    modifier->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID", 900, false));
-
-    // options
-    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-
-    // validate descriptor
-    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
-    ASSERT_TRUE(descriptor.IsValid());
-    EXPECT_EQ(1, descriptor->GetVisibleFields().size()); // Widget_MyID
-
-    // request for content
-    ContentCPtr content = m_manager->GetContent(*descriptor, PageOptions()).get();
-    ASSERT_TRUE(content.IsValid());
-
-    // validate content set
-    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
-    ASSERT_EQ(1, contentSet.GetSize());
-
-    rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
-    RapidJsonValueCR values1 = recordJson["Values"];
-    EXPECT_STREQ("TestID", values1[descriptor->GetVisibleFields()[0]->GetName().c_str()].GetString());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Saulius.Skliutas                07/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesHiddenPropertiesSpecificationWhenPriorityIsHigher)
-    {
-    // set up the dataset
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("TestID"));});
-
-    // create the rule set
-    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
-    m_locater->AddRuleSet(*rules);
-
-    ContentRuleP contentRule = new ContentRule("", 1, false);
-    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
-    contentRule->AddSpecification(*spec);
-    rules->AddPresentationRule(*contentRule);
-
-    ContentModifierP modifier = new ContentModifier("RulesEngineTest", "Widget");
-    rules->AddPresentationRule(*modifier);
-    modifier->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID,Description", 900, true));
-    modifier->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("Description", 1000, false));
-
-    // options
-    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-
-    // validate descriptor
-    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
-    ASSERT_TRUE(descriptor.IsValid());
-    EXPECT_EQ(1, descriptor->GetVisibleFields().size()); // Widget_MyID
-
-    // request for content
-    ContentCPtr content = m_manager->GetContent(*descriptor, PageOptions()).get();
-    ASSERT_TRUE(content.IsValid());
-
-    // validate content set
-    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
-    ASSERT_EQ(1, contentSet.GetSize());
-
-    rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
-    RapidJsonValueCR values1 = recordJson["Values"];
-    EXPECT_STREQ("TestID", values1[descriptor->GetVisibleFields()[0]->GetName().c_str()].GetString());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Saulius.Skliutas                07/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificClassesSpecificationApliesPropertyEditorsSpecification)
-    {
-    // set up the dataset
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("TestID")); });
-
-    // create the rule set
-    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
-    m_locater->AddRuleSet(*rules);
-
-    ContentRuleP contentRule = new ContentRule("", 1, false);
-    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Widget", false);
-    contentRule->AddSpecification(*spec);
-    rules->AddPresentationRule(*contentRule);
-    spec->AddPropertyEditor(*new PropertyEditorsSpecification("IntProperty", "IntEditor"));
-    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("IntProperty", 1000, true));
-
-    // options
-    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-
-    // validate descriptor
-    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
-    ASSERT_TRUE(descriptor.IsValid());
-    EXPECT_EQ(1, descriptor->GetVisibleFields().size()); // Widget_IntProperty
-
+    ASSERT_EQ(1, descriptor->GetVisibleFields().size());
     ASSERT_TRUE(nullptr != descriptor->GetVisibleFields()[0]->GetEditor());
-    EXPECT_STREQ("IntEditor", descriptor->GetVisibleFields()[0]->GetEditor()->GetName().c_str());
+    EXPECT_STREQ("Custom Editor 1", descriptor->GetVisibleFields()[0]->GetEditor()->GetName().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(PropertyEditorOverride_Priorities_AppliesModifierOverSpecificationOverrideWhenPriorityHigher, R"*(
+    <ECEntityClass typeName="ClassA">
+        <ECProperty propertyName="UserLabel" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyEditorOverride_Priorities_AppliesModifierOverSpecificationOverrideWhenPriorityHigher)
+    {
+    // set up the dataset
+    ECClassCP classA = GetClass("ClassA");
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false);
+    spec->AddPropertyOverride(*new PropertySpecification("UserLabel", 1, "", "", nullptr, new PropertyEditorSpecification("Custom Editor 1")));
+    contentRule->AddSpecification(*spec);
+    rules->AddPresentationRule(*contentRule);
+
+    ContentModifierP modifier = new ContentModifier(classA->GetSchema().GetName(), classA->GetName());
+    modifier->AddPropertyOverride(*new PropertySpecification("UserLabel", 2, "", "", nullptr, new PropertyEditorSpecification("Custom Editor 2")));
+    rules->AddPresentationRule(*modifier);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+    ASSERT_EQ(1, descriptor->GetVisibleFields().size());
+    ASSERT_TRUE(nullptr != descriptor->GetVisibleFields()[0]->GetEditor());
+    EXPECT_STREQ("Custom Editor 2", descriptor->GetVisibleFields()[0]->GetEditor()->GetName().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(PropertyEditorOverride_Priorities_AppliesRelatedPropertyOverrideWhenPrioritiesEqual, R"*(
+    <ECEntityClass typeName="ClassA">
+        <ECProperty propertyName="UserLabel" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="ClassB">
+        <ECProperty propertyName="UserLabel" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ClassAHasClassB" strength="referencing" strengthDirection="forward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="ClassAHasClassB" polymorphic="True">
+            <Class class="ClassA" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="ClassAHasClassB (reversed)" polymorphic="True">
+            <Class class="ClassB" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyEditorOverride_Priorities_AppliesRelatedPropertyOverrideWhenPrioritiesEqual)
+    {
+    // set up the dataset
+    ECClassCP classA = GetClass("ClassA");
+    ECClassCP classB = GetClass("ClassB");
+    ECRelationshipClassCP rel = GetClass("ClassAHasClassB")->GetRelationshipClassCP();
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classB->GetFullName(), false);
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, rel->GetFullName(), classA->GetFullName(),
+        { new PropertySpecification("UserLabel", 1, "", "", nullptr, new PropertyEditorSpecification("Custom Editor 1")) }, RelationshipMeaning::RelatedInstance));
+    contentRule->AddSpecification(*spec);
+    rules->AddPresentationRule(*contentRule);
+
+    ContentModifierP modifier = new ContentModifier(classA->GetSchema().GetName(), classA->GetName());
+    modifier->AddPropertyOverride(*new PropertySpecification("UserLabel", 1, "", "", nullptr, new PropertyEditorSpecification("Custom Editor 2")));
+    rules->AddPresentationRule(*modifier);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+    ASSERT_EQ(2, descriptor->GetVisibleFields().size()); // ClassA_UserLabel, ClassA_ClassB_UserLabel
+    ASSERT_TRUE(nullptr != descriptor->GetVisibleFields()[1]->GetEditor());
+    EXPECT_STREQ("Custom Editor 1", descriptor->GetVisibleFields()[1]->GetEditor()->GetName().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(PropertyEditorOverride_Priorities_AppliesModifierOverRelatedPropertyOverrideWhenPriorityHigher, R"*(
+    <ECEntityClass typeName="ClassA">
+        <ECProperty propertyName="UserLabel" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="ClassB">
+        <ECProperty propertyName="UserLabel" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ClassAHasClassB" strength="referencing" strengthDirection="forward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="ClassAHasClassB" polymorphic="True">
+            <Class class="ClassA" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="ClassAHasClassB (reversed)" polymorphic="True">
+            <Class class="ClassB" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyEditorOverride_Priorities_AppliesModifierOverRelatedPropertyOverrideWhenPriorityHigher)
+    {
+    // set up the dataset
+    ECClassCP classA = GetClass("ClassA");
+    ECClassCP classB = GetClass("ClassB");
+    ECRelationshipClassCP rel = GetClass("ClassAHasClassB")->GetRelationshipClassCP();
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classB->GetFullName(), false);
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, rel->GetFullName(), classA->GetFullName(),
+        { new PropertySpecification("UserLabel", 1, "", "", nullptr, new PropertyEditorSpecification("Custom Editor 1")) }, RelationshipMeaning::RelatedInstance));
+    contentRule->AddSpecification(*spec);
+    rules->AddPresentationRule(*contentRule);
+
+    ContentModifierP modifier = new ContentModifier(classA->GetSchema().GetName(), classA->GetName());
+    modifier->AddPropertyOverride(*new PropertySpecification("UserLabel", 2, "", "", nullptr, new PropertyEditorSpecification("Custom Editor 2")));
+    rules->AddPresentationRule(*modifier);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+    ASSERT_EQ(2, descriptor->GetVisibleFields().size()); // ClassA_UserLabel, ClassA_ClassB_UserLabel
+    ASSERT_TRUE(nullptr != descriptor->GetVisibleFields()[1]->GetEditor());
+    EXPECT_STREQ("Custom Editor 2", descriptor->GetVisibleFields()[1]->GetEditor()->GetName().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Saulius.Skliutas                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerContentTests, AppliesPropertyEditorsSpecification_GetOneFieldWhenPropertiesAndEditorsAreSimilar)
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyEditorOverride_FieldsMerging_GetOneFieldWhenPropertiesAndEditorsAreSimilar)
     {
     // set up the dataset
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
@@ -4448,8 +4649,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, AppliesPropertyEditorsSpeci
     SelectedNodeInstancesSpecification* spec = new SelectedNodeInstancesSpecification();
     contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
-    spec->AddPropertyEditor(*new PropertyEditorsSpecification("MyID", "IDEditor"));
-    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID", 1000, true));
+    spec->AddPropertyOverride(*new PropertySpecification("MyID", 1000, "", "", true, new PropertyEditorSpecification("IDEditor")));
 
     // options
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
@@ -4466,7 +4666,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, AppliesPropertyEditorsSpeci
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Saulius.Skliutas                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerContentTests, AppliesPropertyEditorsSpecification_GetDifferentFieldsWhenPropertiesAndEditorsAreDifferent)
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyEditorOverride_FieldsMerging_GetDifferentFieldsWhenPropertiesAndEditorsAreDifferent)
     {
     // set up the dataset
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
@@ -4483,11 +4683,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, AppliesPropertyEditorsSpeci
     SelectedNodeInstancesSpecification* spec = new SelectedNodeInstancesSpecification();
     contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
-    spec->AddPropertyEditor(*new PropertyEditorsSpecification("MyID", "IDEditor"));
-    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID", 1000, true));
+    spec->AddPropertyOverride(*new PropertySpecification("MyID", 1000, "", "", true, new PropertyEditorSpecification("IDEditor")));
 
     ContentModifierP modifier = new ContentModifier("RulesEngineTest", "Gadget");
-    modifier->AddPropertyEditor(*new PropertyEditorsSpecification("MyID", "GadgetEditor"));
+    modifier->AddPropertyOverride(*new PropertySpecification("MyID", 1500, "", "", true, new PropertyEditorSpecification("GadgetEditor")));
     rules->AddPresentationRule(*modifier);
 
     // options
@@ -4508,7 +4707,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, AppliesPropertyEditorsSpeci
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Saulius.Skliutas                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerContentTests, AppliesPropertyEditorsSpecificationFromBaseClassOnDerivedClass)
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyEditorOverride_Polymorphism_AppliesFromBaseClassOnDerivedClass)
     {
     // set up the dataset
     ECEntityClassCP classE = GetClass("RulesEngineTest", "ClassE")->GetEntityClassCP();
@@ -4525,12 +4724,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, AppliesPropertyEditorsSpeci
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     SelectedNodeInstancesSpecification* spec = new SelectedNodeInstancesSpecification();
+    spec->AddPropertyOverride(*new PropertySpecification("IntProperty", 1000, "", "", true, nullptr));
     contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
-    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("IntProperty", 1000, true));
 
     ContentModifierP modifier = new ContentModifier("RulesEngineTest", "ClassE");
-    modifier->AddPropertyEditor(*new PropertyEditorsSpecification("IntProperty", "IntEditor"));
+    modifier->AddPropertyOverride(*new PropertySpecification("IntProperty", 1000, "", "", nullptr, new PropertyEditorSpecification("IntEditor")));
     rules->AddPresentationRule(*modifier);
 
     // options
@@ -4548,7 +4747,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, AppliesPropertyEditorsSpeci
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Saulius.Skliutas                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerContentTests, DoesNotApplyPropertyEditorsSpecificationFromDerivedClassOnBaseClass)
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyEditorOverride_Polymorphism_DoesNotApplyFromDerivedClassOnBaseClass)
     {
     // set up the dataset
     ECEntityClassCP classE = GetClass("RulesEngineTest", "ClassE")->GetEntityClassCP();
@@ -4567,12 +4766,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DoesNotApplyPropertyEditors
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     SelectedNodeInstancesSpecification* spec = new SelectedNodeInstancesSpecification();
+    spec->AddPropertyOverride(*new PropertySpecification("IntProperty", 1000, "", "", true, nullptr));
     contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
-    spec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("IntProperty", 1000, true));
 
     ContentModifierP modifier = new ContentModifier("RulesEngineTest", "ClassF");
-    modifier->AddPropertyEditor(*new PropertyEditorsSpecification("IntProperty", "ClassFIntEditor"));
+    modifier->AddPropertyOverride(*new PropertySpecification("IntProperty", 1500, "", "", nullptr, new PropertyEditorSpecification("ClassFIntEditor")));
     rules->AddPresentationRule(*modifier);
 
     // options
@@ -4581,12 +4780,866 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DoesNotApplyPropertyEditors
     // validate descriptor
     ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *input, nullptr, options.GetJson()).get();
     ASSERT_TRUE(descriptor.IsValid());
-    EXPECT_EQ(2, descriptor->GetVisibleFields().size()); // ClassE_IntProperty, ClassH_ClassF_IntProperty
+    ASSERT_EQ(2, descriptor->GetVisibleFields().size()); // ClassE_IntProperty, ClassH_ClassF_IntProperty
 
-    ASSERT_TRUE(nullptr == descriptor->GetVisibleFields()[0]->GetEditor());
+    EXPECT_TRUE(nullptr == descriptor->GetVisibleFields()[0]->GetEditor());
 
     ASSERT_TRUE(nullptr != descriptor->GetVisibleFields()[1]->GetEditor());
     EXPECT_STREQ("ClassFIntEditor", descriptor->GetVisibleFields()[1]->GetEditor()->GetName().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                11/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(PropertyEditorOverride_AppliesRelatedPropertyOverrideOnNestedContentProperty, R"*(
+    <ECEntityClass typeName="Element">
+    </ECEntityClass>
+    <ECEntityClass typeName="Aspect">
+        <ECProperty propertyName="UserLabel" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsAspect" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="Aspect"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyEditorOverride_AppliesRelatedPropertyOverrideOnNestedContentProperty)
+    {
+    // set up the dataset
+    ECClassCP elementClass = GetClass("Element");
+    ECClassCP aspectClass = GetClass("Aspect");
+    ECRelationshipClassCP rel = GetClass("ElementOwnsAspect")->GetRelationshipClassCP();
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    contentRule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", elementClass->GetFullName(), false));
+    rules->AddPresentationRule(*contentRule);
+
+    ContentModifierP modifier = new ContentModifier(elementClass->GetSchema().GetName(), elementClass->GetName());
+    modifier->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, rel->GetFullName(), aspectClass->GetFullName(),
+        {new PropertySpecification("UserLabel", 1, "", "", nullptr, new PropertyEditorSpecification("test editor"))}, RelationshipMeaning::RelatedInstance));
+    rules->AddPresentationRule(*modifier);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+    ASSERT_EQ(1, descriptor->GetVisibleFields().size()); // Element_Aspect
+    ASSERT_TRUE(descriptor->GetVisibleFields()[0]->IsNestedContentField());
+    ASSERT_EQ(1, descriptor->GetVisibleFields()[0]->AsNestedContentField()->GetFields().size());
+    ASSERT_TRUE(nullptr != descriptor->GetVisibleFields()[0]->AsNestedContentField()->GetFields()[0]->GetEditor());
+    EXPECT_STREQ("test editor", descriptor->GetVisibleFields()[0]->AsNestedContentField()->GetFields()[0]->GetEditor()->GetName().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyLabelOverride_FieldsMerging_GetOneFieldWhenPropertyLabelsAreEqual)
+    {
+    // set up the dataset
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
+
+    // set up input
+    KeySetPtr input = KeySet::Create(bvector<IECInstancePtr>{widget, gadget});
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    SelectedNodeInstancesSpecification* spec = new SelectedNodeInstancesSpecification();
+    contentRule->AddSpecification(*spec);
+    rules->AddPresentationRule(*contentRule);
+    spec->AddPropertyOverride(*new PropertySpecification("MyID", 1000, "Custom Property Label", "", true));
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *input, nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size()); // Gadget_Widget_MyID
+    EXPECT_STREQ("Gadget_Widget_MyID", descriptor->GetVisibleFields()[0]->GetName().c_str());
+    EXPECT_STREQ("Custom Property Label", descriptor->GetVisibleFields()[0]->GetLabel().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyLabelOverride_FieldsMerging_GetDifferentFieldsWhenPropertyLabelsAreDifferent)
+    {
+    // set up the dataset
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
+
+    // set up input
+    KeySetPtr input = KeySet::Create(bvector<IECInstancePtr>{widget, gadget});
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    SelectedNodeInstancesSpecification* spec = new SelectedNodeInstancesSpecification();
+    contentRule->AddSpecification(*spec);
+    rules->AddPresentationRule(*contentRule);
+    spec->AddPropertyOverride(*new PropertySpecification("MyID", 1000, "", "", true));
+
+    ContentModifierP modifier = new ContentModifier("RulesEngineTest", "Gadget");
+    modifier->AddPropertyOverride(*new PropertySpecification("MyID", 1000, "Custom Gadget Property Label", "", true));
+    rules->AddPresentationRule(*modifier);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *input, nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(2, descriptor->GetVisibleFields().size()); // Widget_MyID, Gadget_MyID
+
+    EXPECT_STREQ("Gadget_MyID", descriptor->GetVisibleFields()[0]->GetName().c_str());
+    EXPECT_STREQ("Custom Gadget Property Label", descriptor->GetVisibleFields()[0]->GetLabel().c_str());
+
+    EXPECT_STREQ("Widget_MyID", descriptor->GetVisibleFields()[1]->GetName().c_str());
+    EXPECT_STREQ("MyID", descriptor->GetVisibleFields()[1]->GetLabel().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyLabelOverride_Polymorphism_FromBaseClassOnDerivedClass)
+    {
+    // set up the dataset
+    ECEntityClassCP classE = GetClass("RulesEngineTest", "ClassE")->GetEntityClassCP();
+    ECEntityClassCP classF = GetClass("RulesEngineTest", "ClassF")->GetEntityClassCP();
+    IECInstancePtr instanceF = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classF);
+    IECInstancePtr instanceE = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE);
+
+    // set up input
+    KeySetPtr input = KeySet::Create(bvector<IECInstancePtr>{instanceF, instanceE});
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    SelectedNodeInstancesSpecification* spec = new SelectedNodeInstancesSpecification();
+    spec->AddPropertyOverride(*new PropertySpecification("IntProperty", 1000, "", "", true));
+    contentRule->AddSpecification(*spec);
+    rules->AddPresentationRule(*contentRule);
+
+    ContentModifierP modifier = new ContentModifier("RulesEngineTest", "ClassE");
+    modifier->AddPropertyOverride(*new PropertySpecification("IntProperty", 1000, "Custom ClassE Property Label", "", nullptr));
+    rules->AddPresentationRule(*modifier);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *input, nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size()); // ClassE_IntProperty
+    EXPECT_STREQ("ClassE_IntProperty", descriptor->GetVisibleFields()[0]->GetName().c_str());
+    EXPECT_STREQ("Custom ClassE Property Label", descriptor->GetVisibleFields()[0]->GetLabel().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyLabelOverride_Polymorphism_DoesNotApplyFromDerivedClassOnBaseClass)
+    {
+    // set up the dataset
+    ECEntityClassCP classE = GetClass("RulesEngineTest", "ClassE")->GetEntityClassCP();
+    ECEntityClassCP classF = GetClass("RulesEngineTest", "ClassF")->GetEntityClassCP();
+    ECEntityClassCP classH = GetClass("RulesEngineTest", "ClassH")->GetEntityClassCP();
+    IECInstancePtr instanceF = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classF);
+    IECInstancePtr instanceE = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE);
+    IECInstancePtr instanceH = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classH);
+
+    // set up input
+    KeySetPtr input = KeySet::Create(bvector<IECInstancePtr>{instanceH, instanceF, instanceE});
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    SelectedNodeInstancesSpecification* spec = new SelectedNodeInstancesSpecification();
+    spec->AddPropertyOverride(*new PropertySpecification("IntProperty", 1000, "", "", true));
+    contentRule->AddSpecification(*spec);
+    rules->AddPresentationRule(*contentRule);
+
+    ContentModifierP modifier = new ContentModifier("RulesEngineTest", "ClassF");
+    modifier->AddPropertyOverride(*new PropertySpecification("IntProperty", 1000, "Custom ClassF Property Label", "", nullptr));
+    rules->AddPresentationRule(*modifier);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *input, nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+    ASSERT_EQ(2, descriptor->GetVisibleFields().size()); // ClassE_IntProperty, ClassH_ClassF_IntProperty
+
+    EXPECT_STREQ("ClassE_IntProperty", descriptor->GetVisibleFields()[0]->GetName().c_str());
+    EXPECT_STREQ("IntProperty", descriptor->GetVisibleFields()[0]->GetLabel().c_str());
+
+    EXPECT_STREQ("ClassE_IntProperty", descriptor->GetVisibleFields()[1]->GetName().c_str());
+    EXPECT_STREQ("Custom ClassF Property Label", descriptor->GetVisibleFields()[1]->GetLabel().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(PropertyLabelOverride_Priorities_AppliesSpecificationOverrideWhenPrioritiesEqual, R"*(
+    <ECEntityClass typeName="ClassA">
+        <ECProperty propertyName="UserLabel" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyLabelOverride_Priorities_AppliesSpecificationOverrideWhenPrioritiesEqual)
+    {
+    // set up the dataset
+    ECClassCP classA = GetClass("ClassA");
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false);
+    spec->AddPropertyOverride(*new PropertySpecification("UserLabel", 1, "Custom Label 1"));
+    contentRule->AddSpecification(*spec);
+    rules->AddPresentationRule(*contentRule);
+
+    ContentModifierP modifier = new ContentModifier(classA->GetSchema().GetName(), classA->GetName());
+    modifier->AddPropertyOverride(*new PropertySpecification("UserLabel", 1, "Custom Label 2"));
+    rules->AddPresentationRule(*modifier);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size()); // ClassA_UserLabel
+    EXPECT_STREQ("Custom Label 1", descriptor->GetVisibleFields()[0]->GetLabel().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(PropertyLabelOverride_Priorities_AppliesModifierOverSpecOverrideWhenPriorityIsHigher, R"*(
+    <ECEntityClass typeName="ClassA">
+        <ECProperty propertyName="UserLabel" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyLabelOverride_Priorities_AppliesModifierOverSpecOverrideWhenPriorityIsHigher)
+    {
+    // set up the dataset
+    ECClassCP classA = GetClass("ClassA");
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false);
+    spec->AddPropertyOverride(*new PropertySpecification("UserLabel", 1, "Custom Label 1"));
+    contentRule->AddSpecification(*spec);
+    rules->AddPresentationRule(*contentRule);
+
+    ContentModifierP modifier = new ContentModifier(classA->GetSchema().GetName(), classA->GetName());
+    modifier->AddPropertyOverride(*new PropertySpecification("UserLabel", 2, "Custom Label 2"));
+    rules->AddPresentationRule(*modifier);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size()); // ClassA_UserLabel
+    EXPECT_STREQ("Custom Label 2", descriptor->GetVisibleFields()[0]->GetLabel().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(PropertyLabelOverride_Priorities_AppliesRelatedPropertyOverrideWhenPrioritiesEqual, R"*(
+    <ECEntityClass typeName="ClassA">
+        <ECProperty propertyName="UserLabel" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="ClassB">
+        <ECProperty propertyName="UserLabel" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ClassAHasClassB" strength="referencing" strengthDirection="forward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="ClassAHasClassB" polymorphic="True">
+            <Class class="ClassA" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="ClassAHasClassB (reversed)" polymorphic="True">
+            <Class class="ClassB" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyLabelOverride_Priorities_AppliesRelatedPropertyOverrideWhenPrioritiesEqual)
+    {
+    // set up the dataset
+    ECClassCP classA = GetClass("ClassA");
+    ECClassCP classB = GetClass("ClassB");
+    ECRelationshipClassCP rel = GetClass("ClassAHasClassB")->GetRelationshipClassCP();
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classB->GetFullName(), false);
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, rel->GetFullName(), classA->GetFullName(),
+        { new PropertySpecification("UserLabel", 1, "Custom A Label 1") }, RelationshipMeaning::RelatedInstance));
+    contentRule->AddSpecification(*spec);
+    rules->AddPresentationRule(*contentRule);
+
+    ContentModifierP modifier = new ContentModifier(classA->GetSchema().GetName(), classA->GetName());
+    modifier->AddPropertyOverride(*new PropertySpecification("UserLabel", 1, "Custom A Label 2"));
+    rules->AddPresentationRule(*modifier);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(2, descriptor->GetVisibleFields().size()); // ClassA_UserLabel, ClassA_ClassB_UserLabel
+    EXPECT_STREQ("UserLabel", descriptor->GetVisibleFields()[0]->GetLabel().c_str());
+    EXPECT_STREQ("Custom A Label 1", descriptor->GetVisibleFields()[1]->GetLabel().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(PropertyLabelOverride_Priorities_AppliesModifierOverRelatedPropertyOverrideWhenPriorityIsHigher, R"*(
+    <ECEntityClass typeName="ClassA">
+        <ECProperty propertyName="UserLabel" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="ClassB">
+        <ECProperty propertyName="UserLabel" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ClassAHasClassB" strength="referencing" strengthDirection="forward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="ClassAHasClassB" polymorphic="True">
+            <Class class="ClassA" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="ClassAHasClassB (reversed)" polymorphic="True">
+            <Class class="ClassB" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyLabelOverride_Priorities_AppliesModifierOverRelatedPropertyOverrideWhenPriorityIsHigher)
+    {
+    // set up the dataset
+    ECClassCP classA = GetClass("ClassA");
+    ECClassCP classB = GetClass("ClassB");
+    ECRelationshipClassCP rel = GetClass("ClassAHasClassB")->GetRelationshipClassCP();
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classB->GetFullName(), false);
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, rel->GetFullName(), classA->GetFullName(),
+        { new PropertySpecification("UserLabel", 1, "Custom A Label 1") }, RelationshipMeaning::RelatedInstance));
+    contentRule->AddSpecification(*spec);
+    rules->AddPresentationRule(*contentRule);
+
+    ContentModifierP modifier = new ContentModifier(classA->GetSchema().GetName(), classA->GetName());
+    modifier->AddPropertyOverride(*new PropertySpecification("UserLabel", 2, "Custom A Label 2"));
+    rules->AddPresentationRule(*modifier);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(2, descriptor->GetVisibleFields().size()); // ClassA_UserLabel, ClassA_ClassB_UserLabel
+    EXPECT_STREQ("UserLabel", descriptor->GetVisibleFields()[0]->GetLabel().c_str());
+    EXPECT_STREQ("Custom A Label 2", descriptor->GetVisibleFields()[1]->GetLabel().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                11/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(PropertyLabelOverride_AppliesRelatedPropertyOverrideOnNestedContentProperty, R"*(
+    <ECEntityClass typeName="Element">
+    </ECEntityClass>
+    <ECEntityClass typeName="Aspect">
+        <ECProperty propertyName="UserLabel" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsAspect" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="Aspect"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyLabelOverride_AppliesRelatedPropertyOverrideOnNestedContentProperty)
+    {
+    // set up the dataset
+    ECClassCP elementClass = GetClass("Element");
+    ECClassCP aspectClass = GetClass("Aspect");
+    ECRelationshipClassCP rel = GetClass("ElementOwnsAspect")->GetRelationshipClassCP();
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    contentRule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", elementClass->GetFullName(), false));
+    rules->AddPresentationRule(*contentRule);
+
+    ContentModifierP modifier = new ContentModifier(elementClass->GetSchema().GetName(), elementClass->GetName());
+    modifier->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, rel->GetFullName(), aspectClass->GetFullName(),
+        {new PropertySpecification("UserLabel", 1, "Custom Label")}, RelationshipMeaning::RelatedInstance));
+    rules->AddPresentationRule(*modifier);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+    ASSERT_EQ(1, descriptor->GetVisibleFields().size()); // Element_Aspect
+    ASSERT_TRUE(descriptor->GetVisibleFields()[0]->IsNestedContentField());
+    ASSERT_EQ(1, descriptor->GetVisibleFields()[0]->AsNestedContentField()->GetFields().size());
+    EXPECT_STREQ("Custom Label", descriptor->GetVisibleFields()[0]->AsNestedContentField()->GetFields()[0]->GetLabel().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(PropertyCategoryOverride_FieldsMerging_GetOneFieldWhenPropertyCategoriesAreEqual, R"*(
+    <ECEntityClass typeName="ClassA">
+        <ECProperty propertyName="UserLabel" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="ClassB">
+        <ECProperty propertyName="UserLabel" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategoryOverride_FieldsMerging_GetOneFieldWhenPropertyCategoriesAreEqual)
+    {
+    ECClassCP classA = GetClass("ClassA");
+    ECClassCP classB = GetClass("ClassB");
+
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    auto spec = new ContentInstancesOfSpecificClassesSpecification(1, "", GetClassNamesList({ classA, classB }), false);
+    spec->AddPropertyCategory(*new PropertyCategorySpecification("my_category", "My Category"));
+    spec->AddPropertyOverride(*new PropertySpecification("UserLabel", 1, "", "my_category"));
+    contentRule->AddSpecification(*spec);
+    rules->AddPresentationRule(*contentRule);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size()); // ClassA_ClassB_UserLabel
+    EXPECT_STREQ("ClassA_ClassB_UserLabel", descriptor->GetVisibleFields()[0]->GetName().c_str());
+    EXPECT_STREQ("my_category", descriptor->GetVisibleFields()[0]->GetCategory().GetName().c_str());
+    EXPECT_STREQ("My Category", descriptor->GetVisibleFields()[0]->GetCategory().GetLabel().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(PropertyCategoryOverride_FieldsMerging_GetDifferentFieldsWhenPropertyCategoriesAreDifferent, R"*(
+    <ECEntityClass typeName="ClassA">
+        <ECProperty propertyName="UserLabel" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="ClassB">
+        <ECProperty propertyName="UserLabel" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategoryOverride_FieldsMerging_GetDifferentFieldsWhenPropertyCategoriesAreDifferent)
+    {
+    ECClassCP classA = GetClass("ClassA");
+    ECClassCP classB = GetClass("ClassB");
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    contentRule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", GetClassNamesList({ classA, classB }), false));
+    rules->AddPresentationRule(*contentRule);
+
+    ContentModifierP modifier1 = new ContentModifier(classA->GetSchema().GetName(), classA->GetName());
+    modifier1->AddPropertyCategory(*new PropertyCategorySpecification("my_category_1", "My Category 1"));
+    modifier1->AddPropertyOverride(*new PropertySpecification("UserLabel", 1, "", "my_category_1"));
+    rules->AddPresentationRule(*modifier1);
+
+    ContentModifierP modifier2 = new ContentModifier(classB->GetSchema().GetName(), classB->GetName());
+    modifier2->AddPropertyCategory(*new PropertyCategorySpecification("my_category_2", "My Category 2"));
+    modifier2->AddPropertyOverride(*new PropertySpecification("UserLabel", 1, "", "my_category_2"));
+    rules->AddPresentationRule(*modifier2);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+    ASSERT_EQ(2, descriptor->GetVisibleFields().size()); // ClassA_UserLabel, ClassB_UserLabel
+
+    EXPECT_STREQ("ClassA_UserLabel", descriptor->GetVisibleFields()[0]->GetName().c_str());
+    EXPECT_STREQ("my_category_1", descriptor->GetVisibleFields()[0]->GetCategory().GetName().c_str());
+    EXPECT_STREQ("My Category 1", descriptor->GetVisibleFields()[0]->GetCategory().GetLabel().c_str());
+
+    EXPECT_STREQ("ClassB_UserLabel", descriptor->GetVisibleFields()[1]->GetName().c_str());
+    EXPECT_STREQ("my_category_2", descriptor->GetVisibleFields()[1]->GetCategory().GetName().c_str());
+    EXPECT_STREQ("My Category 2", descriptor->GetVisibleFields()[1]->GetCategory().GetLabel().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(PropertyCategoryOverride_Polymorphism_FromBaseClassOnDerivedClass, R"*(
+    <ECEntityClass typeName="Element">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="UserLabel" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="DerivedElement">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategoryOverride_Polymorphism_FromBaseClassOnDerivedClass)
+    {
+    ECClassCP baseClass = GetClass("Element");
+    ECClassCP derivedClass = GetClass("DerivedElement");
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    contentRule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", derivedClass->GetFullName(), false));
+    rules->AddPresentationRule(*contentRule);
+
+    ContentModifierP modifier = new ContentModifier(baseClass->GetSchema().GetName(), baseClass->GetName());
+    modifier->AddPropertyCategory(*new PropertyCategorySpecification("my_category", "My Category"));
+    modifier->AddPropertyOverride(*new PropertySpecification("UserLabel", 1, "", "my_category"));
+    rules->AddPresentationRule(*modifier);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+    EXPECT_STREQ("Element_UserLabel", descriptor->GetVisibleFields()[0]->GetName().c_str());
+    EXPECT_STREQ("my_category", descriptor->GetVisibleFields()[0]->GetCategory().GetName().c_str());
+    EXPECT_STREQ("My Category", descriptor->GetVisibleFields()[0]->GetCategory().GetLabel().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(PropertyCategoryOverride_Polymorphism_DoesNotApplyFromDerivedClassOnBaseClass, R"*(
+    <ECEntityClass typeName="Element">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="UserLabel" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="DerivedElement">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategoryOverride_Polymorphism_DoesNotApplyFromDerivedClassOnBaseClass)
+    {
+    ECClassCP baseClass = GetClass("Element");
+    ECClassCP derivedClass = GetClass("DerivedElement");
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    contentRule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", baseClass->GetFullName(), true));
+    rules->AddPresentationRule(*contentRule);
+
+    ContentModifierP modifier = new ContentModifier(derivedClass->GetSchema().GetName(), derivedClass->GetName());
+    modifier->AddPropertyCategory(*new PropertyCategorySpecification("my_category", "My Category"));
+    modifier->AddPropertyOverride(*new PropertySpecification("UserLabel", 1, "", "my_category"));
+    rules->AddPresentationRule(*modifier);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+    ASSERT_EQ(2, descriptor->GetVisibleFields().size()); 
+    EXPECT_STREQ("Element_UserLabel", descriptor->GetVisibleFields()[0]->GetName().c_str());
+    EXPECT_STRNE("my_category", descriptor->GetVisibleFields()[0]->GetCategory().GetName().c_str());
+    EXPECT_STREQ("Element_UserLabel", descriptor->GetVisibleFields()[1]->GetName().c_str());
+    EXPECT_STREQ("my_category", descriptor->GetVisibleFields()[1]->GetCategory().GetName().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(PropertyCategoryOverride_Priorities_AppliesSpecificationOverrideWhenPrioritiesEqual, R"*(
+    <ECEntityClass typeName="ClassA">
+        <ECProperty propertyName="UserLabel" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategoryOverride_Priorities_AppliesSpecificationOverrideWhenPrioritiesEqual)
+    {
+    // set up the dataset
+    ECClassCP classA = GetClass("ClassA");
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false);
+    spec->AddPropertyCategory(*new PropertyCategorySpecification("category1", "Category 1"));
+    spec->AddPropertyOverride(*new PropertySpecification("UserLabel", 1, "", "category1"));
+    contentRule->AddSpecification(*spec);
+    rules->AddPresentationRule(*contentRule);
+
+    ContentModifierP modifier = new ContentModifier(classA->GetSchema().GetName(), classA->GetName());
+    modifier->AddPropertyCategory(*new PropertyCategorySpecification("category2", "Category 2"));
+    modifier->AddPropertyOverride(*new PropertySpecification("UserLabel", 1, "", "category2"));
+    rules->AddPresentationRule(*modifier);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size()); // ClassA_UserLabel
+    EXPECT_STREQ("category1", descriptor->GetVisibleFields()[0]->GetCategory().GetName().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(PropertyCategoryOverride_Priorities_AppliesModifierOverSpecOverrideWhenPriorityIsHigher, R"*(
+    <ECEntityClass typeName="ClassA">
+        <ECProperty propertyName="UserLabel" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategoryOverride_Priorities_AppliesModifierOverSpecOverrideWhenPriorityIsHigher)
+    {
+    // set up the dataset
+    ECClassCP classA = GetClass("ClassA");
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false);
+    spec->AddPropertyCategory(*new PropertyCategorySpecification("category1", "Category 1"));
+    spec->AddPropertyOverride(*new PropertySpecification("UserLabel", 1, "", "category1"));
+    contentRule->AddSpecification(*spec);
+    rules->AddPresentationRule(*contentRule);
+
+    ContentModifierP modifier = new ContentModifier(classA->GetSchema().GetName(), classA->GetName());
+    modifier->AddPropertyCategory(*new PropertyCategorySpecification("category2", "Category 2"));
+    modifier->AddPropertyOverride(*new PropertySpecification("UserLabel", 2, "", "category2"));
+    rules->AddPresentationRule(*modifier);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size()); // ClassA_UserLabel
+    EXPECT_STREQ("category2", descriptor->GetVisibleFields()[0]->GetCategory().GetName().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(PropertyCategoryOverride_Priorities_AppliesRelatedPropertyOverrideWhenPrioritiesEqual, R"*(
+    <ECEntityClass typeName="ClassA">
+        <ECProperty propertyName="UserLabel" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="ClassB">
+        <ECProperty propertyName="UserLabel" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ClassAHasClassB" strength="referencing" strengthDirection="forward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="ClassAHasClassB" polymorphic="True">
+            <Class class="ClassA" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="ClassAHasClassB (reversed)" polymorphic="True">
+            <Class class="ClassB" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategoryOverride_Priorities_AppliesRelatedPropertyOverrideWhenPrioritiesEqual)
+    {
+    // set up the dataset
+    ECClassCP classA = GetClass("ClassA");
+    ECClassCP classB = GetClass("ClassB");
+    ECRelationshipClassCP rel = GetClass("ClassAHasClassB")->GetRelationshipClassCP();
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classB->GetFullName(), false);
+    spec->AddPropertyCategory(*new PropertyCategorySpecification("category1", "Category 1"));
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, rel->GetFullName(), classA->GetFullName(),
+        { new PropertySpecification("UserLabel", 1, "", "category1") }, RelationshipMeaning::RelatedInstance));
+    contentRule->AddSpecification(*spec);
+    rules->AddPresentationRule(*contentRule);
+
+    ContentModifierP modifier = new ContentModifier(classA->GetSchema().GetName(), classA->GetName());
+    modifier->AddPropertyCategory(*new PropertyCategorySpecification("category2", "Category 2"));
+    modifier->AddPropertyOverride(*new PropertySpecification("UserLabel", 1, "", "category2"));
+    rules->AddPresentationRule(*modifier);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(2, descriptor->GetVisibleFields().size()); // ClassA_UserLabel, ClassA_ClassB_UserLabel
+    EXPECT_STREQ("category1", descriptor->GetVisibleFields()[1]->GetCategory().GetName().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(PropertyCategoryOverride_Priorities_AppliesModifierOverRelatedPropertyOverrideWhenPriorityIsHigher, R"*(
+    <ECEntityClass typeName="ClassA">
+        <ECProperty propertyName="UserLabel" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="ClassB">
+        <ECProperty propertyName="UserLabel" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ClassAHasClassB" strength="referencing" strengthDirection="forward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="ClassAHasClassB" polymorphic="True">
+            <Class class="ClassA" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="ClassAHasClassB (reversed)" polymorphic="True">
+            <Class class="ClassB" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategoryOverride_Priorities_AppliesModifierOverRelatedPropertyOverrideWhenPriorityIsHigher)
+    {
+    // set up the dataset
+    ECClassCP classA = GetClass("ClassA");
+    ECClassCP classB = GetClass("ClassB");
+    ECRelationshipClassCP rel = GetClass("ClassAHasClassB")->GetRelationshipClassCP();
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classB->GetFullName(), false);
+    spec->AddPropertyCategory(*new PropertyCategorySpecification("category1", "Category 1"));
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, rel->GetFullName(), classA->GetFullName(),
+        { new PropertySpecification("UserLabel", 1, "", "", nullptr, nullptr) }, RelationshipMeaning::RelatedInstance));
+    contentRule->AddSpecification(*spec);
+    rules->AddPresentationRule(*contentRule);
+
+    ContentModifierP modifier = new ContentModifier(classA->GetSchema().GetName(), classA->GetName());
+    modifier->AddPropertyCategory(*new PropertyCategorySpecification("category2", "Category 2"));
+    modifier->AddPropertyOverride(*new PropertySpecification("UserLabel", 2, "", "category2"));
+    rules->AddPresentationRule(*modifier);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(2, descriptor->GetVisibleFields().size()); // ClassA_UserLabel, ClassA_ClassB_UserLabel
+    EXPECT_STREQ("category2", descriptor->GetVisibleFields()[1]->GetCategory().GetName().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                11/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(PropertyCategoryOverride_AppliesRelatedPropertyOverrideOnNestedContentProperty, R"*(
+    <ECEntityClass typeName="Element">
+    </ECEntityClass>
+    <ECEntityClass typeName="Aspect">
+        <ECProperty propertyName="UserLabel" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsAspect" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="Aspect"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategoryOverride_AppliesRelatedPropertyOverrideOnNestedContentProperty)
+    {
+    // set up the dataset
+    ECClassCP elementClass = GetClass("Element");
+    ECClassCP aspectClass = GetClass("Aspect");
+    ECRelationshipClassCP rel = GetClass("ElementOwnsAspect")->GetRelationshipClassCP();
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    contentRule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", elementClass->GetFullName(), false));
+    rules->AddPresentationRule(*contentRule);
+
+    ContentModifierP modifier = new ContentModifier(elementClass->GetSchema().GetName(), elementClass->GetName());
+    modifier->AddPropertyCategory(*new PropertyCategorySpecification("test_category", "Test Category"));
+    modifier->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, rel->GetFullName(), aspectClass->GetFullName(),
+        {new PropertySpecification("UserLabel", 1, "", "test_category")}, RelationshipMeaning::RelatedInstance));
+    rules->AddPresentationRule(*modifier);
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+    ASSERT_EQ(1, descriptor->GetVisibleFields().size()); // Element_Aspect
+    ASSERT_TRUE(descriptor->GetVisibleFields()[0]->IsNestedContentField());
+    ASSERT_EQ(1, descriptor->GetVisibleFields()[0]->AsNestedContentField()->GetFields().size());
+    EXPECT_STREQ("test_category", descriptor->GetVisibleFields()[0]->AsNestedContentField()->GetFields()[0]->GetCategory().GetName().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -8923,8 +9976,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetsContentDescriptorWithNa
     ruleSet->AddPresentationRule(*rule);
     ContentInstancesOfSpecificClassesSpecificationP gadgetSpec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Gadget", true);
     ContentInstancesOfSpecificClassesSpecificationP sprocketSpec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Sprocket", true);
-    gadgetSpec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("Widget", 1500, true));
-    sprocketSpec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("Gadget", 1500, true));
+    gadgetSpec->AddPropertyOverride(*new PropertySpecification("Widget", 1500, "", "", true));
+    sprocketSpec->AddPropertyOverride(*new PropertySpecification("Gadget", 1500, "", "", true));
     rule->AddSpecification(*gadgetSpec);
     rule->AddSpecification(*sprocketSpec);
 
@@ -8974,7 +10027,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctNavigationProper
     ContentRuleP rule = new ContentRule("", 1, false);
     ruleSet->AddPresentationRule(*rule);
     ContentInstancesOfSpecificClassesSpecificationP gadgetSpec = new ContentInstancesOfSpecificClassesSpecification(1, "", "RulesEngineTest:Gadget", true);
-    gadgetSpec->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("Widget", 1500, true));
+    gadgetSpec->AddPropertyOverride(*new PropertySpecification("Widget", 1500, "", "", true));
     rule->AddSpecification(*gadgetSpec);
 
     RulesDrivenECPresentationManager::ContentOptions options(ruleSet->GetRuleSetId().c_str());

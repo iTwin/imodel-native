@@ -14,10 +14,10 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR HashableBase::GetHash(Utf8CP parentHash)
+Utf8StringCR HashableBase::GetHash(Utf8CP parentHash) const
     {
     BeMutexHolder lock(m_mutex);
-    m_hash = _ComputeHash(parentHash).GetHashString();
+    m_hash = const_cast<HashableBase*>(this)->_ComputeHash(parentHash).GetHashString();
     return m_hash;
     }
 

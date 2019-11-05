@@ -238,9 +238,12 @@ Utf8String CommonToolsInternal::SchemaAndClassNamesToString(JsonValueCR json)
             Utf8String schemaName;
             bvector<Utf8String> includes, excludes;
             ParseSchemaAndClassNames(json[i], schemaName, includes, excludes);
-            if (!str.empty())
-                str.append(";");
-            str.append(schemaName).append(":").append(BeStringUtilities::Join(includes, ","));
+            if (!includes.empty())
+                {
+                if (!str.empty())
+                    str.append(";");
+                str.append(schemaName).append(":").append(BeStringUtilities::Join(includes, ","));
+                }
             if (!excludes.empty())
                 schemaExcludes.Insert(schemaName, excludes);
             }
@@ -264,7 +267,8 @@ Utf8String CommonToolsInternal::SchemaAndClassNamesToString(JsonValueCR json)
         Utf8String schemaName;
         bvector<Utf8String> includes, excludes;
         ParseSchemaAndClassNames(json, schemaName, includes, excludes);
-        str.append(schemaName).append(":").append(BeStringUtilities::Join(includes, ","));
+        if (!includes.empty())
+            str.append(schemaName).append(":").append(BeStringUtilities::Join(includes, ","));
         if (!excludes.empty())
             str.append("E:").append(schemaName).append(":").append(BeStringUtilities::Join(excludes, ","));
         }

@@ -78,6 +78,15 @@ public:
             }
         }
 
+    //! Copies the rules in source vector into the target vector.
+    template<typename T>
+    static void SwapRules(bvector<T*>& target, bvector<T*>& source, HashableBase* parentHashable)
+        {
+        target.swap(source);
+        for (T* rule : target)
+            rule->SetParent(parentHashable);
+        }
+
     //! Frees and clears given list of objects
     template<typename T>
     static void FreePresentationRules(T& set)
@@ -160,15 +169,19 @@ public:
             CommonTools::AddToListByPriority(collection, *rule);
         }
 
-    //! Load specification from Json object and adds to collection
     template<typename TRule> static TRule* LoadRuleFromJson(JsonValueCR json)
         {
+        return LoadRuleFromJson<TRule>(json, &TRule::ReadJson);
+        }
+
+    template<typename TRule> static TRule* LoadRuleFromJson(JsonValueCR json, bool(TRule::*reader)(JsonValueCR))
+        {
         TRule* rule = new TRule();
-        if (!rule->ReadJson(json))
+        if (!(rule->*reader)(json))
             DELETE_AND_CLEAR(rule);
         return rule;
         }
-
+    
     //! Load rules from json array and add them to collection
     template<typename TRule>
     static void LoadFromJson(JsonValueCR json, bvector<TRule*>& collection, TRule*(*factory)(JsonValueCR), HashableBase* parentHashable)
@@ -181,7 +194,7 @@ public:
             AddToCollection(collection, rule);
             }
         }
-
+    
     //! Load rules from json array and add them to collection by priority
     template<typename TRule>
     static void LoadFromJsonByPriority(JsonValueCR json, bvector<TRule*>& collection, TRule*(*factory)(JsonValueCR), HashableBase* parentHashable)

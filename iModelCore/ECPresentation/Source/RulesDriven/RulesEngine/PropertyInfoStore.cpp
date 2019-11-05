@@ -8,88 +8,168 @@
 #include "PropertyInfoStore.h"
 #include "LoggingHelper.h"
 
-/*-----------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis            02/2018
-+---------------+---------------+---------------+---------------+-----------+------*/
-bool DisplayInfo::ShouldDisplay(ECClassCR, ECPropertyCR prop) const
-    {
-    // first, look for display info specified for some property
-    auto iter = m_propertyDisplayInfos.find(PropertyDisplayInfo(prop.GetName()));
-    if (m_propertyDisplayInfos.end() != iter)
-        return iter->IsDisplayed();
+#define SET_PRIORITZED_NULLABLE_MEMBER(member_name) \
+    if (source.member_name.IsValid()) \
+        { \
+        if (member_name.IsNull() || member_name.Value().priority < source.member_name.Value().priority) \
+            member_name = source.member_name; \
+        }
 
-    // then, find a default class display info with the highest priority
-    DefaultDisplayInfo const* matchingDisplayInfo = nullptr;
-    for (auto pair : m_defaultDisplayInfos)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void ClassPropertyOverridesInfo::Overrides::Merge(Overrides const& source)
+    {
+    SET_PRIORITZED_NULLABLE_MEMBER(m_display);
+    SET_PRIORITZED_NULLABLE_MEMBER(m_labelOverride);
+    SET_PRIORITZED_NULLABLE_MEMBER(m_category);
+    SET_PRIORITZED_NULLABLE_MEMBER(m_editor);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void ClassPropertyOverridesInfo::Merge(ClassPropertyOverridesInfo const& source)
+    {
+    for (auto const& entry : source.m_propertyOverrides)
         {
-        if (nullptr != pair.first && !pair.first->Is(&prop.GetClass()))
+        auto iter = m_propertyOverrides.find(entry.first);
+        if (m_propertyOverrides.end() == iter)
+            m_propertyOverrides[entry.first] = entry.second;
+        else
+            iter->second.Merge(entry.second);
+        }
+
+    for (auto const& entry : source.m_defaultClassPropertyOverrides)
+        {
+        auto iter = m_defaultClassPropertyOverrides.find(entry.first);
+        if (m_defaultClassPropertyOverrides.end() == iter)
+            m_defaultClassPropertyOverrides[entry.first] = entry.second;
+        else
+            iter->second.Merge(entry.second);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename TValue>
+Nullable<ClassPropertyOverridesInfo::PrioritizedValue<TValue>> const& ClassPropertyOverridesInfo::GetOverrides(ECPropertyCR prop, Nullable<PrioritizedValue<TValue>> const& (*valuePicker)(Overrides const&)) const
+    {
+    // first, look for overrides specified specifically for some property
+    auto iter = m_propertyOverrides.find(prop.GetName());
+    if (m_propertyOverrides.end() != iter)
+        return valuePicker(iter->second);
+
+    // then, attempt to find a default class override with the highest priority
+    Nullable<PrioritizedValue<TValue>> const* matchingOverride = nullptr;
+    for (auto const& entry : m_defaultClassPropertyOverrides)
+        {
+        if (nullptr != entry.first && !entry.first->Is(&prop.GetClass()))
             continue;
 
-        if (nullptr == matchingDisplayInfo || pair.second.GetPriority() > matchingDisplayInfo->GetPriority())
-            matchingDisplayInfo = &pair.second;
+        Nullable<PrioritizedValue<TValue>> const& prioritizedValue = valuePicker(entry.second);
+        if (prioritizedValue.IsNull())
+            continue;
+
+        if (nullptr == matchingOverride || prioritizedValue.Value().priority > matchingOverride->Value().priority)
+            matchingOverride = &prioritizedValue;
         }
-    // if found, use its display flag
-    if (nullptr != matchingDisplayInfo)
-        return matchingDisplayInfo->ShouldDisplay();
-    
-    // by default - display
-    return true;
+    if (nullptr != matchingOverride)
+        return *matchingOverride;
+
+    static const Nullable<ClassPropertyOverridesInfo::PrioritizedValue<TValue>> s_null;
+    return s_null;
     }
 
-/*-----------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas            07/2017
-+---------------+---------------+---------------+---------------+-----------+------*/
-void DisplayInfo::Merge(DisplayInfo const& source)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassPropertyOverridesInfo::NullablePrioritizedValue<bool> const& ClassPropertyOverridesInfo::GetDisplayOverride(ECPropertyCR prop) const
     {
-    for (PropertyDisplayInfo const& info : source.m_propertyDisplayInfos)
-        {
-        auto iter = m_propertyDisplayInfos.find(info);
-        if (m_propertyDisplayInfos.end() == iter)
-            m_propertyDisplayInfos.insert(info);
-        else if (iter->GetPriority() < info.GetPriority())
-            m_propertyDisplayInfos.insert(m_propertyDisplayInfos.erase(iter), info);
-        }
-
-    for (auto pair : source.m_defaultDisplayInfos)
-        {
-        ECClassCP key = pair.first;
-        DefaultDisplayInfo const& info = pair.second;
-
-        auto iter = m_defaultDisplayInfos.find(key);
-        if (m_defaultDisplayInfos.end() == iter)
-            m_defaultDisplayInfos.Insert(key, info);
-        else if (iter->second.GetPriority() < info.GetPriority())
-            {
-            m_defaultDisplayInfos.erase(iter);
-            m_defaultDisplayInfos.Insert(key, info);
-            }
-        }
+    return GetOverrides<bool>(prop, [](Overrides const& ovr) -> NullablePrioritizedValue<bool> const& {return ovr.GetDisplayOverride();});
     }
 
-/*-----------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas            07/2017
-+---------------+---------------+---------------+---------------+-----------+------*/
-void PropertyInfoStore::CollectPropertiesDisplayRules(ECClassCP ecClass, PropertiesDisplaySpecificationCR spec)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassPropertyOverridesInfo::NullablePrioritizedValue<std::shared_ptr<ContentFieldEditor const>> const& ClassPropertyOverridesInfo::GetContentFieldEditorOverride(ECPropertyCR prop) const
     {
-    DisplayInfo info;
-    if (spec.GetPropertyNames().Equals("*"))
-        {
-        info.AddDefaultDisplayInfo(ecClass, DefaultDisplayInfo(spec.IsDisplayed(), spec.GetPriority()));
-        }
+    return GetOverrides<std::shared_ptr<ContentFieldEditor const>>(prop, [](Overrides const& ovr) -> NullablePrioritizedValue<std::shared_ptr<ContentFieldEditor const>> const& {return ovr.GetEditorOverride();});
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassPropertyOverridesInfo::NullablePrioritizedValue<Utf8String> const& ClassPropertyOverridesInfo::GetLabelOverride(ECPropertyCR prop) const
+    {
+    return GetOverrides<Utf8String>(prop, [](Overrides const& ovr) -> NullablePrioritizedValue<Utf8String> const& {return ovr.GetLabelOverride();});
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassPropertyOverridesInfo::NullablePrioritizedValue<ContentDescriptor::Category> const& ClassPropertyOverridesInfo::GetCategoryOverride(ECPropertyCR prop) const
+    {
+    return GetOverrides<ContentDescriptor::Category>(prop, [](Overrides const& ovr) -> NullablePrioritizedValue<ContentDescriptor::Category> const& {return ovr.GetCategoryOverride();});
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static std::shared_ptr<ContentFieldEditor> CreateEditorOverride(PropertyEditorSpecificationCR spec)
+    {
+    return std::shared_ptr<ContentFieldEditor>(ContentFieldEditor::FromSpec(spec));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static ContentDescriptor::Category CreateCategoryOverride(Utf8StringCR id, PropertyCategorySpecificationsList const& categorySpecs)
+    {
+    return ContentDescriptor::Category::FromSpec(id, categorySpecs);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static ClassPropertyOverridesInfo::Overrides CreateOverrides(PropertySpecificationCR spec, PropertyCategorySpecificationsList const& categorySpecifications)
+    {
+    ClassPropertyOverridesInfo::Overrides ovr(spec.GetOverridesPriority());
+    if (nullptr != spec.GetEditorOverride())
+        ovr.SetEditorOverride(CreateEditorOverride(*spec.GetEditorOverride()));
+    if (!spec.GetLabelOverride().empty())
+        ovr.SetLabelOverride(spec.GetLabelOverride());
+    if (!spec.GetCategoryId().empty())
+        ovr.SetCategoryOverride(CreateCategoryOverride(spec.GetCategoryId(), categorySpecifications));
+    if (spec.IsDisplayed().IsValid())
+        ovr.SetDisplayOverride(spec.IsDisplayed().Value());
+    return ovr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+static ClassPropertyOverridesInfo::Overrides CreateDefaultHiddenPropertiesOverride()
+    {
+    ClassPropertyOverridesInfo::Overrides ovr(INT_MIN);
+    ovr.SetDisplayOverride(false);
+    return ovr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void PropertyInfoStore::CollectPropertyOverrides(ECClassCP ecClass, PropertySpecificationCR spec, PropertyCategorySpecificationsList const& categorySpecifications)
+    {
+    ClassPropertyOverridesInfo info;
+    if (spec.GetPropertyName().Equals("*"))
+        info.SetClassOverrides(ecClass, CreateOverrides(spec, categorySpecifications));
     else
-        {
-        bvector<Utf8String> propertyNamesVec;
-        BeStringUtilities::Split(spec.GetPropertyNames().c_str(), ",", propertyNamesVec);
-        for (Utf8StringR propertyName : propertyNamesVec)
-            {
-            propertyName.Trim();
-            info.GetPropertyDisplayInfos().insert(PropertyDisplayInfo(propertyName, spec.GetPriority(), spec.IsDisplayed()));
-            }
-        }
-
-    auto iter = m_perClassPropertyDisplayInfos.find(ecClass);
-    if (m_perClassPropertyDisplayInfos.end() == iter)
-        m_perClassPropertyDisplayInfos[ecClass] = info;
+        info.SetPropertyOverrides(spec.GetPropertyName(), CreateOverrides(spec, categorySpecifications));
+    auto iter = m_perClassPropertyOverrides.find(ecClass);
+    if (m_perClassPropertyOverrides.end() == iter)
+        m_perClassPropertyOverrides[ecClass] = info;
     else
         iter->second.Merge(info);
     }
@@ -97,25 +177,25 @@ void PropertyInfoStore::CollectPropertiesDisplayRules(ECClassCP ecClass, Propert
 /*-----------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas            07/2017
 +---------------+---------------+---------------+---------------+-----------+------*/
-void PropertyInfoStore::InitPropertyDisplayInfos(ContentSpecificationCP specification, ContentModifierList const& contentModifiers)
+void PropertyInfoStore::InitPropertyOverrides(ContentSpecificationCP specification, ContentModifierList const& contentModifiers)
     {
     if (nullptr != specification)
         {
-        for (PropertiesDisplaySpecificationCP displaySpec : specification->GetPropertiesDisplaySpecifications())
-            CollectPropertiesDisplayRules(nullptr, *displaySpec);
+        for (PropertySpecificationCP propertySpec : specification->GetPropertyOverrides())
+            CollectPropertyOverrides(nullptr, *propertySpec, specification->GetPropertyCategories());
         }
 
     for (ContentModifierCP modifier : contentModifiers)
         {
-        for (PropertiesDisplaySpecificationCP displaySpec : modifier->GetPropertiesDisplaySpecifications())
+        for (PropertySpecificationCP propertySpec : modifier->GetPropertyOverrides())
             {
             ECClassCP ecClass = m_schemaHelper.GetECClass(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str());
             if (nullptr == ecClass)
                 {
-                //BeAssert(false);
+                BeAssert(false);
                 continue;
                 }
-            CollectPropertiesDisplayRules(ecClass, *displaySpec);
+            CollectPropertyOverrides(ecClass, *propertySpec, modifier->GetPropertyCategories());
             }
         }
     }
@@ -123,94 +203,50 @@ void PropertyInfoStore::InitPropertyDisplayInfos(ContentSpecificationCP specific
 /*-----------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas            07/2017
 +---------------+---------------+---------------+---------------+-----------+------*/
-DisplayInfo const& PropertyInfoStore::GetDisplayInfo(ECClassCR ecClass) const
+ClassPropertyOverridesInfo const& PropertyInfoStore::GetOverrides(ECClassCR ecClass) const
     {
-    auto iter = m_aggregatedPropertyDisplayInfos.find(&ecClass);
-    if (m_aggregatedPropertyDisplayInfos.end() == iter)
+    auto iter = m_aggregatedOverrides.find(&ecClass);
+    if (m_aggregatedOverrides.end() == iter)
         {
-        DisplayInfo info;
+        ClassPropertyOverridesInfo info;
 
-        // merge in display infos that apply for any class (defined at specification level)
-        auto anyClassIter = m_perClassPropertyDisplayInfos.find(nullptr);
-        if (m_perClassPropertyDisplayInfos.end() != anyClassIter)
+        // merge in overrides that apply for any class (defined at specification level)
+        auto anyClassIter = m_perClassPropertyOverrides.find(nullptr);
+        if (m_perClassPropertyOverrides.end() != anyClassIter)
             info.Merge(anyClassIter->second);
 
-        // merge in display infos that apply for supplied class (defined as content modifier)
-        auto perClassIter = m_perClassPropertyDisplayInfos.find(&ecClass);
-        if (m_perClassPropertyDisplayInfos.end() != perClassIter)
+        // merge in overrides that apply for supplied class (defined as content modifier)
+        auto perClassIter = m_perClassPropertyOverrides.find(&ecClass);
+        if (m_perClassPropertyOverrides.end() != perClassIter)
             info.Merge(perClassIter->second);
 
-        // find if there's at least one spec that requires property to be displayed
-        bool hasDisplayedPropertySpec = false;
-        for (PropertyDisplayInfo const& propertyDisplayInfo : info.GetPropertyDisplayInfos())
+        // find if there's at least one override that requires property to be displayed
+        bool hasDisplayOverride = false;
+        for (auto const& entry : info.GetPropertyOverrides())
             {
-            if (propertyDisplayInfo.IsDisplayed())
+            if (entry.second.GetDisplayOverride().IsValid() && true == entry.second.GetDisplayOverride().Value().value)
                 {
-                hasDisplayedPropertySpec = true;
+                hasDisplayOverride = true;
                 break;
                 }
             }
-        if (hasDisplayedPropertySpec)
+        if (hasDisplayOverride)
             {
             // if there's at least one spec requiring property display, it means we should hide all 
             // others - insert hiding display infos with low priority so they don't override any
             // explicitly specified infos
-            info.AddDefaultDisplayInfo(&ecClass, DefaultDisplayInfo(false, 0));
+            info.SetClassOverrides(&ecClass, CreateDefaultHiddenPropertiesOverride());
             for (ECClassCP baseClass : ecClass.GetBaseClasses())
-                info.AddDefaultDisplayInfo(baseClass, DefaultDisplayInfo(false, 0));
-
+                info.SetClassOverrides(baseClass, CreateDefaultHiddenPropertiesOverride());
             }
 
-        // merge in display infos of base class properties
+        // merge in overrides of base class properties
         for (ECClassCP base : ecClass.GetBaseClasses())
-            info.Merge(GetDisplayInfo(*base));
+            info.Merge(GetOverrides(*base));
 
-
-        iter = m_aggregatedPropertyDisplayInfos.Insert(&ecClass, info).first;
+        iter = m_aggregatedOverrides.Insert(&ecClass, info).first;
         }
     return iter->second;
-    }
-    
-/*-----------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis            10/2017
-+---------------+---------------+---------------+---------------+-----------+------*/
-ContentFieldEditor const* PropertyInfoStore::CreateEditor(PropertyEditorsSpecificationCR spec)
-    {
-    ContentFieldEditor* editor = new ContentFieldEditor(spec.GetEditorName());
-    EditorParamsBuilder paramsBuilder(*editor);
-    for (PropertyEditorParametersSpecificationCP paramsSpec : spec.GetParameters())
-        paramsSpec->Accept(paramsBuilder);
-    return editor;
-    }
-    
-/*-----------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas            07/2017
-+---------------+---------------+---------------+---------------+-----------+------*/
-void PropertyInfoStore::InitPropertyEditors(ContentSpecificationCP specification, ContentModifierList const& contentModifiers)
-    {
-    if (nullptr != specification)
-        {
-        for (PropertyEditorsSpecificationCP editorSpec : specification->GetPropertyEditors())
-            {
-            bmap<Utf8String, ContentFieldEditor const*>& editors = m_propertyEditors[nullptr];
-            editors[editorSpec->GetPropertyName()] = CreateEditor(*editorSpec);
-            }
-        }
-
-    for (ContentModifierCP modifier : contentModifiers)
-        {
-        for (PropertyEditorsSpecificationCP editorSpec : modifier->GetPropertyEditors())
-            {
-            ECClassCP ecClass = m_schemaHelper.GetECClass(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str());
-            if (nullptr == ecClass)
-                {
-                //BeAssert(false);
-                continue;
-                }
-            bmap<Utf8String, ContentFieldEditor const*>& editors = m_propertyEditors[ecClass];
-            editors[editorSpec->GetPropertyName()] = CreateEditor(*editorSpec);
-            }
-        }
     }
 
 /*-----------------------------------------------------------------------------**//**
@@ -219,16 +255,22 @@ void PropertyInfoStore::InitPropertyEditors(ContentSpecificationCP specification
 PropertyInfoStore::PropertyInfoStore(ECSchemaHelper const& helper, PresentationRuleSetCR ruleset, ContentSpecificationCP spec)
     : m_schemaHelper(helper)
     {
-    InitPropertyDisplayInfos(spec, ruleset.GetContentModifierRules());
-    InitPropertyEditors(spec, ruleset.GetContentModifierRules());
+    InitPropertyOverrides(spec, ruleset.GetContentModifierRules());
     }
 
 /*-----------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas            07/2017
+* @bsimethod                                    Grigas.Petraitis            10/2019
 +---------------+---------------+---------------+---------------+-----------+------*/
-bool PropertyInfoStore::ShouldDisplay(ECPropertyCR prop, ECClassCR ecClass) const
+bool PropertyInfoStore::ShouldDisplay(ECPropertyCR prop, ECClassCR ecClass, PropertySpecificationCP customOverride) const
     {
-    // schema custom attribute overrides everything
+    auto const& ovr = GetOverrides(ecClass).GetDisplayOverride(prop);
+    if (customOverride && customOverride->IsDisplayed().IsValid() && ovr.IsValid())
+        return (ovr.Value().priority > customOverride->GetOverridesPriority()) ? ovr.Value().value : customOverride->IsDisplayed().Value();
+    if (customOverride && customOverride->IsDisplayed().IsValid())
+        return customOverride->IsDisplayed().Value();
+    if (ovr.IsValid())
+        return ovr.Value().value;
+
     IECInstancePtr hideCustomAttribute = prop.GetCustomAttribute("CoreCustomAttributes", "HiddenProperty");
     if (hideCustomAttribute.IsValid())
         {
@@ -236,46 +278,50 @@ bool PropertyInfoStore::ShouldDisplay(ECPropertyCR prop, ECClassCR ecClass) cons
         if (ECObjectsStatus::Success == hideCustomAttribute->GetValue(value, "Show") && (value.IsNull() || (value.IsBoolean() && false == value.GetBoolean())))
             return false;
         }
-
-    DisplayInfo const& displayInfo = GetDisplayInfo(ecClass);
-    return displayInfo.ShouldDisplay(ecClass, prop);
+    return true;
     }
 
 /*-----------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas            07/2017
+* @bsimethod                                    Grigas.Petraitis            10/2019
 +---------------+---------------+---------------+---------------+-----------+------*/
-ContentFieldEditor const* PropertyInfoStore::GetPropertyEditor(ECPropertyCR ecProperty, ECClassCR ecClass, bool searchForAnyClassEditor) const
+std::shared_ptr<ContentFieldEditor const> PropertyInfoStore::GetPropertyEditor(ECPropertyCR prop, ECClassCR ecClass, PropertySpecificationCP customOverride) const
     {
-    Utf8StringCR propertyName = ecProperty.GetName();
-
-    // is there an editor that matches the provided class?
-    auto specificClassIter = m_propertyEditors.find(&ecClass);
-    if (m_propertyEditors.end() != specificClassIter)
-        {
-        auto propertyIter = specificClassIter->second.find(propertyName);
-        if (specificClassIter->second.end() != propertyIter)
-            return propertyIter->second;
-        }
-
-    if (searchForAnyClassEditor)
-        {
-        // is there an editor that matches any class?
-        auto anyClassIter = m_propertyEditors.find(nullptr);
-        if (m_propertyEditors.end() != anyClassIter)
-            {
-            auto propertyIter = anyClassIter->second.find(propertyName);
-            if (anyClassIter->second.end() != propertyIter)
-                return propertyIter->second;
-            }
-        }
-
-    // it's possible that one of the base classes of the provided class has an editor - check that
-    for (ECClassCP base : ecClass.GetBaseClasses())
-        {
-        ContentFieldEditor const* baseEditor = GetPropertyEditor(ecProperty, *base, false);
-        if (nullptr != baseEditor)
-            return baseEditor;
-        }
-
+    auto const& ovr = GetOverrides(ecClass).GetContentFieldEditorOverride(prop);
+    if (customOverride && customOverride->GetEditorOverride() && ovr.IsValid())
+        return (ovr.Value().priority > customOverride->GetOverridesPriority()) ? ovr.Value().value : CreateEditorOverride(*customOverride->GetEditorOverride());
+    if (customOverride && customOverride->GetEditorOverride())
+        return CreateEditorOverride(*customOverride->GetEditorOverride());
+    if (ovr.IsValid())
+        return ovr.Value().value;
     return nullptr;
+    }
+
+/*-----------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis            10/2019
++---------------+---------------+---------------+---------------+-----------+------*/
+Utf8String PropertyInfoStore::GetLabelOverride(ECPropertyCR prop, ECClassCR ecClass, PropertySpecificationCP customOverride) const
+    {
+    auto const& ovr = GetOverrides(ecClass).GetLabelOverride(prop);
+    if (customOverride && !customOverride->GetLabelOverride().empty() && ovr.IsValid())
+        return (ovr.Value().priority > customOverride->GetOverridesPriority()) ? ovr.Value().value : customOverride->GetLabelOverride();
+    if (customOverride && !customOverride->GetLabelOverride().empty())
+        return customOverride->GetLabelOverride();
+    if (ovr.IsValid())
+        return ovr.Value().value;
+    return "";
+    }
+
+/*-----------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis            10/2019
++---------------+---------------+---------------+---------------+-----------+------*/
+ContentDescriptor::Category PropertyInfoStore::GetCategoryOverride(ECPropertyCR prop, ECClassCR ecClass, PropertySpecificationCP customOverride, PropertyCategorySpecificationsList const* scopeCategorySpecs) const
+    {
+    auto const& ovr = GetOverrides(ecClass).GetCategoryOverride(prop);
+    if (customOverride && scopeCategorySpecs && !customOverride->GetCategoryId().empty() && ovr.IsValid())
+        return (ovr.Value().priority > customOverride->GetOverridesPriority()) ? ovr.Value().value : CreateCategoryOverride(customOverride->GetCategoryId(), *scopeCategorySpecs);
+    if (customOverride && scopeCategorySpecs && !customOverride->GetCategoryId().empty())
+        return CreateCategoryOverride(customOverride->GetCategoryId(), *scopeCategorySpecs);
+    if (ovr.IsValid())
+        return ovr.Value().value;
+    return ContentDescriptor::Category();
     }

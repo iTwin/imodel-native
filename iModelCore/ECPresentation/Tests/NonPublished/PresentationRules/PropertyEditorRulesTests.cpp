@@ -4,7 +4,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "PresentationRulesTests.h"
-#include <ECPresentation/RulesDriven/Rules/PropertyEditorsSpecification.h>
+#include <ECPresentation/RulesDriven/Rules/PropertyEditorSpecification.h>
 
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
 USING_NAMESPACE_ECPRESENTATIONTESTS
@@ -22,7 +22,6 @@ struct PropertyEditorRulesTests : PresentationRulesTests
 TEST_F(PropertyEditorRulesTests, LoadsFromJson)
     {
     static Utf8CP jsonString = R"({
-        "propertyName": "TestProperty",
         "editorName": "TestEditor",
         "parameters": [{
             "paramsType": "Multiline"
@@ -40,26 +39,10 @@ TEST_F(PropertyEditorRulesTests, LoadsFromJson)
     Json::Value json = Json::Reader::DoParse(jsonString);
     EXPECT_FALSE(json.isNull());
     
-    PropertyEditorsSpecification spec;
+    PropertyEditorSpecification spec;
     EXPECT_TRUE(spec.ReadJson(json));
-    EXPECT_STREQ("TestProperty", spec.GetPropertyName().c_str());
     EXPECT_STREQ("TestEditor", spec.GetEditorName().c_str());
     EXPECT_EQ(4, spec.GetParameters().size());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Aidas.Kilinskas                 04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PropertyEditorRulesTests, LoadFromJsonFailsWhenPropertyNameIsNotSpecified)
-    {
-    static Utf8CP jsonString = R"({
-       "editorName":"TestEditor"
-    })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
-    EXPECT_FALSE(json.isNull());
-
-    PropertyEditorsSpecification spec;
-    EXPECT_FALSE(spec.ReadJson(json));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -68,12 +51,11 @@ TEST_F(PropertyEditorRulesTests, LoadFromJsonFailsWhenPropertyNameIsNotSpecified
 TEST_F(PropertyEditorRulesTests, LoadFromJsonFailsWhenEditorNameIsNotSpecified)
     {
     static Utf8CP jsonString = R"({
-        "propertyName":"TestProperty"
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
     EXPECT_FALSE(json.isNull());
 
-    PropertyEditorsSpecification spec;
+    PropertyEditorSpecification spec;
     EXPECT_FALSE(spec.ReadJson(json));
     }
 
@@ -82,10 +64,9 @@ TEST_F(PropertyEditorRulesTests, LoadFromJsonFailsWhenEditorNameIsNotSpecified)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PropertyEditorRulesTests, WriteToJson)
     {
-    PropertyEditorsSpecification spec("prop", "editor");
+    PropertyEditorSpecification spec("editor");
     Json::Value json = spec.WriteJson();
     Json::Value expected = Json::Reader::DoParse(R"({
-        "propertyName": "prop",
         "editorName": "editor"
     })");
     EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
@@ -97,7 +78,7 @@ TEST_F(PropertyEditorRulesTests, WriteToJson)
 TEST_F(PropertyEditorRulesTests, LoadsFromXml)
     {
     static Utf8CP xmlString = R"(
-        <Editor PropertyName="TestProperty" EditorName="TestEditor">
+        <Editor EditorName="TestEditor">
             <JsonParams>{}</JsonParams>
             <MultilineParams>{}</MultilineParams>
             <RangeParams>{}</RangeParams>
@@ -108,27 +89,10 @@ TEST_F(PropertyEditorRulesTests, LoadsFromXml)
     BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
     ASSERT_EQ(BEXML_Success, xmlStatus);
     
-    PropertyEditorsSpecification spec;
+    PropertyEditorSpecification spec;
     EXPECT_TRUE(spec.ReadXml(xml->GetRootElement()));
-    EXPECT_STREQ("TestProperty", spec.GetPropertyName().c_str());
     EXPECT_STREQ("TestEditor", spec.GetEditorName().c_str());
     EXPECT_EQ(4, spec.GetParameters().size());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsiclass                                     Aidas.Vaiksnoras                12/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(PropertyEditorRulesTests, LoadFromXmlFailsWhenPropertyNameIsNotSpecified)
-    {
-    static Utf8CP xmlString = R"(
-        <Editor EditorName="TestEditor"/>
-        )";
-    BeXmlStatus xmlStatus;
-    BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
-    ASSERT_EQ(BEXML_Success, xmlStatus);
-    
-    PropertyEditorsSpecification spec;
-    EXPECT_FALSE(spec.ReadXml(xml->GetRootElement()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -137,13 +101,13 @@ TEST_F(PropertyEditorRulesTests, LoadFromXmlFailsWhenPropertyNameIsNotSpecified)
 TEST_F(PropertyEditorRulesTests, LoadFromXmlFailsWhenEditorNameIsNotSpecified)
     {
     static Utf8CP xmlString = R"(
-        <Editor PropertyName="TestProperty"/>
+        <Editor />
         )";
     BeXmlStatus xmlStatus;
     BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
     ASSERT_EQ(BEXML_Success, xmlStatus);
     
-    PropertyEditorsSpecification spec;
+    PropertyEditorSpecification spec;
     EXPECT_FALSE(spec.ReadXml(xml->GetRootElement()));
     }
 
@@ -156,13 +120,13 @@ TEST_F(PropertyEditorRulesTests, WritesToXml)
     BeXmlDomPtr xml = BeXmlDom::CreateEmpty();
     xml->AddNewElement("Root", nullptr, nullptr);
 
-    PropertyEditorsSpecification spec("Property1", "Editor1");
+    PropertyEditorSpecification spec("Editor1");
     spec.AddParameter(*new PropertyEditorJsonParameters());
     spec.WriteXml(xml->GetRootElement());
 
     static Utf8CP expected = ""
         "<Root>"
-            R"(<Editor PropertyName="Property1" EditorName="Editor1">)"
+            R"(<Editor EditorName="Editor1">)"
                 R"(<JsonParams />)"
             R"(</Editor>)"
         "</Root>";
@@ -602,15 +566,15 @@ TEST_F(PropertyEditorRulesTests, WritesDefaultSliderParamsToXml)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PropertyEditorRulesTests, ComputesCorrectHashes)
     {
-    PropertyEditorsSpecification spec1("Property", "Editor");
+    PropertyEditorSpecification spec1("Editor");
     spec1.AddParameter(*new PropertyEditorJsonParameters());
     spec1.AddParameter(*new PropertyEditorMultilineParameters());
     spec1.AddParameter(*new PropertyEditorRangeParameters());
-    PropertyEditorsSpecification spec2("Property", "Editor");
+    PropertyEditorSpecification spec2("Editor");
     spec2.AddParameter(*new PropertyEditorJsonParameters());
     spec2.AddParameter(*new PropertyEditorMultilineParameters());
     spec2.AddParameter(*new PropertyEditorRangeParameters());
-    PropertyEditorsSpecification spec3("Property", "Editor");
+    PropertyEditorSpecification spec3("Editor");
     spec3.AddParameter(*new PropertyEditorSliderParameters());
 
     // Hashes are same for editor with same parameters

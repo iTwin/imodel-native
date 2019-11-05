@@ -47,9 +47,10 @@ ECPRESENTATION_TYPEDEFS(QuerySpecification);
 ECPRESENTATION_TYPEDEFS(StringQuerySpecification);
 ECPRESENTATION_TYPEDEFS(ECPropertyValueQuerySpecification);
 ECPRESENTATION_TYPEDEFS(ContentSpecification);
+ECPRESENTATION_TYPEDEFS(PropertySpecification);
+ECPRESENTATION_TYPEDEFS(PropertyCategorySpecification);
 ECPRESENTATION_TYPEDEFS(RelatedPropertiesSpecification);
-ECPRESENTATION_TYPEDEFS(PropertiesDisplaySpecification);
-ECPRESENTATION_TYPEDEFS(PropertyEditorsSpecification);
+ECPRESENTATION_TYPEDEFS(PropertyEditorSpecification);
 ECPRESENTATION_TYPEDEFS(PropertyEditorParametersSpecification);
 ECPRESENTATION_TYPEDEFS(CalculatedPropertiesSpecification);
 ECPRESENTATION_TYPEDEFS(ContentInstancesOfSpecificClassesSpecification);
@@ -62,7 +63,7 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 #define LOGGER_NAMESPACE_ECPRESENTATION_RULES   LOGGER_NAMESPACE_ECPRESENTATION ".Rules"
 #define ECPRENSETATION_RULES_LOG (*NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE_ECPRESENTATION_RULES))
 
-enum RequiredRelationDirection : unsigned; 
+enum RequiredRelationDirection : unsigned;
 enum class RelationshipMeaning;
 
 typedef RefCountedPtr<PresentationRuleSet>    		PresentationRuleSetPtr;
@@ -84,5 +85,9 @@ typedef bvector<PropertyEditorParametersSpecificationP> PropertyEditorParameters
 typedef bvector<RelatedInstanceSpecificationP>      RelatedInstanceSpecificationList;
 typedef bvector<ExtendedDataRuleP>                  ExtendedDataRuleList;
 typedef bvector<NodeArtifactsRuleP>                 NodeArtifactsRuleList;
+typedef bvector<RelatedPropertiesSpecificationP>    RelatedPropertiesSpecificationList;
+typedef bvector<CalculatedPropertiesSpecificationP> CalculatedPropertiesSpecificationList;
+typedef bvector<PropertyCategorySpecificationP>     PropertyCategorySpecificationsList;
+typedef bvector<PropertySpecificationP>             PropertySpecificationsList;
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

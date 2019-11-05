@@ -32,10 +32,11 @@
 #include <ECPresentation/RulesDriven/Rules/ContentSpecification.h>
 #include <ECPresentation/RulesDriven/Rules/ContentModifier.h>
 #include <ECPresentation/RulesDriven/Rules/RelatedPropertiesSpecification.h>
-#include <ECPresentation/RulesDriven/Rules/PropertiesDisplaySpecification.h>
+#include <ECPresentation/RulesDriven/Rules/PropertySpecification.h>
 #include <ECPresentation/RulesDriven/Rules/ContentInstancesOfSpecificClassesSpecification.h>
 #include <ECPresentation/RulesDriven/Rules/ContentRelatedInstancesSpecification.h>
 #include <ECPresentation/RulesDriven/Rules/SelectedNodeInstancesSpecification.h>
 #include <ECPresentation/RulesDriven/Rules/CalculatedPropertySpecification.h>
 #include <ECPresentation/RulesDriven/Rules/RelatedInstanceSpecification.h>
-#include <ECPresentation/RulesDriven/Rules/PropertyEditorsSpecification.h>
+#include <ECPresentation/RulesDriven/Rules/PropertyEditorSpecification.h>
+#include <ECPresentation/RulesDriven/Rules/PropertyCategorySpecification.h>

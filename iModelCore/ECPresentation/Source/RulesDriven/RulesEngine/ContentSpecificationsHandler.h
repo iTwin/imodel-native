@@ -78,11 +78,11 @@ struct ContentSpecificationsHandler
     struct PropertyAppender : RefCountedBase
     {
     protected:
-        virtual bool _Supports(ECPropertyCR) = 0;
-        virtual bool _Append(ECPropertyCR, Utf8CP) = 0;
+        virtual bool _Supports(ECPropertyCR, PropertySpecificationCP) = 0;
+        virtual bool _Append(ECPropertyCR, Utf8CP, PropertySpecificationCP) = 0;
     public:
-        bool Supports(ECPropertyCR ecProperty) {return _Supports(ecProperty);}
-        bool Append(ECPropertyCR ecProperty, Utf8CP propertyClassAlias) {return _Append(ecProperty, propertyClassAlias);}
+        bool Supports(ECPropertyCR ecProperty, PropertySpecificationCP overrides) {return _Supports(ecProperty, overrides);}
+        bool Append(ECPropertyCR ecProperty, Utf8CP propertyClassAlias, PropertySpecificationCP overrides) {return _Append(ecProperty, propertyClassAlias, overrides);}
     };
     typedef RefCountedPtr<PropertyAppender> PropertyAppenderPtr;
 
@@ -99,11 +99,12 @@ private:
     bvector<RelatedClassPath> AppendRelatedProperties(AppendRelatedPropertyParams const&);
     bvector<RelatedClassPath> AppendRelatedProperties(AppendRelatedPropertiesParams const&, bool isNested);
     void AppendRelatedProperties(bvector<RelatedClassPath>&, AppendRelatedPropertiesParams const&);
-    bool AppendProperty(PropertyAppender&, bvector<RelatedClass>&, ECPropertyCR, Utf8CP defaultAlias);
+    bool AppendProperty(PropertyAppender&, bvector<RelatedClass>&, ECPropertyCR, Utf8CP defaultAlias, PropertySpecificationCP overrides);
     bset<ECClassCP> const& GetModifierClasses() const;
 
 protected:
-    virtual PropertyAppenderPtr _CreatePropertyAppender(ECClassCR propertyClass, RelatedClassPath const& pathToSelectClass, RelationshipMeaning, bool expandNestedFields) = 0;
+    virtual PropertyAppenderPtr _CreatePropertyAppender(ECClassCR propertyClass, RelatedClassPath const& pathToSelectClass, RelationshipMeaning, 
+        bool expandNestedFields, PropertyCategorySpecificationsList const*) = 0;
     virtual bool _ShouldIncludeRelatedProperties() const {return true;}
     virtual void _AppendClass(SelectClassInfo const&) = 0;
     ECPRESENTATION_EXPORT virtual void _OnBeforeAppendClassInfos(bvector<SupportedEntityClassInfo>&);

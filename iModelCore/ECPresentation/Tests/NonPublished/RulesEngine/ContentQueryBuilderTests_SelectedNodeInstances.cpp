@@ -146,7 +146,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_RemovesHiddenProperty)
     {
     ECClassCP class3 = GetECClass("SchemaComplex", "Class3");
     SelectedNodeInstancesSpecification spec(1, false, "SchemaComplex", "Class3", false);
-    spec.AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("PropertyC", 1000, false));
+    spec.AddPropertyOverride(*new PropertySpecification("PropertyC", 1000, "", "", false));
     
     TestParsedInput info(*class3, ECInstanceId((uint64_t)123));
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
@@ -178,7 +178,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_RemovesAllHiddenProperti
     {
     ECClassCP ecClass = GetECClass("PhysicalElement");
     SelectedNodeInstancesSpecification spec(1, false, "", "", false);
-    spec.AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("*", 1000, false));
+    spec.AddPropertyOverride(*new PropertySpecification("*", 1000, "", "", false));
     
     TestParsedInput info(*ecClass, ECInstanceId((uint64_t)123));
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
@@ -212,7 +212,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_RemovesAllHiddenBaseClas
     ECClassCP derivedClass = GetECClass("PhysicalElement");
     SelectedNodeInstancesSpecification spec(1, false, "", "", false);
     ContentModifier* modifier = new ContentModifier(baseClass->GetSchema().GetName(), baseClass->GetName());
-    modifier->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("*", 1000, false));
+    modifier->AddPropertyOverride(*new PropertySpecification("*", 1000, "", "", false));
     m_ruleset->AddPresentationRule(*modifier);
     
     TestParsedInput info(*derivedClass, ECInstanceId((uint64_t)123));
@@ -246,7 +246,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_RemovesAllHiddenDerivedC
     ECClassCP derivedClass = GetECClass("PhysicalElement");
     SelectedNodeInstancesSpecification spec(1, false, "", "", false);
     ContentModifier* modifier = new ContentModifier(derivedClass->GetSchema().GetName(), derivedClass->GetName());
-    modifier->AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("*", 1000, false));
+    modifier->AddPropertyOverride(*new PropertySpecification("*", 1000, "", "", false));
     m_ruleset->AddPresentationRule(*modifier);
     
     TestParsedInput info(*derivedClass, ECInstanceId((uint64_t)123));
@@ -270,7 +270,8 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_RemovesMultipleHiddenPro
     {
     ECClassCP class3 = GetECClass("SchemaComplex", "Class3");
     SelectedNodeInstancesSpecification spec(1, false, "SchemaComplex", "Class3", false);
-    spec.AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("PropertyC,PropertyD", 1000, false));
+    spec.AddPropertyOverride(*new PropertySpecification("PropertyC", 1000, "", "", false));
+    spec.AddPropertyOverride(*new PropertySpecification("PropertyD", 1000, "", "", false));
     
     TestParsedInput info(*class3, ECInstanceId((uint64_t)123));
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
@@ -294,8 +295,8 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_RemovesMultipleHiddenPro
     ECClassCP class2 = GetECClass("SchemaComplex", "Class2");
     ECClassCP class3 = GetECClass("SchemaComplex", "Class3");
     SelectedNodeInstancesSpecification spec(1, false, "SchemaComplex", "", false);
-    spec.AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("PropertyB", 1000, false));
-    spec.AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("PropertyC", 1000, false));
+    spec.AddPropertyOverride(*new PropertySpecification("PropertyB", 1000, "", "", false));
+    spec.AddPropertyOverride(*new PropertySpecification("PropertyC", 1000, "", "", false));
     
     TestParsedInput info({
         bpair<ECClassCP, ECInstanceId>(class2, {ECInstanceId((uint64_t)123)}), 
@@ -553,7 +554,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_SelectsRawValueAndGroups
     TestParsedInput info(*classH, ECInstanceId((uint64_t)123));
 
     SelectedNodeInstancesSpecification spec(1, false, "", "", false);
-    spec.AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("PointProperty", 1000, true));
+    spec.AddPropertyOverride(*new PropertySpecification("PointProperty", 1000, "", "", true));
 
     ContentDescriptorPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
@@ -580,7 +581,8 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_InstanceLabelOverride_Ap
 
     ECClassCP ecClass = GetECClass("RulesEngineTest", "Widget");
     SelectedNodeInstancesSpecification spec(1, false, "", "", false);
-    spec.AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID,Description", 1000, true));
+    spec.AddPropertyOverride(*new PropertySpecification("MyID", 1000, "", "", true));
+    spec.AddPropertyOverride(*new PropertySpecification("Description", 1000, "", "", true));
     m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
     m_ruleset->AddPresentationRule(*new InstanceLabelOverride(2, true, "RulesEngineTest:Widget", "Description"));
     TestParsedInput info(*ecClass, ECInstanceId((uint64_t)123));
@@ -615,7 +617,7 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_InstanceLabelOverride_Ov
         });
 
     SelectedNodeInstancesSpecification spec(1, false, "", "", false);
-    spec.AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID", 1000, true));
+    spec.AddPropertyOverride(*new PropertySpecification("MyID", 1000, "", "", true));
     m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
 
     ContentDescriptorPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
@@ -649,7 +651,8 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_InstanceLabelOverride_Ov
         });
 
     SelectedNodeInstancesSpecification spec(1, false, "", "", false);
-    spec.AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID,Widget", 1000, true));
+    spec.AddPropertyOverride(*new PropertySpecification("MyID", 1000, "", "", true));
+    spec.AddPropertyOverride(*new PropertySpecification("Widget", 1000, "", "", true));
     m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
 
     ContentDescriptorPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);

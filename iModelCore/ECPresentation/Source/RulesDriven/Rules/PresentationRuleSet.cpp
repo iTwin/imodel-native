@@ -357,10 +357,12 @@ void PresentationRuleSet::WriteJson(JsonValueR json) const
     CommonToolsInternal::WriteRulesToJson<ExtendedDataRule, ExtendedDataRuleList>(rulesJson, m_extendedDataRules);
     CommonToolsInternal::WriteRulesToJson<NodeArtifactsRule, NodeArtifactsRuleList>(rulesJson, m_nodeArtifactRules);
     CommonToolsInternal::WriteRulesToJson<GroupingRule, GroupingRuleList>(rulesJson, m_groupingRules);
-    CommonToolsInternal::WriteRulesToJson<UserSettingsGroup, UserSettingsGroupList>(rulesJson, m_userSettings);
     CommonToolsInternal::WriteRulesToJson<CheckBoxRule, CheckBoxRuleList>(rulesJson, m_checkBoxRules);
     CommonToolsInternal::WriteRulesToJson<SortingRule, SortingRuleList>(rulesJson, m_sortingRules);
     json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULES] = rulesJson;
+
+    if (!m_userSettings.empty())
+        CommonToolsInternal::WriteRulesToJson<UserSettingsGroup, UserSettingsGroupList>(json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_USERSETTINGS], m_userSettings);
     }
 
 /*---------------------------------------------------------------------------------**//**

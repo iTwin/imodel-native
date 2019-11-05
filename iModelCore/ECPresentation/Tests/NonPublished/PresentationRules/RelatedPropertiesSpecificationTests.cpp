@@ -25,7 +25,7 @@ TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromJson)
         "relationships": {"schemaName": "Relationship", "classNames": ["Names"]},
         "relatedClasses": [{"schemaName": "Related", "classNames": ["Class", "Names"]}],
         "requiredDirection": "Backward",
-        "propertyNames": ["Property","Names"],
+        "properties": ["Property", "Names"],
         "relationshipMeaning": "SameInstance",
         "isPolymorphic": true,
         "nestedRelatedProperties": [{}],
@@ -33,17 +33,137 @@ TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromJson)
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
     ASSERT_FALSE(json.isNull());
-    
+
     RelatedPropertiesSpecification spec;
     ASSERT_TRUE(spec.ReadJson(json));
     EXPECT_STREQ("Related:Class,Names", spec.GetRelatedClassNames().c_str());
     EXPECT_STREQ("Relationship:Names", spec.GetRelationshipClassNames().c_str());
-    EXPECT_STREQ("Property,Names", spec.GetPropertyNames().c_str());
+    ASSERT_EQ(2, spec.GetProperties().size());
+    EXPECT_STREQ("Property", spec.GetProperties()[0]->GetPropertyName().c_str());
+    EXPECT_STREQ("Names", spec.GetProperties()[1]->GetPropertyName().c_str());
+    EXPECT_FALSE(spec.GetIncludeAllProperties());
+    EXPECT_FALSE(spec.GetIncludeNoProperties());
     EXPECT_EQ(RequiredRelationDirection_Backward, spec.GetRequiredRelationDirection());
     EXPECT_EQ(RelationshipMeaning::SameInstance, spec.GetRelationshipMeaning());
     EXPECT_TRUE(spec.IsPolymorphic());
     EXPECT_TRUE(spec.ShouldAutoExpand());
     EXPECT_EQ(1, spec.GetNestedRelatedProperties().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromJsonWithSpecifiedPropertiesSpecAsObjects)
+    {
+    static Utf8CP jsonString = R"({
+        "properties": [{
+            "name": "Prop1"
+        }, {
+            "name": "Prop2"
+        }]
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    ASSERT_FALSE(json.isNull());
+
+    RelatedPropertiesSpecification spec;
+    ASSERT_TRUE(spec.ReadJson(json));
+    ASSERT_EQ(2, spec.GetProperties().size());
+    EXPECT_STREQ("Prop1", spec.GetProperties()[0]->GetPropertyName().c_str());
+    EXPECT_STREQ("Prop2", spec.GetProperties()[1]->GetPropertyName().c_str());
+    EXPECT_FALSE(spec.GetIncludeAllProperties());
+    EXPECT_FALSE(spec.GetIncludeNoProperties());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromJsonWithEmptyPropertiesSpec)
+    {
+    static Utf8CP jsonString = R"({
+        "properties": []
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    ASSERT_FALSE(json.isNull());
+
+    RelatedPropertiesSpecification spec;
+    ASSERT_TRUE(spec.ReadJson(json));
+    EXPECT_TRUE(spec.GetProperties().empty());
+    EXPECT_TRUE(spec.GetIncludeAllProperties());
+    EXPECT_FALSE(spec.GetIncludeNoProperties());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromJsonWithNonePropertiesSpec)
+    {
+    static Utf8CP jsonString = R"({
+        "properties": "_none_"
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    ASSERT_FALSE(json.isNull());
+
+    RelatedPropertiesSpecification spec;
+    ASSERT_TRUE(spec.ReadJson(json));
+    EXPECT_TRUE(spec.GetProperties().empty());
+    EXPECT_FALSE(spec.GetIncludeAllProperties());
+    EXPECT_TRUE(spec.GetIncludeNoProperties());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromJsonWithSpecifiedDeprecatedPropertyNamesSpec)
+    {
+    static Utf8CP jsonString = R"({
+        "propertyNames": ["Prop1", "Prop2"]
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    ASSERT_FALSE(json.isNull());
+
+    RelatedPropertiesSpecification spec;
+    ASSERT_TRUE(spec.ReadJson(json));
+    ASSERT_EQ(2, spec.GetProperties().size());
+    EXPECT_STREQ("Prop1", spec.GetProperties()[0]->GetPropertyName().c_str());
+    EXPECT_STREQ("Prop2", spec.GetProperties()[1]->GetPropertyName().c_str());
+    EXPECT_FALSE(spec.GetIncludeAllProperties());
+    EXPECT_FALSE(spec.GetIncludeNoProperties());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromJsonWithEmptyDeprecatedPropertyNamesSpec)
+    {
+    static Utf8CP jsonString = R"({
+        "propertyNames": []
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    ASSERT_FALSE(json.isNull());
+    
+    RelatedPropertiesSpecification spec;
+    ASSERT_TRUE(spec.ReadJson(json));
+    EXPECT_TRUE(spec.GetProperties().empty());
+    EXPECT_TRUE(spec.GetIncludeAllProperties());
+    EXPECT_FALSE(spec.GetIncludeNoProperties());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromJsonWithNoneDeprecatedPropertyNamesSpec)
+    {
+    static Utf8CP jsonString = R"({
+        "propertyNames": "_none_"
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    ASSERT_FALSE(json.isNull());
+
+    RelatedPropertiesSpecification spec;
+    ASSERT_TRUE(spec.ReadJson(json));
+    EXPECT_TRUE(spec.GetProperties().empty());
+    EXPECT_FALSE(spec.GetIncludeAllProperties());
+    EXPECT_TRUE(spec.GetIncludeNoProperties());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -59,7 +179,9 @@ TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromJsonWithDefaultValues)
     EXPECT_TRUE(spec.ReadJson(json));
     EXPECT_STREQ("", spec.GetRelatedClassNames().c_str());
     EXPECT_STREQ("", spec.GetRelationshipClassNames().c_str());
-    EXPECT_STREQ("", spec.GetPropertyNames().c_str());
+    EXPECT_TRUE(spec.GetProperties().empty());
+    EXPECT_TRUE(spec.GetIncludeAllProperties());
+    EXPECT_FALSE(spec.GetIncludeNoProperties());
     EXPECT_EQ(RequiredRelationDirection_Both, spec.GetRequiredRelationDirection());
     EXPECT_EQ(RelationshipMeaning::RelatedInstance, spec.GetRelationshipMeaning());
     EXPECT_FALSE(spec.IsPolymorphic());
@@ -72,33 +194,23 @@ TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromJsonWithDefaultValues)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RelatedPropertiesSpecificationsTests, WriteToJson)
     {
-    RelatedPropertiesSpecification spec(RequiredRelationDirection_Backward, "s1:c1", "s2:c2,c3", "p1,p2", RelationshipMeaning::SameInstance, true, true);
+    RelatedPropertiesSpecification spec(RequiredRelationDirection_Backward, "s1:c1", "s2:c2,c3", {new PropertySpecification("p1"), new PropertySpecification("p2")},
+        RelationshipMeaning::SameInstance, true, true);
     Json::Value json = spec.WriteJson();
     Json::Value expected = Json::Reader::DoParse(R"({
         "requiredDirection": "Backward",
         "relationships": {"schemaName": "s1", "classNames": ["c1"]},
         "relatedClasses": {"schemaName": "s2", "classNames": ["c2", "c3"]},
         "relationshipMeaning": "SameInstance",
-        "propertyNames": ["p1", "p2"],
+        "properties": [{
+            "name": "p1"
+        }, {
+            "name": "p2"
+        }],
         "isPolymorphic": true,
         "autoExpand": true
     })");
     EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                   Aidas.Kilinskas                		12/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromJsonWithPropertyNamesSetToNone)
-    {
-    static Utf8CP jsonString = R"({
-        "propertyNames": "_none_"
-    })";
-    Json::Value json = Json::Reader::DoParse(jsonString);
-    ASSERT_FALSE(json.isNull());
-    RelatedPropertiesSpecification spec;
-    ASSERT_TRUE(spec.ReadJson(json));
-    EXPECT_STREQ("_none_", spec.GetPropertyNames().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -107,10 +219,10 @@ TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromJsonWithPropertyNamesSetTo
 TEST_F(RelatedPropertiesSpecificationsTests, WriteToJsonWithPropertyNamesSetToNone)
     {
     RelatedPropertiesSpecification spec;
-    spec.SetPropertyNames("_none_");
+    spec.SetIncludeNoProperties();
     Json::Value json = spec.WriteJson();
     Json::Value expected = Json::Reader::DoParse(R"({
-        "propertyNames": "_none_"
+        "properties": "_none_"
     })");
     EXPECT_STREQ(ToPrettyString(expected).c_str(), ToPrettyString(json).c_str());
     }
@@ -138,7 +250,11 @@ TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromXml)
     EXPECT_TRUE(spec.ReadXml(xml->GetRootElement()));
     EXPECT_STREQ("Related:Class,Names", spec.GetRelatedClassNames().c_str());
     EXPECT_STREQ("Relationship:Names", spec.GetRelationshipClassNames().c_str());
-    EXPECT_STREQ("Property,Names", spec.GetPropertyNames().c_str());
+    ASSERT_EQ(2, spec.GetProperties().size());
+    EXPECT_STREQ("Property", spec.GetProperties()[0]->GetPropertyName().c_str());
+    EXPECT_STREQ("Names", spec.GetProperties()[1]->GetPropertyName().c_str());
+    EXPECT_FALSE(spec.GetIncludeAllProperties());
+    EXPECT_FALSE(spec.GetIncludeNoProperties());
     EXPECT_EQ(RequiredRelationDirection_Backward, spec.GetRequiredRelationDirection());
     EXPECT_EQ(RelationshipMeaning::SameInstance, spec.GetRelationshipMeaning());
     EXPECT_TRUE(spec.IsPolymorphic());
@@ -159,7 +275,9 @@ TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromXmlWithDefaultValues)
     EXPECT_TRUE(spec.ReadXml(xml->GetRootElement()));
     EXPECT_STREQ("", spec.GetRelatedClassNames().c_str());
     EXPECT_STREQ("", spec.GetRelationshipClassNames().c_str());
-    EXPECT_STREQ("", spec.GetPropertyNames().c_str());
+    EXPECT_TRUE(spec.GetProperties().empty());
+    EXPECT_TRUE(spec.GetIncludeAllProperties());
+    EXPECT_FALSE(spec.GetIncludeNoProperties());
     EXPECT_EQ(RequiredRelationDirection_Both, spec.GetRequiredRelationDirection());
     EXPECT_EQ(RelationshipMeaning::RelatedInstance, spec.GetRelationshipMeaning());
     EXPECT_FALSE(spec.IsPolymorphic());
@@ -178,7 +296,8 @@ TEST_F(RelatedPropertiesSpecificationsTests, WritesToXml)
     RelatedPropertiesSpecification spec(RequiredRelationDirection_Backward, "Relationship:Names",
         "", "", RelationshipMeaning::SameInstance);
     spec.SetRelatedClassNames("Related:Class,Names");
-    spec.SetPropertyNames("Property,Names");
+    spec.AddProperty(*new PropertySpecification("Property"));
+    spec.AddProperty(*new PropertySpecification("Names"));
     spec.SetRelationshipMeaning(RelationshipMeaning::RelatedInstance);
     spec.SetIsPolymorphic(true);
     spec.SetAutoExpand(true);
@@ -214,13 +333,15 @@ TEST_F(RelatedPropertiesSpecificationsTests, WritesToXml)
 TEST_F(RelatedPropertiesSpecificationsTests, ComputesCorrectHashes)
     {
     RelatedPropertiesSpecification spec1(RequiredRelationDirection_Backward, "Relationship:Names",
-        "Related:Class,Names", "Property,Names", RelationshipMeaning::RelatedInstance, true);
+        "Related:Class,Names", { new PropertySpecification("p1"), new PropertySpecification("p2") }, RelationshipMeaning::RelatedInstance, true);
     spec1.AddNestedRelatedProperty(*new RelatedPropertiesSpecification());
+
     RelatedPropertiesSpecification spec2(RequiredRelationDirection_Backward, "Relationship:Names",
-        "Related:Class,Names", "Property,Names", RelationshipMeaning::RelatedInstance, true);
+        "Related:Class,Names", { new PropertySpecification("p1"), new PropertySpecification("p2") }, RelationshipMeaning::RelatedInstance, true);
     spec2.AddNestedRelatedProperty(*new RelatedPropertiesSpecification());
+
     RelatedPropertiesSpecification spec3(RequiredRelationDirection_Backward, "Relationship:Names",
-        "Related:Class,Names", "Property,Names", RelationshipMeaning::RelatedInstance);
+        "Related:Class,Names", { new PropertySpecification("p1"), new PropertySpecification("p2") }, RelationshipMeaning::RelatedInstance);
     spec3.AddNestedRelatedProperty(*new RelatedPropertiesSpecification());
     spec3.AddNestedRelatedProperty(*new RelatedPropertiesSpecification());    
 

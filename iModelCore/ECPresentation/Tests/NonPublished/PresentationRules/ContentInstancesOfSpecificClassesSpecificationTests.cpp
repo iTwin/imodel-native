@@ -72,6 +72,87 @@ TEST_F(ContentInstancesOfSpecificClassesSpecificationTests, LoadsFromJsonWithDef
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ContentInstancesOfSpecificClassesSpecificationTests, LoadsFromJsonWithOnlyExcludedClasses)
+    {
+    static Utf8CP jsonString = R"({
+        "specType": "ContentInstancesOfSpecificClasses",
+        "classes": [{
+            "schemaName": "TestSchema1", 
+            "classNames": ["E:TestClass1"]
+        }, {
+            "schemaName": "TestSchema2", 
+            "classNames": ["E:TestClass2"]
+        }]
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    ContentInstancesOfSpecificClassesSpecification spec;
+    EXPECT_TRUE(spec.ReadJson(json));
+    EXPECT_STREQ("E:TestSchema1:TestClass1;TestSchema2:TestClass2", spec.GetClassNames().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ContentInstancesOfSpecificClassesSpecificationTests, LoadsFromJsonWithIncludedAndExcludedClasses)
+    {
+    static Utf8CP jsonString = R"({
+        "specType": "ContentInstancesOfSpecificClasses",
+        "classes": [{
+            "schemaName": "TestSchema1", 
+            "classNames": ["TestClass1", "E:TestClass2"]
+        }, {
+            "schemaName": "TestSchema2", 
+            "classNames": ["E:TestClass3", "TestClass4"]
+        }]
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    ContentInstancesOfSpecificClassesSpecification spec;
+    EXPECT_TRUE(spec.ReadJson(json));
+    EXPECT_STREQ("TestSchema1:TestClass1;TestSchema2:TestClass4;E:TestSchema1:TestClass2;TestSchema2:TestClass3", spec.GetClassNames().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ContentInstancesOfSpecificClassesSpecificationTests, FailsToLoadFromJsonWithEmptyClassesArray)
+    {
+    static Utf8CP jsonString = R"({
+        "specType": "ContentInstancesOfSpecificClasses",
+        "classes": []
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    ContentInstancesOfSpecificClassesSpecification spec;
+    EXPECT_FALSE(spec.ReadJson(json));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ContentInstancesOfSpecificClassesSpecificationTests, FailsToLoadFromJsonWithSchemaSpecifiedButClassesNot)
+    {
+    static Utf8CP jsonString = R"({
+        "specType": "ContentInstancesOfSpecificClasses",
+        "classes": {
+            "schemaName": "TestSchema",
+            "classNames": []
+        }
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    ContentInstancesOfSpecificClassesSpecification spec;
+    EXPECT_FALSE(spec.ReadJson(json));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ContentInstancesOfSpecificClassesSpecificationTests, WriteToJson)

@@ -134,8 +134,8 @@ private:
     PropertyInfoStore m_propertyInfos;
     ECClassCR m_propertyClass;
 protected:
-    bool _Supports(ECPropertyCR prop) override {return m_propertyInfos.ShouldDisplay(prop, m_propertyClass);}
-    bool _Append(ECPropertyCR, Utf8CP) override {return true;}
+    bool _Supports(ECPropertyCR prop, PropertySpecificationCP ovr) override {return m_propertyInfos.ShouldDisplay(prop, m_propertyClass, ovr);}
+    bool _Append(ECPropertyCR, Utf8CP, PropertySpecificationCP) override {return true;}
 public:
     DisplayedPropertyAppender(ContentSpecificationsHandler::Context const& context, ContentSpecificationCR spec, ECClassCR propertyClass)
         : m_propertyInfos(context.GetSchemaHelper(), context.GetRuleset(), &spec), m_propertyClass(propertyClass)
@@ -186,7 +186,7 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                10/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    PropertyAppenderPtr _CreatePropertyAppender(ECClassCR propertyClass, RelatedClassPath const&, RelationshipMeaning, bool) override
+    PropertyAppenderPtr _CreatePropertyAppender(ECClassCR propertyClass, RelatedClassPath const&, RelationshipMeaning, bool, PropertyCategorySpecificationsList const*) override
         {
         return new DisplayedPropertyAppender(GetContext(), *m_currentSpecification, propertyClass);
         }

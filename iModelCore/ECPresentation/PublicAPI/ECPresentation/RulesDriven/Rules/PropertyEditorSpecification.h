@@ -11,52 +11,6 @@
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
-/*---------------------------------------------------------------------------------**//**
-* Specification for specifying editor for a single property.
-* @bsiclass                                     Saulius.Skliutas                07/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct PropertyEditorsSpecification : HashableBase
-    {
-    private:
-        Utf8String m_propertyName;
-        Utf8String m_editorName;
-        PropertyEditorParametersList m_parameters;
-
-    protected:
-        //! Computes specification hash.
-        ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
-
-    public:
-        PropertyEditorsSpecification() {}
-        PropertyEditorsSpecification(Utf8String propertyName, Utf8String editorName)
-            : m_propertyName(propertyName), m_editorName(editorName)
-            {}
-
-        //! Reads rule information from XmlNode, returns true if it can read it successfully.
-        ECPRESENTATION_EXPORT bool ReadXml(BeXmlNodeP xmlNode);
-
-        //! Writes rule information to given XmlNode.
-        ECPRESENTATION_EXPORT void WriteXml(BeXmlNodeP parentXmlNode) const;
-
-        //! Reads rule information from Json, returns true if it can read it successfully.
-        ECPRESENTATION_EXPORT bool ReadJson(JsonValueCR json);
-
-        //! Writes rule information to json.
-        ECPRESENTATION_EXPORT Json::Value WriteJson() const;
-
-        //! Get property name.
-        Utf8StringCR GetPropertyName() const {return m_propertyName;}
-
-        //! Get editor name.
-        Utf8StringCR GetEditorName() const {return m_editorName;}
-        
-        //! Get parameters.
-        PropertyEditorParametersList const& GetParameters() const {return m_parameters;}
-
-        //! Add parameter.
-        ECPRESENTATION_EXPORT void AddParameter(PropertyEditorParametersSpecificationR specification);
-    };
-
 struct PropertyEditorJsonParameters;
 struct PropertyEditorMultilineParameters;
 struct PropertyEditorRangeParameters;
@@ -214,6 +168,51 @@ public:
     uint32_t GetIntervalsCount() const {return m_intervalsCount;}
     uint32_t GetValueFactor() const {return m_valueFactor;}
     bool IsVertical() const {return m_isVertical;}
+};
+
+/*---------------------------------------------------------------------------------**//**
+* Specification for specifying editor for a single property.
+* @bsiclass                                     Saulius.Skliutas                07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+struct PropertyEditorSpecification : HashableBase
+{
+private:
+    Utf8String m_name;
+    PropertyEditorParametersList m_parameters;
+
+protected:
+    //! Computes specification hash.
+    ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
+
+public:
+    PropertyEditorSpecification() {}
+    PropertyEditorSpecification(Utf8String editorName) : m_name(editorName) {}
+    ~PropertyEditorSpecification()
+        {
+        for (PropertyEditorParametersSpecificationCP param : m_parameters)
+            delete param;
+        }
+
+    //! Reads rule information from XmlNode, returns true if it can read it successfully.
+    ECPRESENTATION_EXPORT bool ReadXml(BeXmlNodeP xmlNode);
+
+    //! Writes rule information to given XmlNode.
+    ECPRESENTATION_EXPORT void WriteXml(BeXmlNodeP parentXmlNode) const;
+
+    //! Reads rule information from Json, returns true if it can read it successfully.
+    ECPRESENTATION_EXPORT bool ReadJson(JsonValueCR json);
+
+    //! Writes rule information to json.
+    ECPRESENTATION_EXPORT Json::Value WriteJson() const;
+    
+    //! Get editor name.
+    Utf8StringCR GetEditorName() const {return m_name;}
+        
+    //! Get parameters.
+    PropertyEditorParametersList const& GetParameters() const {return m_parameters;}
+
+    //! Add parameter.
+    ECPRESENTATION_EXPORT void AddParameter(PropertyEditorParametersSpecificationR specification);
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

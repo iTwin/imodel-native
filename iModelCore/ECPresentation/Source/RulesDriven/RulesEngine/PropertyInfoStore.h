@@ -10,67 +10,59 @@
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
 /*=================================================================================**//**
-* @bsiclass                                     Saulius.Skliutas                07/2017
+* @bsiclass                                     Grigas.Petraitis                10/2019
 +===============+===============+===============+===============+===============+======*/
-struct PropertyDisplayInfo
+struct ClassPropertyOverridesInfo
 {
-private:
-    Utf8String m_propertyName;
-    int m_priority;
-    bool m_displayed;
-
-public:
-    PropertyDisplayInfo() {}
-    PropertyDisplayInfo(Utf8String propertyName) : m_propertyName(propertyName) {}
-    PropertyDisplayInfo(Utf8String propertyName, int priority, bool displayed) : m_propertyName(propertyName), m_priority(priority), m_displayed(displayed) {}
-
-    bool operator<(PropertyDisplayInfo const& rhs) const
+    template<typename TValue>
+    struct PrioritizedValue
         {
-        return strcmp(GetPropertyName(), rhs.GetPropertyName()) < 0;
-        }
+        int priority;
+        TValue value;
+        };
 
-    Utf8CP GetPropertyName() const {return m_propertyName.c_str();}
-    int GetPriority() const {return m_priority;}
-    bool IsDisplayed() const {return m_displayed;}
-};
+    template<typename TValue>
+    using NullablePrioritizedValue = Nullable<PrioritizedValue<TValue>>;
 
-/*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                02/2018
-+===============+===============+===============+===============+===============+======*/
-struct DefaultDisplayInfo
-{
+    struct Overrides
+    {
+    private:
+        int m_defaultPriority;
+        NullablePrioritizedValue<bool> m_display;
+        NullablePrioritizedValue<std::shared_ptr<ContentFieldEditor const>> m_editor;
+        NullablePrioritizedValue<Utf8String> m_labelOverride;
+        NullablePrioritizedValue<ContentDescriptor::Category> m_category;
+    public:
+        Overrides() : m_defaultPriority(0) {}
+        Overrides(int defaultPriority) : m_defaultPriority(defaultPriority) {}
+        void Merge(Overrides const& other);
+        void SetDisplayOverride(bool ovr) {m_display = PrioritizedValue<bool>({ m_defaultPriority, ovr });}
+        NullablePrioritizedValue<bool> const& GetDisplayOverride() const {return m_display;}
+        void SetEditorOverride(std::shared_ptr<ContentFieldEditor const> ovr) {m_editor = PrioritizedValue<std::shared_ptr<ContentFieldEditor const>>({ m_defaultPriority, ovr });}
+        NullablePrioritizedValue<std::shared_ptr<ContentFieldEditor const>> const& GetEditorOverride() const {return m_editor;}
+        void SetLabelOverride(Utf8String ovr) {m_labelOverride = PrioritizedValue<Utf8String>({ m_defaultPriority, ovr });}
+        NullablePrioritizedValue<Utf8String> const& GetLabelOverride() const {return m_labelOverride;}
+        void SetCategoryOverride(ContentDescriptor::Category ovr) {m_category = PrioritizedValue<ContentDescriptor::Category>({ m_defaultPriority, ovr });}
+        NullablePrioritizedValue<ContentDescriptor::Category> const& GetCategoryOverride() const {return m_category;}
+    };
+
 private:
-    bool m_display;
-    int m_priority;
-public:
-    DefaultDisplayInfo() : m_display(false), m_priority(0) {}
-    DefaultDisplayInfo(bool display, int priority) : m_display(display), m_priority(priority) {}
-    bool ShouldDisplay() const {return m_display;}
-    int GetPriority() const {return m_priority;}
-};
+    bmap<ECClassCP, Overrides> m_defaultClassPropertyOverrides;
+    bmap<Utf8String, Overrides> m_propertyOverrides;
 
-/*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                02/2018
-+===============+===============+===============+===============+===============+======*/
-struct DisplayInfo
-{
 private:
-    bmap<ECClassCP, DefaultDisplayInfo> m_defaultDisplayInfos;
-    bset<PropertyDisplayInfo> m_propertyDisplayInfos;
+    template<typename TValue>
+    NullablePrioritizedValue<TValue> const& GetOverrides(ECPropertyCR, Nullable<PrioritizedValue<TValue>> const&(*valuePicker)(Overrides const&)) const;
 
 public:
-    DefaultDisplayInfo const* GetDefaultDisplayInfo(ECClassCP ecClass) const
-        {
-        auto iter = m_defaultDisplayInfos.find(ecClass);
-        return (m_defaultDisplayInfos.end() != iter) ? &iter->second : nullptr;
-        }
-    void AddDefaultDisplayInfo(ECClassCP ecClass, DefaultDisplayInfo info) {m_defaultDisplayInfos[ecClass] = info;}
-
-    bset<PropertyDisplayInfo> const& GetPropertyDisplayInfos() const {return m_propertyDisplayInfos;}
-    bset<PropertyDisplayInfo>& GetPropertyDisplayInfos() {return m_propertyDisplayInfos;}
-
-    bool ShouldDisplay(ECClassCR, ECPropertyCR) const;
-    void Merge(DisplayInfo const& other);
+    NullablePrioritizedValue<bool> const& GetDisplayOverride(ECPropertyCR) const;
+    NullablePrioritizedValue<std::shared_ptr<ContentFieldEditor const>> const& GetContentFieldEditorOverride(ECPropertyCR) const;
+    NullablePrioritizedValue<Utf8String> const& GetLabelOverride(ECPropertyCR) const;
+    NullablePrioritizedValue<ContentDescriptor::Category> const& GetCategoryOverride(ECPropertyCR) const;
+    bmap<Utf8String, Overrides> const& GetPropertyOverrides() const {return m_propertyOverrides;}
+    void SetClassOverrides(ECClassCP ecClass, Overrides ovr) {m_defaultClassPropertyOverrides[ecClass] = ovr;}
+    void SetPropertyOverrides(Utf8StringCR ecPropertyName, Overrides ovr) {m_propertyOverrides[ecPropertyName] = ovr;}
+    void Merge(ClassPropertyOverridesInfo const&);
 };
 
 /*=================================================================================**//**
@@ -80,21 +72,20 @@ struct PropertyInfoStore
 {
 private:
     ECSchemaHelper const& m_schemaHelper;
-    bmap<ECClassCP, DisplayInfo> m_perClassPropertyDisplayInfos; // per-class property display info
-    mutable bmap<ECClassCP, DisplayInfo> m_aggregatedPropertyDisplayInfos; // property display info, including base class properties
-    bmap<ECClassCP, bmap<Utf8String, ContentFieldEditor const*>> m_propertyEditors;
+    bmap<ECClassCP, ClassPropertyOverridesInfo> m_perClassPropertyOverrides;
+    mutable bmap<ECClassCP, ClassPropertyOverridesInfo> m_aggregatedOverrides; // property overrides, including base class properties
 
 private:
-    void CollectPropertiesDisplayRules(ECClassCP ecClass, PropertiesDisplaySpecificationCR spec);
-    void InitPropertyDisplayInfos(ContentSpecificationCP specification, ContentModifierList const& contentModifiers);
-    DisplayInfo const& GetDisplayInfo(ECClassCR ecClass) const;
-    static ContentFieldEditor const* CreateEditor(PropertyEditorsSpecificationCR spec);
-    void InitPropertyEditors(ContentSpecificationCP specification, ContentModifierList const& contentModifiers);
-
+    void CollectPropertyOverrides(ECClassCP ecClass, PropertySpecificationCR spec, PropertyCategorySpecificationsList const&);
+    void InitPropertyOverrides(ContentSpecificationCP specification, ContentModifierList const& contentModifiers);
+    ClassPropertyOverridesInfo const& GetOverrides(ECClassCR ecClass) const;
+    
 public:
     PropertyInfoStore(ECSchemaHelper const& helper, PresentationRuleSetCR ruleset, ContentSpecificationCP spec);
-    bool ShouldDisplay(ECPropertyCR prop, ECClassCR ecClass) const;
-    ContentFieldEditor const* GetPropertyEditor(ECPropertyCR ecProperty, ECClassCR ecClass, bool searchForAnyClassEditor = true) const;
+    bool ShouldDisplay(ECPropertyCR, ECClassCR, PropertySpecificationCP = nullptr) const;
+    std::shared_ptr<ContentFieldEditor const> GetPropertyEditor(ECPropertyCR, ECClassCR, PropertySpecificationCP = nullptr) const;
+    Utf8String GetLabelOverride(ECPropertyCR, ECClassCR, PropertySpecificationCP = nullptr) const;
+    ContentDescriptor::Category GetCategoryOverride(ECPropertyCR, ECClassCR, PropertySpecificationCP = nullptr, PropertyCategorySpecificationsList const* = nullptr) const;
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

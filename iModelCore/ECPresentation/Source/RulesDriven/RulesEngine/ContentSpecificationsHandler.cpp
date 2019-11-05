@@ -10,8 +10,6 @@
 #include "QueryBuilderHelpers.h"
 #include "LoggingHelper.h"
 
-#define NO_RELATED_PROPERTIES_KEYWORD "_none_"
-
 static const RelatedClassPath s_emptyRelationshipPath;
 
 /*---------------------------------------------------------------------------------**//**
@@ -76,12 +74,15 @@ static Utf8String CreateRelatedClassNamesList(bvector<RelatedClassPath> const& p
     }
 
 /*---------------------------------------------------------------------------------**//**
+* note: overrides need to be specified only if the appended property has them set specifically,
+* e.g. as in 'related properties' specification. otherwise, when overrides are specified
+* in content specification or content modifier, the overrides are taken care of by PropertyInfoStore.
 * @bsimethod                                    Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ContentSpecificationsHandler::AppendProperty(PropertyAppender& appender, bvector<RelatedClass>& navigationPropertyPaths, 
-    ECPropertyCR prop, Utf8CP alias)
+    ECPropertyCR prop, Utf8CP alias, PropertySpecificationCP overrides)
     {
-    if (!appender.Supports(prop))
+    if (!appender.Supports(prop, overrides))
         return false;
 
     if (prop.GetIsNavigation())
@@ -94,7 +95,7 @@ bool ContentSpecificationsHandler::AppendProperty(PropertyAppender& appender, bv
         alias = navigationPropertyPaths.back().GetTargetClassAlias();
         }
 
-    return appender.Append(prop, alias);
+    return appender.Append(prop, alias, overrides);
     }
 
 /*=================================================================================**//**
@@ -108,17 +109,20 @@ private:
     Utf8String m_relatedClassAlias;
     RelatedPropertiesSpecificationCR m_relatedPropertySpec;
     InstanceFilteringParams const& m_instanceFilteringParams;
+    PropertyCategorySpecificationsList const& m_scopeCategorySpecifications;
 public:
     AppendRelatedPropertyParams(RelatedClassPath const& relatedClassPath, ECClassCR relatedClass, 
-        Utf8String relatedClassAlias, RelatedPropertiesSpecificationCR relatedPropertySpec, InstanceFilteringParams const& instanceFilteringParams)
+        Utf8String relatedClassAlias, RelatedPropertiesSpecificationCR relatedPropertySpec, InstanceFilteringParams const& instanceFilteringParams,
+        PropertyCategorySpecificationsList const& scopeCategorySpecifications)
         : m_relatedClassPath(relatedClassPath), m_relatedClass(relatedClass), m_relatedClassAlias(relatedClassAlias), 
-        m_relatedPropertySpec(relatedPropertySpec), m_instanceFilteringParams(instanceFilteringParams)
+        m_relatedPropertySpec(relatedPropertySpec), m_instanceFilteringParams(instanceFilteringParams), m_scopeCategorySpecifications(scopeCategorySpecifications)
         {}
     RelatedClassPath const& GetRelatedClassPath() const {return m_relatedClassPath;}
     ECClassCR GetRelatedClass() const {return m_relatedClass;}
     Utf8StringCR GetRelatedClassAlias() const {return m_relatedClassAlias;}
     RelatedPropertiesSpecificationCR GetRelatedPropertySpec() const {return m_relatedPropertySpec;}
     InstanceFilteringParams const& GetInstanceFilteringParams() const {return m_instanceFilteringParams;}
+    PropertyCategorySpecificationsList const& GetScopeCategorySpecifications() const {return m_scopeCategorySpecifications;}
 };
 
 /*=================================================================================**//**
@@ -132,17 +136,20 @@ private:
     Utf8String m_relatedClassAlias;
     RelatedPropertiesSpecificationList const& m_relatedPropertySpecs;
     InstanceFilteringParams const& m_instanceFilteringParams;
+    PropertyCategorySpecificationsList const& m_scopeCategorySpecifications;
 public:
     AppendRelatedPropertiesParams(RelatedClassPath const& relatedClassPath, ECClassCR relatedClass, 
-        Utf8String relatedClassAlias, RelatedPropertiesSpecificationList const& specs, InstanceFilteringParams const& instanceFilteringParams)
+        Utf8String relatedClassAlias, RelatedPropertiesSpecificationList const& specs, InstanceFilteringParams const& instanceFilteringParams,
+        PropertyCategorySpecificationsList const& scopeCategorySpecifications)
         : m_relatedClassPath(relatedClassPath), m_relatedClass(relatedClass), m_relatedClassAlias(relatedClassAlias), 
-        m_relatedPropertySpecs(specs), m_instanceFilteringParams(instanceFilteringParams)
+        m_relatedPropertySpecs(specs), m_instanceFilteringParams(instanceFilteringParams), m_scopeCategorySpecifications(scopeCategorySpecifications)
         {}
     RelatedClassPath const& GetRelatedClassPath() const {return m_relatedClassPath;}
     ECClassCR GetRelatedClass() const {return m_relatedClass;}
     Utf8StringCR GetRelatedClassAlias() const {return m_relatedClassAlias;}
     RelatedPropertiesSpecificationList const& GetRelatedPropertySpecs() const {return m_relatedPropertySpecs;}
     InstanceFilteringParams const& GetInstanceFilteringParams() const {return m_instanceFilteringParams;}
+    PropertyCategorySpecificationsList const& GetScopeCategorySpecifications() const {return m_scopeCategorySpecifications;}
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -152,10 +159,6 @@ bvector<RelatedClassPath> ContentSpecificationsHandler::AppendRelatedProperties(
     {
     bvector<RelatedClassPath> allPaths;
 
-    bvector<Utf8String> propertyNames;
-    BeStringUtilities::Split(params.GetRelatedPropertySpec().GetPropertyNames().c_str(), ",", propertyNames);
-    std::for_each(propertyNames.begin(), propertyNames.end(), [](Utf8StringR name){name.Trim();});
-        
     Utf8String relatedClassNames = params.GetRelatedPropertySpec().GetRelatedClassNames();
     if (params.GetRelatedPropertySpec().IsPolymorphic())
         {
@@ -199,30 +202,33 @@ bvector<RelatedClassPath> ContentSpecificationsHandler::AppendRelatedProperties(
 
         bvector<RelatedClass> navigationPropertiesPaths;
         bool appendPath = false;
-        if (propertyNames.empty())
-            {
-            PropertyAppenderPtr appender = _CreatePropertyAppender(*pathClass, propertyRelatedClassPath, params.GetRelatedPropertySpec().GetRelationshipMeaning(), params.GetRelatedPropertySpec().ShouldAutoExpand());
-            ECPropertyIterable properties = pathClass->GetProperties(true);
-            for (ECPropertyCP ecProperty : properties)
-                appendPath |= AppendProperty(*appender, navigationPropertiesPaths, *ecProperty, pathClassAlias.c_str());
-            }
-        else if (1 == propertyNames.size() && propertyNames[0].EqualsI(NO_RELATED_PROPERTIES_KEYWORD))
+        if (params.GetRelatedPropertySpec().GetIncludeNoProperties())
             {
             // wip: log something
             }
         else
             {
-            PropertyAppenderPtr appender = _CreatePropertyAppender(*pathClass, propertyRelatedClassPath, params.GetRelatedPropertySpec().GetRelationshipMeaning(), params.GetRelatedPropertySpec().ShouldAutoExpand());
-            for (Utf8StringCR propertyName : propertyNames)
+            PropertyAppenderPtr appender = _CreatePropertyAppender(*pathClass, propertyRelatedClassPath, params.GetRelatedPropertySpec().GetRelationshipMeaning(),
+                params.GetRelatedPropertySpec().ShouldAutoExpand(), &params.GetScopeCategorySpecifications());
+            if (params.GetRelatedPropertySpec().GetIncludeAllProperties())
                 {
-                ECPropertyCP ecProperty = pathClass->GetPropertyP(propertyName.c_str());
-                if (nullptr != ecProperty)
-                    appendPath |= AppendProperty(*appender, navigationPropertiesPaths, *ecProperty, pathClassAlias.c_str());
+                ECPropertyIterable properties = pathClass->GetProperties(true);
+                for (ECPropertyCP ecProperty : properties)
+                    appendPath |= AppendProperty(*appender, navigationPropertiesPaths, *ecProperty, pathClassAlias.c_str(), nullptr);
+                }
+            else
+                {
+                for (PropertySpecificationCP spec : params.GetRelatedPropertySpec().GetProperties())
+                    {
+                    ECPropertyCP ecProperty = pathClass->GetPropertyP(spec->GetPropertyName().c_str());
+                    if (nullptr != ecProperty)
+                        appendPath |= AppendProperty(*appender, navigationPropertiesPaths, *ecProperty, pathClassAlias.c_str(), spec);
+                    }
                 }
             }
 
         AppendRelatedPropertiesParams nestedPropertyParams(propertyRelatedClassPath, *pathClass, pathClassAlias, 
-            params.GetRelatedPropertySpec().GetNestedRelatedProperties(), params.GetInstanceFilteringParams());
+            params.GetRelatedPropertySpec().GetNestedRelatedProperties(), params.GetInstanceFilteringParams(), params.GetScopeCategorySpecifications());
         bvector<RelatedClassPath> relatedPaths = AppendRelatedProperties(nestedPropertyParams, true);
         if (!relatedPaths.empty())
             {
@@ -250,7 +256,8 @@ void ContentSpecificationsHandler::AppendRelatedProperties(bvector<RelatedClassP
     {
     for (RelatedPropertiesSpecificationCP spec : params.GetRelatedPropertySpecs())
         {
-        AppendRelatedPropertyParams specParams(params.GetRelatedClassPath(), params.GetRelatedClass(), params.GetRelatedClassAlias(), *spec, params.GetInstanceFilteringParams());
+        AppendRelatedPropertyParams specParams(params.GetRelatedClassPath(), params.GetRelatedClass(), params.GetRelatedClassAlias(), *spec, 
+            params.GetInstanceFilteringParams(), params.GetScopeCategorySpecifications());
         bvector<RelatedClassPath> specPaths = AppendRelatedProperties(specParams);
         paths.insert(paths.end(), specPaths.begin(), specPaths.end());
         }
@@ -274,7 +281,8 @@ bvector<RelatedClassPath> ContentSpecificationsHandler::AppendRelatedProperties(
             if (params.GetRelatedClass().Is(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str()))
                 {
                 AppendRelatedPropertiesParams modifierParams(params.GetRelatedClassPath(), params.GetRelatedClass(),
-                    params.GetRelatedClassAlias(), modifier->GetRelatedProperties(), params.GetInstanceFilteringParams());
+                    params.GetRelatedClassAlias(), modifier->GetRelatedProperties(), params.GetInstanceFilteringParams(),
+                    modifier->GetPropertyCategories());
                 AppendRelatedProperties(paths, modifierParams);
                 }
             }
@@ -316,10 +324,10 @@ void ContentSpecificationsHandler::AppendClass(ECClassCR ecClass, ContentSpecifi
     info.SetRelatedInstanceClasses(QueryBuilderHelpers::GetRelatedInstanceClasses(GetContext().GetSchemaHelper(), info.GetSelectClass(),
         spec.GetRelatedInstances(), GetContext().GetRelationshipUseCounts()));
     bvector<RelatedClass> navigationPropertiesPaths;
-    PropertyAppenderPtr appender = _CreatePropertyAppender(ecClass, s_emptyRelationshipPath, RelationshipMeaning::SameInstance, false);
+    PropertyAppenderPtr appender = _CreatePropertyAppender(ecClass, s_emptyRelationshipPath, RelationshipMeaning::SameInstance, false, &spec.GetPropertyCategories());
     ECPropertyIterable properties = ecClass.GetProperties(true);
     for (ECPropertyCP prop : properties)
-        AppendProperty(*appender, navigationPropertiesPaths, *prop, "this");
+        AppendProperty(*appender, navigationPropertiesPaths, *prop, "this", nullptr);
     
     info.SetNavigationPropertyClasses(navigationPropertiesPaths);
 
@@ -327,7 +335,7 @@ void ContentSpecificationsHandler::AppendClass(ECClassCR ecClass, ContentSpecifi
         {
         InstanceFilteringParams filteringParams(GetContext().GetConnection(), GetContext().GetSchemaHelper().GetECExpressionsCache(),
             input, info, nullptr, instanceFilter.c_str());
-        AppendRelatedPropertiesParams params(s_emptyRelationshipPath, ecClass, "this", spec.GetRelatedProperties(), filteringParams);
+        AppendRelatedPropertiesParams params(s_emptyRelationshipPath, ecClass, "this", spec.GetRelatedProperties(), filteringParams, spec.GetPropertyCategories());
         bvector<RelatedClassPath> relatedPropertyPaths = AppendRelatedProperties(params, false);
         info.SetRelatedPropertyPaths(relatedPropertyPaths);
         }
@@ -354,10 +362,10 @@ void ContentSpecificationsHandler::AppendClassPaths(bvector<RelatedClassPath> co
         bvector<RelatedClass> navigationPropertiesPaths;
         if (!GetContext().IsClassHandled(selectClass))
             {
-            PropertyAppenderPtr appender = _CreatePropertyAppender(selectClass, s_emptyRelationshipPath, RelationshipMeaning::SameInstance, false);
+            PropertyAppenderPtr appender = _CreatePropertyAppender(selectClass, s_emptyRelationshipPath, RelationshipMeaning::SameInstance, false, &spec.GetPropertyCategories());
             ECPropertyIterable properties = selectClass.GetProperties(true);
             for (ECPropertyCP prop : properties)
-                AppendProperty(*appender, navigationPropertiesPaths, *prop, "this");
+                AppendProperty(*appender, navigationPropertiesPaths, *prop, "this", nullptr);
             GetContext().AddNavigationPropertiesPaths(selectClass, navigationPropertiesPaths);
             GetContext().SetClassHandled(selectClass);
             }
@@ -376,7 +384,7 @@ void ContentSpecificationsHandler::AppendClassPaths(bvector<RelatedClassPath> co
             {
             InstanceFilteringParams filteringParams(GetContext().GetConnection(), GetContext().GetSchemaHelper().GetECExpressionsCache(),
                 &input, appendInfo, recursiveInfo, spec.GetInstanceFilter().c_str());
-            AppendRelatedPropertiesParams params(s_emptyRelationshipPath, selectClass, "this", spec.GetRelatedProperties(), filteringParams);
+            AppendRelatedPropertiesParams params(s_emptyRelationshipPath, selectClass, "this", spec.GetRelatedProperties(), filteringParams, spec.GetPropertyCategories());
             bvector<RelatedClassPath> relatedPropertyPaths = AppendRelatedProperties(params, false);
             appendInfo.SetRelatedPropertyPaths(relatedPropertyPaths);
             }

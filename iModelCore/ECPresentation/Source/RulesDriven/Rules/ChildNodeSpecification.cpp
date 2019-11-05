@@ -213,9 +213,9 @@ void ChildNodeSpecification::_WriteJson(JsonValueR json) const
     if (!m_hideExpression.empty())
         json[CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_HIDEEXPRESSION] = m_hideExpression;
     if (!m_relatedInstances.empty())
-        CommonToolsInternal::WriteRulesToJson<RelatedInstanceSpecification, RelatedInstanceSpecificationList>(json, m_relatedInstances);
+        CommonToolsInternal::WriteRulesToJson<RelatedInstanceSpecification, RelatedInstanceSpecificationList>(json[CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_RELATEDINSTANCES], m_relatedInstances);
     if (!m_nestedRules.empty())
-        CommonToolsInternal::WriteRulesToJson<ChildNodeRule, ChildNodeRuleList>(json, m_nestedRules);
+        CommonToolsInternal::WriteRulesToJson<ChildNodeRule, ChildNodeRuleList>(json[CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_NESTEDRULES], m_nestedRules);
     } 
 
 /*---------------------------------------------------------------------------------**//**

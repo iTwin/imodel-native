@@ -57,6 +57,24 @@ struct ContentPropertiesAppender : ContentSpecificationsHandler::PropertyAppende
         Create,
         };
 
+    //===================================================================================
+    // @bsiclass                                    Grigas.Petraitis            10/2019
+    //===================================================================================
+    struct FieldAttributes
+    {
+    private:
+        Utf8String m_label;
+        ContentDescriptor::Category m_category;
+        std::shared_ptr<ContentFieldEditor const> m_editor;
+    public:
+        FieldAttributes(Utf8String label, ContentDescriptor::Category category, std::shared_ptr<ContentFieldEditor const> editor)
+            : m_label(label), m_category(category), m_editor(editor)
+            {}
+        Utf8StringCR GetLabel() const {return m_label;}
+        ContentDescriptor::Category const& GetCategory() const {return m_category;}
+        std::shared_ptr<ContentFieldEditor const> GetEditor() const {return m_editor;}
+    };
+
 private:
     ContentDescriptorBuilder::Context& m_context;
     PropertyInfoStore const& m_propertyInfos;
@@ -67,23 +85,57 @@ private:
     ContentDescriptor::ECInstanceKeyField* m_keyField;
     ContentDescriptor::NestedContentField* m_nestedContentField;
     bool m_expandNestedFields;
+    PropertyCategorySpecificationsList const* m_scopePropertyCategories;
 
 private:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                06/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    Utf8String CreateFieldDisplayLabel(ECPropertyCR ecProperty)
+    Utf8String CreateFieldDisplayLabel(ECPropertyCR ecProperty, PropertySpecificationCP overrides) const
         {
+        Utf8String labelOverride = m_propertyInfos.GetLabelOverride(ecProperty, m_actualClass, overrides);
+        if (!labelOverride.empty())
+            return labelOverride;
+
         Utf8String displayLabel;
-        if (nullptr == m_context.GetPropertyFormatter()
-            || SUCCESS != m_context.GetPropertyFormatter()->GetFormattedPropertyLabel(displayLabel, ecProperty, m_actualClass, m_relatedClassPath, m_relationshipMeaning))
-            {
-            if (!m_relatedClassPath.empty() && RelationshipMeaning::SameInstance != m_relationshipMeaning)
-                displayLabel.append(m_actualClass.GetDisplayLabel()).append(" ").append(ecProperty.GetDisplayLabel());
-            else
-                displayLabel = ecProperty.GetDisplayLabel();
-            }
-        return displayLabel;
+        if (nullptr != m_context.GetPropertyFormatter() && SUCCESS == m_context.GetPropertyFormatter()->GetFormattedPropertyLabel(displayLabel, ecProperty, m_actualClass, m_relatedClassPath, m_relationshipMeaning))
+            return displayLabel;
+
+        if (!m_relatedClassPath.empty() && RelationshipMeaning::SameInstance != m_relationshipMeaning && nullptr == m_nestedContentField)
+            return Utf8String(m_actualClass.GetDisplayLabel()).append(" ").append(ecProperty.GetDisplayLabel());
+
+        return ecProperty.GetDisplayLabel();
+        }
+    
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis                10/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    ContentDescriptor::Category CreateFieldCategory(ECPropertyCR ecProperty, PropertySpecificationCP overrides, std::function<ContentDescriptor::Category()> const& defaultCategoryFactory) const
+        {
+        ContentDescriptor::Category categoryOverride = m_propertyInfos.GetCategoryOverride(ecProperty, m_actualClass, overrides, m_scopePropertyCategories);
+        if (categoryOverride.IsValid())
+            return categoryOverride;
+        return defaultCategoryFactory();
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis                10/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    std::shared_ptr<ContentFieldEditor const> CreateFieldEditor(ECPropertyCR ecProperty, PropertySpecificationCP overrides) const
+        {
+        return m_propertyInfos.GetPropertyEditor(ecProperty, m_actualClass, overrides);
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis                10/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    FieldAttributes CreateFieldAttributes(ECPropertyCR ecProperty, PropertySpecificationCP overrides, std::function<ContentDescriptor::Category()> const& defaultCategoryFactory) const
+        {
+        return FieldAttributes(
+            CreateFieldDisplayLabel(ecProperty, overrides),
+            CreateFieldCategory(ecProperty, overrides, defaultCategoryFactory),
+            CreateFieldEditor(ecProperty, overrides)
+            );
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -121,11 +173,10 @@ private:
     * @bsimethod                                    Grigas.Petraitis                06/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
     FieldCreateAction GetActionForPropertyField(ContentDescriptor::ECPropertiesField*& mergeField, bvector<ContentDescriptor::Field*> const& fields, 
-        ECPropertyCR ecProperty, Utf8CP propertyClassAlias)
+        ECPropertyCR ecProperty, Utf8CP propertyClassAlias, FieldAttributes const& fieldAttributes)
         {
-        ContentFieldEditor const* newPropertyEditor = m_propertyInfos.GetPropertyEditor(ecProperty, m_actualClass);
-
-        ContentDescriptor::ECPropertiesField* field = m_descriptor.FindECPropertiesField(ecProperty, m_actualClass, m_relatedClassPath, newPropertyEditor);
+        ContentDescriptor::ECPropertiesField* field = m_descriptor.FindECPropertiesField(ecProperty, m_actualClass, m_relatedClassPath, 
+            fieldAttributes.GetLabel(), fieldAttributes.GetCategory(), fieldAttributes.GetEditor().get());
         if (nullptr != field)
             {
             for (ContentDescriptor::Property const& prop : field->AsPropertiesField()->GetProperties())
@@ -150,10 +201,12 @@ private:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                06/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    ContentDescriptor::ECPropertiesField* GetPropertiesField(ECPropertyCR ecProperty, Utf8CP propertyClassAlias)
+    ContentDescriptor::ECPropertiesField* GetPropertiesField(ECPropertyCR ecProperty, Utf8CP propertyClassAlias, PropertySpecificationCP overrides)
         {
+        FieldAttributes fieldAttributes = CreateFieldAttributes(ecProperty, overrides, [&]() {return m_context.GetCategorySupplier().CreateCategory(m_actualClass, ecProperty, m_relationshipMeaning);});
+
         ContentDescriptor::ECPropertiesField* field = nullptr;
-        if (FieldCreateAction::Skip == GetActionForPropertyField(field, m_descriptor.GetAllFields(), ecProperty, propertyClassAlias))
+        if (FieldCreateAction::Skip == GetActionForPropertyField(field, m_descriptor.GetAllFields(), ecProperty, propertyClassAlias, fieldAttributes))
             return nullptr;
                 
         // did not find a field with similar properties - create a new one
@@ -164,10 +217,7 @@ private:
                 m_keyField = new ContentDescriptor::ECInstanceKeyField();
                 m_descriptor.AddField(m_keyField);
                 }
-
-            ContentDescriptor::Category fieldCategory = m_context.GetCategorySupplier().CreateCategory(m_actualClass, ecProperty, m_relationshipMeaning);
-            ContentFieldEditor const* editor = m_propertyInfos.GetPropertyEditor(ecProperty, m_actualClass);
-            field = new ContentDescriptor::ECPropertiesField(fieldCategory, "", CreateFieldDisplayLabel(ecProperty), editor ? new ContentFieldEditor(*editor) : nullptr);
+            field = new ContentDescriptor::ECPropertiesField(fieldAttributes.GetCategory(), "", fieldAttributes.GetLabel(), fieldAttributes.GetEditor().get());
             ApplyFieldLocalization(*field, m_context);
             }
 
@@ -340,9 +390,11 @@ private:
                 }
 
             // create the field
-            ContentDescriptor::Category fieldCategory = m_context.GetCategorySupplier().GetRelatedECClassCategory(m_actualClass, m_relationshipMeaning);
-            m_nestedContentField = new ContentDescriptor::NestedContentField(fieldCategory, CreateNestedContentFieldName(relationshipPath), 
-                m_actualClass.GetDisplayLabel(), m_actualClass, classAlias, relationshipPath, bvector<ContentDescriptor::Field*>(), m_expandNestedFields);
+            FieldAttributes fieldAttributes(m_actualClass.GetDisplayLabel(), m_context.GetCategorySupplier().GetRelatedECClassCategory(m_actualClass, m_relationshipMeaning), nullptr);
+            m_nestedContentField = new ContentDescriptor::NestedContentField(fieldAttributes.GetCategory(), CreateNestedContentFieldName(relationshipPath), 
+                fieldAttributes.GetLabel(), m_actualClass, classAlias, relationshipPath, bvector<ContentDescriptor::Field*>(), m_expandNestedFields);
+            if (fieldAttributes.GetEditor())
+                m_nestedContentField->SetEditor(new ContentFieldEditor(*fieldAttributes.GetEditor()));
             ApplyFieldLocalization(*m_nestedContentField, m_context);
 
             if (nullptr != nestingField)
@@ -377,10 +429,10 @@ private:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                06/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    bool AppendSimpleProperty(ECPropertyCR p, Utf8CP propertyClassAlias)
+    bool AppendSimpleProperty(ECPropertyCR p, Utf8CP propertyClassAlias, PropertySpecificationCP overrides)
         {
         // get the field to append the property to (a new field will be created if necessary)
-        ContentDescriptor::ECPropertiesField* field = GetPropertiesField(p, propertyClassAlias);
+        ContentDescriptor::ECPropertiesField* field = GetPropertiesField(p, propertyClassAlias, overrides);
         if (nullptr == field)
             return false;
 
@@ -408,15 +460,17 @@ private:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                07/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    bool AppendXToManyRelatedProperty(ECPropertyCR p, Utf8CP propertyClassAlias)
+    bool AppendXToManyRelatedProperty(ECPropertyCR p, Utf8CP propertyClassAlias, PropertySpecificationCP overrides)
         {
         ContentDescriptor::NestedContentField* field = GetXToManyNestedContentField(propertyClassAlias);
         if (nullptr == field)
             return false;
 
-        ContentDescriptor::Property property(propertyClassAlias, m_actualClass, p);
-        ContentDescriptor::Category category = m_context.GetCategorySupplier().GetPropertyCategory(p);
-        ContentDescriptor::ECPropertiesField propertyField(category, property);
+        FieldAttributes fieldAttributes = CreateFieldAttributes(p, overrides, [&](){return m_context.GetCategorySupplier().GetPropertyCategory(p);});
+        ContentDescriptor::ECPropertiesField propertyField(fieldAttributes.GetCategory(), "", fieldAttributes.GetLabel(), fieldAttributes.GetEditor().get());
+        propertyField.AddProperty(ContentDescriptor::Property(propertyClassAlias, m_actualClass, p));
+        ApplyFieldLocalization(propertyField, m_context);
+
         for (ContentDescriptor::Field* nestedField : field->GetFields())
             {
             if (*nestedField == propertyField)
@@ -431,15 +485,17 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                07/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    bool _Supports(ECPropertyCR ecProperty) override
+    bool _Supports(ECPropertyCR ecProperty, PropertySpecificationCP overrides) override
         {
         // don't support any properties if we're not creating fields
         if (!ShouldCreateFields(m_descriptor))
             return false;
 
         // don't support hidden properties
-        if (!m_propertyInfos.ShouldDisplay(ecProperty, m_actualClass))
+        if (!m_propertyInfos.ShouldDisplay(ecProperty, m_actualClass, overrides))
             return false;
+
+        // note: we don't want to return binary, igeometry, etc. fields even if the above says we should..
 
         // don't support binary and igeometry properties
         if (ecProperty.GetIsPrimitive() && (PRIMITIVETYPE_Binary == ecProperty.GetAsPrimitiveProperty()->GetType() || PRIMITIVETYPE_IGeometry == ecProperty.GetAsPrimitiveProperty()->GetType()))
@@ -455,11 +511,11 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                07/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    bool _Append(ECPropertyCR ecProperty, Utf8CP propertyClassAlias) override
+    bool _Append(ECPropertyCR ecProperty, Utf8CP propertyClassAlias, PropertySpecificationCP overrides) override
         {        
         if (IsXToManyRelated())
-            return AppendXToManyRelatedProperty(ecProperty, propertyClassAlias);
-        return AppendSimpleProperty(ecProperty, propertyClassAlias);
+            return AppendXToManyRelatedProperty(ecProperty, propertyClassAlias, overrides);
+        return AppendSimpleProperty(ecProperty, propertyClassAlias, overrides);
         }
 
 public:
@@ -467,9 +523,11 @@ public:
     * @bsimethod                                    Grigas.Petraitis                06/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
     ContentPropertiesAppender(ContentDescriptorBuilder::Context& context, PropertyInfoStore const& propertyInfos, ContentDescriptorR descriptor,        
-        ECClassCR actualClass, RelatedClassPath const& relatedClassPath, RelationshipMeaning relationshipMeaning, bool expandNestedFields)
+        ECClassCR actualClass, RelatedClassPath const& relatedClassPath, RelationshipMeaning relationshipMeaning, bool expandNestedFields, 
+        PropertyCategorySpecificationsList const* scopePropertyCategories)
         : m_context(context), m_descriptor(descriptor), m_propertyInfos(propertyInfos), m_relatedClassPath(relatedClassPath), m_actualClass(actualClass), 
-        m_relationshipMeaning(relationshipMeaning), m_keyField(nullptr), m_nestedContentField(nullptr), m_expandNestedFields(expandNestedFields)
+        m_relationshipMeaning(relationshipMeaning), m_keyField(nullptr), m_nestedContentField(nullptr), m_expandNestedFields(expandNestedFields), 
+        m_scopePropertyCategories(scopePropertyCategories)
         {}
 };
 
@@ -516,9 +574,11 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                10/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    PropertyAppenderPtr _CreatePropertyAppender(ECClassCR propertyClass, RelatedClassPath const& pathToSelectClass, RelationshipMeaning relationshipMeaning, bool expandNestedFields) override
+    PropertyAppenderPtr _CreatePropertyAppender(ECClassCR propertyClass, RelatedClassPath const& pathToSelectClass, RelationshipMeaning relationshipMeaning, 
+        bool expandNestedFields, PropertyCategorySpecificationsList const* categorySpecifications) override
         {
-        return new ContentPropertiesAppender(GetContext(), m_propertyInfos, *m_descriptor, propertyClass, pathToSelectClass, relationshipMeaning, expandNestedFields);
+        return new ContentPropertiesAppender(GetContext(), m_propertyInfos, *m_descriptor, 
+            propertyClass, pathToSelectClass, relationshipMeaning, expandNestedFields, categorySpecifications);
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -610,9 +670,10 @@ public:
                 ContentDescriptor::ECPropertiesField const* propertiesField = field->AsPropertiesField();
                 BeAssert(1 == propertiesField->GetProperties().size());
                 bvector<RelatedClassPath> navigationPropertiesPaths;
-                PropertyAppenderPtr appender = _CreatePropertyAppender(contentField.GetContentClass(), RelatedClassPath(), RelationshipMeaning::SameInstance, false);
-                appender->Append(propertiesField->GetProperties().front().GetProperty(), contentField.GetContentClassAlias().c_str());
-                m_descriptor->GetAllFields().back()->SetName(field->GetName());
+                PropertyAppenderPtr appender = _CreatePropertyAppender(contentField.GetContentClass(), RelatedClassPath(), 
+                    RelationshipMeaning::SameInstance, false, nullptr);
+                if (appender->Append(propertiesField->GetProperties().front().GetProperty(), contentField.GetContentClassAlias().c_str(), nullptr))
+                    m_descriptor->GetAllFields().back()->SetName(field->GetName());
                 }
             else if (field->IsNestedContentField())
                 {

@@ -1123,9 +1123,8 @@ TEST_F(DefaultECPresentationSerializerTests, NestedContentFieldSerialization)
 //---------------------------------------------------------------------------------------
 TEST_F(DefaultECPresentationSerializerTests, DisplayLabelFieldSerializationHasContentFieldEditor)
     {
-    ContentFieldEditor contentFieldEditor("ContentFieldEditorName");
     ContentDescriptor::DisplayLabelField field("Label", 10);
-    field.SetEditor(&contentFieldEditor);
+    field.SetEditor(new ContentFieldEditor("ContentFieldEditorName"));
     rapidjson::Document actual = field.AsJson();
 
     rapidjson::Document expected;

@@ -289,7 +289,7 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_MergesSimila
 TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_SelectPointPropertyRawDataGroupedByDisplayValue)
     {
     ContentInstancesOfSpecificClassesSpecification spec(1, "", "RulesEngineTest:ClassH", false);
-    spec.AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("PointProperty", 1000, true));
+    spec.AddPropertyOverride(*new PropertySpecification("PointProperty", 1000, "", "", true));
 
     ContentDescriptorPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec);
     descriptor->AddContentFlag(ContentFlags::DistinctValues);
@@ -313,7 +313,8 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_SelectPointP
 TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_InstanceLabelOverride_AppliedByPriority)
     {
     ContentInstancesOfSpecificClassesSpecification spec(1, "", "RulesEngineTest:Widget", false);
-    spec.AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID,Description", 1000, true));
+    spec.AddPropertyOverride(*new PropertySpecification("MyID", 1000, "", "", true));
+    spec.AddPropertyOverride(*new PropertySpecification("Description", 1000, "", "", true));
     m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
     m_ruleset->AddPresentationRule(*new InstanceLabelOverride(2, true, "RulesEngineTest:Widget", "Description"));
 
@@ -337,7 +338,7 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_InstanceLabe
 TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_InstanceLabelOverride_OverrideOnlySpecifiedClassInstancesLabels)
     {
     ContentInstancesOfSpecificClassesSpecification spec(1, "", "RulesEngineTest:Widget,Gadget", false);
-    spec.AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID", 1000, true));
+    spec.AddPropertyOverride(*new PropertySpecification("MyID", 1000, "", "", true));
     m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
 
     ContentDescriptorPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec);
@@ -360,7 +361,8 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_InstanceLabe
 TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_InstanceLabelOverride_OverrideNavigationProperty)
     {
     ContentInstancesOfSpecificClassesSpecification spec(1, "", "RulesEngineTest:Gadget", false);
-    spec.AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID,Widget", 1000, true));
+    spec.AddPropertyOverride(*new PropertySpecification("MyID", 1000, "", "", true));
+    spec.AddPropertyOverride(*new PropertySpecification("Widget", 1000, "", "", true));
     m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
 
     ContentDescriptorPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec);

@@ -421,7 +421,7 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_SelectPointPropertyRaw
     {
     ECClassCP ecClass = GetECClass("RulesEngineTest", "ClassD");
     ContentRelatedInstancesSpecification spec(1, 0, false, "", RequiredRelationDirection_Forward, "RulesEngineTest:ClassDHasClassE", "RulesEngineTest:ClassH");
-    spec.AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("PointProperty", 1000, true));
+    spec.AddPropertyOverride(*new PropertySpecification("PointProperty", 1000, "", "", true));
 
     TestParsedInput info(*ecClass, ECInstanceId((uint64_t)123));
     ContentDescriptorPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
@@ -447,7 +447,8 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_InstanceLabelOverride_
     {
     ECClassCP ecClass = GetECClass("RulesEngineTest", "Gadget");
     ContentRelatedInstancesSpecification spec(1, 0, false, "", RequiredRelationDirection_Forward, "", "RulesEngineTest:Sprocket");
-    spec.AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID,Description", 1000, true));
+    spec.AddPropertyOverride(*new PropertySpecification("MyID", 1000, "", "", true));
+    spec.AddPropertyOverride(*new PropertySpecification("Description", 1000, "", "", true));
     m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Sprocket", "MyID"));
     m_ruleset->AddPresentationRule(*new InstanceLabelOverride(2, true, "RulesEngineTest:Sprocket", "Description"));      
 
@@ -474,7 +475,8 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_InstanceLabelOverride_
 
     ECClassCP ecClass = GetECClass("RulesEngineTest", "Gadget");
     ContentRelatedInstancesSpecification spec(1, 0, false, "", RequiredRelationDirection_Forward, "", "RulesEngineTest:Widget,Sprocket");
-    spec.AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("MyID,Gadget", 1000, true));   
+    spec.AddPropertyOverride(*new PropertySpecification("MyID", 1000, "", "", true));
+    spec.AddPropertyOverride(*new PropertySpecification("Gadget", 1000, "", "", true));
     m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Gadget", "MyID"));    
 
     TestParsedInput info(*ecClass, ECInstanceId((uint64_t)123));

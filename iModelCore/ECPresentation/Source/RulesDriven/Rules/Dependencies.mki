@@ -40,13 +40,14 @@ PresentationRulesPublicHeaders    = $(PresentationRulesPublicApiDirectory)Presen
                                     $(PresentationRulesPublicApiDirectory)ContentSpecification.h \
                                     $(PresentationRulesPublicApiDirectory)ContentInstancesOfSpecificClassesSpecification.h \
                                     $(PresentationRulesPublicApiDirectory)ContentRelatedInstancesSpecification.h \
-                                    $(PresentationRulesPublicApiDirectory)PropertiesDisplaySpecification.h \
+                                    $(PresentationRulesPublicApiDirectory)PropertySpecification.h \
                                     $(PresentationRulesPublicApiDirectory)SelectedNodeInstancesSpecification.h \
                                     $(PresentationRulesPublicApiDirectory)CalculatedPropertySpecification.h \
                                     $(PresentationRulesPublicApiDirectory)RelatedInstanceSpecification.h \
                                     $(PresentationRulesPublicApiDirectory)CustomizationRules.h \
                                     $(PresentationRulesPublicApiDirectory)ContentModifier.h \
-                                    $(PresentationRulesPublicApiDirectory)PropertyEditorsSpecification.h
+                                    $(PresentationRulesPublicApiDirectory)PropertyEditorSpecification.h \
+                                    $(PresentationRulesPublicApiDirectory)PropertyCategorySpecification.h
 
 
 PresentationRulesInternalHeaders  = $(PresentationRulesSourceDirectory)PresentationRuleXmlConstants.h \

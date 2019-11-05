@@ -7,7 +7,7 @@
 //__PUBLISH_SECTION_START__
 #include <ECPresentation/ECPresentation.h>
 #include <ECPresentation/Content.h>
-#include <ECPresentation/RulesDriven/Rules/PropertyEditorsSpecification.h>
+#include <ECPresentation/RulesDriven/Rules/PropertyEditorSpecification.h>
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 

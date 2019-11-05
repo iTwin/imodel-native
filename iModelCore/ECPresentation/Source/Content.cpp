@@ -8,6 +8,7 @@
 #include <Units/Units.h>
 #include <ECObjects/ECQuantityFormatting.h>
 #include "ValueHelpers.h"
+#include "RulesDriven/RulesEngine/LoggingHelper.h"
 #include "../Localization/Xliffs/ECPresentation.xliff.h"
 
 const int ContentDescriptor::Property::DEFAULT_PRIORITY = 0;
@@ -290,7 +291,7 @@ void ContentDescriptor::MergeWith(ContentDescriptorCR other)
         bool found = false;
         if (sourceField->IsPropertiesField())
             {
-            ECPropertiesField* targetField = FindECPropertiesField(sourceField->AsPropertiesField()->GetProperties().front(), sourceField->GetEditor());
+            ECPropertiesField* targetField = FindECPropertiesField(sourceField->AsPropertiesField()->GetProperties().front(), sourceField->GetLabel(), sourceField->GetCategory(), sourceField->GetEditor());
             if (nullptr != targetField)
                 {
                 found = true;
@@ -410,9 +411,9 @@ void ContentDescriptor::AddField(Field* field)
 * @bsimethod                                    Saulius.Skliutas                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentDescriptor::ECPropertiesField* ContentDescriptor::FindECPropertiesField(ECPropertyCR prop, ECClassCR propClass,
-    RelatedClassPathCR relatedPath, ContentFieldEditor const* editor)
+    RelatedClassPathCR relatedPath, Utf8StringCR fieldLabel, ContentDescriptor::Category const& category, ContentFieldEditor const* editor)
     {
-    auto iter = m_fieldsMap.find(ECPropertiesFieldKey(prop, propClass, relatedPath, editor));
+    auto iter = m_fieldsMap.find(ECPropertiesFieldKey(prop, propClass, relatedPath, fieldLabel, category.GetName(), editor));
     if (m_fieldsMap.end() == iter)
         return nullptr;
 
@@ -425,7 +426,7 @@ ContentDescriptor::ECPropertiesField* ContentDescriptor::FindECPropertiesField(E
 void ContentDescriptor::OnECPropertiesFieldRemoved(ECPropertiesField const& field)
     {
     Property const& prop = field.GetProperties().front();
-    m_fieldsMap.erase(ECPropertiesFieldKey(prop, field.GetEditor()));
+    m_fieldsMap.erase(ECPropertiesFieldKey(prop, field.GetLabel(), field.GetCategory().GetName(), field.GetEditor()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -434,7 +435,7 @@ void ContentDescriptor::OnECPropertiesFieldRemoved(ECPropertiesField const& fiel
 void ContentDescriptor::OnECPropertiesFieldAdded(ECPropertiesField& field)
     {
     Property const& prop = field.GetProperties().front();
-    m_fieldsMap[ECPropertiesFieldKey(prop, field.GetEditor())] = &field;
+    m_fieldsMap[ECPropertiesFieldKey(prop, field.GetLabel(), field.GetCategory().GetName(), field.GetEditor())] = &field;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -469,6 +470,32 @@ ContentDescriptor::Category ContentDescriptor::Category::GetFavoriteCategory()
     {
     Utf8String label = PRESENTATION_LOCALIZEDSTRING(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_Category_Favorite());
     return ContentDescriptor::Category("Favorite", label, "", 500000, true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentDescriptor::Category ContentDescriptor::Category::FromSpec(PropertyCategorySpecificationCR spec)
+    {
+    return ContentDescriptor::Category(spec.GetId(), spec.GetLabel(), spec.GetDescription(), spec.GetPriority(), spec.ShouldAutoExpand());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentDescriptor::Category ContentDescriptor::Category::FromSpec(Utf8StringCR id, PropertyCategorySpecificationsList const& specs)
+    {
+    auto iter = std::find_if(specs.begin(), specs.end(), [&id](PropertyCategorySpecificationCP spec) {return spec->GetId().Equals(id);});
+    if (iter == specs.end())
+        {
+        bvector<Utf8String> availableCategoryIds;
+        std::transform(specs.begin(), specs.end(), std::back_inserter(availableCategoryIds),
+            [](PropertyCategorySpecificationCP spec) {return Utf8String("'").append(spec->GetId()).append("'");});
+        LoggingHelper::LogMessage(Log::Content, Utf8PrintfString("Failed to find category '%s' in current scope. Available categories: [%s]",
+            id.c_str(), BeStringUtilities::Join(availableCategoryIds, ",").c_str()).c_str(), LOG_WARNING);
+        return Category();
+        }
+    return FromSpec(**iter);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -516,6 +543,18 @@ PrimitiveECPropertyCP ContentDescriptor::Property::GetPrimitiveProperty(StructEC
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentFieldEditor* ContentFieldEditor::FromSpec(PropertyEditorSpecificationCR spec)
+    {
+    auto editor = new ContentFieldEditor(spec.GetEditorName());
+    EditorParamsBuilder paramsBuilder(*editor);
+    for (PropertyEditorParametersSpecificationCP paramsSpec : spec.GetParameters())
+        paramsSpec->Accept(paramsBuilder);
+    return editor;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentFieldEditor::~ContentFieldEditor()
@@ -549,6 +588,27 @@ bool ContentFieldEditor::Equals(ContentFieldEditor const& other) const
         }
 
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentFieldEditor& ContentFieldEditor::operator=(ContentFieldEditor const& other)
+    {
+    m_name = other.m_name;
+    for (Params const* otherParams : other.m_params)
+        m_params.push_back(otherParams->Clone());
+    return *this;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentFieldEditor& ContentFieldEditor::operator=(ContentFieldEditor&& other)
+    {
+    m_name = std::move(other.m_name);
+    m_params.swap(other.m_params);
+    return *this;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -685,8 +745,8 @@ bool ContentDescriptor::ECPropertiesField::_Equals(Field const& other) const
         return true;
 
     // if both lists have elements, just compare the first one
-    ECPropertiesFieldKey thisKey(m_properties[0], GetEditor());
-    ECPropertiesFieldKey otherKey(other.AsPropertiesField()->GetProperties()[0], other.GetEditor());
+    ECPropertiesFieldKey thisKey(m_properties[0], GetLabel(), GetCategory().GetName(), GetEditor());
+    ECPropertiesFieldKey otherKey(other.AsPropertiesField()->GetProperties()[0], other.GetLabel(), other.GetCategory().GetName(), other.GetEditor());
     return !(thisKey < otherKey) && !(otherKey < thisKey);
     }
 
@@ -785,10 +845,10 @@ static Utf8String CreateFieldName(ContentDescriptor::ECPropertiesField const& fi
                 }
             }
 
-        if (usedPropertyClasses.end() == usedPropertyClasses.find(&prop.GetPropertyClass()))
+        if (usedPropertyClasses.end() == usedPropertyClasses.find(&prop.GetProperty().GetClass()))
             {
-            propertyClassNames.push_back(prop.GetPropertyClass().GetName().c_str());
-            usedPropertyClasses.insert(&prop.GetPropertyClass());
+            propertyClassNames.push_back(prop.GetProperty().GetClass().GetName().c_str());
+            usedPropertyClasses.insert(&prop.GetProperty().GetClass());
             }
         }
 
@@ -1044,6 +1104,18 @@ bool ContentDescriptor::ECPropertiesFieldKey::operator<(ECPropertiesFieldKey con
     if (nameCmp < 0)
         return true;
     if (nameCmp > 0)
+        return false;
+
+    int labelCmp = strcmp(GetLabel(), rhs.GetLabel());
+    if (labelCmp < 0)
+        return true;
+    if (labelCmp > 0)
+        return false;
+
+    int categoryNameCmp = strcmp(GetCategoryName().c_str(), rhs.GetCategoryName().c_str());
+    if (categoryNameCmp < 0)
+        return true;
+    if (categoryNameCmp > 0)
         return false;
 
     return GetKoq() < rhs.GetKoq();

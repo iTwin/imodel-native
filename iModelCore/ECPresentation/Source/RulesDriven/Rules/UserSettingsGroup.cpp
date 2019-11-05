@@ -267,8 +267,10 @@ Json::Value UserSettingsItem::WriteJson() const
     Json::Value json(Json::objectValue);
     json[USER_SETTINGS_ITEM_JSON_ATTRIBUTE_ID] = m_id;
     json[USER_SETTINGS_ITEM_JSON_ATTRIBUTE_LABEL] = m_label;
-    json[USER_SETTINGS_ITEM_JSON_ATTRIBUTE_OPTIONS] = m_options;
-    json[USER_SETTINGS_ITEM_JSON_ATTRIBUTE_DEFAULT_VALUE] = m_defaultValue;
+    if (!m_options.empty())
+        json[USER_SETTINGS_ITEM_JSON_ATTRIBUTE_OPTIONS] = m_options;
+    if (!m_defaultValue.empty())
+        json[USER_SETTINGS_ITEM_JSON_ATTRIBUTE_DEFAULT_VALUE] = m_defaultValue;
     return json;
     }
 
