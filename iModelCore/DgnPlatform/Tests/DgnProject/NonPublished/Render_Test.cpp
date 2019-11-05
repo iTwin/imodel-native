@@ -656,7 +656,7 @@ MeshBuilderKey makeBuilderKey(DisplayParamsCR params, Mesh::PrimitiveType type)
     }
 
 //=======================================================================================
-// @bsistruct                                                   Paul.Connelly   07/19
+// @bsimethod                                                   Paul.Connelly   07/19
 //=======================================================================================
 TEST(MeshBuilderSet_Test, Populate)
     {
@@ -664,8 +664,9 @@ TEST(MeshBuilderSet_Test, Populate)
     MeshBuilderSet s1(maxMaterials);
 
     // Linear Mesh does not use material atlas, so only ever has a single builder per key.
+    uint32_t numVertices = 1;
     auto k1 = makeBuilderKey(*makeLinearDisplayParams(), Mesh::PrimitiveType::Polyline);
-    MeshBuilderP b1 = &s1[k1];
+    MeshBuilderP b1 = &s1.GetMeshBuilder(k1, numVertices);
     MeshBuilderListPtr l1 = s1.FindList(k1);
     EXPECT_NOT_NULL(l1.get());
     EXPECT_EQ(s1.size(), 1);
@@ -673,7 +674,7 @@ TEST(MeshBuilderSet_Test, Populate)
 
     for (uint8_t i = 0; i < maxMaterials; i++)
         {
-        EXPECT_EQ(&s1[k1], b1);
+        EXPECT_EQ(&s1.GetMeshBuilder(k1, numVertices), b1);
         EXPECT_EQ(l1.get(), s1.FindList(k1).get());
         }
 
@@ -683,13 +684,13 @@ TEST(MeshBuilderSet_Test, Populate)
     // Mesh with material must obey max materials per mesh
     MeshBuilderSet s2(maxMaterials);
     auto k2 = makeBuilderKey(*makeMeshDisplayParams(makeMatParams(WeightedMatColor(), 0.0, WeightedMatColor(), 1.0)), Mesh::PrimitiveType::Mesh);
-    auto b2 = &s2[k2];
+    auto b2 = &s2.GetMeshBuilder(k2, numVertices);
     auto l2 = s2.FindList(k2);
     EXPECT_NOT_NULL(l2.get());
     EXPECT_NOT_NULL(b2->GetMesh()->GetMaterialAtlas());
     for (uint8_t i = 0; i < maxMaterials; i++)
         {
-        EXPECT_EQ(&s2[k2], b2);
+        EXPECT_EQ(&s2.GetMeshBuilder(k2, numVertices), b2);
         EXPECT_EQ(s2.FindList(k2).get(), l2.get());
         }
 
@@ -697,13 +698,13 @@ TEST(MeshBuilderSet_Test, Populate)
     EXPECT_EQ(s2.size(), 1);
 
     auto k3 = makeBuilderKey(*makeMeshDisplayParams(makeMatParams(WeightedMatColor(), 0.0, WeightedMatColor(), 2.0)), Mesh::PrimitiveType::Mesh);
-    auto b3 = &s2[k3];
+    auto b3 = &s2.GetMeshBuilder(k3, numVertices);
     EXPECT_EQ(b3, b2);
     EXPECT_EQ(l2->size(), 1);
     EXPECT_EQ(s2.size(), 1);
 
     auto k4 = makeBuilderKey(*makeMeshDisplayParams(makeMatParams(WeightedMatColor(), 0.0, WeightedMatColor(), 3.0)), Mesh::PrimitiveType::Mesh);
-    auto b4 = &s2[k4];
+    auto b4 = &s2.GetMeshBuilder(k4, numVertices);
     EXPECT_NE(b4, b2);
     EXPECT_EQ(s2.FindList(k4).get(), l2.get());
     EXPECT_EQ(l2->size(), 2);
@@ -712,7 +713,7 @@ TEST(MeshBuilderSet_Test, Populate)
 
     // Second builder in s2 has room in material atlas for another material, but translucent and opaque materials cannot inhabit same atlas
     auto k5 = makeBuilderKey(*makeMeshDisplayParams(makeMatParams(WeightedMatColor(), 0.5, WeightedMatColor(), 4.0)), Mesh::PrimitiveType::Mesh);
-    auto b5 = &s2[k5];
+    auto b5 = &s2.GetMeshBuilder(k5, numVertices);
     EXPECT_NE(b5, b2);
     EXPECT_NE(b5, b4);
     auto l5 = s2.FindList(k5);
@@ -723,20 +724,66 @@ TEST(MeshBuilderSet_Test, Populate)
     EXPECT_NOT_NULL(b5->GetMesh()->GetMaterialAtlas());
 
     // Linear and Mesh type meshes do not mix
-    auto& b = s2[k1];
+    auto& b = s2.GetMeshBuilder(k1, numVertices);
     EXPECT_EQ(s2.size(), 3);
     EXPECT_NULL(b.GetMesh()->GetMaterialAtlas());
 
     // Text never has a material, does not use atlas, does not batch with other meshes
     auto textKey = makeBuilderKey(*DisplayParams::CreateForText(GraphicParams(), nullptr), Mesh::PrimitiveType::Mesh);
-    MeshBuilderR textBuilder = s2[textKey];
+    MeshBuilderR textBuilder = s2.GetMeshBuilder(textKey, numVertices);
     EXPECT_NULL(textBuilder.GetMesh()->GetMaterialAtlas());
     EXPECT_EQ(s2.size(), 4);
 
     // Textured materials do not use atlas, do not batch with other meshes
     auto textureKey = makeBuilderKey(*makeMeshDisplayParams(makeMatParams(WeightedMatColor(), 0.0, WeightedMatColor(), 1.0, true)), Mesh::PrimitiveType::Mesh);
-    MeshBuilderR textureBuilder = s2[textureKey];
+    MeshBuilderR textureBuilder = s2.GetMeshBuilder(textureKey, numVertices);
     EXPECT_NULL(textureBuilder.GetMesh()->GetMaterialAtlas());
     EXPECT_EQ(s2.size(), 5);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/19
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(MeshBuilderSet_Test, MaxVertexCount)
+    {
+    MeshBuilderSet s(255, 100);
+    auto key = makeBuilderKey(*makeLinearDisplayParams(), Mesh::PrimitiveType::Polyline);
+    auto getMeshBuilder = [&](uint32_t numVertices)
+        {
+        MeshBuilderP builder = &s.GetMeshBuilder(key, numVertices);
+        auto& points = builder->GetMesh()->VertsR();
+        points.resize(points.size() + numVertices);
+        return builder;
+        };
+
+    auto countBuilders = [&]()
+        {
+        auto list = s.FindList(key);
+        EXPECT_TRUE(list.IsValid());
+        return list->size();
+        };
+
+    MeshBuilderP b75 = getMeshBuilder(75);
+    EXPECT_NOT_NULL(b75);
+    EXPECT_EQ(countBuilders(), 1);
+
+    MeshBuilderP b50 = getMeshBuilder(50);
+    EXPECT_NOT_NULL(b50);
+    EXPECT_NE(b75, b50);
+    EXPECT_EQ(countBuilders(), 2);
+
+    MeshBuilderP b25 = getMeshBuilder(25);
+    EXPECT_EQ(b75, b25);
+    EXPECT_EQ(countBuilders(), 2);
+
+    MeshBuilderP b1 = getMeshBuilder(1);
+    EXPECT_EQ(b50, b1);
+    EXPECT_EQ(countBuilders(), 2);
+
+    // If a request for a MeshBuilder exceeds max vertices, we still return a new one and allow it to overflow.
+    MeshBuilderP b200 = getMeshBuilder(200);
+    EXPECT_NOT_NULL(b200);
+    EXPECT_NE(b75, b200);
+    EXPECT_NE(b50, b200);
+    EXPECT_EQ(countBuilders(), 3);
+    }

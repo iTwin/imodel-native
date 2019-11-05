@@ -971,7 +971,7 @@ protected:
 
     static double DecimateStrokes(StrokesR strokesOut, StrokesR strokesIn);
 
-    MeshBuilderR GetMeshBuilder(MeshBuilderKey const& key);
+    MeshBuilderR GetMeshBuilder(MeshBuilderKey const& key, uint32_t numVertices);
 
     void AddPolyfaces(PolyfaceList& polyfaces, DgnElementId, double rangePixels, bool isContained);
     void AddClippedPolyface(PolyfaceQueryCR, DgnElementId, DisplayParamsCR, MeshEdgeCreationOptions, bool isPlanar);
@@ -3143,9 +3143,9 @@ MeshGenerator::MeshGenerator(GeometryLoaderCR loader, double tolerance, Geometry
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-MeshBuilderR MeshGenerator::GetMeshBuilder(MeshBuilderKey const& key)
+MeshBuilderR MeshGenerator::GetMeshBuilder(MeshBuilderKey const& key, uint32_t numVertices)
     {
-    return m_builders[key];
+    return m_builders.GetMeshBuilder(key, numVertices);
     }
 
 // #define DEBUG_DUMP_TEXTURE_ATLAS_DIR L"E:\\texture_atlas\\"
@@ -3538,7 +3538,7 @@ void MeshGenerator::AddClippedPolyface(PolyfaceQueryCR polyface, DgnElementId el
     DgnDbR              db = m_loader.GetDgnDb();
     uint64_t            keyElementId = m_loader.GetLoader().GetNodeId(elemId); // Create separate primitives per element if classifying.
     MeshBuilderKey      key(displayParams, nullptr != polyface.GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, isPlanar, keyElementId);
-    MeshBuilderR        builder = GetMeshBuilder(key);
+    MeshBuilderR        builder = GetMeshBuilder(key, static_cast<uint32_t>(polyface.GetPointCount()));
 
     auto extendRange = [&](bvector<DPoint3d> const& points) { ExtendContentRange(points); };
     addClippedPolyface(builder, polyface, edgeOptions, featureFromParams(elemId, displayParams), displayParams, db, extendRange);
@@ -3700,8 +3700,6 @@ void MeshGenerator::AddStrokes(StrokesR strokes, DgnElementId elemId, double ran
         return; // avoid potentially creating the builder below...
 
     DisplayParamsCR displayParams = strokes.GetDisplayParams();
-    MeshBuilderKey key(displayParams, false, strokes.m_disjoint ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline, strokes.m_isPlanar);
-    MeshBuilderR builder = GetMeshBuilder(key);
 
     // Decimate if possible
     Strokes* strokesToAdd = &strokes;
@@ -3711,6 +3709,9 @@ void MeshGenerator::AddStrokes(StrokesR strokes, DgnElementId elemId, double ran
         strokesToAdd = &decimatedStrokes;
         m_didDecimate = true;
         }
+
+    MeshBuilderKey key(displayParams, false, strokesToAdd->m_disjoint ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline, strokesToAdd->m_isPlanar);
+    MeshBuilderR builder = GetMeshBuilder(key, strokesToAdd->ComputePointCount());
 
     uint32_t fillColor = displayParams.GetLineColor();
     addClippedStrokes(builder, *strokesToAdd, featureFromParams(elemId, displayParams), fillColor, [&](bvector<DPoint3d> const& pts) { ExtendContentRange(pts); });

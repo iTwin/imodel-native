@@ -840,7 +840,7 @@ private:
 public:
     static MeshBuilderListPtr Create(MeshBuilderKeyCR key, MeshBuilderSetCR set) { return new MeshBuilderList(key, set); }
 
-    DGNPLATFORM_EXPORT MeshBuilderR GetMeshBuilder(DisplayParamsCR params);
+    DGNPLATFORM_EXPORT MeshBuilderR GetMeshBuilder(DisplayParamsCR params, uint32_t numVertices);
     DGNPLATFORM_EXPORT MeshBuilderKeyCR GetKey() const { return m_key; }
 
     template<typename T> void ForEach(T func) const
@@ -888,6 +888,7 @@ struct MeshBuilderKeyComparator
 //=======================================================================================
 struct MeshBuilderSet
 {
+    DGNPLATFORM_EXPORT static uint32_t GetDefaultMaxVertices();
 private:
     using Set = std::set<MeshBuilderListPtr, MeshBuilderKeyComparator>;
 
@@ -898,13 +899,15 @@ private:
     FeatureTableP       m_featureTable;
     bool                m_is2d;
     uint8_t             m_maxMaterialsPerMesh;
+    uint32_t            m_maxVerticesPerMesh;
 public:
-    MeshBuilderSet(uint8_t maxMaterialsPerMesh = 255) : MeshBuilderSet(0.0, nullptr, DRange3d::NullRange(), false, maxMaterialsPerMesh) { }
-    MeshBuilderSet(double tolerance, FeatureTableP features, DRange3dCR range, bool is2d, uint8_t maxMaterialsPerMesh = 255) :
+    MeshBuilderSet(uint8_t maxMaterialsPerMesh = 255, uint32_t maxVerticesPerMesh = GetDefaultMaxVertices())
+        : MeshBuilderSet(0.0, nullptr, DRange3d::NullRange(), false, maxMaterialsPerMesh, maxVerticesPerMesh) { }
+    MeshBuilderSet(double tolerance, FeatureTableP features, DRange3dCR range, bool is2d, uint8_t maxMaterialsPerMesh = 255, uint32_t maxVerticesPerMesh = GetDefaultMaxVertices()) :
         m_vertexTolerance(tolerance*ToleranceRatio::Vertex()), m_facetAreaTolerance(tolerance*ToleranceRatio::FacetArea()),
-        m_featureTable(features), m_range(range), m_is2d(is2d), m_maxMaterialsPerMesh(maxMaterialsPerMesh) { }
+        m_featureTable(features), m_range(range), m_is2d(is2d), m_maxMaterialsPerMesh(maxMaterialsPerMesh), m_maxVerticesPerMesh(maxVerticesPerMesh) { }
 
-    DGNPLATFORM_EXPORT MeshBuilderR operator[](MeshBuilderKeyCR key);
+    DGNPLATFORM_EXPORT MeshBuilderR GetMeshBuilder(MeshBuilderKeyCR key, uint32_t numVertices);
     DGNPLATFORM_EXPORT MeshBuilderListPtr FindList(MeshBuilderKeyCR key) const;
 
     DRange3dCR GetRange() const { return m_range; }
@@ -913,6 +916,7 @@ public:
     double GetFacetAreaTolerance() const { return m_facetAreaTolerance; }
     bool Is2d() const { return m_is2d; }
     uint8_t GetMaxMaterialsPerMesh() const { return m_maxMaterialsPerMesh; }
+    uint32_t GetMaxVerticesPerMesh() const { return m_maxVerticesPerMesh; }
 
     size_t size() const { return m_set.size(); }
 

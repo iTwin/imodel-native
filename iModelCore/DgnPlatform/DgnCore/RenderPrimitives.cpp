@@ -2603,7 +2603,7 @@ MeshBuilderSet GeometryAccumulator::ToMeshBuilders(GeometryOptionsCR options, do
             bool hasTexture = displayParams.IsValid() && displayParams->IsTextured();
 
             MeshBuilderKey key(*displayParams, nullptr != polyface->GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, tilePolyface.m_isPlanar);
-            MeshBuilderR meshBuilder = builders[key];
+            MeshBuilderR meshBuilder = builders.GetMeshBuilder(key, static_cast<uint32_t>(polyface->GetPointCount()));
 
             auto edgeOptions = (options.WantEdges() && tilePolyface.m_displayEdges) ? MeshEdgeCreationOptions::DefaultEdges : MeshEdgeCreationOptions::NoEdges;
             meshBuilder.BeginPolyface(*polyface, edgeOptions);
@@ -2627,7 +2627,7 @@ MeshBuilderSet GeometryAccumulator::ToMeshBuilders(GeometryOptionsCR options, do
                 DisplayParamsCPtr displayParams = tileStrokes.m_displayParams;
                 auto type = tileStrokes.m_disjoint ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline;
                 MeshBuilderKey key(*displayParams, false, type, tileStrokes.m_isPlanar);
-                MeshBuilderR builder = builders[key];
+                MeshBuilderR builder = builders.GetMeshBuilder(key, tileStrokes.ComputePointCount());
                 uint32_t fillColor = displayParams->GetLineColor();
                 for (auto& strokePoints : tileStrokes.m_strokes)
                     {
@@ -4000,23 +4000,29 @@ MeshBuilderPtr MeshBuilderList::CreateMeshBuilder(DisplayParamsCR params) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-MeshBuilderR MeshBuilderList::GetMeshBuilder(DisplayParamsCR params)
+MeshBuilderR MeshBuilderList::GetMeshBuilder(DisplayParamsCR params, uint32_t numVertices)
     {
     // Find a builder whose material atlas is not full, or whose atlas already contains a compatible material, or who doesn't support material atlas.
     // (The latter will be true for: point strings, polylines, any surface with a texture/gradient or which ignores lighting).
+    // The builder must also have enough space to hold all the requested vertices.
     MeshBuilderPtr builder = m_head;
     MeshBuilderPtr tail = builder;
     auto material = params.GetSurfaceMaterial().GetMaterial();
     do {
-        auto atlas = builder->GetMesh()->GetMaterialAtlas();
-        if (nullptr == atlas || atlas->Insert(material).IsValid())
-            return *builder;
+        size_t totalVertices = builder->GetMesh()->Points().size() + numVertices;
+        if (totalVertices <= m_set.GetMaxVerticesPerMesh())
+            {
+            auto atlas = builder->GetMesh()->GetMaterialAtlas();
+            if (nullptr == atlas || atlas->Insert(material).IsValid())
+                return *builder;
+            }
 
         tail = builder;
         builder = builder->m_next;
     } while (builder.IsValid());
 
-    // No room in any builder's atlas - must create a new one
+    // No room in any existing builder - must create a new one
+    // NB: If input numVertices > max vertices per mesh, we're going to overflow our vertex table. Let's assume that's exceedingly unlikely.
     builder = CreateMeshBuilder(params);
     tail->m_next = builder;
 
@@ -4172,6 +4178,22 @@ CompareResult MaterialComparison::Compare(Material::CreateParams const& lhs, Mat
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/19
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t MeshBuilderSet::GetDefaultMaxVertices()
+    {
+    // Max texture size = 4096x4096.
+    // Reserve 64k for color table (1 entry per up to 64k color indices)
+    // Reserve 1024 for material atlas (4 entries per up to 256 material indices)
+    // Biggest vertex type occupies 4 entries.
+    // Leaves room for maximum 4177664 vertices.
+    // At least - in theory. On my Windows box with a GTX 970, that's fine. On my Linux box with a Radeon HD 5430,
+    // a max of 3 million vertices still produces artifacts (jaggies). A max of 2.5 million produced no artifacts.
+    // Explanation for discrepancy unclear.
+    return 2500000;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/19
 +---------------+---------------+---------------+---------------+---------------+------*/
 MeshBuilderListPtr MeshBuilderSet::FindList(MeshBuilderKeyCR key) const
@@ -4183,7 +4205,7 @@ MeshBuilderListPtr MeshBuilderSet::FindList(MeshBuilderKeyCR key) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-MeshBuilderR MeshBuilderSet::operator[](MeshBuilderKeyCR key)
+MeshBuilderR MeshBuilderSet::GetMeshBuilder(MeshBuilderKeyCR key, uint32_t numVertices)
     {
     auto found = m_set.find(key);
     if (m_set.end() == found)
@@ -4191,7 +4213,7 @@ MeshBuilderR MeshBuilderSet::operator[](MeshBuilderKeyCR key)
 
     // std::set iterators are const, but we know the members used by our comparator will not change.
     MeshBuilderListR list = const_cast<MeshBuilderListR>(**found);
-    return list.GetMeshBuilder(key.GetDisplayParams());
+    return list.GetMeshBuilder(key.GetDisplayParams(), numVertices);
     }
 
 /*---------------------------------------------------------------------------------**//**
