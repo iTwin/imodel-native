@@ -15,8 +15,9 @@ struct V8FileEditor
     Bentley::DgnFilePtr m_file;
     DgnV8ModelP m_defaultModel;
     DgnV8Api::LevelId m_activeLevel;
+    bool m_saveOnClose = true;
 
-    V8FileEditor() : m_defaultModel(nullptr), m_activeLevel(DGNV8_LEVEL_DEFAULT_LEVEL_ID) {;}
+    V8FileEditor(bool soc = true) : m_defaultModel(nullptr), m_activeLevel(DGNV8_LEVEL_DEFAULT_LEVEL_ID), m_saveOnClose(soc) {;}
     ~V8FileEditor() {Save();}
 
     void Open(BentleyApi::BeFileNameCR);

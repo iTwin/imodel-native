@@ -290,10 +290,9 @@ void iModelBridgeSyncInfoFile::ChangeDetector::_OnScopeSkipped(ROWID srid)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-iModelBridgeSyncInfoFile::ChangeDetector::ChangeDetector(DgnDbR db)
-    : m_dgnDb(db)
+iModelBridgeSyncInfoFile::ChangeDetector::ChangeDetector(DgnDbR db, bool ignoreStaleItems)
+    : m_dgnDb(db), m_ignoreStaleItems(ignoreStaleItems)
     {
-
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -372,7 +371,7 @@ iModelBridgeSyncInfoFile::ChangeDetectorPtr iModelBridgeSyncInfoFile::GetChangeD
     if (!bridge.GetParamsCR().IsUpdating())
         return new InitialConversionChangeDetector(*m_bim);
 
-    return new ChangeDetector(*m_bim);
+    return new ChangeDetector(*m_bim, bridge._GetParams().IgnoreStaleFiles());
     }
 
 //---------------------------------------------------------------------------------------
@@ -401,7 +400,7 @@ iModelBridgeSyncInfoFile::ChangeDetector::Results iModelBridgeSyncInfoFile::Chan
                 if (!forceChange && (0 != lmt))
                     {
                     double previousLmt = iModelExternalSourceAspect::DoubleFromString(aspect.GetSourceState().m_version.c_str());
-                    if (previousLmt == lmt)
+                    if (previousLmt == lmt || (m_ignoreStaleItems && (lmt < previousLmt)))
                         return Results(ChangeType::Unchanged, rec, SourceState(lmt, ""));
                     }
                 SourceState currentState(lmt, item._GetHash());

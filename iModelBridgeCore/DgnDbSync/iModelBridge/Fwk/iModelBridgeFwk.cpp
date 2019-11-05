@@ -214,7 +214,9 @@ void iModelBridgeFwk::JobDefArgs::PrintUsage()
         L"--fwk-job-subject-name=     (optional)  The unique name of the Job Subject element that the bridge must use.\n"
         L"--fwk-jobrun-guid=          (optional)  A unique GUID that identifies this job run for activity tracking. This will be passed along to all dependant services and logs.\n"
         L"--fwk-jobrequest-guid=      (optional)  A unique GUID that identifies this job run for correlation. This will be limited to the native callstack.\n"
-        L"--fwk-no-mergeDefinitions   (optional)  Do NOT merge definitions such as levels/layers and materials by name from different root models and bridges into the public dictionary model. Instead, keep definitions separate by job subject. The default is false (that is, merge definition)."
+        L"--fwk-ignore-stale-files    (optional)  Should bridges ignore any file whose last-saved-time is BEFORE that last-saved-time recorded for that file in the iModel?. The default is false (that is, process such files, looking for differences).\n"
+        L"--fwk-error-on-stale-files  (optional)  Should bridges fail and report an error if they encounter a file whose last-saved-time is BEFORE that last-saved-time recorded for that file in the iModel?. The default is false (that is, don't fail on stale files).\n"
+        L"--fwk-no-mergeDefinitions   (optional)  Do NOT merge definitions such as levels/layers and materials by name from different root models and bridges into the public dictionary model. Instead, keep definitions separate by job subject. The default is false (that is, merge definition).\n"
         L"--fwk-status-message-sink-url= (optional) The URL of a WebServer that will process progress meter and status messages\n"
         L"--fwk-status-message-interval= (optional) The number of milliseconds to wait before sending another status or progress meter message to the status message server. The default is 1000 milliseconds.\n"
         );
@@ -505,6 +507,16 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
         if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-no-mergeDefinitions"))
             {
             m_mergeDefinitions = false;
+            continue;
+            }
+        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-ignore-stale-files"))
+            {
+            m_ignoreStaleFiles = false;
+            continue;
+            }
+        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-error-on-stale-files"))
+            {
+            m_errorOnStaleFiles = false;
             continue;
             }
         if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-all-docs-processed"))
@@ -1140,6 +1152,8 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params, FwkRepoAdmin
 	if (!m_jobEnvArgs.m_jobSubjectName.empty())
 		params.SetBridgeJobName(m_jobEnvArgs.m_jobSubjectName);
     params.SetMergeDefinitions(m_jobEnvArgs.m_mergeDefinitions);
+    params.SetIgnoreStaleFiles(m_jobEnvArgs.m_ignoreStaleFiles);
+    params.SetErrorOnStaleFiles(m_jobEnvArgs.m_errorOnStaleFiles);
     if (!m_jobEnvArgs.m_revisionComment.empty())
         params.SetRevisionComment(m_jobEnvArgs.m_revisionComment);
 

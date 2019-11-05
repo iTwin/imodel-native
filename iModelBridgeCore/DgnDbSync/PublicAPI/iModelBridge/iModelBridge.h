@@ -556,6 +556,8 @@ struct iModelBridge
         bool m_hasEmbeddedFileIdRecipe = false;
         bool m_doRealityDataUpload = false;
         bool m_doTerrainModelConversion = false;
+        bool m_ignoreStaleFiles = false;
+        bool m_errorOnStaleFiles = false;
         FileIdRecipe m_embeddedFileIdRecipe;
         PushIntermediateRevisions m_pushIntermediateRevisions = PushIntermediateRevisions::None;
         BeFileName m_inputFileName;
@@ -676,6 +678,10 @@ struct iModelBridge
         BeDuration GetThumbnailTimeout() const {return m_thumbnailTimeout;}
         void SetWantThumbnails(bool b) {m_wantThumbnails = b;}
         bool WantThumbnails() const {return m_wantThumbnails;}
+        void SetIgnoreStaleFiles(bool b) {m_ignoreStaleFiles = b;}
+        bool IgnoreStaleFiles() const {return m_ignoreStaleFiles;}
+        void SetErrorOnStaleFiles(bool b) {m_errorOnStaleFiles = b;}
+        bool ErrorOnStaleFiles() const {return m_errorOnStaleFiles;}
         
         void SetDoTerrainModelConversion(bool b) { m_doTerrainModelConversion = b; }
         bool DoTerrainModelConversion() const { return m_doTerrainModelConversion; }
@@ -887,7 +893,6 @@ public:
     //! The bridge should prepare to write to the BIM.
     //! <p>In its implementation of _OnOpenBim, the bridge should:
     //! - Should store a pointer to @a db.
-    //! - @ref ANCHOR_MutiFileTransaction "Open and attach its syncinfo file".
     //! - Create temp tables.
     //! <p>_OnOpenBim may call DgnDb::SaveChanges and in fact should do that if it creates temp tables or attaches syncinfo.
     //! <p>This function is called after _ParseCommandLine and _Initialize. It is called before _OpenSource. It is called right after the

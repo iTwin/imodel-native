@@ -278,9 +278,14 @@ bool SyncInfo::HasLastSaveTimeChanged(DgnV8FileCR v8File)
         BeFileName  filename(v8File.GetFileName().c_str());
         SyncInfo::DiskFileInfo diskfile;
         diskfile.GetInfo (filename);
+        if (m_converter._GetParams().IgnoreStaleFiles())
+            return diskfile.m_lastModifiedTime > previous.GetLastModifiedTime();
         return diskfile.m_lastModifiedTime != previous.GetLastModifiedTime();
         }
 
+    
+    if (m_converter._GetParams().IgnoreStaleFiles())
+        return lastSaveTime > previous.GetLastSaveTime();
     return lastSaveTime != previous.GetLastSaveTime();
     }
 
@@ -819,8 +824,11 @@ SyncInfo::RepositoryLinkExternalSourceAspect SyncInfo::RepositoryLinkExternalSou
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      1/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SyncInfo::RepositoryLinkExternalSourceAspect::Update(V8FileInfo const& fileInfo)
+bool SyncInfo::RepositoryLinkExternalSourceAspect::Update(V8FileInfo const& fileInfo, bool ignoreStaleFiles)
     {
+    if (ignoreStaleFiles && (fileInfo.m_lastSaveTime < GetLastSaveTime()))  // Note: consider last *save* time. That is the time stored in the V8 file header. Don't look at the disk file's last *modified* time. That can be changed, just by copying the file.
+        return false;
+
     bool anyChanges = false;
 
     iModelExternalSourceAspect::SourceState ss;

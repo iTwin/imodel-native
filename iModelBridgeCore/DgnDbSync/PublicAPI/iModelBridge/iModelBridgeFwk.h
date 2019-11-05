@@ -136,6 +136,8 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         bool       m_mergeDefinitions = true;
         bool       m_allDocsProcessed = false;
         bool       m_allowIntermdiatePushes = true;
+        bool       m_ignoreStaleFiles = false;
+        bool       m_errorOnStaleFiles = false;
         int m_maxWaitForMutex = 60000;
         int m_statusMessageInterval = 1000;
         Utf8String m_revisionComment;

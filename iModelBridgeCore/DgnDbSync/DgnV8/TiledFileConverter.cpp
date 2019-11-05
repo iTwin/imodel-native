@@ -329,8 +329,8 @@ void TiledFileConverter::_OnFileComplete(DgnV8FileR v8File)
 
         auto rlinkEd = GetDgnDb().Elements().GetForEdit<RepositoryLink>(GetRepositoryLinkId(v8File));
         auto rlinkXsa = SyncInfo::RepositoryLinkExternalSourceAspect::GetAspectForEdit(*rlinkEd);
-        rlinkXsa.Update(GetSyncInfo().ComputeFileInfo(v8File));
-        rlinkEd->Update();
+        if (rlinkXsa.Update(GetSyncInfo().ComputeFileInfo(v8File), _GetParams().IgnoreStaleFiles()))
+            rlinkEd->Update();
         }
 
     GetDgnDb().Elements().ClearCache();

@@ -511,6 +511,8 @@ TEST_F(iModelBridgeTests, FwkArgs)
     args.push_back(L"--server-password=\"password><!@\"");
     //args.push_back(L"--fwk-bridge-regsubkey=regsubkey"); // CGM - Trying to isolate where firebug is failing in these tests
     //args.push_back(L"--fwk-input=rootfilename");
+    args.push_back(L"--fwk-ignore-stale-files");
+    args.push_back(L"--fwk-error-on-stale-files");
 
     bvector<WCharCP> argptrs;
     for (auto& arg: args)
@@ -518,8 +520,6 @@ TEST_F(iModelBridgeTests, FwkArgs)
 
     iModelBridgeFwk fwk;
     ASSERT_EQ(BSISUCCESS, fwk.ParseCommandLine((int)argptrs.size(), argptrs.data()));
-
-    // Too bad - there's almost nothing we can test in the fwk. We'd need to connect to iModelHub to check the real validity of the parameters.
     }
 
 /*---------------------------------------------------------------------------------**//**

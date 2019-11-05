@@ -38,20 +38,6 @@ infer deletions by comparing what was seen to what was previously recorded in sy
 \ref iModelBridgeSyncInfoFile::ChangeDetector is an implementation of a change detector that is tied to the iModelBridgeSyncInfoFile 
 implementation of syncinfo.
 
-@anchor ANCHOR_MutiFileTransaction
-<h2>Syncinfo Integrity</h2>
-
-A bridge must guarantee that its syncinfo matches its BIM. In particular, the bridge must ensure that it updates
-syncinfo when it updates its BIM. If the BIM update fails, then syncinfo should not be updated. One
-reliable way to guarantee this is to implement syncinfo as a SQLite database and to @em attach it to the BIM
-during a conversion. SQLite will then update the BIM and the attached syncinfo db together or not at all as part 
-of an atomic multi-file transaction.
-
-Note that if a bridge attaches a syncinfo db to the BIM, this must be done in the iModelBridge::_OnConvertToBim
-method and not in its _ConvertToBim method.
-
-\ref iModelBridgeSyncInfoFile uses the SQLite attachment mechanism to guarantee transactional integrity.
-
 */
 
 /**
@@ -63,10 +49,6 @@ method and not in its _ConvertToBim method.
 * The key class is iModelBridgeSyncInfoFile::ChangeDetector, which normally handles all access to the
 * syncinfo file for the bridge. This is explained in more detail below.
 *
-* iModelBridgeSyncInfoFile stores mappings in a local SQLite file
-* and uses the @ref ANCHOR_MutiFileTransaction "attachment" mechanism to guarantee that it always
-* matches the BIM.
-* 
 * A syncinfo file must be specific to a single @ref ANCHOR_iModelBridgeJobOverview "bridge job".
 *
 * <h2>Source "Items"</h2>
@@ -689,7 +671,7 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
 
       protected:
         uint32_t            m_elementsConverted = 0;
-        
+        bool                m_ignoreStaleItems = false;
         DgnElementIdSet     m_elementsSeen;
         bset<ROWID>         m_scopesSkipped;
 
@@ -712,7 +694,7 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
         //! Construct a change detector object. This will invoke the iModelBridgeSyncInfoFile::_OnNewUpdate method on @a si
         //! @note You should generally call iModelSyncInfoFile::GetChangeDetectorFor to get a change detector.
         //! @note You should use the same change detector object for an entire update.
-        IMODEL_BRIDGE_EXPORT ChangeDetector(DgnDbR db);
+        IMODEL_BRIDGE_EXPORT ChangeDetector(DgnDbR db, bool ignoreStaleItems = false);
 
         //! Get a reference to the BIM
         virtual DgnDbR GetDgnDb() {return m_dgnDb;}
@@ -774,7 +756,7 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
 
         //! Construct a change detector that can be used efficiently by a converter that is doing an initial conversion, such that all items are new to the BIM.
         //! @note You should generally call iModelSyncInfoFile::GetChangeDetectorFor to get a change detector.
-        InitialConversionChangeDetector(DgnDbR db) : ChangeDetector(db) {}
+        InitialConversionChangeDetector(DgnDbR db) : ChangeDetector(db, false) {}
         };
 
     typedef RefCountedPtr<ChangeDetector> ChangeDetectorPtr;

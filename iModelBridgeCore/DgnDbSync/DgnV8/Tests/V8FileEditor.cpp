@@ -34,7 +34,8 @@ void V8FileEditor::Open(BentleyApi::BeFileNameCR inputFile)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void V8FileEditor::Save()
     {
-    m_file->ProcessChanges(DgnV8Api::DgnSaveReason::ApplInitiated);
+    if (m_saveOnClose)
+        m_file->ProcessChanges(DgnV8Api::DgnSaveReason::ApplInitiated);
     }
 
 /*---------------------------------------------------------------------------------**//**

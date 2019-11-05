@@ -1928,7 +1928,7 @@ void RootModelConverter::_FinishConversion()
         auto rlinkXsa = SyncInfo::RepositoryLinkExternalSourceAspect::GetAspectForEdit(*rlinkEd);
         if (rlinkXsa.IsValid())
             {
-            auto anyChanges = rlinkXsa.Update(GetSyncInfo().ComputeFileInfo(*v8File));
+            auto anyChanges = rlinkXsa.Update(GetSyncInfo().ComputeFileInfo(*v8File), _GetParams().IgnoreStaleFiles());
             if (anyChanges)
                 rlinkEd->Update();
             }

@@ -38,6 +38,8 @@ struct ConverterTests : public ConverterTestBaseFixture
     void CheckNoDupXsas(DgnDbR, Utf8CP kind);
     void ConvertWithCrash(DgnDbR, CrashControlMonitor&);
     bool ConvertWithCrashCaught(DgnDbR, CrashControlMonitor&);
+
+    double GetV8FileLastSaveTimeFromExternalSourceAspect(BentleyApi::BeFileName const& dgnDbFileName, BentleyApi::BeFileName const& v8FileName);
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -700,6 +702,118 @@ TEST_F(ConverterTests, GCSMultiFilesGCSTransformWithScale)
     ValidateModelRange (*db.get(), "Building 1", 775953.179, 83335.971, -0.0005, 776088.567, 83467.104, 0.0005);
     ValidateModelRange (*db.get(), "TPB Building", 775885.795, 83307.686, -0.0005, 775960.121, 83398.667, 0.0005);
     ValidateProjectExtents(774782.254, 76257.877, -5.839, 783576.865, 87155.225, 20.159, db->GeoLocation().GetProjectExtents());
+    }
+
+struct SetAndRestoreIgnoreStaleFilesParam
+    {
+    bool m_was;
+    iModelBridge::Params& m_params;
+    SetAndRestoreIgnoreStaleFilesParam(iModelBridge::Params& p, bool v): m_params(p), m_was(p.IgnoreStaleFiles()) {m_params.SetIgnoreStaleFiles(v);}
+    ~SetAndRestoreIgnoreStaleFilesParam() {m_params.SetIgnoreStaleFiles(m_was);}
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson
++---------------+---------------+---------------+---------------+---------------+------*/
+static SyncInfo::RepositoryLinkExternalSourceAspect findRepositoryLinkXsaByFilename(DgnDbR db, BentleyApi::BeFileNameCR filename)
+    {
+    Utf8String searchName(filename.c_str());
+
+    SyncInfo::RepositoryLinkExternalSourceAspectIterator rlinkIter(db, nullptr);
+    for (auto aspect : rlinkIter)
+        {
+        if (aspect.GetFileName().EndsWithI(searchName.c_str()))
+            return aspect;
+        }
+    return SyncInfo::RepositoryLinkExternalSourceAspect(nullptr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson
++---------------+---------------+---------------+---------------+---------------+------*/
+static double getV8FileLastSaveTime(BentleyApi::BeFileName const& v8FileName)
+    {
+    V8FileEditor v8editor(false);
+    v8editor.Open(v8FileName);
+    return v8editor.m_file->GetLastSaveTime();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson
++---------------+---------------+---------------+---------------+---------------+------*/
+double ConverterTests::GetV8FileLastSaveTimeFromExternalSourceAspect(BentleyApi::BeFileName const& dgnDbFileName, BentleyApi::BeFileName const& v8FileName)
+    {
+    auto outputBim = OpenExistingDgnDb(dgnDbFileName);
+    auto xsa = findRepositoryLinkXsaByFilename(*outputBim, v8FileName);
+    return xsa.GetLastSaveTime();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                       Sam.Wilson                  10/2019
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ConverterTests, IgnoreStaleFiles)
+    {
+    auto originalV8File = GetInputFileName(L"Test3d.dgn");
+
+    LineUpFiles(L"IgnoreStaleFiles.bim", L"Test3d.dgn", true);
+
+    if (true)
+        {
+        SetAndRestoreIgnoreStaleFilesParam __(m_params, true);
+        DoUpdate(m_dgnDbFileName, m_v8FileName, false, false);  // no change should be detected when there is truly no change at all. The new parameter should not affect that.
+        }
+
+    if (true)
+        {
+        V8FileEditor v8editor;
+        v8editor.Open(m_v8FileName);
+        v8editor.AddLine(nullptr, v8editor.m_defaultModel, Bentley::DPoint3d::From(0,0,0));
+        v8editor.Save();
+        }
+
+    if (true)
+        {
+        SetAndRestoreIgnoreStaleFilesParam __(m_params, true);
+        DoUpdate(m_dgnDbFileName, m_v8FileName, false, true);  // change should be detected when there is a change and the LST is moving forward. The new parameter should not affect that.
+        }
+
+    // Copy the orginal v8 file on top of the modified copy.
+    ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(originalV8File, m_v8FileName));
+
+    DoUpdate(m_dgnDbFileName, m_v8FileName, false, true);  // change SHOULD be detected when we update with a stale copy and the new parameter is not set.
+
+    // Make another change.
+    if (true)
+        {
+        V8FileEditor v8editor;
+        v8editor.Open(m_v8FileName);
+        v8editor.AddLine(nullptr, v8editor.m_defaultModel, Bentley::DPoint3d::From(0,0,0));
+        v8editor.Save();
+        }
+    double changedV8Lst = getV8FileLastSaveTime(m_v8FileName);
+
+    DoUpdate(m_dgnDbFileName, m_v8FileName, false, true);
+
+    // Verify that the LST of the XSA for this file matches changedV8Lst
+    auto xsaLst = GetV8FileLastSaveTimeFromExternalSourceAspect(m_dgnDbFileName, m_v8FileName);
+    ASSERT_EQ(xsaLst, changedV8Lst);
+
+    // Now repeat the experiment of copying the orginal file on top of the modified copy, but this time set the new flag to ignore stale copies.
+    ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(originalV8File, m_v8FileName));
+    double restoredV8Lst = getV8FileLastSaveTime(m_v8FileName);
+    ASSERT_LT(restoredV8Lst, changedV8Lst) << "Last saved time of V8 file should have moved backward when I restored it from backup.";
+
+    //  m_v8FileName now points to a stale file. Its LST is older than the LST of the XSA that represents this file in the dgndb file.
+    if (true)
+        {
+        SetAndRestoreIgnoreStaleFilesParam __(m_params, true);
+        DoUpdate(m_dgnDbFileName, m_v8FileName, false, false);  // change should NOT be detected when we update with a stale copy and the new parameter IS set.
+        }
+
+    // Verify that the LST of the XSA for this file DID NOT GO BACKWARD IN TIME. It should still match changedV8Lst.
+    auto xsaLst2 = GetV8FileLastSaveTimeFromExternalSourceAspect(m_dgnDbFileName, m_v8FileName);
+    ASSERT_EQ(xsaLst2, changedV8Lst);
+    ASSERT_EQ(xsaLst2, xsaLst);
     }
 
 /*---------------------------------------------------------------------------------**//**
