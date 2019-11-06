@@ -8,22 +8,22 @@
     <Filter Include="Performance">
       <UniqueIdentifier>{47b049d3-ec94-4a7c-87d8-3b064bd7a292}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Published">
+    <Filter Include="NonPublished">
       <UniqueIdentifier>{51eb4f6a-0622-45a5-9c01-ad0c33c5dff1}</UniqueIdentifier>
     </Filter>
     <Filter Include="TestFixture">
       <UniqueIdentifier>{27a0fec8-23b9-4007-adaa-e636913c9b6e}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Published\Formatting">
+    <Filter Include="NonPublished\Formatting">
       <UniqueIdentifier>{3b5e6a24-0361-46f3-a103-1f811d577c95}</UniqueIdentifier>
     </Filter>
     <Filter Include="TestFixture\Formatting">
       <UniqueIdentifier>{f63a7185-22f7-4217-afc3-3880c4f2ef28}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Published\Units">
+    <Filter Include="NonPublished\Units">
       <UniqueIdentifier>{47b3f72a-e1e6-4943-8cdf-45e4b32e7716}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Published\Quantity">
+    <Filter Include="NonPublished\Quantity">
       <UniqueIdentifier>{111d958b-f3b3-4e13-a90e-318b71482d3f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -60,41 +60,41 @@
     <ClCompile Include="TestFixture\UnitsTestFixture.cpp">
       <Filter>TestFixture</Filter>
     </ClCompile>
-    <ClCompile Include="Published\UnitsTests.cpp">
-      <Filter>Published\Units</Filter>
+    <ClCompile Include="NonPublished\UnitsTests.cpp">
+      <Filter>NonPublished\Units</Filter>
     </ClCompile>
-    <ClCompile Include="Published\UnitRegistryTests.cpp">
-      <Filter>Published\Units</Filter>
+    <ClCompile Include="NonPublished\UnitRegistryTests.cpp">
+      <Filter>NonPublished\Units</Filter>
     </ClCompile>
-    <ClCompile Include="Published\UnitConversionTests.cpp">
-      <Filter>Published\Units</Filter>
+    <ClCompile Include="NonPublished\UnitConversionTests.cpp">
+      <Filter>NonPublished\Units</Filter>
     </ClCompile>
-    <ClCompile Include="Published\UnitNameMappingsTests.cpp">
-      <Filter>Published\Units</Filter>
+    <ClCompile Include="NonPublished\UnitNameMappingsTests.cpp">
+      <Filter>NonPublished\Units</Filter>
     </ClCompile>
-    <ClCompile Include="Published\QuantityTests.cpp">
-      <Filter>Published\Quantity</Filter>
+    <ClCompile Include="NonPublished\QuantityTests.cpp">
+      <Filter>NonPublished\Quantity</Filter>
     </ClCompile>
     <ClCompile Include="TestFixture\FormattingTestFixture.cpp">
       <Filter>TestFixture\Formatting</Filter>
     </ClCompile>
-    <ClCompile Include="Published\FormattingTests.cpp">
-      <Filter>Published\Formatting</Filter>
+    <ClCompile Include="NonPublished\FormattingTests.cpp">
+      <Filter>NonPublished\Formatting</Filter>
     </ClCompile>
-    <ClCompile Include="Published\LocaleTests.cpp">
-      <Filter>Published\Formatting</Filter>
+    <ClCompile Include="NonPublished\LocaleTests.cpp">
+      <Filter>NonPublished\Formatting</Filter>
     </ClCompile>
-    <ClCompile Include="Published\CompositeValueTests.cpp">
-      <Filter>Published\Formatting</Filter>
+    <ClCompile Include="NonPublished\CompositeValueTests.cpp">
+      <Filter>NonPublished\Formatting</Filter>
     </ClCompile>
-    <ClCompile Include="Published\FormatTests.cpp">
-      <Filter>Published\Formatting</Filter>
+    <ClCompile Include="NonPublished\FormatTests.cpp">
+      <Filter>NonPublished\Formatting</Filter>
     </ClCompile>
-    <ClCompile Include="Published\NumericFormatSpecTests.cpp">
-      <Filter>Published\Formatting</Filter>
+    <ClCompile Include="NonPublished\NumericFormatSpecTests.cpp">
+      <Filter>NonPublished\Formatting</Filter>
     </ClCompile>
-    <ClCompile Include="Published\MappingTests.cpp">
-      <Filter>Published\Formatting</Filter>
+    <ClCompile Include="NonPublished\MappingTests.cpp">
+      <Filter>NonPublished\Formatting</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

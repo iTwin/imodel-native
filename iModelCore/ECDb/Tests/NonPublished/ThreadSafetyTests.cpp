@@ -5,6 +5,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
 #include <BeRapidJson/BeRapidJson.h>
+#include <ECObjects/ECObjects.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -548,5 +549,69 @@ TEST_F(ThreadSafetyTests, ConncurentECSqlStressTest)
 
     BeThread::JoinAll(threads);
     ecdb.RemoveFunction(testFunc);
+    }
+
+struct ThreadSafetyTestsToRun : public ECDbTestFixture {};
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Affan.Khan                       12/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ThreadSafetyTestsToRun, UnitsLoadAndEvaluateCorrectlyInManyThreads)
+    {
+    const int nthreads = BeThreadUtilities::GetHardwareConcurrency();
+
+    ECDb ecdb;
+    BeFileName ecdbFileName = BuildECDbPath("WithUnits.ecdb");
+    if (!ecdbFileName.DoesPathExist())
+        {
+        printf("Creating file ... %s\r\n", ecdbFileName.GetNameUtf8().c_str());
+        ASSERT_EQ(BE_SQLITE_OK,  ecdb.CreateNewDb(ecdbFileName));
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        SchemaKey key("Units", 1, 0, 0);
+        ECSchemaPtr unitsSchema = context->LocateSchema(key, SchemaMatchType::LatestReadCompatible);
+        ASSERT_TRUE(unitsSchema.IsValid());
+        ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportSchemas({ unitsSchema.get() }));
+        ecdb.CloseDb();
+        }
+
+    printf("Running threads\r\n");
+    //////////////////////////////////////////////
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbFileName, Db::OpenParams(Db::OpenMode::Readonly)));
+    bvector<ECSchemaCP> schemas = ecdb.Schemas().GetSchemas(true);
+    auto unitsIt = std::find_if(schemas.begin(), schemas.end(), [](ECSchemaCP schema) { return schema->GetName().EqualsI("Units"); });
+    ASSERT_TRUE(unitsIt != schemas.end());
+
+    ECUnitCP psig = (*unitsIt)->GetUnitCP("PSIG");
+    ASSERT_NE(nullptr, psig);
+    ECUnitCP pa = (*unitsIt)->GetUnitCP("PA");
+    ASSERT_NE(nullptr, pa);
+
+    ECUnitCP gph = (*unitsIt)->GetUnitCP("GALLON_PER_HR");
+    ASSERT_NE(nullptr, gph);
+    ECUnitCP cmps = (*unitsIt)->GetUnitCP("CUB_M_PER_SEC");
+    ASSERT_NE(nullptr, cmps);
+
+    ECUnitCP f = (*unitsIt)->GetUnitCP("FAHRENHEIT");
+    ASSERT_NE(nullptr, f);
+    ECUnitCP c = (*unitsIt)->GetUnitCP("CELSIUS");
+    ASSERT_NE(nullptr, c);
+
+    std::vector<BeThread> threads;
+    for (int p = 0; p < nthreads; p++)
+        {
+        threads.push_back(BeThread::Start([&] ()
+            {
+            double convertedValue;
+            EXPECT_TRUE(Units::UnitsProblemCode::NoProblem == psig->Convert(convertedValue, 42.42, pa));
+            EXPECT_TRUE(convertedValue != 0) << "psig to pa conversion failed";
+
+            EXPECT_TRUE(Units::UnitsProblemCode::NoProblem == gph->Convert(convertedValue, 42.42, cmps));
+            EXPECT_TRUE(convertedValue != 0) << "gph to cmps conversion failed";
+
+            EXPECT_TRUE(Units::UnitsProblemCode::NoProblem == f->Convert(convertedValue, 42.42, c));
+            EXPECT_TRUE(convertedValue != 0) << "f to c conversion failed";
+            }));
+        }
+
+    BeThread::JoinAll(threads);
     }
 END_ECDBUNITTESTS_NAMESPACE

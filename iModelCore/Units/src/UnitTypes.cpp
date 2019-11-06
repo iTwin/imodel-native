@@ -94,9 +94,13 @@ ExpressionCR UnitsSymbol::Evaluate(int depth, std::function<UnitsSymbolCP(Utf8CP
     {
     if (!m_evaluated)
         {
-        m_symbolExpression->Add(this, 1);
-        Expression::ParseDefinition(*this, depth, m_definition.c_str(), *m_symbolExpression, 1, getSymbolByName);
-        m_evaluated = true;
+        BeMutexHolder lock(GetMutex());
+        if (!m_evaluated)
+            {
+            m_symbolExpression->Add(this, 1);
+            Expression::ParseDefinition(*this, depth, m_definition.c_str(), *m_symbolExpression, 1, getSymbolByName);
+            m_evaluated = true;
+            }
         }
     return *m_symbolExpression;
     }

@@ -31,19 +31,19 @@
     <Text Include="ignore_list.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Published\CompositeValueTests.cpp" />
-    <ClCompile Include="Published\FormatTests.cpp" />
-    <ClCompile Include="Published\FormattingTests.cpp" />
-    <ClCompile Include="Published\LocaleTests.cpp" />
-    <ClCompile Include="Published\NumericFormatSpecTests.cpp" />
-    <ClCompile Include="Published\MappingTests.cpp" />
-    <ClCompile Include="Published\UnitConversionTests.cpp" />
-    <ClCompile Include="Published\UnitNameMappingsTests.cpp" />
-    <ClCompile Include="Published\UnitRegistryTests.cpp" />
+    <ClCompile Include="NonPublished\CompositeValueTests.cpp" />
+    <ClCompile Include="NonPublished\FormatTests.cpp" />
+    <ClCompile Include="NonPublished\FormattingTests.cpp" />
+    <ClCompile Include="NonPublished\LocaleTests.cpp" />
+    <ClCompile Include="NonPublished\NumericFormatSpecTests.cpp" />
+    <ClCompile Include="NonPublished\MappingTests.cpp" />
+    <ClCompile Include="NonPublished\UnitConversionTests.cpp" />
+    <ClCompile Include="NonPublished\UnitNameMappingsTests.cpp" />
+    <ClCompile Include="NonPublished\UnitRegistryTests.cpp" />
     <ClCompile Include="TestFixture\FormattingTestFixture.cpp" />
     <ClCompile Include="TestFixture\QuantityTestFixture.cpp" />
-    <ClCompile Include="Published\QuantityTests.cpp" />
-    <ClCompile Include="Published\UnitsTests.cpp" />
+    <ClCompile Include="NonPublished\QuantityTests.cpp" />
+    <ClCompile Include="NonPublished\UnitsTests.cpp" />
     <ClCompile Include="Performance\UnitsPerformanceTests.cpp" />
     <ClCompile Include="TestFixture\UnitsTestFixture.cpp" />
   </ItemGroup>

@@ -15,6 +15,7 @@
 #include <Bentley/Bentley.h>
 #include <Bentley/bvector.h>
 #include <Bentley/bmap.h>
+#include <Bentley/BeThread.h>
 #include <Logging/bentleylogging.h>
 
 // Bentley Standard Macros

@@ -110,6 +110,7 @@ friend struct Unit; // Needed for access to private members
 friend struct Phenomenon; // Needed for access to private members
 
 private:
+    mutable BeMutex     m_mutex;
     Utf8String  m_name;
     Utf8String  m_definition;
     bool        m_isBaseSymbol = false;
@@ -120,6 +121,8 @@ private:
 
     mutable bool m_evaluated = false;
     Expression* m_symbolExpression;
+
+    BeMutex& GetMutex() const { return m_mutex; }
 
     virtual bool IsNumber() const = 0;
 
