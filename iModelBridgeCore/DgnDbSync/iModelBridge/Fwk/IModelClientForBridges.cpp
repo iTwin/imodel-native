@@ -33,8 +33,8 @@ static IJsonLocalState* getLocalState()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-IModelClientBase::IModelClientBase(WebServices::ClientInfoPtr info, uint8_t maxRetryCount, WebServices::UrlProvider::Environment environment, int64_t cacheTimeOutMs) : 
-    m_clientInfo(info), m_maxRetryCount(maxRetryCount)
+IModelClientBase::IModelClientBase(WebServices::ClientInfoPtr info, uint8_t maxRetryCount, size_t maxRetryWait, WebServices::UrlProvider::Environment environment, int64_t cacheTimeOutMs) : 
+    m_clientInfo(info), m_maxRetryCount(maxRetryCount), m_maxRetryWait(maxRetryWait)
     {
     UrlProvider::Initialize(environment, cacheTimeOutMs, getLocalState());
     ClientHelper::Initialize(m_clientInfo, getLocalState());
@@ -45,7 +45,7 @@ IModelClientBase::IModelClientBase(WebServices::ClientInfoPtr info, uint8_t maxR
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 IModelBankClient::IModelBankClient(iModelBridgeFwk::IModelBankArgs const& args, WebServices::ClientInfoPtr info) : 
-    IModelClientBase(info, args.m_maxRetryCount, WebServices::UrlProvider::Environment::Release, INT64_MAX),
+    IModelClientBase(info, args.m_maxRetryCount, args.m_maxRetryWait, WebServices::UrlProvider::Environment::Release, INT64_MAX),
     m_iModelId(args.m_iModelId)
     {
     SetUrlAndAccessToken(args);
@@ -67,7 +67,7 @@ void IModelBankClient::SetUrlAndAccessToken(iModelBridgeFwk::IModelBankArgs cons
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 IModelHubClient::IModelHubClient(iModelBridgeFwk::IModelHubArgs const& args, WebServices::ClientInfoPtr info, iModelBridgeError& error) :
-    IModelClientBase(info, args.m_maxRetryCount, args.m_environment, UrlProvider::DefaultTimeout),
+    IModelClientBase(info, args.m_maxRetryCount, args.m_maxRetryWait, args.m_environment, UrlProvider::DefaultTimeout),
     m_args(args)
     {
     Tasks::AsyncError serror;
@@ -297,9 +297,9 @@ StatusInt IModelClientBase::PullMergeAndPush(Utf8CP descr)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool IModelClientBase::SleepBeforeRetry()
+bool IModelClientBase::SleepBeforeRetry(size_t maxRetryWait)
     {
-    int sleepTime = rand() % (30*1000);
+    int sleepTime = rand() % (maxRetryWait * 1000);
     BeThreadUtilities::BeSleep(sleepTime);
     return true;
     }

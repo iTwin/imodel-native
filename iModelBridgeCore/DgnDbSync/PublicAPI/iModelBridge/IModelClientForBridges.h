@@ -72,10 +72,11 @@ protected:
     iModel::Hub::BriefcasePtr m_briefcase;
     iModel::Hub::Error m_lastServerError;
     uint8_t m_maxRetryCount {};
+    size_t m_maxRetryWait;
     WebServices::ClientInfoPtr m_clientInfo;
     OidcSignInManagerPtr m_oidcMgr;
 public:
-    IModelClientBase(WebServices::ClientInfoPtr ci, uint8_t maxRetryCount, WebServices::UrlProvider::Environment, int64_t cacheTimeOutMs);
+    IModelClientBase(WebServices::ClientInfoPtr ci, uint8_t maxRetryCount, size_t maxRetryWait, WebServices::UrlProvider::Environment, int64_t cacheTimeOutMs);
 
     iModel::Hub::ClientPtr GetImodelHubClientPtr() const {return m_client;}
     iModel::Hub::BriefcasePtr GetImodelHubBriefcase() const {return m_briefcase;}
@@ -95,7 +96,8 @@ public:
 
     StatusInt AcquireLocks(LockRequest&, DgnDbR) override;
 
-    static bool SleepBeforeRetry();
+    bool SleepBeforeRetry() { return SleepBeforeRetry(m_maxRetryWait); }
+    static bool SleepBeforeRetry(size_t maxRetryWait);
 
     static NativeLogging::ILogger& GetLogger() { return *NativeLogging::LoggingManager::GetLogger("iModelBridge"); }
 

@@ -47,15 +47,16 @@ void iModelBridgeFwk::IModelHubArgs::PrintUsage()
     {
     fwprintf(stderr, L"\n\
 iModelHub:\n\
-    --server-project=       (optional)  The name of a project in the iModel Hub Services. Optional if --server-project-guid is specified.\n\
-    --server-project-guid= (optional)  The GUID of a project in the iModel Hub Services. Optional if --server-project is specified.\n\
-    --server-repository=    (required)  The name of a repository in the project.\n\
-    --server-user=          (required)  The username for the project.\n\
-    --server-password=      (required)  The password for the project.\n\
-    --server-retries=       (optional)  The number of times to retry a pull, merge, and/or push to iModelHub. Must be a value between 0 and 255.\n\
-    --server-credentials-isEncrypted (optional) The user name and password passed in is encrypted.\n\
-    --server-oidcCallBackUrl= (optional) The OIDC callback url to receive access token instead of credentials. \n\
-    --server-briefcaseId= (optional) The briefcase Id incase we do not have the original BIM file\n\
+    --server-project=                   (optional) The name of a project in the iModel Hub Services. Optional if --server-project-guid is specified.\n\
+    --server-project-guid=              (optional) The GUID of a project in the iModel Hub Services. Optional if --server-project is specified.\n\
+    --server-repository=                (required) The name of a repository in the project.\n\
+    --server-user=                      (required) The username for the project.\n\
+    --server-password=                  (required) The password for the project.\n\
+    --server-retries=                   (optional) The number of times to retry a pull, merge, and/or push to iModelHub. Must be a value between 0 and 255.\n\
+    --server-max-retry-wait=            (optional) The maximum number of seconds to wait when retrying a pull, merge, and/or push to iModelHub (actual wait is randomized). Must be a value between 0 and 255.\n\
+    --server-credentials-isEncrypted    (optional) The user name and password passed in is encrypted.\n\
+    --server-oidcCallBackUrl=           (optional) The OIDC callback url to receive access token instead of credentials. \n\
+    --server-briefcaseId=               (optional) The briefcase Id incase we do not have the original BIM file\n\
     \n");
     }
 
@@ -101,6 +102,18 @@ BentleyStatus iModelBridgeFwk::IModelHubArgs::ParseCommandLine(bvector<WCharCP>&
                 return BSIERROR;
                 }
             m_maxRetryCount = (uint8_t)n;
+            continue;
+            }
+
+        if (argv[iArg] == wcsstr(argv[iArg], L"--server-max-retry-wait="))
+            {
+            int n = atoi(getArgValue(argv[iArg]).c_str());
+            if (n < 0 || 256 <= n)
+                {
+                fprintf(stderr, "%s - invalid max retry wait value. Must be a value between 0 and 255\n", getArgValue(argv[iArg]).c_str());
+                return BSIERROR;
+                }
+            m_maxRetryWait = (uint8_t)n;
             continue;
             }
 
@@ -207,14 +220,14 @@ void iModelBridgeFwk::IModelBankArgs::PrintUsage()
     {
     fwprintf(stderr, L"\n\
 iModelBank:\n\
-    --imodel-bank-url=              The URL of the iModelBank server to use.\n\
-    --imodel-bank-imodel-id=        The GUID of the iModel that is served by the bank at the specified URL.\n\
-    --imodel-bank-access-token=     (optional) The JSON-encoded user access token, if needed by the project mgmt system.\n\
-    --imodel-bank-retries=          (optional) The number of times to retry a pull, merge, and/or push to iModelBank. Must be a value between 0 and 255.\n\
-    --imodel-bank-dms-credentials-isEncrypted (optional) The DMS user name and password passed in is encrypted.\n\
+    --imodel-bank-url=                          (required) The URL of the iModelBank server to use.\n\
+    --imodel-bank-imodel-id=                    (required) The GUID of the iModel that is served by the bank at the specified URL.\n\
+    --imodel-bank-access-token=                 (optional) The JSON-encoded user access token, if needed by the project mgmt system.\n\
+    --imodel-bank-retries=                      (optional) The number of times to retry a pull, merge, and/or push to iModelBank. Must be a value between 0 and 255.\n\
+    --imodel-bank-max-retry-wait=               (optional) The maximum number of seconds to wait when retrying a pull, merge, and/or push to iModelBank (actual wait is randomized). Must be a value between 0 and 255.\n\
+    --imodel-bank-dms-credentials-isEncrypted   (optional) The DMS user name and password passed in is encrypted.\n\
     \n");
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
@@ -242,6 +255,18 @@ BentleyStatus iModelBridgeFwk::IModelBankArgs::ParseCommandLine(bvector<WCharCP>
                 return BSIERROR;
                 }
             m_maxRetryCount = (uint8_t)n;
+            continue;
+            }
+
+        if (argv[iArg] == wcsstr(argv[iArg], L"--imodel-bank-max-retry-wait="))
+            {
+            int n = atoi(getArgValue(argv[iArg]).c_str());
+            if (n < 0 || 256 <= n)
+                {
+                fprintf(stderr, "%s - invalid max retry wait value. Must be a value between 0 and 255\n", getArgValue(argv[iArg]).c_str());
+                return BSIERROR;
+                }
+            m_maxRetryWait = (uint8_t)n;
             continue;
             }
 

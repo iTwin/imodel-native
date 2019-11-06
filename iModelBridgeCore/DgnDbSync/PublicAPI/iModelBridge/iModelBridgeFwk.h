@@ -138,6 +138,7 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         bool       m_allowIntermdiatePushes = true;
         bool       m_ignoreStaleFiles = false;
         bool       m_errorOnStaleFiles = false;
+        bool       m_isCrashReportingEnabled = false;
         int m_maxWaitForMutex = 60000;
         int m_statusMessageInterval = 1000;
         Utf8String m_revisionComment;
@@ -185,6 +186,7 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         bool m_parsedAny {};
         bool m_dmsCredentialsEncrypted{};
         uint8_t m_maxRetryCount = 3; //!< The number of times to retry a failed pull, merge, and/or push. (0 means that the framework will try operations only once and will not re-try them in case of failure.)
+        uint8_t m_maxRetryWait = 5;  //!< The maximum number of seconds to wait during retries (each retry waits randomly between 0 and this maximum).
         Utf8String m_url;            //!< Where the iModelBank server is 
         Utf8String m_iModelId;       //!< The GUID of the iModel that the bank serves. This is used to name to local briefcase and as a means of checking that the URL is correct.
         Utf8String m_accessToken;    //!< The token that identifies the user and the user's rights in this environment. (Is passed in http headers as the authorization property.)
@@ -212,6 +214,7 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         BeSQLite::BeBriefcaseId m_briefcaseId;     //! optional briefcaseId if the bim file is missing.
         WebServices::UrlProvider::Environment m_environment;    //!< Connect environment
         uint8_t             m_maxRetryCount = 3;  //! The number of times to retry a failed pull, merge, and/or push. (0 means that the framework will try operations only once and will not re-try them in case of failure.)
+        uint8_t             m_maxRetryWait = 5;   //!< The maximum number of seconds to wait during retries (each retry waits randomly between 0 and this maximum).
         bvector<WString>    m_bargs;
         
         BentleyStatus ParseCommandLine(bvector<WCharCP>& bargptrs, int argc, WCharCP argv[]);
@@ -288,6 +291,7 @@ protected:
         };
     Utf8String m_briefcaseBasename;
     int m_maxRetryCount;
+    size_t m_maxRetryWait {};
     bool m_isCreatingNewRepo {};
     bool m_areCodesInLockedModelsReported = true;    // This an OUTPUT variable, set to the result of calling a method on the BriefcaseManager
     bool m_requestInFlight{};

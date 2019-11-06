@@ -524,6 +524,11 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
             m_allDocsProcessed = true;
             continue;
             }
+        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-enable-crash-reporting"))
+            {
+            m_isCrashReportingEnabled = true;
+            continue;
+            }
 
         BeAssert(false);
         fwprintf(stderr, L"%ls: unrecognized fwk argument\n", argv[iArg]);
@@ -713,6 +718,7 @@ BentleyStatus iModelBridgeFwk::ParseCommandLine(int argc, WCharCP argv[])
         m_iModelBankArgs = new IModelBankArgs(bankArgs);
         m_briefcaseBasename = m_iModelBankArgs->GetBriefcaseBasename();
         m_maxRetryCount = m_iModelBankArgs->m_maxRetryCount;
+        m_maxRetryWait = m_iModelBankArgs->m_maxRetryWait;
         dmsCredentialsAreEncrypted = m_iModelBankArgs->m_dmsCredentialsEncrypted;
         }
     else
@@ -721,6 +727,7 @@ BentleyStatus iModelBridgeFwk::ParseCommandLine(int argc, WCharCP argv[])
         m_iModelHubArgs = new IModelHubArgs(hubArgs);
         m_briefcaseBasename = m_iModelHubArgs->m_repositoryName;
         m_maxRetryCount = m_iModelHubArgs->m_maxRetryCount;
+        m_maxRetryWait = m_iModelHubArgs->m_maxRetryWait;
         dmsCredentialsAreEncrypted = m_iModelHubArgs->m_isEncrypted;
         }
       
@@ -1448,6 +1455,9 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
 
     InitLogging();
 
+    // Do this as a service to innards that call rand(). For example, the random wait times when acquiring locks to try and break logjams.
+    srand(time(0));
+
     Briefcase_MakeBriefcaseName();
     BeFileName::BeDeleteFile(ComputeReportFileName(m_briefcaseName));  // delete any old issues file hanging round from the previous run
     BeFileName errorFile(m_briefcaseName);
@@ -1741,7 +1751,7 @@ BentleyStatus   iModelBridgeFwk::TryOpenBimWithOptions(DgnDb::OpenParams& oparam
     DbResult dbres;
     m_briefcaseDgnDb = iModelBridge::OpenBimAndMergeSchemaChanges(dbres, madeSchemaChanges, m_briefcaseName, oparams);
     uint8_t retryopenII = 0;
-    while (!m_briefcaseDgnDb.IsValid() && isUpgradeFailure(dbres) && (++retryopenII < m_maxRetryCount) && IModelClientBase::SleepBeforeRetry())
+    while (!m_briefcaseDgnDb.IsValid() && isUpgradeFailure(dbres) && (++retryopenII < m_maxRetryCount) && IModelClientBase::SleepBeforeRetry(m_maxRetryWait))
         {
         // The upgrade may have failed because we could not get the schema lock, and that may have failed because
         // another briefcase pushed schema changes after this briefcase last pulled.
@@ -1841,7 +1851,7 @@ BentleyStatus   iModelBridgeFwk::GetSchemaLock()
         auto response = m_briefcaseDgnDb->BriefcaseManager().LockSchemas();
         status = response.Result();
         SetLastError(response, "");
-        } while ((RepositoryStatus::Success != status) && (++retryAttempt < m_maxRetryCount) && IModelClientBase::SleepBeforeRetry());
+        } while ((RepositoryStatus::Success != status) && (++retryAttempt < m_maxRetryCount) && IModelClientBase::SleepBeforeRetry(m_maxRetryWait));
 
     if (RepositoryStatus::Success != status)
         GetLogger().warningv(L"GetSchemaLock failed with status %x. briefcase=%ls", status, m_briefcaseName.c_str());
@@ -1883,7 +1893,7 @@ BentleyStatus iModelBridgeFwk::LockChannelParent(SubjectCR jobSubj)
         auto errId = iModelBridgeErrorId::FailedToLockChannelParent;
         SetLastError(resp, "", &errId);
         status = resp.Result();
-        } while ((RepositoryStatus::Success != status) && (++retryAttempt < m_maxRetryCount) && IModelClientBase::SleepBeforeRetry());
+        } while ((RepositoryStatus::Success != status) && (++retryAttempt < m_maxRetryCount) && IModelClientBase::SleepBeforeRetry(m_maxRetryWait));
 
     if (RepositoryStatus::Success != status)
         {
@@ -1990,7 +2000,7 @@ int iModelBridgeFwk::MakeSchemaChanges(iModelBridgeCallOpenCloseFunctions& callC
         if (BSISUCCESS != bridgeSchemaChangeStatus)
             {
             uint8_t retryAttempt = 0;
-            while ((BSISUCCESS != bridgeSchemaChangeStatus) && (++retryAttempt < m_maxRetryCount) && IModelClientBase::SleepBeforeRetry())
+            while ((BSISUCCESS != bridgeSchemaChangeStatus) && (++retryAttempt < m_maxRetryCount) && IModelClientBase::SleepBeforeRetry(m_maxRetryWait))
                 {
                 GetLogger().infov("_MakeSchemaChanges failed. Retrying.");
                 PostStatusMessage("_MakeSchemaChanges failed. Retrying.");
@@ -2667,8 +2677,11 @@ int iModelBridgeFwk::Run(int argc, WCharCP argv[])
 
     int res = RETURN_STATUS_UNHANDLED_EXCEPTION;
 
-    iModelBridgeErrorHandling::Initialize(s_crashDumpConfig);
-    // TODO: s_crashDumpConfig.m_uploadUrl = ...
+    if (m_jobEnvArgs.m_isCrashReportingEnabled)
+        {
+        iModelBridgeErrorHandling::Initialize(s_crashDumpConfig);
+        // TODO: s_crashDumpConfig.m_uploadUrl = ...
+        }
 
     IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
         {
