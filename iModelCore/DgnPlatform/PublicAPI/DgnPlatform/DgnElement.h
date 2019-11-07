@@ -3554,6 +3554,10 @@ public:
 
     //! Empty the Most Recentley Used element cache for this DgnDb.
     DGNPLATFORM_EXPORT void ClearCache();
+
+    //! Find all geometric elements that reference the specified geometry part Id(s) in their geometry streams.
+    //! @note This is an exhaustive search - it may take a very long time to complete.
+    DGNPLATFORM_EXPORT DgnElementIdSet FindGeometryPartReferences(BeSQLite::IdSet<DgnGeometryPartId> const& partIds, bool is2d) const;
 };
 
 //=======================================================================================

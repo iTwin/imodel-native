@@ -1785,6 +1785,21 @@ public:
         return Napi::Number::New(Env(), (int)result);
         }
 
+    Napi::Value FindGeometryPartReferences(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN
+        REQUIRE_ARGUMENT_STRING_ARRAY(0, partIds, Napi::Array::New(Env(), 0));
+        REQUIRE_ARGUMENT_BOOL(1, is2d, Napi::Array::New(Env(), 0));
+
+        auto elemIds = JsInterop::FindGeometryPartReferences(partIds, is2d, GetDgnDb());
+        uint32_t index = 0;
+        auto ret = Napi::Array::New(Env(), elemIds.size());
+        for (auto elemId : elemIds)
+            ret.Set(index++, Napi::String::New(Env(), elemId.ToHexStr().c_str()));
+
+        return ret;
+        }
+
     Napi::Value ExportSchemas(Napi::CallbackInfo const& info)
         {
         REQUIRE_ARGUMENT_STRING(0, exportDirectory, Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
@@ -2348,6 +2363,7 @@ public:
             InstanceMethod("extractChangeSummary", &NativeDgnDb::ExtractChangeSummary),
             InstanceMethod("extractCodes", &NativeDgnDb::ExtractCodes),
             InstanceMethod("extractCodesFromFile", &NativeDgnDb::ExtractCodesFromFile),
+            InstanceMethod("findGeometryPartReferences", &NativeDgnDb::FindGeometryPartReferences),
             InstanceMethod("finishCreateChangeSet", &NativeDgnDb::FinishCreateChangeSet),
             InstanceMethod("getBriefcaseId", &NativeDgnDb::GetBriefcaseId),
             InstanceMethod("getCurrentTxnId", &NativeDgnDb::GetCurrentTxnId),

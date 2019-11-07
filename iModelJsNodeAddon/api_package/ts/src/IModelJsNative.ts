@@ -204,6 +204,7 @@ export declare namespace IModelJsNative {
     public extractChangeSummary(changeCacheFile: ECDb, changesetFilePath: string): ErrorStatusOrResult<DbResult, string>;
     public extractCodes(): ErrorStatusOrResult<DbResult, string>;
     public extractCodesFromFile(changeSets: string): ErrorStatusOrResult<DbResult, string>;
+    public findGeometryPartReferences(partIds: Id64String[], is2d: boolean): Id64String[];
     public finishCreateChangeSet(): ChangeSetStatus;
     public getBriefcaseId(): number;
     public getCurrentTxnId(): TxnIdString;

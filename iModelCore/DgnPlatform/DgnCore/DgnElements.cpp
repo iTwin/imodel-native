@@ -931,3 +931,47 @@ CachedECSqlStatementPtr DgnElements::GetPreparedUpdateStatement(DgnElementR el) 
     // Not bothering to cache per class...use our general-purpose ECSql statement cache
     return FindClassInfo(el).GetUpdateStmt(GetDgnDb(), ECInstanceId(el.GetElementId().GetValue()));
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/19
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementIdSet DgnElements::FindGeometryPartReferences(BeSQLite::IdSet<DgnGeometryPartId> const& partIdsToFind, bool is2d) const
+    {
+    DgnElementIdSet refs;
+    if (partIdsToFind.empty())
+        return refs;
+
+    Utf8String sql("SELECT ElementId FROM ");
+    auto tableName = is2d ? BIS_TABLE(BIS_CLASS_GeometricElement2d) : BIS_TABLE(BIS_CLASS_GeometricElement3d);
+    sql.append(tableName);
+    sql.append(" WHERE GeometryStream IS NOT NULL");
+
+    BeSQLite::IdSet<DgnGeometryPartId> foundPartIds;
+    auto stmt = GetStatement(sql.c_str());
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        auto elemId = stmt->GetValueId<DgnElementId>(0);
+        auto elem = GetElement(elemId);
+        auto src = elem.IsValid() ? elem->ToGeometrySource() : nullptr;
+        if (nullptr == src)
+            continue;
+
+        auto const& stream = src->GetGeometryStream();
+        uint8_t const* data = stream.GetData();
+        size_t size = stream.GetSize();
+        foundPartIds.clear();
+        GeometryStreamIO::Collection geom(data, size);
+        geom.GetGeometryPartIds(foundPartIds, GetDgnDb());
+        for (auto foundPartId : foundPartIds)
+            {
+            if (partIdsToFind.end() != partIdsToFind.find(foundPartId))
+                {
+                refs.insert(elemId);
+                break;
+                }
+            }
+        }
+
+    return refs;
+    }
+

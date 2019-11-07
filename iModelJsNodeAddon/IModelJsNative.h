@@ -199,7 +199,7 @@ public:
     static BentleyStatus GetIModelCoordsFromGeoCoords (JsonValueR, DgnDbR, JsonValueCR);
 
     static void GetIModelProps(JsonValueR, DgnDbCR dgndb);
-    
+    static DgnElementIdSet FindGeometryPartReferences(bvector<Utf8String> const& partIds, bool is2d, DgnDbR db);
     static DgnPlatformLib::Host::RepositoryAdmin& GetRepositoryAdmin();
     static bool SetOkEndBulkMode(bool);
     static RepositoryStatus BuildBriefcaseManagerResourcesRequestToInsertElement(IBriefcaseManager::Request& req, DgnDbR dgndb, JsonValueCR elemProps);

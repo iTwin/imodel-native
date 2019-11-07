@@ -987,3 +987,18 @@ BentleyStatus JsInterop::GetIModelCoordsFromGeoCoords (JsonValueR results, DgnDb
     return BentleyStatus::BSISUCCESS;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/19
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementIdSet JsInterop::FindGeometryPartReferences(bvector<Utf8String> const& idArray, bool is2d, DgnDbR db)
+    {
+    BeSQLite::IdSet<DgnGeometryPartId> idSet;
+    for (auto const& idStr : idArray)
+        {
+        auto id = BeInt64Id::FromString(idStr.c_str());
+        if (id.IsValid())
+            idSet.insert(DgnGeometryPartId(id.GetValue()));
+        }
+
+    return db.Elements().FindGeometryPartReferences(idSet, is2d);
+    }
