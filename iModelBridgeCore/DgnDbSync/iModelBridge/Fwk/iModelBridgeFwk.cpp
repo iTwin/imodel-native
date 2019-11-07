@@ -511,12 +511,12 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
             }
         if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-ignore-stale-files"))
             {
-            m_ignoreStaleFiles = false;
+            m_ignoreStaleFiles = true;
             continue;
             }
         if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-error-on-stale-files"))
             {
-            m_errorOnStaleFiles = false;
+            m_errorOnStaleFiles = true;
             continue;
             }
         if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-all-docs-processed"))
@@ -1159,6 +1159,7 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params, FwkRepoAdmin
 	if (!m_jobEnvArgs.m_jobSubjectName.empty())
 		params.SetBridgeJobName(m_jobEnvArgs.m_jobSubjectName);
     params.SetMergeDefinitions(m_jobEnvArgs.m_mergeDefinitions);
+
     params.SetIgnoreStaleFiles(m_jobEnvArgs.m_ignoreStaleFiles);
     params.SetErrorOnStaleFiles(m_jobEnvArgs.m_errorOnStaleFiles);
     if (!m_jobEnvArgs.m_revisionComment.empty())

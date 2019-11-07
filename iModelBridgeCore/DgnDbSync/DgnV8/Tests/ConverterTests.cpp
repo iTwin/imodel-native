@@ -706,10 +706,23 @@ TEST_F(ConverterTests, GCSMultiFilesGCSTransformWithScale)
 
 struct SetAndRestoreIgnoreStaleFilesParam
     {
-    bool m_was;
+    bool m_wasIgnore;
+    bool m_wasError;
     iModelBridge::Params& m_params;
-    SetAndRestoreIgnoreStaleFilesParam(iModelBridge::Params& p, bool v): m_params(p), m_was(p.IgnoreStaleFiles()) {m_params.SetIgnoreStaleFiles(v);}
-    ~SetAndRestoreIgnoreStaleFilesParam() {m_params.SetIgnoreStaleFiles(m_was);}
+    SetAndRestoreIgnoreStaleFilesParam(iModelBridge::Params& p, bool i, bool e)
+        :
+        m_params(p),
+        m_wasIgnore(p.IgnoreStaleFiles()),
+        m_wasError(p.ErrorOnStaleFiles())
+        {
+        m_params.SetIgnoreStaleFiles(i);
+        m_params.SetErrorOnStaleFiles(e);
+        }
+    ~SetAndRestoreIgnoreStaleFilesParam()
+        {
+        m_params.SetIgnoreStaleFiles(m_wasIgnore);
+        m_params.SetErrorOnStaleFiles(m_wasError);
+        }
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -759,7 +772,7 @@ TEST_F(ConverterTests, IgnoreStaleFiles)
 
     if (true)
         {
-        SetAndRestoreIgnoreStaleFilesParam __(m_params, true);
+        SetAndRestoreIgnoreStaleFilesParam __(m_params, true, true);
         DoUpdate(m_dgnDbFileName, m_v8FileName, false, false);  // no change should be detected when there is truly no change at all. The new parameter should not affect that.
         }
 
@@ -773,7 +786,7 @@ TEST_F(ConverterTests, IgnoreStaleFiles)
 
     if (true)
         {
-        SetAndRestoreIgnoreStaleFilesParam __(m_params, true);
+        SetAndRestoreIgnoreStaleFilesParam __(m_params, true, true);
         DoUpdate(m_dgnDbFileName, m_v8FileName, false, true);  // change should be detected when there is a change and the LST is moving forward. The new parameter should not affect that.
         }
 
@@ -806,8 +819,14 @@ TEST_F(ConverterTests, IgnoreStaleFiles)
     //  m_v8FileName now points to a stale file. Its LST is older than the LST of the XSA that represents this file in the dgndb file.
     if (true)
         {
-        SetAndRestoreIgnoreStaleFilesParam __(m_params, true);
+        SetAndRestoreIgnoreStaleFilesParam __(m_params, true, false);
         DoUpdate(m_dgnDbFileName, m_v8FileName, false, false);  // change should NOT be detected when we update with a stale copy and the new parameter IS set.
+        }
+
+    if (true)
+        {
+        SetAndRestoreIgnoreStaleFilesParam __(m_params, true, true);
+        DoUpdate(m_dgnDbFileName, m_v8FileName, true, false, false, false, true);  // update should fail if we specify error on stale files
         }
 
     // Verify that the LST of the XSA for this file DID NOT GO BACKWARD IN TIME. It should still match changedV8Lst.

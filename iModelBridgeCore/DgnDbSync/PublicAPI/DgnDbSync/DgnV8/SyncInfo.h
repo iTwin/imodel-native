@@ -460,6 +460,14 @@ public:
     //! @return true if the file is not found in syncinfo or if it is found and its last-save time is different
     DGNDBSYNC_EXPORT bool HasLastSaveTimeChanged(DgnV8FileCR file);
 
+    //! Query if the specified file is *stale*, that is, if the last saved time of the file is before
+    //! the last save time recorded in the iModel for that file in the iModel.
+    //! @param v8File the Dgn file to check.
+    //! @param ftime If not null, the last-saved time of the Dgn file.
+    //! @param ftime If not null, the last-saved time that was recorded in the iModel for the Dgn file.
+    //! @return true if the last-saved time that was recorded in the iModel for the Dgn file is after the last-saved time of the Dgn file.
+    DGNDBSYNC_EXPORT bool IsStaleFile(DateTime* ftime, DateTime* xtime, DgnFileCR v8File);
+
     //! Query if a v8 file's disk file might have changed since syncinfo was created or last updated
     //! @param[in] v8FileName  the name of the file on disk
     //! @param[in] uniqueName       the key that identifies the file in sync info

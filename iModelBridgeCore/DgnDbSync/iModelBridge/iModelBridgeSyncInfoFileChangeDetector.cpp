@@ -305,6 +305,7 @@ BentleyStatus iModelBridgeSyncInfoFile::ChangeDetector::_UpdateBimAndSyncInfo(Co
         {
         _OnElementSeen(changeDetectorResults.GetSyncInfoRecord().GetDgnElementId());
         conversionResults.m_syncInfoRecord = changeDetectorResults.GetSyncInfoRecord();
+        conversionResults.m_isStale = changeDetectorResults.IsItemStale();
         return BentleyStatus::SUCCESS;
         }
     
@@ -399,7 +400,7 @@ iModelBridgeSyncInfoFile::ChangeDetector::Results iModelBridgeSyncInfoFile::Chan
                 double lmt = item._GetLastModifiedTime();
                 if (!forceChange && (0 != lmt))
                     {
-                    double previousLmt = iModelExternalSourceAspect::DoubleFromString(aspect.GetSourceState().m_version.c_str());
+                    double previousLmt = rec.GetSourceState().GetLastModifiedTime();
                     if (previousLmt == lmt || (m_ignoreStaleItems && (lmt < previousLmt)))
                         return Results(ChangeType::Unchanged, rec, SourceState(lmt, ""));
                     }

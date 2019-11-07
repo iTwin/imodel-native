@@ -378,7 +378,7 @@ void ConverterTestBaseFixture::DoConvert(BentleyApi::BeFileNameCR output, Bentle
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ConverterTestBaseFixture::DoUpdate(BentleyApi::BeFileNameCR output, BentleyApi::BeFileNameCR input, bool expectFailure, bool expectUpdate, bool doDetectDeletedDocuments, bool onAllDocsProcessed)
+void ConverterTestBaseFixture::DoUpdate(BentleyApi::BeFileNameCR output, BentleyApi::BeFileNameCR input, bool expectFailure, bool expectUpdate, bool doDetectDeletedDocuments, bool onAllDocsProcessed, bool expectedInitRootModelFailure)
     {
     // *** TRICKY: the converter takes a reference to and will MODIFY its Params. Make a copy, so that it does not pollute m_params.
     RootModelConverter::RootModelSpatialParams params(m_params);
@@ -398,7 +398,17 @@ void ConverterTestBaseFixture::DoUpdate(BentleyApi::BeFileNameCR output, Bentley
         updater.SetDgnDb(*db);
         updater.SetIsUpdating(true);
         updater.AttachSyncInfo();
-        ASSERT_EQ(BentleyApi::SUCCESS, updater.InitRootModel());
+        auto initRootModelStatus = updater.InitRootModel();
+        if (expectedInitRootModelFailure)
+            {
+            ASSERT_NE(BentleyApi::SUCCESS, initRootModelStatus);
+            ASSERT_TRUE(updater.WasAborted());
+            }
+        else
+            {
+            ASSERT_EQ(BentleyApi::SUCCESS, initRootModelStatus);
+            ASSERT_FALSE(updater.WasAborted());
+            }
         updater.MakeSchemaChanges();
         ASSERT_EQ(expectFailure, updater.WasAborted());
         if (!updater.WasAborted())

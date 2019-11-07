@@ -282,10 +282,12 @@ void iModelBridgeSyncInfoFileTester::DoTests(SubjectCR jobSubject)
         // verify that the item does not exist in the BIM or in syncinfo
         iModelBridgeSyncInfoFile::ChangeDetector::Results change = changeDetector._DetectChange(scope1, itemKind, i0NoId);
         ASSERT_EQ(iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::New, change.GetChangeType());
+        ASSERT_FALSE(change.IsItemStale());
 
         // verify that second check on the same source item shows the same thing
         change = changeDetector._DetectChange(scope1, itemKind, i0NoId);
         ASSERT_EQ(iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::New, change.GetChangeType());
+        ASSERT_FALSE(change.IsItemStale());
 
         ASSERT_EQ(expected_counts, countItemsInSyncInfo(m_syncInfo));
         ASSERT_EQ(expected_counts.first-2, countElementsOfClass(iModelBridgeTests::GetGenericPhysicalObjectClassId(db), db));
@@ -301,6 +303,7 @@ void iModelBridgeSyncInfoFileTester::DoTests(SubjectCR jobSubject)
         // verify that the item is now in the bim and is unchanged w.r.t. i0NoId
         change = changeDetector._DetectChange(scope1, itemKind, i0NoId);
         ASSERT_EQ(iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::Unchanged, change.GetChangeType());
+        ASSERT_FALSE(change.IsItemStale());
 
         ASSERT_EQ(1, changeDetector.GetElementsConverted());
 
@@ -327,6 +330,7 @@ void iModelBridgeSyncInfoFileTester::DoTests(SubjectCR jobSubject)
         // Note that, since this item has no ID, it will look like it's new.
         auto change = changeDetector._DetectChange(scope1, itemKind, i0NoId);
         ASSERT_EQ(iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::New, change.GetChangeType());
+        ASSERT_FALSE(change.IsItemStale());
         if (true)
             {
             iModelBridgeSyncInfoFile::ConversionResults results;
@@ -337,6 +341,7 @@ void iModelBridgeSyncInfoFileTester::DoTests(SubjectCR jobSubject)
         // verify that the item is now in the bim and is unchanged w.r.t. i0NoId
         change = changeDetector._DetectChange(scope1, itemKind, i0NoId);
         ASSERT_EQ(iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::Unchanged, change.GetChangeType());
+        ASSERT_FALSE(change.IsItemStale());
 
         // Note that the "change" resulted in a *NEW* item. That is how it works for items with no IDs.
         // We have actually added a new element and syncinfo record for the original item and abandoned the first. 

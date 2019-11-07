@@ -81,7 +81,6 @@ BentleyStatus iModelBridgeWithSyncInfoBase::_OnOpenBim(DgnDbR db)
     if (BentleyStatus::SUCCESS != T_Super::_OnOpenBim(db))
         return BentleyStatus::ERROR;
 
-    // Note that I must attach my syncinfo in _OnConvertToBim -- outside of the bulk update txn -- I must not wait until _ConvertToBim.
     return m_syncInfo.AttachToBIM(db);
     }
 
@@ -146,6 +145,10 @@ iModelBridgeSyncInfoFile::ConversionResults iModelBridgeWithSyncInfoBase::Record
     if (iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::Unchanged != change.GetChangeType())
         {
         LOG.infov(L"[%ls] - document recorded in syncinfo with id=[%ls], rowid=%ld", fileName.c_str(), WString(docItem._GetId().c_str(), true).c_str(), results.m_syncInfoRecord.GetROWID());
+        }
+    else if (change.IsItemStale())
+        {
+        LOG.warningv(L"[%ls] - the document is stale", fileName.c_str());
         }
 
     return results;

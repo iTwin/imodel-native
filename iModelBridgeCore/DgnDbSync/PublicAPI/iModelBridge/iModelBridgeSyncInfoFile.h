@@ -201,11 +201,6 @@ implementation of syncinfo.
 * delete the elements in the BIM that correspond to items that were not processed by the conversion logic. 
 * The change detector is making the inference that the only reason why an item was not seen is because it is not there.
 *
-* <h2>Attach and Detach</h2>
-* A bridge must attach syncinfo in iModelBridge::_OnOpenBim and detach syncinfo in iModelBridge::_OnCloseBim. 
-* It must not try to do either of these operations in iModelBridge::_ConvertToBim.
-* iModelBridgeWithSyncInfoBase overrides _OnOpenBim and _OnCloseBim in order to handle attach and detach for you.
-*
 * <h2>Complex Mappings</h2>
 *
 * A single source item can be mapped to one or more DgnElements. To do that, the bridge 
@@ -554,7 +549,8 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
     //! - Last modified time (LMT).  The last "time" that the item's content was modified, if known. SyncInfo assumes that if the current LMT of a source item
     //!                             is equal to the stored value, then the item's content is unchanged. 
     //!                             The source repository must guarantee this! If in doubt, \ref iModelBridgeSyncInfoFile::ISourceItem should return 0 for LMT. Note that the definition of this value is known only to the source repository.
-    //!                             It may be a real timestamp or just a counter. SyncInfo just needs to check for equality.
+    //!                             It may be a real timestamp or just a counter. SyncInfo just needs to check for equality. Optionally, if the "ignore stale items" is true, then SyncInfo will detect a change only if the item's
+    //!                             current LMT is greater than the stored value. If it is less, then the item will be classified as "stale". A stale item is treated as unchanged. Stale items may be reported in the issues file.
     //! @note The hash value is the only required field. Hash can serve as the item's identity (relative to scope and kind) in the soure repository if it has no other identity.
     // @bsiclass                                    BentleySystems 
     //=======================================================================================
@@ -633,6 +629,7 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
         DgnElementPtr m_element;  //!< The DgnDb element created to represent the source item -- optional
         bvector<ConversionResults> m_childElements; //!< Child elements - optional
         Record m_syncInfoRecord; //!< Output from _ProcessConversionResults
+        bool m_isStale{}; //!< Is the item stale?
         };
 
     //=======================================================================================
@@ -667,6 +664,8 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
             Record const& GetSyncInfoRecord() const {return m_record;}
             //! Get the current state of the source data, as cached by the change detector. @note This may be empty if #GetChangeType returns ChangeType::Unchanged.
             SourceState const& GetCurrentState() const {return m_currentState;}
+            //! Is the item "stale"? That is, is the value returned by its _LastModifiedTime function earlier than the value stored in the ExternalSourceAspect that tracks this item?
+            bool IsItemStale() const {return m_currentState.GetLastModifiedTime() < m_record.GetSourceState().GetLastModifiedTime();}
             };
 
       protected:
@@ -685,6 +684,8 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
         IMODEL_BRIDGE_EXPORT virtual void _OnItemDelete(Record const&);
 
      public:
+
+        bool IgnoreStaleItems() const {return m_ignoreStaleItems;}
 
         IMODEL_BRIDGE_EXPORT DgnDbStatus UpdateResultsInBIM(ConversionResults& conversionResults, DgnElementId existingElementId);
 
@@ -772,11 +773,11 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
 
   public:
     //! Construct a syncinfo object. @see AttachToBIM
-    //! @note iModelBridgeWithSyncInfoBase will construct and manage a syncinfo file for you automatically.
+    //! @note iModelBridgeWithSyncInfoBase will manage "syncinfo" (aka ExternalSourceAspects) for you.
     iModelBridgeSyncInfoFile() : m_bim(nullptr) {}
     
     //! Destructor - detaches from m_bim
-    //! @note iModelBridgeWithSyncInfoBase will construct and manage a syncinfo file for you automatically.
+    //! @note iModelBridgeWithSyncInfoBase will manage "syncinfo" (aka ExternalSourceAspects) for you.
     IMODEL_BRIDGE_EXPORT ~iModelBridgeSyncInfoFile();
     
     //! Open the syncinfo file and attach it to a BIM
@@ -787,7 +788,7 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
     //! Detach from the BIM
     IMODEL_BRIDGE_EXPORT void DetachFromBIM();
 
-    //! Check that syncinfo is open and attached to the BIM
+    //! Check that this is ready to manage ExternalSourceAspects.
     bool IsAttached() const {return m_isAttached;}
 
     //! Get a reference to the BIM

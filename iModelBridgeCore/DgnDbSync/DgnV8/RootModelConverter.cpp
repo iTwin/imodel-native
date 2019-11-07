@@ -131,6 +131,26 @@ DgnV8Api::DgnFileStatus RootModelConverter::_InitRootModel()
         }
 #endif
 
+    if (GetParams().IgnoreStaleFiles() || GetParams().ErrorOnStaleFiles())
+        {
+        bool anyStale = false;
+        for (auto v8File : m_v8Files)
+            {
+            DateTime ftime, xtime;
+            if (GetSyncInfo().IsStaleFile(&ftime, &xtime, *v8File))
+                {
+                anyStale = true;
+                auto sev = GetParams().ErrorOnStaleFiles() ? Converter::IssueSeverity::Fatal : Converter::IssueSeverity::Error;
+                ReportIssueV(sev, Converter::IssueCategory::InconsistentData(), Converter::Issue::FileIsStale(), Utf8String(v8File->GetFileName().c_str()).c_str(),
+                            xtime.ToString().c_str());
+                }
+            }
+        if (anyStale && GetParams().ErrorOnStaleFiles())
+            {
+            _OnFatalError();
+            }
+        }
+
     return WasAborted() ? DgnV8Api::DGNFILE_STATUS_UnknownError: DgnV8Api::DGNFILE_STATUS_Success;
     }
 

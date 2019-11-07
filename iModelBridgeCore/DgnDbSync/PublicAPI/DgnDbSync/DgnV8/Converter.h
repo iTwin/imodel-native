@@ -846,6 +846,7 @@ struct Converter
         L10N_STRING(InconsistentTransformsForEmbeddedReference)    // =="Inconsistent transform used for embedded reference %s. It was first seen with a different transform in %s"==
         L10N_STRING(RootAlreadyProcessedAsRef)      // =="This file has already been mapped into this iModel, not as a masterfile but as a reference attachment."==
         L10N_STRING(RootBelongsToAnotherJob)        // =="This file has already been mapped into this iModel as a masterfile by another iModel bridge job (%s)."==
+        L10N_STRING(FileIsStale)                    // =="This file is out of date. The version of this file that was last processed by a bridge was dated %s."==
 
         IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 

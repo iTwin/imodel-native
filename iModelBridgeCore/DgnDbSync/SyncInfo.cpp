@@ -290,6 +290,25 @@ bool SyncInfo::HasLastSaveTimeChanged(DgnV8FileCR v8File)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SyncInfo::IsStaleFile(DateTime* ftime, DateTime* xtime, DgnFileCR v8File)
+    {
+    auto el = m_converter.GetRepositoryLinkElement(m_converter.GetRepositoryLinkId(v8File));
+    if (!el.IsValid())
+        return false;
+    auto xsa = SyncInfo::RepositoryLinkExternalSourceAspect::GetAspect(*el);
+    if (!xsa.IsValid())
+        return false;
+    SyncInfo::V8FileInfo finfo = ComputeFileInfo(v8File);
+    if (ftime)
+        DateTime::FromUnixMilliseconds(*ftime, (uint64_t)(int64_t)finfo.m_lastSaveTime);
+    if (xtime)
+        DateTime::FromUnixMilliseconds(*xtime, (uint64_t)(int64_t)xsa.GetLastSaveTime());
+    return finfo.m_lastSaveTime < xsa.GetLastSaveTime();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 SyncInfo::ProxyGraphicExternalSourceAspect SyncInfo::ProxyGraphicExternalSourceAspect::CreateAspect(DgnModelCR bimDrawingModel, Utf8StringCR idPath, Utf8StringCR propsJson, DgnDbR db) 
