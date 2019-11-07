@@ -1699,6 +1699,26 @@ TEST_F(SchemaValidatorTests, EmbeddingRelationshipsShouldNotContainHasInClassNam
     ASSERT_FALSE(validator.Validate(*schema)) << "Should fail validation as relationship is embedding and contains 'Has'";
     }
     {
+    Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='BadSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECEntityClass typeName='TestClass'>"
+        "        <BaseClass>bis:Element</BaseClass>"
+        "    </ECEntityClass>"
+        "    <ECRelationshipClass typeName='OtherRelationshipHASBadString' strength='embedding' modifier='Sealed'>"
+        "        <Source multiplicity='(0..1)' roleLabel='read from source to target' polymorphic='true'>"
+        "            <Class class='TestClass'/>"
+        "        </Source>"
+        "        <Target multiplicity='(0..*)' roleLabel='read from target to source' polymorphic='true'>"
+        "            <Class class='TestClass'/>"
+        "        </Target>"
+        "    </ECRelationshipClass>"
+        "</ECSchema>";
+    InitBisContextWithSchemaXml(badSchemaXml.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_FALSE(validator.Validate(*schema)) << "Should fail validation as relationship is embedding and contains 'HAS'";
+    }
+    {
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
         "<ECSchema schemaName='GoodSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
@@ -1757,6 +1777,46 @@ TEST_F(SchemaValidatorTests, EmbeddingRelationshipsShouldNotContainHasInClassNam
     InitBisContextWithSchemaXml(badSP3dSchema.c_str());
     ASSERT_TRUE(schema.IsValid());
     ASSERT_FALSE(validator.Validate(*schema)) << "Should fail validation because the SP3D is not at the beginning of the schema name, therefore the exception does not apply.";
+    }
+    {
+    Utf8String opSchema = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='ProcessFunctional' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECEntityClass typeName='TestClass'>"
+        "        <BaseClass>bis:Element</BaseClass>"
+        "    </ECEntityClass>"
+        "    <ECRelationshipClass typeName='RelationshipHasBadString' strength='embedding' modifier='Sealed'>"
+        "        <Source multiplicity='(0..1)' roleLabel='read from source to target' polymorphic='true'>"
+        "            <Class class='TestClass'/>"
+        "        </Source>"
+        "        <Target multiplicity='(0..*)' roleLabel='read from target to source' polymorphic='true'>"
+        "            <Class class='TestClass'/>"
+        "        </Target>"
+        "    </ECRelationshipClass>"
+        "</ECSchema>";
+    InitBisContextWithSchemaXml(opSchema.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(validator.Validate(*schema)) << "Should succeed validation since the ProcessFunctional schema has an exception for this rule.";
+    }
+    {
+    Utf8String opSchema = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='ProcessPhysical' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECEntityClass typeName='TestClass'>"
+        "        <BaseClass>bis:Element</BaseClass>"
+        "    </ECEntityClass>"
+        "    <ECRelationshipClass typeName='RelationshipHasBadString' strength='embedding' modifier='Sealed'>"
+        "        <Source multiplicity='(0..1)' roleLabel='read from source to target' polymorphic='true'>"
+        "            <Class class='TestClass'/>"
+        "        </Source>"
+        "        <Target multiplicity='(0..*)' roleLabel='read from target to source' polymorphic='true'>"
+        "            <Class class='TestClass'/>"
+        "        </Target>"
+        "    </ECRelationshipClass>"
+        "</ECSchema>";
+    InitBisContextWithSchemaXml(opSchema.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(validator.Validate(*schema)) << "Should succeed validation since the ProcessFunctional schema has an exception for this rule.";
     }
     }
 
