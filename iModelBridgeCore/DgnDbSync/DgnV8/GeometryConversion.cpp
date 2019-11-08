@@ -2480,10 +2480,16 @@ void BuildNewElement(Dgn::GeometryBuilderPtr& builder, DgnClassId elementClassId
     if (!builder.IsValid())
         return;
 
-    DgnClassId      childClassId = m_converter.ComputeElementClassIgnoringEcContent(v8eh, m_v8mt);
+    DgnClassId      childClassId;
     DgnCode         childCode;
 
-    if (m_converter.WantDebugCodes())
+    for (auto xdomain : XDomainRegistry::s_xdomains)
+        xdomain->_DetermineElementParams(childClassId, childCode, categoryId, v8eh, m_converter, nullptr, m_v8mt);
+
+    if (!childClassId.IsValid())
+        childClassId = m_converter.ComputeElementClassIgnoringEcContent(v8eh, m_v8mt);
+
+    if (!childCode.IsValid() && m_converter.WantDebugCodes())
         childCode = m_converter.CreateDebuggingCode(v8eh);
 
     DgnElementPtr   gel = Converter::CreateNewElement(m_model, childClassId, categoryId, childCode);
