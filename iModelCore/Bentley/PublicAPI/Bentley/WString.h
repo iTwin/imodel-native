@@ -331,7 +331,7 @@ struct Utf8String : public bastring
     size_type SizeInBytes() const {return (sizeof (value_type) * (size() + 1));}
 
     //! Test if this string contains only characters less than or equal to 127.
-    BENTLEYDLL_EXPORT bool IsAscii();
+    BENTLEYDLL_EXPORT bool IsAscii() const;
     //! Replace the contents of this string with a formatted result. 
     //! @param format The sprintf-like format string. 
     //! @param argptr The variable-length argument list

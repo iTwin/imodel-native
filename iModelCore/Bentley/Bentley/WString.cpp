@@ -328,7 +328,7 @@ bool WString::EndsWithI (WCharCP value) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Utf8String::IsAscii ()
+bool Utf8String::IsAscii () const
     {
     for (Utf8CP p = c_str(); 0 != *p; ++p)
         {
