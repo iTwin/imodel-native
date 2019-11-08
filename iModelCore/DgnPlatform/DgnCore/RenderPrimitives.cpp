@@ -1936,7 +1936,7 @@ PolyfaceList SharedGeom::GetPolyfaces(double chordTolerance, NormalMode normalMo
             // Polyface polyface(*thisPolyface.m_displayParams, *thisPolyface.m_polyface->Clone());
             // auto const& displayParams = nullptr != instance ? instance->GetDisplayParams() : *m_key.m_displayParams;
             auto displayParams = CloneDisplayParamsForInstance(*thisPolyface.m_displayParams, nullptr != instance ? instance->GetDisplayParams() : GetDisplayParams());
-            Polyface polyface(*displayParams, *thisPolyface.m_polyface->Clone());
+            Polyface polyface = thisPolyface.Clone(*displayParams);
             if (nullptr != instance)
                 polyface.Transform(instance->GetTransform());
 
