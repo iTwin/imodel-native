@@ -2987,9 +2987,13 @@ BentleyStatus SpatialConverterBase::DoConvertSpatialElement(ElementConversionRes
     if (v8eh.GetElementType() == DgnV8Api::EXTENDED_ELM &&  // Quickly reject non-106
         DgnV8Api::ElementHandlerManager::GetHandlerId(v8eh) == DgnV8Api::PointCloudHandler::GetElemHandlerId())
         {
-        return _ConvertPointCloudElement(v8eh, v8mm, true, isNewElement);
-        }
+        bool doCopy = true;
+        Bentley::WString serverConfigVar;
+        if (_GetParamsR().DoRealityDataUpload() || GetConfig().GetOptionValueBool("DoRealityDataUpload", false) || SUCCESS == DgnV8Api::ConfigurationManager::GetVariable(serverConfigVar, L"DGNDB_REALITY_MODEL_UPLOAD"))
+            doCopy = false;
 
+        return _ConvertPointCloudElement(v8eh, v8mm, doCopy, isNewElement);
+        }
     return ConvertElement(results, v8eh, v8mm, GetSyncInfo().GetCategory(v8eh, v8mm), false, isNewElement);
     }
 
