@@ -126,6 +126,7 @@
         <ProductDirectory Name="VendorNotices"              RelativeTo="applicationroot" Path="notices" LibType="Static"/>
         <ProductDirectory Name="BentleyEulaDelivery"        RelativeTo="applicationroot" Path="notices"/>
         <ProductDirectory Name="Assemblies"                 RelativeTo="applicationroot"/>
+        <ProductDirectory Name="CrashpadHandler"            RelativeTo="Assemblies"/>
         <ProductDirectory Name="dgnplatformlinestylersc"    RelativeTo="applicationroot" Path="LineStyles"/>
         <ProductDirectory Name="PublisherLoggingConfigXml"  RelativeTo="applicationroot"/>
         <ProductDirectory Name="DgnV8Dlls"                  RelativeTo="applicationroot" Path="DgnV8"/>

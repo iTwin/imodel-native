@@ -22,11 +22,14 @@
 #include <iModelBridge/IModelClientForBridges.h>
 #include <BentleyLog4cxx/log4cxx.h>
 #include <iModelBridge/iModelBridgeLdClient.h>
-#include "iModelCrashProcessor.h"
-#include "iModelBridgeErrorHandling.h"
 #include <regex>
 #include "../iModelBridgeSettings.h"
 #include <WebServices/iModelHub/Client/Error.h>
+#include "CrashProcessor.h"
+
+#if defined (BENTLEYCONFIG_OS_WINDOWS)
+#include <DgnPlatform\DesktopTools\w32tools.h>
+#endif
 
 #include "OidcSignInManager.h"
 #include <DgnPlatform/DgnGeoCoord.h>
@@ -70,7 +73,6 @@ static iModelBridge* s_bridgeForTesting;
 static IModelBridgeRegistry* s_registryForTesting;
 
 static int s_maxWaitForMutex = 60000;
-static iModelBridgeErrorHandling::Config s_crashDumpConfig;
 
 void iModelBridgeFwk::SetBridgeForTesting(iModelBridge& b)
     {
@@ -199,26 +201,27 @@ void iModelBridgeFwk::JobDefArgs::PrintUsage()
     {
     fwprintf (stderr,
         L"JOB ENVIRONMENT:\n"
-        L"--fwk-bridge-library=       (optional)  The full path to the bridge library. Specify this instead of --fwk-bridge-regsubkey.\n"
-        L"--fwk-bridge-regsubkey=     (optional)  The registry subkey of a bridge that is installed on this machine. Specify this instead of --fwk-bridge-library.\n"
-        L"--fwk-staging-dir=          (required)  The staging directory.\n"
-        L"--fwk-input=                (required)  Input file name. Specify only one.\n"
-        L"--fwk-input-sheet=          (required)  Input sheet file name. Can be more than one.\n"
-        L"--fwk-revision-comment=     (optional)  The revision comment. Can be more than one.\n"
-        L"--fwk-logging-config-file=  (optional)  The name of the logging configuration file.\n"
-        L"--fwk-argsJson=             (optional)  Additional arguments in JSON format.\n"
-        L"--fwk-max-wait=milliseconds (optional)  The maximum amount of time to wait for other instances of this job to finish. Default value is 60000ms\n"
-        L"--fwk-assetsDir=            (optional)  Asset directory for the iModelBridgeFwk resources if default location is not suitable.\n"
-        L"--fwk-bridgeAssetsDir=      (optional)  Asset directory for the iModelBridge resources if default location is not suitable.\n"
-        L"--fwk-imodelbank-url=       (optional)  The URL of the iModelBank server to use. If none is provided, then iModelHub will be used.\n"
-        L"--fwk-job-subject-name=     (optional)  The unique name of the Job Subject element that the bridge must use.\n"
-        L"--fwk-jobrun-guid=          (optional)  A unique GUID that identifies this job run for activity tracking. This will be passed along to all dependant services and logs.\n"
-        L"--fwk-jobrequest-guid=      (optional)  A unique GUID that identifies this job run for correlation. This will be limited to the native callstack.\n"
-        L"--fwk-ignore-stale-files    (optional)  Should bridges ignore any file whose last-saved-time is BEFORE that last-saved-time recorded for that file in the iModel?. The default is false (that is, process such files, looking for differences).\n"
-        L"--fwk-error-on-stale-files  (optional)  Should bridges fail and report an error if they encounter a file whose last-saved-time is BEFORE that last-saved-time recorded for that file in the iModel?. The default is false (that is, don't fail on stale files).\n"
-        L"--fwk-no-mergeDefinitions   (optional)  Do NOT merge definitions such as levels/layers and materials by name from different root models and bridges into the public dictionary model. Instead, keep definitions separate by job subject. The default is false (that is, merge definition).\n"
-        L"--fwk-status-message-sink-url= (optional) The URL of a WebServer that will process progress meter and status messages\n"
-        L"--fwk-status-message-interval= (optional) The number of milliseconds to wait before sending another status or progress meter message to the status message server. The default is 1000 milliseconds.\n"
+        L"--fwk-bridge-library=             (optional)  The full path to the bridge library. Specify this instead of --fwk-bridge-regsubkey.\n"
+        L"--fwk-bridge-regsubkey=           (optional)  The registry subkey of a bridge that is installed on this machine. Specify this instead of --fwk-bridge-library.\n"
+        L"--fwk-staging-dir=                (required)  The staging directory.\n"
+        L"--fwk-input=                      (required)  Input file name. Specify only one.\n"
+        L"--fwk-input-sheet=                (required)  Input sheet file name. Can be more than one.\n"
+        L"--fwk-revision-comment=           (optional)  The revision comment. Can be more than one.\n"
+        L"--fwk-logging-config-file=        (optional)  The name of the logging configuration file.\n"
+        L"--fwk-argsJson=                   (optional)  Additional arguments in JSON format.\n"
+        L"--fwk-max-wait=milliseconds       (optional)  The maximum amount of time to wait for other instances of this job to finish. Default value is 60000ms\n"
+        L"--fwk-assetsDir=                  (optional)  Asset directory for the iModelBridgeFwk resources if default location is not suitable.\n"
+        L"--fwk-bridgeAssetsDir=            (optional)  Asset directory for the iModelBridge resources if default location is not suitable.\n"
+        L"--fwk-imodelbank-url=             (optional)  The URL of the iModelBank server to use. If none is provided, then iModelHub will be used.\n"
+        L"--fwk-job-subject-name=           (optional)  The unique name of the Job Subject element that the bridge must use.\n"
+        L"--fwk-jobrun-guid=                (optional)  A unique GUID that identifies this job run for activity tracking. This will be passed along to all dependant services and logs.\n"
+        L"--fwk-jobrequest-guid=            (optional)  A unique GUID that identifies this job run for correlation. This will be limited to the native callstack.\n"
+        L"--fwk-ignore-stale-files          (optional)  Should bridges ignore any file whose last-saved-time is BEFORE that last-saved-time recorded for that file in the iModel?. The default is false (that is, process such files, looking for differences).\n"
+        L"--fwk-error-on-stale-files        (optional)  Should bridges fail and report an error if they encounter a file whose last-saved-time is BEFORE that last-saved-time recorded for that file in the iModel?. The default is false (that is, don't fail on stale files).\n"
+        L"--fwk-no-mergeDefinitions         (optional)  Do NOT merge definitions such as levels/layers and materials by name from different root models and bridges into the public dictionary model. Instead, keep definitions separate by job subject. The default is false (that is, merge definition).\n"
+        L"--fwk-status-message-sink-url=    (optional)  The URL of a WebServer that will process progress meter and status messages\n"
+        L"--fwk-status-message-interval=    (optional)  The number of milliseconds to wait before sending another status or progress meter message to the status message server. The default is 1000 milliseconds.\n"
+        L"--fwk-enable-crash-reporting      (optional)  Opt-in to crash reporting and potential upload\n"
         );
     }
 
@@ -881,11 +884,11 @@ BentleyStatus iModelBridgeFwk::AssertPreConditions()
 BentleyStatus iModelBridgeFwk::DoInitial(iModelBridgeFwk::FwkContext& context)
     {
     // ***
-	// ***
-	// *** DO NOT CHANGE THE ORDER OF THE STEPS BELOW
-	// *** Talk to Sam Wilson if you need to make a change.
-	// ***
-	// ***
+    // ***
+    // *** DO NOT CHANGE THE ORDER OF THE STEPS BELOW
+    // *** Talk to Sam Wilson if you need to make a change.
+    // ***
+    // ***
 
     // ***
     // *** TRICKY: Do not call InitBridge until AFTER we try to acquire the briefcase.
@@ -1156,8 +1159,8 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params, FwkRepoAdmin
     //Set up Dms files would have loaded the DMS accesor. Set it on the params for the Dgnv8 Bridge
     params.m_dmsSupport = m_dmsSupport;
     params.SetPushIntermediateRevisions(iModelBridge::Params::PushIntermediateRevisions::ByFile);
-	if (!m_jobEnvArgs.m_jobSubjectName.empty())
-		params.SetBridgeJobName(m_jobEnvArgs.m_jobSubjectName);
+    if (!m_jobEnvArgs.m_jobSubjectName.empty())
+        params.SetBridgeJobName(m_jobEnvArgs.m_jobSubjectName);
     params.SetMergeDefinitions(m_jobEnvArgs.m_mergeDefinitions);
 
     params.SetIgnoreStaleFiles(m_jobEnvArgs.m_ignoreStaleFiles);
@@ -1249,10 +1252,10 @@ BentleyStatus iModelBridgeFwk::InitBridge()
 
     SetBridgeParams(m_bridge->_GetParams(), m_repoAdmin);    // make sure that MY definition of these params is used!
 
-	if (BSISUCCESS != m_bridge->TrackUsage())
-		{
-		LOG.error("Bridge Usage tracking failed. Please ignore if OIDC is not initialized.");
-		}
+    if (BSISUCCESS != m_bridge->TrackUsage())
+        {
+        LOG.error("Bridge Usage tracking failed. Please ignore if OIDC is not initialized.");
+        }
 
     if (BSISUCCESS != m_bridge->_Initialize((int)m_bargptrs.size(), m_bargptrs.data()))
         return BentleyStatus::ERROR;
@@ -1405,17 +1408,60 @@ struct LoggingContext //This class allows to pass in a logging sequence id to re
         }
     };
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     09/2019
+//---------------------------------------------------------------------------------------
+#if defined (BENTLEYCONFIG_OS_WINDOWS)
+
+// N.B. The EXCEPTION_POINTERS are only available during this exception filter callback.
+// We need to perform cleanup before terminating, so we need to create the dump here manually,
+// and then continue to perform cleanup before termianting.
+int windows_filterException(EXCEPTION_POINTERS* ptrs)
+    {
+    CrashProcessor* crashProc = CrashProcessor::GetInstance();
+    if (nullptr == crashProc)
+        return EXCEPTION_CONTINUE_SEARCH; // Act as if no manual crash processing.
+
+    crashProc->CreateDump(ptrs);
+
+    win32Tools_resetFloatingPointExceptions(0); // Sam had this previously... not sure why... but keeping until proven otherwise
+    return EXCEPTION_EXECUTE_HANDLER; // Ignore the exception for now so we can perform cleanup.
+    }
+
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+int iModelBridgeFwk::UpdateExistingBimWithExceptionHandling(iModelBridgeFwk::FwkContext& context)
+{
+#if defined (BENTLEYCONFIG_OS_WINDOWS)
+    __try
+        {
+#endif
+        return UpdateExistingBim(context);
+#if defined (BENTLEYCONFIG_OS_WINDOWS)
+        }
+    __except (windows_filterException(GetExceptionInformation()))
+        {
+        fprintf(stderr, "Unhandled exception in UpdateExistingBim. Attempting to release public locks...\n");
+        }
+
+    return RETURN_STATUS_UNHANDLED_EXCEPTION;
+#endif
+}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     {
     // ***
-	// ***
-	// *** DO NOT CHANGE THE ORDER OF THE STEPS IN THIS FUNCTION.
-	// *** Talk to Sam Wilson if you need to make a change.
-	// ***
-	// ***
+    // ***
+    // *** DO NOT CHANGE THE ORDER OF THE STEPS IN THIS FUNCTION.
+    // *** Talk to Sam Wilson if you need to make a change.
+    // ***
+    // ***
     StopWatch setUpTimer(true);
     Utf8String connectProjectId, iModelId;
     if (m_useIModelHub && NULL != m_iModelHubArgs)
@@ -1505,6 +1551,23 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
         return errorContext.GetIntErrorId();
         }
 
+    // Initialize crash reporting.
+    if (m_jobEnvArgs.m_isCrashReportingEnabled)
+        {
+        // We intentionally create BUDDI URLs matching bridge application names to get the Sentry endpoint.
+        CrashProcessor& crashProc = CrashProcessor::CreateSentryInstance(m_bridge->_GetParams().GetClientInfo()->GetApplicationName().c_str());
+
+        crashProc.SetAnnotation(CrashProcessor::CommonAnnotation::JOB_Id, m_jobEnvArgs.m_jobRequestId.c_str());
+        crashProc.SetAnnotation(CrashProcessor::CommonAnnotation::JOB_CorrelationId, m_jobEnvArgs.m_jobRunCorrelationId.c_str());
+        
+        if (m_useIModelHub)
+            {
+            crashProc.SetAnnotation(CrashProcessor::CommonAnnotation::IMH_UserName, m_iModelHubArgs->m_credentials.GetUsername().c_str());
+            crashProc.SetAnnotation(CrashProcessor::CommonAnnotation::IMH_RpositoryName, m_iModelHubArgs->m_repositoryName.c_str());
+            crashProc.SetAnnotation(CrashProcessor::CommonAnnotation::IMH_ProjectId, m_iModelHubArgs->m_bcsProjectId.c_str());
+            }
+        }
+    
     // Initialize the DgnViewLib Host.
     m_repoAdmin = new FwkRepoAdmin(*this);  // TRICKY: This is ultimately passed to the host as a host variable, and host terimation will delete it.
     iModelBridge::Params params;
@@ -1535,8 +1598,6 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     GetProgressMeter().AddSteps(3);
 
     iModelBridge::LogPerformance(setUpTimer, "Initialized iModelBridge Fwk");
-
-    iModelCrashProcessor::GetInstance().SetRunInfo(m_jobEnvArgs.m_jobRequestId, m_jobEnvArgs.m_jobRunCorrelationId);
 
     LOG.tracev(L"Logging into iModel Hub");
     GetProgressMeter().SetCurrentStepName("Contacting the iModel Server");
@@ -1957,28 +2018,6 @@ BentleyStatus iModelBridgeFwk::MustHoldJobSubjectLock()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-int iModelBridgeFwk::UpdateExistingBimWithExceptionHandling(iModelBridgeFwk::FwkContext& context)
-    {
-    IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
-        {
-        return UpdateExistingBim(context);
-        }
-    IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(OnUnhandledException("UpdateExistingBim"))
-    return RETURN_STATUS_UNHANDLED_EXCEPTION;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void iModelBridgeFwk::OnUnhandledException(Utf8CP phase)
-    {
-    fprintf(stderr, "Unhandled exception in %s. Releasing public locks and doing other cleanup\n", phase);
-    Briefcase_ReleaseAllPublicLocks(true);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 int iModelBridgeFwk::MakeSchemaChanges(iModelBridgeCallOpenCloseFunctions& callCloseOnReturn)
@@ -2352,11 +2391,11 @@ int iModelBridgeFwk::UpdateExistingBim(iModelBridgeFwk::FwkContext& context)
     BeAssert(Briefcase_IsInitialized());
 
     // ***
-	// ***
-	// *** DO NOT CHANGE THE ORDER OF THE STEPS IN THIS FUNCTION.
-	// *** Talk to Sam Wilson if you need to make a change.
-	// ***
-	// ***
+    // ***
+    // *** DO NOT CHANGE THE ORDER OF THE STEPS IN THIS FUNCTION.
+    // *** Talk to Sam Wilson if you need to make a change.
+    // ***
+    // ***
 
 
     //                                      ************************************************
@@ -2678,20 +2717,18 @@ int iModelBridgeFwk::Run(int argc, WCharCP argv[])
 
     int res = RETURN_STATUS_UNHANDLED_EXCEPTION;
 
-    if (m_jobEnvArgs.m_isCrashReportingEnabled)
+#if defined (BENTLEYCONFIG_OS_WINDOWS)
+    __try
         {
-        iModelBridgeErrorHandling::Initialize(s_crashDumpConfig);
-        // TODO: s_crashDumpConfig.m_uploadUrl = ...
-        }
-
-    IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
-        {
+#endif
         res = RunExclusive(argc, argv);
+#if defined (BENTLEYCONFIG_OS_WINDOWS)
         }
-    IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS
+    __except (windows_filterException(GetExceptionInformation()))
         {
-        fprintf(stderr, "Unhandled exception terminated bridge.\n");
+        fprintf(stderr, "Unhandled exception in iModelBridgeFwk::Run.\n");
         }
+#endif
 
 #ifdef _WIN32
     ::ReleaseMutex(mutex);

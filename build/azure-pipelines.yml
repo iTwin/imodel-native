@@ -78,6 +78,7 @@ jobs:
       BB_ARCH: x64
       BDF_DIR: $(Pipeline.Workspace)/bdf
       VERSIONS_FILE: $(BDF_DIR)/versions.json
+      CREATE_STRIPPED_PDBS: 1
 
     steps:
       - template: ./templates/build.yml
@@ -109,6 +110,7 @@ jobs:
             **/*.pdb
             !**/objects.pdb
             !**/*Test*/**/*
+            !**/*-stripped.pdb
           DestinationPath: '$(Build.ArtifactStagingDirectory)/Symbols-Winx64'
       
       - task: PublishSymbols@2
@@ -121,6 +123,42 @@ jobs:
           SymbolServerType: TeamServices
           SymbolsProduct: imodel02
           SymbolsArtifactName: 'imodel02_Symbols_Winx64'
+
+      - powershell: |
+          $ErrorActionPreference = "Stop"
+          function runCommand([String]$command) { Write-Host $command; Invoke-Expression "& $command" }
+
+          # Quick hack to act like a "tool installer" task.
+          $sentryVer = "1.49.0"
+          $sentryCmd = "$(Agent.ToolsDirectory)/sentry/$sentryVer/x64/sentry-cli.exe"
+          if (-Not (Test-Path $sentryCmd)) {
+            $sentryCmdDir = [System.IO.Path]::GetDirectoryName($sentryCmd)
+            if (-Not (Test-Path $sentryCmdDir)) { mkdir $sentryCmdDir }
+            Copy-Item "\\winxx\DevProg\sentry_io\$sentryVer\sentry-cli-Windows-x86_64.exe" $sentryCmd
+          }
+
+          $authToken = "$(SENTRY_AUTH_TOKEN)"
+          $orgSlug = "bentley-systems-inc"
+          $prjSlug = "imodelbridgeservice-microstation"
+          $walkDir = "$(Build.BinariesDirectory)/Winx64/build"
+          
+          Write-Host "Walking $walkDir for PDBs"
+          $pdbs = (Get-ChildItem -Recurse -Filter "*.pdb" -Path $walkDir)
+          Write-Host "Found $($pdbs.Length) total PDB(s)"
+          $pdbs = $pdbs | Where-Object { $_.Name -like "*stripped*" }
+          Write-Host "Found $($pdbs.Length) stripped PDB(s)"
+          $pdbs = $pdbs | Where-Object { -not ($_.Name -like "*test*") }
+          $pdbs = $pdbs | Where-Object { -not ($_.Name -eq "objects.pdb") }
+          Write-Host "Found $($pdbs.Length) PDB(s) to upload"
+
+          foreach ($pdb in $pdbs) {
+              $pdb = $pdb.FullName
+              Write-Output "`n== $pdb ".PadRight(100, "=")
+              runCommand("$sentryCmd difutil check $pdb")
+              runCommand("$sentryCmd --auth-token $authToken upload-dif -t pdb -o $orgSlug -p $prjSlug $pdb")
+          }
+        displayName: Upload MstnBridge PDBs to Sentry
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'MstnBridge'))
 
       - publish: $(Build.BinariesDirectory)/Winx64/Nugetpkg/iModelCoreNuget
         displayName: Save iModelCoreNuget_x64

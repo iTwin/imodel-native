@@ -494,6 +494,12 @@ class CrashpadClient {
   //!     similar.
   static void DumpWithoutCrash(const CONTEXT& context);
 
+// BEGIN BENTLEY CHANGES
+  // Similar to DumpWithoutCrash(const CONTEXT&), but allows the caller to provide a more detailed EXCEPTION_POINTERS.
+  // This is a special case for when a caller can emit a crash, but then perform cleanup logic before actually terminating.
+  static void DumpWithoutCrash(EXCEPTION_POINTERS*);
+// END BENTLEY CHANGES
+
   //! \brief Requests that the handler capture a dump using the given \a
   //!     exception_pointers to get the `EXCEPTION_RECORD` and `CONTEXT`.
   //!

@@ -354,7 +354,6 @@ protected:
     int DoNormalUpdate();
     int OnAllDocsProcessed();
     BentleyStatus LockAllJobSubjects();
-    void OnUnhandledException(Utf8CP);
     Utf8String GetRevisionComment();
     void SetBridgeParams(iModelBridge::Params&, FwkRepoAdmin*);
     BentleyStatus ReleaseBridge();

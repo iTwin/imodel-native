@@ -1,30 +1,38 @@
 #--------------------------------------------------------------------------------------
-#
 #  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-#
 #--------------------------------------------------------------------------------------
 %include mdl.mki
 
-appName = iModelBridgeFwkLib
-o = $(OutputRootDir)Build/$(appName)/
+o = $(PartBuildDir)
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+%if defined (BMAKE_DELETE_ALL_TARGETS)
+    always:
+        -$(rmdirRecursiveCmd) $(o)
+    
+    %return
+%endif
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+always:
+    ~mkdir $(o)
+
+AppName = iModelBridgeFwkLib
+CCompPDBName = $(AppName)
+RegistryDir = $(baseDir)Registry/
+iModelBridgeAPISrc = $(SrcRoot)imodel02/iModelBridgeCore/DgnDbSync/PublicAPI/iModelBridge/
+iModelBridgePrivateAPISrc = $(SrcRoot)imodel02/iModelBridgeCore/DgnDbSync/PrivateAPI/
 
 nameToDefine = __IMODEL_BRIDGE_FWK_BUILD__
 %include cdefapnd.mki
 
-always:
-    ~mkdir $(o)
-
-iModelBridgeAPISrc     = $(SrcRoot)imodel02/iModelBridgeCore/DgnDbSync/PublicAPI/iModelBridge/
-RegistryDir = $(baseDir)Registry/
-
-iModelBridgePrivateAPISrc = $(SrcRoot)imodel02/iModelBridgeCore/DgnDbSync/PrivateAPI/
-
-dirToSearch  = $(iModelBridgePrivateAPISrc)
+dirToSearch = $(iModelBridgePrivateAPISrc)
 %include cincapnd.mki
 
-#--------------------------------------------------------------------------------------
-#   Compile the source
-#--------------------------------------------------------------------------------------
+dirToSearch = $(BuildContext)VendorAPI/crashpad
+%include cincapnd.mki
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
 MultiCompileDepends = $(_MakeFileSpec)
 
 %include MultiCppCompileRule.mki
@@ -53,74 +61,70 @@ $(o)OidcTokenProvider$(oext): $(baseDir)OidcTokenProvider.cpp  $(baseDir)OidcTok
 
 $(o)OidcToken$(oext): $(baseDir)OidcToken.cpp  $(baseDir)OidcToken.h ${MultiCompileDepends}
 
-$(o)iModelBridgeErrorHandling$(oext) : $(_MakeFilePath)iModelBridgeErrorHandling.cpp $(baseDir)iModelBridgeErrorHandling.h ${MultiCompileDepends}
-
 $(o)ProgressMeter$(oext): $(baseDir)ProgressMeter.cpp $(iModelBridgeAPISrc)iModelBridgeFwk.h ${MultiCompileDepends}
 
-%if $(TARGET_PLATFORM)=="Windows"
+$(o)CrashProcessor$(oext): $(baseDir)CrashProcessor.cpp $(baseDir)CrashProcessor.h ${MultiCompileDepends}
 
-$(o)iModelCrashProcessor$(oext) : $(_MakeFilePath)iModelCrashProcessor.cpp $(_MakeFilePath)iModelCrashProcessor.h ${MultiCompileDepends}
-
-%endif
+$(o)CrashProcessorHttp$(oext): $(baseDir)CrashProcessorHttp.cpp $(baseDir)CrashProcessor.h ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 
-#--------------------------------------------------------------------------------------
-#   Create the library
-#--------------------------------------------------------------------------------------
-DLM_NAME                    = $(appName)
-DLM_OBJECT_FILES            = $(MultiCompileObjectList)
-DLM_OBJECT_DEST             = $(o)
-DLM_DEST                    = $(o)
-DLM_EXPORT_DEST             = $(o)
-DLM_NOENTRY                 = 1
-DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
-DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+DLM_NAME = $(AppName)
+DLM_OBJECT_FILES = $(MultiCompileObjectList)
+DLM_OBJECT_DEST = $(o)
+DLM_DEST = $(o)
+DLM_EXPORT_DEST = $(o)
+DLM_NOENTRY = 1
+DLM_CONTEXT_LOCATION = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1
 
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeHttp$(libext)
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)Bentley$(libext)
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)iModelHubClient$(libext)
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)iModelBridge$(libext)
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)WebServicesClient$(libext)
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(stlibext)
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)bentleylog4cxx$(stlibext)
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeXml$(libext)
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext)
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext)
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext)
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BaseGeoCoord$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BaseGeoCoord$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeHttp$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(stlibext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)Bentley$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)bentleylog4cxx$(stlibext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeXml$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)iModelBridge$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)iModelHubClient$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)WebServicesClient$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsStaticLibs)$(stlibprefix)CrashpadClient$(stlibext)
 
 %if $(TARGET_PLATFORM)=="Windows" || $(TARGET_PLATFORM)=="WinRT"
-LINKER_LIBRARIES  + Crypt32.lib Version.lib
+    LINKER_LIBRARIES + Crypt32.lib
+    LINKER_LIBRARIES + Version.lib
 %endif
 
 %include $(sharedMki)linkLibrary.mki
 
-$(BuildContext)Delivery/$(appname)/iModelBridgeFwk.logging.config.xml : $(baseDir)logging.config.xml
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+$(BuildContext)Delivery/$(AppName)/iModelBridgeFwk.logging.config.xml : $(baseDir)logging.config.xml
     $(LinkFirstDepToFirstTarget)
 
-$(BuildContext)Delivery/$(appname)/iModelBridgeFwk.trace.logging.config.xml : $(baseDir)iModelBridgeFwk.trace.logging.config.xml
+$(BuildContext)Delivery/$(AppName)/iModelBridgeFwk.trace.logging.config.xml : $(baseDir)iModelBridgeFwk.trace.logging.config.xml
     $(LinkFirstDepToFirstTarget)    
 
-$(BuildContext)Delivery/$(appname)/iModelBridgeFwk.info.logging.config.xml : $(baseDir)iModelBridgeFwk.info.logging.config.xml
+$(BuildContext)Delivery/$(AppName)/iModelBridgeFwk.info.logging.config.xml : $(baseDir)iModelBridgeFwk.info.logging.config.xml
     $(LinkFirstDepToFirstTarget) 
     
-$(BuildContext)Delivery/$(appname)/iModelBridgeFwk.debug.logging.config.xml : $(baseDir)iModelBridgeFwk.debug.logging.config.xml
+$(BuildContext)Delivery/$(AppName)/iModelBridgeFwk.debug.logging.config.xml : $(baseDir)iModelBridgeFwk.debug.logging.config.xml
     $(LinkFirstDepToFirstTarget)  
 
-$(BuildContext)Delivery/$(appname)/iModelBridgeFwk.warn.logging.config.xml : $(baseDir)iModelBridgeFwk.warn.logging.config.xml
+$(BuildContext)Delivery/$(AppName)/iModelBridgeFwk.warn.logging.config.xml : $(baseDir)iModelBridgeFwk.warn.logging.config.xml
     $(LinkFirstDepToFirstTarget)  
 
-$(BuildContext)Delivery/$(appname)/iModelBridgeFwk.error.logging.config.xml : $(baseDir)iModelBridgeFwk.error.logging.config.xml
+$(BuildContext)Delivery/$(AppName)/iModelBridgeFwk.error.logging.config.xml : $(baseDir)iModelBridgeFwk.error.logging.config.xml
     $(LinkFirstDepToFirstTarget)
 
-$(BuildContext)Delivery/$(appname)/iModelBridgeFwk.fatal.logging.config.xml : $(baseDir)iModelBridgeFwk.fatal.logging.config.xml
+$(BuildContext)Delivery/$(AppName)/iModelBridgeFwk.fatal.logging.config.xml : $(baseDir)iModelBridgeFwk.fatal.logging.config.xml
     $(LinkFirstDepToFirstTarget)  
 
-$(BuildContext)Delivery/$(appname)/iModelBridgeFwk.none.logging.config.xml : $(baseDir)iModelBridgeFwk.none.logging.config.xml
+$(BuildContext)Delivery/$(AppName)/iModelBridgeFwk.none.logging.config.xml : $(baseDir)iModelBridgeFwk.none.logging.config.xml
     $(LinkFirstDepToFirstTarget)  
-                       

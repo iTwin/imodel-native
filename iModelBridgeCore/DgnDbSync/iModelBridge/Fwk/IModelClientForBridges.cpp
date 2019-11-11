@@ -9,9 +9,9 @@
 #include <WebServices/Connect/ConnectSignInManager.h>
 #include <WebServices/Configuration/UrlProvider.h>
 #include <Bentley/Base64Utilities.h >
-#include "iModelCrashProcessor.h"
 
 #include "OidcSignInManager.h"
+
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_IMODELHUB
 USING_NAMESPACE_BENTLEY_HTTP
@@ -38,7 +38,6 @@ IModelClientBase::IModelClientBase(WebServices::ClientInfoPtr info, uint8_t maxR
     {
     UrlProvider::Initialize(environment, cacheTimeOutMs, getLocalState());
     ClientHelper::Initialize(m_clientInfo, getLocalState());
-    iModelCrashProcessor::GetInstance().SetClientInfo(info);
     }
 
 /*---------------------------------------------------------------------------------**//**

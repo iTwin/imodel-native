@@ -99,6 +99,8 @@
     <ProductDirectoryList ListName="iModelBridgeFwkDirList">
         <ProductDirectory Name="Assemblies"                                     Path="bin"      RelativeTo="Root"/>
         <ProductDirectory Name="Assemblies"                 LibType="Static"    Deliver="false"/>
+        <ProductDirectory Name="CrashpadHandler"                                Path="bin"      RelativeTo="Root"/>
+        <ProductDirectory Name="CrashpadHandler"            LibType="Static"    Path="bin"      RelativeTo="Root"/>
         <ProductDirectory Name="iModelBridgeDoc"                                Path="docs"     RelativeTo="Root"/>
         <ProductDirectory Name="iModelBridgeDoc"            LibType="Static"    Path="docs"     RelativeTo="Root"/>
         <ProductDirectory Name="Libs"                                           Path="lib"      RelativeTo="Root"/>
@@ -217,6 +219,7 @@
       <SubPart PartName="BeSecurity" PartFile="iModelCore/BeSecurity/BeSecurity" Repository="imodel02"/>
       <SubPart PartName="iModelDmsSupport" Repository="imodel02" PartFile="iModelBridgeCore/dmssupport/iModelDmsSupport"/>
       <SubPart PartName="cxxopts" Repository="bsicommon" PartFile="Libsrc-Nugets"/>
+      <SubPart PartName="CrashpadHandler" PartFile="iModelCore/libsrc/crashpad/crashpad"/>
       <Bindings>
         <Assemblies>Delivery/$(libprefix)iModelBridgeFwkLib$(ApiNumber)$(shlibext)</Assemblies>
         <Libs Required="false">Delivery/$(libprefix)iModelBridgeFwkLib$(libext)</Libs>

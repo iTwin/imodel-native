@@ -785,6 +785,31 @@ void CrashpadClient::DumpWithoutCrash(const CONTEXT& context) {
   PLOG_IF(ERROR, wfso_result != WAIT_OBJECT_0) << "WaitForSingleObject";
 }
 
+// BEGIN BENTLEY CHANGES
+// static
+void CrashpadClient::DumpWithoutCrash(EXCEPTION_POINTERS* exception_pointers) {
+  if (g_signal_non_crash_dump == INVALID_HANDLE_VALUE || g_non_crash_dump_done == INVALID_HANDLE_VALUE) {
+    LOG(ERROR) << "not connected";
+    return;
+  }
+
+  if (BlockUntilHandlerStartedOrFailed() == StartupState::kFailed) {
+    LOG(ERROR) << "crash server failed to launch, no dump captured";
+    return;
+  }
+
+  base::AutoLock lock(*g_non_crash_dump_lock);
+  g_non_crash_exception_information.thread_id = GetCurrentThreadId();
+  g_non_crash_exception_information.exception_pointers = FromPointerCast<WinVMAddress>(exception_pointers);
+
+  bool set_event_result = !!SetEvent(g_signal_non_crash_dump);
+  PLOG_IF(ERROR, !set_event_result) << "SetEvent";
+
+  DWORD wfso_result = WaitForSingleObject(g_non_crash_dump_done, INFINITE);
+  PLOG_IF(ERROR, wfso_result != WAIT_OBJECT_0) << "WaitForSingleObject";
+}
+// END BENTLEY CHANGES
+
 // static
 void CrashpadClient::DumpAndCrash(EXCEPTION_POINTERS* exception_pointers) {
   if (g_signal_exception == INVALID_HANDLE_VALUE) {
