@@ -75,7 +75,7 @@
     <Xml Include="RoadRailAlignment.PartFile.xml">
       <Filter>Build Files</Filter>
     </Xml>
-    <Xml Include="..\..\BisSchemas\Domains\RoadRailAlignment\RoadRailAlignment.ecschema.xml" />
+    <Xml Include="..\..\..\BisSchemas\Domains\Civil\RoadRailAlignment\RoadRailAlignment.ecschema.xml" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="RoadRailAlignmentInternal.cpp">

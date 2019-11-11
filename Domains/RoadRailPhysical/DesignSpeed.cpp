@@ -7,25 +7,14 @@
 #include <RoadRailPhysical/DesignSpeed.h>
 #include <RoadRailPhysical/RoadRailPhysicalDomain.h>
 
-HANDLER_DEFINE_MEMBERS(DesignSpeedHandler)
-HANDLER_DEFINE_MEMBERS(DesignSpeedDefinitionHandler)
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-DesignSpeedDefinition::DesignSpeedDefinition(CreateParams const& params):
-    T_Super(params)
-    {
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-DesignSpeedDefinition::DesignSpeedDefinition(CreateParams const& params, double designSpeedInMPerSec, UnitSystem unitSystem):
-    T_Super(params)
+DesignSpeedDefinition::DesignSpeedDefinition(DefinitionElementR element, double designSpeedInMPerSec, UnitSystem unitSystem):
+    T_Super(element)
     {
-    SetPropertyValue(BRRP_PROP_DesignSpeedDefinition_DesignSpeed, designSpeedInMPerSec);
-    SetPropertyValue(BRRP_PROP_DesignSpeedDefinition_UnitSystem, static_cast<int32_t>(unitSystem));
+    getP()->SetPropertyValue(BRRP_PROP_DesignSpeedDefinition_DesignSpeed, designSpeedInMPerSec);
+    getP()->SetPropertyValue(BRRP_PROP_DesignSpeedDefinition_UnitSystem, static_cast<int32_t>(unitSystem));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -55,7 +44,8 @@ DesignSpeedDefinitionCPtr DesignSpeedDefinition::QueryByCode(DefinitionModelCR m
 +---------------+---------------+---------------+---------------+---------------+------*/
 DesignSpeedDefinitionPtr DesignSpeedDefinition::Create(DefinitionModelCR model, double designSpeedInCodeUnits, UnitSystem unitSystem)
     {
-    CreateParams params(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, designSpeedInCodeUnits, unitSystem));
+    DefinitionElement::CreateParams params(model.GetDgnDb(), model.GetModelId(), 
+                                           QueryClassId(model.GetDgnDb()), CreateCode(model, designSpeedInCodeUnits, unitSystem));
     
     auto kphUnitCP = model.GetDgnDb().Schemas().GetUnit("Units", "KM_PER_HR");
     auto mphUnitCP = model.GetDgnDb().Schemas().GetUnit("Units", "MPH");
@@ -63,7 +53,7 @@ DesignSpeedDefinitionPtr DesignSpeedDefinition::Create(DefinitionModelCR model, 
 
     auto mPerSecUnitCP = model.GetDgnDb().Schemas().GetUnit("Units", "M_PER_SEC");
     auto mPerSecSpeedQty = speedQty.ConvertTo(mPerSecUnitCP);
-    return new DesignSpeedDefinition(params, mPerSecSpeedQty.GetMagnitude(), unitSystem);
+    return new DesignSpeedDefinition(*Create(model.GetDgnDb(), params), mPerSecSpeedQty.GetMagnitude(), unitSystem);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -71,25 +61,17 @@ DesignSpeedDefinitionPtr DesignSpeedDefinition::Create(DefinitionModelCR model, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 DesignSpeedDefinition::UnitSystem DesignSpeedDefinition::GetUnitSystem() const
     {
-    return static_cast<UnitSystem>(GetPropertyValueInt32(BRRP_PROP_DesignSpeedDefinition_UnitSystem));
+    return static_cast<UnitSystem>(get()->GetPropertyValueInt32(BRRP_PROP_DesignSpeedDefinition_UnitSystem));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DesignSpeed::DesignSpeed(CreateParams const& params):
-    T_Super(params)
-    {
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      10/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-DesignSpeed::DesignSpeed(CreateParams const& params, CreateFromToParams const& fromToParams) :
-    T_Super(params), ILinearlyLocatedSingleFromTo(fromToParams)
+DesignSpeed::DesignSpeed(SpatialLocationElementR element, CreateFromToParams const& fromToParams) :
+    T_Super(element), ILinearlyLocatedSingleFromTo(fromToParams)
     {
     _SetLinearElement(fromToParams.m_linearElementCPtr->GetElementId());
-    SetAttributedElement(fromToParams.m_designCriteriaCPtr->GetPathway().get());
+    SetAttributedElement(fromToParams.m_designCriteriaCPtr->GetPathway()->get());
     SetStartDefinition(*fromToParams.m_startDesignSpeedDefCPtr);
     SetEndDefinition(*fromToParams.m_endDesignSpeedDefCPtr);
     _AddLinearlyReferencedLocation(*_GetUnpersistedFromToLocation());    
@@ -100,7 +82,7 @@ DesignSpeed::DesignSpeed(CreateParams const& params, CreateFromToParams const& f
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DesignSpeed::SetStartDefinition(DesignSpeedDefinitionCR designSpeedDef)
     { 
-    SetPropertyValue(BRRP_PROP_DesignSpeed_StartDefinition, designSpeedDef.GetElementId(),
+    getP()->SetPropertyValue(BRRP_PROP_DesignSpeed_StartDefinition, designSpeedDef.GetElementId(),
         GetDgnDb().Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_DesignSpeedRefersToStartDefinition));
     }
 
@@ -109,7 +91,7 @@ void DesignSpeed::SetStartDefinition(DesignSpeedDefinitionCR designSpeedDef)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DesignSpeed::SetEndDefinition(DesignSpeedDefinitionCR designSpeedDef)
     {
-    SetPropertyValue(BRRP_PROP_DesignSpeed_EndDefinition, designSpeedDef.GetElementId(),
+    getP()->SetPropertyValue(BRRP_PROP_DesignSpeed_EndDefinition, designSpeedDef.GetElementId(),
         GetDgnDb().Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_DesignSpeedRefersToEndDefinition));
     }
 
@@ -122,8 +104,8 @@ DesignSpeedPtr DesignSpeed::Create(CreateFromToParams const& linearParams)
         return nullptr; 
 
     auto& dgnDbR = linearParams.m_designCriteriaCPtr->GetDgnDb();
-    CreateParams params(dgnDbR, linearParams.m_designCriteriaCPtr->GetSubModelId(), QueryClassId(dgnDbR),
+    SpatialLocationElement::CreateParams params(dgnDbR, linearParams.m_designCriteriaCPtr->GetSubModelId(), QueryClassId(dgnDbR),
         RoadRailCategory::GetDesignSpeed(dgnDbR));
     
-    return new DesignSpeed(params, linearParams);
+    return new DesignSpeed(*Create(dgnDbR, params), linearParams);
     }

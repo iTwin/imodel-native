@@ -163,11 +163,12 @@ DgnDbPtr RoadRailPhysicalProjectHost::CreateProject(WCharCP baseName)
 
     auto subjectCPtr = projectPtr->Elements().GetRootSubject();
     RoadRailAlignmentDomain::SetUpDefinitionPartitions(*subjectCPtr);
-    RoadRailPhysicalDomain::SetUpDefinitionPartitions(*subjectCPtr);
+    RailPhysicalDomain::SetUpDefinitionPartition(*subjectCPtr);
+    RoadPhysicalDomain::SetUpDefinitionPartition(*subjectCPtr);
 
     auto physicalPartitionCPtr = PhysicalModelUtilities::CreateAndInsertPhysicalPartitionAndModel(*subjectCPtr, "Physical");
 
-    auto roadNetworkCPtr = RoadRailNetwork::Insert(*physicalPartitionCPtr->GetSubModel()->ToPhysicalModelP(), 
+    auto roadNetworkCPtr = RoadNetwork::Insert(*physicalPartitionCPtr->GetSubModel()->ToPhysicalModelP(), 
         "Road Network");
 
     DesignAlignments::Insert(*roadNetworkCPtr->GetNetworkModel(), "Design Alignments");
@@ -202,6 +203,8 @@ RoadRailPhysicalProjectHostImpl::RoadRailPhysicalProjectHostImpl() : m_isInitial
     DgnDomains::RegisterDomain(LinearReferencingDomain::GetDomain(), DgnDomain::Required::Yes);
     DgnDomains::RegisterDomain(RoadRailAlignmentDomain::GetDomain(), DgnDomain::Required::Yes);
     DgnDomains::RegisterDomain(RoadRailPhysicalDomain::GetDomain(), DgnDomain::Required::Yes);
+    DgnDomains::RegisterDomain(RailPhysicalDomain::GetDomain(), DgnDomain::Required::Yes);
+    DgnDomains::RegisterDomain(RoadPhysicalDomain::GetDomain(), DgnDomain::Required::Yes);
     m_isInitialized = true;
     }
 

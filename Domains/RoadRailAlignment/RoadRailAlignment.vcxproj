@@ -40,7 +40,7 @@
     <ClInclude Include="RoadRailAlignmentInternal.h" />
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="..\..\BisSchemas\Domains\RoadRailAlignment\RoadRailAlignment.ecschema.xml" />
+    <Xml Include="..\..\..\BisSchemas\Domains\Civil\RoadRailAlignment\RoadRailAlignment.ecschema.xml" />
     <Xml Include="RoadRailAlignment.PartFile.xml">
       <SubType>Designer</SubType>
     </Xml>
@@ -112,8 +112,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeBuildCommandLine>bb -p RoadRailAlignment -f RoadRailAlignment -r DgnDomains-RoadRailAlignment -ax64 re RoadRailAlignment</NMakeBuildCommandLine>
-    <NMakeCleanCommandLine>bb -p RoadRailAlignment -f RoadRailAlignment -r DgnDomains-RoadRailAlignment -ax64 re RoadRailAlignment -c</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>bb -p RoadRailAlignment -f Domains/RoadRailAlignment/RoadRailAlignment -r imodel02 -ax64 re RoadRailAlignment</NMakeBuildCommandLine>
+    <NMakeCleanCommandLine>bb -p RoadRailAlignment -f Domains/RoadRailAlignment/RoadRailAlignment -r imodel02 -ax64 re RoadRailAlignment -c</NMakeCleanCommandLine>
     <NMakeReBuildCommandLine>$(NMakeCleanCommandLine)%26$(NMakeBuildCommandLine)</NMakeReBuildCommandLine>
     <NMakePreprocessorDefinitions>__ROADRAILALIGNMENT_BUILD__;BENTLEY_WIN32;</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>$(OutRoot)Winx64\BuildContexts\RoadRailAlignment\PublicAPI\;$(OutRoot)Winx64\BuildContexts\RoadRailAlignment\VendorAPI\;$(SrcRoot)DgnDomains\RoadRailAlignment\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>

@@ -69,8 +69,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeBuildCommandLine>bb -p LinearReferencing -f LinearReferencing -r DgnDomains-LinearReferencing -ax64 re LinearReferencing</NMakeBuildCommandLine>
-    <NMakeCleanCommandLine>bb -p LinearReferencing -f LinearReferencing -r DgnDomains-LinearReferencing -ax64 re LinearReferencing -c</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>bb -p LinearReferencing -f Domains/LinearReferencing/LinearReferencing -r imodel02 -ax64 re LinearReferencing</NMakeBuildCommandLine>
+    <NMakeCleanCommandLine>bb -p LinearReferencing -f Domains/LinearReferencing/LinearReferencing -r imodel02 -ax64 re LinearReferencing -c</NMakeCleanCommandLine>
     <NMakeReBuildCommandLine>$(NMakeCleanCommandLine)%26$(NMakeBuildCommandLine)</NMakeReBuildCommandLine>
     <NMakePreprocessorDefinitions>__LINEARREFERENCING_BUILD__</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>$(OutRoot)Winx64\BuildContexts\LinearReferencing\PublicAPI\;$(OutRoot)Winx64\BuildContexts\LinearReferencing\VendorAPI\;$(SrcRoot)DgnDomains\LinearReferencing\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
@@ -121,7 +121,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <Xml Include="..\..\BisSchemas\Domains\LinearReferencing\LinearReferencing.ecschema.xml" />
+    <Xml Include="..\..\..\BisSchemas\Domains\Core\LinearReferencing.ecschema.xml" />
     <Xml Include="LinearReferencing.PartFile.xml" />
   </ItemGroup>
   <ItemGroup>

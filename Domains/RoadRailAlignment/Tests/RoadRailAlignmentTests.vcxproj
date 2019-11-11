@@ -88,8 +88,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeBuildCommandLine>bb -ax64 -p Gtest-RoadRailAlignment-Tests -r DgnDomains-RoadRailAlignment -f RoadRailAlignment re BackdoorForUnitTests RoadRailAlignment-Tests PrewireForUnitTests UnitTests-NonPublished UnitTests-Published Gtest-RoadRailAlignment-Tests RoadRailAlignment:Gtest</NMakeBuildCommandLine>
-    <NMakeCleanCommandLine>bb -ax64 -p Gtest-RoadRailAlignment-Tests -r DgnDomains-RoadRailAlignment -f RoadRailAlignment re BackdoorForUnitTests RoadRailAlignment-Tests PrewireForUnitTests UnitTests-NonPublished UnitTests-Published Gtest-RoadRailAlignment-Tests RoadRailAlignment:Gtest -c</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>bb -ax64 -p Gtest-RoadRailAlignment-Tests -r imodel02 -f Domains/RoadRailAlignment/RoadRailAlignment re BackdoorForUnitTests RoadRailAlignment-Tests PrewireForUnitTests UnitTests-NonPublished UnitTests-Published Gtest-RoadRailAlignment-Tests RoadRailAlignment:Gtest</NMakeBuildCommandLine>
+    <NMakeCleanCommandLine>bb -ax64 -p Gtest-RoadRailAlignment-Tests -r imodel02 -f Domains/RoadRailAlignment/RoadRailAlignment re BackdoorForUnitTests RoadRailAlignment-Tests PrewireForUnitTests UnitTests-NonPublished UnitTests-Published Gtest-RoadRailAlignment-Tests RoadRailAlignment:Gtest -c</NMakeCleanCommandLine>
     <NMakeReBuildCommandLine>$(NMakeCleanCommandLine)%26$(NMakeBuildCommandLine)</NMakeReBuildCommandLine>
     <NMakePreprocessorDefinitions>BENTLEY_WIN32</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>$(SrcRoot)DgnDomains\RoadRailAlignment\PublicAPI\;$(OutRoot)Winx64\BuildContexts\RoadRailAlignment\PublicAPI\;$(OutRoot)Winx64\BuildContexts\RoadRailAlignment\Delivery\PublishedApi\;$(OutRoot)Winx64\Build\UnitTests\RoadRailAlignment\BackDoorRoadRailAlignmentUnitTests\PublicAPI\;$(OutRoot)Winx64\BuildContexts\RoadRailAlignment\VendorAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>

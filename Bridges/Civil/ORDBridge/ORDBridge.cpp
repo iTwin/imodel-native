@@ -6,14 +6,20 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ORDBridgeInternal.h"
+#include "ConvertOBMElementXDomain.h"
 #include <windows.h>
 #include <BRepCore/PSolidUtil.h>
 #include "ScalableMeshWrapper.h"
 
-#define DefaultPhysicalPartitionName    "Physical"
-#define DefaultDesignAlignmentsName     "Road/Rail Design Alignments"
-#define DefaultRoadRailNetworkName      "Road/Rail Network"
-#define DomainModelsPrivate             true
+static constexpr Utf8CP DefaultPhysicalPartitionName                = "Physical";
+static constexpr Utf8CP DefaultDesignAlignmentsName                 = "Road/Rail Design Alignments";
+static constexpr Utf8CP DefaultRoadNetworkName                      = "Road Network";
+static constexpr Utf8CP DefaultRailNetworkName                      = "Rail Network";
+static constexpr Utf8CP SubjectCivilGraphicsBreakdownStructureCode  = "Civil Designer Products";
+
+#define DomainModelsPrivate     true
+
+USING_NAMESPACE_BENTLEY_OBMNET_GEOMETRYMODEL_SDK
 
 BEGIN_ORDBRIDGE_NAMESPACE
 
@@ -94,7 +100,11 @@ BentleyStatus ORDBridge::_Initialize(int argc, WCharCP argv[])
     DgnDomains::RegisterDomain(LinearReferencingDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
     DgnDomains::RegisterDomain(AlignmentBim::RoadRailAlignmentDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
     DgnDomains::RegisterDomain(RoadRailBim::RoadRailPhysicalDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
-    DgnDomains::RegisterDomain(DgnV8ORDBim::DgnV8OpenRoadsDesignerDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
+    DgnDomains::RegisterDomain(RoadBim::RoadPhysicalDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
+    DgnDomains::RegisterDomain(RailBim::RailPhysicalDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
+    DgnDomains::RegisterDomain(Structural::StructuralPhysicalDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
+	DgnDomains::RegisterDomain(BridgePhysicalBim::BridgeStructuralPhysicalDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
+	DgnDomains::RegisterDomain(DgnV8ORDBim::DgnV8OpenRoadsDesignerDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
 
     if (!_GetParams().GetInputFileName().DoesPathExist() || _GetParams().GetInputFileName().IsDirectory())
         {
@@ -109,10 +119,14 @@ BentleyStatus ORDBridge::_Initialize(int argc, WCharCP argv[])
         DependencyManager::SetProcessingDisabled(false);
         }
     AppendCifSdkToDllSearchPath(_GetParams().GetLibraryDir());
+	AppendObmSdkToDllSearchPath(_GetParams().GetLibraryDir());
 
     // Initialize Cif SDK
     DgnPlatformCivilLib::InitializeWithDefaultHost();
     GeometryModelDgnECDataBinder::GetInstance().Initialize();
+
+	// Initialize OBM SDK
+	ObmGeometryConsensusSchemaProvider::GetInstance();
 
     m_params.SetConsiderNormal2dModelsSpatial(true);
     m_params.SetProcessAffected(true);
@@ -171,6 +185,14 @@ SubjectCPtr ORDBridge::_FindJob()
     return (DgnDbSync::DgnV8::RootModelConverter::ImportJobLoadStatus::Success == status) ? &m_converter->GetImportJob().GetSubject() : nullptr;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String getAlignedSubjectName(DgnDbR dgnDb)
+    {
+    return Utf8PrintfString("%s <Aligned>", dgnDb.Elements().GetRootSubject()->GetCode().GetValueUtf8CP());
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
@@ -197,64 +219,80 @@ SubjectCPtr ORDBridge::_InitializeJob()
 
     if (DgnDbSync::DgnV8::RootModelConverter::ImportJobCreateStatus::Success == status)
         {
-        auto& subjectCR = m_converter->GetImportJob().GetSubject();
+        auto& importJobSubjectCR = m_converter->GetImportJob().GetSubject();
 
-        SubjectCPtr physicalSubjectCPtr = &subjectCR;
-        AlignmentBim::RoadRailAlignmentDomain::GetDomain().SetUpDefinitionPartitions(subjectCR);
-        for (auto childId : subjectCR.QueryChildren())
+        auto physicalSubjectIdCreatedByConverter = GetDgnDbR().Elements().QueryElementIdByCode(Subject::CreateCode(importJobSubjectCR, "Physical"));
+        if (physicalSubjectIdCreatedByConverter.IsValid())
             {
-            auto childElmCPtr = subjectCR.GetDgnDb().Elements().GetElement(childId);
-            if (auto childSubjectCP = dynamic_cast<SubjectCP>(childElmCPtr.get()))
-                {
-                if (0 == childSubjectCP->GetCode().GetValueUtf8().CompareTo(DefaultPhysicalPartitionName))
-                    {
-                    physicalSubjectCPtr = childSubjectCP;
-                    break;
-                    }
-                }
+            auto graphicalSubjectPtr = GetDgnDbR().Elements().GetForEdit<Subject>(physicalSubjectIdCreatedByConverter);
+            graphicalSubjectPtr->SetCode(Subject::CreateCode(importJobSubjectCR, SubjectCivilGraphicsBreakdownStructureCode));
+
+            Json::Value graphicalSubjectProps = graphicalSubjectPtr->GetJsonProperties(Subject::json_Model()); // Making a copy
+            graphicalSubjectProps["Perspective"] = "AppGraphics";
+            graphicalSubjectPtr->SetJsonProperties(Subject::json_Model(), graphicalSubjectProps);
+
+            graphicalSubjectPtr->Update();
+            }
+        
+        auto alignedSubjectPtr = Subject::Create(importJobSubjectCR, getAlignedSubjectName(GetDgnDbR()));
+
+        Json::Value modelProps(Json::nullValue);
+        modelProps["Perspective"] = "Aligned";
+        alignedSubjectPtr->SetJsonProperties(Subject::json_Model(), modelProps);
+        SubjectCPtr alignedSubjectCPtr = dynamic_cast<SubjectCP>(alignedSubjectPtr->Insert().get());
+        if (alignedSubjectCPtr.IsNull())
+            {
+            ORDBRIDGE_LOG.fatalv(L"%ls - error - creation of the aligned subject failed.", _GetParams().GetBriefcaseName().GetName());
+            return nullptr;
             }
 
-        RoadRailBim::RoadRailPhysicalDomain::GetDomain().SetUpDefinitionPartitions(subjectCR);
+        AlignmentBim::RoadRailAlignmentDomain::GetDomain().SetUpDefinitionPartitions(*alignedSubjectCPtr);
+        RoadBim::RoadPhysicalDomain::GetDomain().SetUpDefinitionPartition(*alignedSubjectCPtr);
+        RailBim::RailPhysicalDomain::GetDomain().SetUpDefinitionPartition(*alignedSubjectCPtr);
 
-        auto clippingsPartitionPtr = SpatialLocationPartition::Create(subjectCR, "TerrainClippings");
+        auto clippingsPartitionPtr = SpatialLocationPartition::Create(*alignedSubjectPtr, "TerrainClippings");
         auto clippingsPartitionCPtr = clippingsPartitionPtr->Insert();
         if (clippingsPartitionCPtr.IsNull())
             return nullptr;
 
         auto& spatialLocationModelHandlerR = dgn_ModelHandler::SpatialLocation::GetHandler();
         auto clippingsModelPtr = spatialLocationModelHandlerR.Create(
-            Dgn::DgnModel::CreateParams(subjectCR.GetDgnDb(), subjectCR.GetDgnDb().Domains().GetClassId(spatialLocationModelHandlerR),
+            Dgn::DgnModel::CreateParams(GetDgnDbR(), GetDgnDbR().Domains().GetClassId(spatialLocationModelHandlerR),
                                         clippingsPartitionCPtr->GetElementId()));
-        clippingsModelPtr->SetIsPrivate(true);
+        clippingsModelPtr->SetIsPrivate(DomainModelsPrivate);
         if (DgnDbStatus::Success != clippingsModelPtr->Insert())
             return nullptr;
 
         m_converter->SetClippingsModelId(clippingsModelPtr->GetModelId());
 
         auto physicalPartitionCPtr = RoadRailBim::PhysicalModelUtilities::CreateAndInsertPhysicalPartitionAndModel(
-            *physicalSubjectCPtr, DefaultPhysicalPartitionName);
+            *alignedSubjectCPtr, DefaultPhysicalPartitionName);
         BeAssert(physicalPartitionCPtr.IsValid());
 
-        auto roadRailNetworkCPtr = RoadRailBim::RoadRailNetwork::Insert(*physicalPartitionCPtr->GetSubModel()->ToPhysicalModelP(), DefaultRoadRailNetworkName);
+        auto roadNetworkCPtr = RoadBim::RoadNetwork::Insert(*physicalPartitionCPtr->GetSubModel()->ToPhysicalModelP(), DefaultRoadNetworkName);
+        auto railNetworkCPtr = RailBim::RailNetwork::Insert(*physicalPartitionCPtr->GetSubModel()->ToPhysicalModelP(), DefaultRailNetworkName);
 
         // IMODELBRIDGE REQUIREMENT: Relate this model to the source document
-        m_converter->SetRoadRailNetwork(*roadRailNetworkCPtr);
+        m_converter->SetRoadNetwork(*roadNetworkCPtr);
+        m_converter->SetRailNetwork(*railNetworkCPtr);
 
         InsertElementHasLinksRelationship(GetDgnDbR(), physicalPartitionCPtr->GetElementId(), m_converter->GetRepositoryLinkId(*m_converter->GetRootV8File()));
 
-        auto designAlignmentsCPtr = AlignmentBim::DesignAlignments::Insert(*roadRailNetworkCPtr->GetNetworkModel(), DefaultDesignAlignmentsName);
+        auto designAlignmentsCPtr = AlignmentBim::DesignAlignments::Insert(*roadNetworkCPtr->GetNetworkModel(), DefaultDesignAlignmentsName);
         auto designAlignmentModelPtr = designAlignmentsCPtr->GetAlignmentModel();
-        InsertElementHasLinksRelationship(GetDgnDbR(), designAlignmentModelPtr->GetModeledElementId(), m_converter->GetRepositoryLinkId(*m_converter->GetRootV8File()));
 
         if (DomainModelsPrivate)
             {
             physicalPartitionCPtr->GetSubModel()->SetIsPrivate(true);
             physicalPartitionCPtr->GetSubModel()->Update();
 
-            roadRailNetworkCPtr->GetNetworkModel()->SetIsPrivate(true);
-            roadRailNetworkCPtr->GetNetworkModel()->Update();
+            roadNetworkCPtr->GetNetworkModel()->SetIsPrivate(true);
+            roadNetworkCPtr->GetNetworkModel()->Update();
 
-            auto horizontalAlignmentsCPtr = AlignmentBim::HorizontalAlignments::Query(*roadRailNetworkCPtr->GetNetworkModel());
+            railNetworkCPtr->GetNetworkModel()->SetIsPrivate(true);
+            railNetworkCPtr->GetNetworkModel()->Update();
+
+            auto horizontalAlignmentsCPtr = AlignmentBim::HorizontalAlignments::Query(*roadNetworkCPtr->GetNetworkModel());
             if (horizontalAlignmentsCPtr.IsValid())
                 {
                 horizontalAlignmentsCPtr->GetHorizontalModel()->SetIsPrivate(true);
@@ -270,12 +308,14 @@ SubjectCPtr ORDBridge::_InitializeJob()
             }
 
         m_converter->SetUpModelFormatters();
-
-        return &subjectCR;
+        
+        return &importJobSubjectCR;
         }
     else
         return nullptr;
     }
+
+OBMConverter* s_obmConverter = nullptr;
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
@@ -287,29 +327,22 @@ BentleyStatus ORDBridge::_ConvertToBim(SubjectCR jobSubject)
     // This if statement's work is also done in _InitializeJob(), but when the bridge goes off for a second time (an update),
     // _InitializeJob() is not called. It's possible that this work can (should?) be just done here and NOT in _InitializeJob(),
     // but I'm not sure yet.
-    if (!m_converter->GetRoadRailNetwork())
+    if (!m_converter->GetRoadNetwork())
         {
-        SubjectCPtr physicalSubjectCPtr = &jobSubject;
-        for (auto childId : jobSubject.QueryChildren())
-            {
-            auto childElmCPtr = jobSubject.GetDgnDb().Elements().GetElement(childId);
-            if (auto childSubjectCP = dynamic_cast<SubjectCP>(childElmCPtr.get()))
-                {
-                if (0 == childSubjectCP->GetCode().GetValueUtf8().CompareTo(DefaultPhysicalPartitionName))
-                    {
-                    physicalSubjectCPtr = childSubjectCP;
-                    break;
-                    }
-                }
-            }
+        auto alignedSubjectId = GetDgnDbR().Elements().QueryElementIdByCode(Subject::CreateCode(jobSubject, getAlignedSubjectName(GetDgnDbR())));
+        SubjectCPtr alignedSubjectCPtr = GetDgnDbR().Elements().Get<Subject>(alignedSubjectId);
 
         // IMODELBRIDGE REQUIREMENT: Relate this model to the source document
-        auto physicalNetworkModelPtr = RoadRailBim::PhysicalModelUtilities::QueryPhysicalNetworkModel(*physicalSubjectCPtr,
-            DefaultPhysicalPartitionName, DefaultRoadRailNetworkName);
-        m_converter->SetRoadRailNetwork(*dynamic_cast<RoadRailBim::RoadRailNetworkCP>(physicalNetworkModelPtr->GetModeledElement().get()));
+        auto physicalNetworkModelPtr = RoadRailBim::PhysicalModelUtilities::QueryRoadNetworkModel(*alignedSubjectCPtr,
+            DefaultPhysicalPartitionName, DefaultRoadNetworkName);
+        m_converter->SetRoadNetwork(*RoadBim::RoadNetwork::Get(GetDgnDbR(), physicalNetworkModelPtr->GetModeledElement()->GetElementId()));
 
-        auto terrainClippingsPartitionCode = SpatialLocationPartition::CreateCode(jobSubject, "TerrainClippings");
-        auto clippingsModelId = jobSubject.GetDgnDb().Models().QuerySubModelId(terrainClippingsPartitionCode);
+        physicalNetworkModelPtr = RoadRailBim::PhysicalModelUtilities::QueryRailNetworkModel(*alignedSubjectCPtr,
+                                                                                             DefaultPhysicalPartitionName, DefaultRailNetworkName);
+        m_converter->SetRailNetwork(*RailBim::RailNetwork::Get(GetDgnDbR(), physicalNetworkModelPtr->GetModeledElement()->GetElementId()));
+
+        auto terrainClippingsPartitionCode = SpatialLocationPartition::CreateCode(*alignedSubjectCPtr, "TerrainClippings");
+        auto clippingsModelId = GetDgnDbR().Models().QuerySubModelId(terrainClippingsPartitionCode);
         m_converter->SetClippingsModelId(clippingsModelId);
         }
 
@@ -330,7 +363,9 @@ BentleyStatus ORDBridge::_ConvertToBim(SubjectCR jobSubject)
 
     m_converter->SetORDParams(&params);
     ConvertORDElementXDomain convertORDXDomain(*m_converter);
+    ConvertOBMElementXDomain convertOBMXDomain(*m_converter);
     Dgn::DgnDbSync::DgnV8::XDomain::Register(convertORDXDomain);
+    //Dgn::DgnDbSync::DgnV8::XDomain::Register(convertOBMXDomain);
 
     ORDBRIDGE_LOGI("ORDConverter ConvertData started.");
 
@@ -341,6 +376,9 @@ BentleyStatus ORDBridge::_ConvertToBim(SubjectCR jobSubject)
     ORDBRIDGE_LOGI("ORDConverter ConvertData stopped.");
 
     Dgn::DgnDbSync::DgnV8::XDomain::UnRegister(convertORDXDomain);
+    //Dgn::DgnDbSync::DgnV8::XDomain::UnRegister(convertOBMXDomain);
+
+    ORDConverterExtension::UnRegister(*s_obmConverter);
     return m_converter->WasAborted() ? BSIERROR : BSISUCCESS;
     }
 
@@ -351,6 +389,21 @@ void ORDBridge::AppendCifSdkToDllSearchPath(BeFileNameCR libraryDir)
     {
     BeFileName dllDirectory(libraryDir);
     dllDirectory.AppendToPath(L"Cif");
+
+    WString newPath(L"PATH=");
+    newPath.append(dllDirectory);
+    newPath.append(L";");
+    newPath.append(::_wgetenv(L"PATH"));
+    _wputenv(newPath.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonathan.DeCarlo            09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ORDBridge::AppendObmSdkToDllSearchPath(BeFileNameCR libraryDir)
+    {
+    BeFileName dllDirectory(libraryDir);
+    dllDirectory.AppendToPath(L"Obm");
 
     WString newPath(L"PATH=");
     newPath.append(dllDirectory);
@@ -423,9 +476,28 @@ BentleyStatus ORDBridge::_MakeSchemaChanges(bool& hasMoreChanges)
         {
         ORDBRIDGE_LOGI("ORDConverter MakeSchemaChanges Import Dynamic.");
         status = m_converter->AddDynamicSchema();
-        GetDgnDbR().Schemas().CreateClassViewsInDb(); // For debugging purposes
-        m_schemaImportPhase = SchemaImportPhase::Done;
-        hasMoreChanges = false;
+
+        if (0 == m_converter->GetExtensionCount())
+            {
+            hasMoreChanges = false;
+            m_schemaImportPhase = SchemaImportPhase::Done;
+            GetDgnDbR().Schemas().CreateClassViewsInDb(); // For debugging purposes
+            }
+        else
+            {
+            m_schemaImportPhase = SchemaImportPhase::Extensions;
+            hasMoreChanges = true;
+            }
+        }
+    else if (m_schemaImportPhase == SchemaImportPhase::Extensions)
+        {
+        status = m_converter->AddExtensionSchema(hasMoreChanges);
+
+        if (!hasMoreChanges)
+            {
+            m_schemaImportPhase = SchemaImportPhase::Done;
+            GetDgnDbR().Schemas().CreateClassViewsInDb(); // For debugging purposes
+            }
         }
     else
         {
@@ -446,6 +518,10 @@ BentleyStatus ORDBridge::_OnOpenBim(DgnDbR db)
     if (m_converter == nullptr)
         {
         m_converter = new ORDConverter(m_params);
+
+        s_obmConverter = new OBMConverter(*m_converter);
+        ORDConverterExtension::UnRegisterAll();
+        ORDConverterExtension::Register(*s_obmConverter);
         }
     m_converter->SetDgnDb(db);
     if (BentleyStatus::SUCCESS != m_converter->AttachSyncInfo())

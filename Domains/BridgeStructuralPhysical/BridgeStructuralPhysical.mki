@@ -1,0 +1,17 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source$
+#
+#  $Copyright$
+#
+#---------------------------------------------------------------------------------------+
+%include $(BuildContext)SubParts/PublicMki/BentleyApi.mki
+
+appName                         = BridgeStructuralPhysical
+o                               = $(OutputRootDir)build/$(appName)/
+CCompPDBName                    = $(appName)
+MultiCompileIntermediatePdbFile = $(o)$(CCompPDBName).pdb
+IntermediatePdbFile             = $(MultiCompileIntermediatePdbFile)
+
+nameToDefine = __BRIDGESTRUCTURALPHYSICAL_BUILD__
+%include cdefapnd.mki

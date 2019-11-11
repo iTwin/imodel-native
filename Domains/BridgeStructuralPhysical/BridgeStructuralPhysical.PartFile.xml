@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
+
+    <!-- A convenience to platform developers that want to build platform and use Gist as their testbed. -->
+    <Part Name="BridgeStructuralPhysicalWithGist" PrgOutputDir="DgnClientSdk" Sequential="true">
+        <SubPart PartName="DgnClientSdk-Tested" PartFile="DgnClientFx" Repository="DgnClientFx"/>
+        <SubPart PartName="Gist" PartFile="Gist" Repository="Gist"/>
+        <SubProduct ProductName="BridgeStructuralPhysicalTested"/>
+    </Part>
+
+    <Product Name="BridgeStructuralPhysicalSDK">
+        <SubPart PartName="BridgeStructuralPhysical"/>
+        <Directories DirectoryListName="BridgeStructuralPhysicalSDKDirs"/>
+    </Product>
+
+    <Product Name="BridgeStructuralPhysicalTested">
+        <SubProduct ProductName="BridgeStructuralPhysicalSDK"/>
+        <SubPart PartName="RunBridgeStructuralPhysicalTests"/>
+        <Directories DirectoryListName="BridgeStructuralPhysicalSDKDirs"/>
+        <Directories DirectoryListName="BridgeStructuralPhysicalTestDirs"/>
+    </Product>
+    <Part Name="BridgeStructuralPhysical" BentleyBuildMakeFile="BridgeStructuralPhysical.mke">
+        <SubPart PartName="PublicAPI"/>
+        <SubPart PartName="DgnPlatformDll"  PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02" />        
+        <SubPart PartName="LinearReferencing"  PartFile="Domains/LinearReferencing/LinearReferencing"  Repository="imodel02" />
+        <SubPart PartName="StructuralDomainDLL" PartFile="Domains/Structural/StructuralDomains" Repository="imodel02"/>
+        <SubPart PartName="ProfilesDomainDLL"  PartFile="Domains/Profiles/ProfilesDomain" Repository="imodel02" />
+        <SubPart PartName="FormsDomainDLL"     PartFile="Domains/Forms/FormsDomain" Repository="imodel02" />
+        <SubPart PartName="RoadRailAlignment"            PartFile="Domains/RoadRailAlignment/RoadRailAlignment" Repository="imodel02"/>
+        <SubPart PartName="CivilBaseGeometry" PartFile="Domains/CivilGeometry/CivilBaseGeometry" Repository="imodel02"/>
+        <Bindings>
+            <Libs Required="false">Delivery/$(libprefix)BridgeStructuralPhysical$(libext)</Libs>
+            <Assemblies Required="false">Delivery/$(shlibprefix)BridgeStructuralPhysical$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="PublicAPI" BentleyBuildMakeFile="BridgeStructuralPhysical.prewire.mke">
+        <Bindings>
+            <PublicAPI Domain="BridgeStructuralPhysical"/>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/BridgeStructuralPhysical*.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="BridgeStructuralPhysicalPublishedApi" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke"
+          BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI=json +dPUBLISHAPI_VENDORAPI2=rapidjson">
+        <SubPart PartName="BridgeStructuralPhysical"/>
+        <Bindings>
+            <Directory SourceName="Delivery/PublishedApi" SubPartDirectory="PublishedApi/BridgeStructuralPhysical"/>
+        </Bindings>
+    </Part>
+    <Part Name="BridgeStructuralPhysicalTestsExe" DeferType="BridgeStructuralPhysicalTests" BentleyBuildMakeFile="Tests/Tests.mke">
+        <SubPart PartName="google_gtest_lib"     PartFile="iModelCore/util/gtest/gtest" Repository="imodel02" />
+        <SubPart PartName="DgnView"              PartFile="DgnDisplay"    Repository="DgnDisplay"  />
+        <SubPart PartName="DgnPlatformSqlang"    PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02" />
+        <SubPart PartName="BridgeStructuralPhysical"/>
+        <Bindings>
+            <Assemblies>Delivery/$(shlibprefix)BridgeStructuralPhysicalTests.exe</Assemblies>
+            <Files ProductDirectoryName="BridgeStructuralPhysicalRoot">
+                Delivery/BridgeStructuralPhysicalTests.logging.config.xml
+                Delivery/ignore_list.txt
+            </Files>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang">
+                Delivery/BridgeStructuralPhysicalTests_en-US.sqlang.db3
+            </Files>
+        </Bindings>
+    </Part>
+    
+    <Part Name="RunBridgeStructuralPhysicalTests" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" 
+          BentleyBuildMakeOptions="-dGTEST_PRODUCT=BridgeStructuralPhysicalTested\  -dGTEST_NAME=BridgeStructuralPhysicalTests" ExcludeLibType="Static">
+        <SubPart PartName="BridgeStructuralPhysicalTestsExe"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="Gtest/Logs">
+                Delivery/Gtest/Logs/BridgeStructuralPhysicalTests.log
+            </Files>
+        </Bindings>
+    </Part>
+    <ProductDirectoryList ListName="BridgeStructuralPhysicalTestDirs">
+        <ProductDirectory Name="VendorNotices"                  Deliver="false" />
+        <ProductDirectory Name="Libs"                           Deliver="false" />
+        <ProductDirectory Name="StructuralDomainIncludes"       Deliver="false" />
+        <ProductDirectory Name="FormsDomainIncludes"            Deliver="false" />
+        <ProductDirectory Name="ProfilesDomainIncludes"         Deliver="false" />
+        <ProductDirectory Name="UnitTests-Assets"               Deliver="false" />
+        <ProductDirectory Name="UnitTests-IgnoreList"           Deliver="false" />
+        <ProductDirectory Name="UnitTests-Objects"              Deliver="false" />
+    </ProductDirectoryList>
+
+    <ProductDirectoryList ListName="BridgeStructuralPhysicalSDKDirs">
+        <ProductDirectory Name="BridgeStructuralPhysicalRoot"           Path=""/>
+        <ProductDirectory Name="Assemblies"                      RelativeTo="BridgeStructuralPhysicalRoot" Path=""/>
+        <ProductDirectory Name="Assemblies"                      LibType="static" Deliver="false"/>
+        <ProductDirectory Name="Libs"                            RelativeTo="BridgeStructuralPhysicalRoot" Path=""/>
+        <ProductDirectory Name="Assets"                          RelativeTo="BridgeStructuralPhysicalRoot" Path="Assets"/>
+        <ProductDirectory Name="Assets"                          LibType="static" Deliver="false" />
+        <ProductDirectory Name="StructuralDomainIncludes"        RelativeTo="BridgeStructuralPhysicalRoot" Path="Include/StructuralDomain"/>
+        <ProductDirectory Name="ProfilesDomainIncludes"          RelativeTo="BridgeStructuralPhysicalRoot" Path="Include/ProfilesDomain"/>
+        <ProductDirectory Name="FormsDomainIncludes"             RelativeTo="BridgeStructuralPhysicalRoot" Path="Include/FormsDomain"/>
+        <ProductDirectory Name="BridgeStructuralPhysicalIncludes"          RelativeTo="BridgeStructuralPhysicalRoot" Path="Include/BridgeStructuralPhysical"/>
+        <ProductDirectory Name="VendorNotices"                   RelativeTo="BridgeStructuralPhysicalRoot" Path="VendorNotices"/>
+        <ProductDirectory Name="VendorNotices"                   LibType="static" RelativeTo="BridgeStructuralPhysicalRoot" Path="VendorNotices"/>
+
+    </ProductDirectoryList>
+</BuildContext>

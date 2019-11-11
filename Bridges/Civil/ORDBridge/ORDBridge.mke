@@ -15,6 +15,7 @@ appPublicApi        = $(appSrc)PublicAPI/$(appName)/
 MultiCompileDepends = $(_MakeFileSpec) $(appSrc)ORDBridgeInternal.h $(appPublicApi)ORDBridgeApi.h
 DgnPlatformV8LibDir = ${BuildContext}/SubParts/VersionedDgnV8Libs/
 CifLibDir           = ${BuildContext}/SubParts/CifLibs/
+ObmLibDir           = ${BuildContext}/SubParts/ObmLibs/
 
 CompileOptionsMki =$(SrcRoot)imodel02/Bridges/Civil/ORDBridge/ORDBridge.mki
 %include $(CompileOptionsMki)
@@ -64,9 +65,13 @@ CCompOpts + -permissive
 
 $(o)iModelBridgeAffinity$(oext) : $(_MakeFilePath)iModelBridgeAffinity.cpp ${MultiCompileDepends} $(_MakeFilePath)ORDBridge.h
 
+$(o)OBMConverter$(oext) : $(_MakeFilePath)OBMConverter.cpp ${MultiCompileDepends} $(_MakeFilePath)OBMConverter.h
+
 $(o)ORDBridge$(oext) : $(_MakeFilePath)ORDBridge.cpp ${MultiCompileDepends} $(_MakeFilePath)ORDBridge.h
 
 $(o)ORDConverter$(oext) : $(_MakeFilePath)ORDConverter.cpp ${MultiCompileDepends} $(_MakeFilePath)ORDConverter.h $(_MakeFilePath)DynamicSchemaComparer.h
+
+$(o)ConvertOBMElementXDomain$(oext) : $(_MakeFilePath)ConvertOBMElementXDomain.cpp ${MultiCompileDepends} $(_MakeFilePath)ConvertOBMElementXDomain.h
 
 %include MultiCppCompileGo.mki
 
@@ -102,7 +107,13 @@ LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)ScalableMeshSche
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)LinearReferencing$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)RoadRailAlignment$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)RoadRailPhysical$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BridgeStructuralPhysical$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)DgnV8OpenRoadsDesigner$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)FormsDomain$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)Profiles$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)StructuralDomain$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)CivilBaseGeometry$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BeXml$(libext)
 
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)Bentley.lib
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)BentleyAllocator.lib
@@ -120,10 +131,12 @@ LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)VisEdgesLib.lib
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)DwgDgnIO.lib
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)acpal.lib
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)BentleyGeomSerialization.lib
+LINKER_LIBRARIES_DELAYLOADED + $(CifLibDir)Bentley.Cif.lib
 LINKER_LIBRARIES_DELAYLOADED + $(CifLibDir)Bentley.Cif.SDK.lib
 LINKER_LIBRARIES_DELAYLOADED + $(CifLibDir)Bentley.Cif.DGN.lib
 LINKER_LIBRARIES_DELAYLOADED + $(CifLibDir)Bentley.CIF.GeometryModel.SDK.lib
 LINKER_LIBRARIES_DELAYLOADED + $(CifLibDir)Bentley.CIF.LinearGeometry.lib
+LINKER_LIBRARIES_DELAYLOADED + $(ObmLibDir)Bentley.ObmNET.GeometryModel.SDK.lib
 LINKER_LIBRARIES_DELAYLOADED + msi.lib
 
 %include $(sharedMki)linkLibrary.mki

@@ -8,8 +8,7 @@
 #include <RoadRailAlignment/AlignmentCategory.h>
 #include <RoadRailAlignment/Alignment.h>
 #include <RoadRailAlignment/AlignmentReferent.h>
-//#include <RoadRailAlignment/AlignmentProfileViewDefinition.h>
-//#include <RoadRailAlignment/ClipPlanesViewDefinition.h>
+#include <DgnPlatform/DgnPlatformLib.h>
 
 #define DEFAULT_VIEWDEF_ASPECT_RATIO_SKEW 10.0 // For Profile and XS view definitions
 #define INSERT_CODESPEC(x) \
@@ -27,15 +26,6 @@ DOMAIN_DEFINE_MEMBERS(RoadRailAlignmentDomain)
 +---------------+---------------+---------------+---------------+---------------+------*/
 RoadRailAlignmentDomain::RoadRailAlignmentDomain() : DgnDomain(BRRA_SCHEMA_NAME, "Bentley RoadRailAlignment Domain", 2)
     {
-    RegisterHandler(AlignmentHandler::GetHandler());
-    RegisterHandler(DesignAlignmentsHandler::GetHandler());
-    RegisterHandler(HorizontalAlignmentsHandler::GetHandler());
-    RegisterHandler(HorizontalAlignmentHandler::GetHandler());    
-    //RegisterHandler(AlignmentProfileViewDefinitionHandler::GetHandler());
-    RegisterHandler(AlignmentStationHandler::GetHandler());
-    //RegisterHandler(ClipPlanesViewDefinitionHandler::GetHandler());
-    RegisterHandler(VerticalAlignmentModelHandler::GetHandler());
-    RegisterHandler(VerticalAlignmentHandler::GetHandler());    
     }
 
 BEGIN_UNNAMED_NAMESPACE
@@ -88,64 +78,8 @@ void setupModelSelector(ModelSelectorR mSelector)
         }
     mSelector.SetIsPrivate(true);
     }
-//---------------------------------------------------------------------------------------
-// @bsimethod                           Alexandre.Gagnon                        09/2017
-//---------------------------------------------------------------------------------------
-/*template <typename VIEWDEF_T>
-RefCountedPtr<VIEWDEF_T> createViewDefinition(ConfigurationModelR model, Utf8StringCR viewName)
-    {
-    Utf8String cSelectorName = viewName;
-    cSelectorName.append("CategorySelector");
-
-    Utf8String dStyleName = viewName;
-    dStyleName.append("DisplayStyle");
-
-    Utf8String mSelectorName = viewName;
-    mSelectorName.append("ModelSelector");
-
-    CategorySelectorPtr cSelector = new CategorySelector(model, cSelectorName);
-    DisplayStyle3dPtr dStyle = new DisplayStyle3d(model, dStyleName);
-    ModelSelectorPtr mSelector = new ModelSelector(model, mSelectorName);
-    if (!cSelector.IsValid() || !dStyle.IsValid() || !mSelector.IsValid())
-        return nullptr;
-
-    setupCategorySelector(*cSelector);
-    setupDisplayStyle(*dStyle);
-    setupModelSelector(*mSelector);
-
-    RefCountedPtr<VIEWDEF_T> viewDefinition = new VIEWDEF_T(model, viewName, *cSelector, *dStyle, *mSelector);
-    if (viewDefinition.IsValid())
-        {
-        viewDefinition->SetIsPrivate(true);
-        viewDefinition->SetAspectRatioSkew(DEFAULT_VIEWDEF_ASPECT_RATIO_SKEW);
-        }
-
-    return viewDefinition;
-    }*/
 
 END_UNNAMED_NAMESPACE
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                           Alexandre.Gagnon                        09/2017
-// Inserts the 'system' private views for ClipPlanesViewDefinition and AlignmentProfileViewDefinition classes
-//---------------------------------------------------------------------------------------
-/*DgnDbStatus RoadRailAlignmentDomain::InsertViewDefinitions(ConfigurationModelR model)
-    {
-    AlignmentProfileViewDefinitionPtr profileDefinition = createViewDefinition<AlignmentProfileViewDefinition>(model, AlignmentProfileViewDefinition::SYSTEM_VIEW_NAME);
-    ClipPlanesViewDefinitionPtr xsDefinition = createViewDefinition<ClipPlanesViewDefinition>(model, ClipPlanesViewDefinition::SYSTEM_VIEW_NAME);
-
-    if (!profileDefinition.IsValid() || !xsDefinition.IsValid())
-        return DgnDbStatus::BadElement;
-
-    DgnDbStatus status;
-    if (!profileDefinition->Insert(&status).IsValid())
-        return status;
-
-    if (!xsDefinition->Insert(&status).IsValid())
-        return status;
-
-    return DgnDbStatus::Success;
-    }*/
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      11/2016
@@ -278,14 +212,3 @@ DefinitionModelPtr RoadRailAlignmentDomain::QueryCategoryModel(DgnDbR db)
     BeAssert(model.IsValid());
     return model;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-/*SubjectCPtr ConfigurationModel::GetParentSubject() const
-    {
-    auto partitionCP = dynamic_cast<DefinitionPartitionCP>(GetModeledElement().get());
-    BeAssert(partitionCP != nullptr);
-
-    return GetDgnDb().Elements().Get<Subject>(partitionCP->GetParentId());
-    }*/

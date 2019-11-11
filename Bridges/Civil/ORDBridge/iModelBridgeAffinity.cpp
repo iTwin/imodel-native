@@ -70,6 +70,7 @@ extern "C" void iModelBridge_getAffinity(WCharP buffer, const size_t bufferSize,
     _wputenv(path.c_str());
 
     ORDBridge::AppendCifSdkToDllSearchPath(dirPath);
+    ORDBridge::AppendObmSdkToDllSearchPath(dirPath);
 
     BentleyApi::BeFileName v8Path = dirPath;
     v8Path.AppendToPath(L"DgnV8");

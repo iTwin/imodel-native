@@ -20,7 +20,7 @@
     <Xml Include="DgnV8OpenRoadsDesigner.PartFile.xml">
       <Filter>Build Files</Filter>
     </Xml>
-    <Xml Include="..\..\BisSchemas\Domains\DgnV8OpenRoadsDesigner\DgnV8OpenRoadsDesigner.ecschema.xml" />
+    <Xml Include="..\..\..\BisSchemas\Domains\Civil\Deprecated\DgnV8OpenRoadsDesigner\DgnV8OpenRoadsDesigner.ecschema.xml" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DgnV8OpenRoadsDesignerInternal.h">

@@ -19,21 +19,20 @@ BEGIN_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 //! Main Linear-Element used in Road & Rail applications.
 //! @ingroup GROUP_RoadRailAlignment
 //=======================================================================================
-struct Alignment : Dgn::SpatialLocationElement, LinearReferencing::ISpatialLinearElement
+struct Alignment : GeometricElementWrapper<Dgn::SpatialLocationElement>, LinearReferencing::ISpatialLinearElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(BRRA_CLASS_Alignment, Dgn::SpatialLocationElement);
-    friend struct AlignmentHandler;
+    DGNELEMENTWRAPPER_DECLARE_MEMBERS(GeometricElementWrapper, Dgn::SpatialLocationElement)
     friend struct HorizontalAlignment;
 
 protected:
-    //! @private
-    explicit Alignment(CreateParams const& params);
+    explicit Alignment(Dgn::SpatialLocationElement const& element) : T_Super(element) {}
+    explicit Alignment(Dgn::SpatialLocationElement& element) : T_Super(element) {}
 
     //! ILinearElement
 
     //! Treat this alignment as a Dgn::DgnElement
     //! @return this Alignment cast as a Dgn::DgnElement
-    virtual Dgn::DgnElementCR _ILinearElementToDgnElement() const override final { return *this; }
+    virtual Dgn::DgnElementCR _ILinearElementToDgnElement() const override final { return *get(); }
 
     //! ISpatialLinearElement
 
@@ -50,7 +49,7 @@ protected:
 
     //__PUBLISH_SECTION_END__
     //! @private
-    virtual Dgn::DgnDbStatus _OnDelete() const override;
+    //virtual Dgn::DgnDbStatus _OnDelete() const override;
     //! @private
     void _SetHorizontal(HorizontalAlignmentCR horizontal);
     //__PUBLISH_SECTION_START__
@@ -81,20 +80,20 @@ public:
     DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(Alignment)
 
     //! @privatesection
-    DECLARE_ROADRAILALIGNMENT_ELEMENT_BASE_METHODS(Alignment)
+    DECLARE_ROADRAILALIGNMENT_ELEMENT_BASE_METHODS(Alignment, Dgn::SpatialLocationElement)
     //! @publicsection
 
     //! Get the SpatialModel that contains this Alignment.
     //! @return this Alignment's AlignmentModel.
-    Dgn::SpatialModelPtr GetAlignmentModel() const { return dynamic_cast<Dgn::SpatialModelP>(GetModel().get()); }
+    Dgn::SpatialModelPtr GetAlignmentModel() const { return dynamic_cast<Dgn::SpatialModelP>(get()->GetModel().get()); }
 
     //! Get the DgnElementId of the horizontal.
     //! @return The DgnElementId of the Horizontal of this alignment.
-    ROADRAILALIGNMENT_EXPORT Dgn::DgnElementId GetHorizontalId() const { return GetPropertyValueId<Dgn::DgnElementId>(BRRA_PROP_Alignment_Horizontal); }
+    ROADRAILALIGNMENT_EXPORT Dgn::DgnElementId GetHorizontalId() const { return get()->GetPropertyValueId<Dgn::DgnElementId>(BRRA_PROP_Alignment_Horizontal); }
 
     //! Get the DgnElementId of the main vertical.
     //! @return The DgnElementId of the main VerticalAlignment of this alignment.  DgnElementId::IsValid() can be false if the Alignment does not have a vertical component.
-    ROADRAILALIGNMENT_EXPORT Dgn::DgnElementId GetMainVerticalId() const { return GetPropertyValueId<Dgn::DgnElementId>(BRRA_PROP_Alignment_MainVertical); }
+    ROADRAILALIGNMENT_EXPORT Dgn::DgnElementId GetMainVerticalId() const { return get()->GetPropertyValueId<Dgn::DgnElementId>(BRRA_PROP_Alignment_MainVertical); }
 
     //! Get the Horizontal of this Alignment
     //! @return The Horizontal, or nullptr
@@ -124,7 +123,7 @@ public:
     //! Get the start station of this Alignment.
     //! This is set by the design application and may be non-zero.
     //! @return Alignment's start station
-    double GetStartStation() const { return GetPropertyValueDouble(BRRA_PROP_Alignment_StartStation); }
+    double GetStartStation() const { return get()->GetPropertyValueDouble(BRRA_PROP_Alignment_StartStation); }
 
     //! Given a DgnElement, attempts to retrieve an Alignment associated with it.
     //! @param element The element to attempt to retrieve an associated alignment for.
@@ -138,7 +137,7 @@ public:
     ROADRAILALIGNMENT_EXPORT AlignmentCPtr UpdateWithMainPair(CivilGeometry::AlignmentPairCR alignmentPair, Dgn::DgnDbStatus* stat = nullptr);
     ROADRAILALIGNMENT_EXPORT Dgn::DgnDbStatus GenerateAprox3dGeom(Dgn::DgnSubCategoryId subCategoryId = Dgn::DgnSubCategoryId());
     ROADRAILALIGNMENT_EXPORT bool QueryIsRepresentedBy(Dgn::GeometrySourceCR geometrySource) const;
-    void SetStartStation(double station) { SetPropertyValue(BRRA_PROP_Alignment_StartStation, station); }
+    void SetStartStation(double station) { getP()->SetPropertyValue(BRRA_PROP_Alignment_StartStation, station); }
 
     ROADRAILALIGNMENT_EXPORT void SetMainVertical(VerticalAlignmentCP vertical);
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnDbStatus AddRepresentedBy(AlignmentCR alignment, Dgn::GeometrySourceCR representedBy);
@@ -150,17 +149,16 @@ public:
 //! SpatialLocationElement representing design alignments in a Physical model.
 //! @ingroup GROUP_RoadRailAlignment
 //=======================================================================================
-struct DesignAlignments : Dgn::SpatialLocationElement
+struct DesignAlignments : GeometricElementWrapper<Dgn::SpatialLocationElement>
 {
-    DGNELEMENT_DECLARE_MEMBERS(BRRA_CLASS_DesignAlignments, Dgn::SpatialLocationElement);
-    friend struct DesignAlignmentsHandler;
+    DGNELEMENTWRAPPER_DECLARE_MEMBERS(GeometricElementWrapper, Dgn::SpatialLocationElement)
 
 private:
     static Dgn::DgnCode CreateCodeBasic(Dgn::SpatialModelCR model, Utf8StringCR codeVal);
 
 protected:
-    //! @private
-    explicit DesignAlignments(CreateParams const& params) : T_Super(params) {}
+    explicit DesignAlignments(Dgn::SpatialLocationElement const& element): T_Super(element) {}
+    explicit DesignAlignments(Dgn::SpatialLocationElement& element) : T_Super(element) {}
 
 public:
     DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(DesignAlignments)
@@ -168,7 +166,7 @@ public:
     //! @param db The project database.
     //! @param id The DgnElementId of the DesignAlignments.
     //! @return The DesignAlignmentsCPtr with the given id, or nullptr.
-    ROADRAILALIGNMENT_EXPORT static DesignAlignmentsCPtr Get(Dgn::DgnDbR db, Dgn::DgnElementId id) { return db.Elements().Get<DesignAlignments>(id); }
+    ROADRAILALIGNMENT_EXPORT static DesignAlignmentsCPtr Get(Dgn::DgnDbR db, Dgn::DgnElementId id) { return new DesignAlignments(*db.Elements().Get<Dgn::SpatialLocationElement>(id)); }
 
     //! Query for the elementId representing all of the Design Alignments for a parent Spatial Model
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnElementId QueryId(Dgn::SpatialModelCR parentSpatialModel, Utf8StringCR codeVal);
@@ -182,7 +180,7 @@ public:
     //! @publicsection
     //__PUBLISH_SECTION_START__
     //! Gets the SpatialLocationModel that is modeling this element
-    Dgn::SpatialLocationModelPtr GetAlignmentModel() const { return GetSub<Dgn::SpatialLocationModel>(); }
+    Dgn::SpatialLocationModelPtr GetAlignmentModel() const { return get()->GetSub<Dgn::SpatialLocationModel>(); }
 }; // DesignAlignments
 
 //=======================================================================================
@@ -190,14 +188,14 @@ public:
 //! an Alignments model.
 //! @ingroup GROUP_RoadRailAlignment
 //=======================================================================================
-struct HorizontalAlignments : Dgn::SpatialLocationElement
+struct HorizontalAlignments : GeometricElementWrapper<Dgn::SpatialLocationElement>
 {
-    DGNELEMENT_DECLARE_MEMBERS(BRRA_CLASS_HorizontalAlignments, Dgn::SpatialLocationElement);
-    friend struct HorizontalAlignmentsHandler;
+    DGNELEMENTWRAPPER_DECLARE_MEMBERS(GeometricElementWrapper, Dgn::SpatialLocationElement)
 
 protected:
     //! @private
-    explicit HorizontalAlignments(CreateParams const& params) : T_Super(params) {}
+    explicit HorizontalAlignments(Dgn::SpatialLocationElement const& element) : T_Super(element) {}
+    explicit HorizontalAlignments(Dgn::SpatialLocationElement& element) : T_Super(element) {}
 
 public:
     DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(HorizontalAlignments)
@@ -205,7 +203,7 @@ public:
     //! @param db The project database.
     //! @param id The DgnElementId of the HorizontalAlignments.
     //! @return The HorizontalAlignmentsCPtr with the given id, or nullptr.
-    ROADRAILALIGNMENT_EXPORT static HorizontalAlignmentsCPtr Get(Dgn::DgnDbR db, Dgn::DgnElementId id) { return db.Elements().Get<HorizontalAlignments>(id); }
+    ROADRAILALIGNMENT_EXPORT static HorizontalAlignmentsCPtr Get(Dgn::DgnDbR db, Dgn::DgnElementId id) { return new HorizontalAlignments(*db.Elements().Get<Dgn::SpatialLocationElement>(id)); }
 
     //! Query for the element representing all of the HorizontalAlignments for an AlignmentModel
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnElementId QueryId(Dgn::SpatialModelCR alignmentModel);
@@ -217,17 +215,16 @@ public:
     //! @publicsection
     //__PUBLISH_SECTION_START__
     //! Gets the SpatialLocationModel that is modeling this element
-    Dgn::SpatialLocationModelPtr GetHorizontalModel() const { return GetSub<Dgn::SpatialLocationModel>(); }
+    Dgn::SpatialLocationModelPtr GetHorizontalModel() const { return get()->GetSub<Dgn::SpatialLocationModel>(); }
 }; // HorizontalAlignments
 
 //=======================================================================================
 //! Horizontal piece of an Alignment.
 //! @ingroup GROUP_RoadRailAlignment
 //=======================================================================================
-struct HorizontalAlignment : Dgn::SpatialLocationElement
+struct HorizontalAlignment : GeometricElementWrapper<Dgn::SpatialLocationElement>
 {
-    DGNELEMENT_DECLARE_MEMBERS(BRRA_CLASS_HorizontalAlignment, Dgn::SpatialLocationElement);
-    friend struct HorizontalAlignmentHandler;
+    DGNELEMENTWRAPPER_DECLARE_MEMBERS(GeometricElementWrapper, Dgn::SpatialLocationElement)
     friend struct Alignment;
 
 private:
@@ -238,16 +235,15 @@ private:
     AlignmentPtr m_editAlignment;
 
 protected:
-    //! @private
-    explicit HorizontalAlignment(CreateParams const& params) : T_Super(params) {}
-    //! @private
-    explicit HorizontalAlignment(CreateParams const& params, AlignmentCR alignment, CurveVectorCR geometry);
+    explicit HorizontalAlignment(Dgn::SpatialLocationElement const& element) : T_Super(element) {}
+    explicit HorizontalAlignment(Dgn::SpatialLocationElement& element) : T_Super(element) {}
+    explicit HorizontalAlignment(Dgn::SpatialLocationElement& element, AlignmentCR alignment, CurveVectorCR geometry);
 
-    ROADRAILALIGNMENT_EXPORT virtual void _CopyFrom(Dgn::DgnElementCR source, CopyFromOptions const& opts) override;
+    //ROADRAILALIGNMENT_EXPORT virtual void _CopyFrom(Dgn::DgnElementCR source, CopyFromOptions const& opts) override;
 
 public:
     DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(HorizontalAlignment)
-    DECLARE_ROADRAILALIGNMENT_ELEMENT_GET_METHODS(HorizontalAlignment)
+    DECLARE_ROADRAILALIGNMENT_ELEMENT_GET_METHODS(HorizontalAlignment, Dgn::SpatialLocationElement)
 
     //! Get the raw geometry of this HorizontalAlignment.
     //! @return CurveVector representing the raw geometry of this HorizontalAlignment.
@@ -272,10 +268,9 @@ public:
 //! Vertical/Profile piece(s) associated to an Alignment.
 //! @ingroup GROUP_RoadRailAlignment
 //=======================================================================================
-struct VerticalAlignment : Dgn::GeometricElement2d
+struct VerticalAlignment : GeometricElementWrapper<Dgn::GeometricElement2d>
 {
-    DGNELEMENT_DECLARE_MEMBERS(BRRA_CLASS_VerticalAlignment, Dgn::GeometricElement2d);
-    friend struct VerticalAlignmentHandler;
+    DGNELEMENTWRAPPER_DECLARE_MEMBERS(GeometricElementWrapper, Dgn::GeometricElement2d)
     friend struct Alignment;
 
 private:
@@ -283,20 +278,21 @@ private:
 
 protected:
     //! @private
-    explicit VerticalAlignment(CreateParams const& params) : T_Super(params) {}
+    explicit VerticalAlignment(Dgn::GeometricElement2d const& element) : T_Super(element) {}
+    explicit VerticalAlignment(Dgn::GeometricElement2d& element) : T_Super(element) {}
     //! @private
-    explicit VerticalAlignment(CreateParams const& params, CurveVectorCR geometry);
+    explicit VerticalAlignment(Dgn::GeometricElement2d& element, CurveVectorCR geometry);
     
 public:
     DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(VerticalAlignment)
     
     //! @privatesection
-    DECLARE_ROADRAILALIGNMENT_ELEMENT_BASE_METHODS(VerticalAlignment)
+    DECLARE_ROADRAILALIGNMENT_ELEMENT_BASE_METHODS(VerticalAlignment, Dgn::GeometricElement2d)
     //! @publicsection
 
     //! Get the Alignment holding this VerticalAlignment.
     //! @return The Alignment holding this VerticalAlignment.
-    AlignmentCR GetAlignment() const { return *Alignment::Get(GetDgnDb(), GetModel()->GetModeledElementId()); }
+    AlignmentCR GetAlignment() const { return *Alignment::Get(GetDgnDb(), get()->GetModel()->GetModeledElementId()); }
 
     //! Get the raw geometry of this VerticalAlignment.
     //! @return The CurveVector representing the raw geometry of this VerticalAlignment.
@@ -313,54 +309,6 @@ public:
 
 }; // VerticalAlignment
 
-
-//__PUBLISH_SECTION_END__
-//=================================================================================
-//! ElementHandler for Alignment Elements
-//! @ingroup GROUP_RoadRailAlignment
-//=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE AlignmentHandler : Dgn::dgn_ElementHandler::SpatialLocation
-{
-ELEMENTHANDLER_DECLARE_MEMBERS(BRRA_CLASS_Alignment, Alignment, AlignmentHandler, Dgn::dgn_ElementHandler::SpatialLocation, ROADRAILALIGNMENT_EXPORT)
-}; //AlignmentHandler
-
-//=================================================================================
-//! ElementHandler for DesignAlignments Element
-//! @ingroup GROUP_RoadRailAlignment
-//=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DesignAlignmentsHandler : Dgn::dgn_ElementHandler::SpatialLocation
-{
-ELEMENTHANDLER_DECLARE_MEMBERS(BRRA_CLASS_DesignAlignments, DesignAlignments, DesignAlignmentsHandler, Dgn::dgn_ElementHandler::SpatialLocation, ROADRAILALIGNMENT_EXPORT)
-}; // DesignAlignmentsHandler
-
-//=================================================================================
-//! ElementHandler for HorizontalAlignments Element
-//! @ingroup GROUP_RoadRailAlignment
-//=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE HorizontalAlignmentsHandler : Dgn::dgn_ElementHandler::SpatialLocation
-{
-ELEMENTHANDLER_DECLARE_MEMBERS(BRRA_CLASS_HorizontalAlignments, HorizontalAlignments, HorizontalAlignmentsHandler, Dgn::dgn_ElementHandler::SpatialLocation, ROADRAILALIGNMENT_EXPORT)
-}; // HorizontalAlignmentsHandler
-
-//=================================================================================
-//! ElementHandler for HorizontalAlignment Elements
-//! @ingroup GROUP_RoadRailAlignment
-//=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE HorizontalAlignmentHandler : Dgn::dgn_ElementHandler::SpatialLocation
-{
-ELEMENTHANDLER_DECLARE_MEMBERS(BRRA_CLASS_HorizontalAlignment, HorizontalAlignment, HorizontalAlignmentHandler, Dgn::dgn_ElementHandler::SpatialLocation, ROADRAILALIGNMENT_EXPORT)
-}; // HorizontalAlignmentHandler
-
-//=================================================================================
-//! ElementHandler for VerticalAlignment Elements
-//! @ingroup GROUP_RoadRailAlignment
-//=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE VerticalAlignmentHandler : Dgn::dgn_ElementHandler::Geometric2d
-{
-ELEMENTHANDLER_DECLARE_MEMBERS(BRRA_CLASS_VerticalAlignment, VerticalAlignment, VerticalAlignmentHandler, Dgn::dgn_ElementHandler::Geometric2d, ROADRAILALIGNMENT_EXPORT)
-}; // VerticalAlignmentHandler
-
-//__PUBLISH_SECTION_START__
 END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 
 /** @endcond */

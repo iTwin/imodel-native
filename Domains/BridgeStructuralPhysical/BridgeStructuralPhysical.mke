@@ -1,0 +1,115 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source$
+#
+#  $Copyright$
+#
+#---------------------------------------------------------------------------------------+
+%include mdl.mki
+%include $(SrcRoot)imodel02/Domains/BridgeStructuralPhysical/BridgeStructuralPhysical.mki
+
+#--------------------------------------------------------------------------------------
+#   Macros
+#--------------------------------------------------------------------------------------
+appSrc              = $(_MakeFilePath)
+appPublicApi        = $(appSrc)PublicAPI/$(appName)/
+MultiCompileDepends = $(_MakeFileSpec) $(appSrc)BridgeStructuralPhysicalInternal.h $(appPublicApi)BridgeStructuralPhysicalApi.h
+
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------------------
+#   Pre-compiled header
+#----------------------------------------------------------------------
+#PchCompiland        = $(appSrc)BridgeStructuralPhysicalInternal.cpp
+#PchOutputDir        = $(o)
+#PchExtraOptions     = -Zm160
+#PchExplicitDepends  = $(MultiCompileDepends) \
+
+CompileOptionsMki =$(SrcRoot)imodel02/Domains/BridgeStructuralPhysical/BridgeStructuralPhysical.mki
+%include $(CompileOptionsMki)
+#%include $(SharedMki)PreCompileHeader.mki
+
+CCPchOpts = $(UsePrecompiledHeaderOptions)
+CPchOpts  = $(UsePrecompiledHeaderOptions)
+
+#--------------------------------------------------------------------------------------
+#   Compile source
+#--------------------------------------------------------------------------------------
+%include MultiCppCompileRule.mki
+
+$(o)Bridge$(oext) : $(_MakeFilePath)Bridge.cpp \
+    ${MultiCompileDepends} \
+    $(appPublicApi)BridgeStructuralPhysicalApi.h \
+    $(appPublicApi)Bridge.h \
+    $(appPublicApi)BridgeCategory.h \
+    $(appPublicApi)BridgeSubstructure.h
+
+$(o)BridgeCategory$(oext) : $(_MakeFilePath)BridgeCategory.cpp \
+    ${MultiCompileDepends} \
+    $(appPublicApi)BridgeStructuralPhysicalApi.h \
+    $(appPublicApi)BridgeCategory.h
+
+$(o)BridgeStructuralPhysicalDomain$(oext) : $(_MakeFilePath)BridgeStructuralPhysicalDomain.cpp \
+    ${MultiCompileDepends} \
+    $(appPublicApi)BridgeStructuralPhysicalApi.h \
+    $(appPublicApi)BridgeStructuralPhysicalDomain.h \
+    $(appPublicApi)BridgeCategory.h \
+    $(appPublicApi)Bridge.h \
+    $(appPublicApi)BridgeSuperstructure.h \
+    $(appPublicApi)BridgeSubstructure.h
+
+$(o)BridgeStructuralPhysicalDomainUtilities$(oext) : $(_MakeFilePath)BridgeStructuralPhysicalDomainUtilities.cpp \
+    ${MultiCompileDepends} \
+    $(appPublicApi)BridgeStructuralPhysicalApi.h \
+    $(appPublicApi)BridgeStructuralPhysicalDomainUtilities.h \
+    $(appPublicApi)BridgeStructuralPhysicalDomain.h \
+    $(appPublicApi)BridgeCategory.h
+
+
+$(o)BridgeSuperstructure$(oext) : $(_MakeFilePath)BridgeSuperstructure.cpp \
+    ${MultiCompileDepends} \
+    $(appPublicApi)BridgeStructuralPhysicalApi.h \
+    $(appPublicApi)BridgeSuperstructure.h \
+    $(appPublicApi)Bridge.h \
+    $(appPublicApi)BridgeSubstructure.h
+
+$(o)BridgeSubstructure$(oext) : $(_MakeFilePath)BridgeSubstructure.cpp \
+    ${MultiCompileDepends} \
+    $(appPublicApi)BridgeStructuralPhysicalApi.h \
+    $(appPublicApi)BridgeSubstructure.h \
+    $(appPublicApi)Bridge.h \
+    $(appPublicApi)BridgeCategory.h 
+
+
+%include MultiCppCompileGo.mki
+
+#--------------------------------------------------------------------------------------
+#   Create the library
+#--------------------------------------------------------------------------------------
+DLM_NAME                    = $(appName)
+DLM_OBJECT_FILES            = $(MultiCompileObjectList)
+DLM_OBJECT_DEST             = $(o)
+#DLM_OBJECT_PCH              = $(o)___$(oext) 
+DLM_DEST                    = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+LINKER_LIBRARIES            = $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BentleyGeomSerialization$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)LinearReferencing$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)FormsDomain$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)RoadRailAlignment$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)StructuralDomain$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)Profiles$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeJsonCpp$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)CivilBaseGeometry$(libext)
+%include $(sharedMki)linkLibrary.mki
+

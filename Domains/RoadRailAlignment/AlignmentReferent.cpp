@@ -6,21 +6,11 @@
 #include "RoadRailAlignmentInternal.h"
 #include <RoadRailAlignment/AlignmentReferent.h>
 
-HANDLER_DEFINE_MEMBERS(AlignmentStationHandler)
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-AlignmentStation::AlignmentStation(CreateParams const& params) :
-    T_Super(params)
-    {
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-AlignmentStation::AlignmentStation(CreateParams const& params, CreateAtParams const& atParams) :
-    T_Super(params, atParams)
+AlignmentStation::AlignmentStation(SpatialLocationElement& element, CreateAtParams const& atParams) :
+    T_Super(element, atParams)
     {
     ILinearlyLocated::_AddLinearlyReferencedLocation(*_GetUnpersistedAtLocation());
     SetStation(atParams.m_station);
@@ -34,12 +24,12 @@ AlignmentStationPtr AlignmentStation::Create(CreateAtParams const& atParams)
     if (!atParams.m_linearElementCPtr->GetModelId().IsValid() || !atParams.m_linearElementCPtr->GetElementId().IsValid())
         return nullptr;
 
-    CreateParams params(atParams.m_linearElementCPtr->GetDgnDb(), atParams.m_linearElementCPtr->GetModelId(),
+    SpatialLocationElement::CreateParams params(atParams.m_linearElementCPtr->GetDgnDb(), atParams.m_linearElementCPtr->GetModelId(),
         QueryClassId(atParams.m_linearElementCPtr->GetDgnDb()), AlignmentCategory::GetAlignment(atParams.m_linearElementCPtr->GetDgnDb()));
     params.SetParentId(atParams.m_linearElementCPtr->GetElementId(), 
         DgnClassId(atParams.m_linearElementCPtr->GetDgnDb().Schemas().GetClassId(BRRA_SCHEMA_NAME, BRRA_REL_AlignmentOwnsReferents)));
 
-    AlignmentStationPtr retVal(new AlignmentStation(params, atParams));
+    AlignmentStationPtr retVal(new AlignmentStation(*Create(atParams.m_linearElementCPtr->GetDgnDb(), params), atParams));
     retVal->_SetLinearElement(atParams.m_linearElementCPtr->GetElementId());
     return retVal;
     }

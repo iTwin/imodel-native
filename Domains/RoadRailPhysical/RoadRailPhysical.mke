@@ -47,7 +47,15 @@ $(o)DesignSpeed$(oext) : $(_MakeFilePath)DesignSpeed.cpp ${MultiCompileDepends} 
 
 $(o)RoadRailCategory$(oext) : $(_MakeFilePath)RoadRailCategory.cpp ${MultiCompileDepends} $(appPublicApi)RoadRailCategory.h
 
+$(o)RailPhysicalDomain$(oext) : $(_MakeFilePath)RailPhysicalDomain.cpp ${MultiCompileDepends} $(appPublicApi)RailPhysicalDomain.h
+
+$(o)RoadPhysicalDomain$(oext) : $(_MakeFilePath)RoadPhysicalDomain.cpp ${MultiCompileDepends} $(appPublicApi)RoadPhysicalDomain.h
+
 $(o)RoadRailPhysicalDomain$(oext) : $(_MakeFilePath)RoadRailPhysicalDomain.cpp ${MultiCompileDepends} $(appPublicApi)RoadRailPhysicalDomain.h
+
+$(o)Railway$(oext) : $(_MakeFilePath)Railway.cpp ${MultiCompileDepends} $(appPublicApi)Railway.h
+
+$(o)Roadway$(oext) : $(_MakeFilePath)Roadway.cpp ${MultiCompileDepends} $(appPublicApi)Roadway.h
 
 %include MultiCppCompileGo.mki
 

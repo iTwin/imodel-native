@@ -9,7 +9,11 @@
 #include "RoadRailPhysical.h"
 #include "RoadRailCategory.h"
 #include "RoadRailPhysicalDomain.h"
+#include "RailPhysicalDomain.h"
+#include "RoadPhysicalDomain.h"
 #include "Corridor.h"
 #include "DesignSpeed.h"
+#include "Roadway.h"
+#include "Railway.h"
 
 //__PUBLISH_SECTION_END__

@@ -245,6 +245,9 @@ public:
     Dgn::DgnElementR ToElementR() { return *const_cast<Dgn::DgnElementP>(&_ILinearlyLocatedToDgnElement()); }    
 
     LINEARREFERENCING_EXPORT LinearlyReferencedLocationP GetLinearlyReferencedLocationP(LinearlyReferencedLocationId);    
+
+    //! Overrides the Linear-Element for this LinearlyLocated element
+    LINEARREFERENCING_EXPORT void SetLinearElement(ILinearElementCP linearElement) const;
     //__PUBLISH_SECTION_START__
     
 }; // ILinearlyLocated
@@ -268,7 +271,7 @@ public:
 
     //__PUBLISH_SECTION_END__
 
-    LINEARREFERENCING_EXPORT void SetAttributedElement(ILinearElementSourceCP attributedElement);
+    LINEARREFERENCING_EXPORT void SetAttributedElement(Dgn::GeometricElement3dCP attributedElement);
     //__PUBLISH_SECTION_START__
 }; // ILinearlyLocatedAttribution
 
@@ -296,10 +299,10 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE ILinearlyLocatedMultipleAt : virtual ILinearlyLocated
 {
     //! Given a LinearlyReferencedLocationId (see QueryLinearlyReferencedLocationIds()), get its LinearlyReferencedAtLocation.
-    LINEARREFERENCING_EXPORT LinearlyReferencedAtLocationCP GetAtLocation(LinearlyReferencedLocationId) const;
+    LINEARREFERENCING_EXPORT LinearlyReferencedAtLocationCPtr GetAtLocation(LinearlyReferencedLocationId) const;
     //__PUBLISH_SECTION_END__
 
-    LINEARREFERENCING_EXPORT LinearlyReferencedAtLocationP GetAtLocationP(LinearlyReferencedLocationId);
+    LINEARREFERENCING_EXPORT LinearlyReferencedAtLocationPtr GetAtLocationP(LinearlyReferencedLocationId);
 
     //__PUBLISH_SECTION_START__
 }; // ILinearlyLocatedAt
@@ -340,8 +343,8 @@ protected:
     static bool ValidateParams(CreateAtParams const& params) { return params.m_linearElementCPtr.IsValid() && params.m_linearElementCPtr->GetElementId().IsValid(); }
 
 public:
-    LINEARREFERENCING_EXPORT LinearReferencing::LinearlyReferencedAtLocationCP GetAtLocation() const;
-    LINEARREFERENCING_EXPORT LinearReferencing::LinearlyReferencedAtLocationP GetAtLocationP();
+    LINEARREFERENCING_EXPORT LinearReferencing::LinearlyReferencedAtLocationCPtr GetAtLocation() const;
+    LINEARREFERENCING_EXPORT LinearReferencing::LinearlyReferencedAtLocationPtr GetAtLocationP();
 
     //! Get the distance along of this LinearLocated from the start of the ILinearElement
     LINEARREFERENCING_EXPORT double GetAtDistanceAlongFromStart() const;
@@ -358,10 +361,10 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE ILinearlyLocatedMultipleFromTo : virtual ILinearlyLocated
 {
     //! Given a LinearlyReferencedLocationId (see QueryLinearlyReferencedLocationIds()), get its LinearlyReferencedLocationId.
-    LINEARREFERENCING_EXPORT LinearlyReferencedFromToLocationCP GetFromToLocation(LinearlyReferencedLocationId) const;
+    LINEARREFERENCING_EXPORT LinearlyReferencedFromToLocationCPtr GetFromToLocation(LinearlyReferencedLocationId) const;
     //__PUBLISH_SECTION_END__
 
-    LINEARREFERENCING_EXPORT LinearlyReferencedFromToLocationP GetFromToLocationP(LinearlyReferencedLocationId);
+    LINEARREFERENCING_EXPORT LinearlyReferencedFromToLocationPtr GetFromToLocationP(LinearlyReferencedLocationId);
     //__PUBLISH_SECTION_START__
 }; // ILinearlyLocatedAt
 
@@ -403,8 +406,8 @@ protected:
     static bool ValidateParams(CreateFromToParams const& params) { return params.m_linearElementCPtr.IsValid() && params.m_linearElementCPtr->GetElementId().IsValid(); }
 
 public:
-    LINEARREFERENCING_EXPORT LinearReferencing::LinearlyReferencedFromToLocationCP GetFromToLocation() const;
-    LINEARREFERENCING_EXPORT LinearReferencing::LinearlyReferencedFromToLocationP GetFromToLocationP();
+    LINEARREFERENCING_EXPORT LinearReferencing::LinearlyReferencedFromToLocationCPtr GetFromToLocation() const;
+    LINEARREFERENCING_EXPORT LinearReferencing::LinearlyReferencedFromToLocationPtr GetFromToLocationP();
 
     //! Get the "From" distance from the start.
     LINEARREFERENCING_EXPORT double GetFromDistanceAlongFromStart() const;

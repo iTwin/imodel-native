@@ -69,8 +69,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeBuildCommandLine>bb -p DgnV8OpenRoadsDesigner -f DgnV8OpenRoadsDesigner -r DgnDomains-DgnV8OpenRoadsDesigner -ax64 re DgnV8OpenRoadsDesigner</NMakeBuildCommandLine>
-    <NMakeCleanCommandLine>bb -p DgnV8OpenRoadsDesigner -f DgnV8OpenRoadsDesigner -r DgnDomains-DgnV8OpenRoadsDesigner -ax64 re DgnV8OpenRoadsDesigner -c</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>bb -p DgnV8OpenRoadsDesigner -f Domains/DgnV8OpenRoadsDesigner/DgnV8OpenRoadsDesigner -r imodel02 -ax64 re DgnV8OpenRoadsDesigner</NMakeBuildCommandLine>
+    <NMakeCleanCommandLine>bb -p DgnV8OpenRoadsDesigner -f Domains/DgnV8OpenRoadsDesigner/DgnV8OpenRoadsDesigner -r imodel02 -ax64 re DgnV8OpenRoadsDesigner -c</NMakeCleanCommandLine>
     <NMakeReBuildCommandLine>$(NMakeCleanCommandLine)%26$(NMakeBuildCommandLine)</NMakeReBuildCommandLine>
     <NMakePreprocessorDefinitions>__DGNV8OPENROADSDESIGNER_BUILD__</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>$(OutRoot)Winx64\BuildContexts\DgnV8OpenRoadsDesigner\PublicAPI\;$(OutRoot)Winx64\BuildContexts\DgnV8OpenRoadsDesigner\VendorAPI\;$(SrcRoot)DgnDomains\DgnV8OpenRoadsDesigner\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
@@ -121,7 +121,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <Xml Include="..\..\BisSchemas\Domains\DgnV8OpenRoadsDesigner\DgnV8OpenRoadsDesigner.ecschema.xml" />
+    <Xml Include="..\..\..\BisSchemas\Domains\Civil\Deprecated\DgnV8OpenRoadsDesigner\DgnV8OpenRoadsDesigner.ecschema.xml" />
     <Xml Include="DgnV8OpenRoadsDesigner.PartFile.xml" />
   </ItemGroup>
   <ItemGroup>

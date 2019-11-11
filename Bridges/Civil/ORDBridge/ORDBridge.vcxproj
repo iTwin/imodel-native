@@ -12,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DynamicSchemaComparer.h" />
+    <ClInclude Include="OBMConverter.h" />
     <ClInclude Include="ORDBridge.h" />
     <ClInclude Include="ORDBridgeInternal.h" />
     <ClInclude Include="ORDConverter.h" />
@@ -21,6 +22,7 @@
   <ItemGroup>
     <ClCompile Include="DynamicSchemaComparer.cpp" />
     <ClCompile Include="iModelBridgeAffinity.cpp" />
+    <ClCompile Include="OBMConverter.cpp" />
     <ClCompile Include="ORDBridge.cpp" />
     <ClCompile Include="ORDBridgeInternal.cpp" />
     <ClCompile Include="ORDConverter.cpp" />
@@ -31,6 +33,7 @@
     <None Include="installer\installer.prewire.mke" />
     <None Include="installer\ORDBridgeInstaller.wxs" />
     <None Include="installer\ORDBridgeInstallerbeforecompile.mki" />
+    <None Include="OBMSDK.prewire.mke" />
     <None Include="ORDBridge.mke" />
     <None Include="ORDBridge.mki" />
     <None Include="ORDBridge.prewire.mke" />
@@ -41,6 +44,7 @@
       <SubType>Designer</SubType>
     </Xml>
     <Xml Include="installer\ORDBridgeinstaller.wix.xml" />
+    <Xml Include="OpenBridgeModelerCE.ecschema.xml" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{82006D28-7E29-44DB-A592-58AAE71563D4}</ProjectGuid>

@@ -13,6 +13,33 @@
 
 BEGIN_ORDBRIDGE_NAMESPACE
 
+struct ORDConverterExtension
+{
+    friend struct ORDConverter;
+    friend struct ConvertORDElementXDomain;
+    
+protected:
+    virtual Dgn::DgnDbSync::DgnV8::XDomain::Result _PreConvertElement(DgnV8EhCR, ORDConverter&, Dgn::DgnDbSync::DgnV8::ResolvedModelMapping const&) { return Dgn::DgnDbSync::DgnV8::XDomain::Result::Proceed; }
+    virtual void _DetermineElementParams(Dgn::DgnClassId&, Dgn::DgnCode&, Dgn::DgnCategoryId&, DgnV8EhCR, ORDConverter&, ECObjectsV8::IECInstance const* primaryV8Instance, Dgn::DgnDbSync::DgnV8::ResolvedModelMapping const&) {}
+    virtual void _ProcessResults(Dgn::DgnDbSync::DgnV8::ElementConversionResults&, DgnV8EhCR, Dgn::DgnDbSync::DgnV8::ResolvedModelMapping const&, ORDConverter&) {}
+    virtual void _OnConversionComplete(ORDConverter&) {}
+    virtual BentleyStatus _MakeSchemaChanges() { return BentleyStatus::SUCCESS; }
+    
+private:
+    Dgn::DgnDbSync::DgnV8::XDomain::Result PreConvertElement(DgnV8EhCR v8el, ORDConverter& conv, Dgn::DgnDbSync::DgnV8::ResolvedModelMapping const& rmm) { return _PreConvertElement(v8el, conv, rmm); }
+    void DetermineElementParams(Dgn::DgnClassId& classId, Dgn::DgnCode& code, Dgn::DgnCategoryId& catId, DgnV8EhCR v8el, ORDConverter& conv, ECObjectsV8::IECInstance const* primaryV8Instance, Dgn::DgnDbSync::DgnV8::ResolvedModelMapping const& rmm) { _DetermineElementParams(classId, code, catId, v8el, conv, primaryV8Instance, rmm); }
+    void ProcessResults(Dgn::DgnDbSync::DgnV8::ElementConversionResults& res, DgnV8EhCR v8el, Dgn::DgnDbSync::DgnV8::ResolvedModelMapping const& rmm, ORDConverter& conv) { _ProcessResults(res, v8el, rmm, conv); }
+    void OnConversionComplete(ORDConverter& conv) { _OnConversionComplete(conv); }
+    BentleyStatus MakeSchemaChanges() { return _MakeSchemaChanges(); }
+    
+public:
+    ORDConverterExtension() {}
+    
+    static void Register(ORDConverterExtension& ext);
+    static void UnRegister(ORDConverterExtension& ext);
+    static void UnRegisterAll();
+}; // ORDConverterExtension
+
 struct ORDConverter : Dgn::DgnDbSync::DgnV8::RootModelConverter
 {
     DEFINE_T_SUPER(Dgn::DgnDbSync::DgnV8::RootModelConverter)
@@ -26,6 +53,7 @@ protected:
     virtual bool _ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Model) override;
     virtual void _OnSheetsConvertViewAttachment(Dgn::DgnDbSync::DgnV8::ResolvedModelMapping const& v8SheetModelMapping, DgnAttachmentR v8DgnAttachment) override;    
     virtual void _ConvertModels() override;
+    virtual Dgn::DgnModelId _MapModelIntoProject(DgnV8ModelR v8Model, Utf8CP newName, DgnAttachment const* attachment);// override;
     virtual Bentley::DgnPlatform::ModelId _GetRootModelId() override;
 
 public:
@@ -51,24 +79,28 @@ public:
 
 private:
     Params* m_ordParams;
-    RoadRailPhysical::RoadRailNetworkCPtr m_roadRailNetworkCPtr;
+    bvector<ORDConverterExtension*>::iterator m_makeSchemaChangeExtIter;
+    RoadPhysical::RoadNetworkCPtr m_roadNetworkCPtr;
+    RailPhysical::RailNetworkCPtr m_railNetworkCPtr;
     Dgn::DgnModelId m_clippingsModelId;
     bmap<Bentley::ElementRefP, Dgn::DgnElementPtr> m_v8ToBimElmMap;
+    bmap<Bentley::ElementRefP, Dgn::DgnElementId> m_cifAlignmentToBimID;
     bmap<Dgn::DgnSubCategoryId, Dgn::DgnSubCategoryId> m_2dSubCategoryMap;
     bool m_2dSubCategoryMapIsFilled = false;
 
     bvector<Bentley::RefCountedPtr<Bentley::Cif::GeometryModel::SDK::Corridor>> m_cifCorridors;
     bvector<Bentley::RefCountedPtr<Bentley::Cif::GeometryModel::SDK::Alignment>> m_cifAlignments;    
     bvector<Bentley::RefCountedPtr<Bentley::Cif::GeometryModel::SDK::LinearEntity3d>> m_cifGeneratedLinear3ds;
+    bvector<Bentley::RefCountedPtr<Bentley::Cif::GeometryModel::SDK::CorridorSurface>> m_cifCorridorSurfaces;
     bool m_isProcessing;
 
     bset<Dgn::DgnModelId> m_planViewModels;
     bset<Dgn::DgnModelId> m_3dModels;
 
     void CreateRoadRailElements();
-    void CreateAlignments();
+    void CreateDesignAlignments();
+    void Create3dLinears();
     void CreatePathways();
-    void SetCorridorDesignAlignments();
     void AssociateGeneratedAlignments();
     void CreateDefaultSavedViews();
     
@@ -76,12 +108,12 @@ private:
 
     //! Progress messages for the conversion process
     IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START(ORDBridgeProgressMessage, ordbridge_progress)
-        L10N_STRING(STEP_ALIGN_DATA)           // =="Aligning data"==
-        L10N_STRING(TASK_CREATE_CORRIDORS)     // =="Creating corridors"==
-        L10N_STRING(TASK_CREATE_ALIGNMENTS)    // =="Creating alignments"==
-        L10N_STRING(TASK_ASSOCIATE_CORRIDORS)  // =="Associating corridors"==
-        L10N_STRING(TASK_ASSOCIATE_3DLINEARS)  // =="Associating 3d linears"==
-        L10N_STRING(TASK_PROCESS_PROFILE)      // =="Processing profile"==
+        L10N_STRING(STEP_ALIGN_DATA)                // =="Aligning data"==
+        L10N_STRING(TASK_CREATE_CORRIDORS)          // =="Creating corridors"==
+        L10N_STRING(TASK_CREATE_DESIGNALIGNMENTS)   // =="Creating alignments"==
+        L10N_STRING(TASK_CREATE_3DLINEARS)          // =="Creating 3d linears"==
+        L10N_STRING(TASK_ASSOCIATE_3DLINEARS)       // =="Associating 3d linears"==
+        L10N_STRING(TASK_PROCESS_PROFILE)           // =="Processing profile"==
     IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
     //! Translatable Element-Codes
@@ -90,9 +122,10 @@ private:
         L10N_STRING(VIEW_3D_MODELS)            // =="3D Models"==
     IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
+
 public:
     ORDConverter(Dgn::DgnDbSync::DgnV8::RootModelConverter::RootModelSpatialParams& params) : 
-        Dgn::DgnDbSync::DgnV8::RootModelConverter(params), m_isProcessing(false)
+        Dgn::DgnDbSync::DgnV8::RootModelConverter(params), m_isProcessing(false), m_makeSchemaChangeExtIter(nullptr)
         {
         // When EC Content is skipped, item types don't get converted.  By default, the framework has this 
         // m_skipECContent set to true.  Let's change that for us to default to false so we default to getting
@@ -107,17 +140,27 @@ public:
             m_dgndb = nullptr;
         }
 
+    bset<Bentley::ElementRefP> m_bridgeV8RefSet;
+
     void SetORDParams(Params* ordParams) { m_ordParams = ordParams; }
     void SetIsProcessing(bool newVal) { m_isProcessing = newVal; }
 
-    RoadRailPhysical::RoadRailNetworkCP GetRoadRailNetwork() const { return m_roadRailNetworkCPtr.get(); }
-    void SetRoadRailNetwork(RoadRailPhysical::RoadRailNetworkCR network) { m_roadRailNetworkCPtr = &network; }
+    RoadPhysical::RoadNetworkCP GetRoadNetwork() const { return m_roadNetworkCPtr.get(); }
+    RailPhysical::RailNetworkCP GetRailNetwork() const { return m_railNetworkCPtr.get(); }
+    Dgn::DgnElementId GetBimElementFor(Bentley::ElementRefP) const;
+    Dgn::DgnViewId GetDefaultViewId();
+    void InsertIntoV8ToBimElmMap(Bentley::ElementRefP v8ElementRefP, Dgn::DgnElementPtr bimElementPtr);
+    void SetRoadNetwork(RoadPhysical::RoadNetworkCR network) { m_roadNetworkCPtr = &network; }
+    void SetRailNetwork(RailPhysical::RailNetworkCR network) { m_railNetworkCPtr = &network; }
     Dgn::DgnModelId GetClippingsModelId() const { return m_clippingsModelId; }
     void SetClippingsModelId(Dgn::DgnModelId clippingsModelId) { m_clippingsModelId = clippingsModelId; }
     void SetUpModelFormatters();
     Dgn::UnitSystem GetRootModelUnitSystem();
+    bmap<Bentley::ElementRefP, Dgn::DgnElementId> GetCifAlignmentToBimIDMap() { return m_cifAlignmentToBimID; }
     BentleyStatus AddDynamicSchema();
-    BentleyStatus Add2dCategory();
+    size_t GetExtensionCount() const;
+    BentleyStatus AddExtensionSchema(bool& hasMoreChanges);
+	BentleyStatus Add2dCategory();
 }; // ORDConverter
 
 struct ConvertORDElementXDomain : Dgn::DgnDbSync::DgnV8::XDomain
@@ -148,6 +191,7 @@ protected:
     virtual Result _PreConvertElement(DgnV8EhCR, Dgn::DgnDbSync::DgnV8::Converter&, Dgn::DgnDbSync::DgnV8::ResolvedModelMapping const&) override;
     virtual void _ProcessResults(Dgn::DgnDbSync::DgnV8::ElementConversionResults&, DgnV8EhCR, Dgn::DgnDbSync::DgnV8::ResolvedModelMapping const&, Dgn::DgnDbSync::DgnV8::Converter&) override;
     virtual void _OnFinishConversion(Dgn::DgnDbSync::DgnV8::Converter&) override {};
+    virtual bool _GetBasisTransform(Bentley::Transform&, DgnV8EhCR, Dgn::DgnDbSync::DgnV8::Converter&) override;
 
 public:
     ConvertORDElementXDomain(ORDConverter& converter);

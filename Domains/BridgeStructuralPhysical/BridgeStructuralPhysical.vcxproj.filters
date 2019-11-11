@@ -1,0 +1,80 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="PublicAPI\BridgeStructuralPhysical\BridgeStructuralPhysicalApi.h">
+      <Filter>Header Files\Public API</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\BridgeStructuralPhysical\BridgeStructuralPhysicalDomain.h">
+      <Filter>Header Files\Public API</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\BridgeStructuralPhysical\Bridge.h">
+      <Filter>Header Files\Public API</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\BridgeStructuralPhysical\BridgeSubstructure.h">
+      <Filter>Header Files\Public API</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\BridgeStructuralPhysical\BridgeSuperstructure.h">
+      <Filter>Header Files\Public API</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\BridgeStructuralPhysical\BridgeCategory.h">
+      <Filter>Header Files\Public API</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\BridgeStructuralPhysical\BridgeStructuralPhysicalDomainUtilities.h">
+      <Filter>Header Files\Public API</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\BridgeStructuralPhysical\BridgeStructuralPhysical.h">
+      <Filter>Header Files\Public API</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="BridgeStructuralPhysical.PartFile.xml">
+      <Filter>Build Files</Filter>
+    </Xml>
+    <Xml Include="BridgeStructuralPhysical.ecschema.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="BridgeStructuralPhysical.mke">
+      <Filter>Build Files</Filter>
+    </None>
+    <None Include="BridgeStructuralPhysical.mki">
+      <Filter>Build Files</Filter>
+    </None>
+    <None Include="BridgeStructuralPhysical.prewire.mke">
+      <Filter>Build Files</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Build Files">
+      <UniqueIdentifier>{ac8c80d5-6a3d-4971-ba69-e8adbaefd6cc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{4d423d9b-3ccb-4401-9d17-3fa7bc5c5035}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Public API">
+      <UniqueIdentifier>{197f8ef4-f48e-4d52-8a3a-ffe07d7ca20f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{0e29df35-0e20-45d3-919a-e8a609c93536}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="BridgeStructuralPhysicalDomain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Bridge.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="BridgeSubstructure.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="BridgeCategory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="BridgeStructuralPhysicalDomainUtilities.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="BridgeSuperstructure.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

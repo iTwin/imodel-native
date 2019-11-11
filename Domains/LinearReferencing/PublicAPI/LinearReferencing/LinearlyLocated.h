@@ -19,16 +19,14 @@ BEGIN_BENTLEY_LINEARREFERENCING_NAMESPACE
 //! bis:SpatialLocationElement.
 //! @ingroup GROUP_LinearReferencing
 //=======================================================================================
-struct LinearLocationElement : Dgn::SpatialLocationElement, LinearReferencing::ILinearLocationElement
+struct LinearLocationElement : GeometricElementWrapper<Dgn::SpatialLocationElement>, LinearReferencing::ILinearLocationElement
 {
-DGNELEMENT_DECLARE_MEMBERS(BLR_CLASS_LinearLocationElement, Dgn::SpatialLocationElement);
-friend struct LinearLocationElementHandler;
+    DGNELEMENTWRAPPER_DECLARE_MEMBERS(GeometricElementWrapper, Dgn::SpatialLocationElement)
 
 protected:
     //! @private
-    explicit LinearLocationElement(CreateParams const& params): T_Super(params) {}
-
-    virtual Dgn::DgnElementCR _ILinearlyLocatedToDgnElement() const { return *this; }
+    explicit LinearLocationElement(Dgn::SpatialLocationElement const& element) : T_Super(element) {}
+    explicit LinearLocationElement(Dgn::SpatialLocationElement& element) : T_Super(element) {}
 
 public:
     DECLARE_LINEARREFERENCING_QUERYCLASS_METHODS(LinearLocationElement)
@@ -39,16 +37,14 @@ public:
 //! bis:PhysicalElement.
 //! @ingroup GROUP_LinearReferencing
 //=======================================================================================
-struct LinearPhysicalElement : Dgn::PhysicalElement, LinearReferencing::ILinearLocationElement
+struct LinearPhysicalElement : GeometricElementWrapper<Dgn::PhysicalElement>, LinearReferencing::ILinearLocationElement
 {
-DGNELEMENT_DECLARE_MEMBERS(BLR_CLASS_LinearPhysicalElement, Dgn::PhysicalElement);
-friend struct LinearPhysicalElementHandler;
+    DGNELEMENTWRAPPER_DECLARE_MEMBERS(GeometricElementWrapper, Dgn::PhysicalElement)
 
 protected:
     //! @private
-    explicit LinearPhysicalElement(CreateParams const& params): T_Super(params) {}
-
-    virtual Dgn::DgnElementCR _ILinearlyLocatedToDgnElement() const { return *this; }
+    explicit LinearPhysicalElement(Dgn::PhysicalElement const& element) : T_Super(element) {}
+    explicit LinearPhysicalElement(Dgn::PhysicalElement& element) : T_Super(element) {}
 
 public:
     DECLARE_LINEARREFERENCING_QUERYCLASS_METHODS(LinearPhysicalElement)
@@ -59,19 +55,39 @@ public:
 //! bis:SpatialLocationElement.
 //! @ingroup GROUP_LinearReferencing
 //=======================================================================================
-struct LinearLocation : LinearLocationElement
+struct LinearLocation : LinearLocationElement, ILinearlyLocatedSingleAt, ILinearlyLocatedSingleFromTo
 {
-DGNELEMENT_DECLARE_MEMBERS(BLR_CLASS_LinearLocation, LinearLocationElement);
-friend struct LinearLocationHandler;
+    DGNELEMENTWRAPPER_DECLARE_MEMBERS(LinearLocationElement, Dgn::SpatialLocationElement)
+
+private:
+    mutable Dgn::DgnElementId m_cachedLocatedElementId;
+
+    //! @private
+    LINEARREFERENCING_EXPORT Dgn::DgnDbStatus _InsertLocatedElementRelationship();
 
 protected:
     //! @private
-    explicit LinearLocation(CreateParams const& params): T_Super(params) {}
+    explicit LinearLocation(Dgn::SpatialLocationElement const& element) : T_Super(element) {}
+    explicit LinearLocation(Dgn::SpatialLocationElement& element) : T_Super(element) {}
+    //! @private
+    explicit LinearLocation(Dgn::SpatialLocationElementR element, Dgn::DgnElementCR locatedElement, CreateAtParams const& atParams);
+    explicit LinearLocation(Dgn::SpatialLocationElementR element, Dgn::DgnElementCR locatedElement, CreateFromToParams const& atParams);
+
+    virtual Dgn::DgnElementCR _ILinearlyLocatedToDgnElement() const override { return *get(); }
+
+    //! @private
+    void _SetLocatedElement(Dgn::DgnElementId elementId) { m_cachedLocatedElementId = elementId; }
 
 public:
     DECLARE_LINEARREFERENCING_QUERYCLASS_METHODS(LinearLocation)
-    DECLARE_LINEARREFERENCING_ELEMENT_GET_METHODS(LinearLocation)
-    DECLARE_LINEARREFERENCING_LINEARLYLOCATED_SET_METHODS(LinearLocation)
+    DECLARE_LINEARREFERENCING_ELEMENT_GET_METHODS(LinearLocation, Dgn::SpatialLocationElement)
+
+    LINEARREFERENCING_EXPORT static LinearLocationPtr Create(Dgn::DgnElementCR locatedElement, Dgn::DgnCategoryId const& categoryId, CreateAtParams const& atParams);
+    LINEARREFERENCING_EXPORT static LinearLocationPtr Create(Dgn::DgnElementCR locatedElement, Dgn::DgnCategoryId const& categoryId, CreateFromToParams const& atParams);
+    LINEARREFERENCING_EXPORT static Dgn::DgnElementId Query(Dgn::DgnElementCR locatedElement);
+
+    LINEARREFERENCING_EXPORT LinearLocationCPtr Insert(Dgn::DgnDbStatus* stat = nullptr);
+    LINEARREFERENCING_EXPORT LinearLocationCPtr Update(Dgn::DgnDbStatus* stat = nullptr);
 }; // LinearLocation
 
 //=======================================================================================
@@ -79,16 +95,16 @@ public:
 //! bis:SpatialLocationElement.
 //! @ingroup GROUP_LinearReferencing
 //=======================================================================================
-struct LinearlyLocatedAttribution : Dgn::SpatialLocationElement, LinearReferencing::ILinearlyLocatedAttribution
+struct LinearlyLocatedAttribution : GeometricElementWrapper<Dgn::SpatialLocationElement>, LinearReferencing::ILinearlyLocatedAttribution
 {
-DGNELEMENT_DECLARE_MEMBERS(BLR_CLASS_LinearlyLocatedAttribution, Dgn::SpatialLocationElement);
-friend struct LinearlyLocatedAttributionHandler;
+    DGNELEMENTWRAPPER_DECLARE_MEMBERS(GeometricElementWrapper, Dgn::SpatialLocationElement)
 
 protected:
     //! @private
-    explicit LinearlyLocatedAttribution(CreateParams const& params): T_Super(params) {}
+    explicit LinearlyLocatedAttribution(Dgn::SpatialLocationElement const& element) : T_Super(element) {}
+    explicit LinearlyLocatedAttribution(Dgn::SpatialLocationElement& element) : T_Super(element) {}
 
-    virtual Dgn::DgnElementCR _ILinearlyLocatedToDgnElement() const { return *this; }
+    virtual Dgn::DgnElementCR _ILinearlyLocatedToDgnElement() const { return *get(); }
 
 public:
     DECLARE_LINEARREFERENCING_QUERYCLASS_METHODS(LinearlyLocatedAttribution)
@@ -99,19 +115,19 @@ public:
 //! bis:SpatialLocationElement.
 //! @ingroup GROUP_LinearReferencing
 //=======================================================================================
-struct ReferentElement : Dgn::SpatialLocationElement, IReferent, ILinearlyLocatedSingleAt
+struct ReferentElement : GeometricElementWrapper<Dgn::SpatialLocationElement>, IReferent, ILinearlyLocatedSingleAt
 {
-DGNELEMENT_DECLARE_MEMBERS(BLR_CLASS_ReferentElement, Dgn::SpatialLocationElement);
-friend struct ReferentElementHandler;
+    DGNELEMENTWRAPPER_DECLARE_MEMBERS(GeometricElementWrapper, Dgn::SpatialLocationElement)
 
 protected:
     //! @private
-    explicit ReferentElement(CreateParams const& params): T_Super(params) {}
+    explicit ReferentElement(Dgn::SpatialLocationElement const& element) : T_Super(element) {}
+    explicit ReferentElement(Dgn::SpatialLocationElement& element) : T_Super(element) {}
 
     //! @private
-    explicit ReferentElement(CreateParams const& params, CreateAtParams const& atParams): T_Super(params), ILinearlyLocatedSingleAt(atParams) {}
+    explicit ReferentElement(Dgn::SpatialLocationElement& element, CreateAtParams const& atParams): T_Super(element), ILinearlyLocatedSingleAt(atParams) {}
 
-    virtual Dgn::DgnElementCR _ILinearlyLocatedToDgnElement() const { return *this; }
+    virtual Dgn::DgnElementCR _ILinearlyLocatedToDgnElement() const { return *get(); }
 
 public:
     DECLARE_LINEARREFERENCING_QUERYCLASS_METHODS(ReferentElement)
@@ -124,77 +140,22 @@ public:
 //=======================================================================================
 struct Referent : ReferentElement
 {
-DGNELEMENT_DECLARE_MEMBERS(BLR_CLASS_Referent, ReferentElement);
-friend struct ReferentHandler;
+    DGNELEMENTWRAPPER_DECLARE_MEMBERS(ReferentElement, Dgn::SpatialLocationElement)
 
 protected:
     //! @private
-    explicit Referent(CreateParams const& params) : T_Super(params) {}
+    explicit Referent(Dgn::SpatialLocationElement const& element) : T_Super(element) {}
+    explicit Referent(Dgn::SpatialLocationElement& element) : T_Super(element) {}
 
     //! @private
-    explicit Referent(CreateParams const& params, CreateAtParams const& atParams): T_Super(params, atParams) {}
+    explicit Referent(Dgn::SpatialLocationElement& element, CreateAtParams const& atParams): T_Super(element, atParams) {}
 
 public:
     DECLARE_LINEARREFERENCING_QUERYCLASS_METHODS(Referent)
-    DECLARE_LINEARREFERENCING_ELEMENT_GET_METHODS(Referent)
-    DECLARE_LINEARREFERENCING_LINEARLYLOCATED_SET_METHODS(Referent)
+    DECLARE_LINEARREFERENCING_ELEMENT_GET_METHODS(Referent, Dgn::SpatialLocationElement)
+    DECLARE_LINEARREFERENCING_LINEARLYLOCATED_SET_METHODS(Referent, Dgn::SpatialLocationElement)
 
-    LINEARREFERENCING_EXPORT static ReferentPtr Create(Dgn::SpatialElementCR referencedElement, CreateAtParams const& atParams);
+    LINEARREFERENCING_EXPORT static ReferentPtr Create(Dgn::GeometricElement3dCR referencedElement, CreateAtParams const& atParams);
 }; // Referent
-
-
-//=================================================================================
-//! ElementHandler for LinearlyLocated Attributions
-//! @ingroup GROUP_RoadRailAlignment
-//=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE LinearlyLocatedAttributionHandler : Dgn::dgn_ElementHandler::SpatialLocation
-{
-ELEMENTHANDLER_DECLARE_MEMBERS(BLR_CLASS_LinearlyLocatedAttribution, LinearlyLocatedAttribution, LinearlyLocatedAttributionHandler, Dgn::dgn_ElementHandler::SpatialLocation, LINEARREFERENCING_EXPORT)
-}; // LinearlyLocatedAttributionHandler
-
-//=================================================================================
-//! ElementHandler for LinearLocation Elements
-//! @ingroup GROUP_RoadRailAlignment
-//=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE LinearLocationElementHandler : Dgn::dgn_ElementHandler::SpatialLocation
-{
-ELEMENTHANDLER_DECLARE_MEMBERS(BLR_CLASS_LinearLocationElement, LinearLocationElement, LinearLocationElementHandler, Dgn::dgn_ElementHandler::SpatialLocation, LINEARREFERENCING_EXPORT)
-}; // LinearLocationElementHandler
-
-//=================================================================================
-//! ElementHandler for LinearLocation Elements
-//! @ingroup GROUP_RoadRailAlignment
-//=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE LinearLocationHandler : LinearLocationElementHandler
-{
-ELEMENTHANDLER_DECLARE_MEMBERS(BLR_CLASS_LinearLocation, LinearLocation, LinearLocationHandler, LinearLocationElementHandler, LINEARREFERENCING_EXPORT)
-}; // LinearLocationHandler
-
-//=================================================================================
-//! ElementHandler for LinearLocation Elements
-//! @ingroup GROUP_RoadRailAlignment
-//=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE LinearPhysicalElementHandler : Dgn::dgn_ElementHandler::Physical
-{
-ELEMENTHANDLER_DECLARE_MEMBERS(BLR_CLASS_LinearPhysicalElement, LinearPhysicalElement, LinearPhysicalElementHandler, Dgn::dgn_ElementHandler::Physical, LINEARREFERENCING_EXPORT)
-}; // LinearPhysicalElementHandler
-
-//=================================================================================
-//! ElementHandler for Referent Elements
-//! @ingroup GROUP_RoadRailAlignment
-//=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ReferentElementHandler : Dgn::dgn_ElementHandler::SpatialLocation
-{
-ELEMENTHANDLER_DECLARE_MEMBERS(BLR_CLASS_ReferentElement, ReferentElement, ReferentElementHandler, Dgn::dgn_ElementHandler::SpatialLocation, LINEARREFERENCING_EXPORT)
-}; // ReferentElementHandler
-
-//=================================================================================
-//! ElementHandler for Referent Elements
-//! @ingroup GROUP_RoadRailAlignment
-//=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ReferentHandler : ReferentElementHandler
-{
-ELEMENTHANDLER_DECLARE_MEMBERS(BLR_CLASS_Referent, Referent, ReferentHandler, ReferentElementHandler, LINEARREFERENCING_EXPORT)
-}; // ReferentHandler
 
 END_BENTLEY_LINEARREFERENCING_NAMESPACE

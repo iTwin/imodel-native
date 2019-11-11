@@ -1,0 +1,885 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1" schemaName="OpenBridgeModelerCE" alias="obmce" version="01.00.00" description="Application schema for data specific to OpenBridgeModelerCE.">
+  <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
+  <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+  <ECSchemaReference name="StructuralPhysical" version="01.00.00" alias="sp"/>
+  <ECSchemaReference name="RoadRailUnits" version="01.00.00" alias="rru"/>
+  <KindOfQuantity typeName="LENGTH" displayLabel="Bridge Length" persistenceUnit="M(DefaultReal)" presentationUnits="M(real2u);FT(real2u)" relativeError="0.0001"/>
+    <ECEntityClass typeName="PierAspect" modifier="sealed" displayLabel="Pier" description="PierAspect">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="PropPierName" typeName="string" displayLabel="Pier Name"/>
+        <ECProperty propertyName="PropPierDescription" typeName="string" displayLabel="Pier Description"/>
+        <ECProperty propertyName="PropPierType" typeName="int" displayLabel="Pier Type"/>
+        <ECProperty propertyName="PropAbutmentType" typeName="int" displayLabel="Abutment Type"/>
+        <ECProperty propertyName="PropSupportType" typeName="int" displayLabel="Support Type"/>
+        <ECProperty propertyName="PropCustomPierEnterAnalyticalProperties" typeName="boolean" displayLabel="Custom Pier Enter Analytical Properties"/>
+        <ECProperty propertyName="PropCustomPierHasCapProperties" typeName="boolean" displayLabel="Custom Pier Has Cap Properties"/>
+        <ECProperty propertyName="PropCustomPierHasColumnProperties" typeName="boolean" displayLabel="Custom Pier Has Column Properties"/>
+        <ECProperty propertyName="PropCustomPierHasFootingProperties" typeName="boolean" displayLabel="Custom Pier Has Footing Properties"/>
+        <ECProperty propertyName="PropCustomPierHasPileProperties" typeName="boolean" displayLabel="Custom Pier Has Pile Properties"/>
+        <ECProperty propertyName="PropCustomPierCapHeight" typeName="double" displayLabel="Custom Pier Cap Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PropCustomPierCapLength" typeName="double" displayLabel="Custom Pier Cap Length" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PropCustomPierCapWidth" typeName="double" displayLabel="Custom Pier Cap Width" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PropCustomPierColumnDiameter" typeName="double" displayLabel="Custom Pier Column Diameter" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PropCustomPierColumnHeight" typeName="double" displayLabel="Custom Pier Column Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PropCustomPierFootingHeight" typeName="double" displayLabel="Custom Pier Footing Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PropCustomPierFootingLength" typeName="double" displayLabel="Custom Pier Footing Length" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PropCustomPierFootingWidth" typeName="double" displayLabel="Custom Pier Footing Width" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PropCustomPierPileDiameter" typeName="double" displayLabel="Custom Pier Pile Diameter" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PropCustomPierPileHeight" typeName="double" displayLabel="Custom Pier Pile Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PropCustomPierColumnNumber" typeName="int" displayLabel="Custom Pier Column Number"/>
+        <ECProperty propertyName="PropCustomPierPileNumber" typeName="int" displayLabel="Custom Pier Pile Number"/>
+        <ECProperty propertyName="TemplateName" typeName="string" displayLabel="Template Name"/>
+        <ECProperty propertyName="ElementTemplate" typeName="string" displayLabel="Element Template"/>
+        <ECProperty propertyName="PierTemplateXmlFrag" typeName="string" displayLabel="Pier Template Xml Frag"/>
+        <ECProperty propertyName="PierElevCnstrXmlFrag" typeName="string" displayLabel="Pier Elev Cnstr Xml Frag"/>
+        <ECProperty propertyName="PierTmplXmlFragMd5Hash" typeName="string" displayLabel="Pier Tmpl Xml Frag Md5 Hash"/>
+        <ECProperty propertyName="ColTmplStoreXmlFragment" typeName="string" displayLabel="Col Tmpl Store Xml Fragment"/>
+        <ECProperty propertyName="SupportLineType" typeName="int" displayLabel="Orientation"/>
+        <ECProperty propertyName="LengthAdjustment" typeName="int" displayLabel="Cap Length Adjustment"/>
+        <ECProperty propertyName="WpOffset" typeName="double" displayLabel="Wp Offset" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="ApplySkewToSolids" typeName="boolean" displayLabel="Apply Skew To Solids"/>
+        <ECProperty propertyName="IsIntegral" typeName="boolean" displayLabel="Integral"/>
+        <ECProperty propertyName="ConformBackWallWithDeckTop" typeName="boolean" displayLabel="Conform BackWall With Deck Top"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsPierAspect" strength="embedding" modifier="sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="sp:StructuralMember"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="PierAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="PierCapAspect" modifier="sealed" displayLabel="PierCap" description="PierCapAspect">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="PierCap_Type" typeName="int" displayLabel="Pier Cap Type"/>
+        <ECProperty propertyName="PierCap_ZLocation" typeName="double" displayLabel="Pier Cap Z Location" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PierCap_Height" typeName="double" displayLabel="Pier Cap Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PierCap_Width" typeName="double" displayLabel="Pier Cap Width" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PierCap_Length" typeName="double" displayLabel="Pier Cap Length" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PierCap_TopLeftElevation" typeName="double" displayLabel="Pier Cap Top Left Elevation" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PierCap_TopRightElevation" typeName="double" displayLabel="Pier Cap Top Right Elevation" kindOfQuantity="LENGTH"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsPierCapAspect" strength="embedding" modifier="sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="sp:StructuralMember"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="PierCapAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="StemWallCapAspect" modifier="sealed" displayLabel="StemWallCap" description="StemWallCap">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="StemWallCapID" typeName="string" displayLabel="Stem Wall Cap ID"/>
+        <ECProperty propertyName="CapLength" typeName="double" displayLabel="Cap Length" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="CapWidth" typeName="double" displayLabel="Cap Width" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="CapHeight" typeName="double" displayLabel="Cap Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="WorkingPointLocation" typeName="string" displayLabel="Working Point Location"/>
+        <ECProperty propertyName="SupportLineAlignment" typeName="string" displayLabel="SupportLine Alignment"/>
+        <ECProperty propertyName="AlignTop" typeName="string" displayLabel="Align Top"/>
+        <ECProperty propertyName="WallWidth" typeName="double" displayLabel="Wall Width" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="WallHeight" typeName="double" displayLabel="Wall Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="BackWallOffset" typeName="double" displayLabel="Back Wall Horizontal Offset" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="VertBackWallOffset" typeName="double" displayLabel="Back Wall Vertical Offset" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PlacedWallHeight" typeName="double" displayLabel="Placed Wall Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PlacedCapHeight" typeName="double" displayLabel="Placed Cap Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="FootingOffset" typeName="double" displayLabel="Footing Offset" kindOfQuantity="LENGTH"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsStemWallCapAspect" strength="embedding" modifier="sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="sp:StructuralMember"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="StemWallCapAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="PierFootingAspect" modifier="sealed" displayLabel="PierFooting" description="PierFootingAspect">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="PierFooting_Type" typeName="int" displayLabel="Pier Footing Type"/>
+        <ECProperty propertyName="PierFooting_TopElevation" typeName="double" displayLabel="Pier Footing Top Elevation" kindOfQuantity="LENGTH"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsPierFootingAspect" strength="embedding" modifier="sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="sp:StructuralMember"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="PierFootingAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="RectangularIsolatedFootingAspect" modifier="sealed" displayLabel="RectangularIsolatedFooting" description="RectangularIsolatedFooting">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="RectangularIsolatedFootingID" typeName="string" displayLabel="Rectangular Isolated Footing ID"/>
+        <ECProperty propertyName="ComponentAssociation" typeName="string" displayLabel="Component Association"/>
+        <ECProperty propertyName="FootingHeight" typeName="double" displayLabel="Footing Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Sloped" typeName="string" displayLabel="Sloped"/>
+        <ECProperty propertyName="FootingWidth" typeName="double" displayLabel="Footing Width" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="FootingLength" typeName="double" displayLabel="Footing Length" kindOfQuantity="LENGTH"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsRectangularIsolatedFootingAspect" strength="embedding" modifier="sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="sp:StructuralMember"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="RectangularIsolatedFootingAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="PierPileAspect" modifier="sealed" displayLabel="PierPile" description="PierPileAspect">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="PierPile_Type" typeName="int" displayLabel="Pier Pile Type"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsPierPileAspect" strength="embedding" modifier="sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="sp:StructuralMember"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="PierPileAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="HPileAspect" modifier="sealed" displayLabel="HPile" description="HPile">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="HPileID" typeName="string" displayLabel="H Pile ID"/>
+        <ECProperty propertyName="PileLength" typeName="double" displayLabel="Pile Length" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="ComponentAssociation" typeName="string" displayLabel="Component Association"/>
+        <ECProperty propertyName="PilePlacement" typeName="string" displayLabel="Placement"/>
+        <ECProperty propertyName="NumbOfRows" typeName="string" displayLabel="Number of Rows"/>
+        <ECProperty propertyName="NumbOfColumns" typeName="string" displayLabel="Number of Columns"/>
+        <ECProperty propertyName="TopMargin" typeName="double" displayLabel="Top Margin" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="BottomMargin" typeName="double" displayLabel="Bottom Margin" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="LeftMargin" typeName="double" displayLabel="Left Margin" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="RightMargin" typeName="double" displayLabel="Right Margin" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="BottomAngleXAdjustment" typeName="double" displayLabel="Longitudinal Angle" kindOfQuantity="rru:ANGLE"/>
+        <ECProperty propertyName="BottomAngleYAdjustment" typeName="double" displayLabel="Transverse Angle" kindOfQuantity="rru:ANGLE"/>
+        <ECProperty propertyName="SinglePile" typeName="string" displayLabel="Single Pile"/>
+        <ECProperty propertyName="PileWidth" typeName="double" displayLabel="Pile Width" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PileDepth" typeName="double" displayLabel="Pile Depth" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="EmbedDepth" typeName="double" displayLabel="Embed Length" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="ThicknessOutside" typeName="double" displayLabel="Flange Thickness" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="ThicknessInside" typeName="double" displayLabel="Web Thickness" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="RotationAngle" typeName="double" displayLabel="Rotation" kindOfQuantity="rru:ANGLE"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsHPileAspect" strength="embedding" modifier="sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="sp:StructuralMember"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="HPileAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="RectangularPierCapAspect" modifier="sealed" displayLabel="RectangularPierCap" description="RectangularPierCap">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="RectangularPierCapID" typeName="string" displayLabel="Rectangular Pier Cap ID"/>
+        <ECProperty propertyName="CapLength" typeName="double" displayLabel="Cap Length" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="CapWidth" typeName="double" displayLabel="Cap Width" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="CapHeight" typeName="double" displayLabel="Cap Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="WorkingPointLocation" typeName="string" displayLabel="Working Point Location"/>
+        <ECProperty propertyName="Edge" typeName="string" displayLabel="Edge"/>
+        <ECProperty propertyName="CapBottomLength" typeName="double" displayLabel="Cap Bottom Length" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="CapBottomWidth" typeName="double" displayLabel="Cap Bottom Width" kindOfQuantity="LENGTH"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsRectangularPierCapAspect" strength="embedding" modifier="sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="sp:StructuralMember"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="RectangularPierCapAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="PierColumnAspect" modifier="sealed" displayLabel="PierColumn" description="PierColumnAspect">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="PierColumn_Type" typeName="int" displayLabel="Pier Column Type"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsPierColumnAspect" strength="embedding" modifier="sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="sp:StructuralMember"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="PierColumnAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="RectangularPierColumnAspect" modifier="sealed" displayLabel="RectangularPierColumn" description="RectangularPierColumn">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="RectangularPierColumnID" typeName="string" displayLabel="Rectangular Pier Column ID"/>
+        <ECProperty propertyName="Height" typeName="double" displayLabel="Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PlacedHeight" typeName="double" displayLabel="Placed Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Width" typeName="double" displayLabel="Width" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="BottomAngleXAdjustment" typeName="double" displayLabel="Longitudinal Angle" kindOfQuantity="rru:ANGLE"/>
+        <ECProperty propertyName="BottomAngleYAdjustment" typeName="double" displayLabel="Transverse Angle" kindOfQuantity="rru:ANGLE"/>
+        <ECProperty propertyName="OverhangType" typeName="string" displayLabel="Overhang Type"/>
+        <ECProperty propertyName="Overhang" typeName="double" displayLabel="Overhang Dist." kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="LengthType" typeName="string" displayLabel="Length Type"/>
+        <ECProperty propertyName="Depth" typeName="double" displayLabel="Depth" kindOfQuantity="LENGTH"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsRectangularPierColumnAspect" strength="embedding" modifier="sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="sp:StructuralMember"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="RectangularPierColumnAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="RectangularPileAspect" modifier="sealed" displayLabel="RectangularPile" description="RectangularPile">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="RectangularPileID" typeName="string" displayLabel="Rectangular Pile ID"/>
+        <ECProperty propertyName="PileLength" typeName="double" displayLabel="Pile Length" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="ComponentAssociation" typeName="string" displayLabel="Component Association"/>
+        <ECProperty propertyName="PilePlacement" typeName="string" displayLabel="Placement"/>
+        <ECProperty propertyName="NumbOfRows" typeName="string" displayLabel="Number of Rows"/>
+        <ECProperty propertyName="NumbOfColumns" typeName="string" displayLabel="Number of Columns"/>
+        <ECProperty propertyName="TopMargin" typeName="double" displayLabel="Top Margin" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="BottomMargin" typeName="double" displayLabel="Bottom Margin" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="LeftMargin" typeName="double" displayLabel="Left Margin" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="RightMargin" typeName="double" displayLabel="Right Margin" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="BottomAngleXAdjustment" typeName="double" displayLabel="Longitudinal Angle" kindOfQuantity="rru:ANGLE"/>
+        <ECProperty propertyName="BottomAngleYAdjustment" typeName="double" displayLabel="Transverse Angle" kindOfQuantity="rru:ANGLE"/>
+        <ECProperty propertyName="SinglePile" typeName="string" displayLabel="Single Pile"/>
+        <ECProperty propertyName="PileWidth" typeName="double" displayLabel="Pile Width" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PileDepth" typeName="double" displayLabel="Pile Depth" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="EmbedDepth" typeName="double" displayLabel="Embed Length" kindOfQuantity="LENGTH"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsRectangularPileAspect" strength="embedding" modifier="sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="sp:StructuralMember"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="RectangularPileAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="AbutmentWingWallAspect" modifier="sealed" displayLabel="AbutmentWingWall" description="AbutmentWingWallAspect">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="TemplateXmlFragment" typeName="string" displayLabel="Template Xml Fragment"/>
+        <ECProperty propertyName="TemplateXmlFragMd5Hash" typeName="string" displayLabel="Template Xml Frag Md5 Hash"/>
+        <ECProperty propertyName="TemplateGuid" typeName="string" displayLabel="Template Guid"/>
+        <ECProperty propertyName="AbutmentSyncId" typeName="string" displayLabel="Abutment Sync Id"/>
+        <ECProperty propertyName="FillSlope" typeName="string" displayLabel="Fill Slope"/>
+        <ECProperty propertyName="WingWallType" typeName="int" displayLabel="Wing Wall Type"/>
+        <ECProperty propertyName="Orientation" typeName="int" displayLabel="Orientation"/>
+        <ECProperty propertyName="Position" typeName="int" displayLabel="Position"/>
+        <ECProperty propertyName="AdjustHeightToBackwall" typeName="boolean" displayLabel="Adjust Height to Backwall"/>
+        <ECProperty propertyName="ComputeLength" typeName="boolean" displayLabel="Compute Length"/>
+        <ECProperty propertyName="AlignWithAbutment" typeName="boolean" displayLabel="Align With Abutment"/>
+        <ECProperty propertyName="ParallelToAlignment" typeName="boolean" displayLabel="Parallel To Alignment"/>
+        <ECProperty propertyName="VerticalOffset" typeName="double" displayLabel="Vertical Offset" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="TransverseOffset" typeName="double" displayLabel="Transverse Offset" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="LongitudinalOffset" typeName="double" displayLabel="Longitudinal Offset" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="SkewAngle" typeName="double" displayLabel="Skew Angle" kindOfQuantity="rru:ANGLE"/>
+        <ECProperty propertyName="BermHorizontalOffset" typeName="double" displayLabel="Berm Horizontal Offset" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="BermVerticalOffset" typeName="double" displayLabel="Berm Vertical Offset" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="LengthExtension" typeName="double" displayLabel="Length Extension" kindOfQuantity="LENGTH"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsAbutmentWingWallAspect" strength="embedding" modifier="sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="sp:StructuralMember"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="AbutmentWingWallAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="WingWallAspect" modifier="sealed" displayLabel="WingWall" description="WingWallAspect">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="PropWingWallType" typeName="int" displayLabel="Wing Wall Type"/>
+        <ECProperty propertyName="WingWallID" typeName="string" displayLabel="Wing Wall ID"/>
+        <ECProperty propertyName="Length" typeName="double" displayLabel="Length" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="TopHorizontalOffset" typeName="double" displayLabel="Top Horizontal Offset" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="TopVerticalOffset" typeName="double" displayLabel="Top Veritcal Offset" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="BtmHorizontalOffset" typeName="double" displayLabel="Bottom Horizontal Offset" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="BtmVerticalOffset" typeName="double" displayLabel="Bottom Vertical Offset" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Height" typeName="double" displayLabel="Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="TopThickness" typeName="double" displayLabel="Top Thickness" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="BtmThickness" typeName="double" displayLabel="Bottom Thickness" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="AdditionalBtmVertOffset" typeName="double" displayLabel="Additional Bottom Vertical Offset" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="FootingOffset" typeName="double" displayLabel="Footing Offset" kindOfQuantity="LENGTH"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsWingWallAspect" strength="embedding" modifier="sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="sp:StructuralMember"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="WingWallAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="WingWallFootingAspect" modifier="sealed" displayLabel="WingWallFooting" description="WingWallFootingAspect">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="PropWingWallFootingType" typeName="int" displayLabel="Wing Wall Footing Type"/>
+        <ECProperty propertyName="PropWingWallFootingTopElevation" typeName="double" displayLabel="Wing Wall Footing Top Elevation" kindOfQuantity="LENGTH"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsWingWallFootingAspect" strength="embedding" modifier="sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="sp:StructuralMember"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="WingWallFootingAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="WingWallPileAspect" modifier="sealed" displayLabel="WingWallPile" description="WingWallPileAspect">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="PropWingWallPileType" typeName="int" displayLabel="Wing Wall Pile Type"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsWingWallPileAspect" strength="embedding" modifier="sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="sp:StructuralMember"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="WingWallPileAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="BearingAspect" modifier="sealed" displayLabel="Bearing" description="BearingAspect">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="PropBearing_CellLibrary" typeName="string" displayLabel="Bearing Cell Library"/>
+        <ECProperty propertyName="PropBearing_CellName" typeName="string" displayLabel="Bearing Cell Name"/>
+        <ECProperty propertyName="PropBearing_SupportedItemRef" typeName="string" displayLabel="Bearing Supported Item Ref"/>
+        <ECProperty propertyName="PropBearing_ActiveAngle" typeName="double" displayLabel="Bearing Active Angle" kindOfQuantity="rru:ANGLE"/>
+        <ECProperty propertyName="PropBearing_XScale" typeName="double" displayLabel="Bearing X Scale" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PropBearing_YScale" typeName="double" displayLabel="Bearing Y Scale" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PropBearing_ZScale" typeName="double" displayLabel="Bearing Z Scale" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PropBearing_CubeWidth" typeName="double" displayLabel="Bearing Cube Width" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PropBearing_CubeDepth" typeName="double" displayLabel="Bearing Cube Depth" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PropBearing_CubeHeight" typeName="double" displayLabel="Bearing Cube Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PropBearing_CylinderRadius" typeName="double" displayLabel="Bearing Cylinder Radius" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PropBearing_CylinderHeight" typeName="double" displayLabel="Bearing Cylinder Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PropBearing_BearingType" typeName="int" displayLabel="Bearing Bearing Type"/>
+        <ECProperty propertyName="PropBearing_BearingOrientation" typeName="int" displayLabel="Bearing Bearing Orientation"/>
+        <ECProperty propertyName="PropBearing_HasGroutPad" typeName="boolean" displayLabel="Bearing Has Grout Pad"/>
+        <ECProperty propertyName="PropBearing_HasBeamSeat" typeName="boolean" displayLabel="Bearing Has Beam Seat"/>
+        <ECProperty propertyName="PropBearing_UsedInSteppedCap" typeName="boolean" displayLabel="Bearing Used In Stepped Cap"/>
+        <ECProperty propertyName="PropBearing_LocationPoint" typeName="point3d" displayLabel="Bearing Location Point"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsBearingAspect" strength="embedding" modifier="sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="sp:StructuralMember"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="BearingAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="BeamSeatAspect" modifier="sealed" displayLabel="BeamSeat" description="BeamSeatAspect">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="PropBeamSeatW1" typeName="double" displayLabel="Beam Seat W1" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PropBeamSeatW2" typeName="double" displayLabel="Beam Seat W2" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PropBeamSeatD1" typeName="double" displayLabel="Beam Seat D1" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PropBeamSeatD2" typeName="double" displayLabel="Beam Seat D2" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PropBeamSeat_MinThickness" typeName="double" displayLabel="Beam Seat Min Thickness" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PropBeamSeat_ThicknessAtCenter" typeName="double" displayLabel="Beam Seat Thickness At Center" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PropBeamSeat_DepthAtD1W1" typeName="double" displayLabel="Beam Seat Depth At D1 W1" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PropBeamSeat_DepthAtD1W2" typeName="double" displayLabel="Beam Seat Depth At D1 W2" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PropBeamSeat_DepthAtD2W1" typeName="double" displayLabel="Beam Seat Depth At D2 W1" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PropBeamSeat_DepthAtD2W2" typeName="double" displayLabel="Beam Seat Depth At D2 W2" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PropBeamSeat_Orientation" typeName="int" displayLabel="Beam Seat Orientation"/>
+        <ECProperty propertyName="PropBeamSeat_BeamSeatType" typeName="int" displayLabel="Beam Seat Beam Seat Type"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsBeamSeatAspect" strength="embedding" modifier="sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="sp:StructuralMember"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="BeamSeatAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="BeamSegmentAspect" modifier="sealed" displayLabel="BeamSegment" description="BeamSegmentAspect">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="PropBeamSegmentType" typeName="int" displayLabel="Beam Segment Type"/>
+        <ECProperty propertyName="PropBeamSegmentConstraintsXmlFragment" typeName="string" displayLabel="Beam Segment Constraints Xml Fragment"/>
+        <ECProperty propertyName="PropBeamSegmentTemplateXmlFragment" typeName="string" displayLabel="Beam Segment Template Xml Fragment"/>
+        <ECProperty propertyName="PropBeamSegmentName" typeName="string" displayLabel="Beam Segment Name"/>
+        <ECProperty propertyName="PropBeamSegmentRotationAngle" typeName="double" displayLabel="Beam Segment Rotation Angle" kindOfQuantity="rru:ANGLE"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsBeamSegmentAspect" strength="embedding" modifier="sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="sp:StructuralMember"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="BeamSegmentAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="TemplateGenBeamAttrAspect" modifier="sealed" displayLabel="TemplateGenBeamAttr" description="TemplateGenBeamAttr">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="FormatVersion" typeName="string" displayLabel="Format Version"/>
+        <ECProperty propertyName="SegmentStartAbsolute" typeName="double" displayLabel="Segment Start Absolute" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="SegmentLength" typeName="double" displayLabel="Segment Length" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="DistanceReference" typeName="string" displayLabel="Distance Reference"/>
+        <ECProperty propertyName="DistanceFromReference" typeName="double" displayLabel="Distance From Reference" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="SpanOrBeamRatio" typeName="string" displayLabel="Span Or Beam Ratio"/>
+        <ECProperty propertyName="SupportLineSyncIdString" typeName="string" displayLabel="Support Line Sync Id String"/>
+        <ECProperty propertyName="EndSupportLineSyncIdString" typeName="string" displayLabel="End Support Line Sync Id String"/>
+        <ECProperty propertyName="HaunchThickness" typeName="double" displayLabel="Haunch Thickness" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Material" typeName="string" displayLabel="Material"/>
+        <ECProperty propertyName="OriginForDistFrom" typeName="string" displayLabel="Origin For Dist From"/>
+        <ECProperty propertyName="LocationType" typeName="string" displayLabel="Location Type"/>
+        <ECProperty propertyName="SegmentStartRatio" typeName="double" displayLabel="Segment Start Ratio" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="DistanceFromEnds" typeName="double" displayLabel="Distance From Ends" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="TemplateSource" typeName="string" displayLabel="Template Source"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsTemplateGenBeamAttrAspect" strength="embedding" modifier="sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="sp:StructuralMember"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="TemplateGenBeamAttrAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="BMSolidAspect" modifier="sealed" displayLabel="BMSolid" description="BMSolidAspect">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsBMSolidAspect" strength="embedding" modifier="sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="sp:StructuralMember"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="BMSolidAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="DeckAspect" modifier="sealed" displayLabel="Deck" description="DeckAspect">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="PropDeckDescription" typeName="string" displayLabel="Deck Description"/>
+        <ECProperty propertyName="StartOffset" typeName="double" displayLabel="Start Station Offset" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="EndOffset" typeName="double" displayLabel="End Station Offset" kindOfQuantity="LENGTH"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsDeckAspect" strength="embedding" modifier="sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="sp:StructuralMember"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="DeckAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="BarrierAspect" modifier="sealed" displayLabel="Barrier" description="BarrierAspect">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="PropBarrierDescription" typeName="string" displayLabel="Barrier Description"/>
+        <ECProperty propertyName="StartOffset" typeName="double" displayLabel="Start Station Offset" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="EndOffset" typeName="double" displayLabel="End Station Offset" kindOfQuantity="LENGTH"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsBarrierAspect" strength="embedding" modifier="sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="sp:StructuralMember"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="BarrierAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="PileCapAspect" modifier="sealed" displayLabel="PileCap" description="PileCap">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="PileCapID" typeName="string" displayLabel="Pile Cap ID"/>
+        <ECProperty propertyName="CapLength" typeName="double" displayLabel="Cap Length" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="CapWidth" typeName="double" displayLabel="Cap Width" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="CapHeight" typeName="double" displayLabel="Cap Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="WorkingPointLocation" typeName="string" displayLabel="Working Point Location"/>
+        <ECProperty propertyName="SupportLineAlignment" typeName="string" displayLabel="SupportLine Alignment"/>
+        <ECProperty propertyName="AlignTop" typeName="string" displayLabel="Align Top"/>
+        <ECProperty propertyName="WallWidth" typeName="double" displayLabel="Wall Width" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="WallHeight" typeName="double" displayLabel="Wall Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="BackWallOffset" typeName="double" displayLabel="Back Wall Horizontal Offset" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="VertBackWallOffset" typeName="double" displayLabel="Back Wall Vertical Offset" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PlacedWallHeight" typeName="double" displayLabel="Placed Wall Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PlacedCapHeight" typeName="double" displayLabel="Placed Cap Height" kindOfQuantity="LENGTH"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsPileCapAspect" strength="embedding" modifier="sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="sp:StructuralMember"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="PileCapAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="TaperedPierCapAspect" modifier="sealed" displayLabel="TaperedPierCap" description="TaperedPierCap">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="TaperedPierCapID" typeName="string" displayLabel="Tapered Pier Cap ID"/>
+        <ECProperty propertyName="CapLength" typeName="double" displayLabel="Cap Length" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="CapWidth" typeName="double" displayLabel="Cap Width" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="CapHeight" typeName="double" displayLabel="Cap Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="WorkingPointLocation" typeName="string" displayLabel="Working Point Location"/>
+        <ECProperty propertyName="CapMinimumHeight" typeName="double" displayLabel="Cap Minimum Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="LeftDelta" typeName="string" displayLabel="Left Taper Length"/>
+        <ECProperty propertyName="RightDelta" typeName="string" displayLabel="Right Taper Length"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsTaperedPierCapAspect" strength="embedding" modifier="sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="sp:StructuralMember"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="TaperedPierCapAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="VariablePierColumnAspect" modifier="sealed" displayLabel="VariablePierColumn" description="VariablePierColumn">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="VariablePierColumnID" typeName="string" displayLabel="Variable Pier Column ID"/>
+        <ECProperty propertyName="Height" typeName="double" displayLabel="Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PlacedHeight" typeName="double" displayLabel="Placed Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Width" typeName="double" displayLabel="Width" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="BottomAngleXAdjustment" typeName="double" displayLabel="Longitudinal Angle" kindOfQuantity="rru:ANGLE"/>
+        <ECProperty propertyName="BottomAngleYAdjustment" typeName="double" displayLabel="Transverse Angle" kindOfQuantity="rru:ANGLE"/>
+        <ECProperty propertyName="OverhangType" typeName="string" displayLabel="Overhang Type"/>
+        <ECProperty propertyName="Overhang" typeName="double" displayLabel="Overhang Dist." kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="LengthType" typeName="string" displayLabel="Length Type"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsVariablePierColumnAspect" strength="embedding" modifier="sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="sp:StructuralMember"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="VariablePierColumnAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="RectangularCombinedFootingAspect" modifier="sealed" displayLabel="RectangularCombinedFooting" description="RectangularCombinedFooting">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="RectangularCombinedFootingID" typeName="string" displayLabel="Rectangular Combined Footing ID"/>
+        <ECProperty propertyName="ComponentAssociation" typeName="string" displayLabel="Component Association"/>
+        <ECProperty propertyName="TopElevation" typeName="double" displayLabel="Top Elevation" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="FootingHeight" typeName="double" displayLabel="Footing Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Sloped" typeName="string" displayLabel="Sloped"/>
+        <ECProperty propertyName="FootingWidth" typeName="double" displayLabel="Footing Width" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="ExtraLength" typeName="double" displayLabel="Extra Length" kindOfQuantity="LENGTH"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsRectangularCombinedFootingAspect" strength="embedding" modifier="sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="sp:StructuralMember"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="RectangularCombinedFootingAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="VariablePierCapAspect" modifier="sealed" displayLabel="VariablePierCap" description="VariablePierCap">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="VariablePierCapID" typeName="string" displayLabel="Variable Pier Cap ID"/>
+        <ECProperty propertyName="CapLength" typeName="double" displayLabel="Cap Length" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="CapWidth" typeName="double" displayLabel="Cap Width" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="CapHeight" typeName="double" displayLabel="Cap Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="WorkingPointLocation" typeName="string" displayLabel="Working Point Location"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsVariablePierCapAspect" strength="embedding" modifier="sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="sp:StructuralMember"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="VariablePierCapAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="RectangularCombinedCrashWallFootingAspect" modifier="sealed" displayLabel="RectangularCombinedCrashWallFooting" description="RectangularCombinedCrashWallFooting">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="RectangularCombinedCrashWallFootingID" typeName="string" displayLabel="Rectangular Combined Crash Wall Footing ID"/>
+        <ECProperty propertyName="ComponentAssociation" typeName="string" displayLabel="Component Association"/>
+        <ECProperty propertyName="TopElevation" typeName="double" displayLabel="Top Elevation" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="FootingHeight" typeName="double" displayLabel="Footing Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="FootingWidth" typeName="double" displayLabel="Footing Width" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="ExtraLength" typeName="double" displayLabel="Extra Length" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="WallExtraLengthTop" typeName="double" displayLabel="Wall Extra Length Top" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="WallExtraLengthBottom" typeName="double" displayLabel="Wall Extra Length Bottom" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="WallThicknessTop" typeName="double" displayLabel="Wall Thickness Top" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="WallThicknessBottom" typeName="double" displayLabel="Wall Thickness Bottom" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="WallHeight" typeName="double" displayLabel="Wall Height" kindOfQuantity="LENGTH"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsRectangularCombinedCrashWallFootingAspect" strength="embedding" modifier="sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="sp:StructuralMember"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="RectangularCombinedCrashWallFootingAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="PierCrashWallAspect" modifier="sealed" displayLabel="PierCrashWall" description="PierCrashWallAspect">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsPierCrashWallAspect" strength="embedding" modifier="sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="sp:StructuralMember"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="PierCrashWallAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="CircularPileAspect" modifier="sealed" displayLabel="CircularPile" description="CircularPile">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="CircularPileID" typeName="string" displayLabel="Circular Pile ID"/>
+        <ECProperty propertyName="PileLength" typeName="double" displayLabel="Pile Length" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="ComponentAssociation" typeName="string" displayLabel="Component Association"/>
+        <ECProperty propertyName="PilePlacement" typeName="string" displayLabel="Placement"/>
+        <ECProperty propertyName="NumbOfRows" typeName="string" displayLabel="Number of Rows"/>
+        <ECProperty propertyName="NumbOfColumns" typeName="string" displayLabel="Number of Columns"/>
+        <ECProperty propertyName="TopMargin" typeName="double" displayLabel="Top Margin" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="BottomMargin" typeName="double" displayLabel="Bottom Margin" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="LeftMargin" typeName="double" displayLabel="Left Margin" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="RightMargin" typeName="double" displayLabel="Right Margin" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="BottomAngleXAdjustment" typeName="double" displayLabel="Longitudinal Angle" kindOfQuantity="rru:ANGLE"/>
+        <ECProperty propertyName="BottomAngleYAdjustment" typeName="double" displayLabel="Transverse Angle" kindOfQuantity="rru:ANGLE"/>
+        <ECProperty propertyName="SinglePile" typeName="string" displayLabel="Single Pile"/>
+        <ECProperty propertyName="PileWidth" typeName="double" displayLabel="Pile Width" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PileDepth" typeName="double" displayLabel="Pile Depth" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="EmbedDepth" typeName="double" displayLabel="Embed Length" kindOfQuantity="LENGTH"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsCircularPileAspect" strength="embedding" modifier="sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="sp:StructuralMember"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="CircularPileAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="RectangularFilletPierColumnAspect" modifier="sealed" displayLabel="RectangularFilletPierColumn" description="RectangularFilletPierColumn">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="RectangularFilletPierColumnID" typeName="string" displayLabel="Rectangular Fillet Pier Column ID"/>
+        <ECProperty propertyName="Height" typeName="double" displayLabel="Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PlacedHeight" typeName="double" displayLabel="Placed Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Width" typeName="double" displayLabel="Width" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="BottomAngleXAdjustment" typeName="double" displayLabel="Longitudinal Angle" kindOfQuantity="rru:ANGLE"/>
+        <ECProperty propertyName="BottomAngleYAdjustment" typeName="double" displayLabel="Transverse Angle" kindOfQuantity="rru:ANGLE"/>
+        <ECProperty propertyName="OverhangType" typeName="string" displayLabel="Overhang Type"/>
+        <ECProperty propertyName="LengthType" typeName="string" displayLabel="Length Type"/>
+        <ECProperty propertyName="Depth" typeName="double" displayLabel="Depth" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="FilletRadius" typeName="double" displayLabel="Fillet Radius" kindOfQuantity="LENGTH"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsRectangularFilletPierColumnAspect" strength="embedding" modifier="sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="sp:StructuralMember"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="RectangularFilletPierColumnAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="BuiltUpBeamBodyAttrAspect" modifier="sealed" displayLabel="BuiltUpBeamBodyAttr" description="BuiltUpBeamBodyAttr">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="FormatVersion" typeName="string" displayLabel="Format Version"/>
+        <ECProperty propertyName="SegmentStartAbsolute" typeName="double" displayLabel="Segment Start Absolute" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="SegmentLength" typeName="double" displayLabel="Segment Length" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="DistanceReference" typeName="string" displayLabel="Distance Reference"/>
+        <ECProperty propertyName="DistanceFromReference" typeName="double" displayLabel="Distance From Reference" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="SpanOrBeamRatio" typeName="string" displayLabel="Span Or Beam Ratio"/>
+        <ECProperty propertyName="SupportLineSyncIdString" typeName="string" displayLabel="Support Line Sync Id String"/>
+        <ECProperty propertyName="EndSupportLineSyncIdString" typeName="string" displayLabel="End Support Line Sync Id String"/>
+        <ECProperty propertyName="HaunchThickness" typeName="double" displayLabel="Haunch Thickness" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Material" typeName="string" displayLabel="Material"/>
+        <ECProperty propertyName="OriginForDistFrom" typeName="string" displayLabel="Origin For Dist From"/>
+        <ECProperty propertyName="LocationType" typeName="string" displayLabel="Location Type"/>
+        <ECProperty propertyName="SegmentStartRatio" typeName="double" displayLabel="Segment Start Ratio" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="DistanceFromEnds" typeName="double" displayLabel="Distance From Ends" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Thickness" typeName="double" displayLabel="Thickness" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="StartValue" typeName="string" displayLabel="Start Value"/>
+        <ECProperty propertyName="EndValue" typeName="string" displayLabel="End Value"/>
+        <ECProperty propertyName="TransitionStrategy" typeName="string" displayLabel="Transition Strategy"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsBuiltUpBeamBodyAttrAspect" strength="embedding" modifier="sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="sp:StructuralMember"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="BuiltUpBeamBodyAttrAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="BuiltUpBeamPlateAttrAspect" modifier="sealed" displayLabel="BuiltUpBeamPlateAttr" description="BuiltUpBeamPlateAttr">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="FormatVersion" typeName="string" displayLabel="Format Version"/>
+        <ECProperty propertyName="SegmentStartAbsolute" typeName="double" displayLabel="Segment Start Absolute" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="SegmentLength" typeName="double" displayLabel="Segment Length" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="DistanceReference" typeName="string" displayLabel="Distance Reference"/>
+        <ECProperty propertyName="DistanceFromReference" typeName="double" displayLabel="Distance From Reference" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="SpanOrBeamRatio" typeName="string" displayLabel="Span Or Beam Ratio"/>
+        <ECProperty propertyName="SupportLineSyncIdString" typeName="string" displayLabel="Support Line Sync Id String"/>
+        <ECProperty propertyName="EndSupportLineSyncIdString" typeName="string" displayLabel="End Support Line Sync Id String"/>
+        <ECProperty propertyName="HaunchThickness" typeName="double" displayLabel="Haunch Thickness" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Material" typeName="string" displayLabel="Material"/>
+        <ECProperty propertyName="OriginForDistFrom" typeName="string" displayLabel="Origin For Dist From"/>
+        <ECProperty propertyName="LocationType" typeName="string" displayLabel="Location Type"/>
+        <ECProperty propertyName="SegmentStartRatio" typeName="double" displayLabel="Segment Start Ratio" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="DistanceFromEnds" typeName="double" displayLabel="Distance From Ends" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Thickness" typeName="double" displayLabel="Thickness" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Width" typeName="double" displayLabel="Width" kindOfQuantity="LENGTH"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsBuiltUpBeamPlateAttrAspect" strength="embedding" modifier="sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="sp:StructuralMember"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="BuiltUpBeamPlateAttrAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="CrossFrameComponentAspect" modifier="sealed" displayLabel="CrossFrameComponent" description="CrossFrameComponentAspect">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="PropCrossFrameComponentComponentType" typeName="int" displayLabel="Cross Frame Component Component Type"/>
+        <ECProperty propertyName="PropCrossFrameComponentSection" typeName="string" displayLabel="Cross Frame Component Section"/>
+        <ECProperty propertyName="PropCrossFrameComponentMaterial" typeName="string" displayLabel="Cross Frame Component Material"/>
+        <ECProperty propertyName="PropCrossFrameComponentLength" typeName="double" displayLabel="Cross Frame Component Length" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PropCrossFrameComponentHeight" typeName="double" displayLabel="Cross Frame Component Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PropCrossFrameComponentWidth" typeName="double" displayLabel="Cross Frame Component Width" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PropCrossFrameComponentThickness" typeName="double" displayLabel="Cross Frame Component Thickness" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PropCrossFrameComponentHorizontalOffset" typeName="double" displayLabel="Cross Frame Component Horizontal Offset" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PropCrossFrameComponentVerticalOffset" typeName="double" displayLabel="Cross Frame Component Vertical Offset" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PropCrossFrameComponentAxialOffsetLeft" typeName="double" displayLabel="Cross Frame Component Axial Offset Left" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PropCrossFrameComponentAxialOffsetRight" typeName="double" displayLabel="Cross Frame Component Axial Offset Right" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PropCrossFrameComponentVerticalOffsetLeft" typeName="double" displayLabel="Cross Frame Component Vertical Offset Left" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PropCrossFrameComponentVerticalOffsetRight" typeName="double" displayLabel="Cross Frame Component Vertical Offset Right" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PropCrossFrameComponentWeight" typeName="double" displayLabel="Cross Frame Component Weight"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsCrossFrameComponentAspect" strength="embedding" modifier="sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="sp:StructuralMember"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="CrossFrameComponentAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="CircularPierColumnAspect" modifier="sealed" displayLabel="CircularPierColumn" description="CircularPierColumn">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="CircularPierColumnID" typeName="string" displayLabel="Circular Pier Column ID"/>
+        <ECProperty propertyName="Height" typeName="double" displayLabel="Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PlacedHeight" typeName="double" displayLabel="Placed Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Width" typeName="double" displayLabel="Width" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="BottomAngleXAdjustment" typeName="double" displayLabel="Longitudinal Angle" kindOfQuantity="rru:ANGLE"/>
+        <ECProperty propertyName="BottomAngleYAdjustment" typeName="double" displayLabel="Transverse Angle" kindOfQuantity="rru:ANGLE"/>
+        <ECProperty propertyName="OverhangType" typeName="string" displayLabel="Overhang Type"/>
+        <ECProperty propertyName="LengthType" typeName="string" displayLabel="Length Type"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsCircularPierColumnAspect" strength="embedding" modifier="sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="sp:StructuralMember"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="CircularPierColumnAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="SegmentAspect" modifier="sealed" displayLabel="Segment" description="SegmentAspect">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="PropSegmentSpanIndex" typeName="long" displayLabel="Segment Span Index"/>
+        <ECProperty propertyName="PropSegmentIndxe" typeName="long" displayLabel="Segment Indxe"/>
+        <ECProperty propertyName="PropSegmentBuildOrder" typeName="long" displayLabel="Segment Build Order"/>
+        <ECProperty propertyName="PropSegmentSegmentLength" typeName="double" displayLabel="Segment Segment Length" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PropSegmentStartDistAlong" typeName="double" displayLabel="Segment Start Dist Along" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PropSegmentEndDistAlong" typeName="double" displayLabel="Segment End Dist Along" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PropSegmentSegmentType" typeName="int" displayLabel="Segment Segment Type"/>
+        <ECProperty propertyName="PropSegmentSegmentalType" typeName="int" displayLabel="Segment Segmental Type"/>
+        <ECProperty propertyName="PropSegmentSide" typeName="int" displayLabel="Segment Side"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsSegmentAspect" strength="embedding" modifier="sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="sp:StructuralMember"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="SegmentAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="PierCheekWallAspect" modifier="sealed" displayLabel="PierCheekWall" description="PierCheekWallAspect">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsPierCheekWallAspect" strength="embedding" modifier="sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="sp:StructuralMember"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="PierCheekWallAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="RectangularChamferPierColumnAspect" modifier="sealed" displayLabel="RectangularChamferPierColumn" description="RectangularChamferPierColumn">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="RectangularChamferPierColumnID" typeName="string" displayLabel="Rectangular Chamfer Pier Column ID"/>
+        <ECProperty propertyName="Height" typeName="double" displayLabel="Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PlacedHeight" typeName="double" displayLabel="Placed Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Width" typeName="double" displayLabel="Width" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="BottomAngleXAdjustment" typeName="double" displayLabel="Longitudinal Angle" kindOfQuantity="rru:ANGLE"/>
+        <ECProperty propertyName="BottomAngleYAdjustment" typeName="double" displayLabel="Transverse Angle" kindOfQuantity="rru:ANGLE"/>
+        <ECProperty propertyName="OverhangType" typeName="string" displayLabel="Overhang Type"/>
+        <ECProperty propertyName="Overhang" typeName="double" displayLabel="Overhang Dist." kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="LengthType" typeName="string" displayLabel="Length Type"/>
+        <ECProperty propertyName="Depth" typeName="double" displayLabel="Depth" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="ChamferLength" typeName="double" displayLabel="Chamfer Length" kindOfQuantity="LENGTH"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsRectangularChamferPierColumnAspect" strength="embedding" modifier="sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="sp:StructuralMember"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="RectangularChamferPierColumnAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="InvertedTPierCapAspect" modifier="sealed" displayLabel="InvertedTPierCap" description="InvertedTPierCap">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="InvertedTPierCapID" typeName="string" displayLabel="Inverted T Pier Cap ID"/>
+        <ECProperty propertyName="CapLength" typeName="double" displayLabel="Cap Length" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="CapWidth" typeName="double" displayLabel="Cap Width" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="CapHeight" typeName="double" displayLabel="Cap Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="WorkingPointLocation" typeName="string" displayLabel="Working Point Location"/>
+        <ECProperty propertyName="LedgeWidth" typeName="double" displayLabel="Ledge Width" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="LedgeDepth" typeName="double" displayLabel="Ledge Depth" kindOfQuantity="LENGTH"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsInvertedTPierCapAspect" strength="embedding" modifier="sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="sp:StructuralMember"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="InvertedTPierCapAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="CircularDrillShaftFootingAspect" modifier="sealed" displayLabel="CircularDrillShaftFooting" description="CircularDrillShaftFooting">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="CircularDrillShaftFootingID" typeName="string" displayLabel="Circular Drill Shaft Footing ID"/>
+        <ECProperty propertyName="ComponentAssociation" typeName="string" displayLabel="Component Association"/>
+        <ECProperty propertyName="TopElevation" typeName="double" displayLabel="Top Elevation" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="DrillShaftHeight" typeName="double" displayLabel="Drilled Shaft Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="DrillShaftDiameter" typeName="string" displayLabel="Drilled Shaft Diameter"/>
+        <ECProperty propertyName="DrillShaftRockSocket" typeName="string" displayLabel="Drilled Shaft Rock Socket"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsCircularDrillShaftFootingAspect" strength="embedding" modifier="sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="sp:StructuralMember"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="CircularDrillShaftFootingAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="OvalPierColumnAspect" modifier="sealed" displayLabel="OvalPierColumn" description="OvalPierColumn">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="OvalPierColumnID" typeName="string" displayLabel="Oval Pier Column ID"/>
+        <ECProperty propertyName="Height" typeName="double" displayLabel="Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="PlacedHeight" typeName="double" displayLabel="Placed Height" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="Width" typeName="double" displayLabel="Width" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="BottomAngleXAdjustment" typeName="double" displayLabel="Longitudinal Angle" kindOfQuantity="rru:ANGLE"/>
+        <ECProperty propertyName="BottomAngleYAdjustment" typeName="double" displayLabel="Transverse Angle" kindOfQuantity="rru:ANGLE"/>
+        <ECProperty propertyName="OverhangType" typeName="string" displayLabel="Overhang Type"/>
+        <ECProperty propertyName="LengthType" typeName="string" displayLabel="Length Type"/>
+        <ECProperty propertyName="ColumnDiameterY" typeName="string" displayLabel="Column Diameter Y"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsOvalPierColumnAspect" strength="embedding" modifier="sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="sp:StructuralMember"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="OvalPierColumnAspect"/>
+        </Target>
+    </ECRelationshipClass>
+</ECSchema>

@@ -27,16 +27,7 @@ public:
     RoadRailPhysicalDomain();
 
     //! @private
-    ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus SetUpDefinitionPartitions(Dgn::SubjectCR subject);
-
-    //! @private
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnViewId SetUpDefaultViews(Dgn::SubjectCR, Dgn::PhysicalModelR physicalNetworkModel, bvector<Dgn::DgnCategoryId> const* additionalCategoriesForSelector = nullptr);
-
-    //! The name of the RailwayStandards Partition
-    static Utf8CP GetRailwayStandardsPartitionName() { return "Railway Standards"; }
-
-    //! The name of the RoadwayStandards Partition
-    static Utf8CP GetRoadwayStandardsPartitionName() { return "Roadway Standards"; }
 
     //! The code name of the PathwayDesignCriteria element
     static Utf8CP GetPathwayDesignCriteriaCodeName() { return "Design Criteria"; }
@@ -46,35 +37,27 @@ private:
 }; // RoadRailPhysicalDomain
 
 //=======================================================================================
-//! A long, narrow physical stretch that is designed for one or more modes of transportation 
-//! which share a common course. It is typically defined along a main alignment. A Corridor 
-//! assembles one or more Pathways with Pathway Separations in between them.
+//! Entry-point element leading to the physical modeling of a network of Corridors, 
+//! primarily designed for one mode of transportation.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct RoadRailNetwork : Dgn::PhysicalElement
+struct TransportationNetwork : GeometricElementWrapper<Dgn::PhysicalElement>
 {
-    DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_RoadRailNetwork, Dgn::PhysicalElement);
-    friend struct RoadRailNetworkHandler;
+    DGNELEMENTWRAPPER_DECLARE_MEMBERS(GeometricElementWrapper, Dgn::PhysicalElement)
 
 protected:
     //! @private
-    explicit RoadRailNetwork(CreateParams const& params) : T_Super(params) {}
+    explicit TransportationNetwork(Dgn::PhysicalElementCR element) : T_Super(element) {}
+    explicit TransportationNetwork(Dgn::PhysicalElementR element) : T_Super(element) {}
 
 public:
-    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(RoadRailNetwork)
+    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(TransportationNetwork)
 
     //! @private
-    ROADRAILPHYSICAL_EXPORT static RoadRailNetworkCPtr Get(Dgn::DgnDbR db, Dgn::DgnElementId id) { return db.Elements().Get<RoadRailNetwork>(id); }
-    //! @private
-    ROADRAILPHYSICAL_EXPORT static RoadRailNetworkCPtr Query(Dgn::DgnDbR db, Dgn::DgnCodeCR code) { return Get(db, db.Elements().QueryElementIdByCode(code)); }
+    ROADRAILPHYSICAL_EXPORT static TransportationNetworkCPtr Get(Dgn::DgnDbR db, Dgn::DgnElementId id) { return new TransportationNetwork(*db.Elements().Get<Dgn::PhysicalElement>(id)); }
 
-    //! @private
-    ROADRAILPHYSICAL_EXPORT static RoadRailNetworkCPtr Insert(Dgn::PhysicalModelR parentModel, Utf8StringCR networkName);
-    //! @private
-    ROADRAILPHYSICAL_EXPORT static Dgn::DgnCode CreateCode(Dgn::PhysicalModelCR scopeModel, Utf8StringCR networkCode);
-
-    Dgn::PhysicalModelPtr GetNetworkModel() const { return GetSub<Dgn::PhysicalModel>(); }
-}; // RoadRailNetwork
+    Dgn::PhysicalModelPtr GetNetworkModel() const { return get()->GetSub<Dgn::PhysicalModel>(); }
+}; // TransportationNetwork
 
 //=======================================================================================
 //! Helper methods for manipulation of Physical Models
@@ -94,7 +77,8 @@ public:
     //! @param[in] parentSubject The parent subject of the physical model with \p modelName
     //! @param[in] physicalPartitionName Physical Partition Name associated to the physical model requested
     //! @return The PhysicalModel belonging to the \p parentSubject
-    ROADRAILPHYSICAL_EXPORT static Dgn::PhysicalModelPtr QueryPhysicalNetworkModel(Dgn::SubjectCR parentSubject, Utf8CP physicalPartitionName, Utf8CP roadRailNetworkName);
+    ROADRAILPHYSICAL_EXPORT static Dgn::PhysicalModelPtr QueryRoadNetworkModel(Dgn::SubjectCR parentSubject, Utf8CP physicalPartitionName, Utf8StringCR roadNetworkName);
+    ROADRAILPHYSICAL_EXPORT static Dgn::PhysicalModelPtr QueryRailNetworkModel(Dgn::SubjectCR parentSubject, Utf8CP physicalPartitionName, Utf8StringCR railNetworkName);
 
     //! Query for the Parent Subject of a Physical Model
     //! @param[in] model The PhysicalModel who's parent subject is being queried for.
@@ -105,41 +89,4 @@ public:
     ROADRAILPHYSICAL_EXPORT static Dgn::PhysicalPartitionCPtr CreateAndInsertPhysicalPartitionAndModel(Dgn::SubjectCR subject, Utf8CP physicalPartitionName);
 }; // PhysicalModelUtilities
 
-//=======================================================================================
-//! Utility class for Roadway Standards definition models.
-//=======================================================================================
-struct RoadwayStandardsModelUtilities
-{
-private:
-    RoadwayStandardsModelUtilities() {}
-
-public:
-    //! @private
-    ROADRAILPHYSICAL_EXPORT static Dgn::DefinitionModelCPtr Query(Dgn::SubjectCR parentSubject);
-}; // RoadwayStandardsModelUtilities
-
-//=======================================================================================
-//! Utility class for Railway Standards definition models.
-//=======================================================================================
-struct RailwayStandardsModelUtilities
-{
-private:
-    RailwayStandardsModelUtilities() {}
-
-public:
-    //! @private
-    ROADRAILPHYSICAL_EXPORT static Dgn::DefinitionModelCPtr Query(Dgn::SubjectCR parentSubject);
-}; // RailwayStandardsModelUtilities
-
-//__PUBLISH_SECTION_END__
-//=================================================================================
-//! ElementHandler for RoadRailNetwork Elements
-//! @ingroup GROUP_RoadRailPhysical
-//=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RoadRailNetworkHandler : Dgn::dgn_ElementHandler::Physical
-{
-ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_RoadRailNetwork, RoadRailNetwork, RoadRailNetworkHandler, Dgn::dgn_ElementHandler::Physical, ROADRAILPHYSICAL_EXPORT)
-}; // RoadRailNetworkHandler
-
-   //__PUBLISH_SECTION_START__
 END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE

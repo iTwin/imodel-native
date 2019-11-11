@@ -15,3 +15,7 @@ IntermediatePdbFile             = $(MultiCompileIntermediatePdbFile)
 
 nameToDefine = __ORDBRIDGE_BUILD__
 %include cdefapnd.mki
+
+dirToSearch = $(BuildContext)/PublicAPI/
+%include cincapnd.mki
+

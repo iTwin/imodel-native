@@ -1,0 +1,90 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: ORDBridge/OBMSDK.prewire.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%include mdl.mki
+
+%ifdef OBM_SDK
+    OBMSdk=${OBM_SDK}/
+    %ifnofile ${OBM_SDK}
+        %error $(OBM_SDK) not found. Make sure OBM_SDK points to Product\OpenBridgeModelerSDK directory in your OpenBridge output tree.
+    %endif
+%else
+    OBMSdk=$(BuildContext)SdkSources/OpenBridgeModelerSDK/
+%endif
+
+Delivery=$(BuildContext)Delivery/
+
+o = $(OutputRootDir)build/OpenBridgeModeler/
+
+%if defined (BMAKE_DELETE_ALL_TARGETS)
+    cleanopt = --clean
+%else
+    cleanopt =
+%endif
+
+%if defined (VERBOSE)
+    PUBLISH_VERBOSE = -v6
+%else
+    PUBLISH_VERBOSE = -v3   # INFO_LEVEL_VeryInteresting
+%endif
+
+always:
+    !~@mkdir $(o)
+    >$(o)symbolsToPrefixOBMSDK
+USING_NAMESPACE_BENTLEY_CIF
+    <
+
+headersOutputBaseDir = $(o)include/
+includeOBMSDKDirPrefix = OpenBridgeModeler
+modifiedOBMSDKHeadersOutputBaseDir = $(headersOutputBaseDir)$(includeOBMSDKDirPrefix)
+
+# DgnV8 API special cases:
+#
+# DgnDb moved VirtualCollectionIterator.h from Bentley and into ECObjects. Therefore, #include <Bentley/VirtualCollectionIterator.h> in DgnV8 header files will fail.
+# Since there is only one copy of "Bentley" and it is going to be the DgnDb version, the DgnV8 header files will have to look for VirtualCollectionIterator.h somewhere else.
+# We create a new directory called "BentleyV8" and put DgnV8's VirtualCollectionIterator.h there. We then modify the include statements in the DgnV8
+# header files to look for it there. Same story for ThumbnailPropertyValue.h
+#
+# The last three lines in 'replacements' below cause relative includes of Bentley .h files, such as Bentley.h, to become non-relative, so that relocated files
+# such as VirtualCollectionIterator.h will find the Bentley .h files in the correct location.
+#
+# Some of the items in 'replacements' are there to correct DgnV8 .h files that use incorrect "path/file.h" syntax to include headers from directories other
+# than sub-directories.
+#
+
+$(modifiedOBMSDKHeadersOutputBaseDir).stamp : $[@wildcard $(OBMSdk)include/OpenBridgeModeler/*.h]
+    %iffile ${modifiedOBMSDKHeadersOutputBaseDir}
+        -$(rmdirRecursiveCmd) ${modifiedOBMSDKHeadersOutputBaseDir}
+    %endif
+    !~@mkdir ${modifiedOBMSDKHeadersOutputBaseDir}
+    !~@mkdir $(o)
+    ModifyIncludes.py $(PUBLISH_VERBOSE) -o${modifiedOBMSDKHeadersOutputBaseDir} -d$(OBMSdk)include/OpenBridgeModeler $(cleanopt) --includeDirPrefix= --symbolPrefix=DGNV8 --symbolsToPrefix=$(o)symbolsToPrefixOBMSDK
+    >$(o)replacementsOBMSDK
+\<Cif\/!<CifApi\/Cif\/
+AlignmentPtr!ISHOULDNEVERBEHERE
+ISHOULDNEVERBEHERE!Bentley::Cif::AlignmentPtr
+RefCountedPtr\<Bentley::Cif::SDK::ObjectCollection\<Alignment\>\>!RefCountedPtr<Bentley::Cif::SDK::ObjectCollection<Bentley::Cif::GeometryModel::SDK::Alignment>>
+    <
+    python $(bsiScripts)RegexListReplace.py $(o)replacementsOBMSDK ${modifiedOBMSDKHeadersOutputBaseDir}
+    >$@
+    created
+    <
+    ~time
+#----------------------------------------------------------------------------------------
+#   Deliver the results
+#----------------------------------------------------------------------------------------
+$(Delivery)OpenBridgeModeler/Dlls : $(OBMSdk)redist
+    $(LinkFirstDepToFirstTargetAsDirectory)
+    
+$(Delivery)OpenBridgeModeler/Libs : $(OBMSdk)Library
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(Delivery)OpenBridgeModeler/ECSchemas : $(OBMSdk)ECSchemas/CIF
+    $(LinkFirstDepToFirstTargetAsDirectory)
+    
+$(BuildContext)PublicAPI/OpenBridgeModeler : $(headersOutputBaseDir)OpenBridgeModeler
+    $(LinkFirstDepToFirstTargetAsDirectory)

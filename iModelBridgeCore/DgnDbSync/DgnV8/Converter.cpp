@@ -1080,6 +1080,58 @@ DgnModelId Converter::CreateModelFromV8Model(DgnV8ModelCR v8Model, Utf8CP newNam
         modeledElementId = partition->GetElementId();
 
         }
+    else if (m_dgndb->Schemas().GetClass(classId)->Is(m_dgndb->Schemas().GetClass(BIS_ECSCHEMA_NAME, "GraphicalModel3d")))
+        {
+        SubjectCR parentSubject = _GetSpatialParentSubject();
+
+        DgnCode partitionCode = InformationPartitionElement::CreateCode(parentSubject, newName);
+        Utf8String qualifiedName(newName);
+        if (GetDgnDb().Elements().QueryElementIdByCode(partitionCode).IsValid())
+            {
+            // if the model's own name is not unique among all references attachments of the parent, then
+            //  fall back on filename-modelname.
+            qualifiedName = GetFileBaseName(*v8Model.GetDgnFileP());
+            qualifiedName.append("-");
+            qualifiedName.append(newName);
+
+            partitionCode = InformationPartitionElement::CreateCode(parentSubject, qualifiedName.c_str());
+            if (GetDgnDb().Elements().QueryElementIdByCode(partitionCode).IsValid())
+                {
+                //  If somehow!?! even filename-modelname is not unique among the parent's attachments, then just
+                //  generate a (meaningless) unique code.
+                partitionCode = InformationPartitionElement::CreateUniqueCode(parentSubject, qualifiedName.c_str());
+                }
+            }
+
+        auto graphicalPartition3dClassCP = GetDgnDb().Schemas().GetClass(BIS_ECSCHEMA_NAME, "GraphicalPartition3d");
+        auto graphicalPartition3dEnablerP = graphicalPartition3dClassCP->GetDefaultStandaloneEnabler();
+
+        auto ecInstancePtr = graphicalPartition3dEnablerP->CreateInstance();
+        ecInstancePtr->SetValue("Model", ECN::ECValue(parentSubject.GetModelId()));
+        ecInstancePtr->SetValue("CodeSpec", ECN::ECValue(partitionCode.GetCodeSpecId()));
+        ecInstancePtr->SetValue("CodeScope", ECN::ECValue(partitionCode.GetScopeElementId(GetDgnDb())));
+        ecInstancePtr->SetValue("CodeValue", ECN::ECValue(partitionCode.GetValueUtf8CP()));
+
+        DgnElementPtr ed = GetDgnDb().Elements().CreateElement(*ecInstancePtr);
+        ed->SetParentId(parentSubject.GetElementId(),
+                        GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_SubjectOwnsPartitionElements));
+
+        Json::Value modelProps(Json::nullValue);
+        auto isRef = parentSubject.GetSubjectJsonProperties(Subject::json_Model()).GetMember("Type") == "References";
+        modelProps["Content"] = isRef ? "Reference" : "Master";
+        ed->SetJsonProperties("GraphicalPartition3d.Model", modelProps);
+
+        DgnElementCPtr partition = ed->Insert();
+        if (!partition.IsValid())
+            {
+            BeAssert(false);
+            ReportError(IssueCategory::Unknown(), Issue::ConvertFailure(), "error creating GraphicalPartition3d for GraphicalModel3d");
+            return DgnModelId();
+            }
+
+        modeledElementId = partition->GetElementId();
+
+        }
     else
         {
         BeAssert(false && "Need to manufacture a DgnElement for the DgnModel to model");

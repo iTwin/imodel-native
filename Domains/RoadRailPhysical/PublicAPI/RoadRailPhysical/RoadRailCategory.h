@@ -30,6 +30,8 @@ public:
 
 //__PUBLISH_SECTION_START__
 public:
+    //! Return the DgnCategoryId for the Network Category
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnCategoryId GetNetwork(Dgn::DgnDbR);
     //! Return the DgnCategoryId for the Corridor Category
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnCategoryId GetCorridor(Dgn::DgnDbR);
     //! Return the DgnCategoryId for the Roadway Category

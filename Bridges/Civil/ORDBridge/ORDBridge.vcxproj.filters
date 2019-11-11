@@ -36,6 +36,9 @@
     <ClInclude Include="ScalableMeshWrapper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="OBMConverter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ORDBridge.cpp">
@@ -50,10 +53,19 @@
     <ClCompile Include="iModelBridgeAffinity.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ConvertOBMElementXDomain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="OBMConverter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="DynamicSchemaComparer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ScalableMeshWrapper.cpp">
+	<ClCompile Include="ScalableMeshWrapper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="OBMConverter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -82,12 +94,18 @@
     <None Include="xliffs.mke">
       <Filter>Build Files</Filter>
     </None>
+    <None Include="OBMSDK.prewire.mke">
+      <Filter>Build Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="..\CiviliModelBridges.PartFile.xml">
       <Filter>Build Files</Filter>
     </Xml>
     <Xml Include="installer\ORDBridgeinstaller.wix.xml">
+      <Filter>Installer Files</Filter>
+    </Xml>
+    <Xml Include="OpenBridgeModelerCE.ecschema.xml">
       <Filter>Installer Files</Filter>
     </Xml>
   </ItemGroup>

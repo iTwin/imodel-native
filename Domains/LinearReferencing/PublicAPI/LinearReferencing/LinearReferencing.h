@@ -94,19 +94,19 @@ END_BENTLEY_LINEARREFERENCING_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // Macro to declare Get, GetForEdit, Insert, Update methods on elements. Pointers (Ptr, CPtr) must be defined.
 //-----------------------------------------------------------------------------------------
-#define DECLARE_LINEARREFERENCING_ELEMENT_GET_METHODS(__name__) \
-    LINEARREFERENCING_EXPORT static __name__##CPtr Get       (Dgn::DgnDbR db, Dgn::DgnElementId id) { return db.Elements().Get< __name__ >(id); } \
-    LINEARREFERENCING_EXPORT static __name__##Ptr  GetForEdit(Dgn::DgnDbR db, Dgn::DgnElementId id) { return db.Elements().GetForEdit< __name__ >(id); }
+#define DECLARE_LINEARREFERENCING_ELEMENT_GET_METHODS(__name__, __dgnelementname__) \
+    LINEARREFERENCING_EXPORT static __name__##CPtr Get       (Dgn::DgnDbR db, Dgn::DgnElementId id) { return new __name__(*db.Elements().Get< __dgnelementname__ >(id)); } \
+    LINEARREFERENCING_EXPORT static __name__##Ptr  GetForEdit(Dgn::DgnDbR db, Dgn::DgnElementId id) { return new __name__(*db.Elements().GetForEdit< __dgnelementname__ >(id)); }
 
 //-----------------------------------------------------------------------------------------
 // Macro to declare Get, GetForEdit, Insert, Update methods on elements. Pointers (Ptr, CPtr) must be defined.
 //-----------------------------------------------------------------------------------------
-#define DECLARE_LINEARREFERENCING_LINEARLYLOCATED_SET_METHODS(__name__) \
+#define DECLARE_LINEARREFERENCING_LINEARLYLOCATED_SET_METHODS(__name__, __dgnelementname__) \
     __name__##CPtr Insert(Dgn::DgnDbStatus* stat=nullptr) { \
-        auto retCPtr = GetDgnDb().Elements().Insert< __name__ >(*this, stat); Dgn::DgnDbStatus status = Dgn::DgnDbStatus::Success; \
+        __name__##CPtr retCPtr = new __name__(*getP()->GetDgnDb().Elements().Insert< __dgnelementname__ >(*getP(), stat)); Dgn::DgnDbStatus status = Dgn::DgnDbStatus::Success; \
         if (retCPtr.IsNull() || Dgn::DgnDbStatus::Success != (status = _InsertLinearElementRelationship())) { if (stat) *stat = status; return nullptr; } return retCPtr; } \
     __name__##CPtr Update(Dgn::DgnDbStatus* stat=nullptr) { \
-        auto retCPtr = GetDgnDb().Elements().Update< __name__ >(*this, stat); Dgn::DgnDbStatus status = Dgn::DgnDbStatus::Success; \
+        __name__##CPtr retCPtr = new __name__(*getP()->GetDgnDb().Elements().Update< __dgnelementname__ >(*getP(), stat)); Dgn::DgnDbStatus status = Dgn::DgnDbStatus::Success; \
         if (retCPtr.IsNull() || Dgn::DgnDbStatus::Success != (status = _UpdateLinearElementRelationship())) { if (stat) *stat = status; return nullptr; } return retCPtr; }
 
 
@@ -150,3 +150,66 @@ LINEARREFERENCING_REFCOUNTED_PTR(LinearlyReferencedAtLocation)
 LINEARREFERENCING_REFCOUNTED_PTR(LinearlyReferencedFromToLocation)
 LINEARREFERENCING_REFCOUNTED_PTR(LinearLocation)
 LINEARREFERENCING_REFCOUNTED_PTR(Referent)
+
+#define DGNELEMENTWRAPPER_DECLARE_MEMBERS(__superclass__, __dgnelementclass__) \
+    private: typedef __superclass__ T_Super; \
+    protected: static RefCountedPtr<__dgnelementclass__> Create(Dgn::DgnDbR dgnDb, __dgnelementclass__::CreateParams const& params) { \
+        auto ecInstancePtr = dgnDb.Schemas().GetClass(params.m_classId)->GetDefaultStandaloneEnabler()->CreateInstance(); \
+        ParamsToInstance(dgnDb, params, *ecInstancePtr); \
+        auto newElementPtr = dgnDb.Elements().Create<__dgnelementclass__>(*ecInstancePtr); \
+        if (params.m_parentId.IsValid()) \
+            newElementPtr->SetParentId(params.m_parentId, params.m_parentRelClassId); \
+        return newElementPtr; }
+
+template<typename T>
+struct DgnElementWrapper: BentleyApi::RefCountedBase, BentleyApi::NonCopyableClass
+{    
+private:
+    BentleyApi::RefCountedCPtr<T> m_wrappedCPtr;
+    BentleyApi::RefCountedPtr<T> m_wrappedPtr;
+
+protected:
+    virtual ~DgnElementWrapper() {}
+    explicit DgnElementWrapper(T const& dgnElementCR) : m_wrappedCPtr(&dgnElementCR) { BeAssert(m_wrappedCPtr.IsValid()); }
+    explicit DgnElementWrapper(T& dgnElementR) : m_wrappedPtr(&dgnElementR) { BeAssert(m_wrappedPtr.IsValid()); }
+
+    static void ParamsToInstance(BentleyApi::Dgn::DgnDbR dgnDb, typename T::CreateParams const& params, BentleyApi::ECN::IECInstanceR ecInstance)
+        {
+        ecInstance.SetValue("Model", BentleyApi::ECN::ECValue(params.m_modelId));
+        ecInstance.SetValue("CodeSpec", BentleyApi::ECN::ECValue(params.m_code.GetCodeSpecId()));
+        ecInstance.SetValue("CodeScope", BentleyApi::ECN::ECValue(params.m_code.GetScopeElementId(dgnDb)));
+        ecInstance.SetValue("CodeValue", BentleyApi::ECN::ECValue(params.m_code.GetValueUtf8CP()));
+        }
+
+public:
+    T const* get() const { return m_wrappedPtr.IsValid() ? m_wrappedPtr.get() : (m_wrappedCPtr.IsValid() ? m_wrappedCPtr.get() : m_wrappedPtr.get()); }
+    T* getP() { return m_wrappedPtr.get(); }
+
+    BentleyApi::Dgn::DgnElementId GetElementId() const { return get()->GetElementId(); }
+    BentleyApi::Dgn::DgnDbR GetDgnDb() const { return get()->GetDgnDb(); }
+    BentleyApi::Dgn::DgnModelId GetModelId() const { return get()->GetModelId(); }
+    BentleyApi::Dgn::DgnModelId GetSubModelId() const { return get()->GetSubModelId(); }
+    BentleyApi::Dgn::DgnModelPtr GetModel() const { return get()->GetModel(); }
+    BentleyApi::Dgn::DgnModelPtr GetSubModel() const { return get()->GetSubModel(); }
+    BentleyApi::Dgn::DgnCodeCR GetCode() const { return get()->GetCode(); }
+    void SetCode(BentleyApi::Dgn::DgnCode code) { getP()->SetCode(code); }
+    BentleyApi::Utf8CP GetUserLabel() const { return get()->GetUserLabel(); }
+    void SetUserLabel(BentleyApi::Utf8CP val) { getP()->SetUserLabel(val); }
+}; // DgnElementWrapper
+
+template <typename T>
+struct GeometricElementWrapper : DgnElementWrapper<T>
+{
+protected:
+    explicit GeometricElementWrapper(T const& element) : DgnElementWrapper<T>(element) {}
+    explicit GeometricElementWrapper(T& element) : DgnElementWrapper<T>(element) {}
+
+    static void ParamsToInstance(BentleyApi::Dgn::DgnDbR dgnDb, typename T::CreateParams const& params, BentleyApi::ECN::IECInstanceR ecInstance)
+        {
+        DgnElementWrapper<T>::ParamsToInstance(dgnDb, params, ecInstance);
+        ecInstance.SetValue("Category", BentleyApi::ECN::ECValue(params.m_category));
+        }
+
+public:
+    BentleyApi::Dgn::DgnCategoryId GetCategoryId() const { return this->get()->GetCategoryId(); }
+}; // GeometricElementWrapper

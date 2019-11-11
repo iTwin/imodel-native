@@ -18,6 +18,7 @@
 #include <CifApi/Cif/SDK/ConsensusDgnECProvider.h>
 #include <CifApi/Cif/SDK/CIFGeometryModelECSchema.h>
 #include <CifApi/Cif/SDK/PersistentPathBackPointerBuilder.h>
+#include <CifApi/Cif/DataAccess/DgnECProviderHub.h>
 
 //  The Vancouver header files will not compile unless the there is a "using namespace Bentley".  Therefore we
 //  have to disallow "using namespace BentleyB0200".
@@ -38,6 +39,15 @@
 #include <RoadRailAlignment/RoadRailAlignmentApi.h>
 #include <RoadRailPhysical/RoadRailPhysicalApi.h>
 #include <DgnV8OpenRoadsDesigner/DgnV8OpenRoadsDesignerApi.h>
+#include <BridgeStructuralPhysical/BridgeStructuralPhysicalApi.h>
+#include <BridgeStructuralPhysical/BridgeStructuralPhysicalDomain.h>
+#include <BridgeStructuralPhysical/Bridge.h>
+#include <BridgeStructuralPhysical/BridgeCategory.h>
+#include <BridgeStructuralPhysical/BridgeSubstructure.h>
+#include <BridgeStructuralPhysical/BridgeSuperstructure.h>
+#include <StructuralDomain/StructuralPhysicalApi.h>
+#include <OpenBridgeModeler/ObmGeometryModelSDK.h>
+#include <OpenBridgeModeler/ObmGeometryConsensusSchemaProvider.h>
 #include <ORDBridge/ORDBridgeApi.h>
 
 /** @namespace DgnDbSync Contains types defined by %Bentley Systems that are used to synchronize between DgnDb and foreign data formats. */
@@ -51,7 +61,9 @@ BEGIN_ORDBRIDGE_NAMESPACE
 END_ORDBRIDGE_NAMESPACE
 
 #include "ORDConverter.h"
+#include "OBMConverter.h"
 #include "ORDBridge.h"
+#include "ConvertOBMElementXDomain.h"
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_LINEARREFERENCING
@@ -60,7 +72,14 @@ DGNV8_USING_NAMESPACE_BENTLEY_CIF_GEOMETRYMODEL_SDK
 
 namespace AlignmentBim = BENTLEY_NAMESPACE_NAME::RoadRailAlignment;
 namespace RoadRailBim = BENTLEY_NAMESPACE_NAME::RoadRailPhysical;
+namespace RoadBim = BENTLEY_NAMESPACE_NAME::RoadPhysical;
+namespace RailBim = BENTLEY_NAMESPACE_NAME::RailPhysical;
 namespace DgnV8ORDBim = BENTLEY_NAMESPACE_NAME::DgnV8OpenRoadsDesigner;
+namespace BridgePhysicalBim = BENTLEY_NAMESPACE_NAME::BridgeStructuralPhysical;
+
+#define OBM_SCHEMA_NAME                             "OpenBridgeModelerCE"
+#define OBM_SCHEMA_FILE                             L"OpenBridgeModelerCE.ecschema.xml"
+#define OBM_SCHEMA_LOCATION                         L"ECSchemas/Application/"
 
 //-----------------------------------------------------------------------------------------
 // Logging macros

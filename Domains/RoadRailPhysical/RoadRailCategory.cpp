@@ -18,10 +18,11 @@ void RoadRailCategory::InsertDomainCategories(DgnDbR db)
         BeAssert(false);
         }
 
+    InsertSpatialCategory(*modelPtr, BRRP_CATEGORY_TransportationNetwork, ColorDef::White());
     InsertSpatialCategory(*modelPtr, BRRP_CATEGORY_Corridor, ColorDef::White());
     InsertSpatialCategory(*modelPtr, BRRP_CATEGORY_DesignSpeed, ColorDef::White());
-    InsertSpatialCategory(*modelPtr, BRRP_CATEGORY_Roadway, ColorDef::White());
-    InsertSpatialCategory(*modelPtr, BRRP_CATEGORY_Railway, ColorDef::White());
+    InsertSpatialCategory(*modelPtr, BRDP_CATEGORY_Roadway, ColorDef::White());
+    InsertSpatialCategory(*modelPtr, BRLP_CATEGORY_Railway, ColorDef::White());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -113,5 +114,6 @@ DgnSubCategoryId RoadRailCategory::QuerySubCategoryId(DgnDbR dgnDb, DgnCategoryI
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCategoryId RoadRailCategory::GetCorridor(DgnDbR db) { DgnCategoryId categoryId = QuerySpatialCategoryId(db, BRRP_CATEGORY_Corridor);    BeAssert(categoryId.IsValid()); return categoryId; }
 DgnCategoryId RoadRailCategory::GetDesignSpeed(DgnDbR db) { DgnCategoryId categoryId = QuerySpatialCategoryId(db, BRRP_CATEGORY_DesignSpeed);    BeAssert(categoryId.IsValid()); return categoryId; }
-DgnCategoryId RoadRailCategory::GetRoadway(DgnDbR db)  { DgnCategoryId categoryId = QuerySpatialCategoryId(db, BRRP_CATEGORY_Roadway);    BeAssert(categoryId.IsValid()); return categoryId; }
-DgnCategoryId RoadRailCategory::GetRailway(DgnDbR db) { DgnCategoryId categoryId = QuerySpatialCategoryId(db, BRRP_CATEGORY_Railway);   BeAssert(categoryId.IsValid()); return categoryId; }
+DgnCategoryId RoadRailCategory::GetRoadway(DgnDbR db)  { DgnCategoryId categoryId = QuerySpatialCategoryId(db, BRDP_CATEGORY_Roadway);    BeAssert(categoryId.IsValid()); return categoryId; }
+DgnCategoryId RoadRailCategory::GetRailway(DgnDbR db) { DgnCategoryId categoryId = QuerySpatialCategoryId(db, BRLP_CATEGORY_Railway);   BeAssert(categoryId.IsValid()); return categoryId; }
+DgnCategoryId RoadRailCategory::GetNetwork(DgnDbR db) { DgnCategoryId categoryId = QuerySpatialCategoryId(db, BRRP_CATEGORY_TransportationNetwork);    BeAssert(categoryId.IsValid()); return categoryId; }

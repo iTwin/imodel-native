@@ -8,6 +8,8 @@
 #include <RoadRailPhysical/Corridor.h>
 #include <RoadRailPhysical/DesignSpeed.h>
 #include <RoadRailPhysical/RoadRailCategory.h>
+#include <RoadRailPhysical/RoadPhysicalDomain.h>
+#include <RoadRailPhysical/RailPhysicalDomain.h>
 
 #define INSERT_CODESPEC(x) \
     { auto codeSpecPtr = x; \
@@ -19,7 +21,6 @@
 
 BEGIN_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 
-HANDLER_DEFINE_MEMBERS(RoadRailNetworkHandler)
 DOMAIN_DEFINE_MEMBERS(RoadRailPhysicalDomain)
 
 /*---------------------------------------------------------------------------------**//**
@@ -27,71 +28,6 @@ DOMAIN_DEFINE_MEMBERS(RoadRailPhysicalDomain)
 +---------------+---------------+---------------+---------------+---------------+------*/
 RoadRailPhysicalDomain::RoadRailPhysicalDomain() : DgnDomain(BRRP_SCHEMA_NAME, "Bentley RoadRailPhysical Domain", 2)
     {    
-    RegisterHandler(RoadRailNetworkHandler::GetHandler());
-    RegisterHandler(CorridorHandler::GetHandler());    
-    RegisterHandler(CorridorSegmentHandler::GetHandler());
-
-    RegisterHandler(CorridorPortionElementHandler::GetHandler());
-    RegisterHandler(PathwayElementHandler::GetHandler());
-    RegisterHandler(RailwayHandler::GetHandler());
-    RegisterHandler(RoadwayHandler::GetHandler());    
-
-    RegisterHandler(PathwayDesignCriteriaHandler::GetHandler());
-    RegisterHandler(DesignSpeedDefinitionHandler::GetHandler());
-    RegisterHandler(DesignSpeedHandler::GetHandler());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus createRoadwayStandardsPartition(SubjectCR subject)
-    {
-    DgnDbStatus status;
-
-    auto roadwayStandardsPartitionPtr = DefinitionPartition::Create(subject, RoadRailPhysicalDomain::GetRoadwayStandardsPartitionName());
-    if (roadwayStandardsPartitionPtr->Insert(&status).IsNull())
-        return status;
-
-    auto roadwayStandardsModelPtr = DefinitionModel::Create(*roadwayStandardsPartitionPtr);
-
-    if (DgnDbStatus::Success != (status = roadwayStandardsModelPtr->Insert()))
-        return status;
-
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus createRailwayStandardsPartition(SubjectCR subject)
-    {
-    DgnDbStatus status;
-
-    auto railwayStandardsPartitionPtr = DefinitionPartition::Create(subject, RoadRailPhysicalDomain::GetRailwayStandardsPartitionName());
-    if (railwayStandardsPartitionPtr->Insert(&status).IsNull())
-        return status;
-
-    auto railwayStandardsModelPtr = DefinitionModel::Create(*railwayStandardsPartitionPtr);
-
-    if (DgnDbStatus::Success != (status = railwayStandardsModelPtr->Insert()))
-        return status;
-
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      05/2019
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus RoadRailPhysicalDomain::SetUpDefinitionPartitions(SubjectCR subject)
-    {
-    DgnDbStatus status;
-    if (DgnDbStatus::Success != (status = createRailwayStandardsPartition(subject)))
-        return status;
-
-    if (DgnDbStatus::Success != (status = createRoadwayStandardsPartition(subject)))
-        return status;
-
-    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -99,9 +35,10 @@ DgnDbStatus RoadRailPhysicalDomain::SetUpDefinitionPartitions(SubjectCR subject)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void createCodeSpecs(DgnDbR dgndb)
     {
-    INSERT_CODESPEC(CodeSpec::Create(dgndb, BRRP_CODESPEC_RoadRailNetwork, CodeScopeSpec::CreateModelScope()));
+    INSERT_CODESPEC(CodeSpec::Create(dgndb, BRLP_CODESPEC_RailNetwork, CodeScopeSpec::CreateModelScope()));
+    INSERT_CODESPEC(CodeSpec::Create(dgndb, BRDP_CODESPEC_RoadNetwork, CodeScopeSpec::CreateModelScope()));
     INSERT_CODESPEC(CodeSpec::Create(dgndb, BRRP_CODESPEC_Corridor, CodeScopeSpec::CreateModelScope()));
-    INSERT_CODESPEC(CodeSpec::Create(dgndb, BRRP_CODESPEC_CorridorSegment, CodeScopeSpec::CreateModelScope()));
+    INSERT_CODESPEC(CodeSpec::Create(dgndb, BRRP_CODESPEC_TransportationSystem, CodeScopeSpec::CreateModelScope()));
     INSERT_CODESPEC(CodeSpec::Create(dgndb, BRRP_CODESPEC_Pathway, CodeScopeSpec::CreateModelScope()));
     INSERT_CODESPEC(CodeSpec::Create(dgndb, BRRP_CODESPEC_DesignSpeedDefinition, CodeScopeSpec::CreateModelScope()));
     }
@@ -294,49 +231,6 @@ DgnViewId RoadRailPhysicalDomain::SetUpDefaultViews(SubjectCR subject, PhysicalM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      06/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode RoadRailNetwork::CreateCode(PhysicalModelCR scopeModel, Utf8StringCR networkCode)
-    {
-    return CodeSpec::CreateCode(BRRP_CODESPEC_RoadRailNetwork, scopeModel, networkCode);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      06/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-RoadRailNetworkCPtr RoadRailNetwork::Insert(PhysicalModelR parentModel, Utf8StringCR networkName)
-    {
-    if (!parentModel.GetModelId().IsValid())
-        return nullptr;
-
-    CreateParams createParams(parentModel.GetDgnDb(), parentModel.GetModelId(), QueryClassId(parentModel.GetDgnDb()),
-        RoadRailCategory::GetCorridor(parentModel.GetDgnDb()));
-    createParams.m_code = CreateCode(parentModel, networkName);
-
-    RoadRailNetworkPtr newPtr(new RoadRailNetwork(createParams));
-    auto networkCPtr = parentModel.GetDgnDb().Elements().Insert<RoadRailNetwork>(*newPtr);
-    if (networkCPtr.IsNull())
-        return nullptr;
-
-    auto networkPhysicalModelPtr = PhysicalModel::Create(*networkCPtr);
-    if (networkPhysicalModelPtr.IsValid())
-        {
-        if (DgnDbStatus::Success != networkPhysicalModelPtr->Insert())
-            return nullptr;
-        }
-
-    auto horizontalPartitionCPtr = HorizontalAlignments::Insert(*networkPhysicalModelPtr);
-    if (horizontalPartitionCPtr.IsNull())
-        return nullptr;
-
-    auto horizontalBreakDownModelPtr = SpatialLocationModel::Create(*horizontalPartitionCPtr);
-    if (DgnDbStatus::Success != horizontalBreakDownModelPtr->Insert())
-        return nullptr;
-
-    return networkCPtr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      06/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 PhysicalPartitionCPtr PhysicalModelUtilities::CreateAndInsertPhysicalPartitionAndModel(SubjectCR subject, Utf8CP physicalPartitionName)
     {
     DgnDbStatus status;
@@ -378,7 +272,7 @@ DgnElementIdSet PhysicalModelUtilities::QueryPhysicalPartitions(SubjectCR subjec
 /*---------------------------------------------------------------------------------**//**
 -* @bsimethod                                    Diego.Diaz                      06/2017
 -+---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalModelPtr PhysicalModelUtilities::QueryPhysicalNetworkModel(SubjectCR parentSubject, Utf8CP physicalPartitionName, Utf8CP roadRailNetworkName)
+PhysicalModelPtr PhysicalModelUtilities::QueryRoadNetworkModel(SubjectCR parentSubject, Utf8CP physicalPartitionName, Utf8StringCR roadNetworkName)
     {
     DgnDbR db = parentSubject.GetDgnDb();
     DgnCode partitionCode = PhysicalPartition::CreateCode(parentSubject, physicalPartitionName);
@@ -388,9 +282,31 @@ PhysicalModelPtr PhysicalModelUtilities::QueryPhysicalNetworkModel(SubjectCR par
         return nullptr;
 
     auto parentModelCPtr = partition->GetSubModel()->ToPhysicalModel();
-    DgnCode networkCode = RoadRailNetwork::CreateCode(*parentModelCPtr, roadRailNetworkName);
-    DgnElementId networkId = db.Elements().QueryElementIdByCode(networkCode);
-    auto networkCPtr = RoadRailNetwork::Get(db, networkId);
+    auto roadNetworkCode = RoadNetwork::CreateCode(*parentModelCPtr, roadNetworkName);
+    DgnElementId networkId = db.Elements().QueryElementIdByCode(roadNetworkCode);
+    auto networkCPtr = TransportationNetwork::Get(db, networkId);
+    if (!networkCPtr.IsValid())
+        return nullptr;
+
+    return networkCPtr->GetSubModel()->ToPhysicalModelP();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+-* @bsimethod                                    Diego.Diaz                      06/2017
+-+---------------+---------------+---------------+---------------+---------------+------*/
+PhysicalModelPtr PhysicalModelUtilities::QueryRailNetworkModel(SubjectCR parentSubject, Utf8CP physicalPartitionName, Utf8StringCR railNetworkName)
+    {
+    DgnDbR db = parentSubject.GetDgnDb();
+    DgnCode partitionCode = PhysicalPartition::CreateCode(parentSubject, physicalPartitionName);
+    DgnElementId partitionId = db.Elements().QueryElementIdByCode(partitionCode);
+    PhysicalPartitionCPtr partition = db.Elements().Get<PhysicalPartition>(partitionId);
+    if (!partition.IsValid())
+        return nullptr;
+
+    auto parentModelCPtr = partition->GetSubModel()->ToPhysicalModel();
+    auto railNetworkCode = RailNetwork::CreateCode(*parentModelCPtr, railNetworkName);
+    DgnElementId networkId = db.Elements().QueryElementIdByCode(railNetworkCode);
+    auto networkCPtr = TransportationNetwork::Get(db, networkId);
     if (!networkCPtr.IsValid())
         return nullptr;
 
@@ -406,34 +322,6 @@ SubjectCPtr PhysicalModelUtilities::GetParentSubject(PhysicalModelCR model)
     BeAssert(partitionCP != nullptr);
 
     return model.GetDgnDb().Elements().Get<Subject>(partitionCP->GetParentId());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      12/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-DefinitionModelCPtr RoadwayStandardsModelUtilities::Query(SubjectCR parentSubject)
-    {
-    DgnDbR db = parentSubject.GetDgnDb();
-    DgnCode partitionCode = DefinitionPartition::CreateCode(parentSubject, RoadRailPhysicalDomain::GetRoadwayStandardsPartitionName());
-    DgnElementId partitionId = db.Elements().QueryElementIdByCode(partitionCode);
-    DefinitionPartitionCPtr partition = db.Elements().Get<DefinitionPartition>(partitionId);
-    if (!partition.IsValid())
-        return nullptr;
-    return partition->GetSubModel()->ToDefinitionModel();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      12/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-DefinitionModelCPtr RailwayStandardsModelUtilities::Query(SubjectCR parentSubject)
-    {
-    DgnDbR db = parentSubject.GetDgnDb();
-    DgnCode partitionCode = DefinitionPartition::CreateCode(parentSubject, RoadRailPhysicalDomain::GetRailwayStandardsPartitionName());
-    DgnElementId partitionId = db.Elements().QueryElementIdByCode(partitionCode);
-    DefinitionPartitionCPtr partition = db.Elements().Get<DefinitionPartition>(partitionId);
-    if (!partition.IsValid())
-        return nullptr;
-    return partition->GetSubModel()->ToDefinitionModel();
     }
 
 END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE

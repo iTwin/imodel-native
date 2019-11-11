@@ -21,6 +21,21 @@
             <Files ProductDirectoryName="CifDlls" ProductSubDirectory="ECSchemas/Model" Required="true">
                 Delivery/CifSdk/ECSchemas/Model/*.ecschema.xml
             </Files>
+	</Bindings>
+    </Part>
+    
+    <Part Name="OBMSDK" BentleyBuildMakeFile="ORDBridge/OBMSDK.Prewire.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
+        <SdkSource>OpenBridgeModelerSDK</SdkSource>
+        <Bindings>
+            <PublicAPI Domain="OpenBridgeModeler" />
+            <Files ProductDirectoryName="CifDlls" SubPartDirectory="OBMSdk/Dlls" Required="true">
+                Delivery/OpenBridgeModeler/Dlls/*.dll
+            </Files>
+            <Directory SourceName="Delivery/OpenBridgeModeler/Libs" Required="false" SubPartDirectory="ObmLibs" />
+            <Files ProductDirectoryName="CifDlls" ProductSubDirectory="ECSChemas/CIF" SubPartDirectory="OpenBridgeModeler/ECSchemas" Required="true">
+                Delivery/OpenBridgeModeler/ECSchemas/*.ecschema.xml
+                Delivery/OpenBridgeModeler/ECSchemas/*.ecschema.liveMapping.xml
+            </Files>
         </Bindings>
     </Part>
 
@@ -58,8 +73,10 @@
         <SubPart PartName="VersionedV8_InternalSDK" Repository="imodel02" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync"/>
         <SubPart PartName="Cif_InternalSDK" />
         <SubPart PartName="ORDBridge-en"/>
+	    <SubPart PartName="OBMSDK" />
         <SubPart PartName="RoadRailPhysical" PartFile="Domains/RoadRailPhysical/RoadRailPhysical" Repository="imodel02"/>
         <SubPart PartName="DgnV8OpenRoadsDesigner" PartFile="Domains/DgnV8OpenRoadsDesigner/DgnV8OpenRoadsDesigner" Repository="imodel02"/>
+        <SubPart PartName="BridgeStructuralPhysical" PartFile="Domains/BridgeStructuralPhysical/BridgeStructuralPhysical" Repository="imodel02"/>
         <SubPart PartName="QuantityTakeoffsAspectsSchema" PartFile="BisSchemasIModelCore" Repository="BisSchemas"/>
         <Bindings>
             <Libs Required="false">Delivery/$(libprefix)ORDBridge$(libext)</Libs>
@@ -86,8 +103,8 @@
         <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
         <SubPart PartName="Resources" />
         <SubPart PartName="StaticAppData" PartFile="MstnAppData" Repository="miscdev-mstnappdata"/>
-        <!-- <SubPart PartName="RoadRailAlignment-Tested" Repository="imodel02" PartFile="Domains/RoadRailAlignment/RoadRailAlignment" /> -->
-        <!-- <SubPart PartName="RoadRailPhysical-Tested" Repository="imodel02" PartFile="Domains/RoadRailPhysical/RoadRailPhysical" /> -->
+        <SubPart PartName="RoadRailAlignment-Tested" Repository="imodel02" PartFile="Domains/RoadRailAlignment/RoadRailAlignment" />
+        <SubPart PartName="RoadRailPhysical-Tested" Repository="imodel02" PartFile="Domains/RoadRailPhysical/RoadRailPhysical" />
         <SubPart PartName="CiviliModelBridgesTested" />
         
         <!-- <SubPart PartName="ORDBridgeGUI" /> -->
@@ -100,7 +117,9 @@
     <Part Name="ORDBridgePublicAPI" BentleyBuildMakeFile="ORDBridge/ORDBridge.prewire.mke">
         <Bindings>
             <PublicAPI Domain="ORDBridge"/>
-            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Application" SubPartDirectory="ECSchemas/Application"/>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Application" SubPartDirectory="ECSchemas/Application">
+                ECSchemas/Application/OpenBridgeModelerCE*.xml
+            </Files>
         </Bindings>
     </Part>
 
@@ -149,6 +168,7 @@
         <SubPart PartName="PrewireForORDBridgeUnitTests" />
         <SubPart PartName="PublishORDToBimDLL"/>
         <SubPart PartName="Cif_InternalSDK" />
+        <SubPart PartName="OBMSDK" />
         <SubPart PartName="RoadRailPhysical" PartFile="Domains/RoadRailPhysical/RoadRailPhysical" Repository="imodel02"/>
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="CiviliModelBridgesORDBridge/Backdoor" SourceName="Delivery/UnitTests/Objects/BackdoorORDBridge"/>
@@ -198,6 +218,7 @@
     <Product Name="CiviliModelBridges-Gtest">
         <SubPart PartName="Gtest" />
         <SubPart PartName="Cif_InternalSDK" />
+        <SubPart PartName="OBMSDK" />
         <SubPart PartName="VersionedV8_InternalSDK" Repository="imodel02" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync"/>
         <SubPart PartName="DgnV8ConverterExe" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync" Repository="imodel02"/>
         <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
@@ -254,6 +275,7 @@
         <ProductDirectory Name="ApplicationRoot"                Path=""/>
         <ProductDirectory Name="DgnV8Dlls"  Path="DgnV8"/>
         <ProductDirectory Name="CifDlls"  Path="Cif"/>
+	<ProductDirectory Name="ObmDlls"  Path="Obm"/>
 
         <!-- Silencing warnings... are these actually needed? -->
         <ProductDirectory Name="PublisherLoggingConfigXml" Deliver="false"/>
@@ -270,7 +292,7 @@
         <SubPart PartName="ORDBridgeUnitTests" />
     </Part>
 
-    <Part Name="Gtest" BentleyBuildMakeFile="ORDBridge/gtest/buildGTest.mke" BentleyBuildMakeOptions="
+    <Part Name="Gtest" BentleyBuildMakeFile="${SrcRoot}/imodel02/iModelCore/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="
         -dTEST_NAME=CiviliModelBridgesTests
         -dTEST_COLLECTION_PRODUCT=CiviliModelBridges-Tests
         -dTEST_FRAMEWORK_SQLANG=DgnClientFx_en.sqlang.db3" OnlyPlatforms="x86,x64,MacOs*,Linux*">
@@ -283,7 +305,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="RunGtest" BentleyBuildMakeFile="ORDBridge/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=CiviliModelBridges-Gtest -dGTEST_NAME=CiviliModelBridgesTests -dGTEST_SHOW_PROGRESS -dGTEST_EXTRA_ARGS=--timeout=300" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}/imodel02/iModelCore/BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=CiviliModelBridges-Gtest -dGTEST_NAME=CiviliModelBridgesTests -dGTEST_SHOW_PROGRESS -dGTEST_EXTRA_ARGS=--timeout=300" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubPart PartName="ORDBridgeUnitTests" />
     </Part>
 
@@ -312,6 +334,7 @@
 
   <Product Name="PublishORDToBIM">
     <SubPart PartName="PublishORDToBIMExe" />
+    <SubPart PartName="napi-stub" PartFile="node-addon-api/node-addon-api"/>
     <SubPart PartName="StaticAppData" PartFile="MstnAppData" Repository="miscdev-mstnappdata"/>
     <Directories DirectoryListName="PublishORDToBIMDirectoryList" />
   </Product>
@@ -398,6 +421,7 @@
     <SubPart PartName="LinearReferencing" PartFile="Domains/LinearReferencing/LinearReferencing" Repository="imodel02"/>
     <SubPart PartName="RoadRailAlignment" PartFile="Domains/RoadRailAlignment/RoadRailAlignment" Repository="imodel02"/>
     <SubPart PartName="RoadRailPhysical" PartFile="Domains/RoadRailPhysical/RoadRailPhysical" Repository="imodel02"/>
+    <SubPart PartName="BridgeStructuralPhysical" PartFile="Domains/BridgeStructuralPhysical/BridgeStructuralPhysical" Repository="imodel02"/>
     <Bindings>
       <Libs Required="false">Delivery/$(libprefix)CS06Bridge$(libext)</Libs>
       <Assemblies>Delivery/$(shlibprefix)CS06Bridge$(shlibext)</Assemblies>

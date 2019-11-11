@@ -24,7 +24,7 @@ private:
     ORDConverter* m_converter;
     bool m_isUnitTesting;
 
-    enum class SchemaImportPhase : int16_t { Base = 1, Dynamic = 2, Done = 3 };
+    enum class SchemaImportPhase : int16_t { Base = 1, Dynamic = 2, Extensions = 3, Done = 4 };
     SchemaImportPhase m_schemaImportPhase;
 
 protected:
@@ -59,7 +59,7 @@ public:
 
     static WCharCP GetRegistrySubKey() { return L"Civil"; }
     static void AppendCifSdkToDllSearchPath(BeFileNameCR libraryDir);
-
+	static void AppendObmSdkToDllSearchPath(BeFileNameCR libraryDir);
     void SetIsUnitTesting(bool isUnitTesting) { m_isUnitTesting = isUnitTesting; }
     bool CheckIfUnitTesting(int argc, WCharCP argv[]);
 

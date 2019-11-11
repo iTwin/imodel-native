@@ -17,8 +17,7 @@ BEGIN_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 //=======================================================================================
 struct AlignmentStation : LinearReferencing::ReferentElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(BRRA_CLASS_AlignmentStation, LinearReferencing::ReferentElement);
-    friend struct AlignmentStationHandler;
+    DGNELEMENTWRAPPER_DECLARE_MEMBERS(LinearReferencing::ReferentElement, Dgn::SpatialLocationElement)
 
 public:
     struct CreateAtParams : LinearReferencing::ILinearlyLocatedSingleAt::CreateAtParams
@@ -33,21 +32,22 @@ public:
 
 protected:
     //! @private
-    explicit AlignmentStation(CreateParams const& params);
+    explicit AlignmentStation(Dgn::SpatialLocationElement const& element) : T_Super(element) {}
+    explicit AlignmentStation(Dgn::SpatialLocationElement& element) : T_Super(element) {}
 
     //! @private
-    explicit AlignmentStation(CreateParams const& params, CreateAtParams const& atParams);
+    explicit AlignmentStation(Dgn::SpatialLocationElement& element, CreateAtParams const& atParams);
 
 public:
     DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(AlignmentStation)
-    DECLARE_ROADRAILALIGNMENT_ELEMENT_GET_METHODS(AlignmentStation)
-    DECLARE_LINEARREFERENCING_LINEARLYLOCATED_SET_METHODS(AlignmentStation)
+    DECLARE_ROADRAILALIGNMENT_ELEMENT_GET_METHODS(AlignmentStation, Dgn::SpatialLocationElement)
+    DECLARE_LINEARREFERENCING_LINEARLYLOCATED_SET_METHODS(AlignmentStation, Dgn::SpatialLocationElement)
 
     //! Returns the station, accounting for any StationEquations
-    double GetStation() const { return GetPropertyValueDouble("Station"); }
+    double GetStation() const { return get()->GetPropertyValueDouble("Station"); }
 
     //! @private
-    void SetStation(double newStation) { SetPropertyValue("Station", newStation); }
+    void SetStation(double newStation) { getP()->SetPropertyValue("Station", newStation); }
 
     ROADRAILALIGNMENT_EXPORT static AlignmentStationPtr Create(CreateAtParams const& params);
 }; // AlignmentStation
@@ -81,17 +81,4 @@ public:
     ROADRAILALIGNMENT_EXPORT LinearReferencing::NullableDouble ToDistanceAlongFromStart(double station) const;
 }; // AlignmentStationingTranslator
 
-
-//__PUBLISH_SECTION_END__
-//=================================================================================
-//! ElementHandler for AlignmentStation Elements
-//! @ingroup GROUP_RoadRailAlignment
-//! @private
-//=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE AlignmentStationHandler : LinearReferencing::ReferentElementHandler
-{
-ELEMENTHANDLER_DECLARE_MEMBERS(BRRA_CLASS_AlignmentStation, AlignmentStation, AlignmentStationHandler, LinearReferencing::ReferentElementHandler, ROADRAILALIGNMENT_EXPORT)
-}; //AlignmentStationHandler
-
-//__PUBLISH_SECTION_START__
 END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE

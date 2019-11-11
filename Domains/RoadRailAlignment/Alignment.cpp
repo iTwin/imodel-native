@@ -6,20 +6,6 @@
 #include "RoadRailAlignmentInternal.h"
 #include <RoadRailAlignment/Alignment.h>
 
-HANDLER_DEFINE_MEMBERS(AlignmentHandler)
-HANDLER_DEFINE_MEMBERS(DesignAlignmentsHandler)
-HANDLER_DEFINE_MEMBERS(HorizontalAlignmentsHandler)
-HANDLER_DEFINE_MEMBERS(HorizontalAlignmentHandler)
-HANDLER_DEFINE_MEMBERS(VerticalAlignmentHandler)
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      11/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-Alignment::Alignment(CreateParams const& params) : 
-    T_Super(params) 
-    {
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -34,7 +20,9 @@ AlignmentPtr Alignment::Create(SpatialModelCR model)
     else
         categoryId = AlignmentCategory::GetLinear(model.GetDgnDb());
 
-    AlignmentPtr retVal(new Alignment(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), categoryId)));
+    AlignmentPtr retVal(new Alignment(*Create(model.GetDgnDb(), 
+                                              SpatialLocationElement::CreateParams(
+                                                  model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), categoryId))));
     retVal->SetStartValue(0.0);
     retVal->SetStartStation(0.0);
     return retVal;
@@ -46,12 +34,15 @@ AlignmentPtr Alignment::Create(SpatialModelCR model)
 AlignmentCPtr Alignment::GetAssociated(DgnElementCR element)
     {
     // 1. If element is itself an alignment, return it.
-    if (auto alignmentCP = dynamic_cast<AlignmentCP>(&element))
-        return alignmentCP;
+    if (Alignment::QueryClassId(element.GetDgnDb()) == element.GetElementClassId())
+        return new Alignment(*dynamic_cast<SpatialLocationElementCP>(&element));
 
     // 2. If element is a Horizontal Alignment, return its Alignment.
-    if (auto horizAlignmentCP = dynamic_cast<HorizontalAlignmentCP>(&element))
-        return horizAlignmentCP->QueryAlignment();
+    if (HorizontalAlignment::QueryClassId(element.GetDgnDb()) == element.GetElementClassId())
+        {
+        HorizontalAlignmentCPtr cPtr(new HorizontalAlignment(*dynamic_cast<SpatialLocationElementCP>(&element)));
+        return cPtr->QueryAlignment();
+        }
 
     // 3. If element is a Vertical Alignment, return its Alignment.
     if (auto vertAlignmentCP = dynamic_cast<VerticalAlignmentCP>(&element))
@@ -122,7 +113,7 @@ VerticalAlignmentCPtr Alignment::GetMainVertical() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Alignment::_SetHorizontal(HorizontalAlignmentCR horizontal)
     {
-    SetPropertyValue(BRRA_PROP_Alignment_Horizontal, horizontal.GetElementId());
+    getP()->SetPropertyValue(BRRA_PROP_Alignment_Horizontal, horizontal.GetElementId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -169,7 +160,7 @@ DistanceExpression Alignment::_ToDistanceExpression(DPoint3dCR point) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus Alignment::_OnDelete() const
+/*DgnDbStatus Alignment::_OnDelete() const
     {
     DgnDbStatus retVal = DgnDbStatus::Success;
     auto horizontalCPtr = GetHorizontal();
@@ -188,7 +179,7 @@ DgnDbStatus Alignment::_OnDelete() const
         }
 
     return DgnDbStatus::Success;
-    }
+    }*/
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      06/2017
@@ -251,13 +242,13 @@ bvector<Alignment::DistanceAlongStationPair> Alignment::QueryOrderedStations() c
 void Alignment::SetMainVertical(VerticalAlignmentCP vertical)
     {
     if (vertical)
-        SetPropertyValue(BRRA_PROP_Alignment_MainVertical, vertical->GetElementId());
+        getP()->SetPropertyValue(BRRA_PROP_Alignment_MainVertical, vertical->GetElementId());
     else
         {
         ECValue val;
         val.SetIsNull(true);
 
-        SetPropertyValue(BRRA_PROP_Alignment_MainVertical, val);
+        getP()->SetPropertyValue(BRRA_PROP_Alignment_MainVertical, val);
         }
     }
 
@@ -405,7 +396,7 @@ AlignmentCPtr Alignment::UpdateWithMainPair(AlignmentPairCR alignmentPair, DgnDb
     auto retVal = Update(stat);
     if (retVal.IsValid())
         {
-        auto horizAlignmPtr = GetHorizontal()->MakeCopy<HorizontalAlignment>();
+        HorizontalAlignmentPtr horizAlignmPtr = new HorizontalAlignment(*GetHorizontal()->get()->MakeCopy<SpatialLocationElement>());
         horizAlignmPtr->SetGeometry(*alignmentPair.GetHorizontalCurveVector());
 
         if (DgnDbStatus::Success != horizAlignmPtr->GenerateElementGeom())
@@ -422,7 +413,7 @@ AlignmentCPtr Alignment::UpdateWithMainPair(AlignmentPairCR alignmentPair, DgnDb
             // Main vertical exists... update it
             if (vertAlignmCPtr.IsValid())
                 {
-                VerticalAlignmentPtr vertAlignmPtr = dynamic_cast<VerticalAlignmentP>(vertAlignmCPtr->CopyForEdit().get());
+                VerticalAlignmentPtr vertAlignmPtr = new VerticalAlignment(*dynamic_cast<GeometricElement2dP>(vertAlignmCPtr->get()->CopyForEdit().get()));
                 vertAlignmPtr->SetGeometry(*alignmentPair.GetVerticalCurveVector());
 
                 if (DgnDbStatus::Success != vertAlignmPtr->GenerateElementGeom())
@@ -435,7 +426,8 @@ AlignmentCPtr Alignment::UpdateWithMainPair(AlignmentPairCR alignmentPair, DgnDb
             else
                 {
                 // TODO: check if vertical model breakdown exists.. if it does, reuse it
-                auto verticalModelPtr = VerticalAlignmentModel::Create(DgnModel::CreateParams(GetDgnDb(), VerticalAlignmentModel::QueryClassId(GetDgnDb()),
+                auto verticalModelPtr = VerticalAlignmentModel::Create(DgnModel::CreateParams(GetDgnDb(), 
+                                                                                              VerticalAlignmentModel::QueryClassId(GetDgnDb()),
                     GetElementId()));
 
                 if (DgnDbStatus::Success != verticalModelPtr->Insert())
@@ -452,9 +444,10 @@ AlignmentCPtr Alignment::UpdateWithMainPair(AlignmentPairCR alignmentPair, DgnDb
         // Updated geometry doesn't have a vertical
         else
             {
+            BeAssert(false);
             // Main vertical exists... delete it
-            if (vertAlignmCPtr.IsValid())
-                *stat = vertAlignmCPtr->Delete();
+            /*if (vertAlignmCPtr.IsValid())
+                *stat = vertAlignmCPtr->Delete();*/
             }
         }
 
@@ -467,7 +460,7 @@ AlignmentCPtr Alignment::UpdateWithMainPair(AlignmentPairCR alignmentPair, DgnDb
 DgnDbStatus Alignment::GenerateAprox3dGeom(DgnSubCategoryId subCategoryId)
     {
     DPoint3d origin = { 0, 0, 0 };
-    auto geomBuilderPtr = GeometryBuilder::Create(*GetModel(), GetCategoryId(), origin);
+    auto geomBuilderPtr = GeometryBuilder::Create(*get()->GetModel(), get()->GetCategoryId(), origin);
     if (subCategoryId.IsValid())
         geomBuilderPtr->Append(subCategoryId);
 
@@ -489,7 +482,7 @@ DgnDbStatus Alignment::GenerateAprox3dGeom(DgnSubCategoryId subCategoryId)
             return DgnDbStatus::NoGeometry;
         }
 
-    if (BentleyStatus::SUCCESS != geomBuilderPtr->Finish(*this))
+    if (BentleyStatus::SUCCESS != geomBuilderPtr->Finish(*getP()))
         return DgnDbStatus::NoGeometry;
 
     return DgnDbStatus::Success;
@@ -533,17 +526,21 @@ DesignAlignmentsCPtr DesignAlignments::Insert(SpatialModelCR model, Utf8StringCR
     if (QueryId(model, codeVal).IsValid())
         return nullptr;
 
-    CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()),
+    SpatialLocationElement::CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()),
         AlignmentCategory::GetAlignment(model.GetDgnDb()));
     createParams.m_code = CreateCodeBasic(model, codeVal);
 
-    DesignAlignmentsPtr newPtr(new DesignAlignments(createParams));
-    auto retValCPtr = model.GetDgnDb().Elements().Insert<DesignAlignments>(*newPtr);
+    auto newPtr = Create(model.GetDgnDb(), createParams);
+    auto newCPtr = model.GetDgnDb().Elements().Insert<SpatialLocationElement>(*newPtr);
+    if (newCPtr.IsNull())
+        return nullptr;
+
+    DesignAlignmentsCPtr retValCPtr = new DesignAlignments(*newCPtr);
     
     if (retValCPtr.IsNull())
         return nullptr;
 
-    auto alignmentModelPtr = SpatialLocationModel::Create(*retValCPtr);
+    auto alignmentModelPtr = SpatialLocationModel::Create(*retValCPtr->get());
     if (DgnDbStatus::Success != alignmentModelPtr->Insert())
         return nullptr;
 
@@ -551,7 +548,7 @@ DesignAlignmentsCPtr DesignAlignments::Insert(SpatialModelCR model, Utf8StringCR
     if (horizontalPartitionCPtr.IsNull())
         return nullptr;
 
-    auto horizontalBreakDownModelPtr = SpatialLocationModel::Create(*horizontalPartitionCPtr);
+    auto horizontalBreakDownModelPtr = SpatialLocationModel::Create(*horizontalPartitionCPtr->get());
     if (DgnDbStatus::Success != horizontalBreakDownModelPtr->Insert())
         return nullptr;
 
@@ -596,27 +593,32 @@ HorizontalAlignmentsCPtr HorizontalAlignments::Insert(SpatialModelCR model)
         return nullptr;
 
     DgnCategoryId categoryId;
-    if (model.ToSpatialLocationModel() && dynamic_cast<DesignAlignmentsCP>(model.GetModeledElement().get()))
+    if (model.ToSpatialLocationModel() && DesignAlignments::QueryClassId(model.GetDgnDb()) == model.GetModeledElement()->GetElementClassId())
         categoryId = AlignmentCategory::GetAlignment(model.GetDgnDb());
     else
         categoryId = AlignmentCategory::GetLinear(model.GetDgnDb());
 
-    CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), categoryId);
+    SpatialLocationElement::CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), categoryId);
     createParams.m_code = CreateCode(model);
 
-    HorizontalAlignmentsPtr newPtr(new HorizontalAlignments(createParams));
+    auto newPtr = Create(model.GetDgnDb(), createParams);
     IBriefcaseManager::Request req;
     auto stat = newPtr->PopulateRequest(req, BeSQLite::DbOpcode::Insert);
     if (RepositoryStatus::Success == stat)
         Dgn::IBriefcaseManager::Response response = newPtr->GetDgnDb().BriefcaseManager().Acquire(req);
-    return model.GetDgnDb().Elements().Insert<HorizontalAlignments>(*newPtr);
+
+    auto newCPtr = model.GetDgnDb().Elements().Insert<SpatialLocationElement>(*newPtr);
+    if (newCPtr.IsNull())
+        return nullptr;
+
+    return new HorizontalAlignments(*newCPtr);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-HorizontalAlignment::HorizontalAlignment(CreateParams const& params, AlignmentCR alignment, CurveVectorCR geometry):
-    T_Super(params), m_alignmentId(alignment.GetElementId())
+HorizontalAlignment::HorizontalAlignment(SpatialLocationElement& element, AlignmentCR alignment, CurveVectorCR geometry):
+    T_Super(element), m_alignmentId(alignment.GetElementId())
     {
     SetGeometry(geometry);
     }
@@ -633,9 +635,9 @@ HorizontalAlignmentPtr HorizontalAlignment::Create(AlignmentCR alignment, CurveV
     if (horizontalAlignmentsCPtr.IsNull())
         return nullptr;
 
-    CreateParams createParams(alignment.GetDgnDb(), horizontalAlignmentsCPtr->GetSubModelId(),
-        QueryClassId(alignment.GetDgnDb()), alignment.GetCategoryId());
-    return new HorizontalAlignment(createParams, alignment, horizontalGeometry);
+    SpatialLocationElement::CreateParams createParams(alignment.GetDgnDb(), horizontalAlignmentsCPtr->GetSubModelId(),
+        QueryClassId(alignment.GetDgnDb()), alignment.get()->GetCategoryId());
+    return new HorizontalAlignment(*Create(alignment.GetDgnDb(), createParams), alignment, horizontalGeometry);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -646,7 +648,7 @@ CurveVectorCR HorizontalAlignment::GetGeometry() const
     if (m_geometry.IsNull())
         {
         ECValue val;
-        if (DgnDbStatus::Success != GetPropertyValue(val, BRRA_PROP_HorizontalAlignment_HorizontalGeometry))
+        if (DgnDbStatus::Success != get()->GetPropertyValue(val, BRRA_PROP_HorizontalAlignment_HorizontalGeometry))
             {
             BeAssert(false);
             }
@@ -670,7 +672,7 @@ void HorizontalAlignment::SetGeometry(CurveVectorCR geometry)
     ECValue val(PrimitiveType::PRIMITIVETYPE_IGeometry);
     val.SetIGeometry(*IGeometry::Create(cvPtr));
 
-    SetPropertyValue(BRRA_PROP_HorizontalAlignment_HorizontalGeometry, val);
+    getP()->SetPropertyValue(BRRA_PROP_HorizontalAlignment_HorizontalGeometry, val);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -679,11 +681,11 @@ void HorizontalAlignment::SetGeometry(CurveVectorCR geometry)
 DgnDbStatus HorizontalAlignment::GenerateElementGeom()
     {
     DPoint3d origin = { 0, 0, 0 };
-    auto geomBuilderPtr = GeometryBuilder::Create(*GetModel(), GetCategoryId(), origin);
+    auto geomBuilderPtr = GeometryBuilder::Create(*get()->GetModel(), get()->GetCategoryId(), origin);
     if (!geomBuilderPtr->Append(GetGeometry(), GeometryBuilder::CoordSystem::World))
         return DgnDbStatus::NoGeometry;
 
-    if (BentleyStatus::SUCCESS != geomBuilderPtr->Finish(*this))
+    if (BentleyStatus::SUCCESS != geomBuilderPtr->Finish(*getP()))
         return DgnDbStatus::NoGeometry;
 
     return DgnDbStatus::Success;
@@ -710,7 +712,7 @@ AlignmentCPtr HorizontalAlignment::QueryAlignment() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 HorizontalAlignmentCPtr HorizontalAlignment::Insert(DgnDbStatus* stat)
     {
-    auto retVal = GetDgnDb().Elements().Insert<HorizontalAlignment>(*this, stat);
+    auto retVal = GetDgnDb().Elements().Insert<SpatialLocationElement>(*getP(), stat);
     if (retVal.IsNull())
         return nullptr;
 
@@ -720,7 +722,7 @@ HorizontalAlignmentCPtr HorizontalAlignment::Insert(DgnDbStatus* stat)
     alignmentPtr->_SetLength(algPairPtr->LengthXY());
     if (m_editAlignment.IsNull()) alignmentPtr->Update();
 
-    return retVal;
+    return new HorizontalAlignment(*retVal);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -728,7 +730,7 @@ HorizontalAlignmentCPtr HorizontalAlignment::Insert(DgnDbStatus* stat)
 +---------------+---------------+---------------+---------------+---------------+------*/
 HorizontalAlignmentCPtr HorizontalAlignment::Update(Dgn::DgnDbStatus* stat) 
     { 
-    auto retVal = GetDgnDb().Elements().Update<HorizontalAlignment>(*this, stat); 
+    auto retVal = GetDgnDb().Elements().Update<SpatialLocationElement>(*getP(), stat);
     if (retVal.IsNull())
         return nullptr;
 
@@ -737,34 +739,34 @@ HorizontalAlignmentCPtr HorizontalAlignment::Update(Dgn::DgnDbStatus* stat)
     alignmentPtr->_SetLength(algPairPtr->LengthXY());
     if (m_editAlignment.IsNull()) alignmentPtr->Update();
 
-    return retVal;
+    return new HorizontalAlignment(*retVal);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mindaugas.Butkus                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HorizontalAlignment::_CopyFrom(Dgn::DgnElementCR source, CopyFromOptions const& opts)
+/*void HorizontalAlignment::_CopyFrom(Dgn::DgnElementCR source, CopyFromOptions const& opts)
     {
     T_Super::_CopyFrom(source, opts);
 
     m_geometry = nullptr;
-    }
+    }*/
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 VerticalAlignmentPtr VerticalAlignment::Create(AlignmentCR alignment, CurveVectorCR verticalGeometry)
     {
-    CreateParams createParams(alignment.GetDgnDb(), alignment.GetSubModelId(),
+    GeometricElement2d::CreateParams createParams(alignment.GetDgnDb(), alignment.GetSubModelId(),
         QueryClassId(alignment.GetDgnDb()), AlignmentCategory::GetVertical(alignment.GetDgnDb()));
-    return new VerticalAlignment(createParams, verticalGeometry);
+    return new VerticalAlignment(*Create(alignment.GetDgnDb(), createParams), verticalGeometry);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-VerticalAlignment::VerticalAlignment(CreateParams const& params, CurveVectorCR geometry):
-    T_Super(params)
+VerticalAlignment::VerticalAlignment(GeometricElement2d& element, CurveVectorCR geometry):
+    T_Super(element)
     {
     SetGeometry(geometry);
     }
@@ -775,7 +777,7 @@ VerticalAlignment::VerticalAlignment(CreateParams const& params, CurveVectorCR g
 CurveVectorPtr VerticalAlignment::GetGeometry() const
     {
     ECValue val;
-    if (DgnDbStatus::Success != GetPropertyValue(val, BRRA_PROP_VerticalAlignment_VerticalGeometry))
+    if (DgnDbStatus::Success != get()->GetPropertyValue(val, BRRA_PROP_VerticalAlignment_VerticalGeometry))
         {
         BeAssert(false);
         }
@@ -795,7 +797,7 @@ void VerticalAlignment::SetGeometry(CurveVectorCR geometry)
     ECValue val(PrimitiveType::PRIMITIVETYPE_IGeometry);
     val.SetIGeometry(*IGeometry::Create(cvPtr));
 
-    SetPropertyValue(BRRA_PROP_VerticalAlignment_VerticalGeometry, val);
+    getP()->SetPropertyValue(BRRA_PROP_VerticalAlignment_VerticalGeometry, val);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -804,11 +806,11 @@ void VerticalAlignment::SetGeometry(CurveVectorCR geometry)
 DgnDbStatus VerticalAlignment::GenerateElementGeom()
     {
     DPoint2d origin = { 0, 0 };
-    auto geomBuilderPtr = GeometryBuilder::Create(*GetModel(), GetCategoryId(), origin);
+    auto geomBuilderPtr = GeometryBuilder::Create(*get()->GetModel(), get()->GetCategoryId(), origin);
     if (!geomBuilderPtr->Append(*GetGeometry(), GeometryBuilder::CoordSystem::World))
         return DgnDbStatus::NoGeometry;
 
-    if (BentleyStatus::SUCCESS != geomBuilderPtr->Finish(*this))
+    if (BentleyStatus::SUCCESS != geomBuilderPtr->Finish(*getP()))
         return DgnDbStatus::NoGeometry;
 
     return DgnDbStatus::Success;

@@ -20,7 +20,7 @@
     <Xml Include="LinearReferencing.PartFile.xml">
       <Filter>Build Files</Filter>
     </Xml>
-    <Xml Include="..\..\BisSchemas\Domains\LinearReferencing\LinearReferencing.ecschema.xml" />
+    <Xml Include="..\..\..\BisSchemas\Domains\Core\LinearReferencing.ecschema.xml" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="LinearReferencingInternal.h">

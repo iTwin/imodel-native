@@ -24,24 +24,34 @@
     <None Include="RoadRailPhysical.prewire.mke" />
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="..\..\BisSchemas\Domains\RoadRailPhysical\RoadRailPhysical.ecschema.xml" />
+    <Xml Include="..\..\..\BisSchemas\Domains\Civil\RoadRailPhysical\RailPhysical.ecschema.xml" />
+    <Xml Include="..\..\..\BisSchemas\Domains\Civil\RoadRailPhysical\RoadPhysical.ecschema.xml" />
+    <Xml Include="..\..\..\BisSchemas\Domains\Civil\RoadRailPhysical\RoadRailPhysical.ecschema.xml" />
     <Xml Include="RoadRailPhysical.PartFile.xml" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PublicAPI\RoadRailPhysical\Corridor.h" />
     <ClInclude Include="PublicAPI\RoadRailPhysical\DesignSpeed.h" />
+    <ClInclude Include="PublicAPI\RoadRailPhysical\RailPhysicalDomain.h" />
+    <ClInclude Include="PublicAPI\RoadRailPhysical\Railway.h" />
+    <ClInclude Include="PublicAPI\RoadRailPhysical\RoadPhysicalDomain.h" />
     <ClInclude Include="PublicAPI\RoadRailPhysical\RoadRailCategory.h" />
     <ClInclude Include="PublicAPI\RoadRailPhysical\RoadRailPhysical.h" />
     <ClInclude Include="PublicAPI\RoadRailPhysical\RoadRailPhysicalApi.h" />
     <ClInclude Include="PublicAPI\RoadRailPhysical\RoadRailPhysicalDomain.h" />
+    <ClInclude Include="PublicAPI\RoadRailPhysical\Roadway.h" />
     <ClInclude Include="RoadRailPhysicalInternal.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Corridor.cpp" />
     <ClCompile Include="DesignSpeed.cpp" />
+    <ClCompile Include="RailPhysicalDomain.cpp" />
+    <ClCompile Include="Railway.cpp" />
+    <ClCompile Include="RoadPhysicalDomain.cpp" />
     <ClCompile Include="RoadRailCategory.cpp" />
     <ClCompile Include="RoadRailPhysicalDomain.cpp" />
     <ClCompile Include="RoadRailPhysicalInternal.cpp" />
+    <ClCompile Include="Roadway.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{FB423497-691B-4A7C-8793-BAA0AC67EC55}</ProjectGuid>
@@ -94,8 +104,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeBuildCommandLine>bb -p RoadRailPhysical -f RoadRailPhysical -r DgnDomains-RoadRailPhysical -ax64 re RoadRailPhysical</NMakeBuildCommandLine>
-    <NMakeCleanCommandLine>bb -p RoadRailPhysical -f RoadRailPhysical -r DgnDomains-RoadRailPhysical -ax64 re RoadRailPhysical -c</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>bb -p RoadRailPhysical -f Domains/RoadRailPhysical/RoadRailPhysical -r imodel02 -ax64 re RoadRailPhysical</NMakeBuildCommandLine>
+    <NMakeCleanCommandLine>bb -p RoadRailPhysical -f Domains/RoadRailPhysical/RoadRailPhysical -r imodel02 -ax64 re RoadRailPhysical -c</NMakeCleanCommandLine>
     <NMakeReBuildCommandLine>$(NMakeCleanCommandLine)%26$(NMakeBuildCommandLine)</NMakeReBuildCommandLine>
     <NMakePreprocessorDefinitions>__ROADRAILPHYSICAL_BUILD__</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>$(OutRoot)Winx64\BuildContexts\RoadRailPhysical\PublicAPI\;$(OutRoot)Winx64\BuildContexts\RoadRailPhysical\VendorAPI\;$(SrcRoot)DgnDomains\RoadRailPhysical\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>

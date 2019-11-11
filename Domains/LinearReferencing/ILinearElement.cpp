@@ -598,35 +598,66 @@ LinearlyReferencedLocationP ILinearlyLocated::GetLinearlyReferencedLocationP(Lin
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-LinearlyReferencedAtLocationCP ILinearlyLocatedMultipleAt::GetAtLocation(LinearlyReferencedLocationId id) const
+LinearlyReferencedAtLocationCPtr ILinearlyLocatedMultipleAt::GetAtLocation(LinearlyReferencedLocationId id) const
     {
-    return dynamic_cast<LinearlyReferencedAtLocationCP>(
-        DgnElement::MultiAspect::GetAspect(ToElement(), *LinearlyReferencedAtLocation::QueryClass(ToElement().GetDgnDb()), id));
+    return LinearlyReferencedAtLocation::Create(
+        *DgnElement::GenericMultiAspect::GetAspect(ToElement(), *LinearlyReferencedAtLocation::QueryClass(ToElement().GetDgnDb()), id));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-LinearlyReferencedAtLocationP ILinearlyLocatedMultipleAt::GetAtLocationP(LinearlyReferencedLocationId id)
+LinearlyReferencedAtLocationPtr ILinearlyLocatedMultipleAt::GetAtLocationP(LinearlyReferencedLocationId id)
     {
-    return DgnElement::MultiAspect::GetP<LinearlyReferencedAtLocation>(ToElementR(), *LinearlyReferencedAtLocation::QueryClass(ToElement().GetDgnDb()), id);
+    return LinearlyReferencedAtLocation::Create(
+        *DgnElement::GenericMultiAspect::GetAspectP(ToElementR(), *LinearlyReferencedAtLocation::QueryClass(ToElement().GetDgnDb()), id));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-LinearlyReferencedFromToLocationCP ILinearlyLocatedMultipleFromTo::GetFromToLocation(LinearlyReferencedLocationId id) const
+LinearlyReferencedFromToLocationCPtr ILinearlyLocatedMultipleFromTo::GetFromToLocation(LinearlyReferencedLocationId id) const
     {
-    return dynamic_cast<LinearlyReferencedFromToLocationCP>(
-        DgnElement::MultiAspect::GetAspect(ToElement(), *LinearlyReferencedFromToLocation::QueryClass(ToElement().GetDgnDb()), id));
+    return LinearlyReferencedFromToLocation::Create(
+        *DgnElement::GenericMultiAspect::GetAspect(ToElement(), *LinearlyReferencedFromToLocation::QueryClass(ToElement().GetDgnDb()), id));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-LinearlyReferencedFromToLocationP ILinearlyLocatedMultipleFromTo::GetFromToLocationP(LinearlyReferencedLocationId id)
+LinearlyReferencedFromToLocationPtr ILinearlyLocatedMultipleFromTo::GetFromToLocationP(LinearlyReferencedLocationId id)
     {
-    return DgnElement::MultiAspect::GetP<LinearlyReferencedFromToLocation>(ToElementR(), *LinearlyReferencedFromToLocation::QueryClass(ToElement().GetDgnDb()), id);
+    return LinearlyReferencedFromToLocation::Create(*DgnElement::GenericMultiAspect::GetAspectP(
+        ToElementR(), *LinearlyReferencedFromToLocation::QueryClass(ToElement().GetDgnDb()), id));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      11/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+void ILinearlyLocated::SetLinearElement(ILinearElementCP linearElement) const
+    {
+    auto& elCR = ToElement();
+
+    ECSqlStatement stmt;
+    stmt.Prepare(elCR.GetDgnDb(), "SELECT ECInstanceId, ECClasId FROM " BLR_SCHEMA(BLR_REL_ILinearlyLocatedAlongILinearElement)
+        " WHERE SourceECInstanceId = ?");
+    BeAssert(stmt.IsPrepared());
+
+    stmt.BindId(1, GetLinearElementId());
+    if (DbResult::BE_SQLITE_ROW == stmt.Step())
+        {
+        ECInstanceKey insKey(stmt.GetValueId<ECClassId>(1), stmt.GetValueId<ECInstanceId>(0));
+        elCR.GetDgnDb().DeleteLinkTableRelationship(insKey);
+        }
+
+    if (!linearElement)
+        {
+        m_cachedLinearElementId = DgnElementId();
+        return;
+        }
+    
+    m_cachedLinearElementId = linearElement->ToElement().GetElementId();
+    const_cast<ILinearlyLocatedP>(this)->_InsertLinearElementRelationship();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -634,7 +665,8 @@ LinearlyReferencedFromToLocationP ILinearlyLocatedMultipleFromTo::GetFromToLocat
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ILinearlyLocated::_AddLinearlyReferencedLocation(LinearlyReferencedLocationR location)
     {
-    DgnElement::MultiAspect::AddAspect(ToElementR(), location);
+    auto& elementR = ToElementR();
+    DgnElement::GenericMultiAspect::AddAspect(elementR, *location.ToECInstance(elementR.GetDgnDb()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -647,11 +679,11 @@ ILinearlyLocatedAttribution::ILinearlyLocatedAttribution()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ILinearlyLocatedAttribution::SetAttributedElement(ILinearElementSourceCP attributedElement)
+void ILinearlyLocatedAttribution::SetAttributedElement(Dgn::GeometricElement3dCP attributedElement)
     {
     if (attributedElement)
         const_cast<DgnElementP>(&_ILinearlyLocatedToDgnElement())->SetPropertyValue(BLR_PROP_ILinearlyLocatedAttribution_AttributedElement,
-            attributedElement->ToElement().GetElementId(),
+            attributedElement->GetElementId(),
             _ILinearlyLocatedToDgnElement().GetDgnDb().Schemas().GetClassId(BLR_SCHEMA_NAME, BLR_REL_ILinearlyLocatedAttributesElement));
     else
         const_cast<DgnElementP>(&_ILinearlyLocatedToDgnElement())->SetPropertyValue(BLR_PROP_ILinearlyLocatedAttribution_AttributedElement,
@@ -676,7 +708,7 @@ ILinearlyLocatedSingleAt::ILinearlyLocatedSingleAt(CreateAtParams const& params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-LinearlyReferencedAtLocationCP ILinearlyLocatedSingleAt::GetAtLocation() const
+LinearlyReferencedAtLocationCPtr ILinearlyLocatedSingleAt::GetAtLocation() const
     {
     if (!m_atLocationAspectId.IsValid())
         {
@@ -686,14 +718,14 @@ LinearlyReferencedAtLocationCP ILinearlyLocatedSingleAt::GetAtLocation() const
         m_atLocationAspectId = aspectIds.front();
         }
 
-    return dynamic_cast<LinearlyReferencedAtLocationCP>(
-        DgnElement::MultiAspect::GetAspect(ToElement(), *LinearlyReferencedAtLocation::QueryClass(ToElement().GetDgnDb()), m_atLocationAspectId));
+    return LinearlyReferencedAtLocation::Create(
+        *DgnElement::GenericMultiAspect::GetAspect(ToElement(), *LinearlyReferencedAtLocation::QueryClass(ToElement().GetDgnDb()), m_atLocationAspectId));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-LinearlyReferencedAtLocationP ILinearlyLocatedSingleAt::GetAtLocationP()
+LinearlyReferencedAtLocationPtr ILinearlyLocatedSingleAt::GetAtLocationP()
     {
     if (!m_atLocationAspectId.IsValid())
         {
@@ -703,8 +735,8 @@ LinearlyReferencedAtLocationP ILinearlyLocatedSingleAt::GetAtLocationP()
         m_atLocationAspectId = aspectIds.front();
         }
 
-    return DgnElement::MultiAspect::GetP<LinearlyReferencedAtLocation>(ToElementR(), 
-        *LinearlyReferencedAtLocation::QueryClass(ToElement().GetDgnDb()), m_atLocationAspectId);
+    return LinearlyReferencedAtLocation::Create(*DgnElement::GenericMultiAspect::GetAspectP(ToElementR(),
+        *LinearlyReferencedAtLocation::QueryClass(ToElement().GetDgnDb()), m_atLocationAspectId));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -715,10 +747,10 @@ double ILinearlyLocatedSingleAt::GetAtDistanceAlongFromStart() const
     if (!ToElement().GetElementId().IsValid())
         return m_unpersistedAtLocationPtr->GetAtPosition().GetDistanceAlongFromStart();
 
-    auto locationCP = GetAtLocation();
-    BeAssert(locationCP);
+    auto locationCPtr = GetAtLocation();
+    BeAssert(locationCPtr.IsValid());
 
-    return locationCP->GetAtPosition().GetDistanceAlongFromStart();
+    return locationCPtr->GetAtPosition().GetDistanceAlongFromStart();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -728,14 +760,18 @@ void ILinearlyLocatedSingleAt::SetAtDistanceAlongFromStart(double newAt)
     {
     if (!ToElement().GetElementId().IsValid())
         {
-        m_unpersistedAtLocationPtr->GetAtPositionR().SetDistanceAlongFromStart(newAt);
+        auto atPosition = m_unpersistedAtLocationPtr->GetAtPosition();
+        atPosition.SetDistanceAlongFromStart(newAt);
+        m_unpersistedAtLocationPtr->SetAtPosition(atPosition);
         return;
         }
 
-    auto locationP = GetAtLocationP();
-    BeAssert(locationP);
+    auto locationPtr = GetAtLocationP();
+    BeAssert(locationPtr.IsValid());
 
-    return locationP->GetAtPositionR().SetDistanceAlongFromStart(newAt);
+    auto atPositionPersisted = locationPtr->GetAtPosition();
+    atPositionPersisted.SetDistanceAlongFromStart(newAt);
+    return locationPtr->SetAtPosition(atPositionPersisted);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -754,16 +790,16 @@ double ILinearlyLocatedSingleFromTo::GetFromDistanceAlongFromStart() const
     if (!ToElement().GetElementId().IsValid())
         return m_unpersistedFromToLocationPtr->GetFromPosition().GetDistanceAlongFromStart();
 
-    auto locationCP = GetFromToLocation();
-    BeAssert(locationCP);
+    auto locationCPtr = GetFromToLocation();
+    BeAssert(locationCPtr.IsValid());
 
-    return locationCP->GetFromPosition().GetDistanceAlongFromStart();
+    return locationCPtr->GetFromPosition().GetDistanceAlongFromStart();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-LinearlyReferencedFromToLocationP ILinearlyLocatedSingleFromTo::GetFromToLocationP()
+LinearlyReferencedFromToLocationPtr ILinearlyLocatedSingleFromTo::GetFromToLocationP()
     {
     if (!m_fromToLocationAspectId.IsValid())
         {
@@ -773,14 +809,14 @@ LinearlyReferencedFromToLocationP ILinearlyLocatedSingleFromTo::GetFromToLocatio
         m_fromToLocationAspectId = aspectIds.front();
         }
 
-    return DgnElement::MultiAspect::GetP<LinearlyReferencedFromToLocation>(ToElementR(),
-        *LinearlyReferencedFromToLocation::QueryClass(ToElement().GetDgnDb()), m_fromToLocationAspectId);
+    return LinearlyReferencedFromToLocation::Create(*DgnElement::GenericMultiAspect::GetAspectP(ToElementR(),
+        *LinearlyReferencedFromToLocation::QueryClass(ToElement().GetDgnDb()), m_fromToLocationAspectId));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-LinearlyReferencedFromToLocationCP ILinearlyLocatedSingleFromTo::GetFromToLocation() const
+LinearlyReferencedFromToLocationCPtr ILinearlyLocatedSingleFromTo::GetFromToLocation() const
     {
     if (!m_fromToLocationAspectId.IsValid())
         {
@@ -790,8 +826,9 @@ LinearlyReferencedFromToLocationCP ILinearlyLocatedSingleFromTo::GetFromToLocati
         m_fromToLocationAspectId = aspectIds.front();
         }
 
-    return dynamic_cast<LinearlyReferencedFromToLocationCP>(
-        DgnElement::MultiAspect::GetAspect(ToElement(), *LinearlyReferencedFromToLocation::QueryClass(ToElement().GetDgnDb()), m_fromToLocationAspectId));
+    return LinearlyReferencedFromToLocation::Create(
+        *DgnElement::GenericMultiAspect::GetAspect(ToElement(), 
+                                                  *LinearlyReferencedFromToLocation::QueryClass(ToElement().GetDgnDb()), m_fromToLocationAspectId));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -805,10 +842,10 @@ void ILinearlyLocatedSingleFromTo::SetFromDistanceAlongFromStart(double newFrom)
         return;
         }
 
-    auto locationP = GetFromToLocationP();
-    BeAssert(locationP);
+    auto locationPtr = GetFromToLocationP();
+    BeAssert(locationPtr.IsValid());
 
-    return locationP->GetFromPositionR().SetDistanceAlongFromStart(newFrom);
+    return locationPtr->GetFromPositionR().SetDistanceAlongFromStart(newFrom);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -819,10 +856,10 @@ double ILinearlyLocatedSingleFromTo::GetToDistanceAlongFromStart() const
     if (!ToElement().GetElementId().IsValid())
         return m_unpersistedFromToLocationPtr->GetToPosition().GetDistanceAlongFromStart();
 
-    auto locationCP = GetFromToLocation();
-    BeAssert(locationCP);
+    auto locationCPtr = GetFromToLocation();
+    BeAssert(locationCPtr.IsValid());
 
-    return locationCP->GetToPosition().GetDistanceAlongFromStart();
+    return locationCPtr->GetToPosition().GetDistanceAlongFromStart();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -836,8 +873,8 @@ void ILinearlyLocatedSingleFromTo::SetToDistanceAlongFromStart(double newFrom)
         return;
         }
 
-    auto locationP = GetFromToLocationP();
-    BeAssert(locationP);
+    auto locationPtr = GetFromToLocationP();
+    BeAssert(locationPtr.IsValid());
 
-    return locationP->GetToPositionR().SetDistanceAlongFromStart(newFrom);
+    return locationPtr->GetToPositionR().SetDistanceAlongFromStart(newFrom);
     }
