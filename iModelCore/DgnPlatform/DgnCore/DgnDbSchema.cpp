@@ -222,7 +222,7 @@ DbResult DgnDb::CreateDictionaryModel()
 
     DgnClassId classId = Domains().GetClassId(dgn_ModelHandler::Dictionary::GetHandler());
     BeAssert(classId.IsValid());
-    return insertIntoDgnModel(*this, classId, modeledElementId, DgnModel::RepositoryModelId(), true);
+    return insertIntoDgnModel(*this, classId, modeledElementId, DgnModel::RepositoryModelId(), false);
     }
 
 /*---------------------------------------------------------------------------------**//**

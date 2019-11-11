@@ -380,6 +380,7 @@ TEST_F(DgnModelTests, ImportDictionaryModel)
 
     DictionaryModelR dictModelR = db.GetDictionaryModel();
     EXPECT_EQ(&dictModelR, dictModel.get());
+    EXPECT_FALSE(dictModelR.IsPrivate());
 
     // The dictionary model cannot be copied
     struct DisableAssertions
