@@ -310,6 +310,7 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
             if (Dgn::Tile::IO::WriteStatus::Success != status)
                 {
                 ReportIssueV(Converter::IssueSeverity::Error, IssueCategory::DiskIO(), Issue::TileSetCreationFailure(), "", model->GetName().c_str(), status);
+                BeFileName::EmptyAndRemoveDirectory(modelDir);
                 continue;
                 }
             }
@@ -378,6 +379,7 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
             if (!response.simpleSuccess)
                 {
                 ReportIssueV(Converter::IssueSeverity::Error, IssueCategory::DiskIO(), Issue::RDSUploadFailed(), response.GetSimpleMessage().c_str(), model->GetName().c_str());
+                BeFileName::EmptyAndRemoveDirectory(modelDir);
                 continue;
                 }
 
