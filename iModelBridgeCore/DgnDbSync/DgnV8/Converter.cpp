@@ -3032,7 +3032,12 @@ BentleyStatus SpatialConverterBase::DoConvertSpatialElement(ElementConversionRes
     // Convert raster elements
     if (v8eh.GetElementType() == DgnV8Api::RASTER_FRAME_ELM)
         {
-        return _ConvertRasterElement(v8eh, v8mm, true, isNewElement);
+        bool doCopy = true;
+        Bentley::WString serverConfigVar;
+        if (_GetParamsR().DoRealityDataUpload() || GetConfig().GetOptionValueBool("DoRealityDataUpload", false) || SUCCESS == DgnV8Api::ConfigurationManager::GetVariable(serverConfigVar, L"DGNDB_REALITY_MODEL_UPLOAD"))
+            doCopy = false;
+
+        return _ConvertRasterElement(v8eh, v8mm, doCopy, isNewElement);
         }
 
     // Convert point cloud elements
