@@ -1,8 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
 
 #define DISPATCH_VOIDMETHOD(_class_,_publicName_,_sigArgs_,_callArgs_) \

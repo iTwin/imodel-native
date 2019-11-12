@@ -1,12 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|    $RCSfile: vudebug.cpp,v $
-|   $Revision: 1.2 $
-|       $Date: 2010/10/28 14:03:49 $
-|     $Author: Earlin.Lutz $
-|
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
 #include    <Vu/DrapeGraph.h>
 #define   EXPOSE_PUBLISHED_STRUCTURE

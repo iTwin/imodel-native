@@ -1,8 +1,7 @@
-#--------------------------------------------------------------------------------------
-#
+#---------------------------------------------------------------------------------------------
 #  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-#
-#--------------------------------------------------------------------------------------
+#  See COPYRIGHT.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
 import sys, os, os.path, stat, time
 from os.path import join
 from datetime import date, timedelta

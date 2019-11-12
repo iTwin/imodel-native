@@ -1,12 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|    $RCSfile: ScalableMeshPointTypes.cpp,v $
-|   $Revision: 1.4 $
-|       $Date: 2011/08/30 19:03:59 $
-|     $Author: Raymond.Gauthier $
-|
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
 
 #include <ScalableMesh/Type/IScalableMeshPoint.h>

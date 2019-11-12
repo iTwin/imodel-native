@@ -1,11 +1,10 @@
 #ifndef __checkHndH__
 #define __checkHndH__
 /*__BENTLEY_INTERNAL_ONLY__*/
-/*--------------------------------------------------------------------------------------+
-|
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 /*----------------------------------------------------------------------+
 |                                                                       |
 |       Definitions                                                     |

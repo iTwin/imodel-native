@@ -1,14 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|
-|     $Source: vu/src/vupointin.cpp $
-|    $RCSfile: vupointin.c,v $
-|   $Revision: 1.2 $
-|       $Date: 2006/09/14 14:56:12 $
-|     $Author: DavidAssaf $
-|
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE

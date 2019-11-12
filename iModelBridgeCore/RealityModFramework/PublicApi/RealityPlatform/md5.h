@@ -1,10 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|
-|     $Source: PublicApi/RealityPlatform/md5.h $
-|
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 
 /*  The following tests optimise behaviour on little-endian
 machines, where there is no need to reverse the byte order

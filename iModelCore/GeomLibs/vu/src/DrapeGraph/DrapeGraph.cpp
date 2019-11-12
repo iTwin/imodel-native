@@ -1,12 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|    $RCSfile: DrapeGraph.cpp,v $
-|   $Revision: 1.13 $
-|       $Date: 2010/11/17 22:01:47 $
-|     $Author: Earlin.Lutz $
-|
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
 #include    <vector>
 #include    <algorithm>

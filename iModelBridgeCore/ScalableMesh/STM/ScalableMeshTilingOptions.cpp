@@ -1,12 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|    $RCSfile: ScalableMeshTilingOptions.cpp,v $
-|   $Revision: 1.4 $
-|       $Date: 2009/11/30 09:59:18 $
-|     $Author: Rob.Cormack $
-|
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 
 #include <ScalableMeshPCH.h>
 

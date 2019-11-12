@@ -1,10 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|
-|     $Source: ORDBridge/TestApp/ORDBridgeTestApp.cpp $
-|
-|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 //__PUBLISH_SECTION_START__
 #include "ORDBridgeTestApp.h"
 #include <ORDBridge/ORDBridgeApi.h>

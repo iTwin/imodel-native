@@ -1,12 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|    $RCSfile: IRasterTextureSource.h,v $
-|   $Revision: 1.13 $
-|       $Date: 2012/01/20 23:30:17 $
-|     $Author: Mathieu.St-Pierre $
-|
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 /*__BENTLEY_INTERNAL_ONLY__*/
 #pragma once
 

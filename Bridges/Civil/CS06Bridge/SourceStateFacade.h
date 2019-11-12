@@ -1,10 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|
-|     $Source: CS06Bridge/SourceStateFacade.h $
-|
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 
 #ifndef __SOURCESTATEFACADE_H__
 #define __SOURCESTATEFACADE_H__

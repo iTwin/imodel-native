@@ -1,12 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|    $RCSfile: ContentConfigs.cpp,v $
-|   $Revision: 1.9 $
-|       $Date: 2011/11/18 15:50:54 $
-|     $Author: Raymond.Gauthier $
-|
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #include <ScalableTerrainModelPCH.h>
 #include <ScalableTerrainModel/Import/Config/Content/All.h>
 #include "ContentConfigComponentMixinBaseImpl.h"

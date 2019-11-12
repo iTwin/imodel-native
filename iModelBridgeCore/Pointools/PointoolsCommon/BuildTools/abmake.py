@@ -1,8 +1,7 @@
 #!/usr/bin/python
-# ---------------------------------------------------------------------------------------------------------------------------
-#
+# ---------------------------------------------------------------------------------------------
 #  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-#
+#  See COPYRIGHT.md in the repository root for full copyright notice.
 #  Author      : Lee Bull <Lee.Bull@bentley.com>
 #
 #  Description : Converts source file hierarchy or Microsoft Visual Studio project (2005) to Bentley Makefiles (bmake)

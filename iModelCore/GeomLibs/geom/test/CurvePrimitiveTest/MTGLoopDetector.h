@@ -1,8 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 
 // Context for use in detecting loops in graphs defined by (int,int) edges, where each int is a vertex index.
 // The vertex indices are NOT expected to be "packed" -- e.g. a 4-vertex graph might have vertex indices 1003,36, 28, 92

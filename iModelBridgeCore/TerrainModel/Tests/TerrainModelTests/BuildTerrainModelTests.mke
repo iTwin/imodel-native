@@ -1,8 +1,7 @@
-#----------------------------------------------------------------------------------------
-#
+#---------------------------------------------------------------------------------------------
 #  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-#
-#----------------------------------------------------------------------------------------
+#  See COPYRIGHT.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
 SrcTerrainModelTest=$(SrcRoot)imodel02/iModelBridgeCore/TerrainModel/Tests/TerrainModelTests/
 SrcBentleyTest=$(SrcRoot)imodel02/iModelCore/util/gtest/BentleyTest/
 PolicyFile      = $(SrcRoot)imodel02/iModelBridgeCore/TerrainModel/privmki/AssertTerrainModelPolicy.mki

@@ -1,12 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|    $RCSfile: Source.cpp,v $
-|   $Revision: 1.18 $
-|       $Date: 2011/11/22 20:04:45 $
-|     $Author: Raymond.Gauthier $
-|
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
 #include <ScalableMesh/ScalableMeshDefs.h>
 #include "../STM/ImagePPHeaders.h"

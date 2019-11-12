@@ -1,8 +1,7 @@
-#--------------------------------------------------------------------------------------
-#
+#---------------------------------------------------------------------------------------------
 #  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-#
-#--------------------------------------------------------------------------------------
+#  See COPYRIGHT.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
 
 # This program creates a directory that looks like an npm package, naming it
 # with the specified name, and copying into it the imodeljs node addons that are defined in the

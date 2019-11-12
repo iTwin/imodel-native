@@ -1,8 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 
 #pragma once
 
@@ -29,7 +28,6 @@ namespace BUIA = Bentley::UI::Attributes;
 ///          resources associated with this form.
 /// </summary>
 [BUIA::DialogInformation (OpenKeyin = "TerrainModel import landxml @@", CloseKeyin = "", EnglishTitle = "landXML Import", FeatureTrackingId = "45FEAB96-50A7-4A0B-A1E8-54B7C27F4862",
-                          SourceFile = "$Source: ElementHandler/Commands/LandXMLImportForm.h $")]
 public ref class LandXMLImportForm : public System::Windows::Forms::Form
 {
 

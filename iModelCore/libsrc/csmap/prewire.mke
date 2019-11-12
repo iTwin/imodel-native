@@ -1,12 +1,7 @@
-#----------------------------------------------------------------------------------------
-#    $RCSfile: csmap.mke,v $
-#   $Revision: 1.35 $
-#       $Date: 2010/04/21 15:09:58 $
-#     $Author: Alain.Robert $
-#
+#---------------------------------------------------------------------------------------------
 #  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-#
-#----------------------------------------------------------------------------------------
+#  See COPYRIGHT.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
 %include mdl.mki
 
 $(BuildContext)VendorAPI/csmap : $(_MakeFilePath)Include

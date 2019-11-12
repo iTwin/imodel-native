@@ -1,8 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 // refFVec3d.h is #include'd into refDVec3d.cpp (for template sharing) -- do NOT include PCH.
 BEGIN_BENTLEY_NAMESPACE
 

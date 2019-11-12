@@ -1,12 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|    $RCSfile: FileFinder.cpp,v $
-|   $Revision: 1.4 $
-|       $Date: 2012/05/17 14:52:36 $
-|     $Author: Raymond.Gauthier $
-|
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 
 #include "ATPFileFinder.h"
 #include <windows.h>

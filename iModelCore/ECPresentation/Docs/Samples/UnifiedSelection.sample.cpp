@@ -1,8 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 //__PUBLISH_EXTRACT_START__ UnifiedSelectionSample_Include.sampleCode
 // the required header file for working with rules-driven presentation manager
 #include <ECPresentation/SelectionManager.h>

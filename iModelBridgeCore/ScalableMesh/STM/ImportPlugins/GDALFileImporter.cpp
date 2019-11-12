@@ -1,12 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|    $RCSfile: GDALFileImporter.cpp,v $
-|   $Revision: 1.0 $
-|       $Date: 2015/04/07 12:15:00 $
-|     $Author: Elenie.Godzaridis $
-|
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 
 
 #include <ScalableMeshPCH.h>

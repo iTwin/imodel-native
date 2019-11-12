@@ -1,10 +1,7 @@
-#----------------------------------------------------------------------------------------
-#
-#  $Source: Tests/UnitTests/BuildTests.mke $
-#
-#  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
-#
-#----------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See COPYRIGHT.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
 # ***
 # *** Need to clean up the test code -- then we can remove this 'NOSTRICT' setting
 # ***

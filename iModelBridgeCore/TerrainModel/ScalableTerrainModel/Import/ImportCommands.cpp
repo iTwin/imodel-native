@@ -1,12 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|    $RCSfile: ImportCommands.cpp,v $
-|   $Revision: 1.5 $
-|       $Date: 2011/10/21 17:32:24 $
-|     $Author: Raymond.Gauthier $
-|
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #include <ScalableTerrainModelPCH.h>
 #include <ScalableTerrainModel/Import/Command/All.h>
 #include "ImportCommandMixinBaseImpl.h"

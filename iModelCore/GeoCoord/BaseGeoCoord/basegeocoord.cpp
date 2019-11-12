@@ -1,8 +1,7 @@
-/*----------------------------------------------------------------------+
-|
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-|
-+----------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #ifdef _MSC_VER
 #pragma  warning(disable:4242) // toupper returns an int which is stuffed into this char string.
 #pragma  warning(disable:4189) // local variable is initialized but not referenced

@@ -1,10 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|
-|     $Source: Tests/UnitTests/NonPublished/Utils/LogFileHelperTests.cpp $
-|
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #include <Licensing/Utils/LogFileHelper.h>
 #include <BeSQLite/BeSQLite.h>
 

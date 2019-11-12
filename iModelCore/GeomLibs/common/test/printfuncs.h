@@ -1,12 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|    $RCSfile: printfuncs.h,v $
-|   $Revision: 1.8 $
-|       $Date: 2008/07/22 12:31:46 $
-|     $Author: Earlin.Lutz $
-|
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 
 /* DO NOT EDIT!  THIS FILE IS GENERATED. */
 

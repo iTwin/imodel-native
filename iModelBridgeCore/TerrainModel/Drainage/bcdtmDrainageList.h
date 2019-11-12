@@ -1,8 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
 int  bcdtmDrainageList_copyTptrListToPointListDtmObject(BC_DTM_OBJ *dtmP,long startPoint,DTMPointList& pointList) ;
 int  bcdtmDrainageList_copySptrListToPointListDtmObject(BC_DTM_OBJ *dtmP,long startPoint,DTMPointList& pointList) ;

@@ -1,9 +1,6 @@
-/*--------------------------------------------------------------------------------------+
-|
-|  $Source: ORDBridge/Tests/PublishedORDBridge/ORDBridgeTest.cpp $
-|
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #include "../BackDoorORDBridge/PublicApi/BackDoor/ORDBridge/BackDoor.h"
 

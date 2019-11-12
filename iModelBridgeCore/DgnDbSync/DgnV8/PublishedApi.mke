@@ -1,7 +1,6 @@
 #*--------------------------------------------------------------------------------------+
-#
 #  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-#
+#  See COPYRIGHT.md in the repository root for full copyright notice.
 #--------------------------------------------------------------------------------------*/
 # This mke file generates the set of .h files that we will ship as part of the DgnClientSdk product.
 %include mdl.mki

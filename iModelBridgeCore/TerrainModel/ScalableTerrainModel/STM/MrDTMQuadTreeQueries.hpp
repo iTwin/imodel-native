@@ -1,11 +1,8 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>    $RCSfile: MrDTMQuadTreeQueries.hpp,v $
-//:>   $Revision: 1.20 $
-//:>       $Date: 2012/11/29 17:30:34 $
-//:>     $Author: Mathieu.St-Pierre $
 //:>
 //:>  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+//:>  See COPYRIGHT.md in the repository root for full copyright notice.
 //:>
 //:>+--------------------------------------------------------------------------------------
 

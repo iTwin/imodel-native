@@ -1,10 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|     $Date: 2016/08/23 10:24:32 $
-|     $Author:Stephane.Nullans $
-|
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #pragma once
 
 /*__PUBLISH_SECTION_START__*/

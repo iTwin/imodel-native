@@ -2,6 +2,7 @@
 //:>
 //:>
 //:>  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+//:>  See COPYRIGHT.md in the repository root for full copyright notice.
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Node types, in order of appearance in grammar description

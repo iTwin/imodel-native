@@ -1,8 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #include "DwgImportInternal.h"
 // workaround rapidjson::GenericValue::GetObject resolved to GetObjectW for RealDWG (OpenDWG has Windows.h included before UNICODE is defined)!
 #if defined(DWGTOOLKIT_RealDwg) && defined(GetObject)

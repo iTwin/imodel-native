@@ -1,12 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|    $RCSfile: MrDTMFilteringOptions.cpp,v $
-|   $Revision: 1.7 $
-|       $Date: 2010/12/15 18:23:17 $
-|     $Author: Mathieu.St-Pierre $
-|
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 
 #include <ScalableTerrainModelPCH.h>
 

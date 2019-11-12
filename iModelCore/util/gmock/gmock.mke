@@ -1,8 +1,7 @@
-#--------------------------------------------------------------------------------------
-#
+#---------------------------------------------------------------------------------------------
 #  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-#
-#--------------------------------------------------------------------------------------
+#  See COPYRIGHT.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
 
 # We have had issues in firebug where the PDB produced here sometimes does not match the LIB.
 # Instead of sinking more time into determining why the PDB is bad, link symbol information directly into the LIB as, effectively, a workaround.

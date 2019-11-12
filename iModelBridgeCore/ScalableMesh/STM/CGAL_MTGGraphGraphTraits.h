@@ -1,12 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|    $RCSfile: MTGGraphGraphTraits.h,v $
-|   $Revision: 1.0 $
-|       $Date: 2015/11/30 15:09:23 $
-|     $Author: Elenie.Godzaridis $
-|
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 // This file contains glue code to use CGAL algorithms on BentleyGeometry types. It follows the traits pattern; see following external links for additional information.
 // [http://doc.cgal.org/latest/Manual/devman_traits_classes.html][http://www.cs.fsu.edu/~lacher/boost_1_32_0/libs/graph/doc/graph_traits.html]
 // The functions used to implement the graph_traits are specializations of global functions.

@@ -1,12 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|    $RCSfile: ScalableMeshMeshTypes.cpp,v $
-|   $Revision: 1.3 $
-|       $Date: 2011/08/10 15:10:23 $
-|     $Author: Raymond.Gauthier $
-|
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
 #include "../ImagePPHeaders.h"
 #include "../Stores/SMStoreUtils.h"

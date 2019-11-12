@@ -1,8 +1,7 @@
-#--------------------------------------------------------------------------------------
-#
+#---------------------------------------------------------------------------------------------
 #   Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-#
-#--------------------------------------------------------------------------------------
+#   See COPYRIGHT.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
 DEBUG_POLICY = 1
 PolicyFile = $(SrcRoot)imodel02/iModelCore/LicensingCrossPlatform/mki/AssertLicensingCorePolicy.mki
 %include mdl.mki

@@ -1,6 +1,7 @@
-#--------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------
 #  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-#--------------------------------------------------------------------------------------
+#  See COPYRIGHT.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
 
 # Running of UWP tests is currently opt-in.
 # (a) In order to use Microsoft's command line test runner, the tests must be signed, and that signature must be trusted by the computer.

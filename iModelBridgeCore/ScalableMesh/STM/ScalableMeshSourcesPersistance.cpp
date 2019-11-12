@@ -1,12 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|    $RCSfile: ScalableMeshSourcesPersistance.cpp,v $
-|   $Revision: 1.19 $
-|       $Date: 2011/11/21 17:01:01 $
-|     $Author: Raymond.Gauthier $
-|
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
 #include "ImagePPHeaders.h"
 #include "ScalableMeshSourcesPersistance.h"

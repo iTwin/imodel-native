@@ -1,8 +1,7 @@
-#----------------------------------------------------------------------------------------
-#
+#---------------------------------------------------------------------------------------------
 #  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-#
-#----------------------------------------------------------------------------------------
+#  See COPYRIGHT.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
 
 # The vast majority of data is pre-built and was moved to the thirdparty-csmap_data_2017A repo.
 # However, one file remained in the source repo for a non-minimal build.

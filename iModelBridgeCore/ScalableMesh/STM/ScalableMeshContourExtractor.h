@@ -1,14 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|
-|     $Source: STM/ScalableMeshContourExtractor.h $
-|    $RCSfile: ScalableMeshContourExtractor.h,v $
-|   $Revision: 1.17 $
-|       $Date: 2019/03/25 15:30:53 $
-|     $Author: Elenie.Godzaridis $
-|
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 
 #pragma once
 #include <ScalableMesh/IScalableMeshQuery.h>

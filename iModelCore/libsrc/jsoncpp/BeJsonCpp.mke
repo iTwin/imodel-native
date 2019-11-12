@@ -1,8 +1,7 @@
-#--------------------------------------------------------------------------------------
-#
+#---------------------------------------------------------------------------------------------
 #  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-#
-#--------------------------------------------------------------------------------------
+#  See COPYRIGHT.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
 # Export/make visible all functions in JsonCpp
 GCC_DEFAULT_VISIBILITY=default
 

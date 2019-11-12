@@ -1,11 +1,8 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>    $RCSfile: MrDTMQuadTreeBCLIBFilters.h,v $
-//:>   $Revision: 1.19 $
-//:>       $Date: 2010/12/15 18:23:19 $
-//:>     $Author: Mathieu.St-Pierre $
 //:>
 //:>  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+//:>  See COPYRIGHT.md in the repository root for full copyright notice.
 //:>
 //:>+--------------------------------------------------------------------------------------
 

@@ -1,7 +1,6 @@
-/*--------------------------------------------------------------------------------------+
-|
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-|
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
 | Notice: This file is an adaptation of <DgnPlatform\RealityDataCache.h> which I was not sure we can use directly.
 |         see original file as a reference...
 +--------------------------------------------------------------------------------------*/

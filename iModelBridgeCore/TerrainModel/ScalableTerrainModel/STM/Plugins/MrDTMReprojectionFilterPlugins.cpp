@@ -1,12 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|    $RCSfile: MrDTMReprojectionFilterPlugins.cpp,v $
-|   $Revision: 1.15 $
-|       $Date: 2011/09/01 14:07:09 $
-|     $Author: Raymond.Gauthier $
-|
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #include <ScalableTerrainModelPCH.h>
 
 #include <ScalableTerrainModel/Import/Plugin/ReprojectionFilterV0.h>

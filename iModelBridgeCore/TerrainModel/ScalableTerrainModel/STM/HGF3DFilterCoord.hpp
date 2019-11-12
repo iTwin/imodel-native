@@ -1,11 +1,8 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>    $RCSfile: HGF3DFilterCoord.hpp,v $
-//:>   $Revision: 1.2 $
-//:>       $Date: 2010/05/18 17:25:48 $
-//:>     $Author: Mathieu.St-Pierre $
 //:>
 //:>  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+//:>  See COPYRIGHT.md in the repository root for full copyright notice.
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Inline methods for class HGF3DCoord

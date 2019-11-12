@@ -1,12 +1,7 @@
-#--------------------------------------------------------------------------------------
-#    $RCSfile: imagepp.mke,v $
-#   $Revision: 1.00 $
-#       $Date: 2017/01/20 15:47:00 $
-#     $Author: Christian Tye Gingras $
-#
+#---------------------------------------------------------------------------------------------
 #  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-#
-#--------------------------------------------------------------------------------------
+#  See COPYRIGHT.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
 %include mdl.mki
 
 appName     = FeatureTracking.prewire

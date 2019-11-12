@@ -1,12 +1,7 @@
-#--------------------------------------------------------------------------------------
-#    $RCSfile: imagepp.mke,v $
-#   $Revision: 1.00 $
-#       $Date: 2016/06/02 13:34:13 $
-#     $Author: Francis.Boily $
-#
+#---------------------------------------------------------------------------------------------
 #  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-#
-#--------------------------------------------------------------------------------------
+#  See COPYRIGHT.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
 %include mdl.mki
 
 appName     = S3MXECPlugin.prewire

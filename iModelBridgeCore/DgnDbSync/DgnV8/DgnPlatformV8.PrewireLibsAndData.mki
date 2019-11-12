@@ -1,6 +1,7 @@
-#----------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------
 #  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-#----------------------------------------------------------------------
+#  See COPYRIGHT.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
 
 # Developers may use a PP build containing a different version of RealDWG
 %if exists ($(DgnV8Sdk)Dlls/DwgDgnIO2019.dll)

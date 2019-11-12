@@ -1,12 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|    $RCSfile: PointCloudChannel.h,v $
-|   $Revision: 1.1 $
-|       $Date: 2010/08/18 15:57:40 $
-|     $Author: Simon.Normand $
-|
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #pragma once
 
 BEGIN_BENTLEY_BEPOINTCLOUD_NAMESPACE

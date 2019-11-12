@@ -1,8 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 //__PUBLISH_SECTION_START__
 #if !defined (DWGTOOLKIT_OpenDwg) && !defined (DWGTOOLKIT_RealDwg)
     #error  "Must define a valid DWGTOOLKIT(i.e. OpenDwg or RealDwg)!!!"

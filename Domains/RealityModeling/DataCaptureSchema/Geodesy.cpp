@@ -2,9 +2,9 @@
 |
 |  Adaptation of code found in A3D Libraries (A3D/Geometry/ )
 |  Copyright (C) acute3d.com
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-|
-+--------------------------------------------------------------------------------------*/
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #include "DataCaptureSchemaInternal.h"
 
 BEGIN_BENTLEY_DATACAPTURE_NAMESPACE

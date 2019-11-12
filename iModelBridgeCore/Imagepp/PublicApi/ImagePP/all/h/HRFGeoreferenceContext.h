@@ -1,11 +1,8 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>    $RCSfile: HRFGeoreferenceContext.h,v $
-//:>   $Revision: 1.1 $
-//:>       $Date: 2011/12/22 14:03:54 $
-//:>     $Author: Mathieu.St-Pierre $
 //:>
 //:>  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+//:>  See COPYRIGHT.md in the repository root for full copyright notice.
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFGeoreferenceContext

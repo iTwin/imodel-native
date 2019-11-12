@@ -5,10 +5,9 @@
 #define GEOMDLL_BSPLINEIMPEXP
 |       $Date$
 |     $Author$
-|
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-|
-+--------------------------------------------------------------------------------------*/
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #pragma once
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE

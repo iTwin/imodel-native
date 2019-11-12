@@ -1,14 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|
-|     $Source: STM/ScalableMeshQuery.h $
-|    $RCSfile: ScalableMeshQuery.h,v $
-|   $Revision: 1.20 $
-|       $Date: 2012/06/27 14:07:12 $
-|     $Author: Chantal.Poulin $
-|
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------+
 |                                                                        |

@@ -1,14 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|
-|     $Source: geom/src/mtg/mtgflowlines.cpp $
-|    $RCSfile: mtgflowlines.cpp,v $
-|   $Revision: 1.1 $
-|       $Date: 2010/09/03 15:43:44 $
-|     $Author: Earlin.Lutz $
-|
-|  $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 /*----------------------------------------------------------------------+
 |									|
 |   Include Files   							|

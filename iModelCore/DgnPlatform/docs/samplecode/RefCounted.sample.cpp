@@ -1,8 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 //__PUBLISH_EXTRACT_START__ RefCounted_Basics.sampleCode
 #include <Bentley/RefCounted.h>         // Include types that implement the reference-counting pattern
 #include <Bentley/NonCopyableClass.h>   // Include base class to make a class non-copyable.

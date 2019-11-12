@@ -1,12 +1,7 @@
-/*-------------------------------------------------------------------------------------+
-|    $RCSfile: modelfile.cpp,v $
-|   $Revision: 1.10 $
-|       $Date: 2012/08/16 16:17:17 $
-|     $Author: Daryl.Holmwood $
-|
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 /*
 * TR        DH  10/03/02 Fixed archiving of text strings.
 */

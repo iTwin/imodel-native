@@ -2,10 +2,10 @@
 Runs the given publisher executable on all design files found in the given search paths.
 """
 
-# --------------------------------------------------------------------------------------
-#      $Source: ORDBridge/PythonScripts/BatchPublishORDToBIM.py $
-#   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
-#--------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
+#   Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#   See COPYRIGHT.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
 
 import argparse
 import os.path

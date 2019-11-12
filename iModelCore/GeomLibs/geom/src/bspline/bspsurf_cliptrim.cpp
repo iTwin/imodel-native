@@ -1,12 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|    $RCSfile: bspsurf_cliptrim.cpp,v $
-|   $Revision: 1.4 $
-|       $Date: 2008/06/17 02:41:53 $
-|     $Author: Peter.Yu $
-|
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
 #include "msbsplinemaster.h"
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE

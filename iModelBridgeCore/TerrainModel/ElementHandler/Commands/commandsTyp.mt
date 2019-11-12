@@ -1,12 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|    $RCSfile: dtmcommtyp.mt,v $
-|   $Revision: 1.1 $
-|       $Date: 2011/02/15 16:25:00 $
-|     $Author: Daryl.Holmwood $
-|
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #define resource
 #include    "dtmcommandstool.h"
 

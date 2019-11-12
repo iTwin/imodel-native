@@ -1,8 +1,7 @@
-/*----------------------------------------------------------------------+
-|
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-|
-+----------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #include <SDKDDKVer.h>
 #define BETEST_NO_INCLUDE_BOOST_FOR_EACH
 #include <Bentley/BeTest.h>

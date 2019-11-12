@@ -1,11 +1,8 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>    $RCSfile: ScalableMeshQuadTreeBCLIBFilters.cpp,v $
-//:>   $Revision: 1.13 $
-//:>       $Date: 2011/06/27 14:53:05 $
-//:>     $Author: Alain.Robert $
 //:>
 //:>  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+//:>  See COPYRIGHT.md in the repository root for full copyright notice.
 //:>
 //:>+--------------------------------------------------------------------------------------
 

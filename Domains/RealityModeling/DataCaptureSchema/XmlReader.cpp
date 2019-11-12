@@ -2,10 +2,9 @@
 |
 |  Notice that most of the code here cames from or is an adaptation of "src\MstnPlatform\mstn\mdlapps\rmutil\RMUtilImage.cpp"  
 |  on vancouver source stream
-|
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-|
-+--------------------------------------------------------------------------------------*/
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #include "DataCaptureSchemaInternal.h"
 
 BEGIN_BENTLEY_DATACAPTURE_NAMESPACE

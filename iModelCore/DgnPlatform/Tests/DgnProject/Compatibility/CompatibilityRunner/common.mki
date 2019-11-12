@@ -1,8 +1,7 @@
-#----------------------------------------------------------------------
-#
+#---------------------------------------------------------------------------------------------
 #  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-#
-#----------------------------------------------------------------------
+#  See COPYRIGHT.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
 
 # Artefact dir outside of product folder (all contents which should not be published)
 ARTEFACTS_ROOTDIR = $(OutputRootDir)iModelEvolutionTests

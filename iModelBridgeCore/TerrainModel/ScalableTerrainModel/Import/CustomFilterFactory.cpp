@@ -1,12 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|    $RCSfile: CustomFilterFactory.cpp,v $
-|   $Revision: 1.5 $
-|       $Date: 2011/09/01 14:06:39 $
-|     $Author: Raymond.Gauthier $
-|
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #include <ScalableTerrainModelPCH.h>
 #include <ScalableTerrainModel/Import/CustomFilterFactory.h>
 #include <ScalableTerrainModel/Import/Plugin/CustomFilterFactoryV0.h>

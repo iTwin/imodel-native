@@ -1,8 +1,7 @@
-#----------------------------------------------------------------------
-#
+#---------------------------------------------------------------------------------------------
 #  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-#
-#----------------------------------------------------------------------
+#  See COPYRIGHT.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
 # Modify the DgnDb06 PublicApi to ensure that it will not conflict with the DgnV8 PublicApi
 # when header files from both are included in the same file. 
 # Output:

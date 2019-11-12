@@ -1,12 +1,8 @@
-#------------------------------------------------------------------------------------
-#    $RCSfile: cppwrappers.mke,v $
-#   $Revision: 1.123.2.1 $
-#   $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
-#     $Author: Daryl.Holmwood $
-#
-#   $Copyright: (c) 2019 Bentley Systems, Incorporated. All rights reserved. $
-#
-#--------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------
+#   Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#   See COPYRIGHT.md in the repository root for full copyright notice.
+#   Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#---------------------------------------------------------------------------------------------
 #NEEDSWORK_VS2015: WIP, remove these warning suppress
 CCompOpts + -wd4456 -wd4458 -wd4838 -wd4459
 

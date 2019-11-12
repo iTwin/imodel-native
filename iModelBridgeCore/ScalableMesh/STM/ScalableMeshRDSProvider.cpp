@@ -1,12 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|    $RCSfile: ScalableMeshRDSProvider.cpp,v $
-|   $Revision: 1.106 $
-|       $Date: 2012/01/06 16:30:15 $
-|     $Author: Richard.Bois $
-|
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
 #include "ScalableMeshRDSProvider.h"
 #ifndef LINUX_SCALABLEMESH_BUILD

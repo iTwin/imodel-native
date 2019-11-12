@@ -1,8 +1,7 @@
 /*---------------------------------------------------------------------------------**//**
-|
-|   Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-|
-+--------------------------------------------------------------------------------------*/
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #include    "ECObjectsPch.h"
 #include    <algorithm>
 #if defined (_WIN32) // WIP_NONPORT - iostreams not support on Android

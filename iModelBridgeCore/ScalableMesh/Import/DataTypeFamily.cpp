@@ -1,12 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|    $RCSfile: DataTypeFamily.cpp,v $
-|   $Revision: 1.3 $
-|       $Date: 2011/07/12 13:25:18 $
-|     $Author: Raymond.Gauthier $
-|
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
 #include <ScalableMesh/Import/DataTypeFamily.h>
 #include <ScalableMesh/Import/Plugin/DataTypeFamilyV0.h>

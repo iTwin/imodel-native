@@ -1,8 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
 int bcdtmDrainage_getTriangleEdgeFlowDirectionDtmObject(BC_DTM_OBJ *dtmP, DTMDrainageTables *drainageTablesP,int trgPoint1,int trgPoint2,int trgPoint3,bool testForVoids, bool& voidTriangle,int& flowDirection ) ;
 int bcdtmDrainage_getTriangleEdgeFlowDirectionDtmObject(BC_DTM_OBJ *dtmP, DTMDrainageTables *drainageTablesP,int trgPoint1,int trgPoint2,int trgPoint3,bool& voidTriangle,int& flowDirection ) ;

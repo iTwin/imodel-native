@@ -1,8 +1,7 @@
-#--------------------------------------------------------------------------------------
-#
+#---------------------------------------------------------------------------------------------
 #  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-#
-#--------------------------------------------------------------------------------------
+#  See COPYRIGHT.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
 %if defined (__ImagePPDirs_mki__)
     %warn ImagePPDirs.mki is being included redundantly in $(_MakeFileSpec)
     %if defined (DebugRedundantMkiIncludes)

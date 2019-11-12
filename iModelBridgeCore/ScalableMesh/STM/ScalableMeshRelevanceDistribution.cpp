@@ -1,11 +1,8 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>    $RCSfile: ScalableMeshRelevanceDistribution.cpp,v $
-//:>   $Revision: 1.6 $
-//:>       $Date: 2010/11/29 13:15:52 $
-//:>     $Author: Daryl.Holmwood $
 //:>
 //:>  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+//:>  See COPYRIGHT.md in the repository root for full copyright notice.
 //:>
 //:>+--------------------------------------------------------------------------------------
 

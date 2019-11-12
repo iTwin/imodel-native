@@ -1,8 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #pragma  once
 #define BEGIN_GROUND_DETECTION_NAMESPACE                BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE namespace GroundDetection {
 #define END_GROUND_DETECTION_NAMESPACE                  END_BENTLEY_TERRAINMODEL_NAMESPACE }

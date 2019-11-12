@@ -1,7 +1,7 @@
-#----------------------------------------------------------------------------------------
-#
+#---------------------------------------------------------------------------------------------
 #  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-#----------------------------------------------------------------------------------------
+#  See COPYRIGHT.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
 
 appName             = protocolBufferTest
 # baseDir is the top of the test tree --- a level above the makefile for this particular test.

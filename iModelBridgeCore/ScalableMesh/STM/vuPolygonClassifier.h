@@ -1,12 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|    $RCSfile: vuPolygonClassifier.h,v $
-|   $Revision: 1.14 $
-|       $Date: 2009/04/20 15:27:58 $
-|     $Author: Earlin.Lutz $
-|
-|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #pragma once
 //#include <STDVectorDPoint3d.h>
 #include <Vu/VuApi.h>

@@ -1,8 +1,7 @@
-#--------------------------------------------------------------------------------------
-#
+#---------------------------------------------------------------------------------------------
 #  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-#
-#--------------------------------------------------------------------------------------
+#  See COPYRIGHT.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
 #
 # Only the Release Teigha delivery is available from the CVS repository. If you want to debug Teigha,
 # you will either have the Debug delivery available, or have made a full build from Teigha source files.
