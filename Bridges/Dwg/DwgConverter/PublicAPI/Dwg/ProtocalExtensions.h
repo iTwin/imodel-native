@@ -15,9 +15,9 @@ BEGIN_DWG_NAMESPACE
 #ifdef DWGTOOLKIT_OpenDwg
 
 #define DWG_PROTOCOLEXT_DECLARE_MEMBERS(_className_)                                    \
-    DWG_EXPORT static void            RxInit ();                                        \
-    DWG_EXPORT static void            RxUnInit ();                                      \
-    DWG_EXPORT static OdRxObjectPtr   CreateObject();
+    static void            RxInit ();                                                   \
+    static void            RxUnInit ();                                                 \
+    static OdRxObjectPtr   CreateObject();
 
 #define DWG_PROTOCOLEXT_DEFINE_MEMBERS(_className_)                                     \
     void            _className_::RxInit ()                                              \
@@ -32,9 +32,9 @@ BEGIN_DWG_NAMESPACE
 #elif DWGTOOLKIT_RealDwg
 
 #define DWG_PROTOCOLEXT_DECLARE_MEMBERS(_className_)                                    \
-    DWG_EXPORT static void            RxInit () { /*Nop*/;}                             \
-    DWG_EXPORT static void            RxUnInit () { /*Nop*/;}                           \
-    DWG_EXPORT static DwgRxObjectP    CreateObject();
+    static void            RxInit () { /*Nop*/;}                                        \
+    static void            RxUnInit () { /*Nop*/;}                                      \
+    static DwgRxObjectP    CreateObject();
 
 #define DWG_PROTOCOLEXT_DEFINE_MEMBERS(_className_)                                     \
     DwgRxObjectP        _className_::CreateObject() { return new _className_(); }       \
