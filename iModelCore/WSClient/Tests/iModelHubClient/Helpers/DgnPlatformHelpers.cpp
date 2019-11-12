@@ -37,17 +37,20 @@ Dgn::DgnCategoryId CreateCategory(Utf8CP name, DgnDbR db)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             01/2019
 //---------------------------------------------------------------------------------------
-Dgn::DgnCategoryId GetOrCreateDefaultCategory(DgnDbR db)
+Dgn::DgnCategoryId GetOrCreateCategory(DgnDbR db, Utf8CP categoryName)
     {
     auto iterator = SpatialCategory::MakeIterator(db);
 
+    Utf8String categoryToCreateName = categoryName == nullptr ? Utf8String(L"DefaultCategory") : Utf8String(categoryName);
+
     // If category aleady exists - return it
-    if (iterator.begin() != iterator.end())
+    for (auto it = iterator.begin(); it != iterator.end(); ++it)
         {
-        return (*iterator.begin()).GetId<DgnCategoryId>();
+        if (categoryToCreateName.Equals((*iterator).GetCodeValue()))
+            return (*iterator).GetId<DgnCategoryId>();
         }
 
-    return CreateCategory("DefaultCategory", db);
+    return CreateCategory(categoryToCreateName.c_str(), db);
     }
 
 //---------------------------------------------------------------------------------------
@@ -97,10 +100,10 @@ PhysicalModelPtr CreateModel(Utf8CP name, DgnDbR db)
     return model;
     }
 
-DgnElementPtr Create3dElement(DgnModelR model, DgnCodeCR code)
+DgnElementPtr Create3dElement(DgnModelR model, DgnCodeCR code, Utf8CP categoryName)
     {
     DgnDbR db = model.GetDgnDb();
-    DgnCategoryId catId = GetOrCreateDefaultCategory(db);
+    DgnCategoryId catId = GetOrCreateCategory(db, categoryName);
     DgnClassId classId = model.GetDgnDb().Domains().GetClassId(generic_ElementHandler::PhysicalObject::GetHandler());
     if (!classId.IsValid() || !catId.IsValid())
         {
@@ -111,11 +114,11 @@ DgnElementPtr Create3dElement(DgnModelR model, DgnCodeCR code)
     return GenericPhysicalObject::Create(createParams);
     }
 
-DgnElementPtr Create2dElement(DgnModelR model, DgnCodeCR code)
+DgnElementPtr Create2dElement(DgnModelR model, DgnCodeCR code, Utf8CP categoryName)
     {
     DgnDbR db = model.GetDgnDb();
     DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::Annotation2d::GetHandler());
-    DgnCategoryId catId = GetOrCreateDefaultCategory(db);
+    DgnCategoryId catId = GetOrCreateCategory(db, categoryName);
     if (!classId.IsValid() || !catId.IsValid())
         {
         BeAssert(false);
@@ -125,9 +128,9 @@ DgnElementPtr Create2dElement(DgnModelR model, DgnCodeCR code)
     return AnnotationElement2d::Create(createParams);
     }
 
-DgnElementCPtr CreateElement(DgnModelR model, DgnCodeCR code, bool acquireLocks)
+DgnElementCPtr CreateElement(DgnModelR model, DgnCodeCR code, bool acquireLocks, Utf8CP categoryName)
     {
-    auto elem = model.Is3d() ? Create3dElement(model, code) : Create2dElement(model, code);
+    auto elem = model.Is3d() ? Create3dElement(model, code, categoryName) : Create2dElement(model, code, categoryName);
     if (acquireLocks)
         {
         IBriefcaseManager::Request req;
@@ -204,7 +207,7 @@ void InsertSpatialView(SpatialModelR model, Utf8CP name, bool isPrivate)
     OrthographicViewDefinitionPtr viewDef = new OrthographicViewDefinition(dictionary, name, *new CategorySelector(dictionary, ""), *new DisplayStyle3d(dictionary, ""), *modelSelector);
     ASSERT_TRUE(viewDef.IsValid());
 
-    GetOrCreateDefaultCategory(db);
+    GetOrCreateCategory(db);
     for (ElementIteratorEntryCR categoryEntry : SpatialCategory::MakeIterator(db))
         viewDef->GetCategorySelector().AddCategory(categoryEntry.GetId<DgnCategoryId>());
 

@@ -630,7 +630,7 @@ TEST_F(CodesTests, PlantScenario)
 
     PhysicalModelPtr physicalModel = CreateModel(TestCodeName().c_str(), db);
     ASSERT_TRUE(physicalModel.IsValid());
-    DgnCategoryId categoryId = GetOrCreateDefaultCategory(db);
+    DgnCategoryId categoryId = GetOrCreateCategory(db);
     ASSERT_TRUE(categoryId.IsValid());
 
     CodeSpecPtr unitCodeSpec = CodeSpec::Create(db, "CodesManagerTest.Unit", CodeScopeSpec::CreateModelScope());
@@ -984,7 +984,10 @@ TEST_F(CodesTests, FailingCodesResponseOptions)
     iModelHubHelpers::ExpectCodesCount(briefcase1, 0);
     iModelHubHelpers::ExpectCodesCount(briefcase2, 0);
 
-    DgnElementCPtr partition1_1 = CreateAndInsertModeledElement(TestCodeName().c_str(), db1);
+    PhysicalPartitionPtr partition1_1 = CreateModeledElement(TestCodeName().c_str(), db1);
+    auto partition1_1Element = partition1_1->Insert();
+    ASSERT_TRUE(partition1_1Element.IsValid());
+
     DgnElementCPtr partition1_2 = CreateAndInsertModeledElement(TestCodeName(1).c_str(), db1);
     iModelHubHelpers::ExpectCodesCount(briefcase1, 2);
     ASSERT_SUCCESS(briefcase1->GetiModelConnection().RelinquishCodesLocks(briefcase1->GetBriefcaseId())->GetResult());
@@ -1009,4 +1012,10 @@ TEST_F(CodesTests, FailingCodesResponseOptions)
     IBriefcaseManager::Response result2 = db1.BriefcaseManager().ReserveCodes(codes, IBriefcaseManager::ResponseOptions::None);
     ASSERT_EQ(RepositoryStatus::CodeUnavailable, result2.Result());
     EXPECT_TRUE(result2.CodeStates().empty());
+
+    IBriefcaseManager::Request req;
+    EXPECT_EQ(RepositoryStatus::Success, db1.BriefcaseManager().PrepareForElementDelete(req, *partition1_1Element, IBriefcaseManager::PrepareAction::Acquire));
+    EXPECT_EQ(DgnDbStatus::Success, partition1_1Element->Delete());
+    briefcase1->GetDgnDb().SaveChanges();
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false, false));
     }

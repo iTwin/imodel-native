@@ -379,7 +379,6 @@ private:
     ChangeSetTaskPtr DownloadChangeSetFile(ChangeSetInfoPtr changeSet, Http::Request::ProgressCallbackCR callback = nullptr,
         ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    WSQuery CreateChangeSetsByIdQuery(std::deque<ObjectId>& changeSetIds) const;
     ChangeSetQuery CreateBetweenChangeSetsQuery(Utf8StringCR firstchangeSetId, Utf8StringCR secondChangeSetId, BeSQLite::BeGuidCR fileId) const;
 
     //! Sends a request from changeset.

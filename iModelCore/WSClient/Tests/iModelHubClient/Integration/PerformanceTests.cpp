@@ -91,7 +91,7 @@ struct PerformanceTests : public IntegrationTestsBase
         ASSERT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db.SaveChanges());
 
         m_model = CreateModel(TestCodeName().c_str(), db);
-        GetOrCreateDefaultCategory(db);
+        GetOrCreateCategory(db);
 
         auto pushResult = m_briefcase->PullMergeAndPush(nullptr, true)->GetResult();
         ASSERT_SUCCESS(pushResult);
@@ -184,7 +184,7 @@ struct PerformanceTests : public IntegrationTestsBase
     void CreateElement(GenericPhysicalObjectPtr& element, DgnModelPtr model, ECSqlStatement& stmt)
         {
         const ECInstanceId id(s_elementId++);
-        DgnCategoryId catId = GetOrCreateDefaultCategory(model->GetDgnDb());
+        DgnCategoryId catId = GetOrCreateCategory(model->GetDgnDb());
         element = GenericPhysicalObject::Create(*model->ToPhysicalModelP(), catId);
 
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(stmt.GetParameterIndex("ECInstanceId"), id));
@@ -223,7 +223,7 @@ struct PerformanceTests : public IntegrationTestsBase
         {
         ECSqlStatement stmt;
         Utf8String insertECSql;
-        DgnCategoryId catId = GetOrCreateDefaultCategory(model->GetDgnDb());
+        DgnCategoryId catId = GetOrCreateCategory(model->GetDgnDb());
         auto elmnt = GenericPhysicalObject::Create(*model->ToPhysicalModelP(), catId);
         auto ecClass = elmnt->GetElementClass();
         insertECSql = Utf8String("INSERT INTO ");
@@ -257,7 +257,7 @@ struct PerformanceTests : public IntegrationTestsBase
     //---------------------------------------------------------------------------------------
     RefCountedPtr<TestMultiAspect> CreateAspect(DgnModelPtr model, Utf8CP aspectName="Test")
         {
-        DgnCategoryId catId = GetOrCreateDefaultCategory(model->GetDgnDb());
+        DgnCategoryId catId = GetOrCreateCategory(model->GetDgnDb());
         RefCountedPtr<TestMultiAspect> aspect = TestMultiAspect::Create(aspectName);
         auto element = GenericPhysicalObject::Create(*model->ToPhysicalModelP(), catId);
 

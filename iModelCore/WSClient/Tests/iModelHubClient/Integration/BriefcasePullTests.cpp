@@ -122,6 +122,7 @@ TEST_F(BriefcasePullTests, SuccessfulAcquireAndMergeBriefcase)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BriefcasePullTests, SuccessfulOpenAndMergeBriefcase)
     {
+    iModelHubHelpers::AcquireAndAddChangeSets(s_client, s_info, 1);
     AcquireAndOpenDgnDb(s_info);
     iModelHubHelpers::OpenBriefcase(s_client, m_db, true);
     ExpectDbIsUpToDate(*m_db);
@@ -199,7 +200,7 @@ TEST_F(BriefcasePullTests, DownloadStandaloneBriefcase)
         }, callback.Get())->GetResult();
     ASSERT_SUCCESS(acquireResult);
     callback.Verify();
-    Utf8String lastChangeSet = iModelHubHelpers::GetChangeSetByIndex(s_connection, 7)->GetId();
+    Utf8String lastChangeSet = iModelHubHelpers::GetLastChangeSet(s_connection)->GetId();
     ExpectFileIsReadOnly(acquireResult.GetValue(), lastChangeSet);
     }
 

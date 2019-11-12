@@ -1433,17 +1433,13 @@ ChangeSetsTaskPtr iModelConnection::DownloadChangeSets(std::deque<ObjectId>& cha
     if (0 == changeSetIds.size())
         return CreateCompletedAsyncTask<ChangeSetsResult>(ChangeSetsResult::Error(Error::Id::QueryIdsNotSpecified));
     
-    auto query = CreateChangeSetsByIdQuery(changeSetIds);
+    ChangeSetQuery changeSetQuery;
+    changeSetQuery.FilterByIds(changeSetIds);
+    changeSetQuery.SelectDownloadAccessKey();
     
-    Utf8String selectString;
-    selectString.Sprintf("%s,%s,%s,%s", ServerSchema::Property::Id, ServerSchema::Property::Index, ServerSchema::Property::ParentId, 
-                         ServerSchema::Property::SeedFileId);
-    FileAccessKey::AddDownloadAccessKeySelect(selectString);
-    query.SetSelect(selectString);
-
     std::shared_ptr<ChangeSetsResult> finalResult = std::make_shared<ChangeSetsResult>();
 
-    return GetChangeSetsFromQueryByChunks(query, true, cancellationToken)
+    return GetChangeSetsFromQueryByChunks(changeSetQuery.GetWSQuery(), true, cancellationToken)
         ->Then([=](ChangeSetsInfoResultCR changeSetsQueryResult) {
         if (!changeSetsQueryResult.IsSuccess())
             {
@@ -1537,21 +1533,6 @@ ICancellationTokenPtr             cancellationToken
 
         return ChangeSetResult::Success(changeSetPtr);
         });
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas             02/2017
-//---------------------------------------------------------------------------------------
-WSQuery iModelConnection::CreateChangeSetsByIdQuery
-(
-std::deque<ObjectId>& changeSetIds
-) const
-    {
-    BeAssert(0 != changeSetIds.size() && "Query Ids in empty array is not supported.");
-
-    WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::ChangeSet);
-    query.AddFilterIdsIn(changeSetIds, nullptr, 0, 0);
-    return query;
     }
 
 //---------------------------------------------------------------------------------------

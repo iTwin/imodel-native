@@ -50,10 +50,12 @@ namespace iModelHubHelpers
     void ExpectLocksCountById(BriefcasePtr briefcase, int expectedCount, bool byBriefcaseId, LockableId id1, LockableId id2, LockableId id3);
     void ExpectLocksCountByLevelAndId(BriefcasePtr briefcase, int expectedCount, bool byBriefcaseId, LockableIdSet& ids, LockLevel expectedLevel);
     void ExpectCodesCountByIds(BriefcaseR briefcase, int expectedCount, bool byBriefcaseId, DgnCodeSet& codes);
+    int CountOwnedLocks(Dgn::DgnLockInfoSet locks);
+    int CountOwnedLocks(Dgn::DgnLockSet locks);
 
     ChangeSetsResult PullMergeAndPush(BriefcaseR briefcase, PullChangeSetsArgumentsPtr pullArguments, PushChangeSetArgumentsPtr pushArguments);
     ChangeSetsResult PullMergeAndPush(BriefcasePtr briefcase, bool shouldPush, bool shouldPull = false, bool relinquish = true, bool expectSuccess = true);
-    StatusResult AddChangeSets(BriefcasePtr briefcase, uint32_t count = 1, uint32_t statingNumber = 0, bool needsPull = false, bool expectSuccess = true);
+    StatusResult AddChangeSets(BriefcasePtr briefcase, uint32_t count = 1, uint32_t statingNumber = 0, bool needsPull = false, bool expectSuccess = true, Utf8CP categoryName = nullptr);
     BriefcasePtr AcquireAndAddChangeSets(ClientPtr client, iModelInfoPtr info, uint32_t count = 1);
     void PushDefaultView(ClientPtr client, iModelInfoPtr info);
     void CreateNamedVersion(VersionInfoPtr& result, iModelConnectionPtr connection, Utf8StringCR name, int index);

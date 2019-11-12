@@ -44,8 +44,8 @@ TEST_F(CodesLocksTests, QueryLocksCodes)
     auto manager = IntegrationTestsBase::_GetRepositoryManager(db);
 
     int codesCountBeforeTest = briefcase->GetiModelConnection().QueryAllCodes()->GetResult().GetValue().size();
-    int locksCountBeforeTest = briefcase->GetiModelConnection().QueryAllLocks()->GetResult().GetValue().size();
-
+    int locksCountBeforeTest = iModelHubHelpers::CountOwnedLocks(briefcase->GetiModelConnection().QueryAllLocks()->GetResult().GetValue());
+    
     iModelHubHelpers::ExpectCodesCount(briefcase, 0);
     iModelHubHelpers::ExpectLocksCount(briefcase, 0);
 
@@ -105,12 +105,12 @@ TEST_F(CodesLocksTests, QueryLocksCodes)
 
     auto result7 = briefcase->GetiModelConnection().QueryAllLocks()->GetResult();
     EXPECT_SUCCESS(result7);
-    EXPECT_EQ(4 + locksCountBeforeTest, result7.GetValue().size());
+    EXPECT_EQ(4 + locksCountBeforeTest, iModelHubHelpers::CountOwnedLocks(result7.GetValue()));
 
     auto result8 = briefcase->GetiModelConnection().QueryAllCodesLocks()->GetResult();
     EXPECT_SUCCESS(result8);
     EXPECT_EQ(3 + codesCountBeforeTest, result8.GetValue().GetCodes().size());
-    EXPECT_EQ(4 + locksCountBeforeTest, result8.GetValue().GetLocks().size());
+    EXPECT_EQ(4 + locksCountBeforeTest, iModelHubHelpers::CountOwnedLocks(result8.GetValue().GetLocks()));
     }
 
 //---------------------------------------------------------------------------------------

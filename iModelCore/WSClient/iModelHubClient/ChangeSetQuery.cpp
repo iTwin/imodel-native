@@ -93,6 +93,19 @@ bool ChangeSetQuery::FilterById(Utf8StringCR changeSetId)
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             11/2019
+//---------------------------------------------------------------------------------------
+bool ChangeSetQuery::FilterByIds(std::deque<ObjectId>& changeSetIds)
+    {
+    BeAssert(0 != changeSetIds.size() && "Query Ids in empty array is not supported.");
+    if (0 == changeSetIds.size())
+        return false;
+
+    m_wsQuery.AddFilterIdsIn(changeSetIds, nullptr, 0, 0);
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             10/2019
 //---------------------------------------------------------------------------------------
 void ChangeSetQuery::SelectBridgeProperties()
@@ -131,4 +144,15 @@ bool ChangeSetQuery::FilterBySeedFileId(BeSQLite::BeGuidCR seedFileId)
     m_wsQuery.SetFilter(queryFilter);
 
     return true;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             11/2019
+//---------------------------------------------------------------------------------------
+WSQuery ChangeSetQuery::GetWSQuery()
+    {
+    if (m_wsQuery.GetSelect().Equals("*"))
+        m_wsQuery.SetSelect("");
+
+    return m_wsQuery;
     }

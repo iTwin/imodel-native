@@ -403,6 +403,34 @@ namespace iModelHubHelpers
         EXPECT_EQ(expectedCount, actualCount);
         }
 
+    /*--------------------------------------------------------------------------------------+
+    * @bsimethod                                    Algirdas.Mikoliunas             11/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    int CountOwnedLocks(Dgn::DgnLockInfoSet locks)
+        {
+        int result = 0;
+
+        for (auto lock : locks)
+            if (lock.IsOwned())
+                result++;
+
+        return result;
+        }
+    
+    /*--------------------------------------------------------------------------------------+
+    * @bsimethod                                    Algirdas.Mikoliunas             11/2019
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    int CountOwnedLocks(Dgn::DgnLockSet locks)
+        {
+        int result = 0;
+
+        for (auto lock : locks)
+            if (lock.GetLevel() != LockLevel::None)
+                result++;
+
+        return result;
+        }
+
     //---------------------------------------------------------------------------------------
     //@bsimethod                                     Eligijus.Mauragas             01/2016
     //---------------------------------------------------------------------------------------
@@ -601,12 +629,12 @@ namespace iModelHubHelpers
     /*--------------------------------------------------------------------------------------+
     * @bsimethod                                    Karolis.Dziedzelis              11/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    StatusResult AddChangeSets(BriefcaseR briefcase, uint32_t count, uint32_t startingNumber, bool needsPull, bool expectSuccess)
+    StatusResult AddChangeSets(BriefcaseR briefcase, uint32_t count, uint32_t startingNumber, bool needsPull, bool expectSuccess, Utf8CP categoryName)
         {
         DgnModelPtr model = CreateModel(Utf8GuidString("AddChangeSetsModel_%s").c_str(), briefcase.GetDgnDb());
         for (uint32_t i = startingNumber; i < startingNumber + count; ++i)
             {
-            CreateElement(*model);
+            CreateElement(*model, Dgn::DgnCode(), true, categoryName);
             ChangeSetsResult result = PullMergeAndPush(briefcase, expectSuccess, false, true, expectSuccess);
             if (!result.IsSuccess())
                 {
@@ -619,9 +647,9 @@ namespace iModelHubHelpers
     /*--------------------------------------------------------------------------------------+
     * @bsimethod                                    Karolis.Dziedzelis              01/2018
     +---------------+---------------+---------------+---------------+---------------+------*/
-    StatusResult AddChangeSets(BriefcasePtr briefcase, uint32_t count, uint32_t statingNumber, bool needsPull, bool expectSuccess)
+    StatusResult AddChangeSets(BriefcasePtr briefcase, uint32_t count, uint32_t statingNumber, bool needsPull, bool expectSuccess, Utf8CP categoryName)
         {
-        return AddChangeSets(*briefcase, count, statingNumber, needsPull, expectSuccess);
+        return AddChangeSets(*briefcase, count, statingNumber, needsPull, expectSuccess, categoryName);
         }
 
     /*--------------------------------------------------------------------------------------+

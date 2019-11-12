@@ -137,7 +137,7 @@ TEST_F(EventsTests, SingleCallbackTest)
 
     //Test events callbacks
     EXPECT_SUCCESS(briefcase->SubscribeEventsCallback(&eventTypes, callback)->GetResult());
-    iModelHubHelpers::AddChangeSets(briefcase);
+    iModelHubHelpers::AddChangeSets(briefcase, 1, 0, false, true, "EventsTestsSingleCallbackTest");
     auto changeSets = s_connection->GetAllChangeSets()->GetResult().GetValue();
     EXPECT_FALSE(changeSets.empty());
     auto versionManager = s_connection->GetVersionsManager();
@@ -197,11 +197,11 @@ TEST_F(EventsTests, MultipleCallbacksTest)
 
     // Act and wait for events
     iModelHubHelpers::AddChangeSets(briefcase);
-    WaitForEventsCount(callbackNum1, 2, callbackNum2, 1);
+    WaitForEventsCount(callbackNum1, 3, callbackNum2, 1);
 
     EXPECT_SUCCESS(briefcase->UnsubscribeEventsCallback(callback1)->GetResult());
     EXPECT_SUCCESS(briefcase->UnsubscribeEventsCallback(callback2)->GetResult());
-    EXPECT_EQ(2, callbackNum1);
+    EXPECT_EQ(3, callbackNum1);
     EXPECT_EQ(1, callbackNum2);
     }
 

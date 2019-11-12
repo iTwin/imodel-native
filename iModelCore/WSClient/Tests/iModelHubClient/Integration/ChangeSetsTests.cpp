@@ -180,11 +180,16 @@ TEST_F(ChangeSetsTests, PullAndMerge)
     ASSERT_SUCCESS(upToDateResult);
     EXPECT_FALSE(upToDateResult.GetValue());
 
+    Utf8String lastChangeSetId = m_briefcase->GetDgnDb().Revisions().GetParentRevisionId();
+    auto missingChangeSetsResult = m_briefcase->GetiModelConnectionPtr()->GetChangeSetsAfterId(lastChangeSetId)->GetResult();
+    ASSERT_SUCCESS(missingChangeSetsResult);
+    int missingChangeSetsCount = missingChangeSetsResult.GetValue().size();
+
     ChangeSetsResult result = iModelHubHelpers::PullMergeAndPush(m_briefcase, false, true);
     ASSERT_SUCCESS(result);
-    EXPECT_EQ(3, result.GetValue().size());
+    EXPECT_EQ(missingChangeSetsCount, result.GetValue().size());
 
-    Utf8String lastChangeSetId = m_briefcase->GetDgnDb().Revisions().GetParentRevisionId();
+    lastChangeSetId = m_briefcase->GetDgnDb().Revisions().GetParentRevisionId();
     EXPECT_FALSE(lastChangeSetId.empty());
     EXPECT_EQ(lastChangeSetId, result.GetValue().back()->GetId());
 

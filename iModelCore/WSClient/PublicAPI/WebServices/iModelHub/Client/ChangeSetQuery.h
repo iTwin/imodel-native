@@ -26,7 +26,10 @@ private:
 public:
     //! Create an instance of bridge properties.
     IMODELHUBCLIENT_EXPORT ChangeSetQuery();
-    WSQuery GetWSQuery() { return m_wsQuery; }
+
+    //! Returns WSQuery for current ChangeSet query
+    //! @return WSQuery object
+    IMODELHUBCLIENT_EXPORT WSQuery GetWSQuery();
 
     //! Sets filter to get ChangeSets between two specified ChangeSets.
     //! @param[in] firstChangeSetId If empty gets all changeSets before secondChangeSetId
@@ -40,6 +43,10 @@ public:
     //! Sets filter to get a ChangeSet for the specific ChangeSetId.
     //! @param[in] changeSetId Id of the ChangeSet to retrieve.
     IMODELHUBCLIENT_EXPORT bool FilterById(Utf8StringCR changeSetId);
+
+    //! Sets filter to get ChangeSets for the specific ChangeSetIds.
+    //! @param[in] changeSetIds Ids of ChangeSets to retrieve.
+    IMODELHUBCLIENT_EXPORT bool FilterByIds(std::deque<ObjectId>& changeSetIds);
 
     //! Sets selector to query bridge properties
     IMODELHUBCLIENT_EXPORT void SelectBridgeProperties();
