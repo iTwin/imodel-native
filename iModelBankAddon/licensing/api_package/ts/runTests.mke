@@ -1,0 +1,16 @@
+#----------------------------------------------------------------------
+#
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#
+#----------------------------------------------------------------------
+%include mdl.mki
+
+baseDir = $(_MakeFilePath)
+
+%if defined (BMAKE_DELETE_ALL_TARGETS)
+    %return
+%endif
+
+always:
+    ~chdir $(baseDir)
+    python $(SrcRoot)thirdparty/nodejs_10_16_1/bentley/npm.py run test

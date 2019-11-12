@@ -197,6 +197,20 @@ jobs:
         inputs:
           rootFolderOrFile: $(Build.BinariesDirectory)/Winx64/imodelbankaddon_pkgs/imodel-bank
           artifactName: imodel-bank
+        
+      - task: archiveandpublishartifact@0
+        displayName: Save imodel-bank-licensing-win32-x64
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'iModelBankAddon'))
+        inputs:
+          rootFolderOrFile: $(Build.BinariesDirectory)/Winx64/imodelbanklicensingaddon_pkgs/imodel-bank-licensing-win32-x64
+          artifactName: imodel-bank-win32-x64
+        
+      - task: archiveandpublishartifact@0
+        displayName: Save imodel-bank-licensing
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'iModelBankAddon'))
+        inputs:
+          rootFolderOrFile: $(Build.BinariesDirectory)/Winx64/imodelbanklicensingaddon_pkgs/imodel-bank-licensing
+          artifactName: imodel-bank
 
       - publish: $(Build.BinariesDirectory)/Winx64/Nugetpkg/DgnV8ConverterNuget
         displayName: Save DgnV8ConverterNuget

@@ -12,6 +12,7 @@ import sys
 import re
 import shutil
 import subprocess
+import glob
 
 # publish a package
 def publishPackage(packagedir, doPublish, tag):
@@ -55,6 +56,7 @@ def compute_compatible_api_version_range(packageVersion):
     return "<=" + packageVersion + "  >=" + packageVersion.split('.')[0] + ".0.0"
 
 # Copy a version-specific addon into place
+# @param packagebasename 'imodel-bank' or 'imodel-bank-licensing'
 # @param outdirParent The path to the output package's parent directory
 # @param inputProductdir The path to the Product that contains the ingredients, e.g., D:\bim0200dev\out\Winx64\product\iModelJsNodeAddon-Windows
 # @param nodeOS The target platform (using Node terminology)
@@ -62,11 +64,11 @@ def compute_compatible_api_version_range(packageVersion):
 # @param packageVersion The semantic version number for the generated package
 # @param sourceDir The source directory, i.e., %SrcRoot%iModelJsNodeAddon
 # @return the full path to the generated package directory
-def generate_package_for_platform(outdirParent, inputProductdir, nodeOS, nodeCPU, packageVersion, sourceDir):
+def generate_package_for_platform(packagebasename, outdirParent, inputProductdir, nodeOS, nodeCPU, packageVersion, sourceDir):
 
     # Compute the name of a directory that we can use to stage this package. This is just a temporary name.
     # The real name of the package is inside the package.json file.
-    outputpackagename = 'imodel-bank-' + nodeOS + '-' + nodeCPU
+    outputpackagename = packagebasename + '-' + nodeOS + '-' + nodeCPU
 
     outputpackagedir = os.path.join(outdirParent, outputpackagename)
 
@@ -75,9 +77,8 @@ def generate_package_for_platform(outdirParent, inputProductdir, nodeOS, nodeCPU
 
     srcpackagefile = os.path.join(sourceDir, "package.json.template")
     dstpackagefile = os.path.join(outputpackagedir, 'package.json')
-    dstaddondir = os.path.join(outputpackagedir, 'addon')
 
-    # NB: shutil.copytree insists on creating dstaddondir and will throw an exception if it already exists. That is why we don't call os.makedirs(dest...) here.
+    # NB: shutil.copytree insists on creating outputpackagedir and will throw an exception if it already exists. That is why we don't call os.makedirs(outputpackagedir) here.
     shutil.copytree(inputProductdir, outputpackagedir, False)
 
     shutil.copyfile(srcpackagefile, dstpackagefile)
@@ -86,13 +87,14 @@ def generate_package_for_platform(outdirParent, inputProductdir, nodeOS, nodeCPU
 
     return outputpackagedir
 
+# @param packagebasename 'imodel-bank' or 'imodel-bank-licensing'
 # @param outdirParent The path to the output package's parent directory
 # @param parentSourceDir The iModelJsNodeAddon source directory, i.e., %SrcRoot%iModelJsNodeAddon
 # @param packageVersion The semantic version number for the generated package
 # @return the full path to the generated package directory
-def generate_imodelbank_platform(outdirParent, parentSourceDir, packageVersion):
+def generate_imodelbank_platform(packagebasename, outdirParent, parentSourceDir, packageVersion):
 
-    outputpackagedir = os.path.join(outdirParent, 'imodel-bank')
+    outputpackagedir = os.path.join(outdirParent, packagebasename)
 
     apiSourceDir = os.path.join(parentSourceDir, 'api_package')
 
@@ -101,10 +103,20 @@ def generate_imodelbank_platform(outdirParent, parentSourceDir, packageVersion):
     packageTemplateFileName = 'package.json.template'
 
     # Copy some files into place without modifying them.
-    filesToCopy = ['installAddon.js', 'loadAddon.js', 'native.d.ts']
+    filesToCopy = ['installAddon.js', 'loadAddon.js']
 
     for fileToCopy in filesToCopy:
         shutil.copyfile(os.path.join(apiSourceDir, fileToCopy), os.path.join(outputpackagedir, fileToCopy))
+
+    apiTsLibDir = os.path.join(apiSourceDir, 'ts', 'lib')
+
+    jsfiles = glob.glob(os.path.join(apiTsLibDir, '*.js'))
+    for jsfile in jsfiles:
+        shutil.copyfile(jsfile, os.path.join(outputpackagedir, os.path.basename(jsfile)))
+
+    tsfiles = glob.glob(os.path.join(apiTsLibDir, '*.ts'))
+    for tsfile in tsfiles:
+        shutil.copyfile(tsfile, os.path.join(outputpackagedir, os.path.basename(tsfile)))
 
     # Generate the package.json file
     dstpackagefile = os.path.join(outputpackagedir, 'package.json')
@@ -119,16 +131,22 @@ def generate_imodelbank_platform(outdirParent, parentSourceDir, packageVersion):
 #
 if __name__ == '__main__':
     if len(sys.argv) < 8:
-        print ("Syntax: " + sys.argv[0] + " inputproductdir outputpackageparentdir nodeOS nodeCPU packageversionfilename sourceDir {publish|print} [tag]")
+        print ("Syntax: " + sys.argv[0] + " packagebasename inputproductdir outputpackageparentdir nodeOS nodeCPU packageversionfilename sourceDir {publish|print} [tag]")
         exit(1)
 
-    productdir = sys.argv[1]
-    outdirParent = sys.argv[2]
-    nodeOS = sys.argv[3].lower()
-    nodeCPU = sys.argv[4].lower()
-    packageVersionFileName = sys.argv[5]
-    sourceDir = sys.argv[6]
-    doPublish = (sys.argv[7].lower() == 'publish')
+    packagebasename = sys.argv[1]
+
+    if packagebasename != 'imodel-bank' and packagebasename != 'imodel-bank-licensing':
+        print(packagebasename + " - invalid package name")
+        exit(1)
+
+    productdir = sys.argv[2]
+    outdirParent = sys.argv[3]
+    nodeOS = sys.argv[4].lower()
+    nodeCPU = sys.argv[5].lower()
+    packageVersionFileName = sys.argv[6]
+    sourceDir = sys.argv[7]
+    doPublish = (sys.argv[8].lower() == 'publish')
 
     # TBD: Pass a tag in or read it from a special file? How to prevent stale tags values?
     tag = None
@@ -151,12 +169,12 @@ if __name__ == '__main__':
 
     os.makedirs(outdirParent)
 
-    publishPackage(generate_package_for_platform(outdirParent, productdir, nodeOS, nodeCPU, packageVersion, sourceDir), doPublish, tag)
+    publishPackage(generate_package_for_platform(packagebasename, outdirParent, productdir, nodeOS, nodeCPU, packageVersion, sourceDir), doPublish, tag)
 
     # Generate the api package - PUBLISH ONLY ON WINDOWS - Builds for all other platforms only publish their platform-specific addon packages.
     if nodeOS != 'win32':
         doPublish = False
 
-    publishPackage(generate_imodelbank_platform(outdirParent, sourceDir, packageVersion), doPublish, tag)
+    publishPackage(generate_imodelbank_platform(packagebasename, outdirParent, sourceDir, packageVersion), doPublish, tag)
 
     exit(0)

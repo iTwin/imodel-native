@@ -11,6 +11,9 @@ appName     = imodel-bank
 
 baseDir     = $(_MakeFilePath)
 
+commonDir   = $(baseDir)../common/
+buildToolsDir = $(baseDir)../buildTools/
+
 cDefs + -DBUILDING_NODE_EXTENSION -DEXTERNAL_NAPI
 
 %if $(TARGET_PLATFORM) == "MacOS"
@@ -32,7 +35,7 @@ PACKAGE_VERSION=$[@readfile $(baseDir)package_version.txt]
 $(o)imodel-bank-package-version.h: $(baseDir)/imodel-bank-package-version.h $(baseDir)/package_version.txt
     $(msg)
     $(copyCmd) "$<" $@
-    python $(baseDir)makePackgeVersionHeaderFile.py $@ $(baseDir)/package_version.txt
+    python $(buildToolsDir)makePackgeVersionHeaderFile.py $@ $(baseDir)/package_version.txt
     ~time
 
 cIncs + -I$(o)
@@ -40,14 +43,22 @@ cIncs + -I$(o)
 # DLM_NAME and CCompPDBName must be the same.
 CCompPDBName    =% $(appName)
 
-MultiCompileDepends = $(_MakeFileSpec)
+MultiCompileDepends = $(_MakeFileSpec) $(commonDir)IModelBank.h
 %include MultiCppCompileRule.mki
 
-$(o)IModelBank$(oext) : $(baseDir)IModelBank.cpp $(baseDir)IModelBank.h ${MultiCompileDepends}
+$(o)IModelBank$(oext) : $(baseDir)IModelBank.cpp $(baseDir)EntitlementChecker.h $(commonDir)NativeSQLiteDb.h $(commonDir)NativeSQLiteStatement.h ${MultiCompileDepends}
 
-$(o)IModelBankLoggingInterop$(oext) : $(baseDir)IModelBankLoggingInterop.cpp $(baseDir)IModelBank.h ${MultiCompileDepends}
+$(o)EntitlementChecker$(oext) : $(baseDir)EntitlementChecker.cpp $(baseDir)EntitlementChecker.h ${MultiCompileDepends}
 
-$(o)DgnSqlFuncsForTriggers$(oext) : $(baseDir)DgnSqlFuncsForTriggers.cpp $(baseDir)DgnSqlFuncsForTriggers.h ${MultiCompileDepends}
+$(o)IModelBankLoggingInterop$(oext) : $(commonDir)IModelBankLoggingInterop.cpp ${MultiCompileDepends}
+
+$(o)DgnSqlFuncsForTriggers$(oext) : $(commonDir)DgnSqlFuncsForTriggers.cpp $(commonDir)DgnSqlFuncsForTriggers.h ${MultiCompileDepends}
+
+$(o)NativeSQLiteDb$(oext) : $(commonDir)NativeSQLiteDb.cpp $(commonDir)NativeSQLiteDb.h ${MultiCompileDepends}
+
+$(o)NativeSQLiteStatement$(oext) : $(commonDir)NativeSQLiteStatement.cpp $(commonDir)NativeSQLiteStatement.h ${MultiCompileDepends}
+
+$(o)ConversionUtils$(oext) : $(commonDir)ConversionUtils.cpp $(commonDir)ConversionUtils.h ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 
@@ -62,7 +73,9 @@ DLM_OBJECT_FILES    = $(MultiCompileObjectList)
 DLM_NOENTRY         = 1
 DLM_NO_CONTEXT_LINK = 1
 
-%include $(baseDir)imodel-bank-input-libs.mki
+%include $(baseDir)common-input-libs.mki
+
+IMODEL_BANK_LIBS + $(BuildContext)SubParts/Libs/$(stlibprefix)BeCurl$(stlibext)
 
 %ifdef __unix
 
@@ -86,11 +99,18 @@ DLM_NO_CONTEXT_LINK = 1
     %include dlmlink.mki
 
 %else
-
     DLM_OBJECT_FILES  + $(IMODEL_BANK_LIBS)
 
     DLM_SPECIAL_LINKOPT = -delayload:node.exe
     LINKER_LIBRARIES = DelayImp.lib $(BuildContext)SubParts\nodelib\node.lib
+
+    # Win32 sockets for Web
+    LINKER_LIBRARIES            + "WS2_32.Lib"
+
+    NOSTRICT=1
+    # HTTP client configuration
+    LINKER_LIBRARIES            + "Winhttp.Lib"
+    LINKER_LIBRARIES + crypt32.lib wldap32.lib
 
     # Always produce a .SO (even though this is a static build)
     %undef CREATE_STATIC_LIBRARIES

@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
+
+  <Part Name="imodel-bank-licensing.Dev" PrgOutputDir="imodelbanklicensingaddon">
+    <SubPart PartName="MakePackages"/>
+    <SubPart PartName="RunUnitTests"/>
+  </Part>
+
+  <Part Name="JsApiDeclarations" BentleyBuildMakeFile="licensing/api_package/ts/makeTs.mke">
+    <NpmDependency>${SrcRoot}imodel02/iModelBankAddon/licensing/api_package/ts/</NpmDependency>
+  </Part>
+  
+  <Part Name="MakePackages" BentleyBuildMakeFile="licensing/makePackages.mke" OnlyPlatforms="x64,Linux*,MacOSX64" PrgOutputDir="imodel-bank-licensing">
+    <SubProduct ProductName="imodel-bank-licensing"/>
+    <SubPart PartName="JsApiDeclarations"/>
+  </Part>
+
+  <Product Name="imodel-bank-licensing">
+    <SubProduct ProductName="imodel-bank-licensing-Windows" />
+    <SubProduct ProductName="imodel-bank-licensing-Linux" />
+    <SubProduct ProductName="imodel-bank-licensing-Darwin" />
+  </Product>
+
+  <Product Name="imodel-bank-licensing-Windows" OnlyPlatforms="x64">
+    <SubPart PartName="imodel-bank-licensing-lib" />
+    <SubPart PartName="imodel-sqlang" />
+    <Directories DirectoryListName="imodel-bank-licensing-delivery-list" />
+  </Product>
+
+  <Product Name="imodel-bank-licensing-Linux" OnlyPlatforms="Linux*">
+    <SubPart PartName="imodel-bank-licensing-lib" LibType="Static" />
+    <SubPart PartName="imodel-sqlang" LibType="Static" />
+    <Directories DirectoryListName="imodel-bank-licensing-delivery-list" />
+  </Product>
+
+  <Product Name="imodel-bank-licensing-Darwin" OnlyPlatforms="MacOSX64">
+    <SubPart PartName="imodel-bank-licensing-lib" LibType="Static" />
+    <SubPart PartName="imodel-sqlang" LibType="Static" />
+    <Directories DirectoryListName="imodel-bank-licensing-delivery-list" />
+  </Product>
+
+  <ProductDirectoryList ListName="imodel-bank-licensing-delivery-list">
+    <ProductDirectory Name="AddonRoot" Path="" />
+    <ProductDirectory Name="AddonRoot" LibType="static" Path="" />
+    <ProductDirectory Name="Assemblies" Path="" RelativeTo="AddonRoot"/>
+    <ProductDirectory Name="Assemblies" LibType="static" Path="" RelativeTo="AddonRoot"/>
+    <ProductDirectory Name="Assets" Path="Assets" RelativeTo="AddonRoot"/>
+    <ProductDirectory Name="Assets" LibType="static" Path="Assets" RelativeTo="AddonRoot"/>
+    <ProductDirectory Name="PresentationRules" Path="PresentationRules" RelativeTo="AddonRoot"/>
+    <ProductDirectory Name="PresentationRules" LibType="static" Path="PresentationRules" RelativeTo="AddonRoot"/>
+    <ProductDirectory Name="VendorNotices"  RelativeTo="AddonRoot" Path="Notices"/>
+    <ProductDirectory Name="VendorNotices" LibType="static" RelativeTo="AddonRoot" Path="Notices"/>
+  </ProductDirectoryList>
+
+  <Part Name="imodel-bank-licensing-lib" BentleyBuildMakeFile="licensing/licensing.mke" >
+    <SubPart PartName="napi-lib" PartFile="node-addon-api/node-addon-api" Repository="imodel02"/>
+    <SubPart PartName="BeSQLite" PartFile="iModelCore/BeSQLite/BeSQLite" Repository="imodel02"/>
+    <SubPart PartName="GeomDlls" PartFile="iModelCore/GeomLibs/geomlibs" Repository="imodel02"/>
+    <SubPart PartName="Licensing" PartFile="iModelCore/LicensingCrossPlatform/LicensingCrossPlatform" />
+    <SubPart PartName="WebServicesClient" PartFile="iModelCore/WSClient/WSClient"/>
+    <Bindings>
+      <Files ProductDirectoryName="AddonRoot">
+        Delivery/imodel-bank-licensing/imodel-bank-licensing.node
+      </Files>
+    </Bindings>
+  </Part>
+
+  <Part Name="imodel-sqlang" BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke"
+    BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)build/imodel-bank-licensing/imodel-bank-licensing_en.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)Delivery/xliffs/*.xliff">
+    <SubPart PartName="imodel-bank-licensing-lib" />
+    <Bindings>
+      <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang">Delivery/sqlang/imodel-bank-licensing_en.sqlang.db3</Files>
+    </Bindings>
+  </Part>
+
+  <Part Name="RunUnitTests" DeferType="RunUnitTests" BentleyBuildMakeFile="licensing/api_package/ts/runTests.mke">
+      <SubPart PartName="MakePackages"/>
+  </Part>
+
+</BuildContext>

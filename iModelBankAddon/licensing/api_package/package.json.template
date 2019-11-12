@@ -1,0 +1,19 @@
+{
+  "name": "@bentley/imodel-bank-licensing",
+  "license": "UNLICENSED",
+  "version": "${PACKAGE_VERSION}",
+  "keywords": [
+    "Bentley",
+    "iModel"
+  ],
+  "description":  "iModelBank licensing addon api",
+  "repository": {},
+  "author": {
+    "name": "Bentley Systems, Inc.",
+    "url": "www.bentley.com"
+  },
+  "types": "./${DECL_FILE_NAME}",
+   "scripts": {
+    "postinstall": "node ./installAddon.js"
+   }
+}

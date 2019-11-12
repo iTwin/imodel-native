@@ -1,11 +1,16 @@
-/*---------------------------------------------------------------------------------------------
-* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See COPYRIGHT.md in the repository root for full copyright notice.
-*--------------------------------------------------------------------------------------------*/
-#include "IModelBank.h"
+/*--------------------------------------------------------------------------------------+
+|
+|  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+|
++--------------------------------------------------------------------------------------*/
+#include "ConversionUtils.h"
 #include <Napi/napi.h>
+#include <Logging/bentleylogging.h>
 
-namespace IModelBank
+using namespace IModelBank;
+USING_NAMESPACE_BENTLEY_LOGGING
+
+namespace
 {
 struct LogMessage
 {
@@ -15,8 +20,6 @@ struct LogMessage
 };
 
 static bvector<LogMessage> *s_deferredLogging;
-
-extern Napi::ObjectReference &jsInterop_getLogger();
 
 //=======================================================================================
 // @bsistruct                                   Sam.Wilson                  02/18
@@ -63,13 +66,13 @@ struct NativeLoggingShim : NativeLogging::Provider::ILogProvider
     void STDCALL_ATTRIBUTE LogMessage(NativeLogging::Provider::ILogProviderContext *context, NativeLogging::SEVERITY sev, Utf8CP msg) override
     {
         WString *ns = reinterpret_cast<WString *>(context);
-        JsInterop::LogMessage(Utf8String(*ns).c_str(), sev, msg);
+        ConversionUtils::LogMessage(Utf8String(*ns).c_str(), sev, msg);
     }
 
     bool STDCALL_ATTRIBUTE IsSeverityEnabled(NativeLogging::Provider::ILogProviderContext *context, NativeLogging::SEVERITY sev) override
     {
         WString *ns = reinterpret_cast<WString *>(context);
-        return JsInterop::IsSeverityEnabled(Utf8String(*ns).c_str(), sev);
+        return ConversionUtils::IsSeverityEnabled(Utf8String(*ns).c_str(), sev);
     }
 };
 
@@ -78,22 +81,22 @@ struct NativeLoggingShim : NativeLogging::Provider::ILogProvider
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void logMessageToJs(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP msg)
 {
-    if (JsInterop::IsJsExecutionDisabled())
+    if (ConversionUtils::IsJsExecutionDisabled())
         {
         BeAssert(false);
         return;
         }
 
-    auto env = jsInterop_getLogger().Env();
+    auto env = ConversionUtils::GetJsLogger().Env();
     Napi::HandleScope scope(env);
 
     Utf8CP fname = (sev == NativeLogging::LOG_TRACE) ? "logTrace" : (sev == NativeLogging::LOG_DEBUG) ? "logTrace" :                                                                    // Logger does not distinguish between trace and debug
                                                                         (sev == NativeLogging::LOG_INFO) ? "logInfo" : (sev == NativeLogging::LOG_WARNING) ? "logWarning" : "logError"; // Logger does not distinguish between error and fatal
 
-    auto method = jsInterop_getLogger().Get(fname).As<Napi::Function>();
+    auto method = ConversionUtils::GetJsLogger().Get(fname).As<Napi::Function>();
     if (method == env.Undefined())
     {
-        JsInterop::ThrowJsException("Invalid Logger");
+        ConversionUtils::ThrowJsException("Invalid Logger");
         return;
     }
 
@@ -108,19 +111,19 @@ static void logMessageToJs(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP 
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool callIsLogLevelEnabledJs(Utf8CP category, NativeLogging::SEVERITY sev)
 {
-    if (JsInterop::IsJsExecutionDisabled())
+    if (ConversionUtils::IsJsExecutionDisabled())
         {
         BeAssert(false);
         return false;
         }
 
-    auto env = jsInterop_getLogger().Env();
+    auto env = ConversionUtils::GetJsLogger().Env();
     Napi::HandleScope scope(env);
 
-    auto method = jsInterop_getLogger().Get("isEnabled").As<Napi::Function>();
+    auto method = ConversionUtils::GetJsLogger().Get("isEnabled").As<Napi::Function>();
     if (method == env.Undefined())
     {
-        JsInterop::ThrowJsException("Invalid Logger");
+        ConversionUtils::ThrowJsException("Invalid Logger");
         return true;
     }
 
@@ -156,7 +159,7 @@ static void deferLogging(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP ms
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void doDeferredLogging()
 {
-    if (JsInterop::IsJsExecutionDisabled())
+    if (ConversionUtils::IsJsExecutionDisabled())
         {
         BeAssert(false);
         return;
@@ -175,41 +178,50 @@ static void doDeferredLogging()
     s_deferredLogging = nullptr;
 }
 
-} // namespace IModelBank
-
-using namespace IModelBank;
-
-/*---------------------------------------------------------------------------------**/ /**
-* @bsimethod                                    Sam.Wilson                      02/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-void IModelBank::JsInterop::LogMessage(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP msg)
-{
-    if (IModelBank::jsInterop_getLogger().IsEmpty() || IsJsExecutionDisabled())
-    {
-        IModelBank::deferLogging(category, sev, msg);
-        return;
-    }
-
-    IModelBank::doDeferredLogging();
-    IModelBank::logMessageToJs(category, sev, msg);
 }
 
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod                                    Sam.Wilson                      02/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool IModelBank::JsInterop::IsSeverityEnabled(Utf8CP category, NativeLogging::SEVERITY sev)
+void ConversionUtils::LogMessage(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP msg)
 {
-    if (IModelBank::jsInterop_getLogger().IsEmpty() || IsJsExecutionDisabled())
+    if (ConversionUtils::GetJsLogger().IsEmpty() || IsJsExecutionDisabled())
+    {
+        deferLogging(category, sev, msg);
+        return;
+    }
+
+    doDeferredLogging();
+    logMessageToJs(category, sev, msg);
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+* @bsimethod                                    Sam.Wilson                      02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ConversionUtils::IsSeverityEnabled(Utf8CP category, NativeLogging::SEVERITY sev)
+{
+    if (ConversionUtils::GetJsLogger().IsEmpty() || IsJsExecutionDisabled())
         return true;
 
-    IModelBank::doDeferredLogging();
-    return IModelBank::callIsLogLevelEnabledJs(category, sev);
+    doDeferredLogging();
+    return callIsLogLevelEnabledJs(category, sev);
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+* @bsimethod                                    Sam.Wilson                      02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConversionUtils::DoDeferredLogging()
+{
+    if (ConversionUtils::GetJsLogger().IsEmpty() || IsJsExecutionDisabled())
+        return;
+
+    doDeferredLogging();
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 07/17
 //---------------------------------------------------------------------------------------
-void JsInterop::InitLogging()
+void ConversionUtils::InitLogging()
 {
     NativeLogging::LoggingConfig::ActivateProvider(new NativeLoggingShim());
 }
@@ -217,7 +229,7 @@ void JsInterop::InitLogging()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  05/17
 //---------------------------------------------------------------------------------------
-NativeLogging::ILogger &JsInterop::GetNativeLogger()
+NativeLogging::ILogger &ConversionUtils::GetNativeLogger()
 {
     static NativeLogging::ILogger *s_nativeLogger;
     if (nullptr == s_nativeLogger)

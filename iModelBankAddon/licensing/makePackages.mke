@@ -1,12 +1,14 @@
-#---------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------
+#
 #  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-#  See COPYRIGHT.md in the repository root for full copyright notice.
-#---------------------------------------------------------------------------------------------
+#
+#----------------------------------------------------------------------
 %include mdl.mki
 
 ProductDir = $(OutputRootDir)Product/
-o = $(OutputRootDir)imodelbankaddon_pkgs/
+o = $(OutputRootDir)imodelbanklicensingaddon_pkgs/
 baseDir = $(_MakeFilePath)
+buildToolsDir = $(baseDir)../buildTools/
 
 %if $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
     Platform=Windows
@@ -49,4 +51,4 @@ baseDir = $(_MakeFilePath)
 always:
     |-- Making package imodel-bank-$(NodeOS)-$(NodeCPU) --
     -@$(rmdirRecursiveCmd) $(o)
-    python $(_MakeFilePath)makePackages.py $(ProductDir)imodel-bank-$(Platform) $(o) $(NodeOS) $(NodeCPU) $(baseDir)package_version.txt $(baseDir) $(ACTION)
+    python $(buildToolsDir)makePackages.py imodel-bank-licensing $(ProductDir)imodel-bank-licensing-$(Platform) $(o) $(NodeOS) $(NodeCPU) $(baseDir)package_version.txt $(baseDir) $(ACTION)

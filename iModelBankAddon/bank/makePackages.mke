@@ -1,0 +1,53 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See COPYRIGHT.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+%include mdl.mki
+
+ProductDir = $(OutputRootDir)Product/
+o = $(OutputRootDir)imodelbankaddon_pkgs/
+baseDir = $(_MakeFilePath)
+buildToolsDir = $(baseDir)../buildTools/
+
+%if $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
+    Platform=Windows
+    NodeOS=win32
+    NodeCPU=X64
+%elif $(TARGET_PROCESSOR_ARCHITECTURE) == "LinuxX64"
+    Platform=Linux
+    NodeOS=linux
+    NodeCPU=X64
+%elif $(TARGET_PROCESSOR_ARCHITECTURE) == "MacOSX64"
+    Platform=Darwin
+    NodeOS=darwin
+    NodeCPU=X64
+%else
+    %error iModelJsNodeAddon is not available for this platform
+%endif
+
+# NB: Do NOT create $(o) ... in fact, we must make sure it does not exist. The script creates it (in a special way).
+
+%if defined (BMAKE_DELETE_ALL_TARGETS)
+    always:
+        -$(rmdirRecursiveCmd) $(o)
+
+    %return
+%endif
+
+#----------------------------------------------------------------------------------------
+# Allow opt-in local testing via IMODEL_JS_NODE_ADDON_PUBLISH
+# Never want to do anything in firebug
+# PRG wants to do everything
+#----------------------------------------------------------------------------------------
+# Detecting AGENT_NAME is a hack while we transition to VSTS builds and release piplines.
+# When all builds are done that way, this MKE script should /never/ publish.
+%if defined (IMODEL_JS_NODE_ADDON_PUBLISH) || (defined (SUBNET_PRG) && !defined(AGENT_NAME))
+    ACTION=publish
+%else
+    ACTION=print
+%endif
+
+always:
+    |-- Making package imodel-bank-$(NodeOS)-$(NodeCPU) --
+    -@$(rmdirRecursiveCmd) $(o)
+    python $(buildToolsDir)makePackages.py imodel-bank $(ProductDir)imodel-bank-$(Platform) $(o) $(NodeOS) $(NodeCPU) $(baseDir)package_version.txt $(baseDir) $(ACTION)
