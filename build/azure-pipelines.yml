@@ -376,7 +376,7 @@ jobs:
         displayName: Save imodel-bank-licensing-linux-x64
         condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'iModelBankAddon'))
         inputs:
-          rootFolderOrFile: $(Build.BinariesDirectory)/Winx64/imodelbanklicensingaddon_pkgs/imodel-bank-licensing-linux-x64
+          rootFolderOrFile: $(Build.BinariesDirectory)/LinuxX64/imodelbanklicensingaddon_pkgs/imodel-bank-licensing-linux-x64
           artifactName: imodel-bank-licensing-linux-x64
 
   # ================================================================================================
