@@ -30,6 +30,15 @@
 
                 <wbb:PackageSource InstallSetContext="MstnBridge" PathMacro="MstnBridgeBundle" />
             </MsiPackage>
+
+            <ExePackage Id="UserAddedPackagesInstaller" DisplayName="Added Packages" Compressed="yes" SourceFile="UsersAddedPackageInstaller.exe" UninstallCommand="/uninstall" RepairCommand="/repair" InstallCommand="/install /cfg=&quot;[AddedPackageFileXml]&quot; /log=&quot;[AddedPackageLogFileXml]&quot; /dir=&quot;[WixBundleSourceProcessFolder]&quot;" Vital="no" PerMachine="yes" >
+                <Payload Id="UserAddedSupport1" Compressed="yes" SourceFile="Microsoft.Deployment.WindowsInstaller.dll"/>
+                <Payload Id="UserAddedSupport2" Compressed="yes" SourceFile="Microsoft.Deployment.WindowsInstaller.xml"/>
+                <Payload Id="UserAddedSupport3" Compressed="yes" SourceFile="UsersAddedPackageInstaller.exe.config"/>
+                <wbb:Feature EnableRepair="no">
+                    <wbb:Condition>AddedPackageFileXml OR BePlannedAction~="Layout"</wbb:Condition>
+                </wbb:Feature>
+            </ExePackage>
         </Chain>
 
       <wbb:Pages>

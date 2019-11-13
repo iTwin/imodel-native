@@ -242,6 +242,18 @@ jobs:
         condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'BuildingDomain'))
         artifact: DesignModelingSDKNuget
 
+      - powershell: |
+          $MstninstallerSearch = [System.IO.Path]::Combine($env:OutRoot, "Winx64", "build", "WixBundleBuild", "MstnBridge", "build", "*iModelBridgeMstnx64*.exe")
+          $MstninstallerPath = (Get-ChildItem $MstninstallerSearch).FullName
+          Write-Host ([System.String]::Format("{0} = {1}`n##vso[task.setvariable variable={0}]{1}", "IMODELBRIDGEMSTNX64_PATH", $MstninstallerPath))
+        displayName: Compute IMODELBRIDGEMSTNX64_PATH
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'MstnBridge'))
+
+      - publish: $(IMODELBRIDGEMSTNX64_PATH)
+        displayName: Save [Mstn]MstnBridge
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'MstnBridge'))
+        artifact: MstnBridge
+
       - publish: $(Build.BinariesDirectory)/Winx64/InstallSetContext/MstnBridge/iModelBridgeMstnx64.msi
         displayName: Save iModelBridgeMstnx64
         condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'MstnBridge'))
