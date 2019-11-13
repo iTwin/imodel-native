@@ -242,6 +242,12 @@ BaseEventReponseTaskPtr BaseEventManager::GetEventServiceResponse
                         });
                     });
                 }
+            else if (status == HttpStatus::NotFound || status == HttpStatus::Gone)
+                {
+                LogHelper::Log(LOG_WARNING, methodName, "Event subscription does not exist: %s", result.GetError().GetMessage().c_str());
+                finalResult->SetError(Error::Id::NoSubscriptionFound);
+                return;
+                }
             else
                 {
                 LogHelper::Log(LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
