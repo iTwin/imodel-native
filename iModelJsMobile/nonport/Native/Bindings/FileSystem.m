@@ -7,8 +7,6 @@
 //
 
 #import "FileSystem.h"
-
-
 @implementation FileSystem {
     JSContext* _jsContext;
     NSFileManager* _fileManager;
@@ -128,19 +126,22 @@
 - (void) appendFileSync: (NSString*)path :(JSValue*)content {
     [self touch:path];
     NSError *err;
-    if ([content isString]) {
-        NSString* textToWrite = [content toString];
+    JSValueRef contentRef = [content JSValueRef];
+    JSGlobalContextRef contextRef = [_jsContext JSGlobalContextRef];
+    JSTypedArrayType arrayType = JSValueGetTypedArrayType(contextRef, contentRef, nil);
+
+    if (JSValueIsString(contextRef, contentRef)){
+      NSString* textToWrite = [content toString];
         NSFileHandle *fileHandle = [NSFileHandle fileHandleForWritingAtPath:path];
         [fileHandle seekToEndOfFile];
         [fileHandle writeData:[textToWrite dataUsingEncoding:NSUTF8StringEncoding]];
         [fileHandle closeFile];
-    } else if ([content isArray]) {
-        NSArray* array = [content toArray];
-        Byte* bytes = calloc(array.count, sizeof(Byte));
-        [array enumerateObjectsUsingBlock:^(NSNumber* number, NSUInteger index, BOOL* stop){
-            bytes[index] = number.integerValue;
-            }];
-        NSData *dataToWrite = [NSData dataWithBytesNoCopy:bytes length:array.count freeWhenDone:YES];
+    } else if (kJSTypedArrayTypeNone != arrayType) {
+        JSValueRef* exception = nil;
+        JSObjectRef objRef = JSValueToObject(contextRef, contentRef, exception);
+        size_t nbytes = JSObjectGetTypedArrayLength(contextRef, objRef, exception);
+        void* bytes = JSObjectGetTypedArrayBytesPtr(contextRef, objRef, exception);
+        NSData *dataToWrite = [NSData dataWithBytesNoCopy:bytes length:nbytes freeWhenDone:NO];
         [dataToWrite writeToFile:path atomically:YES];
         NSFileHandle *fileHandle = [NSFileHandle fileHandleForWritingAtPath:path];
         [fileHandle seekToEndOfFile];
@@ -162,19 +163,21 @@
 }
 - (void) writeFileSync: (NSString*)path :(JSValue*)content {
     NSError *err;
+    JSValueRef contentRef = [content JSValueRef];
+    JSGlobalContextRef contextRef = [_jsContext JSGlobalContextRef];
+    JSTypedArrayType arrayType = JSValueGetTypedArrayType(contextRef, contentRef, nil);
+
     [self touch:path];
-    if ([content isString]) {
+    if (JSValueIsString(contextRef, contentRef)) {
         NSString* textToWrite = [content toString];
         NSFileHandle *fileHandle = [NSFileHandle fileHandleForWritingAtPath:path];
         [fileHandle writeData:[textToWrite dataUsingEncoding:NSUTF8StringEncoding]];
         [fileHandle closeFile];
-    } else if ([content isArray]) {
-        NSArray* array = [content toArray];
-        Byte* bytes = calloc(array.count, sizeof(Byte));
-        [array enumerateObjectsUsingBlock:^(NSNumber* number, NSUInteger index, BOOL* stop){
-            bytes[index] = number.integerValue;
-            }];
-        NSData *dataToWrite = [NSData dataWithBytesNoCopy:bytes length:array.count freeWhenDone:YES];
+    } else if (kJSTypedArrayTypeNone != arrayType) {
+        JSObjectRef objRef = JSValueToObject(contextRef, contentRef, nil);
+        size_t nbytes = JSObjectGetTypedArrayLength(contextRef, objRef, nil);
+        void* bytes = JSObjectGetTypedArrayBytesPtr(contextRef, objRef, nil);
+        NSData *dataToWrite = [NSData dataWithBytesNoCopy:bytes length:nbytes freeWhenDone:NO];
         NSFileHandle *fileHandle = [NSFileHandle fileHandleForWritingAtPath:path];
         [fileHandle writeData:dataToWrite];
         [fileHandle closeFile];
@@ -238,15 +241,34 @@
 }
 
 - (JSValue*) readFileSync: (JSValue*)path :(JSValue*)options {
-    if (!options.isString) {
-        //@throw @"Error";
-    }
     NSURL* file = [NSURL fileURLWithPath:path.toString];
-    NSString* content = [[NSString alloc] initWithContentsOfURL:file encoding:NSUTF8StringEncoding error:nil];
-    if (content) {
-        return [JSValue valueWithObject:content inContext:path.context];
+    JSGlobalContextRef contextRef = [_jsContext JSGlobalContextRef];
+    NSString* targetEncoding = @"utf-8";
+    if (options.isObject) {
+        JSValue* encodeValue = options[@"encoding"];
+        if (!encodeValue.isUndefined) {
+            if (encodeValue.isNull) {
+                targetEncoding = @"binary";
+            } else if (encodeValue.isString) {
+                targetEncoding = [encodeValue.toString lowercaseString];
+            }
+        }
     }
-    return [JSValue valueWithUndefinedInContext:path.context];
+    if ([@"utf-8" isEqualToString: targetEncoding]) {
+        NSString* content = [[NSString alloc] initWithContentsOfURL:file encoding:NSUTF8StringEncoding error:nil];
+        if (content) {
+            return [JSValue valueWithObject:content inContext:path.context];
+        }
+        return [JSValue valueWithUndefinedInContext:path.context];
+    } else if ([@"binary" isEqualToString: targetEncoding]) {
+        NSData* data = [NSData dataWithContentsOfURL:file];
+        JSObjectRef typedArray = JSObjectMakeTypedArray(contextRef, kJSTypedArrayTypeUint8Array, data.length, nil);
+        void* bytes = JSObjectGetTypedArrayBytesPtr(contextRef, typedArray, nil);
+        memcpy(bytes, data.bytes, data.length);
+        return [JSValue valueWithJSValueRef:typedArray inContext:_jsContext];
+    }
+    
+    return [JSValue valueWithUndefinedInContext:_jsContext];
 }
 
 - (void)extend:(id)jsContext {
