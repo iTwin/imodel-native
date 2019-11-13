@@ -530,12 +530,12 @@ struct TargetDrawingBoundary
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                                   Sam.Wilson      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-static TargetDrawingBoundary getTargetDrawingBoundary(DgnV8EhCR viewEH, Converter& cvt)
+DgnV8Api::DgnECInstanceHost Converter::GetLinkTargetHost(DgnV8EhCR viewEH, Converter& cvt, WCharCP linkType)
     {
     DgnV8Api::DgnLinkTreeSpecPtr treeSpec = DgnV8Api::DgnLinkManager::CreateTreeSpec (viewEH);
     DgnV8Api::DgnLinkTreePtr annotationTree = DgnV8Api::DgnLinkManager::GetManager ().ReadLinkTree (*treeSpec, false);
     if (!annotationTree.IsValid ())
-        return TargetDrawingBoundary();
+        return DgnV8Api::ElementHandle();
 
     DgnLinkTreeBranchCR root = annotationTree->GetRoot ();
 
@@ -544,16 +544,8 @@ static TargetDrawingBoundary getTargetDrawingBoundary(DgnV8EhCR viewEH, Converte
         DgnLinkTreeLeafCP leafRef = dynamic_cast<Bentley::DgnLinkTreeLeafCP>(root.GetChildCP (ilink));
         Bentley::DgnRegionLinkCP regionLink = dynamic_cast<Bentley::DgnRegionLinkCP>(leafRef->GetLinkCP ());
 
-        if (0 != regionLink->GetTargetType().CompareToI(DGNLINK_REGIONTYPE_Drawing))
+        if (linkType &&  0 != regionLink->GetTargetType().CompareToI(linkType))
             continue;
-
-        //if (RegionLinkProcessor::HasDetailSourceReferenceUserData(*m_regionLink))
-        //    continue;
-
-        /*
-        wprintf(L"[%s] [%s]\n", m_regionLink->GetTargetType().c_str(),
-                            m_regionLink->GetTargetName().c_str());
-                            */
 
         // Let the link figure out the target.
         DgnV8Api::FindInstancesScopePtr   scope;
@@ -567,43 +559,33 @@ static TargetDrawingBoundary getTargetDrawingBoundary(DgnV8EhCR viewEH, Converte
                 if (targetInstance != targetInstances.end ())
                     {
                     DgnECInstanceP instance = const_cast <DgnECInstanceP>(*targetInstance);
-                    auto host = instance->GetInstanceHost();
-                    auto hostType = instance->GetHostType();
-                    if (host.IsElement())
-                        {
-                        //printf(" ==>> %s\n", Converter::IssueReporter::FmtElement(*host.GetElementHandle()).c_str());
-                        TargetDrawingBoundary tdb;
-                        auto dbEh = host.GetElementHandle();
-                        if (dbEh != nullptr)
-                            {
-                            // Note: scope may be holding the V8 model open, and it may close and free all of its V8 ElementRefs when we return.
-                            tdb.m_modelMapping = cvt.FindFirstResolvedModelMapping(*dbEh->GetDgnModelP());
-                            tdb.m_eid = dbEh->GetElementId();
-                            return tdb;
-                            }
-                        }
-
-                    //else if (host.IsModel())
-                    //    printf(" ==>> %s\n", Converter::IssueReporter::FmtModel(*host.GetModel()).c_str());
+                    return instance->GetInstanceHost();
                     }
                 }
             }
-
-
-        /*
-        auto mlink = m_regionLink->GetModelLinkCP();
-        if (nullptr != mlink)
-            {
-            wprintf(L" -> %s\n", mlink->GetModelName().c_str());
-            auto flink = mlink->GetFileLinkCP();
-            if (nullptr != flink)
-                wprintf(L"     -> %s\n", flink->GetMoniker().ResolveFileName().c_str());
-            }
-            */
-
         }
 
-    return TargetDrawingBoundary();
+    return DgnV8Api::ElementHandle();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod                                                   Sam.Wilson      02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static TargetDrawingBoundary getTargetDrawingBoundary(DgnV8EhCR viewEH, Converter& cvt)
+    {
+    TargetDrawingBoundary tdb;
+    DgnV8Api::DgnECInstanceHost host = Converter::GetLinkTargetHost(viewEH, cvt, DGNLINK_REGIONTYPE_Drawing);
+    if (!host.IsElement())
+        return tdb;
+    
+    auto dbEh = host.GetElementHandle();
+    if (NULL != dbEh && !dbEh->IsValid())
+        return tdb;
+
+    // Note: scope may be holding the V8 model open, and it may close and free all of its V8 ElementRefs when we return.
+    tdb.m_modelMapping = cvt.FindFirstResolvedModelMapping(*dbEh->GetDgnModelP());
+    tdb.m_eid = dbEh->GetElementId();
+    return tdb;
     }
 
 //---------------------------------------------------------------------------------------

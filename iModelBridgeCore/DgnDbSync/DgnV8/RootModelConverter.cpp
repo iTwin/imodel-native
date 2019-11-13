@@ -1892,7 +1892,8 @@ void RootModelConverter::_FinishConversion()
         f->_OnFinishConversion(*this);
         LOG.tracev ("called DgnDbElementHandlerExtension::_OnFinishConversion for %p", f);
         }
-
+	//We need to wait until call out extension handler sets up the relationships for view attachments
+    _ConvertDynamicViews();
     for (auto xdomain : XDomainRegistry::s_xdomains)
         {
         LOG.tracev ("calling XDomain::_OnFinishConversion for %p", xdomain);
@@ -2197,8 +2198,6 @@ BentleyStatus  RootModelConverter::ConvertData()
     _ConvertSheets();
     if (WasAborted())
         return ERROR;
-
-    _ConvertDynamicViews();
 
     if (ShouldCreateIntermediateRevisions())
         PushChangesForFile(*GetRootV8File(), ConverterDataStrings::Sheets());

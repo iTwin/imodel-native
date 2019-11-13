@@ -1242,8 +1242,13 @@ struct DynamicViewMapper
 
     BentleyStatus UpdatePlacementAndCategory(DgnElementR element, ElementHandleCR clipElement, DetailingSymbolType sectionType);
 
-    BentleyStatus UpdateProperties(DgnElementR element);
+    BentleyStatus UpdateProperties(DgnElementR element, Utf8StringCR name);
 
+    BentleyStatus CreateRelationship(DgnElementR element);
+
+    BentleyStatus SetModelSelector(DgnElementR element, Utf8StringCR name);
+
+    BentleyStatus SetCategorySelector(DgnElementR element, Utf8StringCR name);
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -1370,9 +1375,49 @@ BentleyStatus   DynamicViewMapper::UpdatePlacementAndCategory(DgnElementR elemen
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  11/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DynamicViewMapper::SetModelSelector (DgnElementR element, Utf8StringCR name)
+    {
+    DgnDbR db = m_converter.GetDgnDb();
+    DefinitionModelPtr definitionModel = m_converter.GetJobDefinitionModel();
+    if (!definitionModel.IsValid())
+        return ERROR;
+    
+    auto stmt = db.GetPreparedECSqlStatement("SELECT 1 from " BIS_SCHEMA(BIS_CLASS_ModelSelector) " WHERE Model.Id=? " );
+    stmt->BindId(1, GetDgnModel().GetModelId());
+    auto rc = stmt->Step();
+    if (BE_SQLITE_DONE == rc)
+        return SUCCESS;
+
+    ModelSelectorPtr models = new ModelSelector(*definitionModel, name.c_str());
+    m_converter.CreateModelSet(models->GetModelsR(), GetDgnModel(), *m_v8Model, m_transform);
+    models->SetIsPrivate(true);
+    models->Insert();
+    return SUCCESS;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  11/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DynamicViewMapper::SetCategorySelector(DgnElementR element, Utf8StringCR name)
+    {
+    DgnDbR db = m_converter.GetDgnDb();
+    DefinitionModelPtr definitionModel = m_converter.GetJobDefinitionModel();
+    if (!definitionModel.IsValid())
+        return ERROR;
+
+    //TODO We need to do something like SheetAttachmentHelper::SetCategories()
+    //CategorySelectorPtr categories = new CategorySelector(*definitionModel, m_name.c_str());
+    //m_converter.CreateC (models->GetModelsR(), parms.GetDgnModel(), parms.GetV8Model(), parms.m_trans);
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  09/2019
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DynamicViewMapper::UpdateProperties(DgnElementR element)
+BentleyStatus   DynamicViewMapper::UpdateProperties(DgnElementR element, Utf8StringCR name)
     {
     DgnV8Api::EditElementHandle clipElement;
     if (SUCCESS != m_namedView.GetClipElement(clipElement))
@@ -1391,6 +1436,16 @@ BentleyStatus   DynamicViewMapper::UpdateProperties(DgnElementR element)
 
     element.SetPropertyValue("ClipGeometry", clipdata.c_str());
     element.SetPropertyValue("SectionType", static_cast<int> (sectionType));
+
+    SetModelSelector(element, name);
+    SetCategorySelector(element, name);
+
+    //Create the relationship
+    if (SUCCESS != CreateRelationship(element))
+        {
+        DgnV8Api::ElementHandle namedViewElement(m_namedView.GetElementRef(), NULL);
+        LOG.errorv("Failed to set relation to sheet for named view %s %s", Converter::IssueReporter::FmtElement(namedViewElement).c_str(), Converter::IssueReporter::FmtModel(*namedViewElement.GetDgnModelP()).c_str());
+        }
     return SUCCESS;
     }
 
@@ -1421,7 +1476,7 @@ BentleyStatus DynamicViewMapper::CreateSectionLocation(DgnElementPtr& element, U
         return BSIERROR;
         }
 
-    if (SUCCESS != UpdateProperties(*element))
+    if (SUCCESS != UpdateProperties(*element, viewName))
         return BSIERROR;
 
     //TODO: Store and update the aspect
@@ -1429,6 +1484,41 @@ BentleyStatus DynamicViewMapper::CreateSectionLocation(DgnElementPtr& element, U
     auto aspect = SyncInfo::ViewDefinitionExternalSourceAspect::CreateAspect(externalSourceAspectScope, viewName, *m_viewInfo, m_converter.GetDgnDb());
     aspect.AddAspect(*element);
     return SUCCESS;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DynamicViewMapper::CreateRelationship(DgnElementR sectionLocationElement)
+    {
+    DgnV8Api::ElementHandle namedViewElement(m_namedView.GetElementRef(), NULL);
+                            
+    DgnV8Api::DgnECInstanceHost titleBlockHost = Converter::GetLinkTargetHost(namedViewElement, m_converter, DGNLINK_REGIONTYPE_Drawing);
+    if (titleBlockHost.IsElement())
+        {
+        ElementHandleCP targetDrawingBoundary = titleBlockHost.GetElementHandle();
+        if (NULL != targetDrawingBoundary && targetDrawingBoundary->IsValid())
+            {
+            DgnElementId drawingLabelElementId;
+            if (!m_converter.TryFindElement(drawingLabelElementId, *targetDrawingBoundary))
+                return ERROR;
+
+            auto element = m_converter.GetDgnDb().Elements().GetElement(drawingLabelElementId);
+            if (!element.IsValid())
+                return ERROR;
+
+            auto attachmentId = element->GetPropertyValueId<DgnElementId>(GENERIC_ViewAttachmentLabel_ViewAttachment);
+            if (!attachmentId.IsValid())
+                return ERROR;
+
+            auto status = sectionLocationElement.SetPropertyValue(GENERIC_ViewAttachmentLabel_ViewAttachment, attachmentId);
+            if (DgnDbStatus::Success == status)
+                return SUCCESS;
+            }
+        }
+    
+    return ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1463,7 +1553,7 @@ BentleyStatus Converter::ConvertDynamicView(DgnV8Api::NamedView& namedView, Tran
     if (existingViewId.IsValid())
         {
         element = GetDgnDb().Elements().GetForEdit<DgnElement>(existingViewId);
-        mapper.UpdateProperties(*element);
+        mapper.UpdateProperties(*element, name);
         if (element->Update().IsNull())
             return BSIERROR;
         }
