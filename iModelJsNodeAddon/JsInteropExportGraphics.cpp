@@ -488,11 +488,16 @@ bool _ProcessPolyface(PolyfaceQueryCR pfQuery, bool filled, SimplifyGraphic& sg)
         Render::TextureMapping::Params textureMapParams = textureMap.GetTextureMapParams();
         textureId = textureMap.GetTextureId();
 
+        // Elevation drape needs localToWorld transform with iModel's global origin accounted for.
+        DPoint3d globalOrigin = m_db.GeoLocation().GetGlobalOrigin();
+        globalOrigin.Negate();
+        auto uvLocalToWorld = Transform::FromProduct(localToWorld, Transform::From(globalOrigin));
+
         bvector<DPoint2d> perFaceParams(3, DPoint2d::FromZero());
         int computedParamCount = 0;
         for (auto visitor = PolyfaceVisitor::Attach(pfQuery); visitor->AdvanceToNextFace(); )
             {
-            textureMapParams.ComputeUVParams(perFaceParams, *visitor, nullptr);
+            textureMapParams.ComputeUVParams(perFaceParams, *visitor, &uvLocalToWorld);
             for (int i = 0; i < 3; ++i)
                 {
                 computedParams[computedParamCount + i].x = static_cast<float>(perFaceParams[i].x);

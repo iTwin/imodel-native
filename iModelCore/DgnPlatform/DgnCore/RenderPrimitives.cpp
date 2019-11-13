@@ -1568,7 +1568,7 @@ void MeshBuilder::AddTriangle(TriangleCR triangle)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR mappedTexture, DgnDbR dgnDb, FeatureCR feature, bool includeParams, uint32_t fillColor, bool requireNormals, uint8_t materialIndex)
+void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR mappedTexture, DgnDbR dgnDb, FeatureCR feature, bool includeParams, uint32_t fillColor, bool requireNormals, uint8_t materialIndex, TransformCP transformToDgn)
     {
     if (visitor.Point().size() < 3)
         return;
@@ -1579,6 +1579,16 @@ void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappin
 
     if (requireNormals && visitor.Normal().size() < points.size())
         return; // TFS#790263: Degenerate triangle - no normals.
+
+    Transform transformToDgnWithGlobalOrigin;
+    if (transformToDgn && mappedTexture.GetParams().m_mapMode == TextureMapping::Mode::ElevationDrape)
+        {
+        // Elevation drape needs world coordinates with iModel's global origin accounted for.
+        DPoint3d globalOrigin = dgnDb.GeoLocation().GetGlobalOrigin();
+        globalOrigin.Negate();
+        transformToDgnWithGlobalOrigin.InitProduct(*transformToDgn, Transform::From(globalOrigin));
+        transformToDgn = &transformToDgnWithGlobalOrigin;
+        }
 
     // The face represented by this visitor should be convex (we request that in facet options) - so we do a simple fan triangulation.
     for (size_t iTriangle =0; iTriangle < nTriangles; iTriangle++)
@@ -1601,7 +1611,7 @@ void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappin
             bvector<DPoint2d>   computedParams;
 
             BeAssert (m_mesh->Verts().empty() || !m_mesh->Params().empty());
-            if (SUCCESS == textureMapParams.ComputeUVParams (computedParams, visitor))
+            if (SUCCESS == textureMapParams.ComputeUVParams (computedParams, visitor, transformToDgn))
                 params = computedParams;
             else
                 BeAssert(false && "ComputeUVParams() failed");
@@ -2613,7 +2623,7 @@ MeshBuilderSet GeometryAccumulator::ToMeshBuilders(GeometryOptionsCR options, do
             auto hasNormals = nullptr != polyface->GetNormalCP();
             auto const& texMap = displayParams->GetSurfaceMaterial().GetTextureMapping();
             for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
-                meshBuilder.AddFromPolyfaceVisitor(*visitor, texMap, GetDgnDb(), feature, hasTexture, fillColor, hasNormals, materialIndex);
+                meshBuilder.AddFromPolyfaceVisitor(*visitor, texMap, GetDgnDb(), feature, hasTexture, fillColor, hasNormals, materialIndex, nullptr);
 
             meshBuilder.EndPolyface();
             }

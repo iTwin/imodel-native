@@ -3498,7 +3498,7 @@ void ElementMeshGenerator::ClipAndAddPolyface(PolyfaceHeaderR polyface, DgnEleme
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/19
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T> static void addClippedPolyface(MeshBuilderR builder, PolyfaceQueryCR polyface, MeshEdgeCreationOptions edgeOptions, FeatureCR feature, DisplayParamsCR displayParams, DgnDbR db, T extendContentRange)
+template<typename T> static void addClippedPolyface(MeshBuilderR builder, PolyfaceQueryCR polyface, MeshEdgeCreationOptions edgeOptions, FeatureCR feature, DisplayParamsCR displayParams, DgnDbR db, TransformCP transformToDgn, T extendContentRange)
     {
     bool anyContributed = false;
     uint32_t fillColor = displayParams.GetFillColor();
@@ -3512,7 +3512,7 @@ template<typename T> static void addClippedPolyface(MeshBuilderR builder, Polyfa
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); /**/)
         {
         anyContributed = true;
-        builder.AddFromPolyfaceVisitor(*visitor, texture, db, feature, hasTexture, fillColor, hasNormals, materialIndex);
+        builder.AddFromPolyfaceVisitor(*visitor, texture, db, feature, hasTexture, fillColor, hasNormals, materialIndex, transformToDgn);
         extendContentRange(visitor->Point());
         }
 
@@ -3538,9 +3538,10 @@ void MeshGenerator::AddClippedPolyface(PolyfaceQueryCR polyface, DgnElementId el
     uint64_t            keyElementId = m_loader.GetLoader().GetNodeId(elemId); // Create separate primitives per element if classifying.
     MeshBuilderKey      key(displayParams, nullptr != polyface.GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, isPlanar, keyElementId);
     MeshBuilderR        builder = GetMeshBuilder(key, static_cast<uint32_t>(polyface.GetPointCount()));
+    TransformCR         tileLocation = m_loader.GetTree().GetLocation();
 
     auto extendRange = [&](bvector<DPoint3d> const& points) { ExtendContentRange(points); };
-    addClippedPolyface(builder, polyface, edgeOptions, featureFromParams(elemId, displayParams), displayParams, db, extendRange);
+    addClippedPolyface(builder, polyface, edgeOptions, featureFromParams(elemId, displayParams), displayParams, db, &tileLocation, extendRange);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3966,10 +3967,13 @@ void TileContext::AddPartGeom(Render::GraphicBuilderR graphic, DgnGeometryPartId
     Transform tf = Transform::FromProduct(GetTransformFromDgn(), partToWorld);
     tf.Multiply(range, tilePartGeom->GetRange());
 
+    // UVs are assigned based on world coordinates - incompatible with instancing.
+    bool hasElevationDrape = TextureMapping::Mode::ElevationDrape == displayParams.GetSurfaceMaterial().GetTextureMapping().GetParams().m_mapMode;
+
     // We can't clip instances - they must be wholly contained within the tile's volume.
     // We also don't support non-uniform scale - although we could - but bim02/imodel02 explicitly do not allow it so the check should always pass.
     double unusedScale;
-    bool isInstanceable = AllowInstancing() && nullptr == graphic.GetCurrentClip() && tilePartGeom->IsInstanceable() && range.IsContained(m_tileRange) && graphic.GetLocalToWorldTransform().IsRigidScale(unusedScale);
+    bool isInstanceable = AllowInstancing() && nullptr == graphic.GetCurrentClip() && tilePartGeom->IsInstanceable() && range.IsContained(m_tileRange) && graphic.GetLocalToWorldTransform().IsRigidScale(unusedScale) && !hasElevationDrape;
     if (isInstanceable)
         {
         tilePartGeom->AddInstance(tf, displayParams, GetCurrentElementId());
@@ -4254,7 +4258,7 @@ void InstanceablePolyface::AddInstanced(MeshGeneratorR meshGen, MeshBuilderR bui
     auto extendRange = [&contentRange](bvector<DPoint3d> const& points) { contentRange.Extend(points); };
     auto edgeOptions = !meshGen.GetOmitEdges() && m_polyface.m_displayEdges ? MeshEdgeCreationOptions::DefaultEdges : MeshEdgeCreationOptions::NoEdges;
     DgnDbR db = meshGen.GetLoader().GetDgnDb();
-    addClippedPolyface(builder, *m_polyface.m_polyface, edgeOptions, Feature(), GetDisplayParams(), db, extendRange);
+    addClippedPolyface(builder, *m_polyface.m_polyface, edgeOptions, Feature(), GetDisplayParams(), db, nullptr, extendRange);
     }
 
 /*---------------------------------------------------------------------------------**//**
