@@ -203,14 +203,14 @@ jobs:
         condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'iModelBankAddon'))
         inputs:
           rootFolderOrFile: $(Build.BinariesDirectory)/Winx64/imodelbanklicensingaddon_pkgs/imodel-bank-licensing-win32-x64
-          artifactName: imodel-bank-win32-x64
+          artifactName: imodel-bank-licensing-win32-x64
         
       - task: archiveandpublishartifact@0
         displayName: Save imodel-bank-licensing
         condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'iModelBankAddon'))
         inputs:
           rootFolderOrFile: $(Build.BinariesDirectory)/Winx64/imodelbanklicensingaddon_pkgs/imodel-bank-licensing
-          artifactName: imodel-bank
+          artifactName: imodel-bank-licensing
 
       - publish: $(Build.BinariesDirectory)/Winx64/Nugetpkg/DgnV8ConverterNuget
         displayName: Save DgnV8ConverterNuget
@@ -357,8 +357,15 @@ jobs:
         displayName: Save imodel-bank-linux-x64
         condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'iModelBankAddon'))
         inputs:
-          rootFolderOrFile: $(Build.BinariesDirectory)/LinuxX64/imodeljsnodeaddon_pkgs/imodeljs-linux-x64
+          rootFolderOrFile: $(Build.BinariesDirectory)/LinuxX64/imodelbankaddon_pkgs/imodel-bank-linux-x64
           artifactName: imodel-bank-linux-x64
+        
+      - task: archiveandpublishartifact@0
+        displayName: Save imodel-bank-licensing-linux-x64
+        condition: and(succeeded(), contains(variables['STRATS_TO_RELEASE'], 'iModelBankAddon'))
+        inputs:
+          rootFolderOrFile: $(Build.BinariesDirectory)/Winx64/imodelbanklicensingaddon_pkgs/imodel-bank-licensing-linux-x64
+          artifactName: imodel-bank-licensing-linux-x64
 
   # ================================================================================================
   - job: build_macosx64
