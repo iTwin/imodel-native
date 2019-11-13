@@ -30,12 +30,12 @@ always:
 #
 # Burn the package version # into the code
 #
-PACKAGE_VERSION=$[@readfile $(baseDir)package_version.txt]
+PACKAGE_VERSION=$[@readfile $(baseDir)../package_version.txt]
 
-$(o)imodel-bank-package-version.h: $(baseDir)/imodel-bank-package-version.h $(baseDir)/package_version.txt
+$(o)imodel-bank-package-version.h: $(baseDir)/imodel-bank-package-version.h $(baseDir)/../package_version.txt
     $(msg)
     $(copyCmd) "$<" $@
-    python $(buildToolsDir)makePackgeVersionHeaderFile.py $@ $(baseDir)/package_version.txt
+    python $(buildToolsDir)makePackgeVersionHeaderFile.py $@ $(baseDir)/../package_version.txt
     ~time
 
 cIncs + -I$(o)

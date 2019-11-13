@@ -50,4 +50,4 @@ buildToolsDir = $(baseDir)../buildTools/
 always:
     |-- Making package imodel-bank-$(NodeOS)-$(NodeCPU) --
     -@$(rmdirRecursiveCmd) $(o)
-    python $(buildToolsDir)makePackages.py imodel-bank $(ProductDir)imodel-bank-$(Platform) $(o) $(NodeOS) $(NodeCPU) $(baseDir)package_version.txt $(baseDir) $(ACTION)
+    python $(buildToolsDir)makePackages.py imodel-bank $(ProductDir)imodel-bank-$(Platform) $(o) $(NodeOS) $(NodeCPU) $(baseDir)../package_version.txt $(baseDir) $(ACTION)
