@@ -723,7 +723,11 @@ MeshPtr GltfReader::ReadMeshPrimitive(Json::Value const& primitiveValue, Feature
 
     Mesh::PrimitiveType     primitiveType = (Mesh::PrimitiveType) primitiveValue["type"].asUInt();
     bool                    isPlanar = primitiveValue["isPlanar"].asBool();
-    MeshPtr                 mesh = Mesh::Create(*displayParams, featureTable, primitiveType, DRange3d::NullRange(), !m_model.Is3d(), isPlanar, nodeIndex, nullptr);
+
+    // NOTE: This code is not used. If it ever becomes used, we will need to handle MaterialAtlas and view-independent origin here.
+    MaterialAtlasP materialAtlas = nullptr;
+    DPoint3dCP viewIndependentOrigin = nullptr;
+    MeshPtr                 mesh = Mesh::Create(*displayParams, featureTable, primitiveType, DRange3d::NullRange(), !m_model.Is3d(), isPlanar, nodeIndex, materialAtlas, viewIndependentOrigin);
     MeshEdgesPtr            meshEdges;
 
     if(SUCCESS != ReadVertices(mesh->VertsR(), primitiveValue))

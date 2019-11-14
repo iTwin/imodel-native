@@ -2611,7 +2611,7 @@ MeshBuilderSet GeometryAccumulator::ToMeshBuilders(GeometryOptionsCR options, do
             DisplayParamsCPtr displayParams = tilePolyface.m_displayParams;
             bool hasTexture = displayParams.IsValid() && displayParams->IsTextured();
 
-            MeshBuilderKey key(*displayParams, nullptr != polyface->GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, tilePolyface.m_isPlanar);
+            MeshBuilderKey key(*displayParams, Mesh::PrimitiveType::Mesh, MeshBuilderKey::MakeFlags(nullptr != polyface->GetNormalIndexCP(), tilePolyface.m_isPlanar), 0, nullptr);
             MeshBuilderR meshBuilder = builders.GetMeshBuilder(key, static_cast<uint32_t>(polyface->GetPointCount()));
 
             auto edgeOptions = (options.WantEdges() && tilePolyface.m_displayEdges) ? MeshEdgeCreationOptions::DefaultEdges : MeshEdgeCreationOptions::NoEdges;
@@ -2635,7 +2635,7 @@ MeshBuilderSet GeometryAccumulator::ToMeshBuilders(GeometryOptionsCR options, do
                 {
                 DisplayParamsCPtr displayParams = tileStrokes.m_displayParams;
                 auto type = tileStrokes.m_disjoint ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline;
-                MeshBuilderKey key(*displayParams, false, type, tileStrokes.m_isPlanar);
+                MeshBuilderKey key(*displayParams, type, MeshBuilderKey::MakeFlags(false, tileStrokes.m_isPlanar), 0, nullptr);
                 MeshBuilderR builder = builders.GetMeshBuilder(key, tileStrokes.ComputePointCount());
                 uint32_t fillColor = displayParams->GetLineColor();
                 for (auto& strokePoints : tileStrokes.m_strokes)
@@ -4003,7 +4003,8 @@ MeshBuilderPtr MeshBuilderList::CreateMeshBuilder(DisplayParamsCR params) const
     auto type = m_key.GetPrimitiveType();
     auto isPlanar = m_key.IsPlanar();
     auto nodeIndex = m_key.GetNodeIndex();
-    return MeshBuilder::Create(params, vertTol, areaTol, featureTable, type, m_set.GetRange(), m_set.Is2d(), isPlanar, nodeIndex, atlas.get());
+    auto viOrigin = m_key.GetViewIndependentOrigin();
+    return MeshBuilder::Create(params, vertTol, areaTol, featureTable, type, m_set.GetRange(), m_set.Is2d(), isPlanar, nodeIndex, atlas.get(), viOrigin);
     }
 
 /*---------------------------------------------------------------------------------**//**

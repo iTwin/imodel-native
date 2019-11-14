@@ -1479,6 +1479,16 @@ DgnDbStatus GeometryStream::ReadGeometryStream(SnappyFromMemory& snappy, DgnDbR 
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/19
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometryStream::IsViewIndependent() const
+    {
+    GeometryStreamIO::Collection geom(data(), size());
+    auto header = geom.GetHeader();
+    return GeometryStreamIO::Header::Flags::None != (header.m_flags & GeometryStreamIO::Header::Flags::ViewIndependent);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Brien.Bastings                  11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 Transform GeometrySource::GetPlacementTransform() const

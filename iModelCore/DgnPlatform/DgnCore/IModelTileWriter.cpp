@@ -1603,6 +1603,15 @@ void IModelTileWriter::AddMesh(Json::Value& primitivesNode, MeshCR mesh, size_t&
 
     primitiveJson["type"] = static_cast<uint32_t>(mesh.GetType());
     primitiveJson["isPlanar"] = mesh.IsPlanar();
+    DPoint3dCP viOrigin = mesh.GetViewIndependentOrigin();
+    if (nullptr != viOrigin)
+        {
+        Json::Value viJson(Json::arrayValue);
+        viJson.append(viOrigin->x);
+        viJson.append(viOrigin->y);
+        viJson.append(viOrigin->z);
+        primitiveJson["viewIndependentOrigin"] = viJson;
+        }
 
     if ((!mesh.Triangles().Empty() && SUCCESS == CreateTriMesh(primitiveJson, mesh, idStr)) ||
         (!mesh.Polylines().empty() && SUCCESS == CreatePolylines(primitiveJson, mesh, idStr)))
@@ -2027,6 +2036,7 @@ IModelTile::Version IModelTile::Version::FromMajorVersion(uint16_t major)
         case 3: return V3();
         case 4: return V4();
         case 5: return V5();
+        case 6: return V6();
         default: return Invalid();
         }
     }

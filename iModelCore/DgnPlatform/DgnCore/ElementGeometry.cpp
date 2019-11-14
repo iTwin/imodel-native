@@ -2519,11 +2519,14 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
 
     Writer writer(importer.GetDestinationDb());
     Collection collection(source.GetData(), source.GetSize());
+    writer.Reset(collection.GetHeader().m_flags);
 
     for (auto const& egOp : collection)
         {
         switch (egOp.m_opCode)
             {
+            case GeometryStreamIO::OpCode::Header:
+                continue; // Appended by Reset() above.
             case GeometryStreamIO::OpCode::BasicSymbology:
                 {
                 auto ppfb = flatbuffers::GetRoot<FB::BasicSymbology>(egOp.m_data);
@@ -3194,6 +3197,22 @@ void GeometryStreamIO::Collection::GetGeometryPartIds(IdSet<DgnGeometryPartId>& 
 
         parts.insert(geomPartId);
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/19
++---------------+---------------+---------------+---------------+---------------+------*/
+GeometryStreamIO::Header GeometryStreamIO::Collection::GetHeader() const
+    {
+    // 00 Opcode::Header
+    // 04 Data length
+    // 08 Header
+    constexpr size_t headerOffset = sizeof(uint32_t) * 2;
+    Header header;
+    if (headerOffset + sizeof(Header) <= m_dataSize)
+        header = *reinterpret_cast<Header const*>(m_data + headerOffset);
+
+    return header;
     }
 
 /*=================================================================================**//**
@@ -4089,6 +4108,15 @@ void GeometryCollection::Iterator::ToNext()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+GeometryStreamIO::Header::Flags GeometryCollection::GetHeaderFlags() const
+    {
+    GeometryStreamIO::Collection collection(m_data, m_dataSize);
+    return collection.GetHeader().m_flags;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryCollection::SetNestedIteratorContext(Iterator const& iter)
@@ -4141,7 +4169,14 @@ Json::Value GeometryCollection::ToJson(JsonValueCR opts) const
         switch (egOp.m_opCode)
             {
             case GeometryStreamIO::OpCode::Header:
+                {
+                Json::Value header;
+                header["flags"] = static_cast<uint32_t>(reader.GetHeader(egOp)->m_flags);
+                Json::Value headerValue;
+                headerValue["header"] = header;
+                output.append(headerValue);
                 break;
+                }
 
             case GeometryStreamIO::OpCode::BasicSymbology:
                 {
@@ -5494,6 +5529,21 @@ bool GeometryBuilder::Append(TextAnnotationCR text, CoordSystem coord)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  11/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometryBuilder::SetHeaderFlags(GeometryStreamIO::Header::Flags flags)
+    {
+    if (m_isPartCreate)
+        {
+        BeAssert(false); // Not valid when creating a part...
+        return false;
+        }
+
+    m_writer.Reset(flags);
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeometryBuilder::GeometryBuilder(DgnDbR dgnDb, DgnCategoryId categoryId, Placement3dCR placement)
@@ -5797,7 +5847,12 @@ bool GeometryBuilder::FromJson(JsonValueCR input, JsonValueCR opts)
         if (!entry.isObject())
             continue;
 
-        if (entry.isMember("appearance"))
+        if (entry.isMember("header"))
+            {
+            BeAssert(0 == i);
+            m_writer.Reset(static_cast<GeometryStreamIO::Header::Flags>(entry["header"]["flags"].asUInt()));
+            }
+        else if (entry.isMember("appearance"))
             {
             Json::Value appearance = entry["appearance"];
 

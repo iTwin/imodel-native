@@ -2004,6 +2004,9 @@ bool SkipEntry(GeometryCollection::Iterator const& iter, GeometryStreamEntryIdCR
 +---------------+---------------+---------------+---------------+---------------+------*/
 SnapStatus GetClosestCurve(GeometryCollection& collection, DgnElementCP element, DgnSubCategoryId const* subCategoryId, DgnGeometryClass const* geomClass, ViewFlagsCP viewFlags, CheckStop* stopTester)
     {
+    if (GeometryStreamIO::Header::Flags::None != (collection.GetHeaderFlags() & GeometryStreamIO::Header::Flags::ViewIndependent))
+        return SnapStatus::NotSnappable;
+
     GeometryStreamEntryId  snapElemEntryId = m_hitEntryId;
     GeometryStreamEntryId  snapPartEntryId = m_hitEntryId;
 

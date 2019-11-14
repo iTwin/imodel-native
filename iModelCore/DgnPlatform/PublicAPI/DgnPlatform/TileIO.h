@@ -352,8 +352,13 @@ ENUM_IS_FLAGS(DgnTile::Flags);
 //      3.0: Introduction of major version 3:
 //          Improved instancing heuristic.
 //          Decimation of polylines.
+//  Major version 4:
 //      4.0: Introduction of major version 4:
 //          Versioning of TileTree JSON. Changes format of Tree::Id to "_vMaj_flags-..." where "..." is unchanged from Id format used by previous versions.
+//  Major version 5:
+//      5.0: Fixed application of opaque materials to transparent surfaces.
+//  Major verions 6:
+//      6.0: Added support for view-independent geometry.
 // @bsistruct                                                   Paul.Connelly   09/18
 //=======================================================================================
 struct IModelTile
@@ -380,9 +385,10 @@ struct IModelTile
         static constexpr Version V3() { return Version(3, 0); }
         static constexpr Version V4() { return Version(4, 0); }
         static constexpr Version V5() { return Version(5, 0); }
+        static constexpr Version V6() { return Version(6, 0); }
 
         // !!! IMPORTANT !!! If you change the major version you must update IModelTile::Version::FromMajorVersion !!!
-        static constexpr Version Current() { return V5(); }
+        static constexpr Version Current() { return V6(); }
 
         DGNPLATFORM_EXPORT static Version FromMajorVersion(uint16_t major);
 

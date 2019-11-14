@@ -728,6 +728,8 @@ private:
     PartGeoms                       m_geomParts;
     SolidPrimitives                 m_solidPrimitives;
     SubRangesR                      m_subRanges;
+    DPoint3d                        m_viewIndependentOrigin;
+    bool                            m_isViewIndependent = false;
 protected:
     void PushGeometry(GeometryR geom);
 
@@ -811,6 +813,9 @@ public:
     SolidPrimitives const& GetSolidPrimitives() const { return m_solidPrimitives; }
 
     void AddSharedGeometry(GeometryList& geometryList, ElementMeshGeneratorR meshGenerator, SubRanges& subRanges) const;
+
+    bool IsViewIndependent() const { return m_isViewIndependent; }
+    DPoint3dCP GetViewIndependentOrigin() const { return IsViewIndependent() ? &m_viewIndependentOrigin : nullptr; }
 };
 
 /*=================================================================================**//**
@@ -1017,6 +1022,7 @@ public:
     virtual void AddDeferredPolyface(Polyface& tilePolyface, DgnElementId, double rangePixels, bool isContained) = 0;
     virtual void ClipAndAddPolyface(PolyfaceHeaderR polyface, DgnElementId elemId, DisplayParamsCR displayParams, MeshEdgeCreationOptions const& edgeOptions, bool isPlanar) = 0;
     virtual void ClipStrokes(StrokesR) const = 0;
+    virtual DPoint3dCP GetViewIndependentOrigin() const { return nullptr; }
 
     void ExtendContentRange(bvector<DPoint3d> const& points) { m_contentRange.Extend(points); }
     void ExtendContentRange(DRange3dR range) { m_contentRange.Extend(range); }
@@ -1040,9 +1046,17 @@ private:
     DeferredGlyphList   m_deferredGlyphs;
     std::set<void*>     m_uniqueGlyphKeys;
     bvector<MeshPtr>    m_sharedMeshes;
+    DPoint3dCP          m_viewIndependentOrigin = nullptr;
+    std::map<DgnElementId, DPoint3d>    m_deferredGlyphOrigins;
 
     Strokes ClipSegments(StrokesCR strokes) const;
     void ClipPoints(StrokesR strokes) const;
+
+    DPoint3dCP GetViewIndependentOrigin(DgnElementId elemId) const
+        {
+        auto iter = m_deferredGlyphOrigins.find(elemId);
+        return m_deferredGlyphOrigins.end() != iter ? &iter->second : nullptr;
+        }
 public:
     ElementMeshGenerator(GeometryLoaderCR loader, GeometryOptionsCR options) : MeshGenerator(loader, loader.GetTolerance(), options, loader.GetTileRange()),
         m_featureTable(loader.GetTree().GetModelId(), loader.GetRenderSystem()._GetMaxFeaturesPerBatch())
@@ -1060,6 +1074,9 @@ public:
     MeshList GetMeshes();
     void AddDeferredGlyphMeshes(Render::System& renderSystem);
     void AddSharedMesh(MeshR mesh) { m_sharedMeshes.push_back(&mesh); }
+
+    void SetViewIndependentOrigin(DPoint3dCP origin) { m_viewIndependentOrigin = origin; }
+    DPoint3dCP GetViewIndependentOrigin() const override { return m_viewIndependentOrigin; }
 };
 
 //=======================================================================================
@@ -1152,7 +1169,7 @@ public:
 
     MeshBuilderKey GetMeshBuilderKey() const final
         {
-        return MeshBuilderKey(GetDisplayParams(), nullptr != m_polyface.m_polyface->GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, m_polyface.m_isPlanar);
+        return MeshBuilderKey(GetDisplayParams(), Mesh::PrimitiveType::Mesh, MeshBuilderKey::MakeFlags(nullptr != m_polyface.m_polyface->GetNormalIndexCP(), m_polyface.m_isPlanar), 0, nullptr);
         }
 };
 
@@ -1204,7 +1221,9 @@ public:
 
     MeshBuilderKey GetMeshBuilderKey() const final
         {
-        return MeshBuilderKey(GetDisplayParams(), false, m_strokes.m_disjoint ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline, m_strokes.m_isPlanar);
+        auto type = m_strokes.m_disjoint ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline;
+        auto flags = MeshBuilderKey::MakeFlags(false, m_strokes.m_isPlanar);
+        return MeshBuilderKey(GetDisplayParams(), type, flags, 0, nullptr);
         }
 };
 
@@ -3082,9 +3101,13 @@ bool GeometryLoader::GenerateGeometry()
                 break;
                 }
 
+            meshGenerator.SetViewIndependentOrigin(tileContext.GetViewIndependentOrigin());
+
             // Convert this element's geometry to meshes
             for (auto const& geom : geometryList)
                 meshGenerator.AddMeshes(*geom, true);
+
+            meshGenerator.SetViewIndependentOrigin(nullptr);
 
             if (IsCanceled())
                 return false;
@@ -3374,6 +3397,8 @@ void ElementMeshGenerator::AddDeferredGlyphMeshes(Render::System& renderSystem)
     // add the polyfaces with appropriate UV coordinates
     for (auto& deferredGlyph : m_deferredGlyphs)
         {
+        SetViewIndependentOrigin(GetViewIndependentOrigin(deferredGlyph.m_elemId));
+
         GlyphLocation loc;
         GlyphAtlas& atlas = atlasManager.GetAtlasAndLocationForGlyph(deferredGlyph, loc);
 
@@ -3392,6 +3417,8 @@ void ElementMeshGenerator::AddDeferredGlyphMeshes(Render::System& renderSystem)
             }
 
         AddPolyface(deferredGlyph.m_polyface, deferredGlyph.m_elemId, deferredGlyph.m_rangePixels, deferredGlyph.m_isContained, false);
+
+        SetViewIndependentOrigin(nullptr);
         }
     }
 
@@ -3447,6 +3474,9 @@ void ElementMeshGenerator::AddDeferredPolyface(Polyface& tilePolyface, DgnElemen
     void* key = m_deferredGlyphs.back().GetKey();
     if (m_uniqueGlyphKeys.find(key) == m_uniqueGlyphKeys.end())
         m_uniqueGlyphKeys.insert(key);
+
+    if (nullptr != m_viewIndependentOrigin)
+        m_deferredGlyphOrigins[elemId] = *m_viewIndependentOrigin;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3536,7 +3566,8 @@ void MeshGenerator::AddClippedPolyface(PolyfaceQueryCR polyface, DgnElementId el
     {
     DgnDbR              db = m_loader.GetDgnDb();
     uint64_t            keyElementId = m_loader.GetLoader().GetNodeId(elemId); // Create separate primitives per element if classifying.
-    MeshBuilderKey      key(displayParams, nullptr != polyface.GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, isPlanar, keyElementId);
+    auto                flags = MeshBuilderKey::MakeFlags(nullptr != polyface.GetNormalIndexCP(), isPlanar);
+    MeshBuilderKey      key(displayParams, Mesh::PrimitiveType::Mesh, flags, keyElementId, GetViewIndependentOrigin());
     MeshBuilderR        builder = GetMeshBuilder(key, static_cast<uint32_t>(polyface.GetPointCount()));
     TransformCR         tileLocation = m_loader.GetTree().GetLocation();
 
@@ -3710,7 +3741,9 @@ void MeshGenerator::AddStrokes(StrokesR strokes, DgnElementId elemId, double ran
         m_didDecimate = true;
         }
 
-    MeshBuilderKey key(displayParams, false, strokesToAdd->m_disjoint ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline, strokesToAdd->m_isPlanar);
+    auto type = strokesToAdd->m_disjoint ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline;
+    auto flags = MeshBuilderKey::MakeFlags(false, strokesToAdd->m_isPlanar);
+    MeshBuilderKey key(displayParams, type, flags, 0, GetViewIndependentOrigin());
     MeshBuilderR builder = GetMeshBuilder(key, strokesToAdd->ComputePointCount());
 
     uint32_t fillColor = displayParams.GetLineColor();
@@ -3971,9 +4004,13 @@ void TileContext::AddPartGeom(Render::GraphicBuilderR graphic, DgnGeometryPartId
     bool hasElevationDrape = TextureMapping::Mode::ElevationDrape == displayParams.GetSurfaceMaterial().GetTextureMapping().GetParams().m_mapMode;
 
     // We can't clip instances - they must be wholly contained within the tile's volume.
+    bool isClipped = nullptr != graphic.GetCurrentClip() || !range.IsContained(m_tileRange);
+
     // We also don't support non-uniform scale - although we could - but bim02/imodel02 explicitly do not allow it so the check should always pass.
     double unusedScale;
-    bool isInstanceable = AllowInstancing() && nullptr == graphic.GetCurrentClip() && tilePartGeom->IsInstanceable() && range.IsContained(m_tileRange) && graphic.GetLocalToWorldTransform().IsRigidScale(unusedScale) && !hasElevationDrape;
+    bool isRigidScale = graphic.GetLocalToWorldTransform().IsRigidScale(unusedScale);
+
+    bool isInstanceable = AllowInstancing() && !isClipped && isRigidScale && !hasElevationDrape && !IsViewIndependent() && tilePartGeom->IsInstanceable();
     if (isInstanceable)
         {
         tilePartGeom->AddInstance(tf, displayParams, GetCurrentElementId());
@@ -4073,6 +4110,7 @@ GraphicPtr TileContext::FinishSubGraphic(GeometryAccumulatorR accum, TileSubGrap
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TileContext::ProcessElement(DgnElementId elemId, double rangeDiagonalSquared)
     {
+    m_isViewIndependent = false;
     m_curElemId = elemId;
     m_curRangeDiagonalSquared = rangeDiagonalSquared;
     VisitElement(elemId, false);
@@ -4160,6 +4198,14 @@ StatusInt TileContext::_VisitElement(DgnElementId elementId, bool allowLoad)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::GraphicPtr TileContext::_StrokeGeometry(GeometrySourceCR source, double pixelSize)
     {
+    auto geom3d = source.GetAsGeometrySource3d();
+    if (nullptr != geom3d && geom3d->GetGeometryStream().IsViewIndependent())
+        {
+        BeAssert(nullptr != geom3d->ToElement());
+        m_isViewIndependent = true;
+        m_viewIndependentOrigin = geom3d->GetPlacement().GetOrigin();
+        }
+
     Render::GraphicPtr graphic = source.Draw(*this, pixelSize);
     return WasAborted() ? nullptr : graphic;
     }
@@ -4291,7 +4337,7 @@ void InstanceableGeom::AddInstanced(ElementMeshGeneratorR meshGen, SubRangesR su
     auto vertTol = tolerance * ToleranceRatio::Vertex();
     auto areaTol = tolerance * ToleranceRatio::FacetArea(); // ###TODO AFAICT this is vestigial and ratio is same as vertex anyway...
 
-    MeshBuilderPtr builder = MeshBuilder::Create(key.GetDisplayParams(), vertTol, areaTol, nullptr, key.GetPrimitiveType(), geom.GetRange(), meshGen.GetLoader().Is2d(), key.IsPlanar(), key.GetNodeIndex(), nullptr);
+    MeshBuilderPtr builder = MeshBuilder::Create(key.GetDisplayParams(), vertTol, areaTol, nullptr, key.GetPrimitiveType(), geom.GetRange(), meshGen.GetLoader().Is2d(), key.IsPlanar(), key.GetNodeIndex(), nullptr, nullptr);
 
     DRange3d contentRange = DRange3d::NullRange();
     AddInstanced(meshGen, *builder, contentRange);

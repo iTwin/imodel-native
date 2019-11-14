@@ -651,7 +651,7 @@ DisplayParamsCPtr makeMeshDisplayParams(Material::CreateParams const& materialPa
 +---------------+---------------+---------------+---------------+---------------+------*/
 MeshBuilderKey makeBuilderKey(DisplayParamsCR params, Mesh::PrimitiveType type)
     {
-    return MeshBuilderKey(params, type, MeshBuilderKey::Flags::None);
+    return MeshBuilderKey(params, type, MeshBuilderFlags::None, 0, nullptr);
     }
 
 //=======================================================================================

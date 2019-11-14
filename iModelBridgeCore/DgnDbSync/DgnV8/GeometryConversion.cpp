@@ -2379,7 +2379,7 @@ bool GetBasisTransform(TransformR basisTransform, double& v8SymbolScale, Bentley
             if (nullptr == (cellQuery = dynamic_cast <DgnV8Api::ICellQuery*> (&v8eh.GetHandler())))
                 return false; // Not a cell, shared cell instance, or shared cell def...
 
-            if (cellQuery->IsNormalCell(v8eh) && cellQuery->IsAnonymous(v8eh))
+            if (cellQuery->IsNormalCell(v8eh) && cellQuery->IsAnonymous(v8eh) && !cellQuery->IsPointCell(v8eh))
                 return false; // Not a user defined cell, edit->group does not set a useful orientation...
 
             if (!v8eh.GetDisplayHandler()->GetBasisTransform(v8eh, localToGeom))
@@ -3002,7 +3002,7 @@ bool IgnorePublicChildren(DgnV8EhCR v8eh)
         if (xdomain->_IgnorePublicChildren())
             return true;
         }
-    return false;
+    return DgnV8Api::CellUtil::IsPointCell(v8eh); // Don't create assemblies for point cells, they are meant to have uniform level and symbology...
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3111,6 +3111,21 @@ bool IsValidGraphicElement(DgnV8EhCR v8eh)
     return true;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IsViewIndependent(DgnV8EhCR v8eh)
+    {
+    switch (v8eh.GetElementType())
+        {
+        case DgnV8Api::TEXT_ELM:
+        case DgnV8Api::TEXT_NODE_ELM:
+            return v8eh.GetElementCP()->hdr.dhdr.props.b.r; // Text only checks relative bit unlike cells that also check snappable...
+        default:
+            return DgnV8Api::CellUtil::IsPointCell(v8eh);
+        }
+    }
+
 public:
 
 /*---------------------------------------------------------------------------------**//**
@@ -3123,6 +3138,7 @@ void ProcessElement(DgnClassId elementClassId, bool hasV8PrimaryECInstance, DgnC
 
     bool        isValidBasis = false;
     bool        isValidBasisAndScale = false;
+    bool        isViewIndependent = false;
     bool        haveSCOverrides = false;
     double      v8SymbolScale = 0.0;
     Transform   basisTransform;
@@ -3147,6 +3163,7 @@ void ProcessElement(DgnClassId elementClassId, bool hasV8PrimaryECInstance, DgnC
         {
         isValidBasis = GetBasisTransform(basisTransform, v8SymbolScale, v8eh);
         isValidBasisAndScale = (isValidBasis && 0.0 != v8SymbolScale);
+        isViewIndependent = (isValidBasis && IsViewIndependent(v8eh));
 
         if (isValidBasisAndScale)
             GetPartReferences(geomParts, v8SymbolScale, v8eh);
@@ -3218,8 +3235,11 @@ void ProcessElement(DgnClassId elementClassId, bool hasV8PrimaryECInstance, DgnC
             if (builder.IsValid() && builder->GetGeometryParams().GetCategoryId() != lastCategoryId)
                 BuildNewElement(builder, elementClassId, targetCategoryId, elementCode, v8eh);
 
-            if (!builder.IsValid())
+            if (!builder.IsValid()) {
                 builder = GeometryBuilder::Create(m_model, lastCategoryId, basisTransform);
+                if (isViewIndependent)
+                    builder->SetHeaderFlags(GeometryStreamIO::Header::Flags::ViewIndependent);
+            }
 
             builder->Append(geomParams);
             builder->Append(partRef.m_partId, geomToLocal, partRef.m_localRange);
@@ -3302,6 +3322,9 @@ void ProcessElement(DgnClassId elementClassId, bool hasV8PrimaryECInstance, DgnC
                 // NOTE: Don't create large multi-primitive GeometryStreams without calling SetAppendAsSubGraphics to store sub-ranges...
                 if (AppendAsSubGraphics(pathGeom, pathEntry))
                     builder->SetAppendAsSubGraphics();
+
+                if (isViewIndependent)
+                    builder->SetHeaderFlags(GeometryStreamIO::Header::Flags::ViewIndependent);
                 }
             else
                 {

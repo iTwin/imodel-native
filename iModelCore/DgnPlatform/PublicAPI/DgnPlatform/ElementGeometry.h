@@ -188,10 +188,16 @@ struct GeometryStreamIO
     //=======================================================================================
     struct Header
     {
-        uint32_t    m_version;
-        uint32_t    m_flags;
+        enum class Flags : uint32_t
+        {
+            None = 0,
+            ViewIndependent = 1 << 0, //!< When the geometry is displayed, it is always oriented to face the camera.
+        };
 
-        Header(uint8_t version = 1, uint32_t flags = 0) : m_version(version), m_flags(flags) {}
+        uint32_t    m_version;
+        Flags       m_flags;
+
+        Header(uint8_t version = 1, Flags flags = Flags::None) : m_version(version), m_flags(flags) {}
     };
 
     //=======================================================================================
@@ -220,8 +226,8 @@ struct GeometryStreamIO
         bvector<uint8_t> m_buffer;
 
         Writer(DgnDbR db) : m_db(db) {AppendHeader();}
-        void AppendHeader(uint32_t flags = 0) {Header hdr(1, flags); Append(Operation(OpCode::Header, (uint32_t) sizeof (hdr), (const uint8_t *) &hdr));}
-        void Reset(uint32_t flags = 0) {m_buffer.clear(); AppendHeader(flags);};
+        void AppendHeader(Header::Flags flags = Header::Flags::None) {Header hdr(1, flags); Append(Operation(OpCode::Header, (uint32_t) sizeof (hdr), (const uint8_t *) &hdr));}
+        void Reset(Header::Flags flags = Header::Flags::None) {m_buffer.clear(); AppendHeader(flags);};
         bool AppendSimplified(ICurvePrimitiveCR, bool isClosed, bool is3d);
         bool AppendSimplified(CurveVectorCR, bool is3d);
         bool AppendSimplified(GeometricPrimitiveCR, bool is3d);
@@ -314,6 +320,7 @@ struct GeometryStreamIO
         const_iterator begin() const {return const_iterator(m_data, m_dataSize);}
         const_iterator end() const {return const_iterator();}
         void GetGeometryPartIds(BeSQLite::IdSet<DgnGeometryPartId>&, DgnDbR) const;
+        DGNPLATFORM_EXPORT Header GetHeader() const;
         DGNPLATFORM_EXPORT void Draw(Render::GraphicBuilderR, ViewContextR, Render::GeometryParamsR, bool activateParams=true, DgnElementCP=nullptr) const;
     };
 
@@ -339,6 +346,8 @@ struct GeometryStreamIO
     DGNPLATFORM_EXPORT static DgnDbStatus Import(GeometryStreamR dest, GeometryStreamCR source, DgnImportContext& remapper);
 
 }; // GeometryStreamIO
+
+ENUM_IS_FLAGS(GeometryStreamIO::Header::Flags);
 
 //=======================================================================================
 //! GeometryCollection provides an iterator for a GeometricElement's GeometrySource or
@@ -443,6 +452,9 @@ public:
 
     const_iterator begin() const {return const_iterator(m_data, m_dataSize, m_state);}
     const_iterator end() const {return const_iterator();}
+
+    //! Returns geometry stream header flags.
+    DGNPLATFORM_EXPORT GeometryStreamIO::Header::Flags GetHeaderFlags() const;
 
     //! Iterate a GeometryStream for a DgnGeometryPart in the context of a parent GeometrySource iterator.
     //! When iterating a GeometrySource for a GeometricElement that has DgnGeometryPartId references, this
@@ -657,6 +669,10 @@ public:
     //! Append a TextAnnotation to builder in either local or world coordinates.
     DGNPLATFORM_EXPORT bool Append(TextAnnotationCR, CoordSystem coord = CoordSystem::Local);
 
+    //! Set GeometryStream header flags when creating a geometric element.
+    //! @note Do this before appending any geometric primitives as it resets the buffer.
+    DGNPLATFORM_EXPORT bool SetHeaderFlags(GeometryStreamIO::Header::Flags flags);
+
     //! @private Create builder for DgnGeometryPart from an existing GeometricElement's GeometryStream (can't contain parts).
     DGNPLATFORM_EXPORT static GeometryBuilderPtr CreateGeometryPart(GeometryStreamCR, DgnDbR db, bool ignoreSymbology = false, Render::GeometryParamsP params = nullptr);
 
@@ -689,7 +705,7 @@ public:
     DGNPLATFORM_EXPORT static GeometryBuilderPtr Create(GeometrySourceCR);
 
     //! @private Append GeometryStream entries supplied as json values.
-    bool FromJson(JsonValueCR input, JsonValueCR opts);
+    DGNPLATFORM_EXPORT bool FromJson(JsonValueCR input, JsonValueCR opts);
 
     //! Updates DgnGeometryPart's GeometryStream from json value.
     //! @param[in] part DgnGeometryPart to update.
