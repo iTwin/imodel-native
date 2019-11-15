@@ -1,8 +1,9 @@
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/ 
 /*	Pointools module class definition										*/ 
-/*  (C) 2003 Copyright Faraz Ravi - All Rights Reserved						*/ 
-/*																			*/ 
-/*  Last Updated 18 Dec 2003 Faraz Ravi										*/ 
 /*--------------------------------------------------------------------------*/ 
 #ifndef _POINTOOLS_MODULE_INTERFACE
 #define _POINTOOLS_MODULE_INTERFACE

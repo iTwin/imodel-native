@@ -1,10 +1,10 @@
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 /*----------------------------------------------------------*/ 
 /* PointsScene.h											*/ 
 /* Point Scene Interface file								*/ 
-/*----------------------------------------------------------*/ 
-/* (c) Copyright Pointools 2004								*/   
-/*----------------------------------------------------------*/ 
-/* Written by Faraz Ravi									*/ 
 /*----------------------------------------------------------*/ 
 #ifndef POINTOOLS_POINTCLOUD_SCENE
 #define POINTOOLS_POINTCLOUD_SCENE 1

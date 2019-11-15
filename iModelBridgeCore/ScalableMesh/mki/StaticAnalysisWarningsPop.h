@@ -1,3 +1,7 @@
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 //#if _MSC_VER > 1800
 //    #pragma warning (suppress: 5031) // likely mismatch, popping warning state pushed in different file
 //    #pragma warning (pop)

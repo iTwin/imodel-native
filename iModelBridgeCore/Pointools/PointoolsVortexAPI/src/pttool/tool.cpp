@@ -1,8 +1,9 @@
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/ 
 /*	Pointools Tool class implementation										*/ 
-/*  (C) 2003 Copyright Faraz Ravi - All Rights Reserved						*/ 
-/*																			*/ 
-/*  Last Updated 26 Dec 2003 Faraz Ravi										*/ 
 /*--------------------------------------------------------------------------*/
 
 #include <pttool/tool.h>

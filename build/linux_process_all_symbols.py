@@ -1,3 +1,7 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See COPYRIGHT.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
 import os, subprocess, sys
 
 if not 'STRATS_TO_RELEASE' in os.environ:

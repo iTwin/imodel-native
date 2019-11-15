@@ -1,10 +1,7 @@
-/*--------------------------------------------------------------------------------------+
-|
-|     $Source$
-|
-|  $Copyright$
-|
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #include "BridgeStructuralPhysicalInternal.h"
 #include <BridgeStructuralPhysical/Bridge.h>
 #include <BridgeStructuralPhysical/BridgeCategory.h>

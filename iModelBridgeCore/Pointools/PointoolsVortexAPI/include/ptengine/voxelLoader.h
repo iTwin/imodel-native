@@ -1,10 +1,10 @@
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 /*----------------------------------------------------------*/ 
 /* PointsPager.h											*/ 
 /* Point Pager Interface file								*/ 
-/*----------------------------------------------------------*/ 
-/* (c) Copyright Pointools 2007-2011						*/   
-/*----------------------------------------------------------*/ 
-/* Written by Faraz Ravi									*/ 
 /*----------------------------------------------------------*/ 
 #ifndef POINTOOLS_ENGINE_POINTS_LOADER
 #define POINTOOLS_ENGINE_POINTS_LOADER 1

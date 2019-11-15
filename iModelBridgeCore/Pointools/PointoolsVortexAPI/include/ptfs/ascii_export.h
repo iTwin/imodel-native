@@ -1,10 +1,12 @@
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 //--------------------------------------------------------------------
 // ascii_exporter.h: interface for the ascii_exporter class.
 //
 // Database importer
 //
-// (c) Copyright 2003 Pointools Ltd
-// All Rights Reserved
 //--------------------------------------------------------------------
 
 #ifndef POINTOOLS_DB_BUILDER_ASCII_EXPORTER_070503

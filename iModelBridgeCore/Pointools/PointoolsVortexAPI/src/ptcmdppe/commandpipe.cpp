@@ -1,8 +1,9 @@
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/ 
 /*	CommandPipe class implementation										*/ 
-/*  (C) 2003 Copyright Pointools Ltd, UK - All Rights Reserved				*/ 
-/*																			*/ 
-/*  Last Updated 14 Oct 2003 Faraz Ravi										*/ 
 /*--------------------------------------------------------------------------*/ 
 #include "PointoolsVortexAPIInternal.h"
 

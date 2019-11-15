@@ -1,8 +1,9 @@
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/ 
 /*	Pointools Tools application module class definition						*/ 
-/*  (C) 2003 Copyright Pointools Ltd, UK - All Rights Reserved				*/ 
-/*																			*/ 
-/*  Last Updated 28 Dec 2003 Faraz Ravi										*/ 
 /*--------------------------------------------------------------------------*/ 
 
 #ifndef POINTOOLS_TOOLS_MODULE_INTERFACE

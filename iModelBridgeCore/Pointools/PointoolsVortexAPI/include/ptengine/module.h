@@ -1,3 +1,7 @@
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #ifndef POINTOOLS_POINTS_ENGINE_MODULE
 #define POINTOOLS_POINTS_ENGINE_MODULE
 

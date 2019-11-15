@@ -1,8 +1,9 @@
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/ 
 /*	Pointools App class class												*/ 
-/*  (C) 2003 Copyright Pointools Ltd, UK - All Rights Reserved				*/ 
-/*																			*/ 
-/*  Last Updated 30 Jan 2004 Faraz Ravi										*/ 
 /*--------------------------------------------------------------------------*/ 
 
 #include <ptmodm/modulesManager.h>

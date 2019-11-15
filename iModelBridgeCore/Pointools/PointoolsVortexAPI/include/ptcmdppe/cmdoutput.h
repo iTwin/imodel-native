@@ -1,8 +1,9 @@
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/ 
 /*	CommandPipe class definition											*/ 
-/*  (C) 2003 Copyright Faraz Ravi - All Rights Reserved						*/ 
-/*																			*/ 
-/*  Last Updated 15 Oct 2003 Faraz Ravi										*/ 
 /*--------------------------------------------------------------------------*/ 
 #ifndef _COMMANDPIPE_OUTPUT
 #define _COMMANDPIPE_OUTPUT

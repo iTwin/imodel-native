@@ -1,4 +1,8 @@
-﻿/*
+﻿/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
+/*
 ** bcdtmInroads.c - Used For Exporting bcDTM Tins To Inroad's DTM
 */
 #include <windows.h>

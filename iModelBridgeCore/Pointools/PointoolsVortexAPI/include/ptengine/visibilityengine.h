@@ -1,10 +1,10 @@
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 /*----------------------------------------------------------*/ 
 /* PointsVisibility.h										*/ 
 /* Point Visibility Interface file							*/ 
-/*----------------------------------------------------------*/ 
-/* (c) Copyright Pointools 2004-2008						*/   
-/*----------------------------------------------------------*/ 
-/* Written by Faraz Ravi									*/ 
 /*----------------------------------------------------------*/ 
 #ifndef POINTOOLS_VISIBILITY_DETERMINATION_ENGINE
 #define POINTOOLS_VISIBILITY_DETERMINATION_ENGINE 1

@@ -1,4 +1,8 @@
-﻿using System;
+﻿/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
+using System;
 using System.IO;
 using System.Windows.Input;
 using Microsoft.Win32;

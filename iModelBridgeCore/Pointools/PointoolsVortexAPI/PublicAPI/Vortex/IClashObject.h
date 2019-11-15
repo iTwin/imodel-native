@@ -1,3 +1,7 @@
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 // IClashObject.h
 #ifndef ICLASHOBJECT_D812C84B_F4FD_4b3b_B2AC_F22966CBE251_H
 #define ICLASHOBJECT_D812C84B_F4FD_4b3b_B2AC_F22966CBE251_H

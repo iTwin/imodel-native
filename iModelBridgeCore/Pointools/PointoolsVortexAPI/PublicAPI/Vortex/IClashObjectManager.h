@@ -1,3 +1,7 @@
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 // IClashObjectManager.h
 #ifndef ICLASHOBJECTMANAGER_3415BD2B_2F44_4f96_9D28_E5D91C59EFBA_H
 #define ICLASHOBJECTMANAGER_3415BD2B_2F44_4f96_9D28_E5D91C59EFBA_H

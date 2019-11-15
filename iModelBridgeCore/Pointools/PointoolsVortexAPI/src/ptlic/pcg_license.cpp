@@ -1,8 +1,9 @@
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/ 
 /*	Pointools Licensing System												*/ 
-/*  (C) 2004 Copyright Pointools Ltd, UK - All Rights Reserved				*/ 
-/*																			*/ 
-/*  Last Updated 1 March 2004 Faraz Ravi									*/ 
 /*--------------------------------------------------------------------------*/ 
 #include <ptapp/license.h>
 #include <stdio.h>

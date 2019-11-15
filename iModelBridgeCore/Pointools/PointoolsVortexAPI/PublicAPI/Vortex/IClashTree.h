@@ -1,3 +1,7 @@
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 // IClashTree.h
 #ifndef ICLASHTREE_85A8A7EF_DFFE_4EDA_87B7_51EAC1663006_H
 #define ICLASHTREE_85A8A7EF_DFFE_4EDA_87B7_51EAC1663006_H

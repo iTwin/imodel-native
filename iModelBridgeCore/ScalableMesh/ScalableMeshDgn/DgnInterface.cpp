@@ -1,3 +1,7 @@
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #include "DgnInterface.h"
 #if defined(BEGIN_BENTLEY_NAMESPACE)
     #error This should be the first code that includes BeAssert.h

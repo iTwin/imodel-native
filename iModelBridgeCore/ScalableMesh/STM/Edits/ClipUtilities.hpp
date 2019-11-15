@@ -1,3 +1,7 @@
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #include "ClipUtilities.h"
 #include <TerrainModel/TerrainModel.h>
 #include <ScalableMesh/ScalableMeshUtilityFunctions.h>

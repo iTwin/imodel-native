@@ -1,7 +1,9 @@
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/ 
 /*	Pointools App class class												*/ 
-/*  (C) 2005 Copyright Pointools Ltd, UK - All Rights Reserved				*/ 
-/*																			*/ 
 /*--------------------------------------------------------------------------*/ 
 
 #define PT_STEREO_FUNCTIONALITY 0xa48fe30681b49c06

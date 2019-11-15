@@ -1,3 +1,7 @@
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 // clashObjectManager.h
 #ifndef CLASH_OBJECT_MANAGER_28620271_3E49_4900_997E_1EAA68926362_H
 #define CLASH_OBJECT_MANAGER_28620271_3E49_4900_997E_1EAA68926362_H

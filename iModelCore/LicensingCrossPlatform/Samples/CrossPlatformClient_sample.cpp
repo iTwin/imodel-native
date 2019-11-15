@@ -1,3 +1,7 @@
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 
 // Example of how to initialize the Cross Platform License Client, start the licensing heartbeat, stop the licensing heartbeat, and post feature data
 // this assumes that you have either the DgnClientFxSdk, or iModelCore libraries

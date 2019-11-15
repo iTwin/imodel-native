@@ -1,8 +1,9 @@
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/ 
 /*	Plugins Manager template base class interface							*/ 
-/*  (C) 2003 Copyright Pointools Ltd, UK - All Rights Reserved				*/ 
-/*																			*/ 
-/*  Last Updated 18 Dec 2003 Faraz Ravi										*/ 
 /*--------------------------------------------------------------------------*/ 
 
 #ifndef POINTOOLS_PLUGING_MANAGER_TEMPLATE

@@ -1,10 +1,10 @@
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 /*----------------------------------------------------------*/ 
 /* RenderEngine.h											*/ 
 /* Points Render Engine Interface file						*/ 
-/*----------------------------------------------------------*/ 
-/* (c) Copyright Pointools 2004-2007						*/   
-/*----------------------------------------------------------*/ 
-/* Written by Faraz Ravi									*/ 
 /*----------------------------------------------------------*/ 
 #ifndef POINTOOLS_RENDER_ENGINE
 #define POINTOOLS_RENDER_ENGINE 1

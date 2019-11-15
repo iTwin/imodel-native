@@ -1,8 +1,9 @@
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/ 
 /*	Pointools Modules manager class definition								*/ 
-/*  (C) 2003 Copyright Faraz Ravi - All Rights Reserved						*/ 
-/*																			*/ 
-/*  Last Updated 21 Dec 2003 Faraz Ravi										*/ 
 /*--------------------------------------------------------------------------*/ 
 #include <ptmodm/modulesManager.h>
 #include <pt/trace.h>

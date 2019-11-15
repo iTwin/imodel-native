@@ -1,8 +1,8 @@
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 // ***************************************************************************************************************************
-// (c)2011 Pointools Ltd.
-//
-// Author	: Lee Bull
-//
 // Notes	: DO NOT CHANGE THE ORDER of any functions in this file.
 //			  Alternative orders will compile but behave differently, due to implied template resolution.
 //

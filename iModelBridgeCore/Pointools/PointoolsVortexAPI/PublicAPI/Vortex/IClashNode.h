@@ -1,3 +1,7 @@
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 // IClashNode.h
 #ifndef ICLASHNODE_AFFA0BAD_9619_4678_9438_5BD671057CE5_H
 #define ICLASHNODE_AFFA0BAD_9619_4678_9438_5BD671057CE5_H

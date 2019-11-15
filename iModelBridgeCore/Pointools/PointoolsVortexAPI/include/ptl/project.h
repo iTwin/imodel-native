@@ -1,8 +1,9 @@
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/ 
 /*	Pointools Project														*/ 
-/*  (C) 2004 Copyright Pointools Ltd, UK - All Rights Reserved				*/ 
-/*																			*/ 
-/*  Last Updated 29 Jan 2004 Faraz Ravi										*/ 
 /*--------------------------------------------------------------------------*/ 
 
 #ifndef PTLPROJECT_DEFINITION_HEADER

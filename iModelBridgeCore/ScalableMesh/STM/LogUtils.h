@@ -1,3 +1,7 @@
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #pragma once
 #define LOG_SET_PATH( __path) Utf8String __log_path_str = __path;
 #define LOG_SET_PATH_W( __path) WString __log_path_wstr = L ## __path;

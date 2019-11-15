@@ -1,9 +1,10 @@
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/ 
 /*  Plane.h																	*/ 
 /*	Plane class definition													*/ 
-/*  (C) 2004 Copyright Pointools Ltd, UK | All Rights Reserved				*/ 
-/*																			*/ 
-/*  Last Updated 1 Feb 2005 Faraz Ravi										*/ 
 /*--------------------------------------------------------------------------*/ 
 /*
  * Plane class designed for easy of definition, placement, projection and 

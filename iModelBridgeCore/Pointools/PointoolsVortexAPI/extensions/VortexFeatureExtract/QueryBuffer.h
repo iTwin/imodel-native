@@ -1,3 +1,7 @@
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 /******************************************************************************
 
 Pointools Vortex API Examples
@@ -5,8 +9,6 @@ Pointools Vortex API Examples
 QueryBuffer.h
 
 Encapsulates query based point extraction from Vortex into buffers
-
-(c) Copyright 2008-11 Pointools Ltd
 
 *******************************************************************************/
 #ifndef POINTOOLS_EXAMPLE_APP_QUERY_BUFFER_H_

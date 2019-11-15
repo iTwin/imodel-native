@@ -1,3 +1,7 @@
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 #include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
 
 #include <ImagePP/all/h/HFCException.h>

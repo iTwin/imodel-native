@@ -1,6 +1,8 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See COPYRIGHT.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
 # *******************************************************************************************************
-# (c) 2014 Bentley Systems
-#
 # Name:			AuditCRT
 # Author:		Lee Bull
 # Description:	Generates report of C++ CRTs used in a folder and sub folders

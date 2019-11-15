@@ -1,8 +1,9 @@
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/
 /*	Points fileIO win32 class												*/
-/*  (C) 2003-2009 Copyright Pointools Ltd, UK - All Rights Reserved				*/
-/*																			*/
-/*  Last Updated Oct 2009 Faraz Ravi										*/
 /*--------------------------------------------------------------------------*/
 
 #ifndef POINTOOLS_FILEIO_WIN32

@@ -1,8 +1,9 @@
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/ 
 /*	Pointools Configurations												*/ 
-/*  (C) 2005 Copyright Pointools Ltd, UK - All Rights Reserved				*/ 
-/*																			*/ 
-/*  Last Updated 02 May 2005 Faraz Ravi										*/ 
 /*--------------------------------------------------------------------------*/ 
 
 #include "PointoolsVortexAPIInternal.h"

@@ -1,8 +1,9 @@
+/*---------------------------------------------------------------------------------------------
+* Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+* See COPYRIGHT.md in the repository root for full copyright notice.
+*--------------------------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/ 
 /*	CommandPipe state definition											*/ 
-/*  (C) 2003 Copyright Faraz Ravi - All Rights Reserved						*/ 
-/*																			*/ 
-/*  Last Updated 1 Oct 2004 Faraz Ravi										*/ 
 /*--------------------------------------------------------------------------*/ 
 #ifndef _COMMANDPIPE_STATE_ICON
 #define _COMMANDPIPE_STATE_ICON
