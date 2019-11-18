@@ -11,6 +11,7 @@ iModelHubClientMkiSourceDir = $(iModelHubClientSourceDirectory)iModelHubClient/
 #----------------------------------------------------------------------------------------
 
 iModelHubClientMkiHeaders =	$(iModelHubClientMkiPublicApiDir)Common.h                            \
+								$(iModelHubClientMkiPublicApiDir)CommonDefinition.h              \
                                 $(iModelHubClientMkiPublicApiDir)Client/BreakHelper.h            \
                                 $(iModelHubClientMkiPublicApiDir)Client/Briefcase.h              \
                                 $(iModelHubClientMkiPublicApiDir)Client/Client.h                 \
@@ -68,7 +69,9 @@ iModelHubClientMkiHeaders =	$(iModelHubClientMkiPublicApiDir)Common.h           
                                 $(iModelHubClientMkiPublicApiDir)Client/ConflictsInfo.h          \
                                 $(iModelHubClientMkiPublicApiDir)Client/BridgeProperties.h       \
                                 $(iModelHubClientMkiPublicApiDir)Client/ChangeSetArguments.h     \
-                                $(iModelHubClientMkiPublicApiDir)Client/ChangeSetQuery.h
+                                $(iModelHubClientMkiPublicApiDir)Client/ChangeSetQuery.h		 \
+								$(iModelHubClientMkiPublicApiDir)Client/OidcToken.h				 \
+								$(iModelHubClientMkiPublicApiDir)Client/OidcTokenProvider.h		
 
 #----------------------------------------------------------------------------------------
 #   Compile
@@ -181,4 +184,8 @@ $(o)ChangeSetArguments$(oext)              : $(iModelHubClientMkiSourceDir)Chang
 $(o)ChangeSetQuery$(oext)                  : $(iModelHubClientMkiSourceDir)ChangeSetQuery.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)BridgeProperties$(oext)                : $(iModelHubClientMkiSourceDir)BridgeProperties.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)OidcToken$(oext)					   : $(iModelHubClientMkiSourceDir)OidcToken.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)OidcTokenProvider$(oext)			   : $(iModelHubClientMkiSourceDir)OidcTokenProvider.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 

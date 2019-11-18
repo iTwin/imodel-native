@@ -213,6 +213,8 @@
     <ClCompile Include="iModelHubClient\JsonFormatters\MultiLockFormatter.cpp" />
     <ClCompile Include="iModelHubClient\MultiProgressCallbackHandler.cpp" />
     <ClCompile Include="iModelHubClient\ChangeSetArguments.cpp" />
+    <ClCompile Include="iModelHubClient\OidcToken.cpp" />
+    <ClCompile Include="iModelHubClient\OidcTokenProvider.cpp" />
     <ClCompile Include="iModelHubClient\StatisticsInfo.cpp" />
     <ClCompile Include="iModelHubClient\Storage\PendingChangeSetStorage.cpp" />
     <ClCompile Include="iModelHubClient\ThumbnailsManager.cpp" />
@@ -328,6 +330,9 @@
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\iModelBaseInfo.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\iModelCreateInfo.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\ChangeSetArguments.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\OidcToken.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\OidcTokenProvider.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\CommonDefinition.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\EventsCommon\BaseEventManager.h" />
     <ClInclude Include="iModelHubClient\Events\EventManager.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\GlobalEvents\GlobalEventManager.h" />

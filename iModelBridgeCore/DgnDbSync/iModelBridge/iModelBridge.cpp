@@ -12,11 +12,13 @@
 #include <iModelBridge/iModelBridgeLdClient.h>
 #include <Licensing/SaasClient.h>
 #include <WebServices/Configuration/UrlProvider.h>
-#include "Fwk/OidcToken.h"
+#include <WebServices/iModelHub/Client/OidcToken.h>
 #include <iModelBridge/iModelBridgeError.h>
+
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_LOGGING
 USING_NAMESPACE_BENTLEY_SQLITE
+USING_NAMESPACE_BENTLEY_IMODELHUB
 
 #undef LOG
 #define LOG (*LoggingManager::GetLogger(L"iModelBridge"))

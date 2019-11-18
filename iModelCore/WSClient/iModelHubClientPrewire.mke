@@ -7,6 +7,7 @@
 always:
     !~@mkdir $(BuildContext)PublicAPI/WebServices/iModelHub
     ~linkfile "$(BuildContext)PublicAPI/WebServices/iModelHub/Common.h =$(_MakeFilePath)/PublicAPI/WebServices/iModelHub/Common.h"
+	~linkfile "$(BuildContext)PublicAPI/WebServices/iModelHub/CommonDefinition.h =$(_MakeFilePath)/PublicAPI/WebServices/iModelHub/CommonDefinition.h"
     ~linkdir "$(BuildContext)PublicAPI/WebServices/iModelHub/Client =$(_MakeFilePath)/PublicAPI/WebServices/iModelHub/Client"
     ~linkdir "$(BuildContext)PublicAPI/WebServices/iModelHub/Events =$(_MakeFilePath)/PublicAPI/WebServices/iModelHub/Events"
     ~linkdir "$(BuildContext)PublicAPI/WebServices/iModelHub/GlobalEvents =$(_MakeFilePath)/PublicAPI/WebServices/iModelHub/GlobalEvents"

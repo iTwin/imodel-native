@@ -58,10 +58,6 @@ $(o)iModelBridgeFwkDmsOptions$(oext): $(baseDir)iModelBridgeFwkDmsOptions.cpp  $
 
 $(o)OidcSignInManager$(oext): $(baseDir)OidcSignInManager.cpp  $(baseDir)OidcSignInManager.h ${MultiCompileDepends}
 
-$(o)OidcTokenProvider$(oext): $(baseDir)OidcTokenProvider.cpp  $(baseDir)OidcTokenProvider.h ${MultiCompileDepends}
-
-$(o)OidcToken$(oext): $(baseDir)OidcToken.cpp  $(baseDir)OidcToken.h ${MultiCompileDepends}
-
 $(o)ProgressMeter$(oext): $(baseDir)ProgressMeter.cpp $(iModelBridgeAPISrc)iModelBridgeFwk.h ${MultiCompileDepends}
 
 $(o)CrashProcessor$(oext): $(baseDir)CrashProcessor.cpp $(baseDir)CrashProcessor.h ${MultiCompileDepends}

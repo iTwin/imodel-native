@@ -9,9 +9,10 @@
 #include <WebServices/Connect/ConnectAuthenticationHandler.h>
 
 #include <Logging/bentleylogging.h>
-#include "Fwk/OidcTokenProvider.h"
+#include <WebServices/iModelHub/Client/OidcTokenProvider.h>
 
 USING_NAMESPACE_BENTLEY_LOGGING
+USING_NAMESPACE_BENTLEY_IMODELHUB
 
 #define LOG (*LoggingManager::GetLogger(L"iModelBridgeFwk"))
 

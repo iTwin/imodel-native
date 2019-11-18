@@ -8,8 +8,9 @@
 #include "OidcSignInManager.h"
 
 #include <WebServices/Connect/ConnectAuthenticationHandler.h>
-#include "OidcTokenProvider.h"
+#include <WebServices/iModelHub/Client/OidcTokenProvider.h>
 USING_NAMESPACE_BENTLEY_DGN
+USING_NAMESPACE_BENTLEY_IMODELHUB
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                     Algirdas.Mikoliunas             08/2018
