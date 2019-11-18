@@ -1362,39 +1362,6 @@ TEST_F(ECSchemaTests, SchemaWithMultiInheritance)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            01/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ECSchemaTests, UpdateWithChangedSchema_WrongVersion)
-    {
-    LineUpFiles(L"UpdateWithChangedSchema.bim", L"Test3d.dgn", false);
-
-    ECObjectsV8::ECSchemaPtr schema = ReadSchema(TestSchema);
-    EXPECT_TRUE(schema.IsValid());
-    DgnV8Api::ElementId eid;
-    ImportSchemaAndAddInstance(m_v8FileName, eid, schema);
-
-    DoConvert(m_dgnDbFileName, m_v8FileName);
-    V8FileEditor v8editor;
-    v8editor.Open(m_v8FileName);
-
-        {
-        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        BentleyApi::ECN::ECSchemaCP ecSchema = db->Schemas().GetSchema("TestSchema");
-        ASSERT_TRUE(nullptr != ecSchema);
-        VerifySyncInfo(*db, v8editor.m_defaultModel, "TestSchema", 1, 1);
-        }
-
-        {
-        ECObjectsV8::ECClassP newClass;
-        schema->CreateClass(newClass, L"NewClass");
-        EXPECT_EQ(DgnV8Api::SCHEMAUPDATE_Success, DgnV8Api::DgnECManager::GetManager().UpdateSchema(*schema, *(v8editor.m_file)));
-        v8editor.Save();
-        }
-
-    DoUpdate(m_dgnDbFileName, m_v8FileName, true, false);
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                   Umar.Hayat            01/2016
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ECSchemaTests, UpdateWithChangedSchema_VersionUpdate)

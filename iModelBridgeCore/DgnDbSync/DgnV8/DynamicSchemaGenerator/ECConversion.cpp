@@ -2920,30 +2920,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ImportTargetECSchemas()
         });
 
     constSchemas.erase(removeDgn, constSchemas.end());
-//#define EXPORT_BISIFIEDECSCHEMAS 1
-#ifdef EXPORT_BISIFIEDECSCHEMAS
-    {
-    BeFileName bimFileName = GetDgnDb().GetFileName();
-    BeFileName outFolder = bimFileName.GetDirectoryName().AppendToPath(bimFileName.GetFileNameWithoutExtension().c_str());
-    if (!outFolder.DoesPathExist())
-        BeFileName::CreateNewDirectory(outFolder.GetName());
 
-    for (BECN::ECSchemaCP schema : constSchemas)
-        {
-        WString fileName;
-        fileName.AssignUtf8(schema->GetFullSchemaName().c_str());
-        fileName.append(L".ecschema.xml");
-
-        BeFileName outPath(outFolder);
-        outPath.AppendToPath(fileName.c_str());
-
-        if (outPath.DoesPathExist())
-            outPath.BeDeleteFile();
-
-        schema->WriteToXmlFile(outPath.GetName());
-        }
-    }
-#endif
     // If we're either updating or mapping a new file, need to see if this schema already exists in the db and if so, increment the minor version
     bvector<ECN::ECSchemaPtr> mergedSchemas;
     for (BECN::ECSchemaCP schema : constSchemas)
@@ -2996,6 +2973,32 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ImportTargetECSchemas()
         constSchemas.erase(removeAt, constSchemas.end());
         constSchemas.push_back(merged.get());
         }
+
+//#define EXPORT_BISIFIEDECSCHEMAS 1
+#ifdef EXPORT_BISIFIEDECSCHEMAS
+    {
+    BeFileName bimFileName = GetDgnDb().GetFileName();
+    BeFileName outFolder = bimFileName.GetDirectoryName().AppendToPath(bimFileName.GetFileNameWithoutExtension().c_str());
+    if (!outFolder.DoesPathExist())
+        BeFileName::CreateNewDirectory(outFolder.GetName());
+
+    for (BECN::ECSchemaCP schema : constSchemas)
+        {
+        WString fileName;
+        fileName.AssignUtf8(schema->GetFullSchemaName().c_str());
+        fileName.append(L".ecschema.xml");
+
+        BeFileName outPath(outFolder);
+        outPath.AppendToPath(fileName.c_str());
+
+        if (outPath.DoesPathExist())
+            outPath.BeDeleteFile();
+
+        schema->WriteToXmlFile(outPath.GetName());
+        }
+    }
+#endif
+
     auto importStatus = GetDgnDb().ImportV8LegacySchemas(constSchemas);
     if (SchemaStatus::Success != importStatus)
         {
@@ -3512,7 +3515,7 @@ void DynamicSchemaGenerator::CheckECSchemasForModel(DgnV8ModelR v8Model, bmap<Ut
             ECN::ECSchemaCP bimSchema = m_converter.GetDgnDb().Schemas().GetSchema(Utf8String(newSchemaKey.GetName().c_str()).c_str(), false);
             ECN::SchemaKey bimSchemaKey = bimSchema->GetSchemaKey();
             if (newSchemaKey.GetVersionMajor() == bimSchemaKey.GetVersionRead() && newSchemaKey.GetVersionMinor() <= bimSchemaKey.GetVersionMinor() && 
-                !IsDynamicSchema(v8SchemaName.c_str(), schemaXml))
+                !bimSchema->IsDynamicSchema())
                 {
                 Utf8PrintfString msg("v8 ECSchema '%s' checksum is different from stored schema yet the version is the same as or lower than the version stored.  Minor version must be greater than stored version in order to update.", Utf8String(v8SchemaInfo.GetSchemaName()).c_str());
                 ReportIssue(Converter::IssueSeverity::Fatal, Converter::IssueCategory::InconsistentData(), Converter::Issue::ConvertFailure(), msg.c_str());
