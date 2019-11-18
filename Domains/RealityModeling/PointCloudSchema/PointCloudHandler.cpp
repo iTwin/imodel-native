@@ -31,12 +31,15 @@ static Utf8CP PROPERTYJSON_Weight = "Weight";
 PointCloudModelPtr PointCloudModelHandler::CreatePointCloudModel(PointCloudModel::CreateParams const& params)
     {
     // Find resolved file name for the point cloud
-    BeFileName fileName;
-    BentleyStatus status = T_HOST.GetPointCloudAdmin()._ResolveFileUri(fileName, params.m_fileUri, params.m_dgndb);
-    if (status != SUCCESS)
+    BeFileName fileName(params.m_fileUri);
+    if (!fileName.IsAbsolutePath())
         {
-        ERROR_PRINTF("Failed to resolve filename = %s", fileName.GetNameUtf8().c_str());
-        return nullptr;
+        BentleyStatus status = T_HOST.GetPointCloudAdmin()._ResolveFileUri(fileName, params.m_fileUri, params.m_dgndb);
+        if (status != SUCCESS)
+            {
+            ERROR_PRINTF("Failed to resolve filename = %s", fileName.GetNameUtf8().c_str());
+            return nullptr;
+            }
         }
     Utf8String resolvedName(fileName);
     Utf8String modelName(fileName.GetFileNameWithoutExtension().c_str());

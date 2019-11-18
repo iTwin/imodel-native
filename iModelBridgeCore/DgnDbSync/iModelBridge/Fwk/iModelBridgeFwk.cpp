@@ -531,7 +531,11 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
             m_isCrashReportingEnabled = true;
             continue;
             }
-
+        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-reality-data-dir="))
+            {
+            m_realityDataDir.SetName(getArgValueW(argv[iArg]));
+            continue;
+            }
         BeAssert(false);
         fwprintf(stderr, L"%ls: unrecognized fwk argument\n", argv[iArg]);
         return BSIERROR;
@@ -1644,7 +1648,11 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     StopWatch briefcaseTime(true);
 
     if (m_bridge->TestFeatureFlag("imodel-bridge-reality-model-upload"))
+        {
         m_bridge->_GetParams().SetDoRealityDataUpload(true);
+        if (!m_jobEnvArgs.m_realityDataDir.empty())
+            m_bridge->_GetParams().SetRealityDataDir(m_jobEnvArgs.m_realityDataDir);
+        }
 
     if (m_bridge->TestFeatureFlag("imodel-bridge-terrain-conversion"))
         m_bridge->_GetParams().SetDoTerrainModelConversion(true);

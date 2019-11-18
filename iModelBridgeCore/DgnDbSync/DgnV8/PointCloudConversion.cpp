@@ -129,7 +129,7 @@ PointCloud::PointCloudModelPtr CreatePointCloudModel(Utf8StringCR fileName, DgnD
         if (!repositoryLink.IsValid() || !repositoryLink->Insert().IsValid())
             return nullptr;
 
-        return PointCloud::PointCloudModelHandler::CreatePointCloudModel(PointCloud::PointCloudModel::CreateParams(db, repositoryLink->GetElementId(), fileUri));
+        return PointCloud::PointCloudModelHandler::CreatePointCloudModel(PointCloud::PointCloudModel::CreateParams(db, repositoryLink->GetElementId(), fileName));
         }
     
     return nullptr;

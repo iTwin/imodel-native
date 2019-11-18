@@ -573,6 +573,7 @@ struct iModelBridge
         BeFileName m_geoCoordDir;
         BeFileName m_libraryDir;
         BeFileName m_reportFileName;
+        BeFileName m_realityDataDir;
         Utf8String m_converterJobName;
         DgnPlatformLib::Host::RepositoryAdmin* m_repoAdmin;
         WebServices::ClientInfoPtr m_clientInfo;
@@ -686,6 +687,8 @@ struct iModelBridge
         bool DoTerrainModelConversion() const { return m_doTerrainModelConversion; }
         void SetDoRealityDataUpload(bool b) { m_doRealityDataUpload = b; }
         bool DoRealityDataUpload() const { return m_doRealityDataUpload; }
+        void SetRealityDataDir(BeFileNameCR filename) { m_realityDataDir = filename; }
+        BeFileNameCR GetRealityDataDir() { return m_realityDataDir; }
         void SetMergeDefinitions(bool b) {m_mergeDefinitions = b;}
         bool GetMergeDefinitions() const {return m_mergeDefinitions;}
         void SetEmbeddedFileIdRecipe(FileIdRecipe const& v) {m_embeddedFileIdRecipe=v; m_hasEmbeddedFileIdRecipe=true;} //!< Optional. Set the rules for how to construct unique identifer for V8 embedded files.

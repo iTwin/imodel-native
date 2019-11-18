@@ -189,7 +189,8 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
     BeFileName              outputDirectory;
     if (doUpload)
         {
-        if (BentleyStatus::ERROR == T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectory(outputDirectory, L"Bentley\\RealityModelTileSets"))
+        outputDirectory = _GetParamsR().GetRealityDataDir();
+        if (outputDirectory.empty() && BentleyStatus::ERROR == T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectory(outputDirectory, L"Bentley\\RealityModelTileSets"))
             {
             ReportIssueV(Converter::IssueSeverity::Error, IssueCategory::DiskIO(), Issue::TemporaryDirectoryNotFound(), Utf8String(outputDirectory.c_str()).c_str());
             return ERROR;
