@@ -7,6 +7,7 @@
 #include <ECPresentation/RulesDriven/RuleSetEmbedder.h>
 #include <Bentley/BeDirectoryIterator.h>
 #include "ECSchemaHelper.h"
+#include "LoggingHelper.h"
 
 #define PRESENTATION_RULESET_EXTENSION_Xml   L".PresentationRuleSet.xml"
 #define PRESENTATION_RULESET_EXTENSION_Json  L".PresentationRuleSet.json"
@@ -368,7 +369,10 @@ bvector<BeFileName> DirectoryRuleSetLocater::_GetRuleSetFileNames() const
     for (BeFileName& directory : directories)
         {
         if (!directory.DoesPathExist())
+            {
+            LoggingHelper::LogMessage(Log::Default, Utf8PrintfString("DirectoryRuleSetLocater: Directory '%s' does not exist", directory.GetNameUtf8().c_str()).c_str());
             continue;
+            }
 
         bvector<BeFileName> matches;
         BeDirectoryIterator::WalkDirsAndMatch(matches, directory, L"*" PRESENTATION_RULESET_EXTENSION_Xml, true);
@@ -391,7 +395,10 @@ bvector<PresentationRuleSetPtr> DirectoryRuleSetLocater::_LocateRuleSets(Utf8CP 
     for (BeFileNameCR file : files)
         {
         if (!file.DoesPathExist())
+            {
+            LoggingHelper::LogMessage(Log::Default, Utf8PrintfString("DirectoryRuleSetLocater: File '%s' does not exist", file.GetNameUtf8().c_str()).c_str());
             continue;
+            }
 
         PresentationRuleSetPtr ruleset;
         auto rulesetIter = m_cache.find(file);
@@ -405,11 +412,21 @@ bvector<PresentationRuleSetPtr> DirectoryRuleSetLocater::_LocateRuleSets(Utf8CP 
                 ruleset = PresentationRuleSet::ReadFromXmlFile(file);
             else if (file.EndsWithI(PRESENTATION_RULESET_EXTENSION_Json))
                 ruleset = PresentationRuleSet::ReadFromJsonFile(file);
+            else
+                {
+                LoggingHelper::LogMessage(Log::Default, Utf8PrintfString("DirectoryRuleSetLocater: Detected a file with non-ruleset extension: '%s'", file.GetNameUtf8().c_str()).c_str());
+                continue;
+                }
 
             if (ruleset.IsValid())
                 {
                 m_cache[file] = ruleset;
                 OnRulesetCreated(*ruleset);
+                LoggingHelper::LogMessage(Log::Default, Utf8PrintfString("DirectoryRuleSetLocater: Read ruleset '%s' from file '%s'", ruleset->GetRuleSetId().c_str(), file.GetNameUtf8().c_str()).c_str());
+                }
+            else
+                {
+                LoggingHelper::LogMessage(Log::Default, Utf8PrintfString("DirectoryRuleSetLocater: Failed to parse ruleset '%s'", file.GetNameUtf8().c_str()).c_str());
                 }
             }
 
