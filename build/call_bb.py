@@ -160,6 +160,11 @@ def callEachStrategy(args, config, verData):
             action = 'prodversion -p ' + stratConfig['name'] + ' -u ' + version
             noArch = True
         elif 'createnugets' == args.action:
+            # Creating nugets seems to be recursive... only run if we're supposed to for this strategy.
+            if ('STRATS_TO_RELEASE' not in os.environ) or ((stratConfig['name'] not in os.environ['STRATS_TO_RELEASE']) and (os.environ['STRATS_TO_RELEASE'] != '*')):
+                print('INFO: Not creating nugets for ' + stratConfig['name'] + ' because it is not in STRATS_TO_RELEASE (' + os.environ['STRATS_TO_RELEASE'] + ').')
+                continue
+            
             action = 'savenuget --noStream'
         elif 'createinstallers' == args.action:
             if os.name != 'nt':
