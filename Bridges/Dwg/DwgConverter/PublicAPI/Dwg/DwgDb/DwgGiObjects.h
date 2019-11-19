@@ -26,7 +26,7 @@
 // declare common methods for DwgGiXxxxx classes which are Rx class in both Teigha and RealDWG!
 #define DWGGI_DECLARE_RX_MEMBERS(_classSuffix_)                         \
     DEFINE_T_SUPER(DWGROOT_SUPER_CONSTRUCTOR(Gi##_classSuffix_##))      \
-    DWGRX_DECLARE_MEMBERS_EXPIMP(DwgGi##_classSuffix_##)
+    DWGRX_DECLARE_MEMBERS_EXPIMP(DwgGi##_classSuffix_##, DWGDB_EXPORT)
 
 #ifdef DWGTOOLKIT_OpenDwg
 // declare common methods for DwgGiXxxxx classes - these are base classes, rasther than Rx classes, in Teigha!

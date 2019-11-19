@@ -144,7 +144,28 @@
     #define DWGDB_PSEUDO_DECLARE_MEMBERS(_className_)   ODDB_PSEUDO_DECLARE_MEMBERS(##_className_##);
 
     #define DWGRX_DECLARE_MEMBERS(_className_)          ODRX_DECLARE_MEMBERS(##_className_##);
-    #define DWGRX_DECLARE_MEMBERS_EXPIMP(_className_)   ODRX_DECLARE_MEMBERS(##_className_##);
+    #define DWGRX_DECLARE_MEMBERS_EXPIMP(_className_,_expimp_)              \
+        public:                                                             \
+        _expimp_ static OdSmartPtr<_className_>cast(const OdRxObject* obj)  \
+            {                                                               \
+            if (obj != nullptr)                                             \
+                return OdSmartPtr<_className_>(((_className_*)obj->queryX(_className_::desc())), kOdRxObjAttach);   \
+            return (_className_*)nullptr;                                   \
+            }                                                               \
+        static OdRxClass* g_pDesc;                                          \
+        _expimp_ static OdRxClass* desc();                                  \
+        _expimp_ virtual OdRxClass* isA() const;                            \
+        _expimp_ virtual OdRxObject* queryX(const OdRxClass* protocolClass) const;  \
+        _expimp_ static OdRxObjectPtr pseudoConstructor();                  \
+        _expimp_ static OdSmartPtr<_className_> createObject()              \
+            {                                                               \
+                if (!desc())                                                \
+                    throw OdError(eNotInitializedYet);                      \
+                return desc()->create();                                    \
+            }                                                               \
+        _expimp_ static void rxInit();                                      \
+        _expimp_ static void rxUninit();                                    \
+        _expimp_ static void rxInit(AppNameChangeFuncPtr appNameChangeFunc);
 
     #define DWGRX_DECLARE_RX_MEMBERS(_className_)                               \
         DWGDB_EXPORT static OdRxClass*      Desc ();                            \
@@ -217,7 +238,7 @@
             ACRX_DECLARE_MEMBERS_EXPIMP(##_className_##,DWGDB_EXPORT);
 
     #define DWGRX_DECLARE_MEMBERS(_className_)          ACRX_DECLARE_MEMBERS(##_className_##);
-    #define DWGRX_DECLARE_MEMBERS_EXPIMP(_className_)   ACRX_DECLARE_MEMBERS_EXPIMP(##_className_##,DWGDB_EXPORT);
+    #define DWGRX_DECLARE_MEMBERS_EXPIMP(_className_,_expimp_)  ACRX_DECLARE_MEMBERS_EXPIMP(##_className_##,##_expimp_##);
 
     #define DWGRX_DECLARE_RX_MEMBERS(_className_)                               \
         DWGDB_EXPORT static AcRxClass*      Desc ();                            \

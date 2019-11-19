@@ -94,7 +94,7 @@ class DwgProtocolExtension : public DwgRxObject
     {
 public:
     DEFINE_T_SUPER (DwgRxObject)
-    DWGRX_DECLARE_MEMBERS (DwgProtocolExtension)
+    DWGRX_DECLARE_MEMBERS_EXPIMP (DwgProtocolExtension, DWG_EXPORT)
 
     DWG_EXPORT static DWG_TypeP(RxClass)      Desc ();
     DWG_EXPORT static DwgProtocolExtension*   Cast (DWG_TypeCP(RxObject) obj);

@@ -14,6 +14,12 @@ USING_NAMESPACE_DWGDB
 #define DWGGI_TransparencyMode          OdGiRasterImage::TransparencyMode
 #define StubToObjectId(_stub_)          reinterpret_cast<OdDbObjectId*>(nullptr==_stub_ ? nullptr : *_stub_)
 
+ODRX_DEFINE_RTTI_MEMBERS (DwgGiMaterialTexture, OdGiMaterialTexture)
+ODRX_DEFINE_RTTI_MEMBERS (DwgGiImageFileTexture, OdGiImageFileTexture)
+ODRX_DEFINE_RTTI_MEMBERS (DwgGiGenericTexture, OdGiGenericTexture)
+ODRX_DEFINE_RTTI_MEMBERS (DwgGiMarbleTexture, OdGiMarbleTexture)
+ODRX_DEFINE_RTTI_MEMBERS (DwgGiWoodTexture, OdGiWoodTexture)
+
 #elif DWGTOOLKIT_RealDwg
 
 ACRX_NO_CONS_DEFINE_MEMBERS (DwgGiVariant, AcGiVariant)
