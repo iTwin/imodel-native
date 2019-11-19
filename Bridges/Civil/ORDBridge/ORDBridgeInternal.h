@@ -76,7 +76,7 @@ namespace BridgePhysicalBim = BENTLEY_NAMESPACE_NAME::BridgeStructuralPhysical;
 
 #define OBM_SCHEMA_NAME                             "OpenBridgeModelerCE"
 #define OBM_SCHEMA_FILE                             L"OpenBridgeModelerCE.ecschema.xml"
-#define OBM_SCHEMA_LOCATION                         L"ECSchemas/Application/"
+#define OBM_SCHEMA_LOCATION                         L"ECSchemas/Domain/"
 
 //-----------------------------------------------------------------------------------------
 // Logging macros

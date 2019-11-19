@@ -28,7 +28,6 @@ public:
 struct VerticalAlignmentModel : Dgn::GeometricModel2d
 {
     DGNMODEL_DECLARE_MEMBERS(BRRA_CLASS_VerticalAlignmentModel, Dgn::GeometricModel2d);
-    friend struct VerticalAlignmentModelHandler;
 
 public:
     struct CreateParams : T_Super::CreateParams
@@ -62,16 +61,4 @@ public:
     static VerticalAlignmentModelPtr GetForEdit(Dgn::DgnDbR db, Dgn::DgnModelId id) { return db.Models().Get<VerticalAlignmentModel>(id); }
 }; // VerticalAlignmentModel
 
-
-//__PUBLISH_SECTION_END__
-//=======================================================================================
-//! The ModelHandler for VerticalAlignmentModel
-//! @private
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE VerticalAlignmentModelHandler : Dgn::dgn_ModelHandler::Geometric2d
-{
-    MODELHANDLER_DECLARE_MEMBERS(BRRA_CLASS_VerticalAlignmentModel, VerticalAlignmentModel, VerticalAlignmentModelHandler, Dgn::dgn_ModelHandler::Geometric2d, ROADRAILALIGNMENT_EXPORT)
-}; // VerticalAlignmentModelHandler
-
-//__PUBLISH_SECTION_START__
 END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE

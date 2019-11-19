@@ -85,6 +85,7 @@ RoadNetworkCPtr RoadNetwork::Insert(PhysicalModelR parentModel, Utf8StringCR net
         return nullptr;
 
     auto horizontalBreakDownModelPtr = SpatialLocationModel::Create(*horizontalPartitionCPtr->get());
+    horizontalBreakDownModelPtr->SetIsPlanProjection(true);
     if (DgnDbStatus::Success != horizontalBreakDownModelPtr->Insert())
         return nullptr;
 

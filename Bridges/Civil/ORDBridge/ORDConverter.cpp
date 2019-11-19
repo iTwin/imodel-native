@@ -1419,6 +1419,9 @@ Dgn::DgnElementCPtr createCorridorComponent(CorridorSurfaceCR corridorSurface,
     auto corridorComponentElmPtr = corridorPortion.GetDgnDb().Elements().CreateElement(*ecInstancePtr);
     BeAssert(corridorComponentElmPtr.IsValid());
 
+    corridorComponentElmPtr->SetParentId(corridorPortion.GetElementId(),
+                                         corridorPortion.GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements));
+
     auto featureDefPtr = corridorSurface.GetFeatureDefinition();
     if (featureDefPtr.IsNull())
         {
@@ -1588,6 +1591,8 @@ BentleyStatus ORDCorridorsConverter::CreateCorridorComponents(CorridorCR cifCorr
         if (iter == m_converter.m_v8ToBimElmMap.end())
             continue;
 
+        // TODO: create code from corridorSurface's GetName, if available.
+        // Maybe its CodeSpec is defined by the CifCommon-level for generic PhysicalObjects.
         createCorridorComponent(*corridorSurfacePtr, *genPhysicalObjEnablerP, corridorPortion,
                                 categoryId, emptyCode, *iter->second, subCategoryMap);
         }
@@ -1673,9 +1678,12 @@ BentleyStatus ORDCorridorsConverter::CreateNewCorridor(
     auto bimAlignmentCPtr = AlignmentBim::Alignment::Get(m_converter.GetDgnDb(), algToBimIter->second);
 
     NetworkType networkType;
-    if (cifAlignmentPtr->GetCants().IsValid())
+    auto cifCantsPtr = cifAlignmentPtr->GetCants();
+    auto cifSuperSectionsPtr = cifAlignmentPtr->GetSuperElevationSections();
+
+    if (cifCantsPtr.IsValid() && cifCantsPtr->MoveNext())
         networkType = NetworkType::Rail;
-    else if (cifAlignmentPtr->GetSuperElevationSections().IsValid())
+    else if (cifSuperSectionsPtr.IsValid() && cifSuperSectionsPtr->MoveNext())
         networkType = NetworkType::Road;
     else
         networkType = NetworkType::Undetermined;

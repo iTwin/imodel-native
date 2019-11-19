@@ -115,11 +115,9 @@
     </Product>
 
     <Part Name="ORDBridgePublicAPI" BentleyBuildMakeFile="ORDBridge/ORDBridge.prewire.mke">
+      <SubPart PartName="OpenBridgeModelerCESchema" PartFile="BisSchemasIModelCore" Repository="BisSchemas"/>
         <Bindings>
             <PublicAPI Domain="ORDBridge"/>
-            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Application" SubPartDirectory="ECSchemas/Application">
-                ECSchemas/Application/OpenBridgeModelerCE*.xml
-            </Files>
         </Bindings>
     </Part>
 

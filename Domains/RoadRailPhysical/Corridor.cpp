@@ -256,6 +256,7 @@ TransportationSystemCPtr TransportationSystem::Insert(CorridorCR corridor, Utf8S
         return nullptr;
 
     auto horizontalBreakDownModelPtr = SpatialLocationModel::Create(*horizontalPartitionCPtr->get());
+    horizontalBreakDownModelPtr->SetIsPlanProjection(true);
     if (DgnDbStatus::Success != horizontalBreakDownModelPtr->Insert())
         return nullptr;
 

@@ -7,5 +7,3 @@
 $(BuildContext)PublicAPI/BridgeStructuralPhysical : $(_MakeFilePath)PublicAPI/BridgeStructuralPhysical
     $(LinkFirstDepToFirstTargetAsDirectory)
 
-$(BuildContext)ECSchemas/Domain/BridgeStructuralPhysical.ecschema.xml : $(_MakeFilePath)BridgeStructuralPhysical.ecschema.xml
-    $(LinkFirstDepToFirstTarget)

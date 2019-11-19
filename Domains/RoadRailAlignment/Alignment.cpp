@@ -14,7 +14,7 @@ AlignmentPtr Alignment::Create(SpatialModelCR model)
         return nullptr;
 
     DgnCategoryId categoryId;
-    if (model.ToSpatialLocationModel() && dynamic_cast<DesignAlignmentsCP>(model.GetModeledElement().get()))
+    if (model.ToSpatialLocationModel() && DesignAlignments::QueryClassId(model.GetDgnDb()) == model.GetModeledElement()->GetElementClassId())
         categoryId = AlignmentCategory::GetAlignment(model.GetDgnDb());
     else
         categoryId = AlignmentCategory::GetLinear(model.GetDgnDb());
@@ -44,8 +44,11 @@ AlignmentCPtr Alignment::GetAssociated(DgnElementCR element)
         }
 
     // 3. If element is a Vertical Alignment, return its Alignment.
-    if (auto vertAlignmentCP = dynamic_cast<VerticalAlignmentCP>(&element))
-        return &vertAlignmentCP->GetAlignment();
+    if (VerticalAlignment::QueryClassId(element.GetDgnDb()) == element.GetElementClassId())
+        {
+        VerticalAlignmentCPtr cPtr(new VerticalAlignment(*dynamic_cast<GeometricElement2dCP>(&element)));
+        return &cPtr->GetAlignment();
+        }
 
     // 4. If element is 3d and it represents an Alignment, return it.
     if (element.ToGeometrySource3d())
@@ -548,6 +551,7 @@ DesignAlignmentsCPtr DesignAlignments::Insert(SpatialModelCR model, Utf8StringCR
         return nullptr;
 
     auto horizontalBreakDownModelPtr = SpatialLocationModel::Create(*horizontalPartitionCPtr->get());
+    horizontalBreakDownModelPtr->SetIsPlanProjection(true);
     if (DgnDbStatus::Success != horizontalBreakDownModelPtr->Insert())
         return nullptr;
 

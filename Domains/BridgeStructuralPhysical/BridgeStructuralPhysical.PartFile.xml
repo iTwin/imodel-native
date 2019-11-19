@@ -36,11 +36,9 @@
     </Part>
 
     <Part Name="PublicAPI" BentleyBuildMakeFile="BridgeStructuralPhysical.prewire.mke">
+      <SubPart PartName="BridgeStructuralPhysical" PartFile="BisSchemasIModelCore" Repository="BisSchemas"/>
         <Bindings>
             <PublicAPI Domain="BridgeStructuralPhysical"/>
-            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
-                ECSchemas/Domain/BridgeStructuralPhysical*.xml
-            </Files>
         </Bindings>
     </Part>
 

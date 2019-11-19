@@ -10,5 +10,3 @@
 $(BuildContext)PublicAPI/ORDBridge : $(_MakeFilePath)PublicAPI/ORDBridge
     $(LinkFirstDepToFirstTargetAsDirectory)
 
-$(BuildContext)ECSchemas/Application/OpenBridgeModelerCE.ecschema.xml : $(_MakeFilePath)OpenBridgeModelerCE.ecschema.xml
-	$(LinkFirstDepToFirstTarget)

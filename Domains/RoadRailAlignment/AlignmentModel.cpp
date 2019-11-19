@@ -7,8 +7,6 @@
 #include <RoadRailAlignment/Alignment.h>
 #include <RoadRailAlignment/RoadRailAlignmentDomain.h>
 
-HANDLER_DEFINE_MEMBERS(VerticalAlignmentModelHandler)
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      03/2018
