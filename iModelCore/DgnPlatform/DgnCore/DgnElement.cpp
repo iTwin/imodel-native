@@ -1315,7 +1315,7 @@ void DgnElement::_ToJson(JsonValueR val, JsonValueCR opts) const
             ElementECPropertyAccessor const accessor(*this, propName);
             return accessor.IsValid() && accessor.IsAutoHandled();
             };
-        JsonEcInstanceWriter::WritePartialInstanceToJson(val, autoHandledAdapter, JsonEcInstanceWriter::MemberNameCasing::LowerFirstChar, shouldWriteProperty);
+        JsonEcInstanceWriter::WritePartialInstanceToJson(val, autoHandledAdapter, JsonEcInstanceWriter::MemberNameCasing::LowerFirstChar, shouldWriteProperty, &GetDgnDb().GetClassLocater());
         }
     else // else not in memory so query from database using ECSQL
         {
@@ -1380,7 +1380,6 @@ void DgnElement::_FromJson(JsonValueR props)
     ECN::JsonECInstanceConverter::JsonToECInstance(ec, props, GetDgnDb().GetClassLocater(), shouldSerializeProperty);
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1400,7 +1399,6 @@ DgnElement::CreateParams::CreateParams(DgnDbR db, JsonValueCR val) : m_dgndb(db)
     m_parentId = parent.m_id;
     m_parentRelClassId = parent.m_relClassId;
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/15

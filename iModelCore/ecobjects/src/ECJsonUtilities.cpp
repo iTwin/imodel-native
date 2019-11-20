@@ -849,8 +849,17 @@ BentleyStatus JsonECInstanceConverter::JsonToECInstance(IECInstanceR instance, J
                 }
 
             BeInt64Id navId = ECJsonUtilities::JsonToId<BeInt64Id>(navIdJson);
-            if (!navId.IsValid())
-                return ERROR; //wrong format
+            if (!navId.IsValid()) // invalid Id means value should be cleared
+                {
+                if (ECObjectsStatus::Success != v.SetNavigationInfo())
+                    return ERROR;
+
+                ECObjectsStatus ecStatus = instance.SetInternalValue(accessString.c_str(), v);
+                if (ecStatus != ECObjectsStatus::Success && ecStatus != ECObjectsStatus::PropertyValueMatchesNoChange)
+                    return ERROR;
+
+                continue;
+                }
 
             if (!childJsonValue.isMember(ECJsonUtilities::json_navRelClassName()))
                 {
@@ -1893,9 +1902,9 @@ StatusInt JsonEcInstanceWriter::WriteInstanceToJson(Json::Value& valueToPopulate
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Shaun.Sewall                   01/2019
 //---------------------------------------------------------------------------------------
-StatusInt JsonEcInstanceWriter::WritePartialInstanceToJson(Json::Value& jsonValue, IECInstanceCR ecInstance, MemberNameCasing casing, std::function<bool(Utf8CP)> shouldWriteProperty)
+StatusInt JsonEcInstanceWriter::WritePartialInstanceToJson(Json::Value& jsonValue, IECInstanceCR ecInstance, MemberNameCasing casing, std::function<bool(Utf8CP)> shouldWriteProperty, IECClassLocaterP classLocator)
     {
-    return WritePropertyValuesOfClassOrStructArrayMember(jsonValue, ecInstance.GetClass(), ecInstance, nullptr, nullptr, false, false, casing, shouldWriteProperty);
+    return WritePropertyValuesOfClassOrStructArrayMember(jsonValue, ecInstance.GetClass(), ecInstance, nullptr, classLocator, false, false, casing, shouldWriteProperty);
     }
 
 //---------------------------------------------------------------------------------------

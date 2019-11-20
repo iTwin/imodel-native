@@ -4078,11 +4078,18 @@ ECObjectsStatus ECDBuffer::CopyDataBuffer (ECDBufferCR src, bool allowClassLayou
                     continue;
                     }
                 else if (dstType.IsStruct())
-                    continue;   // embedded structs always null
+                    {
+                    continue; // embedded structs always null
+                    }
                 else if (dstType.IsPrimitive())
                     {
                     if (ECObjectsStatus::Success == src.GetPrimitiveValueFromMemory (v, *srcPropLayout, false, 0) && v.ConvertToPrimitiveType (dstType.GetPrimitiveType()))
                         SetPrimitiveValueToMemory (v, *dstPropLayout, false, 0, true /* set calculated property directly */);
+                    }
+                else if (dstType.IsNavigation())
+                    {
+                    if (ECObjectsStatus::Success == src.GetNavigationValueFromMemory(v, *srcPropLayout))
+                        SetNavigationValueToMemory(v, *dstPropLayout, false, 0);
                     }
                 else // array
                     {

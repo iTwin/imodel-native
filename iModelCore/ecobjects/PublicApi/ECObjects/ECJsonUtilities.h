@@ -594,7 +594,7 @@ public:
 
     //! Write the supplied instance as JSON excluding system properties and optionally filtering by property name
     //! @return SUCCESS or error status.
-    ECOBJECTS_EXPORT static StatusInt WritePartialInstanceToJson(Json::Value& valueToPopulate, ECN::IECInstanceCR ecInstance, MemberNameCasing casing, std::function<bool(Utf8CP)> shouldWriteProperty);
+    ECOBJECTS_EXPORT static StatusInt WritePartialInstanceToJson(Json::Value& valueToPopulate, ECN::IECInstanceCR ecInstance, MemberNameCasing casing, std::function<bool(Utf8CP)> shouldWriteProperty, IECClassLocaterP classLocator = nullptr);
 
     //! Write the supplied instance in the ECSchemaJSON format
     //! @param[out] valueToPopulate the JSON object to populate
