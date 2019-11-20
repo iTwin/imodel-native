@@ -95,7 +95,7 @@
         {
             "name": "ORDBridge",
             "archs": "x64",
-            "version_seed": "2.1.0",
+            "version_seed": "10.5.0",
             "has_installers": "basic",
             "depends" : [
                 "iModelBridgeCore"
